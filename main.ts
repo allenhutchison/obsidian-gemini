@@ -14,6 +14,7 @@ export const VIEW_TYPE_GEMINI = 'gemini-view';
 export class GeminiView extends ItemView {
     private chatbox: HTMLDivElement;
     private gemini: GoogleGenerativeAI | null = null;
+    private conversationHistory: { role: "user" | "model", content: string }[] = [];	
 
     constructor(leaf: WorkspaceLeaf, private plugin: ObsidianGemini) {
         super(leaf);
@@ -28,7 +29,11 @@ export class GeminiView extends ItemView {
     }
 
     async onOpen() {
-        const container = this.containerEl.children[1];
+		// Example starting message (optional) – adapt as needed
+		//this.displayMessage("Hi! How can I assist you today?", "bot");
+		this.conversationHistory.push({ role: "model", content: "Hi! How can I assist you today?" });
+
+		const container = this.containerEl.children[1];
         container.empty();
         container.createEl('h2', { text: 'Gemini Chat' });
 
@@ -64,7 +69,8 @@ export class GeminiView extends ItemView {
     displayMessage(message: string, sender: "user" | "bot") {
         const newMessage = this.chatbox.createDiv({ cls: `message ${sender}` });
 
-		MarkdownRenderer.render(this.app, message, newMessage, "", this);
+		const sourcePath = this.app.workspace.getActiveFile()?.path ?? ""; // Get active file path
+		MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
 
         this.chatbox.scrollTop = this.chatbox.scrollHeight;
     }
@@ -74,19 +80,53 @@ export class GeminiView extends ItemView {
             throw new Error("Gemini not initialized. Please set your API key.");
         }
 
+        // Add user message to history
+        this.conversationHistory.push({ role: "user", content: userMessage });		
+
         const model = this.gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
+
         const result = await model.generateContent(userMessage);
         let markdownResponse = result.response.text();
+		try {
+			// Build the contents array using conversation history
+			const contents = this.buildContents(userMessage);
+	
+			const result = await model.generateContent({contents});
+			const markdownResponse = result.response.text();
+			console.log("Raw Response:", JSON.stringify(markdownResponse));
+	
+			// Add bot response to history (after successful call)
+			this.conversationHistory.push({ role: "model", content: markdownResponse });
 
-        console.log("Raw Response:", JSON.stringify(markdownResponse));
-
-        return markdownResponse;
-	}
+			return markdownResponse;
+		} catch (error) {
+        	console.error("Error calling Gemini:", error);
+        	return "There was an error processing your request."; //Return a simple message
+		}
+	}		
 
     async onClose() {
         // Clean up if needed
     }
-}
+
+	buildContents(userMessage: string): any[] { // Use any[] to accommodate different part types
+		const contents = [];
+	
+		// Add conversation history to contents
+		for (const turn of this.conversationHistory) {
+			contents.push({
+				role: turn.role,
+				parts: [{ text: turn.content }] // Add text parts
+			});
+		}
+		// Add current user message
+		contents.push({
+			role: "user",
+			parts: [{ text: userMessage }]
+		});
+		return contents;
+	}
+}	
 
 
 export default class ObsidianGemini extends Plugin {
