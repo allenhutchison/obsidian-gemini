@@ -24,9 +24,17 @@ export class GeminiView extends ItemView {
         container.empty();
         container.createEl('h2', { text: 'Gemini Chat' });
 
+        // User input area
         this.chatbox = container.createDiv({ cls: 'chatbox' });
-        const userInput = container.createEl('input', { type: 'text', placeholder: 'Type your message...' });
-        const sendButton = container.createEl('button', { text: 'Send' });
+        const inputArea = container.createDiv({ cls: 'input-area' }); // Wrap input and button
+        const userInput = inputArea.createEl('input', { type: 'text', cls: 'chat-input', placeholder: 'Type your message...' });
+        const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'send-button' });
+
+        userInput.addEventListener('keydown', async (event) => {
+            if (event.key === 'Enter') {
+                sendButton.click();
+            }
+        });
 
         sendButton.addEventListener('click', async () => {
             const userMessage = userInput.value;
@@ -35,8 +43,7 @@ export class GeminiView extends ItemView {
                 userInput.value = "";
 
                 try {
-                    const botResponse = await this.sendMessage(userMessage);
-                    this.displayMessage(botResponse, "model");
+                    await this.sendMessage(userMessage);
                 } catch (error) {
                     new Notice("Error getting bot response.");
                     console.error(error);
@@ -58,11 +65,29 @@ export class GeminiView extends ItemView {
 		const sourcePath = this.app.workspace.getActiveFile()?.path ?? ""; // Get active file path
 		MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
 
+        if (sender === "model") { // Only add copy button to bot messages
+            const copyButton = newMessage.createEl("button", { cls: "copy-button", text: "Copy" });
+    
+            copyButton.addEventListener("click", () => {
+                navigator.clipboard.writeText(message).then(() => { //Requires navigator.clipboard support
+                    new Notice("Message copied to clipboard.");
+                }).catch(err => {
+                    new Notice("Could not copy message to clipboard.  Try selecting and copying manually.");
+                    console.error("Failed to copy: ", err)
+                });    
+            });
+        }
+
         this.chatbox.scrollTop = this.chatbox.scrollHeight;
     }
 
     handleFileOpen(file: TFile | null) {
+        this.clearChat();
         this.loadContext();
+    }
+
+    clearChat() {
+        this.chatbox.empty();
     }
 
     async loadContext() {
@@ -95,7 +120,6 @@ export class GeminiView extends ItemView {
 
     async sendMessage(userMessage: string) {
         if (userMessage.trim() !== "") {
-            this.displayMessage(userMessage, "user");
             try {
                 const botResponse = await getBotResponse(userMessage, this.plugin.settings.apiKey, this.conversationHistory);
                 this.displayMessage(botResponse, "model");
