@@ -1,11 +1,13 @@
-import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
+import { Editor, MarkdownView, ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
 import { getBotResponse } from './api'; // Import API function
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
 export class GeminiView extends ItemView {
     private chatbox: HTMLDivElement;
-    private conversationHistory: { role: "user" | "model", content: string }[] = [];	
+    private conversationHistory: { role: "user" | "model", content: string }[] = [];
+    private rewriteFileCheckbox: HTMLInputElement;
+
 
     constructor(leaf: WorkspaceLeaf, private plugin: ObsidianGemini) {
         super(leaf);
@@ -24,12 +26,20 @@ export class GeminiView extends ItemView {
         container.empty();
         container.createEl('h2', { text: 'Gemini Chat' });
 
-        // User input area
+        // The top level application
         this.chatbox = container.createDiv({ cls: 'chatbox' });
+
+        // User input and send button
         const inputArea = container.createDiv({ cls: 'input-area' }); // Wrap input and button
         const userInput = inputArea.createEl('input', { type: 'text', cls: 'chat-input', placeholder: 'Type your message...' });
         const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'send-button' });
 
+        // Checkbox to rewrite file
+        const rewriteChckboxArea = container.createDiv({ cls: 'rewrite-file-checkbox-area' });
+        this.rewriteFileCheckbox = rewriteChckboxArea.createEl('input', { type: 'checkbox', cls: 'rewrite-file-checkbox'});
+        const rewriteCheckboxLabel = rewriteChckboxArea.createEl("label", { text: "Rewrite File", cls: "rewrite-file-checkbox-label" });
+        rewriteCheckboxLabel.setAttribute("for", "rewrite-file-checkbox");
+        
         userInput.addEventListener('keydown', async (event) => {
             if (event.key === 'Enter') {
                 sendButton.click();
@@ -52,11 +62,13 @@ export class GeminiView extends ItemView {
         });
 
         await this.loadContext();
-
         this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
+        this.app.workspace.on('active-leaf-change', this.handleActiveLeafChange, this);
     }
 
     async onClose() {
+        this.app.workspace.off('file-open', this.handleFileOpen);
+        this.app.workspace.off('active-leaf-change', this.handleActiveLeafChange);
     }
 
     displayMessage(message: string, sender: "user" | "model") {
@@ -84,6 +96,11 @@ export class GeminiView extends ItemView {
     handleFileOpen(file: TFile | null) {
         this.clearChat();
         this.loadContext();
+        console.log("File opened:", file?.path);
+    }
+
+    private handleActiveLeafChange(leaf: WorkspaceLeaf | null) {
+        console.log("Leaf changed");
     }
 
     clearChat() {
@@ -122,11 +139,24 @@ export class GeminiView extends ItemView {
         if (userMessage.trim() !== "") {
             try {
                 const botResponse = await getBotResponse(userMessage, this.plugin.settings.apiKey, this.conversationHistory);
-                this.displayMessage(botResponse, "model");
-                this.conversationHistory.push({ role: "model", content: botResponse }); //Update history
+                this.conversationHistory.push({ role: "user", content: userMessage });
+                this.conversationHistory.push({ role: "model", content: botResponse }); 
+
+                if (this.rewriteFileCheckbox.checked) {
+                    const activeFile = this.app.workspace.getActiveFile();
+                    if (activeFile && activeFile instanceof TFile) {
+                        try {
+                            await this.app.vault.modify(activeFile, botResponse);
+                        } catch (error) {
+                            new Notice("Error rewriting file.");
+                            console.error(error);
+                        }
+                    }
+                } else {
+                    this.displayMessage(botResponse, "model");  
+                }
             } catch (error) {
                 new Notice("Error getting bot response.");
-                console.error(error);
             }
         }
     }
