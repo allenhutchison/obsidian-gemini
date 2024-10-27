@@ -8,22 +8,25 @@ import { GeminiApi } from './api';
 interface ObsidianGeminiSettings {
     apiKey: string;
 	modelName: string;
+    summaryFrontmatterKey: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     apiKey: '',
-	modelName: 'gemini-1.5-flash'
+	modelName: 'gemini-1.5-flash',
+    summaryFrontmatterKey: 'summary'
 };
 
 
 export default class ObsidianGemini extends Plugin {
     settings: ObsidianGeminiSettings;
+    public geminiApi: GeminiApi;
     private summarizer: GeminiSummary;
-    private geminiApi: GeminiApi;
+
 
     async onload() {
         await this.loadSettings();
-        this.geminiApi = new GeminiApi(this.settings.apiKey);
+        this.geminiApi = new GeminiApi(this.settings.apiKey, this.settings.modelName);
         this.summarizer = new GeminiSummary(this.app, this.geminiApi);
 
         this.registerView(

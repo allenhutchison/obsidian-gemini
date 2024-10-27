@@ -1,5 +1,6 @@
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
 import { GeminiApi } from './api'; // Import API function
+import ObsidianGemini from './main'; // Import main plugin class
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -11,7 +12,7 @@ export class GeminiView extends ItemView {
 
     constructor(leaf: WorkspaceLeaf, private plugin: ObsidianGemini) {
         super(leaf);
-        this.geminiApi = new GeminiApi(this.plugin.settings.apiKey);
+        this.geminiApi = plugin.geminiApi; // Initialize geminiApi
     }
 
     getViewType() {

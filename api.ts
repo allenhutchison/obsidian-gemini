@@ -4,9 +4,10 @@ export class GeminiApi {
     private gemini: GoogleGenerativeAI;
     private model: any;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, modelName: string) {
+        console.log("Initializing Gemini API with model:", modelName);
         this.gemini = new GoogleGenerativeAI(apiKey);
-        this.model = this.gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
+        this.model = this.gemini.getGenerativeModel({ model: modelName });
     }
 
     async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<string> {

@@ -1,4 +1,4 @@
-import { App, TFile, Notice } from "obsidian";
+import { App } from "obsidian";
 import { GeminiApi } from "./api";
 
 export class GeminiSummary {
