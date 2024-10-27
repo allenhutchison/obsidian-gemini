@@ -1,5 +1,5 @@
-import { Editor, MarkdownView, ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
-import { getBotResponse } from './api'; // Import API function
+import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
+import { GeminiApi } from './api'; // Import API function
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -7,10 +7,11 @@ export class GeminiView extends ItemView {
     private chatbox: HTMLDivElement;
     private conversationHistory: { role: "user" | "model", content: string }[] = [];
     private rewriteFileCheckbox: HTMLInputElement;
-
+    private geminiApi: GeminiApi; // Add geminiApi property
 
     constructor(leaf: WorkspaceLeaf, private plugin: ObsidianGemini) {
         super(leaf);
+        this.geminiApi = new GeminiApi(this.plugin.settings.apiKey);
     }
 
     getViewType() {
@@ -138,7 +139,7 @@ export class GeminiView extends ItemView {
     async sendMessage(userMessage: string) {
         if (userMessage.trim() !== "") {
             try {
-                const botResponse = await getBotResponse(userMessage, this.plugin.settings.apiKey, this.conversationHistory);
+                const botResponse = await this.geminiApi.getBotResponse(userMessage, this.conversationHistory);
                 this.conversationHistory.push({ role: "user", content: userMessage });
                 this.conversationHistory.push({ role: "model", content: botResponse }); 
 

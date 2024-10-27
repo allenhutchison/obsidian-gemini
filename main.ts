@@ -2,6 +2,8 @@ import { App, ItemView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import ObsidianGeminiSettingTab from './settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './gemini-view';
+import { GeminiSummary } from './summary';
+import { GeminiApi } from './api';
 
 interface ObsidianGeminiSettings {
     apiKey: string;
@@ -16,9 +18,14 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 
 export default class ObsidianGemini extends Plugin {
     settings: ObsidianGeminiSettings;
+    private summarizer: GeminiSummary;
+    private geminiApi: GeminiApi;
 
     async onload() {
         await this.loadSettings();
+        this.geminiApi = new GeminiApi(this.settings.apiKey);
+        this.summarizer = new GeminiSummary(this.app, this.geminiApi);
+
         this.registerView(
             VIEW_TYPE_GEMINI,
             (leaf) => new GeminiView(leaf, this)
@@ -30,6 +37,12 @@ export default class ObsidianGemini extends Plugin {
             callback: () => this.activateView()
         });
 
+        this.addCommand({
+            id: 'summarize-active-file',
+            name: 'Summarize Active File',
+            callback: () => this.summarizer.summarizeActiveFile()
+        });
+
         this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
     }
 
@@ -37,12 +50,15 @@ export default class ObsidianGemini extends Plugin {
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_GEMINI);
 
         const leaf = this.app.workspace.getLeftLeaf(false)
-        await leaf.setViewState({
-            type: VIEW_TYPE_GEMINI,
-            active: true
-        });
-
-        this.app.workspace.revealLeaf(leaf);
+        if (leaf) {
+            await leaf.setViewState({
+                type: VIEW_TYPE_GEMINI,
+                active: true
+            });
+            this.app.workspace.revealLeaf(leaf);
+        } else {
+            console.error("Could not find a suitable leaf to attach the view.");
+        }
     }
 
 
