@@ -1,13 +1,19 @@
+import ObsidianGemini from './main';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export class GeminiApi {
     private gemini: GoogleGenerativeAI;
     private model: any;
+    private plugin: ObsidianGemini;
 
-    constructor(apiKey: string, modelName: string) {
-        console.log("Initializing Gemini API with model:", modelName);
-        this.gemini = new GoogleGenerativeAI(apiKey);
-        this.model = this.gemini.getGenerativeModel({ model: modelName });
+    constructor(plugin: ObsidianGemini) {
+        this.plugin = plugin;
+        console.log("Initializing Gemini API with model:", this.plugin.settings.modelName);
+        this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
+        this.model = this.gemini.getGenerativeModel({ 
+            model: this.plugin.settings.modelName,
+            systemInstruction: this.plugin.settings.systemPrompt
+         });
     }
 
     async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<string> {
@@ -23,13 +29,7 @@ export class GeminiApi {
     }
 
     async generateOneSentenceSummary(content: string): Promise<string> {
-        const prompt = `
-        You are a helpful assistant. 
-        You use the context provided by the user to create useful single line summaries.
-        You only respond with a single sentence that is based on the content provided by the user.
-        You only respond with plain text.
-        Please summarize the following content: ${content}
-        `;
+        const prompt = this.plugin.settings.summaryPrompt + content;
         const result = await this.model.generateContent(prompt);
         return result.response.text();
     }
