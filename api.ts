@@ -1,5 +1,6 @@
 import ObsidianGemini from './main';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Notice, TFile } from 'obsidian';
 
 export class GeminiApi {
     private gemini: GoogleGenerativeAI;
@@ -12,14 +13,21 @@ export class GeminiApi {
         this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
         this.model = this.gemini.getGenerativeModel({ 
             model: this.plugin.settings.modelName,
-            systemInstruction: this.plugin.settings.systemPrompt
-         });
+            systemInstruction: this.plugin.settings.systemPrompt,
+            tools: { functionDeclarations: [ this.replaceDraftDeclaration ] }
+        });
     }
+
 
     async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<string> {
         try {
             const contents = this.buildContents(userMessage, conversationHistory);
             const result = await this.model.generateContent({contents});
+            if (result.response.functionCalls()) {
+                const call = result.response.functionCalls()[0]
+                const apiResponse = await this.functions[call.name](call.args);
+                return "Done"
+            }
             const markdownResponse = result.response.text();
             return markdownResponse;
         } catch (error) {
@@ -51,4 +59,38 @@ export class GeminiApi {
 
         return contents;
     }
+
+    private replaceDraftDeclaration = {
+        name: "replaceDraft",
+        parameters: {
+          type: "OBJECT",
+          description: "Replace the draft of the document that the model and the user are collaborating on.",
+          properties: {
+            newDraft: {
+              type: "STRING",
+              description: "The new draft of the document in Markdown format.",
+            },
+          },
+          required: ["newDraft"],
+        },
+      };
+
+    private async replaceDraft(newDraft: string) {
+        console.log(newDraft);
+        const activeFile = this.plugin.app.workspace.getActiveFile();
+        if (activeFile && activeFile instanceof TFile) {
+            try {
+                await this.plugin.app.vault.modify(activeFile, newDraft)
+            } catch (error) {
+                new Notice("Error rewriting file.");
+                console.error(error);
+            }
+        }
+    }
+
+    private functions = {
+        replaceDraft: ({ newDraft }) => {
+             return this.replaceDraft(newDraft);
+        }
+    };
 }

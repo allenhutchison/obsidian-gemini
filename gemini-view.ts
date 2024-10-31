@@ -140,7 +140,7 @@ export class GeminiView extends ItemView {
     async sendMessage(userMessage: string) {
         if (userMessage.trim() !== "") {
             try {
-                const botResponse = await this.geminiApi.getBotResponse(userMessage, this.conversationHistory);
+                const botResponse = await this.geminiApi.getBotResponse(userMessage, this.conversationHistory, this.rewriteFileCheckbox.checked);
                 this.conversationHistory.push({ role: "user", content: userMessage });
                 this.conversationHistory.push({ role: "model", content: botResponse }); 
 
