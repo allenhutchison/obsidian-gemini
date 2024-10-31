@@ -126,7 +126,23 @@ export class GeminiView extends ItemView {
         if (activeFile && activeFile instanceof TFile) { //Check if file is a TFile
             try {
                 const fileContent = await this.app.vault.read(activeFile);
-                return fileContent;
+                
+                // Create a container element for the rendered markdown
+                const el = document.createElement("div");
+
+                // Use MarkdownRenderer to render the content with embeds
+                await MarkdownRenderer.render(
+                    this.app,
+                    fileContent,
+                    el,
+                    activeFile.path,
+                    this
+                );
+
+                // Get the inner HTML of the container element
+                const contentWithEmbeds = el.innerHTML;
+
+                return contentWithEmbeds;
             } catch (error) {
                 console.error("Error reading file:", error);
                 new Notice("Error reading current file content."); // Show error to user.
