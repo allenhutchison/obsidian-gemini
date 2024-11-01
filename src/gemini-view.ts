@@ -107,7 +107,7 @@ export class GeminiView extends ItemView {
     async loadContext() {
         this.conversationHistory = []; // Always clear the history first
         
-        const currentFileContent = await this.plugin.gfile.getCurrentFileContent();
+        const currentFileContent = await this.plugin.gfile.getCurrentFileContent(false);
         
         if (currentFileContent) {
             this.conversationHistory.push({ role: "user", content: "This is the content of the current file:" });

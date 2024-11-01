@@ -4,6 +4,7 @@ import { GeminiView, VIEW_TYPE_GEMINI } from './src/gemini-view';
 import { GeminiSummary } from './src/summary';
 import { GeminiApi } from './src/api';
 import { GeminiFile } from './src/files'
+import { GeminiHistory } from './src/history';
 
 interface ObsidianGeminiSettings {
     apiKey: string;
@@ -50,6 +51,7 @@ export default class ObsidianGemini extends Plugin {
     private summarizer: GeminiSummary;
     public gfile: GeminiFile;
     public geminiView: GeminiView;
+    public history: GeminiHistory;
 
 
     async onload() {
@@ -57,6 +59,7 @@ export default class ObsidianGemini extends Plugin {
         this.geminiApi = new GeminiApi(this);
         this.summarizer = new GeminiSummary(this);
         this.gfile = new GeminiFile(this);
+        this.history = new GeminiHistory(this);
 
         this.registerView(
             VIEW_TYPE_GEMINI,

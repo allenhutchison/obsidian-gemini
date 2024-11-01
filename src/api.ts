@@ -15,7 +15,6 @@ export class GeminiApi {
         this.model = this.gemini.getGenerativeModel({ 
             model: this.plugin.settings.modelName,
             systemInstruction: this.plugin.settings.systemPrompt,
-            tools: { functionDeclarations: [ this.replaceDraftDeclaration ] }
         });
     }
 
@@ -24,16 +23,11 @@ export class GeminiApi {
         try {
             const contents = this.buildContents(userMessage, conversationHistory);
             const result = await this.model.generateContent({contents});
-            if (result.response.functionCalls()) {
-                const call = result.response.functionCalls()[0]
-                const apiResponse = await this.functions[call.name](call.args);
-                return apiResponse;
-            }
             const markdownResponse = result.response.text();
             return markdownResponse;
         } catch (error) {
             console.error("Error calling Gemini:", error);
-            throw error; //Rethrow so it can be handled by the caller
+            throw error; 
         }
     }
 
@@ -60,40 +54,4 @@ export class GeminiApi {
 
         return contents;
     }
-
-    private replaceDraftDeclaration = {
-        name: "replaceDraft",
-        parameters: {
-          type: "OBJECT",
-          description: "Begin or replace the document that the user and the model are working on together. It may be that the user wants to replace the content, or start a new document.",
-          properties: {
-            newDraft: {
-              type: "STRING",
-              description: "The new draft of the document in Markdown format.",
-            },
-          },
-          required: ["newDraft"],
-        },
-      };
-
-    private async replaceDraft(newDraft: string) {
-        console.log(newDraft);
-        const activeFile = this.plugin.app.workspace.getActiveFile();
-        if (activeFile && activeFile instanceof TFile && this.plugin.settings.rewriteFiles) {
-            try {
-                await this.plugin.app.vault.modify(activeFile, newDraft)
-            } catch (error) {
-                new Notice("Error rewriting file.");
-                console.error(error);
-            }
-        } else {
-            return newDraft;
-        }
-    }
-
-    private functions = {
-        replaceDraft: ({ newDraft }) => {
-             return this.replaceDraft(newDraft);
-        }
-    };
 }
