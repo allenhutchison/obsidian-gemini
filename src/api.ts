@@ -1,12 +1,12 @@
 import ObsidianGemini from '../main';
-import { Notice, TFile } from 'obsidian';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 
 export class GeminiApi {
+    private plugin: ObsidianGemini;
     private gemini: GoogleGenerativeAI;
     private model: any;
-    private plugin: ObsidianGemini;
+
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
@@ -40,12 +40,12 @@ export class GeminiApi {
     private buildContents(userMessage: string, conversationHistory: any[]): any[] {
         const contents = [];
 
-        for (const turn of conversationHistory) {
+        conversationHistory.forEach((entry) => {
             contents.push({
-                role: turn.role,
-                parts: [{ text: turn.content }]
+                role: entry.role,
+                parts: [{ text: entry.content }]
             });
-        }
+        })
 
         contents.push({
             role: "user",

@@ -5,11 +5,9 @@ import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidi
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
 export class GeminiView extends ItemView {
-    private chatbox: HTMLDivElement;
-    private conversationHistory: { role: "user" | "model", content: string }[] = [];
-    private rewriteFileCheckbox: HTMLInputElement;
     private plugin: ObsidianGemini;
-
+    private chatbox: HTMLDivElement;
+    private currentFile: TFile | null;
 
     constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
         super(leaf);
@@ -57,8 +55,7 @@ export class GeminiView extends ItemView {
                 }
             }
         });
-
-        await this.loadContext();
+        this.currentFile = this.app.workspace.getActiveFile();
         this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
         this.app.workspace.on('active-leaf-change', this.handleActiveLeafChange, this);
     }
@@ -90,10 +87,11 @@ export class GeminiView extends ItemView {
         this.chatbox.scrollTop = this.chatbox.scrollHeight;
     }
 
+    // This will be called when a file is opened or made active in the view.
     handleFileOpen(file: TFile | null) {
+        this.currentFile = file;
         this.clearChat();
-        this.loadContext();
-        console.log("File opened:", file?.path);
+        this.reloadChatFromHistory();
     }
 
     private handleActiveLeafChange(leaf: WorkspaceLeaf | null) {
@@ -104,24 +102,24 @@ export class GeminiView extends ItemView {
         this.chatbox.empty();
     }
 
-    async loadContext() {
-        this.conversationHistory = []; // Always clear the history first
-        
-        const currentFileContent = await this.plugin.gfile.getCurrentFileContent(false);
-        
-        if (currentFileContent) {
-            this.conversationHistory.push({ role: "user", content: "This is the content of the current file:" });
-        
-            this.conversationHistory.push({ role: "user", content: currentFileContent });
+    async reloadChatFromHistory() {
+        const history = await this.plugin.history.getHistoryForFile(this.currentFile!);
+        // The first two elements of the history array are always the file contents and related prompts.
+        // Skip those for display purposes.
+        if (history) {
+            history.slice(2).forEach(entry => {
+                this.displayMessage(entry.content, entry.role);
+            });
         }
     }
 
     async sendMessage(userMessage: string) {
         if (userMessage.trim() !== "") {
             try {
-                const botResponse = await this.plugin.geminiApi.getBotResponse(userMessage, this.conversationHistory);
-                this.conversationHistory.push({ role: "user", content: userMessage });
-                this.conversationHistory.push({ role: "model", content: botResponse }); 
+                const botResponse = await this.plugin.geminiApi.getBotResponse(
+                    userMessage, await this.plugin.history.getHistoryForFile(this.currentFile!));
+                this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
+                this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse });
                 this.displayMessage(botResponse, "model");  
             } catch (error) {
                 new Notice("Error getting bot response.");

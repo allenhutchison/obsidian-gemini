@@ -9,47 +9,36 @@ export class GeminiHistory {
         this.plugin = plugin;
     }
     
-    getHistoryForFile(file: TFile | null): { role: "user" | "model", content: string }[] {
-        if (file) {
-            return this.history[file.path] || []; // Return empty array if no history
-        }
-        return []; // Return empty array if no file
-    }
-
-    addHistoryForFile(file: TFile, newEntry: { role: "user" | "model", content: string }) {
+    async appendHistoryForFile(file: TFile, newEntry: { role: "user" | "model", content: string }) {
         if (file) {
             if (!this.history[file.path]) {
-                this.history[file.path] = [];
+                this.getHistoryForFile(file);
             }
             this.history[file.path].push(newEntry);
         }
     }
 
-    clearHistoryForFile(file: TFile | null) {
+    async getHistoryForFile(file: TFile) {
+        if (file) {
+            if (!this.history[file.path]) {
+                this.history[file.path] = [];
+            }
+            const fileContent = await this.plugin.gfile.getCurrentFileContent(true);
+            if (fileContent != null && !this.history[file.path].length) {
+                this.appendHistoryForFile(file, { role: "user", content: fileContent });
+                this.appendHistoryForFile(file, { role: "user", content: "This is the content of the current file:" });
+            } 
+        }
+        return this.history[file.path];
+    }
+
+    async clearHistoryForFile(file: TFile | null) {
         if (file) {
             delete this.history[file.path];
         }
     }
 
-    clearAllHistory() {
+    async clearAllHistory() {
         this.history = {};
-    }
-
-    private buildContents(userMessage: string, conversationHistory: any[]): any[] {
-        const contents = [];
-
-        for (const turn of conversationHistory) {
-            contents.push({
-                role: turn.role,
-                parts: [{ text: turn.content }]
-            });
-        }
-
-        contents.push({
-            role: "user",
-            parts: [{ text: userMessage }]
-        });
-
-        return contents;
     }
 }
