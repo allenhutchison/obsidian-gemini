@@ -1,6 +1,7 @@
 import ObsidianGemini from './main';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Notice, TFile } from 'obsidian';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 
 export class GeminiApi {
     private gemini: GoogleGenerativeAI;
@@ -26,7 +27,7 @@ export class GeminiApi {
             if (result.response.functionCalls()) {
                 const call = result.response.functionCalls()[0]
                 const apiResponse = await this.functions[call.name](call.args);
-                return "Done"
+                return apiResponse;
             }
             const markdownResponse = result.response.text();
             return markdownResponse;
@@ -64,7 +65,7 @@ export class GeminiApi {
         name: "replaceDraft",
         parameters: {
           type: "OBJECT",
-          description: "Replace the draft of the document that the model and the user are collaborating on.",
+          description: "Begin or replace the document that the user and the model are working on together. It may be that the user wants to replace the content, or start a new document.",
           properties: {
             newDraft: {
               type: "STRING",
@@ -78,13 +79,15 @@ export class GeminiApi {
     private async replaceDraft(newDraft: string) {
         console.log(newDraft);
         const activeFile = this.plugin.app.workspace.getActiveFile();
-        if (activeFile && activeFile instanceof TFile) {
+        if (activeFile && activeFile instanceof TFile && this.plugin.settings.rewriteFiles) {
             try {
                 await this.plugin.app.vault.modify(activeFile, newDraft)
             } catch (error) {
                 new Notice("Error rewriting file.");
                 console.error(error);
             }
+        } else {
+            return newDraft;
         }
     }
 

@@ -4,6 +4,7 @@ import ObsidianGeminiSettingTab from './settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './gemini-view';
 import { GeminiSummary } from './summary';
 import { GeminiApi } from './api';
+import { GeminiFile } from './src/files'
 
 interface ObsidianGeminiSettings {
     apiKey: string;
@@ -13,6 +14,7 @@ interface ObsidianGeminiSettings {
     systemPrompt: string;
     summaryPrompt: string;
     rewritePrompt: string;
+    rewriteFiles: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -20,6 +22,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	modelName: 'gemini-1.5-flash',
     summaryFrontmatterKey: 'summary',
     userName: 'User',
+    rewriteFiles: false,
     systemPrompt: `
         You are a note taking assistant. 
         Your goal is to help me stay organized and to surface information from my notes. 
@@ -46,16 +49,22 @@ export default class ObsidianGemini extends Plugin {
     settings: ObsidianGeminiSettings;
     public geminiApi: GeminiApi;
     private summarizer: GeminiSummary;
+    public gfile: GeminiFile;
+    public geminiView: GeminiView;
 
 
     async onload() {
         await this.loadSettings();
         this.geminiApi = new GeminiApi(this);
-        this.summarizer = new GeminiSummary(this.app, this.geminiApi);
+        this.summarizer = new GeminiSummary(this);
+        this.gfile = new GeminiFile(this);
 
         this.registerView(
             VIEW_TYPE_GEMINI,
-            (leaf) => new GeminiView(leaf, this)
+            (leaf) => {
+                this.geminiView = new GeminiView(leaf, this);
+                return this.geminiView;
+            }
         );
 
         this.addCommand({

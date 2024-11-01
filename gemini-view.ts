@@ -1,6 +1,6 @@
+import ObsidianGemini from './main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
-import { GeminiApi } from './api'; // Import API function
-import ObsidianGemini from './main'; // Import main plugin class
+
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -8,11 +8,12 @@ export class GeminiView extends ItemView {
     private chatbox: HTMLDivElement;
     private conversationHistory: { role: "user" | "model", content: string }[] = [];
     private rewriteFileCheckbox: HTMLInputElement;
-    private geminiApi: GeminiApi; // Add geminiApi property
+    private plugin: ObsidianGemini;
 
-    constructor(leaf: WorkspaceLeaf, private plugin: ObsidianGemini) {
+
+    constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
         super(leaf);
-        this.geminiApi = plugin.geminiApi; // Initialize geminiApi
+        this.plugin = plugin
     }
 
     getViewType() {
@@ -35,12 +36,6 @@ export class GeminiView extends ItemView {
         const inputArea = container.createDiv({ cls: 'input-area' }); // Wrap input and button
         const userInput = inputArea.createEl('input', { type: 'text', cls: 'chat-input', placeholder: 'Type your message...' });
         const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'send-button' });
-
-        // Checkbox to rewrite file
-        const rewriteChckboxArea = container.createDiv({ cls: 'rewrite-file-checkbox-area' });
-        this.rewriteFileCheckbox = rewriteChckboxArea.createEl('input', { type: 'checkbox', cls: 'rewrite-file-checkbox'});
-        const rewriteCheckboxLabel = rewriteChckboxArea.createEl("label", { text: "Rewrite File", cls: "rewrite-file-checkbox-label" });
-        rewriteCheckboxLabel.setAttribute("for", "rewrite-file-checkbox");
         
         userInput.addEventListener('keydown', async (event) => {
             if (event.key === 'Enter') {
@@ -112,7 +107,7 @@ export class GeminiView extends ItemView {
     async loadContext() {
         this.conversationHistory = []; // Always clear the history first
         
-        const currentFileContent = await this.getCurrentFileContent();
+        const currentFileContent = await this.plugin.gfile.getCurrentFileContent();
         
         if (currentFileContent) {
             this.conversationHistory.push({ role: "user", content: "This is the content of the current file:" });
@@ -121,58 +116,13 @@ export class GeminiView extends ItemView {
         }
     }
 
-    async getCurrentFileContent(): Promise<string | null> {
-        const activeFile = this.app.workspace.getActiveFile();
-        if (activeFile && activeFile instanceof TFile) { //Check if file is a TFile
-            try {
-                const fileContent = await this.app.vault.read(activeFile);
-                
-                // Create a container element for the rendered markdown
-                const el = document.createElement("div");
-
-                // Use MarkdownRenderer to render the content with embeds
-                await MarkdownRenderer.render(
-                    this.app,
-                    fileContent,
-                    el,
-                    activeFile.path,
-                    this
-                );
-
-                // Get the inner HTML of the container element
-                const contentWithEmbeds = el.innerHTML;
-
-                return contentWithEmbeds;
-            } catch (error) {
-                console.error("Error reading file:", error);
-                new Notice("Error reading current file content."); // Show error to user.
-                return null; // Or handle the error as needed
-
-            }
-        }
-        return null;
-    }
-
     async sendMessage(userMessage: string) {
         if (userMessage.trim() !== "") {
             try {
-                const botResponse = await this.geminiApi.getBotResponse(userMessage, this.conversationHistory, this.rewriteFileCheckbox.checked);
+                const botResponse = await this.plugin.geminiApi.getBotResponse(userMessage, this.conversationHistory);
                 this.conversationHistory.push({ role: "user", content: userMessage });
                 this.conversationHistory.push({ role: "model", content: botResponse }); 
-
-                if (this.rewriteFileCheckbox.checked) {
-                    const activeFile = this.app.workspace.getActiveFile();
-                    if (activeFile && activeFile instanceof TFile) {
-                        try {
-                            await this.app.vault.modify(activeFile, botResponse);
-                        } catch (error) {
-                            new Notice("Error rewriting file.");
-                            console.error(error);
-                        }
-                    }
-                } else {
-                    this.displayMessage(botResponse, "model");  
-                }
+                this.displayMessage(botResponse, "model");  
             } catch (error) {
                 new Notice("Error getting bot response.");
             }

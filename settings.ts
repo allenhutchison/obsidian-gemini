@@ -1,5 +1,5 @@
+import ObsidianGemini from './main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import ObsidianGemini from './main'; // Import your main plugin class
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
     plugin: ObsidianGemini;
@@ -61,6 +61,16 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     console.log("User name changed");
                     this.plugin.settings.userName = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Rewrite Files')
+            .setDesc('Whether to allow the model to rewrite files during chat.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.rewriteFiles)
+                .onChange(async (value) => {
+                    this.plugin.settings.rewriteFiles = value;
                     await this.plugin.saveSettings();
                 }));
 
