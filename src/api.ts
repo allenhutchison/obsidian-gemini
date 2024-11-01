@@ -1,4 +1,4 @@
-import ObsidianGemini from './main';
+import ObsidianGemini from '../main';
 import { Notice, TFile } from 'obsidian';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 

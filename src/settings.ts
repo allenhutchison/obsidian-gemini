@@ -1,4 +1,4 @@
-import ObsidianGemini from './main';
+import ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {

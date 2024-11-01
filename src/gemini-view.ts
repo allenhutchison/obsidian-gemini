@@ -1,4 +1,4 @@
-import ObsidianGemini from './main';
+import ObsidianGemini from '../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
 
 

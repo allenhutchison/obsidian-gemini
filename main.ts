@@ -1,9 +1,8 @@
-import { App, ItemView, Notice, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import ObsidianGeminiSettingTab from './settings';
-import { GeminiView, VIEW_TYPE_GEMINI } from './gemini-view';
-import { GeminiSummary } from './summary';
-import { GeminiApi } from './api';
+import { Plugin } from 'obsidian';
+import ObsidianGeminiSettingTab from './src/settings';
+import { GeminiView, VIEW_TYPE_GEMINI } from './src/gemini-view';
+import { GeminiSummary } from './src/summary';
+import { GeminiApi } from './src/api';
 import { GeminiFile } from './src/files'
 
 interface ObsidianGeminiSettings {
