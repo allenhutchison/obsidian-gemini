@@ -50,15 +50,9 @@ If your plugin does not need CSS, delete this file.
     background-color: var(--interactive-accent);
     border: none;
     color: var(--text-on-accent);
-    padding: var(--size-2-2) var(--size-4-2);
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    border-radius: var(--size-1-2); 
-    /* font-size: var(--font-size-ui-smaller); */
-    margin-left: var(--size-4-2);
-    cursor: pointer;
+    padding: var(--size-4-2) var(--size-4-3);
     border-radius: var(--radius-s);
+    cursor: pointer;
 }
 
 /* Hover effect for the copy button */
@@ -83,14 +77,14 @@ If your plugin does not need CSS, delete this file.
     flex-grow: 1;
 }
 
-.input-area .send-button {  /* style all buttons */
-    padding:  var(--size-4-2) var(--size-4-3);
-    margin-left: var(--size-2-2);  /* Space between button and input */
-    border: none;
-    border-radius: var(--radius-s);
+.input-area .send-button {  
     background-color: var(--interactive-accent);
+    border: none;
     color: var(--text-on-accent);
+    padding:  var(--size-4-2) var(--size-4-3);
+    border-radius: var(--radius-s);
     cursor: pointer;
+    margin-left: var(--size-2-2);  /* Space between button and input */
 }
 
 .input-area .send-button:hover {
