@@ -14,6 +14,7 @@ If your plugin does not need CSS, delete this file.
     overflow-y: auto;  /* Add scrollbar if needed */
     flex-grow: 1;
     padding: var(--size-2-1);
+    background-color: var(--background-primary);
 }
 
 .message-container {
@@ -33,16 +34,16 @@ If your plugin does not need CSS, delete this file.
     padding: var(--size-2-1) var(--size-2-2); /* Padding within message bubbles */
     border-radius: var(--radius-s); /* Rounded corners for the bubbles */
     box-sizing: border-box;
-    background-color: var(--background-secondary-alt); /* Use theme's secondary background color */
     color: var(--text-normal); /* Use theme's normal text color */
+    width: 100%;
 }
 
 .message.user {
-    background-color: var(--background-primary-alt); /* Use theme's modifier background color */
+    background-color: var(--background-secondary); /* Use theme's modifier background color */
 }
 
 .message.model {
-    background-color: var(--background-primary); /* Use theme's primary background color */
+    background-color: var(--background-secondary); /* Use theme's primary background color */
 }
 
 .chatbox .message .copy-button {
@@ -83,6 +84,7 @@ If your plugin does not need CSS, delete this file.
     border-radius: var(--radius-s);
     margin-right: var(--size-2-2);
     flex-grow: 1;
+    background-color: var(--background-modifier-form-field);
 }
 
 .input-area .send-button {
