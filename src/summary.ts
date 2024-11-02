@@ -14,7 +14,7 @@ export class GeminiSummary {
         // Generate summary (use a summarization model or some external API)
         if (fileContent) {
             const summary = await this.plugin.geminiApi.generateOneSentenceSummary(fileContent);
-            this.plugin.gfile.addToFrontMatter("summary", summary);
+            this.plugin.gfile.addToFrontMatter(this.plugin.settings.summaryFrontmatterKey, summary);
         } else {
             console.error("Failed to get file content for summary.");
         }
