@@ -50,9 +50,7 @@ If your plugin does not need CSS, delete this file.
     background-color: var(--interactive-accent);
     border: none;
     color: var(--text-on-accent);
-    padding: var(--size-4-2) var(--size-4-3);
     border-radius: var(--radius-s);
-    cursor: pointer;
 }
 
 /* Hover effect for the copy button */

@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile } from 'obsidian';
+import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
@@ -34,6 +34,7 @@ export class GeminiView extends ItemView {
         const inputArea = container.createDiv({ cls: 'input-area' }); // Wrap input and button
         const userInput = inputArea.createEl('input', { type: 'text', cls: 'chat-input', placeholder: 'Type your message...' });
         const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'send-button' });
+        setIcon(sendButton, "send-horizontal");
         
         userInput.addEventListener('keydown', async (event) => {
             if (event.key === 'Enter') {
@@ -78,10 +79,11 @@ export class GeminiView extends ItemView {
                 navigator.clipboard.writeText(message).then(() => { //Requires navigator.clipboard support
                     new Notice("Message copied to clipboard.");
                 }).catch(err => {
-                    new Notice("Could not copy message to clipboard.  Try selecting and copying manually.");
+                    new Notice("Could not copy message to clipboard.  Try selecting and copying manuall");
                     console.error("Failed to copy: ", err)
                 });    
             });
+            setIcon(copyButton, "copy");
         }
 
         this.chatbox.scrollTop = this.chatbox.scrollHeight;
