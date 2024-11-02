@@ -16,46 +16,56 @@ If your plugin does not need CSS, delete this file.
     padding: var(--size-2-1);
 }
 
-.chatbox .message {
+.message-container {
+    margin-bottom: var(--size-2-2); /* Space between messages */
+}
+
+.sender-indicator {
+    font-weight: bold;
+    margin-bottom: var(--size-1-2); /* Space between indicator and message */
+    color: var(--text-muted); /* Use theme's muted text color */
+}
+
+.message {
     user-select: text;
     -webkit-user-select: text; /* For older WebKit browsers */
-    -ms-user-select: text; /* For older Internet Explorer */    
-    margin-bottom: var(--size-2-2); /* Space between messages */
-    padding: var(--size-2-1) var(--size-2-2);    /* Padding within message bubbles */
-    border-radius: 8px;   /* Rounded corners for the bubbles */
-    clear: both; /* Prevent messages from overlapping on resize */
-    width: calc(100% - var(--size-2-2) * 2); /* Adjust width calculation */
+    -ms-user-select: text; /* For older Internet Explorer */
+    padding: var(--size-2-1) var(--size-2-2); /* Padding within message bubbles */
+    border-radius: var(--radius-s); /* Rounded corners for the bubbles */
     box-sizing: border-box;
     background-color: var(--background-secondary-alt); /* Use theme's secondary background color */
     color: var(--text-normal); /* Use theme's normal text color */
 }
 
-.chatbox .message.user {
+.message.user {
     background-color: var(--background-primary-alt); /* Use theme's modifier background color */
-    align-self: flex-end; /* Align user messages to the right */
 }
 
-.chatbox .message.model {
+.message.model {
     background-color: var(--background-primary); /* Use theme's primary background color */
-    align-self: flex-start;  /* Align model messages to the left */
-    margin-left: var(--size-2-1);
 }
 
-.chatbox .message.user + .message.model { /* Add some top margin between user and model to prevent overlap */
-  margin-top: var(--size-2-1);
-}
-
-/* Style the copy button that appears on model responses */
 .chatbox .message .copy-button {
     background-color: var(--interactive-accent);
     border: none;
     color: var(--text-on-accent);
+    padding: var(--size-4-2) var(--size-4-3);
     border-radius: var(--radius-s);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Hover effect for the copy button */
+.chatbox .message .copy-button::before {
+    content: attr(data-icon);
+    font-family: 'Lucide';
+    font-size: var(--font-size-m);
+    margin-right: var(--size-1-2);
+}
+
 .chatbox .message .copy-button:hover {
-    background-color: var(--interactive-accent-hover); 
+    background-color: var(--interactive-accent-hover);
 }
 
 /* Style the input area */
@@ -75,16 +85,16 @@ If your plugin does not need CSS, delete this file.
     flex-grow: 1;
 }
 
-.input-area .send-button {  
+.input-area .send-button {
     background-color: var(--interactive-accent);
     border: none;
     color: var(--text-on-accent);
-    padding:  var(--size-4-2) var(--size-4-3);
+    padding: var(--size-4-2) var(--size-4-3);
     border-radius: var(--radius-s);
     cursor: pointer;
-    margin-left: var(--size-2-2);  /* Space between button and input */
+    margin-left: var(--size-2-2); /* Space between button and input */
 }
 
 .input-area .send-button:hover {
-    background-color: var(--interactive-accent-hover); 
+    background-color: var(--interactive-accent-hover);
 }

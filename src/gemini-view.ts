@@ -1,17 +1,17 @@
 import ObsidianGemini from '../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 
-
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
 export class GeminiView extends ItemView {
     private plugin: ObsidianGemini;
     private chatbox: HTMLDivElement;
     private currentFile: TFile | null;
+    private observer: MutationObserver;
 
     constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
         super(leaf);
-        this.plugin = plugin
+        this.plugin = plugin;
     }
 
     getViewType() {
@@ -23,7 +23,7 @@ export class GeminiView extends ItemView {
     }
 
     async onOpen() {
-		const container = this.containerEl.children[1];
+        const container = this.containerEl.children[1];
         container.empty();
         container.createEl('h2', { text: 'Gemini Chat' });
 
@@ -35,7 +35,7 @@ export class GeminiView extends ItemView {
         const userInput = inputArea.createEl('input', { type: 'text', cls: 'chat-input', placeholder: 'Type your message...' });
         const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'send-button' });
         setIcon(sendButton, "send-horizontal");
-        
+
         userInput.addEventListener('keydown', async (event) => {
             if (event.key === 'Enter') {
                 sendButton.click();
@@ -56,6 +56,20 @@ export class GeminiView extends ItemView {
                 }
             }
         });
+
+        // Observe changes in the chatbox
+        this.observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    this.scrollToBottom();
+                }
+            }
+        });
+        this.observer.observe(this.chatbox, { 
+            childList: true, 
+            subtree: true 
+        });
+
         this.currentFile = this.app.workspace.getActiveFile();
         this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
         this.app.workspace.on('active-leaf-change', this.handleActiveLeafChange, this);
@@ -66,27 +80,28 @@ export class GeminiView extends ItemView {
         this.app.workspace.off('active-leaf-change', this.handleActiveLeafChange);
     }
 
-    displayMessage(message: string, sender: "user" | "model") {
-        const newMessage = this.chatbox.createDiv({ cls: `message ${sender}` });
+    async displayMessage(message: string, sender: "user" | "model") {
+        const newMessageContainer = this.chatbox.createDiv({ cls: `message-container ${sender}` });
+        const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator', text: sender === "user" ? "User" : "Bot" });
+        const newMessage = newMessageContainer.createDiv({ cls: `message ${sender}` });
 
-		const sourcePath = this.app.workspace.getActiveFile()?.path ?? ""; // Get active file path
-		MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
+        const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
+        await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
+        this.scrollToBottom();
 
-        if (sender === "model") { // Only add copy button to bot messages
-            const copyButton = newMessage.createEl("button", { cls: "copy-button", text: "Copy" });
-    
+        if (sender === "model") {
+            const copyButton = newMessage.createEl("button", { cls: "copy-button" });
+            setIcon(copyButton, "copy");
+            
             copyButton.addEventListener("click", () => {
-                navigator.clipboard.writeText(message).then(() => { //Requires navigator.clipboard support
+                navigator.clipboard.writeText(message).then(() => {
                     new Notice("Message copied to clipboard.");
                 }).catch(err => {
-                    new Notice("Could not copy message to clipboard.  Try selecting and copying manuall");
-                    console.error("Failed to copy: ", err)
-                });    
+                    new Notice("Could not copy message to clipboard. Try selecting and copying manually.");
+                    console.error("Failed to copy: ", err);
+                });
             });
-            setIcon(copyButton, "copy");
         }
-
-        this.chatbox.scrollTop = this.chatbox.scrollHeight;
     }
 
     // This will be called when a file is opened or made active in the view.
@@ -122,10 +137,28 @@ export class GeminiView extends ItemView {
                     userMessage, await this.plugin.history.getHistoryForFile(this.currentFile!));
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse });
-                this.displayMessage(botResponse, "model");  
+                this.displayMessage(botResponse, "model");
             } catch (error) {
                 new Notice("Error getting bot response.");
             }
         }
+    }
+
+    private scrollToBottom() {
+        const tryScroll = () => {
+            const inputArea = this.containerEl.querySelector('.input-area');
+            if (inputArea) {
+                inputArea.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'end',
+                    inline: 'nearest'
+                });
+            }
+        };
+
+        // Multiple scroll attempts with increasing delays
+        tryScroll();
+        setTimeout(tryScroll, 50);
+        setTimeout(tryScroll, 150);
     }
 }
