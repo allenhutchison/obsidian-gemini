@@ -1,9 +1,9 @@
 {
-	"id": "obsidian-gemini",
-	"name": "Gemini Plugin for Obsidian",
-	"version": "1.1.0",
+	"id": "gemini-scribe",
+	"name": "Gemini Scribe",
+	"version": "1.1.1",
 	"minAppVersion": "1.0.0",
-	"description": "Gemini Plugin for Obsidian, allows you to interact with the model and use your notes as context.",
+	"description": "Gemini Scribe, allows you to interact with the model and use your notes as context.",
 	"author": "Allen Hutchison",
 	"authorUrl": "https://allen.hutchison.org",
 	"isDesktopOnly": false
