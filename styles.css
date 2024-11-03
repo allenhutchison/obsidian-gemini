@@ -100,3 +100,21 @@ If your plugin does not need CSS, delete this file.
 .input-area .send-button:hover {
     background-color: var(--interactive-accent-hover);
 }
+
+.options-area {
+    display: flex;
+    align-items: center;
+    padding: var(--size-2-1);
+    margin-bottom: var(--size-2-1);
+}
+
+.rewrite-checkbox {
+    margin-right: var(--size-2-2);
+}
+
+.rewrite-label {
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}

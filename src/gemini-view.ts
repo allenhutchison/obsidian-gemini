@@ -8,6 +8,7 @@ export class GeminiView extends ItemView {
     private chatbox: HTMLDivElement;
     private currentFile: TFile | null;
     private observer: MutationObserver;
+    private shoudRewriteFile: boolean;
 
     constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
         super(leaf);
@@ -35,6 +36,17 @@ export class GeminiView extends ItemView {
         const userInput = inputArea.createEl('input', { type: 'text', cls: 'chat-input', placeholder: 'Type your message...' });
         const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'send-button' });
         setIcon(sendButton, "send-horizontal");
+
+        // Add checkbox container below input area
+        if (this.plugin.settings.rewriteFiles) {
+            const optionsArea = container.createDiv({ cls: 'options-area' });
+            const rewriteCheckbox = optionsArea.createEl('input', { type: 'checkbox', cls: 'rewrite-checkbox' });
+            optionsArea.createEl('label', { text: 'Rewrite file', cls: 'rewrite-label' }).prepend(rewriteCheckbox);
+
+            rewriteCheckbox.addEventListener('change', () => {
+                this.shoudRewriteFile = rewriteCheckbox.checked;
+            });
+        }
 
         userInput.addEventListener('keydown', async (event) => {
             if (event.key === 'Enter') {
@@ -138,9 +150,15 @@ export class GeminiView extends ItemView {
                     userMessage, await this.plugin.history.getHistoryForFile(this.currentFile!));
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse });
-                this.displayMessage(botResponse, "model");
+                if (this.shoudRewriteFile) {
+                    console.log("Rewriting file");
+                    this.displayMessage(botResponse, "model");
+                } else {
+                    this.displayMessage(botResponse, "model");
+                }
             } catch (error) {
                 new Notice("Error getting bot response.");
+                console.error(error);
             }
         }
     }
