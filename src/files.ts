@@ -40,10 +40,8 @@ export class GeminiFile {
                     );
 
                     // Get the inner HTML of the container element
-                    const contentWithEmbeds = el.innerHTML;
+                    const contentWithEmbeds = el.textContent;
                     return contentWithEmbeds;
-                } else {
-                    return fileContent;
                 }   
             } catch (error) {
                 console.error("Error reading file:", error);
