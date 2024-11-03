@@ -21,7 +21,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 .setPlaceholder('Enter your API Key')
                 .setValue(this.plugin.settings.apiKey)
                 .onChange(async (value) => {
-                    console.log("Key changed");
                     this.plugin.settings.apiKey = value;
                     await this.plugin.saveSettings();
                 }));
@@ -37,7 +36,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 .addOption('gemini-1.5-flash-8b', 'gemini-1.5-flash-8b')
             .setValue(this.plugin.settings.modelName)
             .onChange(async (value) => {
-                console.log("Model changed: ", value);
                 this.plugin.settings.modelName = value;
                 await this.plugin.saveSettings();
             }));
@@ -49,7 +47,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 .setPlaceholder('Enter your key')
                 .setValue(this.plugin.settings.summaryFrontmatterKey)
                 .onChange(async (value) => {
-                    console.log("Frontmatter Key changed");
                     this.plugin.settings.summaryFrontmatterKey = value;
                     await this.plugin.saveSettings();
                 }));
@@ -61,11 +58,25 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 .setPlaceholder('Enter your name')
                 .setValue(this.plugin.settings.userName)
                 .onChange(async (value) => {
-                    console.log("User name changed");
                     this.plugin.settings.userName = value;
                     await this.plugin.saveSettings();
                 }));
 
+        new Setting(containerEl)
+            .setName('Context Depth')
+            .setDesc('The number of linked pages to include in the context for the model.')
+            .addDropdown(dropdown => dropdown
+                .addOption('0', '0')
+                .addOption('1', '1')
+                .addOption('2', '2')
+                .addOption('3', '3')
+                .addOption('4', '4')
+            .setValue(this.plugin.settings.maxContextDepth.toString())
+            .onChange(async (value) => {
+                this.plugin.settings.maxContextDepth = parseInt(value);
+                await this.plugin.saveSettings();
+            }));
+    
         new Setting(containerEl)
             .setName('Rewrite Files')
             .setDesc('Whether to allow the model to rewrite files during chat.')
@@ -83,7 +94,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 .setPlaceholder('Enter your system prompt')
                 .setValue(this.plugin.settings.systemPrompt)
                 .onChange(async (value) => {
-                    console.log("System prompt changed");
                     this.plugin.settings.systemPrompt = value;
                     await this.plugin.saveSettings();
                 })

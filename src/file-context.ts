@@ -12,14 +12,12 @@ interface FileContextNode {
 export class FileContextTree {
     private root: FileContextNode | null = null;
     private plugin: ObsidianGemini;
-    private maxDepth: number = 2; // TODO(adh): Make this configurable
+    private maxDepth: number;
     private readonly MAX_TOTAL_CHARS = 500000; // TODO(adh): Make this configurable
 
-    constructor(plugin: ObsidianGemini, depth: number = this.maxDepth) {
+    constructor(plugin: ObsidianGemini, depth?: number) {
         this.plugin = plugin;
-        if (depth) {
-            this.maxDepth = depth;
-        }
+        this.maxDepth = depth ?? this.plugin.settings.maxContextDepth;
     }
 
     async buildStructure(file: TFile, currentDepth: number = 0): Promise<FileContextNode | null> {

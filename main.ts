@@ -11,6 +11,7 @@ interface ObsidianGeminiSettings {
 	modelName: string;
     summaryFrontmatterKey: string;
     userName: string;
+    maxContextDepth: number;
     systemPrompt: string;
     summaryPrompt: string;
     rewritePrompt: string;
@@ -22,6 +23,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	modelName: 'gemini-1.5-flash-002',
     summaryFrontmatterKey: 'summary',
     userName: 'User',
+    maxContextDepth: 2,
     rewriteFiles: false,
     systemPrompt: `
         You are a note taking assistant. 
