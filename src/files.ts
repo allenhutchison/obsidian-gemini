@@ -1,4 +1,5 @@
 import ObsidianGemini from '../main';
+import { FileContextTree } from './file-context';
 import { TFile, MarkdownRenderer, Notice, Editor } from 'obsidian';
 
 export class GeminiFile {
@@ -8,49 +9,17 @@ export class GeminiFile {
         this.plugin = plugin;
     }
 
-    async getCurrentFileContent(render: boolean = true): Promise<string | null> {
+    // TODO(adh): Add a depth parameter from settings, rather than this hard-coded value
+    async getCurrentFileContent(depth: number = 2): Promise<string | null> {
         const activeFile = this.plugin.app.workspace.getActiveFile();
         if (!activeFile) {
-            new Notice("No active file found.");
+            console.log("No active file found.");
             return null;
         } else {
-            return this.getFileContent(activeFile, render);
+            const fileContext = new FileContextTree(this.plugin, depth);
+            await fileContext.initialize(activeFile);
+            return fileContext.toString();
         }
-    }
-
-    async getFileContent(file: TFile, render: boolean = false): Promise<string | null> {
-        if (file && file instanceof TFile) { 
-            try {
-                const fileContent = await this.plugin.app.vault.read(file);
-                this.plugin.app.metadataCache.getFileCache(file)?.links?.forEach((link) => {
-                    console.log("Link:", link.link);
-                });
-                
-                if (render) {
-                    // Create a container element for the rendered markdown
-                    const el = document.createElement("div");
-
-                    // Use MarkdownRenderer to render the content with embeds
-                    await MarkdownRenderer.render(
-                        this.plugin.app,
-                        fileContent,
-                        el,
-                        file.path,
-                        this.plugin
-                    );
-
-                    // Get the inner Text of the rendered content
-                    // Can't use innerHTML because obsidian team will reject the plugin.
-                    const contentWithEmbeds = el.textContent;
-                    return contentWithEmbeds;
-                }   
-            } catch (error) {
-                console.error("Error reading file:", error);
-                new Notice("Error reading current file content."); 
-                return null;
-            }
-        }
-        return null;
     }
 
     async addToFrontMatter(key: string, value: string) {

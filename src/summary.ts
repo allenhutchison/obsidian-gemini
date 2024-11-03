@@ -9,7 +9,7 @@ export class GeminiSummary {
     }
 
     async summarizeActiveFile() {
-        const fileContent = await this.plugin.gfile.getCurrentFileContent();
+        const fileContent = await this.plugin.gfile.getCurrentFileContent(0);
 
         // Generate summary (use a summarization model or some external API)
         if (fileContent) {

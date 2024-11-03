@@ -23,10 +23,10 @@ export class GeminiHistory {
             if (!this.history[file.path]) {
                 this.history[file.path] = [];
             }
-            const fileContent = await this.plugin.gfile.getCurrentFileContent(true);
+            const fileContent = await this.plugin.gfile.getCurrentFileContent();
             if (fileContent != null && !this.history[file.path].length) {
-                this.appendHistoryForFile(file, { role: "user", content: fileContent });
                 this.appendHistoryForFile(file, { role: "user", content: "This is the content of the current file:" });
+                this.appendHistoryForFile(file, { role: "user", content: fileContent });
             } 
         }
         return this.history[file.path];
