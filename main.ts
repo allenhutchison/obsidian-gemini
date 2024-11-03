@@ -19,7 +19,7 @@ interface ObsidianGeminiSettings {
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     apiKey: '',
-	modelName: 'gemini-1.5-flash',
+	modelName: 'gemini-1.5-flash-002',
     summaryFrontmatterKey: 'summary',
     userName: 'User',
     rewriteFiles: false,
