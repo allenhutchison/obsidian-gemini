@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "gemini-scribe",
+	"version": "1.1.1",
+	"description": "Gemini Scribe, allows you to interact with the model and use your notes as context.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
