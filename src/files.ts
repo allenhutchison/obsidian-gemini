@@ -39,7 +39,8 @@ export class GeminiFile {
                         this.plugin
                     );
 
-                    // Get the inner HTML of the container element
+                    // Get the inner Text of the rendered content
+                    // Can't use innerHTML because obsidian team will reject the plugin.
                     const contentWithEmbeds = el.textContent;
                     return contentWithEmbeds;
                 }   
