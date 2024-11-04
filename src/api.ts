@@ -22,7 +22,7 @@ export class GeminiApi {
 
     async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<string> {
         try {
-            const contents = this.buildContents(userMessage, conversationHistory);
+            const contents = await this.buildContents(userMessage, conversationHistory);
             const result = await this.model.generateContent({contents});
             const markdownResponse = result.response.text();
             return markdownResponse;
@@ -38,9 +38,20 @@ export class GeminiApi {
         return result.response.text();
     }
 
-    private buildContents(userMessage: string, conversationHistory: any[]): any[] {
+    private async buildContents(userMessage: string, conversationHistory: any[]): Promise<any[]> {
         const contents = [];
-
+        // TODO(adh): This should be cached so it doesn't have to be recomputed every time we call the model.
+        const fileContent = await this.plugin.gfile.getCurrentFileContent();
+        if (fileContent != null) {
+            contents.push({
+                role: "user", 
+                parts: [{ text: "This is the content of the current file and the files that it links to: " }]
+                });
+            contents.push({
+                role: "user",
+                parts: [{ text: fileContent }]
+            });
+        }
         conversationHistory.forEach((entry) => {
             contents.push({
                 role: entry.role,

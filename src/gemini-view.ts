@@ -84,12 +84,10 @@ export class GeminiView extends ItemView {
 
         this.currentFile = this.app.workspace.getActiveFile();
         this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
-        this.app.workspace.on('active-leaf-change', this.handleActiveLeafChange, this);
     }
 
     async onClose() {
         this.app.workspace.off('file-open', this.handleFileOpen);
-        this.app.workspace.off('active-leaf-change', this.handleActiveLeafChange);
     }
 
     async displayMessage(message: string, sender: "user" | "model") {
@@ -124,20 +122,14 @@ export class GeminiView extends ItemView {
         this.reloadChatFromHistory();
     }
 
-    private handleActiveLeafChange(leaf: WorkspaceLeaf | null) {
-        console.log("Leaf changed");
-    }
-
     clearChat() {
         this.chatbox.empty();
     }
 
     async reloadChatFromHistory() {
         const history = await this.plugin.history.getHistoryForFile(this.currentFile!);
-        // The first two elements of the history array are always the file contents and related prompts.
-        // Skip those for display purposes.
         if (history) {
-            history.slice(2).forEach(entry => {
+            history.forEach(entry => {
                 this.displayMessage(entry.content, entry.role);
             });
         }
