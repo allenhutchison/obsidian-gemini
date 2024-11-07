@@ -108,5 +108,9 @@ export default class ObsidianGemini extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        this.geminiApi = new GeminiApi(this);
+        this.summarizer = new GeminiSummary(this);
+        this.gfile = new GeminiFile(this);
+        this.history = new GeminiHistory(this);
     }
 }
