@@ -137,17 +137,18 @@ export class GeminiView extends ItemView {
 
     async sendMessage(userMessage: string) {
         if (userMessage.trim() !== "") {
+            if (this.shoudRewriteFile) {
+                await this.plugin.geminiApi.generateRewriteResponse(userMessage,
+                    await this.plugin.history.getHistoryForFile(this.currentFile!));
+                return;
+            }
+
             try {
                 const botResponse = await this.plugin.geminiApi.getBotResponse(
                     userMessage, await this.plugin.history.getHistoryForFile(this.currentFile!));
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse });
-                if (this.shoudRewriteFile) {
-                    console.log("Rewriting file");
-                    this.displayMessage(botResponse, "model");
-                } else {
-                    this.displayMessage(botResponse, "model");
-                }
+                this.displayMessage(botResponse, "model");
             } catch (error) {
                 new Notice("Error getting bot response.");
                 console.error(error);

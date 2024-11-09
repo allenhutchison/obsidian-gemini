@@ -26,9 +26,11 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     maxContextDepth: 2,
     rewriteFiles: false,
     systemPrompt: `
-        You are a note taking assistant. 
-        Your goal is to help me stay organized and to surface information from my notes. 
-        You can assume that I am the author for all of my notes.
+You are a note taking and writing assistant. 
+
+Your goal is to help me stay organized, to surface information from my notes, and to help me write.
+
+You can assume that I am the author for all of my notes, unless otherwise specified in the note.
     `,
     summaryPrompt: `
         You use the context provided by the user to create useful single line summaries. 
@@ -40,9 +42,15 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
         Please summarize the following content:
     `,
     rewritePrompt: `
-        You use the context of this chat to help the user write documents. 
-        Your response will replace the contents of the current document, so leave out any text that shouldn't be part of the final file. 
-        You only respond with markdown formatted text.
+You use the context of this chat to help the user write documents. 
+
+The user is working on a document labeled Current File, and you have access to the contents of other files liked from the current file, which are labeled as linked files. You can use this content to assist in writing the document.
+
+Your response will replace the entire contents of the current file. However, you should maintain the content above the Draft heading. If there is no Draft heading you should add one, and write your draft after that heading. 
+
+You should only replace  after the Draft heading, and mainatin everything else.
+
+Your response should leave out any text that shouldn't be part of the final draft.
     `,
 };
 

@@ -1,6 +1,6 @@
 import ObsidianGemini from '../main';
 import { FileContextTree } from './file-context';
-import { TFile, MarkdownRenderer, Notice, Editor } from 'obsidian';
+import { TFile, MarkdownRenderer, Notice, Editor, MarkdownView } from 'obsidian';
 
 export class GeminiFile {
     private plugin: ObsidianGemini;
@@ -32,25 +32,12 @@ export class GeminiFile {
         }
     }
 
-    // Replace the content under a heading with new text
-    // This is used in the rewrite workflow to update the content of a working 
-    // section in the active file.
-    async replaceTextUnderHeading(editor: Editor, heading: string, newText: string) {
-        // Get the full content of the active editor
-        const content = editor.getValue();
+    async replaceTextInActiveFile(newText: string) {
+        const activeFile = this.plugin.app.workspace.getActiveFile();
+        const vault = this.plugin.app.vault;
 
-        // Create a regex pattern to find the heading and capture the content under it until the next heading
-        const regex = new RegExp(`(${heading}\\n)([\\s\\S]*?)(?=\\n#{1,}|$)`, 'm');
-
-        // Check if the heading exists in the content
-        if (regex.test(content)) {
-            // Replace the content under the heading with new text
-            const updatedContent = content.replace(regex, `$1${newText}\n`);
-            editor.setValue(updatedContent);
-        } else {
-            // If the heading does not exist, append the heading and new text at the end of the file
-            const appendedContent = `${content}\n\n${heading}\n${newText}\n`;
-            editor.setValue(appendedContent);
+        if (activeFile) {
+            vault.modify(activeFile, newText);
         }
     }
 }

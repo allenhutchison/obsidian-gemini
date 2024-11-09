@@ -32,6 +32,22 @@ export class GeminiApi {
         }
     }
 
+    async generateRewriteResponse(userMessage: string, conversationHistory: any[]) {
+        try {
+            const prompt = this.plugin.settings.rewritePrompt + userMessage;
+            const contents = await this.buildContents(prompt, conversationHistory);
+            const file = this.plugin.app.workspace.getActiveFile();
+            if (file) {
+                this.plugin.history.appendHistoryForFile(file, { role: "user", content: userMessage })
+            }
+            const result = await this.model.generateContent({contents});
+            await this.plugin.gfile.replaceTextInActiveFile(result.response.text());
+        } catch (error) {
+            console.error("Error getting model results: ", error);
+            throw error;
+        }
+    }
+        
     async generateOneSentenceSummary(content: string): Promise<string> {
         const prompt = this.plugin.settings.summaryPrompt + content;
         const result = await this.model.generateContent(prompt);
@@ -43,10 +59,6 @@ export class GeminiApi {
         // TODO(adh): This should be cached so it doesn't have to be recomputed every time we call the model.
         const fileContent = await this.plugin.gfile.getCurrentFileContent();
         if (fileContent != null) {
-            contents.push({
-                role: "user", 
-                parts: [{ text: "This is the content of the current file and the files that it links to: " }]
-                });
             contents.push({
                 role: "user",
                 parts: [{ text: fileContent }]

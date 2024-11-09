@@ -82,7 +82,11 @@ export class FileContextTree {
             ? node.content.substring(0, maxCharsPerFile) + "\n[Remaining content truncated...]"
             : node.content;
 
-        let result = `${indent}FILE: ${node.path}${separator}${truncatedContent}${separator}`;
+        let result = depth == 0 
+            ? "This is the content of the current file and the files that it links to:" 
+            : separator;
+        const fileLabel = depth == 0 ? "Current File:" : "Linked File:";
+        result += `${indent}${fileLabel} ${node.path}${separator}${truncatedContent}${separator}`;
         let total = currentTotal + result.length;
 
         // Add linked files if we haven't exceeded total limit
