@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { DynamicRetrievalMode, GoogleGenerativeAI } from '@google/generative-ai';
 
 
 export class GeminiApi {
@@ -13,10 +13,22 @@ export class GeminiApi {
         console.log("Initializing Gemini API with model:", this.plugin.settings.modelName);
         const systemInstruction = this.plugin.settings.systemPrompt + ` My name is ${this.plugin.settings.userName}.`;
         this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
+        let tools: any[] = [];
+        if (this.plugin.settings.searchGrounding) {
+            tools = [
+                {googleSearchRetrieval: {
+                    dynamicRetrievalConfig: {
+                    mode: DynamicRetrievalMode.MODE_DYNAMIC,
+                    dynamicThreshold: 0.6,
+                }}}];
+            
+        }
         this.model = this.gemini.getGenerativeModel({ 
             model: this.plugin.settings.modelName,
             systemInstruction: systemInstruction,
+            tools: tools,
         });
+
     }
 
 
@@ -24,11 +36,27 @@ export class GeminiApi {
         try {
             const contents = await this.buildContents(userMessage, conversationHistory);
             const result = await this.model.generateContent({contents});
-            const markdownResponse = result.response.text();
+            let markdownResponse = result.response.text();
             return markdownResponse;
         } catch (error) {
             console.error("Error calling Gemini:", error);
             throw error; 
+        }
+    }
+
+    // TODO(adh): This function should be removed after I get grounding working well.
+    async generateGroundedResponse(userMessage: string, conversationHistory: any[]): Promise<string> {
+        try {
+            const contents = await this.buildContents(userMessage, conversationHistory);
+            const result = await this.model.generateContent({contents});
+            let markdownResponse = result.response.text();
+            if (result.response.candidates[0].groundingMetadata) {
+                markdownResponse += `\n\n<div>${result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent}</div>`;
+            }
+            return markdownResponse;
+        } catch (error) {
+            console.error("Error calling Gemini:", error);
+            throw error;
         }
     }
 
