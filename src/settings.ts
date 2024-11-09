@@ -39,7 +39,17 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 this.plugin.settings.modelName = value;
                 await this.plugin.saveSettings();
             }));
-            
+        
+            new Setting(containerEl)
+            .setName('Search Grounding')
+            .setDesc('Enable the model to use Google search results in its responses.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.searchGrounding)
+                .onChange(async (value) => {
+                    this.plugin.settings.searchGrounding = value;
+                    await this.plugin.saveSettings();
+                }));            
+
         new Setting(containerEl)
             .setName('Summary Frontmatter Key')
             .setDesc('Key to use for frontmatter summarization.')
