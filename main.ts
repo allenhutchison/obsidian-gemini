@@ -9,11 +9,12 @@ import { GeminiHistory } from './src/history';
 interface ObsidianGeminiSettings {
     apiKey: string;
 	modelName: string;
+    sendContext: boolean;
+    maxContextDepth: number;
     searchGrounding: boolean;
     searchGroundingThreshold: number;
     summaryFrontmatterKey: string;
     userName: string;
-    maxContextDepth: number;
     systemPrompt: string;
     summaryPrompt: string;
     rewritePrompt: string;
@@ -23,11 +24,12 @@ interface ObsidianGeminiSettings {
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     apiKey: '',
 	modelName: 'gemini-1.5-flash-002',
+    sendContext: false,
+    maxContextDepth: 2,
     searchGrounding: false,
     searchGroundingThreshold: 0.7,
     summaryFrontmatterKey: 'summary',
     userName: 'User',
-    maxContextDepth: 2,
     rewriteFiles: false,
     systemPrompt: `
 You are a note taking and writing assistant. 

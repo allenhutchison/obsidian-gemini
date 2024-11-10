@@ -39,7 +39,28 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 this.plugin.settings.modelName = value;
                 await this.plugin.saveSettings();
             }));
-        
+
+        new Setting(containerEl)
+            .setName('Context Depth')
+            .setDesc("Set to true to send the context of the current file to the model, and adjust the depth of links followed for the context.")
+            .addDropdown(dropdown => dropdown
+                .addOption('0', '0')
+                .addOption('1', '1')
+                .addOption('2', '2')
+                .addOption('3', '3')
+                .addOption('4', '4')
+            .setValue(this.plugin.settings.maxContextDepth.toString())
+            .onChange(async (value) => {
+                this.plugin.settings.maxContextDepth = parseInt(value);
+                await this.plugin.saveSettings();
+            }))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.sendContext)
+                .onChange(async (value) => {
+                    this.plugin.settings.sendContext = value;
+                    await this.plugin.saveSettings();
+                }));
+
         new Setting(containerEl)
             .setName('Search Grounding')
             .setDesc('Enable the model to use Google search results in its responses, and the threshold for how likely it is to trigger.')
@@ -86,21 +107,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                     this.plugin.settings.userName = value;
                     await this.plugin.saveSettings();
                 }));
-
-        new Setting(containerEl)
-            .setName('Context Depth')
-            .setDesc('The number of linked pages to include in the context for the model.')
-            .addDropdown(dropdown => dropdown
-                .addOption('0', '0')
-                .addOption('1', '1')
-                .addOption('2', '2')
-                .addOption('3', '3')
-                .addOption('4', '4')
-            .setValue(this.plugin.settings.maxContextDepth.toString())
-            .onChange(async (value) => {
-                this.plugin.settings.maxContextDepth = parseInt(value);
-                await this.plugin.saveSettings();
-            }));
     
         new Setting(containerEl)
             .setName('Rewrite Files')
