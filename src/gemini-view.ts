@@ -95,6 +95,7 @@ export class GeminiView extends ItemView {
         const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator', text: sender === "user" ? "User" : "Bot" });
         const newMessage = newMessageContainer.createDiv({ cls: `message ${sender}` });
 
+        // Set the icon based on the sender.
         switch (sender) {
             case "user":
                 setIcon(senderIndicator, "square-user");
@@ -107,14 +108,15 @@ export class GeminiView extends ItemView {
                 break;
         }
 
-        const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
+        // Google TOS requires that we display the search results in the plugin verbatim.
         if (sender === "grounding") {
             newMessage.innerHTML = message;
         } else {
+            const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
             await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
         }
-        this.scrollToBottom();
 
+        // Add a copy button to the message if it was sent by the model.
         if (sender === "model") {
             const copyButton = newMessage.createEl("button", { cls: "copy-button" });
             setIcon(copyButton, "copy");
@@ -128,6 +130,9 @@ export class GeminiView extends ItemView {
                 });
             });
         }
+
+        // Scroll to the bottom of the chatbox
+        this.scrollToBottom();
     }
 
     // This will be called when a file is opened or made active in the view.
