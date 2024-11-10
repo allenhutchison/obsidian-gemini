@@ -1,4 +1,4 @@
-import { Plugin } from 'obsidian';
+import { Plugin, WorkspaceLeaf } from 'obsidian';
 import ObsidianGeminiSettingTab from './src/settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './src/gemini-view';
 import { GeminiSummary } from './src/summary';
@@ -73,10 +73,7 @@ export default class ObsidianGemini extends Plugin {
 
         this.registerView(
             VIEW_TYPE_GEMINI,
-            (leaf) => {
-                this.geminiView = new GeminiView(leaf, this);
-                return this.geminiView;
-            }
+            (leaf) => this.geminiView = new GeminiView(leaf, this)
         );
 
         this.addCommand({
@@ -95,17 +92,25 @@ export default class ObsidianGemini extends Plugin {
     }
 
     async activateView() {
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_GEMINI);
+        const { workspace } = this.app;
 
-        const leaf = this.app.workspace.getLeftLeaf(false)
-        if (leaf) {
-            await leaf.setViewState({
-                type: VIEW_TYPE_GEMINI,
-                active: true
-            });
-            this.app.workspace.revealLeaf(leaf);
+        let leaf: WorkspaceLeaf | null = null;
+        const leaves = workspace.getLeavesOfType(VIEW_TYPE_GEMINI);
+    
+        if (leaves.length > 0) {
+            // A leaf with our view already exists, use that
+            leaf = leaves[0];
         } else {
-            console.error("Could not find a suitable leaf to attach the view.");
+            // Our view could not be found in the workspace, create a new leaf
+            // in the right sidebar for it
+            leaf = workspace.getLeftLeaf(false);
+            if (leaf) {
+                await leaf.setViewState({ type: VIEW_TYPE_GEMINI, active: true });
+                // "Reveal" the leaf in case it is in a collapsed sidebar
+                workspace.revealLeaf(leaf);
+            } else {
+                console.error('Could not find a leaf to open the view');
+            }
         }
     }
 
