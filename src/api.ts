@@ -1,12 +1,15 @@
 import ObsidianGemini from '../main';
 import { DynamicRetrievalMode, GoogleGenerativeAI } from '@google/generative-ai';
 
+interface GeminiResponse {
+    markdown: string;
+    rendered: string;
+}
 
 export class GeminiApi {
     private plugin: ObsidianGemini;
     private gemini: GoogleGenerativeAI;
     private model: any;
-
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
@@ -31,7 +34,6 @@ export class GeminiApi {
 
     }
 
-
     async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<string> {
         try {
             const contents = await this.buildContents(userMessage, conversationHistory);
@@ -44,16 +46,19 @@ export class GeminiApi {
         }
     }
 
-    // TODO(adh): This function should be removed after I get grounding working well.
-    async generateGroundedResponse(userMessage: string, conversationHistory: any[]): Promise<string> {
+    async generateGroundedResponse(prompt: string, conversationHistory: any[]): Promise<GeminiResponse> {
         try {
-            const contents = await this.buildContents(userMessage, conversationHistory);
+            const contents = await this.buildContents(prompt, conversationHistory);
             const result = await this.model.generateContent({contents});
             let markdownResponse = result.response.text();
+            let renderedContent = '';
             if (result.response.candidates[0].groundingMetadata) {
-                markdownResponse += `\n\n<div>${result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent}</div>`;
+                renderedContent = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
             }
-            return markdownResponse;
+            return {
+                markdown: markdownResponse,
+                rendered: renderedContent
+            };
         } catch (error) {
             console.error("Error calling Gemini:", error);
             throw error;

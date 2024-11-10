@@ -90,14 +90,18 @@ export class GeminiView extends ItemView {
         this.app.workspace.off('file-open', this.handleFileOpen);
     }
 
-    async displayMessage(message: string, sender: "user" | "model") {
+    async displayMessage(message: string, sender: "user" | "model" | "grounding") {
         const newMessageContainer = this.chatbox.createDiv({ cls: `message-container ${sender}` });
         const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator', text: sender === "user" ? "User" : "Bot" });
         const newMessage = newMessageContainer.createDiv({ cls: `message ${sender}` });
         setIcon(senderIndicator, sender === "user" ? "square-user" : "bot-message-square");
 
         const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
-        await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
+        if (sender === "grounding") {
+            newMessage.innerHTML = message;
+        } else {
+            await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
+        }
         this.scrollToBottom();
 
         if (sender === "model") {
@@ -141,6 +145,19 @@ export class GeminiView extends ItemView {
                 await this.plugin.geminiApi.generateRewriteResponse(userMessage,
                     await this.plugin.history.getHistoryForFile(this.currentFile!));
                 return;
+            } else if (this.plugin.settings.searchGrounding) {
+                try {
+                    const groundingResponse = await this.plugin.geminiApi.generateGroundedResponse(userMessage, 
+                        await this.plugin.history.getHistoryForFile(this.currentFile!));
+                    this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
+                    this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: groundingResponse.markdown });
+                    this.displayMessage(groundingResponse.markdown, "model")
+                    this.displayMessage(groundingResponse.rendered, "grounding");
+                    return;
+                } catch (error) {
+                    new Notice("Error getting grounding response.");
+                    console.error(error);
+                }
             }
 
             try {
