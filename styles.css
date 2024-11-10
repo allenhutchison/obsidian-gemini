@@ -46,6 +46,11 @@ If your plugin does not need CSS, delete this file.
     background-color: var(--background-secondary); /* Use theme's primary background color */
 }
 
+
+.gemini-scribe-message.grounding {
+    background-color: var(--background-secondary); /* Use theme's primary background color */
+}
+
 .gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button {
     background-color: var(--interactive-accent);
     border: none;

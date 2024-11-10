@@ -39,7 +39,32 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 this.plugin.settings.modelName = value;
                 await this.plugin.saveSettings();
             }));
-            
+        
+        new Setting(containerEl)
+            .setName('Search Grounding')
+            .setDesc('Enable the model to use Google search results in its responses, and the threshold for how likely it is to trigger.')
+            .addDropdown(dropdown => dropdown
+                .addOption('0.1', '0.1')
+                .addOption('0.2', '0.2')
+                .addOption('0.3', '0.3')
+                .addOption('0.4', '0.4')
+                .addOption('0.5', '0.5')
+                .addOption('0.6', '0.6')
+                .addOption('0.7', '0.7')
+                .addOption('0.8', '0.8')
+                .addOption('0.9', '0.9')
+                .setValue(this.plugin.settings.searchGroundingThreshold.toString())
+                .onChange(async (value) => {
+                    this.plugin.settings.searchGroundingThreshold = parseFloat(value);
+                    await this.plugin.saveSettings();
+                }))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.searchGrounding)
+                .onChange(async (value) => {
+                    this.plugin.settings.searchGrounding = value;
+                    await this.plugin.saveSettings();
+                }));            
+
         new Setting(containerEl)
             .setName('Summary Frontmatter Key')
             .setDesc('Key to use for frontmatter summarization.')

@@ -9,6 +9,8 @@ import { GeminiHistory } from './src/history';
 interface ObsidianGeminiSettings {
     apiKey: string;
 	modelName: string;
+    searchGrounding: boolean;
+    searchGroundingThreshold: number;
     summaryFrontmatterKey: string;
     userName: string;
     maxContextDepth: number;
@@ -21,6 +23,8 @@ interface ObsidianGeminiSettings {
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     apiKey: '',
 	modelName: 'gemini-1.5-flash-002',
+    searchGrounding: false,
+    searchGroundingThreshold: 0.7,
     summaryFrontmatterKey: 'summary',
     userName: 'User',
     maxContextDepth: 2,

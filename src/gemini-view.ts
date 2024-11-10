@@ -90,16 +90,34 @@ export class GeminiView extends ItemView {
         this.app.workspace.off('file-open', this.handleFileOpen);
     }
 
-    async displayMessage(message: string, sender: "user" | "model") {
-        const newMessageContainer = this.chatbox.createDiv({ cls: `gemini-scribe-message-container ${sender}` });
-        const senderIndicator = newMessageContainer.createDiv({ cls: 'gemini-scribe-sender-indicator', text: sender === "user" ? "User" : "Bot" });
-        const newMessage = newMessageContainer.createDiv({ cls: `gemini-scribe-message ${sender}` });
-        setIcon(senderIndicator, sender === "user" ? "square-user" : "bot-message-square");
 
-        const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
-        await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
-        this.scrollToBottom();
+    async displayMessage(message: string, sender: "user" | "model" | "grounding") {
+        const newMessageContainer = this.chatbox.createDiv({ cls: `message-container ${sender}` });
+        const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator' });
+        const newMessage = newMessageContainer.createDiv({ cls: `message ${sender}` });
 
+        // Set the icon based on the sender.
+        switch (sender) {
+            case "user":
+                setIcon(senderIndicator, "square-user");
+                break;
+            case "model":
+                setIcon(senderIndicator, "bot-message-square");
+                break;
+            case "grounding":
+                setIcon(senderIndicator, "search");
+                break;
+        }
+
+        // Google TOS requires that we display the search results in the plugin verbatim.
+        if (sender === "grounding") {
+            newMessage.innerHTML = message;
+        } else {
+            const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
+            await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
+        }
+
+        // Add a copy button to the message if it was sent by the model.
         if (sender === "model") {
             const copyButton = newMessage.createEl("button", { cls: "gemini-scribe-copy-button" });
             setIcon(copyButton, "copy");
@@ -113,6 +131,9 @@ export class GeminiView extends ItemView {
                 });
             });
         }
+
+        // Scroll to the bottom of the chatbox
+        this.scrollToBottom();
     }
 
     // This will be called when a file is opened or made active in the view.
@@ -141,14 +162,16 @@ export class GeminiView extends ItemView {
                 await this.plugin.geminiApi.generateRewriteResponse(userMessage,
                     await this.plugin.history.getHistoryForFile(this.currentFile!));
                 return;
-            }
-
+            } 
             try {
                 const botResponse = await this.plugin.geminiApi.getBotResponse(
                     userMessage, await this.plugin.history.getHistoryForFile(this.currentFile!));
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
-                this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse });
-                this.displayMessage(botResponse, "model");
+                this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse.markdown });
+                this.displayMessage(botResponse.markdown, "model");
+                if (botResponse.rendered) {
+                    this.displayMessage(botResponse.rendered, "grounding");
+                }
             } catch (error) {
                 new Notice("Error getting bot response.");
                 console.error(error);
