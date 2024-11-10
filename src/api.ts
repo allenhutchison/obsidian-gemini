@@ -22,7 +22,7 @@ export class GeminiApi {
                 {googleSearchRetrieval: {
                     dynamicRetrievalConfig: {
                     mode: DynamicRetrievalMode.MODE_DYNAMIC,
-                    dynamicThreshold: 0.6,
+                    dynamicThreshold: this.plugin.settings.searchGroundingThreshold,
                 }}}];
         }
         this.model = this.gemini.getGenerativeModel({ 
@@ -38,7 +38,7 @@ export class GeminiApi {
             const contents = await this.buildContents(userMessage, conversationHistory);
             const result = await this.model.generateContent({contents});
             response.markdown = result.response.text();
-            if (result.response.candidates[0].groundingMetadata) {
+            if (result.response.candidates[0].groundingMetadata.searchEntryPoint) {
                 response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
             }
             return response;
@@ -47,7 +47,7 @@ export class GeminiApi {
             throw error; 
         }
     }
-    
+
     async generateRewriteResponse(userMessage: string, conversationHistory: any[]) {
         try {
             const prompt = this.plugin.settings.rewritePrompt + userMessage;

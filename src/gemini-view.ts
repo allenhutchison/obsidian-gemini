@@ -99,15 +99,12 @@ export class GeminiView extends ItemView {
         switch (sender) {
             case "user":
                 setIcon(senderIndicator, "square-user");
-                senderIndicator.setText("User");
                 break;
             case "model":
                 setIcon(senderIndicator, "bot-message-square");
-                senderIndicator.setText("Bot");
                 break;
             case "grounding":
                 setIcon(senderIndicator, "search");
-                senderIndicator.setText("Grounding");
                 break;
         }
 
