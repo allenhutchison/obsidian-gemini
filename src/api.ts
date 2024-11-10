@@ -10,7 +10,6 @@ export class GeminiApi {
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
-        console.log("Initializing Gemini API with model:", this.plugin.settings.modelName);
         const systemInstruction = this.plugin.settings.systemPrompt + ` My name is ${this.plugin.settings.userName}.`;
         this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
         this.model = this.gemini.getGenerativeModel({ 
