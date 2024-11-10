@@ -94,7 +94,18 @@ export class GeminiView extends ItemView {
         const newMessageContainer = this.chatbox.createDiv({ cls: `message-container ${sender}` });
         const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator', text: sender === "user" ? "User" : "Bot" });
         const newMessage = newMessageContainer.createDiv({ cls: `message ${sender}` });
-        setIcon(senderIndicator, sender === "user" ? "square-user" : "bot-message-square");
+
+        switch (sender) {
+            case "user":
+                setIcon(senderIndicator, "square-user");
+                break;
+            case "model":
+                setIcon(senderIndicator, "bot-message-square");
+                break;
+            case "grounding":
+                setIcon(senderIndicator, "search");
+                break;
+        }
 
         const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
         if (sender === "grounding") {
