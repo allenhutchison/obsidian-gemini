@@ -13,7 +13,6 @@ export class GeminiFile {
     async getCurrentFileContent(depth: number = 2): Promise<string | null> {
         const activeFile = this.plugin.app.workspace.getActiveFile();
         if (!activeFile) {
-            console.log("No active file found.");
             return null;
         } else {
             const fileContext = new FileContextTree(this.plugin, depth);

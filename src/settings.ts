@@ -77,8 +77,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                 }));
         
         new Setting(containerEl)
-            .setName('Your name for use in system prompt')
-            .setDesc('Your name for use in system prompt')
+            .setName('Your name.')
+            .setDesc('This will be used in the system instructions for the model.')
             .addText(text => text
                 .setPlaceholder('Enter your name')
                 .setValue(this.plugin.settings.userName)

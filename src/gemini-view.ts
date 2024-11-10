@@ -29,19 +29,19 @@ export class GeminiView extends ItemView {
         container.createEl('h2', { text: 'Gemini Chat' });
 
         // The top level application
-        this.chatbox = container.createDiv({ cls: 'chatbox' });
+        this.chatbox = container.createDiv({ cls: 'gemini-scribe-chatbox' });
 
         // User input and send button
-        const inputArea = container.createDiv({ cls: 'input-area' }); // Wrap input and button
-        const userInput = inputArea.createEl('input', { type: 'text', cls: 'chat-input', placeholder: 'Type your message...' });
-        const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'send-button' });
+        const inputArea = container.createDiv({ cls: 'gemini-scribe-input-area' }); // Wrap input and button
+        const userInput = inputArea.createEl('input', { type: 'text', cls: 'gemini-scribe-chat-input', placeholder: 'Type your message...' });
+        const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'gemini-scribe-send-button' });
         setIcon(sendButton, "send-horizontal");
 
         // Add checkbox container below input area
         if (this.plugin.settings.rewriteFiles) {
-            const optionsArea = container.createDiv({ cls: 'options-area' });
-            const rewriteCheckbox = optionsArea.createEl('input', { type: 'checkbox', cls: 'rewrite-checkbox' });
-            optionsArea.createEl('label', { text: 'Rewrite file', cls: 'rewrite-label' }).prepend(rewriteCheckbox);
+            const optionsArea = container.createDiv({ cls: 'gemini-scribe-options-area' });
+            const rewriteCheckbox = optionsArea.createEl('input', { type: 'checkbox', cls: 'gemini-scribe-rewrite-checkbox' });
+            optionsArea.createEl('label', { text: 'Rewrite file', cls: 'gemini-scribe-rewrite-label' }).prepend(rewriteCheckbox);
 
             rewriteCheckbox.addEventListener('change', () => {
                 this.shoudRewriteFile = rewriteCheckbox.checked;
@@ -90,6 +90,7 @@ export class GeminiView extends ItemView {
         this.app.workspace.off('file-open', this.handleFileOpen);
     }
 
+
     async displayMessage(message: string, sender: "user" | "model" | "grounding") {
         const newMessageContainer = this.chatbox.createDiv({ cls: `message-container ${sender}` });
         const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator' });
@@ -118,7 +119,7 @@ export class GeminiView extends ItemView {
 
         // Add a copy button to the message if it was sent by the model.
         if (sender === "model") {
-            const copyButton = newMessage.createEl("button", { cls: "copy-button" });
+            const copyButton = newMessage.createEl("button", { cls: "gemini-scribe-copy-button" });
             setIcon(copyButton, "copy");
             
             copyButton.addEventListener("click", () => {
@@ -180,7 +181,7 @@ export class GeminiView extends ItemView {
 
     private scrollToBottom() {
         const tryScroll = () => {
-            const inputArea = this.containerEl.querySelector('.input-area');
+            const inputArea = this.containerEl.querySelector('.gemini-scribe-input-area');
             if (inputArea) {
                 inputArea.scrollIntoView({ 
                     behavior: 'smooth', 

@@ -8,7 +8,7 @@ If your plugin does not need CSS, delete this file.
 */
 /* in your plugin's styles.css or a <style> tag in your view */
 
-.chatbox {
+.gemini-scribe-chatbox {
     display: flex;
     flex-direction: column; /* Messages flow vertically */
     overflow-y: auto;  /* Add scrollbar if needed */
@@ -17,17 +17,17 @@ If your plugin does not need CSS, delete this file.
     background-color: var(--background-primary);
 }
 
-.message-container {
+.gemini-scribe-message-container {
     margin-bottom: var(--size-2-2); /* Space between messages */
 }
 
-.sender-indicator {
+.gemini-scribe-sender-indicator {
     font-weight: bold;
     margin-bottom: var(--size-1-2); /* Space between indicator and message */
     color: var(--text-muted); /* Use theme's muted text color */
 }
 
-.message {
+.gemini-scribe-message {
     user-select: text;
     -webkit-user-select: text; /* For older WebKit browsers */
     -ms-user-select: text; /* For older Internet Explorer */
@@ -38,19 +38,20 @@ If your plugin does not need CSS, delete this file.
     width: 100%;
 }
 
-.message.user {
+.gemini-scribe-message.user {
     background-color: var(--background-secondary); /* Use theme's modifier background color */
 }
 
-.message.model {
+.gemini-scribe-message.model {
     background-color: var(--background-secondary); /* Use theme's primary background color */
 }
 
-.message.grounding {
+
+.gemini-scribe-message.grounding {
     background-color: var(--background-secondary); /* Use theme's primary background color */
 }
 
-.chatbox .message .copy-button {
+.gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button {
     background-color: var(--interactive-accent);
     border: none;
     color: var(--text-on-accent);
@@ -62,19 +63,19 @@ If your plugin does not need CSS, delete this file.
     justify-content: center;
 }
 
-.chatbox .message .copy-button::before {
+.gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button::before {
     content: attr(data-icon);
     font-family: 'Lucide';
     font-size: var(--font-size-m);
     margin-right: var(--size-1-2);
 }
 
-.chatbox .message .copy-button:hover {
+.gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button:hover {
     background-color: var(--interactive-accent-hover);
 }
 
 /* Style the input area */
-.input-area {
+.gemini-scribe-input-area {
     display: flex;
     align-items: center;
     margin-top: var(--size-2-1); /* Separate input area from chatbox */
@@ -82,7 +83,7 @@ If your plugin does not need CSS, delete this file.
     width: 100%;
 }
 
-.input-area .chat-input[type="text"] {
+.gemini-scribe-input-area .gemini-scribe-chat-input[type="text"] {
     padding: var(--size-4-2);
     border: var(--border-width) solid var(--background-modifier-border);
     border-radius: var(--radius-s);
@@ -91,7 +92,7 @@ If your plugin does not need CSS, delete this file.
     background-color: var(--background-modifier-form-field);
 }
 
-.input-area .send-button {
+.gemini-scribe-input-area .gemini-scribe-send-button {
     background-color: var(--interactive-accent);
     border: none;
     color: var(--text-on-accent);
@@ -101,22 +102,22 @@ If your plugin does not need CSS, delete this file.
     margin-left: var(--size-2-2); /* Space between button and input */
 }
 
-.input-area .send-button:hover {
+.gemini-scribe-input-area .gemini-scribe-send-button:hover {
     background-color: var(--interactive-accent-hover);
 }
 
-.options-area {
+.gemini-scribe-options-area {
     display: flex;
     align-items: center;
     padding: var(--size-2-1);
     margin-bottom: var(--size-2-1);
 }
 
-.rewrite-checkbox {
+.gemini-scribe-rewrite-checkbox {
     margin-right: var(--size-2-2);
 }
 
-.rewrite-label {
+.gemini-scribe-rewrite-label {
     color: var(--text-muted);
     display: flex;
     align-items: center;
