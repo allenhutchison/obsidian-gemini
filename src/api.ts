@@ -16,6 +16,7 @@ export class GeminiApi {
             model: this.plugin.settings.modelName,
             systemInstruction: systemInstruction,
         });
+        console.debug("Gemini API initialized. Model:", this.plugin.settings.modelName);
     }
 
 
