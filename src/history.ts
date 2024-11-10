@@ -10,7 +10,7 @@ export class GeminiHistory {
     }
     
     async appendHistoryForFile(file: TFile, newEntry: { role: "user" | "model", content: string }) {
-        if (file) {
+        if (this.plugin.gfile.isFile(file)) {
             if (!this.history[file.path]) {
                 this.getHistoryForFile(file);
             }
@@ -19,16 +19,18 @@ export class GeminiHistory {
     }
 
     async getHistoryForFile(file: TFile) {
-        if (file) {
+        if (this.plugin.gfile.isFile(file)) {
             if (!this.history[file.path]) {
                 this.history[file.path] = [];
             }
+            return this.history[file.path];
+        } else {
+            return null;
         }
-        return this.history[file.path];
     }
 
-    async clearHistoryForFile(file: TFile | null) {
-        if (file) {
+    async clearHistoryForFile(file: TFile) {
+        if (this.plugin.gfile.isFile(file)) {
             delete this.history[file.path];
         }
     }

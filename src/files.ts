@@ -1,6 +1,6 @@
 import ObsidianGemini from '../main';
 import { FileContextTree } from './file-context';
-import { TFile, MarkdownRenderer, Notice, Editor, MarkdownView } from 'obsidian';
+import { TFile } from 'obsidian';
 
 export class GeminiFile {
     private plugin: ObsidianGemini;
@@ -10,19 +10,19 @@ export class GeminiFile {
     }
 
     async getCurrentFileContent(depth: number = this.plugin.settings.maxContextDepth): Promise<string | null> {
-        const activeFile = this.plugin.app.workspace.getActiveFile();
-        if (!activeFile) {
-            return null;
-        } else {
+        const activeFile = this.getActiveFile();
+        if (activeFile) {
             const fileContext = new FileContextTree(this.plugin, depth);
             await fileContext.initialize(activeFile);
             return fileContext.toString();
+        } else {
+            return null;
         }
     }
 
     async addToFrontMatter(key: string, value: string) {
-        const activeFile = this.plugin.app.workspace.getActiveFile();
-        if (activeFile && activeFile instanceof TFile) {
+        const activeFile = this.getActiveFile();
+        if (activeFile) {
             // Use processFrontMatter to add or update the summary in the frontmatter
             this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter) => {
                 frontmatter[key] = value;
@@ -31,11 +31,30 @@ export class GeminiFile {
     }
 
     async replaceTextInActiveFile(newText: string) {
-        const activeFile = this.plugin.app.workspace.getActiveFile();
+        const activeFile = this.getActiveFile();
         const vault = this.plugin.app.vault;
 
         if (activeFile) {
             vault.modify(activeFile, newText);
+        }
+    }
+
+    getActiveFile(): TFile | null {
+        const activeFile = this.plugin.app.workspace.getActiveFile();
+        if (this.isFile(activeFile)) {
+            console.debug("Active file:", activeFile);
+            return activeFile;
+        } else {
+            console.debug("No active file found.");
+            return null;
+        }
+    }
+
+    isFile(file: TFile | null): boolean {
+          if (file && file instanceof TFile) {
+            return true;
+        } else {
+            return false;
         }
     }
 }

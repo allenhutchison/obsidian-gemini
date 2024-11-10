@@ -20,7 +20,7 @@ export class GeminiView extends ItemView {
     }
 
     getDisplayText() {
-        return 'Gemini Chat';
+        return 'Gemini Scribe';
     }
 
     async onOpen() {
@@ -32,7 +32,7 @@ export class GeminiView extends ItemView {
         this.chatbox = container.createDiv({ cls: 'gemini-scribe-chatbox' });
 
         // User input and send button
-        const inputArea = container.createDiv({ cls: 'gemini-scribe-input-area' }); // Wrap input and button
+        const inputArea = container.createDiv({ cls: 'gemini-scribe-input-area' }); 
         const userInput = inputArea.createEl('input', { type: 'text', cls: 'gemini-scribe-chat-input', placeholder: 'Type your message...' });
         const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'gemini-scribe-send-button' });
         setIcon(sendButton, "send-horizontal");
@@ -82,7 +82,7 @@ export class GeminiView extends ItemView {
             subtree: true 
         });
 
-        this.currentFile = this.app.workspace.getActiveFile();
+        this.currentFile = this.plugin.gfile.getActiveFile();
         this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
     }
 
@@ -92,9 +92,9 @@ export class GeminiView extends ItemView {
 
 
     async displayMessage(message: string, sender: "user" | "model" | "grounding") {
-        const newMessageContainer = this.chatbox.createDiv({ cls: `message-container ${sender}` });
-        const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator' });
-        const newMessage = newMessageContainer.createDiv({ cls: `message ${sender}` });
+        const newMessageContainer = this.chatbox.createDiv({ cls: `gemini-scribe-message-container ${sender}` });
+        const senderIndicator = newMessageContainer.createDiv({ cls: 'gemini-scribe-sender-indicator' });
+        const newMessage = newMessageContainer.createDiv({ cls: `gemini-scribe-message ${sender}` });
 
         // Set the icon based on the sender.
         switch (sender) {
@@ -109,11 +109,12 @@ export class GeminiView extends ItemView {
                 break;
         }
 
-        // Google TOS requires that we display the search results in the plugin verbatim.
+        // Google TOS requires that we display the search results in the plugin as teh supplied HTML.
+        // This is why we don't render the search results as markdown.
         if (sender === "grounding") {
             newMessage.innerHTML = message;
         } else {
-            const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
+            const sourcePath = this.plugin.gfile.getActiveFile()?.path ?? "";
             await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
         }
 
@@ -137,10 +138,15 @@ export class GeminiView extends ItemView {
     }
 
     // This will be called when a file is opened or made active in the view.
+    // file can be null if it's the new file tab.
     handleFileOpen(file: TFile | null) {
-        this.currentFile = file;
-        this.clearChat();
-        this.reloadChatFromHistory();
+        if (!file) {
+            return;
+        } else {
+            this.currentFile = file;
+            this.clearChat();
+            this.reloadChatFromHistory();
+        }
     }
 
     clearChat() {
@@ -159,13 +165,13 @@ export class GeminiView extends ItemView {
     async sendMessage(userMessage: string) {
         if (userMessage.trim() !== "") {
             if (this.shoudRewriteFile) {
-                await this.plugin.geminiApi.generateRewriteResponse(userMessage,
-                    await this.plugin.history.getHistoryForFile(this.currentFile!));
+                const history = await this.plugin.history.getHistoryForFile(this.currentFile!) ?? [];
+                await this.plugin.geminiApi.generateRewriteResponse(userMessage, history);
                 return;
             } 
             try {
-                const botResponse = await this.plugin.geminiApi.getBotResponse(
-                    userMessage, await this.plugin.history.getHistoryForFile(this.currentFile!));
+                const history = await this.plugin.history.getHistoryForFile(this.currentFile!) ?? [];
+                const botResponse = await this.plugin.geminiApi.getBotResponse(userMessage, history);
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse.markdown });
                 this.displayMessage(botResponse.markdown, "model");
