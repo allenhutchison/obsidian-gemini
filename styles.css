@@ -46,6 +46,10 @@ If your plugin does not need CSS, delete this file.
     background-color: var(--background-secondary); /* Use theme's primary background color */
 }
 
+.message.grounding {
+    background-color: var(--background-secondary); /* Use theme's primary background color */
+}
+
 .chatbox .message .copy-button {
     background-color: var(--interactive-accent);
     border: none;
