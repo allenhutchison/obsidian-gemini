@@ -24,47 +24,30 @@ export class GeminiApi {
                     mode: DynamicRetrievalMode.MODE_DYNAMIC,
                     dynamicThreshold: 0.6,
                 }}}];
-            
         }
         this.model = this.gemini.getGenerativeModel({ 
             model: this.plugin.settings.modelName,
             systemInstruction: systemInstruction,
             tools: tools,
         });
-
     }
 
-    async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<string> {
+    async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<GeminiResponse> {
+        let response: GeminiResponse = { markdown: "", rendered: "" };
         try {
             const contents = await this.buildContents(userMessage, conversationHistory);
             const result = await this.model.generateContent({contents});
-            let markdownResponse = result.response.text();
-            return markdownResponse;
+            response.markdown = result.response.text();
+            if (result.response.candidates[0].groundingMetadata) {
+                response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
+            }
+            return response;
         } catch (error) {
             console.error("Error calling Gemini:", error);
             throw error; 
         }
     }
-
-    async generateGroundedResponse(prompt: string, conversationHistory: any[]): Promise<GeminiResponse> {
-        try {
-            const contents = await this.buildContents(prompt, conversationHistory);
-            const result = await this.model.generateContent({contents});
-            let markdownResponse = result.response.text();
-            let renderedContent = '';
-            if (result.response.candidates[0].groundingMetadata) {
-                renderedContent = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
-            }
-            return {
-                markdown: markdownResponse,
-                rendered: renderedContent
-            };
-        } catch (error) {
-            console.error("Error calling Gemini:", error);
-            throw error;
-        }
-    }
-
+    
     async generateRewriteResponse(userMessage: string, conversationHistory: any[]) {
         try {
             const prompt = this.plugin.settings.rewritePrompt + userMessage;

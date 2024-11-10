@@ -92,19 +92,22 @@ export class GeminiView extends ItemView {
 
     async displayMessage(message: string, sender: "user" | "model" | "grounding") {
         const newMessageContainer = this.chatbox.createDiv({ cls: `message-container ${sender}` });
-        const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator', text: sender === "user" ? "User" : "Bot" });
+        const senderIndicator = newMessageContainer.createDiv({ cls: 'sender-indicator' });
         const newMessage = newMessageContainer.createDiv({ cls: `message ${sender}` });
 
         // Set the icon based on the sender.
         switch (sender) {
             case "user":
                 setIcon(senderIndicator, "square-user");
+                senderIndicator.setText("User");
                 break;
             case "model":
                 setIcon(senderIndicator, "bot-message-square");
+                senderIndicator.setText("Bot");
                 break;
             case "grounding":
                 setIcon(senderIndicator, "search");
+                senderIndicator.setText("Grounding");
                 break;
         }
 
@@ -161,27 +164,16 @@ export class GeminiView extends ItemView {
                 await this.plugin.geminiApi.generateRewriteResponse(userMessage,
                     await this.plugin.history.getHistoryForFile(this.currentFile!));
                 return;
-            } else if (this.plugin.settings.searchGrounding) {
-                try {
-                    const groundingResponse = await this.plugin.geminiApi.generateGroundedResponse(userMessage, 
-                        await this.plugin.history.getHistoryForFile(this.currentFile!));
-                    this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
-                    this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: groundingResponse.markdown });
-                    this.displayMessage(groundingResponse.markdown, "model")
-                    this.displayMessage(groundingResponse.rendered, "grounding");
-                    return;
-                } catch (error) {
-                    new Notice("Error getting grounding response.");
-                    console.error(error);
-                }
-            }
-
+            } 
             try {
                 const botResponse = await this.plugin.geminiApi.getBotResponse(
                     userMessage, await this.plugin.history.getHistoryForFile(this.currentFile!));
                 this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "user", content: userMessage });
-                this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse });
-                this.displayMessage(botResponse, "model");
+                this.plugin.history.appendHistoryForFile(this.currentFile!, { role: "model", content: botResponse.markdown });
+                this.displayMessage(botResponse.markdown, "model");
+                if (botResponse.rendered) {
+                    this.displayMessage(botResponse.rendered, "grounding");
+                }
             } catch (error) {
                 new Notice("Error getting bot response.");
                 console.error(error);
