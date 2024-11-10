@@ -9,8 +9,7 @@ export class GeminiFile {
         this.plugin = plugin;
     }
 
-    // TODO(adh): Add a depth parameter from settings, rather than this hard-coded value
-    async getCurrentFileContent(depth: number = 2): Promise<string | null> {
+    async getCurrentFileContent(depth: number = this.plugin.settings.maxContextDepth): Promise<string | null> {
         const activeFile = this.plugin.app.workspace.getActiveFile();
         if (!activeFile) {
             return null;
