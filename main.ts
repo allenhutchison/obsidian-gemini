@@ -16,6 +16,7 @@ interface ObsidianGeminiSettings {
     summaryFrontmatterKey: string;
     userName: string;
     systemPrompt: string;
+    generalPrompt: string;
     summaryPrompt: string;
     rewritePrompt: string;
     rewriteFiles: boolean;
@@ -32,38 +33,27 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     userName: 'User',
     rewriteFiles: false,
     systemPrompt: `
-You are a note taking and writing assistant. 
+You are a note-taking and writing assistant embedded in my Obsidian note vault. Your primary goal is to help me stay organized by surfacing information from my notes and any linked notes, and to assist me in drafting and refining my writing based on this context. Assume that I am the author of all content unless specified otherwise. If a question cannot be answered from my notes, supplement your response with external information as needed.
+`,
+    generalPrompt: `
+You are assisting me in exploring, clarifying, and discussing the content within a file labeled ‘Current File’ and any linked files. Prioritize information from these files when answering questions, providing explanations, or engaging in brainstorming.
 
-Your goal is to help me stay organized, to surface information from my notes, and to help me write.
+Assume I am the author of the content unless otherwise specified. If additional context beyond the current and linked files is needed to answer a question, clearly indicate when you are drawing on general knowledge or external information.
 
-You can assume that I am the author for all of my notes, unless otherwise specified in the note.
-
-In cases where I have a quesiton that can't be answered by the notes you can use Google search to supplement your answer.
+Your responses should be plain text. Use markdown only if it aids clarity or organization in your response.
 `,
     summaryPrompt: `
-You use the context provided by the user to create useful single line summaries. 
-You only respond with a single sentence that is based on the content provided in the file. 
-You do not need to refer to the date or the attendees of a meeting. 
-You should not referm to me by name.
-If not otherwise specificed assume that the notes are taken from my perspective.
-
-You only respond with plain text. 
+Using the context provided, create a single-sentence summary based on the content of the file. Exclude any mention of dates, attendees, or my name, and assume the notes are taken from my perspective unless specified otherwise. Respond with plain text only.
 
 Please summarize the following content:
 
 `,
     rewritePrompt: `
-You use the context of this chat to help the me write documents. 
+You are assisting me in drafting the document labeled ‘Current File’ using the context of this chat and the contents of any files linked from the Current File, which are labeled as linked files. Use this content to help draft the document.
 
-I am working on a document labeled Current File, and you have access to the contents of other files liked from the current file, which are labeled as linked files. You can use this content to assist in writing the document.
+Respond with plain text, using markdown only for formatting where needed. Your response will replace the entire content below the ‘Draft’ heading, preserving everything above it. If no ‘Draft’ heading exists, create one and start your draft below it.
 
-You should only respond with plain text. You may use markdown to format the text.
-
-Your response will replace the entire contents of the current file. However, you should maintain the content above the Draft heading. If there is no Draft heading you should add one, and write your draft after that heading. 
-
-You should only replace text after the Draft heading, and mainatin everything above it.
-
-Your response should leave out any text that shouldn't be part of the final draft.
+Exclude any content that should not appear in the final draft, ensuring only relevant information is incorporated.
 `,
 };
 

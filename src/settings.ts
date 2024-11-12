@@ -131,7 +131,21 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
             text.inputEl.rows = 5;
             text.inputEl.cols = 50;
             });
-        
+
+        new Setting(containerEl)
+            .setName('General Prompt')
+            .setDesc('This text will be set as the default prompt for all Gemini requests in chat mode.')
+            .addTextArea(text => {text
+                .setPlaceholder('Enter your general prompt')
+                .setValue(this.plugin.settings.generalPrompt)
+                .onChange(async (value) => {
+                    this.plugin.settings.generalPrompt = value;
+                    await this.plugin.saveSettings();
+                })
+            text.inputEl.rows = 5;
+            text.inputEl.cols = 50;
+            });
+
         new Setting(containerEl)
             .setName('Summarization Prompt')
             .setDesc('Your summirization prompt. This prompt will be used along with the content of the active page in summarization tasks.')
