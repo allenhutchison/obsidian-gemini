@@ -10,6 +10,7 @@ export class GeminiApi {
     private plugin: ObsidianGemini;
     private gemini: GoogleGenerativeAI;
     private model: any;
+    private modelNoGrounding: any;
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
@@ -28,6 +29,10 @@ export class GeminiApi {
             model: this.plugin.settings.modelName,
             systemInstruction: systemInstruction,
             tools: tools,
+        });
+        this.modelNoGrounding = this.gemini.getGenerativeModel({ 
+            model: this.plugin.settings.modelName,
+            systemInstruction: systemInstruction,
         });
         console.debug("Gemini API initialized. Model:", this.plugin.settings.modelName);
     }
@@ -56,7 +61,7 @@ export class GeminiApi {
             if (file) {
                 this.plugin.history.appendHistoryForFile(file, { role: "user", content: userMessage })
             }
-            const result = await this.model.generateContent({contents});
+            const result = await this.modelNoGrounding.generateContent({contents});
             await this.plugin.gfile.replaceTextInActiveFile(result.response.text());
         } catch (error) {
             console.error("Error getting model results: ", error);
@@ -66,11 +71,13 @@ export class GeminiApi {
         
     async generateOneSentenceSummary(content: string): Promise<string> {
         const prompt = this.plugin.settings.summaryPrompt + content;
-        const result = await this.model.generateContent(prompt);
+        const result = await this.modelNoGrounding.generateContent(prompt);
         return result.response.text();
     }
 
-    private async buildContents(userMessage: string, conversationHistory: any[]): Promise<any[]> {
+    private async buildContents(userMessage: string,
+                                conversationHistory: any[], 
+                                renderContent: boolean = false): Promise<any[]> {
         const contents = [];
         // TODO(adh): This should be cached so it doesn't have to be recomputed every time we call the model.
         const fileContent = await this.plugin.gfile.getCurrentFileContent();

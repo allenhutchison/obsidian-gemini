@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { TFile } from 'obsidian';
+import { MarkdownRenderer, TFile } from 'obsidian';
 
 // File node interface to represent each document and its links
 interface FileContextNode {
@@ -20,7 +20,7 @@ export class FileContextTree {
         this.maxDepth = depth ?? this.plugin.settings.maxContextDepth;
     }
 
-    async buildStructure(file: TFile, currentDepth: number = 0): Promise<FileContextNode | null> {
+    async buildStructure(file: TFile, currentDepth: number = 0, renderContent: boolean): Promise<FileContextNode | null> {
         if (!file || currentDepth > this.maxDepth) {
             return null;
         }
@@ -28,7 +28,7 @@ export class FileContextTree {
         // Create new node
         const node: FileContextNode = {
             path: file.path,
-            content: await this.plugin.app.vault.read(file) || '',
+            content: await this.getFileContent(file, renderContent),
             links: new Map()
         };
 
@@ -49,7 +49,7 @@ export class FileContextTree {
         for (const link of allLinks) {
             const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(link.link, file.path);
             if (linkedFile && linkedFile instanceof TFile) {
-                const linkedNode = await this.buildStructure(linkedFile, currentDepth + 1);
+                const linkedNode = await this.buildStructure(linkedFile, currentDepth + 1, renderContent);
                 if (linkedNode) {
                     node.links.set(linkedFile.path, linkedNode);
                 }
@@ -59,8 +59,8 @@ export class FileContextTree {
         return node;
     }
 
-    async initialize(startFile: TFile) {
-        this.root = await this.buildStructure(startFile);
+    async initialize(startFile: TFile, renderContent: boolean): Promise<void> {
+        this.root = await this.buildStructure(startFile, 0, renderContent);
     }
 
     toString(maxCharsPerFile: number = 50000): string {
@@ -104,5 +104,16 @@ export class FileContextTree {
         }
 
         return { text: result, total };
+    }
+
+    private async getFileContent(file: TFile, render: boolean): Promise<string> {
+        const fileContent = await this.plugin.app.vault.read(file) || '';
+        if (render) {
+            const el = document.createElement('div');
+            await MarkdownRenderer.render(this.plugin.app, fileContent, el, file.path, this.plugin);
+            return el.innerHTML;
+        } else {
+            return fileContent;
+        }
     }
 }

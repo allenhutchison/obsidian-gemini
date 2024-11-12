@@ -9,11 +9,11 @@ export class GeminiFile {
         this.plugin = plugin;
     }
 
-    async getCurrentFileContent(depth: number = this.plugin.settings.maxContextDepth): Promise<string | null> {
+    async getCurrentFileContent(depth: number = this.plugin.settings.maxContextDepth, renderContent: boolean = false): Promise<string | null> {
         const activeFile = this.getActiveFile();
         if (activeFile) {
             const fileContext = new FileContextTree(this.plugin, depth);
-            await fileContext.initialize(activeFile);
+            await fileContext.initialize(activeFile, renderContent);
             return fileContext.toString();
         } else {
             return null;
