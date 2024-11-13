@@ -40,11 +40,12 @@ export class GeminiApi {
     async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<GeminiResponse> {
         let response: GeminiResponse = { markdown: "", rendered: "" };
         const prompt = this.plugin.settings.generalPrompt + userMessage;
+        
         try {
             const contents = await this.buildContents(prompt, conversationHistory);
             const result = await this.model.generateContent({contents});
             response.markdown = result.response.text();
-            if (result.response.candidates[0].groundingMetadata.searchEntryPoint) {
+            if (result.response.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
                 response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
             }
             return response;
