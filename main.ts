@@ -5,6 +5,7 @@ import { GeminiSummary } from './src/summary';
 import { GeminiApi } from './src/api';
 import { GeminiFile } from './src/files'
 import { GeminiHistory } from './src/history';
+import { GeminiSuggest } from './src/suggestions';
 
 interface ObsidianGeminiSettings {
     apiKey: string;
@@ -74,6 +75,7 @@ export default class ObsidianGemini extends Plugin {
         this.gfile = new GeminiFile(this);
         this.history = new GeminiHistory(this);
 
+
         this.registerView(
             VIEW_TYPE_GEMINI,
             (leaf) => this.geminiView = new GeminiView(leaf, this)
@@ -90,6 +92,8 @@ export default class ObsidianGemini extends Plugin {
             name: 'Summarize Active File',
             callback: () => this.summarizer.summarizeActiveFile()
         });
+
+        this.registerEditorSuggest(new GeminiSuggest(this));
 
         this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
     }
@@ -117,7 +121,6 @@ export default class ObsidianGemini extends Plugin {
         }
     }
 
-
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     }
@@ -128,5 +131,6 @@ export default class ObsidianGemini extends Plugin {
         this.summarizer = new GeminiSummary(this);
         this.gfile = new GeminiFile(this);
         this.history = new GeminiHistory(this);
+        // this.completions = new GeminiCompletions(this);
     }
 }
