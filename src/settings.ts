@@ -30,9 +30,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
             .setDesc('The Gemini Model you would prefer to use.')
             .addDropdown(dropdown => dropdown
                 .addOption('gemini-1.5-flash', 'gemini-1.5-flash')
-                .addOption('gemini-1.5-flash-002', 'gemini-1.5-flash-002')
                 .addOption('gemini-1.5-pro', 'gemini-1.5-pro')
-                .addOption('gemini-1.5-pro-002', 'gemini-1.5-pro-002')
                 .addOption('gemini-1.5-flash-8b', 'gemini-1.5-flash-8b')
             .setValue(this.plugin.settings.modelName)
             .onChange(async (value) => {
