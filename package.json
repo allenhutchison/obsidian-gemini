@@ -12,14 +12,15 @@
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
+		"@google/generative-ai": "latest",
 		"@types/node": "^16.11.6",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
+		"codemirror-companion-extension": "^0.0.11",
 		"esbuild": "0.17.3",
 		"obsidian": "latest",
 		"tslib": "2.4.0",
-		"typescript": "4.7.4",
-		"@google/generative-ai": "latest"
+		"typescript": "4.7.4"
 	}
 }

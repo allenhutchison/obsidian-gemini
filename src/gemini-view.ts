@@ -99,6 +99,7 @@ export class GeminiView extends ItemView {
 
     async onClose() {
         this.app.workspace.off('file-open', this.handleFileOpen);
+        this.observer.disconnect();
     }
 
 
