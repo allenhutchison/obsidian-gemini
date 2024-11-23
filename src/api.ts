@@ -11,6 +11,7 @@ export class GeminiApi {
     private gemini: GoogleGenerativeAI;
     private model: any;
     private modelNoGrounding: any;
+    private modelSmall: any;
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
@@ -34,6 +35,11 @@ export class GeminiApi {
             model: this.plugin.settings.modelName,
             systemInstruction: systemInstruction,
         });
+        this.modelSmall = this.gemini.getGenerativeModel({ 
+            model: 'gemini-1.5-flash-8b',
+            systemInstruction: systemInstruction,
+        });
+
         console.debug("Gemini API initialized. Model:", this.plugin.settings.modelName);
     }
 
@@ -76,6 +82,14 @@ export class GeminiApi {
         const result = await this.modelNoGrounding.generateContent(prompt);
         return result.response.text();
     }
+
+    async generateNextSentence(): Promise<string> {
+        const fileContent = await this.plugin.gfile.getCurrentFileContent(0, true);
+        const prompt = `Given the following content \n${fileContent}\n\nGenerate the next sentence: `;
+        const results = await this.modelSmall.generateContent(prompt);
+        return results.response.text();
+    }
+
 
     private async buildContents(userMessage: string,
                                 conversationHistory: any[], 

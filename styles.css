@@ -105,6 +105,11 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Create a container for send button and timer */
+.gemini-scribe-send-container .gemini-scribe-send-button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+/* Create a container for send button and timer */
 .gemini-scribe-send-container {
     display: flex;
     flex-direction: column;
@@ -121,9 +126,6 @@ If your plugin does not need CSS, delete this file.
     cursor: pointer;
 }
 
-.gemini-scribe-send-container .gemini-scribe-send-button:hover {
-    background-color: var(--interactive-accent-hover);
-}
 
 .gemini-scribe-send-container .gemini-scribe-send-button {
     background-color: var(--interactive-accent);
