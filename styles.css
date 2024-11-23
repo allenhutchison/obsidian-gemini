@@ -77,7 +77,7 @@ If your plugin does not need CSS, delete this file.
 /* Style the input area */
 .gemini-scribe-input-area {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Align items to top */
     margin-top: var(--size-2-1); /* Separate input area from chatbox */
     margin-bottom: var(--size-2-1);
     width: 100%;
@@ -104,17 +104,37 @@ If your plugin does not need CSS, delete this file.
     opacity: 1; /* Ensure the placeholder text is fully opaque */
 }
 
-.gemini-scribe-input-area .gemini-scribe-send-button {
+/* Create a container for send button and timer */
+.gemini-scribe-send-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: var(--size-2-2);
+}
+
+.gemini-scribe-send-button {
     background-color: var(--interactive-accent);
     border: none;
     color: var(--text-on-accent);
     padding: var(--size-4-2) var(--size-4-3);
     border-radius: var(--radius-s);
     cursor: pointer;
-    margin-left: var(--size-2-2); /* Space between button and input */
 }
 
-.gemini-scribe-input-area .gemini-scribe-send-button:hover {
+.gemini-scribe-send-container .gemini-scribe-send-button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.gemini-scribe-send-container .gemini-scribe-send-button {
+    background-color: var(--interactive-accent);
+    border: none;
+    color: var(--text-on-accent);
+    padding: var(--size-4-2) var(--size-4-3);
+    border-radius: var(--radius-s);
+    cursor: pointer;
+}
+
+.gemini-scribe-send-container .gemini-scribe-send-button:hover {
     background-color: var(--interactive-accent-hover);
 }
 
@@ -134,4 +154,12 @@ If your plugin does not need CSS, delete this file.
     display: flex;
     align-items: center;
     cursor: pointer;
+}
+
+.gemini-scribe-timer {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-top: 5px;
+    min-width: 4em;
+    text-align: center;
 }
