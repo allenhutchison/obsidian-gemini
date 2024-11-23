@@ -163,3 +163,8 @@ If your plugin does not need CSS, delete this file.
     min-width: 4em;
     text-align: center;
 }
+
+.gemini-ghost-text {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
