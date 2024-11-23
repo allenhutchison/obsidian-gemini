@@ -66,7 +66,7 @@ export default class ObsidianGemini extends Plugin {
     public gfile: GeminiFile;
     public geminiView: GeminiView;
     public history: GeminiHistory;
-
+    private ribbonIcon: HTMLElement;
 
     async onload() {
         await this.loadSettings();
@@ -75,6 +75,14 @@ export default class ObsidianGemini extends Plugin {
         this.gfile = new GeminiFile(this);
         this.history = new GeminiHistory(this);
 
+        // Add ribbon icon
+        this.ribbonIcon = this.addRibbonIcon(
+            'sparkles', 
+            'Open Gemini Chat',
+            () => {
+                this.activateView();
+            }
+        );
 
         this.registerView(
             VIEW_TYPE_GEMINI,
@@ -132,5 +140,10 @@ export default class ObsidianGemini extends Plugin {
         this.gfile = new GeminiFile(this);
         this.history = new GeminiHistory(this);
         // this.completions = new GeminiCompletions(this);
+    }
+
+    // Optional: Clean up ribbon icon on unload
+    onunload() {
+        this.ribbonIcon?.remove();
     }
 }
