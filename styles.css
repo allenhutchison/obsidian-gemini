@@ -83,13 +83,25 @@ If your plugin does not need CSS, delete this file.
     width: 100%;
 }
 
-.gemini-scribe-input-area .gemini-scribe-chat-input[type="text"] {
+.gemini-scribe-input-area .gemini-scribe-chat-input {
     padding: var(--size-4-2);
     border: var(--border-width) solid var(--background-modifier-border);
     border-radius: var(--radius-s);
     margin-right: var(--size-2-2);
     flex-grow: 1;
     background-color: var(--background-modifier-form-field);
+    width: 100%; /* Ensure the input takes the full width of the container */
+    height: 50px; /* Adjust the height as needed */
+    font-size: 16px; /* Adjust the font size as needed */
+    resize: vertical; /* Allow vertical resizing */
+    overflow: auto; /* Ensure the text wraps inside the box */
+    white-space: pre-wrap; /* Ensure the text wraps inside the box */
+}
+
+/* Optional: Style the placeholder text */
+.gemini-scribe-input-area .gemini-scribe-chat-input::placeholder {
+    color: var(--text-muted); /* Adjust the color as needed */
+    opacity: 1; /* Ensure the placeholder text is fully opaque */
 }
 
 .gemini-scribe-input-area .gemini-scribe-send-button {
