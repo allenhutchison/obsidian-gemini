@@ -33,7 +33,10 @@ export class GeminiView extends ItemView {
 
         // User input and send button
         const inputArea = container.createDiv({ cls: 'gemini-scribe-input-area' }); 
-        const userInput = inputArea.createEl('input', { type: 'text', cls: 'gemini-scribe-chat-input', placeholder: 'Type your message...' });
+        const userInput = inputArea.createEl('textarea', { 
+            cls: 'gemini-scribe-chat-input', 
+            attr: { placeholder: 'Type your message here...' }
+        });
         const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'gemini-scribe-send-button' });
         setIcon(sendButton, "send-horizontal");
 
@@ -49,7 +52,8 @@ export class GeminiView extends ItemView {
         }
 
         userInput.addEventListener('keydown', async (event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 sendButton.click();
             }
         });
@@ -63,7 +67,6 @@ export class GeminiView extends ItemView {
                 try {
                     await this.sendMessage(userMessage);
                 } catch (error) {
-                    new Notice("Error getting bot response.");
                     console.error(error);
                 }
             }
