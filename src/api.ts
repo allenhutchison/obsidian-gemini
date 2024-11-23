@@ -98,6 +98,10 @@ export class GeminiApi {
 
         contents.push({
             role: "user",
+            parts: [{ text: `Today's Date is ${new Date().toDateString()}, and the time is ${new Date().toLocaleTimeString()}.`}]
+        })
+        contents.push({
+            role: "user",
             parts: [{ text: userMessage }]
         });
 
