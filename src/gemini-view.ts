@@ -9,6 +9,9 @@ export class GeminiView extends ItemView {
     private currentFile: TFile | null;
     private observer: MutationObserver;
     private shoudRewriteFile: boolean;
+    private timerDisplay: HTMLDivElement;
+    private timerInterval: NodeJS.Timeout | null = null;
+    private startTime: number | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
         super(leaf);
@@ -37,8 +40,10 @@ export class GeminiView extends ItemView {
             cls: 'gemini-scribe-chat-input', 
             attr: { placeholder: 'Type your message here...' }
         });
-        const sendButton = inputArea.createEl('button', { text: 'Send', cls: 'gemini-scribe-send-button' });
+        const sendContainer = inputArea.createDiv({ cls: 'gemini-scribe-send-container' });
+        const sendButton = sendContainer.createEl('button', { text: 'Send', cls: 'gemini-scribe-send-button' });
         setIcon(sendButton, "send-horizontal");
+        this.timerDisplay = sendContainer.createDiv({ cls: 'gemini-scribe-timer' });
 
         // Add checkbox container below input area
         if (this.plugin.settings.rewriteFiles) {
@@ -63,10 +68,13 @@ export class GeminiView extends ItemView {
             if (userMessage.trim() !== "") {
                 this.displayMessage(userMessage, "user");
                 userInput.value = "";
-
+                this.startTimer();
+                
                 try {
                     await this.sendMessage(userMessage);
+                    this.stopTimer();
                 } catch (error) {
+                    this.stopTimer();
                     console.error(error);
                 }
             }
@@ -205,5 +213,30 @@ export class GeminiView extends ItemView {
         tryScroll();
         setTimeout(tryScroll, 50);
         setTimeout(tryScroll, 150);
+    }
+
+    private startTimer() {
+        this.timerDisplay.style.display = 'block';
+        this.startTime = Date.now();
+        this.timerDisplay.textContent = '0.0s';
+        
+        this.timerInterval = setInterval(() => {
+            if (this.startTime) {
+                const elapsed = (Date.now() - this.startTime) / 1000;
+                this.timerDisplay.textContent = `${elapsed.toFixed(1)}s`;
+            }
+        }, 100);
+    }
+
+    private stopTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        setTimeout(() => {
+            if (this.timerDisplay) {
+                this.timerDisplay.style.display = 'none';
+            }
+        }, 2000); // Keep displayed for 2 seconds after completion
     }
 }
