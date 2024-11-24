@@ -83,9 +83,9 @@ export class GeminiApi {
         return result.response.text();
     }
 
-    async generateNextSentence(): Promise<string> {
-        const fileContent = await this.plugin.gfile.getCurrentFileContent(0, true);
-        const prompt = `Given the following content \n${fileContent}\n\nGenerate the next sentence: `;
+    async generateNextSentence(content: string): Promise<string> {
+        const fileContent = content;
+        const prompt = `You are providing the user with completions in their text. You should provide the next sentence that goes along with the text in the notes so far. If you can't provide a sentence, then provide a phrase, and if you can't provide a phrase then try to provide a word. Don't include anything except the text for the copletion. Always start your response with a " " space character. Please provide a completion for the following content: <begin file content>${fileContent}</end file content>`;
         const results = await this.modelSmall.generateContent(prompt);
         return results.response.text();
     }

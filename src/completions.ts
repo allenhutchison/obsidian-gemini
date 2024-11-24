@@ -27,15 +27,12 @@ export class GeminiCompletions {
         const line = editor.getLine(cursor.line);
         const prefix = line.substring(0, cursor.ch);
         
-        // Only trigger after 3+ characters
-        const match = prefix.match(/(\w{3,})$/);
-        if (match) {
-            const suggestion = " world"; // Replace with real completion logic
-            yield {
-                display_suggestion: suggestion,
-                complete_suggestion: suggestion,
-            };
-        }
+        const content = editor.getRange({ line: 0, ch: 0 }, cursor);
+        const suggestion = await this.plugin.geminiApi.generateNextSentence(content);
+        yield {
+            display_suggestion: suggestion,
+            complete_suggestion: suggestion,
+        };
     }
 
     async setupCompletions() {
@@ -44,7 +41,7 @@ export class GeminiCompletions {
         });
         this.force_fetch = force_fetch;
         this.plugin.registerEditorExtension(extension);
-        console.log("Gemini completions initialized.");
+        console.debug("Gemini completions initialized.");
     }
 
     async setupSuggestionCommands() {
@@ -53,6 +50,7 @@ export class GeminiCompletions {
             name: "Accept completion",
             editorCallback: (editor: Editor) => this.acceptCompletion(editor),
         });
+
         this.plugin.addCommand({
             id: "suggest", 
             name: "Generate completion",
