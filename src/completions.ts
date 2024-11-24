@@ -1,5 +1,5 @@
 import ObsidianGemini from "../main";
-import { MarkdownView, Editor, debounce } from "obsidian";
+import { MarkdownView, Editor, debounce, Notice } from "obsidian";
 import { FileContextTree } from "./file-context";
 import { forceableInlineSuggestion, Suggestion } from "codemirror-companion-extension";
 
@@ -8,6 +8,7 @@ export class GeminiCompletions {
     private force_fetch: () => void = () => {};
     private readonly TYPING_DELAY = 750; // ms to wait after typing stops
     private debouncedComplete: () => void;
+    private completionsOn: boolean = false;
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
@@ -19,6 +20,7 @@ export class GeminiCompletions {
     }
 
     async *complete(): AsyncGenerator<Suggestion> {
+        if (!this.completionsOn) return;
         const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
         if (!view) return;
         
@@ -52,11 +54,17 @@ export class GeminiCompletions {
     }
 
     async setupSuggestionCommands() {
-
         this.plugin.addCommand({
-            id: "suggest", 
-            name: "Generate completion",
-            editorCallback: () => this.force_fetch(),
+            id: "toggle-completions",
+            name: "Toggle completions",
+            editorCallback: () => {
+                this.completionsOn = !this.completionsOn; // Toggle the boolean
+                new Notice(`Gemini Scribe Completions are now ${this.completionsOn ? "enabled" : "disabled"}.`);
+                
+                if (this.completionsOn) {
+                    this.force_fetch(); // Trigger completions if enabled
+                }
+            },
         });
     }
 }
