@@ -27,11 +27,18 @@ export class GeminiCompletions {
         const line = editor.getLine(cursor.line);
         const prefix = line.substring(0, cursor.ch);
         
+        // Check if last character before cursor is a space
+        const needsSpace = prefix.length > 0 && !prefix.endsWith(' ');
+        
         const content = editor.getRange({ line: 0, ch: 0 }, cursor);
         const suggestion = await this.plugin.geminiApi.generateNextSentence(content);
+        
+        // Add space to suggestion if needed
+        const finalSuggestion = needsSpace ? ' ' + suggestion : suggestion;
+        
         yield {
-            display_suggestion: suggestion,
-            complete_suggestion: suggestion,
+            display_suggestion: finalSuggestion,
+            complete_suggestion: finalSuggestion,
         };
     }
 
@@ -45,21 +52,11 @@ export class GeminiCompletions {
     }
 
     async setupSuggestionCommands() {
-        this.plugin.addCommand({
-            id: "accept",
-            name: "Accept completion",
-            editorCallback: (editor: Editor) => this.acceptCompletion(editor),
-        });
 
         this.plugin.addCommand({
             id: "suggest", 
             name: "Generate completion",
             editorCallback: () => this.force_fetch(),
         });
-    }
-
-    async acceptCompletion(editor: Editor) {
-        // Accept current ghost text suggestion
-        // Implementation depends on how suggestions are stored
     }
 }

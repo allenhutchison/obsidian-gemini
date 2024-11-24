@@ -35,10 +35,24 @@ const context = await esbuild.context({
 	format: "cjs",
 	target: "es2018",
 	logLevel: "info",
-	sourcemap: prod ? false : "inline",
+	sourcemap: 'inline',
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
+	plugins: [{
+		name: 'text-files',
+		setup(build) {
+			build.onLoad({ filter: /\.txt$/ }, async (args) => {
+				const text = await import('fs').then(fs => 
+					fs.readFileSync(args.path, 'utf8')
+				);
+				return {
+					contents: text,
+					loader: 'text'
+				};
+			});
+		}
+	}]
 });
 
 if (prod) {

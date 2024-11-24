@@ -1,5 +1,6 @@
 import ObsidianGemini from '../main';
 import { DynamicRetrievalMode, GoogleGenerativeAI } from '@google/generative-ai';
+import { GeminiPrompts } from './prompts';
 
 interface GeminiResponse {
     markdown: string;
@@ -84,9 +85,9 @@ export class GeminiApi {
     }
 
     async generateNextSentence(content: string): Promise<string> {
-        const fileContent = content;
-        const prompt = `You are providing the user with completions in their text. You should provide the next sentence that goes along with the text in the notes so far. If you can't provide a sentence, then provide a phrase, and if you can't provide a phrase then try to provide a word. Don't include anything except the text for the copletion. Always start your response with a " " space character. Please provide a completion for the following content: <begin file content>${fileContent}</end file content>`;
-        const results = await this.modelSmall.generateContent(prompt);
+        const prompts = new GeminiPrompts();
+        const completionPrompt = prompts.completionsPrompt({ content: content });
+        const results = await this.modelSmall.generateContent(completionPrompt);
         return results.response.text();
     }
 
