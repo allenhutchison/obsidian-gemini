@@ -25,7 +25,7 @@ interface ObsidianGeminiSettings {
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     apiKey: '',
-	modelName: 'gemini-1.5-flash-002',
+	modelName: 'gemini-1.5-flash',
     sendContext: false,
     maxContextDepth: 2,
     searchGrounding: false,
