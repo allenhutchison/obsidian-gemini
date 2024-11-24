@@ -1,10 +1,7 @@
 import ObsidianGemini from "../main";
 import { MarkdownView, Editor, debounce } from "obsidian";
 import { FileContextTree } from "./file-context";
-import {
-    forceableInlineSuggestion,
-    Suggestion,
-} from "codemirror-companion-extension";
+import { forceableInlineSuggestion, Suggestion } from "codemirror-companion-extension";
 
 export class GeminiCompletions {
     private plugin: ObsidianGemini;

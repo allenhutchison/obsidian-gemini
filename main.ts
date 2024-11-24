@@ -5,7 +5,6 @@ import { GeminiSummary } from './src/summary';
 import { GeminiApi } from './src/api';
 import { GeminiFile } from './src/files'
 import { GeminiHistory } from './src/history';
-// import { GeminiSuggest } from './src/suggestions';
 import { GeminiCompletions } from './src/completions';
 
 interface ObsidianGeminiSettings {
@@ -108,8 +107,6 @@ export default class ObsidianGemini extends Plugin {
             callback: () => this.summarizer.summarizeActiveFile()
         });
 
-        // this.registerEditorSuggest(new GeminiSuggest(this));
-
         this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
     }
 
@@ -146,7 +143,7 @@ export default class ObsidianGemini extends Plugin {
         this.summarizer = new GeminiSummary(this);
         this.gfile = new GeminiFile(this);
         this.history = new GeminiHistory(this);
-        // this.completions = new GeminiCompletions(this);
+        this.completions = new GeminiCompletions(this);
     }
 
     // Optional: Clean up ribbon icon on unload
