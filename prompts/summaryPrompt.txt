@@ -1,0 +1,8 @@
+Using the context provided, create a single-sentence summary based on the
+content of the file. Exclude any mention of dates, attendees, or my name, and
+assume the notes are taken from my perspective unless specified otherwise. 
+
+Respond with plain text only.
+
+Please summarize the following content:
+<begin file content>{{content}}</end file content>
