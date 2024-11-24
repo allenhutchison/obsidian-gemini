@@ -1,6 +1,5 @@
 import ObsidianGemini from "../main";
 import { MarkdownView, Editor, debounce, Notice } from "obsidian";
-import { FileContextTree } from "./file-context";
 import { forceableInlineSuggestion, Suggestion } from "codemirror-companion-extension";
 
 export class GeminiCompletions {
@@ -49,6 +48,7 @@ export class GeminiCompletions {
             fetchFn: () => this.complete(),
         });
         this.force_fetch = force_fetch;
+        // registerEditorExtension will handle unloading the extension when the plugin is disabled
         this.plugin.registerEditorExtension(extension);
         console.debug("Gemini completions initialized.");
     }
