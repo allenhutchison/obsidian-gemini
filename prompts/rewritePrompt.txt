@@ -10,3 +10,5 @@ start your draft below it.
 
 Exclude any content that should not appear in the final draft, ensuring only
 relevant information is incorporated.
+
+{{userMessage}}

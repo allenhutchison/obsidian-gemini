@@ -13,10 +13,12 @@ export class GeminiApi {
     private model: any;
     private modelNoGrounding: any;
     private modelSmall: any;
+    private prompts: GeminiPrompts;
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
-        const systemInstruction = this.plugin.settings.systemPrompt + ` My name is ${this.plugin.settings.userName}.`;
+        this.prompts = new GeminiPrompts();
+        const systemInstruction = this.prompts.systemPrompt({ userName: this.plugin.settings.userName });
         this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
         let tools: any[] = [];
         if (this.plugin.settings.searchGrounding) {
@@ -46,7 +48,8 @@ export class GeminiApi {
 
     async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<GeminiResponse> {
         let response: GeminiResponse = { markdown: "", rendered: "" };
-        const prompt = this.plugin.settings.generalPrompt + userMessage;
+        // TODO(adh): I don't really need to repeat the general prompt for every message.
+        const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
         
         try {
             const contents = await this.buildContents(prompt, conversationHistory);
@@ -64,7 +67,7 @@ export class GeminiApi {
 
     async generateRewriteResponse(userMessage: string, conversationHistory: any[]) {
         try {
-            const prompt = this.plugin.settings.rewritePrompt + userMessage;
+            const prompt = this.prompts.rewritePrompt({ userMessage: userMessage });
             const contents = await this.buildContents(prompt, conversationHistory);
             const file = this.plugin.app.workspace.getActiveFile();
             if (file) {
@@ -79,7 +82,7 @@ export class GeminiApi {
     }
         
     async generateOneSentenceSummary(content: string): Promise<string> {
-        const prompt = this.plugin.settings.summaryPrompt + content;
+        const prompt = this.prompts.summaryPrompt({ content: content });
         const result = await this.modelNoGrounding.generateContent(prompt);
         return result.response.text();
     }
