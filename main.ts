@@ -50,7 +50,6 @@ export default class ObsidianGemini extends Plugin {
     async onload() {
         await this.loadSettings();
         this.geminiApi = new GeminiApi(this);
-        this.summarizer = new GeminiSummary(this);
         this.gfile = new GeminiFile(this);
         this.history = new GeminiHistory(this);
 
@@ -58,6 +57,10 @@ export default class ObsidianGemini extends Plugin {
         this.completions = new GeminiCompletions(this);
         await this.completions.setupCompletions();
         await this.completions.setupCompletionsCommands();
+
+        // Initialize summarization
+        this.summarizer = new GeminiSummary(this);
+        await this.summarizer.setupSummarizaitonCommand();
 
         // Add ribbon icon
         this.ribbonIcon = this.addRibbonIcon(
@@ -77,12 +80,6 @@ export default class ObsidianGemini extends Plugin {
             id: 'open-gemini-view',
             name: 'Open Gemini Chat',
             callback: () => this.activateView()
-        });
-
-        this.addCommand({
-            id: 'summarize-active-file',
-            name: 'Summarize Active File',
-            callback: () => this.summarizer.summarizeActiveFile()
         });
 
         this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
