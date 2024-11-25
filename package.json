@@ -6,7 +6,9 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"format": "prettier --write .",
+  		"format-check": "prettier --check ."
 	},
 	"keywords": [],
 	"author": "",
@@ -20,6 +22,7 @@
 		"codemirror-companion-extension": "^0.0.11",
 		"esbuild": "0.17.3",
 		"obsidian": "latest",
+		"prettier": "^3.3.3",
 		"raw-loader": "^4.0.2",
 		"ts-loader": "^9.5.1",
 		"tslib": "2.4.0",
