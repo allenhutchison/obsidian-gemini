@@ -1,18 +1,24 @@
 import ObsidianGemini from '../main';
-import { DynamicRetrievalMode, GoogleGenerativeAI } from '@google/generative-ai';
+import { DynamicRetrievalMode, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiPrompts } from './prompts';
 
-interface GeminiResponse {
+export interface ModelResponse {
     markdown: string;
     rendered: string;
+}
+
+export interface ModelRequest {
+    model?: string | null;
+    prompt?: string | null;
+    conversationHistory?: any[] | null;
+    userMessage?: string | null;
 }
 
 export class GeminiApi {
     private plugin: ObsidianGemini;
     private gemini: GoogleGenerativeAI;
-    private model: any;
-    private modelNoGrounding: any;
-    private modelSmall: any;
+    private model: GenerativeModel;
+    private modelNoGrounding: GenerativeModel;
     private prompts: GeminiPrompts;
 
     constructor(plugin: ObsidianGemini) {
@@ -30,24 +36,18 @@ export class GeminiApi {
                 }}}];
         }
         this.model = this.gemini.getGenerativeModel({ 
-            model: this.plugin.settings.modelName,
+            model: this.plugin.settings.chatModelName,
             systemInstruction: systemInstruction,
             tools: tools,
         });
         this.modelNoGrounding = this.gemini.getGenerativeModel({ 
-            model: this.plugin.settings.modelName,
+            model: this.plugin.settings.chatModelName,
             systemInstruction: systemInstruction,
         });
-        this.modelSmall = this.gemini.getGenerativeModel({ 
-            model: 'gemini-1.5-flash-8b',
-            systemInstruction: systemInstruction,
-        });
-
-        console.debug("Gemini API initialized. Model:", this.plugin.settings.modelName);
     }
 
-    async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<GeminiResponse> {
-        let response: GeminiResponse = { markdown: "", rendered: "" };
+    async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<ModelResponse> {
+        let response: ModelResponse = { markdown: "", rendered: "" };
         // TODO(adh): I don't really need to repeat the general prompt for every message.
         const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
         
@@ -66,32 +66,42 @@ export class GeminiApi {
     }
 
     async generateRewriteResponse(userMessage: string, conversationHistory: any[]) {
-        try {
-            const prompt = this.prompts.rewritePrompt({ userMessage: userMessage });
-            const contents = await this.buildContents(prompt, conversationHistory);
-            const file = this.plugin.app.workspace.getActiveFile();
-            if (file) {
-                this.plugin.history.appendHistoryForFile(file, { role: "user", content: userMessage })
-            }
-            const result = await this.modelNoGrounding.generateContent({contents});
-            await this.plugin.gfile.replaceTextInActiveFile(result.response.text());
-        } catch (error) {
-            console.error("Error getting model results: ", error);
-            throw error;
-        }
-    }
-        
-    async generateOneSentenceSummary(content: string): Promise<string> {
-        const prompt = this.prompts.summaryPrompt({ content: content });
-        const result = await this.modelNoGrounding.generateContent(prompt);
-        return result.response.text();
+        const prompt = this.prompts.rewritePrompt({ userMessage: userMessage });
+        const contents = await this.buildContents(prompt, conversationHistory);
+        await this.plugin.history.appendHistory({ role: "user", content: userMessage });
+        const result = await this.modelNoGrounding.generateContent({contents});
+        await this.plugin.gfile.replaceTextInActiveFile(result.response.text());
     }
 
+    // TODO(adh): Add setting for completion model.
     async generateNextSentence(content: string): Promise<string> {
-        const prompts = new GeminiPrompts();
-        const completionPrompt = prompts.completionsPrompt({ content: content });
-        const results = await this.modelSmall.generateContent(completionPrompt);
-        return results.response.text();
+        let request: ModelRequest = {model: 'gemini-1.5-flash-8b',
+                                    prompt: this.prompts.completionsPrompt({ content: content })};
+        const result = await this.generateModelResponse(request);
+        return result.markdown;
+    }
+
+    async generateModelResponse(request: ModelRequest): Promise<ModelResponse> {
+        let response: ModelResponse = { markdown: "", rendered: "" };
+        const modelToUse = request.model ? request.model : this.plugin.settings.chatModelName;
+        const modelInstance = this.gemini.getGenerativeModel({ 
+            model: modelToUse,
+            systemInstruction: this.prompts.systemPrompt({ userName: this.plugin.settings.userName }),
+        });
+
+        if (!request.prompt) {
+            throw new Error("No prompt provided to generateModelResponse.");
+        } else {
+            try {
+                const result = await modelInstance.generateContent(request.prompt);
+                response.markdown = result.response.text();
+            } catch (error) {
+                console.error("Error calling Gemini:", error);
+                new Notification("Error calling Gemini.");
+                throw error; 
+            }
+        }
+        return response;
     }
 
 
@@ -101,6 +111,7 @@ export class GeminiApi {
         const contents = [];
         // TODO(adh): This should be cached so it doesn't have to be recomputed every time we call the model.
         const fileContent = await this.plugin.gfile.getCurrentFileContent();
+        const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
         if (fileContent != null) {
             contents.push({
                 role: "user",

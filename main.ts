@@ -8,9 +8,11 @@ import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
 import { GeminiPrompts } from 'src/prompts';
 
-interface ObsidianGeminiSettings {
+export interface ObsidianGeminiSettings {
     apiKey: string;
-	modelName: string;
+	chatModelName: string;
+    summaryModelName: string;
+    completionModelName: string;
     sendContext: boolean;
     maxContextDepth: number;
     searchGrounding: boolean;
@@ -22,7 +24,9 @@ interface ObsidianGeminiSettings {
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     apiKey: '',
-	modelName: 'gemini-1.5-flash',
+	chatModelName: 'gemini-1.5-pro',
+    summaryModelName: 'gemini-1.5-flash',
+    completionModelName: 'gemini-1.5-flash-8b',
     sendContext: false,
     maxContextDepth: 2,
     searchGrounding: false,

@@ -1,5 +1,6 @@
 import ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
+import { selectModelSetting } from './settings-helpers';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
     plugin: ObsidianGemini;
@@ -25,18 +26,15 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
         
-        new Setting(containerEl)
-            .setName('Preferred Model')
-            .setDesc('The Gemini Model you would prefer to use.')
-            .addDropdown(dropdown => dropdown
-                .addOption('gemini-1.5-flash', 'gemini-1.5-flash')
-                .addOption('gemini-1.5-pro', 'gemini-1.5-pro')
-                .addOption('gemini-1.5-flash-8b', 'gemini-1.5-flash-8b')
-            .setValue(this.plugin.settings.modelName)
-            .onChange(async (value) => {
-                this.plugin.settings.modelName = value;
-                await this.plugin.saveSettings();
-            }));
+        selectModelSetting(containerEl, this.plugin, 'chatModelName', 
+                           'Chat Model', 
+                           'The Gemini Model used in the chat interface.');
+        selectModelSetting(containerEl, this.plugin, 'summaryModelName', 
+                           'Summary Model', 
+                           'The Gemini Model used for summarization.');
+        selectModelSetting(containerEl, this.plugin, 'completionModelName', 
+                            'Completion Model', 
+                            'The Gemini Model used for completions.');
 
         new Setting(containerEl)
             .setName('Context Depth')
