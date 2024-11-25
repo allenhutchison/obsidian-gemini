@@ -12,7 +12,7 @@ export interface ObsidianGeminiSettings {
     apiKey: string;
 	chatModelName: string;
     summaryModelName: string;
-    completionModelName: string;
+    completionsModelName: string;
     sendContext: boolean;
     maxContextDepth: number;
     searchGrounding: boolean;
@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     apiKey: '',
 	chatModelName: 'gemini-1.5-pro',
     summaryModelName: 'gemini-1.5-flash',
-    completionModelName: 'gemini-1.5-flash-8b',
+    completionsModelName: 'gemini-1.5-flash-8b',
     sendContext: false,
     maxContextDepth: 2,
     searchGrounding: false,
@@ -57,7 +57,7 @@ export default class ObsidianGemini extends Plugin {
         // Initialize completions
         this.completions = new GeminiCompletions(this);
         await this.completions.setupCompletions();
-        await this.completions.setupSuggestionCommands();
+        await this.completions.setupCompletionsCommands();
 
         // Add ribbon icon
         this.ribbonIcon = this.addRibbonIcon(

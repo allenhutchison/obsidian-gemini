@@ -1,9 +1,12 @@
 import ObsidianGemini from "../main";
 import { MarkdownView, Editor, debounce, Notice } from "obsidian";
 import { forceableInlineSuggestion, Suggestion } from "codemirror-companion-extension";
+import { ModelRequest } from "./api";
+import { GeminiPrompts } from "./prompts";
 
 export class GeminiCompletions {
     private plugin: ObsidianGemini;
+    private prompts: GeminiPrompts;
     private force_fetch: () => void = () => {};
     private readonly TYPING_DELAY = 750; // ms to wait after typing stops
     private debouncedComplete: () => void;
@@ -11,6 +14,7 @@ export class GeminiCompletions {
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
+        this.prompts = new GeminiPrompts();
         this.debouncedComplete = debounce(
             () => this.force_fetch(),
             this.TYPING_DELAY,
@@ -31,8 +35,10 @@ export class GeminiCompletions {
         // Check if last character before cursor is a space
         const needsSpace = prefix.length > 0 && !prefix.endsWith(' ');
         
-        const content = editor.getRange({ line: 0, ch: 0 }, cursor);
-        const suggestion = await this.plugin.geminiApi.generateNextSentence(content);
+        const contentBeforeCursor = editor.getRange({ line: 0, ch: 0 }, cursor);
+        const contentAfterCursor = editor.getRange(cursor, 
+            { line: editor.lastLine(), ch: editor.getLine(editor.lastLine()).length });
+        const suggestion = await this.generateNextSentence(contentBeforeCursor, contentAfterCursor);
         
         // Add space to suggestion if needed
         const finalSuggestion = needsSpace ? ' ' + suggestion : suggestion;
@@ -41,6 +47,18 @@ export class GeminiCompletions {
             display_suggestion: finalSuggestion,
             complete_suggestion: finalSuggestion,
         };
+    }
+
+    async generateNextSentence(contentBeforeCursor: string, contentAfterCursor: string): Promise<string> {
+        let request: ModelRequest = {
+            model: this.plugin.settings.completionsModelName, 
+            prompt: this.prompts.completionsPrompt({ 
+                contentBeforeCursor: contentBeforeCursor, 
+                contentAfterCursor: contentAfterCursor
+            })
+        };
+        const result = await this.plugin.geminiApi.generateModelResponse(request);
+        return result.markdown.replace(/\n$/, ''); // Remove trailing newline if it exists
     }
 
     async setupCompletions() {
@@ -53,7 +71,7 @@ export class GeminiCompletions {
         console.debug("Gemini completions initialized.");
     }
 
-    async setupSuggestionCommands() {
+    async setupCompletionsCommands() {
         this.plugin.addCommand({
             id: "toggle-completions",
             name: "Toggle completions",

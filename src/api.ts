@@ -73,14 +73,6 @@ export class GeminiApi {
         await this.plugin.gfile.replaceTextInActiveFile(result.response.text());
     }
 
-    // TODO(adh): Add setting for completion model.
-    async generateNextSentence(content: string): Promise<string> {
-        let request: ModelRequest = {model: 'gemini-1.5-flash-8b',
-                                    prompt: this.prompts.completionsPrompt({ content: content })};
-        const result = await this.generateModelResponse(request);
-        return result.markdown;
-    }
-
     async generateModelResponse(request: ModelRequest): Promise<ModelResponse> {
         let response: ModelResponse = { markdown: "", rendered: "" };
         const modelToUse = request.model ? request.model : this.plugin.settings.chatModelName;

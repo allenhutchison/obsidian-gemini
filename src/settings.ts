@@ -32,7 +32,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
         selectModelSetting(containerEl, this.plugin, 'summaryModelName', 
                            'Summary Model', 
                            'The Gemini Model used for summarization.');
-        selectModelSetting(containerEl, this.plugin, 'completionModelName', 
+        selectModelSetting(containerEl, this.plugin, 'completionsModelName', 
                             'Completion Model', 
                             'The Gemini Model used for completions.');
 
