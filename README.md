@@ -1,4 +1,4 @@
-# Gemini Plugin for Obsidian
+# Gemini Scribe for Obsidian
 
 This plugin integrates Google's Gemini AI with Obsidian, providing intelligent assistance for note-taking and content generation.
 
