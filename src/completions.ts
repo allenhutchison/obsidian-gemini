@@ -70,8 +70,6 @@ export class GeminiCompletions {
 
 	async setupCompletionsCommands() {
 		try {
-			console.debug("Setting up completion commands...");
-			
 			this.plugin.addCommand({
 				id: 'gemini-scribe-toggle-completions', // Add plugin prefix
 				name: 'Toggle completions',
@@ -84,8 +82,6 @@ export class GeminiCompletions {
 					}
 				}
 			});
-			
-			console.debug("Completion commands registered successfully");
 		} catch (error) {
 			console.error("Error setting up completion commands:", error);
 		}
