@@ -6,7 +6,7 @@ import { GeminiApi } from './src/api';
 import { GeminiFile } from './src/files'
 import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
-import { GeminiPrompts } from 'src/prompts';
+import { GeminiDatabase } from './src/database';
 
 export interface ObsidianGeminiSettings {
     apiKey: string;
@@ -46,6 +46,7 @@ export default class ObsidianGemini extends Plugin {
     public history: GeminiHistory;
     private ribbonIcon: HTMLElement;
     private completions: GeminiCompletions;
+    private database: GeminiDatabase;
 
     async onload() {
         await this.loadSettings();
@@ -61,6 +62,11 @@ export default class ObsidianGemini extends Plugin {
         // Initialize summarization
         this.summarizer = new GeminiSummary(this);
         await this.summarizer.setupSummarizaitonCommand();
+
+        // Initialize database
+        this.database = new GeminiDatabase();
+        const conversations = await this.database.getAllConversations();
+        console.log('Persisted Conversations:', conversations);
 
         // Add ribbon icon
         this.ribbonIcon = this.addRibbonIcon(

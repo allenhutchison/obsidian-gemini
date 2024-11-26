@@ -8,7 +8,7 @@
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"format": "prettier --write .",
-  		"format-check": "prettier --check ."
+		"format-check": "prettier --check ."
 	},
 	"keywords": [],
 	"author": "",
@@ -26,11 +26,10 @@
 		"raw-loader": "^4.0.2",
 		"ts-loader": "^9.5.1",
 		"tslib": "2.4.0",
-		"typescript": "4.7.4",
-		"webpack": "^5.89.0",
-		"webpack-cli": "^5.1.4"
+		"typescript": "4.7.4"
 	},
 	"dependencies": {
+		"dexie": "^4.0.10",
 		"handlebars": "^4.7.8"
 	}
 }
