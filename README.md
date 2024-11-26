@@ -7,6 +7,7 @@ This plugin integrates Google's Gemini AI with Obsidian, providing intelligent a
 - **Context-Aware Chat**: Interact with Gemini AI based on your current active note's content
 - **Smart Summarization**: Generate one-sentence summaries of your notes and store them in the document's frontmatter
 - **AI-Assisted Writing**: Collaborate with Gemini to write and refine your documents (experimental feature)
+- **IDE Style completions**: When enabled will provide IDE style text completions with the context of your note.
 
 ## Installation
 
