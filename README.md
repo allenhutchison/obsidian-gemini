@@ -49,6 +49,12 @@ This plugin integrates Google's Gemini AI with Obsidian, providing intelligent a
 - Use the chat interface to collaborate with Gemini on document writing
 - The model will update your current document based on the conversation
 
+### Completions
+- From the command palette select Gemini Scribe: Toggle Completions
+- You'll now see IDE style completions whenever you pause in your writing
+- Hit Tab to accept the completion or any other key to dismiss.
+- Turn off by using the same command.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details
