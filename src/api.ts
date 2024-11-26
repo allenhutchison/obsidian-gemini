@@ -81,7 +81,7 @@ export class GeminiApi {
 			const result = await this.model.generateContent({ contents });
 			response.markdown = result.response.text();
 			if (result.response.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
-				response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
+				response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? '';
 			}
 			return response;
 		} catch (error) {
