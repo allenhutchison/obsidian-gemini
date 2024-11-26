@@ -116,6 +116,7 @@ export class GeminiView extends ItemView {
 
 		this.currentFile = this.plugin.gfile.getActiveFile();
 		this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
+		this.app.workspace.on('active-leaf-change', this.handleFileOpen.bind(this));
 	}
 
 	async onClose() {
@@ -198,9 +199,9 @@ export class GeminiView extends ItemView {
 
 	async reloadChatFromHistory() {
 		const history = await this.plugin.history.getHistoryForFile(this.currentFile!);
-		if (history) {
+		if (history && history.length > 0) {
 			history.forEach((entry) => {
-				this.displayMessage(entry.content, entry.role);
+				this.displayMessage(entry.message, entry.role);
 			});
 		}
 	}
@@ -217,11 +218,11 @@ export class GeminiView extends ItemView {
 				const botResponse = await this.plugin.geminiApi.getBotResponse(userMessage, history);
 				this.plugin.history.appendHistoryForFile(this.currentFile!, {
 					role: 'user',
-					content: userMessage,
+					message: userMessage,
 				});
 				this.plugin.history.appendHistoryForFile(this.currentFile!, {
 					role: 'model',
-					content: botResponse.markdown,
+					message: botResponse.markdown,
 				});
 				this.displayMessage(botResponse.markdown, 'model');
 				if (botResponse.rendered) {

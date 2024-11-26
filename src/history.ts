@@ -1,50 +1,45 @@
 import ObsidianGemini from '../main';
 import { TFile } from 'obsidian';
-
-interface HistoryEntry {
-	role: 'user' | 'model';
-	content: string;
-}
+import { GeminiConversationEntry } from './database';
 
 export class GeminiHistory {
 	private plugin: ObsidianGemini;
-	private history: { [filePath: string]: HistoryEntry[] } = {};
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 	}
 
-	async appendHistoryForFile(file: TFile, newEntry: HistoryEntry) {
+	async appendHistoryForFile(file: TFile, newEntry: GeminiConversationEntry) {
 		if (this.plugin.gfile.isFile(file)) {
-			if (!this.history[file.path]) {
-				this.getHistoryForFile(file);
+			if (!newEntry.created_at) {
+				newEntry.created_at = new Date();
 			}
-			this.history[file.path].push(newEntry);
+			if (!newEntry.notePath) {
+				newEntry.notePath = file.path;
+			}
+			return await this.plugin.database.conversations.add(newEntry);
 		}
 	}
 
 	async getHistoryForFile(file: TFile) {
 		if (this.plugin.gfile.isFile(file)) {
-			if (!this.history[file.path]) {
-				this.history[file.path] = [];
-			}
-			return this.history[file.path];
-		} else {
-			return null;
+			const notePath = file.path;
+			return await this.plugin.database.conversations.where('notePath').equals(notePath).toArray();
 		}
 	}
 
 	async clearHistoryForFile(file: TFile) {
 		if (this.plugin.gfile.isFile(file)) {
-			delete this.history[file.path];
+			const notePath = file.path;
+			return await this.plugin.database.conversations.where('notePath').equals(notePath).delete();
 		}
 	}
 
 	async clearAllHistory() {
-		this.history = {};
+		return await this.plugin.database.conversations.clear();
 	}
 
-	async appendHistory(newEntry: HistoryEntry) {
+	async appendHistory(newEntry: GeminiConversationEntry) {
 		const activeFile = this.plugin.app.workspace.getActiveFile();
 		if (activeFile) {
 			await this.appendHistoryForFile(activeFile, newEntry);

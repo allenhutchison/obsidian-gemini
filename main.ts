@@ -39,14 +39,18 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 
 export default class ObsidianGemini extends Plugin {
     settings: ObsidianGeminiSettings;
+
+    // Public members
     public geminiApi: GeminiApi;
-    private summarizer: GeminiSummary;
     public gfile: GeminiFile;
     public geminiView: GeminiView;
     public history: GeminiHistory;
+    public database: GeminiDatabase;
+
+    // Private members
+    private summarizer: GeminiSummary;
     private ribbonIcon: HTMLElement;
     private completions: GeminiCompletions;
-    private database: GeminiDatabase;
 
     async onload() {
         await this.loadSettings();
@@ -65,8 +69,7 @@ export default class ObsidianGemini extends Plugin {
 
         // Initialize database
         this.database = new GeminiDatabase();
-        const conversations = await this.database.getAllConversations();
-        console.log('Persisted Conversations:', conversations);
+
 
         // Add ribbon icon
         this.ribbonIcon = this.addRibbonIcon(

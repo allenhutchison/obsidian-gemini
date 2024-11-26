@@ -27,12 +27,9 @@ export class GeminiFile {
 		const activeFile = this.getActiveFile();
 		if (activeFile) {
 			// Use processFrontMatter to add or update the summary in the frontmatter
-			this.plugin.app.fileManager.processFrontMatter(
-				activeFile,
-				(frontmatter) => {
-					frontmatter[key] = value;
-				}
-			);
+			this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter) => {
+				frontmatter[key] = value;
+			});
 		}
 	}
 
@@ -48,7 +45,6 @@ export class GeminiFile {
 	getActiveFile(): TFile | null {
 		const activeFile = this.plugin.app.workspace.getActiveFile();
 		if (this.isFile(activeFile)) {
-			console.debug('Active file:', activeFile);
 			return activeFile;
 		} else {
 			console.debug('No active file found.');
