@@ -103,7 +103,7 @@ export default class ObsidianGemini extends Plugin {
         if (leaves.length > 0) {
             // A leaf with our view already exists, use that
             leaf = leaves[0];
-            workspace.revealLeaf(leaf);
+            await workspace.revealLeaf(leaf);
         } else {
             // Our view could not be found in the workspace, create a new leaf
             // in the right sidebar for it
@@ -111,7 +111,7 @@ export default class ObsidianGemini extends Plugin {
             if (leaf) {
                 await leaf.setViewState({ type: VIEW_TYPE_GEMINI, active: true });
                 // "Reveal" the leaf in case it is in a collapsed sidebar
-                workspace.revealLeaf(leaf);
+                await workspace.revealLeaf(leaf);
             } else {
                 console.error('Could not find a leaf to open the view');
             }
