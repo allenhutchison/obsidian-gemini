@@ -1,6 +1,6 @@
 import ObsidianGemini from '../main';
 import { GeminiPrompts } from './prompts';
-import { ModelRequest } from './api';
+import { BaseModelRequest } from './api';
 
 export class GeminiSummary {
 	private plugin: ObsidianGemini;
@@ -14,7 +14,7 @@ export class GeminiSummary {
 	async summarizeActiveFile() {
 		const fileContent = await this.plugin.gfile.getCurrentFileContent(0, true);
 		if (fileContent) {
-			let request: ModelRequest = {
+			let request: BaseModelRequest = {
 				model: this.plugin.settings.summaryModelName,
 				prompt: this.prompts.summaryPrompt({ content: fileContent }),
 			};
@@ -31,7 +31,7 @@ export class GeminiSummary {
 
 	async setupSummarizaitonCommand() {
 		this.plugin.addCommand({
-			id: 'summarize-active-file',
+			id: 'gemini-scribe-summarize-active-file',
 			name: 'Summarize Active File',
 			callback: () => this.summarizeActiveFile(),
 		});

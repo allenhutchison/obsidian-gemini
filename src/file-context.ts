@@ -20,11 +20,7 @@ export class FileContextTree {
 		this.maxDepth = depth ?? this.plugin.settings.maxContextDepth;
 	}
 
-	async buildStructure(
-		file: TFile,
-		currentDepth: number = 0,
-		renderContent: boolean
-	): Promise<FileContextNode | null> {
+	async buildStructure(file: TFile, currentDepth: number = 0, renderContent: boolean): Promise<FileContextNode | null> {
 		if (!file || currentDepth > this.maxDepth) {
 			return null;
 		}
@@ -47,16 +43,9 @@ export class FileContextTree {
 
 		// Process each link
 		for (const link of allLinks) {
-			const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(
-				link.link,
-				file.path
-			);
+			const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(link.link, file.path);
 			if (linkedFile && linkedFile instanceof TFile) {
-				const linkedNode = await this.buildStructure(
-					linkedFile,
-					currentDepth + 1,
-					renderContent
-				);
+				const linkedNode = await this.buildStructure(linkedFile, currentDepth + 1, renderContent);
 				if (linkedNode) {
 					node.links.set(linkedFile.path, linkedNode);
 				}
@@ -89,14 +78,10 @@ export class FileContextTree {
 		// Truncate content if too long
 		const truncatedContent =
 			node.content.length > maxCharsPerFile
-				? node.content.substring(0, maxCharsPerFile) +
-					'\n[Remaining content truncated...]'
+				? node.content.substring(0, maxCharsPerFile) + '\n[Remaining content truncated...]'
 				: node.content;
 
-		let result =
-			depth == 0
-				? 'This is the content of the current file and the files that it links to:'
-				: separator;
+		let result = depth == 0 ? 'This is the content of the current file and the files that it links to:' : separator;
 		const fileLabel = depth == 0 ? 'Current File:' : 'Linked File:';
 		result += `${indent}${fileLabel} ${node.path}${separator}${truncatedContent}${separator}`;
 		let total = currentTotal + result.length;
@@ -109,12 +94,7 @@ export class FileContextTree {
 					result += `${indent}[Additional links truncated...]\n`;
 					break;
 				}
-				const linkedResult = this.nodeToString(
-					linkedNode,
-					depth + 1,
-					maxCharsPerFile,
-					total
-				);
+				const linkedResult = this.nodeToString(linkedNode, depth + 1, maxCharsPerFile, total);
 				result += linkedResult.text;
 				total = linkedResult.total;
 			}
@@ -127,13 +107,7 @@ export class FileContextTree {
 		const fileContent = (await this.plugin.app.vault.read(file)) || '';
 		if (render) {
 			const el = document.createElement('div');
-			await MarkdownRenderer.render(
-				this.plugin.app,
-				fileContent,
-				el,
-				file.path,
-				this.plugin
-			);
+			await MarkdownRenderer.render(this.plugin.app, fileContent, el, file.path, this.plugin);
 			return el.innerHTML;
 		} else {
 			return fileContent;

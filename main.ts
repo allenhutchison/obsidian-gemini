@@ -45,7 +45,7 @@ export default class ObsidianGemini extends Plugin {
     public geminiView: GeminiView;
     public history: GeminiHistory;
     private ribbonIcon: HTMLElement;
-    private completions: GeminiCompletions; // Add this
+    private completions: GeminiCompletions;
 
     async onload() {
         await this.loadSettings();
@@ -77,7 +77,7 @@ export default class ObsidianGemini extends Plugin {
         );
 
         this.addCommand({
-            id: 'open-gemini-view',
+            id: 'gemini-scribe-open-view',
             name: 'Open Gemini Chat',
             callback: () => this.activateView()
         });
@@ -94,6 +94,7 @@ export default class ObsidianGemini extends Plugin {
         if (leaves.length > 0) {
             // A leaf with our view already exists, use that
             leaf = leaves[0];
+            workspace.revealLeaf(leaf);
         } else {
             // Our view could not be found in the workspace, create a new leaf
             // in the right sidebar for it

@@ -1,17 +1,12 @@
 import ObsidianGemini from '../main';
-import {
-	ItemView,
-	Notice,
-	WorkspaceLeaf,
-	MarkdownRenderer,
-	TFile,
-	setIcon,
-} from 'obsidian';
+import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
+import { ModelRewriteMode } from './rewrite';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
 export class GeminiView extends ItemView {
 	private plugin: ObsidianGemini;
+	private rewriteMode: ModelRewriteMode;
 	private chatbox: HTMLDivElement;
 	private currentFile: TFile | null;
 	private observer: MutationObserver;
@@ -31,6 +26,10 @@ export class GeminiView extends ItemView {
 
 	getDisplayText() {
 		return 'Gemini Scribe';
+	}
+
+	getIcon() {
+		return 'sparkles';
 	}
 
 	async onOpen() {
@@ -124,10 +123,7 @@ export class GeminiView extends ItemView {
 		this.observer.disconnect();
 	}
 
-	async displayMessage(
-		message: string,
-		sender: 'user' | 'model' | 'grounding'
-	) {
+	async displayMessage(message: string, sender: 'user' | 'model' | 'grounding') {
 		const newMessageContainer = this.chatbox.createDiv({
 			cls: `gemini-scribe-message-container ${sender}`,
 		});
@@ -157,13 +153,7 @@ export class GeminiView extends ItemView {
 			newMessage.innerHTML = message;
 		} else {
 			const sourcePath = this.plugin.gfile.getActiveFile()?.path ?? '';
-			await MarkdownRenderer.render(
-				this.app,
-				message,
-				newMessage,
-				sourcePath,
-				this
-			);
+			await MarkdownRenderer.render(this.app, message, newMessage, sourcePath, this);
 		}
 
 		// Add a copy button to the message if it was sent by the model.
@@ -180,9 +170,7 @@ export class GeminiView extends ItemView {
 						new Notice('Message copied to clipboard.');
 					})
 					.catch((err) => {
-						new Notice(
-							'Could not copy message to clipboard. Try selecting and copying manually.'
-						);
+						new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
 						console.error('Failed to copy: ', err);
 					});
 			});
@@ -209,9 +197,7 @@ export class GeminiView extends ItemView {
 	}
 
 	async reloadChatFromHistory() {
-		const history = await this.plugin.history.getHistoryForFile(
-			this.currentFile!
-		);
+		const history = await this.plugin.history.getHistoryForFile(this.currentFile!);
 		if (history) {
 			history.forEach((entry) => {
 				this.displayMessage(entry.content, entry.role);
@@ -222,23 +208,13 @@ export class GeminiView extends ItemView {
 	async sendMessage(userMessage: string) {
 		if (userMessage.trim() !== '') {
 			if (this.shoudRewriteFile) {
-				const history =
-					(await this.plugin.history.getHistoryForFile(this.currentFile!)) ??
-					[];
-				await this.plugin.geminiApi.generateRewriteResponse(
-					userMessage,
-					history
-				);
+				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
+				await this.rewriteMode.generateRewriteResponse(userMessage, history);
 				return;
 			}
 			try {
-				const history =
-					(await this.plugin.history.getHistoryForFile(this.currentFile!)) ??
-					[];
-				const botResponse = await this.plugin.geminiApi.getBotResponse(
-					userMessage,
-					history
-				);
+				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
+				const botResponse = await this.plugin.geminiApi.getBotResponse(userMessage, history);
 				this.plugin.history.appendHistoryForFile(this.currentFile!, {
 					role: 'user',
 					content: userMessage,
@@ -260,9 +236,7 @@ export class GeminiView extends ItemView {
 
 	private scrollToBottom() {
 		const tryScroll = () => {
-			const inputArea = this.containerEl.querySelector(
-				'.gemini-scribe-input-area'
-			);
+			const inputArea = this.containerEl.querySelector('.gemini-scribe-input-area');
 			if (inputArea) {
 				inputArea.scrollIntoView({
 					behavior: 'smooth',

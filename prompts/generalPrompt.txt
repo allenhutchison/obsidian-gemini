@@ -9,5 +9,3 @@ clearly indicate when you are drawing on general knowledge or external informati
 
 Your responses should be plain text. Use markdown only if it aids clarity or 
 organization in your response.
-
-{{userMessage}}

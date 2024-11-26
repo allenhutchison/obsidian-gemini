@@ -1,10 +1,7 @@
 import ObsidianGemini from '../main';
-import { MarkdownView, Editor, debounce, Notice } from 'obsidian';
-import {
-	forceableInlineSuggestion,
-	Suggestion,
-} from 'codemirror-companion-extension';
-import { ModelRequest } from './api';
+import { MarkdownView, debounce, Notice } from 'obsidian';
+import { forceableInlineSuggestion, Suggestion } from 'codemirror-companion-extension';
+import { BaseModelRequest } from './api';
 import { GeminiPrompts } from './prompts';
 
 export class GeminiCompletions {
@@ -18,11 +15,7 @@ export class GeminiCompletions {
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts();
-		this.debouncedComplete = debounce(
-			() => this.force_fetch(),
-			this.TYPING_DELAY,
-			true
-		);
+		this.debouncedComplete = debounce(() => this.force_fetch(), this.TYPING_DELAY, true);
 	}
 
 	async *complete(): AsyncGenerator<Suggestion> {
@@ -43,10 +36,7 @@ export class GeminiCompletions {
 			line: editor.lastLine(),
 			ch: editor.getLine(editor.lastLine()).length,
 		});
-		const suggestion = await this.generateNextSentence(
-			contentBeforeCursor,
-			contentAfterCursor
-		);
+		const suggestion = await this.generateNextSentence(contentBeforeCursor, contentAfterCursor);
 
 		// Add space to suggestion if needed
 		const finalSuggestion = needsSpace ? ' ' + suggestion : suggestion;
@@ -57,11 +47,8 @@ export class GeminiCompletions {
 		};
 	}
 
-	async generateNextSentence(
-		contentBeforeCursor: string,
-		contentAfterCursor: string
-	): Promise<string> {
-		let request: ModelRequest = {
+	async generateNextSentence(contentBeforeCursor: string, contentAfterCursor: string): Promise<string> {
+		let request: BaseModelRequest = {
 			model: this.plugin.settings.completionsModelName,
 			prompt: this.prompts.completionsPrompt({
 				contentBeforeCursor: contentBeforeCursor,
@@ -79,23 +66,28 @@ export class GeminiCompletions {
 		this.force_fetch = force_fetch;
 		// registerEditorExtension will handle unloading the extension when the plugin is disabled
 		this.plugin.registerEditorExtension(extension);
-		console.debug('Gemini completions initialized.');
 	}
 
 	async setupCompletionsCommands() {
-		this.plugin.addCommand({
-			id: 'toggle-completions',
-			name: 'Toggle completions',
-			editorCallback: () => {
-				this.completionsOn = !this.completionsOn; // Toggle the boolean
-				new Notice(
-					`Gemini Scribe Completions are now ${this.completionsOn ? 'enabled' : 'disabled'}.`
-				);
-
-				if (this.completionsOn) {
-					this.force_fetch(); // Trigger completions if enabled
+		try {
+			console.debug("Setting up completion commands...");
+			
+			this.plugin.addCommand({
+				id: 'gemini-scribe-toggle-completions', // Add plugin prefix
+				name: 'Toggle completions',
+				callback: () => {  // Use callback instead of editorCallback
+					console.debug("Toggle completions command triggered");
+					this.completionsOn = !this.completionsOn;
+					new Notice(`Gemini Scribe Completions are now ${this.completionsOn ? 'enabled' : 'disabled'}.`);
+					if (this.completionsOn) {
+						this.force_fetch();
+					}
 				}
-			},
-		});
+			});
+			
+			console.debug("Completion commands registered successfully");
+		} catch (error) {
+			console.error("Error setting up completion commands:", error);
+		}
 	}
 }

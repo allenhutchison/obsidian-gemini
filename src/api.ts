@@ -1,21 +1,36 @@
 import ObsidianGemini from '../main';
-import {
-	DynamicRetrievalMode,
-	GenerativeModel,
-	GoogleGenerativeAI,
-} from '@google/generative-ai';
+import { DynamicRetrievalMode, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiPrompts } from './prompts';
+import { Notice } from 'obsidian';
 
 export interface ModelResponse {
 	markdown: string;
 	rendered: string;
 }
 
-export interface ModelRequest {
-	model?: string | null;
-	prompt?: string | null;
-	conversationHistory?: any[] | null;
-	userMessage?: string | null;
+/**
+ * Represents a request to a base model.
+ *
+ * @property {string} [model] - The optional model identifier. If not provided, the default chatModel will be used.
+ * @property {string} prompt - The prompt or input text for the model. Should be fully processed with all variable substitutions complete.
+ */
+export interface BaseModelRequest {
+	model?: string;
+	prompt: string;
+}
+
+/**
+ * Represents an extended model request that includes conversation history and a user message.
+ *
+ * @extends BaseModelRequest
+ *
+ * @property {any[]} conversationHistory - An array representing the history of the conversation.
+ * @property {string} userMessage - The message from the user.
+ */
+export interface ExtendedModelRequest extends BaseModelRequest {
+	conversationHistory: any[];
+	userMessage: string;
+	renderContent?: boolean;
 }
 
 export class GeminiApi {
@@ -56,23 +71,17 @@ export class GeminiApi {
 		});
 	}
 
-	async getBotResponse(
-		userMessage: string,
-		conversationHistory: any[]
-	): Promise<ModelResponse> {
+	async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<ModelResponse> {
 		let response: ModelResponse = { markdown: '', rendered: '' };
 		// TODO(adh): I don't really need to repeat the general prompt for every message.
 		const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
 
 		try {
-			const contents = await this.buildContents(prompt, conversationHistory);
+			const contents = await this.buildContents(prompt, userMessage, conversationHistory);
 			const result = await this.model.generateContent({ contents });
 			response.markdown = result.response.text();
-			if (
-				result.response.candidates?.[0]?.groundingMetadata?.searchEntryPoint
-			) {
-				response.rendered =
-					result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
+			if (result.response.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
+				response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
 			}
 			return response;
 		} catch (error) {
@@ -81,25 +90,8 @@ export class GeminiApi {
 		}
 	}
 
-	async generateRewriteResponse(
-		userMessage: string,
-		conversationHistory: any[]
-	) {
-		const prompt = this.prompts.rewritePrompt({ userMessage: userMessage });
-		const contents = await this.buildContents(prompt, conversationHistory);
-		await this.plugin.history.appendHistory({
-			role: 'user',
-			content: userMessage,
-		});
-		const result = await this.modelNoGrounding.generateContent({ contents });
-		await this.plugin.gfile.replaceTextInActiveFile(result.response.text());
-	}
-
-	async generateModelResponse(request: ModelRequest): Promise<ModelResponse> {
-		let response: ModelResponse = { markdown: '', rendered: '' };
-		const modelToUse = request.model
-			? request.model
-			: this.plugin.settings.chatModelName;
+	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
+		const modelToUse = request.model ?? this.plugin.settings.chatModelName;
 		const modelInstance = this.gemini.getGenerativeModel({
 			model: modelToUse,
 			systemInstruction: this.prompts.systemPrompt({
@@ -109,54 +101,73 @@ export class GeminiApi {
 
 		if (!request.prompt) {
 			throw new Error('No prompt provided to generateModelResponse.');
-		} else {
-			try {
+		}
+
+		let response: ModelResponse = { markdown: '', rendered: '' };
+		try {
+			if ('conversationHistory' in request) {
+				// Extended case with history
+				const contents = await this.buildContents(
+					request.prompt,
+					request.userMessage,
+					request.conversationHistory,
+					true
+				);
+				const result = await modelInstance.generateContent({ contents });
+				response.markdown = result.response.text();
+			} else {
+				// Base case - just prompt
 				const result = await modelInstance.generateContent(request.prompt);
 				response.markdown = result.response.text();
-			} catch (error) {
-				console.error('Error calling Gemini:', error);
-				new Notification('Error calling Gemini.');
-				throw error;
 			}
+		} catch (error) {
+			console.error('Error calling Gemini:', error);
+			new Notice('Error calling Gemini.');
+			throw error;
 		}
+
 		return response;
 	}
 
 	private async buildContents(
+		prompt: string,
 		userMessage: string,
 		conversationHistory: any[],
 		renderContent: boolean = false
 	): Promise<any[]> {
 		const contents = [];
-		// TODO(adh): This should be cached so it doesn't have to be recomputed every time we call the model.
-		const fileContent = await this.plugin.gfile.getCurrentFileContent();
-		const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
-		if (fileContent != null) {
-			contents.push({
-				role: 'user',
-				parts: [{ text: fileContent }],
-			});
+
+		// First push the base prompt on the stack.
+		if (prompt != null) {
+			contents.push(this.buildContentElement('user', prompt));
 		}
+		// Then push the current date
+		const date = this.prompts.datePrompt({ date: new Date().toDateString() });
+		contents.push(this.buildContentElement('user', date));
+
+		// Then push the file context.
+		const depth = this.plugin.settings.maxContextDepth;
+		const fileContent = await this.plugin.gfile.getCurrentFileContent(depth, renderContent);
+		if (fileContent != null) {
+			contents.push(this.buildContentElement('user', fileContent));
+		}
+
+		// Now the entire conversation history.
 		conversationHistory.forEach((entry) => {
-			contents.push({
-				role: entry.role,
-				parts: [{ text: entry.content }],
-			});
+			contents.push(this.buildContentElement(entry.role, entry.content));
 		});
 
-		contents.push({
-			role: 'user',
-			parts: [
-				{
-					text: `Today's Date is ${new Date().toDateString()}, and the time is ${new Date().toLocaleTimeString()}.`,
-				},
-			],
-		});
-		contents.push({
-			role: 'user',
-			parts: [{ text: userMessage }],
-		});
+		// Now the time
+		const time = this.prompts.timePrompt({ time: new Date().toLocaleTimeString() });
+		contents.push(this.buildContentElement('user', time));
 
+		// Finally, the latest user message.
+		contents.push(this.buildContentElement('user', userMessage));
 		return contents;
+	}
+
+	private buildContentElement(role: string, text: string) {
+		const element = [{ role: role, parts: [{ text: text }] }];
+		return element;
 	}
 }
