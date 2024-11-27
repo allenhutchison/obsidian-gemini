@@ -74,7 +74,6 @@ export class GeminiCompletions {
 				id: 'gemini-scribe-toggle-completions', // Add plugin prefix
 				name: 'Toggle completions',
 				callback: () => {  // Use callback instead of editorCallback
-					console.debug("Toggle completions command triggered");
 					this.completionsOn = !this.completionsOn;
 					new Notice(`Gemini Scribe Completions are now ${this.completionsOn ? 'enabled' : 'disabled'}.`);
 					if (this.completionsOn) {
