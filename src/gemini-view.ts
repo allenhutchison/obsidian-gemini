@@ -115,13 +115,13 @@ export class GeminiView extends ItemView {
 		});
 
 		this.currentFile = this.plugin.gfile.getActiveFile();
+		this.handleFileOpen(this.currentFile);
 		this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
-		this.app.workspace.on('active-leaf-change', this.handleFileOpen.bind(this));
 	}
 
 	async onClose() {
+		this.plugin.database.exportDatabaseToMarkdown(this.plugin.database.conversations);
 		this.app.workspace.off('file-open', this.handleFileOpen);
-		this.app.workspace.off('active-leaf-change', this.handleFileOpen);
 		this.observer.disconnect();
 	}
 
