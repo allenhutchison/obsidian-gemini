@@ -108,8 +108,9 @@ export class GeminiDatabase extends Dexie {
         if (!(noteFile instanceof TFile)) {
             throw new Error(`Note file not found: ${notePath}`);
         } else {
+            const noteKey = this.plugin.settings.historyFrontmatterKey;
             const noteLink = this.plugin.app.metadataCache.fileToLinktext(noteFile, filePath);
-            const frontmatter = `---\nnotePath: "[[${noteLink}]]"\n---\n\n`;
+            const frontmatter = `---\n${noteKey}: "[[${noteLink}]]"\n---\n\n`;
             const body = messages
                 .map(
                     (msg) =>
@@ -153,8 +154,9 @@ export class GeminiDatabase extends Dexie {
         const frontmatterMatch = content.match(/---\n([\s\S]*?)\n---/);
         let notePath: string | null = null;
         if (frontmatterMatch) {
+            const frontmatterKey = this.plugin.settings.historyFrontmatterKey;
             const frontmatter = frontmatterMatch[1];
-            const match = frontmatter.match(/notePath:\s*"\[\[(.+)\]\]"/);
+            const match = frontmatter.match(new RegExp(`${frontmatterKey}:\\s*"\\[\\[(.+)\\]\\]"`));
             if (match) {
                 notePath = match[1].trim();
                 const vaultPath = (await this.getVaultFolder()).path;
@@ -209,11 +211,12 @@ export class GeminiDatabase extends Dexie {
     }
 
     async getVaultFolder(): Promise<TFolder> {
-        let folder = this.plugin.app.vault.getAbstractFileByPath('gemini-scribe');
+        const folderName = this.plugin.settings.historyFolder;
+        let folder = this.plugin.app.vault.getAbstractFileByPath(folderName);
         if (folder instanceof TFolder) {
             return folder;
         } else {
-            return await this.plugin.app.vault.createFolder('gemini-scribe');
+            return await this.plugin.app.vault.createFolder(folderName);
         }
     }
 }

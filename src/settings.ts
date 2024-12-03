@@ -145,5 +145,31 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+		
+		new Setting(containerEl)
+			.setName('History Frontmatter Key')
+			.setDesc('This key will be used to store the path to the file from the history file.')
+			.addText((text) =>
+				text
+					.setPlaceholder('Enter your key')
+					.setValue(this.plugin.settings.historyFrontmatterKey)
+					.onChange(async (value) => {
+						this.plugin.settings.historyFrontmatterKey = value;
+						await this.plugin.saveSettings();
+					})
+			);
+		
+		new Setting(containerEl)
+			.setName('History Folder')
+			.setDesc('The folder where history files will be stored.')
+			.addText((text) =>
+				text
+					.setPlaceholder('Enter the folder name')
+					.setValue(this.plugin.settings.historyFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.historyFolder = value;
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }

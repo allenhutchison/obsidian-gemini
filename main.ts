@@ -20,6 +20,8 @@ export interface ObsidianGeminiSettings {
     summaryFrontmatterKey: string;
     userName: string;
     rewriteFiles: boolean;
+    historyFrontmatterKey: string;
+    historyFolder: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -34,6 +36,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     summaryFrontmatterKey: 'summary',
     userName: 'User',
     rewriteFiles: false,
+    historyFrontmatterKey: 'gemini-scribe-history-path',
+    historyFolder: 'gemini-scribe',
 };
 
 
