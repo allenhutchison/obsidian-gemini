@@ -120,7 +120,7 @@ export class GeminiView extends ItemView {
 	}
 
 	async onClose() {
-		this.plugin.database.exportDatabaseToVault(this.plugin.database.conversations);
+		this.plugin.history.exportHistory();
 		this.app.workspace.off('file-open', this.handleFileOpen);
 		this.observer.disconnect();
 	}

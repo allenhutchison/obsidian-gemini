@@ -42,11 +42,25 @@ export class GeminiHistory {
     }
 
 	async setupHistory() {
-		return await this.database.setupDatabase();
+		this.plugin.app.vault.on('rename', this.renameHistoryFile.bind(this));
+		await this.database.setupDatabase();
 	}
 
 	async onLayoutReady() {
 		await this.database.setupDatabase();
+	}
+
+	async onUnload() {
+		this.plugin.app.vault.off('rename', this.renameHistoryFile.bind(this));
+		this.exportHistory();
+	}
+
+	async renameHistoryFile(file: TFile, oldPath: string) {
+		const newPath = file.path;
+		console.debug('Renaming history file:', oldPath, '->', newPath);
+		await this.database.conversations.where('notePath').equals(oldPath).modify({ notePath: newPath });
+		await this.database.fileMapping.where('notePath').equals(oldPath).modify({ notePath: newPath });
+		await this.exportHistory();
 	}
 
 	async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {

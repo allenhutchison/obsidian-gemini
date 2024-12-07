@@ -98,8 +98,8 @@ export default class ObsidianGemini extends Plugin {
     }
 
     async onLayoutReady() {
-        // This avoids a race condition where the folder is not yet available
-        // when the plugin is loaded on application start.
+        // This avoids a race condition where the history export folder is not 
+        // yet available when the plugin is loaded on application start.
         await this.history.onLayoutReady();
     }
 
@@ -143,6 +143,6 @@ export default class ObsidianGemini extends Plugin {
     // Optional: Clean up ribbon icon on unload
     onunload() {
         this.ribbonIcon?.remove();
-        this.history.exportHistory();
+        this.history.onUnload();
     }
 }
