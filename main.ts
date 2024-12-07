@@ -61,9 +61,9 @@ export default class ObsidianGemini extends Plugin {
         this.gfile = new GeminiFile(this);
 
         // Initialize history
+        // However, some of the history setup is dependent on the layout being ready
         this.history = new GeminiHistory(this);
         await this.history.setupHistoryCommands();
-        await this.history.setupHistory();
 
         // Initialize completions
         this.completions = new GeminiCompletions(this);
@@ -95,12 +95,8 @@ export default class ObsidianGemini extends Plugin {
         });
 
         this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
-    }
 
-    async onLayoutReady() {
-        // This avoids a race condition where the history export folder is not 
-        // yet available when the plugin is loaded on application start.
-        await this.history.onLayoutReady();
+        this.app.workspace.onLayoutReady(() => this.onLayoutReady());
     }
 
     async activateView() {
@@ -127,6 +123,10 @@ export default class ObsidianGemini extends Plugin {
         }
     }
 
+    async onLayoutReady() {
+        await this.history.onLayoutReady();
+    }
+
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     }
@@ -142,6 +142,7 @@ export default class ObsidianGemini extends Plugin {
 
     // Optional: Clean up ribbon icon on unload
     onunload() {
+        console.debug('Unloading Gemini Scribe');
         this.ribbonIcon?.remove();
         this.history.onUnload();
     }

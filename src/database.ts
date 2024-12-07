@@ -34,7 +34,6 @@ export class GeminiDatabase extends Dexie {
     conversations!: Table<GeminiConversationEntry, number>;
     fileMapping!: Table<GeminiHistoryFileMapping, string>;
     private plugin: ObsidianGemini;
-    private vaultFolder: TFolder;
 
     constructor(plugin: ObsidianGemini) {
         super('GeminiDatabase');
@@ -47,7 +46,6 @@ export class GeminiDatabase extends Dexie {
 
     async setupDatabase() {
         console.debug('Setting up history database');
-        this.vaultFolder = await this.getVaultFolder();
         await this.clearHistory();
         await this.importDatabaseFromVault(this.conversations);
     }
@@ -124,7 +122,7 @@ export class GeminiDatabase extends Dexie {
     }
 
     async importDatabaseFromVault(db: Dexie.Table<GeminiConversationEntry, any>): Promise<void> {
-        const folder = await this.getVaultFolder();
+        const folder = await this.getVaultFolder()
         const files = folder.children;
         
         if (!files) return;
@@ -163,7 +161,12 @@ export class GeminiDatabase extends Dexie {
         if (folder instanceof TFolder) {
             return folder;
         } else {
-            return await this.plugin.app.vault.createFolder(folderName);
+            try {
+                return await this.plugin.app.vault.createFolder(folderName);
+            } catch (error) {
+                console.error(`Failed to create folder ${folderName}:`, error);
+                throw error;
+            }
         }
     }
 }

@@ -121,7 +121,7 @@ export class GeminiView extends ItemView {
 
 	async onClose() {
 		this.plugin.history.exportHistory();
-		this.app.workspace.off('file-open', this.handleFileOpen);
+		this.app.workspace.off('file-open', this.handleFileOpen.bind(this));
 		this.observer.disconnect();
 	}
 

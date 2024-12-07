@@ -41,12 +41,12 @@ export class GeminiHistory {
         }
     }
 
-	async setupHistory() {
-		this.plugin.app.vault.on('rename', this.renameHistoryFile.bind(this));
-		await this.database.setupDatabase();
+	async onLayoutReady() {
+		this.setupHistory();
 	}
 
-	async onLayoutReady() {
+	async setupHistory() {
+		this.plugin.app.vault.on('rename', this.renameHistoryFile.bind(this));
 		await this.database.setupDatabase();
 	}
 
@@ -58,22 +58,27 @@ export class GeminiHistory {
 	async renameHistoryFile(file: TFile, oldPath: string) {
 		const newPath = file.path;
 		console.debug('Renaming history file:', oldPath, '->', newPath);
-		await this.database.conversations.where('notePath').equals(oldPath).modify({ notePath: newPath });
-		await this.database.fileMapping.where('notePath').equals(oldPath).modify({ notePath: newPath });
+		const conversationUpdate = await this.database.conversations
+			.where('notePath')
+			.equals(oldPath)
+			.modify({ notePath: newPath });
+		const fileMappingUpdate = await this.database.fileMapping
+			.where('notePath')
+			.equals(oldPath)
+			.modify({ notePath: newPath });
+		await Promise.all([conversationUpdate, fileMappingUpdate]);
 		await this.exportHistory();
 	}
 
 	async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {
-		console.debug('Appending history for file:', file.path);
 		if (this.plugin.gfile.isFile(file)) {
 			const extendedEntry: GeminiConversationEntry = {
 				...newEntry,
 				notePath: file.path,
 				created_at: new Date(),
 			}
-			const foo = await this.database.conversations.add(extendedEntry);
-			console.debug('New history entry:', foo);
-			return foo;
+			await this.database.conversations.add(extendedEntry);
+			this.exportHistory();
 		}
 	}
 
