@@ -57,7 +57,7 @@ export class GeminiHistory {
 				notePath: file.path,
 				created_at: new Date(),
 			}
-			const foo = await this.plugin.database.conversations.add(extendedEntry);
+			const foo = await this.database.conversations.add(extendedEntry);
 			console.debug('New history entry:', foo);
 			return foo;
 		}
@@ -66,7 +66,7 @@ export class GeminiHistory {
 	async getHistoryForFile(file: TFile) : Promise<GeminiConversationEntry[]> {
 		if (this.plugin.gfile.isFile(file)) {
 			const notePath = file.path;
-			const history = await this.plugin.database.conversations.where('notePath').equals(notePath).toArray();
+			const history = await this.database.conversations.where('notePath').equals(notePath).toArray();
 			return history;
 		} else {
 			return [];
@@ -76,7 +76,7 @@ export class GeminiHistory {
 	async clearHistoryForFile(file: TFile) : Promise<number | undefined> {
 		if (this.plugin.gfile.isFile(file)) {
 			const notePath = file.path;
-			return await this.plugin.database.conversations.where('notePath').equals(notePath).delete();
+			return await this.database.conversations.where('notePath').equals(notePath).delete();
 		}
 		return undefined;
 	}
