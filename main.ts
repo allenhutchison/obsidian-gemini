@@ -37,7 +37,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     userName: 'User',
     rewriteFiles: false,
     historyFrontmatterKey: 'gemini-scribe-history-path',
-    historyFolder: 'gemini-scribe',
+    historyFolder: 'Attachments/gemini-scribe',
 };
 
 
