@@ -57,16 +57,11 @@ export class GeminiHistory {
 
 	async renameHistoryFile(file: TFile, oldPath: string) {
 		const newPath = file.path;
-		console.debug('Renaming history file:', oldPath, '->', newPath);
 		const conversationUpdate = await this.database.conversations
 			.where('notePath')
 			.equals(oldPath)
 			.modify({ notePath: newPath });
-		const fileMappingUpdate = await this.database.fileMapping
-			.where('notePath')
-			.equals(oldPath)
-			.modify({ notePath: newPath });
-		await Promise.all([conversationUpdate, fileMappingUpdate]);
+		await Promise.all([conversationUpdate]);
 		await this.exportHistory();
 	}
 
@@ -113,10 +108,10 @@ export class GeminiHistory {
 	}
 
 	async exportHistory() {
-		return await this.database.exportDatabaseToVault(this.database.conversations);
+		return await this.database.exportDatabaseToVault();
 	}
 
 	async importHistory() {
-		return await this.database.importDatabaseFromVault(this.database.conversations);
+		return await this.database.importDatabaseFromVault();
 	}
 }
