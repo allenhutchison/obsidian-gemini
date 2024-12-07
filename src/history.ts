@@ -1,12 +1,52 @@
 import ObsidianGemini from '../main';
 import { TFile } from 'obsidian';
-import { BasicGeminiConversationEntry, GeminiConversationEntry } from './database';
+import { BasicGeminiConversationEntry, GeminiConversationEntry, GeminiDatabase } from './database';
 
 export class GeminiHistory {
 	private plugin: ObsidianGemini;
+	private database: GeminiDatabase;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
+		this.database = new GeminiDatabase(plugin);
+	}
+
+	async setupHistoryCommands() {
+        try {
+            this.plugin.addCommand({
+                id: 'gemini-scribe-export-conversations',
+                name: 'Export Conversations to Vault',
+                callback: async () => {
+                    await this.exportHistory();
+                },
+            });
+
+            this.plugin.addCommand({
+                id: 'gemini-scribe-import-conversations',
+                name: 'Import Conversations from Vault',
+                callback: async () => {
+					await this.importHistory();
+                },
+            });
+
+            this.plugin.addCommand({
+                id: 'gemini-scribe-clear-conversations',
+                name: 'Clear All Conversations',
+                callback: async () => {
+					await this.clearHistory();
+                },
+            });
+        } catch (error) {
+            console.error('Failed to add export command', error);
+        }
+    }
+
+	async setupHistory() {
+		return await this.database.setupDatabase();
+	}
+
+	async onLayoutReady() {
+		await this.database.setupDatabase();
 	}
 
 	async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {
@@ -41,16 +81,23 @@ export class GeminiHistory {
 		return undefined;
 	}
 
-	async clearAllHistory() {
-		console.log('Clearing all conversation history.');
-		await this.plugin.database.conversations.clear();
-		await this.plugin.database.fileMapping.clear();
-	}
-
 	async appendHistory(newEntry: BasicGeminiConversationEntry) {
 		const activeFile = this.plugin.app.workspace.getActiveFile();
 		if (activeFile) {
 			await this.appendHistoryForFile(activeFile, newEntry);
 		}
+	}
+
+	async clearHistory() {
+		console.log('Clearing all conversation history.');
+		await this.database.clearHistory();
+	}
+
+	async exportHistory() {
+		return await this.database.exportDatabaseToVault(this.database.conversations);
+	}
+
+	async importHistory() {
+		return await this.database.importDatabaseFromVault(this.database.conversations);
 	}
 }

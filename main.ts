@@ -49,7 +49,6 @@ export default class ObsidianGemini extends Plugin {
     public gfile: GeminiFile;
     public geminiView: GeminiView;
     public history: GeminiHistory;
-    public database: GeminiDatabase;
 
     // Private members
     private summarizer: GeminiSummary;
@@ -60,7 +59,11 @@ export default class ObsidianGemini extends Plugin {
         await this.loadSettings();
         this.geminiApi = new GeminiApi(this);
         this.gfile = new GeminiFile(this);
+
+        // Initialize history
         this.history = new GeminiHistory(this);
+        await this.history.setupHistoryCommands();
+        await this.history.setupHistory();
 
         // Initialize completions
         this.completions = new GeminiCompletions(this);
@@ -70,13 +73,6 @@ export default class ObsidianGemini extends Plugin {
         // Initialize summarization
         this.summarizer = new GeminiSummary(this);
         await this.summarizer.setupSummarizaitonCommand();
-
-        // Initialize database
-        // The database setup command is called in onLayoutReady to avoid
-        // a race condition on startup.
-        this.database = new GeminiDatabase(this);
-        await this.database.setupDatabaseCommands();
-        await this.database.setupDatabase();
 
         // Add ribbon icon
         this.ribbonIcon = this.addRibbonIcon(
@@ -104,7 +100,7 @@ export default class ObsidianGemini extends Plugin {
     async onLayoutReady() {
         // This avoids a race condition where the folder is not yet available
         // when the plugin is loaded on application start.
-        await this.database.setupDatabase();
+        await this.history.onLayoutReady();
     }
 
     async activateView() {
@@ -147,6 +143,6 @@ export default class ObsidianGemini extends Plugin {
     // Optional: Clean up ribbon icon on unload
     onunload() {
         this.ribbonIcon?.remove();
-        this.database.exportDatabaseToVault(this.database.conversations);
+        this.history.exportHistory();
     }
 }

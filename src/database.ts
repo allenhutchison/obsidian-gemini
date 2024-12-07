@@ -46,41 +46,15 @@ export class GeminiDatabase extends Dexie {
     }
 
     async setupDatabase() {
-        console.debug('Setting up database');
+        console.debug('Setting up history database');
         this.vaultFolder = await this.getVaultFolder();
-        await this.conversations.clear();
-        await this.fileMapping.clear();
+        await this.clearHistory();
         await this.importDatabaseFromVault(this.conversations);
     }
 
-    async setupDatabaseCommands() {
-        try {
-            this.plugin.addCommand({
-                id: 'gemini-scribe-export-conversations',
-                name: 'Export Conversations to Vault',
-                callback: async () => {
-                    await this.exportDatabaseToVault(this.conversations);
-                },
-            });
-
-            this.plugin.addCommand({
-                id: 'gemini-scribe-import-conversations',
-                name: 'Import Conversations from Vault',
-                callback: async () => {
-                    await this.importDatabaseFromVault(this.conversations);
-                },
-            });
-
-            this.plugin.addCommand({
-                id: 'gemini-scribe-clear-conversations',
-                name: 'Clear All Conversations',
-                callback: async () => {
-                    await this.conversations.clear();
-                },
-            });
-        } catch (error) {
-            console.error('Failed to add export command', error);
-        }
+    async clearHistory() {
+        await this.conversations.clear();
+        await this.fileMapping.clear();
     }
 
     // Obsidian doesn't sync the database, so we need to export the conversations to the vault
