@@ -50,7 +50,7 @@ export class GeminiDatabase extends Dexie {
         this.vaultFolder = await this.getVaultFolder();
         await this.conversations.clear();
         await this.fileMapping.clear();
-        await this.importMarkdownToDatabase(this.conversations);
+        await this.importDatabaseFromVault(this.conversations);
     }
 
     async setupDatabaseCommands() {
@@ -59,7 +59,7 @@ export class GeminiDatabase extends Dexie {
                 id: 'gemini-scribe-export-conversations',
                 name: 'Export Conversations to Vault',
                 callback: async () => {
-                    await this.exportDatabaseToMarkdown(this.conversations);
+                    await this.exportDatabaseToVault(this.conversations);
                 },
             });
 
@@ -67,7 +67,7 @@ export class GeminiDatabase extends Dexie {
                 id: 'gemini-scribe-import-conversations',
                 name: 'Import Conversations from Vault',
                 callback: async () => {
-                    await this.importMarkdownToDatabase(this.conversations);
+                    await this.importDatabaseFromVault(this.conversations);
                 },
             });
 
@@ -84,7 +84,7 @@ export class GeminiDatabase extends Dexie {
     }
 
     // Obsidian doesn't sync the database, so we need to export the conversations to the vault
-    async exportDatabaseToMarkdown(db: Dexie.Table<GeminiConversationEntry, any>): Promise<void> {
+    async exportDatabaseToVault(db: Dexie.Table<GeminiConversationEntry, any>): Promise<void> {
         const conversations = await db.orderBy('notePath').toArray();
         const vaultPath = (await this.getVaultFolder()).path;
     
@@ -149,7 +149,7 @@ export class GeminiDatabase extends Dexie {
         ].join('\n');
     }
 
-    async importMarkdownToDatabase(db: Dexie.Table<GeminiConversationEntry, any>): Promise<void> {
+    async importDatabaseFromVault(db: Dexie.Table<GeminiConversationEntry, any>): Promise<void> {
         const folder = await this.getVaultFolder();
         const files = folder.children;
         

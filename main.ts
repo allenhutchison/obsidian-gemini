@@ -147,6 +147,6 @@ export default class ObsidianGemini extends Plugin {
     // Optional: Clean up ribbon icon on unload
     onunload() {
         this.ribbonIcon?.remove();
-        this.database.exportDatabaseToMarkdown(this.database.conversations);
+        this.database.exportDatabaseToVault(this.database.conversations);
     }
 }
