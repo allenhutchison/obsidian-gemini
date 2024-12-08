@@ -12,10 +12,13 @@ export class GeminiHistory {
 	}
 
 	async setupHistoryCommands() {
+		if (!this.plugin.settings.chatHistory) {
+			return;
+		}
         try {
             this.plugin.addCommand({
                 id: 'gemini-scribe-export-conversations',
-                name: 'Export Conversations to Vault',
+                name: 'Export Chat History to Vault',
                 callback: async () => {
                     await this.exportHistory();
                 },
@@ -23,7 +26,7 @@ export class GeminiHistory {
 
             this.plugin.addCommand({
                 id: 'gemini-scribe-import-conversations',
-                name: 'Import Conversations from Vault',
+                name: 'Import Chat History from Vault',
                 callback: async () => {
 					await this.importHistory();
                 },
@@ -31,7 +34,7 @@ export class GeminiHistory {
 
             this.plugin.addCommand({
                 id: 'gemini-scribe-clear-conversations',
-                name: 'Clear All Conversations',
+                name: 'Clear All Chat History',
                 callback: async () => {
 					await this.clearHistory();
                 },
@@ -103,15 +106,18 @@ export class GeminiHistory {
 	}
 
 	async clearHistory() {
-		console.log('Clearing all conversation history.');
 		await this.database.clearHistory();
 	}
 
 	async exportHistory() {
-		return await this.database.exportDatabaseToVault();
+		if (this.plugin.settings.chatHistory) {
+			return await this.database.exportDatabaseToVault();
+		}
 	}
 
 	async importHistory() {
-		return await this.database.importDatabaseFromVault();
+		if (this.plugin.settings.chatHistory) {
+			return await this.database.importDatabaseFromVault();
+		}
 	}
 }

@@ -6,7 +6,6 @@ import { GeminiApi } from './src/api';
 import { GeminiFile } from './src/files'
 import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
-import { GeminiDatabase } from './src/database';
 
 export interface ObsidianGeminiSettings {
     apiKey: string;
@@ -20,7 +19,7 @@ export interface ObsidianGeminiSettings {
     summaryFrontmatterKey: string;
     userName: string;
     rewriteFiles: boolean;
-    historyFrontmatterKey: string;
+    chatHistory: boolean;
     historyFolder: string;
 }
 
@@ -36,8 +35,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     summaryFrontmatterKey: 'summary',
     userName: 'User',
     rewriteFiles: false,
-    historyFrontmatterKey: 'gemini-scribe-history-path',
-    historyFolder: 'Attachments/gemini-scribe',
+    chatHistory: false,
+    historyFolder: 'gemini-scribe',
 };
 
 
