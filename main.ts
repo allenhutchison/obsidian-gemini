@@ -143,7 +143,7 @@ export default class ObsidianGemini extends Plugin {
     // Optional: Clean up ribbon icon on unload
     onunload() {
         console.debug('Unloading Gemini Scribe');
+        this.history?.onUnload();
         this.ribbonIcon?.remove();
-        this.history.onUnload();
     }
 }

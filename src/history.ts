@@ -54,11 +54,17 @@ export class GeminiHistory {
 		await this.database.setupDatabase();
 	}
 
-	async onUnload() {
+	onUnload() {
+		console.debug('Unloading history module...');
 		this.plugin.app.vault.off('rename', this.renameHistoryFile.bind(this));
 		this.plugin.app.vault.off('modify', this.modifyHistoryFile.bind(this));
-		this.exportHistory();
+		
+		// Fire and forget export
+		this.exportHistory()
+			.then(() => console.debug('History export complete'))
+			.catch(error => console.error('Error during history export:', error));
 	}
+	
 
 	async renameHistoryFile(file: TFile, oldPath: string) {
 		const newPath = file.path;
@@ -128,8 +134,6 @@ export class GeminiHistory {
 		const historyFolder = this.plugin.settings.historyFolder;
 		const filePath = `${historyFolder}/gemini-scribe-history.json`;
 		if (file.path === filePath) {
-			console.debug('History file modified, re-importing');
-			new Notice('Chat history file modified. Re-importing.');
 			await this.importHistory();
 		}
     }
