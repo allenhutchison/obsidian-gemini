@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { TFile } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import { BasicGeminiConversationEntry, GeminiConversationEntry, GeminiDatabase } from './database';
 
 export class GeminiHistory {
@@ -119,7 +119,8 @@ export class GeminiHistory {
 
 	async importHistory() {
 		if (this.plugin.settings.chatHistory) {
-			return await this.database.importDatabaseFromVault();
+			await this.database.importDatabaseFromVault();
+			await this.plugin.geminiView.reloadChatFromHistory();
 		}
 	}
 
@@ -128,6 +129,7 @@ export class GeminiHistory {
 		const filePath = `${historyFolder}/gemini-scribe-history.json`;
 		if (file.path === filePath) {
 			console.debug('History file modified, re-importing');
+			new Notice('Chat history file modified. Re-importing.');
 			await this.importHistory();
 		}
     }
