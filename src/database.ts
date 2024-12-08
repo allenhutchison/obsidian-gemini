@@ -26,6 +26,7 @@ interface DatabaseExport {
 export class GeminiDatabase extends Dexie {
     conversations!: Table<GeminiConversationEntry, number>;
     private plugin: ObsidianGemini;
+    private vaultFolder: TFolder;
 
     constructor(plugin: ObsidianGemini) {
         super('GeminiDatabase');
@@ -99,6 +100,7 @@ export class GeminiDatabase extends Dexie {
         const folderName = this.plugin.settings.historyFolder;
         let folder = this.plugin.app.vault.getAbstractFileByPath(folderName);
         if (folder instanceof TFolder) {
+            this.vaultFolder = folder;
             return folder;
         } else {
             try {

@@ -50,11 +50,13 @@ export class GeminiHistory {
 
 	async setupHistory() {
 		this.plugin.app.vault.on('rename', this.renameHistoryFile.bind(this));
+		this.plugin.app.vault.on('modify', this.modifyHistoryFile.bind(this));
 		await this.database.setupDatabase();
 	}
 
 	async onUnload() {
 		this.plugin.app.vault.off('rename', this.renameHistoryFile.bind(this));
+		this.plugin.app.vault.off('modify', this.modifyHistoryFile.bind(this));
 		this.exportHistory();
 	}
 
@@ -120,4 +122,13 @@ export class GeminiHistory {
 			return await this.database.importDatabaseFromVault();
 		}
 	}
+
+	async modifyHistoryFile(file: TFile) {
+		const historyFolder = this.plugin.settings.historyFolder;
+		const filePath = `${historyFolder}/gemini-scribe-history.json`;
+		if (file.path === filePath) {
+			console.debug('History file modified, re-importing');
+			await this.importHistory();
+		}
+    }
 }
