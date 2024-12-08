@@ -55,23 +55,7 @@ export default class ObsidianGemini extends Plugin {
     private completions: GeminiCompletions;
 
     async onload() {
-        await this.loadSettings();
-        this.geminiApi = new GeminiApi(this);
-        this.gfile = new GeminiFile(this);
-
-        // Initialize history
-        // However, some of the history setup is dependent on the layout being ready
-        this.history = new GeminiHistory(this);
-        await this.history.setupHistoryCommands();
-
-        // Initialize completions
-        this.completions = new GeminiCompletions(this);
-        await this.completions.setupCompletions();
-        await this.completions.setupCompletionsCommands();
-
-        // Initialize summarization
-        this.summarizer = new GeminiSummary(this);
-        await this.summarizer.setupSummarizaitonCommand();
+        await this.setupGeminiScribe();
 
         // Add ribbon icon
         this.ribbonIcon = this.addRibbonIcon(
@@ -96,6 +80,27 @@ export default class ObsidianGemini extends Plugin {
         this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
 
         this.app.workspace.onLayoutReady(() => this.onLayoutReady());
+    }
+
+    async setupGeminiScribe() {
+        await this.loadSettings();
+        this.geminiApi = new GeminiApi(this);
+        this.gfile = new GeminiFile(this);
+
+        // Initialize history
+        // However, some of the history setup is dependent on the layout being ready
+        this.history = new GeminiHistory(this);
+        await this.history.setupHistoryCommands();
+
+        // Initialize completions
+        this.completions = new GeminiCompletions(this);
+        await this.completions.setupCompletions();
+        await this.completions.setupCompletionsCommands();
+
+        // Initialize summarization
+        this.summarizer = new GeminiSummary(this);
+        await this.summarizer.setupSummarizaitonCommand();
+
     }
 
     async activateView() {
@@ -132,11 +137,7 @@ export default class ObsidianGemini extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
-        this.geminiApi = new GeminiApi(this);
-        this.summarizer = new GeminiSummary(this);
-        this.gfile = new GeminiFile(this);
-        this.history = new GeminiHistory(this);
-        this.completions = new GeminiCompletions(this);
+        await this.setupGeminiScribe();
     }
 
     // Optional: Clean up ribbon icon on unload
