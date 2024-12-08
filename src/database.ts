@@ -26,7 +26,6 @@ interface DatabaseExport {
 export class GeminiDatabase extends Dexie {
     conversations!: Table<GeminiConversationEntry, number>;
     private plugin: ObsidianGemini;
-    private vaultFolder: TFolder;
 
     constructor(plugin: ObsidianGemini) {
         super('GeminiDatabase');
@@ -46,6 +45,10 @@ export class GeminiDatabase extends Dexie {
     }
 
     async exportDatabaseToVault(): Promise<void> {
+        if (!this.plugin.settings.chatHistory) {
+            console.debug('Chat history disabled, skipping export');
+            return;
+        }
         const conversations = await this.conversations.orderBy('notePath').toArray();
         const vaultPath = (await this.getVaultFolder()).path;
 
@@ -73,6 +76,10 @@ export class GeminiDatabase extends Dexie {
     }
 
     async importDatabaseFromVault(): Promise<void> {
+        if (!this.plugin.settings.chatHistory) {
+            console.debug('Chat history disabled, skipping import');
+            return;
+        }
         try {
             const folder = await this.getVaultFolder();
             const filePath = `${folder.path}/gemini-scribe-history.json`;
@@ -100,7 +107,6 @@ export class GeminiDatabase extends Dexie {
         const folderName = this.plugin.settings.historyFolder;
         let folder = this.plugin.app.vault.getAbstractFileByPath(folderName);
         if (folder instanceof TFolder) {
-            this.vaultFolder = folder;
             return folder;
         } else {
             try {
