@@ -6,7 +6,6 @@ import { GeminiApi } from './src/api';
 import { GeminiFile } from './src/files'
 import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
-import { GeminiPrompts } from 'src/prompts';
 
 export interface ObsidianGeminiSettings {
     apiKey: string;
@@ -20,6 +19,8 @@ export interface ObsidianGeminiSettings {
     summaryFrontmatterKey: string;
     userName: string;
     rewriteFiles: boolean;
+    chatHistory: boolean;
+    historyFolder: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -34,16 +35,22 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
     summaryFrontmatterKey: 'summary',
     userName: 'User',
     rewriteFiles: false,
+    chatHistory: false,
+    historyFolder: 'gemini-scribe',
 };
 
 
 export default class ObsidianGemini extends Plugin {
     settings: ObsidianGeminiSettings;
+
+    // Public members
     public geminiApi: GeminiApi;
-    private summarizer: GeminiSummary;
     public gfile: GeminiFile;
     public geminiView: GeminiView;
     public history: GeminiHistory;
+
+    // Private members
+    private summarizer: GeminiSummary;
     private ribbonIcon: HTMLElement;
     private completions: GeminiCompletions;
 
@@ -51,7 +58,11 @@ export default class ObsidianGemini extends Plugin {
         await this.loadSettings();
         this.geminiApi = new GeminiApi(this);
         this.gfile = new GeminiFile(this);
+
+        // Initialize history
+        // However, some of the history setup is dependent on the layout being ready
         this.history = new GeminiHistory(this);
+        await this.history.setupHistoryCommands();
 
         // Initialize completions
         this.completions = new GeminiCompletions(this);
@@ -83,6 +94,8 @@ export default class ObsidianGemini extends Plugin {
         });
 
         this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
+
+        this.app.workspace.onLayoutReady(() => this.onLayoutReady());
     }
 
     async activateView() {
@@ -94,7 +107,7 @@ export default class ObsidianGemini extends Plugin {
         if (leaves.length > 0) {
             // A leaf with our view already exists, use that
             leaf = leaves[0];
-            workspace.revealLeaf(leaf);
+            await workspace.revealLeaf(leaf);
         } else {
             // Our view could not be found in the workspace, create a new leaf
             // in the right sidebar for it
@@ -102,11 +115,15 @@ export default class ObsidianGemini extends Plugin {
             if (leaf) {
                 await leaf.setViewState({ type: VIEW_TYPE_GEMINI, active: true });
                 // "Reveal" the leaf in case it is in a collapsed sidebar
-                workspace.revealLeaf(leaf);
+                await workspace.revealLeaf(leaf);
             } else {
                 console.error('Could not find a leaf to open the view');
             }
         }
+    }
+
+    async onLayoutReady() {
+        await this.history.onLayoutReady();
     }
 
     async loadSettings() {
@@ -124,6 +141,8 @@ export default class ObsidianGemini extends Plugin {
 
     // Optional: Clean up ribbon icon on unload
     onunload() {
+        console.debug('Unloading Gemini Scribe');
         this.ribbonIcon?.remove();
+        this.history.onUnload();
     }
 }

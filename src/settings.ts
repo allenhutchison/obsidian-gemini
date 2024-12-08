@@ -1,6 +1,7 @@
 import ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
+import { FolderSuggest } from './folder-suggest';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
@@ -145,5 +146,35 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+		
+		// Chat History
+		new Setting(containerEl).setName('Chat History').setHeading();
+
+		new Setting(containerEl)
+			.setName('Enable Chat History')
+			.setDesc('Store chat history as a json file in your vault. This will allow you to view past conversations between sessions.')
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.chatHistory)
+					.onChange(async (value) => {
+						this.plugin.settings.chatHistory = value;
+						await this.plugin.saveSettings();
+					})
+			);
+			
+		new Setting(containerEl)
+			.setName('History Folder')
+			.setDesc('The folder where history file will be stored.')
+			.addText(text => {
+				const folderSuggest = new FolderSuggest(
+					this.app,
+					text.inputEl,
+					async (folder) => {
+						this.plugin.settings.historyFolder = folder;
+						await this.plugin.saveSettings();
+					}
+				);
+				text.setValue(this.plugin.settings.historyFolder);
+			});
 	}
 }

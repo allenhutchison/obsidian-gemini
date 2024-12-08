@@ -18,7 +18,7 @@ export class ModelRewriteMode {
 		const prompt = this.prompts.rewritePrompt({ userMessage: userMessage });
 		await this.plugin.history.appendHistory({
 			role: 'user',
-			content: userMessage,
+			message: userMessage,
 		});
 		let request: ExtendedModelRequest = {
 			prompt: prompt,

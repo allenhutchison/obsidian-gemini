@@ -154,7 +154,7 @@ export class GeminiApi {
 
 		// Now the entire conversation history.
 		conversationHistory.forEach((entry) => {
-			contents.push(this.buildContentElement(entry.role, entry.content));
+			contents.push(this.buildContentElement(entry.role, entry.message));
 		});
 
 		// Now the time
