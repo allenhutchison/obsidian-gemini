@@ -1,6 +1,7 @@
 import { TFolder, TFile } from "obsidian";
 import ObsidianGemini from "../main";
 import Dexie, { Table } from "dexie";
+import { createHash } from 'crypto';
 
 export interface BasicGeminiConversationEntry {
     role: 'user' | 'model';
@@ -20,12 +21,14 @@ interface DatabaseExport {
     metadata: {
         exportedAt: string;
         pluginVersion: string;
+        checksum?: string;
     };
 }
 
 export class GeminiDatabase extends Dexie {
     conversations!: Table<GeminiConversationEntry, number>;
     private plugin: ObsidianGemini;
+    private lastExportChecksum: string | null = null;
 
     constructor(plugin: ObsidianGemini) {
         super('GeminiDatabase');
@@ -35,9 +38,23 @@ export class GeminiDatabase extends Dexie {
         this.plugin = plugin;
     }
 
+    private generateChecksum(data: string): string {
+        return createHash('md5').update(data).digest('hex');
+    }
+
     async setupDatabase() {
-        await this.clearHistory();
-        await this.importDatabaseFromVault();
+        console.debug('Setting up database...');
+        if (this.plugin.settings.chatHistory) {
+            try {
+                // Try to import existing history first
+                const imported = await this.importDatabaseFromVault();
+                if (!imported) {
+                    console.debug('No existing history found or import failed');
+                }
+            } catch (error) {
+                console.error('Error importing history:', error);
+            }
+        }
     }
 
     async clearHistory() {
@@ -46,13 +63,16 @@ export class GeminiDatabase extends Dexie {
 
     async exportDatabaseToVault(): Promise<void> {
         if (!this.plugin.settings.chatHistory) {
-            console.debug('Chat history disabled, skipping export');
             return;
         }
-        const conversations = await this.conversations.orderBy('notePath').toArray();
-        const vaultPath = (await this.getVaultFolder()).path;
 
-        // Group conversations by notePath
+        console.debug('Exporting history to vault...');
+        
+        // Get ALL conversations
+        const conversations = await this.conversations
+            .orderBy('notePath')
+            .toArray();
+
         const groupedConversations = conversations.reduce((acc, item) => {
             acc[item.notePath] = acc[item.notePath] || [];
             acc[item.notePath].push(item);
@@ -68,38 +88,70 @@ export class GeminiDatabase extends Dexie {
             }
         };
 
-        const filePath = `${vaultPath}/gemini-scribe-history.json`;
+        const jsonData = JSON.stringify(exportData, null, 2);
+        this.lastExportChecksum = this.generateChecksum(jsonData);
+        exportData.metadata.checksum = this.lastExportChecksum;
+
+        const folder = await this.getVaultFolder();
+        const filePath = `${folder.path}/gemini-scribe-history.json`;
+        
         await this.plugin.app.vault.adapter.write(
             filePath, 
             JSON.stringify(exportData, null, 2)
         );
+        
+        console.debug('History export complete');
     }
 
-    async importDatabaseFromVault(): Promise<void> {
+    async hasFileChanged(content: string): Promise<boolean> {
+        const importData: DatabaseExport = JSON.parse(content);
+        const currentChecksum = importData.metadata?.checksum;
+        
+        if (!currentChecksum || currentChecksum !== this.lastExportChecksum) {
+            console.debug('File changed - checksums differ');
+            return true;
+        }
+        
+        console.debug('File unchanged based on checksum');
+        return false;
+    }
+
+    async importDatabaseFromVault(): Promise<boolean> {
         if (!this.plugin.settings.chatHistory) {
             console.debug('Chat history disabled, skipping import');
-            return;
+            return false;
         }
+        
         try {
             const folder = await this.getVaultFolder();
             const filePath = `${folder.path}/gemini-scribe-history.json`;
             const content = await this.plugin.app.vault.adapter.read(filePath);
+            
             const importData: DatabaseExport = JSON.parse(content);
-
-            if (importData.version !== 1) {
-                console.warn(`Unknown version in history file: ${importData.version}`);
+            
+            if (!await this.hasFileChanged(content)) {
+                console.debug('No changes in history file');
+                return false;
             }
 
-            await this.clearHistory();
-
+            console.debug('Importing history from vault...');
+            
+            // Clear existing data before import
+            await this.conversations.clear();
+            
             // Import all conversations
-            for (const notePath in importData.conversations) {
-                await this.conversations.bulkPut(importData.conversations[notePath]);
+            for (const [notePath, messages] of Object.entries(importData.conversations)) {
+                await this.conversations.bulkAdd(messages);
             }
+            
+            this.lastExportChecksum = importData.metadata?.checksum ?? null;
+            console.debug('History import complete');
+            return true;
         } catch (error) {
             if (!(error instanceof Error && error.message.includes('file not found'))) {
-                console.error('Failed to import history:', error);
+                console.error('Import failed:', error);
             }
+            return false;
         }
     }
 

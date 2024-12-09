@@ -125,8 +125,11 @@ export class GeminiHistory {
 
 	async importHistory() {
 		if (this.plugin.settings.chatHistory) {
-			await this.database.importDatabaseFromVault();
-			await this.plugin.geminiView.reloadChatFromHistory();
+			const changed = await this.database.importDatabaseFromVault();
+			if (changed) {
+				new Notice('Chat history updated from vault.');
+				await this.plugin.geminiView.reloadChatFromHistory();
+			}	
 		}
 	}
 
