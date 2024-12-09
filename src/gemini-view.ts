@@ -18,6 +18,7 @@ export class GeminiView extends ItemView {
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
 		this.plugin = plugin;
+		this.rewriteMode = new ModelRewriteMode(plugin);
 	}
 
 	getViewType() {
