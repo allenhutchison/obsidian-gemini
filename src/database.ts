@@ -29,6 +29,8 @@ export class GeminiDatabase extends Dexie {
     conversations!: Table<GeminiConversationEntry, number>;
     private plugin: ObsidianGemini;
     private lastExportChecksum: string | null = null;
+    private isImporting = false;
+    private isExporting = false;
 
     constructor(plugin: ObsidianGemini) {
         super('GeminiDatabase');
@@ -57,88 +59,109 @@ export class GeminiDatabase extends Dexie {
         }
     }
 
-    async clearHistory() {
+    async clearHistory(): Promise<boolean> {
         try {
             const oldCount = await this.conversations.count();
-            await this.conversations.clear();
+
+            // Wrap the clear operation in a transaction
+            await this.transaction('rw', this.conversations, async () => {
+                await this.conversations.clear();
+            });
+
+            // Verify that the conversations table is empty
             const newCount = await this.conversations.count();
             if (newCount > 0) {
                 console.error(`Failed to clear history, ${newCount} entries remaining`);
+                return false;
             }
+
             console.debug(`Cleared history, ${oldCount} entries removed`);
+            return true;
         } catch (error) {
             console.error('Failed to clear history:', error);
+            return false;
         }
     }
 
     async exportDatabaseToVault(): Promise<void> {
-        if (!this.plugin.settings.chatHistory) {
+        if (this.isExporting) {
+            console.debug('Export operation is already in progress.');
             return;
         }
-
-        console.debug('Exporting history to vault...');
-        
-        const conversations = await this.conversations
-            .orderBy('notePath')
-            .toArray();
-
-        const groupedConversations = conversations.reduce((acc, item) => {
-            const { id, notePath, created_at, role, message, metadata } = item;
-            
-            if (!acc[notePath]) {
-                acc[notePath] = new Map();
+        this.isExporting = true;
+        try {
+            if (!this.plugin.settings.chatHistory) {
+                return;
             }
-            
-            // Handle date conversion
-            const timestamp = created_at instanceof Date 
-                ? created_at.getTime()
-                : new Date(created_at).getTime();
-            
-            const key = `${timestamp}-${role}-${message}`;
-            
-            if (!acc[notePath].has(key)) {
-                acc[notePath].set(key, {
-                    notePath,
-                    created_at: created_at instanceof Date ? created_at : new Date(created_at),
-                    role,
-                    message,
-                    metadata
-                });
-            }
-            
-            return acc;
-        }, {} as Record<string, Map<string, Omit<GeminiConversationEntry, 'id'>>>);
 
-        // Convert Map values to arrays
-        const cleanedConversations = Object.fromEntries(
-            Object.entries(groupedConversations).map(([key, value]) => [
-                key,
-                Array.from(value.values())
-            ])
-        );
+            console.debug('Exporting history to vault...');
+            
+            const conversations = await this.conversations
+                .orderBy('notePath')
+                .toArray();
 
-        const exportData: DatabaseExport = {
-            version: 1,
-            conversations: cleanedConversations,
-            metadata: {
-                exportedAt: new Date().toISOString(),
-                pluginVersion: this.plugin.manifest.version
-            }
-        };
+            const groupedConversations = conversations.reduce((acc, item) => {
+                const { id, notePath, created_at, role, message, metadata } = item;
+                
+                if (!acc[notePath]) {
+                    acc[notePath] = new Map();
+                }
+                
+                // Handle date conversion
+                const timestamp = created_at instanceof Date 
+                    ? created_at.getTime()
+                    : new Date(created_at).getTime();
+                
+                const key = `${timestamp}-${role}-${message}`;
+                
+                if (!acc[notePath].has(key)) {
+                    acc[notePath].set(key, {
+                        notePath,
+                        created_at: created_at instanceof Date ? created_at : new Date(created_at),
+                        role,
+                        message,
+                        metadata
+                    });
+                }
+                
+                return acc;
+            }, {} as Record<string, Map<string, Omit<GeminiConversationEntry, 'id'>>>);
 
-        const jsonData = JSON.stringify(exportData, null, 2);
-        this.lastExportChecksum = this.generateChecksum(jsonData);
-        exportData.metadata.checksum = this.lastExportChecksum;
+            // Convert Map values to arrays
+            const cleanedConversations = Object.fromEntries(
+                Object.entries(groupedConversations).map(([key, value]) => [
+                    key,
+                    Array.from(value.values())
+                ])
+            );
 
-        const folder = await this.getVaultFolder();
-        const filePath = `${folder.path}/gemini-scribe-history.json`;
-        
-        await this.plugin.app.vault.adapter.write(
-            filePath, 
-            JSON.stringify(exportData, null, 2)
-        );
-        
-        console.debug('History export complete');
+            const exportData: DatabaseExport = {
+                version: 1,
+                conversations: cleanedConversations,
+                metadata: {
+                    exportedAt: new Date().toISOString(),
+                    pluginVersion: this.plugin.manifest.version
+                }
+            };
+
+            const jsonData = JSON.stringify(exportData, null, 2);
+            this.lastExportChecksum = this.generateChecksum(jsonData);
+            exportData.metadata.checksum = this.lastExportChecksum;
+
+            const folder = await this.getVaultFolder();
+            const filePath = `${folder.path}/gemini-scribe-history.json`;
+            
+            await this.plugin.app.vault.adapter.write(
+                filePath, 
+                JSON.stringify(exportData, null, 2)
+            );
+            
+            console.debug('History export complete');
+        } catch (error) {
+            console.error('Export failed:', error);
+        } finally {
+            this.isExporting = false;
+        }
     }
 
     async hasFileChanged(content: string): Promise<boolean> {
@@ -155,41 +178,72 @@ export class GeminiDatabase extends Dexie {
     }
 
     async importDatabaseFromVault(): Promise<boolean> {
-        if (!this.plugin.settings.chatHistory) {
-            console.debug('Chat history disabled, skipping import');
+        if (this.isImporting) {
+            console.warn('Import operation is already in progress.');
             return false;
         }
-        
+        this.isImporting = true;
         try {
-            const folder = await this.getVaultFolder();
-            const filePath = `${folder.path}/gemini-scribe-history.json`;
-            const content = await this.plugin.app.vault.adapter.read(filePath);
-            
-            const importData: DatabaseExport = JSON.parse(content);
-            
-            if (!await this.hasFileChanged(content)) {
-                console.debug('No changes in history file');
+            if (!this.plugin.settings.chatHistory) {
+                console.debug('Chat history disabled, skipping import');
                 return false;
             }
+            
+            try {
+                const folder = await this.getVaultFolder();
+                const filePath = `${folder.path}/gemini-scribe-history.json`;
+                const content = await this.plugin.app.vault.adapter.read(filePath);
+                
+                const importData: DatabaseExport = JSON.parse(content);
+                
+                if (!await this.hasFileChanged(content)) {
+                    console.debug('No changes in history file');
+                    return false;
+                }
 
-            console.debug('Importing history from vault...');
-            
-            // Clear existing data before import
-            await this.clearHistory();
-            
-            // Import all conversations
-            for (const [notePath, messages] of Object.entries(importData.conversations)) {
-                await this.conversations.bulkAdd(messages);
-            }
-            
-            this.lastExportChecksum = importData.metadata?.checksum ?? null;
-            console.debug('History import complete');
-            return true;
-        } catch (error) {
-            if (!(error instanceof Error && error.message.includes('file not found'))) {
+                console.debug('Importing history from vault...');
+                
+                // Clear existing data
+                await this.clearHistory();
+                
+                // Process each conversation group
+                for (const [notePath, messages] of Object.entries(importData.conversations)) {
+                    // Create a Map to deduplicate messages
+                    const uniqueMessages = new Map();
+                    
+                    messages.forEach(msg => {
+                        const timestamp = new Date(msg.created_at).getTime();
+                        const key = `${timestamp}-${msg.role}-${msg.message}`;
+                        if (!uniqueMessages.has(key)) {
+                            uniqueMessages.set(key, {
+                                notePath: msg.notePath,
+                                created_at: new Date(msg.created_at),
+                                role: msg.role,
+                                message: msg.message,
+                                metadata: msg.metadata
+                            });
+                        }
+                    });
+
+                    // Sort and import unique messages
+                    const sortedMessages = Array.from(uniqueMessages.values())
+                        .sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
+                    
+                    await this.conversations.bulkAdd(sortedMessages);
+                }
+
+                this.lastExportChecksum = importData.metadata?.checksum ?? null;
+                console.debug('History import complete');
+                return true;
+            } catch (error) {
                 console.error('Import failed:', error);
+                return false;
             }
+        } catch (error) {
+            console.error('Import failed:', error);
             return false;
+        } finally {
+            this.isImporting = false;
         }
     }
 
