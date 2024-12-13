@@ -78,28 +78,28 @@ export class GeminiDatabase extends Dexie {
 
         console.debug('Exporting history to vault...');
         
-        // Get ALL conversations and sort
         const conversations = await this.conversations
             .orderBy('notePath')
             .toArray();
 
-        // Group and deduplicate
         const groupedConversations = conversations.reduce((acc, item) => {
             const { id, notePath, created_at, role, message, metadata } = item;
             
-            // Initialize array for this notePath if it doesn't exist
             if (!acc[notePath]) {
                 acc[notePath] = new Map();
             }
             
-            // Create unique key from timestamp and message
-            const key = `${created_at.getTime()}-${role}-${message}`;
+            // Handle date conversion
+            const timestamp = created_at instanceof Date 
+                ? created_at.getTime()
+                : new Date(created_at).getTime();
             
-            // Only add if not already present
+            const key = `${timestamp}-${role}-${message}`;
+            
             if (!acc[notePath].has(key)) {
                 acc[notePath].set(key, {
                     notePath,
-                    created_at,
+                    created_at: created_at instanceof Date ? created_at : new Date(created_at),
                     role,
                     message,
                     metadata
