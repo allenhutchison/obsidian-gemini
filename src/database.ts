@@ -58,7 +58,17 @@ export class GeminiDatabase extends Dexie {
     }
 
     async clearHistory() {
-        await this.conversations.clear();
+        try {
+            const oldCount = await this.conversations.count();
+            await this.conversations.clear();
+            const newCount = await this.conversations.count();
+            if (newCount > 0) {
+                console.error(`Failed to clear history, ${newCount} entries remaining`);
+            }
+            console.debug(`Cleared history, ${oldCount} entries removed`);
+        } catch (error) {
+            console.error('Failed to clear history:', error);
+        }
     }
 
     async exportDatabaseToVault(): Promise<void> {
@@ -68,20 +78,48 @@ export class GeminiDatabase extends Dexie {
 
         console.debug('Exporting history to vault...');
         
-        // Get ALL conversations
+        // Get ALL conversations and sort
         const conversations = await this.conversations
             .orderBy('notePath')
             .toArray();
 
+        // Group and deduplicate
         const groupedConversations = conversations.reduce((acc, item) => {
-            acc[item.notePath] = acc[item.notePath] || [];
-            acc[item.notePath].push(item);
+            const { id, notePath, created_at, role, message, metadata } = item;
+            
+            // Initialize array for this notePath if it doesn't exist
+            if (!acc[notePath]) {
+                acc[notePath] = new Map();
+            }
+            
+            // Create unique key from timestamp and message
+            const key = `${created_at.getTime()}-${role}-${message}`;
+            
+            // Only add if not already present
+            if (!acc[notePath].has(key)) {
+                acc[notePath].set(key, {
+                    notePath,
+                    created_at,
+                    role,
+                    message,
+                    metadata
+                });
+            }
+            
             return acc;
-        }, {} as Record<string, GeminiConversationEntry[]>);
+        }, {} as Record<string, Map<string, Omit<GeminiConversationEntry, 'id'>>>);
+
+        // Convert Map values to arrays
+        const cleanedConversations = Object.fromEntries(
+            Object.entries(groupedConversations).map(([key, value]) => [
+                key,
+                Array.from(value.values())
+            ])
+        );
 
         const exportData: DatabaseExport = {
             version: 1,
-            conversations: groupedConversations,
+            conversations: cleanedConversations,
             metadata: {
                 exportedAt: new Date().toISOString(),
                 pluginVersion: this.plugin.manifest.version
@@ -108,7 +146,7 @@ export class GeminiDatabase extends Dexie {
         const currentChecksum = importData.metadata?.checksum;
         
         if (!currentChecksum || currentChecksum !== this.lastExportChecksum) {
-            console.debug('File changed - checksums differ');
+            console.debug(`File changed - checksums differ (${currentChecksum} vs ${this.lastExportChecksum})`);
             return true;
         }
         
@@ -137,7 +175,7 @@ export class GeminiDatabase extends Dexie {
             console.debug('Importing history from vault...');
             
             // Clear existing data before import
-            await this.conversations.clear();
+            await this.clearHistory();
             
             // Import all conversations
             for (const [notePath, messages] of Object.entries(importData.conversations)) {
