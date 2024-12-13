@@ -203,8 +203,12 @@ export class GeminiDatabase extends Dexie {
 
                 console.debug('Importing history from vault...');
                 
-                // Clear existing data
-                await this.clearHistory();
+                // Attempt to clear existing data
+                const cleared = await this.clearHistory();
+                if (!cleared) {
+                    console.error('Failed to clear history before import. Aborting import to prevent duplicates.');
+                    return false; // Abort import if clearHistory fails
+                }
                 
                 // Process each conversation group
                 for (const [notePath, messages] of Object.entries(importData.conversations)) {
