@@ -1,20 +1,24 @@
-import ObsidianGemini from '../main';
+import ObsidianGemini from '../../main';
 import { DynamicRetrievalMode, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
-import { GeminiPrompts } from './prompts';
 
 export class GeminiSearchTool {
     private plugin: ObsidianGemini;
     private gemini: GoogleGenerativeAI;
     private searchModel: GenerativeModel;
 
-    constructor(plugin: ObsidianGemini) {
+
+    constructor(plugin: ObsidianGemini, systemInstruction: string) {
         this.plugin = plugin;
         this.gemini = new GoogleGenerativeAI(plugin.settings.apiKey);
         this.searchModel = this.gemini.getGenerativeModel({
             model: plugin.settings.chatModelName,
-            systemInstruction: '',
+            systemInstruction: systemInstruction,
             tools: this.getTools(),
         });
+    }
+
+    public getSearchModel(): GenerativeModel {
+        return this.searchModel;
     }
 
     private getTools(): any[] {

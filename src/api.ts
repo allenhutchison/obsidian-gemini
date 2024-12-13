@@ -1,6 +1,7 @@
 import ObsidianGemini from '../main';
 import { DynamicRetrievalMode, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiPrompts } from './prompts';
+import { GeminiSearchTool } from './tools/search';
 import { Notice } from 'obsidian';
 
 export interface ModelResponse {
@@ -37,7 +38,6 @@ export class GeminiApi {
 	private plugin: ObsidianGemini;
 	private gemini: GoogleGenerativeAI;
 	private model: GenerativeModel;
-	private modelNoGrounding: GenerativeModel;
 	private prompts: GeminiPrompts;
 
 	constructor(plugin: ObsidianGemini) {
@@ -49,26 +49,13 @@ export class GeminiApi {
 		this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
 		let tools: any[] = [];
 		if (this.plugin.settings.searchGrounding) {
-			tools = [
-				{
-					googleSearchRetrieval: {
-						dynamicRetrievalConfig: {
-							mode: DynamicRetrievalMode.MODE_DYNAMIC,
-							dynamicThreshold: this.plugin.settings.searchGroundingThreshold,
-						},
-					},
-				},
-			];
+			this.model = new GeminiSearchTool(this.plugin, systemInstruction).getSearchModel();
+		} else {
+			this.model = this.gemini.getGenerativeModel({
+				model: this.plugin.settings.chatModelName,
+				systemInstruction: systemInstruction,
+			});
 		}
-		this.model = this.gemini.getGenerativeModel({
-			model: this.plugin.settings.chatModelName,
-			systemInstruction: systemInstruction,
-			tools: tools,
-		});
-		this.modelNoGrounding = this.gemini.getGenerativeModel({
-			model: this.plugin.settings.chatModelName,
-			systemInstruction: systemInstruction,
-		});
 	}
 
 	async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<ModelResponse> {
