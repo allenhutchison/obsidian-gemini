@@ -1,17 +1,19 @@
-import ObsidianGemini from '../../main';
 import { DynamicRetrievalMode, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 
 export class GeminiSearchTool {
-    private plugin: ObsidianGemini;
     private gemini: GoogleGenerativeAI;
     private searchModel: GenerativeModel;
+    private apiKey: string;
+    private modelName: string;
+    private searchGroundingThreshold: number;
 
-
-    constructor(plugin: ObsidianGemini, systemInstruction: string) {
-        this.plugin = plugin;
-        this.gemini = new GoogleGenerativeAI(plugin.settings.apiKey);
+    constructor(systemInstruction: string, apiKey: string, modelName: string, searchGroundingThreshold: number) {
+        this.apiKey = apiKey;
+        this.modelName = modelName;
+        this.searchGroundingThreshold = searchGroundingThreshold;
+        this.gemini = new GoogleGenerativeAI(this.apiKey);
         this.searchModel = this.gemini.getGenerativeModel({
-            model: plugin.settings.chatModelName,
+            model: this.modelName,
             systemInstruction: systemInstruction,
             tools: this.getTools(),
         });
@@ -22,9 +24,8 @@ export class GeminiSearchTool {
     }
 
     private getTools(): any[] {
-        const modelName = this.plugin.settings.chatModelName;
         let tools: any[] = [];
-        switch (modelName) {
+        switch (this.modelName) {
             case 'gemini-2.0-flash-exp':
                 tools = [
                     {
@@ -38,7 +39,7 @@ export class GeminiSearchTool {
                         googleSearchRetrieval: {
                             dynamicRetrievalConfig: {
                                 mode: DynamicRetrievalMode.MODE_DYNAMIC,
-                                dynamicThreshold: this.plugin.settings.searchGroundingThreshold,
+                                dynamicThreshold: this.searchGroundingThreshold,
                             },
                         },
                     },

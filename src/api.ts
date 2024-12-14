@@ -37,25 +37,12 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 export class GeminiApi {
 	private plugin: ObsidianGemini;
 	private gemini: GoogleGenerativeAI;
-	private model: GenerativeModel;
 	private prompts: GeminiPrompts;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts();
-		const systemInstruction = this.prompts.systemPrompt({
-			userName: this.plugin.settings.userName,
-		});
 		this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
-		let tools: any[] = [];
-		if (this.plugin.settings.searchGrounding) {
-			this.model = new GeminiSearchTool(this.plugin, systemInstruction).getSearchModel();
-		} else {
-			this.model = this.gemini.getGenerativeModel({
-				model: this.plugin.settings.chatModelName,
-				systemInstruction: systemInstruction,
-			});
-		}
 	}
 
 	async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<ModelResponse> {
@@ -76,13 +63,7 @@ export class GeminiApi {
 	}
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
-		const modelToUse = request.model ?? this.plugin.settings.chatModelName;
-		const modelInstance = this.gemini.getGenerativeModel({
-			model: modelToUse,
-			systemInstruction: this.prompts.systemPrompt({
-				userName: this.plugin.settings.userName,
-			}),
-		});
+		const modelInstance = this.getModelInstance(request.model);
 
 		if (!request.prompt) {
 			throw new Error('No prompt provided to generateModelResponse.');
@@ -113,6 +94,29 @@ export class GeminiApi {
 		}
 
 		return response;
+	}
+
+	private getModelInstance(modelName?: string): GenerativeModel {
+		const modelToUse = modelName ?? this.plugin.settings.chatModelName;
+		const systemInstruction = this.prompts.systemPrompt({
+			userName: this.plugin.settings.userName,
+		});
+		let tools: any[] = [];
+		let modelInstance: GenerativeModel;
+		if (this.plugin.settings.searchGrounding) {
+			modelInstance = new GeminiSearchTool(
+				systemInstruction,
+				this.plugin.settings.apiKey,
+				modelToUse,
+				this.plugin.settings.searchGroundingThreshold
+			).getSearchModel();
+		} else {
+			modelInstance = this.gemini.getGenerativeModel({
+				model: modelToUse,
+				systemInstruction: systemInstruction,
+			});
+		}
+		return modelInstance;
 	}
 
 	private parseModelResult(result: GenerateContentResult): ModelResponse {
