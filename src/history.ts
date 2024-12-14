@@ -78,30 +78,34 @@ export class GeminiHistory {
 
 	async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {
 		if (this.plugin.gfile.isFile(file)) {
-			const extendedEntry: GeminiConversationEntry = {
-				...newEntry,
-				notePath: file.path,
+			const notePath = file.path;
+
+			// Prepare the conversation entry
+			const conversation: GeminiConversationEntry = {
+				notePath,
 				created_at: new Date(),
-			}
-			await this.database.conversations.add(extendedEntry);
-			this.exportHistory();
+				role: newEntry.role,
+				message: newEntry.message,
+			};
+
+			// Use the database method with queuing
+			await this.database.addConversation(conversation);
 		}
 	}
 
-	async getHistoryForFile(file: TFile) : Promise<GeminiConversationEntry[]> {
+	async getHistoryForFile(file: TFile): Promise<GeminiConversationEntry[]> {
 		if (this.plugin.gfile.isFile(file)) {
 			const notePath = file.path;
-			const history = await this.database.conversations.where('notePath').equals(notePath).toArray();
+			const history = await this.database.getConversations(notePath);
 			return history;
-		} else {
-			return [];
 		}
+		return [];
 	}
 
-	async clearHistoryForFile(file: TFile) : Promise<number | undefined> {
+	async clearHistoryForFile(file: TFile): Promise<number | undefined> {
 		if (this.plugin.gfile.isFile(file)) {
 			const notePath = file.path;
-			return await this.database.conversations.where('notePath').equals(notePath).delete();
+			return await this.database.clearConversations(notePath);
 		}
 		return undefined;
 	}
