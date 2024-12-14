@@ -1,20 +1,21 @@
 import ObsidianGemini from '../main';
 import { Notice, TFile } from 'obsidian';
-import { BasicGeminiConversationEntry, GeminiConversationEntry, GeminiDatabase } from './database';
+import { GeminiDatabase } from './database';
+import { BasicGeminiConversationEntry, GeminiConversationEntry } from './database/types';
 
 export class GeminiHistory {
-	private plugin: ObsidianGemini;
-	private database: GeminiDatabase;
+    private plugin: ObsidianGemini;
+    private database: GeminiDatabase;
 
-	constructor(plugin: ObsidianGemini) {
-		this.plugin = plugin;
-		this.database = new GeminiDatabase(plugin);
-	}
+    constructor(plugin: ObsidianGemini) {
+        this.plugin = plugin;
+        this.database = new GeminiDatabase(plugin);
+    }
 
-	async setupHistoryCommands() {
-		if (!this.plugin.settings.chatHistory) {
-			return;
-		}
+    async setupHistoryCommands() {
+        if (!this.plugin.settings.chatHistory) {
+            return;
+        }
         try {
             this.plugin.addCommand({
                 id: 'gemini-scribe-export-conversations',
@@ -28,7 +29,7 @@ export class GeminiHistory {
                 id: 'gemini-scribe-import-conversations',
                 name: 'Import Chat History from Vault',
                 callback: async () => {
-					await this.importHistory();
+                    await this.importHistory();
                 },
             });
 
@@ -36,7 +37,7 @@ export class GeminiHistory {
                 id: 'gemini-scribe-clear-conversations',
                 name: 'Clear All Chat History',
                 callback: async () => {
-					await this.clearHistory();
+                    await this.clearHistory();
                 },
             });
         } catch (error) {
@@ -44,104 +45,99 @@ export class GeminiHistory {
         }
     }
 
-	async onLayoutReady() {
-		this.setupHistory();
-	}
+    async onLayoutReady() {
+        await this.setupHistory();
+    }
 
-	async setupHistory() {
-		this.plugin.app.vault.on('rename', this.renameHistoryFile.bind(this));
-		this.plugin.app.vault.on('modify', this.modifyHistoryFile.bind(this));
-		await this.database.setupDatabase();
-	}
+    async setupHistory() {
+        this.plugin.app.vault.on('rename', this.renameHistoryFile.bind(this));
+        this.plugin.app.vault.on('modify', this.modifyHistoryFile.bind(this));
+        await this.database.setupDatabase();
+    }
 
-	onUnload() {
-		console.debug('Unloading history module...');
-		this.plugin.app.vault.off('rename', this.renameHistoryFile.bind(this));
-		this.plugin.app.vault.off('modify', this.modifyHistoryFile.bind(this));
-		
-		// Fire and forget export
-		this.exportHistory()
-			.then(() => console.debug('History export complete'))
-			.catch(error => console.error('Error during history export:', error));
-	}
-	
+    async onUnload() {
+        console.debug('Unloading history module...');
+        this.plugin.app.vault.off('rename', this.renameHistoryFile.bind(this));
+        this.plugin.app.vault.off('modify', this.modifyHistoryFile.bind(this));
+        await this.database.close();
+    }
 
-	async renameHistoryFile(file: TFile, oldPath: string) {
-		const newPath = file.path;
-		const conversationUpdate = await this.database.conversations
-			.where('notePath')
-			.equals(oldPath)
-			.modify({ notePath: newPath });
-		await Promise.all([conversationUpdate]);
-		await this.exportHistory();
-	}
+    async renameHistoryFile(file: TFile, oldPath: string) {
+        const newPath = file.path;
+        const conversationUpdate = await this.database.conversations
+            .where('notePath')
+            .equals(oldPath)
+            .modify({ notePath: newPath });
+        await Promise.all([conversationUpdate]);
+        await this.exportHistory();
+    }
 
-	async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {
-		if (this.plugin.gfile.isFile(file)) {
-			const notePath = file.path;
+    async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {
+        if (this.plugin.gfile.isFile(file)) {
+            const notePath = file.path;
 
-			// Prepare the conversation entry
-			const conversation: GeminiConversationEntry = {
-				notePath,
-				created_at: new Date(),
-				role: newEntry.role,
-				message: newEntry.message,
-			};
+            // Prepare the conversation entry
+            const conversation: GeminiConversationEntry = {
+                notePath,
+                created_at: new Date(),
+                role: newEntry.role,
+                message: newEntry.message,
+            };
 
-			// Use the database method with queuing
-			await this.database.addConversation(conversation);
-		}
-	}
+            // Use the database method with queuing
+            await this.database.addConversation(conversation);
+        }
+    }
 
-	async getHistoryForFile(file: TFile): Promise<GeminiConversationEntry[]> {
-		if (this.plugin.gfile.isFile(file)) {
-			const notePath = file.path;
-			const history = await this.database.getConversations(notePath);
-			return history;
-		}
-		return [];
-	}
+    async getHistoryForFile(file: TFile): Promise<GeminiConversationEntry[]> {
+        if (this.plugin.gfile.isFile(file)) {
+            const notePath = file.path;
+            const history = await this.database.getConversations(notePath);
+            return history;
+        }
+        return [];
+    }
 
-	async clearHistoryForFile(file: TFile): Promise<number | undefined> {
-		if (this.plugin.gfile.isFile(file)) {
-			const notePath = file.path;
-			return await this.database.clearConversations(notePath);
-		}
-		return undefined;
-	}
+    async clearHistoryForFile(file: TFile): Promise<number | undefined> {
+        if (this.plugin.gfile.isFile(file)) {
+            const notePath = file.path;
+            return await this.database.clearConversations(notePath);
+        }
+        return undefined;
+    }
 
-	async appendHistory(newEntry: BasicGeminiConversationEntry) {
-		const activeFile = this.plugin.app.workspace.getActiveFile();
-		if (activeFile) {
-			await this.appendHistoryForFile(activeFile, newEntry);
-		}
-	}
+    async appendHistory(newEntry: BasicGeminiConversationEntry) {
+        const activeFile = this.plugin.app.workspace.getActiveFile();
+        if (activeFile) {
+            await this.appendHistoryForFile(activeFile, newEntry);
+        }
+    }
 
-	async clearHistory() {
-		await this.database.clearHistory();
-	}
+    async clearHistory() {
+        await this.database.clearHistory();
+    }
 
-	async exportHistory() {
-		if (this.plugin.settings.chatHistory) {
-			return await this.database.exportDatabaseToVault();
-		}
-	}
+    async exportHistory() {
+        if (this.plugin.settings.chatHistory) {
+            return await this.database.exportDatabaseToVault();
+        }
+    }
 
-	async importHistory() {
-		if (this.plugin.settings.chatHistory) {
-			const changed = await this.database.importDatabaseFromVault();
-			if (changed) {
-				new Notice('Chat history updated from vault.');
-				await this.plugin.geminiView.reloadChatFromHistory();
-			}	
-		}
-	}
+    async importHistory() {
+        if (this.plugin.settings.chatHistory) {
+            const changed = await this.database.importDatabaseFromVault();
+            if (changed) {
+                new Notice('Chat history updated from vault.');
+                await this.plugin.geminiView.reloadChatFromHistory();
+            }    
+        }
+    }
 
-	async modifyHistoryFile(file: TFile) {
-		const historyFolder = this.plugin.settings.historyFolder;
-		const filePath = `${historyFolder}/gemini-scribe-history.json`;
-		if (file.path === filePath) {
-			await this.importHistory();
-		}
+    async modifyHistoryFile(file: TFile) {
+        const historyFolder = this.plugin.settings.historyFolder;
+        const filePath = `${historyFolder}/gemini-scribe-history.json`;
+        if (file.path === filePath) {
+            await this.importHistory();
+        }
     }
 }
