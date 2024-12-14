@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { DynamicRetrievalMode, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
+import { DynamicRetrievalMode, GenerateContentResult, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiPrompts } from './prompts';
 import { GeminiSearchTool } from './tools/search';
 import { Notice } from 'obsidian';
@@ -59,17 +59,15 @@ export class GeminiApi {
 	}
 
 	async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<ModelResponse> {
-		let response: ModelResponse = { markdown: '', rendered: '' };
-		// TODO(adh): I don't really need to repeat the general prompt for every message.
 		const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
-
+		const request: ExtendedModelRequest = {
+			prompt: prompt,
+			userMessage: userMessage,
+			conversationHistory: conversationHistory,
+			model: this.plugin.settings.chatModelName,
+		};
 		try {
-			const contents = await this.buildContents(prompt, userMessage, conversationHistory);
-			const result = await this.model.generateContent({ contents });
-			response.markdown = result.response.text();
-			if (result.response.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
-				response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? '';
-			}
+			const response = await this.generateModelResponse(request);
 			return response;
 		} catch (error) {
 			console.error('Error calling Gemini:', error);
@@ -101,18 +99,28 @@ export class GeminiApi {
 					true
 				);
 				const result = await modelInstance.generateContent({ contents });
-				response.markdown = result.response.text();
+				response = this.parseModelResult(result);
 			} else {
 				// Base case - just prompt
 				const result = await modelInstance.generateContent(request.prompt);
-				response.markdown = result.response.text();
+				response = this.parseModelResult(result);
 			}
+			return response;
 		} catch (error) {
 			console.error('Error calling Gemini:', error);
 			new Notice('Error calling Gemini.');
 			throw error;
 		}
 
+		return response;
+	}
+
+	private parseModelResult(result: GenerateContentResult): ModelResponse {
+		let response: ModelResponse = { markdown: '', rendered: '' };
+		response.markdown = result.response.text();
+		if (result.response.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
+			response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? '';
+		}
 		return response;
 	}
 
