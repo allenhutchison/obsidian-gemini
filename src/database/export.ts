@@ -30,37 +30,102 @@ export class DatabaseExporter {
     }
 
     async exportDatabaseToVault(): Promise<void> {
-       return this.queue.enqueue(async () => {
+        return this.queue.enqueue(async () => {
             if (this.isExporting) {
                 console.debug('Export operation is already in progress.');
                 return;
             }
             this.isExporting = true;
+            
             try {
                 if (!this.plugin.settings.chatHistory) {
                     return;
                 }
-    
-                console.debug('Exporting history to vault...');
-                
+
+                // Get current conversations
                 const conversations = await this.conversations
                     .orderBy('notePath')
                     .toArray();
-    
-                const groupedConversations = conversations.reduce((acc, item) => {
+
+                // Safety check - don't write empty file if we have existing data
+                if (conversations.length === 0) {
+                    try {
+                        const folder = await getVaultFolder(this.plugin);
+                        const filePath = `${folder.path}/gemini-scribe-history.json`;
+                        const existingContent = await this.plugin.app.vault.adapter.read(filePath);
+                        const existingData = JSON.parse(existingContent);
+                        
+                        // If existing file has data but DB is empty, abort export
+                        if (existingData.conversations && 
+                            Object.keys(existingData.conversations).length > 0) {
+                            console.error('Preventing export of empty database over existing data');
+                            return;
+                        }
+                    } catch (error) {
+                        // File doesn't exist or can't be read - ok to proceed with empty export
+                    }
+                }
+
+                // Process conversations
+                const groupedConversations = this.processConversations(conversations);
+
+                // Create export data
+                const exportData: DatabaseExport = {
+                    version: 1,
+                    conversations: groupedConversations,
+                    metadata: {
+                        exportedAt: new Date().toISOString(),
+                        pluginVersion: this.plugin.manifest.version,
+                        conversationsCount: conversations.length
+                    }
+                };
+
+                // Generate and set checksum
+                const jsonData = JSON.stringify(exportData, null, 2);
+                this.lastExportChecksum = generateChecksum(jsonData);
+                exportData.metadata.checksum = this.lastExportChecksum;
+
+                // Write file atomically
+                const folder = await getVaultFolder(this.plugin);
+                const filePath = `${folder.path}/gemini-scribe-history.json`;
+                const backupPath = `${folder.path}/gemini-scribe-history.backup.json`;
+
+                // Backup existing file if it exists
+                try {
+                    const existing = await this.plugin.app.vault.adapter.read(filePath);
+                    await this.plugin.app.vault.adapter.write(backupPath, existing);
+                } catch (error) {
+                    // No existing file to backup
+                }
+
+                // Write new file
+                await this.plugin.app.vault.adapter.write(filePath, jsonData);
+                console.debug(`History export complete. Saved ${conversations.length} conversations`);
+
+            } catch (error) {
+                console.error('Export failed:', error);
+                throw error;
+            } finally {
+                this.isExporting = false;
+            }
+        });
+    }
+
+    private processConversations(conversations: GeminiConversationEntry[]) {
+        return Object.fromEntries(
+            Object.entries(
+                conversations.reduce((acc, item) => {
                     const { id, notePath, created_at, role, message, metadata } = item;
                     
                     if (!acc[notePath]) {
                         acc[notePath] = new Map();
                     }
                     
-                    // Handle date conversion
                     const timestamp = created_at instanceof Date 
                         ? created_at.getTime()
                         : new Date(created_at).getTime();
                     
                     const key = `${timestamp}-${role}-${message}`;
-                    
                     if (!acc[notePath].has(key)) {
                         acc[notePath].set(key, {
                             notePath,
@@ -70,46 +135,13 @@ export class DatabaseExporter {
                             metadata
                         });
                     }
-                    
                     return acc;
-                }, {} as Record<string, Map<string, Omit<GeminiConversationEntry, 'id'>>>);
-    
-                // Convert Map values to arrays
-                const cleanedConversations = Object.fromEntries(
-                    Object.entries(groupedConversations).map(([key, value]) => [
-                        key,
-                        Array.from(value.values())
-                    ])
-                );
-    
-                const exportData: DatabaseExport = {
-                    version: 1,
-                    conversations: cleanedConversations,
-                    metadata: {
-                        exportedAt: new Date().toISOString(),
-                        pluginVersion: this.plugin.manifest.version
-                    }
-                };
-    
-                const jsonData = JSON.stringify(exportData, null, 2);
-                this.lastExportChecksum = generateChecksum(jsonData);
-                exportData.metadata.checksum = this.lastExportChecksum;
-    
-                const folder = await getVaultFolder(this.plugin);
-                const filePath = `${folder.path}/gemini-scribe-history.json`;
-                
-                await this.plugin.app.vault.adapter.write(
-                    filePath, 
-                    JSON.stringify(exportData, null, 2)
-                );
-                
-                console.debug('History export complete');
-            } catch (error) {
-                console.error('Export failed:', error);
-            } finally {
-                this.isExporting = false;
-            }
-        });
+                }, {} as Record<string, Map<string, Omit<GeminiConversationEntry, 'id'>>>)
+            ).map(([key, value]) => [
+                key,
+                Array.from(value.values())
+            ])
+        );
     }
 
     async importDatabaseFromVault(): Promise<boolean> {

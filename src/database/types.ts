@@ -29,5 +29,6 @@ export interface DatabaseExport {
         exportedAt: string;
         pluginVersion: string;
         checksum?: string;
+        conversationsCount: number;
     };
 }

@@ -55,6 +55,7 @@ export class GeminiDatabase extends Dexie implements IGeminiDatabase {
     async setupDatabase(): Promise<void> {
         try {
             await this.open();
+            await this.operations.setup();
             if (this.plugin.settings.chatHistory) {
                 const result = await this.importDatabaseFromVault();
                 if (!result) {
@@ -74,7 +75,7 @@ export class GeminiDatabase extends Dexie implements IGeminiDatabase {
             if (this.plugin.settings.chatHistory) {
                 await this.exportDatabaseToVault();
             }
-            await super.close();
+            super.close();
         } catch (error) {
             console.error('Error during database close:', error);
             throw error;
