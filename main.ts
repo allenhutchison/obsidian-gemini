@@ -88,9 +88,13 @@ export default class ObsidianGemini extends Plugin {
         this.gfile = new GeminiFile(this);
 
         // Initialize history
-        // However, some of the history setup is dependent on the layout being ready
+        // Getting the vault folder for the import and export of history has to wait for the layout
+        // to be ready, otherwise it throws an error when trying to access the vault.
         this.history = new GeminiHistory(this);
         await this.history.setupHistoryCommands();
+        if (this.app.workspace.layoutReady) {
+            await this.history.onLayoutReady;
+        }
 
         // Initialize completions
         this.completions = new GeminiCompletions(this);

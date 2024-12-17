@@ -1,11 +1,13 @@
 import ObsidianGemini from '../main';
-import { Notice, TFile } from 'obsidian';
+import { Notice, TFile, debounce } from 'obsidian';
 import { GeminiDatabase } from './database';
 import { BasicGeminiConversationEntry, GeminiConversationEntry } from './database/types';
 
 export class GeminiHistory {
     private plugin: ObsidianGemini;
     private database: GeminiDatabase;
+    private isExporting = false;
+    private isImporting = false;
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
@@ -86,6 +88,8 @@ export class GeminiHistory {
 
             // Use the database method with queuing
             await this.database.addConversation(conversation);
+            // Debounce export to prevent rapid successive exports
+            await this.debouncedExport();
         }
     }
 
@@ -118,8 +122,22 @@ export class GeminiHistory {
     }
 
     async exportHistory() {
-        if (this.plugin.settings.chatHistory) {
-            return await this.database.exportDatabaseToVault();
+        if (!this.plugin.settings.chatHistory) return;
+        
+        if (this.isExporting) {
+            console.debug('Export already in progress, skipping');
+            return;
+        }
+
+        try {
+            this.isExporting = true;
+            // Get current conversation count before export
+            const currentCount = await this.getTotalConversationCount();
+            console.debug(`Starting export with ${currentCount} conversations`);
+            
+            await this.database.exportDatabaseToVault();
+        } finally {
+            this.isExporting = false;
         }
     }
 
@@ -137,7 +155,43 @@ export class GeminiHistory {
         const historyFolder = this.plugin.settings.historyFolder;
         const filePath = `${historyFolder}/gemini-scribe-history.json`;
         if (file.path === filePath) {
-            await this.importHistory();
+            await this.debouncedImport();
         }
+    }
+
+    // Add debounced export
+    private debouncedExport = debounce(
+        async () => {
+            await this.exportHistory();
+        }, 
+        1000, // 1 second delay
+        true  // leading edge
+    );
+
+    private debouncedImport = debounce(
+        async () => {
+            if (this.isImporting) {
+                console.debug('Import already in progress, skipping');
+                return;
+            }
+            try {
+                this.isImporting = true;
+                await this.importHistory();
+            } finally {
+                this.isImporting = false;
+            }
+        },
+        1000, // 1 second delay
+        false // trailing edge - wait for pause in calls
+    );
+
+    private async getTotalConversationCount(): Promise<number> {
+        const files = this.plugin.app.vault.getMarkdownFiles();
+        let total = 0;
+        for (const file of files) {
+            const conversations = await this.getHistoryForFile(file);
+            total += conversations.length;
+        }
+        return total;
     }
 }
