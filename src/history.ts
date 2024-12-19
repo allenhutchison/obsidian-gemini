@@ -6,8 +6,6 @@ import { BasicGeminiConversationEntry, GeminiConversationEntry } from './databas
 export class GeminiHistory {
     private plugin: ObsidianGemini;
     private database: GeminiDatabase;
-    private isExporting = false;
-    private isImporting = false;
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
@@ -123,22 +121,7 @@ export class GeminiHistory {
 
     async exportHistory() {
         if (!this.plugin.settings.chatHistory) return;
-        
-        if (this.isExporting) {
-            console.debug('Export already in progress, skipping');
-            return;
-        }
-
-        try {
-            this.isExporting = true;
-            // Get current conversation count before export
-            const currentCount = await this.getTotalConversationCount();
-            console.debug(`Starting export with ${currentCount} conversations`);
-            
-            await this.database.exportDatabaseToVault();
-        } finally {
-            this.isExporting = false;
-        }
+        await this.database.exportDatabaseToVault();
     }
 
     async importHistory() {
@@ -170,16 +153,7 @@ export class GeminiHistory {
 
     private debouncedImport = debounce(
         async () => {
-            if (this.isImporting) {
-                console.debug('Import already in progress, skipping');
-                return;
-            }
-            try {
-                this.isImporting = true;
-                await this.importHistory();
-            } finally {
-                this.isImporting = false;
-            }
+            await this.importHistory();
         },
         1000, // 1 second delay
         false // trailing edge - wait for pause in calls
