@@ -98,8 +98,10 @@ export class GeminiApi {
 
 	private getModelInstance(modelName?: string): GenerativeModel {
 		const modelToUse = modelName ?? this.plugin.settings.chatModelName;
+		const lang = window.localStorage.getItem('language') || 'en';
 		const systemInstruction = this.prompts.systemPrompt({
 			userName: this.plugin.settings.userName,
+			language: lang,
 		});
 		let tools: any[] = [];
 		let modelInstance: GenerativeModel;
