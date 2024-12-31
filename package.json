@@ -22,6 +22,7 @@
 		"codemirror-companion-extension": "^0.0.11",
 		"esbuild": "0.17.3",
 		"obsidian": "latest",
+		"obsidian-dataview": "^0.5.64",
 		"prettier": "^3.3.3",
 		"raw-loader": "^4.0.2",
 		"ts-loader": "^9.5.1",
