@@ -1,5 +1,10 @@
 import ObsidianGemini from '../main';
-import { DynamicRetrievalMode, GenerateContentResult, GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
+import {
+	DynamicRetrievalMode,
+	GenerateContentResult,
+	GenerativeModel,
+	GoogleGenerativeAI,
+} from '@google/generative-ai';
 import { GeminiPrompts } from './prompts';
 import { GeminiSearchTool } from './tools/search';
 import { Notice } from 'obsidian';

@@ -12,6 +12,7 @@ This plugin integrates Google's Gemini AI with Obsidian, providing intelligent a
 ## Installation
 
 1. Install from Obsidian Community Plugins:
+
    - Open Settings → Community plugins
    - Search for "Gemini"
    - Click Install and Enable
@@ -34,22 +35,26 @@ This plugin integrates Google's Gemini AI with Obsidian, providing intelligent a
 ## Usage
 
 ### Chat Interface
+
 - Use the command palette to open "Gemini Chat"
 - The chat will use your current note as context
 - Type messages to interact with Gemini
 - Copy bot responses using the copy button
 
 ### Document Summarization
+
 1. Open the document you want to summarize
 2. Run the "Summarize Active File" command
 3. A one-sentence summary will be added to your document's frontmatter
 
 ### AI-Assisted Writing (Experimental)
+
 - Enable "Rewrite Files" in settings
 - Use the chat interface to collaborate with Gemini on document writing
 - The model will update your current document based on the conversation
 
 ### Completions
+
 - From the command palette select Gemini Scribe: Toggle Completions
 - You'll now see IDE style completions whenever you pause in your writing
 - Hit Tab to accept the completion or any other key to dismiss.

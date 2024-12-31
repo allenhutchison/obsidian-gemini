@@ -25,9 +25,7 @@ export class GeminiPrompts {
 	private timePromptTemplate: Handlebars.TemplateDelegate;
 
 	constructor() {
-		this.completionsPromptTemplate = Handlebars.compile(
-			completionPromptContent
-		);
+		this.completionsPromptTemplate = Handlebars.compile(completionPromptContent);
 		this.systemPromptTemplate = Handlebars.compile(systemPromptContent);
 		this.generalPromptTemplate = Handlebars.compile(generalPromptContent);
 		this.summaryPromptTemplate = Handlebars.compile(summaryPromptContent);

@@ -9,164 +9,162 @@ If your plugin does not need CSS, delete this file.
 /* in your plugin's styles.css or a <style> tag in your view */
 
 .gemini-scribe-chatbox {
-    display: flex;
-    flex-direction: column; /* Messages flow vertically */
-    overflow-y: auto;  /* Add scrollbar if needed */
-    flex-grow: 1;
-    padding: var(--size-2-1);
-    background-color: var(--background-primary);
+	display: flex;
+	flex-direction: column; /* Messages flow vertically */
+	overflow-y: auto; /* Add scrollbar if needed */
+	flex-grow: 1;
+	padding: var(--size-2-1);
+	background-color: var(--background-primary);
 }
 
 .gemini-scribe-message-container {
-    margin-bottom: var(--size-2-2); /* Space between messages */
+	margin-bottom: var(--size-2-2); /* Space between messages */
 }
 
 .gemini-scribe-sender-indicator {
-    font-weight: bold;
-    margin-bottom: var(--size-1-2); /* Space between indicator and message */
-    color: var(--text-muted); /* Use theme's muted text color */
+	font-weight: bold;
+	margin-bottom: var(--size-1-2); /* Space between indicator and message */
+	color: var(--text-muted); /* Use theme's muted text color */
 }
 
 .gemini-scribe-message {
-    user-select: text;
-    -webkit-user-select: text; /* For older WebKit browsers */
-    -ms-user-select: text; /* For older Internet Explorer */
-    padding: var(--size-2-1) var(--size-2-2); /* Padding within message bubbles */
-    border-radius: var(--radius-s); /* Rounded corners for the bubbles */
-    box-sizing: border-box;
-    color: var(--text-normal); /* Use theme's normal text color */
-    width: 100%;
+	user-select: text;
+	-webkit-user-select: text; /* For older WebKit browsers */
+	-ms-user-select: text; /* For older Internet Explorer */
+	padding: var(--size-2-1) var(--size-2-2); /* Padding within message bubbles */
+	border-radius: var(--radius-s); /* Rounded corners for the bubbles */
+	box-sizing: border-box;
+	color: var(--text-normal); /* Use theme's normal text color */
+	width: 100%;
 }
 
 .gemini-scribe-message.user {
-    background-color: var(--background-secondary); /* Use theme's modifier background color */
+	background-color: var(--background-secondary); /* Use theme's modifier background color */
 }
 
 .gemini-scribe-message.model {
-    background-color: var(--background-secondary); /* Use theme's primary background color */
+	background-color: var(--background-secondary); /* Use theme's primary background color */
 }
 
-
 .gemini-scribe-message.grounding {
-    background-color: var(--background-secondary); /* Use theme's primary background color */
+	background-color: var(--background-secondary); /* Use theme's primary background color */
 }
 
 .gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button {
-    background-color: var(--interactive-accent);
-    border: none;
-    color: var(--text-on-accent);
-    padding: var(--size-4-2) var(--size-4-3);
-    border-radius: var(--radius-s);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+	background-color: var(--interactive-accent);
+	border: none;
+	color: var(--text-on-accent);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button::before {
-    content: attr(data-icon);
-    font-family: 'Lucide';
-    font-size: var(--font-size-m);
-    margin-right: var(--size-1-2);
+	content: attr(data-icon);
+	font-family: 'Lucide';
+	font-size: var(--font-size-m);
+	margin-right: var(--size-1-2);
 }
 
 .gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button:hover {
-    background-color: var(--interactive-accent-hover);
+	background-color: var(--interactive-accent-hover);
 }
 
 /* Style the input area */
 .gemini-scribe-input-area {
-    display: flex;
-    align-items: flex-start; /* Align items to top */
-    margin-top: var(--size-2-1); /* Separate input area from chatbox */
-    margin-bottom: var(--size-2-1);
-    width: 100%;
+	display: flex;
+	align-items: flex-start; /* Align items to top */
+	margin-top: var(--size-2-1); /* Separate input area from chatbox */
+	margin-bottom: var(--size-2-1);
+	width: 100%;
 }
 
 .gemini-scribe-input-area .gemini-scribe-chat-input {
-    padding: var(--size-4-2);
-    border: var(--border-width) solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-    margin-right: var(--size-2-2);
-    flex-grow: 1;
-    background-color: var(--background-modifier-form-field);
-    width: 100%; /* Ensure the input takes the full width of the container */
-    height: 50px; /* Adjust the height as needed */
-    font-size: 16px; /* Adjust the font size as needed */
-    resize: vertical; /* Allow vertical resizing */
-    overflow: auto; /* Ensure the text wraps inside the box */
-    white-space: pre-wrap; /* Ensure the text wraps inside the box */
+	padding: var(--size-4-2);
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	margin-right: var(--size-2-2);
+	flex-grow: 1;
+	background-color: var(--background-modifier-form-field);
+	width: 100%; /* Ensure the input takes the full width of the container */
+	height: 50px; /* Adjust the height as needed */
+	font-size: 16px; /* Adjust the font size as needed */
+	resize: vertical; /* Allow vertical resizing */
+	overflow: auto; /* Ensure the text wraps inside the box */
+	white-space: pre-wrap; /* Ensure the text wraps inside the box */
 }
 
 /* Optional: Style the placeholder text */
 .gemini-scribe-input-area .gemini-scribe-chat-input::placeholder {
-    color: var(--text-muted); /* Adjust the color as needed */
-    opacity: 1; /* Ensure the placeholder text is fully opaque */
+	color: var(--text-muted); /* Adjust the color as needed */
+	opacity: 1; /* Ensure the placeholder text is fully opaque */
 }
 
 /* Create a container for send button and timer */
 .gemini-scribe-send-container .gemini-scribe-send-button:hover {
-    background-color: var(--interactive-accent-hover);
+	background-color: var(--interactive-accent-hover);
 }
 
 /* Create a container for send button and timer */
 .gemini-scribe-send-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-left: var(--size-2-2);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-left: var(--size-2-2);
 }
 
 .gemini-scribe-send-button {
-    background-color: var(--interactive-accent);
-    border: none;
-    color: var(--text-on-accent);
-    padding: var(--size-4-2) var(--size-4-3);
-    border-radius: var(--radius-s);
-    cursor: pointer;
+	background-color: var(--interactive-accent);
+	border: none;
+	color: var(--text-on-accent);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-s);
+	cursor: pointer;
 }
 
-
 .gemini-scribe-send-container .gemini-scribe-send-button {
-    background-color: var(--interactive-accent);
-    border: none;
-    color: var(--text-on-accent);
-    padding: var(--size-4-2) var(--size-4-3);
-    border-radius: var(--radius-s);
-    cursor: pointer;
+	background-color: var(--interactive-accent);
+	border: none;
+	color: var(--text-on-accent);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-s);
+	cursor: pointer;
 }
 
 .gemini-scribe-send-container .gemini-scribe-send-button:hover {
-    background-color: var(--interactive-accent-hover);
+	background-color: var(--interactive-accent-hover);
 }
 
 .gemini-scribe-options-area {
-    display: flex;
-    align-items: center;
-    padding: var(--size-2-1);
-    margin-bottom: var(--size-2-1);
+	display: flex;
+	align-items: center;
+	padding: var(--size-2-1);
+	margin-bottom: var(--size-2-1);
 }
 
 .gemini-scribe-rewrite-checkbox {
-    margin-right: var(--size-2-2);
+	margin-right: var(--size-2-2);
 }
 
 .gemini-scribe-rewrite-label {
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    cursor: pointer;
+	color: var(--text-muted);
+	display: flex;
+	align-items: center;
+	cursor: pointer;
 }
 
 .gemini-scribe-timer {
-    color: var(--text-muted);
-    font-size: 14px;
-    margin-top: 5px;
-    min-width: 4em;
-    text-align: center;
+	color: var(--text-muted);
+	font-size: 14px;
+	margin-top: 5px;
+	min-width: 4em;
+	text-align: center;
 }
 
 .gemini-ghost-text {
-    color: var(--text-muted);
-    opacity: 0.5;
+	color: var(--text-muted);
+	opacity: 0.5;
 }

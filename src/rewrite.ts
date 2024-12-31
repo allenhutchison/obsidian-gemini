@@ -11,10 +11,7 @@ export class ModelRewriteMode {
 		this.prompts = new GeminiPrompts();
 	}
 
-	async generateRewriteResponse(
-		userMessage: string,
-		conversationHistory: any[]
-	) {
+	async generateRewriteResponse(userMessage: string, conversationHistory: any[]) {
 		const prompt = this.prompts.rewritePrompt({ userMessage: userMessage });
 		await this.plugin.history.appendHistory({
 			role: 'user',

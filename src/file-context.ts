@@ -38,7 +38,7 @@ export class FileContextTree {
 		const inlineLinks = fileCache?.links || [];
 		const frontmatterLinks = fileCache?.frontmatterLinks || [];
 		const embedLinks = fileCache?.embeds || [];
-		const backlinks = await getBacklinks(file) || [];
+		const backlinks = (await getBacklinks(file)) || [];
 
 		// Combine all link types
 		const allLinks = new Set([...inlineLinks, ...frontmatterLinks, ...embedLinks, ...backlinks]);

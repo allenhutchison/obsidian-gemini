@@ -18,12 +18,8 @@ export class GeminiSummary {
 				model: this.plugin.settings.summaryModelName,
 				prompt: this.prompts.summaryPrompt({ content: fileContent }),
 			};
-			const summary =
-				await this.plugin.geminiApi.generateModelResponse(request);
-			this.plugin.gfile.addToFrontMatter(
-				this.plugin.settings.summaryFrontmatterKey,
-				summary.markdown
-			);
+			const summary = await this.plugin.geminiApi.generateModelResponse(request);
+			this.plugin.gfile.addToFrontMatter(this.plugin.settings.summaryFrontmatterKey, summary.markdown);
 		} else {
 			console.error('Failed to get file content for summary.');
 		}

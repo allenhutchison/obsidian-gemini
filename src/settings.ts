@@ -70,12 +70,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 			)
 			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.sendContext)
-					.onChange(async (value) => {
-						this.plugin.settings.sendContext = value;
-						await this.plugin.saveSettings();
-					})
+				toggle.setValue(this.plugin.settings.sendContext).onChange(async (value) => {
+					this.plugin.settings.sendContext = value;
+					await this.plugin.saveSettings();
+				})
 			);
 
 		new Setting(containerEl)
@@ -101,12 +99,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 			)
 			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.searchGrounding)
-					.onChange(async (value) => {
-						this.plugin.settings.searchGrounding = value;
-						await this.plugin.saveSettings();
-					})
+				toggle.setValue(this.plugin.settings.searchGrounding).onChange(async (value) => {
+					this.plugin.settings.searchGrounding = value;
+					await this.plugin.saveSettings();
+				})
 			);
 
 		new Setting(containerEl)
@@ -139,41 +135,35 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			.setName('Rewrite Files')
 			.setDesc('Whether to allow the model to rewrite files during chat.')
 			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.rewriteFiles)
-					.onChange(async (value) => {
-						this.plugin.settings.rewriteFiles = value;
-						await this.plugin.saveSettings();
-					})
+				toggle.setValue(this.plugin.settings.rewriteFiles).onChange(async (value) => {
+					this.plugin.settings.rewriteFiles = value;
+					await this.plugin.saveSettings();
+				})
 			);
-		
+
 		// Chat History
 		new Setting(containerEl).setName('Chat History').setHeading();
 
 		new Setting(containerEl)
 			.setName('Enable Chat History')
-			.setDesc('Store chat history as a json file in your vault. This will allow you to view past conversations between sessions.')
+			.setDesc(
+				'Store chat history as a json file in your vault. This will allow you to view past conversations between sessions.'
+			)
 			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.chatHistory)
-					.onChange(async (value) => {
-						this.plugin.settings.chatHistory = value;
-						await this.plugin.saveSettings();
-					})
+				toggle.setValue(this.plugin.settings.chatHistory).onChange(async (value) => {
+					this.plugin.settings.chatHistory = value;
+					await this.plugin.saveSettings();
+				})
 			);
-			
+
 		new Setting(containerEl)
 			.setName('History Folder')
 			.setDesc('The folder where history file will be stored.')
-			.addText(text => {
-				const folderSuggest = new FolderSuggest(
-					this.app,
-					text.inputEl,
-					async (folder) => {
-						this.plugin.settings.historyFolder = folder;
-						await this.plugin.saveSettings();
-					}
-				);
+			.addText((text) => {
+				const folderSuggest = new FolderSuggest(this.app, text.inputEl, async (folder) => {
+					this.plugin.settings.historyFolder = folder;
+					await this.plugin.saveSettings();
+				});
 				text.setValue(this.plugin.settings.historyFolder);
 			});
 	}

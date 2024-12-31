@@ -73,16 +73,17 @@ export class GeminiCompletions {
 			this.plugin.addCommand({
 				id: 'gemini-scribe-toggle-completions', // Add plugin prefix
 				name: 'Toggle completions',
-				callback: () => {  // Use callback instead of editorCallback
+				callback: () => {
+					// Use callback instead of editorCallback
 					this.completionsOn = !this.completionsOn;
 					new Notice(`Gemini Scribe Completions are now ${this.completionsOn ? 'enabled' : 'disabled'}.`);
 					if (this.completionsOn) {
 						this.force_fetch();
 					}
-				}
+				},
 			});
 		} catch (error) {
-			console.error("Error setting up completion commands:", error);
+			console.error('Error setting up completion commands:', error);
 		}
 	}
 }
