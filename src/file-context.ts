@@ -1,5 +1,6 @@
 import ObsidianGemini from '../main';
 import { MarkdownRenderer, TFile } from 'obsidian';
+import { getBacklinks } from './files/backlinks';
 
 // File node interface to represent each document and its links
 interface FileContextNode {
@@ -37,9 +38,10 @@ export class FileContextTree {
 		const inlineLinks = fileCache?.links || [];
 		const frontmatterLinks = fileCache?.frontmatterLinks || [];
 		const embedLinks = fileCache?.embeds || [];
+		const backlinks = await getBacklinks(file) || [];
 
 		// Combine all link types
-		const allLinks = [...inlineLinks, ...frontmatterLinks, ...embedLinks];
+		const allLinks = new Set([...inlineLinks, ...frontmatterLinks, ...embedLinks, ...backlinks]);
 
 		// Process each link
 		for (const link of allLinks) {
