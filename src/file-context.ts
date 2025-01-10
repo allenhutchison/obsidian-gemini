@@ -1,6 +1,7 @@
 import ObsidianGemini from '../main';
 import { MarkdownRenderer, TFile } from 'obsidian';
 import { getBacklinks } from './files/backlinks';
+import { GeminiFile } from './files';
 
 // File node interface to represent each document and its links
 interface FileContextNode {
@@ -15,10 +16,12 @@ export class FileContextTree {
 	private plugin: ObsidianGemini;
 	private maxDepth: number;
 	private readonly MAX_TOTAL_CHARS = 500000; // TODO(adh): Make this configurable
+	private fileHelper: GeminiFile;
 
 	constructor(plugin: ObsidianGemini, depth?: number) {
 		this.plugin = plugin;
 		this.maxDepth = depth ?? this.plugin.settings.maxContextDepth;
+		this.fileHelper = new GeminiFile(plugin);
 	}
 
 	async buildStructure(file: TFile, currentDepth: number = 0, renderContent: boolean): Promise<FileContextNode | null> {
@@ -46,10 +49,12 @@ export class FileContextTree {
 		// Process each link
 		for (const link of allLinks) {
 			const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(link.link, file.path);
-			if (linkedFile && linkedFile instanceof TFile) {
-				const linkedNode = await this.buildStructure(linkedFile, currentDepth + 1, renderContent);
-				if (linkedNode) {
-					node.links.set(linkedFile.path, linkedNode);
+			if (this.fileHelper.isMarkdownFile(linkedFile)) {
+				if (linkedFile) {
+					const linkedNode = await this.buildStructure(linkedFile, currentDepth + 1, renderContent);
+					if (linkedNode) {
+						node.links.set(linkedFile.path, linkedNode);
+					}
 				}
 			}
 		}

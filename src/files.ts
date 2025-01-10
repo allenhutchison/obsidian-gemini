@@ -59,4 +59,12 @@ export class GeminiFile {
 			return false;
 		}
 	}
+
+	isMarkdownFile(file: TFile | null): boolean {
+		if (file && this.isFile(file) && file.extension === 'md') {
+			return true;
+		} else {
+			return false;
+		}
+	}
 }
