@@ -37,7 +37,6 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 	conversationHistory: any[];
 	userMessage: string;
 	renderContent?: boolean;
-	streamResponse?: boolean;
 }
 
 export class GeminiApi {

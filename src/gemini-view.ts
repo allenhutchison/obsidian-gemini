@@ -228,7 +228,6 @@ export class GeminiView extends ItemView {
 					model: this.plugin.settings.chatModelName,
 					prompt: prompt,
 					renderContent: true,
-					streamResponse: true,
 				};
 				const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
 
