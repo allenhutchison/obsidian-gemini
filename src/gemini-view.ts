@@ -1,12 +1,15 @@
 import ObsidianGemini from '../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 import { ModelRewriteMode } from './rewrite';
+import { ExtendedModelRequest } from './api';
+import { GeminiPrompts } from './prompts';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
 export class GeminiView extends ItemView {
 	private plugin: ObsidianGemini;
 	private rewriteMode: ModelRewriteMode;
+	private prompts: GeminiPrompts;
 	private chatbox: HTMLDivElement;
 	private currentFile: TFile | null;
 	private observer: MutationObserver;
@@ -19,6 +22,7 @@ export class GeminiView extends ItemView {
 		super(leaf);
 		this.plugin = plugin;
 		this.rewriteMode = new ModelRewriteMode(plugin);
+		this.prompts = new GeminiPrompts();
 	}
 
 	getViewType() {
@@ -217,7 +221,16 @@ export class GeminiView extends ItemView {
 			}
 			try {
 				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
-				const botResponse = await this.plugin.geminiApi.getBotResponse(userMessage, history);
+				const prompt = this.prompts.generalPrompt({ userMessage: userMessage});
+				const request: ExtendedModelRequest = {
+					userMessage: userMessage,
+					conversationHistory: history,
+					model: this.plugin.settings.chatModelName,
+					prompt: prompt,
+					renderContent: true,
+				};
+				const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
+
 				this.plugin.history.appendHistoryForFile(this.currentFile!, {
 					role: 'user',
 					message: userMessage,

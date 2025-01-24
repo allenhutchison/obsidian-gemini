@@ -50,23 +50,6 @@ export class GeminiApi {
 		this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
 	}
 
-	async getBotResponse(userMessage: string, conversationHistory: any[]): Promise<ModelResponse> {
-		const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
-		const request: ExtendedModelRequest = {
-			prompt: prompt,
-			userMessage: userMessage,
-			conversationHistory: conversationHistory,
-			model: this.plugin.settings.chatModelName,
-		};
-		try {
-			const response = await this.generateModelResponse(request);
-			return response;
-		} catch (error) {
-			console.error('Error calling Gemini:', error);
-			throw error;
-		}
-	}
-
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		const modelInstance = this.getModelInstance(request.model);
 
@@ -82,7 +65,7 @@ export class GeminiApi {
 					request.prompt,
 					request.userMessage,
 					request.conversationHistory,
-					true
+					request.renderContent ?? true
 				);
 				const result = await modelInstance.generateContent({ contents });
 				response = this.parseModelResult(result);
