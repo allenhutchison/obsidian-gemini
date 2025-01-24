@@ -37,6 +37,7 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 	conversationHistory: any[];
 	userMessage: string;
 	renderContent?: boolean;
+	streamResponse?: boolean;
 }
 
 export class GeminiApi {
@@ -61,12 +62,7 @@ export class GeminiApi {
 		try {
 			if ('conversationHistory' in request) {
 				// Extended case with history
-				const contents = await this.buildContents(
-					request.prompt,
-					request.userMessage,
-					request.conversationHistory,
-					request.renderContent ?? true
-				);
+				const contents = await this.buildContents(request);
 				const result = await modelInstance.generateContent({ contents });
 				response = this.parseModelResult(result);
 			} else {
@@ -80,8 +76,6 @@ export class GeminiApi {
 			new Notice('Error calling Gemini.');
 			throw error;
 		}
-
-		return response;
 	}
 
 	private getModelInstance(modelName?: string): GenerativeModel {
@@ -118,31 +112,29 @@ export class GeminiApi {
 		return response;
 	}
 
-	private async buildContents(
-		prompt: string,
-		userMessage: string,
-		conversationHistory: any[],
-		renderContent: boolean = false
-	): Promise<any[]> {
+	private async buildContents(request: ExtendedModelRequest): Promise<any[]> {
 		const contents = [];
 
 		// First push the base prompt on the stack.
-		if (prompt != null) {
-			contents.push(this.buildContentElement('user', prompt));
+		if (request.prompt != null) {
+			contents.push(this.buildContentElement('user', request.prompt));
 		}
+		
 		// Then push the current date
 		const date = this.prompts.datePrompt({ date: new Date().toDateString() });
 		contents.push(this.buildContentElement('user', date));
 
 		// Then push the file context.
 		const depth = this.plugin.settings.maxContextDepth;
+		const renderContent = request.renderContent ?? true;
 		const fileContent = await this.plugin.gfile.getCurrentFileContent(depth, renderContent);
 		if (fileContent != null) {
 			contents.push(this.buildContentElement('user', fileContent));
 		}
 
 		// Now the entire conversation history.
-		conversationHistory.forEach((entry) => {
+		const history = request.conversationHistory ?? [];
+		history.forEach((entry) => {
 			contents.push(this.buildContentElement(entry.role, entry.message));
 		});
 
@@ -151,7 +143,7 @@ export class GeminiApi {
 		contents.push(this.buildContentElement('user', time));
 
 		// Finally, the latest user message.
-		contents.push(this.buildContentElement('user', userMessage));
+		contents.push(this.buildContentElement('user', request.userMessage));
 		return contents;
 	}
 
