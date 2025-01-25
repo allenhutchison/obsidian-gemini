@@ -13,6 +13,7 @@ interface FileContextNode {
 // Class to manage the file structure
 export class FileContextTree {
 	private root: FileContextNode | null = null;
+	private visited: Set<string> = new Set();
 	private plugin: ObsidianGemini;
 	private maxDepth: number;
 	private readonly MAX_TOTAL_CHARS = 500000; // TODO(adh): Make this configurable
@@ -26,10 +27,17 @@ export class FileContextTree {
 		this.dataViewHelper = new ScribeDataView(this.fileHelper, this.plugin);
 	}
 
-	async buildStructure(file: TFile, currentDepth: number = 0, renderContent: boolean): Promise<FileContextNode | null> {
-		if (!file || currentDepth > this.maxDepth) {
+	async buildStructure(
+		file: TFile, 
+		currentDepth: number = 0, 
+		renderContent: boolean,
+		visited: Set<string>
+	): Promise<FileContextNode | null> {
+		if (!file || currentDepth > this.maxDepth || visited.has(file.path)) {
 			return null;
 		}
+
+		visited.add(file.path);
 
 		// Create new node
 		const node: FileContextNode = {
@@ -48,7 +56,7 @@ export class FileContextTree {
 
 		// Process each link
 		for (const file of allLinks) {
-			const linkedNode = await this.buildStructure(file, currentDepth + 1, renderContent);
+			const linkedNode = await this.buildStructure(file, currentDepth + 1, renderContent, visited);
 			if (linkedNode) {
 				node.links.set(file.path, linkedNode);
 			}
@@ -57,7 +65,8 @@ export class FileContextTree {
 	}
 
 	async initialize(startFile: TFile, renderContent: boolean): Promise<void> {
-		this.root = await this.buildStructure(startFile, 0, renderContent);
+		this.visited.clear();
+		this.root = await this.buildStructure(startFile, 0, renderContent, this.visited);
 	}
 
 	toString(maxCharsPerFile: number = 50000): string {
