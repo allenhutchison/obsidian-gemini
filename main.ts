@@ -3,7 +3,7 @@ import ObsidianGeminiSettingTab from './src/settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './src/gemini-view';
 import { GeminiSummary } from './src/summary';
 import { GeminiApi } from './src/api';
-import { GeminiFile } from './src/files';
+import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
 
@@ -44,7 +44,7 @@ export default class ObsidianGemini extends Plugin {
 
 	// Public members
 	public geminiApi: GeminiApi;
-	public gfile: GeminiFile;
+	public gfile: ScribeFile;
 	public geminiView: GeminiView;
 	public history: GeminiHistory;
 
@@ -77,7 +77,7 @@ export default class ObsidianGemini extends Plugin {
 	async setupGeminiScribe() {
 		await this.loadSettings();
 		this.geminiApi = new GeminiApi(this);
-		this.gfile = new GeminiFile(this);
+		this.gfile = new ScribeFile(this);
 
 		// Initialize history
 		// Getting the vault folder for the import and export of history has to wait for the layout
