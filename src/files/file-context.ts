@@ -49,10 +49,12 @@ export class FileContextTree {
 		// Get all links from file
 		const fileCacheLinks = this.fileHelper.getUniqueLinks(file);
 		const backlinks = (await this.dataViewHelper.getBacklinks(file)) || new Set();
+		const dataviewLinks = (await this.dataViewHelper.getLinksFromDataviewBlocks(file)) || new Set();
 
 		// Combine all link types
 		const allLinks = fileCacheLinks;
 		backlinks.forEach(link => allLinks.add(link));
+		dataviewLinks.forEach(link => allLinks.add(link));
 
 		// Process each link
 		for (const file of allLinks) {

@@ -44,46 +44,41 @@ export class ScribeDataView {
 		return normalizedLinks;
 	}
 
-	async getLinksFromDataviewBlocks(file: TFile): Promise<{ link: string }[]> {
-		this.iterateCodeblocksInFile(file, (cb) => {
+	async getLinksFromDataviewBlocks(file: TFile): Promise<Set<TFile>> {
+		const allLinks: Set<TFile> = new Set();
+		const promises: Promise<Set<TFile>>[] = [];
+		
+		await this.iterateCodeblocksInFile(file, (cb) => {
 			if (cb.language === 'dataview') {
-				// Process the Dataview query here
-				console.info('DATA VIEW BLOCK FOUND');
-				console.info(cb.text);
-				this.evaluateDataviewQuery(cb.text, file);
+				promises.push(this.evaluateDataviewQuery(cb.text, file));
 			}
 		});
 
-		return [];
-	}
-
-	async getLinksFromBlock(block: string): Promise<{ link: string }[]> {
-		const result = await this.dataViewAPI.evaluate(block);
-		console.info(result);
-		return [];
+		const results = await Promise.all(promises);
+		results.forEach(blockLinks => {
+			blockLinks.forEach(link => allLinks.add(link));
+		});
+		allLinks.forEach(link => console.log(link));
+		return allLinks;
 	}
 
 	async evaluateDataviewQuery(query: string, file: TFile) {
-		try {
-			const result = await this.dataViewAPI.query(query, file.path);
-			console.info(result);
-			console.info(result.value.type);
-			if (result.value.type === 'list') {
-				console.info('Found a list');
-                result.value.values.forEach((value: string) => {
-                    // Assuming the list contains file names
-                    if (typeof value === 'string') {
-                        // Create an Obsidian link for the file
-                        const linkText: string = `[[${value}]]`;
-                        MarkdownRenderer.render(this.plugin.app, linkText, document.createElement('div'), file.path, this.plugin);
-                        console.info(linkText);
-                    }
-                });
+		const result = await this.dataViewAPI.query(query, file.path);
+		const normalizedLinks: Set<TFile> = new Set();
+		console.info(result);
+		console.info(result.value.type);
+		if (result.value.type === 'list') {
+			for (const link of result.value.values) {
+				const normalizedPath = this.scribeFile.normalizePath(link.path, file);
+				if (normalizedPath) {
+					console.info(normalizedPath);
+					normalizedLinks.add(normalizedPath);
+				} else {
+					console.warn(`Link "${link}" in file "${file.path}" could not be normalized.`);
+				}
 			}
-		} catch (error) {
-			// Handle errors
-			console.error('Error evaluating Dataview query:', error);
 		}
+		return normalizedLinks;
 	}
 
 	async iterateCodeblocksInFile(
