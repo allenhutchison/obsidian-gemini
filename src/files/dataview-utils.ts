@@ -25,23 +25,7 @@ export class ScribeDataView {
 
 	async getBacklinks(file: TFile): Promise<Set<TFile>> {
 		const query = `list where contains(file.outlinks, this.file.link)`;
-		const links = await this.dataViewAPI.query(query, file.path);
-		return this.parseDataViewListForLinksToFiles(links, file);
-	}
-
-	parseDataViewListForLinksToFiles(queryResults: any, file: TFile): Set<TFile> {
-		const normalizedLinks: Set<TFile> = new Set();
-		if (queryResults.value.type === 'list') {
-			for (const link of queryResults.value.values) {
-				const normalizedPath = this.scribeFile.normalizePath(link.path, file);
-				if (normalizedPath) {
-					normalizedLinks.add(normalizedPath);
-				} else {
-					console.warn(`Link "${link}" in file "${file.path}" could not be normalized.`);
-				}
-			}
-		}
-		return normalizedLinks;
+		return await this.evaluateDataviewQuery(query, file);
 	}
 
 	async getLinksFromDataviewBlocks(file: TFile): Promise<Set<TFile>> {
