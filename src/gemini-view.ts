@@ -23,6 +23,20 @@ export class GeminiView extends ItemView {
 		this.plugin = plugin;
 		this.rewriteMode = new ModelRewriteMode(plugin);
 		this.prompts = new GeminiPrompts();
+		this.registerLinkClickHandler();
+	}
+
+	registerLinkClickHandler() {
+		this.containerEl.addEventListener('click', (event) => {
+			const target = event.target as HTMLElement;
+			if (target.tagName === 'A' && target.classList.contains('internal-link')) {
+				event.preventDefault();
+				const filePath = target.getAttribute('href');
+				if (filePath) {
+					this.app.workspace.openLinkText(filePath, '', true);
+				}
+			}
+		});
 	}
 
 	getViewType() {
