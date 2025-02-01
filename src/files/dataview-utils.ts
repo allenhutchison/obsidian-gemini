@@ -49,20 +49,53 @@ export class ScribeDataView {
 	async evaluateDataviewQuery(query: string, file: TFile) {
 		const result = await this.dataViewAPI.query(query, file.path);
 		const normalizedLinks: Set<TFile> = new Set();
-		console.info(result);
-		console.info(result.value.type);
-		if (result.value.type === 'list') {
-			for (const link of result.value.values) {
+		const processLink = (link: any) => {
+			if (this.isFileLink(link)) {
 				const normalizedPath = this.scribeFile.normalizePath(link.path, file);
 				if (normalizedPath) {
-					console.info(normalizedPath);
 					normalizedLinks.add(normalizedPath);
 				} else {
 					console.warn(`Link "${link}" in file "${file.path}" could not be normalized.`);
 				}
 			}
+		};
+
+		if (result.value.type === 'list') {
+			for (const link of result.value.values) {
+				processLink(link);
+			}
+		} else if (result.value.type === 'table') {
+			for (const row of result.value.values) {
+				for (const cell of row) {
+					processLink(cell);
+				}
+			}
 		}
 		return normalizedLinks;
+	}
+
+	/**
+	 * Checks whether the given element (of type DataviewLink) represents a file link.
+	 *
+	 * In the plugin API, a Dataview link is typically an object with a 'path' property.
+	 * If the object has a 'subpath' or if the 'path' string contains '#' or '^',
+	 * we assume it’s linking to a header or block rather than the file as a whole.
+	 *
+	 * @param element - The element to check (expected to be a DataviewLink).
+	 * @returns {boolean} True if the element is a link to a file, false otherwise.
+	 */
+	isFileLink(element: any): boolean {
+		// Check that element is an object with a string 'path' property.
+		if (element && typeof element === "object" && typeof element.path === "string") {
+		// If a 'subpath' property exists, treat it as a header or block link.
+		if (element.subpath) return false;
+	
+		// Alternatively, if the 'path' itself contains header/block markers, consider it not a plain file link.
+		if (element.path.includes("#") || element.path.includes("^")) return false;
+	
+		return true;
+		}
+		return false;
 	}
 
 	async iterateCodeblocksInFile(
