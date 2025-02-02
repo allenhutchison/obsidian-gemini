@@ -41,12 +41,12 @@ export class DatabaseQueue {
 				const queueItem = this.dbQueue.shift();
 				if (!queueItem) continue;
 
-				console.debug(`[Queue] Starting operation ${opId}: ${queueItem.name}`);
+				//console.debug(`[Queue] Starting operation ${opId}: ${queueItem.name}`);
 				const startTime = Date.now();
 
 				try {
 					const result = await queueItem.operation();
-					console.debug(`[Queue] Completed operation ${opId}: ${queueItem.name} in ${Date.now() - startTime}ms`);
+					//console.debug(`[Queue] Completed operation ${opId}: ${queueItem.name} in ${Date.now() - startTime}ms`);
 					await new Promise((resolve) => setTimeout(resolve, 0)); // Ensure next tick
 				} catch (error) {
 					console.error(`[Queue] Operation ${opId}: ${queueItem.name} failed:`, error);
