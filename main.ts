@@ -1,6 +1,6 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
-import ObsidianGeminiSettingTab from './src/settings';
-import { GeminiView, VIEW_TYPE_GEMINI } from './src/gemini-view';
+import ObsidianGeminiSettingTab from './src/ui/settings';
+import { GeminiView, VIEW_TYPE_GEMINI } from './src/ui/gemini-view';
 import { GeminiSummary } from './src/summary';
 import { GeminiApi } from './src/api';
 import { ScribeFile } from './src/files';

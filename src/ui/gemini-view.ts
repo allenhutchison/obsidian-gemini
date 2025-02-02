@@ -1,8 +1,8 @@
-import ObsidianGemini from '../main';
+import ObsidianGemini from '../../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
-import { ModelRewriteMode } from './rewrite';
-import { ExtendedModelRequest } from './api';
-import { GeminiPrompts } from './prompts';
+import { ModelRewriteMode } from '../rewrite';
+import { ExtendedModelRequest } from '../api';
+import { GeminiPrompts } from '../prompts';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 

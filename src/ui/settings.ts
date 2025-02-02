@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import ObsidianGemini from '../../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
