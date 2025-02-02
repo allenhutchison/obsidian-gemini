@@ -42,35 +42,47 @@ export class ScribeDataView {
 		results.forEach(blockLinks => {
 			blockLinks.forEach(link => allLinks.add(link));
 		});
-		allLinks.forEach(link => console.log(link));
 		return allLinks;
 	}
 
 	async evaluateDataviewQuery(query: string, file: TFile) {
-		const result = await this.dataViewAPI.query(query, file.path);
 		const normalizedLinks: Set<TFile> = new Set();
-		const processLink = (link: any) => {
-			if (this.isFileLink(link)) {
-				const normalizedPath = this.scribeFile.normalizePath(link.path, file);
-				if (normalizedPath) {
-					normalizedLinks.add(normalizedPath);
-				} else {
-					console.warn(`Link "${link}" in file "${file.path}" could not be normalized.`);
-				}
+		
+		try {
+			const result = await this.dataViewAPI.query(query, file.path);
+			
+			// Check if result and result.value exist
+			if (!result?.value) {
+				console.warn(`Invalid query result for "${query}" in file "${file.path}"`);
+				return normalizedLinks;
 			}
-		};
 
-		if (result.value.type === 'list') {
-			for (const link of result.value.values) {
-				processLink(link);
-			}
-		} else if (result.value.type === 'table') {
-			for (const row of result.value.values) {
-				for (const cell of row) {
-					processLink(cell);
+			const processLink = (link: any) => {
+				if (this.isFileLink(link)) {
+					const normalizedPath = this.scribeFile.normalizePath(link.path, file);
+					if (normalizedPath) {
+						normalizedLinks.add(normalizedPath);
+					} else {
+						console.warn(`Link "${link}" in file "${file.path}" could not be normalized.`);
+					}
+				}
+			};
+
+			if (result.value.type === 'list') {
+				for (const link of result.value.values) {
+					processLink(link);
+				}
+			} else if (result.value.type === 'table') {
+				for (const row of result.value.values) {
+					for (const cell of row) {
+						processLink(cell);
+					}
 				}
 			}
+		} catch (error) {
+			console.error(`Error evaluating dataview query "${query}" in file "${file.path}":`, error);
 		}
+		
 		return normalizedLinks;
 	}
 
