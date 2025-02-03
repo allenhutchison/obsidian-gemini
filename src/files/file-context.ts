@@ -2,6 +2,7 @@ import ObsidianGemini from '../../main';
 import { MarkdownRenderer, TFile } from 'obsidian';
 import { ScribeDataView } from './dataview-utils';
 import { ScribeFile } from '.';
+import { GeminiPrompts } from '../prompts';
 
 // File node interface to represent each document and its links
 interface FileContextNode {
@@ -19,12 +20,14 @@ export class FileContextTree {
 	private readonly MAX_TOTAL_CHARS = 500000; // TODO(adh): Make this configurable
 	private fileHelper: ScribeFile;
 	private dataViewHelper: ScribeDataView;
+	private prompts: GeminiPrompts;
 
 	constructor(plugin: ObsidianGemini, depth?: number) {
 		this.plugin = plugin;
 		this.maxDepth = depth ?? this.plugin.settings.maxContextDepth;
 		this.fileHelper = new ScribeFile(plugin);
 		this.dataViewHelper = new ScribeDataView(this.fileHelper, this.plugin);
+		this.prompts = new GeminiPrompts();
 	}
 
 	async buildStructure(
@@ -84,8 +87,6 @@ export class FileContextTree {
 		maxCharsPerFile: number,
 		currentTotal: number
 	): { text: string; total: number } {
-		const indent = '  '.repeat(depth);
-		const separator = '\n==============================\n';
 
 		// Truncate content if too long
 		const truncatedContent =
@@ -93,17 +94,17 @@ export class FileContextTree {
 				? node.content.substring(0, maxCharsPerFile) + '\n[Remaining content truncated...]'
 				: node.content;
 
-		let result = depth == 0 ? 'This is the content of the current file and the files that it links to:' : separator;
+		let result = depth == 0 ? 'This is the content of the current file and the files that it links to:' : '';
 		const fileLabel = depth == 0 ? 'Current File:' : 'Linked File:';
-		result += `${indent}${fileLabel} ${node.path}${separator}${truncatedContent}${separator}`;
+		result += `${fileLabel} ${node.path}${truncatedContent}`;
 		let total = currentTotal + result.length;
-
+		result += this.prompts.contextPrompt({ file_label: fileLabel,  file_name: node.path, content: truncatedContent });
 		// Add linked files if we haven't exceeded total limit
 		if (node.links.size > 0 && total < this.MAX_TOTAL_CHARS) {
-			result += `${indent}LINKED FILES:\n`;
+			result += `LINKED FILES:\n`;
 			for (const [path, linkedNode] of node.links) {
 				if (total >= this.MAX_TOTAL_CHARS) {
-					result += `${indent}[Additional links truncated...]\n`;
+					result += `[Additional links truncated...]\n`;
 					break;
 				}
 				const linkedResult = this.nodeToString(linkedNode, depth + 1, maxCharsPerFile, total);

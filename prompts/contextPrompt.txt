@@ -1,0 +1,8 @@
+==============================
+File Label: {{file_label}}
+File Name: {{file_name}}
+WikiLink: {{link}}
+==============================
+
+{{file_contents}}
+

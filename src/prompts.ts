@@ -14,6 +14,8 @@ import rewritePromptContent from '../prompts/rewritePrompt.txt';
 import datePromptContent from '../prompts/datePrompt.txt';
 // @ts-ignore
 import timePromptContent from '../prompts/timePrompt.txt';
+// @ts-ignore
+import contextPromptContent from '../prompts/contextPrompt.txt';
 
 export class GeminiPrompts {
 	private completionsPromptTemplate: Handlebars.TemplateDelegate;
@@ -23,6 +25,7 @@ export class GeminiPrompts {
 	private rewritePromptTemplate: Handlebars.TemplateDelegate;
 	private datePromptTemplate: Handlebars.TemplateDelegate;
 	private timePromptTemplate: Handlebars.TemplateDelegate;
+	private contextPromptTemplate: Handlebars.TemplateDelegate;
 
 	constructor() {
 		this.completionsPromptTemplate = Handlebars.compile(completionPromptContent);
@@ -32,6 +35,7 @@ export class GeminiPrompts {
 		this.rewritePromptTemplate = Handlebars.compile(rewritePromptContent);
 		this.datePromptTemplate = Handlebars.compile(datePromptContent);
 		this.timePromptTemplate = Handlebars.compile(timePromptContent);
+		this.contextPromptTemplate = Handlebars.compile(contextPromptContent);
 	}
 
 	completionsPrompt(variables: { [key: string]: string }): string {
@@ -60,5 +64,9 @@ export class GeminiPrompts {
 
 	timePrompt(variables: { [key: string]: string }): string {
 		return this.timePromptTemplate(variables);
+	}
+
+	contextPrompt(variables: { [key: string]: string }): string {
+		return this.contextPromptTemplate(variables);
 	}
 }
