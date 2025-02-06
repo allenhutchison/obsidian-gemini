@@ -94,14 +94,12 @@ export class FileContextTree {
 				? node.content.substring(0, maxCharsPerFile) + '\n[Remaining content truncated...]'
 				: node.content;
 
-		let result = depth == 0 ? 'This is the content of the current file and the files that it links to:' : '';
-		const fileLabel = depth == 0 ? 'Current File:' : 'Linked File:';
-		result += `${fileLabel} ${node.path}${truncatedContent}`;
+		let result = depth == 0 ? 'This is the content of the current file and the files that it links to:\n' : '';
+		const fileLabel = depth == 0 ? 'Current File' : 'Linked File';
+		result += this.prompts.contextPrompt({ file_label: fileLabel,  file_name: node.path, file_contents: truncatedContent });
 		let total = currentTotal + result.length;
-		result += this.prompts.contextPrompt({ file_label: fileLabel,  file_name: node.path, content: truncatedContent });
 		// Add linked files if we haven't exceeded total limit
 		if (node.links.size > 0 && total < this.MAX_TOTAL_CHARS) {
-			result += `LINKED FILES:\n`;
 			for (const [path, linkedNode] of node.links) {
 				if (total >= this.MAX_TOTAL_CHARS) {
 					result += `[Additional links truncated...]\n`;
