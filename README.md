@@ -1,73 +1,127 @@
 # Gemini Scribe for Obsidian
 
-This plugin integrates Google's Gemini AI with Obsidian, providing intelligent assistance for note-taking and content generation.
+Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, providing powerful AI-driven assistance for note-taking, writing, and knowledge management directly within Obsidian. It leverages your notes as context for AI interactions, making it a highly personalized and integrated experience.
 
 ## Features
 
-- **Context-Aware Chat**: Interact with Gemini AI based on your current active note's content
-- **Smart Summarization**: Generate one-sentence summaries of your notes and store them in the document's frontmatter
-- **AI-Assisted Writing**: Collaborate with Gemini to write and refine your documents (experimental feature)
-- **IDE Style completions**: When enabled will provide IDE style text completions with the context of your note.
+*   **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note and its linked notes (up to a configurable depth) as context. This ensures highly relevant and personalized responses.
+*   **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
+*   **AI-Assisted Writing (with File Rewriting):** Collaborate with Gemini to draft, refine, and enhance your documents.  When enabled, Gemini can directly modify your current note based on the conversation, providing a seamless writing experience.
+*   **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
+*   **Chat History (Optional):**  Preserve your chat history across sessions by storing it as a JSON file within your vault.  This allows you to pick up conversations where you left off and provides a record of your AI interactions.
+*   **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
+*   **Search Grounding (Optional):** Enhance responses with Google Search results, improving the accuracy and relevance of the information provided by the AI.  A configurable threshold controls how likely search grounding is to be triggered.
+*   **Customizable Prompts:** While not directly exposed in the settings, the plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
+*   **Data Privacy:** All interactions with the Gemini API are done directly from your machine.  No data is sent to any third-party servers other than Google's.  Chat history, when enabled, is stored locally in your Obsidian vault.
+*   **Robust History Management:** Includes commands to export and import chat history to/from your vault, as well as to clear all chat history.  The history module handles file renaming and modifications automatically.
+*   **Database Driven:** Utilizes a Dexie.js database for efficient storage and retrieval of chat history, ensuring quick access and minimal performance impact.
+*   **Queued Operations:** Database operations are queued to prevent conflicts and ensure data integrity, particularly important when dealing with asynchronous writes and reads.
 
 ## Installation
 
-1. Install from Obsidian Community Plugins:
+1.  **Community Plugins (Recommended):**
+    *   Open Obsidian Settings.
+    *   Navigate to "Community plugins".
+    *   Ensure "Restricted mode" is OFF.
+    *   Click "Browse" and search for "Gemini Scribe".
+    *   Click "Install" and then "Enable".
 
-   - Open Settings → Community plugins
-   - Search for "Gemini"
-   - Click Install and Enable
-
-2. Manual installation:
-   - Download the latest release from GitHub
-   - Extract files to your vault's `.obsidian/plugins/obsidian-gemini/` directory
-   - Enable the plugin in Obsidian settings
+2.  **Manual Installation:**
+    *   Download the latest release from the [GitHub Releases](https://github.com/your-username/obsidian-gemini/releases) page (you'll need `main.js`, `manifest.json`, and `styles.css`).
+    *   Create a folder named `obsidian-gemini` inside your vault's `.obsidian/plugins/` directory.
+    *   Copy the downloaded files into the `obsidian-gemini` folder.
+    *   In Obsidian, go to Settings → Community plugins and enable "Gemini Scribe".
 
 ## Configuration
 
-1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
-2. Open plugin settings and enter your API key
-3. Configure optional settings:
-   - Select preferred Gemini model
-   - Customize system prompts
-   - Set summarization preferences
-   - Configure frontmatter key for summaries
+1.  **Obtain a Gemini API Key:**
+    *   Visit the [Google AI Studio](https://aistudio.google.com/apikey).
+    *   Create a new API key.
+
+2.  **Configure Plugin Settings:**
+    *   Open Obsidian Settings.
+    *   Go to "Gemini Scribe" under "Community plugins".
+    *   **API Key:** Paste your Gemini API key here.
+    *   **Chat Model:** Select the preferred Gemini model for chat interactions (e.g., `gemini-1.5-pro`).
+    *   **Summary Model:** Select the preferred Gemini model for generating summaries (e.g., `gemini-1.5-flash`).
+    *   **Completion Model:** Select the preferred model for IDE-style completions (e.g., `gemini-1.5-flash-8b`).
+    *   **Context Depth:**
+        *   **Send Context:** Toggle whether to send the current file's content as context to the AI.
+        *   **Max Context Depth:** Control how many levels of linked notes to include as context (0 for only the current file, 1 for direct links, etc.).
+    *  **Search Grounding:**
+        *    **Search Grounding:** Toggle the use of Google Search results to improve responses.
+        *   **Search Grounding Threshold:** Adjust the threshold for triggering search grounding (higher values make it more likely).
+    *   **Summary Frontmatter Key:**  Specify the key to use when storing summaries in the frontmatter (default: `summary`).
+    *   **Your Name:**  Enter your name, which the AI will use when addressing you.
+    *   **Rewrite Files:** Enable this option to allow Gemini to *directly modify* your current document during chat.  This is powerful but should be used with caution.
+    * **Chat History:**
+        *   **Enable Chat History:** Toggle whether to save chat history.
+        *   **History Folder:** Choose the folder within your vault to store the chat history file (`gemini-scribe-history.json`).
 
 ## Usage
 
 ### Chat Interface
 
-- Use the command palette to open "Gemini Chat"
-- The chat will use your current note as context
-- Type messages to interact with Gemini
-- Copy bot responses using the copy button
+1.  **Open Chat:**
+    *   Use the command palette (Ctrl/Cmd + P) and search for "Gemini Scribe: Open Gemini Chat".
+    *   Click the Gemini Scribe icon in the ribbon (if enabled).
+
+2.  **Interact:**
+    *   Type your message in the input box.
+    *   Press Enter (or click the Send button) to send your message.  Shift+Enter creates a newline.
+    *   The AI's responses will appear in the chatbox.  Model responses include a "Copy" button to easily copy the text.
+
+3. **Grounding Information:**
+    * If Search Grounding is enabled and the threshold is met, the AI will include a "grounding" section in its response, displaying the raw HTML from relevant search results.
 
 ### Document Summarization
 
-1. Open the document you want to summarize
-2. Run the "Summarize Active File" command
-3. A one-sentence summary will be added to your document's frontmatter
+1.  **Open the Note:** Open the Markdown file you want to summarize.
+2.  **Run Command:** Use the command palette (Ctrl/Cmd + P) and select "Gemini Scribe: Summarize Active File".
+3.  **Summary Added:** A one-sentence summary will be added to the document's frontmatter using the configured `summaryFrontmatterKey`.
 
-### AI-Assisted Writing (Experimental)
+### AI-Assisted Writing (File Rewriting)
 
-- Enable "Rewrite Files" in settings
-- Use the chat interface to collaborate with Gemini on document writing
-- The model will update your current document based on the conversation
+1.  **Enable Rewrite Files:**  In the plugin settings, ensure "Rewrite Files" is toggled ON.
+2.  **Open Chat:** Open the Gemini Chat view.
+3.  **Open a File:**  Open the Markdown file you want to edit.
+4.  **Toggle Rewrite:** In the chat view, check the "Rewrite file" checkbox.
+5.  **Interact:**  Use the chat interface to collaborate with Gemini.  The AI will *replace* the content of your file below a `# Draft` heading (or create the heading if it doesn't exist) with its generated text.  Content *above* the `# Draft` heading is preserved.
+6.  **Caution:** Be mindful when using this feature, as it directly modifies your file. Review changes carefully.
 
 ### Completions
 
-- From the command palette select Gemini Scribe: Toggle Completions
-- You'll now see IDE style completions whenever you pause in your writing
-- Hit Tab to accept the completion or any other key to dismiss.
-- Turn off by using the same command.
+1.  **Toggle Completions:** Use the command palette (Ctrl/Cmd + P) and select "Gemini Scribe: Toggle Completions".  A notice will confirm whether completions are enabled or disabled.
+2.  **Write:** Begin typing in a Markdown file.
+3.  **Suggestions:** After a short pause in typing (default: 750ms), Gemini will provide an inline suggestion.
+4.  **Accept/Dismiss:**
+    *   Press `Tab` to accept the suggestion.
+    *   Press any other key to dismiss the suggestion and continue typing.
+
+### Chat History
+
+*   **Export History:**  Use the command palette and select "Gemini Scribe: Export Chat History to Vault".  This saves the current history to `gemini-scribe-history.json` in your configured history folder.
+*   **Import History:** Use the command palette and select "Gemini Scribe: Import Chat History from Vault".  This loads the history from the JSON file, overwriting any in-memory history.  A notice confirms if the history was updated.
+*   **Clear History:** Use the command palette and select "Gemini Scribe: Clear All Chat History".  This *permanently deletes* all stored chat history.
+*   **Automatic Sync:** The plugin automatically saves history to the JSON file periodically and on plugin unload.  It also automatically imports history from the file on plugin load and whenever the file is modified.
+
+## Troubleshooting
+
+*   **API Key Errors:** Ensure your API key is correct and has the necessary permissions.
+*   **No Responses:** Check your internet connection and make sure your API key is valid.
+*   **Slow Responses:** The speed of responses depends on the Gemini model and the complexity of your request.  Larger context windows will take longer.
+*   **Completions Not Showing:**  Ensure completions are enabled via the command palette.  If they are, try typing a few words and pausing to trigger the suggestion.
+*  **History Not Loading:** Ensure "Enable Chat History" is enabled and the "History Folder" is correctly set.
+*  **"Preventing export of empty database over existing data"**: This safety check prevents data loss. If you intend to clear the history completely, use the "Clear All Chat History" command and then re-export.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## Support
 
-- Report issues on [GitHub](https://github.com/your-username/obsidian-gemini/issues)
-- Visit [author's website](https://allen.hutchison.org) for more information
+*   Report issues or suggest features on [GitHub](https://github.com/your-username/obsidian-gemini/issues).
+*   Visit [author's website](https://allen.hutchison.org) for more information.
 
 ## Credits
 
