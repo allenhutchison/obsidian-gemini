@@ -25,8 +25,15 @@ export class GeminiSearchTool {
 
 	private getTools(): any[] {
 		let tools: any[] = [];
-		switch (this.modelName) {
-			case 'gemini-2.0-flash-exp':
+		switch (true) {
+			case (this.modelName.startsWith('gemini-2.0-flash-lite') ||
+				  this.modelName.startsWith('gemini-2.0-flash-thinking')):
+				// Logic for flash-lite and flash-thinking don't currently support search			
+				tools = [];
+				break;
+			case (this.modelName.startsWith('gemini-2.0-flash') ||
+				  this.modelName.startsWith('gemini-2.0-pro')):
+				// Logic for gemini-2.0 models
 				tools = [
 					{
 						google_search: {},
