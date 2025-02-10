@@ -218,7 +218,8 @@ export class GeminiView extends ItemView {
 	}
 
 	async reloadChatFromHistory() {
-		const history = await this.plugin.history.getHistoryForFile(this.currentFile!);
+		if (!this.currentFile) return;
+		const history = await this.plugin.history.getHistoryForFile(this.currentFile);
 		if (history && history.length > 0) {
 			history.forEach((entry) => {
 				this.displayMessage(entry.message, entry.role);

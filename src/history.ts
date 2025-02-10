@@ -121,7 +121,20 @@ export class GeminiHistory {
 
 	async exportHistory() {
 		if (!this.plugin.settings.chatHistory) return;
-		await this.database.exportDatabaseToVault();
+		try {
+			if (!this.database.isOpen()) {
+				console.debug("Database is closed, skipping history export");
+				return;
+			}
+			await this.database.exportDatabaseToVault();
+		} catch (error: any) {
+			if (error?.name === 'DatabaseClosedError') {
+				console.debug("DatabaseClosedError caught; export skipped.");
+				return;
+			} else {
+				throw error;
+			}
+		}
 	}
 
 	async importHistory() {
