@@ -8,6 +8,7 @@ import { GeminiPrompts } from '../prompts';
 interface FileContextNode {
 	path: string;
 	content: string;
+	wikilink: string; // New property for wikilink
 	links: Map<string, FileContextNode>; // Map of file path to FileContextNode
 }
 
@@ -34,7 +35,8 @@ export class FileContextTree {
 		file: TFile, 
 		currentDepth: number = 0, 
 		renderContent: boolean,
-		visited: Set<string>
+		visited: Set<string>,
+		baseFile: TFile // New parameter to propagate current file for relative link resolution
 	): Promise<FileContextNode | null> {
 		if (!file || currentDepth > this.maxDepth || visited.has(file.path)) {
 			return null;
@@ -42,10 +44,11 @@ export class FileContextTree {
 
 		visited.add(file.path);
 
-		// Create new node
+		const linktext = this.fileHelper.getLinkText(file, baseFile.path);
 		const node: FileContextNode = {
 			path: file.path,
 			content: await this.getFileContent(file, renderContent),
+			wikilink: linktext,
 			links: new Map(),
 		};
 
@@ -60,10 +63,10 @@ export class FileContextTree {
 		dataviewLinks.forEach(link => allLinks.add(link));
 
 		// Process each link
-		for (const file of allLinks) {
-			const linkedNode = await this.buildStructure(file, currentDepth + 1, renderContent, visited);
+		for (const fileLink of allLinks) {
+			const linkedNode = await this.buildStructure(fileLink, currentDepth + 1, renderContent, visited, baseFile);
 			if (linkedNode) {
-				node.links.set(file.path, linkedNode);
+				node.links.set(fileLink.path, linkedNode);
 			}
 		}
 		return node;
@@ -71,7 +74,8 @@ export class FileContextTree {
 
 	async initialize(startFile: TFile, renderContent: boolean): Promise<void> {
 		this.visited.clear();
-		this.root = await this.buildStructure(startFile, 0, renderContent, this.visited);
+		// Pass startFile as the baseFile for relative link resolution
+		this.root = await this.buildStructure(startFile, 0, renderContent, this.visited, startFile);
 	}
 
 	toString(maxCharsPerFile: number = 50000): string {
@@ -96,7 +100,13 @@ export class FileContextTree {
 
 		let result = depth == 0 ? 'This is the content of the current file and the files that it links to:\n' : '';
 		const fileLabel = depth == 0 ? 'Current File' : 'Linked File';
-		result += this.prompts.contextPrompt({ file_label: fileLabel,  file_name: node.path, file_contents: truncatedContent });
+		// Updated to add wikilink property to the context prompt
+		result += this.prompts.contextPrompt({ 
+			file_label: fileLabel,  
+			file_name: node.path, 
+			wikilink: node.wikilink, 
+			file_contents: truncatedContent 
+		});
 		let total = currentTotal + result.length;
 		// Add linked files if we haven't exceeded total limit
 		if (node.links.size > 0 && total < this.MAX_TOTAL_CHARS) {

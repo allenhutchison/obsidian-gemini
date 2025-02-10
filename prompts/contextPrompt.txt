@@ -1,7 +1,7 @@
 ==============================
 File Label: {{file_label}}
 File Name: {{file_name}}
-WikiLink: {{link}}
+WikiLink: {{wikilink}}
 ==============================
 
 {{file_contents}}

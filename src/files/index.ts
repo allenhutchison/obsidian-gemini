@@ -68,6 +68,11 @@ export class ScribeFile {
 		}
 	}
 
+	getLinkText(file: TFile, linkPath: string): string {
+		const link = this.plugin.app.metadataCache.fileToLinktext(file, linkPath, true);
+		return `[[${link}]]`;
+	}
+
 	normalizePath(linkPath: string, file: TFile): TFile | null {
 		const path = this.plugin.app.metadataCache.getFirstLinkpathDest(linkPath, file.path);
 		if (this.isMarkdownFile(path)) {
