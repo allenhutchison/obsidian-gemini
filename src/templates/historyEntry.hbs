@@ -1,0 +1,24 @@
+{{#if isFirstEntry}}
+# Chat History
+*Started: {{timestamp}}*
+*Plugin Version: {{pluginVersion}}*
+
+---
+
+{{/if}}
+## {{role}}
+| Time | {{timestamp}} |
+| File Version | {{fileVersion}} |
+{{#if model}}
+| Model | {{model}} |
+| Temperature | {{temperature}} |
+{{/if}}
+{{#if context}}
+| Context | {{context}} |
+{{/if}}
+
+{{#each messageLines}}
+> {{this}}
+{{/each}}
+
+--- 

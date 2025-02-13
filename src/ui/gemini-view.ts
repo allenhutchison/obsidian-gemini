@@ -20,6 +20,7 @@ export class GeminiView extends ItemView {
 	private startTime: number | null = null;
 	private modelPicker: HTMLSelectElement;
 	private settingsUnsubscribe: (() => void) | null = null;
+	private fileOpenHandler: (file: TFile | null) => Promise<void>;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -28,6 +29,9 @@ export class GeminiView extends ItemView {
 		this.prompts = new GeminiPrompts();
 		this.registerLinkClickHandler();
 		this.registerSettingsListener();
+		
+		// Bind the handler to preserve 'this' context
+		this.fileOpenHandler = this.handleFileOpen.bind(this);
 	}
 
 	private registerSettingsListener() {
@@ -180,14 +184,24 @@ export class GeminiView extends ItemView {
 			subtree: true,
 		});
 
-		this.currentFile = this.plugin.gfile.getActiveFile();
-		this.handleFileOpen(this.currentFile);
-		this.app.workspace.on('file-open', this.handleFileOpen.bind(this));
+		// Register the file-open handler
+		this.registerEvent(
+			this.app.workspace.on('file-open', async (file) => {
+				console.log('File open event:', file?.path);  // Debug log
+				await this.handleFileOpen(file);
+			})
+		);
+
+		// Handle the currently active file
+		const activeFile = this.plugin.gfile.getActiveFile();
+		if (activeFile) {
+			console.log('Loading active file:', activeFile.path);  // Debug log
+			await this.handleFileOpen(activeFile);
+		}
 	}
 
 	async onClose() {
-		this.plugin.history.exportHistory();
-		this.app.workspace.off('file-open', this.handleFileOpen.bind(this));
+		this.app.workspace.off('file-open', this.fileOpenHandler);
 		this.observer.disconnect();
 		if (this.settingsUnsubscribe) {
 			this.settingsUnsubscribe();
@@ -253,13 +267,26 @@ export class GeminiView extends ItemView {
 
 	// This will be called when a file is opened or made active in the view.
 	// file can be null if it's the new file tab.
-	handleFileOpen(file: TFile | null) {
+	async handleFileOpen(file: TFile | null) {
 		if (!file) {
+			this.currentFile = null;
+			this.clearChat();
 			return;
-		} else {
+		}
+
+		// Only reload if it's a different file
+		if (!this.currentFile || this.currentFile.path !== file.path) {
 			this.currentFile = file;
 			this.clearChat();
-			this.reloadChatFromHistory();
+			
+			// Load and display history
+			const history = await this.plugin.history.getHistoryForFile(file);
+			if (history && history.length > 0) {
+				console.log('Loading history:', history.length, 'messages');  // Debug log
+				for (const entry of history) {
+					await this.displayMessage(entry.message, entry.role);
+				}
+			}
 		}
 	}
 
@@ -271,9 +298,16 @@ export class GeminiView extends ItemView {
 		if (!this.currentFile) return;
 		const history = await this.plugin.history.getHistoryForFile(this.currentFile);
 		if (history && history.length > 0) {
-			history.forEach((entry) => {
-				this.displayMessage(entry.message, entry.role);
-			});
+			// Display each message in order
+			for (const entry of history) {
+				// For model responses, also display any rendered content
+				if (entry.role === 'model' && entry.metadata?.rendered) {
+					this.displayMessage(entry.message, 'model');
+					this.displayMessage(entry.metadata.rendered, 'grounding');
+				} else {
+					this.displayMessage(entry.message, entry.role);
+				}
+			}
 		}
 	}
 
@@ -296,15 +330,24 @@ export class GeminiView extends ItemView {
 				};
 				const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
 
-				this.plugin.history.appendHistoryForFile(this.currentFile!, {
+				// Store messages first
+				await this.plugin.history.appendHistoryForFile(this.currentFile!, {
 					role: 'user',
 					message: userMessage,
 				});
-				this.plugin.history.appendHistoryForFile(this.currentFile!, {
+
+				await this.plugin.history.appendHistoryForFile(this.currentFile!, {
 					role: 'model',
 					message: botResponse.markdown,
+					userMessage: userMessage,
+					model: this.plugin.settings.chatModelName
 				});
-				this.displayMessage(botResponse.markdown, 'model');
+
+				// Clear and reload the entire chat
+				this.clearChat();
+				await this.reloadChatFromHistory();
+
+				// Only display grounding content as it's not stored in history
 				if (botResponse.rendered) {
 					this.displayMessage(botResponse.rendered, 'grounding');
 				}
