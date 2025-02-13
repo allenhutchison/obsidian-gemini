@@ -168,3 +168,45 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 	opacity: 0.5;
 }
+
+.gemini-scribe-model-picker-area {
+	display: flex;
+	align-items: center;
+	margin-top: var(--size-2-1);
+	padding: var(--size-2-1);
+	background-color: var(--background-secondary);
+	border-radius: var(--radius-s);
+}
+
+.gemini-scribe-model-label {
+	color: var(--text-muted);
+	margin-right: var(--size-2-2);
+	font-size: var(--font-ui-small);
+}
+
+.gemini-scribe-model-picker {
+	flex: 1;
+	padding: var(--size-4-2) var(--size-4-3);
+	min-height: 32px;
+	border: var(--border-width) solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background-color: var(--background-modifier-form-field);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
+	background-repeat: no-repeat;
+	background-position: right var(--size-4-2) center;
+	padding-right: calc(var(--size-4-3) * 2 + 16px);
+}
+
+.gemini-scribe-model-picker:hover {
+	background-color: var(--background-modifier-form-field-highlighted);
+}
+
+.gemini-scribe-model-picker:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}

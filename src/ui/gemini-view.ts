@@ -3,6 +3,7 @@ import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } fro
 import { ModelRewriteMode } from '../rewrite';
 import { ExtendedModelRequest } from '../api';
 import { GeminiPrompts } from '../prompts';
+import { GEMINI_MODELS } from '../models';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -17,6 +18,8 @@ export class GeminiView extends ItemView {
 	private timerDisplay: HTMLDivElement;
 	private timerInterval: NodeJS.Timeout | null = null;
 	private startTime: number | null = null;
+	private modelPicker: HTMLSelectElement;
+	private settingsUnsubscribe: (() => void) | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -24,6 +27,25 @@ export class GeminiView extends ItemView {
 		this.rewriteMode = new ModelRewriteMode(plugin);
 		this.prompts = new GeminiPrompts();
 		this.registerLinkClickHandler();
+		this.registerSettingsListener();
+	}
+
+	private registerSettingsListener() {
+		// Store the original saveSettings function
+		const originalSaveSettings = this.plugin.saveSettings.bind(this.plugin);
+		
+		// Override with our version that updates the UI
+		this.plugin.saveSettings = async () => {
+			await originalSaveSettings();
+			if (this.modelPicker) {
+				this.modelPicker.value = this.plugin.settings.chatModelName;
+			}
+		};
+		
+		// Store the unsubscribe function
+		this.settingsUnsubscribe = () => {
+			this.plugin.saveSettings = originalSaveSettings;
+		};
 	}
 
 	registerLinkClickHandler() {
@@ -96,6 +118,31 @@ export class GeminiView extends ItemView {
 			});
 		}
 
+		// Model picker area - now below input and options
+		const modelPickerArea = container.createDiv({ cls: 'gemini-scribe-model-picker-area' });
+		const modelLabel = modelPickerArea.createEl('span', { 
+			text: 'Model:', 
+			cls: 'gemini-scribe-model-label' 
+		});
+		this.modelPicker = modelPickerArea.createEl('select', { cls: 'gemini-scribe-model-picker' });
+		
+		// Add model options from shared list
+		GEMINI_MODELS.forEach(model => {
+			this.modelPicker.createEl('option', { 
+				value: model.value, 
+				text: model.label 
+			});
+		});
+
+		// Set the current model
+		this.modelPicker.value = this.plugin.settings.chatModelName;
+
+		// Add change listener
+		this.modelPicker.addEventListener('change', async () => {
+			this.plugin.settings.chatModelName = this.modelPicker.value;
+			await this.plugin.saveSettings();
+		});
+
 		userInput.addEventListener('keydown', async (event) => {
 			if (event.key === 'Enter' && !event.shiftKey) {
 				event.preventDefault();
@@ -142,6 +189,9 @@ export class GeminiView extends ItemView {
 		this.plugin.history.exportHistory();
 		this.app.workspace.off('file-open', this.handleFileOpen.bind(this));
 		this.observer.disconnect();
+		if (this.settingsUnsubscribe) {
+			this.settingsUnsubscribe();
+		}
 	}
 
 	async displayMessage(message: string, sender: 'user' | 'model' | 'grounding') {
