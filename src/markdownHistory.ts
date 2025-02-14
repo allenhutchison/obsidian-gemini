@@ -4,7 +4,7 @@ import { BasicGeminiConversationEntry, GeminiConversationEntry } from './databas
 import { createHash } from 'crypto';
 import * as Handlebars from 'handlebars';
 // @ts-ignore
-import historyEntryTemplate from '../templates/historyEntry.hbs';
+import historyEntryTemplate from './templates/historyEntry.hbs';
 
 export class MarkdownHistory {
     private plugin: ObsidianGemini;
@@ -135,8 +135,8 @@ export class MarkdownHistory {
         const messageLines = entry.message.split('\n');
 
         // Get file version from metadata cache
-        const fileCache = this.plugin.app.metadataCache.getFileCache(this.plugin.gfile.getActiveFile());
-        const fileVersion = fileCache?.hash?.slice(0, 8) || 'unknown';
+        const activeFile = this.plugin.gfile.getActiveFile();
+        const fileVersion = activeFile ? activeFile.stat.mtime.toString(16).slice(0, 8) : 'unknown';
 
         return this.entryTemplate({
             isFirstEntry,

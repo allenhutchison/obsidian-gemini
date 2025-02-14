@@ -6,6 +6,8 @@ import { GeminiApi } from './src/api';
 import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
+import { DatabaseToMarkdownMigration } from './src/migration/DatabaseToMarkdown';
+import { Notice } from 'obsidian';
 
 export interface ObsidianGeminiSettings {
 	apiKey: string;
@@ -67,6 +69,17 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-open-view',
 			name: 'Open Gemini Chat',
 			callback: () => this.activateView(),
+		});
+
+		// Add migration command
+		this.addCommand({
+			id: 'migrate-history-to-markdown',
+			name: 'Migrate Database History to Markdown',
+			callback: async () => {
+				new Notice('Starting history migration...');
+				const migration = new DatabaseToMarkdownMigration(this);
+				await migration.migrateHistory();
+			}
 		});
 
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));

@@ -53,6 +53,9 @@ const context = await esbuild.context({
 			},
 		},
 	],
+	loader: {
+		'.hbs': 'text',
+	},
 });
 
 if (prod) {
