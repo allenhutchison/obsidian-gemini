@@ -12,6 +12,10 @@ export class MarkdownHistory {
 
     constructor(plugin: ObsidianGemini) {
         this.plugin = plugin;
+        // Register the eq helper
+        Handlebars.registerHelper('eq', function(a, b) {
+            return a === b;
+        });
         this.entryTemplate = Handlebars.compile(historyEntryTemplate);
     }
 
@@ -184,54 +188,39 @@ export class MarkdownHistory {
         console.log('Sections:', sections.map(s => s.substring(0, 50) + '...'));
         
         for (const section of sections) {
-            if (!section.trim()) {
-                console.log('Skipping empty section');
-                continue;
-            }
+            if (!section.trim()) continue;
 
             const headerMatch = section.match(/^## (User|Model)/m);
             if (headerMatch) {
-                console.log('Processing section with header:', headerMatch[1]);
                 const role = headerMatch[1].toLowerCase();
-                const timeMatch = section.match(/\*\*Time\*\*: (.*?)$/m);
-                const modelMatch = section.match(/\*\*Model\*\*: (.*?)$/m);
-                const timestamp = timeMatch ? new Date(timeMatch[1]) : new Date();
                 
-                // Extract message content - everything after the metadata block
-                const lines = section.split('\n');
-                const messageLines = [];
-                let inMessage = false;
+                // Extract metadata from the table in the metadata callout
+                const timeMatch = section.match(/\|\s*Time\s*\|\s*(.*?)\s*\|/m);
+                const modelMatch = section.match(/\|\s*Model\s*\|\s*(.*?)\s*\|/m);
+                const timestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
                 
-                for (const line of lines) {
-                    if (inMessage) {
-                        if (line.startsWith('> ')) {
-                            messageLines.push(line.slice(2));
-                        } else if (line.trim() === '') {
-                            messageLines.push('');
-                        }
-                    } else if (line.trim() === '') {
-                        inMessage = true;
+                // Extract message content - look for user/assistant callout and get its content
+                const messageMatch = section.match(/>\s*\[!(user|assistant)\]\+\n([\s\S]*?)(?=\n\s*---|\n\s*$)/m);
+                if (messageMatch) {
+                    const messageLines = messageMatch[2]
+                        .split('\n')
+                        .map(line => line.startsWith('> ') ? line.slice(2) : line)
+                        .join('\n')
+                        .trim();
+
+                    if (messageLines) {
+                        entries.push({
+                            notePath: filePath,
+                            created_at: timestamp,
+                            role: role as 'user' | 'model',
+                            message: messageLines,
+                            model: modelMatch ? modelMatch[1].trim() : undefined,
+                        });
                     }
                 }
-                
-                const message = messageLines.join('\n').trim();
-                console.log('Parsed message:', { role, timestamp, model: modelMatch?.[1], messagePreview: message.slice(0, 50) });
-
-                if (message) {
-                    entries.push({
-                        notePath: filePath,
-                        created_at: timestamp,
-                        role: role as 'user' | 'model',
-                        message,
-                        model: modelMatch ? modelMatch[1] : undefined,
-                    });
-                }
-            } else {
-                console.log('Section without matching header:', section.substring(0, 50));
             }
         }
 
-        console.log('Total entries parsed:', entries.length);
         return entries;
     }
 

@@ -7,16 +7,27 @@
 
 {{/if}}
 ## {{role}}
-| Time | {{timestamp}} |
-| File Version | {{fileVersion}} |
+
+> [!metadata]- Message Info
+> | Property | Value |
+> | -------- | ----- |
+> | Time | {{timestamp}} |
+> | File Version | {{fileVersion}} |
 {{#if model}}
-| Model | {{model}} |
-| Temperature | {{temperature}} |
+> | Model | {{model}} |
+{{#if temperature}}
+> | Temperature | {{temperature}} |
+{{/if}}
 {{/if}}
 {{#if context}}
-| Context | {{context}} |
+> | Context | {{context}} |
 {{/if}}
 
+{{#if (eq role "User")}}
+> [!user]+
+{{else}}
+> [!assistant]+
+{{/if}}
 {{#each messageLines}}
 > {{this}}
 {{/each}}
