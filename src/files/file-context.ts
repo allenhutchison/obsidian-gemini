@@ -38,7 +38,11 @@ export class FileContextTree {
 		visited: Set<string>,
 		baseFile: TFile // New parameter to propagate current file for relative link resolution
 	): Promise<FileContextNode | null> {
-		if (!file || currentDepth > this.maxDepth || visited.has(file.path)) {
+		// Return null if file is in the history folder
+		if (!file || 
+			currentDepth > this.maxDepth || 
+			visited.has(file.path) ||
+			file.path.startsWith(this.plugin.settings.historyFolder + '/')) {
 			return null;
 		}
 
