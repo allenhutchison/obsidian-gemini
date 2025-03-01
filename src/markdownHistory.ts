@@ -238,10 +238,37 @@ export class MarkdownHistory {
                 // Extract the prefix from the old filename
                 const prefix = oldHistoryFile.split('/').pop()?.split('-')[0];
                 const newHistoryPath = `${historyFolder}/${prefix}-${newSafeFilename}.md`;
+                
+                // First update the frontmatter with the new file path
+                const historyTFile = this.plugin.app.vault.getAbstractFileByPath(oldHistoryFile);
+                if (historyTFile instanceof TFile) {
+                    await this.plugin.app.fileManager.processFrontMatter(historyTFile, (frontmatter) => {
+                        frontmatter['source_file'] = this.plugin.gfile.getLinkText(file, file.path);
+                    });
+                }
+                
+                // Then rename the history file
                 await this.plugin.app.vault.adapter.rename(oldHistoryFile, newHistoryPath);
             }
         } catch (error) {
             console.error('Failed to rename history file', error);
+        }
+    }
+
+    async deleteHistoryFile(filePath: string) {
+        const historyFolder = this.plugin.settings.historyFolder;
+        const safeFilename = filePath.replace(/[\/\\]/g, '_');
+
+        try {
+            const files = await this.plugin.app.vault.adapter.list(historyFolder);
+            // Find the history file that ends with our filename
+            const historyFile = files.files.find(f => f.endsWith(`${safeFilename}.md`));
+            
+            if (historyFile) {
+                await this.plugin.app.vault.adapter.remove(historyFile);
+            }
+        } catch (error) {
+            console.error('Failed to delete history file', error);
         }
     }
 } 
