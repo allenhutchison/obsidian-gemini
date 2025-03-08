@@ -48,6 +48,7 @@ export class MarkdownHistory {
 
     async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {
         if (!this.plugin.gfile.isFile(file)) return;
+        if (!this.plugin.settings.chatHistory) return;
 
         const historyPath = this.getHistoryFilePath(file.path);
         const entry: GeminiConversationEntry = {
@@ -97,6 +98,7 @@ export class MarkdownHistory {
 
     async getHistoryForFile(file: TFile): Promise<GeminiConversationEntry[]> {
         if (!this.plugin.gfile.isFile(file)) return [];
+        if (!this.plugin.settings.chatHistory) return [];
 
         const historyPath = this.getHistoryFilePath(file.path);
         try {
@@ -129,6 +131,8 @@ export class MarkdownHistory {
     }
 
     async clearHistory(): Promise<void> {
+        if (!this.plugin.settings.chatHistory) return;
+        
         const historyFolder = this.plugin.settings.historyFolder;
         try {
             const files = await this.plugin.app.vault.adapter.list(historyFolder);
