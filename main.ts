@@ -23,6 +23,7 @@ export interface ObsidianGeminiSettings {
 	rewriteFiles: boolean;
 	chatHistory: boolean;
 	historyFolder: string;
+	showModelPicker: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -39,6 +40,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	rewriteFiles: false,
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
+	showModelPicker: false,
 };
 
 export default class ObsidianGemini extends Plugin {

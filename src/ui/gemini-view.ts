@@ -18,7 +18,7 @@ export class GeminiView extends ItemView {
 	private timerDisplay: HTMLDivElement;
 	private timerInterval: NodeJS.Timeout | null = null;
 	private startTime: number | null = null;
-	private modelPicker: HTMLSelectElement;
+	private modelPicker: HTMLSelectElement | null = null;
 	private settingsUnsubscribe: (() => void) | null = null;
 	private fileOpenHandler: (file: TFile | null) => Promise<void>;
 
@@ -41,15 +41,55 @@ export class GeminiView extends ItemView {
 		// Override with our version that updates the UI
 		this.plugin.saveSettings = async () => {
 			await originalSaveSettings();
-			if (this.modelPicker) {
-				this.modelPicker.value = this.plugin.settings.chatModelName;
-			}
+			await this.updateModelPickerUI();
 		};
 		
 		// Store the unsubscribe function
 		this.settingsUnsubscribe = () => {
 			this.plugin.saveSettings = originalSaveSettings;
 		};
+	}
+
+	private async updateModelPickerUI() {
+		// Find the existing model picker area
+		const existingPickerArea = this.containerEl.querySelector('.gemini-scribe-model-picker-area');
+		
+		// If the setting is enabled and there's no picker, create it
+		if (this.plugin.settings.showModelPicker && !existingPickerArea) {
+			const container = this.containerEl.children[1];
+			const modelPickerArea = container.createDiv({ cls: 'gemini-scribe-model-picker-area' });
+			this.modelPicker = modelPickerArea.createEl('select', { cls: 'gemini-scribe-model-picker' });
+			
+			// Add model options from shared list
+			GEMINI_MODELS.forEach(model => {
+				this.modelPicker?.createEl('option', { 
+					value: model.value, 
+					text: model.label 
+				});
+			});
+
+			// Set the current model
+			if (this.modelPicker) {
+				this.modelPicker.value = this.plugin.settings.chatModelName;
+			}
+
+			// Add change listener
+			this.modelPicker?.addEventListener('change', async () => {
+				if (this.modelPicker) {
+					this.plugin.settings.chatModelName = this.modelPicker.value;
+					await this.plugin.saveSettings();
+				}
+			});
+		}
+		// If the setting is disabled and there is a picker, remove it
+		else if (!this.plugin.settings.showModelPicker && existingPickerArea) {
+			existingPickerArea.remove();
+			this.modelPicker = null;
+		}
+		// If the setting is enabled and there is a picker, update its value
+		else if (this.plugin.settings.showModelPicker && this.modelPicker) {
+			this.modelPicker.value = this.plugin.settings.chatModelName;
+		}
 	}
 
 	registerLinkClickHandler() {
@@ -122,26 +162,8 @@ export class GeminiView extends ItemView {
 			});
 		}
 
-		// Model picker area - now below input and options
-		const modelPickerArea = container.createDiv({ cls: 'gemini-scribe-model-picker-area' });
-		this.modelPicker = modelPickerArea.createEl('select', { cls: 'gemini-scribe-model-picker' });
-		
-		// Add model options from shared list
-		GEMINI_MODELS.forEach(model => {
-			this.modelPicker.createEl('option', { 
-				value: model.value, 
-				text: model.label 
-			});
-		});
-
-		// Set the current model
-		this.modelPicker.value = this.plugin.settings.chatModelName;
-
-		// Add change listener
-		this.modelPicker.addEventListener('change', async () => {
-			this.plugin.settings.chatModelName = this.modelPicker.value;
-			await this.plugin.saveSettings();
-		});
+		// Update model picker UI based on settings
+		await this.updateModelPickerUI();
 
 		userInput.addEventListener('keydown', async (event) => {
 			if (event.key === 'Enter' && !event.shiftKey) {

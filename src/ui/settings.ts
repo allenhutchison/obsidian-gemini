@@ -166,5 +166,18 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				});
 				text.setValue(this.plugin.settings.historyFolder);
 			});
+
+		// UI Settings
+		new Setting(containerEl).setName('UI Settings').setHeading();
+
+		new Setting(containerEl)
+			.setName('Show Model Picker')
+			.setDesc('Show the model picker in the chat interface.')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.showModelPicker).onChange(async (value) => {
+					this.plugin.settings.showModelPicker = value;
+					await this.plugin.saveSettings();
+				})
+			);
 	}
 }
