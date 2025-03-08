@@ -124,10 +124,6 @@ export class GeminiView extends ItemView {
 
 		// Model picker area - now below input and options
 		const modelPickerArea = container.createDiv({ cls: 'gemini-scribe-model-picker-area' });
-		const modelLabel = modelPickerArea.createEl('span', { 
-			text: 'Model:', 
-			cls: 'gemini-scribe-model-label' 
-		});
 		this.modelPicker = modelPickerArea.createEl('select', { cls: 'gemini-scribe-model-picker' });
 		
 		// Add model options from shared list
