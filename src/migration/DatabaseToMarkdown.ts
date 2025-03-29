@@ -38,11 +38,6 @@ export class DatabaseToMarkdownMigration {
                 `Migration complete: ${migratedCount.success} files migrated, ${migratedCount.failed} failed`
             );
 
-            // Optionally clear the old database after successful migration
-            if (migratedCount.failed === 0) {
-                await database.clearHistory();
-            }
-
             // Close the database
             await database.close();
         } catch (error) {

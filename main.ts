@@ -7,6 +7,7 @@ import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
 import { DatabaseToMarkdownMigration } from './src/migration/DatabaseToMarkdown';
+import { GeminiDatabase } from './src/database';
 import { Notice } from 'obsidian';
 
 export interface ObsidianGeminiSettings {
@@ -24,6 +25,7 @@ export interface ObsidianGeminiSettings {
 	chatHistory: boolean;
 	historyFolder: string;
 	showModelPicker: boolean;
+	databaseMigrated: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -41,6 +43,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	showModelPicker: false,
+	databaseMigrated: false,
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -59,6 +62,20 @@ export default class ObsidianGemini extends Plugin {
 
 	async onload() {
 		await this.setupGeminiScribe();
+
+		// Check if we need to run the database migration
+		if (!this.settings.databaseMigrated) {
+			try {
+				new Notice('Starting automatic history migration...');
+				const migration = new DatabaseToMarkdownMigration(this);
+				await migration.migrateHistory();
+				this.settings.databaseMigrated = true;
+				await this.saveSettings();
+			} catch (error) {
+				console.error('Automatic migration failed:', error);
+				new Notice('Failed to automatically migrate chat history. You can try manually migrating from the command palette.');
+			}
+		}
 
 		// Add ribbon icon
 		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Open Gemini Chat', () => {
@@ -81,6 +98,24 @@ export default class ObsidianGemini extends Plugin {
 				new Notice('Starting history migration...');
 				const migration = new DatabaseToMarkdownMigration(this);
 				await migration.migrateHistory();
+			}
+		});
+
+		// Add command to clear old database
+		this.addCommand({
+			id: 'clear-old-database',
+			name: 'Clear Old Database History',
+			callback: async () => {
+				try {
+					const database = new GeminiDatabase(this);
+					await database.setupDatabase();
+					await database.clearHistory();
+					await database.close();
+					new Notice('Successfully cleared old database history');
+				} catch (error) {
+					console.error('Failed to clear old database:', error);
+					new Notice('Failed to clear old database history');
+				}
 			}
 		});
 
