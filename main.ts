@@ -63,20 +63,6 @@ export default class ObsidianGemini extends Plugin {
 	async onload() {
 		await this.setupGeminiScribe();
 
-		// Check if we need to run the database migration
-		if (!this.settings.databaseMigrated) {
-			try {
-				new Notice('Starting automatic history migration...');
-				const migration = new DatabaseToMarkdownMigration(this);
-				await migration.migrateHistory();
-				this.settings.databaseMigrated = true;
-				await this.saveSettings();
-			} catch (error) {
-				console.error('Automatic migration failed:', error);
-				new Notice('Failed to automatically migrate chat history. You can try manually migrating from the command palette.');
-			}
-		}
-
 		// Add ribbon icon
 		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Open Gemini Chat', () => {
 			this.activateView();
@@ -174,6 +160,20 @@ export default class ObsidianGemini extends Plugin {
 
 	async onLayoutReady() {
 		await this.history.onLayoutReady();
+
+		// Check if we need to run the database migration
+		if (!this.settings.databaseMigrated) {
+			try {
+				new Notice('Gemini Scribe: Starting automatic history migration...');
+				const migration = new DatabaseToMarkdownMigration(this);
+				await migration.migrateHistory();
+				this.settings.databaseMigrated = true;
+				await this.saveSettings();
+			} catch (error) {
+				console.error('Gemini Scribe: Automatic migration failed:', error);
+				new Notice('Gemini Scribe: Failed to automatically migrate chat history. You can try manually migrating from the command palette.');
+			}
+		}
 	}
 
 	async loadSettings() {
