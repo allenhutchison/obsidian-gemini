@@ -8,14 +8,18 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 *   **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 *   **AI-Assisted Writing (with File Rewriting):** Collaborate with Gemini to draft, refine, and enhance your documents.  When enabled, Gemini can directly modify your current note based on the conversation, providing a seamless writing experience.
 *   **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
-*   **Chat History (Optional):**  Preserve your chat history across sessions by storing it as a JSON file within your vault.  This allows you to pick up conversations where you left off and provides a record of your AI interactions.
+*   **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe` folder, making it easy to backup, version control, and manage your AI interactions.
 *   **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
 *   **Search Grounding (Optional):** Enhance responses with Google Search results, improving the accuracy and relevance of the information provided by the AI.  A configurable threshold controls how likely search grounding is to be triggered.
 *   **Customizable Prompts:** While not directly exposed in the settings, the plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
-*   **Data Privacy:** All interactions with the Gemini API are done directly from your machine.  No data is sent to any third-party servers other than Google's.  Chat history, when enabled, is stored locally in your Obsidian vault.
-*   **Robust History Management:** Includes commands to export and import chat history to/from your vault, as well as to clear all chat history.  The history module handles file renaming and modifications automatically.
-*   **Database Driven:** Utilizes a Dexie.js database for efficient storage and retrieval of chat history, ensuring quick access and minimal performance impact.
-*   **Queued Operations:** Database operations are queued to prevent conflicts and ensure data integrity, particularly important when dealing with asynchronous writes and reads.
+*   **Data Privacy:** All interactions with the Gemini API are done directly from your machine.  No data is sent to any third-party servers other than Google's.  Chat history is stored locally in your Obsidian vault as markdown files.
+*   **Robust History Management:** 
+    *   Automatic migration from database to markdown storage
+    *   Per-note history files with automatic linking
+    *   Automatic handling of file renames and moves
+    *   Easy backup and version control of chat history
+    *   Commands to manage and clear history
+*   **Queued Operations:** All operations are queued to prevent conflicts and ensure data integrity, particularly important when dealing with asynchronous writes and reads.
 
 ## Installation
 
@@ -100,10 +104,17 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ### Chat History
 
-*   **Export History:**  Use the command palette and select "Gemini Scribe: Export Chat History to Vault".  This saves the current history to `gemini-scribe-history.json` in your configured history folder.
-*   **Import History:** Use the command palette and select "Gemini Scribe: Import Chat History from Vault".  This loads the history from the JSON file, overwriting any in-memory history.  A notice confirms if the history was updated.
-*   **Clear History:** Use the command palette and select "Gemini Scribe: Clear All Chat History".  This *permanently deletes* all stored chat history.
-*   **Automatic Sync:** The plugin automatically saves history to the JSON file periodically and on plugin unload.  It also automatically imports history from the file on plugin load and whenever the file is modified.
+*   **Automatic Migration:** The plugin automatically migrates existing chat history from the database to markdown files when you upgrade to version 1.6 or later.
+*   **Per-Note History:** Each note's chat history is stored in a separate markdown file in the `gemini-scribe` folder, making it easy to manage and backup.
+*   **History Management Commands:**
+    *   **Migrate Database History to Markdown:** Manually trigger the migration process if needed
+    *   **Clear Old Database History:** Safely remove the old database after verifying successful migration
+    *   **Clear All Chat History:** Remove all chat history files
+*   **Automatic File Handling:** The plugin automatically:
+    *   Creates history files when needed
+    *   Updates history files when notes are renamed or moved
+    *   Maintains proper linking between notes and their history files
+    *   Cleans up orphaned history files
 
 ## Troubleshooting
 
