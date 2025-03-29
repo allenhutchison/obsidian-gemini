@@ -33,16 +33,6 @@ export class MarkdownHistory {
             .map(b => b.toString(16).padStart(2, '0'));
         const prefix = hashArray.join('').slice(0, 8);
         
-        // Log the path generation for debugging
-        console.log('Generating history file path:', {
-            notePath,
-            pathWithoutExt,
-            safeFilename,
-            prefix,
-            historyFolder,
-            result: `${historyFolder}/${prefix}-${safeFilename}.md`
-        });
-        
         return `${historyFolder}/${prefix}-${safeFilename}.md`;
     }
 
@@ -179,9 +169,6 @@ export class MarkdownHistory {
         const historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
         let filePath = notePath;
         
-        // Debug log the raw content
-        console.log('Raw history file content:', content);
-        
         if (historyFile instanceof TFile) {
             const frontmatter = this.plugin.app.metadataCache.getFileCache(historyFile)?.frontmatter;
             if (frontmatter && frontmatter.source_file) {
@@ -198,11 +185,6 @@ export class MarkdownHistory {
         
         // Split into sections by double newline followed by ##
         const sections = contentWithoutFrontmatter.split(/\n\n(?=## )/);
-        console.log('Found sections:', sections.length);
-        
-        // Debug logging
-        console.log('Content without frontmatter:', contentWithoutFrontmatter);
-        console.log('Sections:', sections.map(s => s.substring(0, 50) + '...'));
         
         for (const section of sections) {
             if (!section.trim()) continue;
@@ -268,14 +250,6 @@ export class MarkdownHistory {
                         frontmatter['source_file'] = this.plugin.gfile.getLinkText(file, file.path);
                     });
                 }
-                
-                // Log the rename operation for debugging
-                console.log('Renaming history file:', {
-                    from: oldHistoryFile,
-                    to: newHistoryPath,
-                    oldPath,
-                    newPath: file.path
-                });
                 
                 // Then rename the history file with the new hash-based path
                 await this.plugin.app.vault.adapter.rename(oldHistoryFile, newHistoryPath);

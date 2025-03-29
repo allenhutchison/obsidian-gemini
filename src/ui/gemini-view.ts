@@ -162,7 +162,6 @@ export class GeminiView extends ItemView {
 					this.stopTimer();
 				} catch (error) {
 					this.stopTimer();
-					console.error(error);
 				}
 			}
 		});
@@ -183,7 +182,6 @@ export class GeminiView extends ItemView {
 		// Register the file-open handler
 		this.registerEvent(
 			this.app.workspace.on('file-open', async (file) => {
-				console.log('File open event:', file?.path);  // Debug log
 				await this.handleFileOpen(file);
 			})
 		);
@@ -191,7 +189,6 @@ export class GeminiView extends ItemView {
 		// Handle the currently active file
 		const activeFile = this.plugin.gfile.getActiveFile();
 		if (activeFile) {
-			console.log('Loading active file:', activeFile.path);  // Debug log
 			await this.handleFileOpen(activeFile);
 		}
 	}
@@ -252,7 +249,6 @@ export class GeminiView extends ItemView {
 					})
 					.catch((err) => {
 						new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
-						console.error('Failed to copy: ', err);
 					});
 			});
 		}
@@ -263,27 +259,33 @@ export class GeminiView extends ItemView {
 
 	// This will be called when a file is opened or made active in the view.
 	// file can be null if it's the new file tab.
-	async handleFileOpen(file: TFile | null) {
-		if (!file) {
-			this.currentFile = null;
-			this.clearChat();
-			return;
-		}
+	private async handleFileOpen(file: TFile | null) {
+		if (!file) return;
+		
+		// Load the file content
+		const content = await this.plugin.app.vault.read(file);
+		this.currentFile = file;
+		
+		// Load history for this file
+		const history = await this.plugin.markdownHistory.getHistoryForFile(file);
+		
+		// Update the chat with the history
+		this.updateChat(history);
+	}
 
-		// Only reload if it's a different file
-		if (!this.currentFile || this.currentFile.path !== file.path) {
-			this.currentFile = file;
-			this.clearChat();
-			
-			// Load and display history
-			const history = await this.plugin.history.getHistoryForFile(file);
-			if (history && history.length > 0) {
-				console.log('Loading history:', history.length, 'messages');  // Debug log
-				for (const entry of history) {
-					await this.displayMessage(entry.message, entry.role);
-				}
-			}
-		}
+	private async loadActiveFile() {
+		const activeFile = this.plugin.gfile.getActiveFile();
+		if (!activeFile) return;
+		
+		// Load the file content
+		const content = await this.plugin.app.vault.read(activeFile);
+		this.currentFile = activeFile;
+		
+		// Load history for this file
+		const history = await this.plugin.markdownHistory.getHistoryForFile(activeFile);
+		
+		// Update the chat with the history
+		this.updateChat(history);
 	}
 
 	clearChat() {
@@ -349,7 +351,6 @@ export class GeminiView extends ItemView {
 				}
 			} catch (error) {
 				new Notice('Error getting bot response.');
-				console.error(error);
 			}
 		}
 	}
