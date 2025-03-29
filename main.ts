@@ -164,11 +164,23 @@ export default class ObsidianGemini extends Plugin {
 		// Check if we need to run the database migration
 		if (!this.settings.databaseMigrated) {
 			try {
-				new Notice('Gemini Scribe: Starting automatic history migration...');
-				const migration = new DatabaseToMarkdownMigration(this);
-				await migration.migrateHistory();
-				this.settings.databaseMigrated = true;
-				await this.saveSettings();
+				// Check if there's any data in the old database
+				const database = new GeminiDatabase(this);
+				await database.setupDatabase();
+				const count = await database.conversations.count();
+				await database.close();
+
+				if (count > 0) {
+					new Notice('Gemini Scribe: Starting automatic history migration...');
+					const migration = new DatabaseToMarkdownMigration(this);
+					await migration.migrateHistory();
+					this.settings.databaseMigrated = true;
+					await this.saveSettings();
+				} else {
+					// No data to migrate, just mark as migrated
+					this.settings.databaseMigrated = true;
+					await this.saveSettings();
+				}
 			} catch (error) {
 				console.error('Gemini Scribe: Automatic migration failed:', error);
 				new Notice('Gemini Scribe: Failed to automatically migrate chat history. You can try manually migrating from the command palette.');
