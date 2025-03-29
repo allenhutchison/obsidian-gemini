@@ -4,6 +4,7 @@ import { ModelRewriteMode } from '../rewrite';
 import { ExtendedModelRequest } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { GEMINI_MODELS } from '../models';
+import { GeminiConversationEntry } from '../database/types';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -267,7 +268,7 @@ export class GeminiView extends ItemView {
 		this.currentFile = file;
 		
 		// Load history for this file
-		const history = await this.plugin.markdownHistory.getHistoryForFile(file);
+		const history = await this.plugin.history.getHistoryForFile(file);
 		
 		// Update the chat with the history
 		this.updateChat(history);
@@ -282,31 +283,30 @@ export class GeminiView extends ItemView {
 		this.currentFile = activeFile;
 		
 		// Load history for this file
-		const history = await this.plugin.markdownHistory.getHistoryForFile(activeFile);
+		const history = await this.plugin.history.getHistoryForFile(activeFile);
 		
 		// Update the chat with the history
 		this.updateChat(history);
 	}
 
-	clearChat() {
-		this.chatbox.empty();
-	}
-
-	async reloadChatFromHistory() {
-		if (!this.currentFile) return;
-		const history = await this.plugin.history.getHistoryForFile(this.currentFile);
-		if (history && history.length > 0) {
-			// Display each message in order
-			for (const entry of history) {
-				// For model responses, also display any rendered content
-				if (entry.role === 'model' && entry.metadata?.rendered) {
-					this.displayMessage(entry.message, 'model');
-					this.displayMessage(entry.metadata.rendered, 'grounding');
-				} else {
-					this.displayMessage(entry.message, entry.role);
-				}
+	private async updateChat(history: GeminiConversationEntry[]) {
+		// Clear existing chat
+		this.clearChat();
+		
+		// Display each message in order
+		for (const entry of history) {
+			// For model responses, also display any rendered content
+			if (entry.role === 'model' && entry.metadata?.rendered) {
+				this.displayMessage(entry.message, 'model');
+				this.displayMessage(entry.metadata.rendered, 'grounding');
+			} else {
+				this.displayMessage(entry.message, entry.role);
 			}
 		}
+	}
+
+	clearChat() {
+		this.chatbox.empty();
 	}
 
 	async sendMessage(userMessage: string) {
@@ -343,7 +343,7 @@ export class GeminiView extends ItemView {
 
 				// Clear and reload the entire chat
 				this.clearChat();
-				await this.reloadChatFromHistory();
+				await this.updateChat((await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? []);
 
 				// Only display grounding content as it's not stored in history
 				if (botResponse.rendered) {
