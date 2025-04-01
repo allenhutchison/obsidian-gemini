@@ -173,7 +173,8 @@ If your plugin does not need CSS, delete this file.
 	display: flex;
 	align-items: center;
 	margin-top: var(--size-2-1);
-	padding: var(--size-2-1);
+	width: 100%; /* Match the width of the input area */
+	padding: 0; /* Remove padding to align with input area */
 	background-color: var(--background-secondary);
 	border-radius: var(--radius-s);
 }
