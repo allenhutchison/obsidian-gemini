@@ -44,6 +44,13 @@ export class GeminiView extends ItemView {
 			await originalSaveSettings();
 			if (this.modelPicker) {
 				this.modelPicker.value = this.plugin.settings.chatModelName;
+				}
+			
+			// Reload the view to reflect all settings changes
+			this.clearChat();
+			const activeFile = this.plugin.gfile.getActiveFile();
+			if (activeFile) {
+				await this.handleFileOpen(activeFile);
 			}
 		};
 		
