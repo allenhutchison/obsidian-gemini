@@ -124,25 +124,27 @@ export class GeminiView extends ItemView {
 		}
 
 		// Model picker area - now below input and options
-		const modelPickerArea = container.createDiv({ cls: 'gemini-scribe-model-picker-area' });
-		this.modelPicker = modelPickerArea.createEl('select', { cls: 'gemini-scribe-model-picker' });
-		
-		// Add model options from shared list
-		GEMINI_MODELS.forEach(model => {
-			this.modelPicker.createEl('option', { 
-				value: model.value, 
-				text: model.label 
+		if (this.plugin.settings.showModelPicker) {
+			const modelPickerArea = container.createDiv({ cls: 'gemini-scribe-model-picker-area' });
+			this.modelPicker = modelPickerArea.createEl('select', { cls: 'gemini-scribe-model-picker' });
+			
+			// Add model options from shared list
+			GEMINI_MODELS.forEach(model => {
+				this.modelPicker.createEl('option', { 
+					value: model.value, 
+					text: model.label 
+				});
 			});
-		});
 
-		// Set the current model
-		this.modelPicker.value = this.plugin.settings.chatModelName;
+			// Set the current model
+			this.modelPicker.value = this.plugin.settings.chatModelName;
 
-		// Add change listener
-		this.modelPicker.addEventListener('change', async () => {
-			this.plugin.settings.chatModelName = this.modelPicker.value;
-			await this.plugin.saveSettings();
-		});
+			// Add change listener
+			this.modelPicker.addEventListener('change', async () => {
+				this.plugin.settings.chatModelName = this.modelPicker.value;
+				await this.plugin.saveSettings();
+			});
+		}
 
 		userInput.addEventListener('keydown', async (event) => {
 			if (event.key === 'Enter' && !event.shiftKey) {
