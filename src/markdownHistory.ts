@@ -1,6 +1,6 @@
 import { TFile, Notice } from 'obsidian';
 import ObsidianGemini from '../main';
-import { BasicGeminiConversationEntry, GeminiConversationEntry } from './database/types';
+import { BasicGeminiConversationEntry, GeminiConversationEntry } from './types/conversation';
 import { createHash } from 'crypto';
 import * as Handlebars from 'handlebars';
 // @ts-ignore

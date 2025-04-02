@@ -6,8 +6,6 @@ import { GeminiApi } from './src/api';
 import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history';
 import { GeminiCompletions } from './src/completions';
-import { DatabaseToMarkdownMigration } from './src/migration/DatabaseToMarkdown';
-import { GeminiDatabase } from './src/database';
 import { Notice } from 'obsidian';
 
 export interface ObsidianGeminiSettings {
@@ -25,7 +23,6 @@ export interface ObsidianGeminiSettings {
 	chatHistory: boolean;
 	historyFolder: string;
 	showModelPicker: boolean;
-	databaseMigrated: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -43,7 +40,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	showModelPicker: false,
-	databaseMigrated: false,
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -74,35 +70,6 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-open-view',
 			name: 'Open Gemini Chat',
 			callback: () => this.activateView(),
-		});
-
-		// Add migration command
-		this.addCommand({
-			id: 'migrate-history-to-markdown',
-			name: 'Migrate Database History to Markdown',
-			callback: async () => {
-				new Notice('Starting history migration...');
-				const migration = new DatabaseToMarkdownMigration(this);
-				await migration.migrateHistory();
-			}
-		});
-
-		// Add command to clear old database
-		this.addCommand({
-			id: 'clear-old-database',
-			name: 'Clear Old Database History',
-			callback: async () => {
-				try {
-					const database = new GeminiDatabase(this);
-					await database.setupDatabase();
-					await database.clearHistory();
-					await database.close();
-					new Notice('Successfully cleared old database history');
-				} catch (error) {
-					console.error('Failed to clear old database:', error);
-					new Notice('Failed to clear old database history');
-				}
-			}
 		});
 
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
@@ -160,32 +127,6 @@ export default class ObsidianGemini extends Plugin {
 
 	async onLayoutReady() {
 		await this.history.onLayoutReady();
-
-		// Check if we need to run the database migration
-		if (!this.settings.databaseMigrated) {
-			try {
-				// Check if there's any data in the old database
-				const database = new GeminiDatabase(this);
-				await database.setupDatabase();
-				const count = await database.conversations.count();
-				await database.close();
-
-				if (count > 0) {
-					new Notice('Gemini Scribe: Starting automatic history migration...');
-					const migration = new DatabaseToMarkdownMigration(this);
-					await migration.migrateHistory();
-					this.settings.databaseMigrated = true;
-					await this.saveSettings();
-				} else {
-					// No data to migrate, just mark as migrated
-					this.settings.databaseMigrated = true;
-					await this.saveSettings();
-				}
-			} catch (error) {
-				console.error('Gemini Scribe: Automatic migration failed:', error);
-				new Notice('Gemini Scribe: Failed to automatically migrate chat history. You can try manually migrating from the command palette.');
-			}
-		}
 	}
 
 	async loadSettings() {
