@@ -4,7 +4,7 @@ import { GeminiView, VIEW_TYPE_GEMINI } from './src/ui/gemini-view';
 import { GeminiSummary } from './src/summary';
 import { GeminiApi } from './src/api';
 import { ScribeFile } from './src/files';
-import { GeminiHistory } from './src/history';
+import { GeminiHistory } from './src/history/history';
 import { GeminiCompletions } from './src/completions';
 import { Notice } from 'obsidian';
 

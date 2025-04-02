@@ -1,6 +1,6 @@
-import ObsidianGemini from '../main';
+import ObsidianGemini from '../../main';
 import { Notice, TFile, debounce } from 'obsidian';
-import { BasicGeminiConversationEntry, GeminiConversationEntry } from './types/conversation';
+import { BasicGeminiConversationEntry, GeminiConversationEntry } from '../types/conversation';
 import { MarkdownHistory } from './markdownHistory';
 
 export class GeminiHistory {
