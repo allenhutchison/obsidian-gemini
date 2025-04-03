@@ -10,15 +10,4 @@ export interface GeminiConversationEntry extends BasicGeminiConversationEntry {
     notePath: string;
     created_at: Date;
     metadata?: Record<string, any>;
-}
-
-export interface DatabaseExport {
-    version: number;
-    conversations: Record<string, GeminiConversationEntry[]>;
-    metadata: {
-        exportedAt: string;
-        pluginVersion: string;
-        checksum?: string;
-        conversationsCount: number;
-    };
 } 
