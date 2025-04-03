@@ -30,7 +30,6 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"dexie": "^4.0.10",
 		"handlebars": "^4.7.8",
 		"ollama": "^0.5.11"
 	}

@@ -4,7 +4,7 @@ import { ModelRewriteMode } from '../rewrite';
 import { ExtendedModelRequest } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { GEMINI_MODELS } from '../models';
-import { GeminiConversationEntry } from '../database/types';
+import { GeminiConversationEntry } from '../types/conversation';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
