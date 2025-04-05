@@ -7,6 +7,8 @@ import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history/history';
 import { GeminiCompletions } from './src/completions';
 import { Notice } from 'obsidian';
+import { TreeView, VIEW_TYPE_TREE } from './src/ui/tree-view';
+import { FileContextTree } from './src/files/file-context';
 
 export interface ObsidianGeminiSettings {
 	apiKey: string;
@@ -65,11 +67,43 @@ export default class ObsidianGemini extends Plugin {
 		});
 
 		this.registerView(VIEW_TYPE_GEMINI, (leaf) => (this.geminiView = new GeminiView(leaf, this)));
+		this.registerView(VIEW_TYPE_TREE, (leaf) => new TreeView(leaf, this));
 
 		this.addCommand({
 			id: 'gemini-scribe-open-view',
 			name: 'Open Gemini Chat',
 			callback: () => this.activateView(),
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-show-context-tree',
+			name: 'Show Context Tree',
+			callback: async () => {
+				const activeFile = this.gfile.getActiveFile();
+				if (activeFile) {
+					const fileContext = new FileContextTree(this);
+					await fileContext.initialize(activeFile, false);
+					const treeData = fileContext.getVisualizationData();
+					
+					let leaf: WorkspaceLeaf | null = null;
+					const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_TREE);
+
+					if (leaves.length > 0) {
+						leaf = leaves[0];
+					} else {
+						leaf = this.app.workspace.getRightLeaf(false);
+						if (leaf) {
+							await leaf.setViewState({ type: VIEW_TYPE_TREE, active: true });
+						}
+					}
+
+					if (leaf) {
+						const view = leaf.view as TreeView;
+						view.setTreeData(treeData);
+						this.app.workspace.revealLeaf(leaf);
+					}
+				}
+			}
 		});
 
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));

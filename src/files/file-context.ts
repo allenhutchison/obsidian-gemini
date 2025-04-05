@@ -138,4 +138,24 @@ export class FileContextTree {
 			return fileContent;
 		}
 	}
+
+	getVisualizationData(): any {
+		if (!this.root) {
+			return null;
+		}
+		return this.nodeToVisualizationData(this.root);
+	}
+
+	private nodeToVisualizationData(node: FileContextNode): any {
+		const file = this.plugin.app.vault.getAbstractFileByPath(node.path);
+		const displayName = file ? this.fileHelper.getLinkText(file as TFile, node.path) : node.path;
+		
+		return {
+			id: node.path,
+			name: displayName,
+			path: node.path,
+			wikilink: node.wikilink,
+			children: Array.from(node.links.values()).map(child => this.nodeToVisualizationData(child))
+		};
+	}
 }

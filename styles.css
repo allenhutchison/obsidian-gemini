@@ -240,3 +240,92 @@ If your plugin does not need CSS, delete this file.
 .callout[data-callout="metadata"] th {
     padding: 3px 8px;
 }
+
+.gemini-tree-view {
+    padding: 2px;
+    overflow-y: auto;
+}
+
+.gemini-tree-title {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 8px;
+}
+
+.gemini-tree-title-text {
+    font-size: 1.1em;
+    font-weight: var(--font-medium);
+    color: var(--text-normal);
+    margin-bottom: 2px;
+}
+
+.gemini-tree-subtitle {
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.gemini-tree-node {
+    margin-left: 8px;
+    padding: 0;
+    line-height: 1;
+}
+
+.gemini-tree-node-header {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    min-height: 18px;
+}
+
+.gemini-tree-node-header::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    background-color: var(--text-muted);
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>');
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+}
+
+.gemini-tree-node-content {
+    flex: 1;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.gemini-tree-node-content p {
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+.gemini-tree-node-content .internal-link {
+    color: var(--text-normal);
+    text-decoration: none;
+    font-size: 0.85em;
+    padding: 0;
+    margin: 0;
+    display: block;
+    line-height: 1;
+}
+
+.gemini-tree-node-content .internal-link:hover {
+    color: var(--text-accent);
+}
+
+.gemini-tree-children {
+    margin-left: 8px;
+    border-left: 1px solid var(--background-modifier-border);
+    padding-left: 4px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
