@@ -46,7 +46,7 @@ export class GeminiApi {
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(this.plugin.settings);
 		this.gemini = new GoogleGenerativeAI(this.plugin.settings.apiKey);
 	}
 

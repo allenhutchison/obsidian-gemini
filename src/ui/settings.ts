@@ -2,6 +2,7 @@ import ObsidianGemini from '../../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
+import { DEFAULT_PROMPTS } from '../prompts';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
@@ -140,6 +141,110 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+
+		// Prompt Settings Section
+		new Setting(containerEl).setName('Prompt Settings').setHeading();
+
+		new Setting(containerEl)
+			.setName('Prompt Mode')
+			.setDesc('Select prompt mode')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('default', 'Default Prompts')
+					.addOption('custom', 'Custom Prompts')
+					.setValue(this.plugin.settings.promptMode || 'default')
+					.onChange(async (value) => {
+						this.plugin.settings.promptMode = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+
+		// If custom mode is enabled, show the text areas
+		if (this.plugin.settings.promptMode === 'custom') {
+			containerEl.createEl('h4', { text: 'Custom Prompts' });
+			containerEl.createEl('p', {
+				text: 'Edit the prompts below. If a field is left empty, the default prompt will be used.',
+			});
+
+			// Add Reset to Defaults button
+			new Setting(containerEl)
+				.setName('Reset to Default Prompts')
+				.setDesc('Reset all custom prompts to their default values')
+				.addButton((button) => {
+					button
+						.setButtonText('Reset')
+						.setCta()
+						.onClick(async () => {
+							this.plugin.settings.customSystemPrompt = DEFAULT_PROMPTS.system;
+							this.plugin.settings.customCompletionPrompt = DEFAULT_PROMPTS.completion;
+							this.plugin.settings.customGeneralPrompt = DEFAULT_PROMPTS.general;
+							this.plugin.settings.customSummaryPrompt = DEFAULT_PROMPTS.summary;
+							this.plugin.settings.customRewritePrompt = DEFAULT_PROMPTS.rewrite;
+							this.plugin.settings.customDatePrompt = DEFAULT_PROMPTS.date;
+							this.plugin.settings.customTimePrompt = DEFAULT_PROMPTS.time;
+							this.plugin.settings.customContextPrompt = DEFAULT_PROMPTS.context;
+							await this.plugin.saveSettings();
+							this.display();
+						});
+				});
+
+			// Helper function to create a TextArea setting for a prompt
+			const createPromptTextArea = (
+				settingName: keyof ObsidianGemini['settings'],
+				label: string,
+				defaultPrompt: string
+			) => {
+				new Setting(containerEl)
+					.setName(label)
+					.setDesc(`Variables: ${getPromptVariablesHint(settingName)}`)
+					.addTextArea((text) => {
+						text.inputEl.rows = 6;
+						text.inputEl.style.width = '100%';
+						text
+							.setValue((this.plugin.settings[settingName] as string) || defaultPrompt)
+							.setPlaceholder(defaultPrompt)
+							.onChange(async (value) => {
+								(this.plugin.settings as any)[settingName] = value.trim() ? value : '';
+								await this.plugin.saveSettings();
+							});
+					});
+			};
+
+			// Helper function to get variable hints for each prompt type
+			const getPromptVariablesHint = (settingName: keyof ObsidianGemini['settings']): string => {
+				switch (settingName) {
+					case 'customSystemPrompt':
+						return '{{userName}}, {{language}}';
+					case 'customCompletionPrompt':
+						return '{{contentBeforeCursor}}, {{contentAfterCursor}}';
+					case 'customGeneralPrompt':
+						return '{{userMessage}}';
+					case 'customSummaryPrompt':
+						return '{{content}}';
+					case 'customRewritePrompt':
+						return '{{userMessage}}';
+					case 'customDatePrompt':
+						return '{{date}}';
+					case 'customTimePrompt':
+						return '{{time}}';
+					case 'customContextPrompt':
+						return '{{file_label}}, {{file_name}}, {{wikilink}}, {{file_contents}}';
+					default:
+						return 'No variables';
+				}
+			};
+
+			// Calls to createPromptTextArea remain unchanged
+			createPromptTextArea('customSystemPrompt', 'System Prompt', DEFAULT_PROMPTS.system);
+			createPromptTextArea('customCompletionPrompt', 'Completion Prompt', DEFAULT_PROMPTS.completion);
+			createPromptTextArea('customGeneralPrompt', 'General Prompt', DEFAULT_PROMPTS.general);
+			createPromptTextArea('customSummaryPrompt', 'Summary Prompt', DEFAULT_PROMPTS.summary);
+			createPromptTextArea('customRewritePrompt', 'Rewrite Prompt', DEFAULT_PROMPTS.rewrite);
+			createPromptTextArea('customDatePrompt', 'Date Prompt', DEFAULT_PROMPTS.date);
+			createPromptTextArea('customTimePrompt', 'Time Prompt', DEFAULT_PROMPTS.time);
+			createPromptTextArea('customContextPrompt', 'Context Prompt', DEFAULT_PROMPTS.context);
+		}
 
 		// Chat History
 		new Setting(containerEl).setName('Chat History').setHeading();

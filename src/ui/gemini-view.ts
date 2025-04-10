@@ -27,7 +27,7 @@ export class GeminiView extends ItemView {
 		super(leaf);
 		this.plugin = plugin;
 		this.rewriteMode = new ModelRewriteMode(plugin);
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(this.plugin.settings);
 		this.registerLinkClickHandler();
 		this.registerSettingsListener();
 		

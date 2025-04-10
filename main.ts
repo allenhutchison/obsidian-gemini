@@ -23,6 +23,15 @@ export interface ObsidianGeminiSettings {
 	chatHistory: boolean;
 	historyFolder: string;
 	showModelPicker: boolean;
+	promptMode: string;
+	customSystemPrompt: string;
+	customCompletionPrompt: string;
+	customGeneralPrompt: string;
+	customSummaryPrompt: string;
+	customRewritePrompt: string;
+	customDatePrompt: string;
+	customTimePrompt: string;
+	customContextPrompt: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -40,6 +49,15 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	showModelPicker: false,
+	promptMode: 'default',
+	customSystemPrompt: '',
+	customCompletionPrompt: '',
+	customGeneralPrompt: '',
+	customSummaryPrompt: '',
+	customRewritePrompt: '',
+	customDatePrompt: '',
+	customTimePrompt: '',
+	customContextPrompt: '',
 };
 
 export default class ObsidianGemini extends Plugin {

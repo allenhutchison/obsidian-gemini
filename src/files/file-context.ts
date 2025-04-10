@@ -28,7 +28,7 @@ export class FileContextTree {
 		this.maxDepth = depth ?? this.plugin.settings.maxContextDepth;
 		this.fileHelper = new ScribeFile(plugin);
 		this.dataViewHelper = new ScribeDataView(this.fileHelper, this.plugin);
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(this.plugin.settings);
 	}
 
 	async buildStructure(
