@@ -8,7 +8,7 @@ export class ModelRewriteMode {
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(this.plugin.settings);
 	}
 
 	async generateRewriteResponse(userMessage: string, conversationHistory: any[]) {
