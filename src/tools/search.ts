@@ -26,14 +26,12 @@ export class GeminiSearchTool {
 	private getTools(): any[] {
 		let tools: any[] = [];
 		switch (true) {
-			case (this.modelName.startsWith('gemini-2.0-flash-lite') ||
-				  this.modelName.startsWith('gemini-2.0-flash-thinking')):
+			case (this.modelName.startsWith('gemini-2.0-flash-lite')):
 				// Logic for flash-lite and flash-thinking don't currently support search			
 				tools = [];
 				break;
-			case (this.modelName.startsWith('gemini-2.0-flash') ||
-				  this.modelName.startsWith('gemini-2.0-pro')):
-				// Logic for gemini-2.0 models
+			case (this.modelName.startsWith('gemini-2.0') ||
+				  this.modelName.startsWith('gemini-2.5')):
 				tools = [
 					{
 						google_search: {},
