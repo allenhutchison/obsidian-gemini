@@ -32,17 +32,19 @@ export class FileContextTree {
 	}
 
 	async buildStructure(
-		file: TFile, 
-		currentDepth: number = 0, 
+		file: TFile,
+		currentDepth: number = 0,
 		renderContent: boolean,
 		visited: Set<string>,
 		baseFile: TFile // New parameter to propagate current file for relative link resolution
 	): Promise<FileContextNode | null> {
 		// Return null if file is in the history folder
-		if (!file || 
-			currentDepth > this.maxDepth || 
+		if (
+			!file ||
+			currentDepth > this.maxDepth ||
 			visited.has(file.path) ||
-			file.path.startsWith(this.plugin.settings.historyFolder + '/')) {
+			file.path.startsWith(this.plugin.settings.historyFolder + '/')
+		) {
 			return null;
 		}
 
@@ -63,8 +65,8 @@ export class FileContextTree {
 
 		// Combine all link types
 		const allLinks = fileCacheLinks;
-		backlinks.forEach(link => allLinks.add(link));
-		dataviewLinks.forEach(link => allLinks.add(link));
+		backlinks.forEach((link) => allLinks.add(link));
+		dataviewLinks.forEach((link) => allLinks.add(link));
 
 		// Process each link
 		for (const fileLink of allLinks) {
@@ -95,7 +97,6 @@ export class FileContextTree {
 		maxCharsPerFile: number,
 		currentTotal: number
 	): { text: string; total: number } {
-
 		// Truncate content if too long
 		const truncatedContent =
 			node.content.length > maxCharsPerFile
@@ -105,11 +106,11 @@ export class FileContextTree {
 		let result = depth == 0 ? 'This is the content of the current file and the files that it links to:\n' : '';
 		const fileLabel = depth == 0 ? 'Current File' : 'Linked File';
 		// Updated to add wikilink property to the context prompt
-		result += this.prompts.contextPrompt({ 
-			file_label: fileLabel,  
-			file_name: node.path, 
-			wikilink: node.wikilink, 
-			file_contents: truncatedContent 
+		result += this.prompts.contextPrompt({
+			file_label: fileLabel,
+			file_name: node.path,
+			wikilink: node.wikilink,
+			file_contents: truncatedContent,
 		});
 		let total = currentTotal + result.length;
 		// Add linked files if we haven't exceeded total limit

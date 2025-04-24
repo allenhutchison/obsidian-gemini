@@ -118,7 +118,7 @@ export class GeminiApi {
 		if (request.prompt != null) {
 			contents.push(this.buildContentElement('user', request.prompt));
 		}
-		
+
 		// Then push the current date
 		const date = this.prompts.datePrompt({ date: new Date().toDateString() });
 		contents.push(this.buildContentElement('user', date));

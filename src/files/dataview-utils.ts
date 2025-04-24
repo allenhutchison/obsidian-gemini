@@ -31,7 +31,7 @@ export class ScribeDataView {
 	async getLinksFromDataviewBlocks(file: TFile): Promise<Set<TFile>> {
 		const allLinks: Set<TFile> = new Set();
 		const promises: Promise<Set<TFile>>[] = [];
-		
+
 		await this.iterateCodeblocksInFile(file, (cb) => {
 			if (cb.language === 'dataview') {
 				promises.push(this.evaluateDataviewQuery(cb.text, file));
@@ -39,18 +39,18 @@ export class ScribeDataView {
 		});
 
 		const results = await Promise.all(promises);
-		results.forEach(blockLinks => {
-			blockLinks.forEach(link => allLinks.add(link));
+		results.forEach((blockLinks) => {
+			blockLinks.forEach((link) => allLinks.add(link));
 		});
 		return allLinks;
 	}
 
 	async evaluateDataviewQuery(query: string, file: TFile) {
 		const normalizedLinks: Set<TFile> = new Set();
-		
+
 		try {
 			const result = await this.dataViewAPI.query(query, file.path);
-			
+
 			// Check if result and result.value exist
 			if (!result?.value) {
 				console.warn(`Invalid query result for "${query}" in file "${file.path}"`);
@@ -82,7 +82,7 @@ export class ScribeDataView {
 		} catch (error) {
 			console.error(`Error evaluating dataview query "${query}" in file "${file.path}":`, error);
 		}
-		
+
 		return normalizedLinks;
 	}
 
@@ -98,14 +98,14 @@ export class ScribeDataView {
 	 */
 	isFileLink(element: any): boolean {
 		// Check that element is an object with a string 'path' property.
-		if (element && typeof element === "object" && typeof element.path === "string") {
-		// If a 'subpath' property exists, treat it as a header or block link.
-		if (element.subpath) return false;
-	
-		// Alternatively, if the 'path' itself contains header/block markers, consider it not a plain file link.
-		if (element.path.includes("#") || element.path.includes("^")) return false;
-	
-		return true;
+		if (element && typeof element === 'object' && typeof element.path === 'string') {
+			// If a 'subpath' property exists, treat it as a header or block link.
+			if (element.subpath) return false;
+
+			// Alternatively, if the 'path' itself contains header/block markers, consider it not a plain file link.
+			if (element.path.includes('#') || element.path.includes('^')) return false;
+
+			return true;
 		}
 		return false;
 	}

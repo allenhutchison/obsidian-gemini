@@ -213,30 +213,30 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* User message styling */
-.callout[data-callout="user"] {
-    --callout-color: 124, 77, 255;
-    --callout-icon: lucide-square-user;
+.callout[data-callout='user'] {
+	--callout-color: 124, 77, 255;
+	--callout-icon: lucide-square-user;
 }
 
 /* Assistant message styling */
-.callout[data-callout="assistant"] {
-    --callout-color: 0, 184, 212;
-    --callout-icon: lucide-bot-message-square;
+.callout[data-callout='assistant'] {
+	--callout-color: 0, 184, 212;
+	--callout-icon: lucide-bot-message-square;
 }
 
 /* Metadata callout styling */
-.callout[data-callout="metadata"] {
-    --callout-color: 158, 158, 158;
-    --callout-icon: lucide-info;
-    font-size: var(--font-ui-smaller);
+.callout[data-callout='metadata'] {
+	--callout-color: 158, 158, 158;
+	--callout-icon: lucide-info;
+	font-size: var(--font-ui-smaller);
 }
 
 /* Make the metadata table more compact */
-.callout[data-callout="metadata"] table {
-    margin: 0;
+.callout[data-callout='metadata'] table {
+	margin: 0;
 }
 
-.callout[data-callout="metadata"] td,
-.callout[data-callout="metadata"] th {
-    padding: 3px 8px;
+.callout[data-callout='metadata'] td,
+.callout[data-callout='metadata'] th {
+	padding: 3px 8px;
 }
