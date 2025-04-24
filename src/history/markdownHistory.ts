@@ -118,7 +118,10 @@ export class MarkdownHistory {
 						await this.migrateLegacyHistoryFile(legacyFile, file);
 						// console.log(`[History] Finished migration for ${legacyFile.path}`); // DEBUG
 					} catch (migrationError) {
-						console.error(`[History] Failed to migrate legacy history file ${legacyFile?.path} during load:`, migrationError);
+						console.error(
+							`[History] Failed to migrate legacy history file ${legacyFile?.path} during load:`,
+							migrationError
+						);
 						// Decide if we should still return the content even if migration failed
 						// For now, we will, as the content was read successfully before migration attempt.
 						new Notice(`Error updating history file format for ${file.basename}. History may load from old format.`);
@@ -185,11 +188,9 @@ export class MarkdownHistory {
 		try {
 			const listResult = await this.plugin.app.vault.adapter.list(historyFolder);
 			// Filter for markdown files, exclude potential new format name to avoid self-matching
-			const potentialLegacyFiles = listResult.files.filter(p =>
-				p.endsWith('.md') &&
-				normalizePath(p) !== this.getHistoryFilePath(sourceFile.path)
+			const potentialLegacyFiles = listResult.files.filter(
+				(p) => p.endsWith('.md') && normalizePath(p) !== this.getHistoryFilePath(sourceFile.path)
 			);
-
 
 			for (const filePath of potentialLegacyFiles) {
 				const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
@@ -248,8 +249,10 @@ export class MarkdownHistory {
 			const targetExists = await this.plugin.app.vault.adapter.exists(newHistoryPath);
 
 			if (targetExists) {
-				console.warn(`Migration target ${newHistoryPath} already exists. Deleting original legacy file ${legacyFile.path}.`);
-				await this.plugin.app.vault.delete(legacyFile).catch(delErr => {
+				console.warn(
+					`Migration target ${newHistoryPath} already exists. Deleting original legacy file ${legacyFile.path}.`
+				);
+				await this.plugin.app.vault.delete(legacyFile).catch((delErr) => {
 					console.error(`Failed to delete original legacy file ${legacyFile.path} when target existed:`, delErr);
 				});
 				return; // Exit migration, target already exists
@@ -263,7 +266,9 @@ export class MarkdownHistory {
 			const newHistoryFile = this.plugin.app.vault.getAbstractFileByPath(newHistoryPath);
 			if (!(newHistoryFile instanceof TFile)) {
 				// This case is unlikely if rename succeeded, but handle defensively
-				console.error(`Failed to get TFile for newly renamed history file: ${newHistoryPath}. Cannot update frontmatter.`);
+				console.error(
+					`Failed to get TFile for newly renamed history file: ${newHistoryPath}. Cannot update frontmatter.`
+				);
 				return;
 			}
 
@@ -272,13 +277,14 @@ export class MarkdownHistory {
 				frontmatter['source_file'] = this.plugin.gfile.getLinkText(sourceFile, sourceFile.path);
 			});
 			console.log(`Successfully updated frontmatter for ${newHistoryPath}`);
-
 		} catch (error) {
 			// Handle potential errors during rename or frontmatter update
 			if (error.message.includes('already exists')) {
 				// Should have been caught by the initial check, but handle defensively
-				console.warn(`Rename failed, target ${newHistoryPath} already exists (race condition?). Attempting to delete original legacy file ${legacyFile.path}.`);
-				await this.plugin.app.vault.delete(legacyFile).catch(delErr => {
+				console.warn(
+					`Rename failed, target ${newHistoryPath} already exists (race condition?). Attempting to delete original legacy file ${legacyFile.path}.`
+				);
+				await this.plugin.app.vault.delete(legacyFile).catch((delErr) => {
 					console.error(`Failed to delete original legacy file ${legacyFile.path} after rename error:`, delErr);
 				});
 			} else if (error.message.includes('does not exist')) {
@@ -324,9 +330,8 @@ export class MarkdownHistory {
 		if (sourceFile instanceof TFile) {
 			fileVersion = sourceFile.stat.mtime.toString(16).slice(0, 8);
 		} else {
-			 console.warn(`Could not find TFile for path ${entry.notePath} when formatting history entry.`);
+			console.warn(`Could not find TFile for path ${entry.notePath} when formatting history entry.`);
 		}
-
 
 		return this.entryTemplate({
 			isFirstEntry,
@@ -360,7 +365,7 @@ export class MarkdownHistory {
 				if (linkedFile instanceof TFile) {
 					// Use the current path from the linked file if found
 					sourceFilePath = linkedFile.path;
-				} 
+				}
 			}
 		} else {
 			console.warn(`Could not find history file TFile object for path: ${historyPath}`);

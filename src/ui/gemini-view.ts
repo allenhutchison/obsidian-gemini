@@ -337,26 +337,34 @@ export class GeminiView extends ItemView {
 				};
 				const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
 
-				// Store messages first
-				await this.plugin.history.appendHistoryForFile(this.currentFile!, {
-					role: 'user',
-					message: userMessage,
-				});
+				if (this.plugin.settings.chatHistory) {
+					// Store messages first
+					await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+						role: 'user',
+						message: userMessage,
+					});
 
-				await this.plugin.history.appendHistoryForFile(this.currentFile!, {
-					role: 'model',
-					message: botResponse.markdown,
-					userMessage: userMessage,
-					model: this.plugin.settings.chatModelName,
-				});
+					await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+						role: 'model',
+						message: botResponse.markdown,
+						userMessage: userMessage,
+						model: this.plugin.settings.chatModelName,
+					});
 
-				// Clear and reload the entire chat
-				this.clearChat();
-				await this.updateChat((await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? []);
+					// Clear and reload the entire chat from history
+					this.clearChat();
+					await this.updateChat((await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? []);
 
-				// Only display grounding content as it's not stored in history
-				if (botResponse.rendered) {
-					this.displayMessage(botResponse.rendered, 'grounding');
+					// Only display grounding content as it's not stored in history
+					if (botResponse.rendered) {
+						this.displayMessage(botResponse.rendered, 'grounding');
+					}
+				} else {
+					// If history is disabled, just display the new model message directly
+					this.displayMessage(botResponse.markdown, 'model');
+					if (botResponse.rendered) {
+						this.displayMessage(botResponse.rendered, 'grounding');
+					}
 				}
 			} catch (error) {
 				new Notice('Error getting bot response.');

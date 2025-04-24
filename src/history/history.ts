@@ -54,7 +54,10 @@ export class GeminiHistory {
 		const normalizedOldPath = normalizePath(oldPath);
 		const normalizedHistoryPrefix = normalizePath(historyFolder + '/'); // Ensure trailing slash for prefix check
 
-		if (normalizedFilePath.startsWith(normalizedHistoryPrefix) || normalizedOldPath.startsWith(normalizedHistoryPrefix)) {
+		if (
+			normalizedFilePath.startsWith(normalizedHistoryPrefix) ||
+			normalizedOldPath.startsWith(normalizedHistoryPrefix)
+		) {
 			// console.debug(`Ignoring rename event involving history folder: ${oldPath} -> ${file.path}`);
 			return;
 		}
