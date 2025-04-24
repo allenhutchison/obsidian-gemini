@@ -20,12 +20,11 @@ export function selectModelSetting(
 		.setDesc(description)
 		.addDropdown((dropdown) => {
 			// Add all models from the shared list
-			GEMINI_MODELS.forEach(model => {
+			GEMINI_MODELS.forEach((model) => {
 				dropdown.addOption(model.value, model.label);
 			});
-			
-			dropdown.setValue(String((plugin.settings as ObsidianGeminiSettings)[settingName]))
-			.onChange(async (value) => {
+
+			dropdown.setValue(String((plugin.settings as ObsidianGeminiSettings)[settingName])).onChange(async (value) => {
 				(plugin.settings as ObsidianGeminiSettings)[settingName] = value as string;
 				await plugin.saveSettings();
 			});

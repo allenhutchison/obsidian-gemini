@@ -30,7 +30,7 @@ export class GeminiView extends ItemView {
 		this.prompts = new GeminiPrompts();
 		this.registerLinkClickHandler();
 		this.registerSettingsListener();
-		
+
 		// Bind the handler to preserve 'this' context
 		this.fileOpenHandler = this.handleFileOpen.bind(this);
 	}
@@ -38,14 +38,14 @@ export class GeminiView extends ItemView {
 	private registerSettingsListener() {
 		// Store the original saveSettings function
 		const originalSaveSettings = this.plugin.saveSettings.bind(this.plugin);
-		
+
 		// Override with our version that updates the UI
 		this.plugin.saveSettings = async () => {
 			await originalSaveSettings();
 			if (this.modelPicker) {
 				this.modelPicker.value = this.plugin.settings.chatModelName;
-				}
-			
+			}
+
 			// Reload the view to reflect all settings changes
 			this.clearChat();
 			const activeFile = this.plugin.gfile.getActiveFile();
@@ -53,7 +53,7 @@ export class GeminiView extends ItemView {
 				await this.handleFileOpen(activeFile);
 			}
 		};
-		
+
 		// Store the unsubscribe function
 		this.settingsUnsubscribe = () => {
 			this.plugin.saveSettings = originalSaveSettings;
@@ -134,12 +134,12 @@ export class GeminiView extends ItemView {
 		if (this.plugin.settings.showModelPicker) {
 			const modelPickerArea = container.createDiv({ cls: 'gemini-scribe-model-picker-area' });
 			this.modelPicker = modelPickerArea.createEl('select', { cls: 'gemini-scribe-model-picker' });
-			
+
 			// Add model options from shared list
-			GEMINI_MODELS.forEach(model => {
-				this.modelPicker.createEl('option', { 
-					value: model.value, 
-					text: model.label 
+			GEMINI_MODELS.forEach((model) => {
+				this.modelPicker.createEl('option', {
+					value: model.value,
+					text: model.label,
 				});
 			});
 
@@ -271,14 +271,14 @@ export class GeminiView extends ItemView {
 	// file can be null if it's the new file tab.
 	private async handleFileOpen(file: TFile | null) {
 		if (!file) return;
-		
+
 		// Load the file content
 		const content = await this.plugin.app.vault.read(file);
 		this.currentFile = file;
-		
+
 		// Load history for this file
 		const history = await this.plugin.history.getHistoryForFile(file);
-		
+
 		// Update the chat with the history
 		this.updateChat(history);
 	}
@@ -286,14 +286,14 @@ export class GeminiView extends ItemView {
 	private async loadActiveFile() {
 		const activeFile = this.plugin.gfile.getActiveFile();
 		if (!activeFile) return;
-		
+
 		// Load the file content
 		const content = await this.plugin.app.vault.read(activeFile);
 		this.currentFile = activeFile;
-		
+
 		// Load history for this file
 		const history = await this.plugin.history.getHistoryForFile(activeFile);
-		
+
 		// Update the chat with the history
 		this.updateChat(history);
 	}
@@ -301,7 +301,7 @@ export class GeminiView extends ItemView {
 	private async updateChat(history: GeminiConversationEntry[]) {
 		// Clear existing chat
 		this.clearChat();
-		
+
 		// Display each message in order
 		for (const entry of history) {
 			// For model responses, also display any rendered content
@@ -327,7 +327,7 @@ export class GeminiView extends ItemView {
 			}
 			try {
 				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
-				const prompt = this.prompts.generalPrompt({ userMessage: userMessage});
+				const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
 				const request: ExtendedModelRequest = {
 					userMessage: userMessage,
 					conversationHistory: history,
@@ -347,7 +347,7 @@ export class GeminiView extends ItemView {
 					role: 'model',
 					message: botResponse.markdown,
 					userMessage: userMessage,
-					model: this.plugin.settings.chatModelName
+					model: this.plugin.settings.chatModelName,
 				});
 
 				// Clear and reload the entire chat

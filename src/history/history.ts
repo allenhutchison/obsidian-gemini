@@ -1,5 +1,5 @@
 import ObsidianGemini from '../../main';
-import { Notice, TFile, debounce } from 'obsidian';
+import { Notice, TFile, debounce, normalizePath } from 'obsidian'; // Added normalizePath
 import { BasicGeminiConversationEntry, GeminiConversationEntry } from '../types/conversation';
 import { MarkdownHistory } from './markdownHistory';
 
@@ -35,15 +35,42 @@ export class GeminiHistory {
 
 	async setupHistory() {
 		this.plugin.app.vault.on('rename', this.renameHistoryFile.bind(this));
+		// Add listener for file deletion
+		this.plugin.app.vault.on('delete', this.handleFileDelete.bind(this));
 	}
 
 	async onUnload() {
 		console.debug('Unloading history module...');
 		this.plugin.app.vault.off('rename', this.renameHistoryFile.bind(this));
+		// Remove listener for file deletion
+		this.plugin.app.vault.off('delete', this.handleFileDelete.bind(this));
 	}
 
 	async renameHistoryFile(file: TFile, oldPath: string) {
-		await this.markdownHistory.renameHistoryFile(file, oldPath);
+		// Ignore rename events where either the source or destination is inside the history folder
+		const historyFolder = this.plugin.settings.historyFolder;
+		// Normalize paths for reliable comparison
+		const normalizedFilePath = normalizePath(file.path);
+		const normalizedOldPath = normalizePath(oldPath);
+		const normalizedHistoryPrefix = normalizePath(historyFolder + '/'); // Ensure trailing slash for prefix check
+
+		if (normalizedFilePath.startsWith(normalizedHistoryPrefix) || normalizedOldPath.startsWith(normalizedHistoryPrefix)) {
+			// console.debug(`Ignoring rename event involving history folder: ${oldPath} -> ${file.path}`);
+			return;
+		}
+
+		// Ensure it's a file being renamed, not a folder (and not inside history)
+		if (file instanceof TFile) {
+			await this.markdownHistory.renameHistoryFile(file, oldPath);
+		}
+	}
+
+	// Handler for file deletion
+	async handleFileDelete(file: TFile) {
+		// Ensure it's a file being deleted, not a folder
+		if (file instanceof TFile) {
+			await this.markdownHistory.deleteHistoryFile(file.path);
+		}
 	}
 
 	async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {

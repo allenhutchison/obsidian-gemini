@@ -1,5 +1,1 @@
-node_modules/
-dist/
-build/
-prompts/
-.github/
+**/*.hbs
