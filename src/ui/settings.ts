@@ -36,6 +36,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption(ApiProvider.GEMINI, 'Google Gemini')
+					.addOption(ApiProvider.GEMINI_NEW, 'Google Gemini (New SDK)')
 					.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
 					.setValue(this.plugin.settings.apiProvider)
 					.onChange(async (value) => {

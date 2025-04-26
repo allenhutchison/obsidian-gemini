@@ -1,4 +1,5 @@
 import ObsidianGemini from '../../../main';
+import { logDebugInfo } from '../utils/debug';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiPrompts } from '../../prompts';
 import { GeminiSearchTool } from '../../tools/search';
@@ -37,11 +38,11 @@ export class GeminiApi implements ModelApi {
 			if ('conversationHistory' in request) {
 				// Extended case with history (chat)
 				const contents = await this.buildContents(request);
-				this.logDebugInfo('Chat contents', contents);
+				logDebugInfo(this.plugin.settings.debugMode, 'Chat contents', contents);
 				
 				// In the new API all content needs to have a role
 				const chatHistory = contents.filter(item => item.role !== undefined);
-				this.logDebugInfo('Chat history', chatHistory);
+				logDebugInfo(this.plugin.settings.debugMode, 'Chat history', chatHistory);
 				
 				const model = this.gemini.getGenerativeModel({
 					model: modelToUse,
@@ -70,10 +71,10 @@ export class GeminiApi implements ModelApi {
 				} else {
 					// Get the last message (user's most recent input)
 					const lastMessage = chatHistory[chatHistory.length - 1];
-					this.logDebugInfo('Sending message', lastMessage);
+					logDebugInfo(this.plugin.settings.debugMode, 'Sending message', lastMessage);
 					// Standard generation without search tools
 					const result = await chat.sendMessage(request.userMessage);
-					this.logDebugInfo('Model response', result);
+					logDebugInfo(this.plugin.settings.debugMode, 'Model response', result);
 					response = this.parseModelResult(result);
 				}
 			} else {
@@ -134,83 +135,23 @@ export class GeminiApi implements ModelApi {
 		return response;
 	}
 
-	private async buildContents(request: ExtendedModelRequest): Promise<any[]> {
-		const contents = [];
-		
-		// First push the base prompt on the stack as a system message
-		if (request.prompt != null) {
-			contents.push({ 
-				role: 'user',
-				parts: [{ text: request.prompt }]
-			});
-		}
-		
-		// Then push the current date as a system message
-		const date = this.prompts.datePrompt({ date: new Date().toDateString() });
-		contents.push({ 
-			role: 'user',
-			parts: [{ text: date }]
-		});
-
-		// Then push the file context as a system message
-		const depth = this.plugin.settings.maxContextDepth;
-		const renderContent = request.renderContent ?? true;
-		// Only include file context if sendContext setting is true
-		if (this.plugin.settings.sendContext) {
-			const fileContent = await this.plugin.gfile.getCurrentFileContent(depth, renderContent);
-			if (fileContent != null) {
-				// Log the context to help with debugging
-				this.logDebugInfo('File context', fileContent);
-				
-				contents.push({ 
-					role: 'user',
-					parts: [{ text: fileContent }]
-				});
-			}
-		} else {
-			this.logDebugInfo('File context', 'Context sending is disabled in settings');
-		}
-
-		// Now the entire conversation history
-		const history = request.conversationHistory ?? [];
-		history.forEach((entry) => {
-			// Convert from the old format to the new format
-			let role = entry.role === 'model' ? 'model' : 'user';
-			contents.push({
-				role: role,
-				parts: [{ text: entry.message }]
-			});
-		});
-
-		// Now the time as a system message
-		const time = this.prompts.timePrompt({ time: new Date().toLocaleTimeString() });
-		contents.push({ 
-			role: 'user',
-			parts: [{ text: time }]
-		});
-
-		// Finally, the latest user message
-		contents.push({ 
-			role: 'user',
-			parts: [{ text: request.userMessage }]
-		});
-		
-		return contents;
-	}
-
-	private buildContentElement(role: string, text: string) {
-		// This method is no longer used, but kept for reference
-		// The format should be:
-		// { role: 'user', parts: [{ text: 'Your text here' }] }
-		return {
-			role: role === 'model' ? 'model' : 'user',
-			parts: [{ text: text }]
-		};
-	}
-
-	private logDebugInfo(title: string, data: any) {
-		if (this.plugin.settings.debugMode) {
-			console.log(`[GeminiAPI Debug] ${title}:`, JSON.stringify(data, null, 2));
-		}
-	}
-} 
+	// buildContents now uses the shared utility
+private async buildContents(request: ExtendedModelRequest): Promise<any[]> {
+  const datePrompt = this.prompts.datePrompt({ date: new Date().toDateString() });
+  const timePrompt = this.prompts.timePrompt({ time: new Date().toLocaleTimeString() });
+  let fileContext: string | null = null;
+  if (this.plugin.settings.sendContext) {
+    fileContext = await this.plugin.gfile.getCurrentFileContent(this.plugin.settings.maxContextDepth, request.renderContent ?? true);
+  }
+  return await import('../utils/build-contents').then(mod => mod.buildGeminiChatContents({
+    prompt: request.prompt,
+    userMessage: request.userMessage,
+    conversationHistory: request.conversationHistory,
+    datePrompt,
+    timePrompt,
+    fileContext,
+    sendContext: this.plugin.settings.sendContext,
+    debugFn: (title: string, data: any) => logDebugInfo(this.plugin.settings.debugMode, title, data),
+  }));
+}
+}
