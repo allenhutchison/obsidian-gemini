@@ -2,7 +2,7 @@ import { Plugin, WorkspaceLeaf } from 'obsidian';
 import ObsidianGeminiSettingTab from './src/ui/settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './src/ui/gemini-view';
 import { GeminiSummary } from './src/summary';
-import { GeminiApi } from './src/api';
+import { ApiFactory, ModelApi, ApiProvider } from './src/api';
 import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history/history';
 import { GeminiCompletions } from './src/completions';
@@ -10,6 +10,7 @@ import { Notice } from 'obsidian';
 
 export interface ObsidianGeminiSettings {
 	apiKey: string;
+	apiProvider: string;
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
@@ -23,10 +24,12 @@ export interface ObsidianGeminiSettings {
 	chatHistory: boolean;
 	historyFolder: string;
 	showModelPicker: boolean;
+	debugMode: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	apiKey: '',
+	apiProvider: ApiProvider.GEMINI,
 	chatModelName: 'gemini-1.5-pro',
 	summaryModelName: 'gemini-1.5-flash',
 	completionsModelName: 'gemini-1.5-flash-8b',
@@ -40,13 +43,14 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	showModelPicker: false,
+	debugMode: false,
 };
 
 export default class ObsidianGemini extends Plugin {
 	settings: ObsidianGeminiSettings;
 
 	// Public members
-	public geminiApi: GeminiApi;
+	public geminiApi: ModelApi;
 	public gfile: ScribeFile;
 	public geminiView: GeminiView;
 	public history: GeminiHistory;
@@ -79,7 +83,7 @@ export default class ObsidianGemini extends Plugin {
 
 	async setupGeminiScribe() {
 		await this.loadSettings();
-		this.geminiApi = new GeminiApi(this);
+		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
 
 		// Initialize history

@@ -2,6 +2,7 @@ import ObsidianGemini from '../../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
+import { ApiProvider } from '../api';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
@@ -25,6 +26,20 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.apiKey)
 					.onChange(async (value) => {
 						this.plugin.settings.apiKey = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('API Provider')
+			.setDesc('Select which AI provider to use')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption(ApiProvider.GEMINI, 'Google Gemini')
+					.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
+					.setValue(this.plugin.settings.apiProvider)
+					.onChange(async (value) => {
+						this.plugin.settings.apiProvider = value;
 						await this.plugin.saveSettings();
 					})
 			);
@@ -176,6 +191,19 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.showModelPicker).onChange(async (value) => {
 					this.plugin.settings.showModelPicker = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		// Developer Settings
+		new Setting(containerEl).setName('Developer Settings').setHeading();
+		
+		new Setting(containerEl)
+			.setName('Debug Mode')
+			.setDesc('Enable debug logging to the console. Useful for troubleshooting.')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.debugMode).onChange(async (value) => {
+					this.plugin.settings.debugMode = value;
 					await this.plugin.saveSettings();
 				})
 			);
