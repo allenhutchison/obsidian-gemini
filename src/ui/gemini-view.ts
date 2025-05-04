@@ -5,6 +5,7 @@ import { ExtendedModelRequest } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
+import { logDebugInfo } from 'src/api/utils/debug';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -283,21 +284,6 @@ export class GeminiView extends ItemView {
 		this.updateChat(history);
 	}
 
-	private async loadActiveFile() {
-		const activeFile = this.plugin.gfile.getActiveFile();
-		if (!activeFile) return;
-
-		// Load the file content
-		const content = await this.plugin.app.vault.read(activeFile);
-		this.currentFile = activeFile;
-
-		// Load history for this file
-		const history = await this.plugin.history.getHistoryForFile(activeFile);
-
-		// Update the chat with the history
-		this.updateChat(history);
-	}
-
 	private async updateChat(history: GeminiConversationEntry[]) {
 		// Clear existing chat
 		this.clearChat();
@@ -335,6 +321,7 @@ export class GeminiView extends ItemView {
 					prompt: prompt,
 					renderContent: true,
 				};
+				logDebugInfo(this.plugin.settings.debugMode, 'Sending message', request);	
 				const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
 
 				if (this.plugin.settings.chatHistory) {
