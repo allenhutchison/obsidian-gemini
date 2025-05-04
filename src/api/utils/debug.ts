@@ -94,8 +94,48 @@ function redactLinkedFileSections(prompt: string): string {
   return result;
 }
 
+// Helper to detect BaseModelRequest
+function isBaseModelRequest(obj: any): boolean {
+  return obj && typeof obj === 'object' && typeof obj.prompt === 'string';
+}
+
+// Helper to detect ExtendedModelRequest
+function isExtendedModelRequest(obj: any): boolean {
+  return (
+    isBaseModelRequest(obj) &&
+    Array.isArray(obj.conversationHistory) &&
+    typeof obj.userMessage === 'string'
+  );
+}
+
+function formatBaseModelRequest(req: any): string {
+  return [
+    `Model: ${req.model ?? '[default]'}\n`,
+    `Prompt: ${JSON.stringify(req.prompt, null, 2)}\n`
+  ].join('');
+}
+
+function formatExtendedModelRequest(req: any): string {
+  return [
+    `Model: ${req.model ?? '[default]'}\n`,
+    `Prompt: ${JSON.stringify(req.prompt, null, 2)}\n`,
+    `User Message: ${JSON.stringify(req.userMessage, null, 2)}\n`,
+    `Conversation History:`,
+    JSON.stringify(req.conversationHistory, null, 2),
+    req.renderContent !== undefined ? `\nRender Content: ${req.renderContent}` : ''
+  ].join('\n');
+}
+
 export function logDebugInfo(debugMode: boolean, title: string, data: any) {
   if (!debugMode) return;
+  if (isExtendedModelRequest(data)) {
+    console.log(`[GeminiAPI Debug] ${title} (ExtendedModelRequest):\n${formatExtendedModelRequest(data)}`);
+    return;
+  }
+  if (isBaseModelRequest(data)) {
+    console.log(`[GeminiAPI Debug] ${title} (BaseModelRequest):\n${formatBaseModelRequest(data)}`);
+    return;
+  }
   let sanitizedData: any;
   if (typeof data === 'string' && data.includes('File Label:')) {
     sanitizedData = redactLinkedFileSections(data);
