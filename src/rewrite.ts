@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { ExtendedModelRequest } from './api';
+import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
 
 export class ModelRewriteMode {

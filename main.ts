@@ -2,7 +2,7 @@ import { Plugin, WorkspaceLeaf } from 'obsidian';
 import ObsidianGeminiSettingTab from './src/ui/settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './src/ui/gemini-view';
 import { GeminiSummary } from './src/summary';
-import { ApiFactory, ModelApi, ApiProvider } from './src/api';
+import { ApiFactory, ModelApi, ApiProvider } from './src/api/index';
 import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history/history';
 import { GeminiCompletions } from './src/completions';

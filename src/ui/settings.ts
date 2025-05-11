@@ -2,7 +2,7 @@ import ObsidianGemini from '../../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
-import { ApiProvider } from '../api';
+import { ApiProvider } from '../api/index';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;

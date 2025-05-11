@@ -1,7 +1,7 @@
 import ObsidianGemini from '../../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 import { ModelRewriteMode } from '../rewrite';
-import { ExtendedModelRequest } from '../api';
+import { ExtendedModelRequest } from '../api/index';
 import { GeminiPrompts } from '../prompts';
 import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
