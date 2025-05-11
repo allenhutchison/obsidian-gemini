@@ -18,7 +18,6 @@ export interface ObsidianGeminiSettings {
 	sendContext: boolean;
 	maxContextDepth: number;
 	searchGrounding: boolean;
-	searchGroundingThreshold: number;
 	summaryFrontmatterKey: string;
 	userName: string;
 	rewriteFiles: boolean;
@@ -37,7 +36,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	sendContext: false,
 	maxContextDepth: 2,
 	searchGrounding: false,
-	searchGroundingThreshold: 0.7,
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	rewriteFiles: false,
