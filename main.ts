@@ -7,6 +7,7 @@ import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history/history';
 import { GeminiCompletions } from './src/completions';
 import { Notice } from 'obsidian';
+import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './src/models';
 
 export interface ObsidianGeminiSettings {
 	apiKey: string;
@@ -30,9 +31,9 @@ export interface ObsidianGeminiSettings {
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	apiKey: '',
 	apiProvider: ApiProvider.GEMINI,
-	chatModelName: 'gemini-1.5-pro',
-	summaryModelName: 'gemini-1.5-flash',
-	completionsModelName: 'gemini-1.5-flash-8b',
+	chatModelName: getDefaultModelForRole('chat'),
+	summaryModelName: getDefaultModelForRole('summary'),
+	completionsModelName: getDefaultModelForRole('completions'),
 	sendContext: false,
 	maxContextDepth: 2,
 	searchGrounding: false,
@@ -135,6 +136,19 @@ export default class ObsidianGemini extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		await this.updateModelVersions();
+	}
+
+	async updateModelVersions() {
+		const { updatedSettings, settingsChanged, changedSettingsInfo } = getUpdatedModelSettings(this.settings);
+
+		if (settingsChanged) {
+			this.settings = updatedSettings as ObsidianGeminiSettings; // Cast back to specific type
+			console.log('ObsidianGemini: Updating model versions in settings...');
+			changedSettingsInfo.forEach(info => console.log(`- ${info}`));
+			await this.saveData(this.settings);
+			new Notice('Gemini model settings updated to current defaults.');
+		}
 	}
 
 	async saveSettings() {
