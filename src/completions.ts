@@ -1,7 +1,7 @@
 import ObsidianGemini from '../main';
 import { MarkdownView, debounce, Notice } from 'obsidian';
 import { forceableInlineSuggestion, Suggestion } from 'codemirror-companion-extension';
-import { BaseModelRequest } from './api';
+import { BaseModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
 
 export class GeminiCompletions {

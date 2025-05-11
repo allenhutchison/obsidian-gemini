@@ -40,7 +40,6 @@ export class GeminiHistory {
 	}
 
 	async onUnload() {
-		console.debug('Unloading history module...');
 		this.plugin.app.vault.off('rename', this.renameHistoryFile.bind(this));
 		// Remove listener for file deletion
 		this.plugin.app.vault.off('delete', this.handleFileDelete.bind(this));
@@ -97,15 +96,5 @@ export class GeminiHistory {
 
 	async clearHistory() {
 		await this.markdownHistory.clearHistory();
-	}
-
-	private async getTotalConversationCount(): Promise<number> {
-		const files = this.plugin.app.vault.getMarkdownFiles();
-		let total = 0;
-		for (const file of files) {
-			const conversations = await this.getHistoryForFile(file);
-			total += conversations.length;
-		}
-		return total;
 	}
 }

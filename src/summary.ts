@@ -1,6 +1,6 @@
 import ObsidianGemini from '../main';
 import { GeminiPrompts } from './prompts';
-import { BaseModelRequest } from './api';
+import { BaseModelRequest } from './api/index';
 
 export class GeminiSummary {
 	private plugin: ObsidianGemini;

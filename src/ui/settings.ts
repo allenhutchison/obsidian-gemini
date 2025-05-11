@@ -2,6 +2,7 @@ import ObsidianGemini from '../../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
+import { ApiProvider } from '../api/index';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
@@ -25,6 +26,20 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.apiKey)
 					.onChange(async (value) => {
 						this.plugin.settings.apiKey = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('API Provider')
+			.setDesc('Select which AI provider to use')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption(ApiProvider.GEMINI, 'Google Gemini (New SDK)')
+					//.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
+					.setValue(this.plugin.settings.apiProvider)
+					.onChange(async (value) => {
+						this.plugin.settings.apiProvider = value;
 						await this.plugin.saveSettings();
 					})
 			);
@@ -79,24 +94,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Search Grounding')
 			.setDesc(
-				'Enable the model to use Google search results in its responses, and the threshold for how likely it is to trigger.'
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption('0.1', '0.1')
-					.addOption('0.2', '0.2')
-					.addOption('0.3', '0.3')
-					.addOption('0.4', '0.4')
-					.addOption('0.5', '0.5')
-					.addOption('0.6', '0.6')
-					.addOption('0.7', '0.7')
-					.addOption('0.8', '0.8')
-					.addOption('0.9', '0.9')
-					.setValue(this.plugin.settings.searchGroundingThreshold.toString())
-					.onChange(async (value) => {
-						this.plugin.settings.searchGroundingThreshold = parseFloat(value);
-						await this.plugin.saveSettings();
-					})
+				'Enable the model to use Google search results in its responses.'
 			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.searchGrounding).onChange(async (value) => {
@@ -176,6 +174,19 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.showModelPicker).onChange(async (value) => {
 					this.plugin.settings.showModelPicker = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		// Developer Settings
+		new Setting(containerEl).setName('Developer Settings').setHeading();
+		
+		new Setting(containerEl)
+			.setName('Debug Mode')
+			.setDesc('Enable debug logging to the console. Useful for troubleshooting.')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.debugMode).onChange(async (value) => {
+					this.plugin.settings.debugMode = value;
 					await this.plugin.saveSettings();
 				})
 			);

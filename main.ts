@@ -2,51 +2,54 @@ import { Plugin, WorkspaceLeaf } from 'obsidian';
 import ObsidianGeminiSettingTab from './src/ui/settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './src/ui/gemini-view';
 import { GeminiSummary } from './src/summary';
-import { GeminiApi } from './src/api';
+import { ApiFactory, ModelApi, ApiProvider } from './src/api/index';
 import { ScribeFile } from './src/files';
 import { GeminiHistory } from './src/history/history';
 import { GeminiCompletions } from './src/completions';
 import { Notice } from 'obsidian';
+import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './src/models';
 
 export interface ObsidianGeminiSettings {
 	apiKey: string;
+	apiProvider: string;
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
 	sendContext: boolean;
 	maxContextDepth: number;
 	searchGrounding: boolean;
-	searchGroundingThreshold: number;
 	summaryFrontmatterKey: string;
 	userName: string;
 	rewriteFiles: boolean;
 	chatHistory: boolean;
 	historyFolder: string;
 	showModelPicker: boolean;
+	debugMode: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	apiKey: '',
-	chatModelName: 'gemini-1.5-pro',
-	summaryModelName: 'gemini-1.5-flash',
-	completionsModelName: 'gemini-1.5-flash-8b',
+	apiProvider: ApiProvider.GEMINI,
+	chatModelName: getDefaultModelForRole('chat'),
+	summaryModelName: getDefaultModelForRole('summary'),
+	completionsModelName: getDefaultModelForRole('completions'),
 	sendContext: false,
 	maxContextDepth: 2,
 	searchGrounding: false,
-	searchGroundingThreshold: 0.7,
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	rewriteFiles: false,
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	showModelPicker: false,
+	debugMode: false,
 };
 
 export default class ObsidianGemini extends Plugin {
 	settings: ObsidianGeminiSettings;
 
 	// Public members
-	public geminiApi: GeminiApi;
+	public geminiApi: ModelApi;
 	public gfile: ScribeFile;
 	public geminiView: GeminiView;
 	public history: GeminiHistory;
@@ -79,7 +82,7 @@ export default class ObsidianGemini extends Plugin {
 
 	async setupGeminiScribe() {
 		await this.loadSettings();
-		this.geminiApi = new GeminiApi(this);
+		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
 
 		// Initialize history
@@ -131,6 +134,19 @@ export default class ObsidianGemini extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		await this.updateModelVersions();
+	}
+
+	async updateModelVersions() {
+		const { updatedSettings, settingsChanged, changedSettingsInfo } = getUpdatedModelSettings(this.settings);
+
+		if (settingsChanged) {
+			this.settings = updatedSettings as ObsidianGeminiSettings; // Cast back to specific type
+			console.log('ObsidianGemini: Updating model versions in settings...');
+			changedSettingsInfo.forEach(info => console.log(`- ${info}`));
+			await this.saveData(this.settings);
+			new Notice('Gemini model settings updated to current defaults.');
+		}
 	}
 
 	async saveSettings() {

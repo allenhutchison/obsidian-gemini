@@ -1,10 +1,11 @@
 import ObsidianGemini from '../../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 import { ModelRewriteMode } from '../rewrite';
-import { ExtendedModelRequest } from '../api';
+import { ExtendedModelRequest } from '../api/index';
 import { GeminiPrompts } from '../prompts';
 import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
+import { logDebugInfo } from '../api/utils/debug';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -14,12 +15,12 @@ export class GeminiView extends ItemView {
 	private prompts: GeminiPrompts;
 	private chatbox: HTMLDivElement;
 	private currentFile: TFile | null;
-	private observer: MutationObserver;
+	private observer: MutationObserver | null;
 	private shoudRewriteFile: boolean;
 	private timerDisplay: HTMLDivElement;
 	private timerInterval: NodeJS.Timeout | null = null;
 	private startTime: number | null = null;
-	private modelPicker: HTMLSelectElement;
+	private modelPicker: HTMLSelectElement | null;
 	private settingsUnsubscribe: (() => void) | null = null;
 	private fileOpenHandler: (file: TFile | null) => Promise<void>;
 
@@ -42,16 +43,8 @@ export class GeminiView extends ItemView {
 		// Override with our version that updates the UI
 		this.plugin.saveSettings = async () => {
 			await originalSaveSettings();
-			if (this.modelPicker) {
-				this.modelPicker.value = this.plugin.settings.chatModelName;
-			}
-
-			// Reload the view to reflect all settings changes
-			this.clearChat();
-			const activeFile = this.plugin.gfile.getActiveFile();
-			if (activeFile) {
-				await this.handleFileOpen(activeFile);
-			}
+			// When settings save, rebuild the UI and reload data
+			await this._rebuildUIDueToSettingsChange();
 		};
 
 		// Store the unsubscribe function
@@ -60,33 +53,35 @@ export class GeminiView extends ItemView {
 		};
 	}
 
-	registerLinkClickHandler() {
-		this.containerEl.addEventListener('click', (event) => {
-			const target = event.target as HTMLElement;
-			if (target.tagName === 'A' && target.classList.contains('internal-link')) {
-				event.preventDefault();
-				const filePath = target.getAttribute('href');
-				if (filePath) {
-					this.app.workspace.openLinkText(filePath, '', true);
-				}
+	private async _rebuildUIDueToSettingsChange() {
+		if (!this.contentEl) {
+			logDebugInfo(
+				this.plugin.settings.debugMode,
+				'GeminiView: contentEl not available for UI rebuild on settings change.',
+				null
+			);
+			return;
+		}
+
+		logDebugInfo(this.plugin.settings.debugMode, 'GeminiView: Rebuilding UI due to settings change.', null);
+		this._buildViewDOM(this.contentEl); // Rebuild DOM
+
+		// Reload chat for current file
+		// handleFileOpen will call updateChat which calls clearChat then populates.
+		const activeFile = this.plugin.gfile.getActiveFile();
+		if (activeFile) {
+			await this.handleFileOpen(activeFile); // This will populate the new chatbox
+		} else {
+			// If no file is active, the new chatbox (created by _buildViewDOM) is empty, which is correct.
+			// We ensure chatbox is cleared by _buildViewDOM or if handleFileOpen clears it.
+			// If chatbox exists, clear it.
+			if (this.chatbox) {
+				this.clearChat();
 			}
-		});
+		}
 	}
 
-	getViewType() {
-		return VIEW_TYPE_GEMINI;
-	}
-
-	getDisplayText() {
-		return 'Gemini Scribe';
-	}
-
-	getIcon() {
-		return 'sparkles';
-	}
-
-	async onOpen() {
-		const container = this.containerEl.children[1];
+	private _buildViewDOM(container: HTMLElement) {
 		container.empty();
 		container.createEl('h2', { text: 'Gemini Chat' });
 
@@ -137,20 +132,22 @@ export class GeminiView extends ItemView {
 
 			// Add model options from shared list
 			GEMINI_MODELS.forEach((model) => {
-				this.modelPicker.createEl('option', {
+				this.modelPicker!.createEl('option', {
 					value: model.value,
 					text: model.label,
 				});
 			});
 
 			// Set the current model
-			this.modelPicker.value = this.plugin.settings.chatModelName;
+			this.modelPicker!.value = this.plugin.settings.chatModelName;
 
 			// Add change listener
-			this.modelPicker.addEventListener('change', async () => {
-				this.plugin.settings.chatModelName = this.modelPicker.value;
+			this.modelPicker!.addEventListener('change', async () => {
+				this.plugin.settings.chatModelName = this.modelPicker!.value;
 				await this.plugin.saveSettings();
 			});
+		} else {
+			this.modelPicker = null;
 		}
 
 		userInput.addEventListener('keydown', async (event) => {
@@ -169,14 +166,19 @@ export class GeminiView extends ItemView {
 
 				try {
 					await this.sendMessage(userMessage);
-					this.stopTimer();
 				} catch (error) {
+					console.error("Error during sendMessage call from button click:", error);
+					new Notice('An unexpected error occurred while sending the message.');
+				} finally {
 					this.stopTimer();
 				}
 			}
 		});
 
 		// Observe changes in the chatbox
+		if (this.observer) {
+			this.observer.disconnect();
+		}
 		this.observer = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
 				if (mutation.type === 'childList') {
@@ -188,13 +190,38 @@ export class GeminiView extends ItemView {
 			childList: true,
 			subtree: true,
 		});
+	}
+
+	registerLinkClickHandler() {
+		this.containerEl.addEventListener('click', (event) => {
+			const target = event.target as HTMLElement;
+			if (target.tagName === 'A' && target.classList.contains('internal-link')) {
+				event.preventDefault();
+				const filePath = target.getAttribute('href');
+				if (filePath) {
+					this.app.workspace.openLinkText(filePath, '', true);
+				}
+			}
+		});
+	}
+
+	getViewType() {
+		return VIEW_TYPE_GEMINI;
+	}
+
+	getDisplayText() {
+		return 'Gemini Scribe';
+	}
+
+	getIcon() {
+		return 'sparkles';
+	}
+
+	async onOpen() {
+		this._buildViewDOM(this.contentEl);
 
 		// Register the file-open handler
-		this.registerEvent(
-			this.app.workspace.on('file-open', async (file) => {
-				await this.handleFileOpen(file);
-			})
-		);
+		this.registerEvent(this.app.workspace.on('file-open', this.fileOpenHandler));
 
 		// Handle the currently active file
 		const activeFile = this.plugin.gfile.getActiveFile();
@@ -205,9 +232,13 @@ export class GeminiView extends ItemView {
 
 	async onClose() {
 		this.app.workspace.off('file-open', this.fileOpenHandler);
-		this.observer.disconnect();
+		if (this.observer) {
+			this.observer.disconnect();
+			this.observer = null;
+		}
 		if (this.settingsUnsubscribe) {
 			this.settingsUnsubscribe();
+			this.settingsUnsubscribe = null;
 		}
 	}
 
@@ -267,8 +298,6 @@ export class GeminiView extends ItemView {
 		this.scrollToBottom();
 	}
 
-	// This will be called when a file is opened or made active in the view.
-	// file can be null if it's the new file tab.
 	private async handleFileOpen(file: TFile | null) {
 		if (!file) return;
 
@@ -278,21 +307,6 @@ export class GeminiView extends ItemView {
 
 		// Load history for this file
 		const history = await this.plugin.history.getHistoryForFile(file);
-
-		// Update the chat with the history
-		this.updateChat(history);
-	}
-
-	private async loadActiveFile() {
-		const activeFile = this.plugin.gfile.getActiveFile();
-		if (!activeFile) return;
-
-		// Load the file content
-		const content = await this.plugin.app.vault.read(activeFile);
-		this.currentFile = activeFile;
-
-		// Load history for this file
-		const history = await this.plugin.history.getHistoryForFile(activeFile);
 
 		// Update the chat with the history
 		this.updateChat(history);
@@ -315,7 +329,9 @@ export class GeminiView extends ItemView {
 	}
 
 	clearChat() {
-		this.chatbox.empty();
+		if (this.chatbox) {
+			this.chatbox.empty();
+		}
 	}
 
 	async sendMessage(userMessage: string) {
@@ -335,6 +351,7 @@ export class GeminiView extends ItemView {
 					prompt: prompt,
 					renderContent: true,
 				};
+				logDebugInfo(this.plugin.settings.debugMode, 'Sending message', request);	
 				const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
 
 				if (this.plugin.settings.chatHistory) {
