@@ -29,14 +29,14 @@ export class GeminiApiNew implements ModelApi {
 
   async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
     logDebugInfo(this.plugin.settings.debugMode, 'Generating model response for request', request);
-    const lang = window.localStorage.getItem('language') || 'en';
     const systemInstruction = this.prompts.systemPrompt({
 			userName: this.plugin.settings.userName,
-			language: lang,
+			language: window.localStorage.getItem('language') || 'en',
+      date: new Date().toDateString(),
+      time: new Date().toLocaleTimeString(),
 		});
 		const modelToUse = request.model ?? this.plugin.settings.chatModelName;
     
-
 
     let response: ModelResponse = { markdown: '', rendered: '' };
     if ("conversationHistory" in request) {
@@ -74,14 +74,6 @@ export class GeminiApiNew implements ModelApi {
     if (request.prompt != null) {
       contents.push(request.prompt);
     }
-  
-    // Then push the current date
-    const date = prompts.datePrompt({ date: new Date().toDateString() });
-    contents.push(date);
-  
-    // Then push the current time
-    const time = prompts.timePrompt({ time: new Date().toLocaleTimeString() });
-    contents.push(time);
   
     // Then push the file context.
     const depth = this.plugin.settings.maxContextDepth;

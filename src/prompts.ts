@@ -11,10 +11,6 @@ import summaryPromptContent from '../prompts/summaryPrompt.txt';
 // @ts-ignore
 import rewritePromptContent from '../prompts/rewritePrompt.txt';
 // @ts-ignore
-import datePromptContent from '../prompts/datePrompt.txt';
-// @ts-ignore
-import timePromptContent from '../prompts/timePrompt.txt';
-// @ts-ignore
 import contextPromptContent from '../prompts/contextPrompt.txt';
 
 export class GeminiPrompts {
@@ -23,8 +19,6 @@ export class GeminiPrompts {
 	private generalPromptTemplate: Handlebars.TemplateDelegate;
 	private summaryPromptTemplate: Handlebars.TemplateDelegate;
 	private rewritePromptTemplate: Handlebars.TemplateDelegate;
-	private datePromptTemplate: Handlebars.TemplateDelegate;
-	private timePromptTemplate: Handlebars.TemplateDelegate;
 	private contextPromptTemplate: Handlebars.TemplateDelegate;
 
 	constructor() {
@@ -33,8 +27,6 @@ export class GeminiPrompts {
 		this.generalPromptTemplate = Handlebars.compile(generalPromptContent);
 		this.summaryPromptTemplate = Handlebars.compile(summaryPromptContent);
 		this.rewritePromptTemplate = Handlebars.compile(rewritePromptContent);
-		this.datePromptTemplate = Handlebars.compile(datePromptContent);
-		this.timePromptTemplate = Handlebars.compile(timePromptContent);
 		this.contextPromptTemplate = Handlebars.compile(contextPromptContent);
 	}
 
@@ -56,14 +48,6 @@ export class GeminiPrompts {
 
 	rewritePrompt(variables: { [key: string]: string }): string {
 		return this.rewritePromptTemplate(variables);
-	}
-
-	datePrompt(variables: { [key: string]: string }): string {
-		return this.datePromptTemplate(variables);
-	}
-
-	timePrompt(variables: { [key: string]: string }): string {
-		return this.timePromptTemplate(variables);
 	}
 
 	contextPrompt(variables: { [key: string]: string }): string {
