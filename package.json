@@ -1,6 +1,6 @@
 {
 	"name": "gemini-scribe",
-	"version": "1.8.1",
+	"version": "2.0.1",
 	"description": "Gemini Scribe, allows you to interact with the model and use your notes as context.",
 	"main": "main.js",
 	"scripts": {
