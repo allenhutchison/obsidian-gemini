@@ -48,7 +48,8 @@ export class GeminiApiNew implements ModelApi {
       const result = await this.ai.models.generateContent({
         model: modelToUse,
         config: {
-          tools: tools
+          systemInstruction: systemInstruction,
+          tools: tools,
         },
         contents: contents,
       });
