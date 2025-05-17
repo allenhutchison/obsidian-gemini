@@ -13,6 +13,9 @@ export class ScribeFile {
 		depth: number = this.plugin.settings.maxContextDepth,
 		renderContent: boolean = false
 	): Promise<string | null> {
+		if (!this.plugin.settings.sendContext) {
+			return null;
+		}
 		const activeFile = this.getActiveFile();
 		if (activeFile) {
 			const fileContext = new FileContextTree(this.plugin, depth);
