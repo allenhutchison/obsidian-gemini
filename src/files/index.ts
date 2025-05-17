@@ -1,6 +1,7 @@
 import ObsidianGemini from '../../main';
 import { FileContextTree } from './file-context';
 import { TFile } from 'obsidian';
+import { logDebugInfo } from '../api/utils/debug';
 
 export class ScribeFile {
 	private plugin: ObsidianGemini;
@@ -50,7 +51,7 @@ export class ScribeFile {
 		if (this.isFile(activeFile)) {
 			return activeFile;
 		} else {
-			console.debug('No active file found.');
+			logDebugInfo(this.plugin.settings.debugMode, 'File System', 'No active file found.');
 			return null;
 		}
 	}
@@ -98,7 +99,11 @@ export class ScribeFile {
 					if (normalizedPath) {
 						normalizedLinks.push(normalizedPath);
 					} else {
-						console.warn(`Link "${link.link}" in file "${file.path}" could not be normalized.`);
+						logDebugInfo(
+							this.plugin.settings.debugMode,
+							'Link Normalization Warning',
+							`Link "${link.link}" in file "${file.path}" could not be normalized.`
+						);
 					}
 				}
 			}
@@ -109,7 +114,11 @@ export class ScribeFile {
 					if (normalizedPath) {
 						normalizedEmbeds.push(normalizedPath);
 					} else {
-						console.warn(`Embed "${embed.link}" in file "${file.path}" could not be normalized.`);
+						logDebugInfo(
+							this.plugin.settings.debugMode,
+							'Link Normalization Warning',
+							`Embed "${embed.link}" in file "${file.path}" could not be normalized.`
+						);
 					}
 				}
 			}
@@ -120,7 +129,11 @@ export class ScribeFile {
 					if (normalizedPath) {
 						normalizedFrontmatterLinks.push(normalizedPath);
 					} else {
-						console.warn(`Frontmatter link "${link.link}" in file "${file.path}" could not be normalized.`);
+						logDebugInfo(
+							this.plugin.settings.debugMode,
+							'Link Normalization Warning',
+							`Frontmatter link "${link.link}" in file "${file.path}" could not be normalized.`
+						);
 					}
 				}
 			}
@@ -133,7 +146,11 @@ export class ScribeFile {
 							if (normalizedPath) {
 								normalizedFrontmatterLinks.push(normalizedPath);
 							} else {
-								console.warn(`Frontmatter link "${link}" in file "${file.path}" could not be normalized.`);
+								logDebugInfo(
+									this.plugin.settings.debugMode,
+									'Link Normalization Warning',
+									`Frontmatter link "${link}" in file "${file.path}" could not be normalized.`
+								);
 							}
 						});
 					} else if (typeof cache.frontmatter.links === 'string') {
@@ -141,7 +158,9 @@ export class ScribeFile {
 						if (normalizedPath) {
 							normalizedFrontmatterLinks.push(normalizedPath);
 						} else {
-							console.warn(
+							logDebugInfo(
+								this.plugin.settings.debugMode,
+								'Link Normalization Warning',
 								`Frontmatter link "${cache.frontmatter.links}" in file "${file.path}" could not be normalized.`
 							);
 						}
