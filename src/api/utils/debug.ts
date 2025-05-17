@@ -5,7 +5,7 @@
  * @param data Data to log (will be stringified)
  */
 // Recursively strip linked file contents from a file-context object for debug output
-function stripFileContextNode(node: any, isRoot = true): any {
+export function stripFileContextNode(node: any, isRoot = true): any {
   if (!node || typeof node !== 'object') return node;
   // If it looks like a FileContextNode
   if ('path' in node && 'content' in node && 'wikilink' in node && 'links' in node) {
@@ -38,7 +38,7 @@ function stripFileContextNode(node: any, isRoot = true): any {
   }
 }
 
-function stripLinkedFileContents(obj: any): any {
+export function stripLinkedFileContents(obj: any): any {
   // If this is a file-context object or contains one, use the new logic
   if (obj && typeof obj === 'object' && ('path' in obj && 'content' in obj && 'wikilink' in obj && 'links' in obj)) {
     return stripFileContextNode(obj, true);
@@ -58,7 +58,7 @@ function stripLinkedFileContents(obj: any): any {
   return obj;
 }
 
-function redactLinkedFileSections(prompt: string): string {
+export function redactLinkedFileSections(prompt: string): string {
   // Split by file section header
   const sectionRegex = /(=+\nFile Label: [^\n]+\nFile Name: [^\n]+\nWikiLink: [^\n]+\n=+\n\n)/g;
   const parts = prompt.split(sectionRegex);
@@ -95,12 +95,12 @@ function redactLinkedFileSections(prompt: string): string {
 }
 
 // Helper to detect BaseModelRequest
-function isBaseModelRequest(obj: any): boolean {
-  return obj && typeof obj === 'object' && typeof obj.prompt === 'string';
+export function isBaseModelRequest(obj: any): boolean {
+  return !!(obj && typeof obj === 'object' && typeof obj.prompt === 'string');
 }
 
 // Helper to detect ExtendedModelRequest
-function isExtendedModelRequest(obj: any): boolean {
+export function isExtendedModelRequest(obj: any): boolean {
   return (
     isBaseModelRequest(obj) &&
     Array.isArray(obj.conversationHistory) &&
@@ -108,14 +108,14 @@ function isExtendedModelRequest(obj: any): boolean {
   );
 }
 
-function formatBaseModelRequest(req: any): string {
+export function formatBaseModelRequest(req: any): string {
   return [
     `Model: ${req.model ?? '[default]'}\n`,
     `Prompt: ${JSON.stringify(req.prompt, null, 2)}\n`
   ].join('');
 }
 
-function formatExtendedModelRequest(req: any): string {
+export function formatExtendedModelRequest(req: any): string {
   return [
     `Model: ${req.model ?? '[default]'}\n`,
     `Prompt: ${JSON.stringify(req.prompt, null, 2)}\n`,
