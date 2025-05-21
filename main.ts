@@ -25,6 +25,8 @@ export interface ObsidianGeminiSettings {
 	historyFolder: string;
 	showModelPicker: boolean;
 	debugMode: boolean;
+	maxRetries: number;
+	initialBackoffDelay: number;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -43,6 +45,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	historyFolder: 'gemini-scribe',
 	showModelPicker: false,
 	debugMode: false,
+	maxRetries: 3,
+	initialBackoffDelay: 1000,
 };
 
 export default class ObsidianGemini extends Plugin {
