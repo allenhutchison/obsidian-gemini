@@ -1,4 +1,4 @@
-import { GEMINI_MODELS, getDefaultModelForRole, ModelRole, GeminiModel } from './models';
+import { GEMINI_MODELS, getDefaultModelForRole, ModelRole, GeminiModel, getUpdatedModelSettings } from './models';
 
 // Helper to temporarily modify GEMINI_MODELS for specific tests
 const setTestModels = (models: GeminiModel[]) => {
@@ -88,3 +88,150 @@ describe('getDefaultModelForRole', () => {
 		expect(getDefaultModelForRole('summary')).toBe('gemini-2.5-flash-preview-04-17');
 	});
 }); 
+
+describe('getUpdatedModelSettings', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		// Setup default test models
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
+			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
+			{ value: 'gemini-another-model', label: 'Another Model' },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	it('should not change settings if all current models are valid and available', () => {
+		const currentSettings = {
+			chatModelName: 'gemini-chat-default',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(false);
+		expect(result.updatedSettings).toEqual(currentSettings);
+		expect(result.changedSettingsInfo).toEqual([]);
+	});
+
+	it('should update chatModelName to default if current is invalid/unavailable', () => {
+		const currentSettings = {
+			chatModelName: 'invalid-chat-model',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
+		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
+		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
+		expect(result.changedSettingsInfo).toEqual([
+			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default'"
+		]);
+	});
+
+	it('should update summaryModelName to default if current is invalid/unavailable', () => {
+		const currentSettings = {
+			chatModelName: 'gemini-chat-default',
+			summaryModelName: 'invalid-summary-model',
+			completionsModelName: 'gemini-completions-default',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
+		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
+		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
+		expect(result.changedSettingsInfo).toEqual([
+			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default'"
+		]);
+	});
+
+	it('should update completionsModelName to default if current is invalid/unavailable', () => {
+		const currentSettings = {
+			chatModelName: 'gemini-chat-default',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'invalid-completions-model',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
+		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
+		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
+		expect(result.changedSettingsInfo).toEqual([
+			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default'"
+		]);
+	});
+
+	it('should update multiple model names if they are invalid', () => {
+		const currentSettings = {
+			chatModelName: 'invalid-chat-model',
+			summaryModelName: 'invalid-summary-model',
+			completionsModelName: 'gemini-completions-default', // This one is valid
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
+		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
+		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
+		expect(result.changedSettingsInfo).toEqual([
+			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default'",
+			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default'",
+		]);
+	});
+
+	it('should update all model names if all are invalid', () => {
+		const currentSettings = {
+			chatModelName: 'invalid-chat-model',
+			summaryModelName: 'invalid-summary-model',
+			completionsModelName: 'invalid-completions-model',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
+		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
+		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
+		expect(result.changedSettingsInfo).toEqual([
+			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default'",
+			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default'",
+			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default'",
+		]);
+	});
+
+	it('should update to the first model in GEMINI_MODELS if no role-specific default exists for an invalid model', () => {
+		// No model has defaultForRoles: ['chat'] in this setup
+		setTestModels([
+			{ value: 'first-model-in-list', label: 'First Model' },
+			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
+			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
+		]);
+		const currentSettings = {
+			chatModelName: 'invalid-chat-model', // This needs update
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.chatModelName).toBe('first-model-in-list'); // Falls back to first model
+		expect(result.changedSettingsInfo).toEqual([
+			"Chat model: 'invalid-chat-model' -> 'first-model-in-list'"
+		]);
+	});
+
+	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {
+		setTestModels([]); // GEMINI_MODELS is empty
+		const currentSettings = {
+			chatModelName: 'any-model', // This will trigger a call to getDefaultModelForRole
+			summaryModelName: 'any-other-model',
+			completionsModelName: 'yet-another-model',
+		};
+		// Expect getUpdatedModelSettings to throw the error from getDefaultModelForRole
+		expect(() => getUpdatedModelSettings(currentSettings)).toThrow(
+			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
+		);
+	});
+});

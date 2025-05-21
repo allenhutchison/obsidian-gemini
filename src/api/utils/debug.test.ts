@@ -28,6 +28,96 @@ describe('isBaseModelRequest', () => {
   });
 });
 
+describe('logDebugInfo', () => {
+  let consoleLogSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    // Mock console.log before each test
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    // Restore console.log after each test
+    consoleLogSpy.mockRestore();
+  });
+
+  it('should not log anything if debugMode is false', () => {
+    logDebugInfo(false, 'Test Title', { data: 'some data' });
+    expect(consoleLogSpy).not.toHaveBeenCalled();
+  });
+
+  it('should log formatted ExtendedModelRequest if data is an ExtendedModelRequest', () => {
+    const extendedReq = {
+      prompt: 'system prompt',
+      conversationHistory: [],
+      userMessage: 'hello',
+      model: 'gemini-pro-extended',
+    };
+    logDebugInfo(true, 'Extended Test', extendedReq);
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[GeminiAPI Debug] Extended Test (ExtendedModelRequest):')
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining(formatExtendedModelRequest(extendedReq))
+    );
+  });
+
+  it('should log formatted BaseModelRequest if data is a BaseModelRequest (and not Extended)', () => {
+    const baseReq = {
+      prompt: 'simple prompt',
+      model: 'gemini-pro-base',
+    };
+    logDebugInfo(true, 'Base Test', baseReq);
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[GeminiAPI Debug] Base Test (BaseModelRequest):')
+    );
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining(formatBaseModelRequest(baseReq))
+    );
+  });
+
+  it('should log redacted string if data is a string containing "File Label:"', () => {
+    const fileLabelString = "===\nFile Label: Test File\nFile Name: test.md\nWikiLink: [[test]]\n===\n\nSome content here.";
+    const title = 'File Label Test';
+    // No need to spy on redactLinkedFileSections, we check its effect via console.log
+    // and redactLinkedFileSections is already tested separately.
+    logDebugInfo(true, title, fileLabelString);
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      `[GeminiAPI Debug] ${title}:\n${redactLinkedFileSections(fileLabelString)}`
+    );
+  });
+
+  it('should log stripped and stringified data for other object types', () => {
+    const otherData = { key: 'value', nested: { data: 'secret' } };
+    const title = 'Other Object Test';
+    // No need to spy on stripLinkedFileContents, we check its effect via console.log
+    // and stripLinkedFileContents is already tested separately.
+    logDebugInfo(true, title, otherData);
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    // The expected output will be JSON stringified, so we compare against that
+    const expectedStrippedData = stripLinkedFileContents(otherData);
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      `[GeminiAPI Debug] ${title}:`,
+      JSON.stringify(expectedStrippedData, null, 2)
+    );
+  });
+
+  it('should log stripped and stringified data for simple strings not containing "File Label:"', () => {
+    const simpleString = "This is a simple string without file labels.";
+    const title = 'Simple String Test';
+    logDebugInfo(true, title, simpleString);
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    const expectedStrippedData = stripLinkedFileContents(simpleString); // which is the string itself
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      `[GeminiAPI Debug] ${title}:`,
+      JSON.stringify(expectedStrippedData, null, 2) // simple strings are also stringified
+    );
+  });
+});
+
 describe('isExtendedModelRequest', () => {
   const basePrompt = { prompt: 'base prompt' };
   const validExtendedReq = {
