@@ -190,5 +190,33 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+
+		new Setting(containerEl)
+			.setName('Maximum Retries')
+			.setDesc('Maximum number of retries when a model request fails.')
+			.addText((text) =>
+				text
+					.setPlaceholder('e.g., 3')
+					.setValue(this.plugin.settings.maxRetries.toString())
+					.onChange(async (value) => {
+						this.plugin.settings.maxRetries = parseInt(value);
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Initial Backoff Delay (ms)')
+			.setDesc(
+				'Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.'
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder('e.g., 1000')
+					.setValue(this.plugin.settings.initialBackoffDelay.toString())
+					.onChange(async (value) => {
+						this.plugin.settings.initialBackoffDelay = parseInt(value);
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }

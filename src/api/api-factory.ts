@@ -2,6 +2,7 @@ import ObsidianGemini from '../../main';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiApiNew } from './implementations/gemini-api-new';
 import { OllamaApi } from './implementations/ollama-api';
+import { RetryModelApiDecorator } from './retry-model-api-decorator';
 
 /**
  * Enum for different API providers
@@ -26,12 +27,21 @@ export class ApiFactory {
         // Use the provider argument or get from settings
         const apiProvider = provider || (plugin.settings.apiProvider as ApiProvider) || ApiProvider.GEMINI;
         
+        let apiInstance: ModelApi;
+
         switch (apiProvider) {
             case ApiProvider.OLLAMA:
-                return new OllamaApi(plugin);
+                apiInstance = new OllamaApi(plugin);
+                break;
             case ApiProvider.GEMINI:
             default:
-                return new GeminiApiNew(plugin);
+                apiInstance = new GeminiApiNew(plugin);
+                break;
         }
+
+        // Wrap the created API instance with the RetryModelApiDecorator
+        const retryDecoratedApi = new RetryModelApiDecorator(apiInstance, plugin);
+
+        return retryDecoratedApi;
     }
 } 
