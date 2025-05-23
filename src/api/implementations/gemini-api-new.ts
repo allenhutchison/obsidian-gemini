@@ -100,15 +100,23 @@ export class GeminiApiNew implements ModelApi {
 		
 		// Extract text from the response
 		try {
-			if (result.text) {
-				// New API format
-				response.markdown = result.text;
-			//} //else if (result.candidates && result.candidates.length > 0) {
-				// Another possible format
-			//	response.markdown = result.candidates[0].content.parts[0].text;
+			let rawMarkdown = '';
+			if (result.text && typeof result.text === 'string') { // Check if result.text is a string
+        // New API format
+        rawMarkdown = result.text;
 			} else if (typeof result.text === 'function') {
-				// Old API format (keeping for backward compatibility)
-				response.markdown = result.text();
+        // Old API format (keeping for backward compatibility)
+        const textContent = result.text();
+        if (typeof textContent === 'string') { // Ensure the function returns a string
+            rawMarkdown = textContent;
+        }
+			}
+    // ... (other conditions for extracting text if any) ...
+
+			if (rawMarkdown) { // Check if rawMarkdown has content
+        response.markdown = this._decodeHtmlEntities(rawMarkdown);
+			} else {
+        response.markdown = ''; // Ensure markdown is empty string if no text extracted
 			}
 			
 			// Extract search grounding metadata if available
@@ -124,4 +132,19 @@ export class GeminiApiNew implements ModelApi {
 		
 		return response;
 	}
+
+  private _decodeHtmlEntities(encodedString: string): string {
+    if (typeof document !== 'undefined') {
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = encodedString;
+      return textarea.value;
+    }
+    // Fallback for environments where document is not available,
+    // though for an Obsidian plugin, 'document' should typically exist.
+    // This fallback could be simpler or more complex depending on requirements.
+    // For now, let's assume 'document' is available and not overcomplicate the fallback.
+    // If a more robust non-DOM fallback is needed, a library like 'he' would be better.
+    console.warn('HTML entity decoding attempted in an environment without `document`. Returning original string.');
+    return encodedString;
+  }
 }
