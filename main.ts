@@ -27,6 +27,7 @@ export interface ObsidianGeminiSettings {
 	debugMode: boolean;
 	maxRetries: number;
 	initialBackoffDelay: number;
+	streamingEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -47,6 +48,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	debugMode: false,
 	maxRetries: 3,
 	initialBackoffDelay: 1000,
+	streamingEnabled: true,
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -147,7 +149,7 @@ export default class ObsidianGemini extends Plugin {
 		if (settingsChanged) {
 			this.settings = updatedSettings as ObsidianGeminiSettings; // Cast back to specific type
 			console.log('ObsidianGemini: Updating model versions in settings...');
-			changedSettingsInfo.forEach(info => console.log(`- ${info}`));
+			changedSettingsInfo.forEach((info) => console.log(`- ${info}`));
 			await this.saveData(this.settings);
 			new Notice('Gemini model settings updated to current defaults.');
 		}

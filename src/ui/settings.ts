@@ -93,9 +93,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Search Grounding')
-			.setDesc(
-				'Enable the model to use Google search results in its responses.'
-			)
+			.setDesc('Enable the model to use Google search results in its responses.')
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.searchGrounding).onChange(async (value) => {
 					this.plugin.settings.searchGrounding = value;
@@ -178,9 +176,19 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				})
 			);
 
+		new Setting(containerEl)
+			.setName('Enable Streaming')
+			.setDesc('Enable streaming responses in the chat interface for a more interactive experience.')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.streamingEnabled).onChange(async (value) => {
+					this.plugin.settings.streamingEnabled = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
 		// Developer Settings
 		new Setting(containerEl).setName('Developer Settings').setHeading();
-		
+
 		new Setting(containerEl)
 			.setName('Debug Mode')
 			.setDesc('Enable debug logging to the console. Useful for troubleshooting.')
@@ -206,9 +214,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Initial Backoff Delay (ms)')
-			.setDesc(
-				'Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.'
-			)
+			.setDesc('Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.')
 			.addText((text) =>
 				text
 					.setPlaceholder('e.g., 1000')
