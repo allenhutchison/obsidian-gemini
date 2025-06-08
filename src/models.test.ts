@@ -1,237 +1,305 @@
-import { GEMINI_MODELS, getDefaultModelForRole, ModelRole, GeminiModel, getUpdatedModelSettings } from './models';
+import {
+	getOllamaModels,
+	getDefaultModelForRole,
+	getUpdatedModelSettings,
+	OllamaModel,
+	GEMINI_MODELS,
+	ModelRole
+} from './models';
+import ObsidianGemini from '../main';
+import { ApiProvider } from './api/api-factory';
+import { OllamaApi } from './api/implementations/ollama-api';
 
-// Helper to temporarily modify GEMINI_MODELS for specific tests
-const setTestModels = (models: GeminiModel[]) => {
-	// In a real test environment, you might need to mock the import or use a DI pattern.
-	// For this example, we'll assume we can temporarily overwrite it.
-	// This is a simplified approach; consider module mocking for robust testing.
-	(GEMINI_MODELS as any).length = 0; // Clear the array
-	models.forEach(model => (GEMINI_MODELS as any).push(model));
-};
+// Mock OllamaApi
+jest.mock('./api/implementations/ollama-api');
 
-describe('getDefaultModelForRole', () => {
-	let originalModels: GeminiModel[];
+// Mock console.warn and console.error to avoid polluting test output
+global.console.warn = jest.fn();
+global.console.error = jest.fn();
 
-	beforeEach(() => {
-		// Save and restore original models for each test to ensure isolation
-		originalModels = [...GEMINI_MODELS];
-	});
+const mockDefaultGeminiChatModel = GEMINI_MODELS.find(m => m.defaultForRoles?.includes('chat'))?.value || GEMINI_MODELS[0].value;
+const mockDefaultGeminiSummaryModel = GEMINI_MODELS.find(m => m.defaultForRoles?.includes('summary'))?.value || GEMINI_MODELS[0].value;
+const mockDefaultGeminiCompletionsModel = GEMINI_MODELS.find(m => m.defaultForRoles?.includes('completions'))?.value || GEMINI_MODELS[0].value;
 
-	afterEach(() => {
-		setTestModels(originalModels);
-	});
 
-	it('should return the model specified as default for a role', () => {
-		setTestModels([
-			{ value: 'model-a', label: 'Model A' },
-			{ value: 'model-b-chat', label: 'Model B Chat', defaultForRoles: ['chat'] },
-			{ value: 'model-c', label: 'Model C' },
-		]);
-		expect(getDefaultModelForRole('chat')).toBe('model-b-chat');
-	});
-
-	it('should fall back to the first model if no specific default is set for a role', () => {
-		setTestModels([
-			{ value: 'model-first', label: 'First Model' },
-			{ value: 'model-second', label: 'Second Model' },
-		]);
-		// 'summary' role has no explicit default here
-		expect(getDefaultModelForRole('summary')).toBe('model-first');
-	});
-
-	it('should log a warning when falling back to the first model', () => {
-		setTestModels([
-			{ value: 'fallback-model', label: 'Fallback Model' },
-			{ value: 'another-model', label: 'Another Model' },
-		]);
-		const consoleWarnSpy = jest.spyOn(console, 'warn');
-		getDefaultModelForRole('completions'); // No explicit default for completions
-		expect(consoleWarnSpy).toHaveBeenCalledWith(
-			"No default model specified for role 'completions'. Falling back to the first model in GEMINI_MODELS: Fallback Model"
-		);
-		consoleWarnSpy.mockRestore();
-	});
-
-	it('should throw an error if GEMINI_MODELS is empty', () => {
-		setTestModels([]); // Make GEMINI_MODELS empty
-		expect(() => getDefaultModelForRole('chat')).toThrow(
-			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
-		);
-	});
-
-	// This test checks the actual imported GEMINI_MODELS state
-	it('should ensure the global GEMINI_MODELS array is never actually empty', () => {
-		// This test relies on the original state of GEMINI_MODELS before any test modifications
-		// If originalModels was captured from an already empty state, this test would be misleading.
-		// This is more of an assertion about your actual data.
-		const actualImportedModels = jest.requireActual<typeof import('./models')>('./models').GEMINI_MODELS;
-		expect(actualImportedModels.length).toBeGreaterThan(0);
-	});
-
-	it('should return the completions model when completions role is specified', () => {
-		// Assuming originalModels has a default for 'completions'
-		// Or add a specific setup if needed:
-		setTestModels([
-			{ value: 'gemini-2.5-pro-preview-05-06', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
-			{ value: 'gemini-2.5-flash-preview-04-17', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
-			{ value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite', defaultForRoles: ['completions'] },
-		]);
-		expect(getDefaultModelForRole('completions')).toBe('gemini-2.0-flash-lite');
-	});
-
-	it('should return the summary model when summary role is specified', () => {
-		setTestModels([
-			{ value: 'gemini-2.5-pro-preview-05-06', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
-			{ value: 'gemini-2.5-flash-preview-04-17', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
-			{ value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite', defaultForRoles: ['completions'] },
-		]);
-		expect(getDefaultModelForRole('summary')).toBe('gemini-2.5-flash-preview-04-17');
-	});
-}); 
-
-describe('getUpdatedModelSettings', () => {
-	let originalModels: GeminiModel[];
+describe('Ollama Integration in models.ts', () => {
+	let mockPlugin: ObsidianGemini;
+	let mockOllamaApiInstance: jest.Mocked<OllamaApi>;
 
 	beforeEach(() => {
-		originalModels = [...GEMINI_MODELS];
-		// Setup default test models
-		setTestModels([
-			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-			{ value: 'gemini-another-model', label: 'Another Model' },
-		]);
+		// Reset mocks before each test
+		jest.clearAllMocks();
+		(global.console.warn as jest.Mock).mockClear();
+		(global.console.error as jest.Mock).mockClear();
+
+		// Setup mock plugin
+		mockPlugin = {
+			settings: {
+				apiProvider: ApiProvider.OLLAMA,
+				ollamaBaseUrl: 'http://localhost:11434',
+				apiKey: 'test-key',
+				chatModelName: 'ollama-chat',
+				summaryModelName: 'ollama-summary',
+				completionsModelName: 'ollama-completions',
+				sendContext: false,
+				maxContextDepth: 2,
+				searchGrounding: false,
+				summaryFrontmatterKey: 'summary',
+				userName: 'User',
+				rewriteFiles: false,
+				chatHistory: false,
+				historyFolder: 'gemini-scribe',
+				showModelPicker: false,
+				debugMode: false,
+				maxRetries: 3,
+				initialBackoffDelay: 1000,
+			},
+			// Mock other plugin methods/properties if needed by the functions under test
+		} as unknown as ObsidianGemini; // Type assertion for simplicity
+
+		// Setup OllamaApi mock instance
+		// The OllamaApi constructor is mocked by jest.mock at the top
+		// We can then access the mock implementation to control its methods
+		mockOllamaApiInstance = new OllamaApi(mockPlugin) as jest.Mocked<OllamaApi>;
+		(OllamaApi as jest.Mock).mockImplementation(() => mockOllamaApiInstance);
 	});
 
-	afterEach(() => {
-		setTestModels(originalModels);
+	describe('getOllamaModels', () => {
+		it('should return transformed models when OllamaApi.listModels succeeds', async () => {
+			const mockApiResponse = {
+				models: [
+					{ name: 'model1:latest', modified_at: 'sometime', size: 123, details: { family: 'llama' } },
+					{ name: 'model2:7b', modified_at: 'sometime', size: 456, details: { family: 'mistral' } },
+				],
+			};
+			mockOllamaApiInstance.listModels.mockResolvedValue(mockApiResponse as any);
+
+			const result = await getOllamaModels(mockPlugin);
+
+			expect(OllamaApi).toHaveBeenCalledWith(mockPlugin);
+			expect(mockOllamaApiInstance.listModels).toHaveBeenCalledTimes(1);
+			expect(result).toEqual([
+				{ name: 'model1:latest', value: 'model1:latest', details: { family: 'llama' } },
+				{ name: 'model2:7b', value: 'model2:7b', details: { family: 'mistral' } },
+			]);
+		});
+
+		it('should return an empty array when OllamaApi.listModels returns no models', async () => {
+			const mockApiResponse = { models: [] };
+			mockOllamaApiInstance.listModels.mockResolvedValue(mockApiResponse as any);
+
+			const result = await getOllamaModels(mockPlugin);
+			expect(result).toEqual([]);
+		});
+
+		it('should return an empty array when OllamaApi.listModels returns null models property', async () => {
+			const mockApiResponse = { models: null }; // Or undefined
+			mockOllamaApiInstance.listModels.mockResolvedValue(mockApiResponse as any);
+
+			const result = await getOllamaModels(mockPlugin);
+			expect(result).toEqual([]);
+		});
+
+
+		it('should return null and log a warning when OllamaApi.listModels throws an error', async () => {
+			const error = new Error('Ollama server not available');
+			mockOllamaApiInstance.listModels.mockRejectedValue(error);
+
+			const result = await getOllamaModels(mockPlugin);
+
+			expect(result).toBeNull();
+			expect(console.warn).toHaveBeenCalledWith(
+				"ObsidianGemini: Could not fetch Ollama models. Please ensure Ollama is running and the Base URL is correct in settings.",
+				error
+			);
+		});
 	});
 
-	it('should not change settings if all current models are valid and available', () => {
-		const currentSettings = {
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(false);
-		expect(result.updatedSettings).toEqual(currentSettings);
-		expect(result.changedSettingsInfo).toEqual([]);
+	describe('getDefaultModelForRole', () => {
+		describe('Ollama Provider', () => {
+			beforeEach(() => {
+				mockPlugin.settings.apiProvider = ApiProvider.OLLAMA;
+			});
+
+			it('should return the first model from getOllamaModels if models are available', async () => {
+				const mockOllamaModels: OllamaModel[] = [
+					{ name: 'ollama-model-1', value: 'ollama-model-1' },
+					{ name: 'ollama-model-2', value: 'ollama-model-2' },
+				];
+				// Instead of mocking getOllamaModels directly, we ensure the underlying listModels provides the data
+				mockOllamaApiInstance.listModels.mockResolvedValue({ models: mockOllamaModels.map(m => ({name: m.value, details: {}})) } as any);
+
+
+				const result = await getDefaultModelForRole('chat', mockPlugin);
+				expect(result).toBe('ollama-model-1');
+			});
+
+			it('should return null if getOllamaModels returns an empty list', async () => {
+				mockOllamaApiInstance.listModels.mockResolvedValue({ models: [] } as any);
+				const result = await getDefaultModelForRole('chat', mockPlugin);
+				expect(result).toBeNull();
+				expect(console.warn).toHaveBeenCalledWith(
+					"ObsidianGemini: No Ollama models found or error fetching them. Cannot set default for role 'chat'."
+				);
+			});
+
+			it('should return null if getOllamaModels returns null (error case)', async () => {
+				mockOllamaApiInstance.listModels.mockRejectedValue(new Error('fetch error'));
+				const result = await getDefaultModelForRole('chat', mockPlugin);
+				expect(result).toBeNull();
+				expect(console.warn).toHaveBeenCalledWith(
+					"ObsidianGemini: No Ollama models found or error fetching them. Cannot set default for role 'chat'."
+				);
+			});
+		});
+
+		describe('Gemini Provider', () => {
+			beforeEach(() => {
+				mockPlugin.settings.apiProvider = ApiProvider.GEMINI;
+			});
+
+			it('should return the correct default Gemini model for "chat"', async () => {
+				const result = await getDefaultModelForRole('chat', mockPlugin);
+				expect(result).toBe(mockDefaultGeminiChatModel);
+			});
+
+			it('should return the correct default Gemini model for "summary"', async () => {
+				const result = await getDefaultModelForRole('summary', mockPlugin);
+				expect(result).toBe(mockDefaultGeminiSummaryModel);
+			});
+
+			it('should return the correct default Gemini model for "completions"', async () => {
+				const result = await getDefaultModelForRole('completions', mockPlugin);
+				expect(result).toBe(mockDefaultGeminiCompletionsModel);
+			});
+
+			it('should return the first Gemini model if no specific role default is found', async () => {
+				// Temporarily remove default roles to test fallback
+				const originalGeminiModels = [...GEMINI_MODELS];
+				(GEMINI_MODELS as any) = [{ value: 'gemini-fallback', label: 'Fallback Model' }]; // No defaultForRoles
+
+				const result = await getDefaultModelForRole('chat', mockPlugin);
+				expect(result).toBe('gemini-fallback');
+				expect(console.warn).toHaveBeenCalledWith(
+					"ObsidianGemini: No default Gemini model specified for role 'chat'. Falling back to the first model in GEMINI_MODELS: Fallback Model"
+				);
+
+				// Restore original models
+				(GEMINI_MODELS as any) = originalGeminiModels;
+			});
+
+			it('should return null if GEMINI_MODELS is empty (edge case)', async () => {
+				const originalGeminiModels = [...GEMINI_MODELS];
+				(GEMINI_MODELS as any) = []; // Empty array
+
+				const result = await getDefaultModelForRole('chat', mockPlugin);
+				expect(result).toBeNull();
+				expect(console.error).toHaveBeenCalledWith(
+					'ObsidianGemini: CRITICAL: GEMINI_MODELS is empty. Cannot determine a fallback model.'
+				);
+				// Restore original models
+				(GEMINI_MODELS as any) = originalGeminiModels;
+			});
+		});
 	});
 
-	it('should update chatModelName to default if current is invalid/unavailable', () => {
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default'"
-		]);
-	});
+	describe('getUpdatedModelSettings', () => {
+		describe('Ollama Provider', () => {
+			beforeEach(() => {
+				mockPlugin.settings.apiProvider = ApiProvider.OLLAMA;
+				// Mock getOllamaModels to return a fixed list for these tests
+				const ollamaModelsResponse = [
+					{ name: 'ollama-default', value: 'ollama-default' },
+					{ name: 'ollama-another', value: 'ollama-another' },
+				];
+				mockOllamaApiInstance.listModels.mockResolvedValue({ models: ollamaModelsResponse.map(m => ({name: m.value, details: {}})) } as any);
+			});
 
-	it('should update summaryModelName to default if current is invalid/unavailable', () => {
-		const currentSettings = {
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'invalid-summary-model',
-			completionsModelName: 'gemini-completions-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default'"
-		]);
-	});
+			it('should update invalid model names to the default Ollama model', async () => {
+				const currentSettings = {
+					...mockPlugin.settings,
+					chatModelName: 'invalid-chat',
+					summaryModelName: 'invalid-summary',
+					completionsModelName: 'invalid-completions',
+				};
 
-	it('should update completionsModelName to default if current is invalid/unavailable', () => {
-		const currentSettings = {
-			chatModelName: 'gemini-chat-default',
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'invalid-completions-model',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default'"
-		]);
-	});
+				const result = await getUpdatedModelSettings(currentSettings, mockPlugin);
 
-	it('should update multiple model names if they are invalid', () => {
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model',
-			summaryModelName: 'invalid-summary-model',
-			completionsModelName: 'gemini-completions-default', // This one is valid
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default'",
-			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default'",
-		]);
-	});
+				expect(result.settingsChanged).toBe(true);
+				expect(result.updatedSettings.chatModelName).toBe('ollama-default');
+				expect(result.updatedSettings.summaryModelName).toBe('ollama-default');
+				expect(result.updatedSettings.completionsModelName).toBe('ollama-default');
+				expect(result.changedSettingsInfo).toEqual(expect.arrayContaining([
+					"Chat model: 'invalid-chat' -> 'ollama-default'",
+					"Summary model: 'invalid-summary' -> 'ollama-default'",
+					"Completions model: 'invalid-completions' -> 'ollama-default'",
+				]));
+			});
 
-	it('should update all model names if all are invalid', () => {
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model',
-			summaryModelName: 'invalid-summary-model',
-			completionsModelName: 'invalid-completions-model',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
-		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
-		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default');
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default'",
-			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default'",
-			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default'",
-		]);
-	});
+			it('should not change settings if model names are valid Ollama models', async () => {
+				const currentSettings = {
+					...mockPlugin.settings,
+					chatModelName: 'ollama-default',
+					summaryModelName: 'ollama-another',
+					completionsModelName: 'ollama-default',
+				};
 
-	it('should update to the first model in GEMINI_MODELS if no role-specific default exists for an invalid model', () => {
-		// No model has defaultForRoles: ['chat'] in this setup
-		setTestModels([
-			{ value: 'first-model-in-list', label: 'First Model' },
-			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
-			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
-		]);
-		const currentSettings = {
-			chatModelName: 'invalid-chat-model', // This needs update
-			summaryModelName: 'gemini-summary-default',
-			completionsModelName: 'gemini-completions-default',
-		};
-		const result = getUpdatedModelSettings(currentSettings);
-		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('first-model-in-list'); // Falls back to first model
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'first-model-in-list'"
-		]);
-	});
+				const result = await getUpdatedModelSettings(currentSettings, mockPlugin);
 
-	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {
-		setTestModels([]); // GEMINI_MODELS is empty
-		const currentSettings = {
-			chatModelName: 'any-model', // This will trigger a call to getDefaultModelForRole
-			summaryModelName: 'any-other-model',
-			completionsModelName: 'yet-another-model',
-		};
-		// Expect getUpdatedModelSettings to throw the error from getDefaultModelForRole
-		expect(() => getUpdatedModelSettings(currentSettings)).toThrow(
-			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
-		);
+				expect(result.settingsChanged).toBe(false);
+				expect(result.changedSettingsInfo.length).toBe(0);
+				expect(result.updatedSettings.chatModelName).toBe('ollama-default');
+			});
+
+			it('should update to null and log if Ollama models are unavailable during update for a previously set model', async () => {
+				mockOllamaApiInstance.listModels.mockResolvedValue({ models: [] } as any); // No models available
+				const currentSettings = {
+					...mockPlugin.settings,
+					chatModelName: 'some-ollama-model-that-was-set-before', // This model was valid before
+				};
+				const result = await getUpdatedModelSettings(currentSettings, mockPlugin);
+				expect(result.settingsChanged).toBe(true);
+				expect(result.updatedSettings.chatModelName).toBeNull(); // Default model is null when no models are available
+				expect(result.changedSettingsInfo).toEqual(expect.arrayContaining([
+					// This message reflects that the setting was changed from its previous value to 'null'
+					// because no valid default could be determined from an empty list.
+					"Chat model: 'some-ollama-model-that-was-set-before' -> 'null'. Ollama models unavailable.",
+				]));
+			});
+		});
+
+		describe('Gemini Provider', () => {
+			beforeEach(() => {
+				mockPlugin.settings.apiProvider = ApiProvider.GEMINI;
+			});
+
+			it('should update invalid model names to default Gemini models', async () => {
+				const currentSettings = {
+					...mockPlugin.settings,
+					chatModelName: 'invalid-gemini-chat',
+					summaryModelName: 'invalid-gemini-summary',
+					completionsModelName: 'invalid-gemini-completions',
+				};
+
+				const result = await getUpdatedModelSettings(currentSettings, mockPlugin);
+
+				expect(result.settingsChanged).toBe(true);
+				expect(result.updatedSettings.chatModelName).toBe(mockDefaultGeminiChatModel);
+				expect(result.updatedSettings.summaryModelName).toBe(mockDefaultGeminiSummaryModel);
+				expect(result.updatedSettings.completionsModelName).toBe(mockDefaultGeminiCompletionsModel);
+			});
+
+			it('should not change settings if model names are valid Gemini models', async () => {
+				const currentSettings = {
+					...mockPlugin.settings,
+					chatModelName: mockDefaultGeminiChatModel,
+					summaryModelName: mockDefaultGeminiSummaryModel,
+					completionsModelName: mockDefaultGeminiCompletionsModel,
+				};
+
+				const result = await getUpdatedModelSettings(currentSettings, mockPlugin);
+				expect(result.settingsChanged).toBe(false);
+			});
+		});
 	});
 });

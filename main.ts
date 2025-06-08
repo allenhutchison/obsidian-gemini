@@ -27,11 +27,13 @@ export interface ObsidianGeminiSettings {
 	debugMode: boolean;
 	maxRetries: number;
 	initialBackoffDelay: number;
+	ollamaBaseUrl: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	apiKey: '',
 	apiProvider: ApiProvider.GEMINI,
+	ollamaBaseUrl: 'http://localhost:11434',
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
@@ -142,7 +144,7 @@ export default class ObsidianGemini extends Plugin {
 	}
 
 	async updateModelVersions() {
-		const { updatedSettings, settingsChanged, changedSettingsInfo } = getUpdatedModelSettings(this.settings);
+		const { updatedSettings, settingsChanged, changedSettingsInfo } = await getUpdatedModelSettings(this.settings, this);
 
 		if (settingsChanged) {
 			this.settings = updatedSettings as ObsidianGeminiSettings; // Cast back to specific type
