@@ -24,3 +24,7 @@ data.json
 # Coverage reports
 coverage/
 
+
+# Gemini CLI logs
+.gemini/
+
