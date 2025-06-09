@@ -4,7 +4,7 @@
 
 /**
  * Represents a response from a model.
- * 
+ *
  * @property markdown - The primary text response in markdown format
  * @property rendered - Optional rendered HTML content (used for search grounding)
  */
@@ -40,14 +40,49 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 }
 
 /**
+ * Callback function for handling streaming responses
+ *
+ * @param chunk - The text chunk received from the stream
+ */
+export type StreamCallback = (chunk: string) => void;
+
+/**
+ * Represents a streaming response from a model
+ *
+ * @property complete - Promise that resolves when streaming is complete with the full response
+ * @property cancel - Function to cancel the stream
+ */
+export interface StreamingModelResponse {
+	complete: Promise<ModelResponse>;
+	cancel: () => void;
+}
+
+/**
  * Interface for model API implementations
  */
 export interface ModelApi {
 	/**
 	 * Generate a response from a model
-	 * 
+	 *
 	 * @param request - Either a BaseModelRequest or ExtendedModelRequest
 	 * @returns A promise resolving to a ModelResponse
 	 */
 	generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse>;
-} 
+
+	/**
+	 * Generate a streaming response from a model
+	 *
+	 * @param request - Either a BaseModelRequest or ExtendedModelRequest
+	 * @param onChunk - Callback function called for each text chunk
+	 * @returns A StreamingModelResponse with completion promise and cancel function
+	 *
+	 * @remarks
+	 * Implementations that don't support streaming should fall back to
+	 * non-streaming behavior by calling generateModelResponse and
+	 * emitting the full response as a single chunk.
+	 */
+	generateStreamingResponse?(
+		request: BaseModelRequest | ExtendedModelRequest,
+		onChunk: StreamCallback
+	): StreamingModelResponse;
+}

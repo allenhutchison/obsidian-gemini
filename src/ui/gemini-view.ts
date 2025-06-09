@@ -23,6 +23,8 @@ export class GeminiView extends ItemView {
 	private modelPicker: HTMLSelectElement | null;
 	private settingsUnsubscribe: (() => void) | null = null;
 	private fileOpenHandler: (file: TFile | null) => Promise<void>;
+	private currentStreamingResponse: { cancel: () => void } | null = null;
+	private scrollTimeout: NodeJS.Timeout | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -167,7 +169,7 @@ export class GeminiView extends ItemView {
 				try {
 					await this.sendMessage(userMessage);
 				} catch (error) {
-					console.error("Error during sendMessage call from button click:", error);
+					console.error('Error during sendMessage call from button click:', error);
 					new Notice('An unexpected error occurred while sending the message.');
 				} finally {
 					this.stopTimer();
@@ -240,30 +242,49 @@ export class GeminiView extends ItemView {
 			this.settingsUnsubscribe();
 			this.settingsUnsubscribe = null;
 		}
+		if (this.scrollTimeout) {
+			clearTimeout(this.scrollTimeout);
+			this.scrollTimeout = null;
+		}
 	}
 
-	async displayMessage(message: string, sender: 'user' | 'model' | 'grounding') {
-		const newMessageContainer = this.chatbox.createDiv({
-			cls: `gemini-scribe-message-container ${sender}`,
-		});
-		const senderIndicator = newMessageContainer.createDiv({
-			cls: 'gemini-scribe-sender-indicator',
-		});
-		const newMessage = newMessageContainer.createDiv({
-			cls: `gemini-scribe-message ${sender}`,
-		});
+	async displayMessage(
+		message: string,
+		sender: 'user' | 'model' | 'grounding',
+		messageContainer?: HTMLDivElement,
+		shouldScroll: boolean = true
+	): Promise<HTMLDivElement> {
+		let newMessageContainer: HTMLDivElement;
+		let newMessage: HTMLDivElement;
 
-		// Set the icon based on the sender.
-		switch (sender) {
-			case 'user':
-				setIcon(senderIndicator, 'square-user');
-				break;
-			case 'model':
-				setIcon(senderIndicator, 'bot-message-square');
-				break;
-			case 'grounding':
-				setIcon(senderIndicator, 'search');
-				break;
+		if (messageContainer) {
+			// Use existing container for streaming updates
+			newMessageContainer = messageContainer;
+			newMessage = newMessageContainer.querySelector('.gemini-scribe-message') as HTMLDivElement;
+		} else {
+			// Create new container
+			newMessageContainer = this.chatbox.createDiv({
+				cls: `gemini-scribe-message-container ${sender}`,
+			});
+			const senderIndicator = newMessageContainer.createDiv({
+				cls: 'gemini-scribe-sender-indicator',
+			});
+			newMessage = newMessageContainer.createDiv({
+				cls: `gemini-scribe-message ${sender}`,
+			});
+
+			// Set the icon based on the sender.
+			switch (sender) {
+				case 'user':
+					setIcon(senderIndicator, 'square-user');
+					break;
+				case 'model':
+					setIcon(senderIndicator, 'bot-message-square');
+					break;
+				case 'grounding':
+					setIcon(senderIndicator, 'search');
+					break;
+			}
 		}
 
 		// Google TOS requires that we display the search results in the plugin as the supplied HTML.
@@ -276,15 +297,17 @@ export class GeminiView extends ItemView {
 		}
 
 		// Add a copy button to the message if it was sent by the model.
-		if (sender === 'model') {
+		if (sender === 'model' && !messageContainer) {
 			const copyButton = newMessage.createEl('button', {
 				cls: 'gemini-scribe-copy-button',
 			});
 			setIcon(copyButton, 'copy');
 
 			copyButton.addEventListener('click', () => {
+				// Get the current text content for copying
+				const currentText = newMessage.innerText || message;
 				navigator.clipboard
-					.writeText(message)
+					.writeText(currentText)
 					.then(() => {
 						new Notice('Message copied to clipboard.');
 					})
@@ -294,8 +317,51 @@ export class GeminiView extends ItemView {
 			});
 		}
 
-		// Scroll to the bottom of the chatbox
-		this.scrollToBottom();
+		// Scroll to the bottom of the chatbox only if requested
+		if (shouldScroll) {
+			this.scrollToBottom();
+		}
+
+		return newMessageContainer;
+	}
+
+	async updateStreamingMessage(messageContainer: HTMLDivElement, newChunk: string): Promise<void> {
+		const messageDiv = messageContainer.querySelector('.gemini-scribe-message') as HTMLDivElement;
+		if (messageDiv) {
+			// For streaming, we'll append the new chunk as plain text to avoid re-rendering
+			// We'll do a final markdown render when streaming completes
+			const textNode = document.createTextNode(newChunk);
+			messageDiv.appendChild(textNode);
+		}
+	}
+
+	async finalizeStreamingMessage(messageContainer: HTMLDivElement, fullMarkdown: string): Promise<void> {
+		const messageDiv = messageContainer.querySelector('.gemini-scribe-message') as HTMLDivElement;
+		if (messageDiv) {
+			// Clear the div and render the final markdown
+			messageDiv.empty();
+			const sourcePath = this.plugin.gfile.getActiveFile()?.path ?? '';
+			await MarkdownRenderer.render(this.app, fullMarkdown, messageDiv, sourcePath, this);
+
+			// Add copy button now that the message is complete
+			const copyButton = messageDiv.createEl('button', {
+				cls: 'gemini-scribe-copy-button',
+			});
+			setIcon(copyButton, 'copy');
+
+			copyButton.addEventListener('click', () => {
+				// Get the current text content for copying
+				const currentText = messageDiv.innerText || fullMarkdown;
+				navigator.clipboard
+					.writeText(currentText)
+					.then(() => {
+						new Notice('Message copied to clipboard.');
+					})
+					.catch((err) => {
+						new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
+					});
+			});
+		}
 	}
 
 	private async handleFileOpen(file: TFile | null) {
@@ -351,36 +417,107 @@ export class GeminiView extends ItemView {
 					prompt: prompt,
 					renderContent: true,
 				};
-				logDebugInfo(this.plugin.settings.debugMode, 'Sending message', request);	
-				const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
+				logDebugInfo(this.plugin.settings.debugMode, 'Sending message', request);
 
-				if (this.plugin.settings.chatHistory) {
-					// Store messages first
-					await this.plugin.history.appendHistoryForFile(this.currentFile!, {
-						role: 'user',
-						message: userMessage,
+				// Check if streaming is supported
+				if (this.plugin.geminiApi.generateStreamingResponse && this.plugin.settings.streamingEnabled !== false) {
+					// Use streaming API
+					let modelMessageContainer: HTMLDivElement | null = null;
+					let accumulatedMarkdown = '';
+
+					// User message already displayed by button handler
+
+					const streamResponse = this.plugin.geminiApi.generateStreamingResponse(request, (chunk) => {
+						accumulatedMarkdown += chunk;
+
+						// Create or update the model message container
+						if (!modelMessageContainer) {
+							// First chunk - create the container with empty content (no copy button yet)
+							this.displayMessage('', 'model').then((container) => {
+								modelMessageContainer = container;
+								// Now add the first chunk
+								this.updateStreamingMessage(container, chunk);
+							});
+						} else {
+							// Update existing container with new chunk
+							this.updateStreamingMessage(modelMessageContainer, chunk);
+							// Use debounced scroll to avoid stuttering
+							this.debouncedScrollToBottom();
+						}
 					});
 
-					await this.plugin.history.appendHistoryForFile(this.currentFile!, {
-						role: 'model',
-						message: botResponse.markdown,
-						userMessage: userMessage,
-						model: this.plugin.settings.chatModelName,
-					});
+					// Store the streaming response for potential cancellation
+					this.currentStreamingResponse = streamResponse;
 
-					// Clear and reload the entire chat from history
-					this.clearChat();
-					await this.updateChat((await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? []);
+					try {
+						const botResponse = await streamResponse.complete;
+						this.currentStreamingResponse = null;
 
-					// Only display grounding content as it's not stored in history
-					if (botResponse.rendered) {
-						this.displayMessage(botResponse.rendered, 'grounding');
+						// Finalize the streaming message with proper markdown rendering and copy button
+						if (modelMessageContainer) {
+							await this.finalizeStreamingMessage(modelMessageContainer, botResponse.markdown);
+						}
+
+						if (this.plugin.settings.chatHistory) {
+							// Store messages first
+							await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+								role: 'user',
+								message: userMessage,
+							});
+
+							await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+								role: 'model',
+								message: botResponse.markdown,
+								userMessage: userMessage,
+								model: this.plugin.settings.chatModelName,
+							});
+
+							// No need to clear and reload - the streaming UI already shows the messages
+						}
+
+						// Display grounding content if available
+						if (botResponse.rendered) {
+							await this.displayMessage(botResponse.rendered, 'grounding');
+						}
+
+						// Ensure we're scrolled to bottom after streaming completes
+						this.scrollToBottom();
+					} catch (error) {
+						this.currentStreamingResponse = null;
+						throw error;
 					}
 				} else {
-					// If history is disabled, just display the new model message directly
-					this.displayMessage(botResponse.markdown, 'model');
-					if (botResponse.rendered) {
-						this.displayMessage(botResponse.rendered, 'grounding');
+					// Fall back to non-streaming API
+					const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
+
+					if (this.plugin.settings.chatHistory) {
+						// Store messages first
+						await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+							role: 'user',
+							message: userMessage,
+						});
+
+						await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+							role: 'model',
+							message: botResponse.markdown,
+							userMessage: userMessage,
+							model: this.plugin.settings.chatModelName,
+						});
+
+						// Clear and reload the entire chat from history
+						this.clearChat();
+						await this.updateChat((await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? []);
+
+						// Only display grounding content as it's not stored in history
+						if (botResponse.rendered) {
+							this.displayMessage(botResponse.rendered, 'grounding');
+						}
+					} else {
+						// If history is disabled, just display the new model message directly
+						this.displayMessage(botResponse.markdown, 'model');
+						if (botResponse.rendered) {
+							this.displayMessage(botResponse.rendered, 'grounding');
+						}
 					}
 				}
 			} catch (error) {
@@ -405,6 +542,19 @@ export class GeminiView extends ItemView {
 		tryScroll();
 		setTimeout(tryScroll, 50);
 		setTimeout(tryScroll, 150);
+	}
+
+	private debouncedScrollToBottom() {
+		// Clear existing timeout
+		if (this.scrollTimeout) {
+			clearTimeout(this.scrollTimeout);
+		}
+
+		// Set a new timeout to scroll after a brief delay
+		this.scrollTimeout = setTimeout(() => {
+			this.scrollToBottom();
+			this.scrollTimeout = null;
+		}, 50); // 50ms debounce
 	}
 
 	private startTimer() {
