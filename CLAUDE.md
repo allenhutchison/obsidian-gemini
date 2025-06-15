@@ -70,3 +70,23 @@ When adding features, ensure tests cover:
 - API error scenarios with retry behavior
 - File context tree building and circular reference prevention
 - Prompt generation with proper template rendering
+
+## Development Practices
+
+### Implementation Planning
+
+When planning new features:
+
+1. **Create detailed implementation plans** for significant features
+2. **Include plans directly in GitHub issues** rather than separate files
+3. **Structure plans with**:
+   - Architecture overview
+   - Core components with code examples
+   - Integration points
+   - Testing strategy (unit and integration tests)
+   - Migration considerations
+   - Timeline estimates
+
+Example: See issue #90 for the custom prompt system implementation plan.
+
+This keeps technical planning centralized and accessible for all contributors.
