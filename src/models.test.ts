@@ -6,7 +6,7 @@ const setTestModels = (models: GeminiModel[]) => {
 	// For this example, we'll assume we can temporarily overwrite it.
 	// This is a simplified approach; consider module mocking for robust testing.
 	(GEMINI_MODELS as any).length = 0; // Clear the array
-	models.forEach(model => (GEMINI_MODELS as any).push(model));
+	models.forEach((model) => (GEMINI_MODELS as any).push(model));
 };
 
 describe('getDefaultModelForRole', () => {
@@ -87,7 +87,7 @@ describe('getDefaultModelForRole', () => {
 		]);
 		expect(getDefaultModelForRole('summary')).toBe('gemini-2.5-flash-preview-04-17');
 	});
-}); 
+});
 
 describe('getUpdatedModelSettings', () => {
 	let originalModels: GeminiModel[];
@@ -130,9 +130,7 @@ describe('getUpdatedModelSettings', () => {
 		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
 		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
 		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default'"
-		]);
+		expect(result.changedSettingsInfo).toEqual(["Chat model: 'invalid-chat-model' -> 'gemini-chat-default'"]);
 	});
 
 	it('should update summaryModelName to default if current is invalid/unavailable', () => {
@@ -146,9 +144,7 @@ describe('getUpdatedModelSettings', () => {
 		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
 		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
 		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual([
-			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default'"
-		]);
+		expect(result.changedSettingsInfo).toEqual(["Summary model: 'invalid-summary-model' -> 'gemini-summary-default'"]);
 	});
 
 	it('should update completionsModelName to default if current is invalid/unavailable', () => {
@@ -163,7 +159,7 @@ describe('getUpdatedModelSettings', () => {
 		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
 		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
 		expect(result.changedSettingsInfo).toEqual([
-			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default'"
+			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default'",
 		]);
 	});
 
@@ -217,9 +213,7 @@ describe('getUpdatedModelSettings', () => {
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
 		expect(result.updatedSettings.chatModelName).toBe('first-model-in-list'); // Falls back to first model
-		expect(result.changedSettingsInfo).toEqual([
-			"Chat model: 'invalid-chat-model' -> 'first-model-in-list'"
-		]);
+		expect(result.changedSettingsInfo).toEqual(["Chat model: 'invalid-chat-model' -> 'first-model-in-list'"]);
 	});
 
 	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {

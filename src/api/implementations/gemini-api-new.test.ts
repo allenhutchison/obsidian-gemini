@@ -122,12 +122,8 @@ describe('GeminiApiNew', () => {
 	describe('generateStreamingResponse', () => {
 		it('should handle streaming response with multiple chunks', async () => {
 			// Create an async generator that yields chunks
-			const mockChunks = [
-				{ text: 'Hello ' },
-				{ text: 'world!' },
-				{ text: ' How are you?' }
-			];
-			
+			const mockChunks = [{ text: 'Hello ' }, { text: 'world!' }, { text: ' How are you?' }];
+
 			async function* mockAsyncGenerator() {
 				for (const chunk of mockChunks) {
 					yield chunk;
@@ -153,11 +149,8 @@ describe('GeminiApiNew', () => {
 		});
 
 		it('should decode HTML entities in streaming chunks', async () => {
-			const mockChunks = [
-				{ text: 'This is &quot;quoted&quot; ' },
-				{ text: 'and &#x27;apostrophed&#x27;.' }
-			];
-			
+			const mockChunks = [{ text: 'This is &quot;quoted&quot; ' }, { text: 'and &#x27;apostrophed&#x27;.' }];
+
 			async function* mockAsyncGenerator() {
 				for (const chunk of mockChunks) {
 					yield chunk;
@@ -187,9 +180,9 @@ describe('GeminiApiNew', () => {
 			async function* mockAsyncGenerator() {
 				yield { text: 'First chunk' };
 				// Simulate delay between chunks
-				await new Promise(resolve => setTimeout(resolve, 100));
+				await new Promise((resolve) => setTimeout(resolve, 100));
 				yield { text: 'Second chunk' };
-				await new Promise(resolve => setTimeout(resolve, 100));
+				await new Promise((resolve) => setTimeout(resolve, 100));
 				yield { text: 'Third chunk' };
 			}
 
@@ -205,7 +198,7 @@ describe('GeminiApiNew', () => {
 			};
 
 			const streamResponse: StreamingModelResponse = geminiApiNew.generateStreamingResponse!(request, onChunk);
-			
+
 			// Cancel after receiving first chunk
 			setTimeout(() => {
 				streamResponse.cancel();
@@ -224,9 +217,9 @@ describe('GeminiApiNew', () => {
 				{ text: '' }, // Empty chunk
 				{ text: ' world' },
 				{}, // Chunk without text property
-				{ text: '!' }
+				{ text: '!' },
 			];
-			
+
 			async function* mockAsyncGenerator() {
 				for (const chunk of mockChunks) {
 					yield chunk;

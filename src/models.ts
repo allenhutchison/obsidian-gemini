@@ -13,7 +13,7 @@ export const GEMINI_MODELS: GeminiModel[] = [
 ];
 
 export function getDefaultModelForRole(role: ModelRole): string {
-	const modelForRole = GEMINI_MODELS.find(m => m.defaultForRoles?.includes(role));
+	const modelForRole = GEMINI_MODELS.find((m) => m.defaultForRoles?.includes(role));
 	if (modelForRole) {
 		return modelForRole.value;
 	}
@@ -21,7 +21,9 @@ export function getDefaultModelForRole(role: ModelRole): string {
 	// If no specific default is found in GEMINI_MODELS, and assuming GEMINI_MODELS is never empty,
 	// fall back to the first model in the list.
 	if (GEMINI_MODELS.length > 0) {
-		console.warn(`No default model specified for role '${role}'. Falling back to the first model in GEMINI_MODELS: ${GEMINI_MODELS[0].label}`);
+		console.warn(
+			`No default model specified for role '${role}'. Falling back to the first model in GEMINI_MODELS: ${GEMINI_MODELS[0].label}`
+		);
 		return GEMINI_MODELS[0].value;
 	}
 
@@ -40,7 +42,7 @@ export interface ModelUpdateResult {
 }
 
 export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult {
-	const availableModelValues = new Set(GEMINI_MODELS.map(m => m.value));
+	const availableModelValues = new Set(GEMINI_MODELS.map((m) => m.value));
 	let settingsChanged = false;
 	const changedSettingsInfo: string[] = [];
 	const newSettings = { ...currentSettings };
@@ -69,7 +71,9 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	if (!availableModelValues.has(newSettings.completionsModelName)) {
 		const newDefaultCompletions = getDefaultModelForRole('completions');
 		if (newDefaultCompletions) {
-			changedSettingsInfo.push(`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}'`);
+			changedSettingsInfo.push(
+				`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}'`
+			);
 			newSettings.completionsModelName = newDefaultCompletions;
 			settingsChanged = true;
 		}
@@ -78,6 +82,6 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	return {
 		updatedSettings: newSettings,
 		settingsChanged,
-		changedSettingsInfo
+		changedSettingsInfo,
 	};
 }

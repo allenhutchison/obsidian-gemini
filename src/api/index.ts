@@ -9,4 +9,4 @@ export type { ModelApi, ModelResponse, BaseModelRequest, ExtendedModelRequest } 
 export { ApiFactory, ApiProvider } from './api-factory';
 
 // Export implementations directly for backward compatibility
-export { OllamaApi } from './implementations/ollama-api'; 
+export { OllamaApi } from './implementations/ollama-api';
