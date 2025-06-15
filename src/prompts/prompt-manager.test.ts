@@ -25,7 +25,8 @@ describe('PromptManager', () => {
 			},
 			app: {
 				metadataCache: {
-					getFileCache: jest.fn()
+					getFileCache: jest.fn(),
+					getFirstLinkpathDest: jest.fn()
 				}
 			}
 		};
@@ -76,6 +77,16 @@ describe('PromptManager', () => {
 
 	describe('loadPromptFromFile', () => {
 		it('should load and parse valid prompt file', async () => {
+			const mockFile = new TFile();
+			const mockCache = {
+				frontmatter: {
+					name: 'Test Prompt',
+					description: 'Test description',
+					version: 1,
+					override_system_prompt: false,
+					tags: ['test']
+				}
+			};
 			const mockContent = `---
 name: "Test Prompt"
 description: "Test description"
@@ -85,8 +96,8 @@ tags: [test]
 ---
 Test prompt content`;
 			
-			const mockFile = new TFile();
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
 			
 			const result = await promptManager.loadPromptFromFile('test.md');
@@ -104,7 +115,10 @@ Test prompt content`;
 		it('should handle missing frontmatter gracefully', async () => {
 			const mockContent = 'Just prompt content without frontmatter';
 			const mockFile = new TFile();
+			const mockCache = {}; // No frontmatter
+			
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
 			
 			const result = await promptManager.loadPromptFromFile('test.md');
@@ -142,15 +156,23 @@ Test prompt content`;
 				}
 			};
 			
-			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
-			
 			const mockPromptFile = new TFile();
+			const mockPromptCache = {
+				frontmatter: {
+					name: 'Test'
+				}
+			};
+			
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
+			mockPlugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(mockPromptFile);
 			mockVault.getAbstractFileByPath.mockReturnValue(mockPromptFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValueOnce(mockCache).mockReturnValueOnce(mockPromptCache);
 			mockVault.read.mockResolvedValue('---\nname: "Test"\n---\nContent');
 			
-			await promptManager.getPromptFromNote(mockFile);
+			const result = await promptManager.getPromptFromNote(mockFile);
 			
-			expect(mockVault.getAbstractFileByPath).toHaveBeenCalledWith('Prompts/test-prompt.md');
+			expect(mockPlugin.app.metadataCache.getFirstLinkpathDest).toHaveBeenCalledWith('Prompts/test-prompt.md', undefined);
+			expect(result?.name).toBe('Test');
 		});
 
 		it('should return null when no prompt specified', async () => {
@@ -197,6 +219,13 @@ Test prompt content`;
 				folders: []
 			}));
 
+			const mockCache = {
+				frontmatter: {
+					name: 'Test Prompt',
+					description: 'Test',
+					tags: ['test']
+				}
+			};
 			const mockPromptContent = `---
 name: "Test Prompt"
 description: "Test"
@@ -204,8 +233,9 @@ tags: [test]
 ---
 Content`;
 
-			const mockFile = {} as TFile;
+			const mockFile = new TFile();
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockPromptContent);
 
 			const result = await promptManager.listAvailablePrompts();
@@ -252,8 +282,17 @@ Content`;
 		});
 	});
 
-	describe('parsePromptFile', () => {
+	describe('frontmatter parsing via Obsidian API', () => {
 		it('should parse complex YAML frontmatter correctly', async () => {
+			const mockCache = {
+				frontmatter: {
+					name: 'Complex Prompt',
+					description: 'A prompt with various YAML features',
+					version: 2,
+					override_system_prompt: true,
+					tags: ['ai', 'assistant', 'complex']
+				}
+			};
 			const mockContent = `---
 name: "Complex Prompt"
 description: "A prompt with various YAML features"
@@ -263,8 +302,9 @@ tags: [ai, assistant, complex]
 ---
 This is the prompt content`;
 
-			const mockFile = {} as TFile;
+			const mockFile = new TFile();
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
 			
 			const result = await promptManager.loadPromptFromFile('complex.md');
@@ -280,14 +320,21 @@ This is the prompt content`;
 		});
 
 		it('should handle quoted strings in YAML', async () => {
+			const mockCache = {
+				frontmatter: {
+					name: "Prompt with 'quotes'",
+					description: 'Another "quoted" string'
+				}
+			};
 			const mockContent = `---
 name: "Prompt with 'quotes'"
 description: 'Another "quoted" string'
 ---
 Content`;
 
-			const mockFile = {} as TFile;
+			const mockFile = new TFile();
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
 			
 			const result = await promptManager.loadPromptFromFile('quoted.md');

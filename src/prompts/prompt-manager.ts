@@ -27,62 +27,38 @@ export class PromptManager {
 			const file = this.vault.getAbstractFileByPath(filePath);
 			if (!(file instanceof TFile)) return null;
 			
-			const content = await this.vault.read(file);
-			return this.parsePromptFile(content);
+			// Use Obsidian's metadata cache to get frontmatter and content
+			const cache = this.plugin.app.metadataCache.getFileCache(file);
+			const frontmatter = cache?.frontmatter || {};
+			
+			// Get the content without frontmatter
+			const fullContent = await this.vault.read(file);
+			const contentWithoutFrontmatter = this.extractContentWithoutFrontmatter(fullContent);
+			
+			return {
+				name: frontmatter.name || 'Unnamed Prompt',
+				description: frontmatter.description || '',
+				version: frontmatter.version || 1,
+				overrideSystemPrompt: frontmatter.override_system_prompt || false,
+				tags: frontmatter.tags || [],
+				content: contentWithoutFrontmatter.trim()
+			};
 		} catch (error) {
 			console.error('Error loading prompt file:', error);
 			return null;
 		}
 	}
 
-	// Parse prompt file content
-	private parsePromptFile(content: string): CustomPrompt {
+	// Extract content without frontmatter block
+	private extractContentWithoutFrontmatter(content: string): string {
 		const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
 		const match = content.match(frontmatterRegex);
 		
-		let frontmatter: any = {};
-		let promptContent = content;
-		
 		if (match) {
-			// Parse YAML frontmatter
-			const frontmatterText = match[1];
-			promptContent = match[2].trim();
-			
-			// Simple YAML parsing for our use case
-			frontmatterText.split('\n').forEach(line => {
-				const colonIndex = line.indexOf(':');
-				if (colonIndex > -1) {
-					const key = line.substring(0, colonIndex).trim();
-					let value: any = line.substring(colonIndex + 1).trim();
-					
-					// Handle quoted strings
-					if ((value.startsWith('"') && value.endsWith('"')) || 
-						(value.startsWith("'") && value.endsWith("'"))) {
-						value = value.slice(1, -1);
-					}
-					// Handle booleans
-					else if (value === 'true') value = true;
-					else if (value === 'false') value = false;
-					// Handle numbers
-					else if (!isNaN(Number(value))) value = Number(value);
-					// Handle arrays (simple case)
-					else if (value.startsWith('[') && value.endsWith(']')) {
-						value = value.slice(1, -1).split(',').map((v: string) => v.trim().replace(/["']/g, ''));
-					}
-					
-					frontmatter[key] = value;
-				}
-			});
+			return match[2]; // Return content after frontmatter
 		}
 		
-		return {
-			name: frontmatter.name || 'Unnamed Prompt',
-			description: frontmatter.description || '',
-			version: frontmatter.version || 1,
-			overrideSystemPrompt: frontmatter.override_system_prompt || false,
-			tags: frontmatter.tags || [],
-			content: promptContent
-		};
+		return content; // No frontmatter found, return entire content
 	}
 
 	// Get prompt from note's frontmatter
