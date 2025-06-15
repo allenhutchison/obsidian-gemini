@@ -6,11 +6,14 @@ export class ModelMapper {
 	 * Convert Google API models to our internal GeminiModel format
 	 */
 	static mapToGeminiModels(googleModels: GoogleModel[]): GeminiModel[] {
-		return googleModels.map((model) => ({
+		const mappedModels = googleModels.map((model) => ({
 			value: this.extractModelId(model.name),
 			label: this.generateLabel(model),
 			defaultForRoles: this.inferDefaultRoles(model),
 		}));
+
+		// Remove duplicates based on model value (ID)
+		return this.deduplicateModels(mappedModels);
 	}
 
 	/**
@@ -73,8 +76,11 @@ export class ModelMapper {
 	 */
 	static mergeWithExistingModels(discoveredModels: GeminiModel[], existingModels: GeminiModel[]): GeminiModel[] {
 		const existingMap = new Map(existingModels.map((model) => [model.value, model]));
+		
+		// Get models that are currently set as defaults for each role
+		const currentDefaults = this.getCurrentDefaultModels(existingModels);
 
-		return discoveredModels.map((discovered) => {
+		const mergedModels = discoveredModels.map((discovered) => {
 			const existing = existingMap.get(discovered.value);
 			if (existing) {
 				// Preserve user customizations but update label if it has changed significantly
@@ -86,6 +92,81 @@ export class ModelMapper {
 			}
 			return discovered;
 		});
+
+		// Ensure we still have defaults for each role
+		return this.ensureRoleDefaults(mergedModels, currentDefaults);
+	}
+
+	/**
+	 * Get current default models for each role
+	 */
+	private static getCurrentDefaultModels(existingModels: GeminiModel[]): { [role in ModelRole]?: string } {
+		const defaults: { [role in ModelRole]?: string } = {};
+		
+		for (const role of ['chat', 'summary', 'completions'] as ModelRole[]) {
+			const defaultModel = existingModels.find(m => m.defaultForRoles?.includes(role));
+			if (defaultModel) {
+				defaults[role] = defaultModel.value;
+			}
+		}
+		
+		return defaults;
+	}
+
+	/**
+	 * Ensure each role has a default model assigned
+	 */
+	private static ensureRoleDefaults(models: GeminiModel[], currentDefaults: { [role in ModelRole]?: string }): GeminiModel[] {
+		const modelsMap = new Map(models.map(m => [m.value, m]));
+		
+		// Check each role and ensure it has a default
+		for (const role of ['chat', 'summary', 'completions'] as ModelRole[]) {
+			const currentDefault = currentDefaults[role];
+			const hasDefault = models.some(m => m.defaultForRoles?.includes(role));
+			
+			if (!hasDefault) {
+				// Try to preserve the current default if it still exists
+				if (currentDefault && modelsMap.has(currentDefault)) {
+					const model = modelsMap.get(currentDefault)!;
+					model.defaultForRoles = [...(model.defaultForRoles || []), role];
+				} else {
+					// Assign default to best matching model
+					const bestMatch = this.findBestModelForRole(models, role);
+					if (bestMatch && !bestMatch.defaultForRoles?.includes(role)) {
+						bestMatch.defaultForRoles = [...(bestMatch.defaultForRoles || []), role];
+					}
+				}
+			}
+		}
+		
+		return models;
+	}
+
+	/**
+	 * Find the best model for a given role based on naming patterns
+	 */
+	private static findBestModelForRole(models: GeminiModel[], role: ModelRole): GeminiModel | undefined {
+		// Sort models by preference and find the best match for the role
+		const sortedModels = this.sortModelsByPreference(models);
+		
+		for (const model of sortedModels) {
+			const modelId = model.value.toLowerCase();
+			
+			switch (role) {
+				case 'chat':
+					if (modelId.includes('pro')) return model;
+					break;
+				case 'summary':
+					if (modelId.includes('flash')) return model;
+					break;
+				case 'completions':
+					if (modelId.includes('lite') || modelId.includes('flash')) return model;
+					break;
+			}
+		}
+		
+		// Fallback to first model if no specific match found
+		return sortedModels[0];
 	}
 
 	/**
@@ -117,31 +198,98 @@ export class ModelMapper {
 	}
 
 	/**
-	 * Sort models by preference (stable models first, then by version)
+	 * Remove duplicate models based on model ID (value)
+	 */
+	static deduplicateModels(models: GeminiModel[]): GeminiModel[] {
+		const seen = new Map<string, GeminiModel>();
+		
+		for (const model of models) {
+			const existing = seen.get(model.value);
+			
+			if (!existing) {
+				// First occurrence of this model ID
+				seen.set(model.value, model);
+			} else {
+				// Duplicate found - prefer the one with better label or more complete info
+				const preferNew = this.shouldPreferModel(model, existing);
+				if (preferNew) {
+					seen.set(model.value, model);
+				}
+			}
+		}
+		
+		return Array.from(seen.values());
+	}
+
+	/**
+	 * Determine which model to prefer when deduplicating
+	 */
+	private static shouldPreferModel(newModel: GeminiModel, existingModel: GeminiModel): boolean {
+		// Prefer model with displayName over generated label
+		const newHasDisplayName = !newModel.label.includes('-');
+		const existingHasDisplayName = !existingModel.label.includes('-');
+		
+		if (newHasDisplayName !== existingHasDisplayName) {
+			return newHasDisplayName;
+		}
+		
+		// Prefer shorter, cleaner labels
+		if (newModel.label.length !== existingModel.label.length) {
+			return newModel.label.length < existingModel.label.length;
+		}
+		
+		// Prefer more recent versions (if version info in the value)
+		const newVersionMatch = newModel.value.match(/\d{2}-\d{2}$/);
+		const existingVersionMatch = existingModel.value.match(/\d{2}-\d{2}$/);
+		
+		if (newVersionMatch && existingVersionMatch) {
+			return newVersionMatch[0] > existingVersionMatch[0];
+		}
+		
+		// Default to keeping existing
+		return false;
+	}
+
+	/**
+	 * Sort models by preference (version first, then family, then stability)
 	 */
 	static sortModelsByPreference(models: GeminiModel[]): GeminiModel[] {
 		return [...models].sort((a, b) => {
-			// Stable models first
-			const aStable = !a.value.includes('experimental') && !a.value.includes('preview');
-			const bStable = !b.value.includes('experimental') && !b.value.includes('preview');
+			// Extract version numbers (2.5, 2.0, 1.5, 1.0)
+			const getVersion = (value: string) => {
+				const versionMatch = value.match(/gemini-(\d+(?:\.\d+)?)/i);
+				return versionMatch ? parseFloat(versionMatch[1]) : 0;
+			};
 
-			if (aStable !== bStable) {
-				return bStable ? 1 : -1;
+			const aVersion = getVersion(a.value);
+			const bVersion = getVersion(b.value);
+
+			// Sort by version (highest first: 2.5 > 2.0 > 1.5 > 1.0)
+			if (aVersion !== bVersion) {
+				return bVersion - aVersion;
 			}
 
-			// Then by model family (pro > flash > lite)
-			const getModelPriority = (value: string) => {
+			// Within same version, sort by family (pro > flash > lite)
+			const getFamilyPriority = (value: string) => {
 				if (value.includes('pro')) return 3;
 				if (value.includes('flash')) return 2;
 				if (value.includes('lite')) return 1;
 				return 0;
 			};
 
-			const aPriority = getModelPriority(a.value);
-			const bPriority = getModelPriority(b.value);
+			const aFamily = getFamilyPriority(a.value);
+			const bFamily = getFamilyPriority(b.value);
 
-			if (aPriority !== bPriority) {
-				return bPriority - aPriority;
+			if (aFamily !== bFamily) {
+				return bFamily - aFamily;
+			}
+
+			// Within same version and family, stable models first
+			const aStable = !a.value.includes('experimental') && !a.value.includes('preview');
+			const bStable = !b.value.includes('experimental') && !b.value.includes('preview');
+
+			if (aStable !== bStable) {
+				return aStable ? -1 : 1;
 			}
 
 			// Finally by name alphabetically

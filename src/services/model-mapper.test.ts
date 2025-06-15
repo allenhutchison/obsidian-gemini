@@ -146,7 +146,9 @@ describe('ModelMapper', () => {
 			const result = ModelMapper.mergeWithExistingModels(discoveredModels, existingModels);
 
 			const preservedModel = result.find((m) => m.value === 'gemini-2.5-pro');
-			expect(preservedModel?.defaultForRoles).toEqual(['chat', 'summary']); // User's custom roles preserved
+			// User's custom roles preserved, plus ensureRoleDefaults may add completions if no other model has it
+			expect(preservedModel?.defaultForRoles).toContain('chat');
+			expect(preservedModel?.defaultForRoles).toContain('summary');
 		});
 
 		it('should include new discovered models', () => {
@@ -184,56 +186,129 @@ describe('ModelMapper', () => {
 			const preservedModel = result.find((m) => m.value === 'gemini-2.5-pro');
 			expect(preservedModel?.label).toBe('Gemini 2.5 Pro (Custom)'); // Original preserved
 		});
+
+		it('should ensure all roles have defaults after merging', () => {
+			const discoveredModels: GeminiModel[] = [
+				{ value: 'gemini-3.0-pro', label: 'Gemini 3.0 Pro', defaultForRoles: [] }, // No default roles
+				{ value: 'gemini-3.0-flash', label: 'Gemini 3.0 Flash', defaultForRoles: [] },
+			];
+
+			const existingWithDefaults: GeminiModel[] = [
+				{ value: 'gemini-2.5-pro', label: 'Old Pro', defaultForRoles: ['chat'] },
+				{ value: 'gemini-2.5-flash', label: 'Old Flash', defaultForRoles: ['summary'] },
+				{ value: 'gemini-2.5-lite', label: 'Old Lite', defaultForRoles: ['completions'] },
+			];
+
+			const result = ModelMapper.mergeWithExistingModels(discoveredModels, existingWithDefaults);
+
+			// Should have defaults assigned to new models
+			const hasChat = result.some(m => m.defaultForRoles?.includes('chat'));
+			const hasSummary = result.some(m => m.defaultForRoles?.includes('summary'));
+			const hasCompletions = result.some(m => m.defaultForRoles?.includes('completions'));
+
+			expect(hasChat).toBe(true);
+			expect(hasSummary).toBe(true);
+			expect(hasCompletions).toBe(true);
+		});
+
+		it('should preserve current defaults when same models exist', () => {
+			const discoveredModels: GeminiModel[] = [
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro Updated', defaultForRoles: ['summary'] }, // Different role
+				{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash Updated', defaultForRoles: ['chat'] }, // Different role
+			];
+
+			const existingWithDefaults: GeminiModel[] = [
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
+				{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
+			];
+
+			const result = ModelMapper.mergeWithExistingModels(discoveredModels, existingWithDefaults);
+
+			// Should preserve existing role assignments
+			const proModel = result.find(m => m.value === 'gemini-2.5-pro');
+			const flashModel = result.find(m => m.value === 'gemini-2.5-flash');
+
+			expect(proModel?.defaultForRoles).toContain('chat');
+			expect(flashModel?.defaultForRoles).toContain('summary');
+		});
 	});
 
 	describe('sortModelsByPreference', () => {
 		const unsortedModels: GeminiModel[] = [
-			{ value: 'gemini-experimental-model', label: 'Experimental', defaultForRoles: ['chat'] },
-			{ value: 'gemini-2.5-flash', label: 'Flash', defaultForRoles: ['summary'] },
-			{ value: 'gemini-2.5-pro', label: 'Pro', defaultForRoles: ['chat'] },
-			{ value: 'gemini-2.0-flash-lite', label: 'Lite', defaultForRoles: ['completions'] },
-			{ value: 'gemini-preview-model', label: 'Preview', defaultForRoles: ['chat'] },
+			{ value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash', defaultForRoles: ['summary'] },
+			{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
+			{ value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite', defaultForRoles: ['completions'] },
+			{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
+			{ value: 'gemini-1.0-pro', label: 'Gemini 1.0 Pro', defaultForRoles: ['chat'] },
 		];
 
-		it('should sort stable models before experimental/preview models', () => {
+		it('should sort by version first (2.5 > 2.0 > 1.5 > 1.0)', () => {
 			const result = ModelMapper.sortModelsByPreference(unsortedModels);
 
-			const stableModels = result.filter(
-				(m) => !m.value.includes('experimental') && !m.value.includes('preview')
-			);
-			const unstableModels = result.filter(
-				(m) => m.value.includes('experimental') || m.value.includes('preview')
-			);
+			// Extract versions and check order
+			const versions = result.map(m => {
+				const match = m.value.match(/gemini-(\d+(?:\.\d+)?)/);
+				return match ? parseFloat(match[1]) : 0;
+			});
 
-			expect(result.indexOf(stableModels[0])).toBeLessThan(result.indexOf(unstableModels[0]));
+			for (let i = 1; i < versions.length; i++) {
+				expect(versions[i]).toBeLessThanOrEqual(versions[i - 1]);
+			}
 		});
 
-		it('should sort by model family priority: pro > flash > lite', () => {
-			const testModels: GeminiModel[] = [
+		it('should sort by family within same version (pro > flash > lite)', () => {
+			const sameVersionModels: GeminiModel[] = [
 				{ value: 'gemini-2.5-flash', label: 'Flash', defaultForRoles: ['summary'] },
 				{ value: 'gemini-2.5-pro', label: 'Pro', defaultForRoles: ['chat'] },
-				{ value: 'gemini-lite', label: 'Lite', defaultForRoles: ['completions'] },
+				{ value: 'gemini-2.5-lite', label: 'Lite', defaultForRoles: ['completions'] },
 			];
-			const result = ModelMapper.sortModelsByPreference(testModels);
+			const result = ModelMapper.sortModelsByPreference(sameVersionModels);
 
 			const proIndex = result.findIndex((m) => m.value.includes('pro'));
-			const flashIndex = result.findIndex((m) => m.value.includes('flash') && !m.value.includes('lite'));
-			const liteIndex = result.findIndex((m) => m.value === 'gemini-lite');
+			const flashIndex = result.findIndex((m) => m.value.includes('flash'));
+			const liteIndex = result.findIndex((m) => m.value.includes('lite'));
 
 			expect(proIndex).toBeLessThan(flashIndex);
 			expect(flashIndex).toBeLessThan(liteIndex);
 		});
 
-		it('should sort alphabetically within same priority', () => {
-			const sameTypeModels: GeminiModel[] = [
-				{ value: 'gemini-2.5-pro-z', label: 'Pro Z', defaultForRoles: ['chat'] },
-				{ value: 'gemini-2.5-pro-a', label: 'Pro A', defaultForRoles: ['chat'] },
+		it('should prioritize stable over experimental within same version and family', () => {
+			const mixedStabilityModels: GeminiModel[] = [
+				{ value: 'gemini-2.5-pro-experimental', label: 'Experimental Pro', defaultForRoles: ['chat'] },
+				{ value: 'gemini-2.5-pro', label: 'Stable Pro', defaultForRoles: ['chat'] },
+			];
+			const result = ModelMapper.sortModelsByPreference(mixedStabilityModels);
+
+			// Check that the first model is the stable one
+			expect(result[0].value).toBe('gemini-2.5-pro');
+			expect(result[1].value).toBe('gemini-2.5-pro-experimental');
+		});
+	});
+
+	describe('deduplicateModels', () => {
+		it('should remove duplicate models with same value', () => {
+			const duplicateModels: GeminiModel[] = [
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Duplicate)', defaultForRoles: ['chat'] },
+				{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
 			];
 
-			const result = ModelMapper.sortModelsByPreference(sameTypeModels);
+			const result = ModelMapper.deduplicateModels(duplicateModels);
 
-			expect(result[0].value).toBe('gemini-2.5-pro-a');
-			expect(result[1].value).toBe('gemini-2.5-pro-z');
+			expect(result).toHaveLength(2);
+			expect(result.map(m => m.value)).toEqual(['gemini-2.5-pro', 'gemini-2.5-flash']);
+		});
+
+		it('should prefer model with cleaner label when deduplicating', () => {
+			const duplicateModels: GeminiModel[] = [
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Long Descriptive Name)', defaultForRoles: ['chat'] },
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
+			];
+
+			const result = ModelMapper.deduplicateModels(duplicateModels);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].label).toBe('Gemini 2.5 Pro');
 		});
 	});
 
