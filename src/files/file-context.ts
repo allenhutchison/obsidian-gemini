@@ -32,7 +32,7 @@ export class FileContextTree {
 		}
 		this.fileHelper = new ScribeFile(plugin);
 		this.dataViewHelper = new ScribeDataView(this.fileHelper, this.plugin);
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(plugin);
 	}
 
 	async buildStructure(
