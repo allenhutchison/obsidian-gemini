@@ -109,7 +109,7 @@ export class ModelDiscoveryService {
 	 * Check if cache is still valid
 	 */
 	private isCacheValid(): boolean {
-		return this.cache && Date.now() - this.cache.lastUpdated < this.CACHE_DURATION;
+		return !!(this.cache && Date.now() - this.cache.lastUpdated < this.CACHE_DURATION);
 	}
 
 	/**

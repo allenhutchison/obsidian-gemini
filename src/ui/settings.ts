@@ -12,7 +12,29 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
+	private async updateDiscoveryStatus(setting: Setting): Promise<void> {
+		try {
+			const status = await this.plugin.getModelManager().getDiscoveryStatus();
+			
+			if (!status.enabled) {
+				setting.setDesc('Model discovery is disabled');
+				return;
+			}
+
+			if (status.working) {
+				const lastUpdate = status.lastUpdate 
+					? new Date(status.lastUpdate).toLocaleString()
+					: 'Never';
+				setting.setDesc(`✓ Working - Last update: ${lastUpdate}`);
+			} else {
+				setting.setDesc(`✗ Not working - ${status.error || 'Unknown error'}`);
+			}
+		} catch (error) {
+			setting.setDesc(`Error checking status: ${error instanceof Error ? error.message : 'Unknown'}`);
+		}
+	}
+
+	async display(): Promise<void> {
 		const { containerEl } = this;
 
 		containerEl.empty();
@@ -44,21 +66,21 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 			);
 
-		selectModelSetting(
+		await selectModelSetting(
 			containerEl,
 			this.plugin,
 			'chatModelName',
 			'Chat Model',
 			'The Gemini Model used in the chat interface.'
 		);
-		selectModelSetting(
+		await selectModelSetting(
 			containerEl,
 			this.plugin,
 			'summaryModelName',
 			'Summary Model',
 			'The Gemini Model used for summarization.'
 		);
-		selectModelSetting(
+		await selectModelSetting(
 			containerEl,
 			this.plugin,
 			'completionsModelName',
@@ -185,6 +207,87 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+
+		// Model Discovery Settings
+		new Setting(containerEl).setName('Model Discovery').setHeading();
+
+		new Setting(containerEl)
+			.setName('Enable dynamic model discovery')
+			.setDesc('Automatically discover and update available Gemini models from Google\'s API')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.modelDiscovery.enabled).onChange(async (value) => {
+					this.plugin.settings.modelDiscovery.enabled = value;
+					await this.plugin.saveSettings();
+					this.display(); // Refresh to show/hide dependent settings
+				})
+			);
+
+		if (this.plugin.settings.modelDiscovery.enabled) {
+			new Setting(containerEl)
+				.setName('Auto-update interval (hours)')
+				.setDesc('How often to check for new models (0 to disable auto-update)')
+				.addSlider((slider) =>
+					slider
+						.setLimits(0, 168, 1) // 0 to 7 days
+						.setValue(this.plugin.settings.modelDiscovery.autoUpdateInterval)
+						.setDynamicTooltip()
+						.onChange(async (value) => {
+							this.plugin.settings.modelDiscovery.autoUpdateInterval = value;
+							await this.plugin.saveSettings();
+						})
+				);
+
+			new Setting(containerEl)
+				.setName('Fallback to static models')
+				.setDesc('Use built-in model list when API discovery fails')
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.modelDiscovery.fallbackToStatic).onChange(async (value) => {
+						this.plugin.settings.modelDiscovery.fallbackToStatic = value;
+						await this.plugin.saveSettings();
+					})
+				);
+
+			// Discovery Status and Controls
+			const statusSetting = new Setting(containerEl)
+				.setName('Discovery status')
+				.setDesc('Current status of model discovery');
+
+			// Add refresh button and status display
+			statusSetting.addButton((button) =>
+				button
+					.setButtonText('Refresh models')
+					.setTooltip('Manually refresh the model list from Google API')
+					.onClick(async () => {
+						button.setButtonText('Refreshing...');
+						button.setDisabled(true);
+						
+						try {
+							const result = await this.plugin.getModelManager().refreshModels();
+							
+							if (result.success) {
+								button.setButtonText('✓ Refreshed');
+								// Show results
+								const statusText = `Found ${result.modelsFound} models${result.changes ? ' (changes detected)' : ''}`;
+								statusSetting.setDesc(`Last refresh: ${new Date().toLocaleTimeString()} - ${statusText}`);
+							} else {
+								button.setButtonText('✗ Failed');
+								statusSetting.setDesc(`Refresh failed: ${result.error || 'Unknown error'}`);
+							}
+						} catch (error) {
+							button.setButtonText('✗ Error');
+							statusSetting.setDesc(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+						}
+						
+						setTimeout(() => {
+							button.setButtonText('Refresh models');
+							button.setDisabled(false);
+						}, 2000);
+					})
+			);
+
+			// Show current status
+			this.updateDiscoveryStatus(statusSetting);
+		}
 
 		// Developer Settings
 		new Setting(containerEl).setName('Developer Settings').setHeading();

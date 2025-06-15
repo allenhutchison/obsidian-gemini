@@ -187,7 +187,7 @@ describe('ModelManager', () => {
 			];
 
 			// Mock getAvailableModels to return same models
-			jest.spyOn(modelManager, 'getAvailableModels').mockResolvedValue(mockModels);
+			jest.spyOn(modelManager, 'getAvailableModels').mockResolvedValue(mockModels as any);
 
 			// Mock getCurrentGeminiModels to return same models
 			(modelManager as any).getCurrentGeminiModels = jest.fn().mockReturnValue(mockModels);
