@@ -9,6 +9,8 @@ import { GeminiCompletions } from './src/completions';
 import { Notice } from 'obsidian';
 import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './src/models';
 import { ModelManager } from './src/services/model-manager';
+import { PromptManager } from './src/prompts/prompt-manager';
+import { GeminiPrompts } from './src/prompts';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -37,6 +39,8 @@ export interface ObsidianGeminiSettings {
 	initialBackoffDelay: number;
 	streamingEnabled: boolean;
 	modelDiscovery: ModelDiscoverySettings;
+	enableCustomPrompts: boolean;
+	allowSystemPromptOverride: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -64,6 +68,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		lastUpdate: 0,
 		fallbackToStatic: true,
 	},
+	enableCustomPrompts: true,
+	allowSystemPromptOverride: false,
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -74,6 +80,8 @@ export default class ObsidianGemini extends Plugin {
 	public gfile: ScribeFile;
 	public geminiView: GeminiView;
 	public history: GeminiHistory;
+	public promptManager: PromptManager;
+	public prompts: GeminiPrompts;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -104,6 +112,15 @@ export default class ObsidianGemini extends Plugin {
 
 	async setupGeminiScribe() {
 		await this.loadSettings();
+		
+		// Initialize prompts
+		this.prompts = new GeminiPrompts(this);
+		
+		// Initialize prompt manager
+		this.promptManager = new PromptManager(this, this.app.vault);
+		await this.promptManager.ensurePromptsDirectory();
+		await this.promptManager.createDefaultPrompts();
+		
 		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
 

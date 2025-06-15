@@ -14,7 +14,7 @@ export class GeminiCompletions {
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(plugin);
 		this.debouncedComplete = debounce(() => this.force_fetch(), this.TYPING_DELAY, true);
 	}
 

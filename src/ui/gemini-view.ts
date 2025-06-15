@@ -6,6 +6,7 @@ import { GeminiPrompts } from '../prompts';
 import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
 import { logDebugInfo } from '../api/utils/debug';
+import { CustomPrompt } from '../prompts/types';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -25,12 +26,13 @@ export class GeminiView extends ItemView {
 	private fileOpenHandler: (file: TFile | null) => Promise<void>;
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private scrollTimeout: NodeJS.Timeout | null = null;
+	private promptIndicator: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
 		this.plugin = plugin;
 		this.rewriteMode = new ModelRewriteMode(plugin);
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(plugin);
 		this.registerLinkClickHandler();
 		this.registerSettingsListener();
 
@@ -86,6 +88,10 @@ export class GeminiView extends ItemView {
 	private _buildViewDOM(container: HTMLElement) {
 		container.empty();
 		container.createEl('h2', { text: 'Gemini Chat' });
+		
+		// Prompt indicator
+		this.promptIndicator = container.createDiv({ cls: 'gemini-scribe-prompt-indicator' });
+		this.promptIndicator.style.display = 'none'; // Hidden by default
 
 		// The top level application
 		this.chatbox = container.createDiv({ cls: 'gemini-scribe-chatbox' });
@@ -248,6 +254,24 @@ export class GeminiView extends ItemView {
 		}
 	}
 
+	// Update prompt indicator to show active custom prompt
+	private async updatePromptIndicator(): Promise<void> {
+		if (!this.currentFile || !this.plugin.settings.enableCustomPrompts) {
+			this.promptIndicator.style.display = 'none';
+			return;
+		}
+
+		const customPrompt = await this.plugin.promptManager.getPromptFromNote(this.currentFile);
+		
+		if (customPrompt) {
+			// Show indicator in UI
+			this.promptIndicator.setText(`Using prompt: ${customPrompt.name}`);
+			this.promptIndicator.style.display = 'block';
+		} else {
+			this.promptIndicator.style.display = 'none';
+		}
+	}
+
 	async displayMessage(
 		message: string,
 		sender: 'user' | 'model' | 'grounding',
@@ -370,6 +394,9 @@ export class GeminiView extends ItemView {
 		// Load the file content
 		const content = await this.plugin.app.vault.read(file);
 		this.currentFile = file;
+		
+		// Update prompt indicator
+		await this.updatePromptIndicator();
 
 		// Load history for this file
 		const history = await this.plugin.history.getHistoryForFile(file);
@@ -410,12 +437,21 @@ export class GeminiView extends ItemView {
 			try {
 				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
 				const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
+				
+				// Get custom prompt if enabled and available
+				let customPrompt: CustomPrompt | undefined = undefined;
+				if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
+					const prompt = await this.plugin.promptManager.getPromptFromNote(this.currentFile);
+					customPrompt = prompt || undefined;
+				}
+				
 				const request: ExtendedModelRequest = {
 					userMessage: userMessage,
 					conversationHistory: history,
 					model: this.plugin.settings.chatModelName,
 					prompt: prompt,
 					renderContent: true,
+					customPrompt: customPrompt,
 				};
 				logDebugInfo(this.plugin.settings.debugMode, 'Sending message', request);
 

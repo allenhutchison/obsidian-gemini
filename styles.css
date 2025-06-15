@@ -8,6 +8,25 @@ If your plugin does not need CSS, delete this file.
 */
 /* in your plugin's styles.css or a <style> tag in your view */
 
+/* Prompt indicator styling */
+.gemini-scribe-prompt-indicator {
+	background-color: var(--background-modifier-message);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-4-2) var(--size-4-3);
+	margin-bottom: var(--size-4-2);
+	font-size: var(--font-ui-small);
+	color: var(--text-accent);
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.gemini-scribe-prompt-indicator::before {
+	content: "✨";
+	font-size: 1.2em;
+}
+
 .gemini-scribe-chatbox {
 	display: flex;
 	flex-direction: column; /* Messages flow vertically */

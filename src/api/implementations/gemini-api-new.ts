@@ -26,7 +26,7 @@ export class GeminiApiNew implements ModelApi {
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.ai = new GoogleGenAI({ apiKey: this.plugin.settings.apiKey });
-		this.prompts = new GeminiPrompts();
+		this.prompts = new GeminiPrompts(plugin);
 	}
 
 	generateStreamingResponse(
@@ -37,12 +37,11 @@ export class GeminiApiNew implements ModelApi {
 
 		const complete = (async (): Promise<ModelResponse> => {
 			logDebugInfo(this.plugin.settings.debugMode, 'Generating streaming response for request', request);
-			const systemInstruction = this.prompts.systemPrompt({
-				userName: this.plugin.settings.userName,
-				language: window.localStorage.getItem('language') || 'en',
-				date: new Date().toDateString(),
-				time: new Date().toLocaleTimeString(),
-			});
+			
+			// Get system instruction with optional custom prompt
+			const customPrompt = 'customPrompt' in request ? request.customPrompt : undefined;
+			const systemInstruction = await this.prompts.getSystemPromptWithCustom(customPrompt);
+			
 			const modelToUse = request.model ?? this.plugin.settings.chatModelName;
 
 			let fullMarkdown = '';
@@ -115,12 +114,11 @@ export class GeminiApiNew implements ModelApi {
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		logDebugInfo(this.plugin.settings.debugMode, 'Generating model response for request', request);
-		const systemInstruction = this.prompts.systemPrompt({
-			userName: this.plugin.settings.userName,
-			language: window.localStorage.getItem('language') || 'en',
-			date: new Date().toDateString(),
-			time: new Date().toLocaleTimeString(),
-		});
+		
+		// Get system instruction with optional custom prompt
+		const customPrompt = 'customPrompt' in request ? request.customPrompt : undefined;
+		const systemInstruction = await this.prompts.getSystemPromptWithCustom(customPrompt);
+		
 		const modelToUse = request.model ?? this.plugin.settings.chatModelName;
 
 		let response: ModelResponse = { markdown: '', rendered: '' };
@@ -152,7 +150,6 @@ export class GeminiApiNew implements ModelApi {
 	}
 
 	async buildGeminiChatContents(request: ExtendedModelRequest): Promise<any[]> {
-		const prompts = new GeminiPrompts();
 		const contents = [];
 
 		// First push the base prompt on the stack.

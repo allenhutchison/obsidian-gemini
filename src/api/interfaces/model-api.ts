@@ -2,6 +2,8 @@
  * Common interfaces for model API implementations
  */
 
+import { CustomPrompt } from '../../prompts/types';
+
 /**
  * Represents a response from a model.
  *
@@ -32,11 +34,13 @@ export interface BaseModelRequest {
  * @property conversationHistory - An array representing the history of the conversation.
  * @property userMessage - The message from the user.
  * @property renderContent - Whether to render the content in responses (default: true)
+ * @property customPrompt - Optional custom prompt to modify system behavior
  */
 export interface ExtendedModelRequest extends BaseModelRequest {
 	conversationHistory: any[];
 	userMessage: string;
 	renderContent?: boolean;
+	customPrompt?: CustomPrompt;
 }
 
 /**

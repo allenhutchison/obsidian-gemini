@@ -185,6 +185,42 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				text.setValue(this.plugin.settings.historyFolder);
 			});
 
+		// Custom Prompts Settings
+		new Setting(containerEl).setName('Custom Prompts').setHeading();
+
+		new Setting(containerEl)
+			.setName('Enable custom prompts')
+			.setDesc('Allow notes to specify custom AI instructions via frontmatter')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableCustomPrompts ?? true)
+				.onChange(async (value) => {
+					this.plugin.settings.enableCustomPrompts = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Allow system prompt override')
+			.setDesc('WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.allowSystemPromptOverride ?? false)
+				.onChange(async (value) => {
+					this.plugin.settings.allowSystemPromptOverride = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Add button to open prompts folder
+		new Setting(containerEl)
+			.setName('Manage prompts')
+			.setDesc('Open the prompts folder to create or edit prompt templates')
+			.addButton(button => button
+				.setButtonText('Open prompts folder')
+				.onClick(async () => {
+					const promptsDir = this.plugin.promptManager.getPromptsDirectory();
+					await this.plugin.promptManager.ensurePromptsDirectory();
+					// Open folder in system file manager
+					(this.app as any).showInFolder(promptsDir);
+				}));
+
 		// UI Settings
 		new Setting(containerEl).setName('UI Settings').setHeading();
 
