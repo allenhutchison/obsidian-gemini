@@ -55,32 +55,44 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	const changedSettingsInfo: string[] = [];
 	const newSettings = { ...currentSettings };
 
-	// Check chat model
-	if (!availableModelValues.has(newSettings.chatModelName)) {
+	// Helper function to check if a model needs updating
+	const needsUpdate = (modelName: string) => {
+		// Don't update if model is empty/undefined (let defaults handle it)
+		if (!modelName) return false;
+		
+		// Don't update if the model exists in current list
+		if (availableModelValues.has(modelName)) return false;
+		
+		// Update is needed if model is not available
+		return true;
+	};
+
+	// Check chat model - only update if truly needed
+	if (needsUpdate(newSettings.chatModelName)) {
 		const newDefaultChat = getDefaultModelForRole('chat');
 		if (newDefaultChat) {
-			changedSettingsInfo.push(`Chat model: '${newSettings.chatModelName}' -> '${newDefaultChat}'`);
+			changedSettingsInfo.push(`Chat model: '${newSettings.chatModelName}' -> '${newDefaultChat}' (legacy model update)`);
 			newSettings.chatModelName = newDefaultChat;
 			settingsChanged = true;
 		}
 	}
 
-	// Check summary model
-	if (!availableModelValues.has(newSettings.summaryModelName)) {
+	// Check summary model - only update if truly needed
+	if (needsUpdate(newSettings.summaryModelName)) {
 		const newDefaultSummary = getDefaultModelForRole('summary');
 		if (newDefaultSummary) {
-			changedSettingsInfo.push(`Summary model: '${newSettings.summaryModelName}' -> '${newDefaultSummary}'`);
+			changedSettingsInfo.push(`Summary model: '${newSettings.summaryModelName}' -> '${newDefaultSummary}' (legacy model update)`);
 			newSettings.summaryModelName = newDefaultSummary;
 			settingsChanged = true;
 		}
 	}
 
-	// Check completions model
-	if (!availableModelValues.has(newSettings.completionsModelName)) {
+	// Check completions model - only update if truly needed
+	if (needsUpdate(newSettings.completionsModelName)) {
 		const newDefaultCompletions = getDefaultModelForRole('completions');
 		if (newDefaultCompletions) {
 			changedSettingsInfo.push(
-				`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}'`
+				`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}' (legacy model update)`
 			);
 			newSettings.completionsModelName = newDefaultCompletions;
 			settingsChanged = true;

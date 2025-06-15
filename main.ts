@@ -165,7 +165,12 @@ export default class ObsidianGemini extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		await this.updateModelVersions();
+		
+		// Only run model version updates if dynamic discovery is disabled
+		// When dynamic discovery is enabled, user model selections should be preserved
+		if (!this.settings.modelDiscovery?.enabled) {
+			await this.updateModelVersions();
+		}
 	}
 
 	async updateModelVersions() {
