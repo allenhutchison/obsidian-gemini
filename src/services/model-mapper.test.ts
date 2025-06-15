@@ -283,6 +283,34 @@ describe('ModelMapper', () => {
 			expect(result[0].value).toBe('gemini-2.5-pro');
 			expect(result[1].value).toBe('gemini-2.5-pro-experimental');
 		});
+
+		it('should sort by date within same version and family (newer dates first)', () => {
+			const dateVersionModels: GeminiModel[] = [
+				{ value: 'gemini-2.5-flash-preview-04-17', label: 'Flash April 17', defaultForRoles: ['summary'] },
+				{ value: 'gemini-2.5-flash-preview-05-20', label: 'Flash May 20', defaultForRoles: ['summary'] },
+				{ value: 'gemini-2.5-flash-preview-03-15', label: 'Flash March 15', defaultForRoles: ['summary'] },
+				{ value: 'gemini-2.5-flash', label: 'Flash No Date', defaultForRoles: ['summary'] },
+			];
+			const result = ModelMapper.sortModelsByPreference(dateVersionModels);
+
+			// Should be sorted by date: 05-20 > 04-17 > 03-15, then no-date versions
+			expect(result[0].value).toBe('gemini-2.5-flash-preview-05-20'); // May 20 (newest)
+			expect(result[1].value).toBe('gemini-2.5-flash-preview-04-17'); // April 17
+			expect(result[2].value).toBe('gemini-2.5-flash-preview-03-15'); // March 15 (oldest dated)
+			expect(result[3].value).toBe('gemini-2.5-flash'); // No date
+		});
+
+		it('should prioritize dated versions over non-dated versions', () => {
+			const mixedDateModels: GeminiModel[] = [
+				{ value: 'gemini-2.5-pro', label: 'Pro No Date', defaultForRoles: ['chat'] },
+				{ value: 'gemini-2.5-pro-preview-05-20', label: 'Pro May 20', defaultForRoles: ['chat'] },
+			];
+			const result = ModelMapper.sortModelsByPreference(mixedDateModels);
+
+			// Dated version should come first
+			expect(result[0].value).toBe('gemini-2.5-pro-preview-05-20');
+			expect(result[1].value).toBe('gemini-2.5-pro');
+		});
 	});
 
 	describe('deduplicateModels', () => {

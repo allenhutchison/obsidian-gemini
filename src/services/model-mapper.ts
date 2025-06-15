@@ -284,7 +284,36 @@ export class ModelMapper {
 				return bFamily - aFamily;
 			}
 
-			// Within same version and family, stable models first
+			// Within same version and family, sort by date (newer dates first)
+			const getDateVersion = (value: string) => {
+				// Look for date patterns like "05-20", "04-17", etc.
+				const dateMatch = value.match(/(\d{2})-(\d{2})$/);
+				if (dateMatch) {
+					const month = parseInt(dateMatch[1]);
+					const day = parseInt(dateMatch[2]);
+					// Convert to a sortable number (MMDD format)
+					return month * 100 + day;
+				}
+				return 0;
+			};
+
+			const aDate = getDateVersion(a.value);
+			const bDate = getDateVersion(b.value);
+
+			// If both have dates, sort by date (newer first)
+			if (aDate > 0 && bDate > 0) {
+				return bDate - aDate;
+			}
+
+			// If only one has a date, prioritize the one with the date
+			if (aDate > 0 && bDate === 0) {
+				return -1;
+			}
+			if (bDate > 0 && aDate === 0) {
+				return 1;
+			}
+
+			// Within same version, family, and date handling, stable models first
 			const aStable = !a.value.includes('experimental') && !a.value.includes('preview');
 			const bStable = !b.value.includes('experimental') && !b.value.includes('preview');
 
