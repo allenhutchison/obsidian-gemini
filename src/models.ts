@@ -6,11 +6,19 @@ export interface GeminiModel {
 	defaultForRoles?: ModelRole[];
 }
 
-export const GEMINI_MODELS: GeminiModel[] = [
+export let GEMINI_MODELS: GeminiModel[] = [
 	{ value: 'gemini-2.5-pro-preview-06-05', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
 	{ value: 'gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
 	{ value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite', defaultForRoles: ['completions'] },
 ];
+
+/**
+ * Set the models list (used by ModelManager for dynamic updates)
+ */
+export function setGeminiModels(newModels: GeminiModel[]): void {
+	GEMINI_MODELS.length = 0;
+	GEMINI_MODELS.push(...newModels);
+}
 
 export function getDefaultModelForRole(role: ModelRole): string {
 	const modelForRole = GEMINI_MODELS.find((m) => m.defaultForRoles?.includes(role));
@@ -47,32 +55,44 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	const changedSettingsInfo: string[] = [];
 	const newSettings = { ...currentSettings };
 
-	// Check chat model
-	if (!availableModelValues.has(newSettings.chatModelName)) {
+	// Helper function to check if a model needs updating
+	const needsUpdate = (modelName: string) => {
+		// Don't update if model is empty/undefined (let defaults handle it)
+		if (!modelName) return false;
+		
+		// Don't update if the model exists in current list
+		if (availableModelValues.has(modelName)) return false;
+		
+		// Update is needed if model is not available
+		return true;
+	};
+
+	// Check chat model - only update if truly needed
+	if (needsUpdate(newSettings.chatModelName)) {
 		const newDefaultChat = getDefaultModelForRole('chat');
 		if (newDefaultChat) {
-			changedSettingsInfo.push(`Chat model: '${newSettings.chatModelName}' -> '${newDefaultChat}'`);
+			changedSettingsInfo.push(`Chat model: '${newSettings.chatModelName}' -> '${newDefaultChat}' (legacy model update)`);
 			newSettings.chatModelName = newDefaultChat;
 			settingsChanged = true;
 		}
 	}
 
-	// Check summary model
-	if (!availableModelValues.has(newSettings.summaryModelName)) {
+	// Check summary model - only update if truly needed
+	if (needsUpdate(newSettings.summaryModelName)) {
 		const newDefaultSummary = getDefaultModelForRole('summary');
 		if (newDefaultSummary) {
-			changedSettingsInfo.push(`Summary model: '${newSettings.summaryModelName}' -> '${newDefaultSummary}'`);
+			changedSettingsInfo.push(`Summary model: '${newSettings.summaryModelName}' -> '${newDefaultSummary}' (legacy model update)`);
 			newSettings.summaryModelName = newDefaultSummary;
 			settingsChanged = true;
 		}
 	}
 
-	// Check completions model
-	if (!availableModelValues.has(newSettings.completionsModelName)) {
+	// Check completions model - only update if truly needed
+	if (needsUpdate(newSettings.completionsModelName)) {
 		const newDefaultCompletions = getDefaultModelForRole('completions');
 		if (newDefaultCompletions) {
 			changedSettingsInfo.push(
-				`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}'`
+				`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}' (legacy model update)`
 			);
 			newSettings.completionsModelName = newDefaultCompletions;
 			settingsChanged = true;

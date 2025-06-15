@@ -8,6 +8,14 @@ import { GeminiHistory } from './src/history/history';
 import { GeminiCompletions } from './src/completions';
 import { Notice } from 'obsidian';
 import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './src/models';
+import { ModelManager } from './src/services/model-manager';
+
+export interface ModelDiscoverySettings {
+	enabled: boolean;
+	autoUpdateInterval: number; // hours
+	lastUpdate: number;
+	fallbackToStatic: boolean;
+}
 
 export interface ObsidianGeminiSettings {
 	apiKey: string;
@@ -28,6 +36,7 @@ export interface ObsidianGeminiSettings {
 	maxRetries: number;
 	initialBackoffDelay: number;
 	streamingEnabled: boolean;
+	modelDiscovery: ModelDiscoverySettings;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -49,6 +58,12 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	maxRetries: 3,
 	initialBackoffDelay: 1000,
 	streamingEnabled: true,
+	modelDiscovery: {
+		enabled: false, // Start disabled by default
+		autoUpdateInterval: 24, // Check daily
+		lastUpdate: 0,
+		fallbackToStatic: true,
+	},
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -64,6 +79,7 @@ export default class ObsidianGemini extends Plugin {
 	private summarizer: GeminiSummary;
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
+	private modelManager: ModelManager;
 
 	async onload() {
 		await this.setupGeminiScribe();
@@ -90,6 +106,15 @@ export default class ObsidianGemini extends Plugin {
 		await this.loadSettings();
 		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
+
+		// Initialize model manager
+		this.modelManager = new ModelManager(this);
+		await this.modelManager.initialize();
+
+		// Update models if discovery is enabled
+		if (this.settings.modelDiscovery.enabled) {
+			this.updateModelsIfNeeded();
+		}
 
 		// Initialize history
 		// Getting the vault folder for the import and export of history has to wait for the layout
@@ -140,7 +165,12 @@ export default class ObsidianGemini extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		await this.updateModelVersions();
+		
+		// Only run model version updates if dynamic discovery is disabled
+		// When dynamic discovery is enabled, user model selections should be preserved
+		if (!this.settings.modelDiscovery?.enabled) {
+			await this.updateModelVersions();
+		}
 	}
 
 	async updateModelVersions() {
@@ -158,6 +188,55 @@ export default class ObsidianGemini extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		await this.setupGeminiScribe();
+		
+		// If model discovery settings changed, update models
+		if (this.settings.modelDiscovery.enabled && this.modelManager) {
+			this.updateModelsIfNeeded();
+		}
+	}
+
+	/**
+	 * Update models if auto-update interval has passed
+	 */
+	private async updateModelsIfNeeded(): Promise<void> {
+		if (!this.settings.modelDiscovery.enabled || !this.modelManager) {
+			return;
+		}
+
+		const now = Date.now();
+		const lastUpdate = this.settings.modelDiscovery.lastUpdate;
+		const intervalMs = this.settings.modelDiscovery.autoUpdateInterval * 60 * 60 * 1000; // hours to ms
+
+		if (now - lastUpdate > intervalMs) {
+			try {
+				const result = await this.modelManager.updateModels({ preserveUserCustomizations: true });
+				
+				if (result.settingsChanged) {
+					// Update settings with new model assignments
+					this.settings = result.updatedSettings;
+					await this.saveData(this.settings);
+					
+					// Notify user of changes
+					if (result.changedSettingsInfo.length > 0) {
+						console.log('Model settings updated:', result.changedSettingsInfo.join(', '));
+					}
+				}
+
+				// Update last update time
+				this.settings.modelDiscovery.lastUpdate = now;
+				await this.saveData(this.settings);
+
+			} catch (error) {
+				console.warn('Failed to update models during auto-update:', error);
+			}
+		}
+	}
+
+	/**
+	 * Get the model manager instance
+	 */
+	getModelManager(): ModelManager {
+		return this.modelManager;
 	}
 
 	// Optional: Clean up ribbon icon on unload

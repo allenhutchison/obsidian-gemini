@@ -1,0 +1,215 @@
+import ObsidianGemini from '../../main';
+import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings } from '../models';
+import { ModelDiscoveryService } from './model-discovery';
+import { ModelMapper } from './model-mapper';
+
+export interface ModelUpdateOptions {
+	forceRefresh?: boolean;
+	preserveUserCustomizations?: boolean;
+}
+
+export interface ModelDiscoverySettings {
+	enabled: boolean;
+	autoUpdateInterval: number; // hours
+	lastUpdate: number;
+	fallbackToStatic: boolean;
+}
+
+export class ModelManager {
+	private plugin: ObsidianGemini;
+	private discoveryService: ModelDiscoveryService;
+	private static staticModels: GeminiModel[] = [
+		// Keep current models as fallback
+		{ value: 'gemini-2.5-pro-preview-06-05', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
+		{ value: 'gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
+		{ value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite', defaultForRoles: ['completions'] },
+	];
+
+	constructor(plugin: ObsidianGemini) {
+		this.plugin = plugin;
+		this.discoveryService = new ModelDiscoveryService(plugin);
+	}
+
+	/**
+	 * Get current models (dynamic or static fallback)
+	 */
+	async getAvailableModels(options: ModelUpdateOptions = {}): Promise<GeminiModel[]> {
+		// If dynamic discovery is disabled, return static models
+		if (!this.plugin.settings.modelDiscovery?.enabled) {
+			return ModelManager.staticModels;
+		}
+
+		try {
+			const discovery = await this.discoveryService.discoverModels(options.forceRefresh);
+
+			if (discovery.success && discovery.models.length > 0) {
+				let dynamicModels = ModelMapper.mapToGeminiModels(discovery.models);
+
+				// Sort models by preference (stable first, then by family)
+				dynamicModels = ModelMapper.sortModelsByPreference(dynamicModels);
+
+				if (options.preserveUserCustomizations) {
+					dynamicModels = ModelMapper.mergeWithExistingModels(dynamicModels, ModelManager.staticModels);
+				}
+
+				return dynamicModels;
+			}
+		} catch (error) {
+			console.warn('Model discovery failed, falling back to static models:', error);
+		}
+
+		// Fallback to static models
+		return ModelManager.staticModels;
+	}
+
+	/**
+	 * Update models and notify if changes occurred
+	 */
+	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult> {
+		const currentModels = await this.getAvailableModels(options);
+		const previousModels = this.getCurrentGeminiModels();
+
+		// Check for changes
+		const hasChanges = this.detectModelChanges(currentModels, previousModels);
+
+		if (hasChanges) {
+			// Update the global GEMINI_MODELS array
+			this.updateGlobalModelsList(currentModels);
+
+			// Update settings to use new default models if current ones are no longer available
+			return getUpdatedModelSettings(this.plugin.settings);
+		}
+
+		return { 
+			updatedSettings: this.plugin.settings, 
+			settingsChanged: false, 
+			changedSettingsInfo: [] 
+		};
+	}
+
+	/**
+	 * Get the current GEMINI_MODELS array
+	 */
+	private getCurrentGeminiModels(): GeminiModel[] {
+		// Import dynamically to avoid circular dependencies
+		const models = require('../models');
+		return models.GEMINI_MODELS || [];
+	}
+
+	/**
+	 * Update the global GEMINI_MODELS array
+	 */
+	private updateGlobalModelsList(newModels: GeminiModel[]): void {
+		// Import dynamically to avoid circular dependencies
+		const models = require('../models');
+		if (models.setGeminiModels) {
+			models.setGeminiModels(newModels);
+		}
+	}
+
+	/**
+	 * Detect if there are changes between current and previous models
+	 */
+	private detectModelChanges(current: GeminiModel[], previous: GeminiModel[]): boolean {
+		if (current.length !== previous.length) {
+			return true;
+		}
+
+		const currentIds = new Set(current.map((m) => m.value));
+		const previousIds = new Set(previous.map((m) => m.value));
+
+		return !this.areSetsEqual(currentIds, previousIds);
+	}
+
+	/**
+	 * Check if two sets are equal
+	 */
+	private areSetsEqual<T>(set1: Set<T>, set2: Set<T>): boolean {
+		return set1.size === set2.size && [...set1].every((item) => set2.has(item));
+	}
+
+	/**
+	 * Initialize the model manager and load cache
+	 */
+	async initialize(): Promise<void> {
+		await this.discoveryService.loadCache();
+	}
+
+	/**
+	 * Get discovery service for direct access
+	 */
+	getDiscoveryService(): ModelDiscoveryService {
+		return this.discoveryService;
+	}
+
+	/**
+	 * Get static models as fallback
+	 */
+	static getStaticModels(): GeminiModel[] {
+		return [...ModelManager.staticModels];
+	}
+
+	/**
+	 * Check if model discovery is enabled and working
+	 */
+	async getDiscoveryStatus(): Promise<{
+		enabled: boolean;
+		working: boolean;
+		lastUpdate?: number;
+		error?: string;
+	}> {
+		const enabled = this.plugin.settings.modelDiscovery?.enabled || false;
+		
+		if (!enabled) {
+			return { enabled: false, working: false };
+		}
+
+		try {
+			const discovery = await this.discoveryService.discoverModels(false); // Use cache
+			return {
+				enabled: true,
+				working: discovery.success,
+				lastUpdate: discovery.lastUpdated,
+				error: discovery.error,
+			};
+		} catch (error) {
+			return {
+				enabled: true,
+				working: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			};
+		}
+	}
+
+	/**
+	 * Force refresh models and return status
+	 */
+	async refreshModels(): Promise<{
+		success: boolean;
+		modelsFound: number;
+		changes: boolean;
+		error?: string;
+	}> {
+		try {
+			const result = await this.updateModels({ 
+				forceRefresh: true, 
+				preserveUserCustomizations: true 
+			});
+
+			const models = await this.getAvailableModels({ forceRefresh: true });
+
+			return {
+				success: true,
+				modelsFound: models.length,
+				changes: result.settingsChanged,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				modelsFound: 0,
+				changes: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			};
+		}
+	}
+}
