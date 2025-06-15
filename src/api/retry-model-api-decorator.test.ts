@@ -1,7 +1,13 @@
 jest.mock('obsidian');
 
 import { RetryModelApiDecorator } from './retry-model-api-decorator';
-import { ModelApi, BaseModelRequest, StreamCallback, StreamingModelResponse, ModelResponse } from './interfaces/model-api';
+import {
+	ModelApi,
+	BaseModelRequest,
+	StreamCallback,
+	StreamingModelResponse,
+	ModelResponse,
+} from './interfaces/model-api';
 
 // Mock ModelApi implementation for testing
 class MockModelApi implements ModelApi {
@@ -20,7 +26,7 @@ describe('RetryModelApiDecorator', () => {
 			settings: {
 				maxRetries: 3,
 				initialBackoffDelay: 1000,
-			}
+			},
 		};
 		retryDecorator = new RetryModelApiDecorator(mockApi, mockPlugin);
 		jest.clearAllMocks();
@@ -31,18 +37,15 @@ describe('RetryModelApiDecorator', () => {
 			const mockStreamResponse: StreamingModelResponse = {
 				complete: Promise.resolve({
 					markdown: 'Test response',
-					model: 'test-model',
-					totalTokens: 100,
-					inputTokens: 50,
-					outputTokens: 50
-				} as ModelResponse),
-				cancel: jest.fn()
+					rendered: '',
+				}),
+				cancel: jest.fn(),
 			};
 
 			mockApi.generateStreamingResponse!.mockReturnValue(mockStreamResponse);
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const receivedChunks: string[] = [];
@@ -59,20 +62,17 @@ describe('RetryModelApiDecorator', () => {
 
 		it('should fallback to non-streaming when streaming not available', async () => {
 			// Remove streaming method from mock
-			mockApi.generateStreamingResponse = undefined;
-			
+			delete (mockApi as any).generateStreamingResponse;
+
 			const mockResponse: ModelResponse = {
 				markdown: 'Non-streaming response',
-				model: 'test-model',
-				totalTokens: 100,
-				inputTokens: 50,
-				outputTokens: 50
+				rendered: '',
 			};
 
 			mockApi.generateModelResponse.mockResolvedValue(mockResponse);
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const receivedChunks: string[] = [];
@@ -93,12 +93,9 @@ describe('RetryModelApiDecorator', () => {
 			const mockStreamResponse: StreamingModelResponse = {
 				complete: Promise.resolve({
 					markdown: 'Success after retry',
-					model: 'test-model',
-					totalTokens: 100,
-					inputTokens: 50,
-					outputTokens: 50
-				} as ModelResponse),
-				cancel: jest.fn()
+					rendered: '',
+				}),
+				cancel: jest.fn(),
 			};
 
 			mockApi.generateStreamingResponse!.mockImplementation(() => {
@@ -106,14 +103,14 @@ describe('RetryModelApiDecorator', () => {
 				if (callCount === 1) {
 					return {
 						complete: Promise.reject(new Error('API Error')),
-						cancel: jest.fn()
+						cancel: jest.fn(),
 					};
 				}
 				return mockStreamResponse;
 			});
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const receivedChunks: string[] = [];
@@ -132,19 +129,19 @@ describe('RetryModelApiDecorator', () => {
 			const cancelMock = jest.fn();
 			const mockStreamResponse: StreamingModelResponse = {
 				complete: new Promise(() => {}), // Never resolves
-				cancel: cancelMock
+				cancel: cancelMock,
 			};
 
 			mockApi.generateStreamingResponse!.mockReturnValue(mockStreamResponse);
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const onChunk: StreamCallback = jest.fn();
 
 			const result = retryDecorator.generateStreamingResponse!(request, onChunk);
-			
+
 			// Cancel the streaming
 			result.cancel();
 
@@ -154,11 +151,11 @@ describe('RetryModelApiDecorator', () => {
 		it('should fail after max retries for streaming', async () => {
 			mockApi.generateStreamingResponse!.mockImplementation(() => ({
 				complete: Promise.reject(new Error('Persistent API Error')),
-				cancel: jest.fn()
+				cancel: jest.fn(),
 			}));
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const onChunk: StreamCallback = jest.fn();
@@ -176,23 +173,20 @@ describe('RetryModelApiDecorator', () => {
 				if (callCount <= 2) {
 					return {
 						complete: Promise.reject(new Error('Temporary failure')),
-						cancel: jest.fn()
+						cancel: jest.fn(),
 					};
 				}
 				return {
 					complete: Promise.resolve({
 						markdown: 'Success after retries',
-						model: 'test-model',
-						totalTokens: 100,
-						inputTokens: 50,
-						outputTokens: 50
-					} as ModelResponse),
-					cancel: jest.fn()
+						rendered: '',
+					}),
+					cancel: jest.fn(),
 				};
 			});
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const receivedChunks: string[] = [];
@@ -212,18 +206,15 @@ describe('RetryModelApiDecorator', () => {
 			const mockStreamResponse: StreamingModelResponse = {
 				complete: Promise.resolve({
 					markdown: '',
-					model: 'test-model',
-					totalTokens: 10,
-					inputTokens: 5,
-					outputTokens: 5
-				} as ModelResponse),
-				cancel: jest.fn()
+					rendered: '',
+				}),
+				cancel: jest.fn(),
 			};
 
 			mockApi.generateStreamingResponse!.mockReturnValue(mockStreamResponse);
 
 			const request: BaseModelRequest = {
-				prompt: 'Empty test'
+				prompt: 'Empty test',
 			};
 
 			const receivedChunks: string[] = [];
@@ -243,16 +234,13 @@ describe('RetryModelApiDecorator', () => {
 		it('should pass through to decorated API', async () => {
 			const mockResponse: ModelResponse = {
 				markdown: 'Test response',
-				model: 'test-model',
-				totalTokens: 100,
-				inputTokens: 50,
-				outputTokens: 50
+				rendered: '',
 			};
 
 			mockApi.generateModelResponse.mockResolvedValue(mockResponse);
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const response = await retryDecorator.generateModelResponse(request);
@@ -265,10 +253,7 @@ describe('RetryModelApiDecorator', () => {
 			let callCount = 0;
 			const mockResponse: ModelResponse = {
 				markdown: 'Success after retry',
-				model: 'test-model',
-				totalTokens: 100,
-				inputTokens: 50,
-				outputTokens: 50
+				rendered: '',
 			};
 
 			mockApi.generateModelResponse.mockImplementation(() => {
@@ -280,7 +265,7 @@ describe('RetryModelApiDecorator', () => {
 			});
 
 			const request: BaseModelRequest = {
-				prompt: 'Test prompt'
+				prompt: 'Test prompt',
 			};
 
 			const response = await retryDecorator.generateModelResponse(request);

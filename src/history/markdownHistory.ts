@@ -20,22 +20,22 @@ export class MarkdownHistory {
 	}
 
 	// Updated: Flattens directory structure into filename
-// If the note is in the root of the vault (no directory), prefix with 'root_' to avoid filename collision
-private getHistoryFilePath(notePath: string): string {
-	const historyFolder = this.plugin.settings.historyFolder;
-	// Remove .md extension
-	const pathWithoutExt = notePath.replace(/\.md$/, '');
-	// Determine if the note is in the root (no path separator)
-	const isRoot = !pathWithoutExt.includes('/') && !pathWithoutExt.includes('\\');
-	// Replace path separators with underscores to flatten the structure
-	let safeFilename = pathWithoutExt.replace(/[\\/]/g, '_');
-	if (isRoot) {
-		safeFilename = `root_${safeFilename}`;
+	// If the note is in the root of the vault (no directory), prefix with 'root_' to avoid filename collision
+	private getHistoryFilePath(notePath: string): string {
+		const historyFolder = this.plugin.settings.historyFolder;
+		// Remove .md extension
+		const pathWithoutExt = notePath.replace(/\.md$/, '');
+		// Determine if the note is in the root (no path separator)
+		const isRoot = !pathWithoutExt.includes('/') && !pathWithoutExt.includes('\\');
+		// Replace path separators with underscores to flatten the structure
+		let safeFilename = pathWithoutExt.replace(/[\\/]/g, '_');
+		if (isRoot) {
+			safeFilename = `root_${safeFilename}`;
+		}
+		// Combine history folder with the flattened, safe filename and add .md
+		// Use normalizePath to ensure consistent separators for the base history folder path
+		return normalizePath(`${historyFolder}/${safeFilename}.md`);
 	}
-	// Combine history folder with the flattened, safe filename and add .md
-	// Use normalizePath to ensure consistent separators for the base history folder path
-	return normalizePath(`${historyFolder}/${safeFilename}.md`);
-}
 
 	// Updated: Ensure parent directory exists (only base history folder needed now)
 	async appendHistoryForFile(file: TFile, newEntry: BasicGeminiConversationEntry) {

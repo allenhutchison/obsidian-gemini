@@ -9,6 +9,7 @@ Obsidian Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI 
 ## Commands
 
 ### Development
+
 ```bash
 npm run dev          # Development build with watch mode
 npm run build        # Production build (runs TypeScript check first)
@@ -18,11 +19,13 @@ npm run format-check # Check formatting without changes
 ```
 
 ### Build System
+
 - Uses esbuild for fast bundling with TypeScript
 - Custom text file loader for `.txt` and `.hbs` templates
 - Source maps inline in dev, tree shaking in production
 
 ### Testing
+
 - Jest with ts-jest for TypeScript support
 - JSDOM environment for DOM testing
 - Test pattern: `**/?(*.)+(spec|test).[tj]s`
@@ -31,6 +34,7 @@ npm run format-check # Check formatting without changes
 ## Architecture
 
 ### Core Pattern: Factory + Decorator
+
 ```
 main.ts → ApiFactory.createApi() → RetryModelApiDecorator → ModelApi (Gemini/Ollama)
 ```
@@ -45,6 +49,7 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates
 
 ### Model Configuration
+
 - Models defined in `src/models.ts` with automatic version migration
 - Different models for different tasks (chat, summary, completions, rewrite)
 - Settings changes trigger full plugin reload
@@ -58,7 +63,9 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 5. **State Management**: Plugin instance holds all component references with proper cleanup
 
 ### Testing Focus
+
 When adding features, ensure tests cover:
+
 - Core utility functions
 - API error scenarios with retry behavior
 - File context tree building and circular reference prevention
