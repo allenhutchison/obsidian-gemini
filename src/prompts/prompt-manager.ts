@@ -1,12 +1,4 @@
-import { 
-	Vault, 
-	TFile, 
-	TFolder,
-	normalizePath, 
-	Notice, 
-	SuggestModal, 
-	App
-} from 'obsidian';
+import { Vault, TFile, TFolder, normalizePath, Notice, SuggestModal, Modal, App } from 'obsidian';
 import ObsidianGemini from '../../main';
 import { CustomPrompt, PromptInfo } from './types';
 
@@ -25,7 +17,7 @@ export class PromptManager {
 	async ensurePromptsDirectory(): Promise<void> {
 		const promptsDir = this.getPromptsDirectory();
 		const folder = this.vault.getAbstractFileByPath(promptsDir);
-		
+
 		// If it doesn't exist or isn't a folder, create it
 		if (!folder || !(folder instanceof TFolder)) {
 			await this.vault.createFolder(promptsDir);
@@ -37,26 +29,26 @@ export class PromptManager {
 		try {
 			const file = this.vault.getAbstractFileByPath(filePath);
 			if (!(file instanceof TFile)) return null;
-			
+
 			// Use Obsidian's metadata cache to get frontmatter
 			const cache = this.plugin.app.metadataCache.getFileCache(file);
 			const frontmatter = cache?.frontmatter || {};
-			
+
 			// Get the content without frontmatter using sections
 			let contentWithoutFrontmatter = '';
-			
+
 			// If there are sections, concatenate them (they don't include frontmatter)
 			if (cache?.sections) {
 				const fullContent = await this.vault.read(file);
 				const lines = fullContent.split('\n');
-				
+
 				for (const section of cache.sections) {
 					// Skip frontmatter section
 					if (section.type === 'yaml') continue;
-					
+
 					const startLine = section.position.start.line;
 					const endLine = section.position.end.line;
-					
+
 					for (let i = startLine; i <= endLine && i < lines.length; i++) {
 						contentWithoutFrontmatter += lines[i] + '\n';
 					}
@@ -66,17 +58,17 @@ export class PromptManager {
 				const fullContent = await this.vault.read(file);
 				contentWithoutFrontmatter = this.extractContentWithoutFrontmatter(fullContent);
 			}
-			
+
 			// Parse tags - ensure it's an array
 			const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
-			
+
 			return {
 				name: frontmatter.name || 'Unnamed Prompt',
 				description: frontmatter.description || '',
 				version: frontmatter.version || 1,
 				overrideSystemPrompt: frontmatter.override_system_prompt || false,
 				tags: tags,
-				content: contentWithoutFrontmatter.trim()
+				content: contentWithoutFrontmatter.trim(),
 			};
 		} catch (error) {
 			console.error('Error loading prompt file:', error);
@@ -88,11 +80,11 @@ export class PromptManager {
 	private extractContentWithoutFrontmatter(content: string): string {
 		const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
 		const match = content.match(frontmatterRegex);
-		
+
 		if (match) {
 			return match[2]; // Return content after frontmatter
 		}
-		
+
 		return content; // No frontmatter found, return entire content
 	}
 
@@ -100,18 +92,18 @@ export class PromptManager {
 	async getPromptFromNote(file: TFile): Promise<CustomPrompt | null> {
 		const cache = this.plugin.app.metadataCache.getFileCache(file);
 		const promptPath = cache?.frontmatter?.['gemini-scribe-prompt'];
-		
+
 		if (!promptPath) return null;
-		
+
 		// Extract path from wikilink
 		const linkpath = this.extractPathFromWikilink(promptPath);
 		if (!linkpath) return null;
-		
+
 		// Use Obsidian's link resolution to find the file
 		// getFirstLinkpathDest resolves the link path relative to the source file
 		const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, file.path);
 		if (!linkedFile || !(linkedFile instanceof TFile)) return null;
-		
+
 		return await this.loadPromptFromFile(linkedFile.path);
 	}
 
@@ -122,16 +114,16 @@ export class PromptManager {
 		if (cleaned.startsWith('[[') && cleaned.endsWith(']]')) {
 			cleaned = cleaned.slice(2, -2);
 		}
-		
+
 		// Remove alias (text after |)
 		const pathWithoutAlias = cleaned.split('|')[0];
-		
+
 		// Remove heading (text after #)
 		const pathWithoutHeading = pathWithoutAlias.split('#')[0];
-		
+
 		// Remove block reference (text after ^)
 		const pathWithoutBlock = pathWithoutHeading.split('^')[0];
-		
+
 		return pathWithoutBlock.trim() || null;
 	}
 
@@ -139,17 +131,16 @@ export class PromptManager {
 	async listAvailablePrompts(): Promise<PromptInfo[]> {
 		const promptsDir = this.getPromptsDirectory();
 		const folder = this.vault.getAbstractFileByPath(promptsDir);
-		
+
 		if (!(folder instanceof TFolder)) {
 			return [];
 		}
-		
+
 		const prompts: PromptInfo[] = [];
-		
+
 		// Use Vault.getMarkdownFiles() and filter by path
-		const markdownFiles = this.vault.getMarkdownFiles()
-			.filter(file => file.path.startsWith(promptsDir));
-		
+		const markdownFiles = this.vault.getMarkdownFiles().filter((file) => file.path.startsWith(promptsDir));
+
 		for (const file of markdownFiles) {
 			const prompt = await this.loadPromptFromFile(file.path);
 			if (prompt) {
@@ -157,11 +148,11 @@ export class PromptManager {
 					path: file.path,
 					name: prompt.name,
 					description: prompt.description,
-					tags: prompt.tags
+					tags: prompt.tags,
 				});
 			}
 		}
-		
+
 		return prompts;
 	}
 
@@ -169,11 +160,11 @@ export class PromptManager {
 	async createDefaultPrompts(): Promise<void> {
 		const promptsDir = this.getPromptsDirectory();
 		const examplePromptPath = normalizePath(`${promptsDir}/example-expert.md`);
-		
+
 		// Check if file already exists using getAbstractFileByPath
 		const existingFile = this.vault.getAbstractFileByPath(examplePromptPath);
 		if (existingFile) return;
-		
+
 		const exampleContent = `---
 name: "Subject Matter Expert"
 description: "A knowledgeable expert who provides detailed, accurate information"
@@ -210,6 +201,12 @@ Focus on being helpful while maintaining intellectual honesty.`;
 				name: 'Remove Custom Prompt from Current Note',
 				callback: () => this.removeCustomPromptFromCurrentNote(),
 			});
+
+			this.plugin.addCommand({
+				id: 'gemini-scribe-create-custom-prompt',
+				name: 'Create New Custom Prompt',
+				callback: () => this.createNewCustomPrompt(),
+			});
 		}
 	}
 
@@ -242,7 +239,6 @@ Focus on being helpful while maintaining intellectual honesty.`;
 
 			// Show prompt selection modal
 			this.showPromptSelectionModal(activeFile, availablePrompts);
-
 		} catch (error) {
 			console.error('Error applying custom prompt:', error);
 			new Notice('Failed to apply custom prompt');
@@ -267,7 +263,6 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			});
 
 			new Notice(`Applied custom prompt: ${prompt.name}`);
-
 		} catch (error) {
 			console.error('Error applying prompt to file:', error);
 			new Notice('Failed to apply custom prompt to note');
@@ -297,7 +292,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			// Check if file has a custom prompt
 			const cache = this.plugin.app.metadataCache.getFileCache(activeFile);
 			const currentPrompt = cache?.frontmatter?.['gemini-scribe-prompt'];
-			
+
 			if (!currentPrompt) {
 				new Notice('No custom prompt is applied to this note');
 				return;
@@ -309,7 +304,6 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			});
 
 			new Notice('Removed custom prompt from note');
-
 		} catch (error) {
 			console.error('Error removing custom prompt:', error);
 			new Notice('Failed to remove custom prompt from note');
@@ -326,6 +320,88 @@ Focus on being helpful while maintaining intellectual honesty.`;
 		// Fallback
 		const fileName = path.split('/').pop() || '';
 		return fileName.replace('.md', '');
+	}
+
+	// Create a new custom prompt file
+	async createNewCustomPrompt(): Promise<void> {
+		try {
+			// Check if custom prompts are enabled
+			if (!this.plugin.settings.enableCustomPrompts) {
+				new Notice('Custom prompts are disabled. Enable them in plugin settings.');
+				return;
+			}
+
+			// Ensure prompts directory exists
+			await this.ensurePromptsDirectory();
+
+			// Open input modal for prompt name
+			const modal = new PromptNameModal(this.plugin.app, async (promptName: string) => {
+				if (!promptName || promptName.trim() === '') {
+					new Notice('Prompt name cannot be empty');
+					return;
+				}
+
+				// Sanitize filename (remove special characters, keep alphanumeric, spaces, hyphens, underscores)
+				const sanitizedName = promptName
+					.trim()
+					.replace(/[^\w\s-]/g, '')
+					.replace(/\s+/g, '-');
+				if (!sanitizedName) {
+					new Notice('Invalid prompt name. Please use alphanumeric characters, spaces, hyphens, or underscores.');
+					return;
+				}
+
+				const promptsDir = this.getPromptsDirectory();
+				const fileName = `${sanitizedName.toLowerCase()}.md`;
+				const filePath = normalizePath(`${promptsDir}/${fileName}`);
+
+				// Check if file already exists
+				const existingFile = this.vault.getAbstractFileByPath(filePath);
+				if (existingFile) {
+					new Notice(`A prompt file named "${fileName}" already exists.`);
+					return;
+				}
+
+				// Create template content
+				const templateContent = `---
+name: "${promptName}"
+description: "Brief description of what this prompt does"
+version: 1
+override_system_prompt: false
+tags: ["category", "type"]
+---
+
+# Instructions for the AI
+
+Your custom prompt content goes here. This will modify how the AI behaves when applied to notes.
+
+## Tips:
+- Be specific about the desired behavior
+- Include examples if helpful
+- Consider the context this will be used in
+
+## Example Usage:
+This prompt will be applied to notes and will supplement the default system prompt unless override_system_prompt is set to true.`;
+
+				try {
+					// Create the file
+					const newFile = await this.vault.create(filePath, templateContent);
+
+					// Open the file for editing
+					await this.plugin.app.workspace.openLinkText(newFile.path, '', true);
+
+					new Notice(`Created new custom prompt: ${promptName}`);
+				} catch (error) {
+					console.error('Error creating prompt file:', error);
+					new Notice('Failed to create prompt file');
+				}
+			});
+
+			modal.open();
+		} catch (error) {
+			console.error('Error creating new custom prompt:', error);
+			new Notice('Failed to create new custom prompt');
+		}
 	}
 }
 
@@ -345,10 +421,11 @@ class PromptSelectionModal extends SuggestModal<PromptInfo> {
 		if (!query) {
 			return this.prompts;
 		}
-		return this.prompts.filter(prompt => 
-			prompt.name.toLowerCase().includes(lowerQuery) ||
-			prompt.description.toLowerCase().includes(lowerQuery) ||
-			prompt.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+		return this.prompts.filter(
+			(prompt) =>
+				prompt.name.toLowerCase().includes(lowerQuery) ||
+				prompt.description.toLowerCase().includes(lowerQuery) ||
+				prompt.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
 		);
 	}
 
@@ -374,5 +451,80 @@ class PromptSelectionModal extends SuggestModal<PromptInfo> {
 				new Notice('Failed to apply custom prompt');
 			}
 		}, 0);
+	}
+}
+
+class PromptNameModal extends Modal {
+	private inputEl: HTMLInputElement;
+	private onSubmit: (promptName: string) => void;
+
+	constructor(app: App, onSubmit: (promptName: string) => void) {
+		super(app);
+		this.onSubmit = onSubmit;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+
+		contentEl.createEl('h2', { text: 'Create New Custom Prompt' });
+
+		const inputContainer = contentEl.createDiv({ cls: 'prompt-input-container' });
+		inputContainer.createEl('label', { text: 'Prompt Name:' });
+
+		this.inputEl = inputContainer.createEl('input', {
+			type: 'text',
+			placeholder: 'Enter a name for your custom prompt...',
+		});
+
+		this.inputEl.style.width = '100%';
+		this.inputEl.style.marginTop = '8px';
+		this.inputEl.style.padding = '8px';
+		this.inputEl.style.border = '1px solid var(--background-modifier-border)';
+		this.inputEl.style.borderRadius = '4px';
+
+		// Handle Enter key
+		this.inputEl.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				this.submit();
+			} else if (event.key === 'Escape') {
+				this.close();
+			}
+		});
+
+		const buttonContainer = contentEl.createDiv({ cls: 'prompt-button-container' });
+		buttonContainer.style.marginTop = '16px';
+		buttonContainer.style.display = 'flex';
+		buttonContainer.style.gap = '8px';
+		buttonContainer.style.justifyContent = 'flex-end';
+
+		const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
+		cancelButton.style.padding = '8px 16px';
+		cancelButton.addEventListener('click', () => this.close());
+
+		const createButton = buttonContainer.createEl('button', { text: 'Create' });
+		createButton.style.padding = '8px 16px';
+		createButton.style.backgroundColor = 'var(--interactive-accent)';
+		createButton.style.color = 'var(--text-on-accent)';
+		createButton.style.border = 'none';
+		createButton.style.borderRadius = '4px';
+		createButton.addEventListener('click', () => this.submit());
+
+		// Focus the input
+		setTimeout(() => this.inputEl.focus(), 100);
+	}
+
+	private submit() {
+		const promptName = this.inputEl.value.trim();
+		if (promptName) {
+			this.close();
+			this.onSubmit(promptName);
+		}
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
 	}
 }
