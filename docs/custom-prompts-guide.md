@@ -41,6 +41,19 @@ The plugin automatically creates this folder and adds an example prompt when you
 
 ## Creating Custom Prompts
 
+### Quick Start with Command Palette
+
+The easiest way to create a new custom prompt:
+
+1. Open the command palette (Ctrl/Cmd + P)
+2. Search for "Gemini Scribe: Create New Custom Prompt"
+3. Enter a name for your prompt
+4. Edit the generated template to suit your needs
+
+### Manual Creation
+
+You can also create prompt files manually in your Prompts folder.
+
 ### Basic Structure
 
 Every custom prompt file has two parts:
@@ -96,9 +109,37 @@ Always aim for documentation that is both comprehensive and accessible to reader
 
 ## Using Custom Prompts
 
-### Apply to a Single Note
+### Command Palette Commands
 
-Add the prompt to your note's frontmatter using a wikilink:
+Gemini Scribe provides three convenient command palette commands for working with custom prompts:
+
+#### 1. Create New Custom Prompt
+- **Command**: "Gemini Scribe: Create New Custom Prompt"
+- **Purpose**: Creates a new custom prompt file with a proper template
+- **How it works**:
+  1. Opens a modal to enter the prompt name
+  2. Creates a new `.md` file in your Prompts folder
+  3. Fills in the frontmatter template with helpful structure
+  4. Automatically opens the file for editing
+
+#### 2. Apply Custom Prompt to Current Note
+- **Command**: "Gemini Scribe: Apply Custom Prompt to Current Note"
+- **Purpose**: Applies a custom prompt to the currently active note
+- **How it works**:
+  1. Shows a searchable list of all available custom prompts
+  2. Search by name, description, or tags
+  3. Automatically adds the prompt reference to the note's frontmatter
+
+#### 3. Remove Custom Prompt from Current Note
+- **Command**: "Gemini Scribe: Remove Custom Prompt from Current Note"
+- **Purpose**: Removes the custom prompt from the currently active note
+- **How it works**:
+  1. Removes the `gemini-scribe-prompt` field from frontmatter
+  2. AI behavior returns to default for this note
+
+### Manual Application
+
+You can also manually add prompts to your note's frontmatter using a wikilink:
 
 ```markdown
 ---
