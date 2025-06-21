@@ -259,9 +259,7 @@ describe('ModelManager', () => {
 
 	describe('refreshModels', () => {
 		it('should force refresh and return success status', async () => {
-			const newModels: GeminiModel[] = [
-				{ value: 'gemini-new', label: 'New Model', defaultForRoles: ['chat'] },
-			];
+			const newModels: GeminiModel[] = [{ value: 'gemini-new', label: 'New Model', defaultForRoles: ['chat'] }];
 
 			jest.spyOn(modelManager, 'updateModels').mockResolvedValue({
 				updatedSettings: mockPlugin.settings,
@@ -306,22 +304,16 @@ describe('ModelManager', () => {
 		it('should return static models copy', () => {
 			const staticModels = ModelManager.getStaticModels();
 
-			expect(staticModels).toEqual(expect.arrayContaining([
-				expect.objectContaining({ value: expect.any(String) }),
-			]));
+			expect(staticModels).toEqual(expect.arrayContaining([expect.objectContaining({ value: expect.any(String) })]));
 			// Ensure it's a copy, not the original array
 			staticModels.push({ value: 'test', label: 'Test', defaultForRoles: ['chat'] });
-			expect(ModelManager.getStaticModels()).not.toContainEqual(
-				expect.objectContaining({ value: 'test' })
-			);
+			expect(ModelManager.getStaticModels()).not.toContainEqual(expect.objectContaining({ value: 'test' }));
 		});
 	});
 
 	describe('detectModelChanges', () => {
 		it('should detect length differences', () => {
-			const current: GeminiModel[] = [
-				{ value: 'model1', label: 'Model 1', defaultForRoles: ['chat'] },
-			];
+			const current: GeminiModel[] = [{ value: 'model1', label: 'Model 1', defaultForRoles: ['chat'] }];
 			const previous: GeminiModel[] = [
 				{ value: 'model1', label: 'Model 1', defaultForRoles: ['chat'] },
 				{ value: 'model2', label: 'Model 2', defaultForRoles: ['summary'] },
@@ -333,12 +325,8 @@ describe('ModelManager', () => {
 		});
 
 		it('should detect different model IDs', () => {
-			const current: GeminiModel[] = [
-				{ value: 'model1', label: 'Model 1', defaultForRoles: ['chat'] },
-			];
-			const previous: GeminiModel[] = [
-				{ value: 'model2', label: 'Model 2', defaultForRoles: ['chat'] },
-			];
+			const current: GeminiModel[] = [{ value: 'model1', label: 'Model 1', defaultForRoles: ['chat'] }];
+			const previous: GeminiModel[] = [{ value: 'model2', label: 'Model 2', defaultForRoles: ['chat'] }];
 
 			const hasChanges = (modelManager as any).detectModelChanges(current, previous);
 

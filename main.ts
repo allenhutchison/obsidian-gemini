@@ -112,18 +112,18 @@ export default class ObsidianGemini extends Plugin {
 
 	async setupGeminiScribe() {
 		await this.loadSettings();
-		
+
 		// Initialize prompts
 		this.prompts = new GeminiPrompts(this);
-		
+
 		// Initialize prompt manager
 		this.promptManager = new PromptManager(this, this.app.vault);
 		await this.promptManager.ensurePromptsDirectory();
 		await this.promptManager.createDefaultPrompts();
-		
+
 		// Setup prompt commands
 		this.promptManager.setupPromptCommands();
-		
+
 		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
 
@@ -185,7 +185,7 @@ export default class ObsidianGemini extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		
+
 		// Only run model version updates if dynamic discovery is disabled
 		// When dynamic discovery is enabled, user model selections should be preserved
 		if (!this.settings.modelDiscovery?.enabled) {
@@ -208,7 +208,7 @@ export default class ObsidianGemini extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		await this.setupGeminiScribe();
-		
+
 		// If model discovery settings changed, update models
 		if (this.settings.modelDiscovery.enabled && this.modelManager) {
 			this.updateModelsIfNeeded();
@@ -230,12 +230,12 @@ export default class ObsidianGemini extends Plugin {
 		if (now - lastUpdate > intervalMs) {
 			try {
 				const result = await this.modelManager.updateModels({ preserveUserCustomizations: true });
-				
+
 				if (result.settingsChanged) {
 					// Update settings with new model assignments
 					this.settings = result.updatedSettings;
 					await this.saveData(this.settings);
-					
+
 					// Notify user of changes
 					if (result.changedSettingsInfo.length > 0) {
 						console.log('Model settings updated:', result.changedSettingsInfo.join(', '));
@@ -245,7 +245,6 @@ export default class ObsidianGemini extends Plugin {
 				// Update last update time
 				this.settings.modelDiscovery.lastUpdate = now;
 				await this.saveData(this.settings);
-
 			} catch (error) {
 				console.warn('Failed to update models during auto-update:', error);
 			}

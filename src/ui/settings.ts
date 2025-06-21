@@ -15,16 +15,14 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	private async updateDiscoveryStatus(setting: Setting): Promise<void> {
 		try {
 			const status = await this.plugin.getModelManager().getDiscoveryStatus();
-			
+
 			if (!status.enabled) {
 				setting.setDesc('Model discovery is disabled');
 				return;
 			}
 
 			if (status.working) {
-				const lastUpdate = status.lastUpdate 
-					? new Date(status.lastUpdate).toLocaleString()
-					: 'Never';
+				const lastUpdate = status.lastUpdate ? new Date(status.lastUpdate).toLocaleString() : 'Never';
 				setting.setDesc(`✓ Working - Last update: ${lastUpdate}`);
 			} else {
 				setting.setDesc(`✗ Not working - ${status.error || 'Unknown error'}`);
@@ -191,35 +189,37 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Enable custom prompts')
 			.setDesc('Allow notes to specify custom AI instructions via frontmatter')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableCustomPrompts ?? true)
-				.onChange(async (value) => {
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.enableCustomPrompts ?? true).onChange(async (value) => {
 					this.plugin.settings.enableCustomPrompts = value;
 					await this.plugin.saveSettings();
-				}));
+				})
+			);
 
 		new Setting(containerEl)
 			.setName('Allow system prompt override')
-			.setDesc('WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.allowSystemPromptOverride ?? false)
-				.onChange(async (value) => {
+			.setDesc(
+				'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
 					this.plugin.settings.allowSystemPromptOverride = value;
 					await this.plugin.saveSettings();
-				}));
+				})
+			);
 
 		// Add button to open prompts folder
 		new Setting(containerEl)
 			.setName('Manage prompts')
 			.setDesc('Open the prompts folder to create or edit prompt templates')
-			.addButton(button => button
-				.setButtonText('Open prompts folder')
-				.onClick(async () => {
+			.addButton((button) =>
+				button.setButtonText('Open prompts folder').onClick(async () => {
 					const promptsDir = this.plugin.promptManager.getPromptsDirectory();
 					await this.plugin.promptManager.ensurePromptsDirectory();
 					// Open folder in system file manager
 					(this.app as any).showInFolder(promptsDir);
-				}));
+				})
+			);
 
 		// UI Settings
 		new Setting(containerEl).setName('UI Settings').setHeading();
@@ -249,7 +249,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Enable dynamic model discovery')
-			.setDesc('Automatically discover and update available Gemini models from Google\'s API')
+			.setDesc("Automatically discover and update available Gemini models from Google's API")
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.modelDiscovery.enabled).onChange(async (value) => {
 					this.plugin.settings.modelDiscovery.enabled = value;
@@ -296,10 +296,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					.onClick(async () => {
 						button.setButtonText('Refreshing...');
 						button.setDisabled(true);
-						
+
 						try {
 							const result = await this.plugin.getModelManager().refreshModels();
-							
+
 							if (result.success) {
 								button.setButtonText('✓ Refreshed');
 								// Show results
@@ -313,7 +313,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							button.setButtonText('✗ Error');
 							statusSetting.setDesc(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
 						}
-						
+
 						setTimeout(() => {
 							button.setButtonText('Refresh models');
 							button.setDisabled(false);
