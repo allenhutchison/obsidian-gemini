@@ -106,3 +106,7 @@ When planning new features:
 Example: See issue #90 for the custom prompt system implementation plan.
 
 This keeps technical planning centralized and accessible for all contributors.
+
+## Core Guidelines
+
+- Always use native Obsidian API calls when possible. Documentation here: https://docs.obsidian.md/Home
