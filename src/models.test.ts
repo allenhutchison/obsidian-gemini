@@ -1,4 +1,11 @@
-import { GEMINI_MODELS, getDefaultModelForRole, ModelRole, GeminiModel, getUpdatedModelSettings, setGeminiModels } from './models';
+import {
+	GEMINI_MODELS,
+	getDefaultModelForRole,
+	ModelRole,
+	GeminiModel,
+	getUpdatedModelSettings,
+	setGeminiModels,
+} from './models';
 
 // Helper to temporarily modify GEMINI_MODELS for specific tests
 const setTestModels = (models: GeminiModel[]) => {
@@ -126,7 +133,9 @@ describe('getUpdatedModelSettings', () => {
 		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
 		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default'); // Should remain unchanged
 		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual(["Chat model: 'invalid-chat-model' -> 'gemini-chat-default' (legacy model update)"]);
+		expect(result.changedSettingsInfo).toEqual([
+			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default' (legacy model update)",
+		]);
 	});
 
 	it('should update summaryModelName to default if current is invalid/unavailable', () => {
@@ -140,7 +149,9 @@ describe('getUpdatedModelSettings', () => {
 		expect(result.updatedSettings.summaryModelName).toBe('gemini-summary-default');
 		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default'); // Should remain unchanged
 		expect(result.updatedSettings.completionsModelName).toBe('gemini-completions-default'); // Should remain unchanged
-		expect(result.changedSettingsInfo).toEqual(["Summary model: 'invalid-summary-model' -> 'gemini-summary-default' (legacy model update)"]);
+		expect(result.changedSettingsInfo).toEqual([
+			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default' (legacy model update)",
+		]);
 	});
 
 	it('should update completionsModelName to default if current is invalid/unavailable', () => {
@@ -209,7 +220,9 @@ describe('getUpdatedModelSettings', () => {
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
 		expect(result.updatedSettings.chatModelName).toBe('first-model-in-list'); // Falls back to first model
-		expect(result.changedSettingsInfo).toEqual(["Chat model: 'invalid-chat-model' -> 'first-model-in-list' (legacy model update)"]);
+		expect(result.changedSettingsInfo).toEqual([
+			"Chat model: 'invalid-chat-model' -> 'first-model-in-list' (legacy model update)",
+		]);
 	});
 
 	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {

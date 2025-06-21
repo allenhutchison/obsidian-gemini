@@ -67,7 +67,7 @@ export class GeminiPrompts {
 			userName: this.plugin?.settings.userName || 'User',
 			language: this.getLanguageCode(),
 			date: new Date().toLocaleDateString(),
-			time: new Date().toLocaleTimeString()
+			time: new Date().toLocaleTimeString(),
 		});
 
 		if (!customPrompt) {

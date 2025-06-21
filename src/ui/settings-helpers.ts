@@ -16,9 +16,10 @@ export async function selectModelSetting(
 	description: string
 ) {
 	// Get available models (dynamic if enabled, static otherwise)
-	const availableModels = plugin.settings.modelDiscovery?.enabled && plugin.getModelManager
-		? await plugin.getModelManager().getAvailableModels()
-		: GEMINI_MODELS;
+	const availableModels =
+		plugin.settings.modelDiscovery?.enabled && plugin.getModelManager
+			? await plugin.getModelManager().getAvailableModels()
+			: GEMINI_MODELS;
 
 	const dropdown = new Setting(containerEl)
 		.setName(label)

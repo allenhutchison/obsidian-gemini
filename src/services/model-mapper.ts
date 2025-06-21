@@ -76,7 +76,7 @@ export class ModelMapper {
 	 */
 	static mergeWithExistingModels(discoveredModels: GeminiModel[], existingModels: GeminiModel[]): GeminiModel[] {
 		const existingMap = new Map(existingModels.map((model) => [model.value, model]));
-		
+
 		// Get models that are currently set as defaults for each role
 		const currentDefaults = this.getCurrentDefaultModels(existingModels);
 
@@ -102,28 +102,31 @@ export class ModelMapper {
 	 */
 	private static getCurrentDefaultModels(existingModels: GeminiModel[]): { [role in ModelRole]?: string } {
 		const defaults: { [role in ModelRole]?: string } = {};
-		
+
 		for (const role of ['chat', 'summary', 'completions'] as ModelRole[]) {
-			const defaultModel = existingModels.find(m => m.defaultForRoles?.includes(role));
+			const defaultModel = existingModels.find((m) => m.defaultForRoles?.includes(role));
 			if (defaultModel) {
 				defaults[role] = defaultModel.value;
 			}
 		}
-		
+
 		return defaults;
 	}
 
 	/**
 	 * Ensure each role has a default model assigned
 	 */
-	private static ensureRoleDefaults(models: GeminiModel[], currentDefaults: { [role in ModelRole]?: string }): GeminiModel[] {
-		const modelsMap = new Map(models.map(m => [m.value, m]));
-		
+	private static ensureRoleDefaults(
+		models: GeminiModel[],
+		currentDefaults: { [role in ModelRole]?: string }
+	): GeminiModel[] {
+		const modelsMap = new Map(models.map((m) => [m.value, m]));
+
 		// Check each role and ensure it has a default
 		for (const role of ['chat', 'summary', 'completions'] as ModelRole[]) {
 			const currentDefault = currentDefaults[role];
-			const hasDefault = models.some(m => m.defaultForRoles?.includes(role));
-			
+			const hasDefault = models.some((m) => m.defaultForRoles?.includes(role));
+
 			if (!hasDefault) {
 				// Try to preserve the current default if it still exists
 				if (currentDefault && modelsMap.has(currentDefault)) {
@@ -138,7 +141,7 @@ export class ModelMapper {
 				}
 			}
 		}
-		
+
 		return models;
 	}
 
@@ -148,10 +151,10 @@ export class ModelMapper {
 	private static findBestModelForRole(models: GeminiModel[], role: ModelRole): GeminiModel | undefined {
 		// Sort models by preference and find the best match for the role
 		const sortedModels = this.sortModelsByPreference(models);
-		
+
 		for (const model of sortedModels) {
 			const modelId = model.value.toLowerCase();
-			
+
 			switch (role) {
 				case 'chat':
 					if (modelId.includes('pro')) return model;
@@ -164,7 +167,7 @@ export class ModelMapper {
 					break;
 			}
 		}
-		
+
 		// Fallback to first model if no specific match found
 		return sortedModels[0];
 	}
@@ -185,7 +188,10 @@ export class ModelMapper {
 	/**
 	 * Filter models based on criteria (for future use)
 	 */
-	static filterModels(models: GeminiModel[], criteria: { excludeExperimental?: boolean; minNameLength?: number } = {}): GeminiModel[] {
+	static filterModels(
+		models: GeminiModel[],
+		criteria: { excludeExperimental?: boolean; minNameLength?: number } = {}
+	): GeminiModel[] {
 		return models.filter((model) => {
 			if (criteria.excludeExperimental && model.value.includes('experimental')) {
 				return false;
@@ -202,10 +208,10 @@ export class ModelMapper {
 	 */
 	static deduplicateModels(models: GeminiModel[]): GeminiModel[] {
 		const seen = new Map<string, GeminiModel>();
-		
+
 		for (const model of models) {
 			const existing = seen.get(model.value);
-			
+
 			if (!existing) {
 				// First occurrence of this model ID
 				seen.set(model.value, model);
@@ -217,7 +223,7 @@ export class ModelMapper {
 				}
 			}
 		}
-		
+
 		return Array.from(seen.values());
 	}
 
@@ -228,24 +234,24 @@ export class ModelMapper {
 		// Prefer model with displayName over generated label
 		const newHasDisplayName = !newModel.label.includes('-');
 		const existingHasDisplayName = !existingModel.label.includes('-');
-		
+
 		if (newHasDisplayName !== existingHasDisplayName) {
 			return newHasDisplayName;
 		}
-		
+
 		// Prefer shorter, cleaner labels
 		if (newModel.label.length !== existingModel.label.length) {
 			return newModel.label.length < existingModel.label.length;
 		}
-		
+
 		// Prefer more recent versions (if version info in the value)
 		const newVersionMatch = newModel.value.match(/\d{2}-\d{2}$/);
 		const existingVersionMatch = existingModel.value.match(/\d{2}-\d{2}$/);
-		
+
 		if (newVersionMatch && existingVersionMatch) {
 			return newVersionMatch[0] > existingVersionMatch[0];
 		}
-		
+
 		// Default to keeping existing
 		return false;
 	}

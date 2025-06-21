@@ -23,7 +23,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-scribe-prompt-indicator::before {
-	content: "✨";
+	content: '✨';
 	font-size: 1.2em;
 }
 

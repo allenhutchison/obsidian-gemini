@@ -88,7 +88,7 @@ export class GeminiView extends ItemView {
 	private _buildViewDOM(container: HTMLElement) {
 		container.empty();
 		container.createEl('h2', { text: 'Gemini Chat' });
-		
+
 		// Prompt indicator
 		this.promptIndicator = container.createDiv({ cls: 'gemini-scribe-prompt-indicator' });
 		this.promptIndicator.style.display = 'none'; // Hidden by default
@@ -262,7 +262,7 @@ export class GeminiView extends ItemView {
 		}
 
 		const customPrompt = await this.plugin.promptManager.getPromptFromNote(this.currentFile);
-		
+
 		if (customPrompt) {
 			// Show indicator in UI
 			this.promptIndicator.setText(`Using prompt: ${customPrompt.name}`);
@@ -394,7 +394,7 @@ export class GeminiView extends ItemView {
 		// Load the file content
 		const content = await this.plugin.app.vault.read(file);
 		this.currentFile = file;
-		
+
 		// Update prompt indicator
 		await this.updatePromptIndicator();
 
@@ -437,14 +437,14 @@ export class GeminiView extends ItemView {
 			try {
 				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
 				const prompt = this.prompts.generalPrompt({ userMessage: userMessage });
-				
+
 				// Get custom prompt if enabled and available
 				let customPrompt: CustomPrompt | undefined = undefined;
 				if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
 					const prompt = await this.plugin.promptManager.getPromptFromNote(this.currentFile);
 					customPrompt = prompt || undefined;
 				}
-				
+
 				const request: ExtendedModelRequest = {
 					userMessage: userMessage,
 					conversationHistory: history,
