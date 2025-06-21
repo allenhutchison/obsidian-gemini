@@ -121,6 +121,9 @@ export default class ObsidianGemini extends Plugin {
 		await this.promptManager.ensurePromptsDirectory();
 		await this.promptManager.createDefaultPrompts();
 		
+		// Setup prompt commands
+		this.promptManager.setupPromptCommands();
+		
 		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
 
