@@ -40,15 +40,17 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('API Key')
 			.setDesc('Gemini API Key')
-			.addText((text) =>
+			.addText((text) => {
 				text
 					.setPlaceholder('Enter your API Key')
 					.setValue(this.plugin.settings.apiKey)
 					.onChange(async (value) => {
 						this.plugin.settings.apiKey = value;
 						await this.plugin.saveSettings();
-					})
-			);
+					});
+				// Set input width to accommodate at least 40 characters
+				text.inputEl.style.width = '40ch';
+			});
 
 		new Setting(containerEl)
 			.setName('API Provider')
