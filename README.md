@@ -4,6 +4,14 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 > **Note:** This plugin requires a Google Gemini API key. Free tier available at [Google AI Studio](https://aistudio.google.com/apikey).
 
+## What's New
+
+- **Enhanced Custom Prompts System:** Improved prompt management with better tracking and state handling
+- **Improved Plugin Compatibility:** Replaced low-level file operations with native Obsidian APIs for better compatibility with other plugins
+- **Better Chat History Integration:** Custom prompts are now properly tracked in chat history for better context continuity
+- **Restructured Plugin State:** Cleaner organization of plugin data with automatic migration from older folder structures
+- **UI Improvements:** Instant prompt indicator updates when custom prompts are applied or removed
+
 ## Features
 
 - **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note and its linked notes (up to a configurable depth) as context. This ensures highly relevant and personalized responses.
