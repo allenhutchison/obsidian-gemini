@@ -15,6 +15,9 @@ export class PromptManager {
 
 	// Ensure prompts directory exists
 	async ensurePromptsDirectory(): Promise<void> {
+		// First ensure the base state folder exists
+		await this.vault.createFolder(this.plugin.settings.historyFolder).catch(() => {});
+		
 		const promptsDir = this.getPromptsDirectory();
 		const folder = this.vault.getAbstractFileByPath(promptsDir);
 

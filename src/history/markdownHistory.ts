@@ -19,6 +19,69 @@ export class MarkdownHistory {
 		this.entryTemplate = Handlebars.compile(historyEntryTemplate);
 	}
 
+	// One-time migration of all legacy history files
+	async migrateAllLegacyFiles(): Promise<void> {
+		if (!this.plugin.settings.chatHistory) return;
+
+		const historyFolder = this.plugin.settings.historyFolder;
+		const historySubfolder = normalizePath(`${historyFolder}/History`);
+
+		try {
+			// Check if migration has already been done by looking for a marker file
+			const migrationMarker = normalizePath(`${historyFolder}/.migration-completed`);
+			const markerExists = await this.plugin.app.vault.adapter.exists(migrationMarker);
+			
+			if (markerExists) {
+				return; // Migration already completed
+			}
+
+			// Ensure folders exist
+			await this.plugin.app.vault.createFolder(historyFolder).catch(() => {});
+			await this.plugin.app.vault.createFolder(historySubfolder).catch(() => {});
+
+			// Find all legacy files (files directly in historyFolder that are .md files)
+			const folderContents = await this.plugin.app.vault.adapter.list(historyFolder);
+			const legacyFiles = folderContents.files.filter(path => 
+				path.endsWith('.md') && 
+				!path.includes('/History/') && // Not already in History subfolder
+				!path.endsWith('/.migration-completed') // Not the marker file
+			);
+
+			let migratedCount = 0;
+			for (const legacyPath of legacyFiles) {
+				const legacyFile = this.plugin.app.vault.getAbstractFileByPath(legacyPath);
+				if (legacyFile instanceof TFile) {
+					try {
+						// Extract the filename and create new path
+						const filename = legacyFile.name;
+						const newPath = normalizePath(`${historySubfolder}/${filename}`);
+						
+						// Check if target already exists
+						const targetExists = await this.plugin.app.vault.adapter.exists(newPath);
+						if (!targetExists) {
+							await this.plugin.app.vault.rename(legacyFile, newPath);
+							migratedCount++;
+						} else {
+							// If target exists, delete the legacy file to avoid duplicates
+							await this.plugin.app.vault.delete(legacyFile);
+						}
+					} catch (error) {
+						console.error(`Failed to migrate history file ${legacyPath}:`, error);
+					}
+				}
+			}
+
+			// Create migration marker file
+			await this.plugin.app.vault.adapter.write(migrationMarker, `Migration completed at ${new Date().toISOString()}\nMigrated ${migratedCount} files`);
+			
+			if (migratedCount > 0) {
+				console.log(`Migrated ${migratedCount} chat history files to new folder structure`);
+			}
+		} catch (error) {
+			console.error('Error during history migration:', error);
+		}
+	}
+
 	// Updated: Flattens directory structure into filename
 	// If the note is in the root of the vault (no directory), prefix with 'root_' to avoid filename collision
 	private getHistoryFilePath(notePath: string): string {
@@ -32,9 +95,9 @@ export class MarkdownHistory {
 		if (isRoot) {
 			safeFilename = `root_${safeFilename}`;
 		}
-		// Combine history folder with the flattened, safe filename and add .md
+		// Combine history folder with History subfolder, the flattened, safe filename and add .md
 		// Use normalizePath to ensure consistent separators for the base history folder path
-		return normalizePath(`${historyFolder}/${safeFilename}.md`);
+		return normalizePath(`${historyFolder}/History/${safeFilename}.md`);
 	}
 
 	// Updated: Ensure parent directory exists (only base history folder needed now)
@@ -54,10 +117,10 @@ export class MarkdownHistory {
 		};
 
 		try {
-			// Ensure the base history folder exists first
+			// Ensure the base state folder exists first
 			await this.plugin.app.vault.createFolder(this.plugin.settings.historyFolder).catch(() => {});
-			// Ensure the specific subdirectory for the history file exists - NO LONGER NEEDED
-			// await this.plugin.app.vault.createFolder(historyDir).catch(() => {});
+			// Ensure the History subfolder exists
+			await this.plugin.app.vault.createFolder(normalizePath(`${this.plugin.settings.historyFolder}/History`)).catch(() => {});
 
 			const exists = await this.plugin.app.vault.adapter.exists(historyPath);
 			if (exists) {
@@ -251,7 +314,11 @@ export class MarkdownHistory {
 		console.log(`Attempting migration for legacy file ${legacyFile.path} to ${newHistoryPath}`);
 
 		try {
-			// 1. Check if the target path ALREADY exists BEFORE renaming
+			// 1. Ensure the base state folder and History subfolder exist
+			await this.plugin.app.vault.createFolder(this.plugin.settings.historyFolder).catch(() => {});
+			await this.plugin.app.vault.createFolder(normalizePath(`${this.plugin.settings.historyFolder}/History`)).catch(() => {});
+
+			// 2. Check if the target path ALREADY exists BEFORE renaming
 			const targetExists = await this.plugin.app.vault.adapter.exists(newHistoryPath);
 
 			if (targetExists) {
@@ -264,11 +331,11 @@ export class MarkdownHistory {
 				return; // Exit migration, target already exists
 			}
 
-			// 2. Rename the legacy file to the new path
+			// 3. Rename the legacy file to the new path
 			await this.plugin.app.vault.rename(legacyFile, newHistoryPath);
 			console.log(`Successfully renamed ${legacyFile.path} to ${newHistoryPath}`);
 
-			// 3. Get the TFile object for the *new* path (it MUST exist now)
+			// 4. Get the TFile object for the *new* path (it MUST exist now)
 			const newHistoryFile = this.plugin.app.vault.getAbstractFileByPath(newHistoryPath);
 			if (!(newHistoryFile instanceof TFile)) {
 				// This case is unlikely if rename succeeded, but handle defensively
@@ -278,7 +345,7 @@ export class MarkdownHistory {
 				return;
 			}
 
-			// 4. Update frontmatter link on the *new* file
+			// 5. Update frontmatter link on the *new* file
 			await this.plugin.app.fileManager.processFrontMatter(newHistoryFile, (frontmatter) => {
 				frontmatter['source_file'] = this.plugin.gfile.getLinkText(sourceFile, sourceFile.path);
 			});
@@ -303,19 +370,21 @@ export class MarkdownHistory {
 		}
 	}
 
-	// Updated: Recursively remove and recreate history folder
+	// Updated: Recursively remove and recreate History subfolder only
 	async clearHistory(): Promise<void> {
 		if (!this.plugin.settings.chatHistory) return;
 
 		const historyFolder = this.plugin.settings.historyFolder;
+		const historySubfolder = normalizePath(`${historyFolder}/History`);
 		try {
-			const folderExists = await this.plugin.app.vault.adapter.exists(historyFolder);
+			const folderExists = await this.plugin.app.vault.adapter.exists(historySubfolder);
 			if (folderExists) {
-				// Recursively remove the directory and its contents
-				await this.plugin.app.vault.adapter.rmdir(historyFolder, true);
+				// Recursively remove the History subdirectory and its contents
+				await this.plugin.app.vault.adapter.rmdir(historySubfolder, true);
 			}
-			// Recreate the base history folder
-			await this.plugin.app.vault.createFolder(historyFolder);
+			// Recreate the History subfolder
+			await this.plugin.app.vault.createFolder(historyFolder).catch(() => {}); // Ensure base folder exists
+			await this.plugin.app.vault.createFolder(historySubfolder);
 			new Notice('Chat history cleared.');
 		} catch (error) {
 			console.error('Failed to clear all history', error);

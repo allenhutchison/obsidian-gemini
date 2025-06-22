@@ -10,7 +10,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **AI-Assisted Writing (with File Rewriting):** Collaborate with Gemini to draft, refine, and enhance your documents. When enabled, Gemini can directly modify your current note based on the conversation, providing a seamless writing experience.
 - **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
-- **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe` folder, making it easy to backup, version control, and manage your AI interactions.
+- **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe/History/` folder, making it easy to backup, version control, and manage your AI interactions.
 - **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
 - **Search Grounding (Optional):** Enhance responses with Google Search results, improving the accuracy and relevance of the information provided by the AI. A configurable threshold controls how likely search grounding is to be triggered.
 - **Custom Prompt System:** Create reusable AI instruction templates that can be applied to individual notes, allowing you to customize the AI's behavior for different types of content (e.g., technical documentation, creative writing, tutoring). Includes command palette commands for easy creation, application, and removal of custom prompts.
@@ -71,9 +71,9 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
     - **Rewrite Files:** Enable this option to allow Gemini to _directly modify_ your current document during chat. This is powerful but should be used with caution.
     - **Chat History:**
       - **Enable Chat History:** Toggle whether to save chat history.
-      - **History Folder:** Choose the folder within your vault to store chat history files.
+      - **Plugin State Folder:** Choose the folder within your vault to store plugin data (chat history and custom prompts).
     - **Custom Prompts:**
-      - **Enable Custom Prompts:** Toggle the custom prompt system on/off.
+      - **Enable Custom Prompts:** Toggle the custom prompt system on/off (disabled by default).
       - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
 
 ## Usage
@@ -83,9 +83,10 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 Create reusable AI instruction templates to customize behavior for different types of content.
 
 **Quick Start:**
-1. Create a prompt file in `[History Folder]/Prompts/`
-2. Add to your note's frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
-3. The AI will use your custom instructions for that note
+1. Enable custom prompts in plugin settings
+2. Create a prompt file in `[Plugin State Folder]/Prompts/` 
+3. Add to your note's frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
+4. The AI will use your custom instructions for that note
 
 **Learn More:** See the comprehensive [Custom Prompts Guide](docs/custom-prompts-guide.md) for detailed instructions, examples, and best practices.
 

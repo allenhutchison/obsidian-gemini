@@ -31,13 +31,18 @@ Custom prompts are markdown files that contain special instructions for the AI. 
 3. Find the "Custom Prompts" section
 4. Toggle "Enable Custom Prompts" to ON
 
+**Note**: Custom prompts are disabled by default. You must enable them to use this feature.
+
 ### Locate the Prompts Folder
 
-Custom prompts are stored in: `[Your History Folder]/Prompts/`
+Custom prompts are stored in: `[Your Plugin State Folder]/Prompts/`
 
-For example, if your history folder is `gemini-scribe`, prompts will be in `gemini-scribe/Prompts/`.
+For example, if your plugin state folder is `gemini-scribe`, prompts will be in `gemini-scribe/Prompts/`.
 
-The plugin automatically creates this folder and adds an example prompt when you first enable the feature.
+The plugin automatically creates this folder structure and adds an example prompt when you first enable the feature:
+- `gemini-scribe/` - Main plugin state folder
+- `gemini-scribe/Prompts/` - Custom prompt templates  
+- `gemini-scribe/History/` - Chat history files (if chat history is enabled)
 
 ## Creating Custom Prompts
 

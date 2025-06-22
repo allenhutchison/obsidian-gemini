@@ -32,6 +32,40 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		}
 	}
 
+	private async checkMigrationStatus(setting: Setting): Promise<void> {
+		try {
+			const migrationMarker = `${this.plugin.settings.historyFolder}/.migration-completed`;
+			const markerExists = await this.app.vault.adapter.exists(migrationMarker);
+			
+			if (markerExists) {
+				const markerContent = await this.app.vault.adapter.read(migrationMarker);
+				setting.setDesc(`✓ Migration completed. ${markerContent.split('\n')[1] || ''}`);
+			} else {
+				// Check if there are legacy files that need migration
+				const historyFolder = this.plugin.settings.historyFolder;
+				const folderExists = await this.app.vault.adapter.exists(historyFolder);
+				
+				if (folderExists) {
+					const folderContents = await this.app.vault.adapter.list(historyFolder);
+					const legacyFiles = folderContents.files.filter(path => 
+						path.endsWith('.md') && 
+						!path.includes('/History/')
+					);
+					
+					if (legacyFiles.length > 0) {
+						setting.setDesc(`⚠️ Found ${legacyFiles.length} history files that will be migrated to the new folder structure on next restart.`);
+					} else {
+						setting.setDesc('✓ No migration needed - using new folder structure.');
+					}
+				} else {
+					setting.setDesc('✓ No migration needed - no existing history files found.');
+				}
+			}
+		} catch (error) {
+			setting.setDesc(`Error checking migration status: ${error instanceof Error ? error.message : 'Unknown'}`);
+		}
+	}
+
 	async display(): Promise<void> {
 		const { containerEl } = this;
 
@@ -175,7 +209,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Enable Chat History')
 			.setDesc(
-				'Store chat history as a json file in your vault. This will allow you to view past conversations between sessions.'
+				'Store chat history as markdown files in your vault. History files are automatically organized in the History subfolder.'
 			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.chatHistory).onChange(async (value) => {
@@ -185,8 +219,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('History Folder')
-			.setDesc('The folder where history file will be stored.')
+			.setName('Plugin State Folder')
+			.setDesc('The folder where chat history and custom prompts will be stored. History files go in a History subfolder, prompts in a Prompts subfolder.')
 			.addText((text) => {
 				const folderSuggest = new FolderSuggest(this.app, text.inputEl, async (folder) => {
 					this.plugin.settings.historyFolder = folder;
@@ -195,6 +229,15 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				text.setValue(this.plugin.settings.historyFolder);
 			});
 
+		// Add migration status info
+		if (this.plugin.settings.chatHistory) {
+			const migrationStatus = new Setting(containerEl)
+				.setName('Migration Status')
+				.setDesc('Checking migration status...');
+
+			this.checkMigrationStatus(migrationStatus);
+		}
+
 		// Custom Prompts Settings
 		new Setting(containerEl).setName('Custom Prompts').setHeading();
 
@@ -202,9 +245,16 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			.setName('Enable custom prompts')
 			.setDesc('Allow notes to specify custom AI instructions via frontmatter')
 			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.enableCustomPrompts ?? true).onChange(async (value) => {
+				toggle.setValue(this.plugin.settings.enableCustomPrompts ?? false).onChange(async (value) => {
 					this.plugin.settings.enableCustomPrompts = value;
 					await this.plugin.saveSettings();
+					
+					// If enabling custom prompts, ensure the directory and default prompts exist
+					if (value) {
+						await this.plugin.promptManager.ensurePromptsDirectory();
+						await this.plugin.promptManager.createDefaultPrompts();
+						this.plugin.promptManager.setupPromptCommands();
+					}
 				})
 			);
 
@@ -223,7 +273,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		// Add button to open prompts folder
 		new Setting(containerEl)
 			.setName('Manage prompts')
-			.setDesc('Open the prompts folder to create or edit prompt templates')
+			.setDesc('Open the Prompts subfolder to create or edit prompt templates')
 			.addButton((button) =>
 				button.setButtonText('Open prompts folder').onClick(async () => {
 					const promptsDir = this.plugin.promptManager.getPromptsDirectory();

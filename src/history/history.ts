@@ -31,6 +31,8 @@ export class GeminiHistory {
 
 	async onLayoutReady() {
 		await this.setupHistory();
+		// Run one-time migration for existing users
+		await this.markdownHistory.migrateAllLegacyFiles();
 	}
 
 	async setupHistory() {

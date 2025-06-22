@@ -46,7 +46,8 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 1. **API Layer** (`src/api/`): Abstracted model interface with implementations for Gemini and Ollama
 2. **Feature Modules**: Separate modules for chat, completions (`completions.ts`), summary (`summary.ts`), and rewrite (`rewrite.ts`)
 3. **Context System** (`src/files/file-context.ts`): Builds linked note trees for context-aware AI interactions
-4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates
+4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates, stored in `[state-folder]/History/`
+5. **Custom Prompts** (`src/prompts/`): User-defined prompt templates stored in `[state-folder]/Prompts/`
 
 ### Model Configuration
 
@@ -66,6 +67,11 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 4. **Prompts**: Handlebars templates in `prompts/` directory, loaded as text files
 5. **Debouncing**: Completions use 750ms debounce to prevent excessive API calls
 6. **State Management**: Plugin instance holds all component references with proper cleanup
+7. **Folder Structure**: Plugin uses structured state folder:
+   - `[state-folder]/` - Main plugin state folder (default: `gemini-scribe`)
+   - `[state-folder]/History/` - Chat history files
+   - `[state-folder]/Prompts/` - Custom prompt templates
+   - Automatic migration for existing users from flat structure
 
 ### Testing Focus
 
