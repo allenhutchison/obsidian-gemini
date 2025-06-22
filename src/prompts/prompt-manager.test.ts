@@ -84,7 +84,7 @@ describe('PromptManager', () => {
 				exists: jest.fn(),
 				list: jest.fn(),
 			},
-			createFolder: jest.fn(),
+			createFolder: jest.fn(() => Promise.resolve()),
 			getAbstractFileByPath: jest.fn(),
 			read: jest.fn(),
 			create: jest.fn(),
@@ -112,10 +112,12 @@ describe('PromptManager', () => {
 
 			await promptManager.ensurePromptsDirectory();
 
+			// Should create both base folder and prompts folder
+			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe');
 			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/Prompts');
 		});
 
-		it('should not create directory if it exists', async () => {
+		it('should not create prompts directory if it exists', async () => {
 			// Create a mock that is an instance of TFolder
 			const MockTFolder = jest.requireMock('obsidian').TFolder;
 			const mockFolder = Object.create(MockTFolder.prototype);
@@ -124,7 +126,9 @@ describe('PromptManager', () => {
 
 			await promptManager.ensurePromptsDirectory();
 
-			expect(mockVault.createFolder).not.toHaveBeenCalled();
+			// Should still create base folder first, but not the prompts folder since it exists
+			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe');
+			expect(mockVault.createFolder).toHaveBeenCalledTimes(1);
 		});
 	});
 

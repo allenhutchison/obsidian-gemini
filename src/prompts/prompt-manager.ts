@@ -15,6 +15,9 @@ export class PromptManager {
 
 	// Ensure prompts directory exists
 	async ensurePromptsDirectory(): Promise<void> {
+		// First ensure the base state folder exists
+		await this.vault.createFolder(this.plugin.settings.historyFolder).catch(() => {});
+		
 		const promptsDir = this.getPromptsDirectory();
 		const folder = this.vault.getAbstractFileByPath(promptsDir);
 
@@ -105,6 +108,30 @@ export class PromptManager {
 		if (!linkedFile || !(linkedFile instanceof TFile)) return null;
 
 		return await this.loadPromptFromFile(linkedFile.path);
+	}
+
+	// Get custom prompt info formatted for history (with proper wikilink alias)
+	async getPromptHistoryInfo(file: TFile): Promise<string | null> {
+		const cache = this.plugin.app.metadataCache.getFileCache(file);
+		const promptPath = cache?.frontmatter?.['gemini-scribe-prompt'];
+
+		if (!promptPath) return null;
+
+		// Extract path from wikilink
+		const linkpath = this.extractPathFromWikilink(promptPath);
+		if (!linkpath) return null;
+
+		// Use Obsidian's link resolution to find the file
+		const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, file.path);
+		if (!linkedFile || !(linkedFile instanceof TFile)) return null;
+
+		// Get the prompt to access its display name
+		const customPrompt = await this.loadPromptFromFile(linkedFile.path);
+		if (!customPrompt) return null;
+
+		// Return wikilink with filename and display name as alias
+		// Escape the pipe separator for markdown table compatibility
+		return `[[${linkedFile.basename}\\|${customPrompt.name}]]`;
 	}
 
 	// Extract path from wikilink format
@@ -258,11 +285,16 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			const frontmatterValue = `[[${promptName}]]`;
 
 			// Use Obsidian's processFrontMatter API to add/update the prompt
-			this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
 				frontmatter['gemini-scribe-prompt'] = frontmatterValue;
 			});
 
 			new Notice(`Applied custom prompt: ${prompt.name}`);
+
+			// Force refresh the chat interface prompt indicator if view is open
+			if (this.plugin.geminiView) {
+				await this.plugin.geminiView.forceRefreshPromptIndicator();
+			}
 		} catch (error) {
 			console.error('Error applying prompt to file:', error);
 			new Notice('Failed to apply custom prompt to note');
@@ -299,11 +331,16 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			}
 
 			// Remove the prompt from frontmatter
-			this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter: any) => {
+			await this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter: any) => {
 				delete frontmatter['gemini-scribe-prompt'];
 			});
 
 			new Notice('Removed custom prompt from note');
+
+			// Force refresh the chat interface prompt indicator if view is open
+			if (this.plugin.geminiView) {
+				await this.plugin.geminiView.forceRefreshPromptIndicator();
+			}
 		} catch (error) {
 			console.error('Error removing custom prompt:', error);
 			new Notice('Failed to remove custom prompt from note');

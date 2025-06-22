@@ -68,7 +68,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		lastUpdate: 0,
 		fallbackToStatic: true,
 	},
-	enableCustomPrompts: true,
+	enableCustomPrompts: false,
 	allowSystemPromptOverride: false,
 };
 
@@ -118,11 +118,14 @@ export default class ObsidianGemini extends Plugin {
 
 		// Initialize prompt manager
 		this.promptManager = new PromptManager(this, this.app.vault);
-		await this.promptManager.ensurePromptsDirectory();
-		await this.promptManager.createDefaultPrompts();
-
-		// Setup prompt commands
-		this.promptManager.setupPromptCommands();
+		
+		// Only setup prompts if the feature is enabled
+		if (this.settings.enableCustomPrompts) {
+			await this.promptManager.ensurePromptsDirectory();
+			await this.promptManager.createDefaultPrompts();
+			// Setup prompt commands
+			this.promptManager.setupPromptCommands();
+		}
 
 		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
