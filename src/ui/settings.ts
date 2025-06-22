@@ -39,18 +39,30 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
+		// Documentation button at the top
+		new Setting(containerEl)
+			.setName('Documentation')
+			.setDesc('View the complete plugin documentation and guides')
+			.addButton(button => button
+				.setButtonText('View Documentation')
+				.onClick(() => {
+					window.open('https://github.com/allenhutchison/obsidian-gemini/tree/master/docs', '_blank');
+				}));
+
 		new Setting(containerEl)
 			.setName('API Key')
 			.setDesc('Gemini API Key')
-			.addText((text) =>
+			.addText((text) => {
 				text
 					.setPlaceholder('Enter your API Key')
 					.setValue(this.plugin.settings.apiKey)
 					.onChange(async (value) => {
 						this.plugin.settings.apiKey = value;
 						await this.plugin.saveSettings();
-					})
-			);
+					});
+				// Set input width to accommodate at least 40 characters
+				text.inputEl.style.width = '40ch';
+			});
 
 		new Setting(containerEl)
 			.setName('API Provider')
@@ -220,6 +232,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					// Open folder in system file manager
 					(this.app as any).showInFolder(promptsDir);
 				}));
+
 
 		// UI Settings
 		new Setting(containerEl).setName('UI Settings').setHeading();
