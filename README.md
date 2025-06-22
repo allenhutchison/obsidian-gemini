@@ -13,7 +13,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 - **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe` folder, making it easy to backup, version control, and manage your AI interactions.
 - **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
 - **Search Grounding (Optional):** Enhance responses with Google Search results, improving the accuracy and relevance of the information provided by the AI. A configurable threshold controls how likely search grounding is to be triggered.
-- **Custom Prompt System:** Create reusable AI instruction templates that can be applied to individual notes, allowing you to customize the AI's behavior for different types of content (e.g., technical documentation, creative writing, tutoring).
+- **Custom Prompt System:** Create reusable AI instruction templates that can be applied to individual notes, allowing you to customize the AI's behavior for different types of content (e.g., technical documentation, creative writing, tutoring). Includes command palette commands for easy creation, application, and removal of custom prompts.
 - **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
 - **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Chat history is stored locally in your Obsidian vault as markdown files.
 - **Robust History Management:**
@@ -155,6 +155,28 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
   - Updates links when notes are renamed or moved
   - Preserves history across Obsidian sessions
 
+### Custom Prompts
+
+Create reusable AI instruction templates that customize how the AI behaves for specific notes.
+
+1. **Enable Custom Prompts:** In plugin settings, ensure "Enable Custom Prompts" is toggled ON.
+
+2. **Create New Prompts:**
+   - Use the command palette: "Gemini Scribe: Create New Custom Prompt"
+   - Enter a name and edit the generated template
+   - Or manually create `.md` files in `[History Folder]/Prompts/`
+
+3. **Apply to Notes:**
+   - Use command palette: "Gemini Scribe: Apply Custom Prompt to Current Note"
+   - Search and select from available prompts
+   - Or manually add to frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
+
+4. **Remove from Notes:**
+   - Use command palette: "Gemini Scribe: Remove Custom Prompt from Current Note"
+   - Or manually delete the frontmatter field
+
+**Tip:** See the comprehensive [Custom Prompts Guide](docs/custom-prompts-guide.md) for examples and best practices.
+
 ## Troubleshooting
 
 - **API Key Errors:** Ensure your API key is correct and has the necessary permissions. Get a new key at [Google AI Studio](https://aistudio.google.com/apikey).
@@ -167,9 +189,11 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
   - Disable other completion plugins that might conflict
 - **History Not Loading:** Ensure "Enable Chat History" is enabled and the "History Folder" is correctly set.
 - **Custom Prompts Not Working:**
+  - Ensure "Enable Custom Prompts" is toggled on in settings
   - Verify the prompt file exists in the Prompts folder
   - Check that the wikilink syntax is correct: `[[Prompt Name]]`
-  - Ensure "Enable Custom Prompts" is toggled on in settings
+  - Try using the command palette commands for easier management
+  - See the [Custom Prompts Guide](docs/custom-prompts-guide.md) for detailed troubleshooting
 
 ## License
 

@@ -49,7 +49,7 @@ describe('ModelDiscoveryService', () => {
 	beforeEach(() => {
 		service = new ModelDiscoveryService(mockPlugin);
 		jest.clearAllMocks();
-		
+
 		// Reset cache
 		(service as any).cache = null;
 	});
@@ -167,9 +167,7 @@ describe('ModelDiscoveryService', () => {
 				}),
 			};
 
-			(fetch as jest.Mock)
-				.mockResolvedValueOnce(firstPageResponse)
-				.mockResolvedValueOnce(secondPageResponse);
+			(fetch as jest.Mock).mockResolvedValueOnce(firstPageResponse).mockResolvedValueOnce(secondPageResponse);
 
 			const result = await service.discoverModels();
 

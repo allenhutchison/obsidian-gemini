@@ -59,10 +59,10 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	const needsUpdate = (modelName: string) => {
 		// Don't update if model is empty/undefined (let defaults handle it)
 		if (!modelName) return false;
-		
+
 		// Don't update if the model exists in current list
 		if (availableModelValues.has(modelName)) return false;
-		
+
 		// Update is needed if model is not available
 		return true;
 	};
@@ -71,7 +71,9 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	if (needsUpdate(newSettings.chatModelName)) {
 		const newDefaultChat = getDefaultModelForRole('chat');
 		if (newDefaultChat) {
-			changedSettingsInfo.push(`Chat model: '${newSettings.chatModelName}' -> '${newDefaultChat}' (legacy model update)`);
+			changedSettingsInfo.push(
+				`Chat model: '${newSettings.chatModelName}' -> '${newDefaultChat}' (legacy model update)`
+			);
 			newSettings.chatModelName = newDefaultChat;
 			settingsChanged = true;
 		}
@@ -81,7 +83,9 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	if (needsUpdate(newSettings.summaryModelName)) {
 		const newDefaultSummary = getDefaultModelForRole('summary');
 		if (newDefaultSummary) {
-			changedSettingsInfo.push(`Summary model: '${newSettings.summaryModelName}' -> '${newDefaultSummary}' (legacy model update)`);
+			changedSettingsInfo.push(
+				`Summary model: '${newSettings.summaryModelName}' -> '${newDefaultSummary}' (legacy model update)`
+			);
 			newSettings.summaryModelName = newDefaultSummary;
 			settingsChanged = true;
 		}

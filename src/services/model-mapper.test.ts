@@ -202,9 +202,9 @@ describe('ModelMapper', () => {
 			const result = ModelMapper.mergeWithExistingModels(discoveredModels, existingWithDefaults);
 
 			// Should have defaults assigned to new models
-			const hasChat = result.some(m => m.defaultForRoles?.includes('chat'));
-			const hasSummary = result.some(m => m.defaultForRoles?.includes('summary'));
-			const hasCompletions = result.some(m => m.defaultForRoles?.includes('completions'));
+			const hasChat = result.some((m) => m.defaultForRoles?.includes('chat'));
+			const hasSummary = result.some((m) => m.defaultForRoles?.includes('summary'));
+			const hasCompletions = result.some((m) => m.defaultForRoles?.includes('completions'));
 
 			expect(hasChat).toBe(true);
 			expect(hasSummary).toBe(true);
@@ -225,8 +225,8 @@ describe('ModelMapper', () => {
 			const result = ModelMapper.mergeWithExistingModels(discoveredModels, existingWithDefaults);
 
 			// Should preserve existing role assignments
-			const proModel = result.find(m => m.value === 'gemini-2.5-pro');
-			const flashModel = result.find(m => m.value === 'gemini-2.5-flash');
+			const proModel = result.find((m) => m.value === 'gemini-2.5-pro');
+			const flashModel = result.find((m) => m.value === 'gemini-2.5-flash');
 
 			expect(proModel?.defaultForRoles).toContain('chat');
 			expect(flashModel?.defaultForRoles).toContain('summary');
@@ -246,7 +246,7 @@ describe('ModelMapper', () => {
 			const result = ModelMapper.sortModelsByPreference(unsortedModels);
 
 			// Extract versions and check order
-			const versions = result.map(m => {
+			const versions = result.map((m) => {
 				const match = m.value.match(/gemini-(\d+(?:\.\d+)?)/);
 				return match ? parseFloat(match[1]) : 0;
 			});
@@ -324,7 +324,7 @@ describe('ModelMapper', () => {
 			const result = ModelMapper.deduplicateModels(duplicateModels);
 
 			expect(result).toHaveLength(2);
-			expect(result.map(m => m.value)).toEqual(['gemini-2.5-pro', 'gemini-2.5-flash']);
+			expect(result.map((m) => m.value)).toEqual(['gemini-2.5-pro', 'gemini-2.5-flash']);
 		});
 
 		it('should prefer model with cleaner label when deduplicating', () => {

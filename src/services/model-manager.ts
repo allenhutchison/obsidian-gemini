@@ -80,10 +80,10 @@ export class ModelManager {
 			return getUpdatedModelSettings(this.plugin.settings);
 		}
 
-		return { 
-			updatedSettings: this.plugin.settings, 
-			settingsChanged: false, 
-			changedSettingsInfo: [] 
+		return {
+			updatedSettings: this.plugin.settings,
+			settingsChanged: false,
+			changedSettingsInfo: [],
 		};
 	}
 
@@ -159,7 +159,7 @@ export class ModelManager {
 		error?: string;
 	}> {
 		const enabled = this.plugin.settings.modelDiscovery?.enabled || false;
-		
+
 		if (!enabled) {
 			return { enabled: false, working: false };
 		}
@@ -191,9 +191,9 @@ export class ModelManager {
 		error?: string;
 	}> {
 		try {
-			const result = await this.updateModels({ 
-				forceRefresh: true, 
-				preserveUserCustomizations: true 
+			const result = await this.updateModels({
+				forceRefresh: true,
+				preserveUserCustomizations: true,
 			});
 
 			const models = await this.getAvailableModels({ forceRefresh: true });

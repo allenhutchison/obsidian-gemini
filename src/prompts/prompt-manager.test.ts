@@ -1,14 +1,62 @@
 import { PromptManager } from './prompt-manager';
-import { Vault, TFile } from 'obsidian';
+import { Vault, TFile, TFolder } from 'obsidian';
 import ObsidianGemini from '../../main';
 
 // Mock obsidian module
 jest.mock('obsidian', () => {
 	const TFile = jest.fn();
+	const TFolder = jest.fn();
+
+	// Mock SuggestModal base class
+	class MockSuggestModal {
+		constructor(app: any) {}
+		setPlaceholder(placeholder: string) {}
+		open() {}
+	}
+
+	// Mock Modal base class
+	class MockModal {
+		constructor(app: any) {}
+		open() {}
+		close() {}
+		onOpen() {}
+		onClose() {}
+		contentEl = {
+			empty: jest.fn(),
+			createEl: jest.fn(() => ({
+				style: {},
+				addEventListener: jest.fn(),
+				createEl: jest.fn(() => ({
+					style: {},
+					addEventListener: jest.fn(),
+				})),
+				createDiv: jest.fn(() => ({
+					style: {},
+					createEl: jest.fn(() => ({
+						style: {},
+						addEventListener: jest.fn(),
+					})),
+				})),
+			})),
+			createDiv: jest.fn(() => ({
+				style: {},
+				createEl: jest.fn(() => ({
+					style: {},
+					addEventListener: jest.fn(),
+				})),
+			})),
+		};
+	}
+
 	return {
 		Vault: jest.fn(),
 		TFile: TFile,
-		normalizePath: jest.fn((path: string) => path)
+		TFolder: TFolder,
+		normalizePath: jest.fn((path: string) => path),
+		Notice: jest.fn(),
+		SuggestModal: MockSuggestModal,
+		Modal: MockModal,
+		App: jest.fn(),
 	};
 });
 
@@ -21,25 +69,26 @@ describe('PromptManager', () => {
 		// Setup mocks
 		mockPlugin = {
 			settings: {
-				historyFolder: 'gemini-scribe'
+				historyFolder: 'gemini-scribe',
 			},
 			app: {
 				metadataCache: {
 					getFileCache: jest.fn(),
-					getFirstLinkpathDest: jest.fn()
-				}
-			}
+					getFirstLinkpathDest: jest.fn(),
+				},
+			},
 		};
 
 		mockVault = {
 			adapter: {
 				exists: jest.fn(),
-				list: jest.fn()
+				list: jest.fn(),
 			},
 			createFolder: jest.fn(),
 			getAbstractFileByPath: jest.fn(),
 			read: jest.fn(),
-			create: jest.fn()
+			create: jest.fn(),
+			getMarkdownFiles: jest.fn(() => []),
 		};
 
 		promptManager = new PromptManager(mockPlugin as ObsidianGemini, mockVault as Vault);
@@ -59,18 +108,22 @@ describe('PromptManager', () => {
 
 	describe('ensurePromptsDirectory', () => {
 		it('should create directory if it does not exist', async () => {
-			mockVault.adapter.exists.mockResolvedValue(false);
-			
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+
 			await promptManager.ensurePromptsDirectory();
-			
+
 			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/Prompts');
 		});
 
 		it('should not create directory if it exists', async () => {
-			mockVault.adapter.exists.mockResolvedValue(true);
-			
+			// Create a mock that is an instance of TFolder
+			const MockTFolder = jest.requireMock('obsidian').TFolder;
+			const mockFolder = Object.create(MockTFolder.prototype);
+			mockFolder.path = 'gemini-scribe/Prompts';
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
+
 			await promptManager.ensurePromptsDirectory();
-			
+
 			expect(mockVault.createFolder).not.toHaveBeenCalled();
 		});
 	});
@@ -84,8 +137,8 @@ describe('PromptManager', () => {
 					description: 'Test description',
 					version: 1,
 					override_system_prompt: false,
-					tags: ['test']
-				}
+					tags: ['test'],
+				},
 			};
 			const mockContent = `---
 name: "Test Prompt"
@@ -95,20 +148,20 @@ override_system_prompt: false
 tags: [test]
 ---
 Test prompt content`;
-			
+
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
-			
+
 			const result = await promptManager.loadPromptFromFile('test.md');
-			
+
 			expect(result).toEqual({
 				name: 'Test Prompt',
 				description: 'Test description',
 				version: 1,
 				overrideSystemPrompt: false,
 				tags: ['test'],
-				content: 'Test prompt content'
+				content: 'Test prompt content',
 			});
 		});
 
@@ -116,22 +169,22 @@ Test prompt content`;
 			const mockContent = 'Just prompt content without frontmatter';
 			const mockFile = new TFile();
 			const mockCache = {}; // No frontmatter
-			
+
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
-			
+
 			const result = await promptManager.loadPromptFromFile('test.md');
-			
+
 			expect(result?.name).toBe('Unnamed Prompt');
 			expect(result?.content).toBe(mockContent);
 		});
 
 		it('should return null for non-existent files', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
-			
+
 			const result = await promptManager.loadPromptFromFile('nonexistent.md');
-			
+
 			expect(result).toBeNull();
 		});
 
@@ -139,9 +192,9 @@ Test prompt content`;
 			const mockFile = new TFile();
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockVault.read.mockRejectedValue(new Error('Read error'));
-			
+
 			const result = await promptManager.loadPromptFromFile('error.md');
-			
+
 			expect(result).toBeNull();
 		});
 	});
@@ -152,79 +205,105 @@ Test prompt content`;
 		it('should extract prompt from frontmatter wikilink', async () => {
 			const mockCache = {
 				frontmatter: {
-					'gemini-scribe-prompt': '[[Prompts/test-prompt.md]]'
-				}
+					'gemini-scribe-prompt': '[[Prompts/test-prompt.md]]',
+				},
 			};
-			
+
 			const mockPromptFile = new TFile();
 			const mockPromptCache = {
 				frontmatter: {
-					name: 'Test'
-				}
+					name: 'Test',
+				},
 			};
-			
+
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockPlugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(mockPromptFile);
 			mockVault.getAbstractFileByPath.mockReturnValue(mockPromptFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValueOnce(mockCache).mockReturnValueOnce(mockPromptCache);
 			mockVault.read.mockResolvedValue('---\nname: "Test"\n---\nContent');
-			
+
 			const result = await promptManager.getPromptFromNote(mockFile);
-			
-			expect(mockPlugin.app.metadataCache.getFirstLinkpathDest).toHaveBeenCalledWith('Prompts/test-prompt.md', undefined);
+
+			expect(mockPlugin.app.metadataCache.getFirstLinkpathDest).toHaveBeenCalledWith(
+				'Prompts/test-prompt.md',
+				undefined
+			);
 			expect(result?.name).toBe('Test');
 		});
 
 		it('should return null when no prompt specified', async () => {
 			const mockCache = { frontmatter: {} };
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
-			
+
 			const result = await promptManager.getPromptFromNote(mockFile);
-			
+
 			expect(result).toBeNull();
 		});
 
 		it('should handle invalid wikilink format', async () => {
 			const mockCache = {
 				frontmatter: {
-					'gemini-scribe-prompt': 'not-a-wikilink'
-				}
+					'gemini-scribe-prompt': 'not-a-wikilink',
+				},
 			};
-			
+
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
-			
+
 			const result = await promptManager.getPromptFromNote(mockFile);
-			
+
 			expect(result).toBeNull();
 		});
 
 		it('should handle missing cache', async () => {
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
-			
+
 			const result = await promptManager.getPromptFromNote(mockFile);
-			
+
 			expect(result).toBeNull();
 		});
 	});
 
 	describe('listAvailablePrompts', () => {
 		it('should list all markdown files in prompts directory', async () => {
-			// Mock list returns files array directly in this implementation
-			mockVault.adapter.list.mockImplementation(async () => ({
-				files: [
-					'gemini-scribe/Prompts/prompt1.md',
-					'gemini-scribe/Prompts/prompt2.md',
-					'gemini-scribe/Prompts/README.txt' // Should be ignored
-				],
-				folders: []
-			}));
+			// Mock the prompts folder
+			const MockTFolder = jest.requireMock('obsidian').TFolder;
+			const mockFolder = Object.create(MockTFolder.prototype);
+			mockFolder.path = 'gemini-scribe/Prompts';
+
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/Prompts') return mockFolder;
+				return Object.assign({}, { path });
+			});
+
+			// Mock markdown files
+			const mockFile1 = Object.assign(new TFile(), { path: 'gemini-scribe/Prompts/prompt1.md', basename: 'prompt1' });
+			const mockFile2 = Object.assign(new TFile(), { path: 'gemini-scribe/Prompts/prompt2.md', basename: 'prompt2' });
+
+			mockVault.getMarkdownFiles.mockReturnValue([
+				mockFile1,
+				mockFile2,
+				Object.assign(new TFile(), { path: 'other-folder/file.md' }), // Should be filtered out
+			]);
+
+			// Reset and set up mocks for getAbstractFileByPath for file loading
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/Prompts') return mockFolder;
+				if (path.includes('prompt1.md') || path.includes('prompt2.md')) {
+					return Object.assign(new TFile(), { path });
+				}
+				return null;
+			});
 
 			const mockCache = {
 				frontmatter: {
 					name: 'Test Prompt',
 					description: 'Test',
-					tags: ['test']
-				}
+					tags: ['test'],
+				},
+				sections: [
+					{ type: 'yaml', position: { start: { line: 0 }, end: { line: 4 } } },
+					{ type: 'paragraph', position: { start: { line: 5 }, end: { line: 5 } } },
+				],
 			};
 			const mockPromptContent = `---
 name: "Test Prompt"
@@ -233,40 +312,38 @@ tags: [test]
 ---
 Content`;
 
-			const mockFile = new TFile();
-			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockPromptContent);
 
 			const result = await promptManager.listAvailablePrompts();
-			
+
 			expect(result).toHaveLength(2);
 			expect(result[0]).toMatchObject({
 				path: 'gemini-scribe/Prompts/prompt1.md',
 				name: 'Test Prompt',
 				description: 'Test',
-				tags: ['test']
+				tags: ['test'],
 			});
 		});
 
 		it('should handle empty prompts directory', async () => {
 			mockVault.adapter.list.mockResolvedValue({
 				files: [],
-				folders: []
+				folders: [],
 			});
 
 			const result = await promptManager.listAvailablePrompts();
-			
+
 			expect(result).toEqual([]);
 		});
 	});
 
 	describe('createDefaultPrompts', () => {
 		it('should create example prompt if it does not exist', async () => {
-			mockVault.adapter.exists.mockResolvedValue(false);
-			
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+
 			await promptManager.createDefaultPrompts();
-			
+
 			expect(mockVault.create).toHaveBeenCalledWith(
 				'gemini-scribe/Prompts/example-expert.md',
 				expect.stringContaining('Subject Matter Expert')
@@ -274,10 +351,11 @@ Content`;
 		});
 
 		it('should not create example prompt if it already exists', async () => {
-			mockVault.adapter.exists.mockResolvedValue(true);
-			
+			const mockFile = new TFile();
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+
 			await promptManager.createDefaultPrompts();
-			
+
 			expect(mockVault.create).not.toHaveBeenCalled();
 		});
 	});
@@ -290,8 +368,8 @@ Content`;
 					description: 'A prompt with various YAML features',
 					version: 2,
 					override_system_prompt: true,
-					tags: ['ai', 'assistant', 'complex']
-				}
+					tags: ['ai', 'assistant', 'complex'],
+				},
 			};
 			const mockContent = `---
 name: "Complex Prompt"
@@ -306,16 +384,16 @@ This is the prompt content`;
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
-			
+
 			const result = await promptManager.loadPromptFromFile('complex.md');
-			
+
 			expect(result).toEqual({
 				name: 'Complex Prompt',
 				description: 'A prompt with various YAML features',
 				version: 2,
 				overrideSystemPrompt: true,
 				tags: ['ai', 'assistant', 'complex'],
-				content: 'This is the prompt content'
+				content: 'This is the prompt content',
 			});
 		});
 
@@ -323,8 +401,8 @@ This is the prompt content`;
 			const mockCache = {
 				frontmatter: {
 					name: "Prompt with 'quotes'",
-					description: 'Another "quoted" string'
-				}
+					description: 'Another "quoted" string',
+				},
 			};
 			const mockContent = `---
 name: "Prompt with 'quotes'"
@@ -336,9 +414,9 @@ Content`;
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
 			mockVault.read.mockResolvedValue(mockContent);
-			
+
 			const result = await promptManager.loadPromptFromFile('quoted.md');
-			
+
 			expect(result?.name).toBe("Prompt with 'quotes'");
 			expect(result?.description).toBe('Another "quoted" string');
 		});
