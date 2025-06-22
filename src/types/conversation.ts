@@ -3,6 +3,7 @@ export interface BasicGeminiConversationEntry {
 	message: string;
 	userMessage?: string;
 	model?: string;
+	metadata?: Record<string, any>;
 }
 
 export interface GeminiConversationEntry extends BasicGeminiConversationEntry {

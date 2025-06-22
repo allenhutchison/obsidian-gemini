@@ -530,11 +530,18 @@ export class GeminiView extends ItemView {
 								message: userMessage,
 							});
 
+							// Get custom prompt info for history
+							let customPromptInfo = undefined;
+							if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
+								customPromptInfo = await this.plugin.promptManager.getPromptHistoryInfo(this.currentFile);
+							}
+
 							await this.plugin.history.appendHistoryForFile(this.currentFile!, {
 								role: 'model',
 								message: botResponse.markdown,
 								userMessage: userMessage,
 								model: this.plugin.settings.chatModelName,
+								metadata: customPromptInfo ? { customPrompt: customPromptInfo } : undefined,
 							});
 
 							// No need to clear and reload - the streaming UI already shows the messages
@@ -562,11 +569,18 @@ export class GeminiView extends ItemView {
 							message: userMessage,
 						});
 
+						// Get custom prompt info for history
+						let customPromptInfo = undefined;
+						if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
+							customPromptInfo = await this.plugin.promptManager.getPromptHistoryInfo(this.currentFile);
+						}
+
 						await this.plugin.history.appendHistoryForFile(this.currentFile!, {
 							role: 'model',
 							message: botResponse.markdown,
 							userMessage: userMessage,
 							model: this.plugin.settings.chatModelName,
+							metadata: customPromptInfo ? { customPrompt: customPromptInfo } : undefined,
 						});
 
 						// Clear and reload the entire chat from history

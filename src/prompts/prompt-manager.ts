@@ -110,6 +110,30 @@ export class PromptManager {
 		return await this.loadPromptFromFile(linkedFile.path);
 	}
 
+	// Get custom prompt info formatted for history (with proper wikilink alias)
+	async getPromptHistoryInfo(file: TFile): Promise<string | null> {
+		const cache = this.plugin.app.metadataCache.getFileCache(file);
+		const promptPath = cache?.frontmatter?.['gemini-scribe-prompt'];
+
+		if (!promptPath) return null;
+
+		// Extract path from wikilink
+		const linkpath = this.extractPathFromWikilink(promptPath);
+		if (!linkpath) return null;
+
+		// Use Obsidian's link resolution to find the file
+		const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, file.path);
+		if (!linkedFile || !(linkedFile instanceof TFile)) return null;
+
+		// Get the prompt to access its display name
+		const customPrompt = await this.loadPromptFromFile(linkedFile.path);
+		if (!customPrompt) return null;
+
+		// Return wikilink with filename and display name as alias
+		// Escape the pipe separator for markdown table compatibility
+		return `[[${linkedFile.basename}\\|${customPrompt.name}]]`;
+	}
+
 	// Extract path from wikilink format
 	private extractPathFromWikilink(wikilink: string): string | null {
 		// Remove brackets if present

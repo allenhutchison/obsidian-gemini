@@ -114,6 +114,7 @@ export class MarkdownHistory {
 			role: newEntry.role,
 			message: newEntry.message,
 			model: newEntry.model,
+			metadata: newEntry.metadata,
 		};
 
 		try {
@@ -417,6 +418,7 @@ export class MarkdownHistory {
 			pluginVersion: this.plugin.manifest.version,
 			fileVersion,
 			temperature: entry.metadata?.temperature,
+			customPrompt: entry.metadata?.customPrompt,
 			context: entry.metadata?.context,
 		});
 	}
@@ -462,6 +464,7 @@ export class MarkdownHistory {
 				// Extract metadata from the table in the metadata callout
 				const timeMatch = section.match(/\|\s*Time\s*\|\s*(.*?)\s*\|/m);
 				const modelMatch = section.match(/\|\s*Model\s*\|\s*(.*?)\s*\|/m);
+				const customPromptMatch = section.match(/\|\s*Custom Prompt\s*\|\s*(.*?)\s*\|/m);
 				const timestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
 
 				// Extract message content - look for user/assistant callout and get its content
@@ -474,6 +477,12 @@ export class MarkdownHistory {
 						.trim();
 
 					if (messageLines) {
+						// Build metadata object
+						const metadata: Record<string, any> = {};
+						if (customPromptMatch) {
+							metadata.customPrompt = customPromptMatch[1].trim();
+						}
+
 						entries.push({
 							// Use the resolved source file path
 							notePath: sourceFilePath,
@@ -481,6 +490,7 @@ export class MarkdownHistory {
 							role: role as 'user' | 'model',
 							message: messageLines,
 							model: modelMatch ? modelMatch[1].trim() : undefined,
+							metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
 						});
 					}
 				}
