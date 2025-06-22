@@ -261,11 +261,16 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			const frontmatterValue = `[[${promptName}]]`;
 
 			// Use Obsidian's processFrontMatter API to add/update the prompt
-			this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
 				frontmatter['gemini-scribe-prompt'] = frontmatterValue;
 			});
 
 			new Notice(`Applied custom prompt: ${prompt.name}`);
+
+			// Force refresh the chat interface prompt indicator if view is open
+			if (this.plugin.geminiView) {
+				await this.plugin.geminiView.forceRefreshPromptIndicator();
+			}
 		} catch (error) {
 			console.error('Error applying prompt to file:', error);
 			new Notice('Failed to apply custom prompt to note');
@@ -302,11 +307,16 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			}
 
 			// Remove the prompt from frontmatter
-			this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter: any) => {
+			await this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter: any) => {
 				delete frontmatter['gemini-scribe-prompt'];
 			});
 
 			new Notice('Removed custom prompt from note');
+
+			// Force refresh the chat interface prompt indicator if view is open
+			if (this.plugin.geminiView) {
+				await this.plugin.geminiView.forceRefreshPromptIndicator();
+			}
 		} catch (error) {
 			console.error('Error removing custom prompt:', error);
 			new Notice('Failed to remove custom prompt from note');

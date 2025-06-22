@@ -272,6 +272,35 @@ export class GeminiView extends ItemView {
 		}
 	}
 
+	// Public method to refresh the prompt indicator (called when custom prompts are added/removed)
+	async refreshPromptIndicator(): Promise<void> {
+		await this.updatePromptIndicator();
+	}
+
+	// Force refresh prompt indicator by waiting for metadata cache update
+	async forceRefreshPromptIndicator(): Promise<void> {
+		if (!this.currentFile || !this.plugin.settings.enableCustomPrompts) {
+			this.promptIndicator.style.display = 'none';
+			return;
+		}
+
+		// Set up a one-time listener for metadata changes on the current file
+		const handleMetadataChange = (file: any) => {
+			if (file === this.currentFile) {
+				this.app.metadataCache.off('changed', handleMetadataChange);
+				this.updatePromptIndicator();
+			}
+		};
+
+		this.app.metadataCache.on('changed', handleMetadataChange);
+
+		// Also set a timeout as fallback in case the event doesn't fire
+		setTimeout(async () => {
+			this.app.metadataCache.off('changed', handleMetadataChange);
+			await this.updatePromptIndicator();
+		}, 200);
+	}
+
 	async displayMessage(
 		message: string,
 		sender: 'user' | 'model' | 'grounding',
