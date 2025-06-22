@@ -123,12 +123,14 @@ export class MarkdownHistory {
 			// Ensure the History subfolder exists
 			await this.plugin.app.vault.createFolder(normalizePath(`${this.plugin.settings.historyFolder}/History`)).catch(() => {});
 
-			const exists = await this.plugin.app.vault.adapter.exists(historyPath);
-			if (exists) {
-				let currentContent = await this.plugin.app.vault.adapter.read(historyPath);
+			// Check if file exists using Obsidian's file system
+			const existingFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
+			if (existingFile && existingFile instanceof TFile) {
+				// File exists - append to it using Obsidian's modify method
+				let currentContent = await this.plugin.app.vault.read(existingFile);
 				currentContent = currentContent.replace(/\n---\s*$/, '');
-				await this.plugin.app.vault.adapter.write(
-					historyPath,
+				await this.plugin.app.vault.modify(
+					existingFile,
 					currentContent + '\n\n' + this.formatEntryAsMarkdown(entry)
 				);
 			} else {
