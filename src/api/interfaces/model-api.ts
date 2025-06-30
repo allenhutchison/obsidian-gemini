@@ -24,6 +24,8 @@ export interface ModelResponse {
 export interface BaseModelRequest {
 	model?: string;
 	prompt: string;
+	temperature?: number;
+	topP?: number;
 }
 
 /**
