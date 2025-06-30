@@ -12,7 +12,17 @@ jest.mock('obsidian', () => ({
 // Mock Handlebars
 jest.mock('handlebars', () => ({
 	registerHelper: jest.fn(),
-	compile: jest.fn(() => jest.fn(() => 'compiled template')),
+	compile: jest.fn(() => jest.fn((context) => {
+		// Simple mock that includes temperature and topP if they are defined
+		let result = 'compiled template';
+		if (context.temperature !== undefined) {
+			result += ` temperature:${context.temperature}`;
+		}
+		if (context.topP !== undefined) {
+			result += ` topP:${context.topP}`;
+		}
+		return result;
+	})),
 }));
 
 // Mock the template import
@@ -29,6 +39,13 @@ describe('MarkdownHistory', () => {
 				chatHistory: true,
 			},
 			app: {
+				metadataCache: {
+					getFileCache: jest.fn(),
+					getFirstLinkpathDest: jest.fn(),
+				},
+				fileManager: {
+					processFrontMatter: jest.fn(),
+				},
 				vault: {
 					adapter: {
 						exists: jest.fn(),
@@ -41,11 +58,14 @@ describe('MarkdownHistory', () => {
 					getAbstractFileByPath: jest.fn(),
 					rename: jest.fn(() => Promise.resolve()),
 					delete: jest.fn(() => Promise.resolve()),
+					create: jest.fn(() => Promise.resolve()),
+					read: jest.fn(() => Promise.resolve()),
 				},
 			},
 			gfile: {
 				isFile: jest.fn(() => true),
 				getFileFromPath: jest.fn(() => ({ stat: { mtime: new Date() } })),
+				getLinkText: jest.fn((file) => `[[${file.path}]]`),
 			},
 		};
 
@@ -224,6 +244,243 @@ describe('MarkdownHistory', () => {
 			await markdownHistory.clearHistory();
 
 			expect(mockPlugin.app.vault.adapter.rmdir).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('temperature and topP metadata', () => {
+		beforeEach(() => {
+			// Reset plugin settings for each test
+			mockPlugin.settings.temperature = 0.7;
+			mockPlugin.settings.topP = 1;
+			mockPlugin.manifest = { version: '1.0.0' };
+		});
+
+		it('should include temperature and topP in saved metadata', async () => {
+			const testPath = 'test.md';
+			const historyPath = 'gemini-scribe/History/root_test.md';
+			const mockFile = { path: testPath, stat: { mtime: new Date() } };
+			const entry = {
+				role: 'model' as const,
+				message: 'Test response',
+				userMessage: 'Test prompt',
+				model: 'gemini-pro',
+				metadata: {
+					temperature: 0.5,
+					topP: 0.9,
+				},
+			};
+
+			mockPlugin.app.vault.adapter.exists.mockResolvedValue(false);
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+			mockPlugin.app.vault.create.mockResolvedValue({ path: historyPath });
+			mockPlugin.gfile.getFileFromPath.mockReturnValue(mockFile);
+
+			await markdownHistory.appendHistoryForFile(mockFile as any, entry);
+
+			// Check that create was called with the correct path
+			expect(mockPlugin.app.vault.create).toHaveBeenCalledWith(
+				historyPath,
+				expect.any(String)
+			);
+			
+			// Get the content that was passed to create
+			const createCall = mockPlugin.app.vault.create.mock.calls[0];
+			const writtenContent = createCall[1];
+
+			// The content should include compiled template
+			expect(writtenContent).toContain('compiled template');
+		});
+
+		it('should save zero values for temperature and topP', async () => {
+			const testPath = 'test.md';
+			const historyPath = 'gemini-scribe/History/root_test.md';
+			const mockFile = { path: testPath, stat: { mtime: new Date() } };
+			const entry = {
+				role: 'model' as const,
+				message: 'Test response',
+				userMessage: 'Test prompt',
+				model: 'gemini-pro',
+				metadata: {
+					temperature: 0,
+					topP: 0,
+				},
+			};
+
+			mockPlugin.app.vault.adapter.exists.mockResolvedValue(false);
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+			mockPlugin.app.vault.create.mockResolvedValue({ path: historyPath });
+			mockPlugin.gfile.getFileFromPath.mockReturnValue(mockFile);
+
+			await markdownHistory.appendHistoryForFile(mockFile as any, entry);
+
+			// Check that create was called
+			expect(mockPlugin.app.vault.create).toHaveBeenCalled();
+			
+			// Get the content that was passed to create
+			const createCall = mockPlugin.app.vault.create.mock.calls[0];
+			const writtenContent = createCall[1];
+
+			// Should contain both temperature and topP with 0 values
+			expect(writtenContent).toContain('temperature:0');
+			expect(writtenContent).toContain('topP:0');
+		});
+
+		it('should handle entries without temperature and topP', async () => {
+			const testPath = 'test.md';
+			const historyPath = 'gemini-scribe/History/root_test.md';
+			const mockFile = { path: testPath, stat: { mtime: new Date() } };
+			const entry = {
+				role: 'user' as const,
+				message: 'Test message',
+			};
+
+			mockPlugin.app.vault.adapter.exists.mockResolvedValue(false);
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+			mockPlugin.app.vault.create.mockResolvedValue({ path: historyPath });
+			mockPlugin.gfile.getFileFromPath.mockReturnValue(mockFile);
+
+			await markdownHistory.appendHistoryForFile(mockFile as any, entry);
+
+			expect(mockPlugin.app.vault.create).toHaveBeenCalled();
+		});
+
+		it('should parse temperature and topP from history content', async () => {
+			const historyContent = `# Chat History
+*Started: 2023-01-01T00:00:00.000Z*
+*Plugin Version: 1.0.0*
+
+---
+
+## Model
+
+> [!metadata]- Message Info
+> | Property | Value |
+> | -------- | ----- |
+> | Time | 2023-01-01T00:00:00.000Z |
+> | File Version | 1 |
+> | Model | gemini-pro |
+> | Temperature | 0.5 |
+> | Top P | 0.9 |
+
+> [!assistant]+
+> Test response
+
+---`;
+
+			const mockFile = { path: 'test.md', stat: { mtime: new Date() } };
+			const TFile = jest.requireMock('obsidian').TFile;
+			const mockHistoryFile = new TFile();
+			mockHistoryFile.path = 'gemini-scribe/History/root_test.md';
+			
+			mockPlugin.app.vault.adapter.read.mockResolvedValue(historyContent);
+			mockPlugin.app.vault.adapter.exists.mockResolvedValue(true);
+			mockPlugin.app.vault.adapter.list.mockResolvedValue({
+				files: [],
+				folders: [],
+			});
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockHistoryFile);
+			mockPlugin.app.vault.read.mockResolvedValue(historyContent);
+			mockPlugin.gfile.getFileFromPath.mockReturnValue(mockFile);
+			
+			const history = await markdownHistory.getHistoryForFile(mockFile as any);
+
+			expect(history).toHaveLength(1);
+			expect(history![0].metadata).toEqual(
+				expect.objectContaining({
+					temperature: 0.5,
+					topP: 0.9,
+				})
+			);
+		});
+
+		it('should handle zero values for temperature and topP', async () => {
+			const historyContent = `# Chat History
+*Started: 2023-01-01T00:00:00.000Z*
+*Plugin Version: 1.0.0*
+
+---
+
+## Model
+
+> [!metadata]- Message Info
+> | Property | Value |
+> | -------- | ----- |
+> | Time | 2023-01-01T00:00:00.000Z |
+> | File Version | 1 |
+> | Model | gemini-pro |
+> | Temperature | 0 |
+> | Top P | 0 |
+
+> [!assistant]+
+> Test response
+
+---`;
+
+			const mockFile = { path: 'test.md', stat: { mtime: new Date() } };
+			const TFile = jest.requireMock('obsidian').TFile;
+			const mockHistoryFile = new TFile();
+			mockHistoryFile.path = 'gemini-scribe/History/root_test.md';
+			
+			mockPlugin.app.vault.adapter.read.mockResolvedValue(historyContent);
+			mockPlugin.app.vault.adapter.exists.mockResolvedValue(true);
+			mockPlugin.app.vault.adapter.list.mockResolvedValue({
+				files: [],
+				folders: [],
+			});
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockHistoryFile);
+			mockPlugin.app.vault.read.mockResolvedValue(historyContent);
+			mockPlugin.gfile.getFileFromPath.mockReturnValue(mockFile);
+			
+			const history = await markdownHistory.getHistoryForFile(mockFile as any);
+
+			expect(history).toHaveLength(1);
+			expect(history![0].metadata).toEqual(
+				expect.objectContaining({
+					temperature: 0,
+					topP: 0,
+				})
+			);
+		});
+
+		it('should handle history entries without temperature and topP', async () => {
+			const historyContent = `# Chat History
+*Started: 2023-01-01T00:00:00.000Z*
+*Plugin Version: 1.0.0*
+
+---
+
+## User
+
+> [!metadata]- Message Info
+> | Property | Value |
+> | -------- | ----- |
+> | Time | 2023-01-01T00:00:00.000Z |
+> | File Version | 1 |
+
+> [!user]+
+> Test message
+
+---`;
+
+			const mockFile = { path: 'test.md', stat: { mtime: new Date() } };
+			const TFile = jest.requireMock('obsidian').TFile;
+			const mockHistoryFile = new TFile();
+			mockHistoryFile.path = 'gemini-scribe/History/root_test.md';
+			
+			mockPlugin.app.vault.adapter.read.mockResolvedValue(historyContent);
+			mockPlugin.app.vault.adapter.exists.mockResolvedValue(true);
+			mockPlugin.app.vault.adapter.list.mockResolvedValue({
+				files: [],
+				folders: [],
+			});
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockHistoryFile);
+			mockPlugin.app.vault.read.mockResolvedValue(historyContent);
+			mockPlugin.gfile.getFileFromPath.mockReturnValue(mockFile);
+			
+			const history = await markdownHistory.getHistoryForFile(mockFile as any);
+
+			expect(history).toHaveLength(1);
+			expect(history![0].metadata).toBeUndefined();
 		});
 	});
 });

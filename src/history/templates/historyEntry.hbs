@@ -15,8 +15,11 @@
 > | File Version | {{fileVersion}} |
 {{#if model}}
 > | Model | {{model}} |
-{{#if temperature}}
+{{#if (isDefined temperature)}}
 > | Temperature | {{temperature}} |
+{{/if}}
+{{#if (isDefined topP)}}
+> | Top P | {{topP}} |
 {{/if}}
 {{/if}}
 {{#if customPrompt}}

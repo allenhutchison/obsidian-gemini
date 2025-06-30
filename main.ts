@@ -41,6 +41,8 @@ export interface ObsidianGeminiSettings {
 	modelDiscovery: ModelDiscoverySettings;
 	enableCustomPrompts: boolean;
 	allowSystemPromptOverride: boolean;
+	temperature: number;
+	topP: number;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -70,6 +72,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	},
 	enableCustomPrompts: false,
 	allowSystemPromptOverride: false,
+	temperature: 0.7,
+	topP: 1,
 };
 
 export default class ObsidianGemini extends Plugin {

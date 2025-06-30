@@ -337,6 +337,34 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						})
 				);
 
+			new Setting(containerEl)
+				.setName('Temperature')
+				.setDesc('Controls randomness. Lower values are more deterministic. (Default: 0.7)')
+				.addSlider((slider) =>
+					slider
+						.setLimits(0, 1, 0.1)
+						.setValue(this.plugin.settings.temperature)
+						.setDynamicTooltip()
+						.onChange(async (value) => {
+							this.plugin.settings.temperature = value;
+							await this.plugin.saveSettings();
+						})
+				);
+
+			new Setting(containerEl)
+				.setName('Top P')
+				.setDesc('Controls diversity. Lower values are more focused. (Default: 1)')
+				.addSlider((slider) =>
+					slider
+						.setLimits(0, 1, 0.1)
+						.setValue(this.plugin.settings.topP)
+						.setDynamicTooltip()
+						.onChange(async (value) => {
+							this.plugin.settings.topP = value;
+							await this.plugin.saveSettings();
+						})
+				);
+
 			// Model Discovery Settings (only visible in debug mode)
 			new Setting(containerEl).setName('Model Discovery').setHeading();
 

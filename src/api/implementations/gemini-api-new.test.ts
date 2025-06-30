@@ -268,4 +268,104 @@ describe('GeminiApiNew', () => {
 			expect(receivedChunks).toEqual(['First chunk']);
 		});
 	});
+
+	describe('temperature and topP parameters', () => {
+		it('should use temperature from request if provided', async () => {
+			const mockApiResponse = {
+				text: () => 'Test response',
+			};
+			mockGenerateContent.mockResolvedValue(mockApiResponse);
+
+			const request: BaseModelRequest = {
+				prompt: 'Test prompt',
+				temperature: 0.3,
+			};
+
+			await geminiApiNew.generateModelResponse(request);
+
+			// Check that generateContent was called with the correct temperature
+			expect(mockGenerateContent).toHaveBeenCalledWith(
+				expect.objectContaining({
+					config: expect.objectContaining({
+						temperature: 0.3,
+					}),
+				})
+			);
+		});
+
+		it('should use topP from request if provided', async () => {
+			const mockApiResponse = {
+				text: () => 'Test response',
+			};
+			mockGenerateContent.mockResolvedValue(mockApiResponse);
+
+			const request: BaseModelRequest = {
+				prompt: 'Test prompt',
+				topP: 0.8,
+			};
+
+			await geminiApiNew.generateModelResponse(request);
+
+			// Check that generateContent was called with the correct topP
+			expect(mockGenerateContent).toHaveBeenCalledWith(
+				expect.objectContaining({
+					config: expect.objectContaining({
+						topP: 0.8,
+					}),
+				})
+			);
+		});
+
+		it('should use default temperature from settings if not provided in request', async () => {
+			const mockApiResponse = {
+				text: () => 'Test response',
+			};
+			mockGenerateContent.mockResolvedValue(mockApiResponse);
+
+			// Update mock settings to include temperature and topP
+			mockPluginInstance.settings.temperature = 0.7;
+			mockPluginInstance.settings.topP = 1;
+
+			const request: BaseModelRequest = {
+				prompt: 'Test prompt',
+			};
+
+			await geminiApiNew.generateModelResponse(request);
+
+			// Check that generateContent was called with the default temperature
+			expect(mockGenerateContent).toHaveBeenCalledWith(
+				expect.objectContaining({
+					config: expect.objectContaining({
+						temperature: 0.7,
+						topP: 1,
+					}),
+				})
+			);
+		});
+
+		it('should handle both temperature and topP together', async () => {
+			const mockApiResponse = {
+				text: () => 'Test response',
+			};
+			mockGenerateContent.mockResolvedValue(mockApiResponse);
+
+			const request: BaseModelRequest = {
+				prompt: 'Test prompt',
+				temperature: 0.5,
+				topP: 0.9,
+			};
+
+			await geminiApiNew.generateModelResponse(request);
+
+			// Check that generateContent was called with both parameters
+			expect(mockGenerateContent).toHaveBeenCalledWith(
+				expect.objectContaining({
+					config: expect.objectContaining({
+						temperature: 0.5,
+						topP: 0.9,
+					}),
+				})
+			);
+		});
+	});
 });

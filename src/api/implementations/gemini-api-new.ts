@@ -60,6 +60,8 @@ export class GeminiApiNew implements ModelApi {
 						config: {
 							systemInstruction: systemInstruction,
 							tools: tools,
+							temperature: request.temperature ?? this.plugin.settings.temperature,
+							topP: request.topP ?? this.plugin.settings.topP,
 						},
 						contents: contents,
 					});
@@ -81,6 +83,10 @@ export class GeminiApiNew implements ModelApi {
 					const streamingResult = await this.ai.models.generateContentStream({
 						model: modelToUse,
 						contents: request.prompt,
+						config: {
+							temperature: request.temperature ?? this.plugin.settings.temperature,
+							topP: request.topP ?? this.plugin.settings.topP,
+						},
 					});
 
 					for await (const chunk of streamingResult) {
@@ -133,6 +139,8 @@ export class GeminiApiNew implements ModelApi {
 				config: {
 					systemInstruction: systemInstruction,
 					tools: tools,
+					temperature: request.temperature ?? this.plugin.settings.temperature,
+					topP: request.topP ?? this.plugin.settings.topP,
 				},
 				contents: contents,
 			});
@@ -142,6 +150,10 @@ export class GeminiApiNew implements ModelApi {
 			const result = await this.ai.models.generateContent({
 				model: modelToUse,
 				contents: request.prompt,
+				config: {
+					temperature: request.temperature ?? this.plugin.settings.temperature,
+					topP: request.topP ?? this.plugin.settings.topP,
+				},
 			});
 			response = this.parseModelResult(result);
 		}

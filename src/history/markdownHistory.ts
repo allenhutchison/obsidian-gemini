@@ -16,6 +16,10 @@ export class MarkdownHistory {
 		Handlebars.registerHelper('eq', function (a, b) {
 			return a === b;
 		});
+		// Register isDefined helper to handle 0 values properly
+		Handlebars.registerHelper('isDefined', function (value) {
+			return value !== undefined;
+		});
 		this.entryTemplate = Handlebars.compile(historyEntryTemplate);
 	}
 
@@ -420,6 +424,7 @@ export class MarkdownHistory {
 			pluginVersion: this.plugin.manifest.version,
 			fileVersion,
 			temperature: entry.metadata?.temperature,
+			topP: entry.metadata?.topP,
 			customPrompt: entry.metadata?.customPrompt,
 			context: entry.metadata?.context,
 		});
@@ -466,6 +471,8 @@ export class MarkdownHistory {
 				// Extract metadata from the table in the metadata callout
 				const timeMatch = section.match(/\|\s*Time\s*\|\s*(.*?)\s*\|/m);
 				const modelMatch = section.match(/\|\s*Model\s*\|\s*(.*?)\s*\|/m);
+				const temperatureMatch = section.match(/\|\s*Temperature\s*\|\s*(.*?)\s*\|/m);
+				const topPMatch = section.match(/\|\s*Top P\s*\|\s*(.*?)\s*\|/m);
 				const customPromptMatch = section.match(/\|\s*Custom Prompt\s*\|\s*(.*?)\s*\|/m);
 				const timestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
 
@@ -483,6 +490,12 @@ export class MarkdownHistory {
 						const metadata: Record<string, any> = {};
 						if (customPromptMatch) {
 							metadata.customPrompt = customPromptMatch[1].trim();
+						}
+						if (temperatureMatch) {
+							metadata.temperature = parseFloat(temperatureMatch[1].trim());
+						}
+						if (topPMatch) {
+							metadata.topP = parseFloat(topPMatch[1].trim());
 						}
 
 						entries.push({

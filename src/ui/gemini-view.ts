@@ -541,7 +541,11 @@ export class GeminiView extends ItemView {
 								message: botResponse.markdown,
 								userMessage: userMessage,
 								model: this.plugin.settings.chatModelName,
-								metadata: customPromptInfo ? { customPrompt: customPromptInfo } : undefined,
+								metadata: {
+									...(customPromptInfo ? { customPrompt: customPromptInfo } : {}),
+									temperature: this.plugin.settings.temperature,
+									topP: this.plugin.settings.topP,
+								},
 							});
 
 							// No need to clear and reload - the streaming UI already shows the messages
@@ -580,7 +584,11 @@ export class GeminiView extends ItemView {
 							message: botResponse.markdown,
 							userMessage: userMessage,
 							model: this.plugin.settings.chatModelName,
-							metadata: customPromptInfo ? { customPrompt: customPromptInfo } : undefined,
+							metadata: {
+								...(customPromptInfo ? { customPrompt: customPromptInfo } : {}),
+								temperature: this.plugin.settings.temperature,
+								topP: this.plugin.settings.topP,
+							},
 						});
 
 						// Clear and reload the entire chat from history
