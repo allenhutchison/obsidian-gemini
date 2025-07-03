@@ -12,6 +12,7 @@ Welcome to the comprehensive documentation for Gemini Scribe, an Obsidian plugin
 - **[Document Summarization Guide](summarization-guide.md)** - Generate concise summaries automatically
 - **[Chat History Guide](chat-history-guide.md)** - Manage and utilize your conversation history
 - **[Context System Guide](context-system-guide.md)** - Understand how AI uses your notes as context
+- **[Advanced Settings Guide](advanced-settings-guide.md)** - Configure model parameters and developer options
 
 ### Getting Started
 
@@ -145,6 +146,15 @@ The AI automatically includes relevant linked notes to provide comprehensive ass
 - **Chat**: Gemini 1.5 Pro (best quality)
 - **Completions**: Gemini 1.5 Flash-8B (fastest)
 - **Summary**: Gemini 1.5 Flash (balanced)
+
+### Advanced Settings
+- **Temperature**: Control AI creativity (0-2.0, dynamically adjusted)
+- **Top P**: Control response diversity (0-1.0)
+- **Model Discovery**: Automatic model updates from Google API
+- **Retry Configuration**: API failure handling and backoff settings
+- **Developer Options**: Advanced debugging and configuration tools
+
+*See the [Advanced Settings Guide](advanced-settings-guide.md) for detailed configuration instructions.*
 
 ## Support and Resources
 
