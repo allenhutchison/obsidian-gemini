@@ -175,20 +175,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				text.inputEl.style.width = '40ch';
 			});
 
-		new Setting(containerEl)
-			.setName('API Provider')
-			.setDesc('Select which AI provider to use')
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption(ApiProvider.GEMINI, 'Google Gemini (New SDK)')
-					//.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
-					.setValue(this.plugin.settings.apiProvider)
-					.onChange(async (value) => {
-						this.plugin.settings.apiProvider = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
 		await selectModelSetting(
 			containerEl,
 			this.plugin,
@@ -402,6 +388,20 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		// Advanced developer settings only visible when explicitly enabled
 		if (this.showDeveloperSettings) {
+			new Setting(containerEl)
+				.setName('API Provider')
+				.setDesc('Select which AI provider to use')
+				.addDropdown((dropdown) =>
+					dropdown
+						.addOption(ApiProvider.GEMINI, 'Google Gemini (New SDK)')
+						//.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
+						.setValue(this.plugin.settings.apiProvider)
+						.onChange(async (value) => {
+							this.plugin.settings.apiProvider = value;
+							await this.plugin.saveSettings();
+						})
+				);
+
 			new Setting(containerEl)
 				.setName('Maximum Retries')
 				.setDesc('Maximum number of retries when a model request fails.')
