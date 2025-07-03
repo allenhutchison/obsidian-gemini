@@ -120,15 +120,29 @@ describe('PromptManager', () => {
 		it('should not create prompts directory if it exists', async () => {
 			// Create a mock that is an instance of TFolder
 			const MockTFolder = jest.requireMock('obsidian').TFolder;
-			const mockFolder = Object.create(MockTFolder.prototype);
-			mockFolder.path = 'gemini-scribe/Prompts';
-			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
+			const mockPromptsFolder = Object.create(MockTFolder.prototype);
+			mockPromptsFolder.path = 'gemini-scribe/Prompts';
+			
+			mockVault.getAbstractFileByPath
+				.mockReturnValueOnce(mockPromptsFolder); // Prompts folder exists
 
 			await promptManager.ensurePromptsDirectory();
 
-			// Should still create base folder first, but not the prompts folder since it exists
+			// Should create base folder but not prompts folder (since it exists)
 			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe');
 			expect(mockVault.createFolder).toHaveBeenCalledTimes(1);
+		});
+		
+		it('should create both directories if neither exists', async () => {
+			mockVault.getAbstractFileByPath
+				.mockReturnValueOnce(null); // Prompts folder doesn't exist
+
+			await promptManager.ensurePromptsDirectory();
+
+			// Should create both folders
+			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe');
+			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/Prompts');
+			expect(mockVault.createFolder).toHaveBeenCalledTimes(2);
 		});
 	});
 

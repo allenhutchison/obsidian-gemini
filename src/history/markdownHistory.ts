@@ -391,7 +391,7 @@ export class MarkdownHistory {
 			}
 			// Recreate the History subfolder
 			await this.plugin.app.vault.createFolder(historyFolder).catch(() => {}); // Ensure base folder exists
-			await this.plugin.app.vault.createFolder(historySubfolder);
+			await this.plugin.app.vault.createFolder(historySubfolder).catch(() => {});
 			new Notice('Chat history cleared.');
 		} catch (error) {
 			console.error('Failed to clear all history', error);

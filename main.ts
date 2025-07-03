@@ -122,14 +122,6 @@ export default class ObsidianGemini extends Plugin {
 
 		// Initialize prompt manager
 		this.promptManager = new PromptManager(this, this.app.vault);
-		
-		// Only setup prompts if the feature is enabled
-		if (this.settings.enableCustomPrompts) {
-			await this.promptManager.ensurePromptsDirectory();
-			await this.promptManager.createDefaultPrompts();
-			// Setup prompt commands
-			this.promptManager.setupPromptCommands();
-		}
 
 		this.geminiApi = ApiFactory.createApi(this);
 		this.gfile = new ScribeFile(this);
@@ -187,6 +179,14 @@ export default class ObsidianGemini extends Plugin {
 	}
 
 	async onLayoutReady() {
+		// Setup prompts directory and commands after layout is ready
+		if (this.settings.enableCustomPrompts && this.promptManager) {
+			await this.promptManager.ensurePromptsDirectory();
+			await this.promptManager.createDefaultPrompts();
+			// Setup prompt commands
+			this.promptManager.setupPromptCommands();
+		}
+		
 		await this.history.onLayoutReady();
 	}
 
