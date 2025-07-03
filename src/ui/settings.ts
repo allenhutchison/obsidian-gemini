@@ -6,6 +6,7 @@ import { ApiProvider } from '../api/index';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
+	private showDeveloperSettings = false;
 
 	constructor(app: App, plugin: ObsidianGemini) {
 		super(app, plugin);
@@ -383,12 +384,24 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.debugMode).onChange(async (value) => {
 					this.plugin.settings.debugMode = value;
 					await this.plugin.saveSettings();
-					this.display(); // Refresh to show/hide advanced settings
 				})
 			);
 
-		// Advanced developer settings only visible when debug mode is enabled
-		if (this.plugin.settings.debugMode) {
+		new Setting(containerEl)
+			.setName('Show Developer Settings')
+			.setDesc('Reveal advanced settings for developers and power users.')
+			.addButton((button) =>
+				button
+					.setButtonText(this.showDeveloperSettings ? 'Hide Advanced Settings' : 'Show Advanced Settings')
+					.setClass(this.showDeveloperSettings ? 'mod-warning' : 'mod-cta')
+					.onClick(() => {
+						this.showDeveloperSettings = !this.showDeveloperSettings;
+						this.display(); // Refresh to show/hide advanced settings
+					})
+			);
+
+		// Advanced developer settings only visible when explicitly enabled
+		if (this.showDeveloperSettings) {
 			new Setting(containerEl)
 				.setName('Maximum Retries')
 				.setDesc('Maximum number of retries when a model request fails.')
@@ -421,7 +434,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			// Create topP setting with dynamic ranges
 			await this.createTopPSetting(containerEl);
 
-			// Model Discovery Settings (only visible in debug mode)
+			// Model Discovery Settings (visible in developer settings)
 			new Setting(containerEl).setName('Model Discovery').setHeading();
 
 			new Setting(containerEl)
