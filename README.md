@@ -6,11 +6,14 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ## What's New
 
+- **Dynamic Model Parameter Controls:** Automatic discovery of temperature and Top P ranges based on your available Gemini models with real-time validation
+- **Advanced Settings Panel:** Developer-focused settings now organized in a dedicated section with improved discoverability
+- **Model Discovery System:** Automatic fetching of the latest Gemini models with their parameter limits and capabilities
+- **Enhanced API Configuration:** Configurable retry logic with exponential backoff for improved reliability
 - **Enhanced Custom Prompts System:** Improved prompt management with better tracking and state handling
 - **Improved Plugin Compatibility:** Replaced low-level file operations with native Obsidian APIs for better compatibility with other plugins
 - **Better Chat History Integration:** Custom prompts are now properly tracked in chat history for better context continuity
 - **Restructured Plugin State:** Cleaner organization of plugin data with automatic migration from older folder structures
-- **UI Improvements:** Instant prompt indicator updates when custom prompts are applied or removed
 
 ## Features
 
@@ -83,6 +86,12 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
     - **Custom Prompts:**
       - **Enable Custom Prompts:** Toggle the custom prompt system on/off (disabled by default).
       - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
+    - **Advanced Settings:** (Click "Show Advanced Settings" to reveal)
+      - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
+      - **Top P:** Control response diversity and focus (0-1.0).
+      - **Model Discovery:** Automatically fetch and update available Gemini models with their parameter limits.
+      - **API Configuration:** Configure retry behavior, backoff delays, and provider selection.
+      - **Developer Options:** Debug mode and advanced configuration tools.
 
 ## Usage
 
@@ -108,6 +117,7 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
 - [Summarization Guide](docs/summarization-guide.md)
 - [Chat History Guide](docs/chat-history-guide.md)
 - [Context System Guide](docs/context-system-guide.md)
+- [Advanced Settings Guide](docs/advanced-settings-guide.md)
 
 ### Chat Interface
 
@@ -203,6 +213,11 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - Check that the wikilink syntax is correct: `[[Prompt Name]]`
   - Try using the command palette commands for easier management
   - See the [Custom Prompts Guide](docs/custom-prompts-guide.md) for detailed troubleshooting
+- **Parameter/Advanced Settings Issues:**
+  - Check if your model supports the temperature range you're using
+  - Reset temperature and Top P to defaults if getting unexpected responses
+  - Enable model discovery to get latest parameter limits
+  - See the [Advanced Settings Guide](docs/advanced-settings-guide.md) for detailed configuration help
 
 ## License
 

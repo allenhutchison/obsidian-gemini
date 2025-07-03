@@ -1,11 +1,14 @@
 import ObsidianGemini from '../../main';
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { ApiProvider } from '../api/index';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
+	private showDeveloperSettings = false;
+	private temperatureDebounceTimer: NodeJS.Timeout | null = null;
+	private topPDebounceTimer: NodeJS.Timeout | null = null;
 
 	constructor(app: App, plugin: ObsidianGemini) {
 		super(app, plugin);
@@ -66,6 +69,102 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		}
 	}
 
+	/**
+	 * Create temperature setting with dynamic ranges based on model capabilities
+	 */
+	private async createTemperatureSetting(containerEl: HTMLElement): Promise<void> {
+		const modelManager = this.plugin.getModelManager();
+		const ranges = await modelManager.getParameterRanges();
+		const displayInfo = await modelManager.getParameterDisplayInfo();
+
+		const desc = displayInfo.hasModelData 
+			? `Controls randomness. Lower values are more deterministic. ${displayInfo.temperature}` 
+			: 'Controls randomness. Lower values are more deterministic. (Default: 0.7)';
+
+		new Setting(containerEl)
+			.setName('Temperature')
+			.setDesc(desc)
+			.addSlider((slider) =>
+				slider
+					.setLimits(ranges.temperature.min, ranges.temperature.max, ranges.temperature.step)
+					.setValue(this.plugin.settings.temperature)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						// Clear previous timeout
+						if (this.temperatureDebounceTimer) {
+							clearTimeout(this.temperatureDebounceTimer);
+						}
+						
+						// Set immediate value for responsive UI
+						this.plugin.settings.temperature = value;
+						
+						// Debounce validation and saving
+						this.temperatureDebounceTimer = setTimeout(async () => {
+							// Validate the value against model capabilities
+							const validation = await modelManager.validateParameters(value, this.plugin.settings.topP);
+							
+							if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
+								slider.setValue(validation.temperature.adjustedValue);
+								this.plugin.settings.temperature = validation.temperature.adjustedValue;
+								if (validation.temperature.warning) {
+									new Notice(validation.temperature.warning);
+								}
+							}
+							
+							await this.plugin.saveSettings();
+						}, 300);
+					})
+			);
+	}
+
+	/**
+	 * Create topP setting with dynamic ranges based on model capabilities
+	 */
+	private async createTopPSetting(containerEl: HTMLElement): Promise<void> {
+		const modelManager = this.plugin.getModelManager();
+		const ranges = await modelManager.getParameterRanges();
+		const displayInfo = await modelManager.getParameterDisplayInfo();
+
+		const desc = displayInfo.hasModelData 
+			? `Controls diversity. Lower values are more focused. ${displayInfo.topP}` 
+			: 'Controls diversity. Lower values are more focused. (Default: 1)';
+
+		new Setting(containerEl)
+			.setName('Top P')
+			.setDesc(desc)
+			.addSlider((slider) =>
+				slider
+					.setLimits(ranges.topP.min, ranges.topP.max, ranges.topP.step)
+					.setValue(this.plugin.settings.topP)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						// Clear previous timeout
+						if (this.topPDebounceTimer) {
+							clearTimeout(this.topPDebounceTimer);
+						}
+						
+						// Set immediate value for responsive UI
+						this.plugin.settings.topP = value;
+						
+						// Debounce validation and saving
+						this.topPDebounceTimer = setTimeout(async () => {
+							// Validate the value against model capabilities
+							const validation = await modelManager.validateParameters(this.plugin.settings.temperature, value);
+							
+							if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
+								slider.setValue(validation.topP.adjustedValue);
+								this.plugin.settings.topP = validation.topP.adjustedValue;
+								if (validation.topP.warning) {
+									new Notice(validation.topP.warning);
+								}
+							}
+							
+							await this.plugin.saveSettings();
+						}, 300);
+					})
+			);
+	}
+
 	async display(): Promise<void> {
 		const { containerEl } = this;
 
@@ -95,20 +194,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				// Set input width to accommodate at least 40 characters
 				text.inputEl.style.width = '40ch';
 			});
-
-		new Setting(containerEl)
-			.setName('API Provider')
-			.setDesc('Select which AI provider to use')
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption(ApiProvider.GEMINI, 'Google Gemini (New SDK)')
-					//.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
-					.setValue(this.plugin.settings.apiProvider)
-					.onChange(async (value) => {
-						this.plugin.settings.apiProvider = value;
-						await this.plugin.saveSettings();
-					})
-			);
 
 		await selectModelSetting(
 			containerEl,
@@ -305,12 +390,38 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.debugMode).onChange(async (value) => {
 					this.plugin.settings.debugMode = value;
 					await this.plugin.saveSettings();
-					this.display(); // Refresh to show/hide advanced settings
 				})
 			);
 
-		// Advanced developer settings only visible when debug mode is enabled
-		if (this.plugin.settings.debugMode) {
+		new Setting(containerEl)
+			.setName('Show Developer Settings')
+			.setDesc('Reveal advanced settings for developers and power users.')
+			.addButton((button) =>
+				button
+					.setButtonText(this.showDeveloperSettings ? 'Hide Advanced Settings' : 'Show Advanced Settings')
+					.setClass(this.showDeveloperSettings ? 'mod-warning' : 'mod-cta')
+					.onClick(() => {
+						this.showDeveloperSettings = !this.showDeveloperSettings;
+						this.display(); // Refresh to show/hide advanced settings
+					})
+			);
+
+		// Advanced developer settings only visible when explicitly enabled
+		if (this.showDeveloperSettings) {
+			new Setting(containerEl)
+				.setName('API Provider')
+				.setDesc('Select which AI provider to use')
+				.addDropdown((dropdown) =>
+					dropdown
+						.addOption(ApiProvider.GEMINI, 'Google Gemini (New SDK)')
+						//.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
+						.setValue(this.plugin.settings.apiProvider)
+						.onChange(async (value) => {
+							this.plugin.settings.apiProvider = value;
+							await this.plugin.saveSettings();
+						})
+				);
+
 			new Setting(containerEl)
 				.setName('Maximum Retries')
 				.setDesc('Maximum number of retries when a model request fails.')
@@ -337,35 +448,13 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						})
 				);
 
-			new Setting(containerEl)
-				.setName('Temperature')
-				.setDesc('Controls randomness. Lower values are more deterministic. (Default: 0.7)')
-				.addSlider((slider) =>
-					slider
-						.setLimits(0, 1, 0.1)
-						.setValue(this.plugin.settings.temperature)
-						.setDynamicTooltip()
-						.onChange(async (value) => {
-							this.plugin.settings.temperature = value;
-							await this.plugin.saveSettings();
-						})
-				);
+			// Create temperature setting with dynamic ranges
+			await this.createTemperatureSetting(containerEl);
 
-			new Setting(containerEl)
-				.setName('Top P')
-				.setDesc('Controls diversity. Lower values are more focused. (Default: 1)')
-				.addSlider((slider) =>
-					slider
-						.setLimits(0, 1, 0.1)
-						.setValue(this.plugin.settings.topP)
-						.setDynamicTooltip()
-						.onChange(async (value) => {
-							this.plugin.settings.topP = value;
-							await this.plugin.saveSettings();
-						})
-				);
+			// Create topP setting with dynamic ranges
+			await this.createTopPSetting(containerEl);
 
-			// Model Discovery Settings (only visible in debug mode)
+			// Model Discovery Settings (visible in developer settings)
 			new Setting(containerEl).setName('Model Discovery').setHeading();
 
 			new Setting(containerEl)
