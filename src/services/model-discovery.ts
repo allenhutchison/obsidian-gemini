@@ -9,6 +9,9 @@ export interface GoogleModel {
 	outputTokenLimit: number;
 	supportedGenerationMethods: string[];
 	baseModelId?: string;
+	maxTemperature?: number;
+	topP?: number; // Default topP value for this model (0-1 range)
+	topK?: number; // Default topK value for this model
 }
 
 export interface ModelDiscoveryResult {
@@ -62,7 +65,7 @@ export class ModelDiscoveryService {
 	}
 
 	/**
-	 * Fetch models from Google API with pagination support
+	 * Fetch models from Google API with pagination support and detailed parameter information
 	 */
 	private async fetchModelsFromAPI(): Promise<GoogleModel[]> {
 		const apiKey = this.plugin.settings.apiKey;
@@ -73,6 +76,7 @@ export class ModelDiscoveryService {
 		let allModels: GoogleModel[] = [];
 		let pageToken: string | undefined;
 
+		// First, get the list of models
 		do {
 			const url = new URL(`${this.API_BASE}/models`);
 			url.searchParams.set('key', apiKey);
@@ -91,7 +95,43 @@ export class ModelDiscoveryService {
 			pageToken = data.nextPageToken;
 		} while (pageToken);
 
-		return allModels.filter((model) => this.isGenerativeModel(model));
+		const filteredModels = allModels.filter((model) => this.isGenerativeModel(model));
+
+		// Now fetch detailed information for each model to get parameter limits
+		const detailedModels = await Promise.all(
+			filteredModels.map((model) => this.fetchModelDetails(model, apiKey))
+		);
+
+		return detailedModels.filter((model) => model !== null) as GoogleModel[];
+	}
+
+	/**
+	 * Fetch detailed model information including parameter limits
+	 */
+	private async fetchModelDetails(model: GoogleModel, apiKey: string): Promise<GoogleModel | null> {
+		try {
+			const url = new URL(`${this.API_BASE}/${model.name}`);
+			url.searchParams.set('key', apiKey);
+
+			const response = await fetch(url.toString());
+			if (!response.ok) {
+				console.warn(`Failed to fetch details for model ${model.name}: ${response.status}`);
+				return model; // Return basic model info if detailed fetch fails
+			}
+
+			const detailedData = await response.json();
+			
+			// Merge the detailed information with the basic model data
+			return {
+				...model,
+				maxTemperature: detailedData.maxTemperature,
+				topP: detailedData.topP,
+				topK: detailedData.topK,
+			};
+		} catch (error) {
+			console.warn(`Error fetching model details for ${model.name}:`, error);
+			return model; // Return basic model info if there's an error
+		}
 	}
 
 	/**

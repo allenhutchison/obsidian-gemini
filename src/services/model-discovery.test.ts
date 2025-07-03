@@ -166,13 +166,38 @@ describe('ModelDiscoveryService', () => {
 					models: [mockGoogleModels[1]],
 				}),
 			};
+			// Mock detailed model responses
+			const detailedModelResponse1 = {
+				ok: true,
+				json: jest.fn().mockResolvedValue({
+					...mockGoogleModels[0],
+					maxTemperature: 1.5,
+					topP: 0.95,
+				}),
+			};
+			const detailedModelResponse2 = {
+				ok: true,
+				json: jest.fn().mockResolvedValue({
+					...mockGoogleModels[1],
+					maxTemperature: 2.0,
+					topP: 1.0,
+				}),
+			};
 
-			(fetch as jest.Mock).mockResolvedValueOnce(firstPageResponse).mockResolvedValueOnce(secondPageResponse);
+			(fetch as jest.Mock)
+				.mockResolvedValueOnce(firstPageResponse)
+				.mockResolvedValueOnce(secondPageResponse)
+				.mockResolvedValueOnce(detailedModelResponse1)
+				.mockResolvedValueOnce(detailedModelResponse2);
 
 			const result = await service.discoverModels();
 
-			expect(fetch).toHaveBeenCalledTimes(2);
+			// Should make 2 calls for pagination + 2 calls for detailed model info
+			expect(fetch).toHaveBeenCalledTimes(4);
 			expect(result.models).toHaveLength(2);
+			// Verify that detailed information was fetched
+			expect(result.models[0].maxTemperature).toBe(1.5);
+			expect(result.models[1].maxTemperature).toBe(2.0);
 		});
 	});
 

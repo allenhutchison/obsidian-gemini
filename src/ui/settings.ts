@@ -1,5 +1,5 @@
 import ObsidianGemini from '../../main';
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { ApiProvider } from '../api/index';
@@ -64,6 +64,84 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		} catch (error) {
 			setting.setDesc(`Error checking migration status: ${error instanceof Error ? error.message : 'Unknown'}`);
 		}
+	}
+
+	/**
+	 * Create temperature setting with dynamic ranges based on model capabilities
+	 */
+	private async createTemperatureSetting(containerEl: HTMLElement): Promise<void> {
+		const modelManager = this.plugin.getModelManager();
+		const ranges = await modelManager.getParameterRanges();
+		const displayInfo = await modelManager.getParameterDisplayInfo();
+
+		const desc = displayInfo.hasModelData 
+			? `Controls randomness. Lower values are more deterministic. ${displayInfo.temperature}` 
+			: 'Controls randomness. Lower values are more deterministic. (Default: 0.7)';
+
+		new Setting(containerEl)
+			.setName('Temperature')
+			.setDesc(desc)
+			.addSlider((slider) =>
+				slider
+					.setLimits(ranges.temperature.min, ranges.temperature.max, ranges.temperature.step)
+					.setValue(this.plugin.settings.temperature)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						// Validate the value against model capabilities
+						const validation = await modelManager.validateParameters(value, this.plugin.settings.topP);
+						
+						if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
+							slider.setValue(validation.temperature.adjustedValue);
+							this.plugin.settings.temperature = validation.temperature.adjustedValue;
+							if (validation.temperature.warning) {
+								new Notice(validation.temperature.warning);
+							}
+						} else {
+							this.plugin.settings.temperature = value;
+						}
+						
+						await this.plugin.saveSettings();
+					})
+			);
+	}
+
+	/**
+	 * Create topP setting with dynamic ranges based on model capabilities
+	 */
+	private async createTopPSetting(containerEl: HTMLElement): Promise<void> {
+		const modelManager = this.plugin.getModelManager();
+		const ranges = await modelManager.getParameterRanges();
+		const displayInfo = await modelManager.getParameterDisplayInfo();
+
+		const desc = displayInfo.hasModelData 
+			? `Controls diversity. Lower values are more focused. ${displayInfo.topP}` 
+			: 'Controls diversity. Lower values are more focused. (Default: 1)';
+
+		new Setting(containerEl)
+			.setName('Top P')
+			.setDesc(desc)
+			.addSlider((slider) =>
+				slider
+					.setLimits(ranges.topP.min, ranges.topP.max, ranges.topP.step)
+					.setValue(this.plugin.settings.topP)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						// Validate the value against model capabilities
+						const validation = await modelManager.validateParameters(this.plugin.settings.temperature, value);
+						
+						if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
+							slider.setValue(validation.topP.adjustedValue);
+							this.plugin.settings.topP = validation.topP.adjustedValue;
+							if (validation.topP.warning) {
+								new Notice(validation.topP.warning);
+							}
+						} else {
+							this.plugin.settings.topP = value;
+						}
+						
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 
 	async display(): Promise<void> {
@@ -337,33 +415,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						})
 				);
 
-			new Setting(containerEl)
-				.setName('Temperature')
-				.setDesc('Controls randomness. Lower values are more deterministic. (Default: 0.7)')
-				.addSlider((slider) =>
-					slider
-						.setLimits(0, 1, 0.1)
-						.setValue(this.plugin.settings.temperature)
-						.setDynamicTooltip()
-						.onChange(async (value) => {
-							this.plugin.settings.temperature = value;
-							await this.plugin.saveSettings();
-						})
-				);
+			// Create temperature setting with dynamic ranges
+			await this.createTemperatureSetting(containerEl);
 
-			new Setting(containerEl)
-				.setName('Top P')
-				.setDesc('Controls diversity. Lower values are more focused. (Default: 1)')
-				.addSlider((slider) =>
-					slider
-						.setLimits(0, 1, 0.1)
-						.setValue(this.plugin.settings.topP)
-						.setDynamicTooltip()
-						.onChange(async (value) => {
-							this.plugin.settings.topP = value;
-							await this.plugin.saveSettings();
-						})
-				);
+			// Create topP setting with dynamic ranges
+			await this.createTopPSetting(containerEl);
 
 			// Model Discovery Settings (only visible in debug mode)
 			new Setting(containerEl).setName('Model Discovery').setHeading();

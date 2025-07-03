@@ -1,7 +1,8 @@
 import ObsidianGemini from '../../main';
 import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings } from '../models';
-import { ModelDiscoveryService } from './model-discovery';
+import { ModelDiscoveryService, GoogleModel } from './model-discovery';
 import { ModelMapper } from './model-mapper';
+import { ParameterValidationService, ParameterRanges } from './parameter-validation';
 
 export interface ModelUpdateOptions {
 	forceRefresh?: boolean;
@@ -211,5 +212,67 @@ export class ModelManager {
 				error: error instanceof Error ? error.message : 'Unknown error',
 			};
 		}
+	}
+
+	/**
+	 * Get parameter ranges based on discovered models
+	 */
+	async getParameterRanges(): Promise<ParameterRanges> {
+		if (!this.plugin.settings.modelDiscovery?.enabled) {
+			return ParameterValidationService.getParameterRanges([]);
+		}
+
+		try {
+			const discovery = await this.discoveryService.discoverModels(false); // Use cache
+			const discoveredModels = discovery.success ? discovery.models : [];
+			return ParameterValidationService.getParameterRanges(discoveredModels);
+		} catch (error) {
+			console.warn('Failed to get parameter ranges from discovered models:', error);
+			return ParameterValidationService.getParameterRanges([]);
+		}
+	}
+
+	/**
+	 * Get discovered models with parameter information
+	 */
+	async getDiscoveredModels(): Promise<GoogleModel[]> {
+		if (!this.plugin.settings.modelDiscovery?.enabled) {
+			return [];
+		}
+
+		try {
+			const discovery = await this.discoveryService.discoverModels(false);
+			return discovery.success ? discovery.models : [];
+		} catch (error) {
+			console.warn('Failed to get discovered models:', error);
+			return [];
+		}
+	}
+
+	/**
+	 * Validate parameter values against model capabilities
+	 */
+	async validateParameters(temperature: number, topP: number, modelName?: string): Promise<{
+		temperature: { isValid: boolean; adjustedValue?: number; warning?: string };
+		topP: { isValid: boolean; adjustedValue?: number; warning?: string };
+	}> {
+		const discoveredModels = await this.getDiscoveredModels();
+		
+		return {
+			temperature: ParameterValidationService.validateTemperature(temperature, modelName, discoveredModels),
+			topP: ParameterValidationService.validateTopP(topP, modelName, discoveredModels),
+		};
+	}
+
+	/**
+	 * Get parameter display information for settings UI
+	 */
+	async getParameterDisplayInfo(): Promise<{
+		temperature: string;
+		topP: string;
+		hasModelData: boolean;
+	}> {
+		const discoveredModels = await this.getDiscoveredModels();
+		return ParameterValidationService.getParameterDisplayInfo(discoveredModels);
 	}
 }
