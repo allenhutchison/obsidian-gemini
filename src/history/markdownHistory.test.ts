@@ -213,7 +213,11 @@ describe('MarkdownHistory', () => {
 				message: 'test message',
 			};
 
-			mockPlugin.app.vault.adapter.exists.mockResolvedValue(false);
+			// Mock that folders don't exist
+			mockPlugin.app.vault.adapter.exists
+				.mockResolvedValueOnce(false) // base folder doesn't exist
+				.mockResolvedValueOnce(false) // history subfolder doesn't exist
+				.mockResolvedValueOnce(false); // history file doesn't exist
 
 			await markdownHistory.appendHistoryForFile(mockFile, entry);
 
@@ -226,7 +230,8 @@ describe('MarkdownHistory', () => {
 	describe('clearHistory', () => {
 		it('should only clear History subfolder, not entire state folder', async () => {
 			const historySubfolder = 'gemini-scribe/History';
-			mockPlugin.app.vault.adapter.exists.mockResolvedValue(true);
+			mockPlugin.app.vault.adapter.exists
+				.mockResolvedValueOnce(true); // History subfolder exists (for rmdir check)
 
 			await markdownHistory.clearHistory();
 
