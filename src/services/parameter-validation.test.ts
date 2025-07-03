@@ -65,6 +65,24 @@ describe('ParameterValidationService', () => {
 			expect(ranges.topP.max).toBe(1);
 		});
 
+		it('should handle large arrays of temperature values efficiently', () => {
+			// Create a large array to test reduce() instead of spread operator
+			const models: GoogleModel[] = Array.from({ length: 1000 }, (_, i) => ({
+				name: `models/gemini-test-${i}`,
+				displayName: `Gemini Test ${i}`,
+				description: 'Test model',
+				version: '001',
+				inputTokenLimit: 1000000,
+				outputTokenLimit: 8192,
+				supportedGenerationMethods: ['generateContent'],
+				maxTemperature: 1.0 + (i % 10) * 0.1, // Values from 1.0 to 1.9
+			}));
+
+			const ranges = ParameterValidationService.getParameterRanges(models);
+			
+			expect(ranges.temperature.max).toBe(1.9); // Should handle large arrays without failing
+		});
+
 		it('should always use 0-1 range for topP regardless of model defaults', () => {
 			const models: GoogleModel[] = [
 				{

@@ -7,6 +7,8 @@ import { ApiProvider } from '../api/index';
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
 	private showDeveloperSettings = false;
+	private temperatureDebounceTimer: NodeJS.Timeout | null = null;
+	private topPDebounceTimer: NodeJS.Timeout | null = null;
 
 	constructor(app: App, plugin: ObsidianGemini) {
 		super(app, plugin);
@@ -88,20 +90,29 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.temperature)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
-						// Validate the value against model capabilities
-						const validation = await modelManager.validateParameters(value, this.plugin.settings.topP);
-						
-						if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
-							slider.setValue(validation.temperature.adjustedValue);
-							this.plugin.settings.temperature = validation.temperature.adjustedValue;
-							if (validation.temperature.warning) {
-								new Notice(validation.temperature.warning);
-							}
-						} else {
-							this.plugin.settings.temperature = value;
+						// Clear previous timeout
+						if (this.temperatureDebounceTimer) {
+							clearTimeout(this.temperatureDebounceTimer);
 						}
 						
-						await this.plugin.saveSettings();
+						// Set immediate value for responsive UI
+						this.plugin.settings.temperature = value;
+						
+						// Debounce validation and saving
+						this.temperatureDebounceTimer = setTimeout(async () => {
+							// Validate the value against model capabilities
+							const validation = await modelManager.validateParameters(value, this.plugin.settings.topP);
+							
+							if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
+								slider.setValue(validation.temperature.adjustedValue);
+								this.plugin.settings.temperature = validation.temperature.adjustedValue;
+								if (validation.temperature.warning) {
+									new Notice(validation.temperature.warning);
+								}
+							}
+							
+							await this.plugin.saveSettings();
+						}, 300);
 					})
 			);
 	}
@@ -127,20 +138,29 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.topP)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
-						// Validate the value against model capabilities
-						const validation = await modelManager.validateParameters(this.plugin.settings.temperature, value);
-						
-						if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
-							slider.setValue(validation.topP.adjustedValue);
-							this.plugin.settings.topP = validation.topP.adjustedValue;
-							if (validation.topP.warning) {
-								new Notice(validation.topP.warning);
-							}
-						} else {
-							this.plugin.settings.topP = value;
+						// Clear previous timeout
+						if (this.topPDebounceTimer) {
+							clearTimeout(this.topPDebounceTimer);
 						}
 						
-						await this.plugin.saveSettings();
+						// Set immediate value for responsive UI
+						this.plugin.settings.topP = value;
+						
+						// Debounce validation and saving
+						this.topPDebounceTimer = setTimeout(async () => {
+							// Validate the value against model capabilities
+							const validation = await modelManager.validateParameters(this.plugin.settings.temperature, value);
+							
+							if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
+								slider.setValue(validation.topP.adjustedValue);
+								this.plugin.settings.topP = validation.topP.adjustedValue;
+								if (validation.topP.warning) {
+									new Notice(validation.topP.warning);
+								}
+							}
+							
+							await this.plugin.saveSettings();
+						}, 300);
 					})
 			);
 	}

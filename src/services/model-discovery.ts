@@ -98,11 +98,22 @@ export class ModelDiscoveryService {
 		const filteredModels = allModels.filter((model) => this.isGenerativeModel(model));
 
 		// Now fetch detailed information for each model to get parameter limits
-		const detailedModels = await Promise.all(
+		const detailedResults = await Promise.allSettled(
 			filteredModels.map((model) => this.fetchModelDetails(model, apiKey))
 		);
 
-		return detailedModels.filter((model) => model !== null) as GoogleModel[];
+		const detailedModels = detailedResults
+			.filter((result): result is PromiseFulfilledResult<GoogleModel> => 
+				result.status === 'fulfilled' && result.value !== null
+			)
+			.map(result => result.value);
+
+		const failedCount = detailedResults.length - detailedModels.length;
+		if (failedCount > 0) {
+			console.warn(`Failed to fetch detailed information for ${failedCount} models`);
+		}
+
+		return detailedModels;
 	}
 
 	/**
@@ -124,9 +135,9 @@ export class ModelDiscoveryService {
 			// Merge the detailed information with the basic model data
 			return {
 				...model,
-				maxTemperature: detailedData.maxTemperature,
-				topP: detailedData.topP,
-				topK: detailedData.topK,
+				maxTemperature: detailedData?.maxTemperature,
+				topP: detailedData?.topP,
+				topK: detailedData?.topK,
 			};
 		} catch (error) {
 			console.warn(`Error fetching model details for ${model.name}:`, error);

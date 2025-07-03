@@ -44,7 +44,7 @@ export class ParameterValidationService {
 			.filter(temp => temp !== undefined && temp !== null) as number[];
 
 		const maxTemp = maxTemperatures.length > 0 
-			? Math.max(...maxTemperatures)
+			? maxTemperatures.reduce((max, temp) => Math.max(max, temp), 0)
 			: this.DEFAULT_RANGES.temperature.max;
 
 		return {
