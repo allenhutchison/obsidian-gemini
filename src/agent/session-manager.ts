@@ -1,0 +1,279 @@
+import { TFile, TFolder } from 'obsidian';
+import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, ChatMessage } from '../types/agent';
+import type ObsidianGemini from '../main';
+
+/**
+ * Manages chat sessions for both note-centric and agent modes
+ */
+export class SessionManager {
+	private plugin: InstanceType<typeof ObsidianGemini>;
+	private activeSessions = new Map<string, ChatSession>();
+
+	// Folder paths for different session types
+	private readonly HISTORY_FOLDER = 'History';
+	private readonly AGENT_SESSIONS_FOLDER = 'Agent-Sessions';
+
+	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+		this.plugin = plugin;
+	}
+
+	/**
+	 * Create a new note-centric chat session
+	 */
+	async createNoteChatSession(sourceFile: TFile): Promise<ChatSession> {
+		const context: AgentContext = {
+			...DEFAULT_CONTEXTS.NOTE_CHAT,
+			contextFiles: [sourceFile]
+		};
+
+		const session: ChatSession = {
+			id: this.generateSessionId(),
+			type: SessionType.NOTE_CHAT,
+			title: `${sourceFile.basename} Chat`,
+			context,
+			created: new Date(),
+			lastActive: new Date(),
+			historyPath: `${this.getHistoryFolderPath()}/${sourceFile.basename} Chat.md`,
+			sourceNotePath: sourceFile.path
+		};
+
+		this.activeSessions.set(session.id, session);
+		return session;
+	}
+
+	/**
+	 * Create a new agent session
+	 */
+	async createAgentSession(title?: string, initialContext?: Partial<AgentContext>): Promise<ChatSession> {
+		const context: AgentContext = {
+			...DEFAULT_CONTEXTS.AGENT_SESSION,
+			...initialContext
+		};
+
+		const sessionTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
+		
+		const session: ChatSession = {
+			id: this.generateSessionId(),
+			type: SessionType.AGENT_SESSION,
+			title: sessionTitle,
+			context,
+			created: new Date(),
+			lastActive: new Date(),
+			historyPath: `${this.getAgentSessionsFolderPath()}/${sessionTitle}.md`
+		};
+
+		this.activeSessions.set(session.id, session);
+		return session;
+	}
+
+	/**
+	 * Get existing session for a note (note-centric mode)
+	 */
+	async getNoteChatSession(sourceFile: TFile): Promise<ChatSession> {
+		// Check if we already have an active session for this note
+		const existingSession = Array.from(this.activeSessions.values())
+			.find(session => 
+				session.type === SessionType.NOTE_CHAT && 
+				session.sourceNotePath === sourceFile.path
+			);
+
+		if (existingSession) {
+			existingSession.lastActive = new Date();
+			return existingSession;
+		}
+
+		// Check if a history file exists for this note
+		const historyPath = `${this.getHistoryFolderPath()}/${sourceFile.basename} Chat.md`;
+		const historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
+		
+		if (historyFile instanceof TFile) {
+			// Load existing session from history file
+			return this.loadSessionFromFile(historyFile);
+		}
+
+		// Create new session
+		return this.createNoteChatSession(sourceFile);
+	}
+
+	/**
+	 * Get all recent agent sessions
+	 */
+	async getRecentAgentSessions(limit = 10): Promise<ChatSession[]> {
+		const agentSessionsFolder = await this.getOrCreateAgentSessionsFolder();
+		const sessionFiles = agentSessionsFolder.children
+			.filter((file): file is TFile => file instanceof TFile && file.extension === 'md')
+			.sort((a, b) => b.stat.mtime - a.stat.mtime)
+			.slice(0, limit);
+
+		const sessions: ChatSession[] = [];
+		for (const file of sessionFiles) {
+			try {
+				const session = await this.loadSessionFromFile(file);
+				sessions.push(session);
+			} catch (error) {
+				console.warn(`Failed to load agent session from ${file.path}:`, error);
+			}
+		}
+
+		return sessions;
+	}
+
+	/**
+	 * Update session context
+	 */
+	updateSessionContext(sessionId: string, context: Partial<AgentContext>): void {
+		const session = this.activeSessions.get(sessionId);
+		if (session) {
+			session.context = { ...session.context, ...context };
+			session.lastActive = new Date();
+		}
+	}
+
+	/**
+	 * Add files to session context
+	 */
+	addContextFiles(sessionId: string, files: TFile[]): void {
+		const session = this.activeSessions.get(sessionId);
+		if (session) {
+			const existingPaths = session.context.contextFiles.map(f => f.path);
+			const newFiles = files.filter(f => !existingPaths.includes(f.path));
+			session.context.contextFiles.push(...newFiles);
+			session.lastActive = new Date();
+		}
+	}
+
+	/**
+	 * Remove files from session context
+	 */
+	removeContextFiles(sessionId: string, filePaths: string[]): void {
+		const session = this.activeSessions.get(sessionId);
+		if (session) {
+			session.context.contextFiles = session.context.contextFiles
+				.filter(f => !filePaths.includes(f.path));
+			session.lastActive = new Date();
+		}
+	}
+
+	/**
+	 * Promote a note chat to an agent session
+	 */
+	async promoteToAgentSession(noteChatId: string, title?: string): Promise<ChatSession> {
+		const noteSession = this.activeSessions.get(noteChatId);
+		if (!noteSession || noteSession.type !== SessionType.NOTE_CHAT) {
+			throw new Error('Session not found or not a note chat');
+		}
+
+		// Create new agent session with expanded capabilities
+		const agentSession = await this.createAgentSession(
+			title || `${noteSession.title} (Agent)`,
+			{
+				contextFiles: noteSession.context.contextFiles,
+				contextDepth: Math.max(noteSession.context.contextDepth, 3)
+			}
+		);
+
+		// TODO: Copy message history from note session to agent session
+		
+		return agentSession;
+	}
+
+	/**
+	 * Get session by ID
+	 */
+	getSession(sessionId: string): ChatSession | undefined {
+		return this.activeSessions.get(sessionId);
+	}
+
+	/**
+	 * Load session from a history file
+	 */
+	private async loadSessionFromFile(file: TFile): Promise<ChatSession> {
+		const content = await this.plugin.app.vault.read(file);
+		const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+
+		// Determine session type based on folder location
+		const isAgentSession = file.path.startsWith(this.getAgentSessionsFolderPath());
+		
+		const session: ChatSession = {
+			id: frontmatter?.session_id || this.generateSessionId(),
+			type: isAgentSession ? SessionType.AGENT_SESSION : SessionType.NOTE_CHAT,
+			title: frontmatter?.title || file.basename,
+			context: this.parseContextFromFrontmatter(frontmatter),
+			created: frontmatter?.created ? new Date(frontmatter.created) : new Date(file.stat.ctime),
+			lastActive: new Date(file.stat.mtime),
+			historyPath: file.path,
+			sourceNotePath: frontmatter?.source_note_path
+		};
+
+		this.activeSessions.set(session.id, session);
+		return session;
+	}
+
+	/**
+	 * Parse agent context from frontmatter
+	 */
+	private parseContextFromFrontmatter(frontmatter: any): AgentContext {
+		if (!frontmatter) {
+			return DEFAULT_CONTEXTS.NOTE_CHAT as AgentContext;
+		}
+
+		// Convert file paths back to TFile objects
+		const contextFiles: TFile[] = [];
+		if (frontmatter.context_files) {
+			for (const path of frontmatter.context_files) {
+				const file = this.plugin.app.vault.getAbstractFileByPath(path);
+				if (file instanceof TFile) {
+					contextFiles.push(file);
+				}
+			}
+		}
+
+		return {
+			contextFiles,
+			contextDepth: frontmatter.context_depth || 2,
+			enabledTools: frontmatter.enabled_tools || DEFAULT_CONTEXTS.NOTE_CHAT.enabledTools,
+			requireConfirmation: frontmatter.require_confirmation || [],
+			maxContextChars: frontmatter.max_context_chars,
+			maxCharsPerFile: frontmatter.max_chars_per_file
+		};
+	}
+
+	/**
+	 * Generate unique session ID
+	 */
+	private generateSessionId(): string {
+		return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+	}
+
+	/**
+	 * Get the history folder path within the plugin's state folder
+	 */
+	private getHistoryFolderPath(): string {
+		return `${this.plugin.settings.historyFolder}/${this.HISTORY_FOLDER}`;
+	}
+
+	/**
+	 * Get the agent sessions folder path within the plugin's state folder
+	 */
+	private getAgentSessionsFolderPath(): string {
+		return `${this.plugin.settings.historyFolder}/${this.AGENT_SESSIONS_FOLDER}`;
+	}
+
+	/**
+	 * Ensure the agent sessions folder exists
+	 */
+	private async getOrCreateAgentSessionsFolder(): Promise<TFolder> {
+		const folderPath = this.getAgentSessionsFolderPath();
+		
+		let folder = this.plugin.app.vault.getAbstractFileByPath(folderPath);
+		if (!(folder instanceof TFolder)) {
+			await this.plugin.app.vault.createFolder(folderPath);
+			folder = this.plugin.app.vault.getAbstractFileByPath(folderPath);
+			if (!(folder instanceof TFolder)) {
+				throw new Error(`Failed to create or access folder: ${folderPath}`);
+			}
+		}
+		
+		return folder;
+	}
+}
