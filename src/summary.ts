@@ -3,10 +3,10 @@ import { GeminiPrompts } from './prompts';
 import { BaseModelRequest } from './api/index';
 
 export class GeminiSummary {
-	private plugin: ObsidianGemini;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 	private prompts: GeminiPrompts;
 
-	constructor(plugin: ObsidianGemini) {
+	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
 	}

@@ -6,14 +6,14 @@ import {
 	StreamCallback,
 	StreamingModelResponse,
 } from './interfaces/model-api';
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 import { Notice } from 'obsidian';
 
 export class RetryModelApiDecorator implements ModelApi {
 	private decoratedApi: ModelApi;
-	private plugin: ObsidianGemini;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 
-	constructor(decoratedApi: ModelApi, plugin: ObsidianGemini) {
+	constructor(decoratedApi: ModelApi, plugin: InstanceType<typeof ObsidianGemini>) {
 		this.decoratedApi = decoratedApi;
 		this.plugin = plugin;
 	}

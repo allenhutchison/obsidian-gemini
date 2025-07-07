@@ -10,7 +10,7 @@ import { CustomPrompt } from '../prompts/types';
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
 export class GeminiView extends ItemView {
-	private plugin: ObsidianGemini;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 	private prompts: GeminiPrompts;
 	private chatbox: HTMLDivElement;
 	private currentFile: TFile | null;
@@ -25,7 +25,7 @@ export class GeminiView extends ItemView {
 	private scrollTimeout: NodeJS.Timeout | null = null;
 	private promptIndicator: HTMLElement;
 
-	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
+	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
@@ -463,7 +463,7 @@ export class GeminiView extends ItemView {
 
 					// User message already displayed by button handler
 
-					const streamResponse = this.plugin.geminiApi.generateStreamingResponse(request, (chunk) => {
+					const streamResponse = this.plugin.geminiApi.generateStreamingResponse(request, (chunk: string) => {
 						accumulatedMarkdown += chunk;
 
 						// Create or update the model message container

@@ -1,5 +1,5 @@
 import { TFile, Notice, normalizePath } from 'obsidian';
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 import { BasicGeminiConversationEntry, GeminiConversationEntry } from '../types/conversation';
 import * as Handlebars from 'handlebars';
 import * as path from 'path'; // Added for path manipulation

@@ -5,12 +5,12 @@ import { FolderSuggest } from './folder-suggest';
 import { ApiProvider } from '../api/index';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
-	plugin: ObsidianGemini;
+	plugin: InstanceType<typeof ObsidianGemini>;
 	private showDeveloperSettings = false;
 	private temperatureDebounceTimer: NodeJS.Timeout | null = null;
 	private topPDebounceTimer: NodeJS.Timeout | null = null;
 
-	constructor(app: App, plugin: ObsidianGemini) {
+	constructor(app: App, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

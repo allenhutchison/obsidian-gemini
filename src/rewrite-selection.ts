@@ -4,10 +4,10 @@ import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
 
 export class SelectionRewriter {
-	private plugin: ObsidianGemini;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 	private prompts: GeminiPrompts;
 
-	constructor(plugin: ObsidianGemini) {
+	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
 	}

@@ -1,4 +1,4 @@
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 import { Notice, TFile, debounce, normalizePath } from 'obsidian'; // Added normalizePath
 import { BasicGeminiConversationEntry, GeminiConversationEntry } from '../types/conversation';
 import { MarkdownHistory } from './markdownHistory';

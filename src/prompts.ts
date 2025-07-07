@@ -23,7 +23,7 @@ export class GeminiPrompts {
 	private contextPromptTemplate: Handlebars.TemplateDelegate;
 	private selectionRewritePromptTemplate: Handlebars.TemplateDelegate;
 
-	constructor(private plugin?: ObsidianGemini) {
+	constructor(private plugin?: InstanceType<typeof ObsidianGemini>) {
 		this.completionsPromptTemplate = Handlebars.compile(completionPromptContent);
 		this.systemPromptTemplate = Handlebars.compile(systemPromptContent);
 		this.generalPromptTemplate = Handlebars.compile(generalPromptContent);

@@ -1,4 +1,4 @@
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 import { MarkdownRenderer, TFile } from 'obsidian';
 import { ScribeDataView } from './dataview-utils';
 import { ScribeFile } from '.';

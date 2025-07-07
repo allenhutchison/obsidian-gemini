@@ -1,4 +1,4 @@
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 
 export interface GoogleModel {
 	name: string;

@@ -7,9 +7,9 @@ import { ModelApi, BaseModelRequest, ExtendedModelRequest, ModelResponse } from 
  * This is a placeholder implementation that will be filled in later
  */
 export class OllamaApi implements ModelApi {
-	private plugin: ObsidianGemini;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 
-	constructor(plugin: ObsidianGemini) {
+	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
 	}
 

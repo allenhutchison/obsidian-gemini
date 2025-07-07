@@ -15,7 +15,7 @@ import { GeminiPrompts } from '../../prompts';
  * Implementation of ModelApi using the new @google/genai SDK.
  */
 export class GeminiApiNew implements ModelApi {
-	private plugin: ObsidianGemini;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 	private ai: GoogleGenAI;
 	private prompts: GeminiPrompts;
 
@@ -23,7 +23,7 @@ export class GeminiApiNew implements ModelApi {
 	 * @param apiKey Gemini API key
 	 * @param model Model name/id (optional, defaults to 'gemini-pro')
 	 */
-	constructor(plugin: ObsidianGemini) {
+	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
 		this.ai = new GoogleGenAI({ apiKey: this.plugin.settings.apiKey });
 		this.prompts = new GeminiPrompts(plugin);

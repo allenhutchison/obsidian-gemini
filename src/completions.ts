@@ -5,14 +5,14 @@ import { BaseModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
 
 export class GeminiCompletions {
-	private plugin: ObsidianGemini;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 	private prompts: GeminiPrompts;
 	private force_fetch: () => void = () => {};
 	private readonly TYPING_DELAY = 750; // ms to wait after typing stops
 	private debouncedComplete: () => void;
 	private completionsOn: boolean = false;
 
-	constructor(plugin: ObsidianGemini) {
+	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
 		this.debouncedComplete = debounce(() => this.force_fetch(), this.TYPING_DELAY, true);

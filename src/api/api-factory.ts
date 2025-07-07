@@ -1,4 +1,4 @@
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiApiNew } from './implementations/gemini-api-new';
 import { OllamaApi } from './implementations/ollama-api';
@@ -23,7 +23,7 @@ export class ApiFactory {
 	 * @param provider Optional provider to override the settings
 	 * @returns An implementation of the ModelApi interface
 	 */
-	static createApi(plugin: ObsidianGemini, provider?: ApiProvider): ModelApi {
+	static createApi(plugin: InstanceType<typeof ObsidianGemini>, provider?: ApiProvider): ModelApi {
 		// Use the provider argument or get from settings
 		const apiProvider = provider || (plugin.settings.apiProvider as ApiProvider) || ApiProvider.GEMINI;
 

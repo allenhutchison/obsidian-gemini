@@ -1,7 +1,7 @@
 import { getAPI, DataviewApi } from 'obsidian-dataview';
 import { MarkdownRenderer, TFile } from 'obsidian';
 import { ScribeFile } from '.';
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 
 export class ScribeDataView {
 	private scribeFile: ScribeFile;

@@ -1,6 +1,6 @@
 import { MarkdownHistory } from './markdownHistory';
 import { TFile, Notice, normalizePath } from 'obsidian';
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 
 // Mock obsidian module
 jest.mock('obsidian', () => ({

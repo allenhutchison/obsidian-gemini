@@ -41,7 +41,7 @@ jest.mock('../../../main', () => {
 
 describe('GeminiApiNew', () => {
 	let geminiApiNew: GeminiApiNew;
-	let mockPluginInstance: ObsidianGemini;
+	let mockPluginInstance: InstanceType<typeof ObsidianGemini>;
 	// Get the mock functions from the mocked @google/genai
 	const { mockGenerateContent, mockGenerateContentStream } = require('@google/genai');
 
