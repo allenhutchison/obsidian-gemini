@@ -7,6 +7,7 @@ import { GeminiConversationEntry } from '../types/conversation';
 import { logDebugInfo } from '../api/utils/debug';
 import { CustomPrompt } from '../prompts/types';
 import { ChatSession } from '../types/agent';
+import { FilePickerModal } from './file-picker-modal';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -26,6 +27,8 @@ export class GeminiView extends ItemView {
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private scrollTimeout: NodeJS.Timeout | null = null;
 	private promptIndicator: HTMLElement;
+	private agentModeToggle: HTMLInputElement | null = null;
+	private contextPanel: HTMLElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -86,6 +89,9 @@ export class GeminiView extends ItemView {
 	private _buildViewDOM(container: HTMLElement) {
 		container.empty();
 		container.createEl('h2', { text: 'Gemini Chat' });
+
+		// Agent mode controls
+		this.buildAgentModeControls(container);
 
 		// Prompt indicator
 		this.promptIndicator = container.createDiv({ cls: 'gemini-scribe-prompt-indicator' });
@@ -251,6 +257,225 @@ export class GeminiView extends ItemView {
 	 */
 	getSessionContextFiles(): TFile[] {
 		return this.currentSession?.context.contextFiles || [];
+	}
+
+	/**
+	 * Build agent mode controls UI
+	 */
+	private buildAgentModeControls(container: HTMLElement) {
+		const controlsContainer = container.createDiv({ cls: 'gemini-scribe-agent-controls' });
+		
+		// Agent mode toggle
+		const toggleRow = controlsContainer.createDiv({ cls: 'gemini-scribe-control-row' });
+		toggleRow.createSpan({ text: '🤖 Agent Mode' });
+		
+		this.agentModeToggle = toggleRow.createEl('input', {
+			type: 'checkbox',
+			cls: 'gemini-scribe-agent-toggle'
+		});
+		
+		this.agentModeToggle.addEventListener('change', () => {
+			this.handleAgentModeToggle();
+		});
+
+		// Context panel (hidden by default)
+		this.contextPanel = controlsContainer.createDiv({ 
+			cls: 'gemini-scribe-context-panel' 
+		});
+		this.contextPanel.style.display = 'none';
+		
+		this.buildContextPanel();
+	}
+
+	/**
+	 * Build the context management panel
+	 */
+	private buildContextPanel() {
+		if (!this.contextPanel) return;
+		
+		this.contextPanel.empty();
+		
+		// Context files section
+		const filesSection = this.contextPanel.createDiv({ cls: 'gemini-scribe-context-files' });
+		const filesHeader = filesSection.createDiv({ cls: 'gemini-scribe-context-header' });
+		filesHeader.createSpan({ text: '📁 Context Files:' });
+		
+		const filesContainer = filesSection.createDiv({ cls: 'gemini-scribe-files-container' });
+		
+		// Add current context files
+		this.updateContextFilesDisplay(filesContainer);
+		
+		// Add files button
+		const addButton = filesSection.createEl('button', {
+			text: '+ Add files...',
+			cls: 'gemini-scribe-add-files-btn'
+		});
+		
+		addButton.addEventListener('click', () => {
+			this.showFileSelector();
+		});
+		
+		// Context depth slider
+		const depthSection = this.contextPanel.createDiv({ cls: 'gemini-scribe-context-depth' });
+		depthSection.createSpan({ text: '⚙️ Context Depth:' });
+		
+		const depthSlider = depthSection.createEl('input', {
+			type: 'range',
+			value: this.currentSession?.context.contextDepth?.toString() || '2',
+			attr: { min: '0', max: '5', step: '1' }
+		});
+		
+		const depthValue = depthSection.createSpan({ text: depthSlider.value });
+		
+		depthSlider.addEventListener('input', () => {
+			depthValue.textContent = depthSlider.value;
+			this.updateContextDepth(parseInt(depthSlider.value));
+		});
+	}
+
+	/**
+	 * Handle agent mode toggle
+	 */
+	private async handleAgentModeToggle() {
+		const isAgentMode = this.agentModeToggle?.checked || false;
+		
+		if (isAgentMode) {
+			// Switch to agent mode
+			await this.switchToAgentMode();
+		} else {
+			// Switch back to note mode
+			await this.switchToNoteMode();
+		}
+		
+		// Update context panel visibility
+		if (this.contextPanel) {
+			this.contextPanel.style.display = isAgentMode ? 'block' : 'none';
+		}
+	}
+
+	/**
+	 * Switch to agent mode
+	 */
+	private async switchToAgentMode() {
+		if (!this.currentFile) return;
+		
+		// Create new agent session with current file as initial context
+		const agentSession = await this.plugin.sessionManager.createAgentSession(
+			`Agent: ${this.currentFile.basename}`,
+			{
+				contextFiles: [this.currentFile],
+				contextDepth: 3
+			}
+		);
+		
+		this.currentSession = agentSession;
+		this.buildContextPanel(); // Refresh the context panel
+		
+		// Clear and reload chat for agent session
+		this.clearChat();
+		// TODO: Load agent session history when implemented
+	}
+
+	/**
+	 * Switch back to note mode
+	 */
+	private async switchToNoteMode() {
+		if (!this.currentFile) return;
+		
+		// Switch back to note-centric session
+		this.currentSession = await this.plugin.sessionManager.getNoteChatSession(this.currentFile);
+		
+		// Reload note chat history
+		const history = await this.plugin.history.getHistoryForFile(this.currentFile);
+		this.updateChat(history);
+	}
+
+	/**
+	 * Update context files display
+	 */
+	private updateContextFilesDisplay(container: HTMLElement) {
+		container.empty();
+		
+		const contextFiles = this.getSessionContextFiles();
+		
+		if (contextFiles.length === 0) {
+			container.createSpan({ text: 'No context files', cls: 'gemini-scribe-no-files' });
+			return;
+		}
+		
+		contextFiles.forEach(file => {
+			const fileItem = container.createDiv({ cls: 'gemini-scribe-context-file-item' });
+			fileItem.createSpan({ text: file.basename });
+			
+			const removeBtn = fileItem.createEl('button', {
+				text: '×',
+				cls: 'gemini-scribe-remove-file-btn'
+			});
+			
+			removeBtn.addEventListener('click', () => {
+				this.removeContextFile(file.path);
+			});
+		});
+	}
+
+	/**
+	 * Show file selector for adding context files
+	 */
+	private showFileSelector() {
+		const modal = new FilePickerModal(this.app, (selectedFiles) => {
+			if (!this.currentSession) return;
+			
+			// Add selected files to current session context
+			this.plugin.sessionManager.addContextFiles(this.currentSession.id, selectedFiles);
+			
+			// Refresh the context panel to show new files
+			this.buildContextPanel();
+		});
+		
+		modal.open();
+	}
+
+	/**
+	 * Remove a file from context
+	 */
+	private removeContextFile(filePath: string) {
+		if (!this.currentSession) return;
+		
+		this.plugin.sessionManager.removeContextFiles(this.currentSession.id, [filePath]);
+		
+		// Refresh the context panel
+		this.buildContextPanel();
+	}
+
+	/**
+	 * Update context depth
+	 */
+	private updateContextDepth(depth: number) {
+		if (!this.currentSession) return;
+		
+		this.plugin.sessionManager.updateSessionContext(this.currentSession.id, {
+			contextDepth: depth
+		});
+	}
+
+	/**
+	 * Update agent mode UI to reflect current session state
+	 */
+	private updateAgentModeUI() {
+		if (!this.agentModeToggle || !this.contextPanel) return;
+		
+		const isAgentMode = this.isAgentMode();
+		
+		// Update toggle state
+		this.agentModeToggle.checked = isAgentMode;
+		
+		// Update context panel visibility
+		this.contextPanel.style.display = isAgentMode ? 'block' : 'none';
+		
+		// Refresh context panel content if in agent mode
+		if (isAgentMode) {
+			this.buildContextPanel();
+		}
 	}
 
 	// Update prompt indicator to show active custom prompt
@@ -430,6 +655,9 @@ export class GeminiView extends ItemView {
 
 		// Get or create session for this file (note-centric chat)
 		this.currentSession = await this.plugin.sessionManager.getNoteChatSession(file);
+
+		// Update agent mode UI to reflect current session
+		this.updateAgentModeUI();
 
 		// Update prompt indicator
 		await this.updatePromptIndicator();
