@@ -1,6 +1,6 @@
 import { Setting } from 'obsidian';
-import ObsidianGemini from '../../main';
-import { ObsidianGeminiSettings } from '../../main';
+import ObsidianGemini from '../main';
+import { ObsidianGeminiSettings } from '../main';
 import { GEMINI_MODELS } from '../models';
 
 export async function selectModelSetting(

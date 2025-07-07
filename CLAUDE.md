@@ -36,7 +36,7 @@ npm run format-check # Check formatting without changes
 ### Core Pattern: Factory + Decorator
 
 ```
-main.ts → ApiFactory.createApi() → RetryModelApiDecorator → ModelApi (Gemini/Ollama)
+src/main.ts → ApiFactory.createApi() → RetryModelApiDecorator → ModelApi (Gemini/Ollama)
 ```
 
 The plugin uses a factory pattern for API creation with a retry decorator for resilience. All API implementations follow the `ModelApi` interface.

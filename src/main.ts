@@ -1,18 +1,18 @@
 import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
-import ObsidianGeminiSettingTab from './src/ui/settings';
-import { GeminiView, VIEW_TYPE_GEMINI } from './src/ui/gemini-view';
-import { GeminiSummary } from './src/summary';
-import { ApiFactory, ModelApi, ApiProvider } from './src/api/index';
-import { ScribeFile } from './src/files';
-import { GeminiHistory } from './src/history/history';
-import { GeminiCompletions } from './src/completions';
+import ObsidianGeminiSettingTab from './ui/settings';
+import { GeminiView, VIEW_TYPE_GEMINI } from './ui/gemini-view';
+import { GeminiSummary } from './summary';
+import { ApiFactory, ModelApi, ApiProvider } from './api/index';
+import { ScribeFile } from './files';
+import { GeminiHistory } from './history/history';
+import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './src/models';
-import { ModelManager } from './src/services/model-manager';
-import { PromptManager } from './src/prompts/prompt-manager';
-import { GeminiPrompts } from './src/prompts';
-import { SelectionRewriter } from './src/rewrite-selection';
-import { RewriteInstructionsModal } from './src/ui/rewrite-modal';
+import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './models';
+import { ModelManager } from './services/model-manager';
+import { PromptManager } from './prompts/prompt-manager';
+import { GeminiPrompts } from './prompts';
+import { SelectionRewriter } from './rewrite-selection';
+import { RewriteInstructionsModal } from './ui/rewrite-modal';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
