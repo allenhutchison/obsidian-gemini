@@ -6,6 +6,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ## What's New
 
+- **🎯 NEW: Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Select text, right-click "Rewrite with Gemini", provide instructions, and watch the AI improve just that section while maintaining document consistency.
 - **Dynamic Model Parameter Controls:** Automatic discovery of temperature and Top P ranges based on your available Gemini models with real-time validation
 - **Advanced Settings Panel:** Developer-focused settings now organized in a dedicated section with improved discoverability
 - **Model Discovery System:** Automatic fetching of the latest Gemini models with their parameter limits and capabilities
@@ -19,13 +20,13 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 - **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note and its linked notes (up to a configurable depth) as context. This ensures highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
-- **AI-Assisted Writing (with File Rewriting):** Collaborate with Gemini to draft, refine, and enhance your documents. When enabled, Gemini can directly modify your current note based on the conversation, providing a seamless writing experience.
+- **Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Simply select the text you want to improve, right-click to choose "Rewrite with Gemini", and provide instructions for how you'd like it rewritten.
 - **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
 - **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe/History/` folder, making it easy to backup, version control, and manage your AI interactions.
 - **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
 - **Search Grounding (Optional):** Enhance responses with Google Search results, improving the accuracy and relevance of the information provided by the AI. A configurable threshold controls how likely search grounding is to be triggered.
 - **Custom Prompt System:** Create reusable AI instruction templates that can be applied to individual notes, allowing you to customize the AI's behavior for different types of content (e.g., technical documentation, creative writing, tutoring). Includes command palette commands for easy creation, application, and removal of custom prompts.
-- **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
+- **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, selection rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
 - **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Chat history is stored locally in your Obsidian vault as markdown files.
 - **Robust History Management:**
   - Per-note history files with automatic linking
@@ -79,7 +80,6 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
       - **Search Grounding Threshold:** Adjust the threshold for triggering search grounding (higher values make it more likely).
     - **Summary Frontmatter Key:** Specify the key to use when storing summaries in the frontmatter (default: `summary`).
     - **Your Name:** Enter your name, which the AI will use when addressing you.
-    - **Rewrite Files:** Enable this option to allow Gemini to _directly modify_ your current document during chat. This is powerful but should be used with caution.
     - **Chat History:**
       - **Enable Chat History:** Toggle whether to save chat history.
       - **Plugin State Folder:** Choose the folder within your vault to store plugin data (chat history and custom prompts).
@@ -145,14 +145,30 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
 
 **Tip:** Great for creating quick overviews of long notes or generating descriptions for note indexes.
 
-### AI-Assisted Writing (File Rewriting)
+### Selection-Based Text Rewriting
 
-1.  **Enable Rewrite Files:** In the plugin settings, ensure "Rewrite Files" is toggled ON.
-2.  **Open Chat:** Open the Gemini Chat view.
-3.  **Open a File:** Open the Markdown file you want to edit.
-4.  **Toggle Rewrite:** In the chat view, check the "Rewrite file" checkbox.
-5.  **Interact:** Use the chat interface to collaborate with Gemini. The AI will _replace_ the content of your file below a `# Draft` heading (or create the heading if it doesn't exist) with its generated text. Content _above_ the `# Draft` heading is preserved.
-6.  **Caution:** Be mindful when using this feature, as it directly modifies your file. Review changes carefully.
+Precisely rewrite any portion of your text with AI assistance. This feature provides surgical precision for improving specific sections without affecting the rest of your document.
+
+1.  **Select Text:** Highlight the text you want to rewrite in any Markdown file.
+2.  **Access Rewrite Options:** 
+    - **Right-click method:** Right-click the selected text and choose "Rewrite with Gemini"
+    - **Command method:** Use the command palette (Ctrl/Cmd + P) and search for "Rewrite selected text with AI"
+3.  **Provide Instructions:** A modal will appear showing your selected text. Enter instructions for how you'd like it rewritten (e.g., "Make this more concise", "Fix grammar", "Make it more formal").
+4.  **Review and Apply:** The AI will rewrite only your selected text based on your instructions, maintaining consistency with the surrounding content.
+
+**Examples of rewrite instructions:**
+- "Make this more concise"
+- "Fix grammar and spelling" 
+- "Make it more formal/casual"
+- "Expand with more detail"
+- "Simplify the language"
+- "Make it more technical"
+
+**Benefits:**
+- **Precise control:** Only rewrites what you select
+- **Context-aware:** Maintains consistency with surrounding text and linked documents
+- **Safe:** No risk of accidentally modifying your entire document
+- **Intuitive:** Natural text editing workflow
 
 ### IDE-Style Completions
 

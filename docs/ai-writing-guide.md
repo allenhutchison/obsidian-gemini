@@ -1,467 +1,282 @@
-# AI-Assisted Writing (Rewrite) Guide
+# Selection-Based Text Rewriting Guide
 
-The AI-Assisted Writing feature, also known as "Rewrite," allows Gemini to directly modify your documents during chat conversations. This powerful feature enables collaborative writing where the AI can draft, edit, and refine content based on your instructions.
+The Selection-Based Text Rewriting feature allows you to precisely improve any portion of your text with AI assistance. Unlike traditional full-document rewriting, this feature provides surgical precision for refining specific sections while maintaining consistency with your overall document.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Safety and Precautions](#safety-and-precautions)
-- [Enabling Rewrite](#enabling-rewrite)
-- [How Rewrite Works](#how-rewrite-works)
-- [Using Rewrite Effectively](#using-rewrite-effectively)
-- [The Draft Section](#the-draft-section)
+- [Getting Started](#getting-started)
+- [How It Works](#how-it-works)
+- [Writing Effective Instructions](#writing-effective-instructions)
 - [Common Use Cases](#common-use-cases)
 - [Best Practices](#best-practices)
 - [Advanced Techniques](#advanced-techniques)
-- [Troubleshooting](#troubleshooting)
+- [Tips and Tricks](#tips-and-tricks)
 
 ## Overview
 
-### What is AI-Assisted Writing?
+### What is Selection-Based Text Rewriting?
 
-AI-Assisted Writing allows you to:
-- Collaborate with AI to draft documents
-- Get the AI to rewrite sections based on feedback
-- Iterate on content through conversation
-- Maintain a dialogue while the AI updates your document
+Selection-Based Text Rewriting allows you to:
+- **Select any text** in your document for AI improvement
+- **Provide specific instructions** for how to rewrite it
+- **Maintain document flow** with context-aware improvements
+- **Work safely** without risk of modifying unintended content
 
-### Key Features
+### Key Benefits
 
-1. **Direct Document Editing**: AI modifies your note in real-time
-2. **Conversational Iteration**: Refine through back-and-forth dialogue
-3. **Draft Preservation**: Original content above "# Draft" is protected
-4. **Context Awareness**: AI understands your entire document
+1. **🎯 Precise Control**: Only the selected text is modified
+2. **🔒 Safe Operation**: No risk of accidentally changing your entire document
+3. **🧠 Context-Aware**: AI considers surrounding content and linked documents
+4. **⚡ Quick Access**: Right-click menu or command palette integration
+5. **🎨 Flexible Instructions**: Natural language instructions for any type of improvement
 
-## Safety and Precautions
+## Getting Started
 
-### ⚠️ Important Warnings
+### Prerequisites
 
-1. **Backup Your Work**: Always backup important documents before using rewrite
-2. **Review Changes**: Carefully review all AI modifications
-3. **Use Version Control**: Consider using git or Obsidian's file recovery
-4. **Start with Copies**: Practice on duplicate files first
+- Gemini Scribe plugin installed and configured
+- Valid Gemini API key
+- An open Markdown document
 
-### What Gets Modified
+### Basic Workflow
 
-- Only content below the `# Draft` heading is replaced
-- Content above `# Draft` is preserved
-- If no `# Draft` heading exists, one is created
-- The entire draft section is replaced each time
+1. **Select text** you want to improve
+2. **Right-click** and choose "Rewrite with Gemini" (or use command palette)
+3. **Enter instructions** in the modal dialog
+4. **Review** the rewritten text
+5. **Accept** the changes automatically applied to your selection
 
-## Enabling Rewrite
+## How It Works
 
-### Step 1: Enable in Settings
+### The Rewrite Process
 
-1. Open Settings → Gemini Scribe
-2. Find "Rewrite Files" option
-3. Toggle ON
-4. Restart may be required
+1. **Text Selection**: You highlight the specific text that needs improvement
+2. **Context Building**: The AI receives:
+   - Your selected text
+   - The full document with selection markers
+   - Linked documents (based on your context settings)
+   - Your rewrite instructions
+3. **AI Processing**: The AI rewrites only the selected portion while considering:
+   - Document style and tone
+   - Surrounding context
+   - Overall document structure
+   - Your specific instructions
+4. **Text Replacement**: The original selection is replaced with the improved version
 
-### Step 2: Activate for a Document
+### Context Awareness
 
-1. Open the Gemini Chat
-2. Open the document you want to work on
-3. Check the "Rewrite file" checkbox in chat interface
-4. The AI now has write access to your document
+The AI has access to:
+- **Full document content** to understand context and maintain consistency
+- **Linked documents** from your vault (if context sending is enabled)
+- **Selection markers** showing exactly what to rewrite
+- **Document structure** to maintain appropriate flow
 
-### Visual Indicators
+## Writing Effective Instructions
 
-When rewrite is active:
-- Checkbox is checked in chat interface
-- Chat messages indicate rewrite mode
-- AI responses mention document modifications
+### Clear and Specific Instructions
 
-## How Rewrite Works
-
-### The Process
-
-1. **You write instructions** in the chat
-2. **AI generates content** based on your request
-3. **Document is updated** with new content
-4. **You review and provide feedback**
-5. **Iterate** until satisfied
-
-### Technical Details
-
-- AI receives full document context
-- Generates complete draft section
-- Replaces everything below `# Draft`
-- Preserves formatting and structure
-- Updates happen after each AI response
-
-## Using Rewrite Effectively
-
-### Starting a New Document
-
+**Good Examples:**
 ```
-You: Help me write a blog post about productivity tips for remote workers
-
-AI: I'll help you create a blog post about productivity tips for remote workers. Let me draft an initial version for you.
-
-[Document is updated with initial draft]
-
-You: Great start! Can you expand the section on time management and add specific techniques?
-
-AI: I'll expand the time management section with specific techniques.
-
-[Document is updated with expanded content]
+"Make this more concise while keeping the key points"
+"Fix grammar and improve sentence flow"
+"Make this sound more professional and formal"
+"Expand this with more specific examples"
+"Simplify this for a general audience"
+"Make this more technical and add industry terminology"
 ```
 
-### Editing Existing Content
-
-1. Place existing content below `# Draft` heading
-2. Enable rewrite mode
-3. Ask for specific changes:
-   - "Make this more concise"
-   - "Add examples to each point"
-   - "Rewrite in a more formal tone"
-
-### Iterative Refinement
-
-Build your document through conversation:
-
+**Avoid Vague Instructions:**
 ```
-You: Start with an outline for a technical guide on Docker
-
-[AI creates outline]
-
-You: Perfect. Now flesh out the introduction section
-
-[AI expands introduction]
-
-You: Add a prerequisites section before the introduction
-
-[AI reorganizes and adds prerequisites]
+"Make it better" (too vague)
+"Change this" (no direction)
+"Fix it" (unclear what needs fixing)
 ```
 
-## The Draft Section
+### Instruction Categories
 
-### Understanding the Draft Heading
+#### **Style Adjustments**
+- "Make this more formal/casual"
+- "Adjust the tone to be more friendly"
+- "Make this sound more confident"
+- "Write in a more conversational style"
 
-The `# Draft` heading is special:
-- Marks the boundary between preserved and rewritable content
-- Everything below it is replaced during rewrites
-- Everything above it is protected
+#### **Structure Improvements**
+- "Break this into shorter sentences"
+- "Combine these ideas into one paragraph"
+- "Add better transitions between ideas"
+- "Reorganize for better logical flow"
 
-### Structure Example
+#### **Content Enhancement**
+- "Add more specific examples"
+- "Include relevant statistics or data"
+- "Expand with more detail"
+- "Add a compelling introduction"
 
-```markdown
----
-title: My Document
----
+#### **Clarity and Concision**
+- "Make this more concise without losing meaning"
+- "Simplify the language for beginners"
+- "Clarify the main argument"
+- "Remove redundant information"
 
-# Research Notes
-These notes are preserved and won't be modified.
-
-# Draft
-Everything below this line can be rewritten by the AI.
-
-[AI-generated content appears here]
-```
-
-### Working with Mixed Content
-
-Keep important content above the draft:
-- Reference materials
-- Personal notes
-- Data you don't want changed
-- Instructions for yourself
+#### **Technical Adjustments**
+- "Fix grammar and spelling errors"
+- "Improve sentence structure"
+- "Correct any factual inaccuracies"
+- "Format this as a bulleted list"
 
 ## Common Use Cases
 
-### 1. Blog Post Writing
+### 📝 Content Improvement
 
+**Scenario**: Rough draft paragraph needs polishing
 ```
-You: Write a blog post about the benefits of meditation. Target audience is busy professionals.
+Selected text: "The thing about productivity is its hard to measure and people have different ideas about what it means."
 
-[AI creates initial draft]
+Instruction: "Fix grammar and make this more polished and clear"
 
-You: Add a personal anecdote in the introduction and include scientific studies
-
-[AI revises with anecdote and research]
-```
-
-### 2. Documentation
-
-```
-You: Create API documentation for a user authentication endpoint
-
-[AI drafts technical documentation]
-
-You: Add code examples in Python and JavaScript
-
-[AI updates with code examples]
+Result: "Productivity is challenging to measure because people have varying definitions of what it means to be productive."
 ```
 
-### 3. Email Drafting
+### 📊 Technical Writing
 
+**Scenario**: Making complex content accessible
 ```
-You: Help me write a follow-up email after a job interview
-
-[AI creates professional email]
-
-You: Make it slightly less formal and add a question about the timeline
-
-[AI adjusts tone and adds question]
+Instruction: "Simplify this technical explanation for a general audience"
 ```
 
-### 4. Academic Writing
+### ✍️ Creative Writing
 
+**Scenario**: Enhancing narrative descriptions
 ```
-You: Write an introduction for a paper on climate change impacts on agriculture
-
-[AI creates academic introduction]
-
-You: Add more recent citations and strengthen the thesis statement
-
-[AI revises with citations and stronger thesis]
+Instruction: "Make this description more vivid and engaging"
 ```
 
-### 5. Creative Writing
+### 📧 Professional Communication
 
+**Scenario**: Adjusting tone for business context
 ```
-You: Start a short story about a time traveler stuck in medieval times
+Instruction: "Make this more professional while keeping it friendly"
+```
 
-[AI writes opening]
+### 🔍 Research Notes
 
-You: Add more sensory details and develop the character's backstory
-
-[AI enriches the narrative]
+**Scenario**: Organizing scattered thoughts
+```
+Instruction: "Organize these ideas into a logical sequence with better transitions"
 ```
 
 ## Best Practices
 
-### 1. Clear Instructions
+### Before Rewriting
 
-**Be Specific**
-- ❌ "Make it better"
-- ✅ "Add more technical details and include code examples"
+1. **Read the full context** to understand how your selection fits
+2. **Be specific** about what you want to improve
+3. **Consider your audience** when writing instructions
+4. **Start with small selections** to get familiar with the feature
 
-**Provide Context**
-- ❌ "Write about AI"
-- ✅ "Write a beginner-friendly introduction to AI for high school students"
+### Writing Instructions
 
-### 2. Iterative Approach
+1. **Be specific and actionable**: Instead of "make it better", say "make it more concise"
+2. **Include target audience**: "Simplify for beginners" vs "Make more technical"
+3. **Specify desired outcome**: "Turn into a bulleted list" or "Add more examples"
+4. **Consider context**: Reference the document type or purpose if relevant
 
-1. Start with structure/outline
-2. Expand sections individually
-3. Refine tone and style
-4. Polish details last
+### After Rewriting
 
-### 3. Preserve Important Content
-
-Keep above `# Draft`:
-- Original requirements
-- Reference materials
-- Personal notes
-- Content you want to keep
-
-### 4. Regular Backups
-
-- Use Obsidian's file recovery
-- Copy important versions
-- Consider git integration
-- Export drafts periodically
-
-### 5. Review Thoroughly
-
-After each rewrite:
-- Read the entire draft
-- Check for accuracy
-- Verify tone consistency
-- Ensure requirements are met
+1. **Review carefully** to ensure the rewrite meets your expectations
+2. **Check consistency** with the surrounding text
+3. **Verify accuracy** of any facts or claims
+4. **Test the flow** by reading the full paragraph/section
 
 ## Advanced Techniques
 
-### 1. Style Mimicking
+### Multi-Step Rewriting
 
-Provide examples above the draft:
-```markdown
-# Style Reference
-[Paste example of desired writing style]
+For complex improvements, use multiple rewrite sessions:
 
-# Draft
-[AI will mimic the style above]
+1. **First pass**: "Fix grammar and basic clarity issues"
+2. **Second pass**: "Make this more engaging and add examples"
+3. **Third pass**: "Adjust tone to be more professional"
+
+### Context-Specific Instructions
+
+Reference other parts of your document:
+```
+"Make this introduction match the formal tone used in the conclusion"
+"Adjust this to be consistent with the writing style in the previous section"
+"Make this flow better from the preceding paragraph"
 ```
 
-### 2. Structured Templates
+### Template-Style Instructions
 
-Create templates for AI to follow:
-```markdown
-# Template
-- Introduction (2 paragraphs)
-- Main Points (3-5 with examples)
-- Conclusion (1 paragraph)
-
-# Draft
-[AI follows the structure]
+Create reusable instruction patterns:
+```
+"Convert to FAQ format with questions and answers"
+"Rewrite as a step-by-step tutorial"
+"Transform into a comparison table format"
+"Change to executive summary style"
 ```
 
-### 3. Collaborative Outlining
+### Collaborative Iteration
 
-Build complex documents:
-1. Create outline together
-2. Expand each section individually
-3. Ask AI to ensure consistency
-4. Refine transitions between sections
+Use the chat feature alongside selection rewriting:
+1. **Ask questions** in chat about what would work best
+2. **Get suggestions** for improvement approaches
+3. **Use chat feedback** to refine your rewrite instructions
 
-### 4. Research Integration
+## Tips and Tricks
 
-```
-You: I've added research notes above. Please write a literature review section that synthesizes these sources.
+### Keyboard Shortcuts
 
-[AI integrates research into coherent review]
-```
+- Use **Command Palette** (Ctrl/Cmd + P) and type "Rewrite selected text" for quick access
+- The modal supports **Ctrl/Cmd + Enter** to submit quickly
 
-### 5. Multi-Format Writing
+### Selection Strategies
 
-Same content, different formats:
-- "Convert this to a slide presentation outline"
-- "Rewrite as a technical specification"
-- "Transform into a how-to guide"
+- **Start small**: Begin with single sentences or short paragraphs
+- **Natural boundaries**: Select complete thoughts or logical sections
+- **Avoid partial sentences**: Unless specifically reformatting structure
+
+### Instruction Refinement
+
+- **Iterate**: If the first result isn't perfect, select again and provide more specific guidance
+- **Combine goals**: "Fix grammar and make more concise" works well together
+- **Reference style**: "Make this match the tone of academic papers" or "Write like a blog post"
+
+### Quality Control
+
+- **Read aloud**: Check if the rewritten text flows naturally
+- **Check links**: Ensure any internal links or references still make sense
+- **Verify formatting**: Make sure markdown formatting is preserved appropriately
+
+### Working with Large Documents
+
+- **Section by section**: Rewrite large documents in manageable chunks
+- **Maintain consistency**: Use similar instructions for related sections
+- **Review transitions**: Pay attention to how rewritten sections connect
 
 ## Troubleshooting
 
-### Rewrite Not Working
+### Common Issues
 
-1. **Check Settings**
-   - Ensure "Rewrite Files" is ON
-   - Restart Obsidian if needed
+**Issue**: Rewrite doesn't match expectations
+**Solution**: Provide more specific instructions and context about desired outcome
 
-2. **Check Chat Interface**
-   - "Rewrite file" checkbox must be checked
-   - Document must be open
+**Issue**: Style doesn't match rest of document
+**Solution**: Include references to document style in your instructions
 
-3. **Check Document Structure**
-   - Look for `# Draft` heading
-   - Ensure proper markdown formatting
+**Issue**: Important information was removed
+**Solution**: Specify what information must be preserved in your instructions
 
-### Content Not Updating
+**Issue**: Result is too different from original
+**Solution**: Use more conservative instructions like "lightly edit for clarity"
 
-**Document not changing:**
-- Refresh the document view
-- Check if document is in edit mode
-- Look for error messages in chat
+### Getting Better Results
 
-**Wrong content replaced:**
-- Verify `# Draft` heading location
-- Check for multiple draft headings
-- Ensure heading is exactly `# Draft`
+1. **Provide context**: Mention the document type, audience, or purpose
+2. **Be specific**: Replace vague terms with concrete requirements
+3. **Use examples**: Reference other parts of your document as style guides
+4. **Iterate**: Refine instructions based on previous results
 
-### Quality Issues
-
-**Generic content:**
-- Provide more specific instructions
-- Include examples or style guides
-- Add context above draft section
-
-**Lost information:**
-- Move important content above `# Draft`
-- Be explicit about what to preserve
-- Use incremental changes
-
-### Performance Problems
-
-**Slow updates:**
-- Large documents take longer
-- Complex requests need processing time
-- Consider breaking into sections
-
-**Timeouts:**
-- Reduce request complexity
-- Work on smaller sections
-- Check internet connection
-
-## Safety Tips
-
-### 1. Version Control
-
-Use Obsidian's file recovery:
-- Settings → File Recovery
-- Configure snapshot interval
-- Know how to restore versions
-
-### 2. Backup Strategies
-
-- Duplicate important files first
-- Export versions as you work
-- Use cloud sync for extra safety
-- Consider git for technical documents
-
-### 3. Review Process
-
-1. Read entire draft after each change
-2. Compare with previous version
-3. Verify facts and figures
-4. Check formatting and structure
-
-### 4. Gradual Adoption
-
-- Start with low-stakes documents
-- Practice on test files
-- Build confidence gradually
-- Learn AI's patterns and limitations
-
-## Examples of Effective Use
-
-### Example 1: Technical Blog Post
-
-```
-You: I need a blog post explaining containerization to beginners. Start with an analogy.
-
-[AI writes introduction with shipping container analogy]
-
-You: Good! Now add three main benefits with real-world examples.
-
-[AI adds benefits section with examples]
-
-You: Add a simple tutorial section showing how to create a first Docker container.
-
-[AI adds hands-on tutorial]
-```
-
-### Example 2: Business Proposal
-
-```
-You: Create an outline for a proposal to implement a new CRM system
-
-[AI creates structured outline]
-
-You: Expand the budget section with typical cost ranges
-
-[AI adds detailed budget information]
-
-You: Add a risk assessment section with mitigation strategies
-
-[AI incorporates risk analysis]
-```
-
-### Example 3: Academic Essay
-
-```
-You: Write an essay introduction about the impact of social media on democracy
-
-[AI writes introduction]
-
-You: Add a thesis statement that takes a nuanced position
-
-[AI revises with clear thesis]
-
-You: Develop three supporting arguments with evidence
-
-[AI expands with structured arguments]
-```
-
-## Conclusion
-
-AI-Assisted Writing is a powerful feature that can significantly enhance your writing workflow. By understanding how to use it safely and effectively, you can:
-
-- Draft documents faster
-- Iterate on ideas more efficiently
-- Maintain consistency in long documents
-- Explore different writing styles
-- Overcome writer's block
-
-Remember: The AI is a collaborator, not a replacement for your judgment. Always review and refine the output to ensure it meets your standards and requirements.
-
-Start with simple documents, build your confidence, and gradually tackle more complex writing projects. With practice, you'll develop an efficient workflow that combines your creativity and expertise with the AI's capabilities.
+Remember: The Selection-Based Text Rewriting feature is designed to be your collaborative writing partner, helping you refine and improve your content with precision and control.

@@ -1,0 +1,18 @@
+You are helping to rewrite a specific portion of a document.
+
+USER INSTRUCTIONS:
+{{instructions}}
+
+DOCUMENT WITH SELECTION MARKED:
+{{documentWithMarkers}}
+
+FOCUS: The text between [SELECTION_START] and [SELECTION_END] is what needs to be rewritten.
+
+IMPORTANT GUIDELINES:
+- Only rewrite the text between the selection markers
+- Use the surrounding context to maintain consistency in style, tone, and flow
+- Ensure the rewritten text flows naturally with the text before and after it
+- Consider the document's overall structure and the selection's role within it
+- Return ONLY the rewritten text, without the markers
+- Do not add explanations or comments
+- Ignore any duplicate document content that may appear elsewhere

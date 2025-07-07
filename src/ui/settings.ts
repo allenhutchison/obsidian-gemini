@@ -278,15 +278,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
-			.setName('Rewrite Files')
-			.setDesc('Whether to allow the model to rewrite files during chat.')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.rewriteFiles).onChange(async (value) => {
-					this.plugin.settings.rewriteFiles = value;
-					await this.plugin.saveSettings();
-				})
-			);
 
 		// Plugin State Folder
 		new Setting(containerEl)

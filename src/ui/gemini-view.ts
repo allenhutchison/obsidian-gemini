@@ -1,6 +1,5 @@
 import ObsidianGemini from '../../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
-import { ModelRewriteMode } from '../rewrite';
 import { ExtendedModelRequest } from '../api/index';
 import { GeminiPrompts } from '../prompts';
 import { GEMINI_MODELS } from '../models';
@@ -12,12 +11,10 @@ export const VIEW_TYPE_GEMINI = 'gemini-view';
 
 export class GeminiView extends ItemView {
 	private plugin: ObsidianGemini;
-	private rewriteMode: ModelRewriteMode;
 	private prompts: GeminiPrompts;
 	private chatbox: HTMLDivElement;
 	private currentFile: TFile | null;
 	private observer: MutationObserver | null;
-	private shoudRewriteFile: boolean;
 	private timerDisplay: HTMLDivElement;
 	private timerInterval: NodeJS.Timeout | null = null;
 	private startTime: number | null = null;
@@ -31,7 +28,6 @@ export class GeminiView extends ItemView {
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
 		this.plugin = plugin;
-		this.rewriteMode = new ModelRewriteMode(plugin);
 		this.prompts = new GeminiPrompts(plugin);
 		this.registerLinkClickHandler();
 		this.registerSettingsListener();
@@ -112,26 +108,6 @@ export class GeminiView extends ItemView {
 		setIcon(sendButton, 'send-horizontal');
 		this.timerDisplay = sendContainer.createDiv({ cls: 'gemini-scribe-timer' });
 
-		// Add checkbox container below input area
-		if (this.plugin.settings.rewriteFiles) {
-			const optionsArea = container.createDiv({
-				cls: 'gemini-scribe-options-area',
-			});
-			const rewriteCheckbox = optionsArea.createEl('input', {
-				type: 'checkbox',
-				cls: 'gemini-scribe-rewrite-checkbox',
-			});
-			optionsArea
-				.createEl('label', {
-					text: 'Rewrite file',
-					cls: 'gemini-scribe-rewrite-label',
-				})
-				.prepend(rewriteCheckbox);
-
-			rewriteCheckbox.addEventListener('change', () => {
-				this.shoudRewriteFile = rewriteCheckbox.checked;
-			});
-		}
 
 		// Model picker area - now below input and options
 		if (this.plugin.settings.showModelPicker) {
@@ -458,11 +434,6 @@ export class GeminiView extends ItemView {
 
 	async sendMessage(userMessage: string) {
 		if (userMessage.trim() !== '') {
-			if (this.shoudRewriteFile) {
-				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
-				await this.rewriteMode.generateRewriteResponse(userMessage, history);
-				return;
-			}
 			try {
 				const history = (await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? [];
 				const prompt = this.prompts.generalPrompt({ userMessage: userMessage });

@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
 import ObsidianGeminiSettingTab from './src/ui/settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './src/ui/gemini-view';
 import { GeminiSummary } from './src/summary';
@@ -11,6 +11,8 @@ import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from '
 import { ModelManager } from './src/services/model-manager';
 import { PromptManager } from './src/prompts/prompt-manager';
 import { GeminiPrompts } from './src/prompts';
+import { SelectionRewriter } from './src/rewrite-selection';
+import { RewriteInstructionsModal } from './src/ui/rewrite-modal';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -30,7 +32,6 @@ export interface ObsidianGeminiSettings {
 	searchGrounding: boolean;
 	summaryFrontmatterKey: string;
 	userName: string;
-	rewriteFiles: boolean;
 	chatHistory: boolean;
 	historyFolder: string;
 	showModelPicker: boolean;
@@ -56,7 +57,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	searchGrounding: false,
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
-	rewriteFiles: false,
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	showModelPicker: false,
@@ -108,6 +108,64 @@ export default class ObsidianGemini extends Plugin {
 			name: 'Open Gemini Chat',
 			callback: () => this.activateView(),
 		});
+
+		// Add selection rewrite command
+		this.addCommand({
+			id: 'gemini-scribe-rewrite-selection',
+			name: 'Rewrite selected text with AI',
+			editorCheckCallback: (checking: boolean, editor: Editor, view: MarkdownView) => {
+				const selection = editor.getSelection();
+				
+				if (checking) {
+					// Command only available when text is selected
+					return selection.length > 0;
+				}
+				
+				// Show modal for instructions
+				const modal = new RewriteInstructionsModal(
+					this.app,
+					selection,
+					async (instructions) => {
+						const rewriter = new SelectionRewriter(this);
+						await rewriter.rewriteSelection(
+							editor,
+							selection,
+							instructions
+						);
+					}
+				);
+				modal.open();
+			}
+		});
+
+		// Add context menu item for selection rewrite
+		this.registerEvent(
+			this.app.workspace.on('editor-menu', (menu, editor, view) => {
+				const selection = editor.getSelection();
+				if (selection) {
+					menu.addItem((item) => {
+						item
+							.setTitle('Rewrite with Gemini')
+							.setIcon('bot-message-square')
+							.onClick(() => {
+								const modal = new RewriteInstructionsModal(
+									this.app,
+									selection,
+									async (instructions) => {
+										const rewriter = new SelectionRewriter(this);
+										await rewriter.rewriteSelection(
+											editor,
+											selection,
+											instructions
+										);
+									}
+								);
+								modal.open();
+							});
+					});
+				}
+			})
+		);
 
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
 
