@@ -327,9 +327,9 @@ export class GeminiView extends ItemView {
 		
 		const depthValue = depthSection.createSpan({ text: depthSlider.value });
 		
-		depthSlider.addEventListener('input', () => {
+		depthSlider.addEventListener('input', async () => {
 			depthValue.textContent = depthSlider.value;
-			this.updateContextDepth(parseInt(depthSlider.value));
+			await this.updateContextDepth(parseInt(depthSlider.value));
 		});
 	}
 
@@ -373,7 +373,10 @@ export class GeminiView extends ItemView {
 		
 		// Clear and reload chat for agent session
 		this.clearChat();
-		// TODO: Load agent session history when implemented
+		
+		// Load agent session history
+		const history = await this.plugin.history.getHistoryForSession(agentSession);
+		this.updateChat(history);
 	}
 
 	/**
@@ -385,8 +388,8 @@ export class GeminiView extends ItemView {
 		// Switch back to note-centric session
 		this.currentSession = await this.plugin.sessionManager.getNoteChatSession(this.currentFile);
 		
-		// Reload note chat history
-		const history = await this.plugin.history.getHistoryForFile(this.currentFile);
+		// Reload note chat history using session-aware method
+		const history = await this.plugin.history.getHistoryForSession(this.currentSession);
 		this.updateChat(history);
 	}
 
@@ -412,8 +415,8 @@ export class GeminiView extends ItemView {
 				cls: 'gemini-scribe-remove-file-btn'
 			});
 			
-			removeBtn.addEventListener('click', () => {
-				this.removeContextFile(file.path);
+			removeBtn.addEventListener('click', async () => {
+				await this.removeContextFile(file.path);
 			});
 		});
 	}
@@ -422,11 +425,11 @@ export class GeminiView extends ItemView {
 	 * Show file selector for adding context files
 	 */
 	private showFileSelector() {
-		const modal = new FilePickerModal(this.app, (selectedFiles) => {
+		const modal = new FilePickerModal(this.app, async (selectedFiles) => {
 			if (!this.currentSession) return;
 			
 			// Add selected files to current session context
-			this.plugin.sessionManager.addContextFiles(this.currentSession.id, selectedFiles);
+			await this.plugin.sessionManager.addContextFiles(this.currentSession.id, selectedFiles);
 			
 			// Refresh the context panel to show new files
 			this.buildContextPanel();
@@ -438,10 +441,10 @@ export class GeminiView extends ItemView {
 	/**
 	 * Remove a file from context
 	 */
-	private removeContextFile(filePath: string) {
+	private async removeContextFile(filePath: string) {
 		if (!this.currentSession) return;
 		
-		this.plugin.sessionManager.removeContextFiles(this.currentSession.id, [filePath]);
+		await this.plugin.sessionManager.removeContextFiles(this.currentSession.id, [filePath]);
 		
 		// Refresh the context panel
 		this.buildContextPanel();
@@ -450,10 +453,10 @@ export class GeminiView extends ItemView {
 	/**
 	 * Update context depth
 	 */
-	private updateContextDepth(depth: number) {
+	private async updateContextDepth(depth: number) {
 		if (!this.currentSession) return;
 		
-		this.plugin.sessionManager.updateSessionContext(this.currentSession.id, {
+		await this.plugin.sessionManager.updateSessionContext(this.currentSession.id, {
 			contextDepth: depth
 		});
 	}
@@ -662,8 +665,8 @@ export class GeminiView extends ItemView {
 		// Update prompt indicator
 		await this.updatePromptIndicator();
 
-		// Load history for this session
-		const history = await this.plugin.history.getHistoryForFile(file);
+		// Load history for this session using the new session-aware method
+		const history = await this.plugin.history.getHistoryForSession(this.currentSession);
 
 		// Update the chat with the history
 		this.updateChat(history);
@@ -753,29 +756,21 @@ export class GeminiView extends ItemView {
 							await this.finalizeStreamingMessage(modelMessageContainer, botResponse.markdown);
 						}
 
-						if (this.plugin.settings.chatHistory) {
-							// Store messages first
-							await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+						if (this.plugin.settings.chatHistory && this.currentSession) {
+							// Store user message first
+							await this.plugin.history.addEntryToSession(this.currentSession, {
 								role: 'user',
 								message: userMessage,
+								notePath: this.currentFile?.path || '',
+								created_at: new Date()
 							});
 
-							// Get custom prompt info for history
-							let customPromptInfo = undefined;
-							if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
-								customPromptInfo = await this.plugin.promptManager.getPromptHistoryInfo(this.currentFile);
-							}
-
-							await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+							// Store assistant message
+							await this.plugin.history.addEntryToSession(this.currentSession, {
 								role: 'model',
 								message: botResponse.markdown,
-								userMessage: userMessage,
-								model: this.plugin.settings.chatModelName,
-								metadata: {
-									...(customPromptInfo ? { customPrompt: customPromptInfo } : {}),
-									temperature: this.plugin.settings.temperature,
-									topP: this.plugin.settings.topP,
-								},
+								notePath: this.currentFile?.path || '',
+								created_at: new Date()
 							});
 
 							// No need to clear and reload - the streaming UI already shows the messages
@@ -796,34 +791,26 @@ export class GeminiView extends ItemView {
 					// Fall back to non-streaming API
 					const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
 
-					if (this.plugin.settings.chatHistory) {
-						// Store messages first
-						await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+					if (this.plugin.settings.chatHistory && this.currentSession) {
+						// Store user message first
+						await this.plugin.history.addEntryToSession(this.currentSession, {
 							role: 'user',
 							message: userMessage,
+							notePath: this.currentFile?.path || '',
+							created_at: new Date()
 						});
 
-						// Get custom prompt info for history
-						let customPromptInfo = undefined;
-						if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
-							customPromptInfo = await this.plugin.promptManager.getPromptHistoryInfo(this.currentFile);
-						}
-
-						await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+						// Store assistant message
+						await this.plugin.history.addEntryToSession(this.currentSession, {
 							role: 'model',
 							message: botResponse.markdown,
-							userMessage: userMessage,
-							model: this.plugin.settings.chatModelName,
-							metadata: {
-								...(customPromptInfo ? { customPrompt: customPromptInfo } : {}),
-								temperature: this.plugin.settings.temperature,
-								topP: this.plugin.settings.topP,
-							},
+							notePath: this.currentFile?.path || '',
+							created_at: new Date()
 						});
 
-						// Clear and reload the entire chat from history
+						// Clear and reload the entire chat from session history
 						this.clearChat();
-						await this.updateChat((await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? []);
+						await this.updateChat(await this.plugin.history.getHistoryForSession(this.currentSession));
 
 						// Only display grounding content as it's not stored in history
 						if (botResponse.rendered) {

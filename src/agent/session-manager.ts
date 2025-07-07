@@ -121,36 +121,51 @@ export class SessionManager {
 	/**
 	 * Update session context
 	 */
-	updateSessionContext(sessionId: string, context: Partial<AgentContext>): void {
+	async updateSessionContext(sessionId: string, context: Partial<AgentContext>): Promise<void> {
 		const session = this.activeSessions.get(sessionId);
 		if (session) {
 			session.context = { ...session.context, ...context };
 			session.lastActive = new Date();
+			
+			// Save metadata to history file for agent sessions
+			if (session.type === SessionType.AGENT_SESSION) {
+				await this.plugin.history.updateSessionMetadata(session);
+			}
 		}
 	}
 
 	/**
 	 * Add files to session context
 	 */
-	addContextFiles(sessionId: string, files: TFile[]): void {
+	async addContextFiles(sessionId: string, files: TFile[]): Promise<void> {
 		const session = this.activeSessions.get(sessionId);
 		if (session) {
 			const existingPaths = session.context.contextFiles.map(f => f.path);
 			const newFiles = files.filter(f => !existingPaths.includes(f.path));
 			session.context.contextFiles.push(...newFiles);
 			session.lastActive = new Date();
+			
+			// Save metadata to history file for agent sessions
+			if (session.type === SessionType.AGENT_SESSION) {
+				await this.plugin.history.updateSessionMetadata(session);
+			}
 		}
 	}
 
 	/**
 	 * Remove files from session context
 	 */
-	removeContextFiles(sessionId: string, filePaths: string[]): void {
+	async removeContextFiles(sessionId: string, filePaths: string[]): Promise<void> {
 		const session = this.activeSessions.get(sessionId);
 		if (session) {
 			session.context.contextFiles = session.context.contextFiles
 				.filter(f => !filePaths.includes(f.path));
 			session.lastActive = new Date();
+			
+			// Save metadata to history file for agent sessions
+			if (session.type === SessionType.AGENT_SESSION) {
+				await this.plugin.history.updateSessionMetadata(session);
+			}
 		}
 	}
 

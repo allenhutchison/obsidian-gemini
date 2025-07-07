@@ -368,3 +368,139 @@ If your plugin does not need CSS, delete this file.
 .callout[data-callout='metadata'] th {
 	padding: 3px 8px;
 }
+
+/* Agent Mode Controls */
+.gemini-scribe-agent-controls {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px;
+	margin-bottom: 12px;
+}
+
+.gemini-scribe-control-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.gemini-scribe-agent-toggle {
+	margin-left: auto;
+}
+
+.gemini-scribe-context-panel {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-scribe-context-header {
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.gemini-scribe-files-container {
+	min-height: 24px;
+	margin-bottom: 8px;
+}
+
+.gemini-scribe-context-file-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 4px 8px;
+	margin-bottom: 4px;
+	font-size: 13px;
+}
+
+.gemini-scribe-remove-file-btn {
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 2px 4px;
+	border-radius: 2px;
+}
+
+.gemini-scribe-remove-file-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-error);
+}
+
+.gemini-scribe-add-files-btn {
+	background-color: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 4px 8px;
+	font-size: 12px;
+	cursor: pointer;
+	color: var(--text-normal);
+}
+
+.gemini-scribe-add-files-btn:hover {
+	background-color: var(--interactive-hover);
+}
+
+.gemini-scribe-context-depth {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.gemini-scribe-context-depth input[type="range"] {
+	flex: 1;
+	max-width: 100px;
+}
+
+.gemini-scribe-no-files {
+	color: var(--text-muted);
+	font-style: italic;
+	font-size: 12px;
+}
+
+/* File Picker Modal */
+.gemini-file-picker-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+	margin: 16px 0;
+}
+
+.gemini-file-picker-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.gemini-file-picker-item:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-file-picker-label {
+	flex: 1;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.gemini-file-picker-buttons {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 16px;
+}
+
+.gemini-file-picker-buttons button {
+	padding: 8px 16px;
+	border-radius: 4px;
+	cursor: pointer;
+}
