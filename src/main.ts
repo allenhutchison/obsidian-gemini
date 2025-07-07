@@ -13,6 +13,7 @@ import { PromptManager } from './prompts/prompt-manager';
 import { GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
 import { RewriteInstructionsModal } from './ui/rewrite-modal';
+import { SessionManager } from './agent/session-manager';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -86,6 +87,7 @@ export default class ObsidianGemini extends Plugin {
 	public history: GeminiHistory;
 	public promptManager: PromptManager;
 	public prompts: GeminiPrompts;
+	public sessionManager: SessionManager;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -198,6 +200,9 @@ export default class ObsidianGemini extends Plugin {
 		// to be ready, otherwise it throws an error when trying to access the vault.
 		this.history = new GeminiHistory(this);
 		await this.history.setupHistoryCommands();
+		
+		// Initialize session manager
+		this.sessionManager = new SessionManager(this);
 		if (this.app.workspace.layoutReady) {
 			await this.history.onLayoutReady;
 		}

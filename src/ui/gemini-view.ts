@@ -6,6 +6,7 @@ import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
 import { logDebugInfo } from '../api/utils/debug';
 import { CustomPrompt } from '../prompts/types';
+import { ChatSession } from '../types/agent';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -14,6 +15,7 @@ export class GeminiView extends ItemView {
 	private prompts: GeminiPrompts;
 	private chatbox: HTMLDivElement;
 	private currentFile: TFile | null;
+	private currentSession: ChatSession | null = null;
 	private observer: MutationObserver | null;
 	private timerDisplay: HTMLDivElement;
 	private timerInterval: NodeJS.Timeout | null = null;
@@ -230,6 +232,27 @@ export class GeminiView extends ItemView {
 		}
 	}
 
+	/**
+	 * Get the current chat session
+	 */
+	getCurrentSession(): ChatSession | null {
+		return this.currentSession;
+	}
+
+	/**
+	 * Check if currently in agent mode (vs note-centric mode)
+	 */
+	isAgentMode(): boolean {
+		return this.currentSession?.type === 'agent-session';
+	}
+
+	/**
+	 * Get context files for current session
+	 */
+	getSessionContextFiles(): TFile[] {
+		return this.currentSession?.context.contextFiles || [];
+	}
+
 	// Update prompt indicator to show active custom prompt
 	private async updatePromptIndicator(): Promise<void> {
 		if (!this.currentFile || !this.plugin.settings.enableCustomPrompts) {
@@ -394,16 +417,24 @@ export class GeminiView extends ItemView {
 	}
 
 	private async handleFileOpen(file: TFile | null) {
-		if (!file) return;
+		if (!file) {
+			this.currentFile = null;
+			this.currentSession = null;
+			this.clearChat();
+			return;
+		}
 
 		// Load the file content
 		const content = await this.plugin.app.vault.read(file);
 		this.currentFile = file;
 
+		// Get or create session for this file (note-centric chat)
+		this.currentSession = await this.plugin.sessionManager.getNoteChatSession(file);
+
 		// Update prompt indicator
 		await this.updatePromptIndicator();
 
-		// Load history for this file
+		// Load history for this session
 		const history = await this.plugin.history.getHistoryForFile(file);
 
 		// Update the chat with the history
