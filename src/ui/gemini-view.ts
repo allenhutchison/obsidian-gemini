@@ -29,6 +29,7 @@ export class GeminiView extends ItemView {
 	private promptIndicator: HTMLElement;
 	private agentModeToggle: HTMLInputElement | null = null;
 	private contextPanel: HTMLElement | null = null;
+	private toolExecutionPanel: HTMLElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -97,6 +98,10 @@ export class GeminiView extends ItemView {
 		this.promptIndicator = container.createDiv({ cls: 'gemini-scribe-prompt-indicator' });
 		this.promptIndicator.style.display = 'none'; // Hidden by default
 
+		// Tool execution panel (hidden by default)
+		this.toolExecutionPanel = container.createDiv({ cls: 'gemini-scribe-tool-panel' });
+		this.toolExecutionPanel.style.display = 'none';
+		
 		// The top level application
 		this.chatbox = container.createDiv({ cls: 'gemini-scribe-chatbox' });
 
@@ -884,5 +889,63 @@ export class GeminiView extends ItemView {
 				this.timerDisplay.style.display = 'none';
 			}
 		}, 2000); // Keep displayed for 2 seconds after completion
+	}
+
+	/**
+	 * Show tool execution in the UI
+	 */
+	showToolExecution(toolName: string, parameters: any): void {
+		if (!this.toolExecutionPanel) return;
+		
+		this.toolExecutionPanel.style.display = 'block';
+		this.toolExecutionPanel.empty();
+		
+		const executionItem = this.toolExecutionPanel.createDiv({ cls: 'gemini-scribe-tool-execution' });
+		executionItem.createSpan({ text: `🔧 Executing: ${toolName}`, cls: 'gemini-scribe-tool-name' });
+		
+		// Show parameters if not too large
+		const paramStr = JSON.stringify(parameters, null, 2);
+		if (paramStr.length < 200) {
+			const paramDiv = executionItem.createDiv({ cls: 'gemini-scribe-tool-params' });
+			paramDiv.createEl('pre', { text: paramStr });
+		}
+		
+		this.scrollToBottom();
+	}
+
+	/**
+	 * Show tool execution result
+	 */
+	showToolResult(toolName: string, result: any): void {
+		if (!this.toolExecutionPanel) return;
+		
+		const executionItem = this.toolExecutionPanel.querySelector('.gemini-scribe-tool-execution') as HTMLElement;
+		if (!executionItem) return;
+		
+		const resultDiv = executionItem.createDiv({ cls: 'gemini-scribe-tool-result' });
+		const icon = result.success ? '✅' : '❌';
+		const status = result.success ? 'Success' : 'Failed';
+		
+		resultDiv.createSpan({ text: `${icon} ${status}`, cls: 'gemini-scribe-tool-status' });
+		
+		if (result.error) {
+			resultDiv.createDiv({ text: result.error, cls: 'gemini-scribe-tool-error' });
+		}
+		
+		// Hide panel after 3 seconds
+		setTimeout(() => {
+			if (this.toolExecutionPanel) {
+				this.toolExecutionPanel.style.display = 'none';
+			}
+		}, 3000);
+		
+		this.scrollToBottom();
+	}
+
+	/**
+	 * Get current session for tool execution context
+	 */
+	getCurrentSessionForToolExecution(): ChatSession | null {
+		return this.currentSession;
 	}
 }

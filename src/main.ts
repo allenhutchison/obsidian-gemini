@@ -14,6 +14,9 @@ import { GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
 import { RewriteInstructionsModal } from './ui/rewrite-modal';
 import { SessionManager } from './agent/session-manager';
+import { ToolRegistry } from './tools/tool-registry';
+import { ToolExecutionEngine } from './tools/execution-engine';
+import { getVaultTools } from './tools/vault-tools';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -45,6 +48,7 @@ export interface ObsidianGeminiSettings {
 	allowSystemPromptOverride: boolean;
 	temperature: number;
 	topP: number;
+	stopOnToolError: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -75,6 +79,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	allowSystemPromptOverride: false,
 	temperature: 0.7,
 	topP: 1,
+	stopOnToolError: true,
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -88,6 +93,8 @@ export default class ObsidianGemini extends Plugin {
 	public promptManager: PromptManager;
 	public prompts: GeminiPrompts;
 	public sessionManager: SessionManager;
+	public toolRegistry: ToolRegistry;
+	public toolExecutionEngine: ToolExecutionEngine;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -205,6 +212,16 @@ export default class ObsidianGemini extends Plugin {
 		this.sessionManager = new SessionManager(this);
 		if (this.app.workspace.layoutReady) {
 			await this.history.onLayoutReady;
+		}
+
+		// Initialize tool system
+		this.toolRegistry = new ToolRegistry(this);
+		this.toolExecutionEngine = new ToolExecutionEngine(this, this.toolRegistry);
+		
+		// Register vault tools
+		const vaultTools = getVaultTools();
+		for (const tool of vaultTools) {
+			this.toolRegistry.registerTool(tool);
 		}
 
 		// Initialize completions

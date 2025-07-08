@@ -1,0 +1,390 @@
+import { Tool, ToolResult, ToolExecutionContext } from './types';
+import { ToolCategory } from '../types/agent';
+import { TFile, TFolder, normalizePath } from 'obsidian';
+import type ObsidianGemini from '../main';
+
+/**
+ * Read file content
+ */
+export class ReadFileTool implements Tool {
+	name = 'read_file';
+	category = ToolCategory.VAULT_OPERATIONS;
+	description = 'Read the contents of a file in the vault';
+	
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			path: {
+				type: 'string' as const,
+				description: 'Path to the file to read'
+			}
+		},
+		required: ['path']
+	};
+
+	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		
+		try {
+			const file = plugin.app.vault.getAbstractFileByPath(normalizePath(params.path));
+			
+			if (!file) {
+				return {
+					success: false,
+					error: `File not found: ${params.path}`
+				};
+			}
+			
+			if (!(file instanceof TFile)) {
+				return {
+					success: false,
+					error: `Path is not a file: ${params.path}`
+				};
+			}
+			
+			const content = await plugin.app.vault.read(file);
+			
+			return {
+				success: true,
+				data: {
+					path: params.path,
+					content: content,
+					size: file.stat.size,
+					modified: file.stat.mtime
+				}
+			};
+			
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
+ * Write file content
+ */
+export class WriteFileTool implements Tool {
+	name = 'write_file';
+	category = ToolCategory.VAULT_OPERATIONS;
+	description = 'Write content to a file in the vault (creates new file or overwrites existing)';
+	requiresConfirmation = true;
+	
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			path: {
+				type: 'string' as const,
+				description: 'Path to the file to write'
+			},
+			content: {
+				type: 'string' as const,
+				description: 'Content to write to the file'
+			}
+		},
+		required: ['path', 'content']
+	};
+
+	confirmationMessage = (params: { path: string; content: string }) => {
+		return `Write content to file: ${params.path}\n\nContent preview:\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+	};
+
+	async execute(params: { path: string; content: string }, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		
+		try {
+			const normalizedPath = normalizePath(params.path);
+			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			
+			if (file instanceof TFile) {
+				// File exists, modify it
+				await plugin.app.vault.modify(file, params.content);
+			} else {
+				// File doesn't exist, create it
+				await plugin.app.vault.create(normalizedPath, params.content);
+			}
+			
+			return {
+				success: true,
+				data: {
+					path: normalizedPath,
+					action: file ? 'modified' : 'created',
+					size: params.content.length
+				}
+			};
+			
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error writing file: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
+ * List files in a folder
+ */
+export class ListFilesTool implements Tool {
+	name = 'list_files';
+	category = ToolCategory.VAULT_OPERATIONS;
+	description = 'List files and folders in a directory';
+	
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			path: {
+				type: 'string' as const,
+				description: 'Path to the directory to list (empty string for root)'
+			},
+			recursive: {
+				type: 'boolean' as const,
+				description: 'Whether to list files recursively'
+			}
+		},
+		required: ['path']
+	};
+
+	async execute(params: { path: string; recursive?: boolean }, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		
+		try {
+			const folderPath = params.path || '';
+			const folder = plugin.app.vault.getAbstractFileByPath(folderPath);
+			
+			if (folderPath && !folder) {
+				return {
+					success: false,
+					error: `Folder not found: ${params.path}`
+				};
+			}
+			
+			if (folderPath && !(folder instanceof TFolder)) {
+				return {
+					success: false,
+					error: `Path is not a folder: ${params.path}`
+				};
+			}
+			
+			const files = params.recursive 
+				? plugin.app.vault.getMarkdownFiles()
+				: (folder as TFolder)?.children || plugin.app.vault.getRoot().children;
+			
+			const fileList = files
+				.filter(f => !params.recursive || f.path.startsWith(folderPath))
+				.map(f => ({
+					name: f.name,
+					path: f.path,
+					type: f instanceof TFile ? 'file' : 'folder',
+					size: f instanceof TFile ? f.stat.size : undefined,
+					modified: f instanceof TFile ? f.stat.mtime : undefined
+				}));
+			
+			return {
+				success: true,
+				data: {
+					path: folderPath,
+					files: fileList,
+					count: fileList.length
+				}
+			};
+			
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error listing files: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
+ * Create a new folder
+ */
+export class CreateFolderTool implements Tool {
+	name = 'create_folder';
+	category = ToolCategory.VAULT_OPERATIONS;
+	description = 'Create a new folder in the vault';
+	requiresConfirmation = true;
+	
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			path: {
+				type: 'string' as const,
+				description: 'Path of the folder to create'
+			}
+		},
+		required: ['path']
+	};
+
+	confirmationMessage = (params: { path: string }) => {
+		return `Create folder: ${params.path}`;
+	};
+
+	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		
+		try {
+			const normalizedPath = normalizePath(params.path);
+			const existing = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			
+			if (existing) {
+				return {
+					success: false,
+					error: `Path already exists: ${params.path}`
+				};
+			}
+			
+			await plugin.app.vault.createFolder(normalizedPath);
+			
+			return {
+				success: true,
+				data: {
+					path: normalizedPath,
+					action: 'created'
+				}
+			};
+			
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error creating folder: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
+ * Delete a file or folder
+ */
+export class DeleteFileTool implements Tool {
+	name = 'delete_file';
+	category = ToolCategory.VAULT_OPERATIONS;
+	description = 'Delete a file or folder from the vault';
+	requiresConfirmation = true;
+	
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			path: {
+				type: 'string' as const,
+				description: 'Path of the file or folder to delete'
+			}
+		},
+		required: ['path']
+	};
+
+	confirmationMessage = (params: { path: string }) => {
+		return `Delete file or folder: ${params.path}\n\nThis action cannot be undone.`;
+	};
+
+	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		
+		try {
+			const file = plugin.app.vault.getAbstractFileByPath(normalizePath(params.path));
+			
+			if (!file) {
+				return {
+					success: false,
+					error: `File or folder not found: ${params.path}`
+				};
+			}
+			
+			const type = file instanceof TFile ? 'file' : 'folder';
+			await plugin.app.vault.delete(file);
+			
+			return {
+				success: true,
+				data: {
+					path: params.path,
+					type: type,
+					action: 'deleted'
+				}
+			};
+			
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error deleting file: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
+ * Search for files by name pattern
+ */
+export class SearchFilesTool implements Tool {
+	name = 'search_files';
+	category = ToolCategory.READ_ONLY;
+	description = 'Search for files in the vault by name pattern';
+	
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			pattern: {
+				type: 'string' as const,
+				description: 'Search pattern (supports wildcards)'
+			},
+			limit: {
+				type: 'number' as const,
+				description: 'Maximum number of results to return'
+			}
+		},
+		required: ['pattern']
+	};
+
+	async execute(params: { pattern: string; limit?: number }, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		
+		try {
+			const allFiles = plugin.app.vault.getMarkdownFiles();
+			const pattern = params.pattern.toLowerCase();
+			const limit = params.limit || 50;
+			
+			const matchingFiles = allFiles
+				.filter(file => file.name.toLowerCase().includes(pattern) || file.path.toLowerCase().includes(pattern))
+				.slice(0, limit)
+				.map(file => ({
+					name: file.name,
+					path: file.path,
+					size: file.stat.size,
+					modified: file.stat.mtime
+				}));
+			
+			return {
+				success: true,
+				data: {
+					pattern: params.pattern,
+					matches: matchingFiles,
+					count: matchingFiles.length,
+					truncated: allFiles.length > limit
+				}
+			};
+			
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error searching files: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
+ * Get all available vault tools
+ */
+export function getVaultTools(): Tool[] {
+	return [
+		new ReadFileTool(),
+		new WriteFileTool(),
+		new ListFilesTool(),
+		new CreateFolderTool(),
+		new DeleteFileTool(),
+		new SearchFilesTool()
+	];
+}
