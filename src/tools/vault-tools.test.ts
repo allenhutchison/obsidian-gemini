@@ -6,9 +6,13 @@ jest.mock('obsidian', () => ({
 	...jest.requireActual('../../__mocks__/obsidian.js'),
 	normalizePath: jest.fn((path: string) => path),
 	TFolder: class TFolder {
-		constructor(path = 'folder') {
-			this.path = path;
-			this.name = path;
+		path: string;
+		name: string;
+		children: any[];
+		
+		constructor() {
+			this.path = '';
+			this.name = '';
 			this.children = [];
 		}
 	}
@@ -17,15 +21,18 @@ jest.mock('obsidian', () => ({
 // Import the mocked classes
 import { TFile, TFolder } from 'obsidian';
 
-// Mock Obsidian objects
-const mockFile = new TFile('test.md');
-mockFile.name = 'test.md';
-mockFile.stat = {
+// Mock Obsidian objects  
+const mockFile = new TFile();
+(mockFile as any).path = 'test.md';
+(mockFile as any).name = 'test.md';
+(mockFile as any).stat = {
 	size: 100,
-	mtime: Date.now()
+	mtime: Date.now(),
+	ctime: Date.now()
 };
 
-const mockFolder = new TFolder('folder');
+const mockFolder = new TFolder();
+mockFolder.path = 'folder';
 mockFolder.name = 'folder';
 mockFolder.children = [mockFile];
 
@@ -177,7 +184,8 @@ describe('VaultTools', () => {
 		});
 
 		it('should list root files when path is empty', async () => {
-			const rootFolder = { children: [mockFile] } as TFolder;
+			const rootFolder = new TFolder();
+			rootFolder.children = [mockFile];
 			mockVault.getRoot.mockReturnValue(rootFolder);
 
 			const result = await tool.execute({ path: '' }, mockContext);

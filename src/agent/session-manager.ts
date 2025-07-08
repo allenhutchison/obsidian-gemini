@@ -26,14 +26,16 @@ export class SessionManager {
 			contextFiles: [sourceFile]
 		};
 
+		const sessionTitle = this.sanitizeFileName(`${sourceFile.basename} Chat`);
+		
 		const session: ChatSession = {
 			id: this.generateSessionId(),
 			type: SessionType.NOTE_CHAT,
-			title: `${sourceFile.basename} Chat`,
+			title: sessionTitle,
 			context,
 			created: new Date(),
 			lastActive: new Date(),
-			historyPath: `${this.getHistoryFolderPath()}/${sourceFile.basename} Chat.md`,
+			historyPath: `${this.getHistoryFolderPath()}/${sessionTitle}.md`,
 			sourceNotePath: sourceFile.path
 		};
 
@@ -50,7 +52,8 @@ export class SessionManager {
 			...initialContext
 		};
 
-		const sessionTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
+		const rawTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
+		const sessionTitle = this.sanitizeFileName(rawTitle);
 		
 		const session: ChatSession = {
 			id: this.generateSessionId(),
@@ -83,7 +86,8 @@ export class SessionManager {
 		}
 
 		// Check if a history file exists for this note
-		const historyPath = `${this.getHistoryFolderPath()}/${sourceFile.basename} Chat.md`;
+		const sanitizedTitle = this.sanitizeFileName(`${sourceFile.basename} Chat`);
+		const historyPath = `${this.getHistoryFolderPath()}/${sanitizedTitle}.md`;
 		const historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
 		
 		if (historyFile instanceof TFile) {
@@ -290,5 +294,18 @@ export class SessionManager {
 		}
 		
 		return folder;
+	}
+
+	/**
+	 * Sanitize file name by removing or replacing forbidden characters
+	 */
+	private sanitizeFileName(fileName: string): string {
+		// Characters that are forbidden in file names on most operating systems
+		// Including: \ / : * ? " < > |
+		return fileName
+			.replace(/[\\/:*?"<>|]/g, '-')  // Replace forbidden chars with dash
+			.replace(/\s+/g, ' ')          // Normalize whitespace
+			.trim()                        // Remove leading/trailing whitespace
+			.slice(0, 100);               // Limit length to prevent issues
 	}
 }
