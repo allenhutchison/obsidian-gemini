@@ -6,8 +6,6 @@ import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
 import { logDebugInfo } from '../api/utils/debug';
 import { CustomPrompt } from '../prompts/types';
-import { ChatSession } from '../types/agent';
-import { FilePickerModal } from './file-picker-modal';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -16,7 +14,6 @@ export class GeminiView extends ItemView {
 	private prompts: GeminiPrompts;
 	private chatbox: HTMLDivElement;
 	private currentFile: TFile | null;
-	private currentSession: ChatSession | null = null;
 	private observer: MutationObserver | null;
 	private timerDisplay: HTMLDivElement;
 	private timerInterval: NodeJS.Timeout | null = null;
@@ -27,9 +24,6 @@ export class GeminiView extends ItemView {
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private scrollTimeout: NodeJS.Timeout | null = null;
 	private promptIndicator: HTMLElement;
-	private agentModeToggle: HTMLInputElement | null = null;
-	private contextPanel: HTMLElement | null = null;
-	private toolExecutionPanel: HTMLElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -91,16 +85,9 @@ export class GeminiView extends ItemView {
 		container.empty();
 		container.createEl('h2', { text: 'Gemini Chat' });
 
-		// Agent mode controls
-		this.buildAgentModeControls(container);
-
 		// Prompt indicator
 		this.promptIndicator = container.createDiv({ cls: 'gemini-scribe-prompt-indicator' });
 		this.promptIndicator.style.display = 'none'; // Hidden by default
-
-		// Tool execution panel (hidden by default)
-		this.toolExecutionPanel = container.createDiv({ cls: 'gemini-scribe-tool-panel' });
-		this.toolExecutionPanel.style.display = 'none';
 		
 		// The top level application
 		this.chatbox = container.createDiv({ cls: 'gemini-scribe-chatbox' });
@@ -240,249 +227,6 @@ export class GeminiView extends ItemView {
 		if (this.scrollTimeout) {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
-		}
-	}
-
-	/**
-	 * Get the current chat session
-	 */
-	getCurrentSession(): ChatSession | null {
-		return this.currentSession;
-	}
-
-	/**
-	 * Check if currently in agent mode (vs note-centric mode)
-	 */
-	isAgentMode(): boolean {
-		return this.currentSession?.type === 'agent-session';
-	}
-
-	/**
-	 * Get context files for current session
-	 */
-	getSessionContextFiles(): TFile[] {
-		return this.currentSession?.context.contextFiles || [];
-	}
-
-	/**
-	 * Build agent mode controls UI
-	 */
-	private buildAgentModeControls(container: HTMLElement) {
-		const controlsContainer = container.createDiv({ cls: 'gemini-scribe-agent-controls' });
-		
-		// Agent mode toggle
-		const toggleRow = controlsContainer.createDiv({ cls: 'gemini-scribe-control-row' });
-		toggleRow.createSpan({ text: '🤖 Agent Mode' });
-		
-		this.agentModeToggle = toggleRow.createEl('input', {
-			type: 'checkbox',
-			cls: 'gemini-scribe-agent-toggle'
-		});
-		
-		this.agentModeToggle.addEventListener('change', () => {
-			this.handleAgentModeToggle();
-		});
-
-		// Context panel (hidden by default)
-		this.contextPanel = controlsContainer.createDiv({ 
-			cls: 'gemini-scribe-context-panel' 
-		});
-		this.contextPanel.style.display = 'none';
-		
-		this.buildContextPanel();
-	}
-
-	/**
-	 * Build the context management panel
-	 */
-	private buildContextPanel() {
-		if (!this.contextPanel) return;
-		
-		this.contextPanel.empty();
-		
-		// Context files section
-		const filesSection = this.contextPanel.createDiv({ cls: 'gemini-scribe-context-files' });
-		const filesHeader = filesSection.createDiv({ cls: 'gemini-scribe-context-header' });
-		filesHeader.createSpan({ text: '📁 Context Files:' });
-		
-		const filesContainer = filesSection.createDiv({ cls: 'gemini-scribe-files-container' });
-		
-		// Add current context files
-		this.updateContextFilesDisplay(filesContainer);
-		
-		// Add files button
-		const addButton = filesSection.createEl('button', {
-			text: '+ Add files...',
-			cls: 'gemini-scribe-add-files-btn'
-		});
-		
-		addButton.addEventListener('click', () => {
-			this.showFileSelector();
-		});
-		
-		// Context depth slider
-		const depthSection = this.contextPanel.createDiv({ cls: 'gemini-scribe-context-depth' });
-		depthSection.createSpan({ text: '⚙️ Context Depth:' });
-		
-		const depthSlider = depthSection.createEl('input', {
-			type: 'range',
-			value: this.currentSession?.context.contextDepth?.toString() || '2',
-			attr: { min: '0', max: '5', step: '1' }
-		});
-		
-		const depthValue = depthSection.createSpan({ text: depthSlider.value });
-		
-		depthSlider.addEventListener('input', async () => {
-			depthValue.textContent = depthSlider.value;
-			await this.updateContextDepth(parseInt(depthSlider.value));
-		});
-	}
-
-	/**
-	 * Handle agent mode toggle
-	 */
-	private async handleAgentModeToggle() {
-		const isAgentMode = this.agentModeToggle?.checked || false;
-		
-		if (isAgentMode) {
-			// Switch to agent mode
-			await this.switchToAgentMode();
-		} else {
-			// Switch back to note mode
-			await this.switchToNoteMode();
-		}
-		
-		// Update context panel visibility
-		if (this.contextPanel) {
-			this.contextPanel.style.display = isAgentMode ? 'block' : 'none';
-		}
-	}
-
-	/**
-	 * Switch to agent mode
-	 */
-	private async switchToAgentMode() {
-		if (!this.currentFile) return;
-		
-		// Create new agent session with current file as initial context
-		const agentSession = await this.plugin.sessionManager.createAgentSession(
-			`Agent: ${this.currentFile.basename}`,
-			{
-				contextFiles: [this.currentFile],
-				contextDepth: 3
-			}
-		);
-		
-		this.currentSession = agentSession;
-		this.buildContextPanel(); // Refresh the context panel
-		
-		// Clear and reload chat for agent session
-		this.clearChat();
-		
-		// Load agent session history
-		const history = await this.plugin.history.getHistoryForSession(agentSession);
-		this.updateChat(history);
-	}
-
-	/**
-	 * Switch back to note mode
-	 */
-	private async switchToNoteMode() {
-		if (!this.currentFile) return;
-		
-		// Switch back to note-centric session
-		this.currentSession = await this.plugin.sessionManager.getNoteChatSession(this.currentFile);
-		
-		// Reload note chat history using session-aware method
-		const history = await this.plugin.history.getHistoryForSession(this.currentSession);
-		this.updateChat(history);
-	}
-
-	/**
-	 * Update context files display
-	 */
-	private updateContextFilesDisplay(container: HTMLElement) {
-		container.empty();
-		
-		const contextFiles = this.getSessionContextFiles();
-		
-		if (contextFiles.length === 0) {
-			container.createSpan({ text: 'No context files', cls: 'gemini-scribe-no-files' });
-			return;
-		}
-		
-		contextFiles.forEach(file => {
-			const fileItem = container.createDiv({ cls: 'gemini-scribe-context-file-item' });
-			fileItem.createSpan({ text: file.basename });
-			
-			const removeBtn = fileItem.createEl('button', {
-				text: '×',
-				cls: 'gemini-scribe-remove-file-btn'
-			});
-			
-			removeBtn.addEventListener('click', async () => {
-				await this.removeContextFile(file.path);
-			});
-		});
-	}
-
-	/**
-	 * Show file selector for adding context files
-	 */
-	private showFileSelector() {
-		const modal = new FilePickerModal(this.app, async (selectedFiles) => {
-			if (!this.currentSession) return;
-			
-			// Add selected files to current session context
-			await this.plugin.sessionManager.addContextFiles(this.currentSession.id, selectedFiles);
-			
-			// Refresh the context panel to show new files
-			this.buildContextPanel();
-		});
-		
-		modal.open();
-	}
-
-	/**
-	 * Remove a file from context
-	 */
-	private async removeContextFile(filePath: string) {
-		if (!this.currentSession) return;
-		
-		await this.plugin.sessionManager.removeContextFiles(this.currentSession.id, [filePath]);
-		
-		// Refresh the context panel
-		this.buildContextPanel();
-	}
-
-	/**
-	 * Update context depth
-	 */
-	private async updateContextDepth(depth: number) {
-		if (!this.currentSession) return;
-		
-		await this.plugin.sessionManager.updateSessionContext(this.currentSession.id, {
-			contextDepth: depth
-		});
-	}
-
-	/**
-	 * Update agent mode UI to reflect current session state
-	 */
-	private updateAgentModeUI() {
-		if (!this.agentModeToggle || !this.contextPanel) return;
-		
-		const isAgentMode = this.isAgentMode();
-		
-		// Update toggle state
-		this.agentModeToggle.checked = isAgentMode;
-		
-		// Update context panel visibility
-		this.contextPanel.style.display = isAgentMode ? 'block' : 'none';
-		
-		// Refresh context panel content if in agent mode
-		if (isAgentMode) {
-			this.buildContextPanel();
 		}
 	}
 
@@ -652,7 +396,6 @@ export class GeminiView extends ItemView {
 	private async handleFileOpen(file: TFile | null) {
 		if (!file) {
 			this.currentFile = null;
-			this.currentSession = null;
 			this.clearChat();
 			return;
 		}
@@ -661,17 +404,11 @@ export class GeminiView extends ItemView {
 		const content = await this.plugin.app.vault.read(file);
 		this.currentFile = file;
 
-		// Get or create session for this file (note-centric chat)
-		this.currentSession = await this.plugin.sessionManager.getNoteChatSession(file);
-
-		// Update agent mode UI to reflect current session
-		this.updateAgentModeUI();
-
 		// Update prompt indicator
 		await this.updatePromptIndicator();
 
-		// Load history for this session using the new session-aware method
-		const history = await this.plugin.history.getHistoryForSession(this.currentSession);
+		// Load history for this file using the original method
+		const history = await this.plugin.history.getHistory(file.path);
 
 		// Update the chat with the history
 		this.updateChat(history);
@@ -761,20 +498,20 @@ export class GeminiView extends ItemView {
 							await this.finalizeStreamingMessage(modelMessageContainer, botResponse.markdown);
 						}
 
-						if (this.plugin.settings.chatHistory && this.currentSession) {
+						if (this.plugin.settings.chatHistory && this.currentFile) {
 							// Store user message first
-							await this.plugin.history.addEntryToSession(this.currentSession, {
+							await this.plugin.history.addEntry(this.currentFile.path, {
 								role: 'user',
 								message: userMessage,
-								notePath: this.currentFile?.path || '',
+								notePath: this.currentFile.path,
 								created_at: new Date()
 							});
 
 							// Store assistant message
-							await this.plugin.history.addEntryToSession(this.currentSession, {
+							await this.plugin.history.addEntry(this.currentFile.path, {
 								role: 'model',
 								message: botResponse.markdown,
-								notePath: this.currentFile?.path || '',
+								notePath: this.currentFile.path,
 								created_at: new Date()
 							});
 
@@ -796,26 +533,26 @@ export class GeminiView extends ItemView {
 					// Fall back to non-streaming API
 					const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
 
-					if (this.plugin.settings.chatHistory && this.currentSession) {
+					if (this.plugin.settings.chatHistory && this.currentFile) {
 						// Store user message first
-						await this.plugin.history.addEntryToSession(this.currentSession, {
+						await this.plugin.history.addEntry(this.currentFile.path, {
 							role: 'user',
 							message: userMessage,
-							notePath: this.currentFile?.path || '',
+							notePath: this.currentFile.path,
 							created_at: new Date()
 						});
 
 						// Store assistant message
-						await this.plugin.history.addEntryToSession(this.currentSession, {
+						await this.plugin.history.addEntry(this.currentFile.path, {
 							role: 'model',
 							message: botResponse.markdown,
-							notePath: this.currentFile?.path || '',
+							notePath: this.currentFile.path,
 							created_at: new Date()
 						});
 
-						// Clear and reload the entire chat from session history
+						// Clear and reload the entire chat from history
 						this.clearChat();
-						await this.updateChat(await this.plugin.history.getHistoryForSession(this.currentSession));
+						await this.updateChat(await this.plugin.history.getHistory(this.currentFile?.path || ''));
 
 						// Only display grounding content as it's not stored in history
 						if (botResponse.rendered) {
@@ -891,61 +628,4 @@ export class GeminiView extends ItemView {
 		}, 2000); // Keep displayed for 2 seconds after completion
 	}
 
-	/**
-	 * Show tool execution in the UI
-	 */
-	showToolExecution(toolName: string, parameters: any): void {
-		if (!this.toolExecutionPanel) return;
-		
-		this.toolExecutionPanel.style.display = 'block';
-		this.toolExecutionPanel.empty();
-		
-		const executionItem = this.toolExecutionPanel.createDiv({ cls: 'gemini-scribe-tool-execution' });
-		executionItem.createSpan({ text: `🔧 Executing: ${toolName}`, cls: 'gemini-scribe-tool-name' });
-		
-		// Show parameters if not too large
-		const paramStr = JSON.stringify(parameters, null, 2);
-		if (paramStr.length < 200) {
-			const paramDiv = executionItem.createDiv({ cls: 'gemini-scribe-tool-params' });
-			paramDiv.createEl('pre', { text: paramStr });
-		}
-		
-		this.scrollToBottom();
-	}
-
-	/**
-	 * Show tool execution result
-	 */
-	showToolResult(toolName: string, result: any): void {
-		if (!this.toolExecutionPanel) return;
-		
-		const executionItem = this.toolExecutionPanel.querySelector('.gemini-scribe-tool-execution') as HTMLElement;
-		if (!executionItem) return;
-		
-		const resultDiv = executionItem.createDiv({ cls: 'gemini-scribe-tool-result' });
-		const icon = result.success ? '✅' : '❌';
-		const status = result.success ? 'Success' : 'Failed';
-		
-		resultDiv.createSpan({ text: `${icon} ${status}`, cls: 'gemini-scribe-tool-status' });
-		
-		if (result.error) {
-			resultDiv.createDiv({ text: result.error, cls: 'gemini-scribe-tool-error' });
-		}
-		
-		// Hide panel after 3 seconds
-		setTimeout(() => {
-			if (this.toolExecutionPanel) {
-				this.toolExecutionPanel.style.display = 'none';
-			}
-		}, 3000);
-		
-		this.scrollToBottom();
-	}
-
-	/**
-	 * Get current session for tool execution context
-	 */
-	getCurrentSessionForToolExecution(): ChatSession | null {
-		return this.currentSession;
-	}
 }

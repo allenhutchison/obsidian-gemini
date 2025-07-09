@@ -68,9 +68,9 @@ export class ToolExecutionEngine {
 		// Show execution notification and UI feedback
 		const executionNotice = new Notice(`Executing ${tool.name}...`, 0);
 		
-		// Show in UI if gemini view is available
-		if (this.plugin.geminiView) {
-			this.plugin.geminiView.showToolExecution(tool.name, toolCall.arguments);
+		// Show in UI if agent view is available
+		if (this.plugin.agentView) {
+			this.plugin.agentView.showToolExecution(tool.name, toolCall.arguments);
 		}
 
 		try {
@@ -97,9 +97,9 @@ export class ToolExecutionEngine {
 				new Notice(`✗ ${tool.name} failed: ${result.error}`, 5000);
 			}
 			
-			// Show result in UI if gemini view is available
-			if (this.plugin.geminiView) {
-				this.plugin.geminiView.showToolResult(tool.name, result);
+			// Show result in UI if agent view is available
+			if (this.plugin.agentView) {
+				this.plugin.agentView.showToolResult(tool.name, result);
 			}
 
 			return result;
@@ -114,9 +114,9 @@ export class ToolExecutionEngine {
 				error: errorMessage
 			};
 			
-			// Show error in UI if gemini view is available
-			if (this.plugin.geminiView) {
-				this.plugin.geminiView.showToolResult(tool.name, errorResult);
+			// Show error in UI if agent view is available
+			if (this.plugin.agentView) {
+				this.plugin.agentView.showToolResult(tool.name, errorResult);
 			}
 			
 			return errorResult;

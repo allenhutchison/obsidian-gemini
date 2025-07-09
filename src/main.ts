@@ -1,6 +1,7 @@
 import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { GeminiView, VIEW_TYPE_GEMINI } from './ui/gemini-view';
+import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view';
 import { GeminiSummary } from './summary';
 import { ApiFactory, ModelApi, ApiProvider } from './api/index';
 import { ScribeFile } from './files';
@@ -17,6 +18,7 @@ import { SessionManager } from './agent/session-manager';
 import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
 import { getVaultTools } from './tools/vault-tools';
+import { SessionHistory } from './agent/session-history';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -89,7 +91,9 @@ export default class ObsidianGemini extends Plugin {
 	public geminiApi: ModelApi;
 	public gfile: ScribeFile;
 	public geminiView: GeminiView;
+	public agentView: AgentView;
 	public history: GeminiHistory;
+	public sessionHistory: SessionHistory;
 	public promptManager: PromptManager;
 	public prompts: GeminiPrompts;
 	public sessionManager: SessionManager;
@@ -105,17 +109,30 @@ export default class ObsidianGemini extends Plugin {
 	async onload() {
 		await this.setupGeminiScribe();
 
-		// Add ribbon icon
+		// Add ribbon icons
 		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Open Gemini Chat', () => {
 			this.activateView();
 		});
 
-		this.registerView(VIEW_TYPE_GEMINI, (leaf) => (this.geminiView = new GeminiView(leaf, this)));
+		this.addRibbonIcon('bot', 'Open Agent Mode', () => {
+			this.activateAgentView();
+		});
 
+		// Register views
+		this.registerView(VIEW_TYPE_GEMINI, (leaf) => (this.geminiView = new GeminiView(leaf, this)));
+		this.registerView(VIEW_TYPE_AGENT, (leaf) => (this.agentView = new AgentView(leaf, this)));
+
+		// Add commands
 		this.addCommand({
 			id: 'gemini-scribe-open-view',
 			name: 'Open Gemini Chat',
 			callback: () => this.activateView(),
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-open-agent-view',
+			name: 'Open Agent Mode',
+			callback: () => this.activateAgentView(),
 		});
 
 		// Add selection rewrite command
@@ -208,8 +225,9 @@ export default class ObsidianGemini extends Plugin {
 		this.history = new GeminiHistory(this);
 		await this.history.setupHistoryCommands();
 		
-		// Initialize session manager
+		// Initialize session manager and session history
 		this.sessionManager = new SessionManager(this);
+		this.sessionHistory = new SessionHistory(this);
 		if (this.app.workspace.layoutReady) {
 			await this.history.onLayoutReady;
 		}
@@ -254,6 +272,30 @@ export default class ObsidianGemini extends Plugin {
 				await workspace.revealLeaf(leaf);
 			} else {
 				console.error('Could not find a leaf to open the view');
+			}
+		}
+	}
+
+	async activateAgentView() {
+		const { workspace } = this.app;
+
+		let leaf: WorkspaceLeaf | null = null;
+		const leaves = workspace.getLeavesOfType(VIEW_TYPE_AGENT);
+
+		if (leaves.length > 0) {
+			// A leaf with our view already exists, use that
+			leaf = leaves[0];
+			await workspace.revealLeaf(leaf);
+		} else {
+			// Our view could not be found in the workspace, create a new leaf
+			// in the right sidebar for it
+			leaf = workspace.getRightLeaf(false);
+			if (leaf) {
+				await leaf.setViewState({ type: VIEW_TYPE_AGENT, active: true });
+				// "Reveal" the leaf in case it is in a collapsed sidebar
+				await workspace.revealLeaf(leaf);
+			} else {
+				console.error('Could not find a leaf to open the agent view');
 			}
 		}
 	}

@@ -22,7 +22,7 @@ const mockPlugin = {
 } as any;
 
 // Mock TFile using actual mock class constructor
-const mockFile = new TFile('test.md');
+const mockFile = new TFile();
 (mockFile as any).basename = 'test';
 (mockFile as any).stat = {
 	ctime: Date.now(),
@@ -161,9 +161,9 @@ describe('SessionManager', () => {
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter });
 			
 			// Create mock TFile instances for link resolution
-			const mockTFile1 = new TFile('Test File.md');
+			const mockTFile1 = new TFile();
 			(mockTFile1 as any).basename = 'Test File';
-			const mockTFile2 = new TFile('Another File.md');
+			const mockTFile2 = new TFile();
 			(mockTFile2 as any).basename = 'Another File';
 			
 			// Mock link resolution - ensure it returns TFile instances
@@ -206,7 +206,7 @@ describe('SessionManager', () => {
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter });
 			
 			// Create proper TFile instance for old path format
-			const mockFileForPath = new TFile('path/to/file.md');
+			const mockFileForPath = new TFile();
 			(mockFileForPath as any).basename = 'file';
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFileForPath);
 
