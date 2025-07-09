@@ -16,6 +16,11 @@ export class SessionHistory {
 	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
 		
+		// Register Handlebars helpers (same as in markdownHistory)
+		Handlebars.registerHelper('eq', function (a, b) {
+			return a === b;
+		});
+		
 		// Use the same template as regular history for consistency
 		this.entryTemplate = Handlebars.compile(historyEntryTemplate);
 	}
@@ -70,11 +75,19 @@ export class SessionHistory {
 		}
 
 		// Generate the new entry content
+		const role = entry.role.charAt(0).toUpperCase() + entry.role.slice(1);
+		const messageLines = entry.message.split('\n');
+		
 		const entryContent = this.entryTemplate({
-			role: entry.role,
-			message: entry.message,
-			content: entry.message, // The template might expect 'content' field
+			role: role,
+			messageLines: messageLines,
 			timestamp: new Date().toISOString(),
+			pluginVersion: this.plugin.manifest.version,
+			fileVersion: 'unknown', // TODO: Get file version from context
+			model: entry.model,
+			temperature: entry.metadata?.temperature,
+			topP: entry.metadata?.topP,
+			customPrompt: entry.metadata?.customPrompt,
 			toolsUsed: [], // TODO: Add tool support later
 			isDefined: (value: any) => value !== undefined
 		});
@@ -115,12 +128,15 @@ export class SessionHistory {
 			return;
 		}
 
+		// Convert file paths to Obsidian wikilink format for frontmatter
+		const contextFileLinks = session.context.contextFiles.map(f => `[[${f.basename}]]`);
+
 		// Update existing file's frontmatter
 		await this.plugin.app.fileManager.processFrontMatter(historyFile, (frontmatter: any) => {
 			frontmatter.session_id = session.id;
 			frontmatter.type = session.type;
 			frontmatter.title = session.title;
-			frontmatter.context_files = session.context.contextFiles.map(f => f.path);
+			frontmatter.context_files = contextFileLinks;
 			frontmatter.context_depth = session.context.contextDepth;
 			frontmatter.enabled_tools = session.context.enabledTools;
 			frontmatter.require_confirmation = session.context.requireConfirmation;
@@ -131,6 +147,7 @@ export class SessionHistory {
 			}
 		});
 	}
+
 
 	/**
 	 * Delete session history file
@@ -209,11 +226,18 @@ export class SessionHistory {
 	 * Generate frontmatter for a new session file
 	 */
 	private generateSessionFrontmatter(session: ChatSession): string {
+		// Convert file paths to Obsidian wikilink format for frontmatter
+		const contextFileLinks = session.context.contextFiles.map(f => {
+			// Use just the basename without extension for cleaner links
+			const basename = f.basename;
+			return `[[${basename}]]`;
+		});
+
 		const frontmatter = {
 			session_id: session.id,
 			type: session.type,
 			title: session.title,
-			context_files: session.context.contextFiles.map(f => f.path),
+			context_files: contextFileLinks,
 			context_depth: session.context.contextDepth,
 			enabled_tools: session.context.enabledTools,
 			require_confirmation: session.context.requireConfirmation,

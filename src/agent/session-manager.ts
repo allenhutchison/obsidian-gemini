@@ -236,11 +236,28 @@ export class SessionManager {
 			return DEFAULT_CONTEXTS.NOTE_CHAT as AgentContext;
 		}
 
-		// Convert file paths back to TFile objects
+		// Convert file links back to TFile objects
 		const contextFiles: TFile[] = [];
 		if (frontmatter.context_files) {
-			for (const path of frontmatter.context_files) {
-				const file = this.plugin.app.vault.getAbstractFileByPath(path);
+			for (const fileRef of frontmatter.context_files) {
+				let file: TFile | null = null;
+				
+				// Handle both old path format and new wikilink format
+				if (typeof fileRef === 'string') {
+					if (fileRef.startsWith('[[') && fileRef.endsWith(']]')) {
+						// New wikilink format: [[filename]]
+						const linkpath = fileRef.slice(2, -2); // Remove [[ and ]]
+						
+						// Use Obsidian's link resolution to find the file
+						const resolvedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, '');
+						file = resolvedFile instanceof TFile ? resolvedFile : null;
+					} else {
+						// Old path format: direct file path
+						const foundFile = this.plugin.app.vault.getAbstractFileByPath(fileRef);
+						file = foundFile instanceof TFile ? foundFile : null;
+					}
+				}
+				
 				if (file instanceof TFile) {
 					contextFiles.push(file);
 				}
