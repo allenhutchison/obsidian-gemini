@@ -56,7 +56,10 @@ export class AgentView extends ItemView {
 
 		// Tool execution panel
 		this.toolPanel = container.createDiv({ cls: 'gemini-agent-tool-panel' });
-		this.toolPanel.style.display = 'none'; // Hidden by default
+		this.toolPanel.style.border = '1px solid var(--background-modifier-border)';
+		this.toolPanel.style.borderRadius = '6px';
+		this.toolPanel.style.padding = '10px';
+		this.toolPanel.style.marginBottom = '10px';
 		this.createToolPanel();
 
 		// Chat container
@@ -148,8 +151,31 @@ export class AgentView extends ItemView {
 
 	private createToolPanel() {
 		this.toolPanel.empty();
-		this.toolPanel.createEl('h4', { text: 'Tool Execution' });
-		// Tool execution status will be shown here dynamically
+		
+		// Add a toggle to show/hide tool testing interface
+		const header = this.toolPanel.createDiv({ cls: 'gemini-agent-tool-header' });
+		header.createEl('h4', { text: 'Tool Execution' });
+		
+		const testToggle = header.createEl('button', {
+			text: '🧪 Test Tools',
+			cls: 'gemini-agent-btn gemini-agent-btn-secondary'
+		});
+		
+		const testPanel = this.toolPanel.createDiv({ cls: 'gemini-agent-tool-test-panel' });
+		testPanel.style.display = 'none';
+		
+		testToggle.addEventListener('click', () => {
+			if (testPanel.style.display === 'none') {
+				testPanel.style.display = 'block';
+				this.toolPanel.style.display = 'block';
+				this.createToolTestInterface(testPanel);
+			} else {
+				testPanel.style.display = 'none';
+			}
+		});
+		
+		// Execution status area
+		this.toolPanel.createDiv({ cls: 'gemini-agent-tool-status' });
 	}
 
 	private createInputArea(container: HTMLElement) {
@@ -404,11 +430,16 @@ export class AgentView extends ItemView {
 
 	// Tool execution feedback methods
 	showToolExecution(toolName: string, parameters: any): void {
-		this.toolPanel.style.display = 'block';
-		this.toolPanel.empty();
+		// Find or create the status area
+		let statusArea = this.toolPanel.querySelector('.gemini-agent-tool-status') as HTMLElement;
+		if (!statusArea) {
+			statusArea = this.toolPanel.createDiv({ cls: 'gemini-agent-tool-status' });
+		}
 		
-		this.toolPanel.createEl('h4', { text: 'Tool Execution' });
-		const executionItem = this.toolPanel.createDiv({ cls: 'gemini-agent-tool-execution' });
+		statusArea.empty();
+		statusArea.style.display = 'block';
+		
+		const executionItem = statusArea.createDiv({ cls: 'gemini-agent-tool-execution' });
 		executionItem.createSpan({ text: `🔧 Executing: ${toolName}` });
 		
 		if (Object.keys(parameters).length > 0) {
@@ -431,14 +462,177 @@ export class AgentView extends ItemView {
 			resultDiv.createDiv({ text: result.error, cls: 'gemini-agent-tool-error' });
 		}
 		
-		// Hide panel after 3 seconds
+		// Hide status area after 3 seconds
 		setTimeout(() => {
-			this.toolPanel.style.display = 'none';
+			const statusArea = this.toolPanel.querySelector('.gemini-agent-tool-status') as HTMLElement;
+			if (statusArea) {
+				statusArea.style.display = 'none';
+			}
 		}, 3000);
 	}
 
 	getCurrentSessionForToolExecution(): ChatSession | null {
 		return this.currentSession;
+	}
+
+	/**
+	 * Create tool testing interface
+	 */
+	private createToolTestInterface(container: HTMLElement) {
+		container.empty();
+		
+		// Get available tools
+		const tools = this.plugin.toolRegistry.getAllTools();
+		
+		// Tool selector
+		const selectorDiv = container.createDiv({ cls: 'gemini-agent-tool-selector' });
+		selectorDiv.createEl('label', { text: 'Select Tool:' });
+		
+		const toolSelect = selectorDiv.createEl('select', { cls: 'gemini-agent-tool-select' });
+		toolSelect.createEl('option', { value: '', text: '-- Select a tool --' });
+		
+		tools.forEach(tool => {
+			toolSelect.createEl('option', { 
+				value: tool.name, 
+				text: `${tool.name} (${tool.category})`
+			});
+		});
+		
+		// Parameters input area
+		const paramsDiv = container.createDiv({ cls: 'gemini-agent-tool-params-input' });
+		const paramsLabel = paramsDiv.createEl('label', { text: 'Parameters (JSON):' });
+		const paramsTextarea = paramsDiv.createEl('textarea', {
+			cls: 'gemini-agent-tool-params-textarea',
+			attr: { placeholder: '{\n  "param": "value"\n}' }
+		});
+		paramsTextarea.style.height = '100px';
+		paramsTextarea.style.fontFamily = 'monospace';
+		
+		// Tool description
+		const descDiv = container.createDiv({ cls: 'gemini-agent-tool-description' });
+		
+		// Update description and default params when tool is selected
+		toolSelect.addEventListener('change', () => {
+			const selectedTool = tools.find(t => t.name === toolSelect.value);
+			if (selectedTool) {
+				descDiv.empty();
+				descDiv.createEl('strong', { text: 'Description: ' });
+				descDiv.createSpan({ text: selectedTool.description });
+				
+				// Set default parameters based on tool
+				const defaultParams = this.getDefaultParamsForTool(selectedTool.name);
+				paramsTextarea.value = JSON.stringify(defaultParams, null, 2);
+			} else {
+				descDiv.empty();
+				paramsTextarea.value = '';
+			}
+		});
+		
+		// Execute button
+		const executeBtn = container.createEl('button', {
+			text: 'Execute Tool',
+			cls: 'gemini-agent-btn gemini-agent-btn-primary'
+		});
+		
+		// Results area
+		const resultsDiv = container.createDiv({ cls: 'gemini-agent-tool-results' });
+		
+		executeBtn.addEventListener('click', async () => {
+			const toolName = toolSelect.value;
+			if (!toolName) {
+				new Notice('Please select a tool');
+				return;
+			}
+			
+			try {
+				// Parse parameters
+				const params = paramsTextarea.value.trim() ? 
+					JSON.parse(paramsTextarea.value) : {};
+				
+				// Clear previous results
+				resultsDiv.empty();
+				resultsDiv.createEl('h5', { text: 'Executing...' });
+				
+				// Execute through the execution engine
+				const context = {
+					session: this.currentSession!,
+					plugin: this.plugin
+				};
+				
+				const toolCall = {
+					name: toolName,
+					arguments: params
+				};
+				
+				// This will also trigger the UI feedback
+				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context);
+				
+				// Display results
+				resultsDiv.empty();
+				resultsDiv.createEl('h5', { text: 'Result:' });
+				
+				const resultPre = resultsDiv.createEl('pre', {
+					cls: 'gemini-agent-tool-result-pre'
+				});
+				resultPre.style.whiteSpace = 'pre-wrap';
+				resultPre.style.wordWrap = 'break-word';
+				resultPre.textContent = JSON.stringify(result, null, 2);
+				
+				// Color based on success
+				if (result.success) {
+					resultPre.style.color = 'var(--text-success)';
+				} else {
+					resultPre.style.color = 'var(--text-error)';
+				}
+				
+			} catch (error) {
+				resultsDiv.empty();
+				resultsDiv.createEl('h5', { text: 'Error:' });
+				const errorDiv = resultsDiv.createDiv({ cls: 'gemini-agent-tool-error' });
+				errorDiv.style.color = 'var(--text-error)';
+				errorDiv.textContent = error.message;
+			}
+		});
+	}
+
+	/**
+	 * Get default parameters for a tool to make testing easier
+	 */
+	private getDefaultParamsForTool(toolName: string): any {
+		const contextFiles = this.currentSession?.context.contextFiles || [];
+		const firstFile = contextFiles[0];
+		
+		switch (toolName) {
+			case 'read_file':
+				return {
+					path: firstFile?.path || 'example.md'
+				};
+			case 'write_file':
+				return {
+					path: 'test-file.md',
+					content: '# Test File\n\nThis is a test file created by the tool system.'
+				};
+			case 'append_to_file':
+				return {
+					path: firstFile?.path || 'example.md',
+					content: '\n\n## Appended Section\n\nThis content was appended.'
+				};
+			case 'search_vault':
+				return {
+					query: 'test',
+					limit: 5
+				};
+			case 'list_files':
+				return {
+					path: '/'
+				};
+			case 'get_file_info':
+				return {
+					path: firstFile?.path || 'example.md'
+				};
+			default:
+				return {};
+		}
 	}
 
 	async onClose() {
