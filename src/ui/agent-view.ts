@@ -320,37 +320,56 @@ export class AgentView extends ItemView {
 			// Build context for AI request 
 			const contextInfo = await this.plugin.gfile.buildFileContext(
 				this.currentSession.context.contextFiles,
-				this.currentSession.context.contextDepth
+				this.currentSession.context.contextDepth,
+				true // renderContent
 			);
 			
-			// Create prompt with context
-			const promptWithContext = this.plugin.prompts.generalPrompt({ 
-				userMessage: message,
-				fileContext: contextInfo || ''
+			// Create prompt that includes the context
+			let fullPrompt = this.plugin.prompts.generalPrompt({ 
+				userMessage: message
 			});
+			
+			// Add context information if available
+			if (contextInfo) {
+				fullPrompt = `${fullPrompt}\n\n${contextInfo}\n\nUser: ${message}`;
+			} else {
+				fullPrompt = `${fullPrompt}\n\nUser: ${message}`;
+			}
 
-			// Send to AI
-			const response = await this.plugin.geminiApi.generateModelResponse({
-				userMessage: message,
-				conversationHistory: conversationHistory,
-				model: this.plugin.settings.chatModelName,
-				prompt: promptWithContext,
-				renderContent: true
-			});
+			// Send to AI - disable automatic context since we're providing it
+			const originalSendContext = this.plugin.settings.sendContext;
+			this.plugin.settings.sendContext = false;
+			
+			try {
+				const response = await this.plugin.geminiApi.generateModelResponse({
+					userMessage: message,
+					conversationHistory: conversationHistory,
+					model: this.plugin.settings.chatModelName,
+					prompt: fullPrompt,
+					renderContent: false // We already rendered content above
+				});
+				
+				// Restore original setting
+				this.plugin.settings.sendContext = originalSendContext;
 
-			// Display AI response
-			const aiEntry: GeminiConversationEntry = {
-				role: 'model',
-				message: response.markdown,
-				notePath: '',
-				created_at: new Date()
-			};
-			this.displayMessage(aiEntry);
+				// Display AI response
+				const aiEntry: GeminiConversationEntry = {
+					role: 'model',
+					message: response.markdown,
+					notePath: '',
+					created_at: new Date()
+				};
+				this.displayMessage(aiEntry);
 
-			// Save to history
-			if (this.plugin.settings.chatHistory) {
-				await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-				await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+				// Save to history
+				if (this.plugin.settings.chatHistory) {
+					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+				}
+			} catch (error) {
+				// Make sure to restore setting even if there's an error
+				this.plugin.settings.sendContext = originalSendContext;
+				throw error;
 			}
 
 		} catch (error) {
