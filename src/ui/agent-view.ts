@@ -365,6 +365,9 @@ export class AgentView extends ItemView {
 				if (this.plugin.settings.chatHistory) {
 					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
 					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+					
+					// Auto-label session after first exchange
+					await this.autoLabelSessionIfNeeded();
 				}
 			} catch (error) {
 				// Make sure to restore setting even if there's an error
@@ -442,6 +445,89 @@ export class AgentView extends ItemView {
 		// Cleanup when view is closed
 		if (this.currentStreamingResponse) {
 			this.currentStreamingResponse.cancel();
+		}
+	}
+
+	/**
+	 * Auto-label session after first exchange if it still has default title
+	 */
+	private async autoLabelSessionIfNeeded() {
+		if (!this.currentSession) return;
+		
+		// Check if this is still using a default title
+		if (!this.currentSession.title.startsWith('Agent Session') && 
+			!this.currentSession.title.startsWith('New Agent Session')) {
+			return; // Already has a custom title
+		}
+		
+		// Get the conversation history
+		const history = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
+		
+		// Only auto-label after first exchange (2 messages: user + assistant)
+		if (history.length !== 2) return;
+		
+		try {
+			// Generate a title based on the conversation
+			const titlePrompt = `Based on this conversation, suggest a concise title (max 50 characters) that captures the main topic or purpose. Return only the title text, no quotes or explanation.
+
+Context Files: ${this.currentSession.context.contextFiles.map(f => f.basename).join(', ')}
+
+User: ${history[0].message}`;
+			
+			// Temporarily disable context to avoid confusion
+			const originalSendContext = this.plugin.settings.sendContext;
+			this.plugin.settings.sendContext = false;
+			
+			try {
+				// Generate title using the model
+				const response = await this.plugin.geminiApi.generateModelResponse({
+					userMessage: titlePrompt,
+					conversationHistory: [],
+					model: this.plugin.settings.chatModelName,
+					prompt: titlePrompt,
+					renderContent: false
+				});
+				
+				// Restore original setting
+				this.plugin.settings.sendContext = originalSendContext;
+				
+				// Extract and sanitize the title
+				const generatedTitle = response.markdown.trim()
+					.replace(/^["']+|["']+$/g, '') // Remove quotes
+					.substring(0, 50); // Ensure max length
+				
+				if (generatedTitle && generatedTitle.length > 0) {
+					// Update session title
+					this.currentSession.title = generatedTitle;
+					
+					// Update history file name
+					const oldPath = this.currentSession.historyPath;
+					const newFileName = (this.plugin.sessionManager as any).sanitizeFileName(generatedTitle);
+					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + newFileName + '.md';
+					
+					// Rename the history file
+					const oldFile = this.plugin.app.vault.getAbstractFileByPath(oldPath);
+					if (oldFile) {
+						await this.plugin.app.fileManager.renameFile(oldFile, newPath);
+						this.currentSession.historyPath = newPath;
+					}
+					
+					// Update session metadata
+					await this.updateSessionMetadata();
+					
+					// Update UI
+					this.updateSessionHeader();
+					
+					console.log(`Auto-labeled session: ${generatedTitle}`);
+				}
+			} catch (error) {
+				// Restore setting on error
+				this.plugin.settings.sendContext = originalSendContext;
+				console.error('Failed to auto-label session:', error);
+				// Don't show error to user - auto-labeling is a nice-to-have feature
+			}
+		} catch (error) {
+			console.error('Error in auto-labeling:', error);
 		}
 	}
 }
