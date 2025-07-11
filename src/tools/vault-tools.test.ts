@@ -1,4 +1,4 @@
-import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, getVaultTools } from './vault-tools';
+import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, MoveFileTool, getVaultTools } from './vault-tools';
 import { ToolExecutionContext } from './types';
 
 // Use the existing mock by extending it
@@ -44,7 +44,11 @@ const mockVault = {
 	delete: jest.fn(),
 	createFolder: jest.fn(),
 	getMarkdownFiles: jest.fn(),
-	getRoot: jest.fn()
+	getRoot: jest.fn(),
+	rename: jest.fn(),
+	adapter: {
+		exists: jest.fn()
+	}
 };
 
 const mockPlugin = {
@@ -297,16 +301,109 @@ describe('VaultTools', () => {
 		});
 	});
 
+	describe('MoveFileTool', () => {
+		let tool: MoveFileTool;
+
+		beforeEach(() => {
+			tool = new MoveFileTool();
+		});
+
+		it('should move file successfully', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.adapter.exists.mockResolvedValue(false);
+			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.rename.mockResolvedValue(undefined);
+
+			const result = await tool.execute({ 
+				sourcePath: 'test.md', 
+				targetPath: 'folder/renamed.md' 
+			}, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data).toEqual({
+				sourcePath: 'test.md',
+				targetPath: 'folder/renamed.md',
+				action: 'moved'
+			});
+			expect(mockVault.rename).toHaveBeenCalledWith(mockFile, 'folder/renamed.md');
+		});
+
+		it('should return error for non-existent source file', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+
+			const result = await tool.execute({ 
+				sourcePath: 'nonexistent.md', 
+				targetPath: 'new.md' 
+			}, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('Source file not found: nonexistent.md');
+		});
+
+		it('should return error if source is a folder', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
+
+			const result = await tool.execute({ 
+				sourcePath: 'folder', 
+				targetPath: 'new-folder' 
+			}, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('Source path is not a file: folder');
+		});
+
+		it('should return error if target already exists', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.adapter.exists.mockResolvedValue(true);
+
+			const result = await tool.execute({ 
+				sourcePath: 'test.md', 
+				targetPath: 'existing.md' 
+			}, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('Target path already exists: existing.md');
+		});
+
+		it('should create target directory if needed', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.adapter.exists
+				.mockResolvedValueOnce(false) // target file doesn't exist
+				.mockResolvedValueOnce(false); // target dir doesn't exist
+			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.rename.mockResolvedValue(undefined);
+
+			const result = await tool.execute({ 
+				sourcePath: 'test.md', 
+				targetPath: 'new-folder/moved.md' 
+			}, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(mockVault.createFolder).toHaveBeenCalledWith('new-folder');
+			expect(mockVault.rename).toHaveBeenCalledWith(mockFile, 'new-folder/moved.md');
+		});
+
+		it('should have confirmation message', () => {
+			const message = tool.confirmationMessage!({ 
+				sourcePath: 'old.md', 
+				targetPath: 'new.md' 
+			});
+			expect(message).toContain('Move file from: old.md');
+			expect(message).toContain('To: new.md');
+		});
+	});
+
 	describe('getVaultTools', () => {
 		it('should return all vault tools', () => {
 			const tools = getVaultTools();
 			
-			expect(tools).toHaveLength(6);
+			expect(tools).toHaveLength(7);
 			expect(tools.map(t => t.name)).toContain('read_file');
 			expect(tools.map(t => t.name)).toContain('write_file');
 			expect(tools.map(t => t.name)).toContain('list_files');
 			expect(tools.map(t => t.name)).toContain('create_folder');
 			expect(tools.map(t => t.name)).toContain('delete_file');
+			expect(tools.map(t => t.name)).toContain('move_file');
 			expect(tools.map(t => t.name)).toContain('search_files');
 		});
 	});

@@ -8,7 +8,7 @@ import type ObsidianGemini from '../main';
  */
 export class ReadFileTool implements Tool {
 	name = 'read_file';
-	category = ToolCategory.VAULT_OPERATIONS;
+	category = ToolCategory.READ_ONLY;
 	description = 'Read the contents of a file in the vault';
 	
 	parameters = {
@@ -129,7 +129,7 @@ export class WriteFileTool implements Tool {
  */
 export class ListFilesTool implements Tool {
 	name = 'list_files';
-	category = ToolCategory.VAULT_OPERATIONS;
+	category = ToolCategory.READ_ONLY;
 	description = 'List files and folders in a directory';
 	
 	parameters = {
@@ -316,6 +316,95 @@ export class DeleteFileTool implements Tool {
 }
 
 /**
+ * Move or rename a file
+ */
+export class MoveFileTool implements Tool {
+	name = 'move_file';
+	category = ToolCategory.VAULT_OPERATIONS;
+	description = 'Move or rename a file in the vault';
+	requiresConfirmation = true;
+	
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			sourcePath: {
+				type: 'string' as const,
+				description: 'Current path of the file to move'
+			},
+			targetPath: {
+				type: 'string' as const,
+				description: 'New path for the file (including filename)'
+			}
+		},
+		required: ['sourcePath', 'targetPath']
+	};
+
+	confirmationMessage = (params: { sourcePath: string; targetPath: string }) => {
+		return `Move file from: ${params.sourcePath}\nTo: ${params.targetPath}`;
+	};
+
+	async execute(params: { sourcePath: string; targetPath: string }, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		
+		try {
+			const sourceFile = plugin.app.vault.getAbstractFileByPath(normalizePath(params.sourcePath));
+			
+			if (!sourceFile) {
+				return {
+					success: false,
+					error: `Source file not found: ${params.sourcePath}`
+				};
+			}
+			
+			if (!(sourceFile instanceof TFile)) {
+				return {
+					success: false,
+					error: `Source path is not a file: ${params.sourcePath}`
+				};
+			}
+			
+			// Normalize target path
+			const targetNormalizedPath = normalizePath(params.targetPath);
+			
+			// Check if target already exists
+			const targetExists = await plugin.app.vault.adapter.exists(targetNormalizedPath);
+			if (targetExists) {
+				return {
+					success: false,
+					error: `Target path already exists: ${params.targetPath}`
+				};
+			}
+			
+			// Ensure target directory exists
+			const targetDir = targetNormalizedPath.substring(0, targetNormalizedPath.lastIndexOf('/'));
+			if (targetDir && !(await plugin.app.vault.adapter.exists(targetDir))) {
+				await plugin.app.vault.createFolder(targetDir).catch(() => {
+					// Folder might already exist or parent folders need to be created
+				});
+			}
+			
+			// Perform the rename/move
+			await plugin.app.vault.rename(sourceFile, targetNormalizedPath);
+			
+			return {
+				success: true,
+				data: {
+					sourcePath: params.sourcePath,
+					targetPath: targetNormalizedPath,
+					action: 'moved'
+				}
+			};
+			
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error moving file: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
  * Search for files by name pattern
  */
 export class SearchFilesTool implements Tool {
@@ -417,6 +506,7 @@ export function getVaultTools(): Tool[] {
 		new ListFilesTool(),
 		new CreateFolderTool(),
 		new DeleteFileTool(),
+		new MoveFileTool(),
 		new SearchFilesTool()
 	];
 }
