@@ -38,6 +38,7 @@ export class GeminiApiNew implements ModelApi {
 		let cancelled = false;
 
 		const complete = (async (): Promise<ModelResponse> => {
+			console.log('DEBUG: generateStreamingResponse called with request:', request);
 			logDebugInfo(this.plugin.settings.debugMode, 'Generating streaming response for request', request);
 
 			// Get system instruction with optional custom prompt and tools
@@ -77,6 +78,7 @@ export class GeminiApiNew implements ModelApi {
 					
 					// Add available custom tools if provided
 					if (request.availableTools && request.availableTools.length > 0) {
+						console.log('DEBUG: Available tools from request:', request.availableTools);
 						logDebugInfo(this.plugin.settings.debugMode, 'Available tools from request', request.availableTools);
 						
 						// Convert tools to function declarations format
@@ -91,14 +93,18 @@ export class GeminiApiNew implements ModelApi {
 							}
 						}));
 						
+						console.log('DEBUG: Function declarations:', JSON.stringify(functionDeclarations, null, 2));
+						
 						// Add function declarations as a single tool entry
 						if (functionDeclarations.length > 0) {
 							tools.push({
-								function_declarations: functionDeclarations
+								functionDeclarations: functionDeclarations  // Note: camelCase!
 							});
+							console.log('DEBUG: Tools array after adding functionDeclarations:', JSON.stringify(tools, null, 2));
 							logDebugInfo(this.plugin.settings.debugMode, 'Function declarations added to tools', functionDeclarations);
 						}
 					} else {
+						console.log('DEBUG: No available tools in request');
 						logDebugInfo(this.plugin.settings.debugMode, 'No available tools in request', request.availableTools);
 					}
 					
@@ -114,14 +120,17 @@ export class GeminiApiNew implements ModelApi {
 					// Only add tools if we have any
 					if (tools.length > 0) {
 						config.tools = tools;
+						console.log('DEBUG: Final tools array before API call:', JSON.stringify(tools, null, 2));
 						logDebugInfo(this.plugin.settings.debugMode, 'Final tools array before API call', tools);
 					}
 
+					console.log('DEBUG: About to call generateContentStream with config:', JSON.stringify(config, null, 2));
 					const streamingResult = await this.ai.models.generateContentStream({
 						model: modelToUse,
 						config: config,
 						contents: contents,
 					});
+					console.log('DEBUG: generateContentStream called');
 
 					// Process streaming chunks
 					let finalResponse;
@@ -222,6 +231,7 @@ export class GeminiApiNew implements ModelApi {
 
 		const modelToUse = request.model ?? this.plugin.settings.chatModelName;
 
+		console.log('DEBUG: generateModelResponse called with request:', request);
 		let response: ModelResponse = { markdown: '', rendered: '' };
 		if ('conversationHistory' in request) {
 			let tools: any[] = [];
@@ -233,7 +243,6 @@ export class GeminiApiNew implements ModelApi {
 			// Add available custom tools if provided
 			if (request.availableTools && request.availableTools.length > 0) {
 				// Convert tools to function declarations format
-				// The SDK expects function_declarations to be part of the tools array
 				const functionDeclarations = request.availableTools.map(tool => ({
 					name: tool.name,
 					description: tool.description,
@@ -247,7 +256,7 @@ export class GeminiApiNew implements ModelApi {
 				// Add function declarations as a single tool entry
 				if (functionDeclarations.length > 0) {
 					tools.push({
-						function_declarations: functionDeclarations
+						functionDeclarations: functionDeclarations  // Note: camelCase!
 					});
 					logDebugInfo(this.plugin.settings.debugMode, 'Tools being sent to Gemini (non-streaming)', tools);
 				}
@@ -267,11 +276,13 @@ export class GeminiApiNew implements ModelApi {
 				config.tools = tools;
 			}
 			
+			console.log('DEBUG: About to call generateContent with config:', JSON.stringify(config, null, 2));
 			const result = await this.ai.models.generateContent({
 				model: modelToUse,
 				config: config,
 				contents: contents,
 			});
+			console.log('DEBUG: generateContent called');
 			logDebugInfo(this.plugin.settings.debugMode, 'Model response', result);
 			response = this.parseModelResult(result);
 		} else {

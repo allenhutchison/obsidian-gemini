@@ -372,6 +372,8 @@ export class AgentView extends ItemView {
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 			console.log('Available tools from registry:', availableTools);
+			console.log('Number of tools:', availableTools.length);
+			console.log('Tool names:', availableTools.map(t => t.name));
 			
 			// Send to AI - disable automatic context since we're providing it
 			const originalSendContext = this.plugin.settings.sendContext;
@@ -387,6 +389,9 @@ export class AgentView extends ItemView {
 					availableTools: availableTools // No need to cast to any
 				};
 				
+				// For now, agent view will use non-streaming API since tool calls need the full response
+				// TODO: Add streaming support with tool calls
+				console.log('Agent view using non-streaming API for tool support');
 				const response = await this.plugin.geminiApi.generateModelResponse(request);
 				
 				// Restore original setting
