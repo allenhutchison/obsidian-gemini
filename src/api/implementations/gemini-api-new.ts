@@ -296,8 +296,10 @@ export class GeminiApiNew implements ModelApi {
 				contents: contents,
 			});
 			console.log('DEBUG: generateContent called');
+			console.log('DEBUG: Full model result:', JSON.stringify(result, null, 2));
 			logDebugInfo(this.plugin.settings.debugMode, 'Model response', result);
 			response = this.parseModelResult(result);
+			console.log('DEBUG: Parsed response:', JSON.stringify(response, null, 2));
 		} else {
 			const result = await this.ai.models.generateContent({
 				model: modelToUse,

@@ -797,31 +797,55 @@ User: ${history[0].message}`;
 
 		// Send another request with the tool results
 		try {
+			// Get available tools again for the follow-up request
+			const toolContext: ToolExecutionContext = {
+				plugin: this.plugin,
+				session: this.currentSession
+			};
+			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
+			
 			const followUpRequest: ExtendedModelRequest = {
 				userMessage: "Based on the tool execution results above, please provide a response to the user's request.",
 				conversationHistory: updatedHistory,
 				model: this.plugin.settings.chatModelName,
 				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Continue with tool results" }),
-				renderContent: false
+				renderContent: false,
+				availableTools: availableTools  // Include tools so model can chain calls
 			};
 			
 			const followUpResponse = await this.plugin.geminiApi.generateModelResponse(followUpRequest);
 			
-			// Display the final response
-			const aiEntry: GeminiConversationEntry = {
-				role: 'model',
-				message: followUpResponse.markdown,
-				notePath: '',
-				created_at: new Date()
-			};
-			this.displayMessage(aiEntry);
+			// Check if the follow-up response also contains tool calls
+			if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
+				// Recursively handle additional tool calls
+				await this.handleToolCalls(
+					followUpResponse.toolCalls, 
+					"Based on the tool execution results above, please provide a response to the user's request.", 
+					updatedHistory, 
+					{
+						role: 'system',
+						message: 'Continuing with additional tool calls...',
+						notePath: '',
+						created_at: new Date()
+					}
+				);
+			} else {
+				// Display the final response
+				const aiEntry: GeminiConversationEntry = {
+					role: 'model',
+					message: followUpResponse.markdown,
+					notePath: '',
+					created_at: new Date()
+				};
+				this.displayMessage(aiEntry);
 
-			// Save final response to history
-			if (this.plugin.settings.chatHistory) {
-				await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-				
-				// Auto-label session after first exchange
-				await this.autoLabelSessionIfNeeded();
+				// Save final response to history
+				if (this.plugin.settings.chatHistory) {
+					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+					
+					// Auto-label session after first exchange
+					await this.autoLabelSessionIfNeeded();
+				}
 			}
 		} catch (error) {
 			console.error('Failed to process tool results:', error);

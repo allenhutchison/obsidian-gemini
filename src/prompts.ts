@@ -115,8 +115,14 @@ export class GeminiPrompts {
 			toolsSection += '\n';
 		}
 
-		toolsSection += 'To use a tool, respond with a function call in the appropriate format. ';
-		toolsSection += 'The system will execute the tool and provide the results for you to use in your response.\n';
+		toolsSection += 'To use a tool, you MUST make a function call. The system will execute the tool and provide the results.\n\n';
+		toolsSection += '**IMPORTANT**: When the user asks you to:\n';
+		toolsSection += '- Create, write, or save content → USE the write_file tool\n';
+		toolsSection += '- List files → USE the list_files tool\n';
+		toolsSection += '- Read files → USE the read_file tool\n';
+		toolsSection += '- Search files → USE the search_files tool\n\n';
+		toolsSection += 'DO NOT just describe what you would do. ALWAYS use the appropriate tool to complete the task.\n';
+		toolsSection += 'Example: If asked to "create a file", you must call write_file with the path and content.\n';
 
 		return baseSystemPrompt + toolsSection;
 	}
