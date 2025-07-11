@@ -58,6 +58,38 @@
 - ✅ Session state synchronization with UI
 - ✅ Agent mode toggle with full context management
 
+## Phase 2.5: Separate Agent View Architecture (✅ Major Enhancement)
+
+### Separate View Implementation
+**File:** `src/ui/agent-view.ts` ✅
+- ✅ Complete AgentView class extending ItemView
+- ✅ Dedicated agent interface with session header, context panel, tool panel
+- ✅ Session management with auto-generated and custom titles
+- ✅ Context file management with add/remove functionality
+- ✅ Context depth control with real-time UI updates
+- ✅ Chat container with proper message display and history loading
+- ✅ Input area with keyboard shortcuts and send functionality
+
+### UI Separation and Integration
+**File:** `src/main.ts` ✅
+- ✅ AgentView registration with VIEW_TYPE_AGENT
+- ✅ Ribbon icon for agent mode access
+- ✅ activateAgentView method for view management
+- ✅ Command registration for agent mode
+
+**File:** `src/ui/gemini-view.ts` ✅
+- ✅ Removed all agent mode functionality
+- ✅ Reverted to pure note-centric chat approach
+- ✅ Clean separation of concerns between views
+
+### Auto-Labeling System
+**File:** `src/ui/agent-view.ts` ✅
+- ✅ autoLabelSessionIfNeeded method for intelligent session naming
+- ✅ AI-generated titles based on conversation content and context files
+- ✅ Automatic file renaming with sanitized filenames
+- ✅ Session metadata updates and UI refresh
+- ✅ Error handling for graceful fallback
+
 ## Phase 3: Tool System Foundation (✅ Completed)
 
 ### 3.1 Tool Framework
@@ -97,10 +129,13 @@
 - ✅ Parameter expansion for long values
 - ✅ Professional styling and user experience
 
-**File:** `src/ui/gemini-view.ts` ✅
+**File:** `src/ui/agent-view.ts` ✅
 - ✅ Tool execution panel with real-time feedback
 - ✅ Tool status display and result visualization
-- ✅ Integration with existing chat interface
+- ✅ Tool testing interface with manual execution
+- ✅ Parameter editor and validation
+- ✅ Default parameter generation for easier testing
+- ✅ Tool result display with success/error indicators
 - ✅ CSS styling for tool execution components
 
 **File:** `src/main.ts` ✅
@@ -109,9 +144,41 @@
 - ✅ All vault tools automatically registered
 - ✅ Settings integration for tool behavior
 
-## Phase 4: MCP Integration (🔄 Next Priority)
+## Phase 4: AI Tool Integration (🔄 In Progress)
 
-### 4.1 MCP Client Implementation
+### 4.1 AI Model Tool Integration
+**File:** `src/api/model-api.ts` (planned enhancement)
+- Extend ModelApi interface to support tool calls
+- Add tool_choice parameter to generateModelResponse
+- Handle tool call responses from AI models
+- Parse and validate AI-generated tool calls
+
+**File:** `src/tools/ai-integration.ts` (new)
+- Bridge between AI responses and tool execution
+- Parse tool calls from AI model responses
+- Validate tool parameters from AI suggestions
+- Execute multiple tools in sequence
+- Handle tool execution results in conversation
+
+**File:** `src/ui/agent-view.ts` (enhancement)
+- Display AI tool call suggestions
+- Show tool execution progress from AI requests
+- Handle streaming responses with tool calls
+- Update chat with tool results
+
+### 4.2 Gemini Function Calling
+**File:** `src/api/gemini-api.ts` (enhancement)
+- Implement Gemini function calling format
+- Convert internal tool registry to Gemini function definitions
+- Parse Gemini function call responses
+- Handle function calling in streaming responses
+
+**Estimated Time:** 2-3 days
+**Dependencies:** Tool system ✅, AgentView ✅
+
+## Phase 5: MCP Integration (🔄 Next Priority)
+
+### 5.1 MCP Client Implementation
 **File:** `src/mcp/mcp-client.ts` (planned)
 - MCP protocol client implementation
 - Server discovery and connection management
@@ -124,14 +191,14 @@
 - Health monitoring and reconnection
 - Server capability enumeration
 
-### 4.2 MCP Tools Integration
+### 5.2 MCP Tools Integration
 **File:** `src/tools/mcp-tools.ts` (planned)
 - Bridge MCP server tools into internal tool system
 - Parameter conversion and validation
 - Error handling and retry logic
 - Tool categorization from MCP schemas
 
-### 4.3 MCP Configuration UI
+### 5.3 MCP Configuration UI
 **File:** `src/ui/mcp-settings.ts` (planned)
 - MCP server configuration interface
 - Add/remove/test server connections
@@ -141,16 +208,16 @@
 **Estimated Time:** 3-4 days
 **Dependencies:** Tool system ✅, settings infrastructure ✅
 
-## Phase 5: Enhanced Context System (🧠 Intelligence)
+## Phase 6: Enhanced Context System (🧠 Intelligence)
 
-### 5.1 Multi-File Context Processing
+### 6.1 Multi-File Context Processing
 **File:** `src/files/multi-file-context.ts` (new)
 - Extend FileContextTree for agent sessions
 - Handle multiple root files efficiently
 - Context relevance scoring and prioritization
 - Smart context truncation when hitting limits
 
-### 5.2 Context-Aware Tool Execution
+### 6.2 Context-Aware Tool Execution
 **File:** `src/tools/context-integration.ts` (new)
 - Pass session context to tools automatically
 - Context-based tool suggestions
@@ -160,23 +227,23 @@
 **Estimated Time:** 2-3 days
 **Dependencies:** Tool system, session management
 
-## Phase 6: Advanced Agent Features (🚀 Power User)
+## Phase 7: Advanced Agent Features (🚀 Power User)
 
-### 6.1 Multi-Step Workflows
+### 7.1 Multi-Step Workflows
 **File:** `src/agent/workflow-engine.ts` (new)
 - Chain multiple tool calls together
 - Conditional execution based on results
 - Workflow templates and reusable patterns
 - Progress tracking and resumption
 
-### 6.2 Agent Session Templates
+### 7.2 Agent Session Templates
 **File:** `src/agent/session-templates.ts` (new)
 - Pre-configured agent sessions for common tasks
 - Template sharing and import/export
 - Dynamic template customization
 - Template marketplace integration
 
-### 6.3 Advanced UI Features
+### 7.3 Advanced UI Features
 **File:** `src/ui/agent-dashboard.ts` (new)
 - Full-screen agent workspace interface
 - Session timeline and activity view
@@ -192,9 +259,10 @@
 1. ✅ **Agent Session History** - Complete the core session experience
 2. ✅ **Tool Framework** - Build execution infrastructure  
 3. ✅ **Vault Tools** - Add immediate value with file operations
-4. 🔄 **Basic MCP Integration** - Connect first external tool
-5. 🔄 **Enhanced Context** - Improve intelligence
-6. 🔄 **Advanced Features** - Power user capabilities
+4. 🔄 **AI Tool Integration** - Connect AI models to tools automatically
+5. 🔄 **Basic MCP Integration** - Connect first external tool
+6. 🔄 **Enhanced Context** - Improve intelligence
+7. 🔄 **Advanced Features** - Power user capabilities
 
 ### Key Principles
 - **Backward Compatibility** - Never break existing note-centric chats
@@ -238,16 +306,18 @@ When complete, update:
 Phase completion criteria:
 - ✅ **Phase 1** - Users can switch to agent mode and manage context
 - ✅ **Phase 2** - Agent sessions persist and resume properly
+- ✅ **Phase 2.5** - Separate AgentView with auto-labeling and tool testing
 - ✅ **Phase 3** - Basic vault tools work with permission system
-- 🎯 **Phase 4** - First external MCP tool integrated successfully
-- 🎯 **Phase 5** - Multi-file context improves AI responses
-- 🎯 **Phase 6** - Power users can build complex workflows
+- 🎯 **Phase 4** - AI models can automatically call tools during conversation
+- 🎯 **Phase 5** - First external MCP tool integrated successfully
+- 🎯 **Phase 6** - Multi-file context improves AI responses
+- 🎯 **Phase 7** - Power users can build complex workflows
 
 ---
 
-**Current Status:** Phase 3 Complete ✅  
-**Next Milestone:** MCP Integration (Phase 4)  
-**Target:** Full agent capabilities by end of Phase 4
+**Current Status:** Phase 3 Complete ✅ + Major UI Enhancement ✅  
+**Next Milestone:** AI Tool Integration (Phase 4)  
+**Target:** Full agent capabilities by end of Phase 5
 
 ## Recent Progress Summary
 
@@ -255,23 +325,32 @@ Phase completion criteria:
 - **Complete Agent Architecture Foundation** - All core types, session management, and UI components
 - **Full Agent Session History System** - Persistent sessions with metadata and hybrid history storage
 - **Comprehensive Tool System** - Complete framework with vault operations, permissions, and UI feedback
-- **Production-Ready UI** - Agent mode toggle, context management, tool execution feedback
+- **Separate AgentView Architecture** - Dedicated view with complete separation from note-centric chat
+- **Intelligent Auto-Labeling** - AI-generated session titles with automatic file renaming
+- **Manual Tool Testing Interface** - Complete UI for testing tools without console interaction
 - **Security & Permissions** - Robust confirmation system for destructive operations
 - **Backward Compatibility** - Existing note-centric chats unaffected
 
 ### Key Implementation Highlights
-- **6 Vault Tools** implemented with full permission system
+- **6 Vault Tools** implemented with full permission system (`read_file`, `write_file`, `list_files`, `create_folder`, `delete_file`, `search_files`)
 - **Sophisticated Confirmation Modal** with parameter display and warnings
 - **Real-time UI Feedback** for tool execution with status indicators
 - **Session-Based Tool Execution** with history tracking and audit trail
+- **AgentView with Complete Interface** - session header, context panel, tool panel, chat container
+- **Tool Testing UI** - parameter editor, default values, execution feedback
+- **Auto-Labeling System** - AI-generated titles after first exchange
 - **Professional CSS Styling** for all new UI components
 - **Comprehensive Error Handling** with user-friendly messages
 
-### Technical Architecture
+### Architecture Decisions
+- **Separate View Pattern** - AgentView vs GeminiView for clear separation
+- **Manual Context Building** - Session files instead of automatic active file context
+- **Hybrid History System** - `History/` for notes, `Agent-Sessions/` for agent mode
+- **Tool Category System** - READ_ONLY, VAULT_OPERATIONS, EXTERNAL_MCP, SYSTEM
 - **Type-Safe Implementation** - Full TypeScript coverage with comprehensive interfaces
 - **Modular Design** - Clear separation of concerns across tool system components
 - **Plugin Integration** - Seamless integration with existing Obsidian plugin architecture
 - **Extensible Framework** - Easy to add new tools and categories
 - **Performance Optimized** - Efficient context management and tool execution
 
-The foundation is now solid for MCP integration and advanced agent capabilities!
+The foundation is now solid for AI tool integration and advanced agent capabilities!

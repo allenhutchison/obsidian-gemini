@@ -279,7 +279,7 @@ export class GeminiView extends ItemView {
 
 	async displayMessage(
 		message: string,
-		sender: 'user' | 'model' | 'grounding',
+		sender: 'user' | 'model' | 'grounding' | 'system',
 		messageContainer?: HTMLDivElement,
 		shouldScroll: boolean = true
 	): Promise<HTMLDivElement> {
@@ -312,6 +312,9 @@ export class GeminiView extends ItemView {
 					break;
 				case 'grounding':
 					setIcon(senderIndicator, 'search');
+					break;
+				case 'system':
+					setIcon(senderIndicator, 'info');
 					break;
 			}
 		}
@@ -425,7 +428,7 @@ export class GeminiView extends ItemView {
 				this.displayMessage(entry.message, 'model');
 				this.displayMessage(entry.metadata.rendered, 'grounding');
 			} else {
-				this.displayMessage(entry.message, entry.role);
+				this.displayMessage(entry.message, entry.role as 'user' | 'model' | 'grounding' | 'system');
 			}
 		}
 	}

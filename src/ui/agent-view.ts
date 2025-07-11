@@ -3,6 +3,9 @@ import { ChatSession, SessionType } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
 import { FilePickerModal } from './file-picker-modal';
+import { ToolConverter } from '../tools/tool-converter';
+import { ToolExecutionContext } from '../tools/types';
+import { ExtendedModelRequest } from '../api/interfaces/model-api';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -362,38 +365,55 @@ export class AgentView extends ItemView {
 				fullPrompt = `${fullPrompt}\n\nUser: ${message}`;
 			}
 
+			// Get available tools for this session
+			const toolContext: ToolExecutionContext = {
+				plugin: this.plugin,
+				session: this.currentSession
+			};
+			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
+			
 			// Send to AI - disable automatic context since we're providing it
 			const originalSendContext = this.plugin.settings.sendContext;
 			this.plugin.settings.sendContext = false;
 			
 			try {
-				const response = await this.plugin.geminiApi.generateModelResponse({
+				const request: ExtendedModelRequest = {
 					userMessage: message,
 					conversationHistory: conversationHistory,
 					model: this.plugin.settings.chatModelName,
 					prompt: fullPrompt,
-					renderContent: false // We already rendered content above
-				});
+					renderContent: false, // We already rendered content above
+					availableTools: availableTools as any // Convert to API format
+				};
+				
+				const response = await this.plugin.geminiApi.generateModelResponse(request);
 				
 				// Restore original setting
 				this.plugin.settings.sendContext = originalSendContext;
 
-				// Display AI response
-				const aiEntry: GeminiConversationEntry = {
-					role: 'model',
-					message: response.markdown,
-					notePath: '',
-					created_at: new Date()
-				};
-				this.displayMessage(aiEntry);
+				// Check if the model requested tool calls
+				if (response.toolCalls && response.toolCalls.length > 0) {
+					// Execute tools and handle results
+					await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
+				} else {
+					// Normal response without tool calls
+					// Display AI response
+					const aiEntry: GeminiConversationEntry = {
+						role: 'model',
+						message: response.markdown,
+						notePath: '',
+						created_at: new Date()
+					};
+					this.displayMessage(aiEntry);
 
-				// Save to history
-				if (this.plugin.settings.chatHistory) {
-					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-					
-					// Auto-label session after first exchange
-					await this.autoLabelSessionIfNeeded();
+					// Save to history
+					if (this.plugin.settings.chatHistory) {
+						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+						
+						// Auto-label session after first exchange
+						await this.autoLabelSessionIfNeeded();
+					}
 				}
 			} catch (error) {
 				// Make sure to restore setting even if there's an error
@@ -426,49 +446,6 @@ export class AgentView extends ItemView {
 	private async showSessionsList() {
 		// TODO: Implement session selection modal
 		new Notice('Session selection coming soon');
-	}
-
-	// Tool execution feedback methods
-	showToolExecution(toolName: string, parameters: any): void {
-		// Find or create the status area
-		let statusArea = this.toolPanel.querySelector('.gemini-agent-tool-status') as HTMLElement;
-		if (!statusArea) {
-			statusArea = this.toolPanel.createDiv({ cls: 'gemini-agent-tool-status' });
-		}
-		
-		statusArea.empty();
-		statusArea.style.display = 'block';
-		
-		const executionItem = statusArea.createDiv({ cls: 'gemini-agent-tool-execution' });
-		executionItem.createSpan({ text: `🔧 Executing: ${toolName}` });
-		
-		if (Object.keys(parameters).length > 0) {
-			const paramDiv = executionItem.createDiv({ cls: 'gemini-agent-tool-params' });
-			paramDiv.createEl('pre', { text: JSON.stringify(parameters, null, 2) });
-		}
-	}
-
-	showToolResult(toolName: string, result: any): void {
-		const executionItem = this.toolPanel.querySelector('.gemini-agent-tool-execution') as HTMLElement;
-		if (!executionItem) return;
-		
-		const resultDiv = executionItem.createDiv({ cls: 'gemini-agent-tool-result' });
-		const icon = result.success ? '✅' : '❌';
-		const status = result.success ? 'Success' : 'Failed';
-		
-		resultDiv.createSpan({ text: `${icon} ${status}` });
-		
-		if (result.error) {
-			resultDiv.createDiv({ text: result.error, cls: 'gemini-agent-tool-error' });
-		}
-		
-		// Hide status area after 3 seconds
-		setTimeout(() => {
-			const statusArea = this.toolPanel.querySelector('.gemini-agent-tool-status') as HTMLElement;
-			if (statusArea) {
-				statusArea.style.display = 'none';
-			}
-		}, 3000);
 	}
 
 	getCurrentSessionForToolExecution(): ChatSession | null {
@@ -722,6 +699,189 @@ User: ${history[0].message}`;
 			}
 		} catch (error) {
 			console.error('Error in auto-labeling:', error);
+		}
+	}
+
+	/**
+	 * Handle tool calls from the model response
+	 */
+	private async handleToolCalls(
+		toolCalls: any[], 
+		userMessage: string,
+		conversationHistory: any[],
+		userEntry: GeminiConversationEntry
+	) {
+		if (!this.currentSession) return;
+
+		// Display that we're executing tools
+		const toolMessage = `🔧 Executing ${toolCalls.length} tool${toolCalls.length > 1 ? 's' : ''}...`;
+		const toolStatusEntry: GeminiConversationEntry = {
+			role: 'system',
+			message: toolMessage,
+			notePath: '',
+			created_at: new Date()
+		};
+		this.displayMessage(toolStatusEntry);
+
+		// Execute each tool
+		const toolResults: any[] = [];
+		const context: ToolExecutionContext = {
+			plugin: this.plugin,
+			session: this.currentSession
+		};
+
+		for (const toolCall of toolCalls) {
+			try {
+				// Show tool execution in UI
+				this.showToolExecution(toolCall.name, toolCall.arguments);
+				
+				// Execute the tool
+				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context);
+				
+				// Show result in UI
+				this.showToolResult(toolCall.name, result);
+				
+				// Format result for the model
+				toolResults.push({
+					toolName: toolCall.name,
+					result: result
+				});
+			} catch (error) {
+				console.error(`Tool execution error for ${toolCall.name}:`, error);
+				toolResults.push({
+					toolName: toolCall.name,
+					result: {
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error'
+					}
+				});
+			}
+		}
+
+		// Save the original user message and tool calls to history
+		if (this.plugin.settings.chatHistory) {
+			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+			
+			// Save tool execution as a system message
+			const toolExecutionEntry: GeminiConversationEntry = {
+				role: 'system',
+				message: `Executed tools: ${toolCalls.map(t => t.name).join(', ')}`,
+				notePath: '',
+				created_at: new Date(),
+				metadata: {
+					toolCalls: toolCalls,
+					toolResults: toolResults
+				}
+			};
+			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, toolExecutionEntry);
+		}
+
+		// Continue the conversation with tool results
+		// Build a new request that includes the tool results
+		const toolResultsMessage = this.formatToolResultsForModel(toolResults);
+		
+		// Add tool results to conversation history
+		const updatedHistory = [...conversationHistory, {
+			role: 'user',
+			message: userMessage
+		}, {
+			role: 'system', 
+			message: toolResultsMessage
+		}];
+
+		// Send another request with the tool results
+		try {
+			const followUpRequest: ExtendedModelRequest = {
+				userMessage: "Based on the tool execution results above, please provide a response to the user's request.",
+				conversationHistory: updatedHistory,
+				model: this.plugin.settings.chatModelName,
+				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Continue with tool results" }),
+				renderContent: false
+			};
+			
+			const followUpResponse = await this.plugin.geminiApi.generateModelResponse(followUpRequest);
+			
+			// Display the final response
+			const aiEntry: GeminiConversationEntry = {
+				role: 'model',
+				message: followUpResponse.markdown,
+				notePath: '',
+				created_at: new Date()
+			};
+			this.displayMessage(aiEntry);
+
+			// Save final response to history
+			if (this.plugin.settings.chatHistory) {
+				await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+				
+				// Auto-label session after first exchange
+				await this.autoLabelSessionIfNeeded();
+			}
+		} catch (error) {
+			console.error('Failed to process tool results:', error);
+			new Notice('Failed to process tool results');
+		}
+	}
+
+	/**
+	 * Format tool results for the model
+	 */
+	private formatToolResultsForModel(toolResults: any[]): string {
+		let formatted = "Tool Execution Results:\n\n";
+		
+		for (const result of toolResults) {
+			formatted += `### ${result.toolName}\n`;
+			if (result.result.success) {
+				formatted += `✅ Success\n`;
+				if (result.result.data) {
+					formatted += `\`\`\`json\n${JSON.stringify(result.result.data, null, 2)}\n\`\`\`\n`;
+				}
+			} else {
+				formatted += `❌ Failed\n`;
+				formatted += `Error: ${result.result.error}\n`;
+			}
+			formatted += '\n';
+		}
+		
+		return formatted;
+	}
+
+	/**
+	 * Show tool execution in the UI
+	 */
+	public showToolExecution(toolName: string, parameters: any): void {
+		// Update the tool panel to show current execution
+		if (this.toolPanel) {
+			const executionDiv = this.toolPanel.createDiv({ cls: 'gemini-tool-execution-status' });
+			executionDiv.createSpan({ text: `🔧 ${toolName}`, cls: 'gemini-tool-name' });
+			
+			// Show parameters if not too large
+			const paramStr = JSON.stringify(parameters, null, 2);
+			if (paramStr.length < 200) {
+				const paramDiv = executionDiv.createDiv({ cls: 'gemini-tool-params' });
+				paramDiv.createEl('pre', { text: paramStr });
+			}
+		}
+	}
+
+	/**
+	 * Show tool execution result in the UI
+	 */
+	public showToolResult(toolName: string, result: any): void {
+		// Find the execution status for this tool and update it
+		if (this.toolPanel) {
+			const executions = this.toolPanel.querySelectorAll('.gemini-tool-execution-status');
+			const latestExecution = executions[executions.length - 1] as HTMLElement;
+			
+			if (latestExecution) {
+				const resultDiv = latestExecution.createDiv({ cls: 'gemini-tool-result' });
+				const icon = result.success ? '✅' : '❌';
+				resultDiv.createSpan({ text: `${icon} ${result.success ? 'Success' : 'Failed'}` });
+				
+				if (result.error) {
+					resultDiv.createDiv({ text: result.error, cls: 'gemini-tool-error' });
+				}
+			}
 		}
 	}
 }

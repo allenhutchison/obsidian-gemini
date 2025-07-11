@@ -7,9 +7,11 @@ import {
 	ModelResponse,
 	StreamCallback,
 	StreamingModelResponse,
+	ToolCall,
 } from '../interfaces/model-api';
 import ObsidianGemini from '../../../main';
 import { GeminiPrompts } from '../../prompts';
+import { ToolConverter } from '../../tools/tool-converter';
 
 /**
  * Implementation of ModelApi using the new @google/genai SDK.
@@ -38,21 +40,62 @@ export class GeminiApiNew implements ModelApi {
 		const complete = (async (): Promise<ModelResponse> => {
 			logDebugInfo(this.plugin.settings.debugMode, 'Generating streaming response for request', request);
 
-			// Get system instruction with optional custom prompt
+			// Get system instruction with optional custom prompt and tools
 			const customPrompt = 'customPrompt' in request ? request.customPrompt : undefined;
-			const systemInstruction = await this.prompts.getSystemPromptWithCustom(customPrompt);
+			const hasTools = 'availableTools' in request && request.availableTools && request.availableTools.length > 0;
+			
+			let systemInstruction: string;
+			if (hasTools) {
+				// Use tools-aware system prompt
+				systemInstruction = this.prompts.getSystemPromptWithTools(request.availableTools!);
+				if (customPrompt) {
+					// Append custom prompt if provided
+					if (customPrompt.overrideSystemPrompt) {
+						systemInstruction = customPrompt.content;
+					} else {
+						systemInstruction += `\n\n## Additional Instructions\n\n${customPrompt.content}`;
+					}
+				}
+			} else {
+				// Use regular system prompt
+				systemInstruction = await this.prompts.getSystemPromptWithCustom(customPrompt);
+			}
 
 			const modelToUse = request.model ?? this.plugin.settings.chatModelName;
 
 			let fullMarkdown = '';
 			let rendered = '';
+			const toolCalls: ToolCall[] = [];
 
 			try {
 				if ('conversationHistory' in request) {
-					let tools = [];
+					let tools: any[] = [];
+					let functionDeclarations: any[] = [];
+					
 					if (this.plugin.settings.searchGrounding) {
 						tools.push({ googleSearch: {} });
 					}
+					
+					// Add available custom tools if provided
+					if (request.availableTools && request.availableTools.length > 0) {
+						// Convert tools to function declarations
+						functionDeclarations = request.availableTools.map(tool => ({
+							name: tool.name,
+							description: tool.description,
+							parameters: {
+								type: 'object' as const,
+								properties: tool.parameters.properties || {},
+								required: tool.parameters.required || []
+							}
+						}));
+					}
+					
+					// If we have function declarations, add them to tools
+					if (functionDeclarations.length > 0) {
+						tools.push({ function_declarations: functionDeclarations });
+						logDebugInfo(this.plugin.settings.debugMode, 'Tools being sent to Gemini', tools);
+					}
+					
 					const contents = await this.buildGeminiChatContents(request);
 
 					const streamingResult = await this.ai.models.generateContentStream({
@@ -66,19 +109,40 @@ export class GeminiApiNew implements ModelApi {
 						contents: contents,
 					});
 
+					// Process streaming chunks
+					let finalResponse;
 					for await (const chunk of streamingResult) {
 						if (cancelled) {
 							break;
 						}
-
-						const chunkText = chunk.text;
-						if (chunkText) {
-							const decodedChunk = this._decodeHtmlEntities(chunkText);
-							fullMarkdown += decodedChunk;
-							onChunk(decodedChunk);
+						finalResponse = chunk;
+						
+						// Handle text parts in the chunk
+						if (chunk.text) {
+							const decodedText = this._decodeHtmlEntities(chunk.text);
+							fullMarkdown += decodedText;
+							onChunk(decodedText);
+						}
+						
+						// Check for function calls in the chunk
+						if (chunk.candidates?.[0]?.content?.parts) {
+							for (const part of chunk.candidates[0].content.parts) {
+								// Handle function calls
+								if (part.functionCall && part.functionCall.name) {
+									toolCalls.push({
+										name: part.functionCall.name,
+										arguments: part.functionCall.args || {}
+									});
+								}
+							}
 						}
 					}
-					logDebugInfo(this.plugin.settings.debugMode, 'Streaming response complete', fullMarkdown);
+					
+					logDebugInfo(this.plugin.settings.debugMode, 'Streaming response complete', { 
+						text: fullMarkdown, 
+						toolCalls,
+						finalResponse: finalResponse
+					});
 				} else {
 					const streamingResult = await this.ai.models.generateContentStream({
 						model: modelToUse,
@@ -107,7 +171,7 @@ export class GeminiApiNew implements ModelApi {
 				throw error;
 			}
 
-			return { markdown: fullMarkdown, rendered };
+			return { markdown: fullMarkdown, rendered, toolCalls: toolCalls.length > 0 ? toolCalls : undefined };
 		})();
 
 		return {
@@ -121,18 +185,58 @@ export class GeminiApiNew implements ModelApi {
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		logDebugInfo(this.plugin.settings.debugMode, 'Generating model response for request', request);
 
-		// Get system instruction with optional custom prompt
+		// Get system instruction with optional custom prompt and tools
 		const customPrompt = 'customPrompt' in request ? request.customPrompt : undefined;
-		const systemInstruction = await this.prompts.getSystemPromptWithCustom(customPrompt);
+		const hasTools = 'availableTools' in request && request.availableTools && request.availableTools.length > 0;
+		
+		let systemInstruction: string;
+		if (hasTools) {
+			// Use tools-aware system prompt
+			systemInstruction = this.prompts.getSystemPromptWithTools(request.availableTools!);
+			if (customPrompt) {
+				// Append custom prompt if provided
+				if (customPrompt.overrideSystemPrompt) {
+					systemInstruction = customPrompt.content;
+				} else {
+					systemInstruction += `\n\n## Additional Instructions\n\n${customPrompt.content}`;
+				}
+			}
+		} else {
+			// Use regular system prompt
+			systemInstruction = await this.prompts.getSystemPromptWithCustom(customPrompt);
+		}
 
 		const modelToUse = request.model ?? this.plugin.settings.chatModelName;
 
 		let response: ModelResponse = { markdown: '', rendered: '' };
 		if ('conversationHistory' in request) {
-			let tools = [];
+			let tools: any[] = [];
+			let functionDeclarations: any[] = [];
+			
 			if (this.plugin.settings.searchGrounding) {
 				tools.push({ googleSearch: {} });
 			}
+			
+			// Add available custom tools if provided
+			if (request.availableTools && request.availableTools.length > 0) {
+				// Convert tools to function declarations
+				functionDeclarations = request.availableTools.map(tool => ({
+					name: tool.name,
+					description: tool.description,
+					parameters: {
+						type: 'object' as const,
+						properties: tool.parameters.properties || {},
+						required: tool.parameters.required || []
+					}
+				}));
+			}
+			
+			// If we have function declarations, add them to tools
+			if (functionDeclarations.length > 0) {
+				tools.push({ function_declarations: functionDeclarations });
+				logDebugInfo(this.plugin.settings.debugMode, 'Tools being sent to Gemini (non-streaming)', tools);
+			}
+			
 			const contents = await this.buildGeminiChatContents(request);
 			const result = await this.ai.models.generateContent({
 				model: modelToUse,
@@ -191,29 +295,49 @@ export class GeminiApiNew implements ModelApi {
 
 	private parseModelResult(result: any): ModelResponse {
 		let response: ModelResponse = { markdown: '', rendered: '' };
+		const toolCalls: ToolCall[] = [];
 
 		// Extract text from the response
 		try {
-			let rawMarkdown = '';
-			if (result.text && typeof result.text === 'string') {
-				// Check if result.text is a string
-				// New API format
-				rawMarkdown = result.text;
-			} else if (typeof result.text === 'function') {
-				// Old API format (keeping for backward compatibility)
-				const textContent = result.text();
-				if (typeof textContent === 'string') {
-					// Ensure the function returns a string
-					rawMarkdown = textContent;
+			// Check for function calls in the response
+			if (result.candidates?.[0]?.content?.parts) {
+				for (const part of result.candidates[0].content.parts) {
+					// Handle text parts
+					if (part.text) {
+						response.markdown += this._decodeHtmlEntities(part.text);
+					}
+					
+					// Handle function calls
+					if (part.functionCall) {
+						toolCalls.push({
+							name: part.functionCall.name,
+							arguments: part.functionCall.args || {}
+						});
+					}
 				}
-			}
-			// ... (other conditions for extracting text if any) ...
-
-			if (rawMarkdown) {
-				// Check if rawMarkdown has content
-				response.markdown = this._decodeHtmlEntities(rawMarkdown);
 			} else {
-				response.markdown = ''; // Ensure markdown is empty string if no text extracted
+				// Fallback to old parsing logic
+				let rawMarkdown = '';
+				if (result.text && typeof result.text === 'string') {
+					// Check if result.text is a string
+					// New API format
+					rawMarkdown = result.text;
+				} else if (typeof result.text === 'function') {
+					// Old API format (keeping for backward compatibility)
+					const textContent = result.text();
+					if (typeof textContent === 'string') {
+						// Ensure the function returns a string
+						rawMarkdown = textContent;
+					}
+				}
+				// ... (other conditions for extracting text if any) ...
+
+				if (rawMarkdown) {
+					// Check if rawMarkdown has content
+					response.markdown = this._decodeHtmlEntities(rawMarkdown);
+				} else {
+					response.markdown = ''; // Ensure markdown is empty string if no text extracted
+				}
 			}
 
 			// Extract search grounding metadata if available
@@ -221,6 +345,11 @@ export class GeminiApiNew implements ModelApi {
 				response.rendered = result.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? '';
 			} else if (result.response?.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
 				response.rendered = result.response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? '';
+			}
+			
+			// Add tool calls if any were found
+			if (toolCalls.length > 0) {
+				response.toolCalls = toolCalls;
 			}
 		} catch (error) {
 			console.error('Error parsing model result:', error);

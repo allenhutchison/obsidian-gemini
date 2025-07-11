@@ -83,4 +83,41 @@ export class GeminiPrompts {
 		// Default behavior: append custom prompt to system prompt
 		return `${baseSystemPrompt}\n\n## Additional Instructions\n\n${customPrompt.content}`;
 	}
+
+	// Method to create system prompt with tools information
+	getSystemPromptWithTools(availableTools: any[]): string {
+		const baseSystemPrompt = this.systemPrompt({
+			userName: this.plugin?.settings.userName || 'User',
+			language: this.getLanguageCode(),
+			date: new Date().toLocaleDateString(),
+			time: new Date().toLocaleTimeString(),
+		});
+
+		if (!availableTools || availableTools.length === 0) {
+			return baseSystemPrompt;
+		}
+
+		// Add tools information to the system prompt
+		let toolsSection = '\n\n## Available Tools\n\n';
+		toolsSection += 'You have access to the following tools that you can use to help answer questions:\n\n';
+		
+		for (const tool of availableTools) {
+			toolsSection += `### ${tool.name}\n`;
+			toolsSection += `${tool.description}\n`;
+			
+			if (tool.parameters && tool.parameters.properties) {
+				toolsSection += 'Parameters:\n';
+				for (const [param, schema] of Object.entries(tool.parameters.properties as Record<string, any>)) {
+					const required = tool.parameters.required?.includes(param) ? ' (required)' : '';
+					toolsSection += `- ${param}: ${schema.type}${required} - ${schema.description || ''}\n`;
+				}
+			}
+			toolsSection += '\n';
+		}
+
+		toolsSection += 'To use a tool, respond with a function call in the appropriate format. ';
+		toolsSection += 'The system will execute the tool and provide the results for you to use in your response.\n';
+
+		return baseSystemPrompt + toolsSection;
+	}
 }
