@@ -16,7 +16,6 @@ export class AgentView extends ItemView {
 	private userInput: HTMLTextAreaElement;
 	private sendButton: HTMLButtonElement;
 	private contextPanel: HTMLElement;
-	private toolPanel: HTMLElement;
 	private sessionHeader: HTMLElement;
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 
@@ -56,14 +55,6 @@ export class AgentView extends ItemView {
 		// Context management panel
 		this.contextPanel = container.createDiv({ cls: 'gemini-agent-context-panel' });
 		this.createContextPanel();
-
-		// Tool execution panel
-		this.toolPanel = container.createDiv({ cls: 'gemini-agent-tool-panel' });
-		this.toolPanel.style.border = '1px solid var(--background-modifier-border)';
-		this.toolPanel.style.borderRadius = '6px';
-		this.toolPanel.style.padding = '10px';
-		this.toolPanel.style.marginBottom = '10px';
-		this.createToolPanel();
 
 		// Chat container
 		this.chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
@@ -152,16 +143,6 @@ export class AgentView extends ItemView {
 		});
 	}
 
-	private createToolPanel() {
-		this.toolPanel.empty();
-		
-		// Tool execution header
-		const header = this.toolPanel.createDiv({ cls: 'gemini-agent-tool-header' });
-		header.createEl('h4', { text: 'Tool Execution' });
-		
-		// Execution status area
-		this.toolPanel.createDiv({ cls: 'gemini-agent-tool-status' });
-	}
 
 	private createInputArea(container: HTMLElement) {
 		this.userInput = container.createEl('textarea', {
@@ -566,15 +547,6 @@ User: ${history[0].message}`;
 	) {
 		if (!this.currentSession) return;
 
-		// Display that we're executing tools
-		const toolMessage = `🔧 Executing ${toolCalls.length} tool${toolCalls.length > 1 ? 's' : ''}...`;
-		const toolStatusEntry: GeminiConversationEntry = {
-			role: 'system',
-			message: toolMessage,
-			notePath: '',
-			created_at: new Date()
-		};
-		await this.displayMessage(toolStatusEntry);
 
 		// Execute each tool
 		const toolResults: any[] = [];
@@ -586,13 +558,13 @@ User: ${history[0].message}`;
 		for (const toolCall of toolCalls) {
 			try {
 				// Show tool execution in UI
-				this.showToolExecution(toolCall.name, toolCall.arguments);
+				await this.showToolExecution(toolCall.name, toolCall.arguments);
 				
 				// Execute the tool
 				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context);
 				
 				// Show result in UI
-				this.showToolResult(toolCall.name, result);
+				await this.showToolResult(toolCall.name, result);
 				
 				// Format result for the model
 				toolResults.push({
@@ -724,41 +696,62 @@ User: ${history[0].message}`;
 	}
 
 	/**
-	 * Show tool execution in the UI
+	 * Show tool execution in the UI as a chat message
 	 */
-	public showToolExecution(toolName: string, parameters: any): void {
-		// Update the tool panel to show current execution
-		if (this.toolPanel) {
-			const executionDiv = this.toolPanel.createDiv({ cls: 'gemini-tool-execution-status' });
-			executionDiv.createSpan({ text: `🔧 ${toolName}`, cls: 'gemini-tool-name' });
-			
-			// Show parameters if not too large
-			const paramStr = JSON.stringify(parameters, null, 2);
-			if (paramStr.length < 200) {
-				const paramDiv = executionDiv.createDiv({ cls: 'gemini-tool-params' });
-				paramDiv.createEl('pre', { text: paramStr });
-			}
+	public async showToolExecution(toolName: string, parameters: any): Promise<void> {
+		// Create a detailed message about tool execution
+		let message = `🔧 Executing tool: **${toolName}**\n\n`;
+		
+		// Show parameters if not too large
+		const paramStr = JSON.stringify(parameters, null, 2);
+		if (paramStr.length < 500) {
+			message += `Parameters:\n\`\`\`json\n${paramStr}\n\`\`\``;
+		} else {
+			message += `Parameters: (too large to display)`;
 		}
+		
+		const toolEntry: GeminiConversationEntry = {
+			role: 'system',
+			message: message,
+			notePath: '',
+			created_at: new Date()
+		};
+		
+		await this.displayMessage(toolEntry);
 	}
 
 	/**
-	 * Show tool execution result in the UI
+	 * Show tool execution result in the UI as a chat message
 	 */
-	public showToolResult(toolName: string, result: any): void {
-		// Find the execution status for this tool and update it
-		if (this.toolPanel) {
-			const executions = this.toolPanel.querySelectorAll('.gemini-tool-execution-status');
-			const latestExecution = executions[executions.length - 1] as HTMLElement;
-			
-			if (latestExecution) {
-				const resultDiv = latestExecution.createDiv({ cls: 'gemini-tool-result' });
-				const icon = result.success ? '✅' : '❌';
-				resultDiv.createSpan({ text: `${icon} ${result.success ? 'Success' : 'Failed'}` });
-				
-				if (result.error) {
-					resultDiv.createDiv({ text: result.error, cls: 'gemini-tool-error' });
+	public async showToolResult(toolName: string, result: any): Promise<void> {
+		const icon = result.success ? '✅' : '❌';
+		let message = `${icon} Tool **${toolName}** ${result.success ? 'completed successfully' : 'failed'}\n\n`;
+		
+		if (result.success && result.data) {
+			const dataStr = JSON.stringify(result.data, null, 2);
+			if (dataStr.length < 1000) {
+				message += `Result:\n\`\`\`json\n${dataStr}\n\`\`\``;
+			} else {
+				message += `Result: (too large to display in full)\n`;
+				// Show a summary if possible
+				if (result.data.count !== undefined) {
+					message += `- Count: ${result.data.count}\n`;
+				}
+				if (result.data.path !== undefined) {
+					message += `- Path: ${result.data.path}\n`;
 				}
 			}
+		} else if (result.error) {
+			message += `Error: ${result.error}`;
 		}
+		
+		const resultEntry: GeminiConversationEntry = {
+			role: 'system',
+			message: message,
+			notePath: '',
+			created_at: new Date()
+		};
+		
+		await this.displayMessage(resultEntry);
 	}
 }

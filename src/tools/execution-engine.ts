@@ -65,13 +65,8 @@ export class ToolExecutionEngine {
 			}
 		}
 
-		// Show execution notification and UI feedback
+		// Show execution notification
 		const executionNotice = new Notice(`Executing ${tool.name}...`, 0);
-		
-		// Show in UI if agent view is available
-		if (this.plugin.agentView) {
-			this.plugin.agentView.showToolExecution(tool.name, toolCall.arguments);
-		}
 
 		try {
 			// Execute the tool
@@ -97,11 +92,6 @@ export class ToolExecutionEngine {
 				new Notice(`✗ ${tool.name} failed: ${result.error}`, 5000);
 			}
 			
-			// Show result in UI if agent view is available
-			if (this.plugin.agentView) {
-				this.plugin.agentView.showToolResult(tool.name, result);
-			}
-
 			return result;
 
 		} catch (error) {
@@ -114,10 +104,6 @@ export class ToolExecutionEngine {
 				error: errorMessage
 			};
 			
-			// Show error in UI if agent view is available
-			if (this.plugin.agentView) {
-				this.plugin.agentView.showToolResult(tool.name, errorResult);
-			}
 			
 			return errorResult;
 		}
