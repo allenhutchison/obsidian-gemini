@@ -72,18 +72,25 @@ export class GeminiApiNew implements ModelApi {
 				if ('conversationHistory' in request) {
 					let tools: any[] = [];
 					
-					if (this.plugin.settings.searchGrounding) {
+					// Check if we have custom tools
+					const hasCustomTools = request.availableTools && request.availableTools.length > 0;
+					
+					// Google Search and function calling are mutually exclusive in the Gemini API
+					// Error: "Tool use with function calling is unsupported" when both are used
+					// Only add Google Search if we don't have custom tools
+					if (this.plugin.settings.searchGrounding && !hasCustomTools) {
 						tools.push({ googleSearch: {} });
 					}
 					
 					// Add available custom tools if provided
-					if (request.availableTools && request.availableTools.length > 0) {
+					if (hasCustomTools) {
 						console.log('DEBUG: Available tools from request:', request.availableTools);
+						console.log('DEBUG: Google Search disabled due to custom tools');
 						logDebugInfo(this.plugin.settings.debugMode, 'Available tools from request', request.availableTools);
 						
 						// Convert tools to function declarations format
 						// The SDK expects function_declarations to be part of the tools array
-						const functionDeclarations = request.availableTools.map(tool => ({
+						const functionDeclarations = request.availableTools!.map(tool => ({
 							name: tool.name,
 							description: tool.description,
 							parameters: {
@@ -236,14 +243,20 @@ export class GeminiApiNew implements ModelApi {
 		if ('conversationHistory' in request) {
 			let tools: any[] = [];
 			
-			if (this.plugin.settings.searchGrounding) {
+			// Check if we have custom tools
+			const hasCustomTools = request.availableTools && request.availableTools.length > 0;
+			
+			// Google Search and function calling are mutually exclusive in the Gemini API
+			// Error: "Tool use with function calling is unsupported" when both are used
+			// Only add Google Search if we don't have custom tools
+			if (this.plugin.settings.searchGrounding && !hasCustomTools) {
 				tools.push({ googleSearch: {} });
 			}
 			
 			// Add available custom tools if provided
-			if (request.availableTools && request.availableTools.length > 0) {
+			if (hasCustomTools) {
 				// Convert tools to function declarations format
-				const functionDeclarations = request.availableTools.map(tool => ({
+				const functionDeclarations = request.availableTools!.map(tool => ({
 					name: tool.name,
 					description: tool.description,
 					parameters: {
