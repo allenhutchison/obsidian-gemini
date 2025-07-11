@@ -79,31 +79,25 @@ export class GeminiApiNew implements ModelApi {
 					if (request.availableTools && request.availableTools.length > 0) {
 						logDebugInfo(this.plugin.settings.debugMode, 'Available tools from request', request.availableTools);
 						
-						// Convert tools to CallableTool format
-						const callableTools = request.availableTools.map(tool => ({
-							tool: async () => {
-								return Promise.resolve({
-									functionDeclarations: [{
-										name: tool.name,
-										description: tool.description,
-										parameters: {
-											type: 'object' as const,
-											properties: tool.parameters.properties || {},
-											required: tool.parameters.required || []
-										}
-									}]
-								});
-							},
-							callTool: async (params: any[]) => {
-								// This will be handled by our tool execution engine
-								// For now, return empty array as we handle this manually
-								return [];
+						// Convert tools to function declarations format
+						// The SDK expects function_declarations to be part of the tools array
+						const functionDeclarations = request.availableTools.map(tool => ({
+							name: tool.name,
+							description: tool.description,
+							parameters: {
+								type: 'object' as const,
+								properties: tool.parameters.properties || {},
+								required: tool.parameters.required || []
 							}
 						}));
 						
-						// Add callable tools to the tools array
-						tools.push(...callableTools);
-						logDebugInfo(this.plugin.settings.debugMode, 'Callable tools created', callableTools.length);
+						// Add function declarations as a single tool entry
+						if (functionDeclarations.length > 0) {
+							tools.push({
+								function_declarations: functionDeclarations
+							});
+							logDebugInfo(this.plugin.settings.debugMode, 'Function declarations added to tools', functionDeclarations);
+						}
 					} else {
 						logDebugInfo(this.plugin.settings.debugMode, 'No available tools in request', request.availableTools);
 					}
@@ -238,31 +232,25 @@ export class GeminiApiNew implements ModelApi {
 			
 			// Add available custom tools if provided
 			if (request.availableTools && request.availableTools.length > 0) {
-				// Convert tools to CallableTool format
-				const callableTools = request.availableTools.map(tool => ({
-					tool: async () => {
-						return Promise.resolve({
-							functionDeclarations: [{
-								name: tool.name,
-								description: tool.description,
-								parameters: {
-									type: 'object' as const,
-									properties: tool.parameters.properties || {},
-									required: tool.parameters.required || []
-								}
-							}]
-						});
-					},
-					callTool: async (params: any[]) => {
-						// This will be handled by our tool execution engine
-						// For now, return empty array as we handle this manually
-						return [];
+				// Convert tools to function declarations format
+				// The SDK expects function_declarations to be part of the tools array
+				const functionDeclarations = request.availableTools.map(tool => ({
+					name: tool.name,
+					description: tool.description,
+					parameters: {
+						type: 'object' as const,
+						properties: tool.parameters.properties || {},
+						required: tool.parameters.required || []
 					}
 				}));
 				
-				// Add callable tools to the tools array
-				tools.push(...callableTools);
-				logDebugInfo(this.plugin.settings.debugMode, 'Tools being sent to Gemini (non-streaming)', tools);
+				// Add function declarations as a single tool entry
+				if (functionDeclarations.length > 0) {
+					tools.push({
+						function_declarations: functionDeclarations
+					});
+					logDebugInfo(this.plugin.settings.debugMode, 'Tools being sent to Gemini (non-streaming)', tools);
+				}
 			}
 			
 			const contents = await this.buildGeminiChatContents(request);
