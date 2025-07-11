@@ -391,22 +391,34 @@ export class AgentView extends ItemView {
 					await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
 				} else {
 					// Normal response without tool calls
-					// Display AI response
-					const aiEntry: GeminiConversationEntry = {
-						role: 'model',
-						message: response.markdown,
-						notePath: '',
-						created_at: new Date()
-					};
-					await this.displayMessage(aiEntry);
+					// Only display if response has content
+					if (response.markdown && response.markdown.trim()) {
+						// Display AI response
+						const aiEntry: GeminiConversationEntry = {
+							role: 'model',
+							message: response.markdown,
+							notePath: '',
+							created_at: new Date()
+						};
+						await this.displayMessage(aiEntry);
 
-					// Save to history
-					if (this.plugin.settings.chatHistory) {
-						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+						// Save to history
+						if (this.plugin.settings.chatHistory) {
+							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+							
+							// Auto-label session after first exchange
+							await this.autoLabelSessionIfNeeded();
+						}
+					} else {
+						// Empty response - might be thinking tokens
+						console.warn('Model returned empty response');
+						new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
 						
-						// Auto-label session after first exchange
-						await this.autoLabelSessionIfNeeded();
+						// Still save the user message to history
+						if (this.plugin.settings.chatHistory) {
+							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+						}
 					}
 				}
 			} catch (error) {
@@ -649,21 +661,54 @@ User: ${history[0].message}`;
 					}
 				);
 			} else {
-				// Display the final response
-				const aiEntry: GeminiConversationEntry = {
-					role: 'model',
-					message: followUpResponse.markdown,
-					notePath: '',
-					created_at: new Date()
-				};
-				await this.displayMessage(aiEntry);
+				// Display the final response only if it has content
+				if (followUpResponse.markdown && followUpResponse.markdown.trim()) {
+					const aiEntry: GeminiConversationEntry = {
+						role: 'model',
+						message: followUpResponse.markdown,
+						notePath: '',
+						created_at: new Date()
+					};
+					await this.displayMessage(aiEntry);
 
-				// Save final response to history
-				if (this.plugin.settings.chatHistory) {
-					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+					// Save final response to history
+					if (this.plugin.settings.chatHistory) {
+						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+						
+						// Auto-label session after first exchange
+						await this.autoLabelSessionIfNeeded();
+					}
+				} else {
+					// Model returned empty response - this might happen with thinking tokens
+					console.warn('Model returned empty response after tool execution');
+					// Try a simpler prompt to get a response
+					const retryRequest: ExtendedModelRequest = {
+						userMessage: "Please summarize what you just did with the tools.",
+						conversationHistory: updatedHistory,
+						model: this.plugin.settings.chatModelName,
+						prompt: "Please summarize what you just did with the tools.",
+						renderContent: false
+					};
 					
-					// Auto-label session after first exchange
-					await this.autoLabelSessionIfNeeded();
+					const retryResponse = await this.plugin.geminiApi.generateModelResponse(retryRequest);
+					
+					if (retryResponse.markdown && retryResponse.markdown.trim()) {
+						const aiEntry: GeminiConversationEntry = {
+							role: 'model',
+							message: retryResponse.markdown,
+							notePath: '',
+							created_at: new Date()
+						};
+						await this.displayMessage(aiEntry);
+
+						// Save final response to history
+						if (this.plugin.settings.chatHistory) {
+							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+							
+							// Auto-label session after first exchange
+							await this.autoLabelSessionIfNeeded();
+						}
+					}
 				}
 			}
 		} catch (error) {

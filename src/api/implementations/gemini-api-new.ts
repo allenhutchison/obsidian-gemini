@@ -379,6 +379,9 @@ export class GeminiApiNew implements ModelApi {
 						// Ensure the function returns a string
 						rawMarkdown = textContent;
 					}
+				} else if (result.candidates?.[0]?.content?.text) {
+					// Another format where text is directly on content
+					rawMarkdown = result.candidates[0].content.text;
 				}
 				// ... (other conditions for extracting text if any) ...
 
