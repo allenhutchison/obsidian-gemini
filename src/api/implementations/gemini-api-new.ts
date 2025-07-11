@@ -70,7 +70,6 @@ export class GeminiApiNew implements ModelApi {
 			try {
 				if ('conversationHistory' in request) {
 					let tools: any[] = [];
-					let functionDeclarations: any[] = [];
 					
 					if (this.plugin.settings.searchGrounding) {
 						tools.push({ googleSearch: {} });
@@ -78,34 +77,55 @@ export class GeminiApiNew implements ModelApi {
 					
 					// Add available custom tools if provided
 					if (request.availableTools && request.availableTools.length > 0) {
-						// Convert tools to function declarations
-						functionDeclarations = request.availableTools.map(tool => ({
-							name: tool.name,
-							description: tool.description,
-							parameters: {
-								type: 'object' as const,
-								properties: tool.parameters.properties || {},
-								required: tool.parameters.required || []
+						logDebugInfo(this.plugin.settings.debugMode, 'Available tools from request', request.availableTools);
+						
+						// Convert tools to CallableTool format
+						const callableTools = request.availableTools.map(tool => ({
+							tool: async () => {
+								return Promise.resolve({
+									functionDeclarations: [{
+										name: tool.name,
+										description: tool.description,
+										parameters: {
+											type: 'object' as const,
+											properties: tool.parameters.properties || {},
+											required: tool.parameters.required || []
+										}
+									}]
+								});
+							},
+							callTool: async (params: any[]) => {
+								// This will be handled by our tool execution engine
+								// For now, return empty array as we handle this manually
+								return [];
 							}
 						}));
-					}
-					
-					// If we have function declarations, add them to tools
-					if (functionDeclarations.length > 0) {
-						tools.push({ function_declarations: functionDeclarations });
-						logDebugInfo(this.plugin.settings.debugMode, 'Tools being sent to Gemini', tools);
+						
+						// Add callable tools to the tools array
+						tools.push(...callableTools);
+						logDebugInfo(this.plugin.settings.debugMode, 'Callable tools created', callableTools.length);
+					} else {
+						logDebugInfo(this.plugin.settings.debugMode, 'No available tools in request', request.availableTools);
 					}
 					
 					const contents = await this.buildGeminiChatContents(request);
 
+					// Build config object
+					const config: any = {
+						systemInstruction: systemInstruction,
+						temperature: request.temperature ?? this.plugin.settings.temperature,
+						topP: request.topP ?? this.plugin.settings.topP,
+					};
+					
+					// Only add tools if we have any
+					if (tools.length > 0) {
+						config.tools = tools;
+						logDebugInfo(this.plugin.settings.debugMode, 'Final tools array before API call', tools);
+					}
+
 					const streamingResult = await this.ai.models.generateContentStream({
 						model: modelToUse,
-						config: {
-							systemInstruction: systemInstruction,
-							tools: tools,
-							temperature: request.temperature ?? this.plugin.settings.temperature,
-							topP: request.topP ?? this.plugin.settings.topP,
-						},
+						config: config,
 						contents: contents,
 					});
 
@@ -211,7 +231,6 @@ export class GeminiApiNew implements ModelApi {
 		let response: ModelResponse = { markdown: '', rendered: '' };
 		if ('conversationHistory' in request) {
 			let tools: any[] = [];
-			let functionDeclarations: any[] = [];
 			
 			if (this.plugin.settings.searchGrounding) {
 				tools.push({ googleSearch: {} });
@@ -219,33 +238,50 @@ export class GeminiApiNew implements ModelApi {
 			
 			// Add available custom tools if provided
 			if (request.availableTools && request.availableTools.length > 0) {
-				// Convert tools to function declarations
-				functionDeclarations = request.availableTools.map(tool => ({
-					name: tool.name,
-					description: tool.description,
-					parameters: {
-						type: 'object' as const,
-						properties: tool.parameters.properties || {},
-						required: tool.parameters.required || []
+				// Convert tools to CallableTool format
+				const callableTools = request.availableTools.map(tool => ({
+					tool: async () => {
+						return Promise.resolve({
+							functionDeclarations: [{
+								name: tool.name,
+								description: tool.description,
+								parameters: {
+									type: 'object' as const,
+									properties: tool.parameters.properties || {},
+									required: tool.parameters.required || []
+								}
+							}]
+						});
+					},
+					callTool: async (params: any[]) => {
+						// This will be handled by our tool execution engine
+						// For now, return empty array as we handle this manually
+						return [];
 					}
 				}));
-			}
-			
-			// If we have function declarations, add them to tools
-			if (functionDeclarations.length > 0) {
-				tools.push({ function_declarations: functionDeclarations });
+				
+				// Add callable tools to the tools array
+				tools.push(...callableTools);
 				logDebugInfo(this.plugin.settings.debugMode, 'Tools being sent to Gemini (non-streaming)', tools);
 			}
 			
 			const contents = await this.buildGeminiChatContents(request);
+			
+			// Build config object
+			const config: any = {
+				systemInstruction: systemInstruction,
+				temperature: request.temperature ?? this.plugin.settings.temperature,
+				topP: request.topP ?? this.plugin.settings.topP,
+			};
+			
+			// Only add tools if we have any
+			if (tools.length > 0) {
+				config.tools = tools;
+			}
+			
 			const result = await this.ai.models.generateContent({
 				model: modelToUse,
-				config: {
-					systemInstruction: systemInstruction,
-					tools: tools,
-					temperature: request.temperature ?? this.plugin.settings.temperature,
-					topP: request.topP ?? this.plugin.settings.topP,
-				},
+				config: config,
 				contents: contents,
 			});
 			logDebugInfo(this.plugin.settings.debugMode, 'Model response', result);

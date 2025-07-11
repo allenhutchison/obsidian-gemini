@@ -371,6 +371,7 @@ export class AgentView extends ItemView {
 				session: this.currentSession
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
+			console.log('Available tools from registry:', availableTools);
 			
 			// Send to AI - disable automatic context since we're providing it
 			const originalSendContext = this.plugin.settings.sendContext;
@@ -383,7 +384,7 @@ export class AgentView extends ItemView {
 					model: this.plugin.settings.chatModelName,
 					prompt: fullPrompt,
 					renderContent: false, // We already rendered content above
-					availableTools: availableTools as any // Convert to API format
+					availableTools: availableTools // No need to cast to any
 				};
 				
 				const response = await this.plugin.geminiApi.generateModelResponse(request);
