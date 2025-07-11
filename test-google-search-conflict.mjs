@@ -5,6 +5,9 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
+console.log('Testing Google Search + function calling compatibility');
+console.log('Node version:', process.version);
+
 // Try to load API key from ~/.env
 let apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 try {
