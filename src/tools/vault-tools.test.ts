@@ -212,7 +212,7 @@ describe('VaultTools', () => {
 			tool = new SearchFilesTool();
 		});
 
-		it('should search files by pattern', async () => {
+		it('should search files by substring pattern', async () => {
 			const files = [
 				{ name: 'test.md', path: 'test.md', stat: { size: 100, mtime: Date.now() } },
 				{ name: 'another.md', path: 'another.md', stat: { size: 200, mtime: Date.now() } },
@@ -226,6 +226,58 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data?.matches).toHaveLength(1);
 			expect(result.data?.matches[0].name).toBe('test.md');
+		});
+
+		it('should support wildcard patterns', async () => {
+			const files = [
+				{ name: 'Test.md', path: 'Test.md', stat: { size: 100, mtime: Date.now() } },
+				{ name: 'TestCase.md', path: 'TestCase.md', stat: { size: 200, mtime: Date.now() } },
+				{ name: 'UnitTest.md', path: 'UnitTest.md', stat: { size: 150, mtime: Date.now() } },
+				{ name: 'README.md', path: 'README.md', stat: { size: 300, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+
+			// Test * wildcard
+			const result1 = await tool.execute({ pattern: '*Test*' }, mockContext);
+			expect(result1.success).toBe(true);
+			expect(result1.data?.matches).toHaveLength(3);
+			const names1 = result1.data?.matches.map((f: any) => f.name);
+			expect(names1).toContain('Test.md');
+			expect(names1).toContain('TestCase.md');
+			expect(names1).toContain('UnitTest.md');
+
+			// Test pattern at start
+			const result2 = await tool.execute({ pattern: 'Test*' }, mockContext);
+			expect(result2.success).toBe(true);
+			expect(result2.data?.matches).toHaveLength(2);
+			const names2 = result2.data?.matches.map((f: any) => f.name);
+			expect(names2).toContain('Test.md');
+			expect(names2).toContain('TestCase.md');
+
+			// Test pattern at end
+			const result3 = await tool.execute({ pattern: '*Test.md' }, mockContext);
+			expect(result3.success).toBe(true);
+			// This should match both Test.md and UnitTest.md since * matches any characters
+			expect(result3.data?.matches).toHaveLength(2);
+			const names3 = result3.data?.matches.map((f: any) => f.name);
+			expect(names3).toContain('Test.md');
+			expect(names3).toContain('UnitTest.md');
+		});
+
+		it('should be case insensitive', async () => {
+			const files = [
+				{ name: 'TEST.md', path: 'TEST.md', stat: { size: 100, mtime: Date.now() } },
+				{ name: 'test.md', path: 'test.md', stat: { size: 200, mtime: Date.now() } },
+				{ name: 'Test.md', path: 'Test.md', stat: { size: 300, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+
+			const result = await tool.execute({ pattern: 'test' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.matches).toHaveLength(3);
 		});
 
 		it('should limit results', async () => {

@@ -684,3 +684,179 @@ If your plugin does not need CSS, delete this file.
 .gemini-tool-confirm-btn:hover {
 	background-color: var(--interactive-accent-hover);
 }
+
+/* Agent View Styles */
+.gemini-agent-chat-container {
+	padding: var(--size-4-2);
+	overflow-y: auto;
+	flex: 1;
+}
+
+.gemini-agent-message {
+	margin-bottom: var(--size-4-3);
+	animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.gemini-agent-message-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: var(--size-2-1);
+	padding: 0 var(--size-2-2);
+}
+
+.gemini-agent-message-role {
+	font-weight: 600;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.gemini-agent-message-user .gemini-agent-message-role {
+	color: var(--interactive-accent);
+}
+
+.gemini-agent-message-model .gemini-agent-message-role {
+	color: var(--text-accent);
+}
+
+.gemini-agent-message-system .gemini-agent-message-role {
+	color: var(--text-faint);
+}
+
+.gemini-agent-message-time {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+.gemini-agent-message-content {
+	padding: var(--size-4-2) var(--size-4-3);
+	border-radius: var(--radius-m);
+	background-color: var(--background-secondary);
+	position: relative;
+}
+
+.gemini-agent-message-user .gemini-agent-message-content {
+	background-color: var(--background-primary-alt);
+	margin-left: var(--size-4-8);
+}
+
+.gemini-agent-message-model .gemini-agent-message-content {
+	background-color: var(--background-secondary);
+	margin-right: var(--size-4-8);
+}
+
+.gemini-agent-message-system .gemini-agent-message-content {
+	background-color: var(--background-modifier-hover);
+	font-style: italic;
+	text-align: center;
+	margin: 0 var(--size-4-8);
+}
+
+/* Markdown content within agent messages */
+.gemini-agent-message-content p {
+	margin: 0 0 var(--size-2-2) 0;
+}
+
+.gemini-agent-message-content p:last-child {
+	margin-bottom: 0;
+}
+
+.gemini-agent-message-content ul,
+.gemini-agent-message-content ol {
+	margin: var(--size-2-2) 0;
+	padding-left: var(--size-4-4);
+}
+
+.gemini-agent-message-content code {
+	background-color: var(--background-modifier-code);
+	padding: 2px 4px;
+	border-radius: var(--radius-s);
+	font-size: 0.9em;
+}
+
+.gemini-agent-message-content pre {
+	background-color: var(--background-primary);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	overflow-x: auto;
+	margin: var(--size-2-2) 0;
+}
+
+.gemini-agent-message-content blockquote {
+	border-left: 3px solid var(--quote-opening-modifier);
+	padding-left: var(--size-4-2);
+	margin: var(--size-2-2) 0;
+	color: var(--text-muted);
+}
+
+/* Copy button for agent messages */
+.gemini-agent-copy-button {
+	position: absolute;
+	top: var(--size-2-2);
+	right: var(--size-2-2);
+	background-color: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-1);
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
+}
+
+.gemini-agent-message:hover .gemini-agent-copy-button {
+	opacity: 1;
+}
+
+.gemini-agent-copy-button:hover {
+	background-color: var(--interactive-hover);
+}
+
+.gemini-agent-copy-button svg {
+	width: 14px;
+	height: 14px;
+	color: var(--text-muted);
+}
+
+/* Tool execution styles */
+.gemini-agent-tool-execution,
+.gemini-agent-tool-result {
+	padding: var(--size-2-2);
+	margin: var(--size-2-1) 0;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+}
+
+.gemini-agent-tool-execution {
+	background-color: var(--background-modifier-hover);
+	border-left: 3px solid var(--interactive-accent);
+}
+
+.gemini-agent-tool-result {
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-tool-name {
+	font-weight: 600;
+	color: var(--text-accent);
+}
+
+.gemini-agent-tool-params,
+.gemini-agent-tool-result-data {
+	margin-top: var(--size-2-1);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	white-space: pre-wrap;
+	word-break: break-word;
+}

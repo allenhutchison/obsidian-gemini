@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
+import { ItemView, WorkspaceLeaf, TFile, Notice, MarkdownRenderer, setIcon } from 'obsidian';
 import { ChatSession, SessionType } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
@@ -291,21 +291,21 @@ export class AgentView extends ItemView {
 			this.chatContainer.empty();
 
 			for (const entry of history) {
-				this.displayMessage(entry);
+				await this.displayMessage(entry);
 			}
 		} catch (error) {
 			console.error('Failed to load session history:', error);
 		}
 	}
 
-	private displayMessage(entry: GeminiConversationEntry) {
+	private async displayMessage(entry: GeminiConversationEntry) {
 		const messageDiv = this.chatContainer.createDiv({ 
 			cls: `gemini-agent-message gemini-agent-message-${entry.role}`
 		});
 
 		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
 		header.createEl('span', { 
-			text: entry.role === 'user' ? 'You' : 'Agent',
+			text: entry.role === 'user' ? 'You' : entry.role === 'system' ? 'System' : 'Agent',
 			cls: 'gemini-agent-message-role'
 		});
 		header.createEl('span', { 
@@ -314,7 +314,32 @@ export class AgentView extends ItemView {
 		});
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
-		content.textContent = entry.message;
+		
+		// Use markdown rendering like the regular chat view
+		const sourcePath = this.currentSession?.historyPath || '';
+		await MarkdownRenderer.render(this.app, entry.message, content, sourcePath, this);
+
+		// Add a copy button for model messages
+		if (entry.role === 'model') {
+			const copyButton = content.createEl('button', {
+				cls: 'gemini-agent-copy-button',
+			});
+			setIcon(copyButton, 'copy');
+
+			copyButton.addEventListener('click', () => {
+				// Get the current text content for copying
+				const currentText = content.innerText || entry.message;
+				navigator.clipboard
+					.writeText(currentText)
+					.then(() => {
+						new Notice('Message copied to clipboard.');
+					})
+					.catch((err) => {
+						new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
+						console.error(err);
+					});
+			});
+		}
 
 		// Auto-scroll to bottom
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
@@ -340,7 +365,7 @@ export class AgentView extends ItemView {
 			notePath: '',
 			created_at: new Date()
 		};
-		this.displayMessage(userEntry);
+		await this.displayMessage(userEntry);
 
 		try {
 			// Get conversation history
@@ -410,7 +435,7 @@ export class AgentView extends ItemView {
 						notePath: '',
 						created_at: new Date()
 					};
-					this.displayMessage(aiEntry);
+					await this.displayMessage(aiEntry);
 
 					// Save to history
 					if (this.plugin.settings.chatHistory) {
@@ -727,7 +752,7 @@ User: ${history[0].message}`;
 			notePath: '',
 			created_at: new Date()
 		};
-		this.displayMessage(toolStatusEntry);
+		await this.displayMessage(toolStatusEntry);
 
 		// Execute each tool
 		const toolResults: any[] = [];
@@ -837,7 +862,7 @@ User: ${history[0].message}`;
 					notePath: '',
 					created_at: new Date()
 				};
-				this.displayMessage(aiEntry);
+				await this.displayMessage(aiEntry);
 
 				// Save final response to history
 				if (this.plugin.settings.chatHistory) {

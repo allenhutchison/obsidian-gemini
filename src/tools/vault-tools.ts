@@ -328,7 +328,7 @@ export class SearchFilesTool implements Tool {
 		properties: {
 			pattern: {
 				type: 'string' as const,
-				description: 'Search pattern (supports wildcards)'
+				description: 'Search pattern (supports wildcards: * matches any characters, ? matches single character)'
 			},
 			limit: {
 				type: 'number' as const,
@@ -343,11 +343,43 @@ export class SearchFilesTool implements Tool {
 		
 		try {
 			const allFiles = plugin.app.vault.getMarkdownFiles();
-			const pattern = params.pattern.toLowerCase();
 			const limit = params.limit || 50;
 			
+			// Check if pattern contains wildcards
+			const hasWildcards = params.pattern.includes('*') || params.pattern.includes('?');
+			
+			let regex: RegExp;
+			if (hasWildcards) {
+				// Convert wildcard pattern to regex
+				// Escape special regex characters except * and ?
+				let regexPattern = params.pattern
+					.replace(/[.+^${}()|[\]\\]/g, '\\$&')  // Escape special regex chars
+					.replace(/\*/g, '.*')  // * matches any characters
+					.replace(/\?/g, '.');  // ? matches single character
+				
+				// Add anchors if pattern doesn't start/end with wildcards
+				// This makes patterns like 'Test*' match only files starting with Test
+				if (!params.pattern.startsWith('*') && !params.pattern.startsWith('?')) {
+					regexPattern = '^' + regexPattern;
+				}
+				if (!params.pattern.endsWith('*') && !params.pattern.endsWith('?')) {
+					regexPattern = regexPattern + '$';
+				}
+				
+				// Create case-insensitive regex
+				regex = new RegExp(regexPattern, 'i');
+			} else {
+				// For non-wildcard patterns, do simple substring matching
+				// Escape the pattern for use in regex
+				const escapedPattern = params.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+				regex = new RegExp(escapedPattern, 'i');
+			}
+			
 			const matchingFiles = allFiles
-				.filter(file => file.name.toLowerCase().includes(pattern) || file.path.toLowerCase().includes(pattern))
+				.filter(file => {
+					// Test against both file name and full path
+					return regex.test(file.name) || regex.test(file.path);
+				})
 				.slice(0, limit)
 				.map(file => ({
 					name: file.name,
@@ -362,7 +394,7 @@ export class SearchFilesTool implements Tool {
 					pattern: params.pattern,
 					matches: matchingFiles,
 					count: matchingFiles.length,
-					truncated: allFiles.length > limit
+					truncated: allFiles.filter(f => regex.test(f.name) || regex.test(f.path)).length > limit
 				}
 			};
 			
