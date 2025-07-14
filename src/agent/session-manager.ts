@@ -204,6 +204,17 @@ export class SessionManager {
 	}
 
 	/**
+	 * Load session from history path
+	 */
+	async loadSession(historyPath: string): Promise<ChatSession | null> {
+		const file = this.plugin.app.vault.getAbstractFileByPath(historyPath);
+		if (file instanceof TFile) {
+			return this.loadSessionFromFile(file);
+		}
+		return null;
+	}
+
+	/**
 	 * Load session from a history file
 	 */
 	private async loadSessionFromFile(file: TFile): Promise<ChatSession> {

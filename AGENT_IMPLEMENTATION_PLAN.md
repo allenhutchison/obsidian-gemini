@@ -115,14 +115,22 @@
 
 ### 3.2 Vault Operation Tools
 **File:** `src/tools/vault-tools.ts` ✅
-- ✅ `read_file(path: string)` - Read file contents with metadata
+- ✅ `read_file(path: string)` - Read file contents with metadata (no confirmation)
 - ✅ `write_file(path: string, content: string)` - Create/modify files (with confirmation)
-- ✅ `list_files(path: string, recursive?: boolean)` - Browse vault structure
+- ✅ `list_files(path: string, recursive?: boolean)` - Browse vault structure (no confirmation)
 - ✅ `create_folder(path: string)` - Create directories (with confirmation)
 - ✅ `delete_file(path: string)` - Delete files/folders (with confirmation)
-- ✅ `search_files(pattern: string, limit?: number)` - Search files by name pattern
+- ✅ `move_file(sourcePath: string, targetPath: string)` - Move/rename files (with confirmation)
+- ✅ `search_files(pattern: string, limit?: number)` - Search with wildcard support (no confirmation)
 
-### 3.3 Permission & UI System
+### 3.3 Google Search Tool
+**File:** `src/tools/google-search-tool.ts` ✅
+- ✅ `google_search(query: string)` - Web search via separate model instance
+- ✅ Works around Google Search + function calling limitation
+- ✅ Returns search results with optional grounding metadata
+- ✅ Categorized as READ_ONLY (no confirmation needed)
+
+### 3.4 Permission & UI System
 **File:** `src/ui/tool-confirmation-modal.ts` ✅
 - ✅ Sophisticated confirmation modal with parameter display
 - ✅ Custom confirmation messages and warnings
@@ -130,13 +138,11 @@
 - ✅ Professional styling and user experience
 
 **File:** `src/ui/agent-view.ts` ✅
-- ✅ Tool execution panel with real-time feedback
-- ✅ Tool status display and result visualization
-- ✅ Tool testing interface with manual execution
-- ✅ Parameter editor and validation
-- ✅ Default parameter generation for easier testing
-- ✅ Tool result display with success/error indicators
-- ✅ CSS styling for tool execution components
+- ✅ Tool execution details integrated into chat messages
+- ✅ System messages show tool parameters and results
+- ✅ Real-time execution feedback in conversation flow
+- ✅ Removed separate tool panel for cleaner UI
+- ✅ Tool testing interface removed (no longer needed)
 
 **File:** `src/main.ts` ✅
 - ✅ Tool system initialization in plugin startup
@@ -144,37 +150,43 @@
 - ✅ All vault tools automatically registered
 - ✅ Settings integration for tool behavior
 
-## Phase 4: AI Tool Integration (🔄 In Progress)
+## Phase 4: AI Tool Integration (✅ Completed)
 
 ### 4.1 AI Model Tool Integration
-**File:** `src/api/model-api.ts` (planned enhancement)
-- Extend ModelApi interface to support tool calls
-- Add tool_choice parameter to generateModelResponse
-- Handle tool call responses from AI models
-- Parse and validate AI-generated tool calls
+**File:** `src/api/interfaces/model-api.ts` ✅
+- ✅ Extended ModelApi interface with tool support
+- ✅ Added availableTools to ExtendedModelRequest
+- ✅ Added toolCalls to ModelResponse
+- ✅ ToolCall interface for function calling
 
-**File:** `src/tools/ai-integration.ts` (new)
-- Bridge between AI responses and tool execution
-- Parse tool calls from AI model responses
-- Validate tool parameters from AI suggestions
-- Execute multiple tools in sequence
-- Handle tool execution results in conversation
+**File:** `src/tools/tool-converter.ts` ✅
+- ✅ Converts internal tools to Gemini function declarations
+- ✅ Proper parameter schema mapping
+- ✅ Type conversions for Gemini compatibility
 
-**File:** `src/ui/agent-view.ts` (enhancement)
-- Display AI tool call suggestions
-- Show tool execution progress from AI requests
-- Handle streaming responses with tool calls
-- Update chat with tool results
+**File:** `src/ui/agent-view.ts` ✅
+- ✅ Full AI tool integration in handleToolCalls method
+- ✅ Automatic tool execution from AI requests
+- ✅ Tool chaining support (multiple sequential calls)
+- ✅ Tool results fed back to model for response
+- ✅ Empty response handling for thinking models
 
 ### 4.2 Gemini Function Calling
-**File:** `src/api/gemini-api.ts` (enhancement)
-- Implement Gemini function calling format
-- Convert internal tool registry to Gemini function definitions
-- Parse Gemini function call responses
-- Handle function calling in streaming responses
+**File:** `src/api/implementations/gemini-api-new.ts` ✅
+- ✅ Complete Gemini function calling implementation
+- ✅ functionDeclarations format (camelCase)
+- ✅ Google Search + function calling mutual exclusivity handled
+- ✅ Tool call parsing from model responses
+- ✅ Support for multiple tool calls in single response
 
-**Estimated Time:** 2-3 days
-**Dependencies:** Tool system ✅, AgentView ✅
+### 4.3 Bug Fixes & Improvements
+- ✅ Fixed file name sanitization for cross-platform compatibility
+- ✅ Fixed tool format to use functionDeclarations (not function_declarations)
+- ✅ Fixed Google Search conflict with function calling
+- ✅ Fixed tool chaining by including tools in follow-up requests
+- ✅ Fixed search_files wildcard pattern support
+- ✅ Fixed empty model responses with thinking tokens
+- ✅ Improved UI with tool execution in chat messages
 
 ## Phase 5: MCP Integration (🔄 Next Priority)
 

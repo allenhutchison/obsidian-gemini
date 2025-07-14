@@ -3,6 +3,7 @@ import { ChatSession, SessionType } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
 import { FilePickerModal } from './file-picker-modal';
+import { SessionListModal } from './session-list-modal';
 import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
@@ -48,6 +49,9 @@ export class AgentView extends ItemView {
 	}
 
 	private createAgentInterface(container: HTMLElement) {
+		// Add the main container class
+		container.addClass('gemini-agent-container');
+		
 		// Session header with session info and controls
 		this.sessionHeader = container.createDiv({ cls: 'gemini-agent-header' });
 		this.createSessionHeader();
@@ -58,6 +62,7 @@ export class AgentView extends ItemView {
 
 		// Chat container
 		this.chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
+		this.showEmptyState();
 
 		// Input area
 		const inputArea = container.createDiv({ cls: 'gemini-agent-input-area' });
@@ -73,6 +78,56 @@ export class AgentView extends ItemView {
 		const title = titleSection.createEl('h2', { 
 			text: this.currentSession?.title || 'New Agent Session',
 			cls: 'gemini-agent-title'
+		});
+		
+		// Make title editable on double-click
+		title.addEventListener('dblclick', () => {
+			if (!this.currentSession) return;
+			
+			const input = titleSection.createEl('input', {
+				type: 'text',
+				value: this.currentSession.title,
+				cls: 'gemini-agent-title-input'
+			});
+			
+			title.style.display = 'none';
+			input.focus();
+			input.select();
+			
+			const saveTitle = async () => {
+				const newTitle = input.value.trim();
+				if (newTitle && newTitle !== this.currentSession!.title) {
+					// Update session title
+					const oldPath = this.currentSession!.historyPath;
+					const sanitizedTitle = (this.plugin.sessionManager as any).sanitizeFileName(newTitle);
+					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + sanitizedTitle + '.md';
+					
+					// Rename file if it exists
+					const oldFile = this.plugin.app.vault.getAbstractFileByPath(oldPath);
+					if (oldFile) {
+						await this.plugin.app.fileManager.renameFile(oldFile, newPath);
+						this.currentSession!.historyPath = newPath;
+					}
+					
+					this.currentSession!.title = newTitle;
+					await this.updateSessionMetadata();
+				}
+				
+				title.textContent = this.currentSession!.title;
+				title.style.display = '';
+				input.remove();
+			};
+			
+			input.addEventListener('blur', saveTitle);
+			input.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					saveTitle();
+				} else if (e.key === 'Escape') {
+					title.style.display = '';
+					input.remove();
+				}
+			});
 		});
 
 		const sessionInfo = titleSection.createDiv({ cls: 'gemini-agent-session-info' });
@@ -110,9 +165,10 @@ export class AgentView extends ItemView {
 		header.createEl('h3', { text: 'Context Files' });
 
 		const addButton = header.createEl('button', {
-			text: 'Add Files',
 			cls: 'gemini-agent-btn gemini-agent-btn-primary'
 		});
+		setIcon(addButton, 'plus');
+		addButton.createSpan({ text: ' Add Files' });
 		addButton.addEventListener('click', () => this.showFilePicker());
 
 		// Context files list
@@ -180,14 +236,20 @@ export class AgentView extends ItemView {
 		this.currentSession.context.contextFiles.forEach(file => {
 			const fileItem = container.createDiv({ cls: 'gemini-agent-file-item' });
 			
+			// Add file icon
+			const fileIcon = fileItem.createEl('span', { cls: 'gemini-agent-file-icon' });
+			setIcon(fileIcon, 'file-text');
+			
 			const fileName = fileItem.createEl('span', { 
 				text: file.basename,
-				cls: 'gemini-agent-file-name'
+				cls: 'gemini-agent-file-name',
+				title: file.path // Show full path on hover
 			});
 
 			const removeBtn = fileItem.createEl('button', {
 				text: '×',
-				cls: 'gemini-agent-remove-btn'
+				cls: 'gemini-agent-remove-btn',
+				title: 'Remove file'
 			});
 
 			removeBtn.addEventListener('click', () => {
@@ -230,14 +292,19 @@ export class AgentView extends ItemView {
 
 	private async createNewSession() {
 		try {
+			// Clear current session
+			this.currentSession = null;
+			this.chatContainer.empty();
+			
+			// Create new session
 			this.currentSession = await this.plugin.sessionManager.createAgentSession();
 			
-			// Load existing history
-			await this.loadSessionHistory();
-			
-			// Update UI
+			// Update UI (no history to load for new session)
 			this.createSessionHeader();
-			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
+			this.createContextPanel();
+			
+			// Focus on input
+			this.userInput.focus();
 			
 			new Notice('New agent session created');
 		} catch (error) {
@@ -262,6 +329,12 @@ export class AgentView extends ItemView {
 	}
 
 	private async displayMessage(entry: GeminiConversationEntry) {
+		// Remove empty state if it exists
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) {
+			emptyState.remove();
+		}
+		
 		const messageDiv = this.chatContainer.createDiv({ 
 			cls: `gemini-agent-message gemini-agent-message-${entry.role}`
 		});
@@ -320,6 +393,19 @@ export class AgentView extends ItemView {
 		// Clear input
 		this.userInput.value = '';
 		this.sendButton.disabled = true;
+		
+		// Show thinking indicator
+		const thinkingMessage = this.chatContainer.createDiv({ 
+			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-thinking'
+		});
+		const thinkingContent = thinkingMessage.createDiv({ cls: 'gemini-agent-message-content' });
+		thinkingContent.createSpan({ text: 'Thinking', cls: 'gemini-agent-thinking-text' });
+		for (let i = 0; i < 3; i++) {
+			thinkingContent.createSpan({ text: '.', cls: `gemini-agent-thinking-dot gemini-agent-thinking-dot-${i + 1}` });
+		}
+		
+		// Scroll to thinking message
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
 
 		// Display user message
 		const userEntry: GeminiConversationEntry = {
@@ -384,6 +470,9 @@ export class AgentView extends ItemView {
 				
 				// Restore original setting
 				this.plugin.settings.sendContext = originalSendContext;
+				
+				// Remove thinking indicator
+				thinkingMessage.remove();
 
 				// Check if the model requested tool calls
 				if (response.toolCalls && response.toolCalls.length > 0) {
@@ -424,6 +513,8 @@ export class AgentView extends ItemView {
 			} catch (error) {
 				// Make sure to restore setting even if there's an error
 				this.plugin.settings.sendContext = originalSendContext;
+				// Remove thinking indicator on error
+				thinkingMessage.remove();
 				throw error;
 			}
 
@@ -450,8 +541,42 @@ export class AgentView extends ItemView {
 	}
 
 	private async showSessionsList() {
-		// TODO: Implement session selection modal
-		new Notice('Session selection coming soon');
+		const modal = new SessionListModal(
+			this.app,
+			this.plugin,
+			{
+				onSelect: async (session: ChatSession) => {
+					await this.loadSession(session);
+				},
+				onDelete: (session: ChatSession) => {
+					// If the deleted session is the current one, create a new session
+					if (this.currentSession && this.currentSession.id === session.id) {
+						this.createNewSession();
+					}
+				}
+			},
+			this.currentSession?.id || null
+		);
+		modal.open();
+	}
+
+	private async loadSession(session: ChatSession) {
+		try {
+			this.currentSession = session;
+			
+			// Clear chat and reload history
+			this.chatContainer.empty();
+			await this.loadSessionHistory();
+			
+			// Update UI
+			this.createSessionHeader();
+			this.createContextPanel();
+			
+			new Notice(`Loaded session: ${session.title}`);
+		} catch (error) {
+			console.error('Failed to load session:', error);
+			new Notice('Failed to load session');
+		}
 	}
 
 	getCurrentSessionForToolExecution(): ChatSession | null {
@@ -798,5 +923,42 @@ User: ${history[0].message}`;
 		};
 		
 		await this.displayMessage(resultEntry);
+	}
+	
+	private showEmptyState() {
+		if (this.chatContainer.children.length === 0) {
+			const emptyState = this.chatContainer.createDiv({ cls: 'gemini-agent-empty-chat' });
+			
+			const icon = emptyState.createDiv({ cls: 'gemini-agent-empty-icon' });
+			setIcon(icon, 'bot');
+			
+			emptyState.createEl('h3', { 
+				text: 'Start a conversation',
+				cls: 'gemini-agent-empty-title'
+			});
+			
+			emptyState.createEl('p', { 
+				text: 'Ask questions, get help with your notes, or use tools to manage your vault.',
+				cls: 'gemini-agent-empty-desc'
+			});
+			
+			const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
+			const suggestionTexts = [
+				'What files are in my vault?',
+				'Search for notes about "project"',
+				'Create a summary of my recent notes'
+			];
+			
+			suggestionTexts.forEach(text => {
+				const suggestion = suggestions.createDiv({ 
+					text,
+					cls: 'gemini-agent-suggestion'
+				});
+				suggestion.addEventListener('click', () => {
+					this.userInput.value = text;
+					this.userInput.focus();
+				});
+			});
+		}
 	}
 }
