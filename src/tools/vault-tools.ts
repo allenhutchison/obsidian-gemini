@@ -4,6 +4,24 @@ import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 
 /**
+ * Helper function to check if a path should be excluded from vault operations
+ */
+function shouldExcludePath(path: string, plugin: InstanceType<typeof ObsidianGemini>): boolean {
+	// Exclude the plugin's state folder
+	const stateFolder = plugin.settings.historyFolder;
+	if (path === stateFolder || path.startsWith(stateFolder + '/')) {
+		return true;
+	}
+	
+	// Also exclude .obsidian folder
+	if (path === '.obsidian' || path.startsWith('.obsidian/')) {
+		return true;
+	}
+	
+	return false;
+}
+
+/**
  * Read file content
  */
 export class ReadFileTool implements Tool {
@@ -26,7 +44,17 @@ export class ReadFileTool implements Tool {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		
 		try {
-			const file = plugin.app.vault.getAbstractFileByPath(normalizePath(params.path));
+			const normalizedPath = normalizePath(params.path);
+			
+			// Check if path is excluded
+			if (shouldExcludePath(normalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot read from system folder: ${params.path}`
+				};
+			}
+			
+			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			
 			if (!file) {
 				return {
@@ -96,6 +124,15 @@ export class WriteFileTool implements Tool {
 		
 		try {
 			const normalizedPath = normalizePath(params.path);
+			
+			// Check if path is excluded
+			if (shouldExcludePath(normalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot write to system folder: ${params.path}`
+				};
+			}
+			
 			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			
 			if (file instanceof TFile) {
@@ -173,7 +210,14 @@ export class ListFilesTool implements Tool {
 				: (folder as TFolder)?.children || plugin.app.vault.getRoot().children;
 			
 			const fileList = files
-				.filter(f => !params.recursive || f.path.startsWith(folderPath))
+				.filter(f => {
+					// Apply folder filter for recursive listing
+					if (params.recursive && folderPath && !f.path.startsWith(folderPath)) {
+						return false;
+					}
+					// Exclude system folders
+					return !shouldExcludePath(f.path, plugin);
+				})
 				.map(f => ({
 					name: f.name,
 					path: f.path,
@@ -229,6 +273,15 @@ export class CreateFolderTool implements Tool {
 		
 		try {
 			const normalizedPath = normalizePath(params.path);
+			
+			// Check if path is excluded
+			if (shouldExcludePath(normalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot create folder in system directory: ${params.path}`
+				};
+			}
+			
 			const existing = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			
 			if (existing) {
@@ -285,7 +338,17 @@ export class DeleteFileTool implements Tool {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		
 		try {
-			const file = plugin.app.vault.getAbstractFileByPath(normalizePath(params.path));
+			const normalizedPath = normalizePath(params.path);
+			
+			// Check if path is excluded
+			if (shouldExcludePath(normalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot delete system folder: ${params.path}`
+				};
+			}
+			
+			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			
 			if (!file) {
 				return {
@@ -347,7 +410,25 @@ export class MoveFileTool implements Tool {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		
 		try {
-			const sourceFile = plugin.app.vault.getAbstractFileByPath(normalizePath(params.sourcePath));
+			const sourceNormalizedPath = normalizePath(params.sourcePath);
+			const targetNormalizedPath = normalizePath(params.targetPath);
+			
+			// Check if either path is excluded
+			if (shouldExcludePath(sourceNormalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot move from system folder: ${params.sourcePath}`
+				};
+			}
+			
+			if (shouldExcludePath(targetNormalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot move to system folder: ${params.targetPath}`
+				};
+			}
+			
+			const sourceFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath);
 			
 			if (!sourceFile) {
 				return {
@@ -363,8 +444,7 @@ export class MoveFileTool implements Tool {
 				};
 			}
 			
-			// Normalize target path
-			const targetNormalizedPath = normalizePath(params.targetPath);
+			// Target path is already normalized above
 			
 			// Check if target already exists
 			const targetExists = await plugin.app.vault.adapter.exists(targetNormalizedPath);
@@ -466,6 +546,10 @@ export class SearchFilesTool implements Tool {
 			
 			const matchingFiles = allFiles
 				.filter(file => {
+					// Exclude system folders
+					if (shouldExcludePath(file.path, plugin)) {
+						return false;
+					}
 					// Test against both file name and full path
 					return regex.test(file.name) || regex.test(file.path);
 				})

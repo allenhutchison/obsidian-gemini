@@ -1134,7 +1134,8 @@ If your plugin does not need CSS, delete this file.
 
 /* Markdown content within agent messages */
 .gemini-agent-message-content p {
-	margin: 0 0 var(--size-2-2) 0;
+	margin: 0 0 var(--size-4-2) 0;
+	line-height: 1.6;
 }
 
 .gemini-agent-message-content p:last-child {
@@ -1143,8 +1144,19 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-agent-message-content ul,
 .gemini-agent-message-content ol {
-	margin: var(--size-2-2) 0;
+	margin: var(--size-4-2) 0;
 	padding-left: var(--size-4-4);
+	line-height: 1.8;
+}
+
+.gemini-agent-message-content ul li,
+.gemini-agent-message-content ol li {
+	margin-bottom: var(--size-2-1);
+}
+
+.gemini-agent-message-content ul li:last-child,
+.gemini-agent-message-content ol li:last-child {
+	margin-bottom: 0;
 }
 
 .gemini-agent-message-content code {
@@ -1159,13 +1171,13 @@ If your plugin does not need CSS, delete this file.
 	padding: var(--size-4-2);
 	border-radius: var(--radius-s);
 	overflow-x: auto;
-	margin: var(--size-2-2) 0;
+	margin: var(--size-4-2) 0;
 }
 
 .gemini-agent-message-content blockquote {
 	border-left: 3px solid var(--quote-opening-modifier);
 	padding-left: var(--size-4-2);
-	margin: var(--size-2-2) 0;
+	margin: var(--size-4-2) 0;
 	color: var(--text-muted);
 }
 
@@ -1197,37 +1209,297 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 }
 
-/* Tool execution styles */
-.gemini-agent-tool-execution,
-.gemini-agent-tool-result {
-	padding: var(--size-2-2);
-	margin: var(--size-2-1) 0;
+/* Collapsible tool messages */
+.gemini-agent-message-tool {
+	margin-bottom: var(--size-4-2);
+}
+
+.gemini-agent-tool-message {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	overflow: hidden;
+	transition: all 0.2s ease;
+}
+
+.gemini-agent-tool-message:hover {
+	border-color: var(--background-modifier-border-hover);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.gemini-agent-tool-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	cursor: pointer;
+	user-select: none;
+	transition: background-color 0.15s ease;
+}
+
+.gemini-agent-tool-header:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-agent-tool-toggle {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	color: var(--text-muted);
+	display: flex;
+	align-items: center;
+	transition: color 0.15s ease;
+}
+
+.gemini-agent-tool-toggle:hover {
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-toggle svg {
+	width: 16px;
+	height: 16px;
+	transition: transform 0.2s ease;
+}
+
+.gemini-agent-tool-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-muted);
+}
+
+.gemini-agent-tool-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+.gemini-agent-tool-title {
+	flex: 1;
+	font-weight: 500;
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-status {
+	font-size: var(--font-ui-small);
+	padding: 2px 8px;
 	border-radius: var(--radius-s);
+	font-weight: 500;
+}
+
+.gemini-agent-tool-status-running {
+	background-color: var(--color-blue);
+	color: white;
+	animation: pulse 2s infinite;
+}
+
+.gemini-agent-tool-status-success {
+	background-color: var(--color-green);
+	color: white;
+}
+
+.gemini-agent-tool-status-error {
+	background-color: var(--color-red);
+	color: white;
+}
+
+@keyframes pulse {
+	0% { opacity: 1; }
+	50% { opacity: 0.7; }
+	100% { opacity: 1; }
+}
+
+/* Tool details */
+.gemini-agent-tool-details {
+	border-top: 1px solid var(--background-modifier-border);
+	padding: var(--size-4-3);
+	background-color: var(--background-primary);
+	animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.gemini-agent-tool-section {
+	margin-bottom: var(--size-4-3);
+}
+
+.gemini-agent-tool-section:last-child {
+	margin-bottom: 0;
+}
+
+.gemini-agent-tool-section h4 {
+	margin: 0 0 var(--size-2-2) 0;
+	font-size: var(--font-ui-small);
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Parameters list */
+.gemini-agent-tool-params-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.gemini-agent-tool-param-item {
+	display: flex;
+	gap: var(--size-4-2);
+	align-items: baseline;
+}
+
+.gemini-agent-tool-param-key {
+	font-weight: 500;
+	color: var(--text-normal);
+	min-width: 100px;
+}
+
+.gemini-agent-tool-param-value {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	background-color: var(--background-secondary);
+	padding: 2px 6px;
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	word-break: break-all;
+	flex: 1;
+}
+
+/* Result content */
+.gemini-agent-tool-result-content {
 	font-size: var(--font-ui-small);
 }
 
-.gemini-agent-tool-execution {
-	background-color: var(--background-modifier-hover);
-	border-left: 3px solid var(--interactive-accent);
+.gemini-agent-tool-result-list {
+	margin: 0;
+	padding-left: var(--size-4-4);
 }
 
-.gemini-agent-tool-result {
-	background-color: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+.gemini-agent-tool-result-list li {
+	margin-bottom: var(--size-2-1);
+	color: var(--text-normal);
 }
 
-.gemini-agent-tool-name {
-	font-weight: 600;
-	color: var(--text-accent);
+.gemini-agent-tool-result-object {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
 }
 
-.gemini-agent-tool-params,
-.gemini-agent-tool-result-data {
+.gemini-agent-tool-result-item {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
+.gemini-agent-tool-result-key {
+	font-weight: 500;
+	color: var(--text-muted);
+}
+
+.gemini-agent-tool-result-value {
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-empty-result {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.gemini-agent-tool-more-items {
 	margin-top: var(--size-2-1);
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.gemini-agent-tool-error-content {
+	background-color: var(--background-modifier-error);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	border-left: 3px solid var(--text-error);
+}
+
+.gemini-agent-tool-error-message {
+	color: var(--text-error);
+	margin: 0;
+}
+
+/* Expanded state */
+.gemini-agent-tool-expanded {
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Completion animation */
+.gemini-agent-tool-completed {
+	animation: toolComplete 0.5s ease;
+}
+
+@keyframes toolComplete {
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.02);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+/* Code results */
+.gemini-agent-tool-code-result {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-4-2);
+	margin: var(--size-2-1) 0;
+	overflow-x: auto;
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+.gemini-agent-tool-code-result code {
 	font-family: var(--font-monospace);
 	font-size: var(--font-ui-smaller);
-	white-space: pre-wrap;
-	word-break: break-word;
+	white-space: pre;
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-expand-content {
+	margin-top: var(--size-2-2);
+	padding: var(--size-2-1) var(--size-4-2);
+	background-color: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.gemini-agent-tool-expand-content:hover {
+	background-color: var(--interactive-hover);
+	border-color: var(--interactive-accent);
+}
+
+/* File info display */
+.gemini-agent-tool-file-info {
+	margin-bottom: var(--size-2-2);
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-file-size {
+	color: var(--text-muted);
+	font-style: italic;
 }
 
 /* Thinking indicator */

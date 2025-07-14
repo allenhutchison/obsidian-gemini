@@ -351,9 +351,20 @@ export class AgentView extends ItemView {
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 		
+		// Preserve line breaks in the message
+		// Convert single newlines to double newlines for proper markdown rendering
+		// But preserve existing double newlines
+		let formattedMessage = entry.message;
+		if (entry.role === 'model' || entry.role === 'assistant') {
+			// Replace single newlines with double newlines, but not if already double
+			formattedMessage = entry.message
+				.replace(/\n(?!\n)/g, '\n\n')  // Single newline → double newline
+				.replace(/\n{3,}/g, '\n\n');    // Collapse 3+ newlines to double
+		}
+		
 		// Use markdown rendering like the regular chat view
 		const sourcePath = this.currentSession?.historyPath || '';
-		await MarkdownRenderer.render(this.app, entry.message, content, sourcePath, this);
+		await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this);
 
 		// Add a copy button for model messages
 		if (entry.role === 'model') {
@@ -363,10 +374,9 @@ export class AgentView extends ItemView {
 			setIcon(copyButton, 'copy');
 
 			copyButton.addEventListener('click', () => {
-				// Get the current text content for copying
-				const currentText = content.innerText || entry.message;
+				// Use the original message text to preserve formatting
 				navigator.clipboard
-					.writeText(currentText)
+					.writeText(entry.message)
 					.then(() => {
 						new Notice('Message copied to clipboard.');
 					})
@@ -724,18 +734,8 @@ User: ${history[0].message}`;
 		if (this.plugin.settings.chatHistory) {
 			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
 			
-			// Save tool execution as a system message
-			const toolExecutionEntry: GeminiConversationEntry = {
-				role: 'system',
-				message: `Executed tools: ${toolCalls.map(t => t.name).join(', ')}`,
-				notePath: '',
-				created_at: new Date(),
-				metadata: {
-					toolCalls: toolCalls,
-					toolResults: toolResults
-				}
-			};
-			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, toolExecutionEntry);
+			// Don't save tool execution as separate system messages anymore
+			// The tool UI elements themselves serve as the visual record
 		}
 
 		// Continue the conversation with tool results
@@ -869,60 +869,271 @@ User: ${history[0].message}`;
 	 * Show tool execution in the UI as a chat message
 	 */
 	public async showToolExecution(toolName: string, parameters: any): Promise<void> {
-		// Create a detailed message about tool execution
-		let message = `🔧 Executing tool: **${toolName}**\n\n`;
-		
-		// Show parameters if not too large
-		const paramStr = JSON.stringify(parameters, null, 2);
-		if (paramStr.length < 500) {
-			message += `Parameters:\n\`\`\`json\n${paramStr}\n\`\`\``;
-		} else {
-			message += `Parameters: (too large to display)`;
+		// Remove empty state if it exists
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) {
+			emptyState.remove();
 		}
 		
-		const toolEntry: GeminiConversationEntry = {
-			role: 'system',
-			message: message,
-			notePath: '',
-			created_at: new Date()
+		// Create collapsible tool message
+		const toolMessage = this.chatContainer.createDiv({ 
+			cls: 'gemini-agent-message gemini-agent-message-tool'
+		});
+		
+		const toolContent = toolMessage.createDiv({ cls: 'gemini-agent-tool-message' });
+		
+		// Header with toggle
+		const header = toolContent.createDiv({ cls: 'gemini-agent-tool-header' });
+		
+		const toggle = header.createEl('button', { cls: 'gemini-agent-tool-toggle' });
+		setIcon(toggle, 'chevron-right');
+		
+		const icon = header.createSpan({ cls: 'gemini-agent-tool-icon' });
+		// Use tool-specific icons
+		const toolIcons: Record<string, string> = {
+			'read_file': 'file-text',
+			'write_file': 'file-edit',
+			'list_files': 'folder-open',
+			'create_folder': 'folder-plus',
+			'delete_file': 'trash-2',
+			'move_file': 'file-symlink',
+			'search_files': 'search',
+			'google_search': 'globe'
+		};
+		setIcon(icon, toolIcons[toolName] || 'wrench');
+		
+		header.createSpan({ 
+			text: `Executing: ${toolName}`,
+			cls: 'gemini-agent-tool-title'
+		});
+		
+		const status = header.createSpan({ 
+			text: 'Running...',
+			cls: 'gemini-agent-tool-status gemini-agent-tool-status-running'
+		});
+		
+		// Details (hidden by default)
+		const details = toolContent.createDiv({ cls: 'gemini-agent-tool-details' });
+		details.style.display = 'none';
+		
+		// Parameters section
+		if (parameters && Object.keys(parameters).length > 0) {
+			const paramsSection = details.createDiv({ cls: 'gemini-agent-tool-section' });
+			paramsSection.createEl('h4', { text: 'Parameters' });
+			
+			const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-tool-params-list' });
+			for (const [key, value] of Object.entries(parameters)) {
+				const paramItem = paramsList.createDiv({ cls: 'gemini-agent-tool-param-item' });
+				paramItem.createSpan({ 
+					text: key,
+					cls: 'gemini-agent-tool-param-key' 
+				});
+				
+				const valueStr = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+				const valueEl = paramItem.createEl('code', { 
+					text: valueStr,
+					cls: 'gemini-agent-tool-param-value' 
+				});
+				
+				// Truncate long values
+				if (valueStr.length > 100) {
+					valueEl.textContent = valueStr.substring(0, 100) + '...';
+					valueEl.title = valueStr; // Show full value on hover
+				}
+			}
+		}
+		
+		// Toggle functionality
+		let isExpanded = false;
+		const toggleDetails = () => {
+			isExpanded = !isExpanded;
+			details.style.display = isExpanded ? 'block' : 'none';
+			setIcon(toggle, isExpanded ? 'chevron-down' : 'chevron-right');
+			toolContent.toggleClass('gemini-agent-tool-expanded', isExpanded);
 		};
 		
-		await this.displayMessage(toolEntry);
+		// Make both toggle button and header clickable
+		toggle.addEventListener('click', (e) => {
+			e.stopPropagation();
+			toggleDetails();
+		});
+		header.addEventListener('click', toggleDetails);
+		
+		// Store reference to update with result
+		toolMessage.dataset.toolName = toolName;
+		
+		// Auto-scroll to new message
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
 	}
 
 	/**
 	 * Show tool execution result in the UI as a chat message
 	 */
 	public async showToolResult(toolName: string, result: any): Promise<void> {
-		const icon = result.success ? '✅' : '❌';
-		let message = `${icon} Tool **${toolName}** ${result.success ? 'completed successfully' : 'failed'}\n\n`;
+		// Find the existing tool message
+		const toolMessages = this.chatContainer.querySelectorAll('.gemini-agent-message-tool');
+		let toolMessage: HTMLElement | null = null;
 		
-		if (result.success && result.data) {
-			const dataStr = JSON.stringify(result.data, null, 2);
-			if (dataStr.length < 1000) {
-				message += `Result:\n\`\`\`json\n${dataStr}\n\`\`\``;
-			} else {
-				message += `Result: (too large to display in full)\n`;
-				// Show a summary if possible
-				if (result.data.count !== undefined) {
-					message += `- Count: ${result.data.count}\n`;
-				}
-				if (result.data.path !== undefined) {
-					message += `- Path: ${result.data.path}\n`;
-				}
+		for (const msg of Array.from(toolMessages)) {
+			if ((msg as HTMLElement).dataset.toolName === toolName) {
+				toolMessage = msg as HTMLElement;
+				break;
 			}
-		} else if (result.error) {
-			message += `Error: ${result.error}`;
 		}
 		
-		const resultEntry: GeminiConversationEntry = {
-			role: 'system',
-			message: message,
-			notePath: '',
-			created_at: new Date()
-		};
+		if (!toolMessage) {
+			console.warn(`Tool message not found for ${toolName}`);
+			return;
+		}
 		
-		await this.displayMessage(resultEntry);
+		// Update status
+		const statusEl = toolMessage.querySelector('.gemini-agent-tool-status') as HTMLElement;
+		if (statusEl) {
+			statusEl.textContent = result.success ? 'Completed' : 'Failed';
+			statusEl.classList.remove('gemini-agent-tool-status-running');
+			statusEl.classList.add(result.success ? 'gemini-agent-tool-status-success' : 'gemini-agent-tool-status-error');
+			
+			// Add completion animation
+			toolMessage.classList.add('gemini-agent-tool-completed');
+			setTimeout(() => {
+				toolMessage.classList.remove('gemini-agent-tool-completed');
+			}, 500);
+		}
+		
+		// Update icon
+		const iconEl = toolMessage.querySelector('.gemini-agent-tool-icon');
+		if (iconEl) {
+			setIcon(iconEl, result.success ? 'check-circle' : 'x-circle');
+		}
+		
+		// Add result to details
+		const details = toolMessage.querySelector('.gemini-agent-tool-details');
+		if (details) {
+			// Add result section
+			const resultSection = details.createDiv({ cls: 'gemini-agent-tool-section' });
+			resultSection.createEl('h4', { text: 'Result' });
+			
+			if (result.success && result.data) {
+				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
+				
+				// Handle different types of results
+				if (typeof result.data === 'string') {
+					// For string results (like file content)
+					if (result.data.length > 500) {
+						// Large content - show in a code block with truncation
+						const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
+						const code = codeBlock.createEl('code');
+						code.textContent = result.data.substring(0, 500) + '\n\n... (truncated)';
+						
+						// Add button to expand full content
+						const expandBtn = resultContent.createEl('button', {
+							text: 'Show full content',
+							cls: 'gemini-agent-tool-expand-content'
+						});
+						expandBtn.addEventListener('click', () => {
+							code.textContent = result.data;
+							expandBtn.remove();
+						});
+					} else {
+						resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
+							.createEl('code', { text: result.data });
+					}
+				} else if (Array.isArray(result.data)) {
+					// For arrays (like file lists)
+					if (result.data.length === 0) {
+						resultContent.createEl('p', { 
+							text: 'No results found',
+							cls: 'gemini-agent-tool-empty-result'
+						});
+					} else {
+						const list = resultContent.createEl('ul', { cls: 'gemini-agent-tool-result-list' });
+						result.data.slice(0, 10).forEach(item => {
+							list.createEl('li', { text: item });
+						});
+						if (result.data.length > 10) {
+							resultContent.createEl('p', { 
+								text: `... and ${result.data.length - 10} more`,
+								cls: 'gemini-agent-tool-more-items'
+							});
+						}
+					}
+				} else if (typeof result.data === 'object') {
+					// Special handling for read_file results
+					if (result.data.content && result.data.path) {
+						// This is a file read result
+						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
+						fileInfo.createEl('strong', { text: 'File: ' });
+						fileInfo.createSpan({ text: result.data.path });
+						
+						if (result.data.size) {
+							fileInfo.createSpan({ 
+								text: ` (${this.formatFileSize(result.data.size)})`,
+								cls: 'gemini-agent-tool-file-size'
+							});
+						}
+						
+						const content = result.data.content;
+						if (content.length > 500) {
+							// Large content - show in a code block with truncation
+							const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
+							const code = codeBlock.createEl('code');
+							code.textContent = content.substring(0, 500) + '\n\n... (truncated)';
+							
+							// Add button to expand full content
+							const expandBtn = resultContent.createEl('button', {
+								text: 'Show full content',
+								cls: 'gemini-agent-tool-expand-content'
+							});
+							expandBtn.addEventListener('click', () => {
+								code.textContent = content;
+								expandBtn.remove();
+							});
+						} else {
+							resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
+								.createEl('code', { text: content });
+						}
+					} else {
+						// For other objects, show key-value pairs
+						const resultList = resultContent.createDiv({ cls: 'gemini-agent-tool-result-object' });
+						for (const [key, value] of Object.entries(result.data)) {
+							if (key === 'content' && typeof value === 'string' && value.length > 100) {
+								// Skip long content in generic display
+								continue;
+							}
+							
+							const item = resultList.createDiv({ cls: 'gemini-agent-tool-result-item' });
+							item.createSpan({ 
+								text: key + ':',
+								cls: 'gemini-agent-tool-result-key' 
+							});
+							
+							const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
+							item.createSpan({ 
+								text: valueStr.length > 100 ? valueStr.substring(0, 100) + '...' : valueStr,
+								cls: 'gemini-agent-tool-result-value' 
+							});
+						}
+					}
+				}
+			} else if (result.error) {
+				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
+				errorContent.createEl('p', { 
+					text: result.error,
+					cls: 'gemini-agent-tool-error-message'
+				});
+			}
+		}
+		
+		// Auto-expand if there was an error
+		if (!result.success) {
+			const toggle = toolMessage.querySelector('.gemini-agent-tool-toggle') as HTMLElement;
+			const toolContent = toolMessage.querySelector('.gemini-agent-tool-message');
+			if (toggle && details && toolContent) {
+				setIcon(toggle, 'chevron-down');
+				(details as HTMLElement).style.display = 'block';
+				toolContent.classList.add('gemini-agent-tool-expanded');
+			}
+		}
 	}
 	
 	private showEmptyState() {
@@ -960,5 +1171,15 @@ User: ${history[0].message}`;
 				});
 			});
 		}
+	}
+	
+	private formatFileSize(bytes: number): string {
+		if (bytes === 0) return '0 Bytes';
+		
+		const k = 1024;
+		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+		
+		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 	}
 }
