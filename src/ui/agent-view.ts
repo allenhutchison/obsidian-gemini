@@ -46,6 +46,9 @@ export class AgentView extends ItemView {
 
 		this.createAgentInterface(container as HTMLElement);
 		
+		// Register link click handler for internal links
+		this.registerLinkClickHandler();
+		
 		// Create default agent session
 		await this.createNewSession();
 	}
@@ -347,8 +350,6 @@ export class AgentView extends ItemView {
 			
 			// Focus on input
 			this.userInput.focus();
-			
-			new Notice('New agent session created');
 		} catch (error) {
 			console.error('Failed to create agent session:', error);
 			new Notice('Failed to create agent session');
@@ -400,7 +401,7 @@ export class AgentView extends ItemView {
 		// Convert single newlines to double newlines for proper markdown rendering
 		// But preserve existing double newlines and table formatting
 		let formattedMessage = entry.message;
-		if (entry.role === 'model' || entry.role === 'assistant') {
+		if (entry.role === 'model') {
 			// Split by lines to handle tables specially
 			const lines = entry.message.split('\n');
 			const formattedLines: string[] = [];
@@ -459,6 +460,7 @@ export class AgentView extends ItemView {
 			}
 		}
 		
+		// Get source path for proper link resolution
 		const sourcePath = this.currentSession?.historyPath || '';
 		
 		// Special handling for tool execution messages
@@ -609,6 +611,16 @@ export class AgentView extends ItemView {
 		// Add a space after the chip
 		const space = document.createTextNode(' ');
 		chip.after(space);
+		
+		// Move cursor after the space
+		const newSelection = window.getSelection();
+		if (newSelection) {
+			const range = document.createRange();
+			range.setStartAfter(space);
+			range.collapse(true);
+			newSelection.removeAllRanges();
+			newSelection.addRange(range);
+		}
 		
 		// Focus back on input
 		this.userInput.focus();
@@ -898,8 +910,6 @@ export class AgentView extends ItemView {
 			// Update UI
 			this.createSessionHeader();
 			this.createContextPanel();
-			
-			new Notice(`Loaded session: ${session.title}`);
 		} catch (error) {
 			console.error('Failed to load session:', error);
 			new Notice('Failed to load session');
@@ -908,6 +918,19 @@ export class AgentView extends ItemView {
 
 	getCurrentSessionForToolExecution(): ChatSession | null {
 		return this.currentSession;
+	}
+	
+	private registerLinkClickHandler() {
+		this.containerEl.addEventListener('click', (event) => {
+			const target = event.target as HTMLElement;
+			if (target.tagName === 'A' && target.classList.contains('internal-link')) {
+				event.preventDefault();
+				const filePath = target.getAttribute('href');
+				if (filePath) {
+					this.app.workspace.openLinkText(filePath, '', true);
+				}
+			}
+		});
 	}
 
 	async onClose() {
@@ -1313,12 +1336,14 @@ User: ${history[0].message}`;
 			// Add completion animation
 			toolMessage.classList.add('gemini-agent-tool-completed');
 			setTimeout(() => {
-				toolMessage.classList.remove('gemini-agent-tool-completed');
+				if (toolMessage) {
+					toolMessage.classList.remove('gemini-agent-tool-completed');
+				}
 			}, 500);
 		}
 		
 		// Update icon
-		const iconEl = toolMessage.querySelector('.gemini-agent-tool-icon');
+		const iconEl = toolMessage.querySelector('.gemini-agent-tool-icon') as HTMLElement;
 		if (iconEl) {
 			setIcon(iconEl, result.success ? 'check-circle' : 'x-circle');
 		}
@@ -1364,8 +1389,8 @@ User: ${history[0].message}`;
 						});
 					} else {
 						const list = resultContent.createEl('ul', { cls: 'gemini-agent-tool-result-list' });
-						result.data.slice(0, 10).forEach(item => {
-							list.createEl('li', { text: item });
+						result.data.slice(0, 10).forEach((item: any) => {
+							list.createEl('li', { text: String(item) });
 						});
 						if (result.data.length > 10) {
 							resultContent.createEl('p', { 
@@ -1483,7 +1508,7 @@ User: ${history[0].message}`;
 					cls: 'gemini-agent-suggestion'
 				});
 				suggestion.addEventListener('click', () => {
-					this.userInput.value = text;
+					this.userInput.textContent = text;
 					this.userInput.focus();
 				});
 			});

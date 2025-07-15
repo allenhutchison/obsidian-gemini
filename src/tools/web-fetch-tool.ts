@@ -90,11 +90,11 @@ export class WebFetchTool implements Tool {
 			}
 
 			// Extract URL context metadata if available
-			const urlMetadata = result.candidates?.[0]?.url_context_metadata;
+			const urlMetadata = result.candidates?.[0]?.urlContextMetadata;
 			
 			// Log metadata for debugging
-			if (urlMetadata?.url_metadata) {
-				console.log('URL Context Metadata:', urlMetadata.url_metadata);
+			if (urlMetadata?.urlMetadata) {
+				console.log('URL Context Metadata:', urlMetadata.urlMetadata);
 			}
 			
 			return {
@@ -103,7 +103,7 @@ export class WebFetchTool implements Tool {
 					url: params.url,
 					query: params.query,
 					content: text,
-					urlsRetrieved: urlMetadata?.url_metadata?.map((meta: any) => ({
+					urlsRetrieved: urlMetadata?.urlMetadata?.map((meta: any) => ({
 						url: meta.retrieved_url,
 						status: meta.url_retrieval_status
 					})) || [],

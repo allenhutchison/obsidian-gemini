@@ -133,7 +133,8 @@ export class WriteFileTool implements Tool {
 				};
 			}
 			
-			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			const isNewFile = !file;
 			
 			if (file instanceof TFile) {
 				// File exists, modify it
@@ -141,6 +142,28 @@ export class WriteFileTool implements Tool {
 			} else {
 				// File doesn't exist, create it
 				await plugin.app.vault.create(normalizedPath, params.content);
+				// Get the newly created file
+				file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			}
+			
+			// Add the file to session context if it's a new file and we have a session
+			if (file instanceof TFile && context.session && isNewFile) {
+				const agentView = plugin.app.workspace.getLeavesOfType('gemini-agent-view')[0]?.view;
+				if (agentView && 'getCurrentSessionForToolExecution' in agentView) {
+					const session = (agentView as any).getCurrentSessionForToolExecution();
+					if (session && !session.context.contextFiles.includes(file)) {
+						session.context.contextFiles.push(file);
+						// Update UI if agent view is active
+						if ('updateContextFilesList' in agentView && 'updateSessionHeader' in agentView) {
+							const contextPanel = (agentView as any).contextPanel;
+							if (contextPanel) {
+								(agentView as any).updateContextFilesList(contextPanel.querySelector('.gemini-agent-files-list'));
+								(agentView as any).updateSessionHeader();
+								(agentView as any).updateSessionMetadata();
+							}
+						}
+					}
+				}
 			}
 			
 			return {
