@@ -901,11 +901,12 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Collapsible Context Panel */
-.gemini-agent-context-panel-collapsed {
-	max-height: 0;
+.gemini-agent-context-panel.gemini-agent-context-panel-collapsed {
+	max-height: 0 !important;
 	overflow: hidden;
 	opacity: 0;
-	transition: max-height 0.3s ease, opacity 0.3s ease;
+	padding: 0 !important;
+	transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
 	border-bottom: none;
 }
 
@@ -959,6 +960,8 @@ If your plugin does not need CSS, delete this file.
 	flex-shrink: 0;
 	max-height: 200px;
 	overflow-y: auto;
+	transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+	opacity: 1;
 }
 
 .gemini-agent-panel-header {
