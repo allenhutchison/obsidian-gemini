@@ -52,15 +52,15 @@ export class AgentView extends ItemView {
 		// Add the main container class
 		container.addClass('gemini-agent-container');
 		
-		// Session header with session info and controls
-		this.sessionHeader = container.createDiv({ cls: 'gemini-agent-header' });
-		this.createSessionHeader();
+		// Compact header bar with title and primary controls
+		this.sessionHeader = container.createDiv({ cls: 'gemini-agent-header gemini-agent-header-compact' });
+		this.createCompactHeader();
 
-		// Context management panel
-		this.contextPanel = container.createDiv({ cls: 'gemini-agent-context-panel' });
+		// Collapsible context panel
+		this.contextPanel = container.createDiv({ cls: 'gemini-agent-context-panel gemini-agent-context-panel-collapsed' });
 		this.createContextPanel();
 
-		// Chat container
+		// Chat container (will expand to fill available space)
 		this.chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
 		this.showEmptyState();
 
@@ -69,25 +69,44 @@ export class AgentView extends ItemView {
 		this.createInputArea(inputArea);
 	}
 
-	private createSessionHeader() {
+	private createCompactHeader() {
 		this.sessionHeader.empty();
-
-		// Session title and info
-		const titleSection = this.sessionHeader.createDiv({ cls: 'gemini-agent-title-section' });
 		
-		const title = titleSection.createEl('h2', { 
+		// Left section: Title and context toggle
+		const leftSection = this.sessionHeader.createDiv({ cls: 'gemini-agent-header-left' });
+		
+		// Toggle button for context panel
+		const toggleBtn = leftSection.createEl('button', {
+			cls: 'gemini-agent-toggle-btn',
+			title: 'Toggle context panel'
+		});
+		setIcon(toggleBtn, 'chevron-down');
+		
+		toggleBtn.addEventListener('click', () => {
+			const isCollapsed = this.contextPanel.hasClass('gemini-agent-context-panel-collapsed');
+			if (isCollapsed) {
+				this.contextPanel.removeClass('gemini-agent-context-panel-collapsed');
+				setIcon(toggleBtn, 'chevron-up');
+			} else {
+				this.contextPanel.addClass('gemini-agent-context-panel-collapsed');
+				setIcon(toggleBtn, 'chevron-down');
+			}
+		});
+		
+		// Session title (inline, not as large)
+		const title = leftSection.createEl('span', { 
 			text: this.currentSession?.title || 'New Agent Session',
-			cls: 'gemini-agent-title'
+			cls: 'gemini-agent-title-compact'
 		});
 		
 		// Make title editable on double-click
 		title.addEventListener('dblclick', () => {
 			if (!this.currentSession) return;
 			
-			const input = titleSection.createEl('input', {
+			const input = leftSection.createEl('input', {
 				type: 'text',
 				value: this.currentSession.title,
-				cls: 'gemini-agent-title-input'
+				cls: 'gemini-agent-title-input-compact'
 			});
 			
 			title.style.display = 'none';
@@ -129,74 +148,77 @@ export class AgentView extends ItemView {
 				}
 			});
 		});
-
-		const sessionInfo = titleSection.createDiv({ cls: 'gemini-agent-session-info' });
+		
+		// Context info badge
 		if (this.currentSession) {
-			sessionInfo.createSpan({ 
-				text: `Context: ${this.currentSession.context.contextFiles.length} files`,
-				cls: 'gemini-agent-context-count'
-			});
-			sessionInfo.createSpan({ 
-				text: `Depth: ${this.currentSession.context.contextDepth}`,
-				cls: 'gemini-agent-depth'
+			const contextBadge = leftSection.createEl('span', {
+				cls: 'gemini-agent-context-badge',
+				text: `${this.currentSession.context.contextFiles.length} files • Depth ${this.currentSession.context.contextDepth}`
 			});
 		}
-
-		// Session controls
-		const controls = this.sessionHeader.createDiv({ cls: 'gemini-agent-controls' });
 		
-		const newSessionBtn = controls.createEl('button', { 
-			text: 'New Session',
-			cls: 'gemini-agent-btn gemini-agent-btn-secondary'
+		// Right section: Action buttons
+		const rightSection = this.sessionHeader.createDiv({ cls: 'gemini-agent-header-right' });
+		
+		const newSessionBtn = rightSection.createEl('button', { 
+			cls: 'gemini-agent-btn gemini-agent-btn-icon',
+			title: 'New Session'
 		});
+		setIcon(newSessionBtn, 'plus');
 		newSessionBtn.addEventListener('click', () => this.createNewSession());
-
-		const sessionsBtn = controls.createEl('button', { 
-			text: 'Sessions',
-			cls: 'gemini-agent-btn gemini-agent-btn-secondary'
+		
+		const listSessionsBtn = rightSection.createEl('button', { 
+			cls: 'gemini-agent-btn gemini-agent-btn-icon',
+			title: 'Browse Sessions'
 		});
-		sessionsBtn.addEventListener('click', () => this.showSessionsList());
+		setIcon(listSessionsBtn, 'list');
+		listSessionsBtn.addEventListener('click', () => this.showSessionList());
+	}
+
+	private createSessionHeader() {
+		// Just call the compact header method
+		this.createCompactHeader();
 	}
 
 	private createContextPanel() {
 		this.contextPanel.empty();
 
-		const header = this.contextPanel.createDiv({ cls: 'gemini-agent-panel-header' });
-		header.createEl('h3', { text: 'Context Files' });
-
-		const addButton = header.createEl('button', {
-			cls: 'gemini-agent-btn gemini-agent-btn-primary'
+		// Compact context controls
+		const controlsRow = this.contextPanel.createDiv({ cls: 'gemini-agent-context-controls' });
+		
+		// Add files button
+		const addButton = controlsRow.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-sm',
+			title: 'Add context files'
 		});
 		setIcon(addButton, 'plus');
 		addButton.createSpan({ text: ' Add Files' });
 		addButton.addEventListener('click', () => this.showFilePicker());
-
-		// Context files list
-		const filesList = this.contextPanel.createDiv({ cls: 'gemini-agent-files-list' });
-		this.updateContextFilesList(filesList);
-
-		// Context depth control
-		const depthControl = this.contextPanel.createDiv({ cls: 'gemini-agent-depth-control' });
-		depthControl.createEl('label', { text: 'Context Depth:' });
 		
-		const depthSlider = depthControl.createEl('input', {
-			type: 'range',
-			attr: { min: '0', max: '5', step: '1' }
-		}) as HTMLInputElement;
+		// Depth control (inline)
+		const depthControl = controlsRow.createDiv({ cls: 'gemini-agent-depth-control-inline' });
+		depthControl.createSpan({ text: 'Depth:', cls: 'gemini-agent-depth-label' });
 		
-		const depthValue = depthControl.createEl('span', { 
-			text: this.currentSession?.context.contextDepth.toString() || '2'
+		const depthInput = depthControl.createEl('input', {
+			type: 'number',
+			cls: 'gemini-agent-depth-input-sm',
+			value: this.currentSession?.context.contextDepth.toString() || '2'
 		});
-		
-		depthSlider.value = this.currentSession?.context.contextDepth.toString() || '2';
-		depthSlider.addEventListener('input', () => {
-			const depth = parseInt(depthSlider.value);
-			depthValue.textContent = depth.toString();
+		depthInput.min = '0';
+		depthInput.max = '10';
+		depthInput.addEventListener('change', () => {
+			const depth = parseInt(depthInput.value);
 			if (this.currentSession) {
 				this.currentSession.context.contextDepth = depth;
 				this.updateSessionMetadata();
+				// Update the context badge
+				this.createCompactHeader();
 			}
 		});
+
+		// Context files list (compact)
+		const filesList = this.contextPanel.createDiv({ cls: 'gemini-agent-files-list gemini-agent-files-list-compact' });
+		this.updateContextFilesList(filesList);
 	}
 
 
@@ -679,7 +701,7 @@ export class AgentView extends ItemView {
 		this.createSessionHeader();
 	}
 
-	private async showSessionsList() {
+	private async showSessionList() {
 		const modal = new SessionListModal(
 			this.app,
 			this.plugin,

@@ -786,6 +786,159 @@ If your plugin does not need CSS, delete this file.
 	border-color: var(--background-modifier-border-hover);
 }
 
+/* Compact Header Styles */
+.gemini-agent-header-compact {
+	padding: var(--size-2-2) var(--size-4-2);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 40px;
+}
+
+.gemini-agent-header-left {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	flex: 1;
+}
+
+.gemini-agent-header-right {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+}
+
+/* Toggle Button */
+.gemini-agent-toggle-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: var(--size-2-1);
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	display: flex;
+	align-items: center;
+	transition: all 0.15s ease;
+}
+
+.gemini-agent-toggle-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.gemini-agent-toggle-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* Compact Title */
+.gemini-agent-title-compact {
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	color: var(--text-normal);
+	cursor: text;
+	padding: var(--size-2-1) var(--size-2-2);
+	border-radius: var(--radius-s);
+	transition: background-color 0.15s ease;
+}
+
+.gemini-agent-title-compact:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-agent-title-input-compact {
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-1) var(--size-2-2);
+	background-color: var(--background-primary);
+}
+
+/* Context Badge */
+.gemini-agent-context-badge {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	padding: 2px var(--size-2-2);
+	border-radius: var(--radius-s);
+	white-space: nowrap;
+}
+
+/* Icon Buttons */
+.gemini-agent-btn-icon {
+	padding: var(--size-2-1);
+	min-width: auto;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.gemini-agent-btn-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Small Buttons */
+.gemini-agent-btn-sm {
+	padding: var(--size-2-1) var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+}
+
+/* Collapsible Context Panel */
+.gemini-agent-context-panel-collapsed {
+	max-height: 0;
+	overflow: hidden;
+	opacity: 0;
+	transition: max-height 0.3s ease, opacity 0.3s ease;
+	border-bottom: none;
+}
+
+/* Compact Context Controls */
+.gemini-agent-context-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+	padding-bottom: var(--size-2-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-depth-control-inline {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	margin-left: auto;
+}
+
+.gemini-agent-depth-label {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.gemini-agent-depth-input-sm {
+	width: 50px;
+	padding: 2px var(--size-2-1);
+	font-size: var(--font-ui-small);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background-color: var(--background-primary);
+}
+
+/* Compact Files List */
+.gemini-agent-files-list-compact {
+	padding-top: var(--size-2-2);
+	max-height: 150px;
+	overflow-y: auto;
+}
+
+.gemini-agent-files-list-compact .gemini-agent-file-item {
+	padding: var(--size-2-1) var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+}
+
 /* Context Panel */
 .gemini-agent-context-panel {
 	background-color: var(--background-secondary-alt);
