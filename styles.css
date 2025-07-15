@@ -831,6 +831,14 @@ If your plugin does not need CSS, delete this file.
 	height: 14px;
 }
 
+/* Title Container */
+.gemini-agent-title-container {
+	display: inline-flex;
+	align-items: center;
+	min-width: 200px;
+	max-width: 400px;
+}
+
 /* Compact Title */
 .gemini-agent-title-compact {
 	font-size: var(--font-ui-medium);
@@ -840,6 +848,9 @@ If your plugin does not need CSS, delete this file.
 	padding: var(--size-2-1) var(--size-2-2);
 	border-radius: var(--radius-s);
 	transition: background-color 0.15s ease;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .gemini-agent-title-compact:hover {
@@ -853,6 +864,7 @@ If your plugin does not need CSS, delete this file.
 	border-radius: var(--radius-s);
 	padding: var(--size-2-1) var(--size-2-2);
 	background-color: var(--background-primary);
+	width: 100%;
 }
 
 /* Context Badge */

@@ -93,8 +93,11 @@ export class AgentView extends ItemView {
 			}
 		});
 		
+		// Title container to maintain consistent layout
+		const titleContainer = leftSection.createDiv({ cls: 'gemini-agent-title-container' });
+		
 		// Session title (inline, not as large)
-		const title = leftSection.createEl('span', { 
+		const title = titleContainer.createEl('span', { 
 			text: this.currentSession?.title || 'New Agent Session',
 			cls: 'gemini-agent-title-compact'
 		});
@@ -103,7 +106,7 @@ export class AgentView extends ItemView {
 		title.addEventListener('dblclick', () => {
 			if (!this.currentSession) return;
 			
-			const input = leftSection.createEl('input', {
+			const input = titleContainer.createEl('input', {
 				type: 'text',
 				value: this.currentSession.title,
 				cls: 'gemini-agent-title-input-compact'
@@ -149,7 +152,7 @@ export class AgentView extends ItemView {
 			});
 		});
 		
-		// Context info badge
+		// Context info badge - always in the same position
 		if (this.currentSession) {
 			const contextBadge = leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
