@@ -1045,6 +1045,32 @@ User: ${history[0].message}`;
 	}
 
 	/**
+	 * Sort tool calls to ensure safe execution order
+	 * Prioritizes reads before writes/deletes to prevent race conditions
+	 */
+	private sortToolCallsByPriority(toolCalls: any[]): any[] {
+		// Define priority order (lower number = higher priority)
+		const toolPriority: Record<string, number> = {
+			'read_file': 1,
+			'list_files': 2,
+			'search_files': 3,
+			'google_search': 4,
+			'web_fetch': 5,
+			'write_file': 6,
+			'create_folder': 7,
+			'move_file': 8,
+			'delete_file': 9  // Destructive operations last
+		};
+
+		// Sort by priority, maintaining original order for same priority
+		return [...toolCalls].sort((a, b) => {
+			const priorityA = toolPriority[a.name] || 10;
+			const priorityB = toolPriority[b.name] || 10;
+			return priorityA - priorityB;
+		});
+	}
+
+	/**
 	 * Handle tool calls from the model response
 	 */
 	private async handleToolCalls(
@@ -1063,7 +1089,10 @@ User: ${history[0].message}`;
 			session: this.currentSession
 		};
 
-		for (const toolCall of toolCalls) {
+		// Sort tool calls to prioritize reads before destructive operations
+		const sortedToolCalls = this.sortToolCallsByPriority(toolCalls);
+
+		for (const toolCall of sortedToolCalls) {
 			try {
 				// Generate unique ID for this tool execution
 				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

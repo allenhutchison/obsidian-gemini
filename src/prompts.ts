@@ -127,7 +127,11 @@ export class GeminiPrompts {
 		toolsSection += 'When asked to modify or add data to these files:\n';
 		toolsSection += '1. First READ the file with read_file to understand its current content\n';
 		toolsSection += '2. Then WRITE the updated content with write_file, preserving existing data\n';
-		toolsSection += '3. DO NOT create new files unless explicitly asked - modify existing ones\n';
+		toolsSection += '3. DO NOT create new files unless explicitly asked - modify existing ones\n\n';
+		toolsSection += '**IMPORTANT TOOL ORDERING**: When combining operations on the same files:\n';
+		toolsSection += '- ALWAYS read files BEFORE deleting them\n';
+		toolsSection += '- ALWAYS read files BEFORE moving/renaming them\n';
+		toolsSection += '- If you need to combine files and delete originals, read ALL files first, then write combined, then delete\n';
 
 		return baseSystemPrompt + toolsSection;
 	}
