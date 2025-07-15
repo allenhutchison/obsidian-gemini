@@ -1044,14 +1044,17 @@ User: ${history[0].message}`;
 
 		for (const toolCall of toolCalls) {
 			try {
+				// Generate unique ID for this tool execution
+				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+				
 				// Show tool execution in UI
-				await this.showToolExecution(toolCall.name, toolCall.arguments);
+				await this.showToolExecution(toolCall.name, toolCall.arguments, toolExecutionId);
 				
 				// Execute the tool
 				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context);
 				
 				// Show result in UI
-				await this.showToolResult(toolCall.name, result);
+				await this.showToolResult(toolCall.name, result, toolExecutionId);
 				
 				// Format result for the model
 				toolResults.push({
@@ -1208,7 +1211,7 @@ User: ${history[0].message}`;
 	/**
 	 * Show tool execution in the UI as a chat message
 	 */
-	public async showToolExecution(toolName: string, parameters: any): Promise<void> {
+	public async showToolExecution(toolName: string, parameters: any, executionId?: string): Promise<void> {
 		// Remove empty state if it exists
 		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
 		if (emptyState) {
@@ -1301,6 +1304,9 @@ User: ${history[0].message}`;
 		
 		// Store reference to update with result
 		toolMessage.dataset.toolName = toolName;
+		if (executionId) {
+			toolMessage.dataset.executionId = executionId;
+		}
 		
 		// Auto-scroll to new message
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
@@ -1309,15 +1315,26 @@ User: ${history[0].message}`;
 	/**
 	 * Show tool execution result in the UI as a chat message
 	 */
-	public async showToolResult(toolName: string, result: any): Promise<void> {
+	public async showToolResult(toolName: string, result: any, executionId?: string): Promise<void> {
 		// Find the existing tool message
 		const toolMessages = this.chatContainer.querySelectorAll('.gemini-agent-message-tool');
 		let toolMessage: HTMLElement | null = null;
 		
-		for (const msg of Array.from(toolMessages)) {
-			if ((msg as HTMLElement).dataset.toolName === toolName) {
-				toolMessage = msg as HTMLElement;
-				break;
+		if (executionId) {
+			// Use execution ID for precise matching
+			for (const msg of Array.from(toolMessages)) {
+				if ((msg as HTMLElement).dataset.executionId === executionId) {
+					toolMessage = msg as HTMLElement;
+					break;
+				}
+			}
+		} else {
+			// Fallback to tool name (for backward compatibility)
+			for (const msg of Array.from(toolMessages)) {
+				if ((msg as HTMLElement).dataset.toolName === toolName) {
+					toolMessage = msg as HTMLElement;
+					break;
+				}
 			}
 		}
 		
