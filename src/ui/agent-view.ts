@@ -578,6 +578,15 @@ export class AgentView extends ItemView {
 			this.mentionedFiles.push(file);
 		}
 		
+		// Also add to session context files if not already there
+		if (this.currentSession && !this.currentSession.context.contextFiles.includes(file)) {
+			this.currentSession.context.contextFiles.push(file);
+			// Update the UI to reflect the new context file
+			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
+			this.updateSessionHeader();
+			this.updateSessionMetadata();
+		}
+		
 		// Create chip element
 		const chip = this.createFileChip(file);
 		
@@ -635,25 +644,52 @@ export class AgentView extends ItemView {
 			if (index > -1) {
 				this.mentionedFiles.splice(index, 1);
 			}
+			// Also remove from session context if it was added via mention
+			if (this.currentSession) {
+				const contextIndex = this.currentSession.context.contextFiles.indexOf(file);
+				if (contextIndex > -1) {
+					this.currentSession.context.contextFiles.splice(contextIndex, 1);
+					this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
+					this.updateSessionHeader();
+					this.updateSessionMetadata();
+				}
+			}
 		});
 		
 		return chip;
 	}
 	
-	private extractMessageContent(): { text: string; files: TFile[] } {
-		// Clone the input to extract text without chips
+	private extractMessageContent(): { text: string; files: TFile[]; formattedMessage: string } {
+		// Clone the input to process
 		const clone = this.userInput.cloneNode(true) as HTMLElement;
 		
-		// Remove all file chips from clone
+		// Replace file chips with markdown links in the clone
 		const chips = clone.querySelectorAll('.gemini-agent-file-chip');
-		chips.forEach(chip => chip.remove());
+		chips.forEach((chip: Element) => {
+			const filePath = chip.getAttribute('data-file-path');
+			if (filePath) {
+				const file = this.app.vault.getAbstractFileByPath(filePath);
+				if (file instanceof TFile) {
+					// Create markdown link
+					const link = document.createTextNode(`[[${file.basename}]]`);
+					chip.replaceWith(link);
+				}
+			}
+		});
 		
-		// Get the text content
-		const text = clone.textContent?.trim() || '';
+		// Get the formatted message with markdown links
+		const formattedMessage = clone.textContent?.trim() || '';
+		
+		// Now remove all links to get plain text
+		const plainClone = this.userInput.cloneNode(true) as HTMLElement;
+		const plainChips = plainClone.querySelectorAll('.gemini-agent-file-chip');
+		plainChips.forEach(chip => chip.remove());
+		const text = plainClone.textContent?.trim() || '';
 		
 		return {
 			text,
-			files: [...this.mentionedFiles]
+			files: [...this.mentionedFiles],
+			formattedMessage
 		};
 	}
 
@@ -663,7 +699,7 @@ export class AgentView extends ItemView {
 			return;
 		}
 
-		const { text: message, files } = this.extractMessageContent();
+		const { text: message, files, formattedMessage } = this.extractMessageContent();
 		if (!message && files.length === 0) return;
 
 		// Clear input and mentioned files
@@ -684,10 +720,10 @@ export class AgentView extends ItemView {
 		// Scroll to thinking message
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
 
-		// Display user message
+		// Display user message with formatted version (includes markdown links)
 		const userEntry: GeminiConversationEntry = {
 			role: 'user',
-			message,
+			message: formattedMessage, // Use formatted message for display/history
 			notePath: '',
 			created_at: new Date()
 		};
