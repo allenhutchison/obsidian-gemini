@@ -4,6 +4,7 @@ import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
+import { FileMentionModal } from './file-mention-modal';
 import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
@@ -14,11 +15,12 @@ export class AgentView extends ItemView {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private currentSession: ChatSession | null = null;
 	private chatContainer: HTMLElement;
-	private userInput: HTMLTextAreaElement;
+	private userInput: HTMLDivElement;
 	private sendButton: HTMLButtonElement;
 	private contextPanel: HTMLElement;
 	private sessionHeader: HTMLElement;
 	private currentStreamingResponse: { cancel: () => void } | null = null;
+	private mentionedFiles: TFile[] = [];
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -226,9 +228,13 @@ export class AgentView extends ItemView {
 
 
 	private createInputArea(container: HTMLElement) {
-		this.userInput = container.createEl('textarea', {
-			placeholder: 'Message the agent... (Shift+Enter for new line)',
-			cls: 'gemini-agent-input'
+		// Create contenteditable div for rich input
+		this.userInput = container.createDiv({
+			cls: 'gemini-agent-input gemini-agent-input-rich',
+			attr: {
+				contenteditable: 'true',
+				'data-placeholder': 'Message the agent... (@ to mention files)'
+			}
 		});
 
 		this.sendButton = container.createEl('button', {
@@ -241,7 +247,18 @@ export class AgentView extends ItemView {
 			if (e.key === 'Enter' && !e.shiftKey) {
 				e.preventDefault();
 				this.sendMessage();
+			} else if (e.key === '@') {
+				// Trigger file mention
+				e.preventDefault();
+				this.showFileMention();
 			}
+		});
+		
+		// Handle paste to strip formatting
+		this.userInput.addEventListener('paste', (e) => {
+			e.preventDefault();
+			const text = e.clipboardData?.getData('text/plain') || '';
+			document.execCommand('insertText', false, text);
 		});
 
 		this.sendButton.addEventListener('click', () => this.sendMessage());
@@ -545,17 +562,113 @@ export class AgentView extends ItemView {
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
 	}
 
+	private async showFileMention() {
+		const modal = new FileMentionModal(
+			this.app,
+			(file: TFile) => {
+				this.insertFileChip(file);
+			}
+		);
+		modal.open();
+	}
+	
+	private insertFileChip(file: TFile) {
+		// Add file to mentioned files list
+		if (!this.mentionedFiles.includes(file)) {
+			this.mentionedFiles.push(file);
+		}
+		
+		// Create chip element
+		const chip = this.createFileChip(file);
+		
+		// Insert at current cursor position
+		const selection = window.getSelection();
+		if (selection && selection.rangeCount > 0) {
+			const range = selection.getRangeAt(0);
+			range.insertNode(chip);
+			
+			// Move cursor after the chip
+			range.setStartAfter(chip);
+			range.collapse(true);
+			selection.removeAllRanges();
+			selection.addRange(range);
+		} else {
+			// If no selection, append to the end
+			this.userInput.appendChild(chip);
+		}
+		
+		// Add a space after the chip
+		const space = document.createTextNode(' ');
+		chip.after(space);
+		
+		// Focus back on input
+		this.userInput.focus();
+	}
+	
+	private createFileChip(file: TFile): HTMLElement {
+		const chip = document.createElement('span');
+		chip.className = 'gemini-agent-file-chip';
+		chip.contentEditable = 'false';
+		chip.setAttribute('data-file-path', file.path);
+		
+		// File icon
+		const icon = chip.createSpan({ cls: 'gemini-agent-file-chip-icon' });
+		setIcon(icon, 'file-text');
+		
+		// File name
+		chip.createSpan({ 
+			text: file.basename,
+			cls: 'gemini-agent-file-chip-name'
+		});
+		
+		// Remove button
+		const removeBtn = chip.createSpan({ 
+			text: '×',
+			cls: 'gemini-agent-file-chip-remove'
+		});
+		
+		removeBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			chip.remove();
+			// Remove from mentioned files
+			const index = this.mentionedFiles.indexOf(file);
+			if (index > -1) {
+				this.mentionedFiles.splice(index, 1);
+			}
+		});
+		
+		return chip;
+	}
+	
+	private extractMessageContent(): { text: string; files: TFile[] } {
+		// Clone the input to extract text without chips
+		const clone = this.userInput.cloneNode(true) as HTMLElement;
+		
+		// Remove all file chips from clone
+		const chips = clone.querySelectorAll('.gemini-agent-file-chip');
+		chips.forEach(chip => chip.remove());
+		
+		// Get the text content
+		const text = clone.textContent?.trim() || '';
+		
+		return {
+			text,
+			files: [...this.mentionedFiles]
+		};
+	}
+
 	private async sendMessage() {
 		if (!this.currentSession) {
 			new Notice('No active session');
 			return;
 		}
 
-		const message = this.userInput.value.trim();
-		if (!message) return;
+		const { text: message, files } = this.extractMessageContent();
+		if (!message && files.length === 0) return;
 
-		// Clear input
-		this.userInput.value = '';
+		// Clear input and mentioned files
+		this.userInput.innerHTML = '';
+		this.mentionedFiles = [];
 		this.sendButton.disabled = true;
 		
 		// Show thinking indicator
@@ -581,12 +694,20 @@ export class AgentView extends ItemView {
 		await this.displayMessage(userEntry);
 
 		try {
+			// Add mentioned files to context temporarily
+			const allContextFiles = [...this.currentSession.context.contextFiles];
+			files.forEach(file => {
+				if (!allContextFiles.includes(file)) {
+					allContextFiles.push(file);
+				}
+			});
+			
 			// Get conversation history
 			const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
 			
-			// Build context for AI request 
+			// Build context for AI request including mentioned files
 			const contextInfo = await this.plugin.gfile.buildFileContext(
-				this.currentSession.context.contextFiles,
+				allContextFiles,
 				this.currentSession.context.contextDepth,
 				true // renderContent
 			);
@@ -595,6 +716,12 @@ export class AgentView extends ItemView {
 			let fullPrompt = this.plugin.prompts.generalPrompt({ 
 				userMessage: message
 			});
+			
+			// Add mention note if files were mentioned
+			if (files.length > 0) {
+				const fileNames = files.map(f => f.basename).join(', ');
+				fullPrompt = `${fullPrompt}\n\nUser mentioned the following files in their message: ${fileNames}`;
+			}
 			
 			// Add context information if available
 			if (contextInfo) {

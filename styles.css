@@ -1125,6 +1125,75 @@ If your plugin does not need CSS, delete this file.
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover) inset;
 }
 
+/* Rich Input Field */
+.gemini-agent-input-rich {
+	min-height: 40px;
+	max-height: 200px;
+	overflow-y: auto;
+	padding: var(--size-2-2) var(--size-4-2);
+	position: relative;
+}
+
+.gemini-agent-input-rich:focus {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent-hover) inset;
+}
+
+/* Placeholder text */
+.gemini-agent-input-rich:empty:before {
+	content: attr(data-placeholder);
+	color: var(--text-faint);
+	pointer-events: none;
+	position: absolute;
+}
+
+/* File Chips */
+.gemini-agent-file-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 2px 6px 2px 4px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	margin: 0 2px;
+	vertical-align: middle;
+	user-select: none;
+	cursor: default;
+}
+
+.gemini-agent-file-chip-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-file-chip-icon svg {
+	width: 12px;
+	height: 12px;
+}
+
+.gemini-agent-file-chip-name {
+	max-width: 150px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-agent-file-chip-remove {
+	margin-left: 4px;
+	padding: 0 2px;
+	cursor: pointer;
+	opacity: 0.7;
+	font-weight: bold;
+	line-height: 1;
+}
+
+.gemini-agent-file-chip-remove:hover {
+	opacity: 1;
+}
+
 .gemini-agent-input::placeholder {
 	color: var(--text-faint);
 }
