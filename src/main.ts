@@ -242,9 +242,12 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 		
-		// Register Google Search tool
-		const { getGoogleSearchTool } = await import('./tools/google-search-tool');
-		this.toolRegistry.registerTool(getGoogleSearchTool());
+		// Register web tools (Google Search and Web Fetch)
+		const { getWebTools } = await import('./tools/web-tools');
+		const webTools = getWebTools();
+		for (const tool of webTools) {
+			this.toolRegistry.registerTool(tool);
+		}
 
 		// Initialize completions
 		this.completions = new GeminiCompletions(this);

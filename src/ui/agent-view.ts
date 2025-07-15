@@ -353,13 +353,65 @@ export class AgentView extends ItemView {
 		
 		// Preserve line breaks in the message
 		// Convert single newlines to double newlines for proper markdown rendering
-		// But preserve existing double newlines
+		// But preserve existing double newlines and table formatting
 		let formattedMessage = entry.message;
 		if (entry.role === 'model' || entry.role === 'assistant') {
-			// Replace single newlines with double newlines, but not if already double
-			formattedMessage = entry.message
-				.replace(/\n(?!\n)/g, '\n\n')  // Single newline → double newline
-				.replace(/\n{3,}/g, '\n\n');    // Collapse 3+ newlines to double
+			// Split by lines to handle tables specially
+			const lines = entry.message.split('\n');
+			const formattedLines: string[] = [];
+			let inTable = false;
+			let previousLineWasEmpty = true;
+			
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i];
+				const nextLine = lines[i + 1];
+				const trimmedLine = line.trim();
+				
+				// Improved table detection
+				// A table row must have at least one pipe that's not escaped
+				const hasUnescapedPipe = line.split('\\|').join('').includes('|');
+				const isTableDivider = /^\s*\|?\s*[:?\-]+\s*\|/.test(line);
+				const isTableRow = hasUnescapedPipe && !isTableDivider && trimmedLine !== '|';
+				
+				// Check if we're starting a table
+				if ((isTableRow || isTableDivider) && !inTable) {
+					inTable = true;
+					// Add empty line before table if needed
+					if (!previousLineWasEmpty && formattedLines.length > 0) {
+						formattedLines.push('');
+					}
+				}
+				
+				// Add the current line
+				formattedLines.push(line);
+				
+				// Check if we're ending a table
+				if (inTable && !hasUnescapedPipe && trimmedLine !== '') {
+					inTable = false;
+					// Add empty line after table
+					formattedLines.push('');
+				} else if (inTable && trimmedLine === '') {
+					// Empty line also ends a table
+					inTable = false;
+				}
+				
+				// For non-table content, add empty line between paragraphs
+				if (!inTable && !hasUnescapedPipe && trimmedLine !== '' && 
+					nextLine && nextLine.trim() !== '' && !nextLine.includes('|')) {
+					formattedLines.push('');
+				}
+				
+				previousLineWasEmpty = trimmedLine === '';
+			}
+			
+			formattedMessage = formattedLines.join('\n');
+			
+			// Debug logging for table formatting
+			if (this.plugin.settings.debugMode && formattedMessage.includes('|')) {
+				console.log('Table formatting debug:');
+				console.log('Original message:', entry.message);
+				console.log('Formatted message:', formattedMessage);
+			}
 		}
 		
 		// Use markdown rendering like the regular chat view

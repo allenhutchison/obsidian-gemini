@@ -1220,6 +1220,35 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 }
 
+/* Table styling within agent messages */
+.gemini-agent-message-content table {
+	width: 100%;
+	margin: var(--size-4-2) 0;
+	border-collapse: collapse;
+	overflow-x: auto;
+	display: block;
+}
+
+.gemini-agent-message-content table th,
+.gemini-agent-message-content table td {
+	padding: var(--size-2-2) var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	text-align: left;
+}
+
+.gemini-agent-message-content table th {
+	background-color: var(--background-secondary);
+	font-weight: 600;
+}
+
+.gemini-agent-message-content table tr:nth-child(even) {
+	background-color: var(--background-secondary-alt);
+}
+
+.gemini-agent-message-content table tr:hover {
+	background-color: var(--background-modifier-hover);
+}
+
 /* Copy button for agent messages */
 .gemini-agent-copy-button {
 	position: absolute;
