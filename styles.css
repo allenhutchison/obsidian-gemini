@@ -973,27 +973,50 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Session Modal Styles */
-.gemini-session-modal {
+.modal.modal-container:has(.gemini-session-modal) {
 	width: 600px;
 	max-width: 90vw;
+}
+
+.modal-content.gemini-session-modal {
+	overflow-x: hidden !important;
+	padding: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.gemini-session-modal > * {
+	overflow-x: hidden;
+	max-width: 100%;
+}
+
+.gemini-session-modal h2 {
+	padding: 0 20px;
+	margin: 20px 0;
 }
 
 .gemini-session-list {
 	max-height: 400px;
 	overflow-y: auto;
-	margin: var(--size-4-3) 0;
+	overflow-x: hidden !important;
+	margin: var(--size-4-3) 20px;
+	padding-right: 5px; /* Add some padding for scrollbar */
 }
 
 .gemini-session-item {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	gap: var(--size-2-2);
 	padding: var(--size-4-2) var(--size-4-3);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
 	margin-bottom: var(--size-2-2);
 	cursor: pointer;
 	transition: all 0.15s ease;
+	overflow: hidden;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .gemini-session-item:hover {
@@ -1008,22 +1031,31 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-session-info {
 	flex: 1;
+	min-width: 0; /* Allow flex item to shrink below content size */
+	overflow: hidden;
 }
 
 .gemini-session-title {
 	font-weight: 600;
 	color: var(--text-normal);
 	margin-bottom: var(--size-2-1);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .gemini-session-meta {
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .gemini-session-actions {
 	display: flex;
 	gap: var(--size-2-1);
+	flex-shrink: 0; /* Prevent action buttons from shrinking */
 }
 
 .gemini-session-action-btn {
@@ -1044,6 +1076,13 @@ If your plugin does not need CSS, delete this file.
 .gemini-session-action-btn.delete:hover {
 	background-color: var(--background-modifier-error);
 	color: var(--text-error);
+}
+
+/* Modal button container in session modal */
+.gemini-session-modal .modal-button-container {
+	padding: 20px;
+	border-top: 1px solid var(--background-modifier-border);
+	margin-top: 0;
 }
 
 .gemini-agent-message {

@@ -1,4 +1,4 @@
-import { Modal, App, TFile, Notice, setIcon } from 'obsidian';
+import { Modal, App, TFile, TFolder, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../types/agent';
 import type ObsidianGemini from '../main';
 
@@ -67,25 +67,23 @@ export class SessionListModal extends Modal {
 	private async loadSessions() {
 		try {
 			// Get all files in the Agent-Sessions folder
-			const sessionFolder = `${this.plugin.settings.stateFolder}/Agent-Sessions`;
+			const sessionFolder = `${this.plugin.settings.historyFolder}/Agent-Sessions`;
 			const folder = this.app.vault.getAbstractFileByPath(sessionFolder);
 			
-			if (!folder || !(folder instanceof TFile)) {
-				// Try to get files if folder exists
-				const files = this.app.vault.getMarkdownFiles().filter(f => 
-					f.path.startsWith(sessionFolder)
-				);
-				
-				// Load each session
-				for (const file of files) {
-					try {
-						const session = await this.plugin.sessionManager.loadSession(file.path);
-						if (session && session.type === 'agent-session') {
-							this.sessions.push(session);
-						}
-					} catch (error) {
-						console.error(`Failed to load session from ${file.path}:`, error);
+			// Get all markdown files in the session folder
+			const files = this.app.vault.getMarkdownFiles().filter(f => 
+				f.path.startsWith(sessionFolder + '/')
+			);
+			
+			// Load each session
+			for (const file of files) {
+				try {
+					const session = await this.plugin.sessionManager.loadSession(file.path);
+					if (session) {
+						this.sessions.push(session);
 					}
+				} catch (error) {
+					console.error(`Failed to load session from ${file.path}:`, error);
 				}
 			}
 			
