@@ -768,7 +768,11 @@ export class AgentView extends ItemView {
 			// Add mention note if files were mentioned
 			if (files.length > 0) {
 				const fileNames = files.map(f => f.basename).join(', ');
-				fullPrompt = `${fullPrompt}\n\nUser mentioned the following files in their message: ${fileNames}`;
+				fullPrompt = `${fullPrompt}\n\nIMPORTANT: The user has specifically referenced the following files using @ mentions: ${fileNames}
+These files are included in the context below. When the user asks you to write data to or modify these files, you should:
+1. First use the read_file tool to examine their current contents
+2. Then use the write_file tool to update them with the new or modified content
+3. If adding new data, integrate it appropriately with the existing content rather than creating a new file`;
 			}
 			
 			// Add context information if available

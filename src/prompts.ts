@@ -122,7 +122,12 @@ export class GeminiPrompts {
 		toolsSection += '- Read files → USE the read_file tool\n';
 		toolsSection += '- Search files → USE the search_files tool\n\n';
 		toolsSection += 'DO NOT just describe what you would do. ALWAYS use the appropriate tool to complete the task.\n';
-		toolsSection += 'Example: If asked to "create a file", you must call write_file with the path and content.\n';
+		toolsSection += 'Example: If asked to "create a file", you must call write_file with the path and content.\n\n';
+		toolsSection += '**CONTEXT FILES**: Files may be included in the context or mentioned by the user with @ symbols.\n';
+		toolsSection += 'When asked to modify or add data to these files:\n';
+		toolsSection += '1. First READ the file with read_file to understand its current content\n';
+		toolsSection += '2. Then WRITE the updated content with write_file, preserving existing data\n';
+		toolsSection += '3. DO NOT create new files unless explicitly asked - modify existing ones\n';
 
 		return baseSystemPrompt + toolsSection;
 	}
