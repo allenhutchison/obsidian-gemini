@@ -191,31 +191,91 @@ export class SessionHistory {
 	private parseHistoryContent(content: string): GeminiConversationEntry[] {
 		const entries: GeminiConversationEntry[] = [];
 		
-		// Split content by frontmatter separator and entry separators
-		const parts = content.split(/^---$/m);
-		if (parts.length < 3) return entries; // No valid frontmatter structure
-
-		// Skip frontmatter (parts[0] and parts[1])
-		const historyContent = parts.slice(2).join('---');
+		// Split content by entry separator (---)
+		const entrySeparator = /^---\s*$/m;
+		const sections = content.split(entrySeparator);
 		
-		// Split by entry markers (look for role patterns)
-		const entryRegex = /^## (User|Assistant|System)\s*$/gm;
-		const entryParts = historyContent.split(entryRegex);
+		// Skip the frontmatter section (first two sections)
+		const contentSections = sections.slice(2);
 		
-		// Process entries in pairs (role, content)
-		for (let i = 1; i < entryParts.length; i += 2) {
-			const roleName = entryParts[i].toLowerCase();
-			// Map role names to existing conversation format
-			const role = roleName === 'assistant' ? 'model' : (roleName as 'user' | 'model');
-			const content = entryParts[i + 1]?.trim() || '';
+		for (const section of contentSections) {
+			if (!section.trim()) continue;
 			
-			if (content && (role === 'user' || role === 'model')) {
-				entries.push({
-					role,
-					message: content,
-					notePath: '', // Will be set by the calling context
-					created_at: new Date() // TODO: Parse timestamp from content if available
-				});
+			// Look for role header (## User or ## Assistant)
+			const roleMatch = section.match(/^## (User|Assistant|Model)\s*$/m);
+			if (!roleMatch) continue;
+			
+			const roleName = roleMatch[1].toLowerCase();
+			const role = roleName === 'assistant' ? 'model' : (roleName === 'model' ? 'model' : 'user');
+			
+			// Extract message content from callout blocks
+			// Look for > [!user]+ or > [!assistant]+ blocks
+			const calloutRegex = /^> \[!(user|assistant)\]\+\s*$/m;
+			const calloutMatch = section.match(calloutRegex);
+			
+			if (calloutMatch) {
+				// Extract lines after the callout marker
+				const lines = section.split('\n');
+				const calloutIndex = lines.findIndex(line => calloutRegex.test(line));
+				
+				if (calloutIndex !== -1) {
+					const messageLines: string[] = [];
+					let inMessage = false;
+					
+					for (let i = calloutIndex + 1; i < lines.length; i++) {
+						const line = lines[i];
+						
+						// Stop at metadata blocks or empty lines after content
+						if (line.startsWith('> [!metadata]') || 
+							(messageLines.length > 0 && !line.startsWith('>'))) {
+							break;
+						}
+						
+						// Extract content from quoted lines
+						if (line.startsWith('> ')) {
+							messageLines.push(line.substring(2));
+							inMessage = true;
+						} else if (inMessage) {
+							// Stop if we hit a non-quoted line after starting
+							break;
+						}
+					}
+					
+					const message = messageLines.join('\n').trim();
+					
+					if (message) {
+						// Extract timestamp from metadata if available
+						const timeMatch = section.match(/\| Time \| ([^|]+) \|/);
+						const timestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
+						
+						// Extract model info if available
+						const modelMatch = section.match(/\| Model \| ([^|]+) \|/);
+						const model = modelMatch ? modelMatch[1].trim() : undefined;
+						
+						// Check for tool execution info
+						const toolNameMatch = section.match(/\*\*Tool:\*\* `([^`]+)`/);
+						const toolStatusMatch = section.match(/\*\*Status:\*\* (Success|Error)/);
+						
+						const entry: GeminiConversationEntry = {
+							role,
+							message,
+							notePath: '',
+							created_at: timestamp,
+							model
+						};
+						
+						// Add tool execution info if found
+						if (toolNameMatch) {
+							entry.metadata = {
+								...entry.metadata,
+								toolName: toolNameMatch[1],
+								toolStatus: toolStatusMatch ? toolStatusMatch[1].toLowerCase() : undefined
+							};
+						}
+						
+						entries.push(entry);
+					}
+				}
 			}
 		}
 

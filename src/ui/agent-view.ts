@@ -351,6 +351,9 @@ export class AgentView extends ItemView {
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 		
+		// Check if this is a tool execution message from history
+		const isToolExecution = entry.metadata?.toolName || entry.message.includes('Tool Execution Results:');
+		
 		// Preserve line breaks in the message
 		// Convert single newlines to double newlines for proper markdown rendering
 		// But preserve existing double newlines and table formatting
@@ -414,9 +417,83 @@ export class AgentView extends ItemView {
 			}
 		}
 		
-		// Use markdown rendering like the regular chat view
 		const sourcePath = this.currentSession?.historyPath || '';
-		await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this);
+		
+		// Special handling for tool execution messages
+		if (isToolExecution && entry.message.includes('Tool Execution Results:')) {
+			// Extract tool execution sections and make them collapsible
+			const toolSections = formattedMessage.split(/### ([^\n]+)/);
+			
+			if (toolSections.length > 1) {
+				// First part before any tool sections
+				const intro = toolSections[0].trim();
+				if (intro) {
+					const introDiv = content.createDiv();
+					await MarkdownRenderer.render(this.app, intro, introDiv, sourcePath, this);
+				}
+				
+				// Process each tool section
+				for (let i = 1; i < toolSections.length; i += 2) {
+					const toolName = toolSections[i];
+					const toolContent = toolSections[i + 1]?.trim() || '';
+					
+					if (toolName && toolContent) {
+						// Create collapsible tool execution block
+						const toolDiv = content.createDiv({ cls: 'gemini-agent-tool-execution' });
+						const toolHeader = toolDiv.createDiv({ cls: 'gemini-agent-tool-header' });
+						
+						// Add expand/collapse icon
+						const icon = toolHeader.createEl('span', { cls: 'gemini-agent-tool-icon' });
+						setIcon(icon, 'chevron-right');
+						
+						// Tool name
+						toolHeader.createEl('span', { 
+							text: `Tool: ${toolName}`,
+							cls: 'gemini-agent-tool-name'
+						});
+						
+						// Tool status (if available)
+						if (toolContent.includes('✅')) {
+							toolHeader.createEl('span', { 
+								text: 'Success',
+								cls: 'gemini-agent-tool-status gemini-agent-tool-status-success'
+							});
+						} else if (toolContent.includes('❌')) {
+							toolHeader.createEl('span', { 
+								text: 'Failed',
+								cls: 'gemini-agent-tool-status gemini-agent-tool-status-error'
+							});
+						}
+						
+						// Tool content (initially hidden)
+						const toolContentDiv = toolDiv.createDiv({ 
+							cls: 'gemini-agent-tool-content gemini-agent-tool-content-collapsed'
+						});
+						
+						// Render the tool content
+						await MarkdownRenderer.render(this.app, toolContent, toolContentDiv, sourcePath, this);
+						
+						// Toggle handler
+						toolHeader.addEventListener('click', () => {
+							const isCollapsed = toolContentDiv.hasClass('gemini-agent-tool-content-collapsed');
+							if (isCollapsed) {
+								toolContentDiv.removeClass('gemini-agent-tool-content-collapsed');
+								setIcon(icon, 'chevron-down');
+							} else {
+								toolContentDiv.addClass('gemini-agent-tool-content-collapsed');
+								setIcon(icon, 'chevron-right');
+							}
+						});
+					}
+				}
+			} else {
+				// No tool sections found, render normally
+				await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this);
+			}
+		} else {
+			// Use markdown rendering like the regular chat view
+			await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this);
+		}
 
 		// Add a copy button for model messages
 		if (entry.role === 'model') {
