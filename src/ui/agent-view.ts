@@ -337,16 +337,23 @@ export class AgentView extends ItemView {
 
 	private async createNewSession() {
 		try {
-			// Clear current session
+			// Clear current session and UI state
 			this.currentSession = null;
 			this.chatContainer.empty();
+			this.mentionedFiles = []; // Clear any mentioned files from previous session
 			
-			// Create new session
+			// Clear input if it has content
+			if (this.userInput) {
+				this.userInput.innerHTML = '';
+			}
+			
+			// Create new session with default context (no initial files)
 			this.currentSession = await this.plugin.sessionManager.createAgentSession();
 			
 			// Update UI (no history to load for new session)
 			this.createSessionHeader();
 			this.createContextPanel();
+			this.showEmptyState();
 			
 			// Focus on input
 			this.userInput.focus();
@@ -692,10 +699,20 @@ export class AgentView extends ItemView {
 		// Get the formatted message with markdown links
 		const formattedMessage = clone.textContent?.trim() || '';
 		
-		// Now remove all links to get plain text
+		// Now replace chips with file names to get plain text
 		const plainClone = this.userInput.cloneNode(true) as HTMLElement;
 		const plainChips = plainClone.querySelectorAll('.gemini-agent-file-chip');
-		plainChips.forEach(chip => chip.remove());
+		plainChips.forEach((chip: Element) => {
+			const filePath = chip.getAttribute('data-file-path');
+			if (filePath) {
+				const file = this.app.vault.getAbstractFileByPath(filePath);
+				if (file instanceof TFile) {
+					// Replace chip with plain file name
+					const textNode = document.createTextNode(file.basename);
+					chip.replaceWith(textNode);
+				}
+			}
+		});
 		const text = plainClone.textContent?.trim() || '';
 		
 		return {
