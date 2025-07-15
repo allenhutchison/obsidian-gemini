@@ -48,6 +48,11 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 3. **Context System** (`src/files/file-context.ts`): Builds linked note trees for context-aware AI interactions
 4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates, stored in `[state-folder]/History/`
 5. **Custom Prompts** (`src/prompts/`): User-defined prompt templates stored in `[state-folder]/Prompts/`
+6. **Agent Mode** (`src/agent/`, `src/tools/`): AI agent with tool calling capabilities
+   - Session management with persistent history
+   - Tool registry and execution engine
+   - Vault operations tools with permission system
+   - Google Search integration (separate from function calling)
 
 ### Model Configuration
 
@@ -62,6 +67,7 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
    - Use `app.fileManager.processFrontMatter()` for frontmatter manipulation
    - Use `vault.getAbstractFileByPath()` for file operations
    - Use `app.metadataCache` for file metadata access
+   - Use `app.fileManager.renameFile()` for renaming files (preserves metadata)
 2. **File Operations**: Always use Obsidian's normalized paths and metadata cache
 3. **Error Handling**: API calls wrapped with retry logic and exponential backoff
 4. **Prompts**: Handlebars templates in `prompts/` directory, loaded as text files
@@ -71,7 +77,12 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
    - `[state-folder]/` - Main plugin state folder (default: `gemini-scribe`)
    - `[state-folder]/History/` - Chat history files
    - `[state-folder]/Prompts/` - Custom prompt templates
+   - `[state-folder]/Agent-Sessions/` - Agent mode session files
    - Automatic migration for existing users from flat structure
+8. **System Folder Protection**: Always exclude system folders from file operations:
+   - The plugin state folder (`settings.historyFolder`)
+   - The `.obsidian` configuration folder
+   - Use exclusion checks in all vault operation tools
 
 ### Testing Focus
 
@@ -116,3 +127,15 @@ This keeps technical planning centralized and accessible for all contributors.
 ## Core Guidelines
 
 - Always use native Obsidian API calls when possible. Documentation here: https://docs.obsidian.md/Home
+- When building UI components, ensure proper CSS containment to prevent overflow issues
+- Use Obsidian's theme CSS variables for consistent styling
+- Test with different Obsidian themes (light/dark) to ensure compatibility
+
+## UI/UX Best Practices
+
+1. **Modal Sizing**: Use `:has()` selector to target parent containers for proper width constraints
+2. **Text Overflow**: Always handle long text with `text-overflow: ellipsis` and proper flex constraints
+3. **Message Formatting**: Convert single newlines to double newlines for proper Markdown rendering
+4. **Collapsible UI**: Use compact views by default with expandable details for complex information
+5. **Animations**: Add subtle transitions and animations for professional feel
+6. **Icon Usage**: Use Obsidian's built-in Lucide icons via `setIcon()` for consistency
