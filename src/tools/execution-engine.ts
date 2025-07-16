@@ -22,7 +22,8 @@ export class ToolExecutionEngine {
 	 */
 	async executeTool(
 		toolCall: ToolCall, 
-		context: ToolExecutionContext
+		context: ToolExecutionContext,
+		agentView?: any // AgentView type to avoid circular dependency
 	): Promise<ToolResult> {
 		const tool = this.registry.getTool(toolCall.name);
 		
@@ -55,12 +56,21 @@ export class ToolExecutionEngine {
 		const requiresConfirmation = this.registry.requiresConfirmation(toolCall.name, context);
 		
 		if (requiresConfirmation) {
-			const confirmed = await this.requestUserConfirmation(tool, toolCall.arguments);
-			if (!confirmed) {
-				return {
-					success: false,
-					error: 'User declined tool execution'
-				};
+			// Check if this tool is allowed without confirmation for this session
+			const isAllowedWithoutConfirmation = agentView?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
+			
+			if (!isAllowedWithoutConfirmation) {
+				const result = await this.requestUserConfirmation(tool, toolCall.arguments);
+				if (!result.confirmed) {
+					return {
+						success: false,
+						error: 'User declined tool execution'
+					};
+				}
+				// If user allowed this action without future confirmation
+				if (result.allowWithoutConfirmation && agentView) {
+					agentView.allowToolWithoutConfirmation(toolCall.name);
+				}
 			}
 		}
 
@@ -111,12 +121,13 @@ export class ToolExecutionEngine {
 	 */
 	async executeToolCalls(
 		toolCalls: ToolCall[], 
-		context: ToolExecutionContext
+		context: ToolExecutionContext,
+		agentView?: any // AgentView type to avoid circular dependency
 	): Promise<ToolResult[]> {
 		const results: ToolResult[] = [];
 		
 		for (const toolCall of toolCalls) {
-			const result = await this.executeTool(toolCall, context);
+			const result = await this.executeTool(toolCall, context, agentView);
 			results.push(result);
 			
 			// Stop execution chain if a tool fails (unless configured otherwise)
@@ -134,14 +145,14 @@ export class ToolExecutionEngine {
 	private async requestUserConfirmation(
 		tool: Tool, 
 		parameters: any
-	): Promise<boolean> {
+	): Promise<{ confirmed: boolean; allowWithoutConfirmation?: boolean }> {
 		return new Promise((resolve) => {
 			const modal = new ToolConfirmationModal(
 				this.plugin.app,
 				tool,
 				parameters,
-				(confirmed) => {
-					resolve(confirmed);
+				(confirmed, allowWithoutConfirmation) => {
+					resolve({ confirmed, allowWithoutConfirmation: allowWithoutConfirmation || false });
 				}
 			);
 			modal.open();

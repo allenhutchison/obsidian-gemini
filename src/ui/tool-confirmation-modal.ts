@@ -5,9 +5,9 @@ import { ToolCategory } from '../types/agent';
 export class ToolConfirmationModal extends Modal {
 	private tool: Tool;
 	private parameters: any;
-	private onConfirm: (confirmed: boolean) => void;
+	private onConfirm: (confirmed: boolean, allowWithoutConfirmation?: boolean) => void;
 
-	constructor(app: App, tool: Tool, parameters: any, onConfirm: (confirmed: boolean) => void) {
+	constructor(app: App, tool: Tool, parameters: any, onConfirm: (confirmed: boolean, allowWithoutConfirmation?: boolean) => void) {
 		super(app);
 		this.tool = tool;
 		this.parameters = parameters;
@@ -97,6 +97,18 @@ export class ToolConfirmationModal extends Modal {
 		}
 
 
+		// Allow without confirmation checkbox
+		const allowContainer = contentEl.createDiv({ cls: 'gemini-tool-allow-container' });
+		const allowLabel = allowContainer.createEl('label', { cls: 'gemini-tool-allow-label' });
+		const allowCheckbox = allowLabel.createEl('input', { 
+			type: 'checkbox',
+			cls: 'gemini-tool-allow-checkbox'
+		});
+		allowLabel.createSpan({ 
+			text: 'Allow this action in the future without confirmation (this session only)',
+			cls: 'gemini-tool-allow-text'
+		});
+
 		// Buttons
 		const buttonContainer = contentEl.createDiv({ cls: 'gemini-tool-buttons' });
 		
@@ -117,18 +129,18 @@ export class ToolConfirmationModal extends Modal {
 		// Event listeners
 		cancelBtn.addEventListener('click', () => {
 			this.close();
-			this.onConfirm(false);
+			this.onConfirm(false, false);
 		});
 
 		confirmBtn.addEventListener('click', () => {
 			this.close();
-			this.onConfirm(true);
+			this.onConfirm(true, allowCheckbox.checked);
 		});
 
 		// ESC key to cancel
 		this.scope.register([], 'Escape', () => {
 			this.close();
-			this.onConfirm(false);
+			this.onConfirm(false, false);
 		});
 	}
 

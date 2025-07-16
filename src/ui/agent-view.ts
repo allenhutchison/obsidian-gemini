@@ -21,6 +21,7 @@ export class AgentView extends ItemView {
 	private sessionHeader: HTMLElement;
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private mentionedFiles: TFile[] = [];
+	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -341,6 +342,7 @@ export class AgentView extends ItemView {
 			this.currentSession = null;
 			this.chatContainer.empty();
 			this.mentionedFiles = []; // Clear any mentioned files from previous session
+			this.allowedWithoutConfirmation.clear(); // Clear session-level permissions
 			
 			// Clear input if it has content
 			if (this.userInput) {
@@ -923,6 +925,7 @@ These files are included in the context below. When the user asks you to write d
 	private async loadSession(session: ChatSession) {
 		try {
 			this.currentSession = session;
+			this.allowedWithoutConfirmation.clear(); // Clear session-level permissions when loading from history
 			
 			// Clear chat and reload history
 			this.chatContainer.empty();
@@ -1101,7 +1104,7 @@ User: ${history[0].message}`;
 				await this.showToolExecution(toolCall.name, toolCall.arguments, toolExecutionId);
 				
 				// Execute the tool
-				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context);
+				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context, this);
 				
 				// Show result in UI
 				await this.showToolResult(toolCall.name, result, toolExecutionId);
@@ -1590,5 +1593,19 @@ User: ${history[0].message}`;
 		const i = Math.floor(Math.log(bytes) / Math.log(k));
 		
 		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+	}
+
+	/**
+	 * Check if a tool is allowed without confirmation for this session
+	 */
+	isToolAllowedWithoutConfirmation(toolName: string): boolean {
+		return this.allowedWithoutConfirmation.has(toolName);
+	}
+
+	/**
+	 * Add a tool to the allowed list for this session
+	 */
+	allowToolWithoutConfirmation(toolName: string) {
+		this.allowedWithoutConfirmation.add(toolName);
 	}
 }

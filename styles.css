@@ -819,12 +819,41 @@ If your plugin does not need CSS, delete this file.
 }
 
 
+/* Allow without confirmation */
+.gemini-tool-allow-container {
+	margin-top: 20px;
+	padding: 16px;
+	background: var(--background-secondary);
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-tool-allow-label {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.gemini-tool-allow-checkbox {
+	cursor: pointer;
+	width: 16px;
+	height: 16px;
+}
+
+.gemini-tool-allow-text {
+	font-size: 13px;
+	color: var(--text-muted);
+	flex: 1;
+}
+
 /* Buttons */
 .gemini-tool-buttons {
 	display: flex;
 	gap: 12px;
 	justify-content: flex-end;
-	margin-top: 24px;
+	margin-top: 16px;
 	padding-top: 20px;
 	border-top: 1px solid var(--background-modifier-border);
 }
