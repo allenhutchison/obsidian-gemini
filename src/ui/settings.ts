@@ -525,6 +525,50 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				// Show current status
 				this.updateDiscoveryStatus(statusSetting);
 			}
+
+			// Tool Loop Detection Settings
+			new Setting(containerEl).setName('Tool Loop Detection').setHeading();
+
+			new Setting(containerEl)
+				.setName('Enable loop detection')
+				.setDesc('Prevent the AI from repeatedly calling the same tool with identical parameters')
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.loopDetectionEnabled).onChange(async (value) => {
+						this.plugin.settings.loopDetectionEnabled = value;
+						await this.plugin.saveSettings();
+						this.display(); // Refresh to show/hide dependent settings
+					})
+				);
+
+			if (this.plugin.settings.loopDetectionEnabled) {
+				new Setting(containerEl)
+					.setName('Loop threshold')
+					.setDesc('Number of identical tool calls before considering it a loop (default: 3)')
+					.addSlider((slider) =>
+						slider
+							.setLimits(2, 10, 1)
+							.setValue(this.plugin.settings.loopDetectionThreshold)
+							.setDynamicTooltip()
+							.onChange(async (value) => {
+								this.plugin.settings.loopDetectionThreshold = value;
+								await this.plugin.saveSettings();
+							})
+					);
+
+				new Setting(containerEl)
+					.setName('Time window (seconds)')
+					.setDesc('Time window to check for repeated calls (default: 30 seconds)')
+					.addSlider((slider) =>
+						slider
+							.setLimits(10, 120, 5)
+							.setValue(this.plugin.settings.loopDetectionTimeWindowSeconds)
+							.setDynamicTooltip()
+							.onChange(async (value) => {
+								this.plugin.settings.loopDetectionTimeWindowSeconds = value;
+								await this.plugin.saveSettings();
+							})
+					);
+			}
 		}
 	}
 }

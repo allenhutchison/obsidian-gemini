@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution } from 
 import { ToolRegistry } from './tool-registry';
 import { ChatSession } from '../types/agent';
 import { ToolConfirmationModal } from '../ui/tool-confirmation-modal';
+import { ToolLoopDetector } from './loop-detector';
 import type ObsidianGemini from '../main';
 
 /**
@@ -11,10 +12,15 @@ export class ToolExecutionEngine {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private registry: ToolRegistry;
 	private executionHistory: Map<string, ToolExecution[]> = new Map();
+	private loopDetector: ToolLoopDetector;
 
 	constructor(plugin: InstanceType<typeof ObsidianGemini>, registry: ToolRegistry) {
 		this.plugin = plugin;
 		this.registry = registry;
+		this.loopDetector = new ToolLoopDetector(
+			plugin.settings.loopDetectionThreshold,
+			plugin.settings.loopDetectionTimeWindowSeconds
+		);
 	}
 
 	/**
@@ -41,6 +47,24 @@ export class ToolExecutionEngine {
 				success: false,
 				error: `Invalid parameters: ${validation.errors?.join(', ')}`
 			};
+		}
+
+		// Check for execution loops if enabled
+		if (this.plugin.settings.loopDetectionEnabled) {
+			// Update loop detector config in case settings changed
+			this.loopDetector.updateConfig(
+				this.plugin.settings.loopDetectionThreshold,
+				this.plugin.settings.loopDetectionTimeWindowSeconds
+			);
+			
+			const loopInfo = this.loopDetector.getLoopInfo(context.session.id, toolCall);
+			if (loopInfo.isLoop) {
+				console.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);
+				return {
+					success: false,
+					error: `Execution loop detected: ${toolCall.name} has been called ${loopInfo.identicalCallCount} times with the same parameters in the last ${loopInfo.timeWindowMs / 1000} seconds. Please try a different approach.`
+				};
+			}
 		}
 
 		// Check if tool is enabled for current session
@@ -79,6 +103,9 @@ export class ToolExecutionEngine {
 		const executionNotice = { hide: () => {} }; // Dummy object for compatibility
 
 		try {
+			// Record the execution attempt
+			this.loopDetector.recordExecution(context.session.id, toolCall);
+			
 			// Execute the tool
 			const result = await tool.execute(toolCall.arguments, context);
 
@@ -180,6 +207,7 @@ export class ToolExecutionEngine {
 	 */
 	clearExecutionHistory(sessionId: string) {
 		this.executionHistory.delete(sessionId);
+		this.loopDetector.clearSession(sessionId);
 	}
 
 	/**

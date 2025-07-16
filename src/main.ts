@@ -51,6 +51,10 @@ export interface ObsidianGeminiSettings {
 	temperature: number;
 	topP: number;
 	stopOnToolError: boolean;
+	// Tool loop detection settings
+	loopDetectionEnabled: boolean;
+	loopDetectionThreshold: number;
+	loopDetectionTimeWindowSeconds: number;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -82,6 +86,10 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	temperature: 0.7,
 	topP: 1,
 	stopOnToolError: true,
+	// Tool loop detection settings
+	loopDetectionEnabled: true,
+	loopDetectionThreshold: 3,
+	loopDetectionTimeWindowSeconds: 30,
 };
 
 export default class ObsidianGemini extends Plugin {
