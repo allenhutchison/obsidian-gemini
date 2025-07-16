@@ -1413,6 +1413,60 @@ If your plugin does not need CSS, delete this file.
 	opacity: 1;
 }
 
+/* Folder Chips */
+.gemini-agent-folder-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	background-color: var(--background-secondary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 16px;
+	margin: 0 2px;
+	font-size: 13px;
+	vertical-align: middle;
+	user-select: none;
+	max-width: 250px;
+	animation: chipSlideIn 0.2s ease-out;
+}
+
+.gemini-agent-folder-chip-icon {
+	width: 14px;
+	height: 14px;
+	color: var(--text-accent);
+	flex-shrink: 0;
+}
+
+.gemini-agent-folder-chip-icon svg {
+	width: 100%;
+	height: 100%;
+}
+
+.gemini-agent-folder-chip-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--text-normal);
+	font-weight: 500;
+}
+
+.gemini-agent-folder-chip-remove {
+	margin-left: 4px;
+	cursor: pointer;
+	color: var(--text-muted);
+	font-size: 16px;
+	line-height: 1;
+	padding: 0 2px;
+	border-radius: 50%;
+	transition: all 0.15s ease;
+	opacity: 0.7;
+}
+
+.gemini-agent-folder-chip-remove:hover {
+	opacity: 1;
+	color: var(--text-error);
+}
+
 .gemini-agent-input::placeholder {
 	color: var(--text-faint);
 }
@@ -2130,4 +2184,94 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-normal);
 	transform: translateY(-1px);
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Google Search Citations Styling */
+
+.gemini-agent-tool-search-answer {
+	margin-bottom: 16px;
+}
+
+.gemini-agent-tool-search-answer h5 {
+	margin: 0 0 8px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gemini-agent-tool-search-answer p {
+	margin: 0;
+	line-height: 1.6;
+}
+
+/* Inline citation links in answer text */
+.gemini-agent-tool-search-answer a {
+	color: var(--link-color);
+	text-decoration: none;
+	font-size: 12px;
+	font-weight: 500;
+	vertical-align: super;
+}
+
+.gemini-agent-tool-search-answer a:hover {
+	text-decoration: underline;
+}
+
+.gemini-agent-tool-citations {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-tool-citations h5 {
+	margin: 0 0 12px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gemini-agent-tool-citations-list {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+}
+
+.gemini-agent-tool-citations-list li {
+	margin-bottom: 12px;
+	padding-left: 20px;
+	position: relative;
+}
+
+.gemini-agent-tool-citations-list li::before {
+	content: '\u2022';
+	position: absolute;
+	left: 4px;
+	color: var(--text-faint);
+}
+
+.gemini-agent-tool-citation-link {
+	color: var(--link-color);
+	text-decoration: none;
+	font-weight: 500;
+	font-size: 14px;
+	display: inline-block;
+	margin-bottom: 4px;
+}
+
+.gemini-agent-tool-citation-link:hover {
+	text-decoration: underline;
+	color: var(--link-color-hover);
+}
+
+.gemini-agent-tool-citation-snippet {
+	margin: 0;
+	font-size: 12px;
+	color: var(--text-muted);
+	line-height: 1.5;
+	padding-left: 16px;
+	border-left: 2px solid var(--background-modifier-border);
 }

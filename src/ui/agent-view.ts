@@ -5,6 +5,7 @@ import type ObsidianGemini from '../main';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
+import { TFolder, TAbstractFile } from 'obsidian';
 import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
@@ -576,11 +577,62 @@ export class AgentView extends ItemView {
 	private async showFileMention() {
 		const modal = new FileMentionModal(
 			this.app,
-			(file: TFile) => {
-				this.insertFileChip(file);
+			(item: TAbstractFile) => {
+				if (item instanceof TFolder) {
+					this.insertFolderChip(item);
+				} else if (item instanceof TFile) {
+					this.insertFileChip(item);
+				}
 			}
 		);
 		modal.open();
+	}
+	
+	private insertFolderChip(folder: TFolder) {
+		// Get all markdown files in the folder recursively
+		const files = this.getFilesFromFolder(folder);
+		
+		// Add files to mentioned files list
+		for (const file of files) {
+			if (!this.mentionedFiles.includes(file)) {
+				this.mentionedFiles.push(file);
+			}
+			
+			// Also add to session context files if not already there
+			if (this.currentSession && !this.currentSession.context.contextFiles.includes(file)) {
+				this.currentSession.context.contextFiles.push(file);
+			}
+		}
+		
+		// Update UI
+		if (this.currentSession) {
+			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
+			this.updateSessionHeader();
+			this.updateSessionMetadata();
+		}
+		
+		// Create folder chip element
+		const chip = this.createFolderChip(folder, files.length);
+		
+		// Insert at current cursor position
+		this.insertChipAtCursor(chip);
+	}
+	
+	private getFilesFromFolder(folder: TFolder): TFile[] {
+		const files: TFile[] = [];
+		
+		const collectFiles = (f: TFolder) => {
+			for (const child of f.children) {
+				if (child instanceof TFile && child.extension === 'md') {
+					files.push(child);
+				} else if (child instanceof TFolder) {
+					collectFiles(child);
+				}
+			}
+		};
+		
+		collectFiles(folder);
+		return files;
 	}
 	
 	private insertFileChip(file: TFile) {
@@ -602,6 +654,12 @@ export class AgentView extends ItemView {
 		const chip = this.createFileChip(file);
 		
 		// Insert at current cursor position
+		this.insertChipAtCursor(chip);
+	}
+	
+	private insertChipAtCursor(chip: HTMLElement) {
+		
+		// Insert at current cursor position
 		const selection = window.getSelection();
 		if (selection && selection.rangeCount > 0) {
 			const range = selection.getRangeAt(0);
@@ -617,8 +675,8 @@ export class AgentView extends ItemView {
 			this.userInput.appendChild(chip);
 		}
 		
-		// Add a space after the chip
-		const space = document.createTextNode(' ');
+		// Add a non-breaking space after the chip to ensure it's preserved
+		const space = document.createTextNode('\u00A0'); // Non-breaking space
 		chip.after(space);
 		
 		// Move cursor after the space
@@ -680,13 +738,65 @@ export class AgentView extends ItemView {
 		return chip;
 	}
 	
+	private createFolderChip(folder: TFolder, fileCount: number): HTMLElement {
+		const chip = document.createElement('span');
+		chip.className = 'gemini-agent-folder-chip';
+		chip.contentEditable = 'false';
+		chip.setAttribute('data-folder-path', folder.path);
+		chip.setAttribute('data-file-count', fileCount.toString());
+		
+		// Folder icon
+		const icon = chip.createSpan({ cls: 'gemini-agent-folder-chip-icon' });
+		setIcon(icon, 'folder');
+		
+		// Folder name with file count
+		chip.createSpan({ 
+			text: `${folder.name}/ (${fileCount} files)`,
+			cls: 'gemini-agent-folder-chip-name'
+		});
+		
+		// Remove button
+		const removeBtn = chip.createSpan({ 
+			text: '×',
+			cls: 'gemini-agent-folder-chip-remove'
+		});
+		
+		removeBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			chip.remove();
+			// Remove all files from this folder from mentioned files
+			const folderFiles = this.getFilesFromFolder(folder);
+			for (const file of folderFiles) {
+				const index = this.mentionedFiles.indexOf(file);
+				if (index > -1) {
+					this.mentionedFiles.splice(index, 1);
+				}
+				// Also remove from session context
+				if (this.currentSession) {
+					const contextIndex = this.currentSession.context.contextFiles.indexOf(file);
+					if (contextIndex > -1) {
+						this.currentSession.context.contextFiles.splice(contextIndex, 1);
+					}
+				}
+			}
+			// Update UI
+			if (this.currentSession) {
+				this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
+				this.updateSessionHeader();
+				this.updateSessionMetadata();
+			}
+		});
+		
+		return chip;
+	}
+	
 	private extractMessageContent(): { text: string; files: TFile[]; formattedMessage: string } {
 		// Clone the input to process
 		const clone = this.userInput.cloneNode(true) as HTMLElement;
 		
-		// Replace file chips with markdown links in the clone
-		const chips = clone.querySelectorAll('.gemini-agent-file-chip');
-		chips.forEach((chip: Element) => {
+		// Replace file and folder chips with markdown links in the clone
+		const fileChips = clone.querySelectorAll('.gemini-agent-file-chip');
+		fileChips.forEach((chip: Element) => {
 			const filePath = chip.getAttribute('data-file-path');
 			if (filePath) {
 				const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -698,19 +808,43 @@ export class AgentView extends ItemView {
 			}
 		});
 		
+		const folderChips = clone.querySelectorAll('.gemini-agent-folder-chip');
+		folderChips.forEach((chip: Element) => {
+			const folderPath = chip.getAttribute('data-folder-path');
+			const fileCount = chip.getAttribute('data-file-count');
+			if (folderPath) {
+				// Create text representation of folder
+				const text = document.createTextNode(`📁 ${folderPath}/ (${fileCount} files)`);
+				chip.replaceWith(text);
+			}
+		});
+		
 		// Get the formatted message with markdown links
 		const formattedMessage = clone.textContent?.trim() || '';
 		
-		// Now replace chips with file names to get plain text
+		// Now replace chips with file/folder names to get plain text
 		const plainClone = this.userInput.cloneNode(true) as HTMLElement;
-		const plainChips = plainClone.querySelectorAll('.gemini-agent-file-chip');
-		plainChips.forEach((chip: Element) => {
+		const plainFileChips = plainClone.querySelectorAll('.gemini-agent-file-chip');
+		plainFileChips.forEach((chip: Element) => {
 			const filePath = chip.getAttribute('data-file-path');
 			if (filePath) {
 				const file = this.app.vault.getAbstractFileByPath(filePath);
 				if (file instanceof TFile) {
 					// Replace chip with plain file name
 					const textNode = document.createTextNode(file.basename);
+					chip.replaceWith(textNode);
+				}
+			}
+		});
+		
+		const plainFolderChips = plainClone.querySelectorAll('.gemini-agent-folder-chip');
+		plainFolderChips.forEach((chip: Element) => {
+			const folderPath = chip.getAttribute('data-folder-path');
+			if (folderPath) {
+				const folder = this.app.vault.getAbstractFileByPath(folderPath);
+				if (folder instanceof TFolder) {
+					// Replace chip with folder name
+					const textNode = document.createTextNode(folder.name);
 					chip.replaceWith(textNode);
 				}
 			}
@@ -1157,7 +1291,7 @@ User: ${history[0].message}`;
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 			
 			const followUpRequest: ExtendedModelRequest = {
-				userMessage: "Based on the tool execution results above, please provide a response to the user's request.",
+				userMessage: "Based on the tool execution results above, please provide a response to the user's request. If the tool results include citations from Google Search, make sure to incorporate them into your response using inline citation numbers and include a Sources section.",
 				conversationHistory: updatedHistory,
 				model: this.plugin.settings.chatModelName,
 				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Continue with tool results" }),
@@ -1172,7 +1306,7 @@ User: ${history[0].message}`;
 				// Recursively handle additional tool calls
 				await this.handleToolCalls(
 					followUpResponse.toolCalls, 
-					"Based on the tool execution results above, please provide a response to the user's request.", 
+					"Based on the tool execution results above, please provide a response to the user's request. If the tool results include citations from Google Search, make sure to incorporate them into your response using inline citation numbers and include a Sources section.", 
 					updatedHistory, 
 					{
 						role: 'system',
@@ -1249,7 +1383,28 @@ User: ${history[0].message}`;
 			if (result.result.success) {
 				formatted += `✅ Success\n`;
 				if (result.result.data) {
-					formatted += `\`\`\`json\n${JSON.stringify(result.result.data, null, 2)}\n\`\`\`\n`;
+					// Special handling for google_search results
+					if (result.toolName === 'google_search' && result.result.data.answer && result.result.data.citations) {
+						formatted += `**Search Query:** ${result.result.data.query}\n\n`;
+						formatted += `**Answer with citations:**\n${result.result.data.answer}\n\n`;
+						
+						if (result.result.data.citations.length > 0) {
+							formatted += `**Sources:**\n`;
+							result.result.data.citations.forEach((citation: any, index: number) => {
+								formatted += `${index + 1}. [${citation.title || citation.url}](${citation.url})`;
+								if (citation.snippet) {
+									formatted += ` - ${citation.snippet}`;
+								}
+								formatted += '\n';
+							});
+							formatted += '\n';
+						}
+						
+						formatted += `**IMPORTANT:** Please incorporate these citations into your response to the user. Use the inline citation numbers [1], [2], etc. when referencing information from these sources, and include a "Sources" section at the end of your response with the full citation links.\n`;
+					} else {
+						// Default JSON formatting for other tools
+						formatted += `\`\`\`json\n${JSON.stringify(result.result.data, null, 2)}\n\`\`\`\n`;
+					}
 				}
 			} else {
 				formatted += `❌ Failed\n`;
@@ -1298,8 +1453,12 @@ User: ${history[0].message}`;
 		};
 		setIcon(icon, toolIcons[toolName] || 'wrench');
 		
+		// Get display name for tool
+		const tool = this.plugin.toolRegistry.getTool(toolName);
+		const displayName = tool?.displayName || toolName;
+		
 		header.createSpan({ 
-			text: `Executing: ${toolName}`,
+			text: `Executing: ${displayName}`,
 			cls: 'gemini-agent-tool-title'
 		});
 		
@@ -1470,8 +1629,70 @@ User: ${history[0].message}`;
 						}
 					}
 				} else if (typeof result.data === 'object') {
+					// Debug logging
+					console.log('Tool result is object for:', toolName);
+					console.log('Result data keys:', Object.keys(result.data));
+					
+					// Special handling for google_search results with citations
+					if (result.data.answer && result.data.citations && toolName === 'google_search') {
+						console.log('Handling google_search result with citations');
+						// Display the answer
+						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
+						answerDiv.createEl('h5', { text: 'Answer:' });
+						
+						// Render the answer with markdown links
+						const answerPara = answerDiv.createEl('p');
+						// Parse markdown links in the answer
+						const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+						let lastIndex = 0;
+						let match;
+						
+						while ((match = linkRegex.exec(result.data.answer)) !== null) {
+							// Add text before the link
+							if (match.index > lastIndex) {
+								answerPara.appendText(result.data.answer.substring(lastIndex, match.index));
+							}
+							
+							// Add the link
+							const link = answerPara.createEl('a', {
+								text: match[1],
+								href: match[2]
+							});
+							link.setAttribute('target', '_blank');
+							
+							lastIndex = linkRegex.lastIndex;
+						}
+						
+						// Add any remaining text
+						if (lastIndex < result.data.answer.length) {
+							answerPara.appendText(result.data.answer.substring(lastIndex));
+						}
+						
+						// Display citations if available
+						if (result.data.citations.length > 0) {
+							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
+							citationsDiv.createEl('h5', { text: 'Sources:' });
+							
+							const citationsList = citationsDiv.createEl('ul', { cls: 'gemini-agent-tool-citations-list' });
+							for (const citation of result.data.citations) {
+								const citationItem = citationsList.createEl('li');
+								const link = citationItem.createEl('a', {
+									text: citation.title || citation.url,
+									href: citation.url,
+									cls: 'gemini-agent-tool-citation-link'
+								});
+								link.setAttribute('target', '_blank');
+								
+								if (citation.snippet) {
+									citationItem.createEl('p', {
+										text: citation.snippet,
+										cls: 'gemini-agent-tool-citation-snippet'
+									});
+								}
+							}
+						}
 					// Special handling for read_file results
-					if (result.data.content && result.data.path) {
+					} else if (result.data.content && result.data.path) {
 						// This is a file read result
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
 						fileInfo.createEl('strong', { text: 'File: ' });

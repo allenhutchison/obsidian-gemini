@@ -26,6 +26,7 @@ function shouldExcludePath(path: string, plugin: InstanceType<typeof ObsidianGem
  */
 export class ReadFileTool implements Tool {
 	name = 'read_file';
+	displayName = 'Read File';
 	category = ToolCategory.READ_ONLY;
 	description = 'Read the contents of a file in the vault';
 	
@@ -96,6 +97,7 @@ export class ReadFileTool implements Tool {
  */
 export class WriteFileTool implements Tool {
 	name = 'write_file';
+	displayName = 'Write File';
 	category = ToolCategory.VAULT_OPERATIONS;
 	description = 'Write content to a file in the vault (creates new file or overwrites existing)';
 	requiresConfirmation = true;
@@ -189,6 +191,7 @@ export class WriteFileTool implements Tool {
  */
 export class ListFilesTool implements Tool {
 	name = 'list_files';
+	displayName = 'List Files';
 	category = ToolCategory.READ_ONLY;
 	description = 'List files and folders in a directory';
 	
@@ -272,6 +275,7 @@ export class ListFilesTool implements Tool {
  */
 export class CreateFolderTool implements Tool {
 	name = 'create_folder';
+	displayName = 'Create Folder';
 	category = ToolCategory.VAULT_OPERATIONS;
 	description = 'Create a new folder in the vault';
 	requiresConfirmation = true;
@@ -338,6 +342,7 @@ export class CreateFolderTool implements Tool {
  */
 export class DeleteFileTool implements Tool {
 	name = 'delete_file';
+	displayName = 'Delete File';
 	category = ToolCategory.VAULT_OPERATIONS;
 	description = 'Delete a file or folder from the vault';
 	requiresConfirmation = true;
@@ -406,6 +411,7 @@ export class DeleteFileTool implements Tool {
  */
 export class MoveFileTool implements Tool {
 	name = 'move_file';
+	displayName = 'Move/Rename File';
 	category = ToolCategory.VAULT_OPERATIONS;
 	description = 'Move or rename a file in the vault';
 	requiresConfirmation = true;
@@ -512,6 +518,7 @@ export class MoveFileTool implements Tool {
  */
 export class SearchFilesTool implements Tool {
 	name = 'search_files';
+	displayName = 'Search Files';
 	category = ToolCategory.READ_ONLY;
 	description = 'Search for files in the vault by name pattern';
 	

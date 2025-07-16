@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
+import { requestUrl } from 'obsidian';
 
 /**
  * Web fetch tool using Google's URL Context feature
@@ -12,6 +13,7 @@ import { GoogleGenAI } from '@google/genai';
  */
 export class WebFetchTool implements Tool {
 	name = 'web_fetch';
+	displayName = 'Web Fetch';
 	category = ToolCategory.READ_ONLY;
 	description = 'Fetch and analyze content from a URL using AI';
 	
@@ -95,6 +97,25 @@ export class WebFetchTool implements Tool {
 			// Log metadata for debugging
 			if (urlMetadata?.urlMetadata) {
 				console.log('URL Context Metadata:', urlMetadata.urlMetadata);
+				// Log more details about the metadata structure
+				if (urlMetadata.urlMetadata.length > 0) {
+					console.log('First metadata entry:', JSON.stringify(urlMetadata.urlMetadata[0], null, 2));
+				}
+			}
+			
+			// Check if URL retrieval failed - the field is urlRetrievalStatus (camelCase)
+			const urlRetrievalFailed = urlMetadata?.urlMetadata?.some((meta: any) => {
+				const status = meta.urlRetrievalStatus;
+				console.log('Checking URL status:', status);
+				return status === 'URL_RETRIEVAL_STATUS_ERROR' ||
+					   status === 'URL_RETRIEVAL_STATUS_ACCESS_DENIED' ||
+					   status === 'URL_RETRIEVAL_STATUS_NOT_FOUND';
+			});
+			
+			if (urlRetrievalFailed) {
+				console.log('URL retrieval failed, attempting fallback fetch...');
+				// Try fallback fetch
+				return await this.fallbackFetch(params, plugin);
 			}
 			
 			return {
@@ -104,8 +125,8 @@ export class WebFetchTool implements Tool {
 					query: params.query,
 					content: text,
 					urlsRetrieved: urlMetadata?.urlMetadata?.map((meta: any) => ({
-						url: meta.retrieved_url,
-						status: meta.url_retrieval_status
+						url: meta.retrievedUrl,
+						status: meta.urlRetrievalStatus
 					})) || [],
 					fetchedAt: new Date().toISOString()
 				}
@@ -144,9 +165,119 @@ export class WebFetchTool implements Tool {
 				}
 			}
 			
+			// Try fallback fetch for any other errors
+			console.log('Primary web fetch failed, attempting fallback...');
+			try {
+				return await this.fallbackFetch(params, plugin);
+			} catch (fallbackError) {
+				return {
+					success: false,
+					error: `Failed to fetch URL with both methods: ${error instanceof Error ? error.message : 'Unknown error'}`
+				};
+			}
+		}
+	}
+	
+	/**
+	 * Fallback method using direct HTTP fetch
+	 */
+	private async fallbackFetch(params: { url: string; query: string }, plugin: InstanceType<typeof ObsidianGemini>): Promise<ToolResult> {
+		try {
+			// Fetch the URL content directly
+			const response = await requestUrl({
+				url: params.url,
+				method: 'GET',
+				headers: {
+					'User-Agent': 'Mozilla/5.0 (compatible; ObsidianGemini/1.0)'
+				}
+			});
+			
+			if (response.status !== 200) {
+				return {
+					success: false,
+					error: `HTTP ${response.status}: ${response.text || 'Failed to fetch URL'}`
+				};
+			}
+			
+			// Convert HTML to text (basic conversion)
+			let content = response.text;
+			
+			// Remove script and style tags
+			content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+			content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+			
+			// Extract title
+			const titleMatch = content.match(/<title[^>]*>([^<]+)<\/title>/i);
+			const title = titleMatch ? titleMatch[1].trim() : params.url;
+			
+			// Convert common HTML entities
+			content = content.replace(/&nbsp;/g, ' ');
+			content = content.replace(/&amp;/g, '&');
+			content = content.replace(/&lt;/g, '<');
+			content = content.replace(/&gt;/g, '>');
+			content = content.replace(/&quot;/g, '"');
+			content = content.replace(/&#39;/g, "'");
+			
+			// Remove HTML tags but keep text
+			content = content.replace(/<[^>]+>/g, ' ');
+			
+			// Clean up whitespace
+			content = content.replace(/\s+/g, ' ').trim();
+			
+			// Truncate if too long
+			if (content.length > 10000) {
+				content = content.substring(0, 10000) + '\n\n[Content truncated...]';
+			}
+			
+			// Now use Gemini to analyze the content
+			const genAI = new GoogleGenAI({ apiKey: plugin.settings.apiKey });
+			const modelToUse = plugin.settings.chatModelName || 'gemini-2.5-flash';
+			
+			// Create a prompt with the content
+			const prompt = `Based on the following web page content from ${params.url}, ${params.query}\n\nWeb Page Title: ${title}\n\nContent:\n${content}`;
+			
+			const result = await genAI.models.generateContent({
+				model: modelToUse,
+				contents: prompt,
+				config: {
+					temperature: plugin.settings.temperature || 0.7
+				}
+			});
+			
+			// Extract text from response
+			let analysisText = '';
+			if (result.candidates?.[0]?.content?.parts) {
+				for (const part of result.candidates[0].content.parts) {
+					if (part.text) {
+						analysisText += part.text;
+					}
+				}
+			}
+			
+			if (!analysisText) {
+				return {
+					success: false,
+					error: 'No analysis generated from page content'
+				};
+			}
+			
+			return {
+				success: true,
+				data: {
+					url: params.url,
+					query: params.query,
+					content: analysisText,
+					title: title,
+					fallbackMethod: true,
+					fetchedAt: new Date().toISOString()
+				}
+			};
+			
+		} catch (error) {
+			console.error('Fallback fetch error:', error);
 			return {
 				success: false,
-				error: `Failed to fetch URL: ${error instanceof Error ? error.message : 'Unknown error'}`
+				error: `Fallback fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`
 			};
 		}
 	}

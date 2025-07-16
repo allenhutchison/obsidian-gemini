@@ -8,6 +8,7 @@ import { GoogleGenAI } from '@google/genai';
  */
 export class GoogleSearchTool implements Tool {
 	name = 'google_search';
+	displayName = 'Google Search';
 	category = ToolCategory.READ_ONLY;
 	description = 'Search Google for current information from the web';
 	
@@ -74,14 +75,71 @@ export class GoogleSearchTool implements Tool {
 				}
 			}
 
-			// Extract search results metadata if available
+			// Extract search results metadata and citations if available
 			const searchMetadata = result.candidates?.[0]?.groundingMetadata;
+			let citations: Array<{title?: string; url: string; snippet?: string}> = [];
+			let textWithCitations = text;
+			
+			// Debug logging
+			console.log('Search metadata:', searchMetadata);
+			console.log('Has groundingChunks:', !!searchMetadata?.groundingChunks);
+			console.log('Has groundingSupports:', !!searchMetadata?.groundingSupports);
+			
+			// Extract citations from groundingChunks
+			if (searchMetadata?.groundingChunks) {
+				const chunks = searchMetadata.groundingChunks;
+				citations = chunks
+					.filter((chunk: any) => chunk.web?.uri)
+					.map((chunk: any, index: number) => ({
+						url: chunk.web.uri,
+						title: chunk.web.title || chunk.web.uri,
+						snippet: chunk.web.snippet || ''
+					}));
+				
+				// Add inline citations to text if supports are available
+				if (searchMetadata.groundingSupports) {
+					const supports = searchMetadata.groundingSupports;
+					// Sort supports by end_index in descending order
+					const sortedSupports = [...supports].sort(
+						(a: any, b: any) => (b.segment?.endIndex ?? 0) - (a.segment?.endIndex ?? 0)
+					);
+					
+					for (const support of sortedSupports) {
+						const endIndex = support.segment?.endIndex;
+						if (endIndex === undefined || !support.groundingChunkIndices?.length) {
+							continue;
+						}
+						
+						const citationLinks = support.groundingChunkIndices
+							.map((i: number) => {
+								const uri = chunks[i]?.web?.uri;
+								if (uri) {
+									return `[${i + 1}](${uri})`;
+								}
+								return null;
+							})
+							.filter(Boolean);
+						
+						if (citationLinks.length > 0) {
+							const citationString = ` ${citationLinks.join(', ')}`;
+							textWithCitations = textWithCitations.slice(0, endIndex) + citationString + textWithCitations.slice(endIndex);
+						}
+					}
+				}
+			}
+			
+			// Log citations for debugging
+			if (citations.length > 0) {
+				console.log('Google Search citations found:', citations);
+			}
 			
 			return {
 				success: true,
 				data: {
 					query: params.query,
-					answer: text,
+					answer: textWithCitations, // Text with inline citations
+					originalAnswer: text, // Original text without citations
+					citations: citations,
 					searchGrounding: searchMetadata || undefined
 				}
 			};

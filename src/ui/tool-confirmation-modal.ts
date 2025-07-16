@@ -33,7 +33,8 @@ export class ToolConfirmationModal extends Modal {
 		const toolHeader = toolCard.createDiv({ cls: 'gemini-tool-card-header' });
 		
 		const toolName = toolHeader.createDiv({ cls: 'gemini-tool-name-badge' });
-		toolName.createSpan({ text: this.tool.name, cls: 'gemini-tool-name-text' });
+		const displayName = this.tool.displayName || this.tool.name;
+		toolName.createSpan({ text: displayName, cls: 'gemini-tool-name-text' });
 		
 		const toolCategory = toolHeader.createDiv({ cls: 'gemini-tool-category-badge' });
 		toolCategory.textContent = this.getCategoryLabel();

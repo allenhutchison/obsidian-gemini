@@ -41,6 +41,9 @@ export interface Tool {
 	/** Unique identifier for the tool */
 	name: string;
 	
+	/** Human-friendly display name */
+	displayName?: string;
+	
 	/** Category this tool belongs to */
 	category: string;
 	
