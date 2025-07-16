@@ -53,6 +53,9 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
    - Tool registry and execution engine
    - Vault operations tools with permission system
    - Google Search integration (separate from function calling)
+   - Web fetch tool using Google's URL Context API
+   - Session-level permission system for bypassing confirmations
+   - Tool loop detection to prevent infinite execution cycles
 
 ### Model Configuration
 
@@ -68,6 +71,7 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
    - Use `vault.getAbstractFileByPath()` for file operations
    - Use `app.metadataCache` for file metadata access
    - Use `app.fileManager.renameFile()` for renaming files (preserves metadata)
+   - Use `app.workspace.openLinkText()` for clickable file links in views
 2. **File Operations**: Always use Obsidian's normalized paths and metadata cache
 3. **Error Handling**: API calls wrapped with retry logic and exponential backoff
 4. **Prompts**: Handlebars templates in `prompts/` directory, loaded as text files
@@ -83,6 +87,14 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
    - The plugin state folder (`settings.historyFolder`)
    - The `.obsidian` configuration folder
    - Use exclusion checks in all vault operation tools
+9. **Tool Execution Order**: When AI needs to perform multiple operations:
+   - Always prioritize read operations before destructive operations
+   - Sort tool calls to execute reads before writes/deletes
+   - Prevents race conditions where files are deleted before being read
+10. **Loop Detection**: Tool execution includes loop detection to prevent infinite cycles:
+   - Tracks identical tool calls within time windows
+   - Configurable thresholds and time windows
+   - Session-specific tracking with automatic cleanup
 
 ### Testing Focus
 
@@ -130,6 +142,8 @@ This keeps technical planning centralized and accessible for all contributors.
 - When building UI components, ensure proper CSS containment to prevent overflow issues
 - Use Obsidian's theme CSS variables for consistent styling
 - Test with different Obsidian themes (light/dark) to ensure compatibility
+- Handle TypeScript errors properly - ensure all properties are correctly typed
+- Use proper async/await patterns for all asynchronous operations
 
 ## UI/UX Best Practices
 
@@ -139,3 +153,11 @@ This keeps technical planning centralized and accessible for all contributors.
 4. **Collapsible UI**: Use compact views by default with expandable details for complex information
 5. **Animations**: Add subtle transitions and animations for professional feel
 6. **Icon Usage**: Use Obsidian's built-in Lucide icons via `setIcon()` for consistency
+7. **File Chips**: When implementing @ mentions or file references:
+   - Use contenteditable divs with proper event handling
+   - Convert chips to markdown links when saving to history
+   - Position cursor after chip insertion for natural typing flow
+8. **Session State**: Maintain clean session boundaries:
+   - Clear context files when creating new sessions
+   - Reset permissions and state when loading from history
+   - Track session-level settings separately from global settings
