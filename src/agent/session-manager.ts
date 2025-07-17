@@ -141,14 +141,16 @@ export class SessionManager {
 	/**
 	 * Update session model configuration
 	 */
-	async updateSessionModelConfig(sessionId: string, modelConfig: Partial<SessionModelConfig>): Promise<void> {
+	async updateSessionModelConfig(sessionId: string, modelConfig: SessionModelConfig): Promise<void> {
 		const session = this.activeSessions.get(sessionId);
 		if (session) {
-			// Merge the new config with existing
-			session.modelConfig = {
-				...session.modelConfig,
-				...modelConfig
-			};
+			// Replace the entire modelConfig to properly handle deletions
+			// If modelConfig is empty, set to undefined
+			if (Object.keys(modelConfig).length === 0) {
+				session.modelConfig = undefined;
+			} else {
+				session.modelConfig = modelConfig;
+			}
 			session.lastActive = new Date();
 			
 			// Save metadata to history file for agent sessions

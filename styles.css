@@ -2293,6 +2293,40 @@ If your plugin does not need CSS, delete this file.
 	opacity: 1;
 }
 
+/* Prompt Badge - More prominent for custom prompts */
+.gemini-agent-prompt-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-radius: 12px;
+	font-size: var(--font-ui-smaller);
+	font-weight: 500;
+	margin-left: 8px;
+	cursor: help;
+	max-width: 150px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Settings indicator icon for other custom settings */
+.gemini-agent-settings-indicator {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin-left: 8px;
+	cursor: help;
+	color: var(--text-muted);
+}
+
+.gemini-agent-settings-indicator:hover {
+	color: var(--text-normal);
+}
+
 /* Session Settings Modal */
 .modal.session-settings-modal {
 	width: 600px;

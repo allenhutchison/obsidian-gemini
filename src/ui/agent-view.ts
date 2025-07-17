@@ -171,26 +171,50 @@ export class AgentView extends ItemView {
 		
 		// Model config badge (if non-default settings)
 		if (this.currentSession?.modelConfig) {
-			const indicators: string[] = [];
-			if (this.currentSession.modelConfig.model) {
-				indicators.push(this.currentSession.modelConfig.model);
-			}
-			if (this.currentSession.modelConfig.temperature !== undefined) {
-				indicators.push(`T:${this.currentSession.modelConfig.temperature}`);
-			}
-			if (this.currentSession.modelConfig.topP !== undefined) {
-				indicators.push(`P:${this.currentSession.modelConfig.topP}`);
-			}
-			if (this.currentSession.modelConfig.promptTemplate) {
-				indicators.push('Custom Prompt');
-			}
+			const hasCustomSettings = 
+				this.currentSession.modelConfig.model ||
+				this.currentSession.modelConfig.temperature !== undefined ||
+				this.currentSession.modelConfig.topP !== undefined ||
+				this.currentSession.modelConfig.promptTemplate;
 			
-			if (indicators.length > 0) {
-				leftSection.createEl('span', {
-					cls: 'gemini-agent-model-badge',
-					text: indicators.join(' • '),
-					title: 'Session-specific settings active'
-				});
+			if (hasCustomSettings) {
+				// Build detailed tooltip
+				const tooltipParts: string[] = [];
+				
+				if (this.currentSession.modelConfig.model) {
+					tooltipParts.push(`Model: ${this.currentSession.modelConfig.model}`);
+				}
+				if (this.currentSession.modelConfig.temperature !== undefined) {
+					tooltipParts.push(`Temperature: ${this.currentSession.modelConfig.temperature}`);
+				}
+				if (this.currentSession.modelConfig.topP !== undefined) {
+					tooltipParts.push(`Top-P: ${this.currentSession.modelConfig.topP}`);
+				}
+				if (this.currentSession.modelConfig.promptTemplate) {
+					const promptName = this.currentSession.modelConfig.promptTemplate.split('/').pop()?.replace('.md', '') || 'custom';
+					tooltipParts.push(`Prompt: ${promptName}`);
+				}
+				
+				// Show just the prompt template name if present, otherwise show icon
+				if (this.currentSession.modelConfig.promptTemplate) {
+					const promptName = this.currentSession.modelConfig.promptTemplate.split('/').pop()?.replace('.md', '') || 'Custom';
+					leftSection.createEl('span', {
+						cls: 'gemini-agent-prompt-badge',
+						text: promptName,
+						attr: {
+							title: tooltipParts.join('\n')
+						}
+					});
+				} else {
+					// Show settings icon for other custom settings
+					const settingsIndicator = leftSection.createEl('span', {
+						cls: 'gemini-agent-settings-indicator',
+						attr: {
+							title: tooltipParts.join('\n')
+						}
+					});
+					setIcon(settingsIndicator, 'sliders-horizontal');
+				}
 			}
 		}
 		

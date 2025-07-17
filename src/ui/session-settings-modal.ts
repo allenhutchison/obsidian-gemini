@@ -7,6 +7,8 @@ export class SessionSettingsModal extends Modal {
 	private session: ChatSession;
 	private onSave: (config: SessionModelConfig) => Promise<void>;
 	private modelConfig: SessionModelConfig;
+	private tempSlider: SliderComponent | null = null;
+	private topPSlider: SliderComponent | null = null;
 
 	constructor(
 		app: any, 
@@ -32,12 +34,17 @@ export class SessionSettingsModal extends Modal {
 		const models = await this.plugin.getModelManager().getAvailableModels();
 
 		// Model selection
-		new Setting(contentEl)
+		const modelSetting = new Setting(contentEl)
 			.setName('Model')
-			.setDesc('Select the AI model for this session')
+			.setDesc('Select the AI model for this session');
+		
+		let modelDropdown: DropdownComponent;
+		modelSetting
 			.addDropdown((dropdown: DropdownComponent) => {
-				// Add default option
-				dropdown.addOption('', 'Use default');
+				modelDropdown = dropdown;
+				
+				// Add default option with a special value
+				dropdown.addOption('__default__', 'Use default');
 				
 				// Add available models
 				models.forEach((model: any) => {
@@ -45,15 +52,27 @@ export class SessionSettingsModal extends Modal {
 				});
 				
 				// Set current value
-				dropdown.setValue(this.modelConfig.model || '');
+				dropdown.setValue(this.modelConfig.model || '__default__');
 				
 				dropdown.onChange(async (value) => {
-					if (value === '') {
+					if (value === '__default__') {
 						delete this.modelConfig.model;
 					} else {
 						this.modelConfig.model = value;
 					}
+					// Save immediately
+					await this.saveConfig();
 				});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon('reset')
+					.setTooltip('Reset to default')
+					.onClick(async () => {
+						if (modelDropdown) {
+							modelDropdown.setValue('__default__');
+						}
+					});
 			});
 
 		// Temperature slider
@@ -61,6 +80,7 @@ export class SessionSettingsModal extends Modal {
 			.setName('Temperature')
 			.setDesc('Controls randomness (0 = deterministic, 2 = very creative)')
 			.addSlider((slider: SliderComponent) => {
+				this.tempSlider = slider;
 				const defaultTemp = this.plugin.settings.temperature;
 				const currentTemp = this.modelConfig.temperature ?? defaultTemp;
 				
@@ -75,6 +95,8 @@ export class SessionSettingsModal extends Modal {
 						} else {
 							delete this.modelConfig.temperature;
 						}
+						// Save immediately
+						await this.saveConfig();
 					});
 				
 				// Show current value
@@ -89,14 +111,11 @@ export class SessionSettingsModal extends Modal {
 				button
 					.setIcon('reset')
 					.setTooltip('Reset to default')
-					.onClick(() => {
-						const slider = contentEl.querySelector('.temperature-slider input') as HTMLInputElement;
-						if (slider) {
-							slider.value = this.plugin.settings.temperature.toString();
-							slider.dispatchEvent(new Event('input'));
-							slider.dispatchEvent(new Event('change'));
+					.onClick(async () => {
+						if (this.tempSlider) {
+							// Set to default value - this will trigger onChange
+							this.tempSlider.setValue(this.plugin.settings.temperature);
 						}
-						delete this.modelConfig.temperature;
 					});
 			});
 
@@ -109,6 +128,7 @@ export class SessionSettingsModal extends Modal {
 			.setName('Top-P')
 			.setDesc('Nucleus sampling threshold (0 = only top token, 1 = all tokens)')
 			.addSlider((slider: SliderComponent) => {
+				this.topPSlider = slider;
 				const defaultTopP = this.plugin.settings.topP;
 				const currentTopP = this.modelConfig.topP ?? defaultTopP;
 				
@@ -123,6 +143,8 @@ export class SessionSettingsModal extends Modal {
 						} else {
 							delete this.modelConfig.topP;
 						}
+						// Save immediately
+						await this.saveConfig();
 					});
 				
 				// Show current value
@@ -137,14 +159,11 @@ export class SessionSettingsModal extends Modal {
 				button
 					.setIcon('reset')
 					.setTooltip('Reset to default')
-					.onClick(() => {
-						const slider = contentEl.querySelector('.top-p-slider input') as HTMLInputElement;
-						if (slider) {
-							slider.value = this.plugin.settings.topP.toString();
-							slider.dispatchEvent(new Event('input'));
-							slider.dispatchEvent(new Event('change'));
+					.onClick(async () => {
+						if (this.topPSlider) {
+							// Set to default value - this will trigger onChange
+							this.topPSlider.setValue(this.plugin.settings.topP);
 						}
-						delete this.modelConfig.topP;
 					});
 			});
 
@@ -153,12 +172,17 @@ export class SessionSettingsModal extends Modal {
 		topPValueEl.textContent = (this.modelConfig.topP ?? this.plugin.settings.topP).toFixed(2);
 
 		// Prompt template selection
-		new Setting(contentEl)
+		const promptSetting = new Setting(contentEl)
 			.setName('Prompt Template')
-			.setDesc('Select a custom prompt template for this session')
-			.addDropdown(async (dropdown: DropdownComponent) => {
-				// Add default option
-				dropdown.addOption('', 'Use default prompt');
+			.setDesc('Select a custom prompt template for this session');
+		
+		let promptDropdown: DropdownComponent;
+		promptSetting
+			.addDropdown((dropdown: DropdownComponent) => {
+				promptDropdown = dropdown;
+				
+				// Add default option with special value
+				dropdown.addOption('__default__', 'Use default prompt');
 				
 				// Get prompt files
 				const promptsFolder = `${this.plugin.settings.historyFolder}/Prompts`;
@@ -176,46 +200,48 @@ export class SessionSettingsModal extends Modal {
 				}
 				
 				// Set current value
-				dropdown.setValue(this.modelConfig.promptTemplate || '');
+				dropdown.setValue(this.modelConfig.promptTemplate || '__default__');
 				
 				dropdown.onChange(async (value) => {
-					if (value === '') {
+					if (value === '__default__') {
 						delete this.modelConfig.promptTemplate;
 					} else {
 						this.modelConfig.promptTemplate = value;
 					}
+					// Save immediately
+					await this.saveConfig();
 				});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon('reset')
+					.setTooltip('Reset to default')
+					.onClick(async () => {
+						if (promptDropdown) {
+							promptDropdown.setValue('__default__');
+						}
+					});
 			});
 
 		// Info section
 		contentEl.createDiv({ 
-			text: 'These settings override the global defaults for this session only.',
+			text: 'These settings override the global defaults for this session only. Changes are saved automatically.',
 			cls: 'setting-item-description'
-		});
-
-		// Buttons
-		const buttonContainer = contentEl.createDiv({ cls: 'modal-button-container' });
-		
-		// Cancel button
-		buttonContainer.createEl('button', {
-			text: 'Cancel',
-			cls: 'mod-cancel'
-		}).addEventListener('click', () => {
-			this.close();
-		});
-		
-		// Save button
-		buttonContainer.createEl('button', {
-			text: 'Save',
-			cls: 'mod-cta'
-		}).addEventListener('click', async () => {
-			await this.onSave(this.modelConfig);
-			this.close();
 		});
 	}
 
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
+	}
+	
+	private async saveConfig() {
+		// Create a clean config object with only defined values
+		const cleanConfig: SessionModelConfig = {};
+		if (this.modelConfig.model) cleanConfig.model = this.modelConfig.model;
+		if (this.modelConfig.temperature !== undefined) cleanConfig.temperature = this.modelConfig.temperature;
+		if (this.modelConfig.topP !== undefined) cleanConfig.topP = this.modelConfig.topP;
+		if (this.modelConfig.promptTemplate) cleanConfig.promptTemplate = this.modelConfig.promptTemplate;
+		await this.onSave(cleanConfig);
 	}
 }
