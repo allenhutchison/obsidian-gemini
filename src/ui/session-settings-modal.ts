@@ -70,7 +70,11 @@ export class SessionSettingsModal extends Modal {
 					.setTooltip('Reset to default')
 					.onClick(async () => {
 						if (modelDropdown) {
+							// Update the dropdown value
 							modelDropdown.setValue('__default__');
+							// Trigger the onChange handler by simulating a change event
+							const changeEvent = new Event('change', { bubbles: true });
+							modelDropdown.selectEl.dispatchEvent(changeEvent);
 						}
 					});
 			});
@@ -218,7 +222,11 @@ export class SessionSettingsModal extends Modal {
 					.setTooltip('Reset to default')
 					.onClick(async () => {
 						if (promptDropdown) {
+							// Update the dropdown value
 							promptDropdown.setValue('__default__');
+							// Trigger the onChange handler by simulating a change event
+							const changeEvent = new Event('change', { bubbles: true });
+							promptDropdown.selectEl.dispatchEvent(changeEvent);
 						}
 					});
 			});
@@ -238,10 +246,22 @@ export class SessionSettingsModal extends Modal {
 	private async saveConfig() {
 		// Create a clean config object with only defined values
 		const cleanConfig: SessionModelConfig = {};
-		if (this.modelConfig.model) cleanConfig.model = this.modelConfig.model;
-		if (this.modelConfig.temperature !== undefined) cleanConfig.temperature = this.modelConfig.temperature;
-		if (this.modelConfig.topP !== undefined) cleanConfig.topP = this.modelConfig.topP;
-		if (this.modelConfig.promptTemplate) cleanConfig.promptTemplate = this.modelConfig.promptTemplate;
+		
+		// Check each property - if it exists and is not undefined, include it
+		// The delete operations ensure these properties don't exist when set to default
+		if (this.modelConfig.model !== undefined) {
+			cleanConfig.model = this.modelConfig.model;
+		}
+		if (this.modelConfig.temperature !== undefined) {
+			cleanConfig.temperature = this.modelConfig.temperature;
+		}
+		if (this.modelConfig.topP !== undefined) {
+			cleanConfig.topP = this.modelConfig.topP;
+		}
+		if (this.modelConfig.promptTemplate !== undefined) {
+			cleanConfig.promptTemplate = this.modelConfig.promptTemplate;
+		}
+		
 		await this.onSave(cleanConfig);
 	}
 }

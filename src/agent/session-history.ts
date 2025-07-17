@@ -144,14 +144,33 @@ export class SessionHistory {
 			frontmatter.last_active = session.lastActive.toISOString();
 			if (session.sourceNotePath) {
 				frontmatter.source_note_path = session.sourceNotePath;
+			} else {
+				delete frontmatter.source_note_path;
 			}
 			
-			// Add model config if present
-			if (session.modelConfig) {
-				if (session.modelConfig.model) frontmatter.model = session.modelConfig.model;
-				if (session.modelConfig.temperature !== undefined) frontmatter.temperature = session.modelConfig.temperature;
-				if (session.modelConfig.topP !== undefined) frontmatter.top_p = session.modelConfig.topP;
-				if (session.modelConfig.promptTemplate) frontmatter.prompt_template = session.modelConfig.promptTemplate;
+			// Handle model config - delete properties when not present or set to default
+			if (session.modelConfig && session.modelConfig.model) {
+				frontmatter.model = session.modelConfig.model;
+			} else {
+				delete frontmatter.model;
+			}
+			
+			if (session.modelConfig && session.modelConfig.temperature !== undefined) {
+				frontmatter.temperature = session.modelConfig.temperature;
+			} else {
+				delete frontmatter.temperature;
+			}
+			
+			if (session.modelConfig && session.modelConfig.topP !== undefined) {
+				frontmatter.top_p = session.modelConfig.topP;
+			} else {
+				delete frontmatter.top_p;
+			}
+			
+			if (session.modelConfig && session.modelConfig.promptTemplate) {
+				frontmatter.prompt_template = session.modelConfig.promptTemplate;
+			} else {
+				delete frontmatter.prompt_template;
 			}
 		});
 	}
@@ -301,7 +320,7 @@ export class SessionHistory {
 			return `[[${basename}]]`;
 		});
 
-		const frontmatter = {
+		const frontmatter: any = {
 			session_id: session.id,
 			type: session.type,
 			title: session.title,
@@ -310,15 +329,29 @@ export class SessionHistory {
 			enabled_tools: session.context.enabledTools,
 			require_confirmation: session.context.requireConfirmation,
 			created: session.created.toISOString(),
-			last_active: session.lastActive.toISOString(),
-			...(session.sourceNotePath && { source_note_path: session.sourceNotePath }),
-			...(session.modelConfig && {
-				model: session.modelConfig.model,
-				temperature: session.modelConfig.temperature,
-				top_p: session.modelConfig.topP,
-				prompt_template: session.modelConfig.promptTemplate
-			})
+			last_active: session.lastActive.toISOString()
 		};
+		
+		// Only add optional fields if they have values
+		if (session.sourceNotePath) {
+			frontmatter.source_note_path = session.sourceNotePath;
+		}
+		
+		// Only add model config fields if they have values
+		if (session.modelConfig) {
+			if (session.modelConfig.model) {
+				frontmatter.model = session.modelConfig.model;
+			}
+			if (session.modelConfig.temperature !== undefined) {
+				frontmatter.temperature = session.modelConfig.temperature;
+			}
+			if (session.modelConfig.topP !== undefined) {
+				frontmatter.top_p = session.modelConfig.topP;
+			}
+			if (session.modelConfig.promptTemplate) {
+				frontmatter.prompt_template = session.modelConfig.promptTemplate;
+			}
+		}
 
 		return `---\n${Object.entries(frontmatter)
 			.map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
