@@ -250,51 +250,6 @@
 **Estimated Time:** 3-4 days
 **Dependencies:** Tool system ✅, settings infrastructure ✅
 
-## Phase 6: Enhanced Context System (🧠 Intelligence)
-
-### 6.1 Multi-File Context Processing
-**File:** `src/files/multi-file-context.ts` (new)
-- Extend FileContextTree for agent sessions
-- Handle multiple root files efficiently
-- Context relevance scoring and prioritization
-- Smart context truncation when hitting limits
-
-### 6.2 Context-Aware Tool Execution
-**File:** `src/tools/context-integration.ts` (new)
-- Pass session context to tools automatically
-- Context-based tool suggestions
-- Cross-reference tool results with session files
-- Maintain context coherence across tool calls
-
-**Estimated Time:** 2-3 days
-**Dependencies:** Tool system, session management
-
-## Phase 7: Advanced Agent Features (🚀 Power User)
-
-### 7.1 Multi-Step Workflows
-**File:** `src/agent/workflow-engine.ts` (new)
-- Chain multiple tool calls together
-- Conditional execution based on results
-- Workflow templates and reusable patterns
-- Progress tracking and resumption
-
-### 7.2 Agent Session Templates
-**File:** `src/agent/session-templates.ts` (new)
-- Pre-configured agent sessions for common tasks
-- Template sharing and import/export
-- Dynamic template customization
-- Template marketplace integration
-
-### 7.3 Advanced UI Features
-**File:** `src/ui/agent-dashboard.ts` (new)
-- Full-screen agent workspace interface
-- Session timeline and activity view
-- Tool execution visualization
-- Bulk operations interface
-
-**Estimated Time:** 4-5 days
-**Dependencies:** All previous phases
-
 ## Implementation Strategy
 
 ### Development Order (Recommended)
@@ -303,9 +258,12 @@
 3. ✅ **Vault Tools** - Add immediate value with file operations
 4. ✅ **AI Tool Integration** - Connect AI models to tools automatically
 5. ✅ **Enhanced Tool Features** - Additional tools and UI improvements
-6. 🔄 **Architectural Refactoring** - Unify chat implementations
-7. 🔄 **MCP Integration** - Connect external tools
-8. 🔄 **Advanced Features** - Power user capabilities
+6. 🎯 **Session Configuration** - Per-session model/temperature settings (PRE-MERGE)
+7. 🔄 **Architectural Refactoring** - Unify chat implementations
+8. 🔄 **MCP Integration** - Connect external tools
+9. 🔄 **Enhanced Features** - Streaming, caching, memory
+10. 🔄 **Documentation & Testing** - Quality assurance
+11. 🔄 **Advanced Capabilities** - Power user features
 
 ### Key Principles
 - **Backward Compatibility** - Never break existing note-centric chats
@@ -353,16 +311,18 @@ Phase completion criteria:
 - ✅ **Phase 3** - Basic vault tools work with permission system
 - ✅ **Phase 4** - AI models can automatically call tools during conversation
 - ✅ **Phase 5** - Enhanced tools with citations, web fetch, and research
-- 🎯 **Phase 6** - First external MCP tool integrated successfully
-- 🎯 **Phase 7** - Enhanced features improve user experience
-- 🎯 **Phase 8** - Quality assurance ensures reliability
-- 🎯 **Phase 9** - Power users can build complex workflows
+- 🎯 **Phase 5.5** - Session configuration with model/temperature control
+- 🎯 **Phase 6** - Unified architecture improves maintainability
+- 🎯 **Phase 7** - First external MCP tool integrated successfully
+- 🎯 **Phase 8** - Enhanced features improve user experience
+- 🎯 **Phase 9** - Quality assurance ensures reliability
+- 🎯 **Phase 10** - Power users can build complex workflows
 
 ---
 
 **Current Status:** Phase 5 Complete ✅ - All core agent features implemented  
-**Next Milestone:** Documentation & Architectural Refactoring  
-**Target:** MCP Integration and unified architecture
+**Next Milestone:** Session Configuration (Phase 5.5) - Pre-merge priority  
+**Target:** Merge to main with configurable sessions, then architectural refactoring
 
 ## Recent Progress Summary
 
@@ -406,9 +366,50 @@ Phase completion criteria:
 - **Extensible Framework** - Easy to add new tools and categories
 - **Performance Optimized** - Efficient context management and tool execution
 
-## Phase 5: Architectural Refactoring (🏗️ New Priority)
+## Phase 5.5: Session Configuration (🎛️ Quick Win - Pre-Merge)
 
-### 5.1 Unified Chat Architecture
+### 5.5.1 Model & Prompt Configuration
+**File:** `src/types/agent.ts`
+- Add session configuration options to ChatSession interface
+- temperature: number (0-2)
+- topP: number (0-1)
+- model: string (override default)
+- promptFile: string (custom prompt template)
+
+**File:** `src/ui/agent-view.ts`
+- Add settings panel/modal for session configuration
+- Model selector dropdown
+- Temperature/topP sliders with real-time preview
+- Prompt file picker from available templates
+- Save configuration to session metadata
+
+### 5.5.2 Prompt File Enhancements
+**File:** `src/prompts/prompt-manager.ts`
+- Support temperature/topP in prompt frontmatter
+- Override session defaults with prompt-specific values
+- Example:
+  ```markdown
+  ---
+  temperature: 0.7
+  topP: 0.95
+  model: gemini-2.0-pro
+  ---
+  
+  You are a creative writing assistant...
+  ```
+
+### 5.5.3 UI Integration
+- Show current configuration in session header
+- Quick access to change model/temperature
+- Visual indicators for non-default settings
+- Persist settings with session
+
+**Estimated Time:** 1-2 days
+**Priority:** HIGH - User requested feature, implement before merge
+
+## Phase 6: Architectural Refactoring (🏗️ New Priority)
+
+### 6.1 Unified Chat Architecture
 **Goal:** Refactor note-centric mode to be a specialized agent configuration
 
 **File:** `src/agent/agent-configurations.ts` (new)
@@ -428,7 +429,7 @@ Phase completion criteria:
 - Consistent history and session management
 - Easier feature development
 
-### 5.2 Migration Strategy
+### 6.2 Migration Strategy
 - Deprecate GeminiView gradually
 - Migrate note-centric users transparently
 - Preserve all existing functionality
@@ -437,9 +438,9 @@ Phase completion criteria:
 **Estimated Time:** 3-4 days
 **Dependencies:** Current agent architecture
 
-## Phase 6: MCP Integration (🔌 External Tools)
+## Phase 7: MCP Integration (🔌 External Tools)
 
-### 6.1 MCP Client Implementation
+### 7.1 MCP Client Implementation
 **File:** `src/mcp/mcp-client.ts`
 - MCP protocol client (stdio and HTTP transports)
 - Server discovery and connection management
@@ -452,14 +453,14 @@ Phase completion criteria:
 - Health monitoring and reconnection
 - Server capability enumeration
 
-### 6.2 MCP Tools Integration
+### 7.2 MCP Tools Integration
 **File:** `src/tools/mcp-tool-adapter.ts`
 - Bridge MCP tools to internal tool system
 - Dynamic tool registration from MCP schemas
 - Parameter conversion and validation
 - Error handling and retry logic
 
-### 6.3 MCP Configuration UI
+### 7.3 MCP Configuration UI
 **File:** `src/ui/mcp-settings-tab.ts`
 - MCP server configuration interface
 - Add/remove/test server connections
@@ -469,53 +470,53 @@ Phase completion criteria:
 **Estimated Time:** 4-5 days
 **Dependencies:** Tool system ✅, unified architecture
 
-## Phase 7: Enhanced Features (🚀 Next Level)
+## Phase 8: Enhanced Features (🚀 Next Level)
 
-### 7.1 Streaming with Tool Execution
+### 8.1 Streaming with Tool Execution
 **File:** `src/api/streaming-tools.ts`
 - Stream responses that pause for tool execution
 - Show partial responses during long operations
 - Tool confirmation without breaking stream
 - Progress indicators for long-running tools
 
-### 7.2 Tool Result Caching
+### 8.2 Tool Result Caching
 **File:** `src/tools/tool-cache.ts`
 - Cache read_file results until file changes
 - Cache web_fetch with configurable TTL
 - Cache search results for identical queries
 - Smart cache invalidation
 
-### 7.3 Agent Memory System
+### 8.3 Agent Memory System
 **File:** `src/agent/memory-system.ts`
 - Long-term memory storage (facts, preferences)
 - Short-term working memory
 - Semantic search over past conversations
 - Memory persistence across sessions
 
-### 7.4 Custom Agent Personas
+### 8.4 Custom Agent Personas
 **File:** `src/agent/persona-manager.ts`
 - Define custom agent configurations
 - Specialized tool sets per persona
 - Custom prompts and behaviors
 - Save/load persona templates
 
-### 7.5 Parallel Tool Execution
+### 8.5 Parallel Tool Execution
 **File:** `src/tools/parallel-executor.ts`
 - Detect independent tool calls
 - Execute non-conflicting tools concurrently
 - Aggregate results efficiently
 - Maintain execution order where needed
 
-## Phase 8: Documentation & Testing (📚 Quality)
+## Phase 9: Documentation & Testing (📚 Quality)
 
-### 8.1 Comprehensive Documentation
+### 9.1 Comprehensive Documentation
 - **User Guide** - Complete agent mode manual
 - **Tool Documentation** - Each tool with examples
 - **Developer Guide** - Creating custom tools
 - **MCP Integration Guide** - Connecting external services
 - **Video Tutorials** - Common workflows
 
-### 8.2 Test Infrastructure
+### 9.2 Test Infrastructure
 **File:** `tests/tools/*.test.ts`
 - Unit tests for each tool
 - Integration tests for tool execution
@@ -528,29 +529,29 @@ Phase completion criteria:
 - UI interaction tests
 - Configuration tests
 
-### 8.3 CI/CD Improvements
+### 9.3 CI/CD Improvements
 - Automated testing on PR
 - Performance regression detection
 - Security scanning for tools
 - Documentation generation
 
-## Phase 9: Advanced Capabilities (🧠 Intelligence)
+## Phase 10: Advanced Capabilities (🧠 Intelligence)
 
-### 9.1 Tool Usage Analytics
+### 10.1 Tool Usage Analytics
 **File:** `src/analytics/tool-analytics.ts`
 - Track tool usage patterns
 - API cost estimation
 - Token usage breakdown
 - Performance metrics dashboard
 
-### 9.2 Conversation Branching
+### 10.2 Conversation Branching
 **File:** `src/agent/conversation-tree.ts`
 - Save conversation checkpoints
 - Explore alternative paths
 - Compare different approaches
 - Version control for chats
 
-### 9.3 Tool Marketplace
+### 10.3 Tool Marketplace
 **File:** `src/marketplace/tool-store.ts`
 - Community tool repository
 - Tool package format
@@ -559,38 +560,26 @@ Phase completion criteria:
 
 ## Implementation Roadmap
 
-### Immediate Priorities (Next 2 weeks)
-1. **Documentation** - Document current features thoroughly
-2. **Testing** - Build comprehensive test suite
-3. **Architectural Refactoring** - Unify chat implementations
-4. **MCP Integration** - Connect to external tools
+### Immediate Priorities (Pre-Merge - Next 3-4 days)
+1. **Session Configuration** - Model/temperature settings per session
+2. **README Update** - Basic agent mode documentation
+3. **Critical Testing** - Edge cases and error handling
+4. **Breaking Changes Check** - Ensure backward compatibility
+
+### Short Term (Next 2 weeks)
+5. **Architectural Refactoring** - Unify chat implementations
+6. **Comprehensive Documentation** - Full user and developer guides
+7. **Test Suite** - Unit and integration tests
 
 ### Medium Term (Next month)
-5. **Streaming Support** - Better UX for long operations
-6. **Memory System** - Persistent agent knowledge
-7. **Tool Caching** - Performance optimization
-8. **Custom Personas** - Specialized agents
+8. **MCP Integration** - Connect to external tools
+9. **Streaming Support** - Better UX for long operations
+10. **Memory System** - Persistent agent knowledge
+11. **Tool Caching** - Performance optimization
 
 ### Long Term (Next quarter)
-9. **Parallel Execution** - Advanced performance
-10. **Analytics** - Usage insights
-11. **Branching** - Conversation exploration
-12. **Marketplace** - Community ecosystem
+12. **Parallel Execution** - Advanced performance
+13. **Analytics** - Usage insights
+14. **Branching** - Conversation exploration
+15. **Marketplace** - Community ecosystem
 
-## Success Metrics Update
-
-Phase completion criteria:
-- ✅ **Phase 1-4** - Foundation, sessions, tools, AI integration
-- 🎯 **Phase 5** - Unified architecture improves maintainability
-- 🎯 **Phase 6** - MCP enables external tool ecosystem
-- 🎯 **Phase 7** - Enhanced features improve user experience
-- 🎯 **Phase 8** - Quality assurance ensures reliability
-- 🎯 **Phase 9** - Advanced features for power users
-
----
-
-**Current Status:** Phase 4 Complete ✅ with Enhanced Features  
-**Next Milestone:** Documentation & Architectural Refactoring  
-**Target:** MCP Integration by end of next sprint
-
-The foundation is now solid for the next generation of agent capabilities!

@@ -22,26 +22,26 @@ export class SessionSettingsModal extends Modal {
 		this.modelConfig = { ...session.modelConfig } || {};
 	}
 
-	onOpen() {
+	async onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
 
 		contentEl.createEl('h2', { text: 'Session Settings' });
 
+		// Get available models first
+		const models = await this.plugin.getModelManager().getAvailableModels();
+
 		// Model selection
 		new Setting(contentEl)
 			.setName('Model')
 			.setDesc('Select the AI model for this session')
-			.addDropdown(async (dropdown: DropdownComponent) => {
-				// Get available models from model manager
-				const models = await this.plugin.getModelManager().getAvailableModels();
-				
+			.addDropdown((dropdown: DropdownComponent) => {
 				// Add default option
 				dropdown.addOption('', 'Use default');
 				
 				// Add available models
 				models.forEach((model: any) => {
-					dropdown.addOption(model.name, model.name);
+					dropdown.addOption(model.value, model.label);
 				});
 				
 				// Set current value

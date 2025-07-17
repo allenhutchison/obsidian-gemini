@@ -2312,6 +2312,20 @@ If your plugin does not need CSS, delete this file.
 	min-width: 200px;
 }
 
+/* Fix dropdown styling for session settings modal */
+.session-settings-modal select,
+.session-settings-modal .dropdown select {
+	background-color: var(--background-modifier-form-field);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.session-settings-modal select option,
+.session-settings-modal .dropdown select option {
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+}
+
 .session-settings-modal .slider {
 	flex: 1;
 }
