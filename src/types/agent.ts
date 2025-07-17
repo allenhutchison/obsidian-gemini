@@ -52,6 +52,23 @@ export enum SessionType {
 }
 
 /**
+ * Model configuration for a session
+ */
+export interface SessionModelConfig {
+	/** Model to use (e.g., 'gemini-2.0-flash') */
+	model?: string;
+	
+	/** Temperature setting (0-2) */
+	temperature?: number;
+	
+	/** Top-P setting (0-1) */
+	topP?: number;
+	
+	/** Path to custom prompt template */
+	promptTemplate?: string;
+}
+
+/**
  * A chat session with full context and history
  */
 export interface ChatSession {
@@ -66,6 +83,9 @@ export interface ChatSession {
 	
 	/** Agent context configuration */
 	context: AgentContext;
+	
+	/** Model configuration for this session */
+	modelConfig?: SessionModelConfig;
 	
 	/** When this session was created */
 	created: Date;

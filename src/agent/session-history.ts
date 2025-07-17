@@ -145,6 +145,14 @@ export class SessionHistory {
 			if (session.sourceNotePath) {
 				frontmatter.source_note_path = session.sourceNotePath;
 			}
+			
+			// Add model config if present
+			if (session.modelConfig) {
+				if (session.modelConfig.model) frontmatter.model = session.modelConfig.model;
+				if (session.modelConfig.temperature !== undefined) frontmatter.temperature = session.modelConfig.temperature;
+				if (session.modelConfig.topP !== undefined) frontmatter.top_p = session.modelConfig.topP;
+				if (session.modelConfig.promptTemplate) frontmatter.prompt_template = session.modelConfig.promptTemplate;
+			}
 		});
 	}
 
@@ -303,7 +311,13 @@ export class SessionHistory {
 			require_confirmation: session.context.requireConfirmation,
 			created: session.created.toISOString(),
 			last_active: session.lastActive.toISOString(),
-			...(session.sourceNotePath && { source_note_path: session.sourceNotePath })
+			...(session.sourceNotePath && { source_note_path: session.sourceNotePath }),
+			...(session.modelConfig && {
+				model: session.modelConfig.model,
+				temperature: session.modelConfig.temperature,
+				top_p: session.modelConfig.topP,
+				prompt_template: session.modelConfig.promptTemplate
+			})
 		};
 
 		return `---\n${Object.entries(frontmatter)

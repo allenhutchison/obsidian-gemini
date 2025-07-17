@@ -5,10 +5,12 @@ import type ObsidianGemini from '../main';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
+import { SessionSettingsModal } from './session-settings-modal';
 import { TFolder, TAbstractFile } from 'obsidian';
 import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
+import * as Handlebars from 'handlebars';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -167,8 +169,41 @@ export class AgentView extends ItemView {
 			});
 		}
 		
+		// Model config badge (if non-default settings)
+		if (this.currentSession?.modelConfig) {
+			const indicators: string[] = [];
+			if (this.currentSession.modelConfig.model) {
+				indicators.push(this.currentSession.modelConfig.model);
+			}
+			if (this.currentSession.modelConfig.temperature !== undefined) {
+				indicators.push(`T:${this.currentSession.modelConfig.temperature}`);
+			}
+			if (this.currentSession.modelConfig.topP !== undefined) {
+				indicators.push(`P:${this.currentSession.modelConfig.topP}`);
+			}
+			if (this.currentSession.modelConfig.promptTemplate) {
+				indicators.push('Custom Prompt');
+			}
+			
+			if (indicators.length > 0) {
+				leftSection.createEl('span', {
+					cls: 'gemini-agent-model-badge',
+					text: indicators.join(' • '),
+					title: 'Session-specific settings active'
+				});
+			}
+		}
+		
 		// Right section: Action buttons
 		const rightSection = this.sessionHeader.createDiv({ cls: 'gemini-agent-header-right' });
+		
+		// Settings button
+		const settingsBtn = rightSection.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-icon',
+			title: 'Session Settings'
+		});
+		setIcon(settingsBtn, 'settings');
+		settingsBtn.addEventListener('click', () => this.showSessionSettings());
 		
 		const newSessionBtn = rightSection.createEl('button', { 
 			cls: 'gemini-agent-btn gemini-agent-btn-icon',
@@ -914,9 +949,31 @@ export class AgentView extends ItemView {
 			);
 			
 			// Create prompt that includes the context
-			let fullPrompt = this.plugin.prompts.generalPrompt({ 
-				userMessage: message
-			});
+			let fullPrompt: string;
+			
+			// Check if session has a custom prompt template
+			if (this.currentSession?.modelConfig?.promptTemplate) {
+				try {
+					// Load custom prompt from file
+					const promptFile = this.app.vault.getAbstractFileByPath(this.currentSession.modelConfig.promptTemplate);
+					if (promptFile instanceof TFile && promptFile.extension === 'md') {
+						const promptContent = await this.app.vault.read(promptFile);
+						// Use Handlebars to format the custom prompt
+						const template = Handlebars.compile(promptContent);
+						fullPrompt = template({ userMessage: message });
+					} else {
+						// Fall back to default if file not found
+						console.warn('Custom prompt file not found:', this.currentSession.modelConfig.promptTemplate);
+						fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
+					}
+				} catch (error) {
+					console.error('Error loading custom prompt:', error);
+					fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
+				}
+			} else {
+				// Use default prompt
+				fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
+			}
 			
 			// Add mention note if files were mentioned
 			if (files.length > 0) {
@@ -950,10 +1007,15 @@ These files are included in the context below. When the user asks you to write d
 			this.plugin.settings.sendContext = false;
 			
 			try {
+				// Get model config from session or use defaults
+				const modelConfig = this.currentSession?.modelConfig || {};
+				
 				const request: ExtendedModelRequest = {
 					userMessage: message,
 					conversationHistory: conversationHistory,
-					model: this.plugin.settings.chatModelName,
+					model: modelConfig.model || this.plugin.settings.chatModelName,
+					temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
+					topP: modelConfig.topP ?? this.plugin.settings.topP,
 					prompt: fullPrompt,
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools // No need to cast to any
@@ -1129,7 +1191,7 @@ User: ${history[0].message}`;
 			this.plugin.settings.sendContext = false;
 			
 			try {
-				// Generate title using the model
+				// Generate title using the model (use default settings for labeling)
 				const response = await this.plugin.geminiApi.generateModelResponse({
 					userMessage: titlePrompt,
 					conversationHistory: [],
@@ -1179,6 +1241,29 @@ User: ${history[0].message}`;
 		} catch (error) {
 			console.error('Error in auto-labeling:', error);
 		}
+	}
+
+	/**
+	 * Show session settings modal
+	 */
+	private async showSessionSettings() {
+		if (!this.currentSession) return;
+		
+		const modal = new SessionSettingsModal(
+			this.app,
+			this.plugin,
+			this.currentSession,
+			async (modelConfig) => {
+				// Update the session with new model config
+				await this.plugin.sessionManager.updateSessionModelConfig(
+					this.currentSession!.id, 
+					modelConfig
+				);
+				// Update header to show any indicators
+				this.createCompactHeader();
+			}
+		);
+		modal.open();
 	}
 
 	/**
@@ -1290,10 +1375,15 @@ User: ${history[0].message}`;
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 			
+			// Get model config from session or use defaults
+			const modelConfig = this.currentSession?.modelConfig || {};
+			
 			const followUpRequest: ExtendedModelRequest = {
 				userMessage: "Based on the tool execution results above, please provide a response to the user's request. If the tool results include citations from Google Search, make sure to incorporate them into your response using inline citation numbers and include a Sources section.",
 				conversationHistory: updatedHistory,
-				model: this.plugin.settings.chatModelName,
+				model: modelConfig.model || this.plugin.settings.chatModelName,
+				temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
+				topP: modelConfig.topP ?? this.plugin.settings.topP,
 				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Continue with tool results" }),
 				renderContent: false,
 				availableTools: availableTools  // Include tools so model can chain calls
@@ -1340,7 +1430,9 @@ User: ${history[0].message}`;
 					const retryRequest: ExtendedModelRequest = {
 						userMessage: "Please summarize what you just did with the tools.",
 						conversationHistory: updatedHistory,
-						model: this.plugin.settings.chatModelName,
+						model: modelConfig.model || this.plugin.settings.chatModelName,
+						temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
+						topP: modelConfig.topP ?? this.plugin.settings.topP,
 						prompt: "Please summarize what you just did with the tools.",
 						renderContent: false
 					};

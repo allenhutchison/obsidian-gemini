@@ -1,5 +1,5 @@
 import { TFile, TFolder } from 'obsidian';
-import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, ChatMessage } from '../types/agent';
+import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, ChatMessage, SessionModelConfig } from '../types/agent';
 import type ObsidianGemini from '../main';
 
 /**
@@ -139,6 +139,26 @@ export class SessionManager {
 	}
 
 	/**
+	 * Update session model configuration
+	 */
+	async updateSessionModelConfig(sessionId: string, modelConfig: Partial<SessionModelConfig>): Promise<void> {
+		const session = this.activeSessions.get(sessionId);
+		if (session) {
+			// Merge the new config with existing
+			session.modelConfig = {
+				...session.modelConfig,
+				...modelConfig
+			};
+			session.lastActive = new Date();
+			
+			// Save metadata to history file for agent sessions
+			if (session.type === SessionType.AGENT_SESSION) {
+				await this.plugin.history.updateSessionMetadata(session);
+			}
+		}
+	}
+
+	/**
 	 * Add files to session context
 	 */
 	async addContextFiles(sessionId: string, files: TFile[]): Promise<void> {
@@ -229,6 +249,7 @@ export class SessionManager {
 			type: isAgentSession ? SessionType.AGENT_SESSION : SessionType.NOTE_CHAT,
 			title: frontmatter?.title || file.basename,
 			context: this.parseContextFromFrontmatter(frontmatter),
+			modelConfig: this.parseModelConfigFromFrontmatter(frontmatter),
 			created: frontmatter?.created ? new Date(frontmatter.created) : new Date(file.stat.ctime),
 			lastActive: new Date(file.stat.mtime),
 			historyPath: file.path,
@@ -283,6 +304,37 @@ export class SessionManager {
 			maxContextChars: frontmatter.max_context_chars,
 			maxCharsPerFile: frontmatter.max_chars_per_file
 		};
+	}
+
+	/**
+	 * Parse model config from frontmatter
+	 */
+	private parseModelConfigFromFrontmatter(frontmatter: any): SessionModelConfig | undefined {
+		if (!frontmatter) {
+			return undefined;
+		}
+
+		const config: SessionModelConfig = {};
+		let hasConfig = false;
+
+		if (frontmatter.model) {
+			config.model = frontmatter.model;
+			hasConfig = true;
+		}
+		if (frontmatter.temperature !== undefined) {
+			config.temperature = Number(frontmatter.temperature);
+			hasConfig = true;
+		}
+		if (frontmatter.top_p !== undefined) {
+			config.topP = Number(frontmatter.top_p);
+			hasConfig = true;
+		}
+		if (frontmatter.prompt_template) {
+			config.promptTemplate = frontmatter.prompt_template;
+			hasConfig = true;
+		}
+
+		return hasConfig ? config : undefined;
 	}
 
 	/**
