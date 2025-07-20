@@ -1,6 +1,6 @@
 import * as Handlebars from 'handlebars';
 import { CustomPrompt } from './prompts/types';
-import ObsidianGemini from '../main';
+import ObsidianGemini from './main';
 
 // @ts-ignore
 import systemPromptContent from '../prompts/systemPrompt.txt';

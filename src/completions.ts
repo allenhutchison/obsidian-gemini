@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import ObsidianGemini from './main';
 import { MarkdownView, debounce, Notice } from 'obsidian';
 import { forceableInlineSuggestion, Suggestion } from 'codemirror-companion-extension';
 import { BaseModelRequest } from './api/index';

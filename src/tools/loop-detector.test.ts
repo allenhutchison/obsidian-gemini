@@ -71,15 +71,17 @@ describe('ToolLoopDetector', () => {
 	it('should track loops separately per session', () => {
 		const toolCall: ToolCall = { name: 'write_file', arguments: { path: 'test.md', content: 'content' } };
 
-		// Session 1: Record two calls
+		// Session 1: Record three calls (threshold is 3)
+		detector.recordExecution('session1', toolCall);
 		detector.recordExecution('session1', toolCall);
 		detector.recordExecution('session1', toolCall);
 
-		// Session 2: Record two calls
+		// Session 2: Record three calls
+		detector.recordExecution('session2', toolCall);
 		detector.recordExecution('session2', toolCall);
 		detector.recordExecution('session2', toolCall);
 
-		// Both sessions should detect loop on third call
+		// Both sessions should detect loop now
 		expect(detector.isLoopDetected('session1', toolCall)).toBe(true);
 		expect(detector.isLoopDetected('session2', toolCall)).toBe(true);
 	});
@@ -101,6 +103,8 @@ describe('ToolLoopDetector', () => {
 		// Should need 3 calls again to trigger loop
 		detector.recordExecution(sessionId, toolCall);
 		detector.recordExecution(sessionId, toolCall);
+		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(false);
+		detector.recordExecution(sessionId, toolCall);
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(true);
 	});
 
@@ -114,9 +118,10 @@ describe('ToolLoopDetector', () => {
 
 		detector.recordExecution(sessionId, call1);
 		detector.recordExecution(sessionId, call2);
+		detector.recordExecution(sessionId, call3);
 		
 		// Should detect loop since arguments are identical
-		expect(detector.isLoopDetected(sessionId, call3)).toBe(true);
+		expect(detector.isLoopDetected(sessionId, call1)).toBe(true);
 	});
 
 	it('should distinguish between similar but different arguments', () => {
@@ -159,6 +164,7 @@ describe('ToolLoopDetector', () => {
 
 		// Empty arguments
 		const emptyCall: ToolCall = { name: 'tool', arguments: {} };
+		detector.recordExecution(sessionId, emptyCall);
 		detector.recordExecution(sessionId, emptyCall);
 		detector.recordExecution(sessionId, emptyCall);
 		expect(detector.isLoopDetected(sessionId, emptyCall)).toBe(true);

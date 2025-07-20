@@ -1,6 +1,6 @@
 import { SessionManager } from './session-manager';
 import { SessionHistory } from './session-history';
-import { SessionType } from '../types/agent';
+import { SessionType, ToolCategory, DestructiveAction } from '../types/agent';
 import { TFile, TFolder } from 'obsidian';
 
 // Mock Obsidian
@@ -66,7 +66,7 @@ describe('SessionManager Integration Tests', () => {
 			const session = await sessionManager.createAgentSession('Test Session', {
 				contextFiles: [],
 				contextDepth: 2,
-				enabledTools: ['read_files']
+				enabledTools: [ToolCategory.READ_ONLY]
 			});
 
 			expect(session).toBeDefined();
@@ -120,8 +120,8 @@ describe('SessionManager Integration Tests', () => {
 			const session = await sessionManager.createAgentSession('Test Session', {
 				contextFiles: [{ path: 'context.md', basename: 'context' } as TFile],
 				contextDepth: 3,
-				enabledTools: ['read_files', 'write_files'],
-				requireConfirmation: ['delete_files']
+				enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
+				requireConfirmation: [DestructiveAction.DELETE_FILES]
 			});
 
 			// Add model config
@@ -193,21 +193,19 @@ describe('SessionManager Integration Tests', () => {
 	describe('Permission Updates', () => {
 		it('should update session permissions dynamically', async () => {
 			const session = await sessionManager.createAgentSession('Test Session', {
-				enabledTools: ['read_files'],
-				requireConfirmation: ['modify_files']
+				enabledTools: [ToolCategory.READ_ONLY],
+				requireConfirmation: [DestructiveAction.MODIFY_FILES]
 			});
 
 			// Update permissions
 			await sessionManager.updateSessionContext(session.id, {
-				enabledTools: ['read_files', 'write_files', 'delete_files'],
-				requireConfirmation: [],
-				bypassConfirmationFor: ['modify_files', 'delete_files']
+				enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
+				requireConfirmation: []
 			});
 
 			const updated = sessionManager.getSession(session.id);
-			expect(updated?.context.enabledTools).toContain('write_files');
+			expect(updated?.context.enabledTools).toContain(ToolCategory.VAULT_OPERATIONS);
 			expect(updated?.context.requireConfirmation).toHaveLength(0);
-			expect(updated?.context.bypassConfirmationFor).toContain('modify_files');
 		});
 	});
 

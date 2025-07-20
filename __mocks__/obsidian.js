@@ -129,6 +129,65 @@ const Menu = jest.fn().mockImplementation(() => ({
 	showAtMouseEvent: jest.fn()
 }));
 
+class AbstractInputSuggest {
+	constructor() {
+		this.inputEl = null;
+	}
+	
+	getValue() { return ''; }
+	setValue() {}
+	onInputChanged() {}
+	getSuggestions() { return []; }
+	renderSuggestion() {}
+	selectSuggestion() {}
+}
+
+class PluginSettingTab {
+	constructor(app, plugin) {
+		this.app = app;
+		this.plugin = plugin;
+		this.containerEl = {
+			empty: jest.fn(),
+			createEl: jest.fn(),
+			createDiv: jest.fn(),
+		};
+	}
+	
+	display() {}
+	hide() {}
+}
+
+class SuggestModal extends Modal {
+	constructor(app) {
+		super(app);
+		this.inputEl = {
+			addEventListener: jest.fn(),
+			removeEventListener: jest.fn(),
+			value: '',
+		};
+	}
+	
+	getSuggestions() { return []; }
+	renderSuggestion() {}
+	onChooseSuggestion() {}
+}
+
+class Plugin {
+	constructor(app, manifest) {
+		this.app = app;
+		this.manifest = manifest;
+	}
+	
+	onload() {}
+	onunload() {}
+	addCommand() { return jest.fn(); }
+	addRibbonIcon() { return { remove: jest.fn() }; }
+	addSettingTab() {}
+	registerView() {}
+	loadData() { return Promise.resolve({}); }
+	saveData() { return Promise.resolve(); }
+}
+
 module.exports = {
 	ItemView,
 	Modal,
@@ -143,4 +202,8 @@ module.exports = {
 	normalizePath,
 	FuzzySuggestModal,
 	Menu,
+	AbstractInputSuggest,
+	PluginSettingTab,
+	SuggestModal,
+	Plugin,
 };

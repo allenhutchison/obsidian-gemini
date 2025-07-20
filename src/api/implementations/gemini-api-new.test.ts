@@ -1,6 +1,6 @@
 import { GeminiApiNew } from './gemini-api-new';
 import { GoogleGenAI } from '@google/genai'; // Ensure this is imported for mocking
-import ObsidianGemini from '../../../main'; // Adjust path as necessary
+import ObsidianGemini from '../../main'; // Adjust path as necessary
 import { BaseModelRequest, StreamCallback, StreamingModelResponse } from '../interfaces/model-api'; // Adjust path as necessary
 
 // Mock @google/genai

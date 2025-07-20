@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import ObsidianGemini from './main';
 import { Editor, Notice } from 'obsidian';
 import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';

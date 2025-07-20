@@ -1,4 +1,4 @@
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 import { ExtendedModelRequest } from '../api/index';
 import { GeminiPrompts } from '../prompts';
@@ -534,19 +534,15 @@ export class GeminiView extends ItemView {
 
 					if (this.plugin.settings.chatHistory && this.currentFile) {
 						// Store user message first
-						await this.plugin.history.addEntry(this.currentFile.path, {
+						await this.plugin.history.appendHistoryForFile(this.currentFile, {
 							role: 'user',
-							message: userMessage,
-							notePath: this.currentFile.path,
-							created_at: new Date()
+							message: userMessage
 						});
 
 						// Store assistant message
-						await this.plugin.history.addEntry(this.currentFile.path, {
+						await this.plugin.history.appendHistoryForFile(this.currentFile, {
 							role: 'model',
-							message: botResponse.markdown,
-							notePath: this.currentFile.path,
-							created_at: new Date()
+							message: botResponse.markdown
 						});
 
 						// Clear and reload the entire chat from history

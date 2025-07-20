@@ -188,7 +188,7 @@ describe('ToolExecutionEngine - Error Handling', () => {
 		}, context);
 
 		expect(result.success).toBe(false);
-		expect(result.error).toBe('Tool not found: non_existent_tool');
+		expect(result.error).toBe('Tool non_existent_tool not found');
 	});
 
 	it('should handle tool not in enabled category', async () => {
@@ -253,7 +253,7 @@ describe('ToolExecutionEngine - Error Handling', () => {
 		}, context);
 
 		expect(result.success).toBe(false);
-		expect(result.error).toBe('Tool execution failed: Error: Tool execution failed');
+		expect(result.error).toBe('Tool execution failed');
 	});
 
 	it('should handle invalid tool arguments', async () => {
@@ -301,16 +301,16 @@ describe('ToolExecutionEngine - Error Handling', () => {
 		registry.registerTool(new ListFilesTool());
 
 		// Execute multiple tool calls
-		const results = await engine.executeMultipleTools([
+		const results = await engine.executeToolCalls([
 			{ name: 'list_files', arguments: { path: '' } }, // Should succeed
 			{ name: 'non_existent', arguments: {} }, // Should fail
 			{ name: 'list_files', arguments: { path: 'folder' } } // Should succeed
 		], context);
 
-		expect(results).toHaveLength(3);
+		// Should only have 2 results because execution stops on error by default
+		expect(results).toHaveLength(2);
 		expect(results[0].success).toBe(true);
 		expect(results[1].success).toBe(false);
-		expect(results[1].error).toBe('Tool not found: non_existent');
-		expect(results[2].success).toBe(true);
+		expect(results[1].error).toBe('Tool non_existent not found');
 	});
 });

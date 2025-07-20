@@ -190,7 +190,7 @@ describe('Tool Integration Tests', () => {
 					type: SessionType.AGENT_SESSION,
 					context: {
 						contextFiles: [],
-						enabledTools: [ToolCategory.WEB_OPERATIONS],
+						enabledTools: [ToolCategory.READ_ONLY],
 						requireConfirmation: []
 					}
 				}

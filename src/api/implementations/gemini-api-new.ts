@@ -9,7 +9,7 @@ import {
 	StreamingModelResponse,
 	ToolCall,
 } from '../interfaces/model-api';
-import ObsidianGemini from '../../../main';
+import ObsidianGemini from '../../main';
 import { GeminiPrompts } from '../../prompts';
 import { ToolConverter } from '../../tools/tool-converter';
 
