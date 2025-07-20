@@ -1,4 +1,4 @@
-import ObsidianGemini from '../../../main';
+import ObsidianGemini from '../../main';
 import { Notice } from 'obsidian';
 import { ModelApi, BaseModelRequest, ExtendedModelRequest, ModelResponse } from '../interfaces/model-api';
 

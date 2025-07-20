@@ -1,4 +1,4 @@
-import ObsidianGemini from '../../main';
+import ObsidianGemini from '../main';
 import { ItemView, Notice, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon } from 'obsidian';
 import { ExtendedModelRequest } from '../api/index';
 import { GeminiPrompts } from '../prompts';
@@ -6,6 +6,7 @@ import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
 import { logDebugInfo } from '../api/utils/debug';
 import { CustomPrompt } from '../prompts/types';
+import { ModelFactory } from '../api/model-factory';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -88,7 +89,7 @@ export class GeminiView extends ItemView {
 		// Prompt indicator
 		this.promptIndicator = container.createDiv({ cls: 'gemini-scribe-prompt-indicator' });
 		this.promptIndicator.style.display = 'none'; // Hidden by default
-
+		
 		// The top level application
 		this.chatbox = container.createDiv({ cls: 'gemini-scribe-chatbox' });
 
@@ -279,7 +280,7 @@ export class GeminiView extends ItemView {
 
 	async displayMessage(
 		message: string,
-		sender: 'user' | 'model' | 'grounding',
+		sender: 'user' | 'model' | 'grounding' | 'system',
 		messageContainer?: HTMLDivElement,
 		shouldScroll: boolean = true
 	): Promise<HTMLDivElement> {
@@ -312,6 +313,9 @@ export class GeminiView extends ItemView {
 					break;
 				case 'grounding':
 					setIcon(senderIndicator, 'search');
+					break;
+				case 'system':
+					setIcon(senderIndicator, 'info');
 					break;
 			}
 		}
@@ -394,7 +398,11 @@ export class GeminiView extends ItemView {
 	}
 
 	private async handleFileOpen(file: TFile | null) {
-		if (!file) return;
+		if (!file) {
+			this.currentFile = null;
+			this.clearChat();
+			return;
+		}
 
 		// Load the file content
 		const content = await this.plugin.app.vault.read(file);
@@ -403,7 +411,7 @@ export class GeminiView extends ItemView {
 		// Update prompt indicator
 		await this.updatePromptIndicator();
 
-		// Load history for this file
+		// Load history for this file using the original method
 		const history = await this.plugin.history.getHistoryForFile(file);
 
 		// Update the chat with the history
@@ -421,7 +429,7 @@ export class GeminiView extends ItemView {
 				this.displayMessage(entry.message, 'model');
 				this.displayMessage(entry.metadata.rendered, 'grounding');
 			} else {
-				this.displayMessage(entry.message, entry.role);
+				this.displayMessage(entry.message, entry.role as 'user' | 'model' | 'grounding' | 'system');
 			}
 		}
 	}
@@ -455,15 +463,18 @@ export class GeminiView extends ItemView {
 				};
 				logDebugInfo(this.plugin.settings.debugMode, 'Sending message', request);
 
+				// Create a chat model API
+				const modelApi = ModelFactory.createChatModel(this.plugin);
+				
 				// Check if streaming is supported
-				if (this.plugin.geminiApi.generateStreamingResponse && this.plugin.settings.streamingEnabled !== false) {
+				if (modelApi.generateStreamingResponse && this.plugin.settings.streamingEnabled !== false) {
 					// Use streaming API
 					let modelMessageContainer: HTMLDivElement | null = null;
 					let accumulatedMarkdown = '';
 
 					// User message already displayed by button handler
 
-					const streamResponse = this.plugin.geminiApi.generateStreamingResponse(request, (chunk: string) => {
+					const streamResponse = modelApi.generateStreamingResponse(request, (chunk: string) => {
 						accumulatedMarkdown += chunk;
 
 						// Create or update the model message container
@@ -494,29 +505,17 @@ export class GeminiView extends ItemView {
 							await this.finalizeStreamingMessage(modelMessageContainer, botResponse.markdown);
 						}
 
-						if (this.plugin.settings.chatHistory) {
-							// Store messages first
-							await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+						if (this.plugin.settings.chatHistory && this.currentFile) {
+							// Store user message first
+							await this.plugin.history.appendHistoryForFile(this.currentFile, {
 								role: 'user',
-								message: userMessage,
+								message: userMessage
 							});
 
-							// Get custom prompt info for history
-							let customPromptInfo = undefined;
-							if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
-								customPromptInfo = await this.plugin.promptManager.getPromptHistoryInfo(this.currentFile);
-							}
-
-							await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+							// Store assistant message
+							await this.plugin.history.appendHistoryForFile(this.currentFile, {
 								role: 'model',
-								message: botResponse.markdown,
-								userMessage: userMessage,
-								model: this.plugin.settings.chatModelName,
-								metadata: {
-									...(customPromptInfo ? { customPrompt: customPromptInfo } : {}),
-									temperature: this.plugin.settings.temperature,
-									topP: this.plugin.settings.topP,
-								},
+								message: botResponse.markdown
 							});
 
 							// No need to clear and reload - the streaming UI already shows the messages
@@ -535,36 +534,24 @@ export class GeminiView extends ItemView {
 					}
 				} else {
 					// Fall back to non-streaming API
-					const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
+					const botResponse = await modelApi.generateModelResponse(request);
 
-					if (this.plugin.settings.chatHistory) {
-						// Store messages first
-						await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+					if (this.plugin.settings.chatHistory && this.currentFile) {
+						// Store user message first
+						await this.plugin.history.appendHistoryForFile(this.currentFile, {
 							role: 'user',
-							message: userMessage,
+							message: userMessage
 						});
 
-						// Get custom prompt info for history
-						let customPromptInfo = undefined;
-						if (this.plugin.settings.enableCustomPrompts && this.currentFile) {
-							customPromptInfo = await this.plugin.promptManager.getPromptHistoryInfo(this.currentFile);
-						}
-
-						await this.plugin.history.appendHistoryForFile(this.currentFile!, {
+						// Store assistant message
+						await this.plugin.history.appendHistoryForFile(this.currentFile, {
 							role: 'model',
-							message: botResponse.markdown,
-							userMessage: userMessage,
-							model: this.plugin.settings.chatModelName,
-							metadata: {
-								...(customPromptInfo ? { customPrompt: customPromptInfo } : {}),
-								temperature: this.plugin.settings.temperature,
-								topP: this.plugin.settings.topP,
-							},
+							message: botResponse.markdown
 						});
 
 						// Clear and reload the entire chat from history
 						this.clearChat();
-						await this.updateChat((await this.plugin.history.getHistoryForFile(this.currentFile!)) ?? []);
+						await this.updateChat(await this.plugin.history.getHistoryForFile(this.currentFile));
 
 						// Only display grounding content as it's not stored in history
 						if (botResponse.rendered) {
@@ -579,6 +566,7 @@ export class GeminiView extends ItemView {
 					}
 				}
 			} catch (error) {
+				console.error('Error in sendMessage:', error);
 				new Notice('Error getting bot response.');
 			}
 		}
@@ -639,4 +627,5 @@ export class GeminiView extends ItemView {
 			}
 		}, 2000); // Keep displayed for 2 seconds after completion
 	}
+
 }

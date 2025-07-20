@@ -368,3 +368,2028 @@ If your plugin does not need CSS, delete this file.
 .callout[data-callout='metadata'] th {
 	padding: 3px 8px;
 }
+
+/* Agent Mode Controls */
+.gemini-scribe-agent-controls {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px;
+	margin-bottom: 12px;
+}
+
+.gemini-scribe-control-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.gemini-scribe-agent-toggle {
+	margin-left: auto;
+}
+
+.gemini-scribe-context-panel {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-scribe-context-header {
+	font-weight: 600;
+	margin-bottom: 8px;
+}
+
+.gemini-scribe-files-container {
+	min-height: 24px;
+	margin-bottom: 8px;
+}
+
+.gemini-scribe-context-file-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 4px 8px;
+	margin-bottom: 4px;
+	font-size: 13px;
+}
+
+.gemini-scribe-remove-file-btn {
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 2px 4px;
+	border-radius: 2px;
+}
+
+.gemini-scribe-remove-file-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-error);
+}
+
+.gemini-scribe-add-files-btn {
+	background-color: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 4px 8px;
+	font-size: 12px;
+	cursor: pointer;
+	color: var(--text-normal);
+}
+
+.gemini-scribe-add-files-btn:hover {
+	background-color: var(--interactive-hover);
+}
+
+.gemini-scribe-context-depth {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.gemini-scribe-context-depth input[type="range"] {
+	flex: 1;
+	max-width: 100px;
+}
+
+.gemini-scribe-no-files {
+	color: var(--text-muted);
+	font-style: italic;
+	font-size: 12px;
+}
+
+/* File Picker Modal */
+.gemini-file-picker-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+	margin: 16px 0;
+}
+
+.gemini-file-picker-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.gemini-file-picker-item:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-file-picker-label {
+	flex: 1;
+	cursor: pointer;
+	font-size: 14px;
+}
+
+.gemini-file-picker-buttons {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 16px;
+}
+
+.gemini-file-picker-buttons button {
+	padding: 8px 16px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+/* Tool Execution Panel */
+.gemini-scribe-tool-panel {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	margin: 8px 0;
+	padding: 12px;
+}
+
+.gemini-scribe-tool-execution {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.gemini-scribe-tool-name {
+	font-weight: 600;
+	color: var(--text-accent);
+}
+
+.gemini-scribe-tool-params {
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+}
+
+.gemini-scribe-tool-params pre {
+	margin: 0;
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+.gemini-scribe-tool-result {
+	margin-top: 8px;
+}
+
+.gemini-scribe-tool-status {
+	font-weight: 500;
+}
+
+.gemini-scribe-tool-error {
+	color: var(--text-error);
+	font-size: 13px;
+	margin-top: 4px;
+}
+
+/* Tool Confirmation Modal - Enhanced */
+.gemini-tool-confirmation-modal {
+	max-width: 600px;
+}
+
+.modal.modal-container:has(.gemini-tool-confirmation-modal) {
+	width: 600px;
+	max-width: 90vw;
+}
+
+/* Modal Header */
+.gemini-tool-modal-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 24px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gemini-tool-modal-icon {
+	width: 48px;
+	height: 48px;
+	background: linear-gradient(135deg, var(--interactive-accent), var(--interactive-accent-hover));
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.gemini-tool-modal-icon svg {
+	width: 24px;
+	height: 24px;
+	color: var(--text-on-accent);
+}
+
+.gemini-tool-modal-header-text {
+	flex: 1;
+}
+
+.gemini-tool-modal-header-text h2 {
+	margin: 0 0 4px 0;
+	font-size: 20px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-tool-modal-subtitle {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 14px;
+}
+
+/* Tool Card */
+.gemini-tool-card {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 16px;
+	margin-bottom: 20px;
+}
+
+.gemini-tool-card-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.gemini-tool-name-badge {
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 6px 12px;
+	font-family: var(--font-monospace);
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.gemini-tool-category-badge {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-radius: 4px;
+	padding: 4px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.gemini-tool-description p {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+/* Parameters Section */
+.gemini-tool-params-section {
+	margin-bottom: 20px;
+}
+
+.gemini-tool-params-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.gemini-tool-params-icon {
+	color: var(--text-muted);
+	display: flex;
+	align-items: center;
+}
+
+.gemini-tool-params-icon svg {
+	width: 18px;
+	height: 18px;
+}
+
+.gemini-tool-params-title {
+	font-weight: 600;
+	font-size: 16px;
+	color: var(--text-normal);
+}
+
+.gemini-tool-params-container {
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 16px;
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+.gemini-tool-param-row {
+	display: grid;
+	grid-template-columns: 120px 1fr;
+	gap: 16px;
+	align-items: start;
+	padding: 12px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gemini-tool-param-row:first-child {
+	padding-top: 0;
+}
+
+.gemini-tool-param-row:last-child {
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.gemini-tool-param-key {
+	font-weight: 500;
+	color: var(--text-normal);
+	font-size: 14px;
+}
+
+.gemini-tool-param-value {
+	position: relative;
+}
+
+.gemini-tool-param-code,
+.gemini-tool-param-content code {
+	display: block;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+	font-family: var(--font-monospace);
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-all;
+	color: var(--text-muted);
+}
+
+.gemini-tool-param-content {
+	position: relative;
+}
+
+.gemini-tool-param-collapsed code {
+	max-height: 60px;
+	overflow: hidden;
+	position: relative;
+}
+
+.gemini-tool-param-collapsed::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 20px;
+	background: linear-gradient(to bottom, transparent, var(--background-secondary));
+	pointer-events: none;
+}
+
+.gemini-tool-expand-btn {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.1s ease;
+}
+
+.gemini-tool-expand-btn:hover {
+	background: var(--background-modifier-hover);
+}
+
+.gemini-tool-expand-btn svg {
+	width: 16px;
+	height: 16px;
+	color: var(--text-muted);
+}
+
+/* Custom Message */
+.gemini-tool-custom-message {
+	display: flex;
+	gap: 12px;
+	background: linear-gradient(135deg, var(--background-secondary), var(--background-primary));
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 16px;
+	margin-bottom: 20px;
+}
+
+.gemini-tool-message-icon {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	background: var(--interactive-accent);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.gemini-tool-message-icon svg {
+	width: 18px;
+	height: 18px;
+	color: var(--text-on-accent);
+}
+
+.gemini-tool-message-content {
+	flex: 1;
+}
+
+.gemini-tool-message-content p {
+	margin: 0;
+	color: var(--text-normal);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+
+/* Allow without confirmation */
+.gemini-tool-allow-container {
+	margin-top: 20px;
+	padding: 16px;
+	background: var(--background-secondary);
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-tool-allow-label {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.gemini-tool-allow-checkbox {
+	cursor: pointer;
+	width: 16px;
+	height: 16px;
+}
+
+.gemini-tool-allow-text {
+	font-size: 13px;
+	color: var(--text-muted);
+	flex: 1;
+}
+
+/* Buttons */
+.gemini-tool-buttons {
+	display: flex;
+	gap: 12px;
+	justify-content: flex-end;
+	margin-top: 16px;
+	padding-top: 20px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-tool-cancel-btn,
+.gemini-tool-confirm-btn {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 20px;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.gemini-tool-cancel-btn {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	color: var(--text-normal);
+}
+
+.gemini-tool-cancel-btn:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.gemini-tool-confirm-btn {
+	background: var(--interactive-accent);
+	border: none;
+	color: var(--text-on-accent);
+}
+
+.gemini-tool-confirm-btn:hover {
+	background: var(--interactive-accent-hover);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.gemini-tool-btn-icon {
+	display: flex;
+	align-items: center;
+}
+
+.gemini-tool-btn-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Agent View Styles */
+.gemini-agent-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background-color: var(--background-primary);
+}
+
+/* Session Header */
+.gemini-agent-header {
+	background-color: var(--background-secondary);
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: var(--size-4-3) var(--size-4-4);
+	flex-shrink: 0;
+}
+
+.gemini-agent-title-section {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: var(--size-2-2);
+}
+
+.gemini-agent-title {
+	margin: 0;
+	font-size: var(--font-size-h2);
+	font-weight: 600;
+	color: var(--text-normal);
+	cursor: text;
+	padding: 2px 4px;
+	border-radius: var(--radius-s);
+	transition: background-color 0.15s ease;
+}
+
+.gemini-agent-title:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-agent-title-input {
+	font-size: var(--font-size-h2);
+	font-weight: 600;
+	color: var(--text-normal);
+	background-color: var(--background-primary);
+	border: 2px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	padding: 2px 4px;
+	width: 100%;
+	max-width: 400px;
+}
+
+.gemini-agent-session-info {
+	display: flex;
+	gap: var(--size-4-3);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.gemini-agent-controls {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
+.gemini-agent-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	padding: var(--size-2-1) var(--size-4-3);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	border: none;
+}
+
+.gemini-agent-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+.gemini-agent-btn-primary {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-btn-primary:hover {
+	background-color: var(--interactive-accent-hover);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gemini-agent-btn-secondary {
+	background-color: var(--interactive-normal);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-btn-secondary:hover {
+	background-color: var(--interactive-hover);
+	border-color: var(--background-modifier-border-hover);
+}
+
+/* Compact Header Styles */
+.gemini-agent-header-compact {
+	padding: var(--size-2-2) var(--size-4-2);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 40px;
+}
+
+.gemini-agent-header-left {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	flex: 1;
+}
+
+.gemini-agent-header-right {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+}
+
+/* Toggle Button */
+.gemini-agent-toggle-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: var(--size-2-1);
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	display: flex;
+	align-items: center;
+	transition: all 0.15s ease;
+}
+
+.gemini-agent-toggle-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.gemini-agent-toggle-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* Title Container */
+.gemini-agent-title-container {
+	display: inline-flex;
+	align-items: center;
+	min-width: 200px;
+	max-width: 400px;
+}
+
+/* Compact Title */
+.gemini-agent-title-compact {
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	color: var(--text-normal);
+	cursor: text;
+	padding: var(--size-2-1) var(--size-2-2);
+	border-radius: var(--radius-s);
+	transition: background-color 0.15s ease;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.gemini-agent-title-compact:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-agent-title-input-compact {
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-1) var(--size-2-2);
+	background-color: var(--background-primary);
+	width: 100%;
+}
+
+/* Context Badge */
+.gemini-agent-context-badge {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	padding: 2px var(--size-2-2);
+	border-radius: var(--radius-s);
+	white-space: nowrap;
+}
+
+/* Icon Buttons */
+.gemini-agent-btn-icon {
+	padding: var(--size-2-1);
+	min-width: auto;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.gemini-agent-btn-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Small Buttons */
+.gemini-agent-btn-sm {
+	padding: var(--size-2-1) var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+}
+
+/* Collapsible Context Panel */
+.gemini-agent-context-panel.gemini-agent-context-panel-collapsed {
+	max-height: 0 !important;
+	overflow: hidden;
+	opacity: 0;
+	padding: 0 !important;
+	transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+	border-bottom: none;
+}
+
+/* Compact Context Controls */
+.gemini-agent-context-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+	padding-bottom: var(--size-2-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-depth-control-inline {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	margin-left: auto;
+}
+
+.gemini-agent-depth-label {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.gemini-agent-depth-input-sm {
+	width: 50px;
+	padding: 2px var(--size-2-1);
+	font-size: var(--font-ui-small);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background-color: var(--background-primary);
+}
+
+/* Compact Files List */
+.gemini-agent-files-list-compact {
+	padding-top: var(--size-2-2);
+	max-height: 150px;
+	overflow-y: auto;
+}
+
+.gemini-agent-files-list-compact .gemini-agent-file-item {
+	padding: var(--size-2-1) var(--size-2-2);
+	font-size: var(--font-ui-smaller);
+}
+
+/* Context Panel */
+.gemini-agent-context-panel {
+	background-color: var(--background-secondary-alt);
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: var(--size-4-3);
+	flex-shrink: 0;
+	max-height: 200px;
+	overflow-y: auto;
+	transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+	opacity: 1;
+}
+
+.gemini-agent-panel-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: var(--size-4-2);
+}
+
+.gemini-agent-panel-header h3 {
+	margin: 0;
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+/* Files List */
+.gemini-agent-files-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-1);
+	margin-bottom: var(--size-4-2);
+	min-height: 32px;
+}
+
+.gemini-agent-empty-state {
+	color: var(--text-faint);
+	font-style: italic;
+	font-size: var(--font-ui-small);
+	padding: var(--size-4-2);
+	text-align: center;
+	width: 100%;
+}
+
+.gemini-agent-file-item {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: var(--size-2-1) var(--size-4-2);
+	font-size: var(--font-ui-small);
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.gemini-agent-file-item:hover {
+	background-color: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gemini-agent-file-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-muted);
+	width: 14px;
+	height: 14px;
+}
+
+.gemini-agent-file-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+.gemini-agent-file-name {
+	color: var(--text-normal);
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-agent-remove-btn {
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 0;
+	width: 16px;
+	height: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--radius-s);
+	transition: all 0.15s ease;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.gemini-agent-remove-btn:hover {
+	background-color: var(--background-modifier-error);
+	color: var(--text-error);
+}
+
+/* Depth Control */
+.gemini-agent-depth-control {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-depth-control label {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	font-weight: 500;
+}
+
+.gemini-agent-depth-control input[type="range"] {
+	flex: 1;
+	max-width: 150px;
+}
+
+.gemini-agent-depth-control span {
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	font-weight: 600;
+	min-width: 20px;
+	text-align: center;
+}
+
+/* Chat Container */
+.gemini-agent-chat {
+	flex: 1;
+	overflow-y: auto;
+	padding: var(--size-4-3);
+	background-color: var(--background-primary);
+}
+
+/* Input Area */
+.gemini-agent-input-area {
+	display: flex;
+	gap: var(--size-2-2);
+	padding: var(--size-4-3);
+	background-color: var(--background-secondary);
+	border-top: 1px solid var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+.gemini-agent-input {
+	flex: 1;
+	min-height: 80px;
+	max-height: 200px;
+	padding: var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	font-family: var(--font-interface);
+	font-size: var(--font-text-size);
+	resize: vertical;
+	transition: border-color 0.15s ease;
+}
+
+.gemini-agent-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent-hover) inset;
+}
+
+/* Rich Input Field */
+.gemini-agent-input-rich {
+	min-height: 40px;
+	max-height: 200px;
+	overflow-y: auto;
+	padding: var(--size-2-2) var(--size-4-2);
+	position: relative;
+}
+
+.gemini-agent-input-rich:focus {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent-hover) inset;
+}
+
+/* Placeholder text */
+.gemini-agent-input-rich:empty:before {
+	content: attr(data-placeholder);
+	color: var(--text-faint);
+	pointer-events: none;
+	position: absolute;
+}
+
+/* File Chips */
+.gemini-agent-file-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 2px 6px 2px 4px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	margin: 0 2px;
+	vertical-align: middle;
+	user-select: none;
+	cursor: default;
+}
+
+.gemini-agent-file-chip-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-file-chip-icon svg {
+	width: 12px;
+	height: 12px;
+}
+
+.gemini-agent-file-chip-name {
+	max-width: 150px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-agent-file-chip-remove {
+	margin-left: 4px;
+	padding: 0 2px;
+	cursor: pointer;
+	opacity: 0.7;
+	font-weight: bold;
+	line-height: 1;
+}
+
+.gemini-agent-file-chip-remove:hover {
+	opacity: 1;
+}
+
+/* Folder Chips */
+.gemini-agent-folder-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	background-color: var(--background-secondary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 16px;
+	margin: 0 2px;
+	font-size: 13px;
+	vertical-align: middle;
+	user-select: none;
+	max-width: 250px;
+	animation: chipSlideIn 0.2s ease-out;
+}
+
+.gemini-agent-folder-chip-icon {
+	width: 14px;
+	height: 14px;
+	color: var(--text-accent);
+	flex-shrink: 0;
+}
+
+.gemini-agent-folder-chip-icon svg {
+	width: 100%;
+	height: 100%;
+}
+
+.gemini-agent-folder-chip-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--text-normal);
+	font-weight: 500;
+}
+
+.gemini-agent-folder-chip-remove {
+	margin-left: 4px;
+	cursor: pointer;
+	color: var(--text-muted);
+	font-size: 16px;
+	line-height: 1;
+	padding: 0 2px;
+	border-radius: 50%;
+	transition: all 0.15s ease;
+	opacity: 0.7;
+}
+
+.gemini-agent-folder-chip-remove:hover {
+	opacity: 1;
+	color: var(--text-error);
+}
+
+.gemini-agent-input::placeholder {
+	color: var(--text-faint);
+}
+
+.gemini-agent-send-btn {
+	align-self: flex-end;
+	padding: var(--size-4-2) var(--size-4-4);
+	min-width: 80px;
+}
+
+.gemini-agent-send-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Session Modal Styles */
+.modal.modal-container:has(.gemini-session-modal) {
+	width: 600px;
+	max-width: 90vw;
+}
+
+.modal-content.gemini-session-modal {
+	overflow-x: hidden !important;
+	padding: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.gemini-session-modal > * {
+	overflow-x: hidden;
+	max-width: 100%;
+}
+
+.gemini-session-modal h2 {
+	padding: 0 20px;
+	margin: 20px 0;
+}
+
+.gemini-session-list {
+	max-height: 400px;
+	overflow-y: auto;
+	overflow-x: hidden !important;
+	margin: var(--size-4-3) 20px;
+	padding-right: 5px; /* Add some padding for scrollbar */
+}
+
+.gemini-session-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	margin-bottom: var(--size-2-2);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	overflow: hidden;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.gemini-session-item:hover {
+	background-color: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+}
+
+.gemini-session-item-active {
+	background-color: var(--background-modifier-active);
+	border-color: var(--interactive-accent);
+}
+
+.gemini-session-info {
+	flex: 1;
+	min-width: 0; /* Allow flex item to shrink below content size */
+	overflow: hidden;
+}
+
+.gemini-session-title {
+	font-weight: 600;
+	color: var(--text-normal);
+	margin-bottom: var(--size-2-1);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-session-meta {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-session-actions {
+	display: flex;
+	gap: var(--size-2-1);
+	flex-shrink: 0; /* Prevent action buttons from shrinking */
+}
+
+.gemini-session-action-btn {
+	padding: var(--size-2-1);
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	border-radius: var(--radius-s);
+	transition: all 0.15s ease;
+}
+
+.gemini-session-action-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.gemini-session-action-btn.delete:hover {
+	background-color: var(--background-modifier-error);
+	color: var(--text-error);
+}
+
+/* Modal button container in session modal */
+.gemini-session-modal .modal-button-container {
+	padding: 20px;
+	border-top: 1px solid var(--background-modifier-border);
+	margin-top: 0;
+}
+
+.gemini-agent-message {
+	margin-bottom: var(--size-4-4);
+	animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.gemini-agent-message-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: var(--size-2-1);
+	padding: 0 var(--size-2-2);
+}
+
+.gemini-agent-message-role {
+	font-weight: 600;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gemini-agent-message-user .gemini-agent-message-role {
+	color: var(--interactive-accent);
+}
+
+.gemini-agent-message-model .gemini-agent-message-role {
+	color: var(--text-accent);
+}
+
+.gemini-agent-message-system .gemini-agent-message-role {
+	color: var(--text-faint);
+}
+
+.gemini-agent-message-time {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+}
+
+.gemini-agent-message-content {
+	padding: var(--size-4-3) var(--size-4-4);
+	border-radius: var(--radius-l);
+	position: relative;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	transition: box-shadow 0.15s ease;
+}
+
+.gemini-agent-message:hover .gemini-agent-message-content {
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.gemini-agent-message-user .gemini-agent-message-content {
+	background-color: var(--background-primary-alt);
+	color: var(--text-normal);
+	margin-left: var(--size-4-8);
+	border-bottom-right-radius: var(--radius-s);
+	border: 1px solid var(--interactive-accent);
+}
+
+.gemini-agent-message-model .gemini-agent-message-content {
+	background-color: var(--background-secondary);
+	margin-right: var(--size-4-8);
+	border-bottom-left-radius: var(--radius-s);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-message-system .gemini-agent-message-content {
+	background-color: var(--background-modifier-hover);
+	font-style: italic;
+	text-align: center;
+	margin: 0 var(--size-4-12);
+	font-size: var(--font-ui-small);
+	padding: var(--size-2-2) var(--size-4-3);
+	border: 1px dashed var(--background-modifier-border);
+}
+
+/* Markdown content within agent messages */
+.gemini-agent-message-content p {
+	margin: 0 0 var(--size-4-2) 0;
+	line-height: 1.6;
+}
+
+.gemini-agent-message-content p:last-child {
+	margin-bottom: 0;
+}
+
+.gemini-agent-message-content ul,
+.gemini-agent-message-content ol {
+	margin: var(--size-4-2) 0;
+	padding-left: var(--size-4-4);
+	line-height: 1.8;
+}
+
+.gemini-agent-message-content ul li,
+.gemini-agent-message-content ol li {
+	margin-bottom: var(--size-2-1);
+}
+
+.gemini-agent-message-content ul li:last-child,
+.gemini-agent-message-content ol li:last-child {
+	margin-bottom: 0;
+}
+
+.gemini-agent-message-content code {
+	background-color: var(--background-modifier-code);
+	padding: 2px 4px;
+	border-radius: var(--radius-s);
+	font-size: 0.9em;
+}
+
+.gemini-agent-message-content pre {
+	background-color: var(--background-primary);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	overflow-x: auto;
+	margin: var(--size-4-2) 0;
+}
+
+.gemini-agent-message-content blockquote {
+	border-left: 3px solid var(--quote-opening-modifier);
+	padding-left: var(--size-4-2);
+	margin: var(--size-4-2) 0;
+	color: var(--text-muted);
+}
+
+/* Table styling within agent messages */
+.gemini-agent-message-content table {
+	width: 100%;
+	margin: var(--size-4-2) 0;
+	border-collapse: collapse;
+	overflow-x: auto;
+	display: block;
+}
+
+.gemini-agent-message-content table th,
+.gemini-agent-message-content table td {
+	padding: var(--size-2-2) var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	text-align: left;
+}
+
+.gemini-agent-message-content table th {
+	background-color: var(--background-secondary);
+	font-weight: 600;
+}
+
+.gemini-agent-message-content table tr:nth-child(even) {
+	background-color: var(--background-secondary-alt);
+}
+
+.gemini-agent-message-content table tr:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Copy button for agent messages */
+.gemini-agent-copy-button {
+	position: absolute;
+	top: var(--size-2-2);
+	right: var(--size-2-2);
+	background-color: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-1);
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
+}
+
+.gemini-agent-message:hover .gemini-agent-copy-button {
+	opacity: 1;
+}
+
+.gemini-agent-copy-button:hover {
+	background-color: var(--interactive-hover);
+}
+
+.gemini-agent-copy-button svg {
+	width: 14px;
+	height: 14px;
+	color: var(--text-muted);
+}
+
+/* Collapsible tool messages */
+.gemini-agent-message-tool {
+	margin-bottom: var(--size-4-2);
+}
+
+.gemini-agent-tool-message {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	overflow: hidden;
+	transition: all 0.2s ease;
+}
+
+.gemini-agent-tool-message:hover {
+	border-color: var(--background-modifier-border-hover);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.gemini-agent-tool-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	cursor: pointer;
+	user-select: none;
+	transition: background-color 0.15s ease;
+}
+
+.gemini-agent-tool-header:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-agent-tool-toggle {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	color: var(--text-muted);
+	display: flex;
+	align-items: center;
+	transition: color 0.15s ease;
+}
+
+.gemini-agent-tool-toggle:hover {
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-toggle svg {
+	width: 16px;
+	height: 16px;
+	transition: transform 0.2s ease;
+}
+
+.gemini-agent-tool-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-muted);
+}
+
+.gemini-agent-tool-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+.gemini-agent-tool-title {
+	flex: 1;
+	font-weight: 500;
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-status {
+	font-size: var(--font-ui-small);
+	padding: 2px 8px;
+	border-radius: var(--radius-s);
+	font-weight: 500;
+}
+
+.gemini-agent-tool-status-running {
+	background-color: var(--color-blue);
+	color: white;
+	animation: pulse 2s infinite;
+}
+
+.gemini-agent-tool-status-success {
+	background-color: var(--color-green);
+	color: white;
+}
+
+.gemini-agent-tool-status-error {
+	background-color: var(--color-red);
+	color: white;
+}
+
+@keyframes pulse {
+	0% { opacity: 1; }
+	50% { opacity: 0.7; }
+	100% { opacity: 1; }
+}
+
+/* Tool details */
+.gemini-agent-tool-details {
+	border-top: 1px solid var(--background-modifier-border);
+	padding: var(--size-4-3);
+	background-color: var(--background-primary);
+	animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.gemini-agent-tool-section {
+	margin-bottom: var(--size-4-3);
+}
+
+.gemini-agent-tool-section:last-child {
+	margin-bottom: 0;
+}
+
+.gemini-agent-tool-section h4 {
+	margin: 0 0 var(--size-2-2) 0;
+	font-size: var(--font-ui-small);
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Parameters list */
+.gemini-agent-tool-params-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.gemini-agent-tool-param-item {
+	display: flex;
+	gap: var(--size-4-2);
+	align-items: baseline;
+}
+
+.gemini-agent-tool-param-key {
+	font-weight: 500;
+	color: var(--text-normal);
+	min-width: 100px;
+}
+
+.gemini-agent-tool-param-value {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	background-color: var(--background-secondary);
+	padding: 2px 6px;
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	word-break: break-all;
+	flex: 1;
+}
+
+/* Result content */
+.gemini-agent-tool-result-content {
+	font-size: var(--font-ui-small);
+}
+
+.gemini-agent-tool-result-list {
+	margin: 0;
+	padding-left: var(--size-4-4);
+}
+
+.gemini-agent-tool-result-list li {
+	margin-bottom: var(--size-2-1);
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-result-object {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.gemini-agent-tool-result-item {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
+.gemini-agent-tool-result-key {
+	font-weight: 500;
+	color: var(--text-muted);
+}
+
+.gemini-agent-tool-result-value {
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-empty-result {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.gemini-agent-tool-more-items {
+	margin-top: var(--size-2-1);
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.gemini-agent-tool-error-content {
+	background-color: var(--background-modifier-error);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	border-left: 3px solid var(--text-error);
+}
+
+.gemini-agent-tool-error-message {
+	color: var(--text-error);
+	margin: 0;
+}
+
+/* Expanded state */
+.gemini-agent-tool-expanded {
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Completion animation */
+.gemini-agent-tool-completed {
+	animation: toolComplete 0.5s ease;
+}
+
+@keyframes toolComplete {
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.02);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+/* Code results */
+.gemini-agent-tool-code-result {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-4-2);
+	margin: var(--size-2-1) 0;
+	overflow-x: auto;
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+.gemini-agent-tool-code-result code {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	white-space: pre;
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-expand-content {
+	margin-top: var(--size-2-2);
+	padding: var(--size-2-1) var(--size-4-2);
+	background-color: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.gemini-agent-tool-expand-content:hover {
+	background-color: var(--interactive-hover);
+	border-color: var(--interactive-accent);
+}
+
+/* File info display */
+.gemini-agent-tool-file-info {
+	margin-bottom: var(--size-2-2);
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-file-size {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+/* Thinking indicator */
+.gemini-agent-thinking .gemini-agent-message-content {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: var(--size-2-2) var(--size-4-3);
+}
+
+.gemini-agent-thinking-text {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.gemini-agent-thinking-dot {
+	display: inline-block;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background-color: var(--text-muted);
+	animation: thinking-bounce 1.4s infinite ease-in-out both;
+}
+
+.gemini-agent-thinking-dot-1 {
+	animation-delay: -0.32s;
+}
+
+.gemini-agent-thinking-dot-2 {
+	animation-delay: -0.16s;
+}
+
+@keyframes thinking-bounce {
+	0%, 80%, 100% {
+		transform: scale(0.8);
+		opacity: 0.5;
+	}
+	40% {
+		transform: scale(1.2);
+		opacity: 1;
+	}
+}
+
+/* Empty chat state */
+.gemini-agent-empty-chat {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: var(--size-4-8);
+	min-height: 300px;
+	animation: fadeIn 0.5s ease-in;
+}
+
+.gemini-agent-empty-icon {
+	width: 64px;
+	height: 64px;
+	margin-bottom: var(--size-4-4);
+	color: var(--text-muted);
+	opacity: 0.3;
+}
+
+.gemini-agent-empty-icon svg {
+	width: 100%;
+	height: 100%;
+}
+
+.gemini-agent-empty-title {
+	margin: 0 0 var(--size-4-2) 0;
+	font-size: var(--font-size-h3);
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-agent-empty-desc {
+	margin: 0 0 var(--size-4-4) 0;
+	color: var(--text-muted);
+	max-width: 400px;
+}
+
+.gemini-agent-suggestions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	width: 100%;
+	max-width: 400px;
+}
+
+.gemini-agent-suggestion {
+	padding: var(--size-4-2) var(--size-4-3);
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.gemini-agent-suggestion:hover {
+	background-color: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+	color: var(--text-normal);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Google Search Citations Styling */
+
+.gemini-agent-tool-search-answer {
+	margin-bottom: 16px;
+}
+
+.gemini-agent-tool-search-answer h5 {
+	margin: 0 0 8px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gemini-agent-tool-search-answer p {
+	margin: 0;
+	line-height: 1.6;
+}
+
+/* Inline citation links in answer text */
+.gemini-agent-tool-search-answer a {
+	color: var(--link-color);
+	text-decoration: none;
+	font-size: 12px;
+	font-weight: 500;
+	vertical-align: super;
+}
+
+.gemini-agent-tool-search-answer a:hover {
+	text-decoration: underline;
+}
+
+.gemini-agent-tool-citations {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-tool-citations h5 {
+	margin: 0 0 12px 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.gemini-agent-tool-citations-list {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+}
+
+.gemini-agent-tool-citations-list li {
+	margin-bottom: 12px;
+	padding-left: 20px;
+	position: relative;
+}
+
+.gemini-agent-tool-citations-list li::before {
+	content: '\u2022';
+	position: absolute;
+	left: 4px;
+	color: var(--text-faint);
+}
+
+.gemini-agent-tool-citation-link {
+	color: var(--link-color);
+	text-decoration: none;
+	font-weight: 500;
+	font-size: 14px;
+	display: inline-block;
+	margin-bottom: 4px;
+}
+
+.gemini-agent-tool-citation-link:hover {
+	text-decoration: underline;
+	color: var(--link-color-hover);
+}
+
+.gemini-agent-tool-citation-snippet {
+	margin: 0;
+	font-size: 12px;
+	color: var(--text-muted);
+	line-height: 1.5;
+	padding-left: 16px;
+	border-left: 2px solid var(--background-modifier-border);
+}
+
+/* Model Config Badge */
+.gemini-agent-model-badge {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 3px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 500;
+	margin-left: 8px;
+	white-space: nowrap;
+	opacity: 0.9;
+}
+
+.gemini-agent-model-badge:hover {
+	opacity: 1;
+}
+
+/* Prompt Badge - More prominent for custom prompts */
+.gemini-agent-prompt-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-radius: 12px;
+	font-size: var(--font-ui-smaller);
+	font-weight: 500;
+	margin-left: 8px;
+	cursor: help;
+	max-width: 150px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Settings indicator icon for other custom settings */
+.gemini-agent-settings-indicator {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin-left: 8px;
+	cursor: help;
+	color: var(--text-muted);
+}
+
+.gemini-agent-settings-indicator:hover {
+	color: var(--text-normal);
+}
+
+/* Session Settings Modal */
+.modal.session-settings-modal {
+	width: 600px;
+	max-width: 90vw;
+}
+
+.session-settings-modal .setting-item {
+	border: none;
+	padding: 1rem 0;
+}
+
+.session-settings-modal .setting-item-control {
+	gap: 0.5rem;
+}
+
+.session-settings-modal .dropdown {
+	min-width: 200px;
+}
+
+/* Fix dropdown styling for session settings modal */
+.session-settings-modal select,
+.session-settings-modal .dropdown select {
+	background-color: var(--background-modifier-form-field);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.session-settings-modal select option,
+.session-settings-modal .dropdown select option {
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+}
+
+.session-settings-modal .slider {
+	flex: 1;
+}
+
+.session-settings-modal .temperature-value,
+.session-settings-modal .top-p-value {
+	font-family: var(--font-monospace);
+	font-size: 0.875rem;
+	color: var(--text-muted);
+	padding: 0.25rem 0.5rem;
+	background: var(--background-modifier-form-field);
+	border-radius: 4px;
+	margin-top: 0.5rem;
+	display: inline-block;
+}
+
+.session-settings-modal .setting-item-description {
+	margin-top: 2rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: var(--text-muted);
+}
+
+.session-settings-modal .modal-button-container {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	margin-top: 2rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--background-modifier-border);
+}

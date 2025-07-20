@@ -1,6 +1,6 @@
 import * as Handlebars from 'handlebars';
 import { CustomPrompt } from './prompts/types';
-import ObsidianGemini from '../main';
+import ObsidianGemini from './main';
 
 // @ts-ignore
 import systemPromptContent from '../prompts/systemPrompt.txt';
@@ -82,5 +82,57 @@ export class GeminiPrompts {
 
 		// Default behavior: append custom prompt to system prompt
 		return `${baseSystemPrompt}\n\n## Additional Instructions\n\n${customPrompt.content}`;
+	}
+
+	// Method to create system prompt with tools information
+	getSystemPromptWithTools(availableTools: any[]): string {
+		const baseSystemPrompt = this.systemPrompt({
+			userName: this.plugin?.settings.userName || 'User',
+			language: this.getLanguageCode(),
+			date: new Date().toLocaleDateString(),
+			time: new Date().toLocaleTimeString(),
+		});
+
+		if (!availableTools || availableTools.length === 0) {
+			return baseSystemPrompt;
+		}
+
+		// Add tools information to the system prompt
+		let toolsSection = '\n\n## Available Tools\n\n';
+		toolsSection += 'You have access to the following tools that you can use to help answer questions:\n\n';
+		
+		for (const tool of availableTools) {
+			toolsSection += `### ${tool.name}\n`;
+			toolsSection += `${tool.description}\n`;
+			
+			if (tool.parameters && tool.parameters.properties) {
+				toolsSection += 'Parameters:\n';
+				for (const [param, schema] of Object.entries(tool.parameters.properties as Record<string, any>)) {
+					const required = tool.parameters.required?.includes(param) ? ' (required)' : '';
+					toolsSection += `- ${param}: ${schema.type}${required} - ${schema.description || ''}\n`;
+				}
+			}
+			toolsSection += '\n';
+		}
+
+		toolsSection += 'To use a tool, you MUST make a function call. The system will execute the tool and provide the results.\n\n';
+		toolsSection += '**IMPORTANT**: When the user asks you to:\n';
+		toolsSection += '- Create, write, or save content → USE the write_file tool\n';
+		toolsSection += '- List files → USE the list_files tool\n';
+		toolsSection += '- Read files → USE the read_file tool\n';
+		toolsSection += '- Search files → USE the search_files tool\n\n';
+		toolsSection += 'DO NOT just describe what you would do. ALWAYS use the appropriate tool to complete the task.\n';
+		toolsSection += 'Example: If asked to "create a file", you must call write_file with the path and content.\n\n';
+		toolsSection += '**CONTEXT FILES**: Files may be included in the context or mentioned by the user with @ symbols.\n';
+		toolsSection += 'When asked to modify or add data to these files:\n';
+		toolsSection += '1. First READ the file with read_file to understand its current content\n';
+		toolsSection += '2. Then WRITE the updated content with write_file, preserving existing data\n';
+		toolsSection += '3. DO NOT create new files unless explicitly asked - modify existing ones\n\n';
+		toolsSection += '**IMPORTANT TOOL ORDERING**: When combining operations on the same files:\n';
+		toolsSection += '- ALWAYS read files BEFORE deleting them\n';
+		toolsSection += '- ALWAYS read files BEFORE moving/renaming them\n';
+		toolsSection += '- If you need to combine files and delete originals, read ALL files first, then write combined, then delete\n';
+
+		return baseSystemPrompt + toolsSection;
 	}
 }

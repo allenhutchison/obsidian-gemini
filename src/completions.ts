@@ -1,8 +1,9 @@
-import ObsidianGemini from '../main';
+import ObsidianGemini from './main';
 import { MarkdownView, debounce, Notice } from 'obsidian';
 import { forceableInlineSuggestion, Suggestion } from 'codemirror-companion-extension';
 import { BaseModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
+import { ModelFactory } from './api/model-factory';
 
 export class GeminiCompletions {
 	private plugin: InstanceType<typeof ObsidianGemini>;
@@ -48,14 +49,16 @@ export class GeminiCompletions {
 	}
 
 	async generateNextSentence(contentBeforeCursor: string, contentAfterCursor: string): Promise<string> {
+		// Create a completions-specific model API
+		const modelApi = ModelFactory.createCompletionsModel(this.plugin);
+		
 		let request: BaseModelRequest = {
-			model: this.plugin.settings.completionsModelName,
 			prompt: this.prompts.completionsPrompt({
 				contentBeforeCursor: contentBeforeCursor,
 				contentAfterCursor: contentAfterCursor,
 			}),
 		};
-		const result = await this.plugin.geminiApi.generateModelResponse(request);
+		const result = await modelApi.generateModelResponse(request);
 		return result.markdown.replace(/\n$/, ''); // Remove trailing newline if it exists
 	}
 

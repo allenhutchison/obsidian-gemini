@@ -28,3 +28,9 @@ coverage/
 # Gemini CLI logs
 .gemini/
 
+# Obsidian debug logs
+obsidian.md-*.log
+
+# Development test scripts
+test-scripts/
+

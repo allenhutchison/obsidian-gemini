@@ -9,10 +9,20 @@ import { CustomPrompt } from '../../prompts/types';
  *
  * @property markdown - The primary text response in markdown format
  * @property rendered - Optional rendered HTML content (used for search grounding)
+ * @property toolCalls - Optional array of tool/function calls requested by the model
  */
 export interface ModelResponse {
 	markdown: string;
 	rendered: string;
+	toolCalls?: ToolCall[];
+}
+
+/**
+ * Represents a tool call requested by the model
+ */
+export interface ToolCall {
+	name: string;
+	arguments: Record<string, any>;
 }
 
 /**
@@ -37,12 +47,27 @@ export interface BaseModelRequest {
  * @property userMessage - The message from the user.
  * @property renderContent - Whether to render the content in responses (default: true)
  * @property customPrompt - Optional custom prompt to modify system behavior
+ * @property availableTools - Optional array of tool definitions for function calling
  */
 export interface ExtendedModelRequest extends BaseModelRequest {
 	conversationHistory: any[];
 	userMessage: string;
 	renderContent?: boolean;
 	customPrompt?: CustomPrompt;
+	availableTools?: ToolDefinition[];
+}
+
+/**
+ * Represents a tool definition for function calling
+ */
+export interface ToolDefinition {
+	name: string;
+	description: string;
+	parameters: {
+		type: 'object';
+		properties: Record<string, any>;
+		required?: string[];
+	};
 }
 
 /**

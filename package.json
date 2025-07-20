@@ -3,6 +3,13 @@
 	"version": "3.1.0",
 	"description": "Gemini Scribe, allows you to interact with the model and use your notes as context.",
 	"main": "main.js",
+	"types": "src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./main.js"
+		}
+	},
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",

@@ -1,5 +1,5 @@
 export interface BasicGeminiConversationEntry {
-	role: 'user' | 'model';
+	role: 'user' | 'model' | 'system';
 	message: string;
 	userMessage?: string;
 	model?: string;

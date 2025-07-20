@@ -6,7 +6,8 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ## What's New
 
-- **🎯 NEW: Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Select text, right-click "Rewrite with Gemini", provide instructions, and watch the AI improve just that section while maintaining document consistency.
+- **🤖 NEW: Agent Mode with Tool Calling:** AI agent that can perform actions in your vault! Search files, read content, create/edit/delete notes, and more. Features include persistent sessions, permission controls, and session-level model configuration.
+- **🎯 Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Select text, right-click "Rewrite with Gemini", provide instructions, and watch the AI improve just that section while maintaining document consistency.
 - **Dynamic Model Parameter Controls:** Automatic discovery of temperature and Top P ranges based on your available Gemini models with real-time validation
 - **Advanced Settings Panel:** Developer-focused settings now organized in a dedicated section with improved discoverability
 - **Model Discovery System:** Automatic fetching of the latest Gemini models with their parameter limits and capabilities
@@ -18,12 +19,13 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ## Features
 
+- **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, and manage your knowledge base. Features persistent sessions, granular permission controls, and session-specific model configuration.
 - **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note and its linked notes (up to a configurable depth) as context. This ensures highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Simply select the text you want to improve, right-click to choose "Rewrite with Gemini", and provide instructions for how you'd like it rewritten.
 - **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
 - **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe/History/` folder, making it easy to backup, version control, and manage your AI interactions.
-- **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
+- **Configurable Models:** Choose different Gemini models for chat, summarization, completions, and agent mode, allowing you to tailor the AI's behavior to each task.
 - **Search Grounding (Optional):** Enhance responses with Google Search results, improving the accuracy and relevance of the information provided by the AI. A configurable threshold controls how likely search grounding is to be triggered.
 - **Custom Prompt System:** Create reusable AI instruction templates that can be applied to individual notes, allowing you to customize the AI's behavior for different types of content (e.g., technical documentation, creative writing, tutoring). Includes command palette commands for easy creation, application, and removal of custom prompts.
 - **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, selection rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
@@ -33,6 +35,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
   - Automatic handling of file renames and moves
   - Easy backup and version control of chat history
   - Commands to manage and clear history
+  - Persistent agent sessions with full conversation history
 
 ## Quick Start
 
@@ -86,6 +89,11 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
     - **Custom Prompts:**
       - **Enable Custom Prompts:** Toggle the custom prompt system on/off (disabled by default).
       - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
+    - **Agent Mode:**
+      - **Enable Agent Mode:** Toggle the AI agent feature on/off.
+      - **Agent Model:** Select the Gemini model to use for agent interactions.
+      - **Available Tools:** Configure which tools the agent can use (search, read files, create/edit/delete notes).
+      - **Require User Confirmation:** Control whether the agent needs permission before performing actions.
     - **Advanced Settings:** (Click "Show Advanced Settings" to reveal)
       - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
       - **Top P:** Control response diversity and focus (0-1.0).
@@ -94,6 +102,39 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
       - **Developer Options:** Debug mode and advanced configuration tools.
 
 ## Usage
+
+### Agent Mode
+
+Let the AI actively work with your vault through tool calling capabilities.
+
+**Quick Start:**
+1. Enable Agent Mode in plugin settings
+2. Open Agent Chat with the command palette or ribbon icon
+3. Ask the agent to help with vault operations
+4. Review and approve actions (if confirmation is enabled)
+
+**Available Tools:**
+- **Search Files:** Find notes by name or content
+- **Read Files:** Access and analyze note contents
+- **Create Notes:** Generate new notes with specified content
+- **Edit Notes:** Modify existing notes with precision
+- **Delete Notes:** Remove notes (with confirmation)
+- **Manage Properties:** Update frontmatter and metadata
+- **Web Search:** Search Google for information (if enabled)
+- **Fetch URLs:** Retrieve and analyze web content
+
+**Key Features:**
+- **Persistent Sessions:** Continue conversations across Obsidian restarts
+- **Permission Controls:** Choose which tools require confirmation
+- **Context Files:** Add specific notes as persistent context
+- **Session Configuration:** Override model, temperature, and prompt per session
+- **Safety Features:** System folders are protected from modifications
+
+**Example Commands:**
+- "Find all notes about project planning"
+- "Create a new note summarizing my meeting notes from this week"
+- "Update the tags in all notes in the Projects folder"
+- "Analyze my daily notes and identify common themes"
 
 ### Custom Prompts
 
@@ -110,32 +151,44 @@ Create reusable AI instruction templates to customize behavior for different typ
 ### Documentation
 
 For detailed guides on all features, visit the [Documentation Hub](docs/README.md):
+
+**Core Features:**
 - [Chat Interface Guide](docs/chat-interface-guide.md)
+- [Agent Mode Guide](docs/agent-mode-guide.md) - AI agent with tool-calling capabilities
 - [Custom Prompts Guide](docs/custom-prompts-guide.md)
 - [AI-Assisted Writing Guide](docs/ai-writing-guide.md)
 - [Completions Guide](docs/completions-guide.md)
 - [Summarization Guide](docs/summarization-guide.md)
 - [Chat History Guide](docs/chat-history-guide.md)
 - [Context System Guide](docs/context-system-guide.md)
+
+**Configuration & Development:**
+- [Settings Reference](docs/settings-reference.md) - Complete settings documentation
 - [Advanced Settings Guide](docs/advanced-settings-guide.md)
+- [Tool Development Guide](docs/tool-development-guide.md) - Create custom agent tools
+
+**Migration & Updates:**
+- [Changelog](CHANGELOG.md) - Recent changes and migration notes
 
 ### Chat Interface
 
 1.  **Open Chat:**
 
-    - Use the command palette (Ctrl/Cmd + P) and search for "Gemini Scribe: Open Gemini Chat".
-    - Click the Gemini Scribe icon in the ribbon (if enabled).
+    - **Note-Centric Chat:** Use command palette "Gemini Scribe: Open Gemini Chat" or click the ribbon icon
+    - **Agent Chat:** Use command palette "Gemini Scribe: Open Agent Chat" for tool-calling capabilities
 
 2.  **Chat with Context:**
     - Type your message in the input box
     - Press Enter to send (Shift+Enter for new line)
     - The AI automatically includes your current note as context
     - Linked notes are included based on your context depth setting
+    - In Agent Mode, you can add persistent context files with @ mentions
 
 3.  **AI Responses:**
     - Responses appear in the chat with a "Copy" button
     - If Search Grounding is enabled, web search results may be included
     - Custom prompts modify how the AI responds (if configured)
+    - Agent Mode shows tool calls and results in collapsible sections
 
 ### Document Summarization
 
@@ -234,6 +287,14 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - Reset temperature and Top P to defaults if getting unexpected responses
   - Enable model discovery to get latest parameter limits
   - See the [Advanced Settings Guide](docs/advanced-settings-guide.md) for detailed configuration help
+- **Agent Mode Issues:**
+  - Ensure "Enable Agent Mode" is toggled on in settings
+  - Check that required tools are enabled in settings
+  - Verify the agent model supports function calling
+  - If tools fail, check file permissions and paths
+  - System folders (plugin state folder, .obsidian) are protected from modifications
+  - For session issues, try creating a new session
+  - Check the console for detailed error messages
 
 ## License
 

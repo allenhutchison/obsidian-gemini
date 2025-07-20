@@ -21,9 +21,9 @@ export class ModelManager {
 	private discoveryService: ModelDiscoveryService;
 	private static staticModels: GeminiModel[] = [
 		// Keep current models as fallback
-		{ value: 'gemini-2.5-pro-preview-06-05', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
-		{ value: 'gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
-		{ value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite', defaultForRoles: ['completions'] },
+		{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
+		{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
+		{ value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite', defaultForRoles: ['completions'] },
 	];
 
 	constructor(plugin: ObsidianGemini) {
@@ -35,9 +35,9 @@ export class ModelManager {
 	 * Get current models (dynamic or static fallback)
 	 */
 	async getAvailableModels(options: ModelUpdateOptions = {}): Promise<GeminiModel[]> {
-		// If dynamic discovery is disabled, return static models
+		// If dynamic discovery is disabled, return filtered static models
 		if (!this.plugin.settings.modelDiscovery?.enabled) {
-			return ModelManager.staticModels;
+			return this.filterModelsForVersion(ModelManager.staticModels);
 		}
 
 		try {
@@ -53,14 +53,15 @@ export class ModelManager {
 					dynamicModels = ModelMapper.mergeWithExistingModels(dynamicModels, ModelManager.staticModels);
 				}
 
-				return dynamicModels;
+				// Filter for Gemini 2.5+ models only
+				return this.filterModelsForVersion(dynamicModels);
 			}
 		} catch (error) {
 			console.warn('Model discovery failed, falling back to static models:', error);
 		}
 
-		// Fallback to static models
-		return ModelManager.staticModels;
+		// Fallback to filtered static models
+		return this.filterModelsForVersion(ModelManager.staticModels);
 	}
 
 	/**
@@ -148,6 +149,42 @@ export class ModelManager {
 	 */
 	static getStaticModels(): GeminiModel[] {
 		return [...ModelManager.staticModels];
+	}
+
+	/**
+	 * Filter models to only include Gemini 2.5 or higher
+	 * Older versions have been deprecated by Google and are no longer supported
+	 */
+	private filterModelsForVersion(models: GeminiModel[]): GeminiModel[] {
+		return models.filter(model => {
+			const modelValue = model.value.toLowerCase();
+			
+			// Check for Gemini 2.5 or higher
+			if (modelValue.includes('gemini-2.5')) {
+				return true;
+			}
+			
+			// Check for Gemini 2.0 or higher (but exclude 2.0 since we need 2.5+)
+			if (modelValue.includes('gemini-2.0')) {
+				return false;
+			}
+			
+			// Check for future versions (3.0+)
+			const versionMatch = modelValue.match(/gemini-(\d+)\.(\d+)/);
+			if (versionMatch) {
+				const major = parseInt(versionMatch[1]);
+				const minor = parseInt(versionMatch[2]);
+				
+				// Accept 2.5+ or any 3.0+
+				if (major > 2 || (major === 2 && minor >= 5)) {
+					return true;
+				}
+			}
+			
+			// Log filtered models for debugging
+			console.debug(`Filtering out deprecated model ${model.value} - only Gemini 2.5+ supported`);
+			return false;
+		});
 	}
 
 	/**

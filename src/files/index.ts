@@ -27,6 +27,30 @@ export class ScribeFile {
 		}
 	}
 
+	async buildFileContext(
+		files: TFile[],
+		depth: number = this.plugin.settings.maxContextDepth,
+		renderContent: boolean = false
+	): Promise<string | null> {
+		if (!this.plugin.settings.sendContext || files.length === 0) {
+			return null;
+		}
+
+		// Build context from multiple files
+		const contextParts: string[] = [];
+		
+		for (const file of files) {
+			const fileContext = new FileContextTree(this.plugin, depth);
+			await fileContext.initialize(file, renderContent);
+			const contextString = fileContext.toString();
+			if (contextString) {
+				contextParts.push(contextString);
+			}
+		}
+
+		return contextParts.join('\n\n---\n\n');
+	}
+
 	async addToFrontMatter(key: string, value: string) {
 		const activeFile = this.getActiveFile();
 		if (activeFile) {
