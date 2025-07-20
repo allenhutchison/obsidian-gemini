@@ -31,3 +31,6 @@ coverage/
 # Obsidian debug logs
 obsidian.md-*.log
 
+# Development test scripts
+test-scripts/
+
