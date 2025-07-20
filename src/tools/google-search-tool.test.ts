@@ -97,6 +97,8 @@ describe('GoogleSearchTool', () => {
 			expect(result.data).toEqual({
 				query: 'test query',
 				answer: 'Here are the search results for your query...',
+				originalAnswer: 'Here are the search results for your query...',
+				citations: [],
 				searchGrounding: {
 					webSearchQueries: ['test query'],
 					groundingAttributions: [
@@ -136,6 +138,8 @@ describe('GoogleSearchTool', () => {
 			expect(result.data).toEqual({
 				query: 'another query',
 				answer: 'Basic search response without metadata',
+				originalAnswer: 'Basic search response without metadata',
+				citations: [],
 				searchGrounding: undefined
 			});
 		});

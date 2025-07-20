@@ -36,6 +36,10 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 	beforeEach(() => {
 		// Mock plugin
 		plugin = {
+			settings: {
+				loopDetectionThreshold: 3,
+				loopDetectionTimeWindowSeconds: 60
+			},
 			app: {
 				vault: {
 					getAbstractFileByPath: jest.fn(),

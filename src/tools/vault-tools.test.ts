@@ -54,6 +54,9 @@ const mockVault = {
 const mockPlugin = {
 	app: {
 		vault: mockVault
+	},
+	settings: {
+		historyFolder: 'test-history-folder'
 	}
 } as any;
 

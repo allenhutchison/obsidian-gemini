@@ -80,10 +80,10 @@ export class GoogleSearchTool implements Tool {
 			let citations: Array<{title?: string; url: string; snippet?: string}> = [];
 			let textWithCitations = text;
 			
-			// Debug logging
-			console.log('Search metadata:', searchMetadata);
-			console.log('Has groundingChunks:', !!searchMetadata?.groundingChunks);
-			console.log('Has groundingSupports:', !!searchMetadata?.groundingSupports);
+			// Debug logging (commented out for cleaner test output)
+			// console.log('Search metadata:', searchMetadata);
+			// console.log('Has groundingChunks:', !!searchMetadata?.groundingChunks);
+			// console.log('Has groundingSupports:', !!searchMetadata?.groundingSupports);
 			
 			// Extract citations from groundingChunks
 			if (searchMetadata?.groundingChunks) {
@@ -128,10 +128,10 @@ export class GoogleSearchTool implements Tool {
 				}
 			}
 			
-			// Log citations for debugging
-			if (citations.length > 0) {
-				console.log('Google Search citations found:', citations);
-			}
+			// Log citations for debugging (commented out for cleaner test output)
+			// if (citations.length > 0) {
+			// 	console.log('Google Search citations found:', citations);
+			// }
 			
 			return {
 				success: true,
