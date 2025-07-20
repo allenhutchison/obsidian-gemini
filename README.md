@@ -151,14 +151,24 @@ Create reusable AI instruction templates to customize behavior for different typ
 ### Documentation
 
 For detailed guides on all features, visit the [Documentation Hub](docs/README.md):
+
+**Core Features:**
 - [Chat Interface Guide](docs/chat-interface-guide.md)
+- [Agent Mode Guide](docs/agent-mode-guide.md) - AI agent with tool-calling capabilities
 - [Custom Prompts Guide](docs/custom-prompts-guide.md)
 - [AI-Assisted Writing Guide](docs/ai-writing-guide.md)
 - [Completions Guide](docs/completions-guide.md)
 - [Summarization Guide](docs/summarization-guide.md)
 - [Chat History Guide](docs/chat-history-guide.md)
 - [Context System Guide](docs/context-system-guide.md)
+
+**Configuration & Development:**
+- [Settings Reference](docs/settings-reference.md) - Complete settings documentation
 - [Advanced Settings Guide](docs/advanced-settings-guide.md)
+- [Tool Development Guide](docs/tool-development-guide.md) - Create custom agent tools
+
+**Migration & Updates:**
+- [Changelog](CHANGELOG.md) - Recent changes and migration notes
 
 ### Chat Interface
 

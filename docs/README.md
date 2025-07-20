@@ -6,13 +6,18 @@ Welcome to the comprehensive documentation for Gemini Scribe, an Obsidian plugin
 
 ### Core Features
 - **[Chat Interface Guide](chat-interface-guide.md)** - Learn how to effectively use the AI chat
+- **[Agent Mode Guide](agent-mode-guide.md)** - Use AI agent with tool-calling capabilities
 - **[Custom Prompts Guide](custom-prompts-guide.md)** - Create reusable AI instruction templates
 - **[AI-Assisted Writing Guide](ai-writing-guide.md)** - Collaborate with AI to draft and refine documents
 - **[IDE-Style Completions Guide](completions-guide.md)** - Get intelligent text suggestions as you type
 - **[Document Summarization Guide](summarization-guide.md)** - Generate concise summaries automatically
 - **[Chat History Guide](chat-history-guide.md)** - Manage and utilize your conversation history
 - **[Context System Guide](context-system-guide.md)** - Understand how AI uses your notes as context
+
+### Configuration & Development
+- **[Settings Reference](settings-reference.md)** - Comprehensive guide to all plugin settings
 - **[Advanced Settings Guide](advanced-settings-guide.md)** - Configure model parameters and developer options
+- **[Tool Development Guide](tool-development-guide.md)** - Create custom tools for agent mode
 
 ### Getting Started
 
