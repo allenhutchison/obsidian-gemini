@@ -46,18 +46,19 @@ describe('GeminiApiNew', () => {
 	const { mockGenerateContent, mockGenerateContentStream } = require('@google/genai');
 
 	beforeEach(() => {
-		mockPluginInstance = new (ObsidianGemini as any)();
-		// When GeminiApiNew is instantiated, it will try to get the generative model.
-		// The mock for GoogleGenAI needs to correctly provide 'models.generateContent' if that's what GeminiApiNew expects,
-		// or 'getGenerativeModel().generateContent' if it expects that.
-		// The actual code in gemini-api-new.ts uses:
-		// const genAI = new GoogleGenAI(this.plugin.settings.apiKey);
-		// this.model = genAI.getGenerativeModel({ model: chatModelName });
-		// So, the GoogleGenAI mock should be:
-		// getGenerativeModel: jest.fn().mockImplementation(() => ({ generateContent: mockGenerateContent }))
-		// However, the subtask strictly provides the 'models.generateContent' structure.
-		// For this step, I will adhere to the subtask's provided mock structure.
-		// This might mean the test won't pass if GeminiApiNew isn't aligned with this mock.
+		mockPluginInstance = {
+			settings: {
+				apiKey: 'test-api-key',
+				chatModelName: 'gemini-1.5-flash',
+				temperature: 0.7,
+				topP: 0.95,
+				searchGrounding: false
+			},
+			prompts: {
+				systemPrompt: jest.fn().mockReturnValue('System prompt'),
+				contextPrompt: jest.fn().mockReturnValue('Context prompt')
+			}
+		} as any;
 		geminiApiNew = new GeminiApiNew(mockPluginInstance);
 		mockGenerateContent.mockClear();
 		mockGenerateContentStream.mockClear();
