@@ -21,7 +21,7 @@ jest.mock('@google/genai', () => {
 });
 
 // Mock ObsidianGemini plugin
-jest.mock('../../../main', () => {
+jest.mock('../../main', () => {
 	return jest.fn().mockImplementation(() => ({
 		settings: {
 			apiKey: 'test-api-key',

@@ -1413,7 +1413,9 @@ User: ${history[0].message}`;
 				availableTools: availableTools  // Include tools so model can chain calls
 			};
 			
-			const followUpResponse = await this.plugin.geminiApi.generateModelResponse(followUpRequest);
+			// Use the same model API for follow-up requests
+			const modelApi = AgentFactory.createAgentModel(this.plugin, this.currentSession!);
+			const followUpResponse = await modelApi.generateModelResponse(followUpRequest);
 			
 			// Check if the follow-up response also contains tool calls
 			if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
@@ -1461,7 +1463,9 @@ User: ${history[0].message}`;
 						renderContent: false
 					};
 					
-					const retryResponse = await this.plugin.geminiApi.generateModelResponse(retryRequest);
+					// Use the same model API for retry requests
+					const modelApi2 = AgentFactory.createAgentModel(this.plugin, this.currentSession!);
+					const retryResponse = await modelApi2.generateModelResponse(retryRequest);
 					
 					if (retryResponse.markdown && retryResponse.markdown.trim()) {
 						const aiEntry: GeminiConversationEntry = {

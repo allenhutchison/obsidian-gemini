@@ -1,6 +1,7 @@
 import ObsidianGemini from './main';
 import { GeminiPrompts } from './prompts';
 import { BaseModelRequest } from './api/index';
+import { ModelFactory } from './api/model-factory';
 
 export class GeminiSummary {
 	private plugin: InstanceType<typeof ObsidianGemini>;
@@ -14,11 +15,13 @@ export class GeminiSummary {
 	async summarizeActiveFile() {
 		const fileContent = await this.plugin.gfile.getCurrentFileContent(0, true);
 		if (fileContent) {
+			// Create a summary-specific model API
+			const modelApi = ModelFactory.createSummaryModel(this.plugin);
+			
 			let request: BaseModelRequest = {
-				model: this.plugin.settings.summaryModelName,
 				prompt: this.prompts.summaryPrompt({ content: fileContent }),
 			};
-			const summary = await this.plugin.geminiApi.generateModelResponse(request);
+			const summary = await modelApi.generateModelResponse(request);
 			this.plugin.gfile.addToFrontMatter(this.plugin.settings.summaryFrontmatterKey, summary.markdown);
 		} else {
 			console.error('Failed to get file content for summary.');

@@ -100,6 +100,28 @@ export {
     ApiProvider
 } from './api/api-factory';
 
+// Model and Agent Factories
+export {
+    ModelFactory,
+    ModelType
+} from './api/model-factory';
+
+export {
+    AgentFactory
+} from './agent/agent-factory';
+
+export type {
+    AgentConfig
+} from './agent/agent-factory';
+
+// API Configuration Types
+export type {
+    ApiConfig,
+    ModelConfig,
+    RetryConfig,
+    ApiFeatures
+} from './api/config/model-config';
+
 // Core Classes for Extension
 export {
     ToolRegistry
@@ -154,6 +176,15 @@ export {
 export {
     ApiFactory
 } from './api/api-factory';
+
+// Config-based API implementations (for advanced usage)
+export {
+    GeminiApiConfig
+} from './api/implementations/gemini-api-config';
+
+export {
+    RetryDecoratorConfig
+} from './api/retry-decorator-config';
 
 // Main Plugin Class (for type reference)
 export { default as ObsidianGeminiPlugin } from './main';

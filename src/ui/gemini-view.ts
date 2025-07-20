@@ -6,6 +6,7 @@ import { GEMINI_MODELS } from '../models';
 import { GeminiConversationEntry } from '../types/conversation';
 import { logDebugInfo } from '../api/utils/debug';
 import { CustomPrompt } from '../prompts/types';
+import { ModelFactory } from '../api/model-factory';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -462,15 +463,18 @@ export class GeminiView extends ItemView {
 				};
 				logDebugInfo(this.plugin.settings.debugMode, 'Sending message', request);
 
+				// Create a chat model API
+				const modelApi = ModelFactory.createChatModel(this.plugin);
+				
 				// Check if streaming is supported
-				if (this.plugin.geminiApi.generateStreamingResponse && this.plugin.settings.streamingEnabled !== false) {
+				if (modelApi.generateStreamingResponse && this.plugin.settings.streamingEnabled !== false) {
 					// Use streaming API
 					let modelMessageContainer: HTMLDivElement | null = null;
 					let accumulatedMarkdown = '';
 
 					// User message already displayed by button handler
 
-					const streamResponse = this.plugin.geminiApi.generateStreamingResponse(request, (chunk: string) => {
+					const streamResponse = modelApi.generateStreamingResponse(request, (chunk: string) => {
 						accumulatedMarkdown += chunk;
 
 						// Create or update the model message container
@@ -530,7 +534,7 @@ export class GeminiView extends ItemView {
 					}
 				} else {
 					// Fall back to non-streaming API
-					const botResponse = await this.plugin.geminiApi.generateModelResponse(request);
+					const botResponse = await modelApi.generateModelResponse(request);
 
 					if (this.plugin.settings.chatHistory && this.currentFile) {
 						// Store user message first
