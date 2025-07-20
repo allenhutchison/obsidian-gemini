@@ -503,19 +503,15 @@ export class GeminiView extends ItemView {
 
 						if (this.plugin.settings.chatHistory && this.currentFile) {
 							// Store user message first
-							await this.plugin.history.addEntry(this.currentFile.path, {
+							await this.plugin.history.appendHistoryForFile(this.currentFile, {
 								role: 'user',
-								message: userMessage,
-								notePath: this.currentFile.path,
-								created_at: new Date()
+								message: userMessage
 							});
 
 							// Store assistant message
-							await this.plugin.history.addEntry(this.currentFile.path, {
+							await this.plugin.history.appendHistoryForFile(this.currentFile, {
 								role: 'model',
-								message: botResponse.markdown,
-								notePath: this.currentFile.path,
-								created_at: new Date()
+								message: botResponse.markdown
 							});
 
 							// No need to clear and reload - the streaming UI already shows the messages
@@ -570,6 +566,7 @@ export class GeminiView extends ItemView {
 					}
 				}
 			} catch (error) {
+				console.error('Error in sendMessage:', error);
 				new Notice('Error getting bot response.');
 			}
 		}
