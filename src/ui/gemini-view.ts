@@ -411,7 +411,7 @@ export class GeminiView extends ItemView {
 		await this.updatePromptIndicator();
 
 		// Load history for this file using the original method
-		const history = await this.plugin.history.getHistory(file.path);
+		const history = await this.plugin.history.getHistoryForFile(file);
 
 		// Update the chat with the history
 		this.updateChat(history);
@@ -551,7 +551,7 @@ export class GeminiView extends ItemView {
 
 						// Clear and reload the entire chat from history
 						this.clearChat();
-						await this.updateChat(await this.plugin.history.getHistory(this.currentFile?.path || ''));
+						await this.updateChat(await this.plugin.history.getHistoryForFile(this.currentFile));
 
 						// Only display grounding content as it's not stored in history
 						if (botResponse.rendered) {
