@@ -195,6 +195,18 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				text.inputEl.style.width = '40ch';
 			});
 
+		// Add note about model version filtering
+		new Setting(containerEl)
+			.setName('Model Versions')
+			.setDesc('ℹ️ Only Gemini 2.5+ models are shown. Older model versions have been deprecated by Google and are no longer supported.')
+			.addButton((button) =>
+				button
+					.setButtonText('Learn More')
+					.onClick(() => {
+						window.open('https://ai.google.dev/gemini-api/docs/models/gemini');
+					})
+			);
+
 		await selectModelSetting(
 			containerEl,
 			this.plugin,
