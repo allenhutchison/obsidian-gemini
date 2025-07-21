@@ -42,10 +42,10 @@ export class AgentFactory {
 		const sessionManager = new SessionManager(plugin);
 
 		// Create tool registry
-		const toolRegistry = new ToolRegistry();
+		const toolRegistry = new ToolRegistry(plugin);
 
 		// Create execution engine
-		const executionEngine = new ToolExecutionEngine(toolRegistry, app);
+		const executionEngine = new ToolExecutionEngine(plugin, toolRegistry);
 
 		return {
 			sessionManager,
@@ -69,7 +69,7 @@ export class AgentFactory {
 		sessionManager: SessionManager,
 		executionEngine: ToolExecutionEngine
 	): AgentView {
-		return new AgentView(leaf, plugin, sessionManager, executionEngine);
+		return new AgentView(leaf, plugin);
 	}
 
 	/**
@@ -119,7 +119,6 @@ export class AgentFactory {
 		(plugin as any).toolRegistry = toolRegistry;
 		(plugin as any).executionEngine = executionEngine;
 
-		// Initialize session manager
-		await sessionManager.initialize();
+		// Session manager doesn't need initialization
 	}
 }

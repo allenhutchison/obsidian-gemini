@@ -6,6 +6,7 @@ import { OllamaApi } from './implementations/ollama-api';
 import { RetryModelApiDecorator } from './retry-model-api-decorator';
 import { RetryDecoratorConfig } from './retry-decorator-config';
 import { ApiConfig, ModelConfig, RetryConfig } from './config/model-config';
+import { GeminiPrompts } from '../prompts';
 
 /**
  * Enum for different API providers
@@ -61,7 +62,7 @@ export class ApiFactory {
 					apiInstance = new GeminiApiNew(plugin);
 				} else {
 					// Use the new config-based implementation
-					const prompts = plugin ? plugin.prompts : undefined;
+					const prompts = plugin ? new GeminiPrompts(plugin) : undefined;
 					apiInstance = new GeminiApiConfig(config.modelConfig, config.features, prompts);
 				}
 				break;

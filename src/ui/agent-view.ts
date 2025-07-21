@@ -11,6 +11,7 @@ import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import * as Handlebars from 'handlebars';
+import { AgentFactory } from '../agent/agent-factory';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -25,6 +26,7 @@ export class AgentView extends ItemView {
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private mentionedFiles: TFile[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
+	private scrollTimeout: NodeJS.Timeout | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -607,6 +609,9 @@ export class AgentView extends ItemView {
 			// Use markdown rendering like the regular chat view
 			await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this);
 		}
+		
+		// Scroll to bottom after displaying message
+		this.scrollToBottom();
 
 		// Add a copy button for model messages
 		if (entry.role === 'model') {
@@ -1045,50 +1050,157 @@ These files are included in the context below. When the user asks you to write d
 					availableTools: availableTools // No need to cast to any
 				};
 				
-				// For now, agent view will use non-streaming API since tool calls need the full response
-				// TODO: Add streaming support with tool calls
-				console.log('Agent view using non-streaming API for tool support');
-				const response = await this.plugin.geminiApi.generateModelResponse(request);
+				// Create model API for this session
+				const modelApi = AgentFactory.createAgentModel(this.plugin, this.currentSession!);
 				
-				// Restore original setting
-				this.plugin.settings.sendContext = originalSendContext;
-				
-				// Remove thinking indicator
-				thinkingMessage.remove();
-
-				// Check if the model requested tool calls
-				if (response.toolCalls && response.toolCalls.length > 0) {
-					// Execute tools and handle results
-					await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
-				} else {
-					// Normal response without tool calls
-					// Only display if response has content
-					if (response.markdown && response.markdown.trim()) {
-						// Display AI response
-						const aiEntry: GeminiConversationEntry = {
-							role: 'model',
-							message: response.markdown,
-							notePath: '',
-							created_at: new Date()
-						};
-						await this.displayMessage(aiEntry);
-
-						// Save to history
-						if (this.plugin.settings.chatHistory) {
-							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-							
-							// Auto-label session after first exchange
-							await this.autoLabelSessionIfNeeded();
-						}
-					} else {
-						// Empty response - might be thinking tokens
-						console.warn('Model returned empty response');
-						new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
+				// Check if streaming is supported and enabled
+				if (modelApi.generateStreamingResponse && this.plugin.settings.streamingEnabled !== false) {
+					// Use streaming API with tool support
+					let modelMessageContainer: HTMLElement | null = null;
+					let accumulatedMarkdown = '';
+					
+					// Remove thinking indicator before streaming starts
+					thinkingMessage.remove();
+					
+					const streamResponse = modelApi.generateStreamingResponse(request, (chunk: string) => {
+						accumulatedMarkdown += chunk;
 						
-						// Still save the user message to history
-						if (this.plugin.settings.chatHistory) {
-							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+						// Create or update the model message container
+						if (!modelMessageContainer) {
+							// First chunk - create the container
+							modelMessageContainer = this.createStreamingMessageContainer('model');
+							this.updateStreamingMessage(modelMessageContainer, chunk);
+						} else {
+							// Update existing container with new chunk
+							this.updateStreamingMessage(modelMessageContainer, chunk);
+							// Use debounced scroll to avoid stuttering
+							this.debouncedScrollToBottom();
+						}
+					});
+					
+					// Store the streaming response for potential cancellation
+					this.currentStreamingResponse = streamResponse;
+					
+					try {
+						const response = await streamResponse.complete;
+						this.currentStreamingResponse = null;
+						
+						// Restore original setting
+						this.plugin.settings.sendContext = originalSendContext;
+						
+						// Check if the model requested tool calls
+						if (response.toolCalls && response.toolCalls.length > 0) {
+							// Save user message to history first
+							if (this.plugin.settings.chatHistory) {
+								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+							}
+							
+							// If there was any streamed text before tool calls, finalize it
+							if (modelMessageContainer && accumulatedMarkdown.trim()) {
+								const aiEntry: GeminiConversationEntry = {
+									role: 'model',
+									message: accumulatedMarkdown,
+									notePath: '',
+									created_at: new Date()
+								};
+								await this.finalizeStreamingMessage(modelMessageContainer, accumulatedMarkdown, aiEntry);
+								
+								// Save partial response to history before executing tools
+								if (this.plugin.settings.chatHistory) {
+									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+								}
+							}
+							
+							// Execute tools and handle results
+							await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
+						} else {
+							// Normal response without tool calls
+							// Only finalize and save if response has content
+							if (response.markdown && response.markdown.trim()) {
+								const aiEntry: GeminiConversationEntry = {
+									role: 'model',
+									message: response.markdown,
+									notePath: '',
+									created_at: new Date()
+								};
+								
+								// Finalize the streaming message with proper rendering
+								if (modelMessageContainer) {
+									await this.finalizeStreamingMessage(modelMessageContainer, response.markdown, aiEntry);
+								}
+								
+								// Save to history
+								if (this.plugin.settings.chatHistory) {
+									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+									
+									// Auto-label session after first exchange
+									await this.autoLabelSessionIfNeeded();
+								}
+								
+								// Ensure we're scrolled to bottom after streaming completes
+								this.scrollToBottom();
+							} else {
+								// Empty response - might be thinking tokens
+								console.warn('Model returned empty response');
+								new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
+								
+								// Still save the user message to history
+								if (this.plugin.settings.chatHistory) {
+									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+								}
+							}
+						}
+					} catch (error) {
+						this.currentStreamingResponse = null;
+						this.plugin.settings.sendContext = originalSendContext;
+						throw error;
+					}
+				} else {
+					// Fall back to non-streaming API
+					console.log('Agent view using non-streaming API');
+					const response = await modelApi.generateModelResponse(request);
+					
+					// Restore original setting
+					this.plugin.settings.sendContext = originalSendContext;
+					
+					// Remove thinking indicator
+					thinkingMessage.remove();
+
+					// Check if the model requested tool calls
+					if (response.toolCalls && response.toolCalls.length > 0) {
+						// Execute tools and handle results
+						await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
+					} else {
+						// Normal response without tool calls
+						// Only display if response has content
+						if (response.markdown && response.markdown.trim()) {
+							// Display AI response
+							const aiEntry: GeminiConversationEntry = {
+								role: 'model',
+								message: response.markdown,
+								notePath: '',
+								created_at: new Date()
+							};
+							await this.displayMessage(aiEntry);
+
+							// Save to history
+							if (this.plugin.settings.chatHistory) {
+								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
+								
+								// Auto-label session after first exchange
+								await this.autoLabelSessionIfNeeded();
+							}
+						} else {
+							// Empty response - might be thinking tokens
+							console.warn('Model returned empty response');
+							new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
+							
+							// Still save the user message to history
+							if (this.plugin.settings.chatHistory) {
+								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+							}
 						}
 					}
 				}
@@ -1948,5 +2060,154 @@ User: ${history[0].message}`;
 	 */
 	allowToolWithoutConfirmation(toolName: string) {
 		this.allowedWithoutConfirmation.add(toolName);
+	}
+
+	/**
+	 * Scroll chat to bottom
+	 */
+	private scrollToBottom() {
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+	}
+
+	/**
+	 * Debounced scroll to bottom for streaming
+	 */
+	private debouncedScrollToBottom() {
+		// Clear existing timeout
+		if (this.scrollTimeout) {
+			clearTimeout(this.scrollTimeout);
+		}
+
+		// Set a new timeout to scroll after a brief delay
+		this.scrollTimeout = setTimeout(() => {
+			this.scrollToBottom();
+			this.scrollTimeout = null;
+		}, 50); // 50ms debounce
+	}
+
+	/**
+	 * Create empty message container for streaming
+	 */
+	private createStreamingMessageContainer(role: 'user' | 'model' | 'system' = 'model'): HTMLElement {
+		// Remove empty state if it exists
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) {
+			emptyState.remove();
+		}
+		
+		const messageDiv = this.chatContainer.createDiv({ 
+			cls: `gemini-agent-message gemini-agent-message-${role}`
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', { 
+			text: role === 'user' ? 'You' : role === 'system' ? 'System' : 'Agent',
+			cls: 'gemini-agent-message-role'
+		});
+		header.createEl('span', { 
+			text: new Date().toLocaleTimeString(),
+			cls: 'gemini-agent-message-time'
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+		
+		return messageDiv;
+	}
+
+	/**
+	 * Update streaming message with new chunk
+	 */
+	private async updateStreamingMessage(messageContainer: HTMLElement, newChunk: string): Promise<void> {
+		const messageDiv = messageContainer.querySelector('.gemini-agent-message-content') as HTMLElement;
+		if (messageDiv) {
+			// For streaming, append the new chunk as plain text to avoid re-rendering
+			// We'll do a final markdown render when streaming completes
+			const textNode = document.createTextNode(newChunk);
+			messageDiv.appendChild(textNode);
+		}
+	}
+
+	/**
+	 * Finalize streaming message with full markdown
+	 */
+	private async finalizeStreamingMessage(messageContainer: HTMLElement, fullMarkdown: string, entry: GeminiConversationEntry): Promise<void> {
+		const messageDiv = messageContainer.querySelector('.gemini-agent-message-content') as HTMLElement;
+		if (messageDiv) {
+			// Clear the div and render the final markdown
+			messageDiv.empty();
+			
+			// Apply the same formatting logic as displayMessage
+			let formattedMessage = fullMarkdown;
+			if (entry.role === 'model') {
+				// Apply the same formatting for tables and paragraphs
+				const lines = fullMarkdown.split('\n');
+				const formattedLines: string[] = [];
+				let inTable = false;
+				let previousLineWasEmpty = true;
+
+				for (let i = 0; i < lines.length; i++) {
+					const line = lines[i];
+					const trimmedLine = line.trim();
+					const hasUnescapedPipe = /(?<!\\)\|/.test(line);
+					const nextLine = lines[i + 1];
+					
+					// Check if we're starting a table
+					if (hasUnescapedPipe && !inTable) {
+						inTable = true;
+						// Add empty line before table if not already present
+						if (!previousLineWasEmpty) {
+							formattedLines.push('');
+						}
+					}
+					
+					// Add the current line
+					formattedLines.push(line);
+					
+					// Check if we're ending a table
+					if (inTable && !hasUnescapedPipe && trimmedLine !== '') {
+						inTable = false;
+						// Add empty line after table
+						formattedLines.push('');
+					} else if (inTable && trimmedLine === '') {
+						// Empty line also ends a table
+						inTable = false;
+					}
+					
+					// For non-table content, add empty line between paragraphs
+					if (!inTable && !hasUnescapedPipe && trimmedLine !== '' && 
+						nextLine && nextLine.trim() !== '' && !nextLine.includes('|')) {
+						formattedLines.push('');
+					}
+					
+					previousLineWasEmpty = trimmedLine === '';
+				}
+				
+				formattedMessage = formattedLines.join('\n');
+			}
+			
+			const sourcePath = this.currentSession?.historyPath || '';
+			await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this);
+			
+			// Add a copy button for model messages
+			if (entry.role === 'model') {
+				const copyButton = messageDiv.createEl('button', {
+					cls: 'gemini-agent-copy-button',
+				});
+				setIcon(copyButton, 'copy');
+
+				copyButton.addEventListener('click', () => {
+					// Use the original message text to preserve formatting
+					navigator.clipboard
+						.writeText(entry.message)
+						.then(() => {
+							new Notice('Message copied to clipboard.');
+						})
+						.catch((err) => {
+							new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
+							console.error('Failed to copy to clipboard', err);
+						});
+				});
+			}
+		}
 	}
 }
