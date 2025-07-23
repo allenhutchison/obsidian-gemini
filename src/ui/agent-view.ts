@@ -613,8 +613,8 @@ export class AgentView extends ItemView {
 		// Scroll to bottom after displaying message
 		this.scrollToBottom();
 
-		// Add a copy button for model messages
-		if (entry.role === 'model') {
+		// Add a copy button for both user and model messages
+		if (entry.role === 'model' || entry.role === 'user') {
 			const copyButton = content.createEl('button', {
 				cls: 'gemini-agent-copy-button',
 			});
