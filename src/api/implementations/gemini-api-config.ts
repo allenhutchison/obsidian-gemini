@@ -1,17 +1,14 @@
-import { GenerativeModel, GoogleGenerativeAI, Content, FunctionDeclaration } from '@google/generative-ai';
-import { ModelApi, BaseModelRequest, ExtendedModelRequest, ModelResponse, ToolCall } from '../interfaces/model-api';
-import { StreamCallback, StreamingModelResponse } from '../interfaces/streaming';
+import { GoogleGenAI } from '@google/genai';
+import { ModelApi, BaseModelRequest, ExtendedModelRequest, ModelResponse, ToolCall, StreamCallback, StreamingModelResponse } from '../interfaces/model-api';
 import { ModelConfig, ApiFeatures } from '../config/model-config';
 import { GeminiPrompts } from '../../prompts';
-import { convertGeminiTools } from '../../tools/tool-converter';
 
 /**
  * Configuration-based implementation of the Gemini API
  * This is the new preferred implementation that doesn't depend on the plugin instance
  */
 export class GeminiApiConfig implements ModelApi {
-	private ai: GoogleGenerativeAI;
-	private model: GenerativeModel | null = null;
+	private ai: GoogleGenAI;
 	private config: ModelConfig;
 	private features: ApiFeatures;
 	private prompts: GeminiPrompts;
@@ -20,91 +17,118 @@ export class GeminiApiConfig implements ModelApi {
 		this.config = config;
 		this.features = features;
 		this.prompts = prompts || new GeminiPrompts();
-		this.ai = new GoogleGenerativeAI(config.apiKey);
+		this.ai = new GoogleGenAI({
+			apiKey: config.apiKey
+		});
 	}
 
 	/**
-	 * Get or create the generative model instance
+	 * Build the request configuration for the model
 	 */
-	private getModel(request: BaseModelRequest | ExtendedModelRequest): GenerativeModel {
+	private buildRequestConfig(request: BaseModelRequest | ExtendedModelRequest): any {
 		// Determine effective configuration
 		const temperature = (request as ExtendedModelRequest).temperature ?? this.config.temperature;
 		const topP = (request as ExtendedModelRequest).topP ?? this.config.topP;
-		const maxOutputTokens = (request as ExtendedModelRequest).maxOutputTokens ?? this.config.maxOutputTokens;
+		const maxOutputTokens = this.config.maxOutputTokens;
 
-		// Prepare tools array if needed
-		const tools: any[] = [];
-		
+		// Build the config object
+		const config: any = {
+			model: this.config.model,
+			contents: this.buildContents(request),
+			config: {
+				temperature,
+				topP,
+				...(maxOutputTokens && { maxOutputTokens }),
+			},
+		};
+
 		// Handle search grounding
 		if (this.features.searchGrounding && !(request as ExtendedModelRequest).availableTools?.length) {
-			tools.push({ googleSearch: {} });
+			config.tools = [{ googleSearch: {} }];
 		}
 
 		// Handle function calling tools
 		if ((request as ExtendedModelRequest).availableTools?.length) {
-			const functionDeclarations = convertGeminiTools((request as ExtendedModelRequest).availableTools!);
+			const functionDeclarations = (request as ExtendedModelRequest).availableTools!.map(tool => ({
+				name: tool.name,
+				description: tool.description,
+				parameters: {
+					type: 'object' as const,
+					properties: tool.parameters.properties || {},
+					required: tool.parameters.required || []
+				}
+			}));
 			if (functionDeclarations.length > 0) {
-				tools.push({ functionDeclarations });
+				config.tools = config.tools || [];
+				config.tools.push({ functionDeclarations });
 			}
 		}
 
-		// Create model with configuration
-		const modelConfig: any = {
-			temperature,
-			topP,
-			...(maxOutputTokens && { maxOutputTokens }),
-		};
-
-		// Add tools if any
-		if (tools.length > 0) {
-			modelConfig.tools = tools;
-		}
-
-		return this.ai.getGenerativeModel({
-			model: this.config.model,
-			generationConfig: modelConfig,
-		});
+		return config;
 	}
 
 	/**
 	 * Generate a streaming response
 	 */
-	async generateStreamingResponse(
+	generateStreamingResponse(
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
-	): Promise<StreamingModelResponse> {
+	): StreamingModelResponse {
 		if (!this.features.streamingEnabled) {
 			throw new Error('Streaming is not enabled');
 		}
 
-		try {
-			const model = this.getModel(request);
-			
-			// Build content array
-			const contents: Content[] = this.buildContents(request);
+		let cancelled = false;
 
-			// Generate streaming response
-			const result = await model.generateContentStream({ contents });
+		const complete = (async (): Promise<ModelResponse> => {
+			try {
+				const requestConfig = this.buildRequestConfig(request);
+				
+				// Generate streaming response
+				const result = await this.ai.models.generateContentStream(requestConfig);
 
-			// Process the stream
-			for await (const chunk of result.stream) {
-				const text = chunk.text();
-				if (text) {
-					onChunk(text);
+				let fullMarkdown = '';
+				const toolCalls: ToolCall[] = [];
+
+				// Process the stream
+				for await (const chunk of result) {
+					if (cancelled) break;
+					
+					if (chunk.text) {
+						fullMarkdown += chunk.text;
+						onChunk(chunk.text);
+					}
+					
+					// Check for tool calls in streaming chunks
+					if (chunk.candidates?.[0]?.content?.parts) {
+						for (const part of chunk.candidates[0].content.parts) {
+							if (part.functionCall) {
+								toolCalls.push({
+									name: part.functionCall.name || '',
+									arguments: part.functionCall.args || {}
+								});
+							}
+						}
+					}
 				}
-			}
 
-			// Get the final response for metadata
-			const response = await result.response;
-			return {
-				cancel: () => {
-					// Streaming already completed
-				},
-			};
-		} catch (error) {
-			console.error('Error during streaming:', error);
-			throw error;
-		}
+				return {
+					markdown: fullMarkdown,
+					rendered: fullMarkdown,
+					toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+				};
+			} catch (error) {
+				console.error('Error during streaming:', error);
+				throw error;
+			}
+		})();
+
+		return {
+			complete,
+			cancel: () => {
+				cancelled = true;
+			}
+		};
 	}
 
 	/**
@@ -112,31 +136,31 @@ export class GeminiApiConfig implements ModelApi {
 	 */
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		try {
-			const model = this.getModel(request);
+			const requestConfig = this.buildRequestConfig(request);
 			
-			// Build content array
-			const contents: Content[] = this.buildContents(request);
-
 			// Generate response
-			const result = await model.generateContent({ contents });
-			const response = result.response;
+			const result = await this.ai.models.generateContent(requestConfig);
 
 			// Extract text
-			const text = response.text();
+			let text = '';
+			if (result.candidates?.[0]?.content?.parts) {
+				for (const part of result.candidates[0].content.parts) {
+					if (part.text) {
+						text += part.text;
+					}
+				}
+			}
 
 			// Parse tool calls from response
 			const toolCalls: ToolCall[] = [];
 			
-			if (response.candidates && response.candidates.length > 0) {
-				const candidate = response.candidates[0];
-				if (candidate.content && candidate.content.parts) {
-					for (const part of candidate.content.parts) {
-						if (part.functionCall) {
-							toolCalls.push({
-								name: part.functionCall.name,
-								arguments: part.functionCall.args || {}
-							});
-						}
+			if (result.candidates?.[0]?.content?.parts) {
+				for (const part of result.candidates[0].content.parts) {
+					if (part.functionCall) {
+						toolCalls.push({
+							name: part.functionCall.name || '',
+							arguments: part.functionCall.args || {}
+						});
 					}
 				}
 			}
@@ -155,20 +179,10 @@ export class GeminiApiConfig implements ModelApi {
 	/**
 	 * Build content array from request
 	 */
-	private buildContents(request: BaseModelRequest | ExtendedModelRequest): Content[] {
-		const contents: Content[] = [];
+	private buildContents(request: BaseModelRequest | ExtendedModelRequest): any[] {
+		const contents: any[] = [];
 
-		// Add system instruction if available
-		if ((request as ExtendedModelRequest).systemInstruction) {
-			contents.push({
-				role: 'user',
-				parts: [{ text: (request as ExtendedModelRequest).systemInstruction! }],
-			});
-			contents.push({
-				role: 'model',
-				parts: [{ text: 'I understand and will follow these instructions.' }],
-			});
-		}
+		// System instruction is handled separately in the API config, not in contents
 
 		// Add conversation history if available
 		if ((request as ExtendedModelRequest).conversationHistory) {

@@ -1,5 +1,4 @@
-import { ModelApi, BaseModelRequest, ExtendedModelRequest, ModelResponse } from './interfaces/model-api';
-import { StreamCallback, StreamingModelResponse } from './interfaces/streaming';
+import { ModelApi, BaseModelRequest, ExtendedModelRequest, ModelResponse, StreamCallback, StreamingModelResponse } from './interfaces/model-api';
 import { RetryConfig } from './config/model-config';
 
 /**
@@ -63,16 +62,19 @@ export class RetryDecoratorConfig implements ModelApi {
 	/**
 	 * Generate a streaming response with retry logic
 	 */
-	async generateStreamingResponse(
+	generateStreamingResponse(
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
-	): Promise<StreamingModelResponse> {
-		// For streaming, we only retry the initial connection
-		// Once streaming starts, we don't retry mid-stream
-		return this.executeWithRetry(
-			() => this.wrappedApi.generateStreamingResponse!(request, onChunk),
-			'generateStreamingResponse'
-		);
+	): StreamingModelResponse {
+		// For streaming, we need to handle retries differently
+		// We can't use executeWithRetry directly because it expects a Promise
+		if (!this.wrappedApi.generateStreamingResponse) {
+			throw new Error('Wrapped API does not support streaming');
+		}
+		
+		// Return the streaming response directly
+		// The retry logic would need to be implemented within the streaming process
+		return this.wrappedApi.generateStreamingResponse(request, onChunk);
 	}
 
 	/**
