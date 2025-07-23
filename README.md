@@ -6,7 +6,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ## What's New
 
-- **🤖 NEW: Agent Mode with Tool Calling:** AI agent that can perform actions in your vault! Search files, read content, create/edit/delete notes, and more. Features include persistent sessions, permission controls, and session-level model configuration.
+- **🤖 NEW: Agent Mode with Tool Calling:** AI agent that can perform actions in your vault! Search files, read content, create/edit/delete notes, move and rename files, create folders, conduct deep research with citations, and more. Features include persistent sessions, permission controls, and session-level model configuration.
 - **🎯 Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Select text, right-click "Rewrite with Gemini", provide instructions, and watch the AI improve just that section while maintaining document consistency.
 - **Dynamic Model Parameter Controls:** Automatic discovery of temperature and Top P ranges based on your available Gemini models with real-time validation
 - **Advanced Settings Panel:** Developer-focused settings now organized in a dedicated section with improved discoverability
@@ -19,7 +19,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ## Features
 
-- **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, and manage your knowledge base. Features persistent sessions, granular permission controls, and session-specific model configuration.
+- **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, move and rename files, create folders, and even conduct deep research with proper citations. Features persistent sessions, granular permission controls, and session-specific model configuration.
 - **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note and its linked notes (up to a configurable depth) as context. This ensures highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Simply select the text you want to improve, right-click to choose "Rewrite with Gemini", and provide instructions for how you'd like it rewritten.
@@ -114,14 +114,17 @@ Let the AI actively work with your vault through tool calling capabilities.
 4. Review and approve actions (if confirmation is enabled)
 
 **Available Tools:**
-- **Search Files:** Find notes by name or content
+- **Search Files:** Find notes by name or content patterns
 - **Read Files:** Access and analyze note contents
 - **Create Notes:** Generate new notes with specified content
 - **Edit Notes:** Modify existing notes with precision
-- **Delete Notes:** Remove notes (with confirmation)
-- **Manage Properties:** Update frontmatter and metadata
-- **Web Search:** Search Google for information (if enabled)
+- **Move/Rename Files:** Reorganize and rename notes in your vault
+- **Delete Notes:** Remove notes or folders (with confirmation)
+- **Create Folders:** Organize your vault with new folder structures
+- **List Files:** Browse vault directories and their contents
+- **Web Search:** Search Google for current information (if enabled)
 - **Fetch URLs:** Retrieve and analyze web content
+- **Deep Research:** Conduct comprehensive multi-source research with citations
 
 **Key Features:**
 - **Persistent Sessions:** Continue conversations across Obsidian restarts
@@ -133,8 +136,10 @@ Let the AI actively work with your vault through tool calling capabilities.
 **Example Commands:**
 - "Find all notes about project planning"
 - "Create a new note summarizing my meeting notes from this week"
-- "Update the tags in all notes in the Projects folder"
+- "Research the latest developments in quantum computing and save a report"
 - "Analyze my daily notes and identify common themes"
+- "Move all completed project notes to an archive folder"
+- "Search for information about the Zettelkasten method and create a guide"
 
 ### Custom Prompts
 
