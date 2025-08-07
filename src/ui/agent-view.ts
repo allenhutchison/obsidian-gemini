@@ -1311,8 +1311,18 @@ These files are included in the context below. When the user asks you to write d
 		// Get the conversation history
 		const history = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
 		
-		// Only auto-label after first exchange (2 messages: user + assistant)
-		if (history.length !== 2) return;
+		// Only auto-label after we have at least a user message and an AI response
+		// Check for at least one user message and one model message
+		const hasUserMessage = history.some(entry => entry.role === 'user');
+		const hasModelMessage = history.some(entry => entry.role === 'model');
+		
+		if (!hasUserMessage || !hasModelMessage) return;
+		
+		// Check if we've already attempted to label this session
+		// to avoid multiple labeling attempts
+		if (this.currentSession.metadata && this.currentSession.metadata.autoLabeled) {
+			return;
+		}
 		
 		try {
 			// Generate a title based on the conversation
@@ -1347,6 +1357,12 @@ User: ${history[0].message}`;
 				if (generatedTitle && generatedTitle.length > 0) {
 					// Update session title
 					this.currentSession.title = generatedTitle;
+					
+					// Mark session as auto-labeled to prevent multiple attempts
+					if (!this.currentSession.metadata) {
+						this.currentSession.metadata = {};
+					}
+					this.currentSession.metadata.autoLabeled = true;
 					
 					// Update history file name
 					const oldPath = this.currentSession.historyPath;

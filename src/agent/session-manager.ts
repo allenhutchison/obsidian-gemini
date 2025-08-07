@@ -255,7 +255,8 @@ export class SessionManager {
 			created: frontmatter?.created ? new Date(frontmatter.created) : new Date(file.stat.ctime),
 			lastActive: new Date(file.stat.mtime),
 			historyPath: file.path,
-			sourceNotePath: frontmatter?.source_note_path
+			sourceNotePath: frontmatter?.source_note_path,
+			metadata: frontmatter?.metadata
 		};
 
 		this.activeSessions.set(session.id, session);

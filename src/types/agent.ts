@@ -98,6 +98,12 @@ export interface ChatSession {
 	
 	/** For note-chat sessions, the source note path */
 	sourceNotePath?: string;
+	
+	/** Additional metadata for the session */
+	metadata?: {
+		autoLabeled?: boolean;
+		[key: string]: any;
+	};
 }
 
 /**
