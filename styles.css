@@ -2091,6 +2091,18 @@ If your plugin does not need CSS, delete this file.
 	padding: var(--size-2-2) var(--size-4-3);
 }
 
+.gemini-agent-thinking-container {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+}
+
+.gemini-agent-thinking-text-container {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
 .gemini-agent-thinking-text {
 	color: var(--text-muted);
 	font-style: italic;
@@ -2103,6 +2115,14 @@ If your plugin does not need CSS, delete this file.
 	border-radius: 50%;
 	background-color: var(--text-muted);
 	animation: thinking-bounce 1.4s infinite ease-in-out both;
+}
+
+.gemini-agent-timer {
+	color: var(--text-muted);
+	font-size: 0.9em;
+	font-family: var(--font-monospace);
+	min-width: 3.5em;
+	text-align: right;
 }
 
 .gemini-agent-thinking-dot-1 {

@@ -27,6 +27,8 @@ export class AgentView extends ItemView {
 	private mentionedFiles: TFile[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private scrollTimeout: NodeJS.Timeout | null = null;
+	private timerInterval: NodeJS.Timeout | null = null;
+	private startTime: number | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -936,15 +938,26 @@ export class AgentView extends ItemView {
 		this.mentionedFiles = [];
 		this.sendButton.disabled = true;
 		
-		// Show thinking indicator
+		// Show thinking indicator with timer
 		const thinkingMessage = this.chatContainer.createDiv({ 
 			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-thinking'
 		});
 		const thinkingContent = thinkingMessage.createDiv({ cls: 'gemini-agent-message-content' });
-		thinkingContent.createSpan({ text: 'Thinking', cls: 'gemini-agent-thinking-text' });
+		const thinkingContainer = thinkingContent.createDiv({ cls: 'gemini-agent-thinking-container' });
+		
+		// Add thinking text with dots
+		const thinkingTextContainer = thinkingContainer.createSpan({ cls: 'gemini-agent-thinking-text-container' });
+		thinkingTextContainer.createSpan({ text: 'Thinking', cls: 'gemini-agent-thinking-text' });
 		for (let i = 0; i < 3; i++) {
-			thinkingContent.createSpan({ text: '.', cls: `gemini-agent-thinking-dot gemini-agent-thinking-dot-${i + 1}` });
+			thinkingTextContainer.createSpan({ text: '.', cls: `gemini-agent-thinking-dot gemini-agent-thinking-dot-${i + 1}` });
 		}
+		
+		// Add timer display
+		const timerDisplay = thinkingContainer.createSpan({ cls: 'gemini-agent-timer' });
+		timerDisplay.textContent = '0.0s';
+		
+		// Start timer
+		this.startTimer(timerDisplay);
 		
 		// Scroll to thinking message
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
@@ -1061,6 +1074,7 @@ These files are included in the context below. When the user asks you to write d
 					
 					// Remove thinking indicator before streaming starts
 					thinkingMessage.remove();
+					this.stopTimer();
 					
 					const streamResponse = modelApi.generateStreamingResponse(request, (chunk: string) => {
 						accumulatedMarkdown += chunk;
@@ -1166,6 +1180,7 @@ These files are included in the context below. When the user asks you to write d
 					
 					// Remove thinking indicator
 					thinkingMessage.remove();
+					this.stopTimer();
 
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
@@ -1209,6 +1224,7 @@ These files are included in the context below. When the user asks you to write d
 				this.plugin.settings.sendContext = originalSendContext;
 				// Remove thinking indicator on error
 				thinkingMessage.remove();
+				this.stopTimer();
 				throw error;
 			}
 
@@ -1289,11 +1305,31 @@ These files are included in the context below. When the user asks you to write d
 		});
 	}
 
+	private startTimer(timerDisplay: HTMLElement) {
+		this.startTime = Date.now();
+		this.timerInterval = setInterval(() => {
+			if (this.startTime) {
+				const elapsed = (Date.now() - this.startTime) / 1000;
+				timerDisplay.textContent = `${elapsed.toFixed(1)}s`;
+			}
+		}, 100);
+	}
+
+	private stopTimer() {
+		if (this.timerInterval) {
+			clearInterval(this.timerInterval);
+			this.timerInterval = null;
+		}
+		this.startTime = null;
+	}
+
 	async onClose() {
 		// Cleanup when view is closed
 		if (this.currentStreamingResponse) {
 			this.currentStreamingResponse.cancel();
 		}
+		// Clean up timer if still running
+		this.stopTimer();
 	}
 
 	/**
