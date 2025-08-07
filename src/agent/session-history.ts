@@ -172,6 +172,13 @@ export class SessionHistory {
 			} else {
 				delete frontmatter.prompt_template;
 			}
+			
+			// Save additional metadata
+			if (session.metadata) {
+				frontmatter.metadata = session.metadata;
+			} else {
+				delete frontmatter.metadata;
+			}
 		});
 	}
 
@@ -351,6 +358,11 @@ export class SessionHistory {
 			if (session.modelConfig.promptTemplate) {
 				frontmatter.prompt_template = session.modelConfig.promptTemplate;
 			}
+		}
+		
+		// Add metadata if present
+		if (session.metadata) {
+			frontmatter.metadata = session.metadata;
 		}
 
 		return `---\n${Object.entries(frontmatter)
