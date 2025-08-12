@@ -1,4 +1,4 @@
-export type ModelRole = 'chat' | 'summary' | 'completions';
+export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite';
 
 export interface GeminiModel {
 	value: string;
@@ -8,7 +8,7 @@ export interface GeminiModel {
 
 export let GEMINI_MODELS: GeminiModel[] = [
 	{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
-	{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
+	{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary', 'rewrite'] },
 	{ value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite', defaultForRoles: ['completions'] },
 ];
 
@@ -57,14 +57,8 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 
 	// Helper function to check if a model needs updating
 	const needsUpdate = (modelName: string) => {
-		// Don't update if model is empty/undefined (let defaults handle it)
-		if (!modelName) return false;
-
-		// Don't update if the model exists in current list
-		if (availableModelValues.has(modelName)) return false;
-
-		// Update is needed if model is not available
-		return true;
+		// Update if model is empty/undefined OR if the model is no longer available
+		return !modelName || !availableModelValues.has(modelName);
 	};
 
 	// Check chat model - only update if truly needed
