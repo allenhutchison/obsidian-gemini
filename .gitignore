@@ -34,4 +34,5 @@ obsidian.md-*.log
 # Development test scripts
 test-scripts/
 
-\n# TypeScript build info\ntsconfig.tsbuildinfo
+# TypeScript build info
+tsconfig.tsbuildinfo
