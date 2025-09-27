@@ -56,15 +56,8 @@ export class ApiFactory {
 				break;
 			case ApiProvider.GEMINI:
 			default:
-				// Use new config-based implementation when no plugin is provided
-				if (plugin) {
-					// For backward compatibility, use the old implementation
-					apiInstance = new GeminiApiNew(plugin);
-				} else {
-					// Use the new config-based implementation
-					const prompts = plugin ? new GeminiPrompts(plugin) : undefined;
-					apiInstance = new GeminiApiConfig(config.modelConfig, config.features, prompts);
-				}
+				const prompts = plugin ? new GeminiPrompts(plugin) : undefined;
+				apiInstance = new GeminiApiConfig(config.modelConfig, config.features, prompts);
 				break;
 		}
 
@@ -94,16 +87,15 @@ export class ApiFactory {
 		overrides?: Partial<ApiConfig>
 	): ApiConfig {
 		const provider = overrides?.provider || (plugin.settings.apiProvider as ApiProvider) || ApiProvider.GEMINI;
-		
-		// Determine which model to use based on context
-		// This will need to be specified when calling the factory
-		const model = plugin.settings.chatModelName; // Default to chat model
+
+		// The default model is the chat model, but it can be overridden
+		const defaultModel = plugin.settings.chatModelName;
 
 		return {
 			provider,
 			modelConfig: {
 				apiKey: plugin.settings.apiKey,
-				model: overrides?.modelConfig?.model || model,
+				model: overrides?.modelConfig?.model || defaultModel,
 				temperature: overrides?.modelConfig?.temperature ?? plugin.settings.temperature,
 				topP: overrides?.modelConfig?.topP ?? plugin.settings.topP,
 			},
