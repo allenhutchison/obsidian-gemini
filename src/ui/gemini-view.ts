@@ -7,6 +7,7 @@ import { GeminiConversationEntry } from '../types/conversation';
 import { logDebugInfo } from '../api/utils/debug';
 import { CustomPrompt } from '../prompts/types';
 import { ModelFactory } from '../api/model-factory';
+import { ChatTimer } from '../utils/timer-utils';
 
 export const VIEW_TYPE_GEMINI = 'gemini-view';
 
@@ -17,8 +18,7 @@ export class GeminiView extends ItemView {
 	private currentFile: TFile | null;
 	private observer: MutationObserver | null;
 	private timerDisplay: HTMLDivElement;
-	private timerInterval: NodeJS.Timeout | null = null;
-	private startTime: number | null = null;
+	private chatTimer: ChatTimer = new ChatTimer();
 	private modelPicker: HTMLSelectElement | null;
 	private settingsUnsubscribe: (() => void) | null = null;
 	private fileOpenHandler: (file: TFile | null) => Promise<void>;
@@ -107,7 +107,13 @@ export class GeminiView extends ItemView {
 			cls: 'gemini-scribe-send-button',
 		});
 		setIcon(sendButton, 'send-horizontal');
-		this.timerDisplay = sendContainer.createDiv({ cls: 'gemini-scribe-timer' });
+		this.timerDisplay = sendContainer.createDiv({
+			cls: 'gemini-scribe-timer',
+			attr: {
+				'aria-live': 'polite',
+				'aria-label': 'Elapsed time'
+			}
+		});
 
 
 		// Model picker area - now below input and options
@@ -147,7 +153,9 @@ export class GeminiView extends ItemView {
 			if (userMessage.trim() !== '') {
 				this.displayMessage(userMessage, 'user');
 				userInput.value = '';
-				this.startTimer();
+				// Show timer and start it
+				this.timerDisplay.style.display = 'block';
+				this.chatTimer.start(this.timerDisplay);
 
 				try {
 					await this.sendMessage(userMessage);
@@ -229,6 +237,8 @@ export class GeminiView extends ItemView {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
 		}
+		// Clean up timer
+		this.chatTimer.destroy();
 	}
 
 	// Update prompt indicator to show active custom prompt
@@ -603,24 +613,8 @@ export class GeminiView extends ItemView {
 		}, 50); // 50ms debounce
 	}
 
-	private startTimer() {
-		this.timerDisplay.style.display = 'block';
-		this.startTime = Date.now();
-		this.timerDisplay.textContent = '0.0s';
-
-		this.timerInterval = setInterval(() => {
-			if (this.startTime) {
-				const elapsed = (Date.now() - this.startTime) / 1000;
-				this.timerDisplay.textContent = `${elapsed.toFixed(1)}s`;
-			}
-		}, 100);
-	}
-
 	private stopTimer() {
-		if (this.timerInterval) {
-			clearInterval(this.timerInterval);
-			this.timerInterval = null;
-		}
+		this.chatTimer.stop();
 		setTimeout(() => {
 			if (this.timerDisplay) {
 				this.timerDisplay.style.display = 'none';

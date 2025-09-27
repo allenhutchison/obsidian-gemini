@@ -12,6 +12,7 @@ import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import * as Handlebars from 'handlebars';
 import { AgentFactory } from '../agent/agent-factory';
+import { ChatTimer } from '../utils/timer-utils';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -27,8 +28,7 @@ export class AgentView extends ItemView {
 	private mentionedFiles: TFile[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private scrollTimeout: NodeJS.Timeout | null = null;
-	private timerInterval: NodeJS.Timeout | null = null;
-	private startTime: number | null = null;
+	private chatTimer: ChatTimer = new ChatTimer();
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -952,12 +952,18 @@ export class AgentView extends ItemView {
 			thinkingTextContainer.createSpan({ text: '.', cls: `gemini-agent-thinking-dot gemini-agent-thinking-dot-${i + 1}` });
 		}
 		
-		// Add timer display
-		const timerDisplay = thinkingContainer.createSpan({ cls: 'gemini-agent-timer' });
+		// Add timer display with accessibility
+		const timerDisplay = thinkingContainer.createSpan({
+			cls: 'gemini-agent-timer',
+			attr: {
+				'aria-live': 'polite',
+				'aria-label': 'Elapsed time'
+			}
+		});
 		timerDisplay.textContent = '0.0s';
-		
-		// Start timer
-		this.startTimer(timerDisplay);
+
+		// Start timer using utility
+		this.chatTimer.start(timerDisplay);
 		
 		// Scroll to thinking message
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
@@ -1079,7 +1085,7 @@ These files are included in the context below. When the user asks you to write d
 						// Remove thinking indicator when first chunk arrives
 						if (!thinkingRemoved) {
 							thinkingMessage.remove();
-							this.stopTimer();
+							this.chatTimer.stop();
 							thinkingRemoved = true;
 						}
 						
@@ -1111,7 +1117,7 @@ These files are included in the context below. When the user asks you to write d
 							// Remove thinking indicator if it hasn't been removed yet
 							if (!thinkingRemoved) {
 								thinkingMessage.remove();
-								this.stopTimer();
+								this.chatTimer.stop();
 								thinkingRemoved = true;
 							}
 							
@@ -1173,7 +1179,7 @@ These files are included in the context below. When the user asks you to write d
 								// Remove thinking indicator if it hasn't been removed yet
 								if (!thinkingRemoved) {
 									thinkingMessage.remove();
-									this.stopTimer();
+									this.chatTimer.stop();
 									thinkingRemoved = true;
 								}
 								
@@ -1189,7 +1195,7 @@ These files are included in the context below. When the user asks you to write d
 						// Remove thinking indicator if it hasn't been removed yet
 						if (!thinkingRemoved) {
 							thinkingMessage.remove();
-							this.stopTimer();
+							this.chatTimer.stop();
 						}
 						throw error;
 					}
@@ -1203,7 +1209,7 @@ These files are included in the context below. When the user asks you to write d
 					
 					// Remove thinking indicator
 					thinkingMessage.remove();
-					this.stopTimer();
+					this.chatTimer.stop();
 
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
@@ -1247,7 +1253,7 @@ These files are included in the context below. When the user asks you to write d
 				this.plugin.settings.sendContext = originalSendContext;
 				// Remove thinking indicator on error
 				thinkingMessage.remove();
-				this.stopTimer();
+				this.chatTimer.stop();
 				throw error;
 			}
 
@@ -1328,23 +1334,6 @@ These files are included in the context below. When the user asks you to write d
 		});
 	}
 
-	private startTimer(timerDisplay: HTMLElement) {
-		this.startTime = Date.now();
-		this.timerInterval = setInterval(() => {
-			if (this.startTime) {
-				const elapsed = (Date.now() - this.startTime) / 1000;
-				timerDisplay.textContent = `${elapsed.toFixed(1)}s`;
-			}
-		}, 100);
-	}
-
-	private stopTimer() {
-		if (this.timerInterval) {
-			clearInterval(this.timerInterval);
-			this.timerInterval = null;
-		}
-		this.startTime = null;
-	}
 
 	async onClose() {
 		// Cleanup when view is closed
@@ -1352,7 +1341,7 @@ These files are included in the context below. When the user asks you to write d
 			this.currentStreamingResponse.cancel();
 		}
 		// Clean up timer if still running
-		this.stopTimer();
+		this.chatTimer.destroy();
 	}
 
 	/**
