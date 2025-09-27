@@ -34,3 +34,5 @@ obsidian.md-*.log
 # Development test scripts
 test-scripts/
 
+# TypeScript incremental compilation info
+*.tsbuildinfo
