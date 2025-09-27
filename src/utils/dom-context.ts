@@ -69,12 +69,14 @@ export function insertTextAtCursor(element: HTMLElement, text: string): void {
 		// No selection, append to end
 		element.appendChild(doc.createTextNode(text));
 
-		// Move cursor to end
-		const range = doc.createRange();
-		range.selectNodeContents(element);
-		range.collapse(false);
-		selection?.removeAllRanges();
-		selection?.addRange(range);
+		// Move cursor to end - only if we have a selection object
+		if (selection) {
+			const range = doc.createRange();
+			range.selectNodeContents(element);
+			range.collapse(false);
+			selection.removeAllRanges();
+			selection.addRange(range);
+		}
 		return;
 	}
 
@@ -117,6 +119,15 @@ export function insertNodeAtCursor(element: HTMLElement, node: Node): void {
 	if (!selection || selection.rangeCount === 0) {
 		// No selection, append to end
 		element.appendChild(node);
+
+		// Move cursor after the inserted node
+		if (selection && node.parentNode) {
+			const range = doc.createRange();
+			range.setStartAfter(node);
+			range.collapse(true);
+			selection.removeAllRanges();
+			selection.addRange(range);
+		}
 	} else {
 		const range = selection.getRangeAt(0);
 
@@ -132,17 +143,16 @@ export function insertNodeAtCursor(element: HTMLElement, node: Node): void {
 		} else {
 			// Selection is outside our element, append to end
 			element.appendChild(node);
-		}
-	}
 
-	// Move cursor after the inserted node
-	const newSelection = win.getSelection();
-	if (newSelection && node.parentNode) {
-		const range = doc.createRange();
-		range.setStartAfter(node);
-		range.collapse(true);
-		newSelection.removeAllRanges();
-		newSelection.addRange(range);
+			// Move cursor after the inserted node
+			if (node.parentNode) {
+				const range = doc.createRange();
+				range.setStartAfter(node);
+				range.collapse(true);
+				selection.removeAllRanges();
+				selection.addRange(range);
+			}
+		}
 	}
 }
 
