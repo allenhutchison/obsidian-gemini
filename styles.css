@@ -286,9 +286,10 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-scribe-timer {
 	color: var(--text-muted);
-	font-size: 14px;
+	font-size: 0.9em;
+	font-family: var(--font-monospace);
 	margin-top: 5px;
-	min-width: 4em;
+	min-width: 3.5em;
 	text-align: center;
 }
 
@@ -2091,11 +2092,24 @@ If your plugin does not need CSS, delete this file.
 	padding: var(--size-2-2) var(--size-4-3);
 }
 
+.gemini-agent-thinking-container {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+}
+
+.gemini-agent-thinking-text-container {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
 .gemini-agent-thinking-text {
 	color: var(--text-muted);
 	font-style: italic;
 }
 
+/* Thinking animation dots */
 .gemini-agent-thinking-dot {
 	display: inline-block;
 	width: 4px;
@@ -2111,6 +2125,15 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-agent-thinking-dot-2 {
 	animation-delay: -0.16s;
+}
+
+/* Timer display */
+.gemini-agent-timer {
+	color: var(--text-muted);
+	font-size: 0.9em;
+	font-family: var(--font-monospace);
+	min-width: 3.5em;
+	text-align: right;
 }
 
 @keyframes thinking-bounce {

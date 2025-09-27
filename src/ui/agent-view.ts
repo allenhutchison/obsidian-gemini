@@ -23,6 +23,7 @@ import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import * as Handlebars from 'handlebars';
 import { AgentFactory } from '../agent/agent-factory';
+import { ChatTimer } from '../utils/timer-utils';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -38,6 +39,7 @@ export class AgentView extends ItemView {
 	private mentionedFiles: TFile[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private scrollTimeout: NodeJS.Timeout | null = null;
+	private chatTimer: ChatTimer = new ChatTimer();
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -992,15 +994,32 @@ export class AgentView extends ItemView {
 		this.mentionedFiles = [];
 		this.sendButton.disabled = true;
 		
-		// Show thinking indicator
+		// Show thinking indicator with timer
 		const thinkingMessage = this.chatContainer.createDiv({ 
 			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-thinking'
 		});
 		const thinkingContent = thinkingMessage.createDiv({ cls: 'gemini-agent-message-content' });
-		thinkingContent.createSpan({ text: 'Thinking', cls: 'gemini-agent-thinking-text' });
+		const thinkingContainer = thinkingContent.createDiv({ cls: 'gemini-agent-thinking-container' });
+		
+		// Add thinking text with dots
+		const thinkingTextContainer = thinkingContainer.createSpan({ cls: 'gemini-agent-thinking-text-container' });
+		thinkingTextContainer.createSpan({ text: 'Thinking', cls: 'gemini-agent-thinking-text' });
 		for (let i = 0; i < 3; i++) {
-			thinkingContent.createSpan({ text: '.', cls: `gemini-agent-thinking-dot gemini-agent-thinking-dot-${i + 1}` });
+			thinkingTextContainer.createSpan({ text: '.', cls: `gemini-agent-thinking-dot gemini-agent-thinking-dot-${i + 1}` });
 		}
+		
+		// Add timer display with accessibility
+		const timerDisplay = thinkingContainer.createSpan({
+			cls: 'gemini-agent-timer',
+			attr: {
+				'aria-live': 'polite',
+				'aria-label': 'Elapsed time'
+			}
+		});
+		timerDisplay.textContent = '0.0s';
+
+		// Start timer using utility
+		this.chatTimer.start(timerDisplay);
 		
 		// Scroll to thinking message
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
@@ -1114,12 +1133,17 @@ These files are included in the context below. When the user asks you to write d
 					// Use streaming API with tool support
 					let modelMessageContainer: HTMLElement | null = null;
 					let accumulatedMarkdown = '';
-					
-					// Remove thinking indicator before streaming starts
-					thinkingMessage.remove();
+					let thinkingRemoved = false;
 					
 					const streamResponse = modelApi.generateStreamingResponse(request, (chunk: string) => {
 						accumulatedMarkdown += chunk;
+						
+						// Remove thinking indicator when first chunk arrives
+						if (!thinkingRemoved) {
+							thinkingMessage.remove();
+							this.chatTimer.stop();
+							thinkingRemoved = true;
+						}
 						
 						// Create or update the model message container
 						if (!modelMessageContainer) {
@@ -1146,6 +1170,13 @@ These files are included in the context below. When the user asks you to write d
 						
 						// Check if the model requested tool calls
 						if (response.toolCalls && response.toolCalls.length > 0) {
+							// Remove thinking indicator if it hasn't been removed yet
+							if (!thinkingRemoved) {
+								thinkingMessage.remove();
+								this.chatTimer.stop();
+								thinkingRemoved = true;
+							}
+							
 							// Save user message to history first
 							if (this.plugin.settings.chatHistory) {
 								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
@@ -1201,6 +1232,13 @@ These files are included in the context below. When the user asks you to write d
 								console.warn('Model returned empty response');
 								new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
 								
+								// Remove thinking indicator if it hasn't been removed yet
+								if (!thinkingRemoved) {
+									thinkingMessage.remove();
+									this.chatTimer.stop();
+									thinkingRemoved = true;
+								}
+								
 								// Still save the user message to history
 								if (this.plugin.settings.chatHistory) {
 									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
@@ -1210,6 +1248,11 @@ These files are included in the context below. When the user asks you to write d
 					} catch (error) {
 						this.currentStreamingResponse = null;
 						this.plugin.settings.sendContext = originalSendContext;
+						// Remove thinking indicator if it hasn't been removed yet
+						if (!thinkingRemoved) {
+							thinkingMessage.remove();
+							this.chatTimer.stop();
+						}
 						throw error;
 					}
 				} else {
@@ -1222,6 +1265,7 @@ These files are included in the context below. When the user asks you to write d
 					
 					// Remove thinking indicator
 					thinkingMessage.remove();
+					this.chatTimer.stop();
 
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
@@ -1265,6 +1309,7 @@ These files are included in the context below. When the user asks you to write d
 				this.plugin.settings.sendContext = originalSendContext;
 				// Remove thinking indicator on error
 				thinkingMessage.remove();
+				this.chatTimer.stop();
 				throw error;
 			}
 
@@ -1345,11 +1390,14 @@ These files are included in the context below. When the user asks you to write d
 		});
 	}
 
+
 	async onClose() {
 		// Cleanup when view is closed
 		if (this.currentStreamingResponse) {
 			this.currentStreamingResponse.cancel();
 		}
+		// Clean up timer if still running
+		this.chatTimer.destroy();
 	}
 
 	/**
