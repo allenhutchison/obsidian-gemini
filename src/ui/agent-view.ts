@@ -7,6 +7,17 @@ import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
 import { TFolder, TAbstractFile } from 'obsidian';
+import {
+	getDOMContext,
+	getContextSelection,
+	createContextRange,
+	createContextElement,
+	createContextTextNode,
+	insertTextAtCursor,
+	insertNodeAtCursor,
+	moveCursorToEnd,
+	execContextCommand
+} from '../utils/dom-context';
 import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
@@ -321,10 +332,66 @@ export class AgentView extends ItemView {
 		});
 		
 		// Handle paste to strip formatting
-		this.userInput.addEventListener('paste', (e) => {
+		this.userInput.addEventListener('paste', async (e) => {
+			// Try to prevent default first
 			e.preventDefault();
-			const text = e.clipboardData?.getData('text/plain') || '';
-			document.execCommand('insertText', false, text);
+
+			let text = '';
+
+			// Method 1: Try standard clipboardData (works in main window)
+			if (e.clipboardData && e.clipboardData.getData) {
+				try {
+					text = e.clipboardData.getData('text/plain') || '';
+				} catch (err) {
+					// Clipboard access might fail in popout
+					console.debug('Standard clipboard access failed:', err);
+				}
+			}
+
+			// Method 2: If no text yet, try the async Clipboard API
+			// This might work better in popout windows
+			if (!text && navigator.clipboard && navigator.clipboard.readText) {
+				try {
+					text = await navigator.clipboard.readText();
+				} catch (err) {
+					console.debug('Async clipboard access failed:', err);
+
+					// Method 3: As last resort, get the selection and use execCommand
+					// This is a fallback that might help in some browsers
+					try {
+						// Focus the input first
+						this.userInput.focus();
+
+						// Try using execCommand as absolute fallback
+						// This will paste with formatting, but we'll clean it up after
+						execContextCommand(this.userInput, 'paste');
+
+						// Give it a moment to paste, then clean up formatting
+						setTimeout(() => {
+							// Get just the text content, removing all HTML
+							const plainText = this.userInput.innerText || this.userInput.textContent || '';
+
+							// Clear and set plain text
+							this.userInput.textContent = plainText;
+
+							// Move cursor to end
+							moveCursorToEnd(this.userInput);
+						}, 10);
+
+						return; // Exit early since we handled it with the timeout
+					} catch (execErr) {
+						console.warn('All paste methods failed:', execErr);
+						// If all else fails, we can't paste
+						new Notice('Unable to paste in popout window. Try pasting in the main window.');
+						return;
+					}
+				}
+			}
+
+			// If we got text, insert it
+			if (text) {
+				insertTextAtCursor(this.userInput, text);
+			}
 		});
 
 		this.sendButton.addEventListener('click', () => this.sendMessage());
@@ -722,43 +789,31 @@ export class AgentView extends ItemView {
 	}
 	
 	private insertChipAtCursor(chip: HTMLElement) {
-		
-		// Insert at current cursor position
-		const selection = window.getSelection();
-		if (selection && selection.rangeCount > 0) {
-			const range = selection.getRangeAt(0);
-			range.insertNode(chip);
-			
-			// Move cursor after the chip
-			range.setStartAfter(chip);
+		// Insert the chip at cursor position
+		insertNodeAtCursor(this.userInput, chip);
+
+		// Add a non-breaking space after the chip to ensure it's preserved
+		const space = createContextTextNode(this.userInput, '\u00A0'); // Non-breaking space
+		chip.after(space);
+
+		// Move cursor after the space
+		const { doc, win } = getDOMContext(this.userInput);
+		const selection = win.getSelection();
+		if (selection) {
+			const range = doc.createRange();
+			range.setStartAfter(space);
 			range.collapse(true);
 			selection.removeAllRanges();
 			selection.addRange(range);
-		} else {
-			// If no selection, append to the end
-			this.userInput.appendChild(chip);
 		}
-		
-		// Add a non-breaking space after the chip to ensure it's preserved
-		const space = document.createTextNode('\u00A0'); // Non-breaking space
-		chip.after(space);
-		
-		// Move cursor after the space
-		const newSelection = window.getSelection();
-		if (newSelection) {
-			const range = document.createRange();
-			range.setStartAfter(space);
-			range.collapse(true);
-			newSelection.removeAllRanges();
-			newSelection.addRange(range);
-		}
-		
+
 		// Focus back on input
 		this.userInput.focus();
 	}
 	
 	private createFileChip(file: TFile): HTMLElement {
-		const chip = document.createElement('span');
+		// Use the correct document context
+		const chip = createContextElement(this.userInput, 'span');
 		chip.className = 'gemini-agent-file-chip';
 		chip.contentEditable = 'false';
 		chip.setAttribute('data-file-path', file.path);
@@ -803,7 +858,8 @@ export class AgentView extends ItemView {
 	}
 	
 	private createFolderChip(folder: TFolder, fileCount: number): HTMLElement {
-		const chip = document.createElement('span');
+		// Use the correct document context
+		const chip = createContextElement(this.userInput, 'span');
 		chip.className = 'gemini-agent-folder-chip';
 		chip.contentEditable = 'false';
 		chip.setAttribute('data-folder-path', folder.path);
