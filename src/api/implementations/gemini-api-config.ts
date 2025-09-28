@@ -102,16 +102,22 @@ export class GeminiApiConfig implements ModelApi {
 
 				let fullMarkdown = '';
 				const toolCalls: ToolCall[] = [];
+				let groundingContent = '';
 
 				// Process the stream
 				for await (const chunk of result) {
 					if (cancelled) break;
-					
+
 					if (chunk.text) {
 						fullMarkdown += chunk.text;
 						onChunk(chunk.text);
 					}
-					
+
+					// Check for grounding metadata in streaming chunks
+					if (chunk.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
+						groundingContent = chunk.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? '';
+					}
+
 					// Check for tool calls in streaming chunks
 					if (chunk.candidates?.[0]?.content?.parts) {
 						for (const part of chunk.candidates[0].content.parts) {
@@ -127,7 +133,7 @@ export class GeminiApiConfig implements ModelApi {
 
 				return {
 					markdown: fullMarkdown,
-					rendered: fullMarkdown,
+					rendered: groundingContent || '', // Empty string if no grounding content
 					toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 				};
 			} catch (error) {
@@ -166,7 +172,7 @@ export class GeminiApiConfig implements ModelApi {
 
 			// Parse tool calls from response
 			const toolCalls: ToolCall[] = [];
-			
+
 			if (result.candidates?.[0]?.content?.parts) {
 				for (const part of result.candidates[0].content.parts) {
 					if (part.functionCall) {
@@ -178,9 +184,15 @@ export class GeminiApiConfig implements ModelApi {
 				}
 			}
 
+			// Extract search grounding metadata if available
+			let rendered = '';
+			if (result.candidates?.[0]?.groundingMetadata?.searchEntryPoint) {
+				rendered = result.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? '';
+			}
+
 			return {
 				markdown: text,
-				rendered: text,
+				rendered: rendered || '', // Empty string if no grounding content
 				toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 			};
 		} catch (error) {
