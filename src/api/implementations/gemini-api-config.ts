@@ -1,7 +1,23 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Content } from '@google/genai';
 import { ModelApi, BaseModelRequest, ExtendedModelRequest, ModelResponse, ToolCall, StreamCallback, StreamingModelResponse } from '../interfaces/model-api';
 import { ModelConfig, ApiFeatures } from '../config/model-config';
 import { GeminiPrompts } from '../../prompts';
+import type ObsidianGemini from '../../main';
+
+/**
+ * Request configuration for Gemini API
+ */
+interface GeminiRequestConfig {
+	model: string;
+	contents: Content[];
+	config: {
+		systemInstruction: string;
+		temperature: number;
+		topP: number;
+		maxOutputTokens?: number;
+	};
+	tools?: Array<{ googleSearch?: {} } | { functionDeclarations: any[] }>;
+}
 
 /**
  * Configuration-based implementation of the Gemini API
@@ -12,9 +28,9 @@ export class GeminiApiConfig implements ModelApi {
 	private config: ModelConfig;
 	private features: ApiFeatures;
 	private prompts: GeminiPrompts;
-	private plugin?: any; // Optional plugin for file access
+	private plugin?: ObsidianGemini; // Optional plugin for file access
 
-	constructor(config: ModelConfig, features: ApiFeatures = { searchGrounding: false, streamingEnabled: true }, prompts?: GeminiPrompts, plugin?: any) {
+	constructor(config: ModelConfig, features: ApiFeatures = { searchGrounding: false, streamingEnabled: true }, prompts?: GeminiPrompts, plugin?: ObsidianGemini) {
 		this.config = config;
 		this.features = features;
 		this.prompts = prompts || new GeminiPrompts();
@@ -27,7 +43,7 @@ export class GeminiApiConfig implements ModelApi {
 	/**
 	 * Build the request configuration for the model
 	 */
-	private async buildRequestConfig(request: BaseModelRequest | ExtendedModelRequest): Promise<any> {
+	private async buildRequestConfig(request: BaseModelRequest | ExtendedModelRequest): Promise<GeminiRequestConfig> {
 		// Determine effective configuration
 		const temperature = (request as ExtendedModelRequest).temperature ?? this.config.temperature;
 		const topP = (request as ExtendedModelRequest).topP ?? this.config.topP;
@@ -44,7 +60,7 @@ export class GeminiApiConfig implements ModelApi {
 		}
 
 		// Build the config object
-		const config: any = {
+		const config: GeminiRequestConfig = {
 			model: this.config.model,
 			contents: await this.buildContents(request),
 			config: {
@@ -204,8 +220,8 @@ export class GeminiApiConfig implements ModelApi {
 	/**
 	 * Build content array from request
 	 */
-	private async buildContents(request: BaseModelRequest | ExtendedModelRequest): Promise<any[]> {
-		const contents: any[] = [];
+	private async buildContents(request: BaseModelRequest | ExtendedModelRequest): Promise<Content[]> {
+		const contents: Content[] = [];
 
 		// System instruction is handled separately in the API config, not in contents
 
