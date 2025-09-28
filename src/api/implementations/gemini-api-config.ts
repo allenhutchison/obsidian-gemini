@@ -12,11 +12,13 @@ export class GeminiApiConfig implements ModelApi {
 	private config: ModelConfig;
 	private features: ApiFeatures;
 	private prompts: GeminiPrompts;
+	private plugin?: any; // Optional plugin for file access
 
-	constructor(config: ModelConfig, features: ApiFeatures = { searchGrounding: false, streamingEnabled: true }, prompts?: GeminiPrompts) {
+	constructor(config: ModelConfig, features: ApiFeatures = { searchGrounding: false, streamingEnabled: true }, prompts?: GeminiPrompts, plugin?: any) {
 		this.config = config;
 		this.features = features;
 		this.prompts = prompts || new GeminiPrompts();
+		this.plugin = plugin;
 		this.ai = new GoogleGenAI({
 			apiKey: config.apiKey
 		});
@@ -25,17 +27,28 @@ export class GeminiApiConfig implements ModelApi {
 	/**
 	 * Build the request configuration for the model
 	 */
-	private buildRequestConfig(request: BaseModelRequest | ExtendedModelRequest): any {
+	private async buildRequestConfig(request: BaseModelRequest | ExtendedModelRequest): Promise<any> {
 		// Determine effective configuration
 		const temperature = (request as ExtendedModelRequest).temperature ?? this.config.temperature;
 		const topP = (request as ExtendedModelRequest).topP ?? this.config.topP;
 		const maxOutputTokens = this.config.maxOutputTokens;
 
+		// Get system instruction from prompts if we have extended request
+		let systemInstruction = '';
+		if ('prompt' in request && request.prompt) {
+			systemInstruction = request.prompt;
+		} else if ('customPrompt' in request && this.prompts) {
+			systemInstruction = await this.prompts.getSystemPromptWithCustom(
+				(request as ExtendedModelRequest).customPrompt
+			);
+		}
+
 		// Build the config object
 		const config: any = {
 			model: this.config.model,
-			contents: this.buildContents(request),
+			contents: await this.buildContents(request),
 			config: {
+				systemInstruction,
 				temperature,
 				topP,
 				...(maxOutputTokens && { maxOutputTokens }),
@@ -82,7 +95,7 @@ export class GeminiApiConfig implements ModelApi {
 
 		const complete = (async (): Promise<ModelResponse> => {
 			try {
-				const requestConfig = this.buildRequestConfig(request);
+				const requestConfig = await this.buildRequestConfig(request);
 				
 				// Generate streaming response
 				const result = await this.ai.models.generateContentStream(requestConfig);
@@ -136,8 +149,8 @@ export class GeminiApiConfig implements ModelApi {
 	 */
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		try {
-			const requestConfig = this.buildRequestConfig(request);
-			
+			const requestConfig = await this.buildRequestConfig(request);
+
 			// Generate response
 			const result = await this.ai.models.generateContent(requestConfig);
 
@@ -179,20 +192,46 @@ export class GeminiApiConfig implements ModelApi {
 	/**
 	 * Build content array from request
 	 */
-	private buildContents(request: BaseModelRequest | ExtendedModelRequest): any[] {
+	private async buildContents(request: BaseModelRequest | ExtendedModelRequest): Promise<any[]> {
 		const contents: any[] = [];
 
 		// System instruction is handled separately in the API config, not in contents
 
-		// Add conversation history if available
-		if ((request as ExtendedModelRequest).conversationHistory) {
-			contents.push(...(request as ExtendedModelRequest).conversationHistory!);
+		// Get file context if available and we have plugin access
+		let fileContent: string | null = null;
+		if (this.plugin && this.plugin.gfile && 'renderContent' in request) {
+			const depth = this.plugin.settings?.maxContextDepth || 0;
+			const renderContent = (request as ExtendedModelRequest).renderContent ?? true;
+			fileContent = await this.plugin.gfile.getCurrentFileContent(depth, renderContent);
 		}
 
-		// Add the current prompt
+		// Add conversation history if available
+		if ((request as ExtendedModelRequest).conversationHistory) {
+			const history = (request as ExtendedModelRequest).conversationHistory!;
+
+			history.forEach((entry) => {
+				// Convert history entries to proper Content format
+				// The SDK expects { role: string, parts: [{ text: string }] }
+				const role = entry.role === 'system' ? 'user' : entry.role;
+				contents.push({
+					role: role,
+					parts: [{ text: entry.message }]
+				});
+			});
+		}
+
+		// Add the current user message
+		// For ExtendedModelRequest, use userMessage; for BaseModelRequest, use prompt
+		let userMessage = (request as ExtendedModelRequest).userMessage || request.prompt;
+
+		// If we have file content, add it to the current message
+		if (fileContent) {
+			userMessage = `Current file content:\n${fileContent}\n\nUser: ${userMessage}`;
+		}
+
 		contents.push({
 			role: 'user',
-			parts: [{ text: request.prompt }],
+			parts: [{ text: userMessage }],
 		});
 
 		return contents;

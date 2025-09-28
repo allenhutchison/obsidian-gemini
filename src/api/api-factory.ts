@@ -57,7 +57,7 @@ export class ApiFactory {
 			case ApiProvider.GEMINI:
 			default:
 				const prompts = plugin ? new GeminiPrompts(plugin) : undefined;
-				apiInstance = new GeminiApiConfig(config.modelConfig, config.features, prompts);
+				apiInstance = new GeminiApiConfig(config.modelConfig, config.features, prompts, plugin);
 				break;
 		}
 
