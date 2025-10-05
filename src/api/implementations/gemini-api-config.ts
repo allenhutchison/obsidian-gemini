@@ -11,7 +11,7 @@ interface GeminiRequestConfig {
 	model: string;
 	contents: Content[];
 	config: {
-		systemInstruction: string;
+		systemInstruction?: string;
 		temperature: number;
 		topP: number;
 		maxOutputTokens?: number;
@@ -64,7 +64,7 @@ export class GeminiApiConfig implements ModelApi {
 			model: this.config.model,
 			contents: await this.buildContents(request),
 			config: {
-				systemInstruction,
+				...(systemInstruction && { systemInstruction }),
 				temperature,
 				topP,
 				...(maxOutputTokens && { maxOutputTokens }),
