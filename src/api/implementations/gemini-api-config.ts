@@ -51,7 +51,7 @@ export class GeminiApiConfig implements ModelApi {
 
 		// Get system instruction from prompts if we have extended request
 		let systemInstruction = '';
-		if ('prompt' in request && request.prompt) {
+		if ('userMessage' in request && request.prompt) {
 			systemInstruction = request.prompt;
 		} else if ('customPrompt' in request && this.prompts) {
 			systemInstruction = await this.prompts.getSystemPromptWithCustom(
@@ -227,7 +227,7 @@ export class GeminiApiConfig implements ModelApi {
 
 		// Get file context if available and we have plugin access
 		let fileContent: string | null = null;
-		if (this.plugin && this.plugin.gfile && 'renderContent' in request) {
+		if (this.plugin && this.plugin.gfile && 'userMessage' in request) {
 			const depth = this.plugin.settings?.maxContextDepth || 0;
 			const renderContent = (request as ExtendedModelRequest).renderContent ?? true;
 			fileContent = await this.plugin.gfile.getCurrentFileContent(depth, renderContent);
