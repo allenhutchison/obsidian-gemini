@@ -119,7 +119,7 @@ export class GeminiApiNew implements ModelApi {
 
 					// Build config object
 					const config: any = {
-						systemInstruction: systemInstruction,
+						...(systemInstruction && { systemInstruction }),
 						temperature: request.temperature ?? this.plugin.settings.temperature,
 						topP: request.topP ?? this.plugin.settings.topP,
 					};
@@ -279,7 +279,7 @@ export class GeminiApiNew implements ModelApi {
 			
 			// Build config object
 			const config: any = {
-				systemInstruction: systemInstruction,
+				...(systemInstruction && { systemInstruction }),
 				temperature: request.temperature ?? this.plugin.settings.temperature,
 				topP: request.topP ?? this.plugin.settings.topP,
 			};
