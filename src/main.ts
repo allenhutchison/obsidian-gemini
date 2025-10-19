@@ -1,9 +1,8 @@
 import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
-import { GeminiView, VIEW_TYPE_GEMINI } from './ui/gemini-view';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view';
 import { GeminiSummary } from './summary';
-import { ApiFactory, ModelApi, ApiProvider } from './api/index';
+import { ModelApi } from './api/index';
 import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
@@ -14,6 +13,8 @@ import { PromptManager } from './prompts/prompt-manager';
 import { GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
 import { RewriteInstructionsModal } from './ui/rewrite-modal';
+import { MigrationModal } from './ui/migration-modal';
+import { HistoryMigrator } from './migrations/history-migrator';
 import { SessionManager } from './agent/session-manager';
 import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
@@ -29,7 +30,6 @@ export interface ModelDiscoverySettings {
 
 export interface ObsidianGeminiSettings {
 	apiKey: string;
-	apiProvider: string;
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
@@ -59,7 +59,6 @@ export interface ObsidianGeminiSettings {
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	apiKey: '',
-	apiProvider: ApiProvider.GEMINI,
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
@@ -96,9 +95,8 @@ export default class ObsidianGemini extends Plugin {
 	settings: ObsidianGeminiSettings;
 
 	// Public members
-	public geminiApi: ModelApi;
+	// Note: geminiApi removed - API clients are now created on-demand by features
 	public gfile: ScribeFile;
-	public geminiView: GeminiView;
 	public agentView: AgentView;
 	public history: GeminiHistory;
 	public sessionHistory: SessionHistory;
@@ -117,29 +115,18 @@ export default class ObsidianGemini extends Plugin {
 	async onload() {
 		await this.setupGeminiScribe();
 
-		// Add ribbon icons
-		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Open Gemini Chat', () => {
-			this.activateView();
-		});
-
-		this.addRibbonIcon('bot', 'Open Agent Mode', () => {
+		// Add ribbon icon
+		this.ribbonIcon = this.addRibbonIcon('bot', 'Open Gemini Chat', () => {
 			this.activateAgentView();
 		});
 
-		// Register views
-		this.registerView(VIEW_TYPE_GEMINI, (leaf) => (this.geminiView = new GeminiView(leaf, this)));
+		// Register view
 		this.registerView(VIEW_TYPE_AGENT, (leaf) => (this.agentView = new AgentView(leaf, this)));
 
-		// Add commands
-		this.addCommand({
-			id: 'gemini-scribe-open-view',
-			name: 'Open Gemini Chat',
-			callback: () => this.activateView(),
-		});
-
+		// Add command
 		this.addCommand({
 			id: 'gemini-scribe-open-agent-view',
-			name: 'Open Agent Mode',
+			name: 'Open Gemini Chat',
 			callback: () => this.activateAgentView(),
 		});
 
@@ -215,7 +202,7 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize prompt manager
 		this.promptManager = new PromptManager(this, this.app.vault);
 
-		this.geminiApi = ApiFactory.createApi(this);
+		// Note: API clients are now created on-demand by features using GeminiClientFactory
 		this.gfile = new ScribeFile(this);
 
 		// Initialize model manager
@@ -267,30 +254,6 @@ export default class ObsidianGemini extends Plugin {
 		await this.summarizer.setupSummarizaitonCommand();
 	}
 
-	async activateView() {
-		const { workspace } = this.app;
-
-		let leaf: WorkspaceLeaf | null = null;
-		const leaves = workspace.getLeavesOfType(VIEW_TYPE_GEMINI);
-
-		if (leaves.length > 0) {
-			// A leaf with our view already exists, use that
-			leaf = leaves[0];
-			await workspace.revealLeaf(leaf);
-		} else {
-			// Our view could not be found in the workspace, create a new leaf
-			// in the right sidebar for it
-			leaf = workspace.getLeftLeaf(false);
-			if (leaf) {
-				await leaf.setViewState({ type: VIEW_TYPE_GEMINI, active: true });
-				// "Reveal" the leaf in case it is in a collapsed sidebar
-				await workspace.revealLeaf(leaf);
-			} else {
-				console.error('Could not find a leaf to open the view');
-			}
-		}
-	}
-
 	async activateAgentView() {
 		const { workspace } = this.app;
 
@@ -323,8 +286,30 @@ export default class ObsidianGemini extends Plugin {
 			// Setup prompt commands
 			this.promptManager.setupPromptCommands();
 		}
-		
+
 		await this.history.onLayoutReady();
+
+		// Check if history migration is needed
+		await this.checkAndOfferMigration();
+	}
+
+	/**
+	 * Check if history migration is needed and offer to migrate
+	 */
+	private async checkAndOfferMigration(): Promise<void> {
+		try {
+			const migrator = new HistoryMigrator(this);
+			const needsMigration = await migrator.needsMigration();
+
+			if (needsMigration) {
+				// Show migration modal
+				const modal = new MigrationModal(this.app, this);
+				modal.open();
+			}
+		} catch (error) {
+			console.error('Error checking for migration:', error);
+			// Don't show error to user - migration is optional
+		}
 	}
 
 	async loadSettings() {

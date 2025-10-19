@@ -1,5 +1,3 @@
-import { ApiProvider } from '../index';
-
 /**
  * Configuration for a specific model
  */
@@ -14,6 +12,8 @@ export interface ModelConfig {
 
 /**
  * Retry configuration for API calls
+ *
+ * @deprecated No longer used with js-genai SDK
  */
 export interface RetryConfig {
 	maxRetries: number;
@@ -30,9 +30,10 @@ export interface ApiFeatures {
 
 /**
  * Complete API configuration
+ *
+ * @deprecated Use GeminiClientConfig instead
  */
 export interface ApiConfig {
-	provider: ApiProvider;
 	modelConfig: ModelConfig;
 	retryConfig?: RetryConfig;
 	features?: ApiFeatures;

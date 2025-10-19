@@ -4,18 +4,29 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 > **Note:** This plugin requires a Google Gemini API key. Free tier available at [Google AI Studio](https://aistudio.google.com/apikey).
 
-## What's New
+## What's New in v4.0.0
 
-- **🤖 NEW: Agent Mode with Tool Calling:** AI agent that can perform actions in your vault! Search files, read content, create/edit/delete notes, move and rename files, create folders, conduct deep research with citations, and more. Features include persistent sessions, permission controls, and session-level model configuration.
-- **🎯 Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Select text, right-click "Rewrite with Gemini", provide instructions, and watch the AI improve just that section while maintaining document consistency.
-- **Dynamic Model Parameter Controls:** Automatic discovery of temperature and Top P ranges based on your available Gemini models with real-time validation
-- **Advanced Settings Panel:** Developer-focused settings now organized in a dedicated section with improved discoverability
-- **Model Discovery System:** Automatic fetching of the latest Gemini models with their parameter limits and capabilities
-- **Enhanced API Configuration:** Configurable retry logic with exponential backoff for improved reliability
-- **Enhanced Custom Prompts System:** Improved prompt management with better tracking and state handling
-- **Improved Plugin Compatibility:** Replaced low-level file operations with native Obsidian APIs for better compatibility with other plugins
-- **Better Chat History Integration:** Custom prompts are now properly tracked in chat history for better context continuity
-- **Restructured Plugin State:** Cleaner organization of plugin data with automatic migration from older folder structures
+**🎉 Major Update: Unified Agent-First Experience**
+
+This release simplifies Gemini Scribe by focusing entirely on the powerful Agent Mode with tool calling:
+
+- **🔄 Single Unified Chat Interface:** Streamlined to one chat mode with full agent capabilities - no more switching between modes!
+- **📦 Automatic Migration:** Seamlessly converts your existing chat history to the new Agent Sessions format with backup preservation
+- **🗑️ Simplified Settings:** Removed legacy API provider options - now exclusively focused on Google Gemini for the best experience
+- **⚙️ Migration Controls:** New settings panel for managing history migration and viewing backups
+
+**What This Means:**
+- All conversations now support tool calling and agent features by default
+- Cleaner, more intuitive interface focused on what works best
+- Your existing chat history is automatically preserved and migrated
+- Full backward compatibility with automatic data conversion
+
+**Previous Updates:**
+- **🎯 Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance
+- **Dynamic Model Parameter Controls:** Automatic discovery of temperature and Top P ranges
+- **Model Discovery System:** Automatic fetching of the latest Gemini models
+- **Enhanced Custom Prompts System:** Improved prompt management with better tracking
+- **Improved Plugin Compatibility:** Native Obsidian APIs for better plugin compatibility
 
 ## Features
 
@@ -86,19 +97,17 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
     - **Chat History:**
       - **Enable Chat History:** Toggle whether to save chat history.
       - **Plugin State Folder:** Choose the folder within your vault to store plugin data (chat history and custom prompts).
+      - **Migration Status:** Shows the status of history migration from older versions
+      - **Migration Tools:** Re-run migration or view backup files
     - **Custom Prompts:**
       - **Enable Custom Prompts:** Toggle the custom prompt system on/off (disabled by default).
       - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
-    - **Agent Mode:**
-      - **Enable Agent Mode:** Toggle the AI agent feature on/off.
-      - **Agent Model:** Select the Gemini model to use for agent interactions.
-      - **Available Tools:** Configure which tools the agent can use (search, read files, create/edit/delete notes).
-      - **Require User Confirmation:** Control whether the agent needs permission before performing actions.
     - **Advanced Settings:** (Click "Show Advanced Settings" to reveal)
       - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
       - **Top P:** Control response diversity and focus (0-1.0).
       - **Model Discovery:** Automatically fetch and update available Gemini models with their parameter limits.
-      - **API Configuration:** Configure retry behavior, backoff delays, and provider selection.
+      - **API Configuration:** Configure retry behavior and backoff delays.
+      - **Tool Loop Detection:** Prevent infinite tool execution loops
       - **Developer Options:** Debug mode and advanced configuration tools.
 
 ## Usage
@@ -179,21 +188,22 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
 
 1.  **Open Chat:**
 
-    - **Note-Centric Chat:** Use command palette "Gemini Scribe: Open Gemini Chat" or click the ribbon icon
-    - **Agent Chat:** Use command palette "Gemini Scribe: Open Agent Chat" for tool-calling capabilities
+    - Use command palette "Gemini Scribe: Open Gemini Chat" or click the ribbon icon
+    - All chats now have full agent capabilities with tool calling
 
 2.  **Chat with Context:**
     - Type your message in the input box
     - Press Enter to send (Shift+Enter for new line)
     - The AI automatically includes your current note as context
     - Linked notes are included based on your context depth setting
-    - In Agent Mode, you can add persistent context files with @ mentions
+    - You can add persistent context files with @ mentions
+    - Sessions are automatically saved and can be resumed
 
 3.  **AI Responses:**
     - Responses appear in the chat with a "Copy" button
     - If Search Grounding is enabled, web search results may be included
     - Custom prompts modify how the AI responds (if configured)
-    - Agent Mode shows tool calls and results in collapsible sections
+    - Tool calls and results are shown in collapsible sections for clarity
 
 ### Document Summarization
 
@@ -292,14 +302,13 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - Reset temperature and Top P to defaults if getting unexpected responses
   - Enable model discovery to get latest parameter limits
   - See the [Advanced Settings Guide](docs/advanced-settings-guide.md) for detailed configuration help
-- **Agent Mode Issues:**
-  - Ensure "Enable Agent Mode" is toggled on in settings
-  - Check that required tools are enabled in settings
-  - Verify the agent model supports function calling
+- **Agent Mode / Tool Issues:**
+  - Verify your Gemini model supports function calling (all Gemini 2.0+ models do)
   - If tools fail, check file permissions and paths
   - System folders (plugin state folder, .obsidian) are protected from modifications
-  - For session issues, try creating a new session
-  - Check the console for detailed error messages
+  - For session issues, try creating a new session from the chat interface
+  - Check the console (Ctrl/Cmd + Shift + I) for detailed error messages
+  - Tool loop detection may stop repeated operations - adjust settings if needed
 
 ## License
 

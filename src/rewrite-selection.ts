@@ -2,7 +2,7 @@ import ObsidianGemini from './main';
 import { Editor, Notice } from 'obsidian';
 import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
-import { ModelFactory } from './api/model-factory';
+import { GeminiClientFactory } from './api/simple-factory';
 
 export class SelectionRewriter {
 	private plugin: InstanceType<typeof ObsidianGemini>;
@@ -66,9 +66,9 @@ export class SelectionRewriter {
 		try {
 			// Show loading notice
 			new Notice('Rewriting selected text...');
-			
+
 			// Create a rewrite-specific model API
-			const modelApi = ModelFactory.createRewriteModel(this.plugin);
+			const modelApi = GeminiClientFactory.createRewriteModel(this.plugin);
 			
 			const result = await modelApi.generateModelResponse(request);
 			

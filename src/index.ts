@@ -95,16 +95,11 @@ export type {
     LoopDetectionInfo
 } from './tools/loop-detector';
 
-// API Provider
-export {
-    ApiProvider
-} from './api/api-factory';
-
 // Model and Agent Factories
 export {
-    ModelFactory,
-    ModelType
-} from './api/model-factory';
+    GeminiClientFactory,
+    ModelUseCase
+} from './api/simple-factory';
 
 export {
     AgentFactory
@@ -172,19 +167,14 @@ export {
     WebFetchTool
 } from './tools/web-fetch-tool';
 
-// Utility function for API creation
+// Gemini API Client (for advanced usage)
 export {
-    ApiFactory
-} from './api/api-factory';
+    GeminiClient
+} from './api/gemini-client';
 
-// Config-based API implementations (for advanced usage)
-export {
-    GeminiApiConfig
-} from './api/implementations/gemini-api-config';
-
-export {
-    RetryDecoratorConfig
-} from './api/retry-decorator-config';
+export type {
+    GeminiClientConfig
+} from './api/gemini-client';
 
 // Main Plugin Class (for type reference)
 export { default as ObsidianGeminiPlugin } from './main';

@@ -52,13 +52,6 @@ Gemini Scribe automatically discovers the parameter limits for your available mo
 
 ## API Configuration
 
-### API Provider
-
-Choose which AI service to use:
-
-- **Google Gemini (New SDK)**: Official Google AI SDK (recommended)
-- **Ollama (Local)**: *Coming soon* - Local model support
-
 ### Retry Settings
 
 Configure how the plugin handles API failures:

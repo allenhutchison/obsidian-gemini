@@ -103,6 +103,7 @@ describe('VaultTools', () => {
 
 		it('should return error for non-existent file', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.getMarkdownFiles.mockReturnValue([]);
 
 			const result = await tool.execute({ path: 'nonexistent.md' }, mockContext);
 

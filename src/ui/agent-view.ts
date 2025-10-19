@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf, TFile, Notice, MarkdownRenderer, setIcon } fro
 import { ChatSession, SessionType } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
+import { GeminiClientFactory } from '../api/simple-factory';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
@@ -1442,7 +1443,8 @@ User: ${history[0].message}`;
 			
 			try {
 				// Generate title using the model (use default settings for labeling)
-				const response = await this.plugin.geminiApi.generateModelResponse({
+				const modelApi = GeminiClientFactory.createChatModel(this.plugin);
+				const response = await modelApi.generateModelResponse({
 					userMessage: titlePrompt,
 					conversationHistory: [],
 					model: this.plugin.settings.chatModelName,
@@ -1552,7 +1554,7 @@ User: ${history[0].message}`;
 	 * Handle tool calls from the model response
 	 */
 	private async handleToolCalls(
-		toolCalls: any[], 
+		toolCalls: any[],
 		userMessage: string,
 		conversationHistory: any[],
 		userEntry: GeminiConversationEntry
@@ -1574,25 +1576,27 @@ User: ${history[0].message}`;
 			try {
 				// Generate unique ID for this tool execution
 				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-				
+
 				// Show tool execution in UI
 				await this.showToolExecution(toolCall.name, toolCall.arguments, toolExecutionId);
-				
+
 				// Execute the tool
 				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context, this);
-				
+
 				// Show result in UI
 				await this.showToolResult(toolCall.name, result, toolExecutionId);
-				
-				// Format result for the model
+
+				// Format result for the model - store original tool call with result
 				toolResults.push({
 					toolName: toolCall.name,
+					toolArguments: toolCall.arguments,
 					result: result
 				});
 			} catch (error) {
 				console.error(`Tool execution error for ${toolCall.name}:`, error);
 				toolResults.push({
 					toolName: toolCall.name,
+					toolArguments: toolCall.arguments || {},
 					result: {
 						success: false,
 						error: error instanceof Error ? error.message : 'Unknown error'
@@ -1604,23 +1608,45 @@ User: ${history[0].message}`;
 		// Save the original user message and tool calls to history
 		if (this.plugin.settings.chatHistory) {
 			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-			
+
 			// Don't save tool execution as separate system messages anymore
 			// The tool UI elements themselves serve as the visual record
 		}
 
-		// Continue the conversation with tool results
-		// Build a new request that includes the tool results
-		const toolResultsMessage = this.formatToolResultsForModel(toolResults);
-		
-		// Add tool results to conversation history
-		const updatedHistory = [...conversationHistory, {
-			role: 'user',
-			message: userMessage
-		}, {
-			role: 'system', 
-			message: toolResultsMessage
-		}];
+		// Build updated conversation history with proper Gemini API format:
+		// 1. Previous conversation history
+		// 2. User message
+		// 3. Model response with tool calls (as functionCall parts)
+		// 4. Tool results (as functionResponse parts)
+
+		const updatedHistory = [
+			...conversationHistory,
+			// User message
+			{
+				role: 'user',
+				parts: [{ text: userMessage }]
+			},
+			// Model's tool calls
+			{
+				role: 'model',
+				parts: toolCalls.map(tc => ({
+					functionCall: {
+						name: tc.name,
+						args: tc.arguments || {}
+					}
+				}))
+			},
+			// Tool results as functionResponse
+			{
+				role: 'user',
+				parts: toolResults.map(tr => ({
+					functionResponse: {
+						name: tr.toolName,
+						response: tr.result
+					}
+				}))
+			}
+		];
 
 		// Send another request with the tool results
 		try {
@@ -1630,17 +1656,17 @@ User: ${history[0].message}`;
 				session: this.currentSession
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
-			
+
 			// Get model config from session or use defaults
 			const modelConfig = this.currentSession?.modelConfig || {};
-			
+
 			const followUpRequest: ExtendedModelRequest = {
-				userMessage: "Based on the tool execution results above, please provide a response to the user's request. If the tool results include citations from Google Search, make sure to incorporate them into your response using inline citation numbers and include a Sources section.",
+				userMessage: "", // Empty since tool results are already in conversation history
 				conversationHistory: updatedHistory,
 				model: modelConfig.model || this.plugin.settings.chatModelName,
 				temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 				topP: modelConfig.topP ?? this.plugin.settings.topP,
-				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Continue with tool results" }),
+				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Respond to the user based on the tool execution results" }),
 				renderContent: false,
 				availableTools: availableTools  // Include tools so model can chain calls
 			};
@@ -1652,10 +1678,11 @@ User: ${history[0].message}`;
 			// Check if the follow-up response also contains tool calls
 			if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
 				// Recursively handle additional tool calls
+				// Don't pass a user message since the tool results are already in history
 				await this.handleToolCalls(
-					followUpResponse.toolCalls, 
-					"Based on the tool execution results above, please provide a response to the user's request. If the tool results include citations from Google Search, make sure to incorporate them into your response using inline citation numbers and include a Sources section.", 
-					updatedHistory, 
+					followUpResponse.toolCalls,
+					"", // Empty message - tool results already in history
+					updatedHistory,
 					{
 						role: 'system',
 						message: 'Continuing with additional tool calls...',

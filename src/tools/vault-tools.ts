@@ -28,14 +28,14 @@ export class ReadFileTool implements Tool {
 	name = 'read_file';
 	displayName = 'Read File';
 	category = ToolCategory.READ_ONLY;
-	description = 'Read the contents of a file in the vault';
-	
+	description = 'Read the contents of a file in the vault. The path should be relative to the vault root (e.g., "folder/note.md" or just "folder/note"). The .md extension is optional.';
+
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			path: {
 				type: 'string' as const,
-				description: 'Path to the file to read'
+				description: 'Path to the file relative to vault root (e.g., "folder/note.md" or "folder/note"). Extension is optional - will try both with and without .md'
 			}
 		},
 		required: ['path']
@@ -43,10 +43,10 @@ export class ReadFileTool implements Tool {
 
 	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
-		
+
 		try {
 			const normalizedPath = normalizePath(params.path);
-			
+
 			// Check if path is excluded
 			if (shouldExcludePath(normalizedPath, plugin)) {
 				return {
@@ -54,35 +54,73 @@ export class ReadFileTool implements Tool {
 					error: `Cannot read from system folder: ${params.path}`
 				};
 			}
-			
-			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-			
+
+			// Try multiple path variations to be more forgiving
+			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+
+			// If not found and doesn't end with .md, try adding it
+			if (!file && !normalizedPath.endsWith('.md')) {
+				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+			}
+
+			// If still not found and ends with .md, try without it
+			if (!file && normalizedPath.endsWith('.md')) {
+				const pathWithoutExt = normalizedPath.slice(0, -3);
+				file = plugin.app.vault.getAbstractFileByPath(pathWithoutExt);
+			}
+
+			// If still not found, try case-insensitive search
 			if (!file) {
+				const allFiles = plugin.app.vault.getMarkdownFiles();
+				if (allFiles && allFiles.length > 0) {
+					const lowerPath = normalizedPath.toLowerCase();
+					file = allFiles.find(f =>
+						f.path.toLowerCase() === lowerPath ||
+						f.path.toLowerCase() === lowerPath + '.md' ||
+						(lowerPath.endsWith('.md') && f.path.toLowerCase() === lowerPath.slice(0, -3))
+					) || null;
+				}
+			}
+
+			if (!file) {
+				// Provide helpful error message with suggestions
+				const allFiles = plugin.app.vault.getMarkdownFiles();
+				const similar = (allFiles && allFiles.length > 0)
+					? allFiles
+						.filter(f => f.name.toLowerCase().includes(params.path.toLowerCase().replace('.md', '')))
+						.slice(0, 5)
+						.map(f => f.path)
+					: [];
+
+				const suggestion = similar.length > 0
+					? `\n\nDid you mean one of these?\n${similar.join('\n')}`
+					: '';
+
 				return {
 					success: false,
-					error: `File not found: ${params.path}`
+					error: `File not found: ${params.path}${suggestion}`
 				};
 			}
-			
+
 			if (!(file instanceof TFile)) {
 				return {
 					success: false,
 					error: `Path is not a file: ${params.path}`
 				};
 			}
-			
+
 			const content = await plugin.app.vault.read(file);
-			
+
 			return {
 				success: true,
 				data: {
-					path: params.path,
+					path: file.path,  // Return the actual path that was found
 					content: content,
 					size: file.stat.size,
 					modified: file.stat.mtime
 				}
 			};
-			
+
 		} catch (error) {
 			return {
 				success: false,

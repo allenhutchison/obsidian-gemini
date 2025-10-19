@@ -23,7 +23,7 @@
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
-		"@google/genai": "1.21.0",
+		"@google/genai": "^1.21.0",
 		"@types/jest": "^29.5.14",
 		"@types/node": "^16.11.6",
 		"@typescript-eslint/eslint-plugin": "5.29.0",

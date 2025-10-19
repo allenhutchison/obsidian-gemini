@@ -2,7 +2,8 @@ import ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
-import { ApiProvider } from '../api/index';
+import { MigrationModal } from './migration-modal';
+import { HistoryMigrator } from '../migrations/history-migrator';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: InstanceType<typeof ObsidianGemini>;
@@ -325,6 +326,47 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				.setDesc('Checking migration status...');
 
 			this.checkMigrationStatus(migrationStatus);
+
+			// Add migration control buttons
+			new Setting(containerEl)
+				.setName('Migration Tools')
+				.setDesc('Manage history migration from the old format to Agent Sessions')
+				.addButton((button) =>
+					button
+						.setButtonText('Re-run Migration')
+						.setTooltip('Migrate any new history files to Agent Sessions format')
+						.onClick(async () => {
+							const migrator = new HistoryMigrator(this.plugin);
+							const needsMigration = await migrator.needsMigration();
+
+							if (needsMigration) {
+								const modal = new MigrationModal(this.app, this.plugin);
+								modal.open();
+							} else {
+								new Notice('No history files need migration.');
+							}
+						})
+				)
+				.addButton((button) =>
+					button
+						.setButtonText('View Backup')
+						.setTooltip('Open the History-Archive folder containing backed up files')
+						.onClick(async () => {
+							const archivePath = `${this.plugin.settings.historyFolder}/History-Archive`;
+							const archiveExists = await this.app.vault.adapter.exists(archivePath);
+
+							if (archiveExists) {
+								// Open the archive folder in the file explorer
+								const folder = this.app.vault.getAbstractFileByPath(archivePath);
+								if (folder) {
+									// @ts-ignore - Internal API
+									this.app.workspace.getLeaf().openFile(folder);
+								}
+							} else {
+								new Notice('No backup archive found. Migration may not have been run yet.');
+							}
+						})
+				);
 		}
 
 		// Custom Prompts Settings
@@ -411,20 +453,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		// Advanced developer settings only visible when explicitly enabled
 		if (this.showDeveloperSettings) {
-			new Setting(containerEl)
-				.setName('API Provider')
-				.setDesc('Select which AI provider to use')
-				.addDropdown((dropdown) =>
-					dropdown
-						.addOption(ApiProvider.GEMINI, 'Google Gemini (New SDK)')
-						//.addOption(ApiProvider.OLLAMA, 'Ollama (Local)')
-						.setValue(this.plugin.settings.apiProvider)
-						.onChange(async (value) => {
-							this.plugin.settings.apiProvider = value;
-							await this.plugin.saveSettings();
-						})
-				);
-
 			new Setting(containerEl)
 				.setName('Maximum Retries')
 				.setDesc('Maximum number of retries when a model request fails.')

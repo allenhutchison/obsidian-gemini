@@ -2419,3 +2419,187 @@ If your plugin does not need CSS, delete this file.
 	padding-top: 1rem;
 	border-top: 1px solid var(--background-modifier-border);
 }
+
+/* Migration Modal Styles */
+
+.gemini-migration-modal {
+	max-width: 600px;
+}
+
+.gemini-migration-header {
+	margin-bottom: 1rem;
+	color: var(--text-normal);
+}
+
+.gemini-migration-description {
+	margin-bottom: 1.5rem;
+	line-height: 1.6;
+}
+
+.gemini-migration-description p {
+	margin: 0.5rem 0;
+	color: var(--text-normal);
+}
+
+.gemini-migration-info {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 1rem;
+	margin-bottom: 1.5rem;
+}
+
+.gemini-migration-info h3 {
+	margin: 0 0 0.75rem 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-migration-info ul {
+	margin: 0;
+	padding-left: 1.5rem;
+	list-style: none;
+}
+
+.gemini-migration-info li {
+	margin: 0.5rem 0;
+	color: var(--text-normal);
+}
+
+.gemini-migration-warning {
+	background-color: var(--background-modifier-error-hover);
+	border: 1px solid var(--background-modifier-error);
+	border-radius: 8px;
+	padding: 1rem;
+	margin-bottom: 1.5rem;
+}
+
+.gemini-migration-warning p {
+	margin: 0;
+	color: var(--text-normal);
+	font-weight: 500;
+}
+
+.gemini-migration-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-top: 1.5rem;
+}
+
+.gemini-migration-buttons button {
+	padding: 0.5rem 1.5rem;
+	border-radius: 6px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.gemini-migration-progress {
+	padding: 2rem;
+	text-align: center;
+}
+
+.gemini-migration-progress p {
+	margin: 1rem 0;
+	color: var(--text-muted);
+}
+
+.gemini-migration-results {
+	margin: 1.5rem 0;
+}
+
+.gemini-migration-stats {
+	background-color: var(--background-secondary);
+	border-radius: 8px;
+	padding: 1rem;
+	margin-bottom: 1rem;
+}
+
+.gemini-migration-stats p {
+	margin: 0.5rem 0;
+	color: var(--text-normal);
+	font-weight: 500;
+}
+
+.gemini-migration-failed {
+	color: var(--text-error) !important;
+}
+
+.gemini-migration-backup {
+	color: var(--text-success) !important;
+}
+
+.gemini-migration-errors {
+	background-color: var(--background-modifier-error-hover);
+	border: 1px solid var(--background-modifier-error);
+	border-radius: 8px;
+	padding: 1rem;
+	margin-top: 1rem;
+}
+
+.gemini-migration-errors h3 {
+	margin: 0 0 0.5rem 0;
+	font-size: 1rem;
+	color: var(--text-error);
+}
+
+.gemini-migration-errors ul {
+	margin: 0;
+	padding-left: 1.5rem;
+	list-style: disc;
+}
+
+.gemini-migration-errors li {
+	margin: 0.25rem 0;
+	color: var(--text-normal);
+	font-size: 0.875rem;
+}
+
+.gemini-migration-next-steps {
+	margin: 1.5rem 0;
+}
+
+.gemini-migration-next-steps h3 {
+	margin: 0 0 0.75rem 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-migration-next-steps ul {
+	margin: 0;
+	padding-left: 1.5rem;
+	list-style: disc;
+}
+
+.gemini-migration-next-steps li {
+	margin: 0.5rem 0;
+	color: var(--text-normal);
+}
+
+.gemini-migration-error {
+	background-color: var(--background-modifier-error-hover);
+	border: 1px solid var(--background-modifier-error);
+	border-radius: 8px;
+	padding: 1rem;
+	margin: 1rem 0;
+}
+
+.gemini-migration-error p {
+	margin: 0 0 0.5rem 0;
+	color: var(--text-normal);
+	font-weight: 500;
+}
+
+.gemini-migration-error code {
+	display: block;
+	background-color: var(--background-primary);
+	border-radius: 4px;
+	padding: 0.5rem;
+	margin-top: 0.5rem;
+	font-size: 0.875rem;
+	color: var(--text-error);
+	word-wrap: break-word;
+}
