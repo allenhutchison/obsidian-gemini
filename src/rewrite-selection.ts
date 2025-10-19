@@ -42,11 +42,11 @@ export class SelectionRewriter {
 	): Promise<void> {
 		const from = editor.getCursor('from');
 		const to = editor.getCursor('to');
-		
+
 		// Calculate selection positions
 		const selectionStart = editor.posToOffset(from);
 		const selectionEnd = editor.posToOffset(to);
-		
+
 		const prompt = this.buildSelectionPrompt({
 			selectedText,
 			instructions,
@@ -54,7 +54,7 @@ export class SelectionRewriter {
 			selectionStart,
 			selectionEnd
 		});
-		
+
 		// Send request without conversation history
 		// The file context will be added automatically by the API layer
 		const request: ExtendedModelRequest = {
@@ -62,23 +62,78 @@ export class SelectionRewriter {
 			conversationHistory: [], // Empty history for rewrite operations
 			userMessage: instructions
 		};
-		
+
 		try {
 			// Show loading notice
 			new Notice('Rewriting selected text...');
 
 			// Create a rewrite-specific model API
 			const modelApi = GeminiClientFactory.createRewriteModel(this.plugin);
-			
+
 			const result = await modelApi.generateModelResponse(request);
-			
+
 			// Replace the selected text with the result
 			editor.replaceSelection(result.markdown.trim());
-			
+
 			new Notice('Text rewritten successfully');
 		} catch (error) {
 			console.error('Failed to rewrite text:', error);
 			new Notice('Failed to rewrite text: ' + error.message);
+		}
+	}
+
+	private buildFullFilePrompt(params: {
+		fileContent: string;
+		instructions: string;
+	}): string {
+		return `You are rewriting an entire markdown document based on user instructions.
+
+# Current Document Content
+
+${params.fileContent}
+
+# User Instructions
+
+${params.instructions}
+
+# Your Task
+
+Rewrite the entire document according to the user's instructions. Maintain the markdown formatting and structure unless the instructions specifically ask you to change it. Return ONLY the rewritten document content, no explanations or metadata.`;
+	}
+
+	async rewriteFullFile(
+		editor: Editor,
+		instructions: string
+	): Promise<void> {
+		const fileContent = editor.getValue();
+
+		const prompt = this.buildFullFilePrompt({
+			fileContent,
+			instructions
+		});
+
+		const request: ExtendedModelRequest = {
+			prompt,
+			conversationHistory: [],
+			userMessage: instructions
+		};
+
+		try {
+			// Show loading notice
+			new Notice('Rewriting entire file...');
+
+			// Create a rewrite-specific model API
+			const modelApi = GeminiClientFactory.createRewriteModel(this.plugin);
+
+			const result = await modelApi.generateModelResponse(request);
+
+			// Replace the entire file content with the result
+			editor.setValue(result.markdown.trim());
+
+			new Notice('File rewritten successfully');
+		} catch (error) {
+			console.error('Failed to rewrite file:', error);
+			new Notice('Failed to rewrite file: ' + error.message);
 		}
 	}
 }

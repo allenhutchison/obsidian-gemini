@@ -130,30 +130,38 @@ export default class ObsidianGemini extends Plugin {
 			callback: () => this.activateAgentView(),
 		});
 
-		// Add selection rewrite command
+		// Add rewrite command (works with selection or full file)
 		this.addCommand({
 			id: 'gemini-scribe-rewrite-selection',
-			name: 'Rewrite selected text with AI',
-			editorCheckCallback: (checking: boolean, editor: Editor, view: MarkdownView) => {
+			name: 'Rewrite text with AI',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const selection = editor.getSelection();
-				
-				if (checking) {
-					// Command only available when text is selected
-					return selection.length > 0;
-				}
-				
+				const hasSelection = selection.length > 0;
+
+				// Use selection if available, otherwise use entire file
+				const textToRewrite = hasSelection ? selection : editor.getValue();
+				const isFullFile = !hasSelection;
+
 				// Show modal for instructions
 				const modal = new RewriteInstructionsModal(
 					this.app,
-					selection,
+					textToRewrite,
 					async (instructions) => {
 						const rewriter = new SelectionRewriter(this);
-						await rewriter.rewriteSelection(
-							editor,
-							selection,
-							instructions
-						);
-					}
+						if (isFullFile) {
+							await rewriter.rewriteFullFile(
+								editor,
+								instructions
+							);
+						} else {
+							await rewriter.rewriteSelection(
+								editor,
+								selection,
+								instructions
+							);
+						}
+					},
+					isFullFile
 				);
 				modal.open();
 			}
@@ -179,7 +187,8 @@ export default class ObsidianGemini extends Plugin {
 											selection,
 											instructions
 										);
-									}
+									},
+									false // Context menu is always for selection, not full file
 								);
 								modal.open();
 							});
