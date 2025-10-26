@@ -260,7 +260,7 @@ export default class ObsidianGemini extends Plugin {
 
 		// Initialize summarization
 		this.summarizer = new GeminiSummary(this);
-		await this.summarizer.setupSummarizaitonCommand();
+		await this.summarizer.setupSummarizationCommand();
 	}
 
 	async activateAgentView() {

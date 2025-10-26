@@ -8,6 +8,7 @@
 import { GeminiClient, GeminiClientConfig } from './gemini-client';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
+import { RetryDecorator } from './retry-decorator';
 import type ObsidianGemini from '../main';
 
 /**
@@ -72,8 +73,16 @@ export class GeminiClientFactory {
 		// Create prompts instance with plugin reference so it can access settings
 		const prompts = new GeminiPrompts(plugin);
 
-		// Create and return client
-		return new GeminiClient(config, prompts, plugin);
+		// Create client
+		const client = new GeminiClient(config, prompts, plugin);
+
+		// Wrap with retry decorator
+		const retryConfig = {
+			maxRetries: settings.maxRetries ?? 3,
+			initialBackoffDelay: settings.initialBackoffDelay ?? 1000
+		};
+
+		return new RetryDecorator(client, retryConfig);
 	}
 
 	/**
@@ -82,14 +91,25 @@ export class GeminiClientFactory {
 	 * @param config - Complete client configuration
 	 * @param prompts - Optional prompts instance
 	 * @param plugin - Optional plugin instance
-	 * @returns Configured GeminiClient instance
+	 * @returns Configured GeminiClient instance wrapped with retry logic
 	 */
 	static createCustom(
 		config: GeminiClientConfig,
 		prompts?: GeminiPrompts,
 		plugin?: ObsidianGemini
 	): ModelApi {
-		return new GeminiClient(config, prompts, plugin);
+		const client = new GeminiClient(config, prompts, plugin);
+
+		// Use retry config from plugin settings if available, otherwise use defaults
+		const retryConfig = plugin ? {
+			maxRetries: plugin.settings.maxRetries ?? 3,
+			initialBackoffDelay: plugin.settings.initialBackoffDelay ?? 1000
+		} : {
+			maxRetries: 3,
+			initialBackoffDelay: 1000
+		};
+
+		return new RetryDecorator(client, retryConfig);
 	}
 
 	/**
