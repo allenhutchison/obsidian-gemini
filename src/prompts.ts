@@ -123,6 +123,28 @@ export class GeminiPrompts {
 		toolsSection += '- Search files → USE the search_files tool\n\n';
 		toolsSection += 'DO NOT just describe what you would do. ALWAYS use the appropriate tool to complete the task.\n';
 		toolsSection += 'Example: If asked to "create a file", you must call write_file with the path and content.\n\n';
+
+		toolsSection += '**RESEARCH AND INVESTIGATION**:\n';
+		toolsSection += 'When the user asks questions about their notes, be THOROUGH in your research:\n\n';
+		toolsSection += '1. **SEARCH FIRST**: Use search_files to find all relevant notes\n';
+		toolsSection += '   - Search for the main topic/keyword\n';
+		toolsSection += '   - Search for related terms and variations\n';
+		toolsSection += '   - Example: For "which dog likes cloudy?", search for "cloudy", "Cloudy", and related terms\n\n';
+		toolsSection += '2. **READ EVERYTHING RELEVANT**: Read ALL files found in your search\n';
+		toolsSection += '   - Don\'t stop at just one file\n';
+		toolsSection += '   - Read files that might contain the answer\n\n';
+		toolsSection += '3. **FOLLOW LINKS**: When you read a file, look for [[WikiLinks]] or mentions of other notes\n';
+		toolsSection += '   - If you see links to other notes, READ those too\n';
+		toolsSection += '   - Example: If "Dogs.md" links to [[Rex]] and [[Buddy]], read those files\n';
+		toolsSection += '   - Build a complete picture by following the connections\n\n';
+		toolsSection += '4. **SEARCH FOR CONNECTIONS**: If initial search doesn\'t answer the question fully\n';
+		toolsSection += '   - Search for entities mentioned in the files you\'ve read\n';
+		toolsSection += '   - Example: If you find "Rex" in a file, search for "Rex" to find all mentions\n\n';
+		toolsSection += '5. **SYNTHESIZE**: After gathering all relevant information, provide a comprehensive answer\n';
+		toolsSection += '   - Reference which files you found the information in\n';
+		toolsSection += '   - If you can\'t find the answer after thorough research, say so\n\n';
+		toolsSection += 'DO NOT answer based on just ONE file when the question requires connecting information across multiple notes.\n\n';
+
 		toolsSection += '**CONTEXT FILES**: Files may be included in the context or mentioned by the user with @ symbols.\n';
 		toolsSection += 'When asked to modify or add data to these files:\n';
 		toolsSection += '1. First READ the file with read_file to understand its current content\n';

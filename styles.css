@@ -1278,6 +1278,28 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-error);
 }
 
+/* Auto-included active file styling */
+.gemini-agent-file-item-auto {
+	background-color: var(--interactive-accent-hover);
+	border-color: var(--interactive-accent);
+}
+
+.gemini-agent-file-item-auto:hover {
+	background-color: var(--interactive-accent-hover);
+	border-color: var(--interactive-accent);
+	opacity: 0.9;
+}
+
+.gemini-agent-active-badge {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-size: var(--font-ui-smaller);
+	padding: 1px var(--size-2-2);
+	border-radius: var(--radius-s);
+	font-weight: 500;
+	margin-left: auto;
+}
+
 /* Depth Control */
 .gemini-agent-depth-control {
 	display: flex;

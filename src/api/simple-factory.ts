@@ -69,8 +69,8 @@ export class GeminiClientFactory {
 			...overrides
 		};
 
-		// Create prompts instance
-		const prompts = new GeminiPrompts();
+		// Create prompts instance with plugin reference so it can access settings
+		const prompts = new GeminiPrompts(plugin);
 
 		// Create and return client
 		return new GeminiClient(config, prompts, plugin);

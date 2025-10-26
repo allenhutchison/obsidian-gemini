@@ -50,9 +50,16 @@ export class GeminiClient implements ModelApi {
 			streamingEnabled: true,
 			...config
 		};
-		this.prompts = prompts || new GeminiPrompts();
 		this.plugin = plugin;
+		this.prompts = prompts || new GeminiPrompts(plugin);
 		this.ai = new GoogleGenAI({ apiKey: config.apiKey });
+	}
+
+	/**
+	 * Get language code from localStorage
+	 */
+	private getLanguageCode(): string {
+		return window.localStorage.getItem('language') || 'en';
 	}
 
 	/**
@@ -152,10 +159,36 @@ export class GeminiClient implements ModelApi {
 		let systemInstruction = '';
 		if (isExtended) {
 			const extReq = request as ExtendedModelRequest;
+
+			// Start with base system prompt (includes userName, date, time, language)
+			// and add tool instructions if tools are available
+			if (extReq.availableTools && extReq.availableTools.length > 0) {
+				// Use system prompt with tools (includes base system prompt + tool instructions)
+				systemInstruction = this.prompts.getSystemPromptWithTools(extReq.availableTools);
+			} else {
+				// Use base system prompt only
+				systemInstruction = this.prompts.systemPrompt({
+					userName: this.plugin?.settings.userName || 'User',
+					language: this.getLanguageCode(),
+					date: new Date().toLocaleDateString(),
+					time: new Date().toLocaleTimeString(),
+				});
+			}
+
+			// Append additional instructions from prompt field (e.g., generalPrompt, contextPrompt)
 			if (extReq.prompt) {
-				systemInstruction = extReq.prompt;
-			} else if (extReq.customPrompt) {
-				systemInstruction = await this.prompts.getSystemPromptWithCustom(extReq.customPrompt);
+				systemInstruction += '\n\n' + extReq.prompt;
+			}
+
+			// Handle custom prompts (user-defined prompt templates)
+			if (extReq.customPrompt) {
+				if (extReq.customPrompt.overrideSystemPrompt) {
+					// User explicitly wants to override - replace everything
+					systemInstruction = extReq.customPrompt.content;
+				} else {
+					// Append custom prompt to system instructions
+					systemInstruction += '\n\n## Additional Instructions\n\n' + extReq.customPrompt.content;
+				}
 			}
 		} else {
 			// For BaseModelRequest, prompt is the full input
