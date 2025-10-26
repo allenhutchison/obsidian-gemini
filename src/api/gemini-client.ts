@@ -160,35 +160,17 @@ export class GeminiClient implements ModelApi {
 		if (isExtended) {
 			const extReq = request as ExtendedModelRequest;
 
-			// Start with base system prompt (includes userName, date, time, language)
-			// and add tool instructions if tools are available
-			if (extReq.availableTools && extReq.availableTools.length > 0) {
-				// Use system prompt with tools (includes base system prompt + tool instructions)
-				systemInstruction = this.prompts.getSystemPromptWithTools(extReq.availableTools);
-			} else {
-				// Use base system prompt only
-				systemInstruction = this.prompts.systemPrompt({
-					userName: this.plugin?.settings.userName || 'User',
-					language: this.getLanguageCode(),
-					date: new Date().toLocaleDateString(),
-					time: new Date().toLocaleTimeString(),
-				});
-			}
+			// Build unified system prompt with tools and custom prompt
+			// This includes: base system prompt + tool instructions (if tools) + custom prompt (if provided)
+			systemInstruction = this.prompts.getSystemPromptWithCustom(
+				extReq.availableTools,
+				extReq.customPrompt
+			);
 
 			// Append additional instructions from prompt field (e.g., generalPrompt, contextPrompt)
-			if (extReq.prompt) {
+			// Only append if custom prompt didn't override everything
+			if (extReq.prompt && !extReq.customPrompt?.overrideSystemPrompt) {
 				systemInstruction += '\n\n' + extReq.prompt;
-			}
-
-			// Handle custom prompts (user-defined prompt templates)
-			if (extReq.customPrompt) {
-				if (extReq.customPrompt.overrideSystemPrompt) {
-					// User explicitly wants to override - replace everything
-					systemInstruction = extReq.customPrompt.content;
-				} else {
-					// Append custom prompt to system instructions
-					systemInstruction += '\n\n## Additional Instructions\n\n' + extReq.customPrompt.content;
-				}
 			}
 		} else {
 			// For BaseModelRequest, prompt is the full input
