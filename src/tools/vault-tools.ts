@@ -2,6 +2,8 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { ScribeFile } from '../files';
+import { ScribeDataView } from '../files/dataview-utils';
 
 /**
  * Helper function to check if a path should be excluded from vault operations
@@ -28,7 +30,7 @@ export class ReadFileTool implements Tool {
 	name = 'read_file';
 	displayName = 'Read File';
 	category = ToolCategory.READ_ONLY;
-	description = 'Read the full text contents of a markdown file from the vault. Returns the complete file content as a string. Use this to examine files found in searches, follow [[WikiLinks]], or read files mentioned by the user. Path should be relative to vault root (e.g., "folder/note.md" or "folder/note"). The .md extension is optional - the tool will try both with and without it.';
+	description = 'Read the full text contents of a markdown file from the vault. Returns the file content along with metadata including the canonical wikilink for the file, outgoing links (files this note links to), and backlinks (files that link to this note). The "wikilink" field contains the preferred way to reference this file (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]"). All links are in [[WikiLink]] format and can be passed directly to any vault tool - they will automatically resolve to the correct file path, even if the file is in a subfolder. Use this to traverse note relationships, follow connections between notes, or explore related content. Path can be a full path (e.g., "folder/note.md"), a simple filename (e.g., "note"), or a wikilink text (e.g., "My Note" from [[My Note]]). The .md extension is optional.';
 
 	parameters = {
 		type: 'object' as const,
@@ -67,6 +69,22 @@ export class ReadFileTool implements Tool {
 			if (!file && normalizedPath.endsWith('.md')) {
 				const pathWithoutExt = normalizedPath.slice(0, -3);
 				file = plugin.app.vault.getAbstractFileByPath(pathWithoutExt);
+			}
+
+			// If still not found, try resolving as a wikilink
+			// This handles cases like "Foo Foo" which might be in "Dogs/Foo Foo.md"
+			if (!file) {
+				// Strip [[ and ]] if present
+				let linkPath = params.path.replace(/^\[\[/, '').replace(/\]\]$/, '');
+				// Remove .md extension if present for link resolution
+				linkPath = linkPath.replace(/\.md$/, '');
+
+				// Use Obsidian's link resolution API
+				// Pass empty string as source path since we don't have context
+				const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+				if (resolvedFile) {
+					file = resolvedFile;
+				}
 			}
 
 			// If still not found, try case-insensitive search
@@ -111,13 +129,50 @@ export class ReadFileTool implements Tool {
 
 			const content = await plugin.app.vault.read(file);
 
+			// Get link information
+			const scribeFile = new ScribeFile(plugin);
+			const scribeDataView = new ScribeDataView(scribeFile, plugin);
+
+			// Get outgoing links (files this file links to)
+			// Filter out links to system folders (plugin state, .obsidian, etc.)
+			const outgoingLinksSet = scribeFile.getUniqueLinks(file);
+			const outgoingLinks: string[] = [];
+			for (const linkedFile of outgoingLinksSet) {
+				// Skip links to system folders
+				if (shouldExcludePath(linkedFile.path, plugin)) {
+					continue;
+				}
+				const wikilink = scribeFile.getLinkText(linkedFile, file.path);
+				outgoingLinks.push(wikilink);
+			}
+
+			// Get backlinks (files that link to this file)
+			// Filter out backlinks from system folders
+			const backlinksSet = await scribeDataView.getBacklinks(file);
+			const backlinks: string[] = [];
+			for (const backlinkFile of backlinksSet) {
+				// Skip backlinks from system folders
+				if (shouldExcludePath(backlinkFile.path, plugin)) {
+					continue;
+				}
+				const wikilink = scribeFile.getLinkText(backlinkFile, file.path);
+				backlinks.push(wikilink);
+			}
+
+			// Get canonical wikilink for this file
+			// Use empty source path to get the shortest/canonical form
+			const canonicalWikilink = scribeFile.getLinkText(file, '');
+
 			return {
 				success: true,
 				data: {
 					path: file.path,  // Return the actual path that was found
+					wikilink: canonicalWikilink,  // Canonical wikilink (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]")
 					content: content,
 					size: file.stat.size,
-					modified: file.stat.mtime
+					modified: file.stat.mtime,
+					outgoingLinks: outgoingLinks.sort(),  // Sort for consistent output
+					backlinks: backlinks.sort()           // Sort for consistent output
 				}
 			};
 
@@ -382,7 +437,7 @@ export class DeleteFileTool implements Tool {
 	name = 'delete_file';
 	displayName = 'Delete File';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Permanently delete a file or folder from the vault. WARNING: This action cannot be undone! When deleting a folder, all contents are removed recursively. Returns the path and type (file/folder) that was deleted. Always confirm with the user before executing this destructive operation.';
+	description = 'Permanently delete a file or folder from the vault. WARNING: This action cannot be undone! When deleting a folder, all contents are removed recursively. Returns the path and type (file/folder) that was deleted. Path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Always confirm with the user before executing this destructive operation.';
 	requiresConfirmation = true;
 	
 	parameters = {
@@ -402,10 +457,10 @@ export class DeleteFileTool implements Tool {
 
 	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
-		
+
 		try {
 			const normalizedPath = normalizePath(params.path);
-			
+
 			// Check if path is excluded
 			if (shouldExcludePath(normalizedPath, plugin)) {
 				return {
@@ -413,9 +468,25 @@ export class DeleteFileTool implements Tool {
 					error: `Cannot delete system folder: ${params.path}`
 				};
 			}
-			
-			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-			
+
+			// Try to find the file - support wikilinks
+			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+
+			// If not found, try with .md extension
+			if (!file && !normalizedPath.endsWith('.md')) {
+				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+			}
+
+			// If still not found, try resolving as a wikilink
+			if (!file) {
+				let linkPath = params.path.replace(/^\[\[/, '').replace(/\]\]$/, '');
+				linkPath = linkPath.replace(/\.md$/, '');
+				const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+				if (resolvedFile) {
+					file = resolvedFile;
+				}
+			}
+
 			if (!file) {
 				return {
 					success: false,
@@ -451,7 +522,7 @@ export class MoveFileTool implements Tool {
 	name = 'move_file';
 	displayName = 'Move/Rename File';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Move a file to a different location or rename it. Provide both source and target paths (including filenames). Target directory will be created if it doesn\'t exist. Returns both paths and action status. Examples: rename "Note.md" to "New Name.md" in same folder, or move "Folder A/Note.md" to "Folder B/Subfolder/Note.md". Preserves all file metadata and updates internal links automatically.';
+	description = 'Move a file to a different location or rename it. Provide both source and target paths (including filenames). Source path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Target directory will be created if it doesn\'t exist. Returns both paths and action status. Examples: rename "Note.md" to "New Name.md" in same folder, or move "Folder A/Note.md" to "Folder B/Subfolder/Note.md". Preserves all file metadata and updates internal links automatically.';
 	requiresConfirmation = true;
 	
 	parameters = {
@@ -479,7 +550,7 @@ export class MoveFileTool implements Tool {
 		try {
 			const sourceNormalizedPath = normalizePath(params.sourcePath);
 			const targetNormalizedPath = normalizePath(params.targetPath);
-			
+
 			// Check if either path is excluded
 			if (shouldExcludePath(sourceNormalizedPath, plugin)) {
 				return {
@@ -487,16 +558,32 @@ export class MoveFileTool implements Tool {
 					error: `Cannot move from system folder: ${params.sourcePath}`
 				};
 			}
-			
+
 			if (shouldExcludePath(targetNormalizedPath, plugin)) {
 				return {
 					success: false,
 					error: `Cannot move to system folder: ${params.targetPath}`
 				};
 			}
-			
-			const sourceFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath);
-			
+
+			// Try to find the source file - support wikilinks
+			let sourceFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath);
+
+			// If not found, try with .md extension
+			if (!sourceFile && !sourceNormalizedPath.endsWith('.md')) {
+				sourceFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath + '.md');
+			}
+
+			// If still not found, try resolving as a wikilink
+			if (!sourceFile) {
+				let linkPath = params.sourcePath.replace(/^\[\[/, '').replace(/\]\]$/, '');
+				linkPath = linkPath.replace(/\.md$/, '');
+				const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+				if (resolvedFile) {
+					sourceFile = resolvedFile;
+				}
+			}
+
 			if (!sourceFile) {
 				return {
 					success: false,

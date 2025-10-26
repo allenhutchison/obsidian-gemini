@@ -1630,17 +1630,12 @@ User: ${history[0].message}`;
 
 		// Build updated conversation history with proper Gemini API format:
 		// 1. Previous conversation history
-		// 2. User message
+		// 2. User message (only if non-empty)
 		// 3. Model response with tool calls (as functionCall parts)
 		// 4. Tool results (as functionResponse parts)
 
 		const updatedHistory = [
 			...conversationHistory,
-			// User message
-			{
-				role: 'user',
-				parts: [{ text: userMessage }]
-			},
 			// Model's tool calls
 			{
 				role: 'model',
@@ -1662,6 +1657,16 @@ User: ${history[0].message}`;
 				}))
 			}
 		];
+
+		// Only add user message if it's non-empty
+		// On recursive calls, userMessage will be empty since the message is already in conversationHistory
+		if (userMessage && userMessage.trim()) {
+			// Insert user message before the model's tool calls
+			updatedHistory.splice(conversationHistory.length, 0, {
+				role: 'user',
+				parts: [{ text: userMessage }]
+			});
+		}
 
 		// Send another request with the tool results
 		try {

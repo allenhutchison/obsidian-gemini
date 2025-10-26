@@ -21,6 +21,20 @@ jest.mock('obsidian', () => ({
 
 jest.mock('@google/genai');
 
+// Mock ScribeFile and ScribeDataView
+jest.mock('../files', () => ({
+	ScribeFile: jest.fn().mockImplementation(() => ({
+		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
+		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
+	}))
+}));
+
+jest.mock('../files/dataview-utils', () => ({
+	ScribeDataView: jest.fn().mockImplementation(() => ({
+		getBacklinks: jest.fn().mockResolvedValue(new Set())
+	}))
+}));
+
 describe('Tool Integration Tests', () => {
 	let plugin: any;
 	let registry: ToolRegistry;
@@ -46,13 +60,14 @@ describe('Tool Integration Tests', () => {
 					modify: jest.fn(),
 					delete: jest.fn(),
 					processFrontMatter: jest.fn(),
-					getRoot: jest.fn().mockReturnValue({ 
+					getRoot: jest.fn().mockReturnValue({
 						children: [],
 						path: '/'
 					})
 				},
 				metadataCache: {
-					getFileCache: jest.fn()
+					getFileCache: jest.fn(),
+					getFirstLinkpathDest: jest.fn().mockReturnValue(null)
 				}
 			}
 		};

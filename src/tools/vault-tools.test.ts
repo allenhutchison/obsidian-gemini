@@ -1,6 +1,20 @@
 import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, MoveFileTool, getVaultTools } from './vault-tools';
 import { ToolExecutionContext } from './types';
 
+// Mock ScribeFile and ScribeDataView
+jest.mock('../files', () => ({
+	ScribeFile: jest.fn().mockImplementation(() => ({
+		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
+		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
+	}))
+}));
+
+jest.mock('../files/dataview-utils', () => ({
+	ScribeDataView: jest.fn().mockImplementation(() => ({
+		getBacklinks: jest.fn().mockResolvedValue(new Set())
+	}))
+}));
+
 // Use the existing mock by extending it
 jest.mock('obsidian', () => ({
 	...jest.requireActual('../../__mocks__/obsidian.js'),
@@ -9,7 +23,7 @@ jest.mock('obsidian', () => ({
 		path: string;
 		name: string;
 		children: any[];
-		
+
 		constructor() {
 			this.path = '';
 			this.name = '';
@@ -51,9 +65,14 @@ const mockVault = {
 	}
 };
 
+const mockMetadataCache = {
+	getFirstLinkpathDest: jest.fn()
+};
+
 const mockPlugin = {
 	app: {
-		vault: mockVault
+		vault: mockVault,
+		metadataCache: mockMetadataCache
 	},
 	settings: {
 		historyFolder: 'test-history-folder'
@@ -95,15 +114,19 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				path: 'test.md',
+				wikilink: '[[test.md]]',
 				content: 'file content',
 				size: 100,
-				modified: mockFile.stat.mtime
+				modified: mockFile.stat.mtime,
+				outgoingLinks: [],
+				backlinks: []
 			});
 		});
 
 		it('should return error for non-existent file', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.getMarkdownFiles.mockReturnValue([]);
+			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
 
 			const result = await tool.execute({ path: 'nonexistent.md' }, mockContext);
 
