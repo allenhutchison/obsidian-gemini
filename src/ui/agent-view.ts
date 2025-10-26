@@ -1097,45 +1097,17 @@ export class AgentView extends ItemView {
 			let customPrompt: CustomPrompt | undefined;
 			if (this.currentSession?.modelConfig?.promptTemplate) {
 				try {
-					// Load custom prompt from file
-					const promptFile = this.app.vault.getAbstractFileByPath(this.currentSession.modelConfig.promptTemplate);
-					if (promptFile instanceof TFile && promptFile.extension === 'md') {
-						const fileContent = await this.app.vault.read(promptFile);
-
-						// Parse frontmatter to get custom prompt metadata
-						const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
-						const match = fileContent.match(frontmatterRegex);
-
-						if (match) {
-							const frontmatter = match[1];
-							const content = match[2].trim();
-
-							// Parse frontmatter fields
-							const nameMatch = frontmatter.match(/name:\s*(.+)/);
-							const descMatch = frontmatter.match(/description:\s*(.+)/);
-							const overrideMatch = frontmatter.match(/overrideSystemPrompt:\s*(true|false)/);
-
-							customPrompt = {
-								name: nameMatch?.[1]?.trim() || promptFile.basename,
-								description: descMatch?.[1]?.trim() || '',
-								version: 1,
-								overrideSystemPrompt: overrideMatch?.[1] === 'true',
-								tags: [],
-								content: content
-							};
-						} else {
-							// No frontmatter, use entire content
-							customPrompt = {
-								name: promptFile.basename,
-								description: '',
-								version: 1,
-								overrideSystemPrompt: false,
-								tags: [],
-								content: fileContent.trim()
-							};
-						}
+					// Use the promptManager to robustly load the custom prompt
+					const loadedPrompt = await this.plugin.promptManager.loadPromptFromFile(
+						this.currentSession.modelConfig.promptTemplate
+					);
+					if (loadedPrompt) {
+						customPrompt = loadedPrompt;
 					} else {
-						console.warn('Custom prompt file not found:', this.currentSession.modelConfig.promptTemplate);
+						console.warn(
+							'Custom prompt file not found or failed to load:',
+							this.currentSession.modelConfig.promptTemplate
+						);
 					}
 				} catch (error) {
 					console.error('Error loading custom prompt:', error);
