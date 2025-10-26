@@ -66,15 +66,18 @@ export class SessionListModal extends Modal {
 
 	private async loadSessions() {
 		try {
+			// Clear existing sessions before reloading
+			this.sessions = [];
+
 			// Get all files in the Agent-Sessions folder
 			const sessionFolder = `${this.plugin.settings.historyFolder}/Agent-Sessions`;
 			const folder = this.app.vault.getAbstractFileByPath(sessionFolder);
-			
+
 			// Get all markdown files in the session folder
-			const files = this.app.vault.getMarkdownFiles().filter(f => 
+			const files = this.app.vault.getMarkdownFiles().filter(f =>
 				f.path.startsWith(sessionFolder + '/')
 			);
-			
+
 			// Load each session
 			for (const file of files) {
 				try {

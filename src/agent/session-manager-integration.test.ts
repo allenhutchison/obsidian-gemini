@@ -65,7 +65,6 @@ describe('SessionManager Integration Tests', () => {
 			// Create session
 			const session = await sessionManager.createAgentSession('Test Session', {
 				contextFiles: [],
-				contextDepth: 2,
 				enabledTools: [ToolCategory.READ_ONLY]
 			});
 
@@ -119,7 +118,6 @@ describe('SessionManager Integration Tests', () => {
 			// Create session with custom config
 			const session = await sessionManager.createAgentSession('Test Session', {
 				contextFiles: [{ path: 'context.md', basename: 'context' } as TFile],
-				contextDepth: 3,
 				enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
 				requireConfirmation: [DestructiveAction.DELETE_FILES]
 			});

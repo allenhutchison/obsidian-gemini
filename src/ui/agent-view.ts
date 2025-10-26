@@ -22,6 +22,7 @@ import {
 import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
+import { CustomPrompt } from '../prompts/types';
 import * as Handlebars from 'handlebars';
 import { AgentFactory } from '../agent/agent-factory';
 import { ChatTimer } from '../utils/timer-utils';
@@ -201,7 +202,7 @@ export class AgentView extends ItemView {
 
 			const contextBadge = leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
-				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'} • Depth ${this.currentSession.context.contextDepth}`
+				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`
 			});
 		}
 		
@@ -299,27 +300,6 @@ export class AgentView extends ItemView {
 		setIcon(addButton, 'plus');
 		addButton.createSpan({ text: ' Add Files' });
 		addButton.addEventListener('click', () => this.showFilePicker());
-		
-		// Depth control (inline)
-		const depthControl = controlsRow.createDiv({ cls: 'gemini-agent-depth-control-inline' });
-		depthControl.createSpan({ text: 'Depth:', cls: 'gemini-agent-depth-label' });
-		
-		const depthInput = depthControl.createEl('input', {
-			type: 'number',
-			cls: 'gemini-agent-depth-input-sm',
-			value: this.currentSession?.context.contextDepth.toString() || '2'
-		});
-		depthInput.min = '0';
-		depthInput.max = '10';
-		depthInput.addEventListener('change', () => {
-			const depth = parseInt(depthInput.value);
-			if (this.currentSession) {
-				this.currentSession.context.contextDepth = depth;
-				this.updateSessionMetadata();
-				// Update the context badge
-				this.createCompactHeader();
-			}
-		});
 
 		// Context files list (compact)
 		const filesList = this.contextPanel.createDiv({ cls: 'gemini-agent-files-list gemini-agent-files-list-compact' });
@@ -1110,52 +1090,46 @@ export class AgentView extends ItemView {
 			// Build context for AI request including mentioned files
 			const contextInfo = await this.plugin.gfile.buildFileContext(
 				allContextFiles,
-				this.currentSession.context.contextDepth,
 				true // renderContent
 			);
 			
-			// Create prompt that includes the context
-			let fullPrompt: string;
-			
-			// Check if session has a custom prompt template
+			// Load custom prompt if session has one configured
+			let customPrompt: CustomPrompt | undefined;
 			if (this.currentSession?.modelConfig?.promptTemplate) {
 				try {
-					// Load custom prompt from file
-					const promptFile = this.app.vault.getAbstractFileByPath(this.currentSession.modelConfig.promptTemplate);
-					if (promptFile instanceof TFile && promptFile.extension === 'md') {
-						const promptContent = await this.app.vault.read(promptFile);
-						// Use Handlebars to format the custom prompt
-						const template = Handlebars.compile(promptContent);
-						fullPrompt = template({ userMessage: message });
+					// Use the promptManager to robustly load the custom prompt
+					const loadedPrompt = await this.plugin.promptManager.loadPromptFromFile(
+						this.currentSession.modelConfig.promptTemplate
+					);
+					if (loadedPrompt) {
+						customPrompt = loadedPrompt;
 					} else {
-						// Fall back to default if file not found
-						console.warn('Custom prompt file not found:', this.currentSession.modelConfig.promptTemplate);
-						fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
+						console.warn(
+							'Custom prompt file not found or failed to load:',
+							this.currentSession.modelConfig.promptTemplate
+						);
 					}
 				} catch (error) {
 					console.error('Error loading custom prompt:', error);
-					fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
 				}
-			} else {
-				// Use default prompt
-				fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
 			}
-			
+
+			// Build additional prompt instructions (not part of system prompt)
+			let additionalInstructions = '';
+
 			// Add mention note if files were mentioned
 			if (files.length > 0) {
 				const fileNames = files.map(f => f.basename).join(', ');
-				fullPrompt = `${fullPrompt}\n\nIMPORTANT: The user has specifically referenced the following files using @ mentions: ${fileNames}
+				additionalInstructions += `\n\nIMPORTANT: The user has specifically referenced the following files using @ mentions: ${fileNames}
 These files are included in the context below. When the user asks you to write data to or modify these files, you should:
 1. First use the read_file tool to examine their current contents
 2. Then use the write_file tool to update them with the new or modified content
 3. If adding new data, integrate it appropriately with the existing content rather than creating a new file`;
 			}
-			
+
 			// Add context information if available
 			if (contextInfo) {
-				fullPrompt = `${fullPrompt}\n\n${contextInfo}\n\nUser: ${message}`;
-			} else {
-				fullPrompt = `${fullPrompt}\n\nUser: ${message}`;
+				additionalInstructions += `\n\n${contextInfo}`;
 			}
 
 			// Get available tools for this session
@@ -1167,22 +1141,19 @@ These files are included in the context below. When the user asks you to write d
 			console.log('Available tools from registry:', availableTools);
 			console.log('Number of tools:', availableTools.length);
 			console.log('Tool names:', availableTools.map(t => t.name));
-			
-			// Send to AI - disable automatic context since we're providing it
-			const originalSendContext = this.plugin.settings.sendContext;
-			this.plugin.settings.sendContext = false;
-			
+
 			try {
 				// Get model config from session or use defaults
 				const modelConfig = this.currentSession?.modelConfig || {};
-				
+
 				const request: ExtendedModelRequest = {
 					userMessage: message,
 					conversationHistory: conversationHistory,
 					model: modelConfig.model || this.plugin.settings.chatModelName,
 					temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 					topP: modelConfig.topP ?? this.plugin.settings.topP,
-					prompt: fullPrompt,
+					prompt: additionalInstructions, // Additional context and instructions
+					customPrompt: customPrompt, // Custom prompt template (if configured)
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools // No need to cast to any
 				};
@@ -1226,10 +1197,7 @@ These files are included in the context below. When the user asks you to write d
 					try {
 						const response = await streamResponse.complete;
 						this.currentStreamingResponse = null;
-						
-						// Restore original setting
-						this.plugin.settings.sendContext = originalSendContext;
-						
+
 						// Check if the model requested tool calls
 						if (response.toolCalls && response.toolCalls.length > 0) {
 							// Remove thinking indicator if it hasn't been removed yet
@@ -1261,7 +1229,7 @@ These files are included in the context below. When the user asks you to write d
 							}
 							
 							// Execute tools and handle results
-							await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
+							await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry, customPrompt);
 						} else {
 							// Normal response without tool calls
 							// Only finalize and save if response has content
@@ -1309,7 +1277,6 @@ These files are included in the context below. When the user asks you to write d
 						}
 					} catch (error) {
 						this.currentStreamingResponse = null;
-						this.plugin.settings.sendContext = originalSendContext;
 						// Remove thinking indicator if it hasn't been removed yet
 						if (!thinkingRemoved) {
 							thinkingMessage.remove();
@@ -1321,10 +1288,7 @@ These files are included in the context below. When the user asks you to write d
 					// Fall back to non-streaming API
 					console.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
-					
-					// Restore original setting
-					this.plugin.settings.sendContext = originalSendContext;
-					
+
 					// Remove thinking indicator
 					thinkingMessage.remove();
 					this.chatTimer.stop();
@@ -1332,7 +1296,7 @@ These files are included in the context below. When the user asks you to write d
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
 						// Execute tools and handle results
-						await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
+						await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry, customPrompt);
 					} else {
 						// Normal response without tool calls
 						// Only display if response has content
@@ -1367,8 +1331,6 @@ These files are included in the context below. When the user asks you to write d
 					}
 				}
 			} catch (error) {
-				// Make sure to restore setting even if there's an error
-				this.plugin.settings.sendContext = originalSendContext;
 				// Remove thinking indicator on error
 				thinkingMessage.remove();
 				this.chatTimer.stop();
@@ -1497,11 +1459,7 @@ These files are included in the context below. When the user asks you to write d
 Context Files: ${this.currentSession.context.contextFiles.map(f => f.basename).join(', ')}
 
 User: ${history[0].message}`;
-			
-			// Temporarily disable context to avoid confusion
-			const originalSendContext = this.plugin.settings.sendContext;
-			this.plugin.settings.sendContext = false;
-			
+
 			try {
 				// Generate title using the model (use default settings for labeling)
 				const modelApi = GeminiClientFactory.createChatModel(this.plugin);
@@ -1512,10 +1470,7 @@ User: ${history[0].message}`;
 					prompt: titlePrompt,
 					renderContent: false
 				});
-				
-				// Restore original setting
-				this.plugin.settings.sendContext = originalSendContext;
-				
+
 				// Extract and sanitize the title
 				const generatedTitle = response.markdown.trim()
 					.replace(/^["']+|["']+$/g, '') // Remove quotes
@@ -1552,8 +1507,6 @@ User: ${history[0].message}`;
 					console.log(`Auto-labeled session: ${generatedTitle}`);
 				}
 			} catch (error) {
-				// Restore setting on error
-				this.plugin.settings.sendContext = originalSendContext;
 				console.error('Failed to auto-label session:', error);
 				// Don't show error to user - auto-labeling is a nice-to-have feature
 			}
@@ -1618,7 +1571,8 @@ User: ${history[0].message}`;
 		toolCalls: any[],
 		userMessage: string,
 		conversationHistory: any[],
-		userEntry: GeminiConversationEntry
+		userEntry: GeminiConversationEntry,
+		customPrompt?: CustomPrompt
 	) {
 		if (!this.currentSession) return;
 
@@ -1728,6 +1682,7 @@ User: ${history[0].message}`;
 				temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 				topP: modelConfig.topP ?? this.plugin.settings.topP,
 				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Respond to the user based on the tool execution results" }),
+				customPrompt: customPrompt, // Pass custom prompt through to follow-up requests
 				renderContent: false,
 				availableTools: availableTools  // Include tools so model can chain calls
 			};
@@ -1749,7 +1704,8 @@ User: ${history[0].message}`;
 						message: 'Continuing with additional tool calls...',
 						notePath: '',
 						created_at: new Date()
-					}
+					},
+					customPrompt // Pass custom prompt through recursive calls
 				);
 			} else {
 				// Display the final response only if it has content

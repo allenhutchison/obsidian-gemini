@@ -208,8 +208,7 @@ export class SessionManager {
 		const agentSession = await this.createAgentSession(
 			title || `${noteSession.title} (Agent)`,
 			{
-				contextFiles: noteSession.context.contextFiles,
-				contextDepth: Math.max(noteSession.context.contextDepth, 3)
+				contextFiles: noteSession.context.contextFiles
 			}
 		);
 
@@ -301,7 +300,6 @@ export class SessionManager {
 
 		return {
 			contextFiles,
-			contextDepth: frontmatter.context_depth || 2,
 			enabledTools: frontmatter.enabled_tools || DEFAULT_CONTEXTS.NOTE_CHAT.enabledTools,
 			requireConfirmation: frontmatter.require_confirmation || [],
 			maxContextChars: frontmatter.max_context_chars,

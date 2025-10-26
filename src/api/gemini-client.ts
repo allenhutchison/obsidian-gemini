@@ -27,7 +27,6 @@ export interface GeminiClientConfig {
 	temperature?: number;
 	topP?: number;
 	maxOutputTokens?: number;
-	searchGrounding?: boolean;
 	streamingEnabled?: boolean;
 }
 
@@ -46,7 +45,6 @@ export class GeminiClient implements ModelApi {
 		this.config = {
 			temperature: 1.0,
 			topP: 0.95,
-			searchGrounding: false,
 			streamingEnabled: true,
 			...config
 		};
@@ -188,13 +186,8 @@ export class GeminiClient implements ModelApi {
 			...(systemInstruction && { systemInstruction }),
 		};
 
-		// Add search grounding if enabled and no tools present
-		const hasTools = isExtended && (request as ExtendedModelRequest).availableTools?.length;
-		if (this.config.searchGrounding && !hasTools) {
-			config.tools = [{ googleSearch: {} }];
-		}
-
 		// Add function calling tools
+		const hasTools = isExtended && (request as ExtendedModelRequest).availableTools?.length;
 		if (hasTools) {
 			const tools = (request as ExtendedModelRequest).availableTools!;
 			const functionDeclarations = tools.map(tool => ({

@@ -33,9 +33,6 @@ export interface ObsidianGeminiSettings {
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
-	sendContext: boolean;
-	maxContextDepth: number;
-	searchGrounding: boolean;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;
@@ -46,7 +43,6 @@ export interface ObsidianGeminiSettings {
 	initialBackoffDelay: number;
 	streamingEnabled: boolean;
 	modelDiscovery: ModelDiscoverySettings;
-	enableCustomPrompts: boolean;
 	allowSystemPromptOverride: boolean;
 	temperature: number;
 	topP: number;
@@ -62,9 +58,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
-	sendContext: false,
-	maxContextDepth: 2,
-	searchGrounding: false,
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
@@ -80,7 +73,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		lastUpdate: 0,
 		fallbackToStatic: true,
 	},
-	enableCustomPrompts: false,
 	allowSystemPromptOverride: false,
 	temperature: 0.7,
 	topP: 1,
@@ -289,7 +281,7 @@ export default class ObsidianGemini extends Plugin {
 
 	async onLayoutReady() {
 		// Setup prompts directory and commands after layout is ready
-		if (this.settings.enableCustomPrompts && this.promptManager) {
+		if (this.promptManager) {
 			await this.promptManager.ensurePromptsDirectory();
 			await this.promptManager.createDefaultPrompts();
 			// Setup prompt commands

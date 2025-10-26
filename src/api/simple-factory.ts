@@ -65,7 +65,6 @@ export class GeminiClientFactory {
 			apiKey: settings.apiKey,
 			temperature: settings.temperature ?? 1.0,
 			topP: settings.topP ?? 0.95,
-			searchGrounding: settings.searchGrounding ?? false,
 			streamingEnabled: settings.streamingEnabled ?? true,
 			...overrides
 		};

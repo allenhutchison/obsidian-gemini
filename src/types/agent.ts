@@ -26,19 +26,16 @@ export enum DestructiveAction {
 export interface AgentContext {
 	/** Files to include in the conversation context */
 	contextFiles: TFile[];
-	
-	/** How deep to traverse linked files (0 = no links, 1 = direct links, etc.) */
-	contextDepth: number;
-	
+
 	/** Tool categories enabled for this agent session */
 	enabledTools: ToolCategory[];
-	
+
 	/** Actions that require user confirmation */
 	requireConfirmation: DestructiveAction[];
-	
+
 	/** Maximum total characters to include from context files */
 	maxContextChars?: number;
-	
+
 	/** Maximum characters per individual file */
 	maxCharsPerFile?: number;
 }
@@ -128,7 +125,6 @@ export interface ChatMessage {
 	/** Context that was active when this message was sent */
 	contextSnapshot?: {
 		files: string[];  // File paths
-		depth: number;
 	};
 }
 
@@ -162,16 +158,14 @@ export interface ToolExecution {
 export const DEFAULT_CONTEXTS = {
 	NOTE_CHAT: {
 		contextFiles: [], // Will be set to current file
-		contextDepth: 2,
 		enabledTools: [ToolCategory.READ_ONLY],
 		requireConfirmation: [],
 		maxContextChars: 50000,
 		maxCharsPerFile: 10000
 	} as Omit<AgentContext, 'contextFiles'>,
-	
+
 	AGENT_SESSION: {
 		contextFiles: [],
-		contextDepth: 3,
 		enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
 		requireConfirmation: [DestructiveAction.MODIFY_FILES, DestructiveAction.CREATE_FILES, DestructiveAction.DELETE_FILES],
 		maxContextChars: 100000,
