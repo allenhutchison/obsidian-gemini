@@ -1266,7 +1266,7 @@ These files are included in the context below. When the user asks you to write d
 							}
 							
 							// Execute tools and handle results
-							await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
+							await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry, customPrompt);
 						} else {
 							// Normal response without tool calls
 							// Only finalize and save if response has content
@@ -1333,7 +1333,7 @@ These files are included in the context below. When the user asks you to write d
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
 						// Execute tools and handle results
-						await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry);
+						await this.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry, customPrompt);
 					} else {
 						// Normal response without tool calls
 						// Only display if response has content
@@ -1608,7 +1608,8 @@ User: ${history[0].message}`;
 		toolCalls: any[],
 		userMessage: string,
 		conversationHistory: any[],
-		userEntry: GeminiConversationEntry
+		userEntry: GeminiConversationEntry,
+		customPrompt?: CustomPrompt
 	) {
 		if (!this.currentSession) return;
 
@@ -1718,6 +1719,7 @@ User: ${history[0].message}`;
 				temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 				topP: modelConfig.topP ?? this.plugin.settings.topP,
 				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Respond to the user based on the tool execution results" }),
+				customPrompt: customPrompt, // Pass custom prompt through to follow-up requests
 				renderContent: false,
 				availableTools: availableTools  // Include tools so model can chain calls
 			};
@@ -1739,7 +1741,8 @@ User: ${history[0].message}`;
 						message: 'Continuing with additional tool calls...',
 						notePath: '',
 						created_at: new Date()
-					}
+					},
+					customPrompt // Pass custom prompt through recursive calls
 				);
 			} else {
 				// Display the final response only if it has content
