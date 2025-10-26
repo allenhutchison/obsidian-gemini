@@ -1096,13 +1096,11 @@ export class AgentView extends ItemView {
 			// Load custom prompt if session has one configured
 			let customPrompt: CustomPrompt | undefined;
 			if (this.currentSession?.modelConfig?.promptTemplate) {
-				console.log('[AgentView] Loading custom prompt from:', this.currentSession.modelConfig.promptTemplate);
 				try {
 					// Load custom prompt from file
 					const promptFile = this.app.vault.getAbstractFileByPath(this.currentSession.modelConfig.promptTemplate);
 					if (promptFile instanceof TFile && promptFile.extension === 'md') {
 						const fileContent = await this.app.vault.read(promptFile);
-						console.log('[AgentView] Prompt file content length:', fileContent.length);
 
 						// Parse frontmatter to get custom prompt metadata
 						const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
@@ -1125,7 +1123,6 @@ export class AgentView extends ItemView {
 								tags: [],
 								content: content
 							};
-							console.log('[AgentView] Parsed custom prompt with frontmatter:', customPrompt.name, 'override:', customPrompt.overrideSystemPrompt);
 						} else {
 							// No frontmatter, use entire content
 							customPrompt = {
@@ -1136,17 +1133,13 @@ export class AgentView extends ItemView {
 								tags: [],
 								content: fileContent.trim()
 							};
-							console.log('[AgentView] Using prompt without frontmatter:', customPrompt.name);
 						}
-						console.log('[AgentView] Custom prompt content preview:', customPrompt.content.substring(0, 100));
 					} else {
-						console.warn('[AgentView] Custom prompt file not found:', this.currentSession.modelConfig.promptTemplate);
+						console.warn('Custom prompt file not found:', this.currentSession.modelConfig.promptTemplate);
 					}
 				} catch (error) {
-					console.error('[AgentView] Error loading custom prompt:', error);
+					console.error('Error loading custom prompt:', error);
 				}
-			} else {
-				console.log('[AgentView] No custom prompt template configured for session');
 			}
 
 			// Build additional prompt instructions (not part of system prompt)
@@ -1192,8 +1185,6 @@ These files are included in the context below. When the user asks you to write d
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools // No need to cast to any
 				};
-
-				console.log('[AgentView] Request customPrompt:', customPrompt ? `${customPrompt.name} (${customPrompt.content.length} chars)` : 'none');
 				
 				// Create model API for this session
 				const modelApi = AgentFactory.createAgentModel(this.plugin, this.currentSession!);
