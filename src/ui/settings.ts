@@ -338,23 +338,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('Custom Prompts').setHeading();
 
 		new Setting(containerEl)
-			.setName('Enable custom prompts')
-			.setDesc('Allow notes to specify custom AI instructions via frontmatter')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.enableCustomPrompts ?? false).onChange(async (value) => {
-					this.plugin.settings.enableCustomPrompts = value;
-					await this.plugin.saveSettings();
-					
-					// If enabling custom prompts, ensure the directory and default prompts exist
-					if (value) {
-						await this.plugin.promptManager.ensurePromptsDirectory();
-						await this.plugin.promptManager.createDefaultPrompts();
-						this.plugin.promptManager.setupPromptCommands();
-					}
-				})
-			);
-
-		new Setting(containerEl)
 			.setName('Allow system prompt override')
 			.setDesc(
 				'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'

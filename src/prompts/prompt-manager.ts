@@ -215,37 +215,28 @@ Focus on being helpful while maintaining intellectual honesty.`;
 
 	// Setup commands for prompt management
 	setupPromptCommands(): void {
-		// Only register commands if custom prompts are enabled
-		if (this.plugin.settings.enableCustomPrompts) {
-			this.plugin.addCommand({
-				id: 'gemini-scribe-apply-custom-prompt',
-				name: 'Apply Custom Prompt to Current Note',
-				callback: () => this.applyCustomPromptToCurrentNote(),
-			});
+		this.plugin.addCommand({
+			id: 'gemini-scribe-apply-custom-prompt',
+			name: 'Apply Custom Prompt to Current Note',
+			callback: () => this.applyCustomPromptToCurrentNote(),
+		});
 
-			this.plugin.addCommand({
-				id: 'gemini-scribe-remove-custom-prompt',
-				name: 'Remove Custom Prompt from Current Note',
-				callback: () => this.removeCustomPromptFromCurrentNote(),
-			});
+		this.plugin.addCommand({
+			id: 'gemini-scribe-remove-custom-prompt',
+			name: 'Remove Custom Prompt from Current Note',
+			callback: () => this.removeCustomPromptFromCurrentNote(),
+		});
 
-			this.plugin.addCommand({
-				id: 'gemini-scribe-create-custom-prompt',
-				name: 'Create New Custom Prompt',
-				callback: () => this.createNewCustomPrompt(),
-			});
-		}
+		this.plugin.addCommand({
+			id: 'gemini-scribe-create-custom-prompt',
+			name: 'Create New Custom Prompt',
+			callback: () => this.createNewCustomPrompt(),
+		});
 	}
 
 	// Apply a custom prompt to the current note by inserting frontmatter
 	async applyCustomPromptToCurrentNote(): Promise<void> {
 		try {
-			// Check if custom prompts are enabled
-			if (!this.plugin.settings.enableCustomPrompts) {
-				new Notice('Custom prompts are disabled. Enable them in plugin settings.');
-				return;
-			}
-
 			const activeFile = this.plugin.gfile.getActiveFile();
 			if (!activeFile) {
 				new Notice('No active file to apply prompt to');
@@ -301,12 +292,6 @@ Focus on being helpful while maintaining intellectual honesty.`;
 	// Remove custom prompt from the current note
 	async removeCustomPromptFromCurrentNote(): Promise<void> {
 		try {
-			// Check if custom prompts are enabled
-			if (!this.plugin.settings.enableCustomPrompts) {
-				new Notice('Custom prompts are disabled. Enable them in plugin settings.');
-				return;
-			}
-
 			const activeFile = this.plugin.gfile.getActiveFile();
 			if (!activeFile) {
 				new Notice('No active file to remove prompt from');
@@ -356,12 +341,6 @@ Focus on being helpful while maintaining intellectual honesty.`;
 	// Create a new custom prompt file
 	async createNewCustomPrompt(): Promise<void> {
 		try {
-			// Check if custom prompts are enabled
-			if (!this.plugin.settings.enableCustomPrompts) {
-				new Notice('Custom prompts are disabled. Enable them in plugin settings.');
-				return;
-			}
-
 			// Ensure prompts directory exists
 			await this.ensurePromptsDirectory();
 
