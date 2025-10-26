@@ -46,6 +46,9 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 					read: jest.fn().mockResolvedValue('file content'),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
 					getRoot: jest.fn().mockReturnValue({ children: [] })
+				},
+				metadataCache: {
+					getFirstLinkpathDest: jest.fn().mockReturnValue(null)
 				}
 			},
 			agentView: null
@@ -153,6 +156,9 @@ describe('ToolExecutionEngine - Error Handling', () => {
 					read: jest.fn().mockResolvedValue('file content'),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
 					getRoot: jest.fn().mockReturnValue({ children: [] })
+				},
+				metadataCache: {
+					getFirstLinkpathDest: jest.fn().mockReturnValue(null)
 				}
 			},
 			agentView: null
