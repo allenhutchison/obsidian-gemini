@@ -137,7 +137,6 @@ export class SessionHistory {
 			frontmatter.type = session.type;
 			frontmatter.title = session.title;
 			frontmatter.context_files = contextFileLinks;
-			frontmatter.context_depth = session.context.contextDepth;
 			frontmatter.enabled_tools = session.context.enabledTools;
 			frontmatter.require_confirmation = session.context.requireConfirmation;
 			frontmatter.created = session.created.toISOString();
@@ -332,7 +331,6 @@ export class SessionHistory {
 			type: session.type,
 			title: session.title,
 			context_files: contextFileLinks,
-			context_depth: session.context.contextDepth,
 			enabled_tools: session.context.enabledTools,
 			require_confirmation: session.context.requireConfirmation,
 			created: session.created.toISOString(),

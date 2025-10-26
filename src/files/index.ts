@@ -1,5 +1,4 @@
 import ObsidianGemini from '../main';
-import { FileContextTree } from './file-context';
 import { TFile } from 'obsidian';
 import { logDebugInfo } from '../api/utils/debug';
 import { GeminiPrompts } from '../prompts';

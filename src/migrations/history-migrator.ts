@@ -212,7 +212,6 @@ export class HistoryMigrator {
 			type: SessionType.AGENT_SESSION,
 			context: {
 				contextFiles: [],
-				contextDepth: 0,
 				enabledTools: [ToolCategory.VAULT_OPERATIONS],
 				requireConfirmation: [DestructiveAction.DELETE_FILES, DestructiveAction.MODIFY_FILES]
 			},

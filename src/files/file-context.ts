@@ -23,13 +23,9 @@ export class FileContextTree {
 	private dataViewHelper: ScribeDataView;
 	private prompts: GeminiPrompts;
 
-	constructor(plugin: ObsidianGemini, depth?: number) {
+	constructor(plugin: ObsidianGemini, depth: number = 0) {
 		this.plugin = plugin;
-		if (!this.plugin.settings.sendContext) {
-			this.maxDepth = 0;
-		} else {
-			this.maxDepth = depth ?? this.plugin.settings.maxContextDepth;
-		}
+		this.maxDepth = depth;
 		this.fileHelper = new ScribeFile(plugin);
 		this.dataViewHelper = new ScribeDataView(this.fileHelper, this.plugin);
 		this.prompts = new GeminiPrompts(plugin);
