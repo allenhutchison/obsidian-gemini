@@ -72,7 +72,10 @@ export class AgentView extends ItemView {
 		this.registerLinkClickHandler();
 
 		// Register active file change listener to update context panel and header
-		this.activeFileChangeHandler = () => {
+		this.activeFileChangeHandler = async () => {
+			// Add active file to session context
+			await this.addActiveFileToContext();
+
 			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 			this.updateSessionHeader();
 		};
@@ -190,15 +193,7 @@ export class AgentView extends ItemView {
 		
 		// Context info badge - always in the same position
 		if (this.currentSession) {
-			// Calculate total context files including auto-included active file
-			let totalContextFiles = this.currentSession.context.contextFiles.length;
-			const activeFile = this.app.workspace.getActiveFile();
-
-			// Add 1 if there's an active markdown file that's not already in context
-			if (activeFile && activeFile.extension === 'md' &&
-				!this.currentSession.context.contextFiles.includes(activeFile)) {
-				totalContextFiles += 1;
-			}
+			const totalContextFiles = this.currentSession.context.contextFiles.length;
 
 			const contextBadge = leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
@@ -403,12 +398,9 @@ export class AgentView extends ItemView {
 	private updateContextFilesList(container: HTMLElement) {
 		container.empty();
 
-		// Get the currently active file
-		const activeFile = this.app.workspace.getActiveFile();
-		const hasActiveFile = activeFile && activeFile.extension === 'md';
 		const hasContextFiles = this.currentSession && this.currentSession.context.contextFiles.length > 0;
 
-		if (!hasActiveFile && !hasContextFiles) {
+		if (!hasContextFiles) {
 			container.createEl('p', {
 				text: 'No context files',
 				cls: 'gemini-agent-empty-state'
@@ -416,33 +408,13 @@ export class AgentView extends ItemView {
 			return;
 		}
 
-		// Show auto-included active file first with special styling
-		if (hasActiveFile) {
-			const fileItem = container.createDiv({ cls: 'gemini-agent-file-item gemini-agent-file-item-auto' });
+		// Get the currently active file to mark it with a badge
+		const activeFile = this.app.workspace.getActiveFile();
 
-			// Add file icon
-			const fileIcon = fileItem.createEl('span', { cls: 'gemini-agent-file-icon' });
-			setIcon(fileIcon, 'file-text');
-
-			const fileName = fileItem.createEl('span', {
-				text: activeFile!.basename,
-				cls: 'gemini-agent-file-name',
-				title: activeFile!.path // Show full path on hover
-			});
-
-			// Add "Active" badge
-			const badge = fileItem.createEl('span', {
-				text: 'Active',
-				cls: 'gemini-agent-active-badge',
-				title: 'This file is automatically included because it\'s currently open'
-			});
-		}
-
-		// Show manually added context files
+		// Show all context files with remove buttons
 		if (this.currentSession) {
 			this.currentSession.context.contextFiles.forEach(file => {
-				// Skip if this is the active file (already shown above)
-				if (file === activeFile) return;
+				const isActiveFile = file === activeFile;
 
 				const fileItem = container.createDiv({ cls: 'gemini-agent-file-item' });
 
@@ -455,6 +427,15 @@ export class AgentView extends ItemView {
 					cls: 'gemini-agent-file-name',
 					title: file.path // Show full path on hover
 				});
+
+				// Add "Active" badge if this is the currently open file
+				if (isActiveFile) {
+					const badge = fileItem.createEl('span', {
+						text: 'Active',
+						cls: 'gemini-agent-active-badge',
+						title: 'This is the currently open file'
+					});
+				}
 
 				const removeBtn = fileItem.createEl('button', {
 					text: '×',
@@ -501,6 +482,27 @@ export class AgentView extends ItemView {
 		}
 	}
 
+	/**
+	 * Add the currently active markdown file to session context
+	 */
+	private async addActiveFileToContext() {
+		if (!this.currentSession) return;
+
+		const activeFile = this.app.workspace.getActiveFile();
+
+		// Only add markdown files
+		if (!activeFile || activeFile.extension !== 'md') return;
+
+		// Check if already in context
+		if (this.currentSession.context.contextFiles.includes(activeFile)) return;
+
+		// Add to context
+		this.currentSession.context.contextFiles.push(activeFile);
+
+		// Save to frontmatter
+		await this.updateSessionMetadata();
+	}
+
 	private async createNewSession() {
 		try {
 			// Clear current session and UI state
@@ -516,7 +518,10 @@ export class AgentView extends ItemView {
 			
 			// Create new session with default context (no initial files)
 			this.currentSession = await this.plugin.sessionManager.createAgentSession();
-			
+
+			// Add active file to context if there is one
+			await this.addActiveFileToContext();
+
 			// Update UI (no history to load for new session)
 			this.createSessionHeader();
 			this.createContextPanel();
@@ -1068,14 +1073,8 @@ export class AgentView extends ItemView {
 		await this.displayMessage(userEntry);
 
 		try {
-			// Start with session context files
+			// Start with session context files (active file is already included if present)
 			const allContextFiles = [...this.currentSession.context.contextFiles];
-
-			// Auto-include the currently active note
-			const activeFile = this.app.workspace.getActiveFile();
-			if (activeFile && activeFile.extension === 'md' && !allContextFiles.includes(activeFile)) {
-				allContextFiles.push(activeFile);
-			}
 
 			// Add mentioned files to context temporarily
 			files.forEach(file => {
@@ -1620,13 +1619,8 @@ User: ${history[0].message}`;
 			}
 		}
 
-		// Save the original user message and tool calls to history
-		if (this.plugin.settings.chatHistory) {
-			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-
-			// Don't save tool execution as separate system messages anymore
-			// The tool UI elements themselves serve as the visual record
-		}
+		// Note: User message was already saved to history before calling handleToolCalls
+		// Don't save it again here to avoid duplicates
 
 		// Build updated conversation history with proper Gemini API format:
 		// 1. Previous conversation history
