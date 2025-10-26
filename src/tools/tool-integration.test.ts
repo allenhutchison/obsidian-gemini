@@ -69,6 +69,10 @@ describe('Tool Integration Tests', () => {
 					getFileCache: jest.fn(),
 					getFirstLinkpathDest: jest.fn().mockReturnValue(null)
 				}
+			},
+			gfile: {
+				getUniqueLinks: jest.fn().mockReturnValue(new Set()),
+				getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
 			}
 		};
 

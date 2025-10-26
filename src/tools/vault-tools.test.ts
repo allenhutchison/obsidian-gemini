@@ -76,6 +76,10 @@ const mockPlugin = {
 	},
 	settings: {
 		historyFolder: 'test-history-folder'
+	},
+	gfile: {
+		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
+		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
 	}
 } as any;
 

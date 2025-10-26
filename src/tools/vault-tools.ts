@@ -14,13 +14,91 @@ function shouldExcludePath(path: string, plugin: InstanceType<typeof ObsidianGem
 	if (path === stateFolder || path.startsWith(stateFolder + '/')) {
 		return true;
 	}
-	
+
 	// Also exclude .obsidian folder
 	if (path === '.obsidian' || path.startsWith('.obsidian/')) {
 		return true;
 	}
-	
+
 	return false;
+}
+
+/**
+ * Helper function to resolve a path to a file with multiple fallback strategies
+ * Handles paths, extensions, wikilinks, and case-insensitive searches
+ *
+ * @param path - The path to resolve (can be full path, filename, or wikilink)
+ * @param plugin - The plugin instance
+ * @param includeSuggestions - Whether to include suggestions if file not found
+ * @returns Object with resolved file and optional suggestions
+ */
+function resolvePathToFile(
+	path: string,
+	plugin: InstanceType<typeof ObsidianGemini>,
+	includeSuggestions: boolean = false
+): { file: TFile | null; suggestions?: string[] } {
+	const normalizedPath = normalizePath(path);
+
+	// Strategy 1: Try direct path lookup
+	let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+
+	// Strategy 2: If not found and doesn't end with .md, try adding it
+	if (!file && !normalizedPath.endsWith('.md')) {
+		file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+	}
+
+	// Strategy 3: If still not found and ends with .md, try without it
+	if (!file && normalizedPath.endsWith('.md')) {
+		const pathWithoutExt = normalizedPath.slice(0, -3);
+		file = plugin.app.vault.getAbstractFileByPath(pathWithoutExt);
+	}
+
+	// Strategy 4: If still not found, try resolving as a wikilink
+	// This handles cases like "Foo Foo" which might be in "Dogs/Foo Foo.md"
+	if (!file) {
+		// Strip [[ and ]] if present
+		let linkPath = path.replace(/^\[\[/, '').replace(/\]\]$/, '');
+		// Remove .md extension if present for link resolution
+		linkPath = linkPath.replace(/\.md$/, '');
+
+		// Use Obsidian's link resolution API
+		// Pass empty string as source path since we don't have context
+		const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+		if (resolvedFile) {
+			file = resolvedFile;
+		}
+	}
+
+	// Strategy 5: If still not found, try case-insensitive search (only for TFiles)
+	if (!file) {
+		const allFiles = plugin.app.vault.getMarkdownFiles();
+		if (allFiles && allFiles.length > 0) {
+			const lowerPath = normalizedPath.toLowerCase();
+			file = allFiles.find(f =>
+				f.path.toLowerCase() === lowerPath ||
+				f.path.toLowerCase() === lowerPath + '.md' ||
+				(lowerPath.endsWith('.md') && f.path.toLowerCase() === lowerPath.slice(0, -3))
+			) || null;
+		}
+	}
+
+	// Only return TFile instances (filter out TFolder)
+	// This is for file operations that specifically need files, not folders
+	const tfile = (file instanceof TFile) ? file : null;
+
+	// Generate suggestions if requested and file not found
+	let suggestions: string[] | undefined;
+	if (!tfile && includeSuggestions) {
+		const allFiles = plugin.app.vault.getMarkdownFiles();
+		suggestions = (allFiles && allFiles.length > 0)
+			? allFiles
+				.filter(f => f.name.toLowerCase().includes(path.toLowerCase().replace('.md', '')))
+				.slice(0, 5)
+				.map(f => f.path)
+			: [];
+	}
+
+	return { file: tfile, suggestions };
 }
 
 /**
@@ -57,61 +135,22 @@ export class ReadFileTool implements Tool {
 				};
 			}
 
-			// Try multiple path variations to be more forgiving
-			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-
-			// If not found and doesn't end with .md, try adding it
-			if (!file && !normalizedPath.endsWith('.md')) {
-				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+			// Check if path is a folder before trying to resolve as file
+			const abstractFile = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			if (abstractFile && !(abstractFile instanceof TFile)) {
+				return {
+					success: false,
+					error: `Path is not a file: ${params.path}`
+				};
 			}
 
-			// If still not found and ends with .md, try without it
-			if (!file && normalizedPath.endsWith('.md')) {
-				const pathWithoutExt = normalizedPath.slice(0, -3);
-				file = plugin.app.vault.getAbstractFileByPath(pathWithoutExt);
-			}
-
-			// If still not found, try resolving as a wikilink
-			// This handles cases like "Foo Foo" which might be in "Dogs/Foo Foo.md"
-			if (!file) {
-				// Strip [[ and ]] if present
-				let linkPath = params.path.replace(/^\[\[/, '').replace(/\]\]$/, '');
-				// Remove .md extension if present for link resolution
-				linkPath = linkPath.replace(/\.md$/, '');
-
-				// Use Obsidian's link resolution API
-				// Pass empty string as source path since we don't have context
-				const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
-				if (resolvedFile) {
-					file = resolvedFile;
-				}
-			}
-
-			// If still not found, try case-insensitive search
-			if (!file) {
-				const allFiles = plugin.app.vault.getMarkdownFiles();
-				if (allFiles && allFiles.length > 0) {
-					const lowerPath = normalizedPath.toLowerCase();
-					file = allFiles.find(f =>
-						f.path.toLowerCase() === lowerPath ||
-						f.path.toLowerCase() === lowerPath + '.md' ||
-						(lowerPath.endsWith('.md') && f.path.toLowerCase() === lowerPath.slice(0, -3))
-					) || null;
-				}
-			}
+			// Use shared file resolution helper with suggestions
+			const { file, suggestions } = resolvePathToFile(params.path, plugin, true);
 
 			if (!file) {
 				// Provide helpful error message with suggestions
-				const allFiles = plugin.app.vault.getMarkdownFiles();
-				const similar = (allFiles && allFiles.length > 0)
-					? allFiles
-						.filter(f => f.name.toLowerCase().includes(params.path.toLowerCase().replace('.md', '')))
-						.slice(0, 5)
-						.map(f => f.path)
-					: [];
-
-				const suggestion = similar.length > 0
-					? `\n\nDid you mean one of these?\n${similar.join('\n')}`
+				const suggestion = suggestions && suggestions.length > 0
+					? `\n\nDid you mean one of these?\n${suggestions.join('\n')}`
 					: '';
 
 				return {
@@ -120,44 +159,25 @@ export class ReadFileTool implements Tool {
 				};
 			}
 
-			if (!(file instanceof TFile)) {
-				return {
-					success: false,
-					error: `Path is not a file: ${params.path}`
-				};
-			}
-
 			const content = await plugin.app.vault.read(file);
 
-			// Get link information
-			const scribeFile = new ScribeFile(plugin);
+			// Get link information using singleton instances
+			const scribeFile = plugin.gfile;
 			const scribeDataView = new ScribeDataView(scribeFile, plugin);
 
 			// Get outgoing links (files this file links to)
 			// Filter out links to system folders (plugin state, .obsidian, etc.)
 			const outgoingLinksSet = scribeFile.getUniqueLinks(file);
-			const outgoingLinks: string[] = [];
-			for (const linkedFile of outgoingLinksSet) {
-				// Skip links to system folders
-				if (shouldExcludePath(linkedFile.path, plugin)) {
-					continue;
-				}
-				const wikilink = scribeFile.getLinkText(linkedFile, file.path);
-				outgoingLinks.push(wikilink);
-			}
+			const outgoingLinks = Array.from(outgoingLinksSet)
+				.filter(linkedFile => !shouldExcludePath(linkedFile.path, plugin))
+				.map(linkedFile => scribeFile.getLinkText(linkedFile, file.path));
 
 			// Get backlinks (files that link to this file)
 			// Filter out backlinks from system folders
 			const backlinksSet = await scribeDataView.getBacklinks(file);
-			const backlinks: string[] = [];
-			for (const backlinkFile of backlinksSet) {
-				// Skip backlinks from system folders
-				if (shouldExcludePath(backlinkFile.path, plugin)) {
-					continue;
-				}
-				const wikilink = scribeFile.getLinkText(backlinkFile, file.path);
-				backlinks.push(wikilink);
-			}
+			const backlinks = Array.from(backlinksSet)
+				.filter(backlinkFile => !shouldExcludePath(backlinkFile.path, plugin))
+				.map(backlinkFile => scribeFile.getLinkText(backlinkFile, file.path));
 
 			// Get canonical wikilink for this file
 			// Use empty source path to get the shortest/canonical form
@@ -469,23 +489,8 @@ export class DeleteFileTool implements Tool {
 				};
 			}
 
-			// Try to find the file - support wikilinks
-			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-
-			// If not found, try with .md extension
-			if (!file && !normalizedPath.endsWith('.md')) {
-				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
-			}
-
-			// If still not found, try resolving as a wikilink
-			if (!file) {
-				let linkPath = params.path.replace(/^\[\[/, '').replace(/\]\]$/, '');
-				linkPath = linkPath.replace(/\.md$/, '');
-				const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
-				if (resolvedFile) {
-					file = resolvedFile;
-				}
-			}
+			// Use shared file resolution helper
+			const { file } = resolvePathToFile(params.path, plugin);
 
 			if (!file) {
 				return {
@@ -546,7 +551,7 @@ export class MoveFileTool implements Tool {
 
 	async execute(params: { sourcePath: string; targetPath: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
-		
+
 		try {
 			const sourceNormalizedPath = normalizePath(params.sourcePath);
 			const targetNormalizedPath = normalizePath(params.targetPath);
@@ -566,35 +571,22 @@ export class MoveFileTool implements Tool {
 				};
 			}
 
-			// Try to find the source file - support wikilinks
-			let sourceFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath);
-
-			// If not found, try with .md extension
-			if (!sourceFile && !sourceNormalizedPath.endsWith('.md')) {
-				sourceFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath + '.md');
+			// Check if source path is a folder before trying to resolve as file
+			const abstractFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath);
+			if (abstractFile && !(abstractFile instanceof TFile)) {
+				return {
+					success: false,
+					error: `Source path is not a file: ${params.sourcePath}`
+				};
 			}
 
-			// If still not found, try resolving as a wikilink
-			if (!sourceFile) {
-				let linkPath = params.sourcePath.replace(/^\[\[/, '').replace(/\]\]$/, '');
-				linkPath = linkPath.replace(/\.md$/, '');
-				const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
-				if (resolvedFile) {
-					sourceFile = resolvedFile;
-				}
-			}
+			// Use shared file resolution helper
+			const { file: sourceFile } = resolvePathToFile(params.sourcePath, plugin);
 
 			if (!sourceFile) {
 				return {
 					success: false,
 					error: `Source file not found: ${params.sourcePath}`
-				};
-			}
-			
-			if (!(sourceFile instanceof TFile)) {
-				return {
-					success: false,
-					error: `Source path is not a file: ${params.sourcePath}`
 				};
 			}
 			
