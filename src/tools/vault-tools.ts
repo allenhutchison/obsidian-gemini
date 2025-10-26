@@ -28,7 +28,7 @@ export class ReadFileTool implements Tool {
 	name = 'read_file';
 	displayName = 'Read File';
 	category = ToolCategory.READ_ONLY;
-	description = 'Read the contents of a file in the vault. The path should be relative to the vault root (e.g., "folder/note.md" or just "folder/note"). The .md extension is optional.';
+	description = 'Read the full text contents of a markdown file from the vault. Returns the complete file content as a string. Use this to examine files found in searches, follow [[WikiLinks]], or read files mentioned by the user. Path should be relative to vault root (e.g., "folder/note.md" or "folder/note"). The .md extension is optional - the tool will try both with and without it.';
 
 	parameters = {
 		type: 'object' as const,
@@ -137,7 +137,7 @@ export class WriteFileTool implements Tool {
 	name = 'write_file';
 	displayName = 'Write File';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Write content to a file in the vault (creates new file or overwrites existing)';
+	description = 'Write text content to a file in the vault. Creates a new file if it doesn\'t exist, or completely overwrites an existing file with new content. Returns the file path and whether it was created or modified. Newly created files are automatically added to the current session context. Use this to save AI-generated content, create new notes, or update existing files.';
 	requiresConfirmation = true;
 	
 	parameters = {
@@ -231,7 +231,7 @@ export class ListFilesTool implements Tool {
 	name = 'list_files';
 	displayName = 'List Files';
 	category = ToolCategory.READ_ONLY;
-	description = 'List files and folders in a directory';
+	description = 'List all files and folders in a directory. Returns an array of objects with name, path, type (file/folder), size, and modification time for each item. Can list recursively through all subdirectories or just immediate children. Use empty string for path to list the vault root. Useful for exploring folder structure or finding all files in a specific location.';
 	
 	parameters = {
 		type: 'object' as const,
@@ -315,7 +315,7 @@ export class CreateFolderTool implements Tool {
 	name = 'create_folder';
 	displayName = 'Create Folder';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Create a new folder in the vault';
+	description = 'Create a new folder in the vault at the specified path. Parent folders will be created automatically if they don\'t exist. Returns the normalized folder path on success. Use this to organize notes into new directory structures or prepare locations for new files.';
 	requiresConfirmation = true;
 	
 	parameters = {
@@ -382,7 +382,7 @@ export class DeleteFileTool implements Tool {
 	name = 'delete_file';
 	displayName = 'Delete File';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Delete a file or folder from the vault';
+	description = 'Permanently delete a file or folder from the vault. WARNING: This action cannot be undone! When deleting a folder, all contents are removed recursively. Returns the path and type (file/folder) that was deleted. Always confirm with the user before executing this destructive operation.';
 	requiresConfirmation = true;
 	
 	parameters = {
@@ -451,7 +451,7 @@ export class MoveFileTool implements Tool {
 	name = 'move_file';
 	displayName = 'Move/Rename File';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Move or rename a file in the vault';
+	description = 'Move a file to a different location or rename it. Provide both source and target paths (including filenames). Target directory will be created if it doesn\'t exist. Returns both paths and action status. Examples: rename "Note.md" to "New Name.md" in same folder, or move "Folder A/Note.md" to "Folder B/Subfolder/Note.md". Preserves all file metadata and updates internal links automatically.';
 	requiresConfirmation = true;
 	
 	parameters = {
@@ -558,7 +558,7 @@ export class SearchFilesTool implements Tool {
 	name = 'search_files';
 	displayName = 'Search Files';
 	category = ToolCategory.READ_ONLY;
-	description = 'Search for files in the vault by name pattern';
+	description = 'Search for files in the vault by matching file names or paths against a pattern. Supports wildcards: * (matches any characters) and ? (matches single character). Searches are case-insensitive and match against both file names and full paths. Returns array of matching files with name, path, size, and modification time. Examples: "daily*" finds all files starting with "daily", "*meeting*" finds files containing "meeting" anywhere in name/path. Limited to 50 results by default. NOTE: This searches file NAMES/PATHS only, not file contents.';
 	
 	parameters = {
 		type: 'object' as const,

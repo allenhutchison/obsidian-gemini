@@ -10,7 +10,7 @@ export class GoogleSearchTool implements Tool {
 	name = 'google_search';
 	displayName = 'Google Search';
 	category = ToolCategory.READ_ONLY;
-	description = 'Search Google for current information from the web';
+	description = 'Search Google for current, up-to-date information from the web using Google\'s Search Grounding feature. Returns AI-generated answer with inline citations and source links. Use this to find recent news, facts, statistics, or any information that might have changed since the AI model\'s training cutoff. Results include structured citations with URLs, titles, and snippets from authoritative web sources.';
 	
 	parameters = {
 		type: 'object' as const,
