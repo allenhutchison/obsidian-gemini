@@ -33,9 +33,6 @@ export interface ObsidianGeminiSettings {
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
-	sendContext: boolean;
-	maxContextDepth: number;
-	searchGrounding: boolean;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;
@@ -62,9 +59,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
-	sendContext: false,
-	maxContextDepth: 2,
-	searchGrounding: false,
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,

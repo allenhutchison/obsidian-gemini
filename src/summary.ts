@@ -13,7 +13,7 @@ export class GeminiSummary {
 	}
 
 	async summarizeActiveFile() {
-		const fileContent = await this.plugin.gfile.getCurrentFileContent(0, true);
+		const fileContent = await this.plugin.gfile.getCurrentFileContent(true);
 		if (fileContent) {
 			// Create a summary-specific model API
 			const modelApi = GeminiClientFactory.createSummaryModel(this.plugin);

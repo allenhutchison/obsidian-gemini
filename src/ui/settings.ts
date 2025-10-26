@@ -231,41 +231,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-			.setName('Context Depth')
-			.setDesc(
-				'Set to true to send the context of the current file to the model, and adjust the depth of links followed for the context.'
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption('0', '0')
-					.addOption('1', '1')
-					.addOption('2', '2')
-					.addOption('3', '3')
-					.addOption('4', '4')
-					.setValue(this.plugin.settings.maxContextDepth.toString())
-					.onChange(async (value) => {
-						this.plugin.settings.maxContextDepth = parseInt(value);
-						await this.plugin.saveSettings();
-					})
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.sendContext).onChange(async (value) => {
-					this.plugin.settings.sendContext = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName('Search Grounding')
-			.setDesc('Enable the model to use Google search results in its responses.')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.searchGrounding).onChange(async (value) => {
-					this.plugin.settings.searchGrounding = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
 			.setName('Summary Frontmatter Key')
 			.setDesc('Key to use for frontmatter summarization.')
 			.addText((text) =>

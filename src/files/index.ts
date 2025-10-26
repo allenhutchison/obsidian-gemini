@@ -2,6 +2,7 @@ import ObsidianGemini from '../main';
 import { FileContextTree } from './file-context';
 import { TFile } from 'obsidian';
 import { logDebugInfo } from '../api/utils/debug';
+import { GeminiPrompts } from '../prompts';
 
 export class ScribeFile {
 	private plugin: ObsidianGemini;
@@ -11,17 +12,13 @@ export class ScribeFile {
 	}
 
 	async getCurrentFileContent(
-		depth: number = this.plugin.settings.maxContextDepth,
 		renderContent: boolean = false
 	): Promise<string | null> {
-		if (!this.plugin.settings.sendContext) {
-			return null;
-		}
 		const activeFile = this.getActiveFile();
 		if (activeFile) {
-			const fileContext = new FileContextTree(this.plugin, depth);
-			await fileContext.initialize(activeFile, renderContent);
-			return fileContext.toString();
+			// Just return the current file content (no link traversal)
+			const content = await this.plugin.app.vault.read(activeFile);
+			return content;
 		} else {
 			return null;
 		}
@@ -29,26 +26,41 @@ export class ScribeFile {
 
 	async buildFileContext(
 		files: TFile[],
-		depth: number = this.plugin.settings.maxContextDepth,
 		renderContent: boolean = false
 	): Promise<string | null> {
-		if (!this.plugin.settings.sendContext || files.length === 0) {
+		if (files.length === 0) {
 			return null;
 		}
 
-		// Build context from multiple files
+		// Build context from explicit files only (no link traversal)
+		// The agent can follow links dynamically using read_file tool
 		const contextParts: string[] = [];
-		
+		const prompts = new GeminiPrompts(this.plugin);
+
 		for (const file of files) {
-			const fileContext = new FileContextTree(this.plugin, depth);
-			await fileContext.initialize(file, renderContent);
-			const contextString = fileContext.toString();
-			if (contextString) {
+			try {
+				// Read file content
+				const fileContent = await this.plugin.app.vault.read(file);
+
+				// Format using context prompt template
+				const contextString = prompts.contextPrompt({
+					file_label: 'Context File',
+					file_name: file.path,
+					wikilink: this.getLinkText(file, file.path),
+					file_contents: fileContent
+				});
+
 				contextParts.push(contextString);
+			} catch (error) {
+				console.error(`Failed to read file ${file.path}:`, error);
 			}
 		}
 
-		return contextParts.join('\n\n---\n\n');
+		if (contextParts.length === 0) {
+			return null;
+		}
+
+		return 'The following files have been provided as context:\n\n' + contextParts.join('\n\n---\n\n');
 	}
 
 	async addToFrontMatter(key: string, value: string) {

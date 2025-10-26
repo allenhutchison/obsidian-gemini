@@ -201,7 +201,7 @@ export class AgentView extends ItemView {
 
 			const contextBadge = leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
-				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'} • Depth ${this.currentSession.context.contextDepth}`
+				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`
 			});
 		}
 		
@@ -299,27 +299,6 @@ export class AgentView extends ItemView {
 		setIcon(addButton, 'plus');
 		addButton.createSpan({ text: ' Add Files' });
 		addButton.addEventListener('click', () => this.showFilePicker());
-		
-		// Depth control (inline)
-		const depthControl = controlsRow.createDiv({ cls: 'gemini-agent-depth-control-inline' });
-		depthControl.createSpan({ text: 'Depth:', cls: 'gemini-agent-depth-label' });
-		
-		const depthInput = depthControl.createEl('input', {
-			type: 'number',
-			cls: 'gemini-agent-depth-input-sm',
-			value: this.currentSession?.context.contextDepth.toString() || '2'
-		});
-		depthInput.min = '0';
-		depthInput.max = '10';
-		depthInput.addEventListener('change', () => {
-			const depth = parseInt(depthInput.value);
-			if (this.currentSession) {
-				this.currentSession.context.contextDepth = depth;
-				this.updateSessionMetadata();
-				// Update the context badge
-				this.createCompactHeader();
-			}
-		});
 
 		// Context files list (compact)
 		const filesList = this.contextPanel.createDiv({ cls: 'gemini-agent-files-list gemini-agent-files-list-compact' });
@@ -1110,7 +1089,6 @@ export class AgentView extends ItemView {
 			// Build context for AI request including mentioned files
 			const contextInfo = await this.plugin.gfile.buildFileContext(
 				allContextFiles,
-				this.currentSession.context.contextDepth,
 				true // renderContent
 			);
 			
@@ -1167,11 +1145,7 @@ These files are included in the context below. When the user asks you to write d
 			console.log('Available tools from registry:', availableTools);
 			console.log('Number of tools:', availableTools.length);
 			console.log('Tool names:', availableTools.map(t => t.name));
-			
-			// Send to AI - disable automatic context since we're providing it
-			const originalSendContext = this.plugin.settings.sendContext;
-			this.plugin.settings.sendContext = false;
-			
+
 			try {
 				// Get model config from session or use defaults
 				const modelConfig = this.currentSession?.modelConfig || {};
@@ -1226,10 +1200,7 @@ These files are included in the context below. When the user asks you to write d
 					try {
 						const response = await streamResponse.complete;
 						this.currentStreamingResponse = null;
-						
-						// Restore original setting
-						this.plugin.settings.sendContext = originalSendContext;
-						
+
 						// Check if the model requested tool calls
 						if (response.toolCalls && response.toolCalls.length > 0) {
 							// Remove thinking indicator if it hasn't been removed yet
@@ -1309,7 +1280,6 @@ These files are included in the context below. When the user asks you to write d
 						}
 					} catch (error) {
 						this.currentStreamingResponse = null;
-						this.plugin.settings.sendContext = originalSendContext;
 						// Remove thinking indicator if it hasn't been removed yet
 						if (!thinkingRemoved) {
 							thinkingMessage.remove();
@@ -1321,10 +1291,7 @@ These files are included in the context below. When the user asks you to write d
 					// Fall back to non-streaming API
 					console.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
-					
-					// Restore original setting
-					this.plugin.settings.sendContext = originalSendContext;
-					
+
 					// Remove thinking indicator
 					thinkingMessage.remove();
 					this.chatTimer.stop();
@@ -1367,8 +1334,6 @@ These files are included in the context below. When the user asks you to write d
 					}
 				}
 			} catch (error) {
-				// Make sure to restore setting even if there's an error
-				this.plugin.settings.sendContext = originalSendContext;
 				// Remove thinking indicator on error
 				thinkingMessage.remove();
 				this.chatTimer.stop();
@@ -1497,11 +1462,7 @@ These files are included in the context below. When the user asks you to write d
 Context Files: ${this.currentSession.context.contextFiles.map(f => f.basename).join(', ')}
 
 User: ${history[0].message}`;
-			
-			// Temporarily disable context to avoid confusion
-			const originalSendContext = this.plugin.settings.sendContext;
-			this.plugin.settings.sendContext = false;
-			
+
 			try {
 				// Generate title using the model (use default settings for labeling)
 				const modelApi = GeminiClientFactory.createChatModel(this.plugin);
@@ -1512,10 +1473,7 @@ User: ${history[0].message}`;
 					prompt: titlePrompt,
 					renderContent: false
 				});
-				
-				// Restore original setting
-				this.plugin.settings.sendContext = originalSendContext;
-				
+
 				// Extract and sanitize the title
 				const generatedTitle = response.markdown.trim()
 					.replace(/^["']+|["']+$/g, '') // Remove quotes
@@ -1552,8 +1510,6 @@ User: ${history[0].message}`;
 					console.log(`Auto-labeled session: ${generatedTitle}`);
 				}
 			} catch (error) {
-				// Restore setting on error
-				this.plugin.settings.sendContext = originalSendContext;
 				console.error('Failed to auto-label session:', error);
 				// Don't show error to user - auto-labeling is a nice-to-have feature
 			}
