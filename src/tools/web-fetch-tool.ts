@@ -15,7 +15,7 @@ export class WebFetchTool implements Tool {
 	name = 'web_fetch';
 	displayName = 'Web Fetch';
 	category = ToolCategory.READ_ONLY;
-	description = 'Fetch and analyze content from a URL using AI';
+	description = 'Fetch and analyze content from a specific URL using Google\'s URL Context feature and AI. Provide a URL and a query describing what information to extract or questions to answer about the page content. The AI will read the page and provide a targeted analysis based on your query. Returns the analyzed content, URL metadata, and fetch timestamp. Falls back to direct HTTP fetch if URL Context fails. Use this to extract specific information from web pages, documentation, articles, or any publicly accessible URL.';
 	
 	parameters = {
 		type: 'object' as const,

@@ -1,5 +1,96 @@
 # Changelog
 
+## [4.0.0] - 2025-01-XX
+
+### 🎉 Major Release: Unified Agent-First Experience
+
+This major release simplifies Gemini Scribe by consolidating around a single, powerful agent-first interface. All chat interactions now have full tool-calling capabilities by default.
+
+### ✨ New Features
+
+- **Unified Chat Interface**: Single chat mode with full agent capabilities - no more switching between modes
+- **Automatic History Migration**: Seamlessly converts existing chat history to Agent Sessions format
+  - Automatic migration modal on first launch
+  - Original files backed up to `History-Archive/`
+  - Re-run migration anytime from settings
+- **Migration Controls**: New settings panel for managing migration
+  - View migration status
+  - Re-run migration for new files
+  - Quick access to backup archive
+- **Streamlined SDK Integration**: Now using `@google/genai` official SDK for better reliability
+
+### 🔧 Improvements
+
+- **Simplified Settings**: Removed confusing dual-mode toggles and legacy provider options
+- **Better Documentation**: Comprehensive migration guide and updated README
+- **Improved Reliability**: Direct SDK integration reduces API compatibility issues
+- **Cleaner Architecture**: Removed 600+ lines of legacy code
+
+### 💔 Breaking Changes
+
+#### 1. Single Chat Interface Only
+- **Removed**: Note-centric chat mode and separate GeminiView
+- **Impact**: All conversations now use Agent Mode with tool calling
+- **Action Required**: None - migration handles conversion automatically
+- **Benefit**: Simpler, more powerful interface for all users
+
+#### 2. Gemini-Only Support
+- **Removed**: API provider selection and Ollama support
+- **Impact**: Plugin now exclusively uses Google Gemini
+- **Action Required**: Ensure you have a valid Gemini API key
+- **Benefit**: Focused development on the best-supported platform
+
+#### 3. History File Location Change
+- **Old**: `[Plugin State Folder]/History/[Note Name] - Gemini History.md`
+- **New**: `[Plugin State Folder]/Agent-Sessions/[Session Title].md`
+- **Impact**: History files reorganized by session instead of by note
+- **Action Required**: Automatic migration preserves all data
+- **Benefit**: More flexible session management
+
+#### 4. Agent Mode Always Enabled
+- **Removed**: "Enable Agent Mode" toggle in settings
+- **Impact**: Tool calling always available
+- **Action Required**: None - all features work the same
+- **Benefit**: Simpler configuration, more consistent experience
+
+### 🗑️ Removed Features
+
+- Note-centric chat view (`gemini-view.ts` - 625 lines)
+- API provider selection dropdown
+- "Enable Agent Mode" setting
+- Legacy API implementation (`gemini-api.ts`, `ollama-api.ts`, `api-factory.ts`)
+- Dual-ribbon icon system
+
+### 📚 Documentation
+
+- **New**: [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Comprehensive upgrade guide
+- **Updated**: README.md with v4.0.0 information
+- **Updated**: Advanced settings guide
+
+### 🔄 Migration Notes
+
+**First Launch After Upgrade:**
+1. Plugin checks for old history files
+2. Migration modal appears if files found
+3. Choose to migrate now or later
+4. All original files backed up safely
+
+**Migration Safety:**
+- Original files always preserved in `History-Archive/`
+- Migration can be re-run multiple times safely
+- Detailed error reporting if any files fail
+- Manual migration controls in settings
+
+See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for detailed migration instructions and troubleshooting.
+
+### 🧪 Testing
+
+- All 288 existing tests pass
+- New migration tests added
+- Comprehensive integration test coverage
+
+---
+
 ## [3.2.0] - UNRELEASED
 
 ### 🎉 New Features

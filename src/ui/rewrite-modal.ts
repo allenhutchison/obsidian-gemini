@@ -4,11 +4,13 @@ export class RewriteInstructionsModal extends Modal {
 	private instructionsEl: HTMLTextAreaElement;
 	private onSubmit: (instructions: string) => void;
 	private selectedText: string;
+	private isFullFile: boolean;
 
-	constructor(app: App, selectedText: string, onSubmit: (instructions: string) => void) {
+	constructor(app: App, selectedText: string, onSubmit: (instructions: string) => void, isFullFile: boolean = false) {
 		super(app);
 		this.selectedText = selectedText;
 		this.onSubmit = onSubmit;
+		this.isFullFile = isFullFile;
 		this.modalEl.addClass('gemini-scribe-rewrite-modal');
 	}
 
@@ -16,25 +18,39 @@ export class RewriteInstructionsModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Rewrite Selected Text' });
+		contentEl.createEl('h2', { text: this.isFullFile ? 'Rewrite Entire File' : 'Rewrite Selected Text' });
 
-		// Show preview of selected text
+		// Show preview of selected text or file info
 		const previewSection = contentEl.createDiv({ cls: 'gemini-scribe-section' });
-		previewSection.createEl('label', { text: 'Selected text:', cls: 'gemini-scribe-label' });
-		
+		previewSection.createEl('label', {
+			text: this.isFullFile ? 'File content:' : 'Selected text:',
+			cls: 'gemini-scribe-label'
+		});
+
 		const previewTextContainer = previewSection.createDiv({ cls: 'gemini-scribe-preview-text' });
 		const previewDiv = previewTextContainer.createDiv({ cls: 'gemini-scribe-preview-content' });
-		previewDiv.setText(this.selectedText);
+
+		// Show truncated preview for full files
+		if (this.isFullFile && this.selectedText.length > 500) {
+			const preview = this.selectedText.substring(0, 500) + '\n\n... (file truncated for preview)';
+			previewDiv.setText(preview);
+		} else {
+			previewDiv.setText(this.selectedText);
+		}
 
 		// Instructions input
 		const instructionsSection = contentEl.createDiv({ cls: 'gemini-scribe-section' });
-		instructionsSection.createEl('label', { 
-			text: 'Instructions:', 
-			cls: 'gemini-scribe-label' 
+		instructionsSection.createEl('label', {
+			text: 'Instructions:',
+			cls: 'gemini-scribe-label'
 		});
-		
+
+		const placeholder = this.isFullFile
+			? 'How would you like to rewrite this file?\n\nExamples:\n• Make it more concise\n• Fix grammar and spelling throughout\n• Convert to a different format\n• Reorganize the structure\n• Improve clarity and readability'
+			: 'How would you like to rewrite this text?\n\nExamples:\n• Make it more concise\n• Fix grammar and spelling\n• Make it more formal/casual\n• Expand with more detail\n• Simplify the language';
+
 		this.instructionsEl = instructionsSection.createEl('textarea', {
-			placeholder: 'How would you like to rewrite this text?\n\nExamples:\n• Make it more concise\n• Fix grammar and spelling\n• Make it more formal/casual\n• Expand with more detail\n• Simplify the language',
+			placeholder,
 			cls: 'gemini-scribe-instructions-input'
 		});
 

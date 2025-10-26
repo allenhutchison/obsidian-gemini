@@ -1,12 +1,13 @@
 /**
- * API module for interacting with various LLM providers
+ * API module for Gemini AI integration
  */
 
 // Re-export the interfaces
-export type { ModelApi, ModelResponse, BaseModelRequest, ExtendedModelRequest } from './interfaces/model-api';
+export type { ModelApi, ModelResponse, BaseModelRequest, ExtendedModelRequest, ToolCall, ToolDefinition } from './interfaces/model-api';
 
-// Export the factory and provider enum
-export { ApiFactory, ApiProvider } from './api-factory';
+// Export the simplified factory
+export { GeminiClientFactory, ModelUseCase } from './simple-factory';
 
-// Export implementations directly for backward compatibility
-export { OllamaApi } from './implementations/ollama-api';
+// Export the client
+export { GeminiClient } from './gemini-client';
+export type { GeminiClientConfig } from './gemini-client';

@@ -12,7 +12,7 @@ export class DeepResearchTool implements Tool {
 	name = 'deep_research';
 	displayName = 'Deep Research';
 	category = ToolCategory.READ_ONLY;
-	description = 'Conduct comprehensive research on a topic with multiple searches and generate a cited report';
+	description = 'Conduct comprehensive, multi-phase research on a complex topic using iterative Google searches and AI synthesis. Performs multiple rounds of targeted searches (1-5 iterations), analyzes information gaps, generates follow-up queries, and compiles findings into a well-structured markdown report with inline citations. Returns a professional research document with sections, summaries, and a complete sources bibliography. Optionally saves the report to a vault file. Use this for in-depth research projects, literature reviews, or when you need a thorough analysis with proper academic-style citations. WARNING: This tool performs many API calls and may take several minutes to complete.';
 	requiresConfirmation = true;
 	
 	parameters = {

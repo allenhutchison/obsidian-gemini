@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf, TFile, Notice, MarkdownRenderer, setIcon } fro
 import { ChatSession, SessionType } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
+import { GeminiClientFactory } from '../api/simple-factory';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
@@ -40,6 +41,7 @@ export class AgentView extends ItemView {
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private scrollTimeout: NodeJS.Timeout | null = null;
 	private chatTimer: ChatTimer = new ChatTimer();
+	private activeFileChangeHandler: () => void;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -64,10 +66,19 @@ export class AgentView extends ItemView {
 		container.addClass('gemini-agent-container');
 
 		this.createAgentInterface(container as HTMLElement);
-		
+
 		// Register link click handler for internal links
 		this.registerLinkClickHandler();
-		
+
+		// Register active file change listener to update context panel and header
+		this.activeFileChangeHandler = () => {
+			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
+			this.updateSessionHeader();
+		};
+		this.registerEvent(
+			this.app.workspace.on('active-leaf-change', this.activeFileChangeHandler)
+		);
+
 		// Create default agent session
 		await this.createNewSession();
 	}
@@ -178,9 +189,19 @@ export class AgentView extends ItemView {
 		
 		// Context info badge - always in the same position
 		if (this.currentSession) {
+			// Calculate total context files including auto-included active file
+			let totalContextFiles = this.currentSession.context.contextFiles.length;
+			const activeFile = this.app.workspace.getActiveFile();
+
+			// Add 1 if there's an active markdown file that's not already in context
+			if (activeFile && activeFile.extension === 'md' &&
+				!this.currentSession.context.contextFiles.includes(activeFile)) {
+				totalContextFiles += 1;
+			}
+
 			const contextBadge = leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
-				text: `${this.currentSession.context.contextFiles.length} files • Depth ${this.currentSession.context.contextDepth}`
+				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'} • Depth ${this.currentSession.context.contextDepth}`
 			});
 		}
 		
@@ -402,37 +423,70 @@ export class AgentView extends ItemView {
 	private updateContextFilesList(container: HTMLElement) {
 		container.empty();
 
-		if (!this.currentSession || this.currentSession.context.contextFiles.length === 0) {
-			container.createEl('p', { 
-				text: 'No context files selected',
+		// Get the currently active file
+		const activeFile = this.app.workspace.getActiveFile();
+		const hasActiveFile = activeFile && activeFile.extension === 'md';
+		const hasContextFiles = this.currentSession && this.currentSession.context.contextFiles.length > 0;
+
+		if (!hasActiveFile && !hasContextFiles) {
+			container.createEl('p', {
+				text: 'No context files',
 				cls: 'gemini-agent-empty-state'
 			});
 			return;
 		}
 
-		this.currentSession.context.contextFiles.forEach(file => {
-			const fileItem = container.createDiv({ cls: 'gemini-agent-file-item' });
-			
+		// Show auto-included active file first with special styling
+		if (hasActiveFile) {
+			const fileItem = container.createDiv({ cls: 'gemini-agent-file-item gemini-agent-file-item-auto' });
+
 			// Add file icon
 			const fileIcon = fileItem.createEl('span', { cls: 'gemini-agent-file-icon' });
 			setIcon(fileIcon, 'file-text');
-			
-			const fileName = fileItem.createEl('span', { 
-				text: file.basename,
+
+			const fileName = fileItem.createEl('span', {
+				text: activeFile!.basename,
 				cls: 'gemini-agent-file-name',
-				title: file.path // Show full path on hover
+				title: activeFile!.path // Show full path on hover
 			});
 
-			const removeBtn = fileItem.createEl('button', {
-				text: '×',
-				cls: 'gemini-agent-remove-btn',
-				title: 'Remove file'
+			// Add "Active" badge
+			const badge = fileItem.createEl('span', {
+				text: 'Active',
+				cls: 'gemini-agent-active-badge',
+				title: 'This file is automatically included because it\'s currently open'
 			});
+		}
 
-			removeBtn.addEventListener('click', () => {
-				this.removeContextFile(file);
+		// Show manually added context files
+		if (this.currentSession) {
+			this.currentSession.context.contextFiles.forEach(file => {
+				// Skip if this is the active file (already shown above)
+				if (file === activeFile) return;
+
+				const fileItem = container.createDiv({ cls: 'gemini-agent-file-item' });
+
+				// Add file icon
+				const fileIcon = fileItem.createEl('span', { cls: 'gemini-agent-file-icon' });
+				setIcon(fileIcon, 'file-text');
+
+				const fileName = fileItem.createEl('span', {
+					text: file.basename,
+					cls: 'gemini-agent-file-name',
+					title: file.path // Show full path on hover
+				});
+
+				const removeBtn = fileItem.createEl('button', {
+					text: '×',
+					cls: 'gemini-agent-remove-btn',
+					title: 'Remove file'
+				});
+
+				removeBtn.addEventListener('click', () => {
+					this.removeContextFile(file);
+				});
 			});
-		});
+		}
 	}
 
 	private async showFilePicker() {
@@ -1034,8 +1088,16 @@ export class AgentView extends ItemView {
 		await this.displayMessage(userEntry);
 
 		try {
-			// Add mentioned files to context temporarily
+			// Start with session context files
 			const allContextFiles = [...this.currentSession.context.contextFiles];
+
+			// Auto-include the currently active note
+			const activeFile = this.app.workspace.getActiveFile();
+			if (activeFile && activeFile.extension === 'md' && !allContextFiles.includes(activeFile)) {
+				allContextFiles.push(activeFile);
+			}
+
+			// Add mentioned files to context temporarily
 			files.forEach(file => {
 				if (!allContextFiles.includes(file)) {
 					allContextFiles.push(file);
@@ -1442,7 +1504,8 @@ User: ${history[0].message}`;
 			
 			try {
 				// Generate title using the model (use default settings for labeling)
-				const response = await this.plugin.geminiApi.generateModelResponse({
+				const modelApi = GeminiClientFactory.createChatModel(this.plugin);
+				const response = await modelApi.generateModelResponse({
 					userMessage: titlePrompt,
 					conversationHistory: [],
 					model: this.plugin.settings.chatModelName,
@@ -1552,7 +1615,7 @@ User: ${history[0].message}`;
 	 * Handle tool calls from the model response
 	 */
 	private async handleToolCalls(
-		toolCalls: any[], 
+		toolCalls: any[],
 		userMessage: string,
 		conversationHistory: any[],
 		userEntry: GeminiConversationEntry
@@ -1574,25 +1637,27 @@ User: ${history[0].message}`;
 			try {
 				// Generate unique ID for this tool execution
 				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-				
+
 				// Show tool execution in UI
 				await this.showToolExecution(toolCall.name, toolCall.arguments, toolExecutionId);
-				
+
 				// Execute the tool
 				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context, this);
-				
+
 				// Show result in UI
 				await this.showToolResult(toolCall.name, result, toolExecutionId);
-				
-				// Format result for the model
+
+				// Format result for the model - store original tool call with result
 				toolResults.push({
 					toolName: toolCall.name,
+					toolArguments: toolCall.arguments,
 					result: result
 				});
 			} catch (error) {
 				console.error(`Tool execution error for ${toolCall.name}:`, error);
 				toolResults.push({
 					toolName: toolCall.name,
+					toolArguments: toolCall.arguments || {},
 					result: {
 						success: false,
 						error: error instanceof Error ? error.message : 'Unknown error'
@@ -1604,23 +1669,45 @@ User: ${history[0].message}`;
 		// Save the original user message and tool calls to history
 		if (this.plugin.settings.chatHistory) {
 			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-			
+
 			// Don't save tool execution as separate system messages anymore
 			// The tool UI elements themselves serve as the visual record
 		}
 
-		// Continue the conversation with tool results
-		// Build a new request that includes the tool results
-		const toolResultsMessage = this.formatToolResultsForModel(toolResults);
-		
-		// Add tool results to conversation history
-		const updatedHistory = [...conversationHistory, {
-			role: 'user',
-			message: userMessage
-		}, {
-			role: 'system', 
-			message: toolResultsMessage
-		}];
+		// Build updated conversation history with proper Gemini API format:
+		// 1. Previous conversation history
+		// 2. User message
+		// 3. Model response with tool calls (as functionCall parts)
+		// 4. Tool results (as functionResponse parts)
+
+		const updatedHistory = [
+			...conversationHistory,
+			// User message
+			{
+				role: 'user',
+				parts: [{ text: userMessage }]
+			},
+			// Model's tool calls
+			{
+				role: 'model',
+				parts: toolCalls.map(tc => ({
+					functionCall: {
+						name: tc.name,
+						args: tc.arguments || {}
+					}
+				}))
+			},
+			// Tool results as functionResponse
+			{
+				role: 'user',
+				parts: toolResults.map(tr => ({
+					functionResponse: {
+						name: tr.toolName,
+						response: tr.result
+					}
+				}))
+			}
+		];
 
 		// Send another request with the tool results
 		try {
@@ -1630,17 +1717,17 @@ User: ${history[0].message}`;
 				session: this.currentSession
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
-			
+
 			// Get model config from session or use defaults
 			const modelConfig = this.currentSession?.modelConfig || {};
-			
+
 			const followUpRequest: ExtendedModelRequest = {
-				userMessage: "Based on the tool execution results above, please provide a response to the user's request. If the tool results include citations from Google Search, make sure to incorporate them into your response using inline citation numbers and include a Sources section.",
+				userMessage: "", // Empty since tool results are already in conversation history
 				conversationHistory: updatedHistory,
 				model: modelConfig.model || this.plugin.settings.chatModelName,
 				temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 				topP: modelConfig.topP ?? this.plugin.settings.topP,
-				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Continue with tool results" }),
+				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Respond to the user based on the tool execution results" }),
 				renderContent: false,
 				availableTools: availableTools  // Include tools so model can chain calls
 			};
@@ -1652,10 +1739,11 @@ User: ${history[0].message}`;
 			// Check if the follow-up response also contains tool calls
 			if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
 				// Recursively handle additional tool calls
+				// Don't pass a user message since the tool results are already in history
 				await this.handleToolCalls(
-					followUpResponse.toolCalls, 
-					"Based on the tool execution results above, please provide a response to the user's request. If the tool results include citations from Google Search, make sure to incorporate them into your response using inline citation numbers and include a Sources section.", 
-					updatedHistory, 
+					followUpResponse.toolCalls,
+					"", // Empty message - tool results already in history
+					updatedHistory,
 					{
 						role: 'system',
 						message: 'Continuing with additional tool calls...',
