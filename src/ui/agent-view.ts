@@ -22,6 +22,7 @@ import {
 import { ToolConverter } from '../tools/tool-converter';
 import { ToolExecutionContext } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
+import { CustomPrompt } from '../prompts/types';
 import * as Handlebars from 'handlebars';
 import { AgentFactory } from '../agent/agent-factory';
 import { ChatTimer } from '../utils/timer-utils';
@@ -1092,48 +1093,78 @@ export class AgentView extends ItemView {
 				true // renderContent
 			);
 			
-			// Create prompt that includes the context
-			let fullPrompt: string;
-			
-			// Check if session has a custom prompt template
+			// Load custom prompt if session has one configured
+			let customPrompt: CustomPrompt | undefined;
 			if (this.currentSession?.modelConfig?.promptTemplate) {
+				console.log('[AgentView] Loading custom prompt from:', this.currentSession.modelConfig.promptTemplate);
 				try {
 					// Load custom prompt from file
 					const promptFile = this.app.vault.getAbstractFileByPath(this.currentSession.modelConfig.promptTemplate);
 					if (promptFile instanceof TFile && promptFile.extension === 'md') {
-						const promptContent = await this.app.vault.read(promptFile);
-						// Use Handlebars to format the custom prompt
-						const template = Handlebars.compile(promptContent);
-						fullPrompt = template({ userMessage: message });
+						const fileContent = await this.app.vault.read(promptFile);
+						console.log('[AgentView] Prompt file content length:', fileContent.length);
+
+						// Parse frontmatter to get custom prompt metadata
+						const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+						const match = fileContent.match(frontmatterRegex);
+
+						if (match) {
+							const frontmatter = match[1];
+							const content = match[2].trim();
+
+							// Parse frontmatter fields
+							const nameMatch = frontmatter.match(/name:\s*(.+)/);
+							const descMatch = frontmatter.match(/description:\s*(.+)/);
+							const overrideMatch = frontmatter.match(/overrideSystemPrompt:\s*(true|false)/);
+
+							customPrompt = {
+								name: nameMatch?.[1]?.trim() || promptFile.basename,
+								description: descMatch?.[1]?.trim() || '',
+								version: 1,
+								overrideSystemPrompt: overrideMatch?.[1] === 'true',
+								tags: [],
+								content: content
+							};
+							console.log('[AgentView] Parsed custom prompt with frontmatter:', customPrompt.name, 'override:', customPrompt.overrideSystemPrompt);
+						} else {
+							// No frontmatter, use entire content
+							customPrompt = {
+								name: promptFile.basename,
+								description: '',
+								version: 1,
+								overrideSystemPrompt: false,
+								tags: [],
+								content: fileContent.trim()
+							};
+							console.log('[AgentView] Using prompt without frontmatter:', customPrompt.name);
+						}
+						console.log('[AgentView] Custom prompt content preview:', customPrompt.content.substring(0, 100));
 					} else {
-						// Fall back to default if file not found
-						console.warn('Custom prompt file not found:', this.currentSession.modelConfig.promptTemplate);
-						fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
+						console.warn('[AgentView] Custom prompt file not found:', this.currentSession.modelConfig.promptTemplate);
 					}
 				} catch (error) {
-					console.error('Error loading custom prompt:', error);
-					fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
+					console.error('[AgentView] Error loading custom prompt:', error);
 				}
 			} else {
-				// Use default prompt
-				fullPrompt = this.plugin.prompts.generalPrompt({ userMessage: message });
+				console.log('[AgentView] No custom prompt template configured for session');
 			}
-			
+
+			// Build additional prompt instructions (not part of system prompt)
+			let additionalInstructions = '';
+
 			// Add mention note if files were mentioned
 			if (files.length > 0) {
 				const fileNames = files.map(f => f.basename).join(', ');
-				fullPrompt = `${fullPrompt}\n\nIMPORTANT: The user has specifically referenced the following files using @ mentions: ${fileNames}
+				additionalInstructions += `\n\nIMPORTANT: The user has specifically referenced the following files using @ mentions: ${fileNames}
 These files are included in the context below. When the user asks you to write data to or modify these files, you should:
 1. First use the read_file tool to examine their current contents
 2. Then use the write_file tool to update them with the new or modified content
 3. If adding new data, integrate it appropriately with the existing content rather than creating a new file`;
 			}
-			
+
 			// Add context information if available
 			if (contextInfo) {
-				fullPrompt = `${fullPrompt}\n\n${contextInfo}\n\nUser: ${message}`;
-			} else {
-				fullPrompt = `${fullPrompt}\n\nUser: ${message}`;
+				additionalInstructions += `\n\n${contextInfo}`;
 			}
 
 			// Get available tools for this session
@@ -1149,17 +1180,20 @@ These files are included in the context below. When the user asks you to write d
 			try {
 				// Get model config from session or use defaults
 				const modelConfig = this.currentSession?.modelConfig || {};
-				
+
 				const request: ExtendedModelRequest = {
 					userMessage: message,
 					conversationHistory: conversationHistory,
 					model: modelConfig.model || this.plugin.settings.chatModelName,
 					temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 					topP: modelConfig.topP ?? this.plugin.settings.topP,
-					prompt: fullPrompt,
+					prompt: additionalInstructions, // Additional context and instructions
+					customPrompt: customPrompt, // Custom prompt template (if configured)
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools // No need to cast to any
 				};
+
+				console.log('[AgentView] Request customPrompt:', customPrompt ? `${customPrompt.name} (${customPrompt.content.length} chars)` : 'none');
 				
 				// Create model API for this session
 				const modelApi = AgentFactory.createAgentModel(this.plugin, this.currentSession!);

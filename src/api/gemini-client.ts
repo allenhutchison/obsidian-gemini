@@ -158,6 +158,8 @@ export class GeminiClient implements ModelApi {
 		if (isExtended) {
 			const extReq = request as ExtendedModelRequest;
 
+			console.log('[GeminiClient] Building system instruction with customPrompt:', extReq.customPrompt ? extReq.customPrompt.name : 'none');
+
 			// Build unified system prompt with tools and custom prompt
 			// This includes: base system prompt + tool instructions (if tools) + custom prompt (if provided)
 			systemInstruction = this.prompts.getSystemPromptWithCustom(
@@ -165,11 +167,16 @@ export class GeminiClient implements ModelApi {
 				extReq.customPrompt
 			);
 
+			console.log('[GeminiClient] System instruction length after getSystemPromptWithCustom:', systemInstruction.length);
+
 			// Append additional instructions from prompt field (e.g., generalPrompt, contextPrompt)
 			// Only append if custom prompt didn't override everything
 			if (extReq.prompt && !extReq.customPrompt?.overrideSystemPrompt) {
 				systemInstruction += '\n\n' + extReq.prompt;
 			}
+
+			console.log('[GeminiClient] Final system instruction length:', systemInstruction.length);
+			console.log('[GeminiClient] System instruction preview:', systemInstruction.substring(0, 200));
 		} else {
 			// For BaseModelRequest, prompt is the full input
 			systemInstruction = request.prompt || '';

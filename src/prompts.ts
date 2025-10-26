@@ -96,9 +96,12 @@ export class GeminiPrompts {
 	 * @returns Complete system prompt
 	 */
 	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt): string {
+		console.log('[GeminiPrompts] getSystemPromptWithCustom called with customPrompt:', customPrompt ? `${customPrompt.name} (override: ${customPrompt.overrideSystemPrompt})` : 'none');
+
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
-			console.warn('System prompt override enabled. Base functionality may be affected.');
+			console.warn('[GeminiPrompts] System prompt override enabled. Base functionality may be affected.');
+			console.log('[GeminiPrompts] Returning custom prompt content only:', customPrompt.content.substring(0, 100));
 			return customPrompt.content;
 		}
 
@@ -110,6 +113,8 @@ export class GeminiPrompts {
 			time: new Date().toLocaleTimeString(),
 		});
 
+		console.log('[GeminiPrompts] Base system prompt length:', baseSystemPrompt.length);
+
 		let fullPrompt = baseSystemPrompt;
 
 		// Add tool instructions if tools are provided
@@ -117,13 +122,17 @@ export class GeminiPrompts {
 			const toolsList = this.formatToolsList(availableTools);
 			const toolsPrompt = this.agentToolsPromptTemplate({ toolsList });
 			fullPrompt += '\n\n' + toolsPrompt;
+			console.log('[GeminiPrompts] Added tool instructions, new length:', fullPrompt.length);
 		}
 
 		// Add custom prompt if provided (and not overriding)
 		if (customPrompt && !customPrompt.overrideSystemPrompt) {
 			fullPrompt += '\n\n## Additional Instructions\n\n' + customPrompt.content;
+			console.log('[GeminiPrompts] Added custom prompt, new length:', fullPrompt.length);
+			console.log('[GeminiPrompts] Custom prompt content:', customPrompt.content.substring(0, 100));
 		}
 
+		console.log('[GeminiPrompts] Returning full prompt, length:', fullPrompt.length);
 		return fullPrompt;
 	}
 }
