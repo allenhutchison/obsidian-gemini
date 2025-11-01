@@ -1,15 +1,17 @@
-export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite';
+export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite' | 'image';
 
 export interface GeminiModel {
 	value: string;
 	label: string;
 	defaultForRoles?: ModelRole[];
+	supportsImageGeneration?: boolean;
 }
 
 export let GEMINI_MODELS: GeminiModel[] = [
 	{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
 	{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary', 'rewrite'] },
 	{ value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite', defaultForRoles: ['completions'] },
+	{ value: 'gemini-2.5-flash-image-preview', label: 'Gemini 2.5 Flash Image', defaultForRoles: ['image'], supportsImageGeneration: true },
 ];
 
 /**
