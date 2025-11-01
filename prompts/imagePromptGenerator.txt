@@ -1,0 +1,12 @@
+Based on the content provided below, generate a detailed image generation prompt that captures the essence, mood, and key themes of this content.
+
+The prompt should be:
+- Vivid and descriptive (2-3 sentences)
+- Focused on visual elements, colors, atmosphere, and composition
+- Suitable for an AI image generation model
+- Creative but relevant to the content's themes
+
+Respond with ONLY the image prompt text - no explanations, no markdown, no additional commentary.
+
+Content to analyze:
+<file><content>{{content}}</content></file>

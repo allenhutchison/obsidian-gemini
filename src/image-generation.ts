@@ -2,14 +2,17 @@ import ObsidianGemini from './main';
 import { Notice } from 'obsidian';
 import { GeminiClient } from './api/gemini-client';
 import { GeminiPrompts } from './prompts';
+import { GeminiClientFactory } from './api/simple-factory';
+import { BaseModelRequest } from './api/index';
 
 export class ImageGeneration {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private client: GeminiClient;
+	private prompts: GeminiPrompts;
 
 	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
-		const prompts = new GeminiPrompts(plugin);
+		this.prompts = new GeminiPrompts(plugin);
 		this.client = new GeminiClient(
 			{
 				apiKey: plugin.settings.apiKey,
@@ -17,7 +20,7 @@ export class ImageGeneration {
 				topP: plugin.settings.topP,
 				streamingEnabled: false
 			},
-			prompts,
+			this.prompts,
 			plugin
 		);
 	}
@@ -70,6 +73,27 @@ export class ImageGeneration {
 			console.error('Failed to generate image:', error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Generate a suggested image prompt based on the current page's content
+	 * Uses the summary model to analyze the content and suggest an image prompt
+	 */
+	async suggestPromptFromPage(): Promise<string> {
+		const fileContent = await this.plugin.gfile.getCurrentFileContent(true);
+		if (!fileContent) {
+			throw new Error('Failed to get file content');
+		}
+
+		// Create a summary-specific model API for prompt generation
+		const modelApi = GeminiClientFactory.createSummaryModel(this.plugin);
+
+		const request: BaseModelRequest = {
+			prompt: this.prompts.imagePromptGenerator({ content: fileContent }),
+		};
+
+		const response = await modelApi.generateModelResponse(request);
+		return response.markdown.trim();
 	}
 
 	/**
@@ -144,7 +168,7 @@ export class ImageGeneration {
 	 */
 	private async promptForImageDescription(): Promise<string | null> {
 		return new Promise((resolve) => {
-			const modal = new ImagePromptModal(this.plugin.app, (prompt) => {
+			const modal = new ImagePromptModal(this.plugin.app, this, (prompt) => {
 				resolve(prompt);
 			});
 			modal.open();
@@ -155,14 +179,17 @@ export class ImageGeneration {
 /**
  * Modal for prompting user to enter image description
  */
-import { App, Modal, Setting } from 'obsidian';
+import { App, Modal, Setting, TextAreaComponent } from 'obsidian';
 
 class ImagePromptModal extends Modal {
+	private imageGeneration: ImageGeneration;
 	private onSubmit: (prompt: string) => void;
 	private prompt = '';
+	private textArea: TextAreaComponent | null = null;
 
-	constructor(app: App, onSubmit: (prompt: string) => void) {
+	constructor(app: App, imageGeneration: ImageGeneration, onSubmit: (prompt: string) => void) {
 		super(app);
+		this.imageGeneration = imageGeneration;
 		this.onSubmit = onSubmit;
 	}
 
@@ -176,6 +203,7 @@ class ImagePromptModal extends Modal {
 			.setName('Image description')
 			.setDesc('Describe the image you want to generate')
 			.addTextArea((text) => {
+				this.textArea = text;
 				text.setPlaceholder('A serene landscape with mountains and a lake...')
 					.setValue(this.prompt)
 					.onChange((value) => {
@@ -187,10 +215,23 @@ class ImagePromptModal extends Modal {
 				setTimeout(() => text.inputEl.focus(), 100);
 			});
 
+		// Add "Generate from Page" button
+		new Setting(contentEl)
+			.setName('Generate prompt from current page')
+			.setDesc('Let AI suggest an image prompt based on this page\'s content')
+			.addButton((btn) =>
+				btn
+					.setButtonText('Generate Prompt from Page')
+					.setIcon('sparkles')
+					.onClick(async () => {
+						await this.handleGenerateFromPage(btn.buttonEl);
+					})
+			);
+
 		new Setting(contentEl)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Generate')
+					.setButtonText('Generate Image')
 					.setCta()
 					.onClick(() => {
 						if (this.prompt.trim()) {
@@ -205,6 +246,34 @@ class ImagePromptModal extends Modal {
 					this.onSubmit('');
 				})
 			);
+	}
+
+	private async handleGenerateFromPage(buttonEl: HTMLElement) {
+		const originalText = buttonEl.textContent;
+		try {
+			// Show loading state
+			buttonEl.textContent = 'Generating...';
+			buttonEl.setAttribute('disabled', 'true');
+
+			// Generate suggested prompt
+			const suggestedPrompt = await this.imageGeneration.suggestPromptFromPage();
+
+			// Update text area with suggested prompt
+			if (this.textArea) {
+				this.textArea.setValue(suggestedPrompt);
+				this.prompt = suggestedPrompt;
+			}
+
+			new Notice('Prompt generated! Feel free to edit it before generating the image.');
+		} catch (error) {
+			const errorMsg = `Failed to generate prompt: ${error instanceof Error ? error.message : String(error)}`;
+			console.error(errorMsg, error);
+			new Notice(errorMsg);
+		} finally {
+			// Restore button state
+			buttonEl.textContent = originalText;
+			buttonEl.removeAttribute('disabled');
+		}
 	}
 
 	onClose() {

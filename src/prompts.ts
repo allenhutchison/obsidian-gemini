@@ -16,6 +16,8 @@ import contextPromptContent from '../prompts/contextPrompt.txt';
 import selectionRewritePromptContent from '../prompts/selectionRewritePrompt.txt';
 // @ts-ignore
 import agentToolsPromptContent from '../prompts/agentToolsPrompt.txt';
+// @ts-ignore
+import imagePromptGeneratorContent from '../prompts/imagePromptGenerator.txt';
 
 export class GeminiPrompts {
 	private completionsPromptTemplate: Handlebars.TemplateDelegate;
@@ -25,6 +27,7 @@ export class GeminiPrompts {
 	private contextPromptTemplate: Handlebars.TemplateDelegate;
 	private selectionRewritePromptTemplate: Handlebars.TemplateDelegate;
 	private agentToolsPromptTemplate: Handlebars.TemplateDelegate;
+	private imagePromptGeneratorTemplate: Handlebars.TemplateDelegate;
 
 	constructor(private plugin?: InstanceType<typeof ObsidianGemini>) {
 		this.completionsPromptTemplate = Handlebars.compile(completionPromptContent);
@@ -34,6 +37,7 @@ export class GeminiPrompts {
 		this.contextPromptTemplate = Handlebars.compile(contextPromptContent);
 		this.selectionRewritePromptTemplate = Handlebars.compile(selectionRewritePromptContent);
 		this.agentToolsPromptTemplate = Handlebars.compile(agentToolsPromptContent);
+		this.imagePromptGeneratorTemplate = Handlebars.compile(imagePromptGeneratorContent);
 	}
 
 	completionsPrompt(variables: { [key: string]: string }): string {
@@ -58,6 +62,10 @@ export class GeminiPrompts {
 
 	selectionRewritePrompt(variables: { [key: string]: string }): string {
 		return this.selectionRewritePromptTemplate(variables);
+	}
+
+	imagePromptGenerator(variables: { [key: string]: string }): string {
+		return this.imagePromptGeneratorTemplate(variables);
 	}
 
 	// Get language code helper
