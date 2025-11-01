@@ -221,4 +221,133 @@ describe('SessionManager', () => {
 			expect(session.context.contextFiles).toHaveLength(1);
 		});
 	});
+
+	describe('getRecentAgentSessions', () => {
+		let mockFolder: any;
+		let mockSessionFiles: TFile[];
+
+		// Helper to create a mock session from a TFile
+		const createMockSession = (file: TFile) => ({
+			id: file.basename,
+			title: `${file.basename} Session`,
+			type: SessionType.AGENT_SESSION,
+			historyPath: file.path,
+			created: new Date(file.stat.ctime),
+			lastActive: new Date(file.stat.mtime),
+			context: {}
+		});
+
+		beforeEach(() => {
+			// Create mock session files with different modification times
+			const now = Date.now();
+
+			mockSessionFiles = [
+				Object.assign(new TFile(), {
+					path: 'gemini-scribe/Agent-Sessions/session1.md',
+					basename: 'session1',
+					extension: 'md',
+					stat: { ctime: now - 3000, mtime: now - 3000 }
+				}),
+				Object.assign(new TFile(), {
+					path: 'gemini-scribe/Agent-Sessions/session2.md',
+					basename: 'session2',
+					extension: 'md',
+					stat: { ctime: now - 1000, mtime: now - 1000 }
+				}),
+				Object.assign(new TFile(), {
+					path: 'gemini-scribe/Agent-Sessions/session3.md',
+					basename: 'session3',
+					extension: 'md',
+					stat: { ctime: now - 2000, mtime: now - 2000 }
+				})
+			];
+
+			mockFolder = {
+				children: mockSessionFiles,
+				path: 'gemini-scribe/Agent-Sessions',
+				name: 'Agent-Sessions'
+			};
+
+			// Mock getOrCreateAgentSessionsFolder to return our mock folder
+			jest.spyOn(sessionManager as any, 'getOrCreateAgentSessionsFolder')
+				.mockResolvedValue(mockFolder);
+
+			// Mock loadSessionFromFile to return mock sessions
+			jest.spyOn(sessionManager as any, 'loadSessionFromFile')
+				.mockImplementation(async (file: TFile) => createMockSession(file));
+		});
+
+		it('should return sessions sorted by most recent', async () => {
+			const sessions = await sessionManager.getRecentAgentSessions();
+
+			// Should be sorted by mtime descending (newest first)
+			expect(sessions).toHaveLength(3);
+			expect(sessions[0].id).toBe('session2'); // Most recent (now - 1000)
+			expect(sessions[1].id).toBe('session3'); // Middle (now - 2000)
+			expect(sessions[2].id).toBe('session1'); // Oldest (now - 3000)
+		});
+
+		it('should respect the limit parameter', async () => {
+			const sessions = await sessionManager.getRecentAgentSessions(2);
+
+			// Should only return 2 most recent sessions
+			expect(sessions).toHaveLength(2);
+			expect(sessions[0].id).toBe('session2');
+			expect(sessions[1].id).toBe('session3');
+		});
+
+		it('should filter out non-markdown files', async () => {
+			// Add a non-markdown file to the folder
+			const nonMdFile = Object.assign(new TFile(), {
+				path: 'gemini-scribe/Agent-Sessions/note.txt',
+				basename: 'note',
+				extension: 'txt',
+				stat: { ctime: Date.now(), mtime: Date.now() }
+			});
+			mockFolder.children = [...mockSessionFiles, nonMdFile];
+
+			const sessions = await sessionManager.getRecentAgentSessions();
+
+			// Should only include .md files
+			expect(sessions).toHaveLength(3);
+			expect(sessions.every(s => s.id.startsWith('session'))).toBe(true);
+		});
+
+		it('should handle errors loading individual sessions gracefully', async () => {
+			// Override mock to throw for one file, reuse createMockSession for others
+			jest.spyOn(sessionManager as any, 'loadSessionFromFile')
+				.mockImplementation(async (file: TFile) => {
+					if (file.basename === 'session2') {
+						throw new Error('Failed to load session');
+					}
+					return createMockSession(file);
+				});
+
+			const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+			const sessions = await sessionManager.getRecentAgentSessions();
+
+			// Should return the 2 sessions that loaded successfully
+			expect(sessions).toHaveLength(2);
+			expect(sessions[0].id).toBe('session3');
+			expect(sessions[1].id).toBe('session1');
+
+			// Should have logged a warning
+			expect(consoleSpy).toHaveBeenCalledWith(
+				expect.stringContaining('Failed to load agent session'),
+				expect.any(Error)
+			);
+
+			consoleSpy.mockRestore();
+		});
+
+		it('should return empty array when no sessions exist', async () => {
+			mockFolder.children = [];
+
+			const sessions = await sessionManager.getRecentAgentSessions();
+
+			expect(sessions).toHaveLength(0);
+			expect(sessions).toEqual([]);
+		});
+	});
 });
