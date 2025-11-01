@@ -70,8 +70,8 @@ All models are selected from available Gemini models. The plugin supports dynami
 - **Setting**: `summaryModelName`
 - **Type**: String
 - **Default**: `gemini-1.5-flash-8b`
-- **Description**: Model used for document summarization
-- **Used by**: Summarize Active File command
+- **Description**: Model used for document summarization and selection-based text rewriting
+- **Used by**: Summarize Active File command, Rewrite text with AI command
 
 ### Completions Model
 - **Setting**: `completionsModelName`
