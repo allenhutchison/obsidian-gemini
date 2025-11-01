@@ -1,4 +1,5 @@
 import { App, Modal, TFile, Setting } from 'obsidian';
+import { shouldExcludePath } from '../utils/file-utils';
 
 export class FilePickerModal extends Modal {
 	private onSelect: (files: TFile[]) => void;
@@ -17,18 +18,11 @@ export class FilePickerModal extends Modal {
 
 		contentEl.createEl('h2', { text: 'Add Context Files' });
 
-		// Get all markdown files in the vault, excluding the plugin state folder
+		// Get all markdown files in the vault, excluding system and plugin folders
 		const allFiles = this.app.vault.getMarkdownFiles();
-		const markdownFiles = allFiles.filter(file => {
-			// Exclude files from the plugin state folder and .obsidian folder
-			if (this.excludeFolder && (file.path === this.excludeFolder || file.path.startsWith(this.excludeFolder + '/'))) {
-				return false;
-			}
-			if (file.path === '.obsidian' || file.path.startsWith('.obsidian/')) {
-				return false;
-			}
-			return true;
-		});
+		const markdownFiles = allFiles.filter(file =>
+			!shouldExcludePath(file.path, this.excludeFolder)
+		);
 
 		// Create a container for the file list
 		const fileListContainer = contentEl.createDiv({ cls: 'gemini-file-picker-list' });
