@@ -37,7 +37,6 @@ export interface ObsidianGeminiSettings {
 	userName: string;
 	chatHistory: boolean;
 	historyFolder: string;
-	showModelPicker: boolean;
 	debugMode: boolean;
 	maxRetries: number;
 	initialBackoffDelay: number;
@@ -62,7 +61,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	userName: 'User',
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
-	showModelPicker: false,
 	debugMode: false,
 	maxRetries: 3,
 	initialBackoffDelay: 1000,
@@ -108,7 +106,7 @@ export default class ObsidianGemini extends Plugin {
 		await this.setupGeminiScribe();
 
 		// Add ribbon icon
-		this.ribbonIcon = this.addRibbonIcon('bot', 'Open Gemini Chat', () => {
+		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Gemini Scribe: Agent Mode', () => {
 			this.activateAgentView();
 		});
 

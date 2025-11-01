@@ -58,7 +58,7 @@ export class AgentView extends ItemView {
 	}
 
 	getIcon(): string {
-		return 'bot';
+		return 'sparkles';
 	}
 
 	async onOpen() {
