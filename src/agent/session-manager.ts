@@ -54,9 +54,9 @@ export class SessionManager {
 			...DEFAULT_CONTEXTS.AGENT_SESSION,
 			...initialContext,
 			// Create new arrays to avoid sharing references between sessions
-			contextFiles: initialContext?.contextFiles ? [...initialContext.contextFiles] : [],
-			enabledTools: initialContext?.enabledTools ? [...initialContext.enabledTools] : [...DEFAULT_CONTEXTS.AGENT_SESSION.enabledTools],
-			requireConfirmation: initialContext?.requireConfirmation ? [...initialContext.requireConfirmation] : [...DEFAULT_CONTEXTS.AGENT_SESSION.requireConfirmation]
+			contextFiles: [...(initialContext?.contextFiles ?? [])],
+			enabledTools: [...(initialContext?.enabledTools ?? DEFAULT_CONTEXTS.AGENT_SESSION.enabledTools)],
+			requireConfirmation: [...(initialContext?.requireConfirmation ?? DEFAULT_CONTEXTS.AGENT_SESSION.requireConfirmation)]
 		};
 
 		const rawTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
