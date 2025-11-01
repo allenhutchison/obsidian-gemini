@@ -66,7 +66,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	initialBackoffDelay: 1000,
 	streamingEnabled: true,
 	modelDiscovery: {
-		enabled: false, // Start disabled by default
+		enabled: true, // Automatically discover latest Gemini models
 		autoUpdateInterval: 24, // Check daily
 		lastUpdate: 0,
 		fallbackToStatic: true,
