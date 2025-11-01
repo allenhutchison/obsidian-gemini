@@ -13,13 +13,21 @@ export class GeminiSummary {
 		this.prompts = new GeminiPrompts(plugin);
 	}
 
+	/**
+	 * Display an error message to the user and log to console
+	 * @param message - The error message to display
+	 * @param error - Optional error object for detailed logging
+	 */
+	private showError(message: string, error?: unknown): void {
+		console.error(message, error);
+		new Notice(message);
+	}
+
 	async summarizeActiveFile() {
 		// Check if there's an active file first
 		const activeFile = this.plugin.gfile.getActiveFile();
 		if (!activeFile) {
-			const errorMsg = 'No active file to summarize. Please open a markdown file first.';
-			console.error(errorMsg);
-			new Notice(errorMsg);
+			this.showError('No active file to summarize. Please open a markdown file first.');
 			return;
 		}
 
@@ -28,9 +36,7 @@ export class GeminiSummary {
 			const fileContent = await this.plugin.gfile.getCurrentFileContent(true);
 
 			if (!fileContent) {
-				const errorMsg = 'Failed to read file content. Please try again.';
-				console.error(errorMsg);
-				new Notice(errorMsg);
+				this.showError('Failed to read file content. Please try again.');
 				return;
 			}
 
@@ -50,9 +56,8 @@ export class GeminiSummary {
 			// Show success message
 			new Notice('Summary added to frontmatter successfully!');
 		} catch (error) {
-			const errorMsg = `Failed to generate summary: ${error instanceof Error ? error.message : 'Unknown error'}`;
-			console.error(errorMsg, error);
-			new Notice(errorMsg);
+			const errorMsg = `Failed to generate summary: ${error instanceof Error ? error.message : String(error)}`;
+			this.showError(errorMsg, error);
 		}
 	}
 
