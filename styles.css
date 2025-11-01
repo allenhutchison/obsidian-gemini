@@ -2234,6 +2234,28 @@ If your plugin does not need CSS, delete this file.
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.gemini-agent-suggestion-session {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.gemini-agent-suggestion-title {
+	flex: 1;
+	text-align: left;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-agent-suggestion-date {
+	flex-shrink: 0;
+	text-align: right;
+	opacity: 0.7;
+	font-size: var(--font-ui-smaller);
+}
+
 /* Google Search Citations Styling */
 
 .gemini-agent-tool-search-answer {
