@@ -2184,26 +2184,30 @@ User: ${history[0].message}`;
 			// Try to get recent sessions
 			const recentSessions = await this.plugin.sessionManager.getRecentAgentSessions(5);
 
-			if (recentSessions.length > 0) {
-				// Show recent sessions
-				emptyState.createEl('p', {
-					text: 'Recent sessions:',
-					cls: 'gemini-agent-suggestions-header'
-				});
+			// Create suggestions container (used for both recent sessions and example prompts)
+			const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
 
-				const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
+			if (recentSessions.length > 0) {
+				// Show recent sessions header
+				emptyState.insertBefore(
+					emptyState.createEl('p', {
+						text: 'Recent sessions:',
+						cls: 'gemini-agent-suggestions-header'
+					}),
+					suggestions
+				);
 
 				recentSessions.forEach(session => {
 					const suggestion = suggestions.createDiv({
 						cls: 'gemini-agent-suggestion gemini-agent-suggestion-session'
 					});
 
-					const sessionTitle = suggestion.createEl('span', {
+					suggestion.createEl('span', {
 						text: session.title,
 						cls: 'gemini-agent-suggestion-title'
 					});
 
-					const sessionDate = suggestion.createEl('span', {
+					suggestion.createEl('span', {
 						text: new Date(session.lastActive).toLocaleDateString(),
 						cls: 'gemini-agent-suggestion-date'
 					});
@@ -2214,8 +2218,6 @@ User: ${history[0].message}`;
 				});
 			} else {
 				// Show example prompts
-				const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
-
 				const suggestionTexts = [
 					'What files are in my vault?',
 					'Search for notes about "project"',

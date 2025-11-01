@@ -226,6 +226,17 @@ describe('SessionManager', () => {
 		let mockFolder: any;
 		let mockSessionFiles: TFile[];
 
+		// Helper to create a mock session from a TFile
+		const createMockSession = (file: TFile) => ({
+			id: file.basename,
+			title: `${file.basename} Session`,
+			type: SessionType.AGENT_SESSION,
+			historyPath: file.path,
+			created: new Date(file.stat.ctime),
+			lastActive: new Date(file.stat.mtime),
+			context: {}
+		});
+
 		beforeEach(() => {
 			// Create mock session files with different modification times
 			const now = Date.now();
@@ -263,17 +274,7 @@ describe('SessionManager', () => {
 
 			// Mock loadSessionFromFile to return mock sessions
 			jest.spyOn(sessionManager as any, 'loadSessionFromFile')
-				.mockImplementation(async (file: TFile) => {
-					return {
-						id: file.basename,
-						title: `${file.basename} Session`,
-						type: SessionType.AGENT_SESSION,
-						historyPath: file.path,
-						created: new Date(file.stat.ctime),
-						lastActive: new Date(file.stat.mtime),
-						context: {}
-					};
-				});
+				.mockImplementation(async (file: TFile) => createMockSession(file));
 		});
 
 		it('should return sessions sorted by most recent', async () => {
@@ -313,21 +314,13 @@ describe('SessionManager', () => {
 		});
 
 		it('should handle errors loading individual sessions gracefully', async () => {
-			// Mock loadSessionFromFile to throw for one file
+			// Override mock to throw for one file, reuse createMockSession for others
 			jest.spyOn(sessionManager as any, 'loadSessionFromFile')
 				.mockImplementation(async (file: TFile) => {
 					if (file.basename === 'session2') {
 						throw new Error('Failed to load session');
 					}
-					return {
-						id: file.basename,
-						title: `${file.basename} Session`,
-						type: SessionType.AGENT_SESSION,
-						historyPath: file.path,
-						created: new Date(file.stat.ctime),
-						lastActive: new Date(file.stat.mtime),
-						context: {}
-					};
+					return createMockSession(file);
 				});
 
 			const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
