@@ -2,6 +2,7 @@ import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view';
 import { GeminiSummary } from './summary';
+import { ImageGeneration } from './image-generation';
 import { ModelApi } from './api/index';
 import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
@@ -98,6 +99,7 @@ export default class ObsidianGemini extends Plugin {
 
 	// Private members
 	private summarizer: GeminiSummary;
+	private imageGeneration: ImageGeneration;
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
@@ -251,6 +253,10 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize summarization
 		this.summarizer = new GeminiSummary(this);
 		await this.summarizer.setupSummarizationCommand();
+
+		// Initialize image generation
+		this.imageGeneration = new ImageGeneration(this);
+		await this.imageGeneration.setupImageGenerationCommand();
 	}
 
 	async activateAgentView() {

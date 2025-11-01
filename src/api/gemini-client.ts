@@ -384,4 +384,37 @@ export class GeminiClient implements ModelApi {
 	private extractRenderedFromChunk(chunk: any): string {
 		return this.extractRenderedFromResponse(chunk as GenerateContentResponse);
 	}
+
+	/**
+	 * Generate an image from a text prompt
+	 * @param prompt - Text description of the image to generate
+	 * @param model - Image generation model (defaults to gemini-2.5-flash-image-preview)
+	 * @returns Base64 encoded image data
+	 */
+	async generateImage(prompt: string, model: string = 'gemini-2.5-flash-image-preview'): Promise<string> {
+		try {
+			const params: GenerateContentParameters = {
+				model,
+				contents: prompt,
+				config: {
+					// Image generation typically doesn't need temperature/topP
+					// but we can include them if needed
+				}
+			};
+
+			const response = await this.ai.models.generateContent(params);
+
+			// Extract base64 image data from response
+			// According to docs: response.candidates[0].content.parts[0].inlineData.data
+			const part = response.candidates?.[0]?.content?.parts?.[0];
+			if (part && 'inlineData' in part && part.inlineData?.data) {
+				return part.inlineData.data;
+			}
+
+			throw new Error('No image data in response');
+		} catch (error) {
+			console.error('[GeminiClient] Error generating image:', error);
+			throw error;
+		}
+	}
 }
