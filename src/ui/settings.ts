@@ -353,16 +353,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('UI Settings').setHeading();
 
 		new Setting(containerEl)
-			.setName('Show Model Picker')
-			.setDesc('Show the model picker in the chat interface.')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.showModelPicker).onChange(async (value) => {
-					this.plugin.settings.showModelPicker = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
 			.setName('Enable Streaming')
 			.setDesc('Enable streaming responses in the chat interface for a more interactive experience.')
 			.addToggle((toggle) =>
@@ -513,6 +503,19 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				// Show current status
 				this.updateDiscoveryStatus(statusSetting);
 			}
+
+			// Tool Execution Settings
+			new Setting(containerEl).setName('Tool Execution').setHeading();
+
+			new Setting(containerEl)
+				.setName('Stop on tool error')
+				.setDesc('Stop agent execution when a tool call fails. If disabled, the agent will continue executing subsequent tools.')
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.stopOnToolError).onChange(async (value) => {
+						this.plugin.settings.stopOnToolError = value;
+						await this.plugin.saveSettings();
+					})
+				);
 
 			// Tool Loop Detection Settings
 			new Setting(containerEl).setName('Tool Loop Detection').setHeading();

@@ -31,13 +31,12 @@ This release simplifies Gemini Scribe by focusing entirely on the powerful Agent
 ## Features
 
 - **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, move and rename files, create folders, and even conduct deep research with proper citations. Features persistent sessions, granular permission controls, and session-specific model configuration.
-- **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note and its linked notes (up to a configurable depth) as context. This ensures highly relevant and personalized responses.
+- **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note and its linked notes as context. This ensures highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Simply select the text you want to improve, right-click to choose "Rewrite with Gemini", and provide instructions for how you'd like it rewritten.
 - **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
 - **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe/History/` folder, making it easy to backup, version control, and manage your AI interactions.
 - **Configurable Models:** Choose different Gemini models for chat, summarization, completions, and agent mode, allowing you to tailor the AI's behavior to each task.
-- **Search Grounding (Optional):** Enhance responses with Google Search results, improving the accuracy and relevance of the information provided by the AI. A configurable threshold controls how likely search grounding is to be triggered.
 - **Custom Prompt System:** Create reusable AI instruction templates that can be applied to individual notes, allowing you to customize the AI's behavior for different types of content (e.g., technical documentation, creative writing, tutoring). Includes command palette commands for easy creation, application, and removal of custom prompts.
 - **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, selection rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
 - **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Chat history is stored locally in your Obsidian vault as markdown files.
@@ -86,12 +85,6 @@ This release simplifies Gemini Scribe by focusing entirely on the powerful Agent
     - **Chat Model:** Select the preferred Gemini model for chat interactions (e.g., `gemini-1.5-pro`).
     - **Summary Model:** Select the preferred Gemini model for generating summaries (e.g., `gemini-1.5-flash`).
     - **Completion Model:** Select the preferred model for IDE-style completions (e.g., `gemini-1.5-flash-8b`).
-    - **Context Depth:**
-      - **Send Context:** Toggle whether to send the current file's content as context to the AI.
-      - **Max Context Depth:** Control how many levels of linked notes to include as context (0 for only the current file, 1 for direct links, etc.).
-    - **Search Grounding:**
-      - **Search Grounding:** Toggle the use of Google Search results to improve responses.
-      - **Search Grounding Threshold:** Adjust the threshold for triggering search grounding (higher values make it more likely).
     - **Summary Frontmatter Key:** Specify the key to use when storing summaries in the frontmatter (default: `summary`).
     - **Your Name:** Enter your name, which the AI will use when addressing you.
     - **Chat History:**
@@ -100,14 +93,16 @@ This release simplifies Gemini Scribe by focusing entirely on the powerful Agent
       - **Migration Status:** Shows the status of history migration from older versions
       - **Migration Tools:** Re-run migration or view backup files
     - **Custom Prompts:**
-      - **Enable Custom Prompts:** Toggle the custom prompt system on/off (disabled by default).
       - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
+    - **UI Settings:**
+      - **Enable Streaming:** Toggle streaming responses for a more interactive chat experience.
     - **Advanced Settings:** (Click "Show Advanced Settings" to reveal)
       - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
       - **Top P:** Control response diversity and focus (0-1.0).
       - **Model Discovery:** Automatically fetch and update available Gemini models with their parameter limits.
       - **API Configuration:** Configure retry behavior and backoff delays.
-      - **Tool Loop Detection:** Prevent infinite tool execution loops
+      - **Tool Execution:** Control whether to stop agent execution on tool errors.
+      - **Tool Loop Detection:** Prevent infinite tool execution loops.
       - **Developer Options:** Debug mode and advanced configuration tools.
 
 ## Usage
@@ -117,10 +112,9 @@ This release simplifies Gemini Scribe by focusing entirely on the powerful Agent
 Let the AI actively work with your vault through tool calling capabilities.
 
 **Quick Start:**
-1. Enable Agent Mode in plugin settings
-2. Open Agent Chat with the command palette or ribbon icon
-3. Ask the agent to help with vault operations
-4. Review and approve actions (if confirmation is enabled)
+1. Open Agent Chat with the command palette or ribbon icon
+2. Ask the agent to help with vault operations
+3. Review and approve actions (if confirmation is enabled)
 
 **Available Tools:**
 - **Search Files:** Find notes by name or content patterns
@@ -155,10 +149,9 @@ Let the AI actively work with your vault through tool calling capabilities.
 Create reusable AI instruction templates to customize behavior for different types of content.
 
 **Quick Start:**
-1. Enable custom prompts in plugin settings
-2. Create a prompt file in `[Plugin State Folder]/Prompts/` 
-3. Add to your note's frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
-4. The AI will use your custom instructions for that note
+1. Create a prompt file in `[Plugin State Folder]/Prompts/`
+2. Add to your note's frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
+3. The AI will use your custom instructions for that note
 
 **Learn More:** See the comprehensive [Custom Prompts Guide](docs/custom-prompts-guide.md) for detailed instructions, examples, and best practices.
 
@@ -195,13 +188,11 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
     - Type your message in the input box
     - Press Enter to send (Shift+Enter for new line)
     - The AI automatically includes your current note as context
-    - Linked notes are included based on your context depth setting
     - You can add persistent context files with @ mentions
     - Sessions are automatically saved and can be resumed
 
 3.  **AI Responses:**
     - Responses appear in the chat with a "Copy" button
-    - If Search Grounding is enabled, web search results may be included
     - Custom prompts modify how the AI responds (if configured)
     - Tool calls and results are shown in collapsible sections for clarity
 
