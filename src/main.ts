@@ -245,6 +245,13 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 
+		// Register image generation tools
+		const { getImageTools } = await import('./tools/image-tools');
+		const imageTools = getImageTools();
+		for (const tool of imageTools) {
+			this.toolRegistry.registerTool(tool);
+		}
+
 		// Initialize completions
 		this.completions = new GeminiCompletions(this);
 		await this.completions.setupCompletions();

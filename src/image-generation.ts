@@ -56,14 +56,16 @@ export class ImageGeneration {
 	/**
 	 * Generate an image and return the file path
 	 * Used by the agent tool
+	 * @param prompt - Text description of the image to generate
+	 * @param targetNotePath - Optional path to a note to use as reference for attachment folder
 	 */
-	async generateImage(prompt: string): Promise<string> {
+	async generateImage(prompt: string, targetNotePath?: string): Promise<string> {
 		try {
 			// Generate the image
 			const base64Data = await this.client.generateImage(prompt);
 
 			// Save the image to vault
-			return await this.saveImageToVault(base64Data, prompt);
+			return await this.saveImageToVault(base64Data, prompt, targetNotePath);
 		} catch (error) {
 			console.error('Failed to generate image:', error);
 			throw error;
@@ -72,8 +74,11 @@ export class ImageGeneration {
 
 	/**
 	 * Save base64 image data to the vault
+	 * @param base64Data - Base64 encoded image data
+	 * @param prompt - The prompt used to generate the image
+	 * @param targetNotePath - Optional path to a note to use as reference for attachment folder
 	 */
-	private async saveImageToVault(base64Data: string, prompt: string): Promise<string> {
+	private async saveImageToVault(base64Data: string, prompt: string, targetNotePath?: string): Promise<string> {
 		// Create a safe filename from the prompt (truncate and sanitize)
 		const sanitizedPrompt = prompt
 			.substring(0, 50)
@@ -91,16 +96,24 @@ export class ImageGeneration {
 			bytes[i] = binaryData.charCodeAt(i);
 		}
 
-		// Get the active file to use as reference for attachment folder
-		const activeFile = this.plugin.app.workspace.getActiveFile();
-		if (!activeFile) {
-			throw new Error('No active file');
+		// Determine reference note path for attachment folder
+		let referenceNotePath: string;
+		if (targetNotePath) {
+			// Use provided target note path
+			referenceNotePath = targetNotePath;
+		} else {
+			// Fall back to active file
+			const activeFile = this.plugin.app.workspace.getActiveFile();
+			if (!activeFile) {
+				throw new Error('No active file and no target note path provided');
+			}
+			referenceNotePath = activeFile.path;
 		}
 
 		// Use Obsidian's built-in method to get the correct path for attachments
 		const path = await this.plugin.app.fileManager.getAvailablePathForAttachment(
 			filename,
-			activeFile.path
+			referenceNotePath
 		);
 
 		// Save to vault
