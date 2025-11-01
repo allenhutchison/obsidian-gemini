@@ -163,7 +163,7 @@ Dynamic model discovery automatically fetches the latest available Gemini models
 #### Enable Model Discovery
 - **Setting**: `modelDiscovery.enabled`
 - **Type**: Boolean
-- **Default**: `false`
+- **Default**: `true`
 - **Description**: Automatically discover and update available Gemini models
 
 #### Auto-Update Interval
