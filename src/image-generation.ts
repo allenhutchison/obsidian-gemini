@@ -84,18 +84,6 @@ export class ImageGeneration {
 		const timestamp = Date.now();
 		const filename = `generated-${sanitizedPrompt}-${timestamp}.png`;
 
-		// Determine where to save (either in attachments folder or root)
-		const attachmentFolder = (this.plugin.app.vault as any).getConfig?.('attachmentFolderPath') || '';
-		const filePath = attachmentFolder ? `${attachmentFolder}/${filename}` : filename;
-
-		// Ensure the attachment folder exists
-		if (attachmentFolder) {
-			const folder = this.plugin.app.vault.getAbstractFileByPath(attachmentFolder);
-			if (!folder) {
-				await this.plugin.app.vault.createFolder(attachmentFolder);
-			}
-		}
-
 		// Convert base64 to binary
 		const binaryData = atob(base64Data);
 		const bytes = new Uint8Array(binaryData.length);
@@ -103,10 +91,22 @@ export class ImageGeneration {
 			bytes[i] = binaryData.charCodeAt(i);
 		}
 
-		// Save to vault
-		await this.plugin.app.vault.createBinary(filePath, bytes.buffer);
+		// Get the active file to use as reference for attachment folder
+		const activeFile = this.plugin.app.workspace.getActiveFile();
+		if (!activeFile) {
+			throw new Error('No active file');
+		}
 
-		return filePath;
+		// Use Obsidian's built-in method to get the correct path for attachments
+		const path = await this.plugin.app.fileManager.getAvailablePathForAttachment(
+			filename,
+			activeFile.path
+		);
+
+		// Save to vault
+		await this.plugin.app.vault.createBinary(path, bytes.buffer);
+
+		return path;
 	}
 
 	/**
