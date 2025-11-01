@@ -728,6 +728,66 @@ export class SearchFilesTool implements Tool {
 }
 
 /**
+ * Get the currently active file in the editor
+ * This is a wrapper around ReadFileTool that automatically gets the active file
+ */
+export class GetActiveFileTool implements Tool {
+	name = 'get_active_file';
+	displayName = 'Get Active File';
+	category = ToolCategory.READ_ONLY;
+	description = 'Get the full content and metadata of the currently active file open in the editor. This is the file the user is currently viewing or editing. Returns the same information as read_file (content, wikilink, outgoing links, backlinks) for the active file. Use this when the user refers to "the current file", "this file", or "the active file". Returns an error if no file is currently active.';
+
+	parameters = {
+		type: 'object' as const,
+		properties: {},
+		required: []
+	};
+
+	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+
+		try {
+			// Get the currently active file from the workspace
+			const activeFile = plugin.app.workspace.getActiveFile();
+
+			if (!activeFile) {
+				return {
+					success: false,
+					error: 'No file is currently active in the editor'
+				};
+			}
+
+			// Only return markdown files
+			if (activeFile.extension !== 'md') {
+				return {
+					success: false,
+					error: `The active file is not a markdown file (extension: ${activeFile.extension})`
+				};
+			}
+
+			// Check if path is excluded (shouldn't be, but safety check)
+			if (shouldExcludePath(activeFile.path, plugin)) {
+				return {
+					success: false,
+					error: 'The active file is in a system folder'
+				};
+			}
+
+			// Delegate to ReadFileTool to get full file information
+			// This ensures we return the same rich data (content, links, backlinks, etc.)
+			const readFileTool = new ReadFileTool();
+			return await readFileTool.execute({ path: activeFile.path }, context);
+
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error getting active file: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
  * Get all available vault tools
  */
 export function getVaultTools(): Tool[] {
@@ -738,6 +798,7 @@ export function getVaultTools(): Tool[] {
 		new CreateFolderTool(),
 		new DeleteFileTool(),
 		new MoveFileTool(),
-		new SearchFilesTool()
+		new SearchFilesTool(),
+		new GetActiveFileTool()
 	];
 }

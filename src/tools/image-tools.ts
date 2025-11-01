@@ -8,7 +8,7 @@ export class GenerateImageTool implements Tool {
 	name = 'generate_image';
 	displayName = 'Generate Image';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Generate an image from a text prompt and save it to the vault. Returns the path to the generated image file.';
+	description = 'Generate an image from a text prompt and save it to the vault. Returns the wikilink that can be used to embed the image in a note. IMPORTANT: This tool only generates and saves the image file - it does NOT insert the image into any note. To add the generated image to a note, you must use write_file to insert the returned wikilink into the note content.';
 
 	parameters = {
 		type: 'object' as const,
@@ -19,7 +19,7 @@ export class GenerateImageTool implements Tool {
 			},
 			target_note: {
 				type: 'string' as const,
-				description: 'Optional: The path of the note to associate the image with for attachment folder placement. If not provided, uses the currently active note.'
+				description: 'Optional: The path of the note to use for determining the attachment folder location where the image file will be saved. This does NOT insert the image into the note - it only affects where the image file is stored. If not provided, uses the currently active note to determine the attachment folder.'
 			}
 		},
 		required: ['prompt']

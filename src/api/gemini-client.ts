@@ -405,15 +405,28 @@ export class GeminiClient implements ModelApi {
 			const response = await this.ai.models.generateContent(params);
 
 			// Extract base64 image data from response
-			// According to docs: response.candidates[0].content.parts[0].inlineData.data
-			const part = response.candidates?.[0]?.content?.parts?.[0];
-			if (part && 'inlineData' in part && part.inlineData?.data) {
-				return part.inlineData.data;
+			// The response may contain multiple parts: text + inlineData
+			// We need to find the part with inlineData
+			const parts = response.candidates?.[0]?.content?.parts;
+			if (!parts || parts.length === 0) {
+				throw new Error('No content parts in response');
 			}
 
-			throw new Error('No image data in response');
+			// Find the part with image data
+			for (const part of parts) {
+				if ('inlineData' in part && part.inlineData?.data) {
+					return part.inlineData.data;
+				}
+			}
+
+			// If we get here, no image data was found
+			throw new Error('No image data in response. The model may have returned only text.');
 		} catch (error) {
 			console.error('[GeminiClient] Error generating image:', error);
+			// Log additional details if available
+			if (error && typeof error === 'object') {
+				console.error('[GeminiClient] Error details:', JSON.stringify(error, null, 2));
+			}
 			throw error;
 		}
 	}

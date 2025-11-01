@@ -2028,46 +2028,98 @@ User: ${history[0].message}`;
 					console.log('Tool result is object for:', toolName);
 					console.log('Result data keys:', Object.keys(result.data));
 					
+					// Special handling for generate_image results
+					if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
+						// Display the generated image
+						const imageDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-image-result' });
+						imageDiv.createEl('h5', { text: 'Generated Image:' });
+
+						// Get the image file from vault
+						const imageFile = this.plugin.app.vault.getAbstractFileByPath(result.data.path);
+						if (imageFile instanceof TFile) {
+							// Create image element
+							const imgContainer = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-container' });
+							const img = imgContainer.createEl('img', {
+								cls: 'gemini-agent-tool-image'
+							});
+
+							// Get the image URL from Obsidian's resource path
+							img.src = this.plugin.app.vault.getResourcePath(imageFile);
+							img.alt = result.data.prompt || 'Generated image';
+
+							// Add image info
+							const imageInfo = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-info' });
+							imageInfo.createEl('strong', { text: 'Path: ' });
+							imageInfo.createSpan({ text: result.data.path });
+
+							// Add wikilink for easy copying
+							imageInfo.createEl('br');
+							imageInfo.createEl('strong', { text: 'Wikilink: ' });
+							const wikilinkCode = imageInfo.createEl('code', {
+								text: result.data.wikilink,
+								cls: 'gemini-agent-tool-wikilink'
+							});
+
+							// Add copy button for wikilink
+							const copyBtn = imageInfo.createEl('button', {
+								text: 'Copy',
+								cls: 'gemini-agent-tool-copy-wikilink'
+							});
+							copyBtn.addEventListener('click', () => {
+								navigator.clipboard.writeText(result.data.wikilink).then(() => {
+									copyBtn.textContent = 'Copied!';
+									setTimeout(() => {
+										copyBtn.textContent = 'Copy';
+									}, 2000);
+								});
+							});
+						} else {
+							imageDiv.createEl('p', {
+								text: `Image saved to: ${result.data.path}`,
+								cls: 'gemini-agent-tool-image-path'
+							});
+						}
+					}
 					// Special handling for google_search results with citations
-					if (result.data.answer && result.data.citations && toolName === 'google_search') {
+					else if (result.data.answer && result.data.citations && toolName === 'google_search') {
 						console.log('Handling google_search result with citations');
 						// Display the answer
 						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
 						answerDiv.createEl('h5', { text: 'Answer:' });
-						
+
 						// Render the answer with markdown links
 						const answerPara = answerDiv.createEl('p');
 						// Parse markdown links in the answer
 						const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 						let lastIndex = 0;
 						let match;
-						
+
 						while ((match = linkRegex.exec(result.data.answer)) !== null) {
 							// Add text before the link
 							if (match.index > lastIndex) {
 								answerPara.appendText(result.data.answer.substring(lastIndex, match.index));
 							}
-							
+
 							// Add the link
 							const link = answerPara.createEl('a', {
 								text: match[1],
 								href: match[2]
 							});
 							link.setAttribute('target', '_blank');
-							
+
 							lastIndex = linkRegex.lastIndex;
 						}
-						
+
 						// Add any remaining text
 						if (lastIndex < result.data.answer.length) {
 							answerPara.appendText(result.data.answer.substring(lastIndex));
 						}
-						
+
 						// Display citations if available
 						if (result.data.citations.length > 0) {
 							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
 							citationsDiv.createEl('h5', { text: 'Sources:' });
-							
+
 							const citationsList = citationsDiv.createEl('ul', { cls: 'gemini-agent-tool-citations-list' });
 							for (const citation of result.data.citations) {
 								const citationItem = citationsList.createEl('li');
@@ -2077,7 +2129,7 @@ User: ${history[0].message}`;
 									cls: 'gemini-agent-tool-citation-link'
 								});
 								link.setAttribute('target', '_blank');
-								
+
 								if (citation.snippet) {
 									citationItem.createEl('p', {
 										text: citation.snippet,
@@ -2086,8 +2138,9 @@ User: ${history[0].message}`;
 								}
 							}
 						}
+					}
 					// Special handling for read_file results
-					} else if (result.data.content && result.data.path) {
+					else if (result.data.content && result.data.path) {
 						// This is a file read result
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
 						fileInfo.createEl('strong', { text: 'File: ' });
