@@ -23,7 +23,10 @@ export class SessionManager {
 	async createNoteChatSession(sourceFile: TFile): Promise<ChatSession> {
 		const context: AgentContext = {
 			...DEFAULT_CONTEXTS.NOTE_CHAT,
-			contextFiles: [sourceFile]
+			contextFiles: [sourceFile],
+			// Create new arrays to avoid sharing references between sessions
+			enabledTools: [...DEFAULT_CONTEXTS.NOTE_CHAT.enabledTools],
+			requireConfirmation: [...DEFAULT_CONTEXTS.NOTE_CHAT.requireConfirmation]
 		};
 
 		const sessionTitle = this.sanitizeFileName(`${sourceFile.basename} Chat`);
@@ -49,7 +52,11 @@ export class SessionManager {
 	async createAgentSession(title?: string, initialContext?: Partial<AgentContext>): Promise<ChatSession> {
 		const context: AgentContext = {
 			...DEFAULT_CONTEXTS.AGENT_SESSION,
-			...initialContext
+			...initialContext,
+			// Create new arrays to avoid sharing references between sessions
+			contextFiles: [...(initialContext?.contextFiles ?? [])],
+			enabledTools: [...(initialContext?.enabledTools ?? DEFAULT_CONTEXTS.AGENT_SESSION.enabledTools)],
+			requireConfirmation: [...(initialContext?.requireConfirmation ?? DEFAULT_CONTEXTS.AGENT_SESSION.requireConfirmation)]
 		};
 
 		const rawTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
