@@ -4,24 +4,7 @@ import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ScribeFile } from '../files';
 import { ScribeDataView } from '../files/dataview-utils';
-
-/**
- * Helper function to check if a path should be excluded from vault operations
- */
-function shouldExcludePath(path: string, plugin: InstanceType<typeof ObsidianGemini>): boolean {
-	// Exclude the plugin's state folder
-	const stateFolder = plugin.settings.historyFolder;
-	if (path === stateFolder || path.startsWith(stateFolder + '/')) {
-		return true;
-	}
-
-	// Also exclude .obsidian folder
-	if (path === '.obsidian' || path.startsWith('.obsidian/')) {
-		return true;
-	}
-
-	return false;
-}
+import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
 
 /**
  * Helper function to resolve a path to a file with multiple fallback strategies

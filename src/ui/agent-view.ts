@@ -464,7 +464,8 @@ export class AgentView extends ItemView {
 				this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 				this.updateSessionHeader();
 				this.updateSessionMetadata();
-			}
+			},
+			this.plugin.settings.historyFolder // Exclude plugin state folder
 		);
 
 		modal.open();
@@ -755,7 +756,8 @@ export class AgentView extends ItemView {
 				} else if (item instanceof TFile) {
 					this.insertFileChip(item);
 				}
-			}
+			},
+			this.plugin.settings.historyFolder // Exclude plugin state folder
 		);
 		modal.open();
 	}
