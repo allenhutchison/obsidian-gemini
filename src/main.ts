@@ -106,7 +106,7 @@ export default class ObsidianGemini extends Plugin {
 		await this.setupGeminiScribe();
 
 		// Add ribbon icon
-		this.ribbonIcon = this.addRibbonIcon('bot', 'Open Gemini Chat', () => {
+		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Gemini Scribe: Agent Mode', () => {
 			this.activateAgentView();
 		});
 
