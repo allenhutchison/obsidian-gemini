@@ -509,10 +509,9 @@ export class AgentView extends ItemView {
 		// If this file is already the auto-added active file, nothing to do
 		if (this.autoAddedActiveFile === activeFile) return;
 
-		// If the new active file was manually added, don't auto-add it
-		// (this prevents replacing a manually-added file)
+		// If the new active file was manually added, don't modify the context
+		// Keep tracking the existing auto-added file so it can be removed later
 		if (this.currentSession.context.contextFiles.includes(activeFile)) {
-			this.autoAddedActiveFile = null; // Clear auto-add tracking since it's manually added
 			return;
 		}
 
