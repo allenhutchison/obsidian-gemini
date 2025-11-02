@@ -2315,8 +2315,18 @@ User: ${history[0].message}`;
 				}
 			});
 
-			// Try to get recent sessions
-			const recentSessions = await this.plugin.sessionManager.getRecentAgentSessions(5);
+			// Try to get recent sessions (excluding the current session)
+			// Fetch 6 sessions since we might filter out the current one
+			const allRecentSessions = await this.plugin.sessionManager.getRecentAgentSessions(6);
+			const recentSessions = allRecentSessions
+				.filter(session => {
+					if (!this.currentSession) return true;
+					// Exclude session if either ID or history path matches the current session
+					const isSameId = session.id === this.currentSession.id;
+					const isSamePath = session.historyPath === this.currentSession.historyPath;
+					return !isSameId && !isSamePath;
+				})
+				.slice(0, 5); // Limit to 5 after filtering
 
 			// Create suggestions container (used for both recent sessions and example prompts)
 			const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
