@@ -101,13 +101,13 @@ export default class ObsidianGemini extends Plugin {
 	public toolRegistry: ToolRegistry;
 	public toolExecutionEngine: ToolExecutionEngine;
 	public agentsMemory: AgentsMemory;
+	public vaultAnalyzer: VaultAnalyzer;
 
 	// Private members
 	private summarizer: GeminiSummary;
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
-	private vaultAnalyzer: VaultAnalyzer;
 
 	async onload() {
 		await this.setupGeminiScribe();

@@ -2164,32 +2164,57 @@ User: ${history[0].message}`;
 		}
 	}
 	
-	private showEmptyState() {
+	private async showEmptyState() {
 		if (this.chatContainer.children.length === 0) {
 			const emptyState = this.chatContainer.createDiv({ cls: 'gemini-agent-empty-chat' });
-			
+
 			const icon = emptyState.createDiv({ cls: 'gemini-agent-empty-icon' });
 			setIcon(icon, 'bot');
-			
-			emptyState.createEl('h3', { 
+
+			emptyState.createEl('h3', {
 				text: 'Start a conversation',
 				cls: 'gemini-agent-empty-title'
 			});
-			
-			emptyState.createEl('p', { 
+
+			emptyState.createEl('p', {
 				text: 'Ask questions, get help with your notes, or use tools to manage your vault.',
 				cls: 'gemini-agent-empty-desc'
 			});
-			
+
+			// Check if AGENTS.md exists and show init button if not
+			const agentsMemoryExists = await this.plugin.agentsMemory.exists();
+			if (!agentsMemoryExists) {
+				const initButton = emptyState.createDiv({
+					cls: 'gemini-agent-init-context-button'
+				});
+
+				const buttonIcon = initButton.createDiv({ cls: 'gemini-agent-init-icon' });
+				setIcon(buttonIcon, 'sparkles');
+
+				const buttonText = initButton.createDiv({ cls: 'gemini-agent-init-text' });
+				buttonText.createEl('strong', { text: 'Initialize Vault Context' });
+				buttonText.createEl('span', {
+					text: 'Help me understand your vault structure and organization',
+					cls: 'gemini-agent-init-desc'
+				});
+
+				initButton.addEventListener('click', async () => {
+					// Run the vault analyzer
+					if (this.plugin.vaultAnalyzer) {
+						await this.plugin.vaultAnalyzer.initializeAgentsMemory();
+					}
+				});
+			}
+
 			const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
 			const suggestionTexts = [
 				'What files are in my vault?',
 				'Search for notes about "project"',
 				'Create a summary of my recent notes'
 			];
-			
+
 			suggestionTexts.forEach(text => {
-				const suggestion = suggestions.createDiv({ 
+				const suggestion = suggestions.createDiv({
 					text,
 					cls: 'gemini-agent-suggestion'
 				});
