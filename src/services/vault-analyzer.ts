@@ -83,10 +83,6 @@ export class VaultAnalyzer {
 				return;
 			}
 
-			// Debug: Log the parsed data structure
-			if (this.plugin.settings.debugMode) {
-				console.log('Parsed AGENTS.md data:', generatedData);
-			}
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('parse');
 
