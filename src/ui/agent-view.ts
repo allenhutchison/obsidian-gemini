@@ -465,7 +465,7 @@ export class AgentView extends ItemView {
 				this.updateSessionHeader();
 				this.updateSessionMetadata();
 			},
-			this.plugin.settings.historyFolder // Exclude plugin state folder
+			this.plugin // Plugin instance for automatic exclusion
 		);
 
 		modal.open();
@@ -756,7 +756,8 @@ export class AgentView extends ItemView {
 				} else if (item instanceof TFile) {
 					this.insertFileChip(item);
 				}
-			}
+			},
+			this.plugin // Plugin instance for automatic exclusion
 		);
 		modal.open();
 	}
