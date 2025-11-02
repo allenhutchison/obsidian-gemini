@@ -26,6 +26,7 @@ import { CustomPrompt } from '../prompts/types';
 import * as Handlebars from 'handlebars';
 import { AgentFactory } from '../agent/agent-factory';
 import { ChatTimer } from '../utils/timer-utils';
+import { shouldExcludePathForPlugin } from '../utils/file-utils';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -43,6 +44,7 @@ export class AgentView extends ItemView {
 	private scrollTimeout: NodeJS.Timeout | null = null;
 	private chatTimer: ChatTimer = new ChatTimer();
 	private activeFileChangeHandler: () => void;
+	private autoAddedActiveFile: TFile | null = null; // Track the auto-added active file
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -477,6 +479,12 @@ export class AgentView extends ItemView {
 		const index = this.currentSession.context.contextFiles.indexOf(file);
 		if (index > -1) {
 			this.currentSession.context.contextFiles.splice(index, 1);
+
+			// If this was the auto-added active file, clear tracking
+			if (this.autoAddedActiveFile === file) {
+				this.autoAddedActiveFile = null;
+			}
+
 			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 			this.updateSessionHeader();
 			this.updateSessionMetadata();
@@ -485,6 +493,7 @@ export class AgentView extends ItemView {
 
 	/**
 	 * Add the currently active markdown file to session context
+	 * Auto-replaces the previous auto-added file to avoid accumulation
 	 */
 	private async addActiveFileToContext() {
 		if (!this.currentSession) return;
@@ -494,11 +503,30 @@ export class AgentView extends ItemView {
 		// Only add markdown files
 		if (!activeFile || activeFile.extension !== 'md') return;
 
-		// Check if already in context
-		if (this.currentSession.context.contextFiles.includes(activeFile)) return;
+		// Check if file should be excluded (history files, system folders, etc.)
+		if (shouldExcludePathForPlugin(activeFile.path, this.plugin)) return;
 
-		// Add to context
+		// If this file is already the auto-added active file, nothing to do
+		if (this.autoAddedActiveFile === activeFile) return;
+
+		// Remove previous auto-added file (if exists and still in context)
+		if (this.autoAddedActiveFile) {
+			const index = this.currentSession.context.contextFiles.indexOf(this.autoAddedActiveFile);
+			if (index > -1) {
+				this.currentSession.context.contextFiles.splice(index, 1);
+			}
+		}
+
+		// If the new active file was manually added, don't auto-add it
+		// (this prevents replacing a manually-added file)
+		if (this.currentSession.context.contextFiles.includes(activeFile)) {
+			this.autoAddedActiveFile = null; // Clear auto-add tracking since it's manually added
+			return;
+		}
+
+		// Add new active file and track it
 		this.currentSession.context.contextFiles.push(activeFile);
+		this.autoAddedActiveFile = activeFile;
 
 		// Save to frontmatter
 		await this.updateSessionMetadata();
@@ -511,6 +539,7 @@ export class AgentView extends ItemView {
 			this.chatContainer.empty();
 			this.mentionedFiles = []; // Clear any mentioned files from previous session
 			this.allowedWithoutConfirmation.clear(); // Clear session-level permissions
+			this.autoAddedActiveFile = null; // Clear auto-added file tracking
 			
 			// Clear input if it has content
 			if (this.userInput) {
@@ -1384,7 +1413,8 @@ These files are included in the context below. When the user asks you to write d
 		try {
 			this.currentSession = session;
 			this.allowedWithoutConfirmation.clear(); // Clear session-level permissions when loading from history
-			
+			this.autoAddedActiveFile = null; // Clear auto-added file tracking when loading a session
+
 			// Clear chat and reload history
 			this.chatContainer.empty();
 			await this.loadSessionHistory();
