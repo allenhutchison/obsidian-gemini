@@ -509,19 +509,19 @@ export class AgentView extends ItemView {
 		// If this file is already the auto-added active file, nothing to do
 		if (this.autoAddedActiveFile === activeFile) return;
 
+		// If the new active file was manually added, don't auto-add it
+		// (this prevents replacing a manually-added file)
+		if (this.currentSession.context.contextFiles.includes(activeFile)) {
+			this.autoAddedActiveFile = null; // Clear auto-add tracking since it's manually added
+			return;
+		}
+
 		// Remove previous auto-added file (if exists and still in context)
 		if (this.autoAddedActiveFile) {
 			const index = this.currentSession.context.contextFiles.indexOf(this.autoAddedActiveFile);
 			if (index > -1) {
 				this.currentSession.context.contextFiles.splice(index, 1);
 			}
-		}
-
-		// If the new active file was manually added, don't auto-add it
-		// (this prevents replacing a manually-added file)
-		if (this.currentSession.context.contextFiles.includes(activeFile)) {
-			this.autoAddedActiveFile = null; // Clear auto-add tracking since it's manually added
-			return;
 		}
 
 		// Add new active file and track it
