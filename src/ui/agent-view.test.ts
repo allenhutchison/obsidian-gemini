@@ -518,7 +518,7 @@ describe('AgentView UI Tests', () => {
 	describe('View Lifecycle', () => {
 		it('should clean up resources on close', async () => {
 			await agentView.onOpen();
-			
+
 			// Create active session
 			const session = await plugin.sessionManager.createAgentSession();
 			await agentView['loadSession'](session.id);
@@ -528,6 +528,129 @@ describe('AgentView UI Tests', () => {
 
 			// Should clean up
 			expect(agentView['currentSession']).toBeNull();
+		});
+	});
+
+	describe('Recent Sessions Filtering', () => {
+		it('should exclude current session from recent sessions list', async () => {
+			// Create multiple sessions
+			const session1 = await plugin.sessionManager.createAgentSession('Session 1');
+			const session2 = await plugin.sessionManager.createAgentSession('Session 2');
+			const session3 = await plugin.sessionManager.createAgentSession('Session 3');
+
+			// Set session2 as current
+			(agentView as any).currentSession = session2;
+
+			// Mock getRecentAgentSessions to return all 3 sessions
+			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
+				.mockResolvedValue([session3, session2, session1]); // Most recent first
+
+			// Test isCurrentSession helper
+			expect((agentView as any).isCurrentSession(session1)).toBe(false);
+			expect((agentView as any).isCurrentSession(session2)).toBe(true); // Current session
+			expect((agentView as any).isCurrentSession(session3)).toBe(false);
+
+			// Filter sessions (simulating what showEmptyState does)
+			const allSessions = await plugin.sessionManager.getRecentAgentSessions(6);
+			const filteredSessions = allSessions.filter((session: any) =>
+				!(agentView as any).isCurrentSession(session)
+			);
+
+			// Should exclude session2 (current session)
+			expect(filteredSessions).toHaveLength(2);
+			expect(filteredSessions).toContain(session1);
+			expect(filteredSessions).toContain(session3);
+			expect(filteredSessions).not.toContain(session2);
+
+			mockGetRecent.mockRestore();
+		});
+
+		it('should handle null currentSession gracefully', async () => {
+			// Create test sessions
+			const session1 = await plugin.sessionManager.createAgentSession('Session 1');
+			const session2 = await plugin.sessionManager.createAgentSession('Session 2');
+
+			// Set currentSession to null
+			(agentView as any).currentSession = null;
+
+			// Test isCurrentSession with null currentSession
+			expect((agentView as any).isCurrentSession(session1)).toBe(false);
+			expect((agentView as any).isCurrentSession(session2)).toBe(false);
+
+			// Mock getRecentAgentSessions
+			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
+				.mockResolvedValue([session2, session1]);
+
+			// Filter sessions
+			const allSessions = await plugin.sessionManager.getRecentAgentSessions(6);
+			const filteredSessions = allSessions.filter((session: any) =>
+				!(agentView as any).isCurrentSession(session)
+			);
+
+			// Should include all sessions when currentSession is null
+			expect(filteredSessions).toHaveLength(2);
+			expect(filteredSessions).toContain(session1);
+			expect(filteredSessions).toContain(session2);
+
+			mockGetRecent.mockRestore();
+		});
+
+		it('should still show 5 sessions when current session is filtered', async () => {
+			// Create 6 sessions
+			const sessions = [];
+			for (let i = 1; i <= 6; i++) {
+				sessions.push(await plugin.sessionManager.createAgentSession(`Session ${i}`));
+			}
+
+			// Set session 3 as current (middle of the list)
+			const currentSession = sessions[2];
+			(agentView as any).currentSession = currentSession;
+
+			// Mock getRecentAgentSessions to return all 6 sessions
+			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
+				.mockResolvedValue(sessions);
+
+			// Fetch and filter (simulating what showEmptyState does)
+			const allSessions = await plugin.sessionManager.getRecentAgentSessions(6);
+			const filteredSessions = allSessions
+				.filter((session: any) => !(agentView as any).isCurrentSession(session))
+				.slice(0, 5); // Limit to 5 after filtering
+
+			// Should have exactly 5 sessions (6 total - 1 current)
+			expect(filteredSessions).toHaveLength(5);
+
+			// Should not include current session
+			expect(filteredSessions).not.toContain(currentSession);
+
+			// Should include the other 5 sessions
+			const otherSessions = sessions.filter(s => s !== currentSession);
+			otherSessions.forEach(session => {
+				expect(filteredSessions).toContain(session);
+			});
+
+			mockGetRecent.mockRestore();
+		});
+
+		it('should compare both session ID and history path', async () => {
+			const session1 = await plugin.sessionManager.createAgentSession('Session 1');
+			const session2 = await plugin.sessionManager.createAgentSession('Session 2');
+
+			// Set current session
+			(agentView as any).currentSession = session1;
+
+			// Test matching by ID
+			expect((agentView as any).isCurrentSession(session1)).toBe(true);
+
+			// Test non-matching session
+			expect((agentView as any).isCurrentSession(session2)).toBe(false);
+
+			// Test with matching history path (edge case)
+			const sessionWithSamePath = {
+				...session2,
+				id: 'different-id',
+				historyPath: session1.historyPath // Same path as current session
+			};
+			expect((agentView as any).isCurrentSession(sessionWithSamePath)).toBe(true);
 		});
 	});
 });
