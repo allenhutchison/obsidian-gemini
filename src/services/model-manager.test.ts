@@ -64,7 +64,9 @@ describe('ModelManager', () => {
 
 			const result = await manager.getAvailableModels();
 
-			expect(result).toEqual(ModelManager.getStaticModels());
+			// Should return static models WITHOUT image generation models (filtered out by default)
+			const expectedModels = ModelManager.getStaticModels().filter(m => !m.supportsImageGeneration);
+			expect(result).toEqual(expectedModels);
 		});
 
 		it('should return dynamic models when discovery is successful', async () => {
@@ -146,7 +148,9 @@ describe('ModelManager', () => {
 
 			const result = await modelManager.getAvailableModels();
 
-			expect(result).toEqual(ModelManager.getStaticModels());
+			// Should return static models WITHOUT image generation models (filtered out by default)
+			const expectedModels = ModelManager.getStaticModels().filter(m => !m.supportsImageGeneration);
+			expect(result).toEqual(expectedModels);
 		});
 
 		it('should fallback to static models when discovery throws exception', async () => {
@@ -154,7 +158,9 @@ describe('ModelManager', () => {
 
 			const result = await modelManager.getAvailableModels();
 
-			expect(result).toEqual(ModelManager.getStaticModels());
+			// Should return static models WITHOUT image generation models (filtered out by default)
+			const expectedModels = ModelManager.getStaticModels().filter(m => !m.supportsImageGeneration);
+			expect(result).toEqual(expectedModels);
 		});
 	});
 

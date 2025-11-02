@@ -384,4 +384,50 @@ export class GeminiClient implements ModelApi {
 	private extractRenderedFromChunk(chunk: any): string {
 		return this.extractRenderedFromResponse(chunk as GenerateContentResponse);
 	}
+
+	/**
+	 * Generate an image from a text prompt
+	 * @param prompt - Text description of the image to generate
+	 * @param model - Image generation model (defaults to gemini-2.5-flash-image-preview)
+	 * @returns Base64 encoded image data
+	 */
+	async generateImage(prompt: string, model: string = 'gemini-2.5-flash-image-preview'): Promise<string> {
+		try {
+			const params: GenerateContentParameters = {
+				model,
+				contents: prompt,
+				config: {
+					// Image generation typically doesn't need temperature/topP
+					// but we can include them if needed
+				}
+			};
+
+			const response = await this.ai.models.generateContent(params);
+
+			// Extract base64 image data from response
+			// The response may contain multiple parts: text + inlineData
+			// We need to find the part with inlineData
+			const parts = response.candidates?.[0]?.content?.parts;
+			if (!parts || parts.length === 0) {
+				throw new Error('No content parts in response');
+			}
+
+			// Find the part with image data
+			for (const part of parts) {
+				if ('inlineData' in part && part.inlineData?.data) {
+					return part.inlineData.data;
+				}
+			}
+
+			// If we get here, no image data was found
+			throw new Error('No image data in response. The model may have returned only text.');
+		} catch (error) {
+			console.error('[GeminiClient] Error generating image:', error);
+			// Log additional details if available
+			if (error && typeof error === 'object') {
+				console.error('[GeminiClient] Error details:', JSON.stringify(error, null, 2));
+			}
+			throw error;
+		}
+	}
 }
