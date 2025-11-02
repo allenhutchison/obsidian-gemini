@@ -2317,6 +2317,37 @@ If your plugin does not need CSS, delete this file.
 	line-height: 1.4;
 }
 
+/* Update variant - more subtle styling */
+.gemini-agent-init-context-button-update {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.gemini-agent-init-context-button-update:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.gemini-agent-init-context-button-update .gemini-agent-init-icon {
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-init-context-button-update .gemini-agent-init-icon svg {
+	color: var(--text-muted);
+}
+
+.gemini-agent-init-context-button-update .gemini-agent-init-text strong {
+	color: var(--text-normal);
+}
+
+.gemini-agent-init-context-button-update .gemini-agent-init-desc {
+	color: var(--text-muted);
+	opacity: 1;
+}
+
 /* Google Search Citations Styling */
 
 .gemini-agent-tool-search-answer {

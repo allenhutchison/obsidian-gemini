@@ -2181,30 +2181,40 @@ User: ${history[0].message}`;
 				cls: 'gemini-agent-empty-desc'
 			});
 
-			// Check if AGENTS.md exists and show init button if not
+			// Check if AGENTS.md exists and show appropriate button
 			const agentsMemoryExists = await this.plugin.agentsMemory.exists();
-			if (!agentsMemoryExists) {
-				const initButton = emptyState.createDiv({
-					cls: 'gemini-agent-init-context-button'
+
+			const initButton = emptyState.createDiv({
+				cls: agentsMemoryExists
+					? 'gemini-agent-init-context-button gemini-agent-init-context-button-update'
+					: 'gemini-agent-init-context-button'
+			});
+
+			const buttonIcon = initButton.createDiv({ cls: 'gemini-agent-init-icon' });
+			setIcon(buttonIcon, agentsMemoryExists ? 'refresh-cw' : 'sparkles');
+
+			const buttonText = initButton.createDiv({ cls: 'gemini-agent-init-text' });
+
+			if (agentsMemoryExists) {
+				buttonText.createEl('strong', { text: 'Update Vault Context' });
+				buttonText.createEl('span', {
+					text: 'Refresh my understanding of your vault',
+					cls: 'gemini-agent-init-desc'
 				});
-
-				const buttonIcon = initButton.createDiv({ cls: 'gemini-agent-init-icon' });
-				setIcon(buttonIcon, 'sparkles');
-
-				const buttonText = initButton.createDiv({ cls: 'gemini-agent-init-text' });
+			} else {
 				buttonText.createEl('strong', { text: 'Initialize Vault Context' });
 				buttonText.createEl('span', {
 					text: 'Help me understand your vault structure and organization',
 					cls: 'gemini-agent-init-desc'
 				});
-
-				initButton.addEventListener('click', async () => {
-					// Run the vault analyzer
-					if (this.plugin.vaultAnalyzer) {
-						await this.plugin.vaultAnalyzer.initializeAgentsMemory();
-					}
-				});
 			}
+
+			initButton.addEventListener('click', async () => {
+				// Run the vault analyzer
+				if (this.plugin.vaultAnalyzer) {
+					await this.plugin.vaultAnalyzer.initializeAgentsMemory();
+				}
+			});
 
 			// Try to get recent sessions
 			const recentSessions = await this.plugin.sessionManager.getRecentAgentSessions(5);
