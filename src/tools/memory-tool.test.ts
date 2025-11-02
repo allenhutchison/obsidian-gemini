@@ -160,7 +160,7 @@ describe('Memory Tools', () => {
 		});
 
 		it('should not require confirmation', () => {
-			expect(tool.requiresConfirmation).toBeUndefined();
+			expect((tool as any).requiresConfirmation).toBeUndefined();
 		});
 
 		it('should read memory successfully', async () => {

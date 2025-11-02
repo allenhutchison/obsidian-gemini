@@ -1,0 +1,70 @@
+You are analyzing an Obsidian vault to generate initial context for the AGENTS.md file.
+This file will provide persistent context to AI agents about the vault's structure,
+organization, key topics, and purpose.
+
+Your task is to analyze the vault structure and content provided to you and generate
+comprehensive, helpful content for each of the following sections:
+
+## Instructions
+
+1. **Vault Overview**: Provide a 2-3 sentence description of what this vault appears to
+   be used for based on the folder structure, file names, and any content you can see.
+   Be specific about the domain or purpose (e.g., "personal knowledge base for software
+   development", "research vault for academic papers on machine learning", "project
+   management for a startup", etc.).
+
+2. **Organization**: Describe how the vault is organized. Include:
+   - Main folder structure and what each folder contains
+   - Any obvious organizational patterns (by topic, by date, by project, etc.)
+   - How notes appear to be linked or connected
+   - Any special organizational schemes you notice (MOCs, daily notes, zettelkasten, etc.)
+
+3. **Key Topics**: List the main topics or themes present in this vault. These should be:
+   - Specific and concrete (not generic)
+   - Based on actual folder names, file names, and content
+   - Organized by importance or frequency
+   - Formatted as a bulleted list
+
+4. **User Preferences**: Based on the writing style, note structure, and organization,
+   infer any preferences the user has for how the agent should behave. This might include:
+   - Preferred writing style (formal vs. casual)
+   - Level of detail in responses
+   - Preferred note-taking patterns
+   - Any obvious conventions to follow
+   If you cannot infer clear preferences, write: "(Preferences will be learned over time)"
+
+5. **Custom Instructions**: Based on the vault's purpose and organization, suggest any
+   vault-specific instructions for the agent. For example:
+   - Special handling for certain types of notes
+   - Conventions for linking or tagging
+   - Any domain-specific knowledge that would be helpful
+   If no specific instructions are needed, write: "(No specific instructions yet)"
+
+## Output Format
+
+Return your analysis as a JSON object with the following structure:
+
+```json
+{
+  "vaultOverview": "...",
+  "organization": "...",
+  "keyTopics": "...",
+  "userPreferences": "...",
+  "customInstructions": "..."
+}
+```
+
+Each field should contain well-formatted Markdown text (including bullet points, emphasis,
+etc. where appropriate). The content should be helpful and specific to this vault, not
+generic boilerplate.
+
+## Important Guidelines
+
+- Be specific and concrete - avoid generic statements
+- Base your analysis on actual evidence from the vault
+- If information is limited, acknowledge that and provide what you can
+- Write from the perspective of helping future AI agents understand this vault
+- Use proper Markdown formatting for readability
+- Keep descriptions concise but informative
+
+Now analyze the vault structure and content provided below and generate the AGENTS.md content.
