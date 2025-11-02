@@ -582,6 +582,16 @@ export class AgentView extends ItemView {
 		}
 	}
 
+	/**
+	 * Check if a session is the current session
+	 * Compares both session ID and history path for robustness
+	 */
+	private isCurrentSession(session: ChatSession): boolean {
+		if (!this.currentSession) return false;
+		return session.id === this.currentSession.id ||
+		       session.historyPath === this.currentSession.historyPath;
+	}
+
 	private async loadSessionHistory() {
 		if (!this.currentSession) return;
 
@@ -2373,8 +2383,12 @@ User: ${history[0].message}`;
 				}
 			});
 
-			// Try to get recent sessions
-			const recentSessions = await this.plugin.sessionManager.getRecentAgentSessions(5);
+			// Try to get recent sessions (excluding the current session)
+			// Fetch 6 sessions since we might filter out the current one
+			const allRecentSessions = await this.plugin.sessionManager.getRecentAgentSessions(6);
+			const recentSessions = allRecentSessions
+				.filter(session => !this.isCurrentSession(session))
+				.slice(0, 5); // Limit to 5 after filtering
 
 			if (recentSessions.length > 0) {
 				// Show recent sessions
