@@ -2256,6 +2256,67 @@ If your plugin does not need CSS, delete this file.
 	font-size: var(--font-ui-smaller);
 }
 
+/* Initialize Context Button */
+.gemini-agent-init-context-button {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+	padding: var(--size-4-4) var(--size-4-4);
+	margin: var(--size-4-4) 0;
+	background: linear-gradient(135deg, var(--interactive-accent), var(--interactive-accent-hover));
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-l);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	width: 100%;
+	max-width: 400px;
+}
+
+.gemini-agent-init-context-button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+	border-color: var(--interactive-accent-hover);
+}
+
+.gemini-agent-init-icon {
+	width: 40px;
+	height: 40px;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: var(--radius-m);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.gemini-agent-init-icon svg {
+	width: 24px;
+	height: 24px;
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-init-text {
+	flex: 1;
+	text-align: left;
+}
+
+.gemini-agent-init-text strong {
+	display: block;
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	color: var(--text-on-accent);
+	margin-bottom: var(--size-2-1);
+}
+
+.gemini-agent-init-desc {
+	display: block;
+	font-size: var(--font-ui-small);
+	color: var(--text-on-accent);
+	opacity: 0.9;
+	line-height: 1.4;
+}
+
 /* Google Search Citations Styling */
 
 .gemini-agent-tool-search-answer {

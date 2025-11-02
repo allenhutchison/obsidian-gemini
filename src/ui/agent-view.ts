@@ -66,7 +66,7 @@ export class AgentView extends ItemView {
 		container.empty();
 		container.addClass('gemini-agent-container');
 
-		this.createAgentInterface(container as HTMLElement);
+		await this.createAgentInterface(container as HTMLElement);
 
 		// Register link click handler for internal links
 		this.registerLinkClickHandler();
@@ -87,7 +87,7 @@ export class AgentView extends ItemView {
 		await this.createNewSession();
 	}
 
-	private createAgentInterface(container: HTMLElement) {
+	private async createAgentInterface(container: HTMLElement) {
 		// Add the main container class
 		container.addClass('gemini-agent-container');
 		
@@ -101,7 +101,7 @@ export class AgentView extends ItemView {
 
 		// Chat container (will expand to fill available space)
 		this.chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
-		this.showEmptyState();
+		await this.showEmptyState();
 
 		// Input area
 		const inputArea = container.createDiv({ cls: 'gemini-agent-input-area' });
@@ -525,7 +525,7 @@ export class AgentView extends ItemView {
 			// Update UI (no history to load for new session)
 			this.createSessionHeader();
 			this.createContextPanel();
-			this.showEmptyState();
+			await this.showEmptyState();
 			
 			// Focus on input
 			this.userInput.focus();
