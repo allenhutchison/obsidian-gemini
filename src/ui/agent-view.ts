@@ -30,6 +30,24 @@ import { shouldExcludePathForPlugin } from '../utils/file-utils';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
+// Documentation and help content
+const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
+const AGENT_MODE_GUIDE_URL = `${DOCS_BASE_URL}/agent-mode-guide.md`;
+
+const AGENT_CAPABILITIES = [
+	{ icon: 'search', text: 'Search and read files in your vault' },
+	{ icon: 'file-edit', text: 'Create, modify, and organize notes' },
+	{ icon: 'globe', text: 'Search the web and fetch information' },
+	{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' }
+] as const;
+
+const EXAMPLE_PROMPTS = [
+	{ icon: 'search', text: 'Find all notes tagged with #important' },
+	{ icon: 'file-plus', text: 'Create a weekly summary of my meeting notes' },
+	{ icon: 'globe', text: 'Research productivity methods and create notes' },
+	{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
+] as const;
+
 export class AgentView extends ItemView {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private currentSession: ChatSession | null = null;
@@ -2290,14 +2308,7 @@ User: ${history[0].message}`;
 
 			const capList = capabilities.createEl('ul', { cls: 'gemini-agent-capabilities-list' });
 
-			const capabilityItems = [
-				{ icon: 'search', text: 'Search and read files in your vault' },
-				{ icon: 'file-edit', text: 'Create, modify, and organize notes' },
-				{ icon: 'globe', text: 'Search the web and fetch information' },
-				{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' }
-			];
-
-			capabilityItems.forEach(item => {
+			AGENT_CAPABILITIES.forEach(item => {
 				const li = capList.createEl('li', { cls: 'gemini-agent-capability-item' });
 				const iconEl = li.createSpan({ cls: 'gemini-agent-capability-icon' });
 				setIcon(iconEl, item.icon);
@@ -2310,10 +2321,21 @@ User: ${history[0].message}`;
 				text: '📖 Learn more about Agent Mode',
 				cls: 'gemini-agent-docs-link-text'
 			});
-			linkEl.href = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs/agent-mode-guide.md';
+			linkEl.href = AGENT_MODE_GUIDE_URL;
+			linkEl.setAttribute('aria-label', 'Open Agent Mode documentation in new tab');
 			linkEl.addEventListener('click', (e) => {
 				e.preventDefault();
-				window.open(linkEl.href, '_blank');
+				// Validate URL before opening
+				if (linkEl.href.startsWith(DOCS_BASE_URL)) {
+					try {
+						window.open(linkEl.href, '_blank');
+					} catch (error) {
+						console.error('Failed to open documentation link:', error);
+						new Notice('Failed to open documentation. Please check your browser settings.');
+					}
+				} else {
+					console.error('Invalid documentation URL');
+				}
 			});
 
 			// Check if AGENTS.md exists and show appropriate button
@@ -2392,14 +2414,7 @@ User: ${history[0].message}`;
 
 			const examplesContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions gemini-agent-examples' });
 
-			const examplePrompts = [
-				{ icon: 'search', text: 'Find all notes tagged with #important' },
-				{ icon: 'file-plus', text: 'Create a weekly summary of my meeting notes' },
-				{ icon: 'globe', text: 'Research productivity methods and create notes' },
-				{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
-			];
-
-			examplePrompts.forEach(example => {
+			EXAMPLE_PROMPTS.forEach(example => {
 				const suggestion = examplesContainer.createDiv({
 					cls: 'gemini-agent-suggestion gemini-agent-suggestion-example'
 				});
