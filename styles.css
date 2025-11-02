@@ -2348,6 +2348,117 @@ If your plugin does not need CSS, delete this file.
 	opacity: 1;
 }
 
+/* Agent Capabilities Section */
+.gemini-agent-capabilities {
+	width: 100%;
+	max-width: 400px;
+	margin: var(--size-4-6) 0 var(--size-4-4) 0;
+	padding: var(--size-4-4);
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+}
+
+.gemini-agent-capabilities-title {
+	margin: 0 0 var(--size-4-3) 0;
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-agent-capabilities-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.gemini-agent-capability-item {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-2-2) 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.gemini-agent-capability-icon {
+	width: 16px;
+	height: 16px;
+	color: var(--interactive-accent);
+	flex-shrink: 0;
+}
+
+.gemini-agent-capability-icon svg {
+	width: 100%;
+	height: 100%;
+}
+
+.gemini-agent-capability-text {
+	flex: 1;
+}
+
+.gemini-agent-docs-link {
+	margin-top: var(--size-4-3);
+	padding-top: var(--size-4-3);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-docs-link-text {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	font-size: var(--font-ui-small);
+	color: var(--interactive-accent);
+	text-decoration: none;
+	cursor: pointer;
+	transition: color 0.15s ease;
+}
+
+.gemini-agent-docs-link-text:hover {
+	color: var(--interactive-accent-hover);
+	text-decoration: underline;
+}
+
+/* Suggestions Header */
+.gemini-agent-suggestions-header {
+	margin: var(--size-4-4) 0 var(--size-4-2) 0;
+	font-size: var(--font-ui-small);
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	width: 100%;
+	max-width: 400px;
+}
+
+/* Example Prompts with Icons */
+.gemini-agent-suggestion-example {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.gemini-agent-example-icon {
+	width: 16px;
+	height: 16px;
+	color: var(--text-muted);
+	flex-shrink: 0;
+}
+
+.gemini-agent-example-icon svg {
+	width: 100%;
+	height: 100%;
+}
+
+.gemini-agent-suggestion-example:hover .gemini-agent-example-icon {
+	color: var(--interactive-accent);
+}
+
+.gemini-agent-example-text {
+	flex: 1;
+	text-align: left;
+}
+
 /* Google Search Citations Styling */
 
 .gemini-agent-tool-search-answer {
