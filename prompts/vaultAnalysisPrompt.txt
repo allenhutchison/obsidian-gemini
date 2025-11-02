@@ -32,17 +32,24 @@ comprehensive, helpful content for each of the following sections.
    development", "research vault for academic papers on machine learning", "project
    management for a startup", etc.).
 
+   Format as 1-2 short paragraphs with proper line breaks between sentences if needed.
+
 2. **Organization**: Describe how the vault is organized. Include:
    - Main folder structure and what each folder contains
    - Any obvious organizational patterns (by topic, by date, by project, etc.)
    - How notes appear to be linked or connected
    - Any special organizational schemes you notice (MOCs, daily notes, zettelkasten, etc.)
 
+   Format as 2-3 paragraphs with proper spacing. Use bullet points where appropriate for
+   listing folders or organizational patterns.
+
 3. **Key Topics**: List the main topics or themes present in this vault. These should be:
    - Specific and concrete (not generic)
    - Based on actual folder names, file names, and content
    - Organized by importance or frequency
-   - Formatted as a bulleted list
+   - Formatted as a bulleted list with proper spacing
+
+   Use a clear bulleted list format with one topic per line.
 
 4. **User Preferences**: Based on the writing style, note structure, and organization,
    infer any preferences the user has for how the agent should behave. This might include:
@@ -50,14 +57,18 @@ comprehensive, helpful content for each of the following sections.
    - Level of detail in responses
    - Preferred note-taking patterns
    - Any obvious conventions to follow
-   If you cannot infer clear preferences, write: "(Preferences will be learned over time)"
+
+   Format as 2-3 short paragraphs. If you cannot infer clear preferences, write:
+   "(Preferences will be learned over time)"
 
 5. **Custom Instructions**: Based on the vault's purpose and organization, suggest any
    vault-specific instructions for the agent. For example:
    - Special handling for certain types of notes
    - Conventions for linking or tagging
    - Any domain-specific knowledge that would be helpful
-   If no specific instructions are needed, write: "(No specific instructions yet)"
+
+   Format as bullet points or short paragraphs. If no specific instructions are needed, write:
+   "(No specific instructions yet)"
 
 ## Output Format
 
@@ -73,9 +84,14 @@ Return your analysis as a JSON object with the following structure:
 }
 ```
 
-Each field should contain well-formatted Markdown text (including bullet points, emphasis,
-etc. where appropriate). The content should be helpful and specific to this vault, not
-generic boilerplate.
+Each field should contain well-formatted Markdown text with:
+- Proper paragraph breaks (use `\n\n` for paragraph spacing)
+- Bullet points where appropriate (use `- ` for lists)
+- Emphasis markers where helpful (use `**bold**` or `*italic*`)
+- Clear structure and readability
+
+The content should be helpful and specific to this vault, not generic boilerplate.
+IMPORTANT: Use actual newline characters (`\n`) in your JSON strings for proper formatting.
 
 ## Important Guidelines
 

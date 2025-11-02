@@ -2,6 +2,7 @@ import { TFolder, TFile, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { GeminiClientFactory } from '../api/simple-factory';
 import { AgentsMemoryData } from './agents-memory';
+import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
 
 /**
  * Service for analyzing vault structure and generating AGENTS.md content
@@ -13,11 +14,23 @@ export class VaultAnalyzer {
 	 * Analyze the vault and initialize/update AGENTS.md
 	 */
 	async initializeAgentsMemory(): Promise<void> {
-		try {
-			new Notice('Analyzing vault structure...');
+		// Create and open the progress modal
+		const modal = new VaultAnalysisModal(this.plugin.app);
+		modal.open();
 
-			// Collect vault information
+		// Define steps
+		modal.addStep('collect', 'Collecting vault information');
+		modal.addStep('analyze', 'Analyzing with AI');
+		modal.addStep('parse', 'Processing results');
+		modal.addStep('render', 'Rendering template');
+		modal.addStep('write', 'Writing AGENTS.md');
+
+		try {
+			// Step 1: Collect vault information
+			modal.setStepInProgress('collect');
+			modal.updateStatus('Analyzing vault structure...');
 			const vaultInfo = this.collectVaultInformation();
+			modal.setStepComplete('collect');
 
 			// Read existing AGENTS.md if it exists
 			const existingContent = await this.plugin.agentsMemory.read();
@@ -25,9 +38,9 @@ export class VaultAnalyzer {
 			// Build the analysis prompt
 			const analysisPrompt = this.buildAnalysisPrompt(vaultInfo, existingContent);
 
-			new Notice('Generating vault context with AI...');
-
-			// Call the API to analyze and generate content
+			// Step 2: Call AI
+			modal.setStepInProgress('analyze');
+			modal.updateStatus('Generating vault context with AI...');
 			const modelApi = GeminiClientFactory.createChatModel(this.plugin);
 			const response = await modelApi.generateModelResponse({
 				prompt: analysisPrompt,
@@ -36,23 +49,42 @@ export class VaultAnalyzer {
 				conversationHistory: [],
 				renderContent: false
 			});
+			modal.setStepComplete('analyze');
 
-			// Parse the JSON response
+			// Step 3: Parse response
+			modal.setStepInProgress('parse');
+			modal.updateStatus('Processing AI response...');
 			const generatedData = this.parseAnalysisResponse(response.markdown);
 
 			if (!generatedData) {
-				new Notice('Failed to parse AI response. Please try again.');
+				modal.setStepFailed('parse', 'Failed to parse AI response');
 				console.error('Failed to parse analysis response:', response.markdown);
+				new Notice('Failed to parse AI response. Check console for details.');
+				setTimeout(() => modal.close(), 3000);
 				return;
 			}
 
-			// Render the content using the template
+			// Debug: Log the parsed data structure
+			if (this.plugin.settings.debugMode) {
+				console.log('Parsed AGENTS.md data:', generatedData);
+			}
+			modal.setStepComplete('parse');
+
+			// Step 4: Render template
+			modal.setStepInProgress('render');
+			modal.updateStatus('Rendering content...');
 			const renderedContent = await this.plugin.agentsMemory.render(generatedData);
+			modal.setStepComplete('render');
 
-			// Write to AGENTS.md
+			// Step 5: Write to file
+			modal.setStepInProgress('write');
+			modal.updateStatus('Writing AGENTS.md...');
 			await this.plugin.agentsMemory.write(renderedContent);
+			modal.setStepComplete('write');
 
+			// Success!
 			const action = existingContent ? 'updated' : 'created';
+			modal.setComplete(`AGENTS.md ${action} successfully!`);
 			new Notice(`AGENTS.md ${action} successfully!`);
 
 			// Open the file for review
@@ -63,7 +95,9 @@ export class VaultAnalyzer {
 			}
 		} catch (error) {
 			console.error('Failed to initialize AGENTS.md:', error);
+			modal.setStepFailed(modal['currentStep'], error instanceof Error ? error.message : 'Unknown error');
 			new Notice('Failed to initialize AGENTS.md. Check console for details.');
+			setTimeout(() => modal.close(), 3000);
 		}
 	}
 
