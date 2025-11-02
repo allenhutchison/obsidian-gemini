@@ -17,6 +17,8 @@ import selectionRewritePromptContent from '../prompts/selectionRewritePrompt.txt
 // @ts-ignore
 import agentToolsPromptContent from '../prompts/agentToolsPrompt.txt';
 // @ts-ignore
+import vaultAnalysisPromptContent from '../prompts/vaultAnalysisPrompt.txt';
+// @ts-ignore
 import imagePromptGeneratorContent from '../prompts/imagePromptGenerator.txt';
 
 export class GeminiPrompts {
@@ -27,6 +29,7 @@ export class GeminiPrompts {
 	private contextPromptTemplate: Handlebars.TemplateDelegate;
 	private selectionRewritePromptTemplate: Handlebars.TemplateDelegate;
 	private agentToolsPromptTemplate: Handlebars.TemplateDelegate;
+	private vaultAnalysisPromptTemplate: Handlebars.TemplateDelegate;
 	private imagePromptGeneratorTemplate: Handlebars.TemplateDelegate;
 
 	constructor(private plugin?: InstanceType<typeof ObsidianGemini>) {
@@ -37,6 +40,7 @@ export class GeminiPrompts {
 		this.contextPromptTemplate = Handlebars.compile(contextPromptContent);
 		this.selectionRewritePromptTemplate = Handlebars.compile(selectionRewritePromptContent);
 		this.agentToolsPromptTemplate = Handlebars.compile(agentToolsPromptContent);
+		this.vaultAnalysisPromptTemplate = Handlebars.compile(vaultAnalysisPromptContent);
 		this.imagePromptGeneratorTemplate = Handlebars.compile(imagePromptGeneratorContent);
 	}
 
@@ -62,6 +66,10 @@ export class GeminiPrompts {
 
 	selectionRewritePrompt(variables: { [key: string]: string }): string {
 		return this.selectionRewritePromptTemplate(variables);
+	}
+
+	vaultAnalysisPrompt(variables: { [key: string]: string }): string {
+		return this.vaultAnalysisPromptTemplate(variables);
 	}
 
 	imagePromptGenerator(variables: { [key: string]: string }): string {
@@ -101,21 +109,23 @@ export class GeminiPrompts {
 	 *
 	 * @param availableTools - Optional array of tool definitions
 	 * @param customPrompt - Optional custom prompt to append or override
+	 * @param agentsMemory - Optional AGENTS.md content to include
 	 * @returns Complete system prompt
 	 */
-	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt): string {
+	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt, agentsMemory?: string | null): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
 			console.warn('System prompt override enabled. Base functionality may be affected.');
 			return customPrompt.content;
 		}
 
-		// Build base system prompt
+		// Build base system prompt with agentsMemory as a template variable
 		const baseSystemPrompt = this.systemPrompt({
 			userName: this.plugin?.settings.userName || 'User',
 			language: this.getLanguageCode(),
 			date: new Date().toLocaleDateString(),
 			time: new Date().toLocaleTimeString(),
+			agentsMemory: agentsMemory || '', // Pass as template variable
 		});
 
 		let fullPrompt = baseSystemPrompt;

@@ -1,15 +1,16 @@
 import { App, Modal, TFile, Setting } from 'obsidian';
-import { shouldExcludePath } from '../utils/file-utils';
+import { shouldExcludePathForPlugin } from '../utils/file-utils';
+import type ObsidianGemini from '../main';
 
 export class FilePickerModal extends Modal {
 	private onSelect: (files: TFile[]) => void;
 	private selectedFiles: Set<TFile> = new Set();
-	private excludeFolder: string;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 
-	constructor(app: App, onSelect: (files: TFile[]) => void, excludeFolder?: string) {
+	constructor(app: App, onSelect: (files: TFile[]) => void, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(app);
 		this.onSelect = onSelect;
-		this.excludeFolder = excludeFolder || '';
+		this.plugin = plugin;
 	}
 
 	onOpen() {
@@ -21,7 +22,7 @@ export class FilePickerModal extends Modal {
 		// Get all markdown files in the vault, excluding system and plugin folders
 		const allFiles = this.app.vault.getMarkdownFiles();
 		const markdownFiles = allFiles.filter(file =>
-			!shouldExcludePath(file.path, this.excludeFolder)
+			!shouldExcludePathForPlugin(file.path, this.plugin)
 		);
 
 		// Create a container for the file list

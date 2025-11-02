@@ -1,14 +1,15 @@
 import { FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian';
-import { shouldExcludePath } from '../utils/file-utils';
+import { shouldExcludePathForPlugin } from '../utils/file-utils';
+import type ObsidianGemini from '../main';
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	private onSelect: (file: TAbstractFile) => void;
-	private excludeFolder: string;
+	private plugin: InstanceType<typeof ObsidianGemini>;
 
-	constructor(app: any, onSelect: (file: TAbstractFile) => void, excludeFolder?: string) {
+	constructor(app: any, onSelect: (file: TAbstractFile) => void, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(app);
 		this.onSelect = onSelect;
-		this.excludeFolder = excludeFolder || '';
+		this.plugin = plugin;
 		this.setPlaceholder('Select a file or folder to mention...');
 	}
 
@@ -18,14 +19,14 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 		// Add all markdown files except those in excluded folders
 		const allFiles = this.app.vault.getMarkdownFiles();
 		const filteredFiles = allFiles.filter((file: TFile) =>
-			!shouldExcludePath(file.path, this.excludeFolder)
+			!shouldExcludePathForPlugin(file.path, this.plugin)
 		);
 		items.push(...filteredFiles);
 
 		// Add all folders except system and plugin folders
 		const addFolders = (folder: TFolder) => {
 			// Skip excluded folders
-			if (shouldExcludePath(folder.path, this.excludeFolder)) return;
+			if (shouldExcludePathForPlugin(folder.path, this.plugin)) return;
 			
 			if (folder.path) { // Don't add root folder
 				items.push(folder);

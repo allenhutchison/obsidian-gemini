@@ -21,6 +21,11 @@ import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
 import { getVaultTools } from './tools/vault-tools';
 import { SessionHistory } from './agent/session-history';
+import { AgentsMemory } from './services/agents-memory';
+import { VaultAnalyzer } from './services/vault-analyzer';
+
+// @ts-ignore
+import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -96,6 +101,8 @@ export default class ObsidianGemini extends Plugin {
 	public sessionManager: SessionManager;
 	public toolRegistry: ToolRegistry;
 	public toolExecutionEngine: ToolExecutionEngine;
+	public agentsMemory: AgentsMemory;
+	public vaultAnalyzer: VaultAnalyzer;
 	public imageGeneration: ImageGeneration;
 
 	// Private members
@@ -224,6 +231,9 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize session manager and session history
 		this.sessionManager = new SessionManager(this);
 		this.sessionHistory = new SessionHistory(this);
+
+		// Initialize agents memory
+		this.agentsMemory = new AgentsMemory(this, agentsMemoryTemplateContent);
 		if (this.app.workspace.layoutReady) {
 			await this.history.onLayoutReady;
 		}
@@ -245,6 +255,13 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 
+		// Register memory tools
+		const { getMemoryTools } = await import('./tools/memory-tool');
+		const memoryTools = getMemoryTools();
+		for (const tool of memoryTools) {
+			this.toolRegistry.registerTool(tool);
+		}
+
 		// Register image generation tools
 		const { getImageTools } = await import('./tools/image-tools');
 		const imageTools = getImageTools();
@@ -260,6 +277,10 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize summarization
 		this.summarizer = new GeminiSummary(this);
 		await this.summarizer.setupSummarizationCommand();
+
+		// Initialize vault analyzer for AGENTS.md
+		this.vaultAnalyzer = new VaultAnalyzer(this);
+		this.vaultAnalyzer.setupInitCommand();
 
 		// Initialize image generation
 		this.imageGeneration = new ImageGeneration(this);

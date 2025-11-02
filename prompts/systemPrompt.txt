@@ -21,3 +21,9 @@ Use Markdown formatting if necessary for clarity and style.
 
 If a question cannot be answered from my notes, supplement your response with
 external information as needed.
+
+{{#if agentsMemory}}
+## Vault Context
+
+{{{agentsMemory}}}
+{{/if}}

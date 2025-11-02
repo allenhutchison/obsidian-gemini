@@ -66,7 +66,7 @@ export class AgentView extends ItemView {
 		container.empty();
 		container.addClass('gemini-agent-container');
 
-		this.createAgentInterface(container as HTMLElement);
+		await this.createAgentInterface(container as HTMLElement);
 
 		// Register link click handler for internal links
 		this.registerLinkClickHandler();
@@ -87,10 +87,10 @@ export class AgentView extends ItemView {
 		await this.createNewSession();
 	}
 
-	private createAgentInterface(container: HTMLElement) {
+	private async createAgentInterface(container: HTMLElement) {
 		// Add the main container class
 		container.addClass('gemini-agent-container');
-
+		
 		// Compact header bar with title and primary controls
 		this.sessionHeader = container.createDiv({ cls: 'gemini-agent-header gemini-agent-header-compact' });
 		this.createCompactHeader();
@@ -101,7 +101,7 @@ export class AgentView extends ItemView {
 
 		// Chat container (will expand to fill available space)
 		this.chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
-		// Empty state will be shown by createNewSession()
+		await this.showEmptyState();
 
 		// Input area
 		const inputArea = container.createDiv({ cls: 'gemini-agent-input-area' });
@@ -465,7 +465,7 @@ export class AgentView extends ItemView {
 				this.updateSessionHeader();
 				this.updateSessionMetadata();
 			},
-			this.plugin.settings.historyFolder // Exclude plugin state folder
+			this.plugin // Plugin instance for automatic exclusion
 		);
 
 		modal.open();
@@ -527,7 +527,7 @@ export class AgentView extends ItemView {
 			this.createSessionHeader();
 			this.createContextPanel();
 			await this.showEmptyState();
-
+			
 			// Focus on input
 			this.userInput.focus();
 		} catch (error) {
@@ -757,7 +757,7 @@ export class AgentView extends ItemView {
 					this.insertFileChip(item);
 				}
 			},
-			this.plugin.settings.historyFolder // Exclude plugin state folder
+			this.plugin // Plugin instance for automatic exclusion
 		);
 		modal.open();
 	}
@@ -2030,8 +2030,66 @@ User: ${history[0].message}`;
 					console.log('Tool result is object for:', toolName);
 					console.log('Result data keys:', Object.keys(result.data));
 					
+					// Special handling for google_search results with citations
+					if (result.data.answer && result.data.citations && toolName === 'google_search') {
+						console.log('Handling google_search result with citations');
+						// Display the answer
+						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
+						answerDiv.createEl('h5', { text: 'Answer:' });
+						
+						// Render the answer with markdown links
+						const answerPara = answerDiv.createEl('p');
+						// Parse markdown links in the answer
+						const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+						let lastIndex = 0;
+						let match;
+						
+						while ((match = linkRegex.exec(result.data.answer)) !== null) {
+							// Add text before the link
+							if (match.index > lastIndex) {
+								answerPara.appendText(result.data.answer.substring(lastIndex, match.index));
+							}
+							
+							// Add the link
+							const link = answerPara.createEl('a', {
+								text: match[1],
+								href: match[2]
+							});
+							link.setAttribute('target', '_blank');
+							
+							lastIndex = linkRegex.lastIndex;
+						}
+						
+						// Add any remaining text
+						if (lastIndex < result.data.answer.length) {
+							answerPara.appendText(result.data.answer.substring(lastIndex));
+						}
+						
+						// Display citations if available
+						if (result.data.citations.length > 0) {
+							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
+							citationsDiv.createEl('h5', { text: 'Sources:' });
+							
+							const citationsList = citationsDiv.createEl('ul', { cls: 'gemini-agent-tool-citations-list' });
+							for (const citation of result.data.citations) {
+								const citationItem = citationsList.createEl('li');
+								const link = citationItem.createEl('a', {
+									text: citation.title || citation.url,
+									href: citation.url,
+									cls: 'gemini-agent-tool-citation-link'
+								});
+								link.setAttribute('target', '_blank');
+								
+								if (citation.snippet) {
+									citationItem.createEl('p', {
+										text: citation.snippet,
+										cls: 'gemini-agent-tool-citation-snippet'
+									});
+								}
+							}
+						}
 					// Special handling for generate_image results
-					if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
+					} else if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
 						// Display the generated image
 						const imageDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-image-result' });
 						imageDiv.createEl('h5', { text: 'Generated Image:' });
@@ -2098,68 +2156,8 @@ User: ${history[0].message}`;
 								cls: 'gemini-agent-tool-image-path'
 							});
 						}
-					}
-					// Special handling for google_search results with citations
-					else if (result.data.answer && result.data.citations && toolName === 'google_search') {
-						console.log('Handling google_search result with citations');
-						// Display the answer
-						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
-						answerDiv.createEl('h5', { text: 'Answer:' });
-
-						// Render the answer with markdown links
-						const answerPara = answerDiv.createEl('p');
-						// Parse markdown links in the answer
-						const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-						let lastIndex = 0;
-						let match;
-
-						while ((match = linkRegex.exec(result.data.answer)) !== null) {
-							// Add text before the link
-							if (match.index > lastIndex) {
-								answerPara.appendText(result.data.answer.substring(lastIndex, match.index));
-							}
-
-							// Add the link
-							const link = answerPara.createEl('a', {
-								text: match[1],
-								href: match[2]
-							});
-							link.setAttribute('target', '_blank');
-
-							lastIndex = linkRegex.lastIndex;
-						}
-
-						// Add any remaining text
-						if (lastIndex < result.data.answer.length) {
-							answerPara.appendText(result.data.answer.substring(lastIndex));
-						}
-
-						// Display citations if available
-						if (result.data.citations.length > 0) {
-							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
-							citationsDiv.createEl('h5', { text: 'Sources:' });
-
-							const citationsList = citationsDiv.createEl('ul', { cls: 'gemini-agent-tool-citations-list' });
-							for (const citation of result.data.citations) {
-								const citationItem = citationsList.createEl('li');
-								const link = citationItem.createEl('a', {
-									text: citation.title || citation.url,
-									href: citation.url,
-									cls: 'gemini-agent-tool-citation-link'
-								});
-								link.setAttribute('target', '_blank');
-
-								if (citation.snippet) {
-									citationItem.createEl('p', {
-										text: citation.snippet,
-										cls: 'gemini-agent-tool-citation-snippet'
-									});
-								}
-							}
-						}
-					}
 					// Special handling for read_file results
-					else if (result.data.content && result.data.path) {
+					} else if (result.data.content && result.data.path) {
 						// This is a file read result
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
 						fileInfo.createEl('strong', { text: 'File: ' });
@@ -2251,6 +2249,41 @@ User: ${history[0].message}`;
 			emptyState.createEl('p', {
 				text: 'Start a new session by typing below, or pick from recent sessions to continue.',
 				cls: 'gemini-agent-empty-desc'
+			});
+
+			// Check if AGENTS.md exists and show appropriate button
+			const agentsMemoryExists = await this.plugin.agentsMemory.exists();
+
+			const initButton = emptyState.createDiv({
+				cls: agentsMemoryExists
+					? 'gemini-agent-init-context-button gemini-agent-init-context-button-update'
+					: 'gemini-agent-init-context-button'
+			});
+
+			const buttonIcon = initButton.createDiv({ cls: 'gemini-agent-init-icon' });
+			setIcon(buttonIcon, agentsMemoryExists ? 'refresh-cw' : 'sparkles');
+
+			const buttonText = initButton.createDiv({ cls: 'gemini-agent-init-text' });
+
+			if (agentsMemoryExists) {
+				buttonText.createEl('strong', { text: 'Update Vault Context' });
+				buttonText.createEl('span', {
+					text: 'Refresh my understanding of your vault',
+					cls: 'gemini-agent-init-desc'
+				});
+			} else {
+				buttonText.createEl('strong', { text: 'Initialize Vault Context' });
+				buttonText.createEl('span', {
+					text: 'Help me understand your vault structure and organization',
+					cls: 'gemini-agent-init-desc'
+				});
+			}
+
+			initButton.addEventListener('click', async () => {
+				// Run the vault analyzer
+				if (this.plugin.vaultAnalyzer) {
+					await this.plugin.vaultAnalyzer.initializeAgentsMemory();
+				}
 			});
 
 			// Try to get recent sessions
