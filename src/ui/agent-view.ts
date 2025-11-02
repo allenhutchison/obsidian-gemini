@@ -2276,8 +2276,44 @@ User: ${history[0].message}`;
 			});
 
 			emptyState.createEl('p', {
-				text: 'Start a new session by typing below, or pick from recent sessions to continue.',
+				text: 'Your AI assistant that can actively work with your vault.',
 				cls: 'gemini-agent-empty-desc'
+			});
+
+			// What can the agent do section
+			const capabilities = emptyState.createDiv({ cls: 'gemini-agent-capabilities' });
+
+			capabilities.createEl('h4', {
+				text: 'What can the Agent do?',
+				cls: 'gemini-agent-capabilities-title'
+			});
+
+			const capList = capabilities.createEl('ul', { cls: 'gemini-agent-capabilities-list' });
+
+			const capabilityItems = [
+				{ icon: 'search', text: 'Search and read files in your vault' },
+				{ icon: 'file-edit', text: 'Create, modify, and organize notes' },
+				{ icon: 'globe', text: 'Search the web and fetch information' },
+				{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' }
+			];
+
+			capabilityItems.forEach(item => {
+				const li = capList.createEl('li', { cls: 'gemini-agent-capability-item' });
+				const iconEl = li.createSpan({ cls: 'gemini-agent-capability-icon' });
+				setIcon(iconEl, item.icon);
+				li.createSpan({ text: item.text, cls: 'gemini-agent-capability-text' });
+			});
+
+			// Documentation link
+			const docsLink = capabilities.createDiv({ cls: 'gemini-agent-docs-link' });
+			const linkEl = docsLink.createEl('a', {
+				text: '📖 Learn more about Agent Mode',
+				cls: 'gemini-agent-docs-link-text'
+			});
+			linkEl.href = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs/agent-mode-guide.md';
+			linkEl.addEventListener('click', (e) => {
+				e.preventDefault();
+				window.open(linkEl.href, '_blank');
 			});
 
 			// Check if AGENTS.md exists and show appropriate button
@@ -2318,21 +2354,17 @@ User: ${history[0].message}`;
 			// Try to get recent sessions
 			const recentSessions = await this.plugin.sessionManager.getRecentAgentSessions(5);
 
-			// Create suggestions container (used for both recent sessions and example prompts)
-			const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
-
 			if (recentSessions.length > 0) {
-				// Show recent sessions header
-				emptyState.insertBefore(
-					emptyState.createEl('p', {
-						text: 'Recent sessions:',
-						cls: 'gemini-agent-suggestions-header'
-					}),
-					suggestions
-				);
+				// Show recent sessions
+				emptyState.createEl('p', {
+					text: 'Recent sessions:',
+					cls: 'gemini-agent-suggestions-header'
+				});
+
+				const sessionsContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
 
 				recentSessions.forEach(session => {
-					const suggestion = suggestions.createDiv({
+					const suggestion = sessionsContainer.createDiv({
 						cls: 'gemini-agent-suggestion gemini-agent-suggestion-session'
 					});
 
@@ -2350,25 +2382,41 @@ User: ${history[0].message}`;
 						await this.loadSession(session);
 					});
 				});
-			} else {
-				// Show example prompts
-				const suggestionTexts = [
-					'What files are in my vault?',
-					'Search for notes about "project"',
-					'Create a summary of my recent notes'
-				];
-
-				suggestionTexts.forEach(text => {
-					const suggestion = suggestions.createDiv({
-						text,
-						cls: 'gemini-agent-suggestion'
-					});
-					suggestion.addEventListener('click', () => {
-						this.userInput.textContent = text;
-						this.userInput.focus();
-					});
-				});
 			}
+
+			// Always show example prompts
+			emptyState.createEl('p', {
+				text: 'Try these examples:',
+				cls: 'gemini-agent-suggestions-header'
+			});
+
+			const examplesContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions gemini-agent-examples' });
+
+			const examplePrompts = [
+				{ icon: 'search', text: 'Find all notes tagged with #important' },
+				{ icon: 'file-plus', text: 'Create a weekly summary of my meeting notes' },
+				{ icon: 'globe', text: 'Research productivity methods and create notes' },
+				{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
+			];
+
+			examplePrompts.forEach(example => {
+				const suggestion = examplesContainer.createDiv({
+					cls: 'gemini-agent-suggestion gemini-agent-suggestion-example'
+				});
+
+				const iconEl = suggestion.createSpan({ cls: 'gemini-agent-example-icon' });
+				setIcon(iconEl, example.icon);
+
+				suggestion.createSpan({
+					text: example.text,
+					cls: 'gemini-agent-example-text'
+				});
+
+				suggestion.addEventListener('click', () => {
+					this.userInput.textContent = example.text;
+					this.userInput.focus();
+				});
+			});
 		}
 	}
 	
