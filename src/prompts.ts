@@ -93,21 +93,23 @@ export class GeminiPrompts {
 	 *
 	 * @param availableTools - Optional array of tool definitions
 	 * @param customPrompt - Optional custom prompt to append or override
+	 * @param agentsMemory - Optional AGENTS.md content to include
 	 * @returns Complete system prompt
 	 */
-	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt): string {
+	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt, agentsMemory?: string | null): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
 			console.warn('System prompt override enabled. Base functionality may be affected.');
 			return customPrompt.content;
 		}
 
-		// Build base system prompt
+		// Build base system prompt with agentsMemory as a template variable
 		const baseSystemPrompt = this.systemPrompt({
 			userName: this.plugin?.settings.userName || 'User',
 			language: this.getLanguageCode(),
 			date: new Date().toLocaleDateString(),
 			time: new Date().toLocaleTimeString(),
+			agentsMemory: agentsMemory || '', // Pass as template variable
 		});
 
 		let fullPrompt = baseSystemPrompt;

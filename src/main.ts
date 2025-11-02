@@ -20,6 +20,7 @@ import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
 import { getVaultTools } from './tools/vault-tools';
 import { SessionHistory } from './agent/session-history';
+import { AgentsMemory } from './services/agents-memory';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -95,6 +96,7 @@ export default class ObsidianGemini extends Plugin {
 	public sessionManager: SessionManager;
 	public toolRegistry: ToolRegistry;
 	public toolExecutionEngine: ToolExecutionEngine;
+	public agentsMemory: AgentsMemory;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -222,6 +224,9 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize session manager and session history
 		this.sessionManager = new SessionManager(this);
 		this.sessionHistory = new SessionHistory(this);
+
+		// Initialize agents memory
+		this.agentsMemory = new AgentsMemory(this);
 		if (this.app.workspace.layoutReady) {
 			await this.history.onLayoutReady;
 		}
@@ -240,6 +245,13 @@ export default class ObsidianGemini extends Plugin {
 		const { getWebTools } = await import('./tools/web-tools');
 		const webTools = getWebTools();
 		for (const tool of webTools) {
+			this.toolRegistry.registerTool(tool);
+		}
+
+		// Register memory tools
+		const { getMemoryTools } = await import('./tools/memory-tool');
+		const memoryTools = getMemoryTools();
+		for (const tool of memoryTools) {
 			this.toolRegistry.registerTool(tool);
 		}
 

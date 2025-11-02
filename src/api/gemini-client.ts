@@ -158,11 +158,22 @@ export class GeminiClient implements ModelApi {
 		if (isExtended) {
 			const extReq = request as ExtendedModelRequest;
 
-			// Build unified system prompt with tools and custom prompt
-			// This includes: base system prompt + tool instructions (if tools) + custom prompt (if provided)
+			// Load AGENTS.md memory if available
+			let agentsMemory: string | null = null;
+			if (this.plugin?.agentsMemory) {
+				try {
+					agentsMemory = await this.plugin.agentsMemory.read();
+				} catch (error) {
+					console.warn('Failed to load AGENTS.md:', error);
+				}
+			}
+
+			// Build unified system prompt with tools, custom prompt, and agents memory
+			// This includes: base system prompt + vault context (AGENTS.md) + tool instructions (if tools) + custom prompt (if provided)
 			systemInstruction = this.prompts.getSystemPromptWithCustom(
 				extReq.availableTools,
-				extReq.customPrompt
+				extReq.customPrompt,
+				agentsMemory
 			);
 
 			// Append additional instructions from prompt field (e.g., generalPrompt, contextPrompt)
