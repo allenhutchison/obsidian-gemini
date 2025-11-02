@@ -5,9 +5,22 @@ import { AgentsMemoryData } from './agents-memory';
 import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
 
 /**
+ * Simple cache entry for vault information
+ */
+interface VaultInfoCache {
+	vaultInfo: string;
+	fileCount: number;
+	lastModified: number;
+	timestamp: number;
+}
+
+/**
  * Service for analyzing vault structure and generating AGENTS.md content
  */
 export class VaultAnalyzer {
+	private vaultInfoCache: VaultInfoCache | null = null;
+	private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 	constructor(private plugin: InstanceType<typeof ObsidianGemini>) {}
 
 	/**
@@ -123,14 +136,34 @@ export class VaultAnalyzer {
 
 	/**
 	 * Collect information about the vault structure
+	 * Uses caching for large vaults to improve performance
 	 */
 	private collectVaultInformation(): string {
 		const vault = this.plugin.app.vault;
-		const root = vault.getRoot();
-
-		// Get all markdown files
 		const allFiles = vault.getMarkdownFiles();
 		const fileCount = allFiles.length;
+
+		// Calculate vault fingerprint (file count + most recent modification)
+		const lastModified = allFiles.length > 0
+			? Math.max(...allFiles.map(f => f.stat.mtime))
+			: 0;
+
+		// Check if we can use cached data (for large vaults)
+		if (this.vaultInfoCache && fileCount > 1000) {
+			const now = Date.now();
+			const cacheValid =
+				this.vaultInfoCache.fileCount === fileCount &&
+				this.vaultInfoCache.lastModified === lastModified &&
+				(now - this.vaultInfoCache.timestamp) < this.CACHE_TTL_MS;
+
+			if (cacheValid) {
+				console.log('VaultAnalyzer: Using cached vault information');
+				return this.vaultInfoCache.vaultInfo;
+			}
+		}
+
+		// Cache miss or invalid - collect fresh data
+		const root = vault.getRoot();
 
 		// Build folder structure
 		const folderStructure = this.buildFolderStructure(root);
@@ -146,6 +179,17 @@ export class VaultAnalyzer {
 		vaultInfo += '\n## Sample File Names\n\n';
 		vaultInfo += sampleFiles.map(f => `- ${f}`).join('\n');
 		vaultInfo += '\n\n';
+
+		// Update cache for large vaults
+		if (fileCount > 1000) {
+			this.vaultInfoCache = {
+				vaultInfo,
+				fileCount,
+				lastModified,
+				timestamp: Date.now()
+			};
+			console.log('VaultAnalyzer: Cached vault information for large vault');
+		}
 
 		return vaultInfo;
 	}

@@ -89,9 +89,25 @@ export class AgentsMemory {
 
 	/**
 	 * Render the AGENTS.md template with the provided data
+	 * Validates that all string values are safe before rendering
 	 */
 	render(data: AgentsMemoryData): string {
-		return this.template(data);
+		// Validate data before passing to template
+		const validatedData: AgentsMemoryData = {};
+
+		// Only include string properties that are defined
+		for (const key of ['vaultOverview', 'organization', 'keyTopics', 'userPreferences', 'customInstructions'] as const) {
+			if (data[key] !== undefined) {
+				// Ensure value is a string
+				if (typeof data[key] !== 'string') {
+					console.warn(`AgentsMemory: Invalid type for ${key}, expected string but got ${typeof data[key]}`);
+					continue;
+				}
+				validatedData[key] = data[key];
+			}
+		}
+
+		return this.template(validatedData);
 	}
 
 	/**
