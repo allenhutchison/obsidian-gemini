@@ -564,6 +564,16 @@ export class AgentView extends ItemView {
 		}
 	}
 
+	/**
+	 * Check if a session is the current session
+	 * Compares both session ID and history path for robustness
+	 */
+	private isCurrentSession(session: ChatSession): boolean {
+		if (!this.currentSession) return false;
+		return session.id === this.currentSession.id ||
+		       session.historyPath === this.currentSession.historyPath;
+	}
+
 	private async loadSessionHistory() {
 		if (!this.currentSession) return;
 
@@ -2319,13 +2329,7 @@ User: ${history[0].message}`;
 			// Fetch 6 sessions since we might filter out the current one
 			const allRecentSessions = await this.plugin.sessionManager.getRecentAgentSessions(6);
 			const recentSessions = allRecentSessions
-				.filter(session => {
-					if (!this.currentSession) return true;
-					// Exclude session if either ID or history path matches the current session
-					const isSameId = session.id === this.currentSession.id;
-					const isSamePath = session.historyPath === this.currentSession.historyPath;
-					return !isSameId && !isSamePath;
-				})
+				.filter(session => !this.isCurrentSession(session))
 				.slice(0, 5); // Limit to 5 after filtering
 
 			// Create suggestions container (used for both recent sessions and example prompts)
