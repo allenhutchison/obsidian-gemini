@@ -21,6 +21,7 @@ import { ToolExecutionEngine } from './tools/execution-engine';
 import { getVaultTools } from './tools/vault-tools';
 import { SessionHistory } from './agent/session-history';
 import { AgentsMemory } from './services/agents-memory';
+import { VaultAnalyzer } from './services/vault-analyzer';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -103,6 +104,7 @@ export default class ObsidianGemini extends Plugin {
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
+	private vaultAnalyzer: VaultAnalyzer;
 
 	async onload() {
 		await this.setupGeminiScribe();
@@ -263,6 +265,10 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize summarization
 		this.summarizer = new GeminiSummary(this);
 		await this.summarizer.setupSummarizationCommand();
+
+		// Initialize vault analyzer for AGENTS.md
+		this.vaultAnalyzer = new VaultAnalyzer(this);
+		this.vaultAnalyzer.setupInitCommand();
 	}
 
 	async activateAgentView() {
