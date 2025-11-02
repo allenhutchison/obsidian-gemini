@@ -11,6 +11,17 @@ export class VaultAnalyzer {
 	constructor(private plugin: InstanceType<typeof ObsidianGemini>) {}
 
 	/**
+	 * Helper to ensure minimum display time for each step
+	 */
+	private async ensureMinimumDelay(startTime: number, minimumMs: number = 2000): Promise<void> {
+		const elapsed = Date.now() - startTime;
+		const remaining = minimumMs - elapsed;
+		if (remaining > 0) {
+			await new Promise(resolve => setTimeout(resolve, remaining));
+		}
+	}
+
+	/**
 	 * Analyze the vault and initialize/update AGENTS.md
 	 */
 	async initializeAgentsMemory(): Promise<void> {
@@ -18,18 +29,23 @@ export class VaultAnalyzer {
 		const modal = new VaultAnalysisModal(this.plugin.app);
 		modal.open();
 
+		// Get the model name for display
+		const modelName = this.plugin.settings.chatModelName;
+
 		// Define steps
 		modal.addStep('collect', 'Collecting vault information');
-		modal.addStep('analyze', 'Analyzing with AI');
+		modal.addStep('analyze', `Analyzing with ${modelName}`);
 		modal.addStep('parse', 'Processing results');
 		modal.addStep('render', 'Rendering template');
 		modal.addStep('write', 'Writing AGENTS.md');
 
 		try {
 			// Step 1: Collect vault information
+			let stepStart = Date.now();
 			modal.setStepInProgress('collect');
 			modal.updateStatus('Analyzing vault structure...');
 			const vaultInfo = this.collectVaultInformation();
+			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('collect');
 
 			// Read existing AGENTS.md if it exists
@@ -38,9 +54,10 @@ export class VaultAnalyzer {
 			// Build the analysis prompt
 			const analysisPrompt = this.buildAnalysisPrompt(vaultInfo, existingContent);
 
-			// Step 2: Call AI
+			// Step 2: Call model
+			stepStart = Date.now();
 			modal.setStepInProgress('analyze');
-			modal.updateStatus('Generating vault context with AI...');
+			modal.updateStatus(`Generating vault context with ${modelName}...`);
 			const modelApi = GeminiClientFactory.createChatModel(this.plugin);
 			const response = await modelApi.generateModelResponse({
 				prompt: analysisPrompt,
@@ -49,11 +66,13 @@ export class VaultAnalyzer {
 				conversationHistory: [],
 				renderContent: false
 			});
+			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('analyze');
 
 			// Step 3: Parse response
+			stepStart = Date.now();
 			modal.setStepInProgress('parse');
-			modal.updateStatus('Processing AI response...');
+			modal.updateStatus('Processing response...');
 			const generatedData = this.parseAnalysisResponse(response.markdown);
 
 			if (!generatedData) {
@@ -68,18 +87,23 @@ export class VaultAnalyzer {
 			if (this.plugin.settings.debugMode) {
 				console.log('Parsed AGENTS.md data:', generatedData);
 			}
+			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('parse');
 
 			// Step 4: Render template
+			stepStart = Date.now();
 			modal.setStepInProgress('render');
 			modal.updateStatus('Rendering content...');
-			const renderedContent = await this.plugin.agentsMemory.render(generatedData);
+			const renderedContent = this.plugin.agentsMemory.render(generatedData);
+			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('render');
 
 			// Step 5: Write to file
+			stepStart = Date.now();
 			modal.setStepInProgress('write');
 			modal.updateStatus('Writing AGENTS.md...');
 			await this.plugin.agentsMemory.write(renderedContent);
+			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('write');
 
 			// Success!

@@ -23,6 +23,9 @@ import { SessionHistory } from './agent/session-history';
 import { AgentsMemory } from './services/agents-memory';
 import { VaultAnalyzer } from './services/vault-analyzer';
 
+// @ts-ignore
+import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
+
 export interface ModelDiscoverySettings {
 	enabled: boolean;
 	autoUpdateInterval: number; // hours
@@ -228,7 +231,7 @@ export default class ObsidianGemini extends Plugin {
 		this.sessionHistory = new SessionHistory(this);
 
 		// Initialize agents memory
-		this.agentsMemory = new AgentsMemory(this);
+		this.agentsMemory = new AgentsMemory(this, agentsMemoryTemplateContent);
 		if (this.app.workspace.layoutReady) {
 			await this.history.onLayoutReady;
 		}

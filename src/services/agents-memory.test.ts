@@ -65,7 +65,16 @@ describe('AgentsMemory', () => {
 			}
 		};
 
-		agentsMemory = new AgentsMemory(mockPlugin);
+		// Simple test template
+		const testTemplate = `# AGENTS.md
+
+{{#if vaultOverview}}{{{vaultOverview}}}{{/if}}
+{{#if organization}}{{{organization}}}{{/if}}
+{{#if keyTopics}}{{{keyTopics}}}{{/if}}
+{{#if userPreferences}}{{{userPreferences}}}{{/if}}
+{{#if customInstructions}}{{{customInstructions}}}{{/if}}`;
+
+		agentsMemory = new AgentsMemory(mockPlugin, testTemplate);
 	});
 
 	describe('getMemoryFilePath', () => {
@@ -229,54 +238,32 @@ describe('AgentsMemory', () => {
 	});
 
 	describe('render', () => {
-		it('should render template with data', async () => {
-			// Mock template loading
-			mockAdapter.read.mockResolvedValue('{{#if vaultOverview}}{{{vaultOverview}}}{{/if}}');
-
+		it('should render template with data', () => {
 			const data: AgentsMemoryData = {
 				vaultOverview: 'Test vault overview'
 			};
 
-			const result = await agentsMemory.render(data);
+			const result = agentsMemory.render(data);
 
 			expect(result).toContain('Test vault overview');
 		});
 
-		it('should render template with multiple fields', async () => {
-			mockAdapter.read.mockResolvedValue(
-				'{{#if vaultOverview}}{{{vaultOverview}}}{{/if}}\n{{#if keyTopics}}{{{keyTopics}}}{{/if}}'
-			);
-
+		it('should render template with multiple fields', () => {
 			const data: AgentsMemoryData = {
 				vaultOverview: 'Overview',
 				keyTopics: 'Topics'
 			};
 
-			const result = await agentsMemory.render(data);
+			const result = agentsMemory.render(data);
 
 			expect(result).toContain('Overview');
 			expect(result).toContain('Topics');
 		});
 
-		it('should handle empty data', async () => {
-			mockAdapter.read.mockResolvedValue('{{#if vaultOverview}}{{{vaultOverview}}}{{/if}}');
-
-			const result = await agentsMemory.render({});
+		it('should handle empty data', () => {
+			const result = agentsMemory.render({});
 
 			expect(result).not.toContain('undefined');
-		});
-
-		it('should use fallback template on load failure', async () => {
-			mockAdapter.read.mockRejectedValue(new Error('Template not found'));
-
-			const data: AgentsMemoryData = {
-				vaultOverview: 'Test'
-			};
-
-			const result = await agentsMemory.render(data);
-
-			// Should still render with fallback template
-			expect(result).toBeTruthy();
 		});
 	});
 

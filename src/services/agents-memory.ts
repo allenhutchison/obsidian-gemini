@@ -27,39 +27,12 @@ export interface AgentsMemoryData {
 export class AgentsMemory {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private memoryFilePath: string;
-	private template: HandlebarsTemplateDelegate | null = null;
+	private template: HandlebarsTemplateDelegate;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: InstanceType<typeof ObsidianGemini>, templateContent: string) {
 		this.plugin = plugin;
 		this.memoryFilePath = normalizePath(`${plugin.settings.historyFolder}/AGENTS.md`);
-	}
-
-	/**
-	 * Load the Handlebars template for AGENTS.md
-	 */
-	private async loadTemplate(): Promise<void> {
-		if (this.template) {
-			return;
-		}
-
-		try {
-			const templatePath = 'prompts/agentsMemoryTemplate.hbs';
-			const templateContent = await this.plugin.app.vault.adapter.read(templatePath);
-			this.template = Handlebars.compile(templateContent);
-		} catch (error) {
-			console.error('Failed to load AGENTS.md template:', error);
-			// Fallback to a simple template
-			this.template = Handlebars.compile(`# AGENTS.md
-
-This file provides context about this Obsidian vault for AI agents.
-
-{{#if vaultOverview}}{{{vaultOverview}}}{{/if}}
-{{#if organization}}{{{organization}}}{{/if}}
-{{#if keyTopics}}{{{keyTopics}}}{{/if}}
-{{#if userPreferences}}{{{userPreferences}}}{{/if}}
-{{#if customInstructions}}{{{customInstructions}}}{{/if}}
-`);
-		}
+		this.template = Handlebars.compile(templateContent);
 	}
 
 	/**
@@ -117,11 +90,7 @@ This file provides context about this Obsidian vault for AI agents.
 	/**
 	 * Render the AGENTS.md template with the provided data
 	 */
-	async render(data: AgentsMemoryData): Promise<string> {
-		await this.loadTemplate();
-		if (!this.template) {
-			throw new Error('Failed to load AGENTS.md template');
-		}
+	render(data: AgentsMemoryData): string {
 		return this.template(data);
 	}
 
@@ -131,7 +100,7 @@ This file provides context about this Obsidian vault for AI agents.
 	async initialize(data?: AgentsMemoryData): Promise<void> {
 		const exists = await this.exists();
 		if (!exists) {
-			const content = await this.render(data || {});
+			const content = this.render(data || {});
 			await this.write(content);
 		}
 	}
