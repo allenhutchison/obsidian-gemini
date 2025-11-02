@@ -24,6 +24,7 @@ export class ModelManager {
 		{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
 		{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
 		{ value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite', defaultForRoles: ['completions'] },
+		{ value: 'gemini-2.5-flash-image-preview', label: 'Gemini 2.5 Flash Image', defaultForRoles: ['image'], supportsImageGeneration: true },
 	];
 
 	constructor(plugin: ObsidianGemini) {
@@ -33,11 +34,12 @@ export class ModelManager {
 
 	/**
 	 * Get current models (dynamic or static fallback)
+	 * By default, excludes image generation models
 	 */
 	async getAvailableModels(options: ModelUpdateOptions = {}): Promise<GeminiModel[]> {
 		// If dynamic discovery is disabled, return filtered static models
 		if (!this.plugin.settings.modelDiscovery?.enabled) {
-			return this.filterModelsForVersion(ModelManager.staticModels);
+			return this.filterModelsForVersion(ModelManager.staticModels, false);
 		}
 
 		try {
@@ -53,15 +55,44 @@ export class ModelManager {
 					dynamicModels = ModelMapper.mergeWithExistingModels(dynamicModels, ModelManager.staticModels);
 				}
 
-				// Filter for Gemini 2.5+ models only
-				return this.filterModelsForVersion(dynamicModels);
+				// Filter for Gemini 2.5+ models only, excluding image models
+				return this.filterModelsForVersion(dynamicModels, false);
 			}
 		} catch (error) {
 			console.warn('Model discovery failed, falling back to static models:', error);
 		}
 
 		// Fallback to filtered static models
-		return this.filterModelsForVersion(ModelManager.staticModels);
+		return this.filterModelsForVersion(ModelManager.staticModels, false);
+	}
+
+	/**
+	 * Get image generation models
+	 */
+	async getImageGenerationModels(): Promise<GeminiModel[]> {
+		// If dynamic discovery is disabled, return filtered static models
+		if (!this.plugin.settings.modelDiscovery?.enabled) {
+			return this.filterModelsForVersion(ModelManager.staticModels, true);
+		}
+
+		try {
+			const discovery = await this.discoveryService.discoverModels(false);
+
+			if (discovery.success && discovery.models.length > 0) {
+				let dynamicModels = ModelMapper.mapToGeminiModels(discovery.models);
+
+				// Sort models by preference (stable first, then by family)
+				dynamicModels = ModelMapper.sortModelsByPreference(dynamicModels);
+
+				// Filter for image generation models only
+				return this.filterModelsForVersion(dynamicModels, true);
+			}
+		} catch (error) {
+			console.warn('Model discovery failed, falling back to static models:', error);
+		}
+
+		// Fallback to filtered static models (image only)
+		return this.filterModelsForVersion(ModelManager.staticModels, true);
 	}
 
 	/**
@@ -154,33 +185,49 @@ export class ModelManager {
 	/**
 	 * Filter models to only include Gemini 2.5 or higher
 	 * Older versions have been deprecated by Google and are no longer supported
+	 *
+	 * @param models - Array of models to filter
+	 * @param imageModelsOnly - If true, return only image generation models. If false, exclude image generation models.
 	 */
-	private filterModelsForVersion(models: GeminiModel[]): GeminiModel[] {
+	private filterModelsForVersion(models: GeminiModel[], imageModelsOnly: boolean): GeminiModel[] {
 		return models.filter(model => {
 			const modelValue = model.value.toLowerCase();
-			
+
+			// Filter by image generation capability
+			if (imageModelsOnly) {
+				// Only return models that support image generation
+				if (!model.supportsImageGeneration) {
+					return false;
+				}
+			} else {
+				// Exclude models that are only for image generation
+				if (model.supportsImageGeneration) {
+					return false;
+				}
+			}
+
 			// Check for Gemini 2.5 or higher
 			if (modelValue.includes('gemini-2.5')) {
 				return true;
 			}
-			
+
 			// Check for Gemini 2.0 or higher (but exclude 2.0 since we need 2.5+)
 			if (modelValue.includes('gemini-2.0')) {
 				return false;
 			}
-			
+
 			// Check for future versions (3.0+)
 			const versionMatch = modelValue.match(/gemini-(\d+)\.(\d+)/);
 			if (versionMatch) {
 				const major = parseInt(versionMatch[1]);
 				const minor = parseInt(versionMatch[2]);
-				
+
 				// Accept 2.5+ or any 3.0+
 				if (major > 2 || (major === 2 && minor >= 5)) {
 					return true;
 				}
 			}
-			
+
 			// Log filtered models for debugging
 			console.debug(`Filtering out deprecated model ${model.value} - only Gemini 2.5+ supported`);
 			return false;

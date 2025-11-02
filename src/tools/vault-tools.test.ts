@@ -424,11 +424,105 @@ describe('VaultTools', () => {
 		});
 	});
 
+	describe('GetActiveFileTool', () => {
+		let tool: any;
+
+		beforeEach(() => {
+			const { GetActiveFileTool } = require('./vault-tools');
+			tool = new GetActiveFileTool();
+		});
+
+		it('should get active file and return full content', async () => {
+			const mockActiveFile = new TFile();
+			(mockActiveFile as any).path = 'active.md';
+			(mockActiveFile as any).name = 'active.md';
+			(mockActiveFile as any).extension = 'md';
+			(mockActiveFile as any).stat = {
+				size: 200,
+				mtime: Date.now(),
+				ctime: Date.now()
+			};
+
+			const mockWorkspace = {
+				getActiveFile: jest.fn().mockReturnValue(mockActiveFile)
+			};
+
+			const contextWithWorkspace = {
+				...mockContext,
+				plugin: {
+					...mockPlugin,
+					app: {
+						...mockPlugin.app,
+						workspace: mockWorkspace
+					}
+				}
+			};
+
+			mockVault.getAbstractFileByPath.mockReturnValue(mockActiveFile);
+			mockVault.read.mockResolvedValue('active file content');
+
+			const result = await tool.execute({}, contextWithWorkspace);
+
+			expect(result.success).toBe(true);
+			expect(result.data.path).toBe('active.md');
+			expect(result.data.content).toBe('active file content');
+			expect(mockWorkspace.getActiveFile).toHaveBeenCalled();
+		});
+
+		it('should return error when no file is active', async () => {
+			const mockWorkspace = {
+				getActiveFile: jest.fn().mockReturnValue(null)
+			};
+
+			const contextWithWorkspace = {
+				...mockContext,
+				plugin: {
+					...mockPlugin,
+					app: {
+						...mockPlugin.app,
+						workspace: mockWorkspace
+					}
+				}
+			};
+
+			const result = await tool.execute({}, contextWithWorkspace);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('No file is currently active in the editor');
+		});
+
+		it('should return error when active file is not markdown', async () => {
+			const mockActiveFile = new TFile();
+			(mockActiveFile as any).path = 'image.png';
+			(mockActiveFile as any).extension = 'png';
+
+			const mockWorkspace = {
+				getActiveFile: jest.fn().mockReturnValue(mockActiveFile)
+			};
+
+			const contextWithWorkspace = {
+				...mockContext,
+				plugin: {
+					...mockPlugin,
+					app: {
+						...mockPlugin.app,
+						workspace: mockWorkspace
+					}
+				}
+			};
+
+			const result = await tool.execute({}, contextWithWorkspace);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('not a markdown file');
+		});
+	});
+
 	describe('getVaultTools', () => {
 		it('should return all vault tools', () => {
 			const tools = getVaultTools();
-			
-			expect(tools).toHaveLength(7);
+
+			expect(tools).toHaveLength(8);
 			expect(tools.map(t => t.name)).toContain('read_file');
 			expect(tools.map(t => t.name)).toContain('write_file');
 			expect(tools.map(t => t.name)).toContain('list_files');
@@ -436,6 +530,7 @@ describe('VaultTools', () => {
 			expect(tools.map(t => t.name)).toContain('delete_file');
 			expect(tools.map(t => t.name)).toContain('move_file');
 			expect(tools.map(t => t.name)).toContain('search_files');
+			expect(tools.map(t => t.name)).toContain('get_active_file');
 		});
 	});
 });

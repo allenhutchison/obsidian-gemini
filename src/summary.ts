@@ -2,6 +2,7 @@ import ObsidianGemini from './main';
 import { GeminiPrompts } from './prompts';
 import { BaseModelRequest } from './api/index';
 import { GeminiClientFactory } from './api/simple-factory';
+import { Notice } from 'obsidian';
 
 export class GeminiSummary {
 	private plugin: InstanceType<typeof ObsidianGemini>;
@@ -12,19 +13,51 @@ export class GeminiSummary {
 		this.prompts = new GeminiPrompts(plugin);
 	}
 
+	/**
+	 * Display an error message to the user and log to console
+	 * @param message - The error message to display
+	 * @param error - Optional error object for detailed logging
+	 */
+	private showError(message: string, error?: unknown): void {
+		console.error(message, error);
+		new Notice(message);
+	}
+
 	async summarizeActiveFile() {
-		const fileContent = await this.plugin.gfile.getCurrentFileContent(true);
-		if (fileContent) {
+		// Check if there's an active file first
+		const activeFile = this.plugin.gfile.getActiveFile();
+		if (!activeFile) {
+			this.showError('No active file to summarize. Please open a markdown file first.');
+			return;
+		}
+
+		try {
+			// Get file content
+			const fileContent = await this.plugin.gfile.getCurrentFileContent(true);
+
+			if (!fileContent) {
+				this.showError('Failed to read file content. Please try again.');
+				return;
+			}
+
 			// Create a summary-specific model API
 			const modelApi = GeminiClientFactory.createSummaryModel(this.plugin);
-			
-			let request: BaseModelRequest = {
+
+			const request: BaseModelRequest = {
 				prompt: this.prompts.summaryPrompt({ content: fileContent }),
 			};
+
+			// Generate summary with API error handling
 			const summary = await modelApi.generateModelResponse(request);
+
+			// Add summary to frontmatter
 			this.plugin.gfile.addToFrontMatter(this.plugin.settings.summaryFrontmatterKey, summary.markdown);
-		} else {
-			console.error('Failed to get file content for summary.');
+
+			// Show success message
+			new Notice('Summary added to frontmatter successfully!');
+		} catch (error) {
+			const errorMsg = `Failed to generate summary: ${error instanceof Error ? error.message : String(error)}`;
+			this.showError(errorMsg, error);
 		}
 	}
 

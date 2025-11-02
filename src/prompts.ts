@@ -18,6 +18,8 @@ import selectionRewritePromptContent from '../prompts/selectionRewritePrompt.txt
 import agentToolsPromptContent from '../prompts/agentToolsPrompt.txt';
 // @ts-ignore
 import vaultAnalysisPromptContent from '../prompts/vaultAnalysisPrompt.txt';
+// @ts-ignore
+import imagePromptGeneratorContent from '../prompts/imagePromptGenerator.txt';
 
 export class GeminiPrompts {
 	private completionsPromptTemplate: Handlebars.TemplateDelegate;
@@ -28,6 +30,7 @@ export class GeminiPrompts {
 	private selectionRewritePromptTemplate: Handlebars.TemplateDelegate;
 	private agentToolsPromptTemplate: Handlebars.TemplateDelegate;
 	private vaultAnalysisPromptTemplate: Handlebars.TemplateDelegate;
+	private imagePromptGeneratorTemplate: Handlebars.TemplateDelegate;
 
 	constructor(private plugin?: InstanceType<typeof ObsidianGemini>) {
 		this.completionsPromptTemplate = Handlebars.compile(completionPromptContent);
@@ -38,6 +41,7 @@ export class GeminiPrompts {
 		this.selectionRewritePromptTemplate = Handlebars.compile(selectionRewritePromptContent);
 		this.agentToolsPromptTemplate = Handlebars.compile(agentToolsPromptContent);
 		this.vaultAnalysisPromptTemplate = Handlebars.compile(vaultAnalysisPromptContent);
+		this.imagePromptGeneratorTemplate = Handlebars.compile(imagePromptGeneratorContent);
 	}
 
 	completionsPrompt(variables: { [key: string]: string }): string {
@@ -66,6 +70,10 @@ export class GeminiPrompts {
 
 	vaultAnalysisPrompt(variables: { [key: string]: string }): string {
 		return this.vaultAnalysisPromptTemplate(variables);
+	}
+
+	imagePromptGenerator(variables: { [key: string]: string }): string {
+		return this.imagePromptGeneratorTemplate(variables);
 	}
 
 	// Get language code helper

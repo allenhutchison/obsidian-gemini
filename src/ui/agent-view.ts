@@ -2169,7 +2169,7 @@ User: ${history[0].message}`;
 			const emptyState = this.chatContainer.createDiv({ cls: 'gemini-agent-empty-chat' });
 
 			const icon = emptyState.createDiv({ cls: 'gemini-agent-empty-icon' });
-			setIcon(icon, 'bot');
+			setIcon(icon, 'sparkles');
 
 			emptyState.createEl('h3', {
 				text: 'Start a conversation',
@@ -2177,7 +2177,7 @@ User: ${history[0].message}`;
 			});
 
 			emptyState.createEl('p', {
-				text: 'Ask questions, get help with your notes, or use tools to manage your vault.',
+				text: 'Start a new session by typing below, or pick from recent sessions to continue.',
 				cls: 'gemini-agent-empty-desc'
 			});
 
@@ -2206,23 +2206,60 @@ User: ${history[0].message}`;
 				});
 			}
 
-			const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
-			const suggestionTexts = [
-				'What files are in my vault?',
-				'Search for notes about "project"',
-				'Create a summary of my recent notes'
-			];
+			// Try to get recent sessions
+			const recentSessions = await this.plugin.sessionManager.getRecentAgentSessions(5);
 
-			suggestionTexts.forEach(text => {
-				const suggestion = suggestions.createDiv({
-					text,
-					cls: 'gemini-agent-suggestion'
+			// Create suggestions container (used for both recent sessions and example prompts)
+			const suggestions = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
+
+			if (recentSessions.length > 0) {
+				// Show recent sessions header
+				emptyState.insertBefore(
+					emptyState.createEl('p', {
+						text: 'Recent sessions:',
+						cls: 'gemini-agent-suggestions-header'
+					}),
+					suggestions
+				);
+
+				recentSessions.forEach(session => {
+					const suggestion = suggestions.createDiv({
+						cls: 'gemini-agent-suggestion gemini-agent-suggestion-session'
+					});
+
+					suggestion.createEl('span', {
+						text: session.title,
+						cls: 'gemini-agent-suggestion-title'
+					});
+
+					suggestion.createEl('span', {
+						text: new Date(session.lastActive).toLocaleDateString(),
+						cls: 'gemini-agent-suggestion-date'
+					});
+
+					suggestion.addEventListener('click', async () => {
+						await this.loadSession(session);
+					});
 				});
-				suggestion.addEventListener('click', () => {
-					this.userInput.textContent = text;
-					this.userInput.focus();
+			} else {
+				// Show example prompts
+				const suggestionTexts = [
+					'What files are in my vault?',
+					'Search for notes about "project"',
+					'Create a summary of my recent notes'
+				];
+
+				suggestionTexts.forEach(text => {
+					const suggestion = suggestions.createDiv({
+						text,
+						cls: 'gemini-agent-suggestion'
+					});
+					suggestion.addEventListener('click', () => {
+						this.userInput.textContent = text;
+						this.userInput.focus();
+					});
 				});
-			});
+			}
 		}
 	}
 	

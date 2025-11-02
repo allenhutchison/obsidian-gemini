@@ -2,6 +2,7 @@ import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view';
 import { GeminiSummary } from './summary';
+import { ImageGeneration } from './image-generation';
 import { ModelApi } from './api/index';
 import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
@@ -102,6 +103,7 @@ export default class ObsidianGemini extends Plugin {
 	public toolExecutionEngine: ToolExecutionEngine;
 	public agentsMemory: AgentsMemory;
 	public vaultAnalyzer: VaultAnalyzer;
+	public imageGeneration: ImageGeneration;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -260,6 +262,13 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 
+		// Register image generation tools
+		const { getImageTools } = await import('./tools/image-tools');
+		const imageTools = getImageTools();
+		for (const tool of imageTools) {
+			this.toolRegistry.registerTool(tool);
+		}
+
 		// Initialize completions
 		this.completions = new GeminiCompletions(this);
 		await this.completions.setupCompletions();
@@ -272,6 +281,10 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize vault analyzer for AGENTS.md
 		this.vaultAnalyzer = new VaultAnalyzer(this);
 		this.vaultAnalyzer.setupInitCommand();
+
+		// Initialize image generation
+		this.imageGeneration = new ImageGeneration(this);
+		await this.imageGeneration.setupImageGenerationCommand();
 	}
 
 	async activateAgentView() {
