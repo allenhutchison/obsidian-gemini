@@ -1,9 +1,28 @@
-You are analyzing an Obsidian vault to generate initial context for the AGENTS.md file.
+You are analyzing an Obsidian vault to generate or update context for the AGENTS.md file.
 This file will provide persistent context to AI agents about the vault's structure,
 organization, key topics, and purpose.
 
+{{#if existingContent}}
+## Existing AGENTS.md Content
+
+The vault already has an AGENTS.md file with the following content:
+
+```
+{{{existingContent}}}
+```
+
+Your task is to analyze the vault structure and content provided, then UPDATE the existing
+AGENTS.md content by:
+- Preserving any user customizations or specific details they've added
+- Filling in sections that are empty or contain placeholder text
+- Enhancing existing content with new insights from your vault analysis
+- Updating outdated information based on current vault state
+- Merging your observations with what's already documented
+
+{{else}}
 Your task is to analyze the vault structure and content provided to you and generate
-comprehensive, helpful content for each of the following sections:
+comprehensive, helpful content for each of the following sections.
+{{/if}}
 
 ## Instructions
 
@@ -66,5 +85,11 @@ generic boilerplate.
 - Write from the perspective of helping future AI agents understand this vault
 - Use proper Markdown formatting for readability
 - Keep descriptions concise but informative
+{{#if existingContent}}
+- When updating existing content, preserve the user's voice and specific customizations
+- Only update sections that need updating based on new vault analysis
+- If existing content is already good, keep it rather than replacing with generic text
+- Mark sections that couldn't be analyzed with appropriate notes (e.g., "No changes needed")
+{{/if}}
 
-Now analyze the vault structure and content provided below and generate the AGENTS.md content.
+Now analyze the vault structure and content provided below and {{#if existingContent}}update{{else}}generate{{/if}} the AGENTS.md content.
