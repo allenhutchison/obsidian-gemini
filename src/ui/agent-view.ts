@@ -464,7 +464,8 @@ export class AgentView extends ItemView {
 				this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 				this.updateSessionHeader();
 				this.updateSessionMetadata();
-			}
+			},
+			this.plugin.settings.historyFolder // Exclude plugin state folder
 		);
 
 		modal.open();
@@ -2085,6 +2086,74 @@ User: ${history[0].message}`;
 									});
 								}
 							}
+						}
+					// Special handling for generate_image results
+					} else if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
+						// Display the generated image
+						const imageDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-image-result' });
+						imageDiv.createEl('h5', { text: 'Generated Image:' });
+
+						// Get the image file from vault
+						const imageFile = this.plugin.app.vault.getAbstractFileByPath(result.data.path);
+						if (imageFile instanceof TFile) {
+							// Create image element
+							const imgContainer = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-container' });
+							const img = imgContainer.createEl('img', {
+								cls: 'gemini-agent-tool-image'
+							});
+
+							// Add loading states and error handling
+							img.onloadstart = () => imgContainer.addClass('loading');
+							img.onload = () => imgContainer.removeClass('loading');
+							img.onerror = () => {
+								img.style.display = 'none';
+								imgContainer.removeClass('loading');
+								imgContainer.createEl('p', {
+									text: 'Failed to load image preview',
+									cls: 'gemini-agent-tool-image-error'
+								});
+							};
+
+							// Get the image URL from Obsidian's resource path
+							try {
+								img.src = this.plugin.app.vault.getResourcePath(imageFile);
+								img.alt = result.data.prompt || 'Generated image';
+							} catch (error) {
+								console.error('Failed to get resource path for image:', error);
+								img.onerror?.(new Event('error'));
+							}
+
+							// Add image info
+							const imageInfo = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-info' });
+							imageInfo.createEl('strong', { text: 'Path: ' });
+							imageInfo.createSpan({ text: result.data.path });
+
+							// Add wikilink for easy copying
+							imageInfo.createEl('br');
+							imageInfo.createEl('strong', { text: 'Wikilink: ' });
+							const wikilinkCode = imageInfo.createEl('code', {
+								text: result.data.wikilink,
+								cls: 'gemini-agent-tool-wikilink'
+							});
+
+							// Add copy button for wikilink
+							const copyBtn = imageInfo.createEl('button', {
+								text: 'Copy',
+								cls: 'gemini-agent-tool-copy-wikilink'
+							});
+							copyBtn.addEventListener('click', () => {
+								navigator.clipboard.writeText(result.data.wikilink).then(() => {
+									copyBtn.textContent = 'Copied!';
+									setTimeout(() => {
+										copyBtn.textContent = 'Copy';
+									}, 2000);
+								});
+							});
+						} else {
+							imageDiv.createEl('p', {
+								text: `Image saved to: ${result.data.path}`,
+								cls: 'gemini-agent-tool-image-path'
+							});
 						}
 					// Special handling for read_file results
 					} else if (result.data.content && result.data.path) {
