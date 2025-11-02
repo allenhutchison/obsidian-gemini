@@ -1,5 +1,5 @@
 import ObsidianGemini from './main';
-import { Notice } from 'obsidian';
+import { Notice, App, Modal, Setting, TextAreaComponent } from 'obsidian';
 import { GeminiClient } from './api/gemini-client';
 import { GeminiPrompts } from './prompts';
 import { GeminiClientFactory } from './api/simple-factory';
@@ -106,19 +106,26 @@ export class ImageGeneration {
 		// Create a safe filename from the prompt (truncate and sanitize)
 		const sanitizedPrompt = prompt
 			.substring(0, 50)
-			.replace(/[^a-z0-9]/gi, '-')
-			.replace(/-+/g, '-')
-			.replace(/^-|-$/g, '');
+			.replace(/[^a-zA-Z0-9\-_]/g, '-')  // More restrictive: only alphanumeric, hyphens, and underscores
+			.replace(/-+/g, '-')  // Collapse multiple dashes
+			.replace(/^-|-$/g, '');  // Trim leading/trailing dashes
 
 		const timestamp = Date.now();
 		const filename = `generated-${sanitizedPrompt}-${timestamp}.png`;
 
-		// Convert base64 to binary
-		const binaryData = atob(base64Data);
-		const bytes = new Uint8Array(binaryData.length);
-		for (let i = 0; i < binaryData.length; i++) {
-			bytes[i] = binaryData.charCodeAt(i);
+		// Convert base64 to binary with validation
+		let binaryData: string;
+		try {
+			binaryData = atob(base64Data);
+			if (binaryData.length === 0) {
+				throw new Error('Empty image data');
+			}
+		} catch (error) {
+			throw new Error(`Invalid base64 image data: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
+
+		// Convert binary string to Uint8Array
+		const bytes = Uint8Array.from(binaryData, c => c.charCodeAt(0));
 
 		// Determine reference note path for attachment folder
 		let referenceNotePath: string;
@@ -179,8 +186,6 @@ export class ImageGeneration {
 /**
  * Modal for prompting user to enter image description
  */
-import { App, Modal, Setting, TextAreaComponent } from 'obsidian';
-
 class ImagePromptModal extends Modal {
 	private imageGeneration: ImageGeneration;
 	private onSubmit: (prompt: string) => void;

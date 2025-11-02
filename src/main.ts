@@ -96,10 +96,10 @@ export default class ObsidianGemini extends Plugin {
 	public sessionManager: SessionManager;
 	public toolRegistry: ToolRegistry;
 	public toolExecutionEngine: ToolExecutionEngine;
+	public imageGeneration: ImageGeneration;
 
 	// Private members
 	private summarizer: GeminiSummary;
-	private imageGeneration: ImageGeneration;
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;

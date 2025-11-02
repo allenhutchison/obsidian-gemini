@@ -2043,9 +2043,26 @@ User: ${history[0].message}`;
 								cls: 'gemini-agent-tool-image'
 							});
 
+							// Add loading states and error handling
+							img.onloadstart = () => imgContainer.addClass('loading');
+							img.onload = () => imgContainer.removeClass('loading');
+							img.onerror = () => {
+								img.style.display = 'none';
+								imgContainer.removeClass('loading');
+								imgContainer.createEl('p', {
+									text: 'Failed to load image preview',
+									cls: 'gemini-agent-tool-image-error'
+								});
+							};
+
 							// Get the image URL from Obsidian's resource path
-							img.src = this.plugin.app.vault.getResourcePath(imageFile);
-							img.alt = result.data.prompt || 'Generated image';
+							try {
+								img.src = this.plugin.app.vault.getResourcePath(imageFile);
+								img.alt = result.data.prompt || 'Generated image';
+							} catch (error) {
+								console.error('Failed to get resource path for image:', error);
+								img.onerror?.(new Event('error'));
+							}
 
 							// Add image info
 							const imageInfo = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-info' });
