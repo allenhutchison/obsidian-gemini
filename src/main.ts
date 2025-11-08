@@ -14,8 +14,8 @@ import { PromptManager } from './prompts/prompt-manager';
 import { GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
 import { RewriteInstructionsModal } from './ui/rewrite-modal';
-import { MigrationModal } from './ui/migration-modal';
-import { HistoryMigrator } from './migrations/history-migrator';
+import { V4WelcomeModal } from './ui/v4-welcome-modal';
+import { HistoryArchiver } from './migrations/history-archiver';
 import { SessionManager } from './agent/session-manager';
 import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
@@ -327,21 +327,23 @@ export default class ObsidianGemini extends Plugin {
 	}
 
 	/**
-	 * Check if history migration is needed and offer to migrate
+	 * Check if this is a v4.0 upgrade and show welcome modal
 	 */
 	private async checkAndOfferMigration(): Promise<void> {
 		try {
-			const migrator = new HistoryMigrator(this);
-			const needsMigration = await migrator.needsMigration();
+			const archiver = new HistoryArchiver(this);
+			const needsArchiving = await archiver.needsArchiving();
 
-			if (needsMigration) {
-				// Show migration modal
-				const modal = new MigrationModal(this.app, this);
+			// Always show welcome modal on first run after upgrade to 4.0
+			// (In future, check a setting to only show once)
+			if (needsArchiving) {
+				// Show v4 welcome modal with archiving option
+				const modal = new V4WelcomeModal(this.app, this);
 				modal.open();
 			}
 		} catch (error) {
-			console.error('Error checking for migration:', error);
-			// Don't show error to user - migration is optional
+			console.error('Error checking for archiving:', error);
+			// Don't show error to user - archiving is optional
 		}
 	}
 
