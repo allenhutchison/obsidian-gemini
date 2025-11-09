@@ -76,7 +76,7 @@ This major release simplifies Gemini Scribe by consolidating around a single, po
 
 ### 📚 Documentation
 
-- **New**: [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) - Comprehensive upgrade guide
+- **New**: [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) - Comprehensive upgrade guide
 - **Updated**: README.md with v4.0.0 information
 - **Updated**: Advanced settings guide
 
@@ -94,7 +94,7 @@ This major release simplifies Gemini Scribe by consolidating around a single, po
 - Detailed error reporting if any files fail
 - Manual migration controls in settings
 
-See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for detailed migration instructions and troubleshooting.
+See [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for detailed migration instructions and troubleshooting.
 
 ### 🧪 Testing
 
