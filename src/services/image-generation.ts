@@ -1,9 +1,7 @@
 import ObsidianGemini from '../main';
 import { Notice, App, Modal, Setting, TextAreaComponent } from 'obsidian';
-import { GeminiClient } from '../api/gemini-client';
+import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
-import { GeminiClientFactory } from '../api/simple-factory';
-import { BaseModelRequest } from '../api/index';
 
 export class ImageGeneration {
 	private plugin: InstanceType<typeof ObsidianGemini>;
