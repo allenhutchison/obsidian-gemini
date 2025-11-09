@@ -56,7 +56,7 @@ export class GeminiClientFactory {
         break;
       case ModelUseCase.REWRITE:
         // Rewrite uses chat model
-        modelName = settings.chatModelName || getDefaultModelForRole('rewrite');
+        modelName = settings.chatModelName || getDefaultModelForRole('chat');
         break;
       case ModelUseCase.SEARCH:
         // Search uses chat model
