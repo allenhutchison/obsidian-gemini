@@ -3,10 +3,8 @@
  */
 
 import { App, Modal } from 'obsidian';
-import type ObsidianGemini from '../main';
 
 interface ReleaseNote {
-	version: string;
 	title: string;
 	highlights: string[];
 	details?: string;
@@ -18,7 +16,6 @@ interface ReleaseNote {
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
 		'4.0.0': {
-			version: '4.0.0',
 			title: '🎉 Welcome to Gemini Scribe 4.0!',
 			highlights: [
 				'🤖 Unified agent-first interface - one powerful chat mode',
@@ -37,13 +34,11 @@ function getReleaseNotes(version: string): ReleaseNote | null {
  * Modal that shows update notifications with release notes
  */
 export class UpdateNotificationModal extends Modal {
-	private plugin: InstanceType<typeof ObsidianGemini>;
 	private newVersion: string;
 	private releaseNotes: ReleaseNote | null;
 
-	constructor(app: App, plugin: InstanceType<typeof ObsidianGemini>, newVersion: string) {
+	constructor(app: App, newVersion: string) {
 		super(app);
-		this.plugin = plugin;
 		this.newVersion = newVersion;
 		this.releaseNotes = getReleaseNotes(newVersion);
 	}
@@ -66,33 +61,34 @@ export class UpdateNotificationModal extends Modal {
 
 	private showVersionSpecificNotes() {
 		const { contentEl } = this;
+		const releaseNotes = this.releaseNotes!;
 
 		// Header
 		contentEl.createEl('h2', {
-			text: this.releaseNotes!.title,
+			text: releaseNotes.title,
 			cls: 'gemini-update-header'
 		});
 
 		// Version info
 		contentEl.createEl('p', {
-			text: `You've been updated to version ${this.releaseNotes!.version}`,
+			text: `You've been updated to version ${this.newVersion}`,
 			cls: 'gemini-update-version'
 		});
 
 		// Highlights
-		if (this.releaseNotes!.highlights.length > 0) {
+		if (releaseNotes.highlights.length > 0) {
 			const highlightsDiv = contentEl.createDiv({ cls: 'gemini-update-highlights' });
 			highlightsDiv.createEl('h3', { text: "What's New:" });
 			const list = highlightsDiv.createEl('ul');
-			this.releaseNotes!.highlights.forEach(highlight => {
+			releaseNotes.highlights.forEach(highlight => {
 				list.createEl('li', { text: highlight });
 			});
 		}
 
 		// Details
-		if (this.releaseNotes!.details) {
+		if (releaseNotes.details) {
 			const detailsDiv = contentEl.createDiv({ cls: 'gemini-update-details' });
-			detailsDiv.createEl('p', { text: this.releaseNotes!.details });
+			detailsDiv.createEl('p', { text: releaseNotes.details });
 		}
 
 		// Action buttons

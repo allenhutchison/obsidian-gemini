@@ -210,7 +210,7 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-view-release-notes',
 			name: 'View Release Notes',
 			callback: () => {
-				const modal = new UpdateNotificationModal(this.app, this, this.manifest.version);
+				const modal = new UpdateNotificationModal(this.app, this.manifest.version);
 				modal.open();
 			},
 		});
@@ -389,7 +389,7 @@ export default class ObsidianGemini extends Plugin {
 			if (currentVersion !== lastSeenVersion) {
 				// Don't show notification for first-time installs (0.0.0)
 				if (lastSeenVersion !== '0.0.0') {
-					const modal = new UpdateNotificationModal(this.app, this, currentVersion);
+					const modal = new UpdateNotificationModal(this.app, currentVersion);
 					modal.open();
 				}
 
