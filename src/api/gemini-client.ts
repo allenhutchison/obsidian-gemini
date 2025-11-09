@@ -18,12 +18,14 @@ import {
 } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import type ObsidianGemini from '../main';
+import { getDefaultModelForRole } from '../models';
 
 /**
  * Configuration for GeminiClient
  */
 export interface GeminiClientConfig {
 	apiKey: string;
+	model?: string;
 	temperature?: number;
 	topP?: number;
 	maxOutputTokens?: number;
@@ -151,7 +153,7 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest
 	): Promise<GenerateContentParameters> {
 		const isExtended = 'userMessage' in request;
-		const model = request.model || 'gemini-2.0-flash-exp';
+		const model = request.model || this.config.model || getDefaultModelForRole('chat');
 
 		// Build system instruction
 		let systemInstruction = '';
