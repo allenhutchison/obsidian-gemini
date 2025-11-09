@@ -2,6 +2,22 @@ import { TFile } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
 
+// Configuration constants
+const INITIAL_SEARCHES_PER_ITERATION = 2;
+const FOLLOWUP_SEARCHES_PER_ITERATION = 2;
+const SUMMARY_MAX_LENGTH = 200;
+
+/**
+ * Grounding chunk from Google's grounding metadata
+ */
+interface GroundingChunk {
+	web?: {
+		uri: string;
+		title?: string;
+		snippet?: string;
+	};
+}
+
 /**
  * Research result containing all data from a deep research operation
  */
@@ -106,8 +122,7 @@ export class DeepResearchService {
 		this.plugin.logger.log('DeepResearch: Starting initial searches');
 		const initialQueries = await this.generateSearchQueries(genAI, modelToUse, params.topic, []);
 
-		for (const query of initialQueries.slice(0, 2)) {
-			// Start with 2 searches
+		for (const query of initialQueries.slice(0, INITIAL_SEARCHES_PER_ITERATION)) {
 			const searchResult = await this.performSearch(genAI, modelToUse, query);
 			if (searchResult) {
 				research.searches.push(searchResult);
@@ -121,7 +136,7 @@ export class DeepResearchService {
 			// Analyze gaps and generate follow-up queries
 			const followUpQueries = await this.generateFollowUpQueries(genAI, modelToUse, params.topic, research.searches);
 
-			for (const query of followUpQueries.slice(0, 2)) {
+			for (const query of followUpQueries.slice(0, FOLLOWUP_SEARCHES_PER_ITERATION)) {
 				const searchResult = await this.performSearch(genAI, modelToUse, query);
 				if (searchResult) {
 					research.searches.push(searchResult);
@@ -185,7 +200,7 @@ Return only the queries, one per line.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: 0.7 }
+			config: { temperature: this.plugin.settings.temperature }
 		});
 
 		const text = this.extractText(result);
@@ -214,7 +229,7 @@ Return only the queries, one per line.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: 0.7 }
+			config: { temperature: this.plugin.settings.temperature }
 		});
 
 		const text = this.extractText(result);
@@ -229,7 +244,7 @@ Return only the queries, one per line.`;
 			const result = await genAI.models.generateContent({
 				model: model,
 				config: {
-					temperature: 0.7,
+					temperature: this.plugin.settings.temperature,
 					tools: [{ googleSearch: {} }]
 				},
 				contents: `Search for: ${query}`
@@ -241,7 +256,7 @@ Return only the queries, one per line.`;
 			// Extract citations
 			const citations: Citation[] = [];
 			if (metadata?.groundingChunks) {
-				metadata.groundingChunks.forEach((chunk: any, index: number) => {
+				(metadata.groundingChunks as GroundingChunk[]).forEach((chunk, index) => {
 					if (chunk.web?.uri) {
 						citations.push({
 							id: `${query}-${index}`,
@@ -256,7 +271,7 @@ Return only the queries, one per line.`;
 			return {
 				query: query,
 				content: text,
-				summary: text.substring(0, 200) + '...',
+				summary: text.substring(0, SUMMARY_MAX_LENGTH) + '...',
 				citations: citations
 			};
 		} catch (error) {
@@ -303,7 +318,7 @@ Return only the section titles, one per line.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: 0.7 }
+			config: { temperature: this.plugin.settings.temperature }
 		});
 
 		const text = this.extractText(result);
@@ -335,7 +350,7 @@ Write 2-3 paragraphs with specific details and citations.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: 0.7 }
+			config: { temperature: this.plugin.settings.temperature }
 		});
 
 		const content = this.extractText(result);
@@ -372,18 +387,11 @@ Write 2-3 paragraphs with specific details and citations.`;
 		// Add sources section
 		report += `---\n\n## Sources\n\n`;
 		let sourceIndex = 1;
-		const sourceMap = new Map<string, number>();
 
 		for (const [url, source] of research.sources) {
-			sourceMap.set(url, sourceIndex);
 			report += `[${sourceIndex}] ${source.title}\n`;
 			report += `    ${url}\n\n`;
 			sourceIndex++;
-		}
-
-		// Replace citation placeholders with actual numbers
-		for (const [url, index] of sourceMap) {
-			report = report.replace(new RegExp(`\\[${url}\\]`, 'g'), `[${index}]`);
 		}
 
 		return report;
