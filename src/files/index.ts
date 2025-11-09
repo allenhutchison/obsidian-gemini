@@ -1,7 +1,7 @@
 import ObsidianGemini from '../main';
 import { TFile } from 'obsidian';
 import { logDebugInfo } from '../api/utils/debug';
-import { GeminiPrompts } from '../prompts';
+import { GeminiPrompts } from '../prompts/gemini-prompts';
 
 export class ScribeFile {
 	private plugin: ObsidianGemini;

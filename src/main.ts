@@ -11,7 +11,7 @@ import { Notice } from 'obsidian';
 import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager } from './prompts/prompt-manager';
-import { GeminiPrompts } from './prompts';
+import { GeminiPrompts } from './prompts/gemini-prompts';
 import { SelectionRewriter } from './rewrite-selection';
 import { RewriteInstructionsModal } from './ui/rewrite-modal';
 import { V4WelcomeModal } from './ui/v4-welcome-modal';

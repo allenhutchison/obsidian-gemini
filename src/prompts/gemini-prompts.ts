@@ -1,25 +1,25 @@
 import * as Handlebars from 'handlebars';
-import { CustomPrompt } from './prompts/types';
-import ObsidianGemini from './main';
+import { CustomPrompt } from './types';
+import ObsidianGemini from '../main';
 
 // @ts-ignore
-import systemPromptContent from '../prompts/systemPrompt.txt';
+import systemPromptContent from '../../prompts/systemPrompt.txt';
 // @ts-ignore
-import completionPromptContent from '../prompts/completionPrompt.txt';
+import completionPromptContent from '../../prompts/completionPrompt.txt';
 // @ts-ignore
-import generalPromptContent from '../prompts/generalPrompt.txt';
+import generalPromptContent from '../../prompts/generalPrompt.txt';
 // @ts-ignore
-import summaryPromptContent from '../prompts/summaryPrompt.txt';
+import summaryPromptContent from '../../prompts/summaryPrompt.txt';
 // @ts-ignore
-import contextPromptContent from '../prompts/contextPrompt.txt';
+import contextPromptContent from '../../prompts/contextPrompt.txt';
 // @ts-ignore
-import selectionRewritePromptContent from '../prompts/selectionRewritePrompt.txt';
+import selectionRewritePromptContent from '../../prompts/selectionRewritePrompt.txt';
 // @ts-ignore
-import agentToolsPromptContent from '../prompts/agentToolsPrompt.txt';
+import agentToolsPromptContent from '../../prompts/agentToolsPrompt.txt';
 // @ts-ignore
-import vaultAnalysisPromptContent from '../prompts/vaultAnalysisPrompt.txt';
+import vaultAnalysisPromptContent from '../../prompts/vaultAnalysisPrompt.txt';
 // @ts-ignore
-import imagePromptGeneratorContent from '../prompts/imagePromptGenerator.txt';
+import imagePromptGeneratorContent from '../../prompts/imagePromptGenerator.txt';
 
 export class GeminiPrompts {
 	private completionsPromptTemplate: Handlebars.TemplateDelegate;
