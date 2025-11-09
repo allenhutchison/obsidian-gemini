@@ -2,8 +2,6 @@ import ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
-import { MigrationModal } from './migration-modal';
-import { HistoryMigrator } from '../migrations/history-migrator';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: InstanceType<typeof ObsidianGemini>;
@@ -36,39 +34,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		}
 	}
 
-	private async checkMigrationStatus(setting: Setting): Promise<void> {
-		try {
-			const migrationMarker = `${this.plugin.settings.historyFolder}/.migration-completed`;
-			const markerExists = await this.app.vault.adapter.exists(migrationMarker);
-			
-			if (markerExists) {
-				const markerContent = await this.app.vault.adapter.read(migrationMarker);
-				setting.setDesc(`✓ Migration completed. ${markerContent.split('\n')[1] || ''}`);
-			} else {
-				// Check if there are legacy files that need migration
-				const historyFolder = this.plugin.settings.historyFolder;
-				const folderExists = await this.app.vault.adapter.exists(historyFolder);
-				
-				if (folderExists) {
-					const folderContents = await this.app.vault.adapter.list(historyFolder);
-					const legacyFiles = folderContents.files.filter(path => 
-						path.endsWith('.md') && 
-						!path.includes('/History/')
-					);
-					
-					if (legacyFiles.length > 0) {
-						setting.setDesc(`⚠️ Found ${legacyFiles.length} history files that will be migrated to the new folder structure on next restart.`);
-					} else {
-						setting.setDesc('✓ No migration needed - using new folder structure.');
-					}
-				} else {
-					setting.setDesc('✓ No migration needed - no existing history files found.');
-				}
-			}
-		} catch (error) {
-			setting.setDesc(`Error checking migration status: ${error instanceof Error ? error.message : 'Unknown'}`);
-		}
-	}
 
 	/**
 	 * Create temperature setting with dynamic ranges based on model capabilities
@@ -284,55 +249,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				})
 			);
 
-		// Add migration status info
-		if (this.plugin.settings.chatHistory) {
-			const migrationStatus = new Setting(containerEl)
-				.setName('Migration Status')
-				.setDesc('Checking migration status...');
-
-			this.checkMigrationStatus(migrationStatus);
-
-			// Add migration control buttons
-			new Setting(containerEl)
-				.setName('Migration Tools')
-				.setDesc('Manage history migration from the old format to Agent Sessions')
-				.addButton((button) =>
-					button
-						.setButtonText('Re-run Migration')
-						.setTooltip('Migrate any new history files to Agent Sessions format')
-						.onClick(async () => {
-							const migrator = new HistoryMigrator(this.plugin);
-							const needsMigration = await migrator.needsMigration();
-
-							if (needsMigration) {
-								const modal = new MigrationModal(this.app, this.plugin);
-								modal.open();
-							} else {
-								new Notice('No history files need migration.');
-							}
-						})
-				)
-				.addButton((button) =>
-					button
-						.setButtonText('View Backup')
-						.setTooltip('Open the History-Archive folder containing backed up files')
-						.onClick(async () => {
-							const archivePath = `${this.plugin.settings.historyFolder}/History-Archive`;
-							const archiveExists = await this.app.vault.adapter.exists(archivePath);
-
-							if (archiveExists) {
-								// Open the archive folder in the file explorer
-								const folder = this.app.vault.getAbstractFileByPath(archivePath);
-								if (folder) {
-									// @ts-ignore - Internal API
-									this.app.workspace.getLeaf().openFile(folder);
-								}
-							} else {
-								new Notice('No backup archive found. Migration may not have been run yet.');
-							}
-						})
-				);
-		}
+		// Note: Migration settings removed in v4.0 - agent-only mode
 
 		// Custom Prompts Settings
 		new Setting(containerEl).setName('Custom Prompts').setHeading();

@@ -2962,3 +2962,219 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-error);
 	word-wrap: break-word;
 }
+/* V4 Welcome Modal Styles */
+
+.gemini-v4-welcome-modal {
+	padding: 24px;
+	max-width: 600px;
+}
+
+.gemini-v4-welcome-header {
+	margin: 0 0 20px 0;
+	font-size: 24px;
+	font-weight: 600;
+	color: var(--text-normal);
+	text-align: center;
+}
+
+.gemini-v4-welcome-description {
+	margin-bottom: 24px;
+	text-align: center;
+}
+
+.gemini-v4-welcome-description p {
+	margin: 0;
+	font-size: 15px;
+	color: var(--text-muted);
+	line-height: 1.6;
+}
+
+.gemini-v4-whats-new {
+	margin-bottom: 28px;
+	padding: 20px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+}
+
+.gemini-v4-whats-new h3 {
+	margin: 0 0 12px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-v4-whats-new ul {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+}
+
+.gemini-v4-whats-new li {
+	margin: 8px 0;
+	padding-left: 24px;
+	position: relative;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--text-normal);
+}
+
+.gemini-v4-history-info {
+	margin-bottom: 24px;
+}
+
+.gemini-v4-history-info h3 {
+	margin: 0 0 12px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-v4-history-info p {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--text-muted);
+}
+
+.gemini-v4-archive-box {
+	padding: 16px;
+	background-color: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	margin-top: 12px;
+}
+
+.gemini-v4-archive-box p {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--text-normal);
+}
+
+.gemini-v4-archive-box ul {
+	margin: 0;
+	padding-left: 20px;
+	list-style-type: disc;
+}
+
+.gemini-v4-archive-box li {
+	margin: 4px 0;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.gemini-v4-welcome-buttons {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	margin: 24px 0 20px 0;
+}
+
+.gemini-v4-welcome-buttons button {
+	padding: 10px 24px;
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: 6px;
+}
+
+.gemini-v4-learn-more {
+	text-align: center;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-v4-learn-more a {
+	color: var(--interactive-accent);
+	text-decoration: none;
+	font-size: 14px;
+	transition: color 0.15s ease;
+}
+
+.gemini-v4-learn-more a:hover {
+	color: var(--interactive-accent-hover);
+	text-decoration: underline;
+}
+
+/* Archive Progress Styles */
+
+.gemini-v4-archive-progress {
+	text-align: center;
+	padding: 40px 20px;
+}
+
+.gemini-v4-archive-progress p {
+	margin: 0;
+	font-size: 15px;
+	color: var(--text-muted);
+}
+
+/* Archive Results Styles */
+
+.gemini-v4-archive-results {
+	margin: 24px 0;
+}
+
+.gemini-v4-archive-stats {
+	padding: 20px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	margin-bottom: 20px;
+}
+
+.gemini-v4-archive-stats p {
+	margin: 8px 0;
+	font-size: 14px;
+	color: var(--text-normal);
+}
+
+.gemini-v4-archive-error {
+	padding: 20px;
+	background-color: var(--background-modifier-error-hover);
+	border: 1px solid var(--background-modifier-error);
+	border-radius: 8px;
+	margin: 20px 0;
+}
+
+.gemini-v4-archive-error p {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	color: var(--text-normal);
+}
+
+.gemini-v4-archive-error code {
+	display: block;
+	padding: 12px;
+	background-color: var(--background-primary);
+	border-radius: 4px;
+	font-size: 13px;
+	color: var(--text-error);
+	word-wrap: break-word;
+	margin: 12px 0;
+}
+
+.gemini-v4-next-steps {
+	margin: 24px 0;
+}
+
+.gemini-v4-next-steps h3 {
+	margin: 0 0 12px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-v4-next-steps ul {
+	margin: 0;
+	padding-left: 20px;
+	list-style-type: disc;
+}
+
+.gemini-v4-next-steps li {
+	margin: 8px 0;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--text-muted);
+}
