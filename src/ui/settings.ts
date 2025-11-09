@@ -148,7 +148,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('API Key')
-			.setDesc('Gemini API Key')
+			.setDesc('Your Google Gemini API key. Get one free at https://aistudio.google.com/apikey')
 			.addText((text) => {
 				text
 					.setPlaceholder('Enter your API Key')
@@ -178,29 +178,29 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			this.plugin,
 			'chatModelName',
 			'Chat Model',
-			'The Gemini Model used in the chat interface.'
+			'Model used for agent chat sessions, selection rewriting, and web search tools.'
 		);
 		await selectModelSetting(
 			containerEl,
 			this.plugin,
 			'summaryModelName',
 			'Summary Model',
-			'The Gemini Model used for summarization.'
+			'Model used for the "Summarize Active File" command that adds summaries to frontmatter.'
 		);
 		await selectModelSetting(
 			containerEl,
 			this.plugin,
 			'completionsModelName',
 			'Completion Model',
-			'The Gemini Model used for completions.'
+			'Model used for IDE-style inline completions as you type in notes.'
 		);
 
 		new Setting(containerEl)
 			.setName('Summary Frontmatter Key')
-			.setDesc('Key to use for frontmatter summarization.')
+			.setDesc('Frontmatter property name where summaries are stored when using "Summarize Active File" command.')
 			.addText((text) =>
 				text
-					.setPlaceholder('Enter your key')
+					.setPlaceholder('summary')
 					.setValue(this.plugin.settings.summaryFrontmatterKey)
 					.onChange(async (value) => {
 						this.plugin.settings.summaryFrontmatterKey = value;
@@ -209,8 +209,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Your name.')
-			.setDesc('This will be used in the system instructions for the model.')
+			.setName('Your Name')
+			.setDesc('Your name used in system instructions so the AI can address you personally in conversations.')
 			.addText((text) =>
 				text
 					.setPlaceholder('Enter your name')
@@ -225,7 +225,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		// Plugin State Folder
 		new Setting(containerEl)
 			.setName('Plugin State Folder')
-			.setDesc('The folder where chat history and custom prompts will be stored. History files go in a History subfolder, prompts in a Prompts subfolder.')
+			.setDesc('Folder where plugin data is stored. Agent sessions are saved in Agent-Sessions/, custom prompts in Prompts/.')
 			.addText((text) => {
 				const folderSuggest = new FolderSuggest(this.app, text.inputEl, async (folder) => {
 					this.plugin.settings.historyFolder = folder;
@@ -256,7 +256,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Enable Streaming')
-			.setDesc('Enable streaming responses in the chat interface for a more interactive experience.')
+			.setDesc('Stream AI responses word-by-word as they are generated for a more interactive chat experience.')
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.streamingEnabled).onChange(async (value) => {
 					this.plugin.settings.streamingEnabled = value;
