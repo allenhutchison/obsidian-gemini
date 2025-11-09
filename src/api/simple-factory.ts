@@ -131,16 +131,13 @@ export class GeminiClientFactory {
 
     if (sessionConfig) {
       // Session config takes precedence
-      if (sessionConfig.model) {
-        // For now, we store model override at request time, not in config
-        // This maintains compatibility with current session management
-      }
       if (sessionConfig.temperature !== undefined) {
         overrides.temperature = sessionConfig.temperature;
       }
       if (sessionConfig.topP !== undefined) {
         overrides.topP = sessionConfig.topP;
       }
+      // Note: model override is handled at request time via session.modelConfig
     }
 
     return this.createFromPlugin(plugin, ModelUseCase.CHAT, overrides);
