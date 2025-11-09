@@ -56,6 +56,8 @@ export interface ObsidianGeminiSettings {
 	loopDetectionEnabled: boolean;
 	loopDetectionThreshold: number;
 	loopDetectionTimeWindowSeconds: number;
+	// V4 upgrade tracking
+	hasSeenV4Welcome: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -85,6 +87,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	loopDetectionEnabled: true,
 	loopDetectionThreshold: 3,
 	loopDetectionTimeWindowSeconds: 30,
+	// V4 upgrade tracking
+	hasSeenV4Welcome: false,
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -331,15 +335,23 @@ export default class ObsidianGemini extends Plugin {
 	 */
 	private async checkAndOfferMigration(): Promise<void> {
 		try {
+			// Only show modal once
+			if (this.settings.hasSeenV4Welcome) {
+				return;
+			}
+
 			const archiver = new HistoryArchiver(this);
 			const needsArchiving = await archiver.needsArchiving();
 
-			// Always show welcome modal on first run after upgrade to 4.0
-			// (In future, check a setting to only show once)
+			// Show welcome modal on first run after upgrade to 4.0
 			if (needsArchiving) {
 				// Show v4 welcome modal with archiving option
 				const modal = new V4WelcomeModal(this.app, this);
 				modal.open();
+
+				// Mark as seen so we don't show it again
+				this.settings.hasSeenV4Welcome = true;
+				await this.saveData(this.settings);
 			}
 		} catch (error) {
 			console.error('Error checking for archiving:', error);
