@@ -173,7 +173,7 @@ export class ImageGeneration {
 	 */
 	private async promptForImageDescription(): Promise<string | null> {
 		return new Promise((resolve) => {
-			const modal = new ImagePromptModal(this.plugin.app, this, (prompt) => {
+			const modal = new ImagePromptModal(this.plugin.app, this.plugin, this, (prompt) => {
 				resolve(prompt);
 			});
 			modal.open();
@@ -185,13 +185,15 @@ export class ImageGeneration {
  * Modal for prompting user to enter image description
  */
 class ImagePromptModal extends Modal {
+	private plugin: InstanceType<typeof ObsidianGemini>;
 	private imageGeneration: ImageGeneration;
 	private onSubmit: (prompt: string) => void;
 	private prompt = '';
 	private textArea: TextAreaComponent | null = null;
 
-	constructor(app: App, imageGeneration: ImageGeneration, onSubmit: (prompt: string) => void) {
+	constructor(app: App, plugin: InstanceType<typeof ObsidianGemini>, imageGeneration: ImageGeneration, onSubmit: (prompt: string) => void) {
 		super(app);
+		this.plugin = plugin;
 		this.imageGeneration = imageGeneration;
 		this.onSubmit = onSubmit;
 	}
