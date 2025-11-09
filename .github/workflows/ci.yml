@@ -21,6 +21,46 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Check for console.* usage
+        run: |
+          echo "Checking for prohibited console.* usage..."
+
+          # Count current console.* violations (excluding logger.ts)
+          CURRENT_COUNT=$(grep -r --include="*.ts" --exclude-dir=node_modules "console\." . | grep -v "src/utils/logger.ts" | wc -l)
+          BASELINE_COUNT=$(cat .console-baseline)
+
+          echo "Current violations: $CURRENT_COUNT"
+          echo "Baseline violations: $BASELINE_COUNT"
+
+          if [ "$CURRENT_COUNT" -gt "$BASELINE_COUNT" ]; then
+            echo ""
+            echo "❌ ERROR: New console.* usage detected!"
+            echo ""
+            echo "You have added $((CURRENT_COUNT - BASELINE_COUNT)) new console.* call(s)."
+            echo ""
+            echo "The codebase uses a Logger service that respects debug mode settings."
+            echo "Please replace console.* calls with logger.* calls:"
+            echo "  - logger.log() or logger.debug() for debug messages (filtered by debug mode)"
+            echo "  - logger.error() for errors (always visible)"
+            echo "  - logger.warn() for warnings (always visible)"
+            echo ""
+            echo "See src/utils/logger.ts for the Logger implementation."
+            echo "See AGENTS.md for logging guidelines."
+            echo ""
+            echo "To see which files contain console.* calls, run:"
+            echo "  grep -r --include=\"*.ts\" --exclude-dir=node_modules \"console\.\" . | grep -v \"src/utils/logger.ts\""
+            exit 1
+          elif [ "$CURRENT_COUNT" -lt "$BASELINE_COUNT" ]; then
+            echo ""
+            echo "🎉 Great! You've reduced console.* usage by $((BASELINE_COUNT - CURRENT_COUNT)) call(s)!"
+            echo "Please update .console-baseline to reflect the new count:"
+            echo "  echo $CURRENT_COUNT > .console-baseline"
+            echo ""
+            echo "✅ Console check passed"
+          else
+            echo "✅ No new console.* usage detected"
+          fi
+
       - name: Run tests
         run: npm test -- --coverage
 
