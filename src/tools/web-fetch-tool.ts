@@ -63,7 +63,7 @@ export class WebFetchTool implements Tool {
 			const prompt = `${params.query} for ${params.url}`;
 
 			// Generate content with URL context using the genAI.models API
-			console.log('Web fetch - sending prompt:', prompt);
+			plugin.logger.log('Web fetch - sending prompt:', prompt);
 			const result = await genAI.models.generateContent({
 				model: modelToUse,
 				contents: prompt,
@@ -72,7 +72,7 @@ export class WebFetchTool implements Tool {
 					tools: [{ urlContext: {} }]
 				}
 			});
-			console.log('Web fetch - received result:', result);
+			plugin.logger.log('Web fetch - received result:', result);
 			
 			// Extract text from response
 			let text = '';
@@ -96,24 +96,24 @@ export class WebFetchTool implements Tool {
 			
 			// Log metadata for debugging
 			if (urlMetadata?.urlMetadata) {
-				console.log('URL Context Metadata:', urlMetadata.urlMetadata);
+				plugin.logger.log('URL Context Metadata:', urlMetadata.urlMetadata);
 				// Log more details about the metadata structure
 				if (urlMetadata.urlMetadata.length > 0) {
-					console.log('First metadata entry:', JSON.stringify(urlMetadata.urlMetadata[0], null, 2));
+					plugin.logger.log('First metadata entry:', JSON.stringify(urlMetadata.urlMetadata[0], null, 2));
 				}
 			}
 			
 			// Check if URL retrieval failed - the field is urlRetrievalStatus (camelCase)
 			const urlRetrievalFailed = urlMetadata?.urlMetadata?.some((meta: any) => {
 				const status = meta.urlRetrievalStatus;
-				console.log('Checking URL status:', status);
+				plugin.logger.log('Checking URL status:', status);
 				return status === 'URL_RETRIEVAL_STATUS_ERROR' ||
 					   status === 'URL_RETRIEVAL_STATUS_ACCESS_DENIED' ||
 					   status === 'URL_RETRIEVAL_STATUS_NOT_FOUND';
 			});
 			
 			if (urlRetrievalFailed) {
-				console.log('URL retrieval failed, attempting fallback fetch...');
+				plugin.logger.log('URL retrieval failed, attempting fallback fetch...');
 				// Try fallback fetch
 				return await this.fallbackFetch(params, plugin);
 			}
@@ -166,7 +166,7 @@ export class WebFetchTool implements Tool {
 			}
 			
 			// Try fallback fetch for any other errors
-			console.log('Primary web fetch failed, attempting fallback...');
+			plugin.logger.log('Primary web fetch failed, attempting fallback...');
 			try {
 				return await this.fallbackFetch(params, plugin);
 			} catch (fallbackError) {

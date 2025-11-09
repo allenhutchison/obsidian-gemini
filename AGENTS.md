@@ -128,6 +128,61 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 - Handle TypeScript errors properly - ensure all properties are correctly typed
 - Use proper async/await patterns for all asynchronous operations
 
+### Console Logging
+
+The plugin uses a dedicated Logger service (`src/utils/logger.ts`) that respects the debug mode setting. This approach avoids global console patching, preventing conflicts with other plugins and Obsidian's debugging tools.
+
+**Accessing the Logger:**
+- Plugin components: `this.plugin.logger`
+- Tool implementations: `context.plugin.logger` (via ToolExecutionContext)
+- Utility functions: Accept logger as parameter
+
+**Logger Methods:**
+- **`logger.log()` and `logger.debug()`**: Only output when debug mode is enabled
+  - Automatically filtered based on settings.debugMode
+  - Prefixed with `[Gemini Scribe]` for easy identification
+
+- **`logger.error()` and `logger.warn()`**: Always visible regardless of debug mode
+  - Use for important errors and warnings that users should always see
+  - Critical failures, API errors, and data integrity issues
+
+**Best Practices:**
+- Use `logger.log()` for debug information that helps development and troubleshooting
+- Use `logger.error()` for errors that indicate something went wrong
+- Use `logger.warn()` for warnings about deprecated features or potential issues
+- Never use native `console.log()` or `console.debug()` directly
+- Pass logger instance to utility functions that need logging
+
+**Examples:**
+```typescript
+// ✅ Good - in plugin components
+this.plugin.logger.log('Processing file:', file.path);
+this.plugin.logger.debug('Tool execution context:', context);
+
+// ✅ Good - in tool implementations
+async execute(params: any, context: ToolExecutionContext) {
+    const plugin = context.plugin;
+    plugin.logger.log('Executing tool with params:', params);
+}
+
+// ✅ Good - in utility functions
+export function processData(logger: Logger, data: any) {
+    logger.log('Processing data:', data);
+}
+
+// ✅ Good - always visible for critical issues
+this.plugin.logger.error('Failed to load API key:', error);
+this.plugin.logger.warn('Model deprecated, using fallback');
+
+// ❌ Bad - using console directly
+console.log('Debug message');
+
+// ❌ Bad - manual debug mode checks (logger handles this)
+if (this.plugin.settings.debugMode) {
+    this.plugin.logger.log('Debug message');
+}
+```
+
 ## Testing Guidelines
 
 - Jest with ts-jest for TypeScript support
