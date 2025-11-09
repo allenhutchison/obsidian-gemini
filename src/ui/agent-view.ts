@@ -2251,21 +2251,26 @@ User: ${history[0].message}`;
 						// For other objects, show key-value pairs
 						const resultList = resultContent.createDiv({ cls: 'gemini-agent-tool-result-object' });
 						for (const [key, value] of Object.entries(result.data)) {
+							// Skip undefined/null values
+							if (value === undefined || value === null) {
+								continue;
+							}
+
 							if (key === 'content' && typeof value === 'string' && value.length > 100) {
 								// Skip long content in generic display
 								continue;
 							}
-							
+
 							const item = resultList.createDiv({ cls: 'gemini-agent-tool-result-item' });
-							item.createSpan({ 
+							item.createSpan({
 								text: key + ':',
-								cls: 'gemini-agent-tool-result-key' 
+								cls: 'gemini-agent-tool-result-key'
 							});
-							
-							const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
-							item.createSpan({ 
+
+							const valueStr = typeof value === 'string' ? value : JSON.stringify(value) || String(value);
+							item.createSpan({
 								text: valueStr.length > 100 ? valueStr.substring(0, 100) + '...' : valueStr,
-								cls: 'gemini-agent-tool-result-value' 
+								cls: 'gemini-agent-tool-result-value'
 							});
 						}
 					}
