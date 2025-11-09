@@ -497,17 +497,19 @@ export default class ObsidianGemini extends Plugin {
 
 		// Override console.log to respect debug mode
 		console.log = (...args: any[]) => {
-			if (this.settings?.debugMode) {
+			if (this.settings?.debugMode && typeof this.originalConsoleLog === 'function') {
 				this.originalConsoleLog.apply(console, args);
 			}
 		};
 
-		// Override console.debug to respect debug mode
-		console.debug = (...args: any[]) => {
-			if (this.settings?.debugMode) {
-				this.originalConsoleDebug.apply(console, args);
-			}
-		};
+		// Override console.debug to respect debug mode (if it exists)
+		if (typeof console.debug === 'function') {
+			console.debug = (...args: any[]) => {
+				if (this.settings?.debugMode && typeof this.originalConsoleDebug === 'function') {
+					this.originalConsoleDebug.apply(console, args);
+				}
+			};
+		}
 	}
 
 	/**

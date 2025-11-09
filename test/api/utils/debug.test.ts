@@ -50,11 +50,6 @@ describe('logDebugInfo', () => {
 		consoleLogSpy.mockRestore();
 	});
 
-	it('should not log anything if debugMode is false', () => {
-		logDebugInfo(false, 'Test Title', { data: 'some data' });
-		expect(consoleLogSpy).not.toHaveBeenCalled();
-	});
-
 	it('should log formatted ExtendedModelRequest if data is an ExtendedModelRequest', () => {
 		const extendedReq = {
 			prompt: 'system prompt',
@@ -62,7 +57,7 @@ describe('logDebugInfo', () => {
 			userMessage: 'hello',
 			model: 'gemini-pro-extended',
 		};
-		logDebugInfo(true, 'Extended Test', extendedReq);
+		logDebugInfo('Extended Test', extendedReq);
 		expect(consoleLogSpy).toHaveBeenCalledTimes(1);
 		expect(consoleLogSpy).toHaveBeenCalledWith(
 			expect.stringContaining('[GeminiAPI Debug] Extended Test (ExtendedModelRequest):')
@@ -75,7 +70,7 @@ describe('logDebugInfo', () => {
 			prompt: 'simple prompt',
 			model: 'gemini-pro-base',
 		};
-		logDebugInfo(true, 'Base Test', baseReq);
+		logDebugInfo('Base Test', baseReq);
 		expect(consoleLogSpy).toHaveBeenCalledTimes(1);
 		expect(consoleLogSpy).toHaveBeenCalledWith(
 			expect.stringContaining('[GeminiAPI Debug] Base Test (BaseModelRequest):')
@@ -89,7 +84,7 @@ describe('logDebugInfo', () => {
 		const title = 'File Label Test';
 		// No need to spy on redactLinkedFileSections, we check its effect via console.log
 		// and redactLinkedFileSections is already tested separately.
-		logDebugInfo(true, title, fileLabelString);
+		logDebugInfo(title, fileLabelString);
 		expect(consoleLogSpy).toHaveBeenCalledTimes(1);
 		expect(consoleLogSpy).toHaveBeenCalledWith(
 			`[GeminiAPI Debug] ${title}:\n${redactLinkedFileSections(fileLabelString)}`
@@ -101,7 +96,7 @@ describe('logDebugInfo', () => {
 		const title = 'Other Object Test';
 		// No need to spy on stripLinkedFileContents, we check its effect via console.log
 		// and stripLinkedFileContents is already tested separately.
-		logDebugInfo(true, title, otherData);
+		logDebugInfo(title, otherData);
 		expect(consoleLogSpy).toHaveBeenCalledTimes(1);
 		// The expected output will be JSON stringified, so we compare against that
 		const expectedStrippedData = stripLinkedFileContents(otherData);
@@ -114,7 +109,7 @@ describe('logDebugInfo', () => {
 	it('should log stripped and stringified data for simple strings not containing "File Label:"', () => {
 		const simpleString = 'This is a simple string without file labels.';
 		const title = 'Simple String Test';
-		logDebugInfo(true, title, simpleString);
+		logDebugInfo(title, simpleString);
 		expect(consoleLogSpy).toHaveBeenCalledTimes(1);
 		const expectedStrippedData = stripLinkedFileContents(simpleString); // which is the string itself
 		expect(consoleLogSpy).toHaveBeenCalledWith(
