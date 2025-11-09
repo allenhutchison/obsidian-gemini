@@ -2380,6 +2380,8 @@ User: ${history[0].message}`;
 				// Run the vault analyzer
 				if (this.plugin.vaultAnalyzer) {
 					await this.plugin.vaultAnalyzer.initializeAgentsMemory();
+					// Refresh the empty state to update the button
+					await this.showEmptyState();
 				}
 			});
 
