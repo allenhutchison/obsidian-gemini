@@ -28,6 +28,25 @@ npm run format-check # Check formatting without changes
 - Run single test: `npm test -- path/to/test.ts`
 - Manual integration: `node test-scripts/test-sdk-tools.mjs` (and siblings) validate agent toolchains before shipping
 
+### Versioning & Releases
+
+Use npm's built-in version commands to create releases:
+
+```bash
+npm version patch  # Bump patch version (e.g., 4.0.0 → 4.0.1)
+npm version minor  # Bump minor version (e.g., 4.0.0 → 4.1.0)
+npm version major  # Bump major version (e.g., 3.3.2 → 4.0.0)
+```
+
+These commands automatically:
+- Update `package.json` version
+- Run `version-bump.mjs` to update `manifest.json` and `versions.json`
+- Create a git commit with the version change
+- Create a git tag (e.g., `4.0.0`)
+- Push the commit and tag to GitHub
+
+**IMPORTANT**: Do NOT manually edit version numbers in `package.json`, `manifest.json`, or `versions.json`. Always use the npm version commands.
+
 ### Build System
 
 - Uses esbuild for fast bundling with TypeScript
