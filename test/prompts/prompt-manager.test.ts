@@ -77,6 +77,15 @@ describe('PromptManager', () => {
 					getFirstLinkpathDest: jest.fn(),
 				},
 			},
+			logger: {
+				log: jest.fn(),
+				debug: jest.fn(),
+				warn: jest.fn(),
+				error: jest.fn(),
+				child: jest.fn(function(this: any, prefix: string) {
+					return this;
+				})
+			}
 		};
 
 		mockVault = {

@@ -22,6 +22,15 @@ describe('ModelManager Version Filtering', () => {
 					fallbackToStatic: true,
 				},
 			},
+			logger: {
+				log: jest.fn(),
+				debug: jest.fn(),
+				warn: jest.fn(),
+				error: jest.fn(),
+				child: jest.fn(function(this: any, prefix: string) {
+					return this;
+				})
+			}
 		} as ObsidianGemini;
 
 		// Create model manager

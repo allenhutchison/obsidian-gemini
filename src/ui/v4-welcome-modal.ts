@@ -150,7 +150,7 @@ export class V4WelcomeModal extends Modal {
 			this.showArchiveResults(report);
 		} catch (error) {
 			notice.hide();
-			console.error('Archive failed:', error);
+			this.plugin.logger.error('Archive failed:', error);
 
 			contentEl.empty();
 			contentEl.createEl('h2', { text: '❌ Archive Failed' });

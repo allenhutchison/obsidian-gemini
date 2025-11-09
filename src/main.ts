@@ -329,7 +329,7 @@ export default class ObsidianGemini extends Plugin {
 				// "Reveal" the leaf in case it is in a collapsed sidebar
 				await workspace.revealLeaf(leaf);
 			} else {
-				console.error('Could not find a leaf to open the agent view');
+				this.logger.error('Could not find a leaf to open the agent view');
 			}
 		}
 	}
@@ -376,7 +376,7 @@ export default class ObsidianGemini extends Plugin {
 			this.settings.hasSeenV4Welcome = true;
 			await this.saveData(this.settings);
 		} catch (error) {
-			console.error('Error checking for archiving:', error);
+			this.logger.error('Error checking for archiving:', error);
 			// Don't show error to user - archiving is optional
 		}
 	}
@@ -402,7 +402,7 @@ export default class ObsidianGemini extends Plugin {
 				await this.saveData(this.settings);
 			}
 		} catch (error) {
-			console.error('Error checking for updates:', error);
+			this.logger.error('Error checking for updates:', error);
 			// Don't show error to user - update notifications are optional
 		}
 	}
@@ -470,7 +470,7 @@ export default class ObsidianGemini extends Plugin {
 				this.settings.modelDiscovery.lastUpdate = now;
 				await this.saveData(this.settings);
 			} catch (error) {
-				console.warn('Failed to update models during auto-update:', error);
+				this.logger.warn('Failed to update models during auto-update:', error);
 			}
 		}
 	}

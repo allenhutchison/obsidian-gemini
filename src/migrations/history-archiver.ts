@@ -112,7 +112,7 @@ export class HistoryArchiver {
 			return report;
 		} catch (error) {
 			report.errors.push(`Archive failed: ${error.message}`);
-			console.error('History archive error:', error);
+			this.plugin.logger.error('History archive error:', error);
 			throw error;
 		}
 	}
@@ -161,7 +161,7 @@ Visit the [Gemini Scribe documentation](https://github.com/allenhutchison/obsidi
 		try {
 			await this.plugin.app.vault.create(readmePath, content);
 		} catch (error) {
-			console.warn('Failed to create archive README:', error);
+			this.plugin.logger.warn('Failed to create archive README:', error);
 			// Non-fatal error, continue
 		}
 	}
@@ -178,7 +178,7 @@ Visit the [Gemini Scribe documentation](https://github.com/allenhutchison/obsidi
 		try {
 			await this.plugin.app.vault.create(markerPath, content);
 		} catch (error) {
-			console.warn('Failed to create archive marker:', error);
+			this.plugin.logger.warn('Failed to create archive marker:', error);
 		}
 	}
 }

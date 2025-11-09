@@ -74,7 +74,7 @@ export class PromptManager {
 				content: contentWithoutFrontmatter.trim(),
 			};
 		} catch (error) {
-			console.error('Error loading prompt file:', error);
+			this.plugin.logger.error('Error loading prompt file:', error);
 			return null;
 		}
 	}
@@ -258,7 +258,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			// Show prompt selection modal
 			this.showPromptSelectionModal(activeFile, availablePrompts);
 		} catch (error) {
-			console.error('Error applying custom prompt:', error);
+			this.plugin.logger.error('Error applying custom prompt:', error);
 			new Notice('Failed to apply custom prompt');
 		}
 	}
@@ -284,7 +284,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 
 			// Force refresh the chat interface prompt indicator if view is open
 		} catch (error) {
-			console.error('Error applying prompt to file:', error);
+			this.plugin.logger.error('Error applying prompt to file:', error);
 			new Notice('Failed to apply custom prompt to note');
 		}
 	}
@@ -321,7 +321,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 
 			// Force refresh the chat interface prompt indicator if view is open
 		} catch (error) {
-			console.error('Error removing custom prompt:', error);
+			this.plugin.logger.error('Error removing custom prompt:', error);
 			new Notice('Failed to remove custom prompt from note');
 		}
 	}
@@ -402,14 +402,14 @@ This prompt will be applied to notes and will supplement the default system prom
 
 					new Notice(`Created new custom prompt: ${promptName}`);
 				} catch (error) {
-					console.error('Error creating prompt file:', error);
+					this.plugin.logger.error('Error creating prompt file:', error);
 					new Notice('Failed to create prompt file');
 				}
 			});
 
 			modal.open();
 		} catch (error) {
-			console.error('Error creating new custom prompt:', error);
+			this.plugin.logger.error('Error creating new custom prompt:', error);
 			new Notice('Failed to create new custom prompt');
 		}
 	}
@@ -457,7 +457,7 @@ class PromptSelectionModal extends SuggestModal<PromptInfo> {
 			try {
 				await this.promptManager.applyPromptToFile(this.targetFile, prompt);
 			} catch (error) {
-				console.error('Error applying prompt:', error);
+				this.plugin.logger.error('Error applying prompt:', error);
 				new Notice('Failed to apply custom prompt');
 			}
 		}, 0);

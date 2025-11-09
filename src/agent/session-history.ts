@@ -43,7 +43,7 @@ export class SessionHistory {
 			const content = await this.plugin.app.vault.read(historyFile);
 			return this.parseHistoryContent(content);
 		} catch (error) {
-			console.error(`Error reading agent session history from ${historyPath}:`, error);
+			this.plugin.logger.error(`Error reading agent session history from ${historyPath}:`, error);
 			return [];
 		}
 	}
@@ -67,7 +67,7 @@ export class SessionHistory {
 			try {
 				existingContent = await this.plugin.app.vault.read(historyFile);
 			} catch (error) {
-				console.error(`Error reading existing history from ${historyPath}:`, error);
+				this.plugin.logger.error(`Error reading existing history from ${historyPath}:`, error);
 			}
 		} else {
 			// Create new file with session metadata
@@ -106,7 +106,7 @@ export class SessionHistory {
 			// Update session's lastActive time
 			session.lastActive = new Date();
 		} catch (error) {
-			console.error(`Error writing to agent session history ${historyPath}:`, error);
+			this.plugin.logger.error(`Error writing to agent session history ${historyPath}:`, error);
 			throw error;
 		}
 	}
@@ -193,7 +193,7 @@ export class SessionHistory {
 			try {
 				await this.plugin.app.vault.delete(historyFile);
 			} catch (error) {
-				console.error(`Error deleting session history ${historyPath}:`, error);
+				this.plugin.logger.error(`Error deleting session history ${historyPath}:`, error);
 				throw error;
 			}
 		}
@@ -213,7 +213,7 @@ export class SessionHistory {
 				.filter((file: any): file is TFile => file instanceof TFile && file.extension === 'md')
 				.sort((a: TFile, b: TFile) => b.stat.mtime - a.stat.mtime); // Most recent first
 		} catch (error) {
-			console.error(`Error listing agent sessions:`, error);
+			this.plugin.logger.error(`Error listing agent sessions:`, error);
 			return [];
 		}
 	}

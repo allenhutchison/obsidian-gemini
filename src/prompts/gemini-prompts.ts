@@ -106,7 +106,7 @@ export class GeminiPrompts {
 	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt, agentsMemory?: string | null): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
-			console.warn('System prompt override enabled. Base functionality may be affected.');
+			this.plugin?.logger.warn('System prompt override enabled. Base functionality may be affected.');
 			return customPrompt.content;
 		}
 

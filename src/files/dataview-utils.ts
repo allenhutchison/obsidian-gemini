@@ -53,7 +53,7 @@ export class ScribeDataView {
 
 			// Check if result and result.value exist
 			if (!result?.value) {
-				console.warn(`Invalid query result for "${query}" in file "${file.path}"`);
+				this.plugin.logger.warn(`Invalid query result for "${query}" in file "${file.path}"`);
 				return normalizedLinks;
 			}
 
@@ -63,7 +63,7 @@ export class ScribeDataView {
 					if (normalizedPath) {
 						normalizedLinks.add(normalizedPath);
 					} else {
-						console.warn(`Link "${link}" in file "${file.path}" could not be normalized.`);
+						this.plugin.logger.warn(`Link "${link}" in file "${file.path}" could not be normalized.`);
 					}
 				}
 			};
@@ -80,7 +80,7 @@ export class ScribeDataView {
 				}
 			}
 		} catch (error) {
-			console.error(`Error evaluating dataview query "${query}" in file "${file.path}":`, error);
+			this.plugin.logger.error(`Error evaluating dataview query "${query}" in file "${file.path}":`, error);
 		}
 
 		return normalizedLinks;

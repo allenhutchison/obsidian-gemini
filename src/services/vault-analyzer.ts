@@ -90,7 +90,7 @@ export class VaultAnalyzer {
 
 			if (!generatedData) {
 				modal.setStepFailed('parse', 'Failed to parse AI response');
-				console.error('Failed to parse analysis response:', response.markdown);
+				this.plugin.logger.error('Failed to parse analysis response:', response.markdown);
 				new Notice('Failed to parse AI response. Check console for details.');
 				setTimeout(() => modal.close(), 3000);
 				return;
@@ -127,7 +127,7 @@ export class VaultAnalyzer {
 				await this.plugin.app.workspace.openLinkText(file.path, '', false);
 			}
 		} catch (error) {
-			console.error('Failed to initialize AGENTS.md:', error);
+			this.plugin.logger.error('Failed to initialize AGENTS.md:', error);
 			modal.setStepFailed(modal['currentStep'], error instanceof Error ? error.message : 'Unknown error');
 			new Notice('Failed to initialize AGENTS.md. Check console for details.');
 			setTimeout(() => modal.close(), 3000);
@@ -316,7 +316,7 @@ export class VaultAnalyzer {
 				customInstructions: parsed.customInstructions || ''
 			};
 		} catch (error) {
-			console.error('Failed to parse analysis response:', error);
+			this.plugin.logger.error('Failed to parse analysis response:', error);
 			return null;
 		}
 	}

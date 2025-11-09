@@ -12,6 +12,7 @@ import {
 	StreamCallback,
 	StreamingModelResponse,
 } from './interfaces/model-api';
+import { Logger } from '../utils/logger';
 
 export interface RetryConfig {
 	maxRetries: number;
@@ -24,10 +25,12 @@ export interface RetryConfig {
 export class RetryDecorator implements ModelApi {
 	private wrappedApi: ModelApi;
 	private config: RetryConfig;
+	private logger?: Logger;
 
-	constructor(wrappedApi: ModelApi, config: RetryConfig) {
+	constructor(wrappedApi: ModelApi, config: RetryConfig, logger?: Logger) {
 		this.wrappedApi = wrappedApi;
 		this.config = config;
+		this.logger = logger;
 	}
 
 	/**
@@ -54,7 +57,7 @@ export class RetryDecorator implements ModelApi {
 
 				// Don't retry if we've exhausted our attempts
 				if (attempt === this.config.maxRetries) {
-					console.error(
+					this.logger?.error(
 						`${operationName} failed after ${this.config.maxRetries + 1} attempts:`,
 						error
 					);
@@ -64,7 +67,7 @@ export class RetryDecorator implements ModelApi {
 				// Calculate backoff delay with exponential increase
 				const backoffDelay = this.config.initialBackoffDelay * Math.pow(2, attempt);
 
-				console.warn(
+				this.logger?.warn(
 					`${operationName} failed (attempt ${attempt + 1}/${this.config.maxRetries + 1}). ` +
 					`Retrying in ${backoffDelay}ms...`,
 					error
@@ -126,7 +129,7 @@ export class RetryDecorator implements ModelApi {
 				if (currentAttempt <= this.config.maxRetries) {
 					const backoffDelay = this.config.initialBackoffDelay * Math.pow(2, currentAttempt - 1);
 
-					console.warn(
+					this.logger?.warn(
 						`Streaming failed (attempt ${currentAttempt}/${this.config.maxRetries + 1}). ` +
 						`Retrying in ${backoffDelay}ms...`,
 						error
@@ -135,7 +138,7 @@ export class RetryDecorator implements ModelApi {
 					await this.sleep(backoffDelay);
 					return attemptStream();
 				} else {
-					console.error(
+					this.logger?.error(
 						`Streaming failed after ${this.config.maxRetries + 1} attempts:`,
 						error
 					);

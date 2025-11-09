@@ -110,7 +110,7 @@ export class ModelDiscoveryService {
 
 		const failedCount = detailedResults.length - detailedModels.length;
 		if (failedCount > 0) {
-			console.warn(`Failed to fetch detailed information for ${failedCount} models`);
+			this.plugin.logger.warn(`Failed to fetch detailed information for ${failedCount} models`);
 		}
 
 		return detailedModels;
@@ -126,7 +126,7 @@ export class ModelDiscoveryService {
 
 			const response = await fetch(url.toString());
 			if (!response.ok) {
-				console.warn(`Failed to fetch details for model ${model.name}: ${response.status}`);
+				this.plugin.logger.warn(`Failed to fetch details for model ${model.name}: ${response.status}`);
 				return model; // Return basic model info if detailed fetch fails
 			}
 
@@ -140,7 +140,7 @@ export class ModelDiscoveryService {
 				topK: detailedData?.topK,
 			};
 		} catch (error) {
-			console.warn(`Error fetching model details for ${model.name}:`, error);
+			this.plugin.logger.warn(`Error fetching model details for ${model.name}:`, error);
 			return model; // Return basic model info if there's an error
 		}
 	}

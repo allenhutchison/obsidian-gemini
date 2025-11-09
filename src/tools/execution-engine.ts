@@ -56,10 +56,10 @@ export class ToolExecutionEngine {
 				this.plugin.settings.loopDetectionThreshold,
 				this.plugin.settings.loopDetectionTimeWindowSeconds
 			);
-			
+
 			const loopInfo = this.loopDetector.getLoopInfo(context.session.id, toolCall);
 			if (loopInfo.isLoop) {
-				console.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);
+				this.plugin.logger.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);
 				return {
 					success: false,
 					error: `Execution loop detected: ${toolCall.name} has been called ${loopInfo.identicalCallCount} times with the same parameters in the last ${loopInfo.timeWindowMs / 1000} seconds. Please try a different approach.`

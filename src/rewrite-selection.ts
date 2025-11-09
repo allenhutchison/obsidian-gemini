@@ -77,7 +77,7 @@ export class SelectionRewriter {
 
 			new Notice('Text rewritten successfully');
 		} catch (error) {
-			console.error('Failed to rewrite text:', error);
+			this.plugin.logger.error('Failed to rewrite text:', error);
 			new Notice('Failed to rewrite text: ' + error.message);
 		}
 	}
@@ -132,7 +132,7 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 
 			new Notice('File rewritten successfully');
 		} catch (error) {
-			console.error('Failed to rewrite file:', error);
+			this.plugin.logger.error('Failed to rewrite file:', error);
 			new Notice('Failed to rewrite file: ' + error.message);
 		}
 	}

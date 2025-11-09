@@ -18,10 +18,9 @@ export class ToolRegistry {
 	 */
 	registerTool(tool: Tool): void {
 		if (this.tools.has(tool.name)) {
-			console.warn(`Tool ${tool.name} is already registered, overwriting...`);
+			this.plugin.logger.warn(`Tool ${tool.name} is already registered, overwriting...`);
 		}
 		this.tools.set(tool.name, tool);
-		// console.debug(`Registered tool: ${tool.name}`);
 	}
 
 	/**
