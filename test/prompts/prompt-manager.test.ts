@@ -1,6 +1,6 @@
-import { PromptManager } from './prompt-manager';
+import { PromptManager } from '../../src/prompts/prompt-manager';
 import { Vault, TFile, TFolder } from 'obsidian';
-import ObsidianGemini from '../main';
+import ObsidianGemini from '../../src/main';
 
 // Mock obsidian module
 jest.mock('obsidian', () => {

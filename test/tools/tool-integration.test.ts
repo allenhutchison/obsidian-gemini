@@ -1,9 +1,9 @@
-import { ToolExecutionEngine } from './execution-engine';
-import { ToolRegistry } from './tool-registry';
-import { ReadFileTool, WriteFileTool, SearchFilesTool, DeleteFileTool, ListFilesTool } from './vault-tools';
-import { GoogleSearchTool } from './google-search-tool';
-import { WebFetchTool } from './web-fetch-tool';
-import { SessionType, ToolCategory } from '../types/agent';
+import { ToolExecutionEngine } from '../../src/tools/execution-engine';
+import { ToolRegistry } from '../../src/tools/tool-registry';
+import { ReadFileTool, WriteFileTool, SearchFilesTool, DeleteFileTool, ListFilesTool } from '../../src/tools/vault-tools';
+import { GoogleSearchTool } from '../../src/tools/google-search-tool';
+import { WebFetchTool } from '../../src/tools/web-fetch-tool';
+import { SessionType, ToolCategory } from '../../src/types/agent';
 import { TFile } from 'obsidian';
 
 // Mock dependencies
@@ -22,14 +22,14 @@ jest.mock('obsidian', () => ({
 jest.mock('@google/genai');
 
 // Mock ScribeFile and ScribeDataView
-jest.mock('../files', () => ({
+jest.mock('../../src/files', () => ({
 	ScribeFile: jest.fn().mockImplementation(() => ({
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
 		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
 	}))
 }));
 
-jest.mock('../files/dataview-utils', () => ({
+jest.mock('../../src/files/dataview-utils', () => ({
 	ScribeDataView: jest.fn().mockImplementation(() => ({
 		getBacklinks: jest.fn().mockResolvedValue(new Set())
 	}))

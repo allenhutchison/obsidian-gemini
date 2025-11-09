@@ -1,6 +1,6 @@
-import { ToolRegistry } from './tool-registry';
-import { Tool, ToolResult, ToolExecutionContext } from './types';
-import { ToolCategory } from '../types/agent';
+import { ToolRegistry } from '../../src/tools/tool-registry';
+import { Tool, ToolResult, ToolExecutionContext } from '../../src/tools/types';
+import { ToolCategory } from '../../src/types/agent';
 
 // Mock plugin
 const mockPlugin = {

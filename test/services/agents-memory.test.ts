@@ -1,4 +1,4 @@
-import { AgentsMemory, AgentsMemoryData } from './agents-memory';
+import { AgentsMemory, AgentsMemoryData } from '../../src/services/agents-memory';
 import { TFile, normalizePath } from 'obsidian';
 
 // Mock obsidian

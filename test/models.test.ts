@@ -5,7 +5,7 @@ import {
 	GeminiModel,
 	getUpdatedModelSettings,
 	setGeminiModels,
-} from './models';
+} from '../src/models';
 
 // Helper to temporarily modify GEMINI_MODELS for specific tests
 const setTestModels = (models: GeminiModel[]) => {
@@ -67,7 +67,7 @@ describe('getDefaultModelForRole', () => {
 		// This test relies on the original state of GEMINI_MODELS before any test modifications
 		// If originalModels was captured from an already empty state, this test would be misleading.
 		// This is more of an assertion about your actual data.
-		const actualImportedModels = jest.requireActual<typeof import('./models')>('./models').GEMINI_MODELS;
+		const actualImportedModels = jest.requireActual<typeof import('../src/models')>('../src/models').GEMINI_MODELS;
 		expect(actualImportedModels.length).toBeGreaterThan(0);
 	});
 

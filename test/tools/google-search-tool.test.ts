@@ -1,7 +1,7 @@
-import { GoogleSearchTool, getGoogleSearchTool } from './google-search-tool';
-import { ToolExecutionContext } from './types';
+import { GoogleSearchTool, getGoogleSearchTool } from '../../src/tools/google-search-tool';
+import { ToolExecutionContext } from '../../src/tools/types';
 import { GoogleGenAI } from '@google/genai';
-import { getDefaultModelForRole } from '../models';
+import { getDefaultModelForRole } from '../../src/models';
 
 // Mock Google Gen AI
 jest.mock('@google/genai', () => ({

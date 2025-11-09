@@ -1,9 +1,9 @@
-import { ModelManager, ModelUpdateOptions } from './model-manager';
-import { ModelDiscoveryService } from './model-discovery';
-import { GeminiModel } from '../models';
+import { ModelManager, ModelUpdateOptions } from '../../src/services/model-manager';
+import { ModelDiscoveryService } from '../../src/services/model-discovery';
+import { GeminiModel } from '../../src/models';
 
 // Mock the models module
-jest.mock('../models', () => ({
+jest.mock('../../src/models', () => ({
 	GEMINI_MODELS: [
 		{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
 		{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
@@ -17,13 +17,13 @@ jest.mock('../models', () => ({
 }));
 
 // Mock ModelDiscoveryService
-jest.mock('./model-discovery');
-jest.mock('./model-mapper');
+jest.mock('../../src/services/model-discovery');
+jest.mock('../../src/services/model-mapper');
 
-import { ModelMapper } from './model-mapper';
+import { ModelMapper } from '../../src/services/model-mapper';
 
 // Get the mocked function after import
-const { setGeminiModels } = require('../models');
+const { setGeminiModels } = require('../../src/models');
 const mockSetGeminiModels = setGeminiModels as jest.Mock;
 
 const mockPlugin = {

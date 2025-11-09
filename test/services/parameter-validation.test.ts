@@ -1,5 +1,5 @@
-import { ParameterValidationService } from './parameter-validation';
-import { GoogleModel } from './model-discovery';
+import { ParameterValidationService } from '../../src/services/parameter-validation';
+import { GoogleModel } from '../../src/services/model-discovery';
 
 describe('ParameterValidationService', () => {
 	describe('getParameterRanges', () => {

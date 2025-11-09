@@ -1,5 +1,5 @@
-import { ToolLoopDetector } from './loop-detector';
-import { ToolCall } from './types';
+import { ToolLoopDetector } from '../../src/tools/loop-detector';
+import { ToolCall } from '../../src/tools/types';
 
 describe('ToolLoopDetector', () => {
 	let detector: ToolLoopDetector;

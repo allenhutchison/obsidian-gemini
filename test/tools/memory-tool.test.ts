@@ -1,6 +1,6 @@
-import { UpdateMemoryTool, ReadMemoryTool, getMemoryTools } from './memory-tool';
-import { ToolExecutionContext } from './types';
-import { ToolCategory } from '../types/agent';
+import { UpdateMemoryTool, ReadMemoryTool, getMemoryTools } from '../../src/tools/memory-tool';
+import { ToolExecutionContext } from '../../src/tools/types';
+import { ToolCategory } from '../../src/types/agent';
 
 // Mock AgentsMemory
 const mockAgentsMemory = {

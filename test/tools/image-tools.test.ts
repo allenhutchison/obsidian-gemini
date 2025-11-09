@@ -1,5 +1,5 @@
-import { GenerateImageTool, getImageTools } from './image-tools';
-import { ToolExecutionContext } from './types';
+import { GenerateImageTool, getImageTools } from '../../src/tools/image-tools';
+import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock the image generation service
 const mockImageGeneration = {

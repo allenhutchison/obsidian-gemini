@@ -1,5 +1,5 @@
-import { SessionManager } from './session-manager';
-import { SessionType } from '../types/agent';
+import { SessionManager } from '../../src/agent/session-manager';
+import { SessionType } from '../../src/types/agent';
 
 // Import the mocked TFile class
 import { TFile } from 'obsidian';

@@ -1,6 +1,6 @@
-import { ModelMapper } from './model-mapper';
-import { GeminiModel } from '../models';
-import { GoogleModel } from './model-discovery';
+import { ModelMapper } from '../../src/services/model-mapper';
+import { GeminiModel } from '../../src/models';
+import { GoogleModel } from '../../src/services/model-discovery';
 
 describe('ModelMapper', () => {
 	const mockGoogleModels: GoogleModel[] = [

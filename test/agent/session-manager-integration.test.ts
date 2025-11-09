@@ -1,6 +1,6 @@
-import { SessionManager } from './session-manager';
-import { SessionHistory } from './session-history';
-import { SessionType, ToolCategory, DestructiveAction } from '../types/agent';
+import { SessionManager } from '../../src/agent/session-manager';
+import { SessionHistory } from '../../src/agent/session-history';
+import { SessionType, ToolCategory, DestructiveAction } from '../../src/types/agent';
 import { TFile, TFolder } from 'obsidian';
 
 // Mock Obsidian

@@ -1,10 +1,10 @@
-import { ModelManager } from './model-manager';
-import { ModelDiscoveryService } from './model-discovery';
-import { GeminiModel } from '../models';
-import ObsidianGemini from '../main';
+import { ModelManager } from '../../src/services/model-manager';
+import { ModelDiscoveryService } from '../../src/services/model-discovery';
+import { GeminiModel } from '../../src/models';
+import ObsidianGemini from '../../src/main';
 
 // Mock the model discovery service
-jest.mock('./model-discovery');
+jest.mock('../../src/services/model-discovery');
 
 describe('ModelManager Version Filtering', () => {
 	let modelManager: ModelManager;
