@@ -23,6 +23,7 @@ import { getVaultTools } from './tools/vault-tools';
 import { SessionHistory } from './agent/session-history';
 import { AgentsMemory } from './services/agents-memory';
 import { VaultAnalyzer } from './services/vault-analyzer';
+import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
 
 // @ts-ignore
@@ -112,6 +113,7 @@ export default class ObsidianGemini extends Plugin {
 	public toolExecutionEngine: ToolExecutionEngine;
 	public agentsMemory: AgentsMemory;
 	public vaultAnalyzer: VaultAnalyzer;
+	public deepResearch: DeepResearchService;
 	public imageGeneration: ImageGeneration;
 	public logger: Logger;
 
@@ -304,6 +306,9 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize vault analyzer for AGENTS.md
 		this.vaultAnalyzer = new VaultAnalyzer(this);
 		this.vaultAnalyzer.setupInitCommand();
+
+		// Initialize deep research service
+		this.deepResearch = new DeepResearchService(this);
 
 		// Initialize image generation
 		this.imageGeneration = new ImageGeneration(this);
