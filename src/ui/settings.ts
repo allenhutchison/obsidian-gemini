@@ -251,21 +251,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		// Note: Migration settings removed in v4.0 - agent-only mode
 
-		// Custom Prompts Settings
-		new Setting(containerEl).setName('Custom Prompts').setHeading();
-
-		new Setting(containerEl)
-			.setName('Allow system prompt override')
-			.setDesc(
-				'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
-					this.plugin.settings.allowSystemPromptOverride = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
 		// UI Settings
 		new Setting(containerEl).setName('UI Settings').setHeading();
 
@@ -280,8 +265,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			);
 
 
-		// Developer Settings
-		new Setting(containerEl).setName('Developer Settings').setHeading();
+		// Advanced Settings
+		new Setting(containerEl).setName('Advanced Settings').setHeading();
 
 		new Setting(containerEl)
 			.setName('Debug Mode')
@@ -294,8 +279,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Show Developer Settings')
-			.setDesc('Reveal advanced settings for developers and power users.')
+			.setName('Show Advanced Settings')
+			.setDesc('Reveal advanced settings for power users.')
 			.addButton((button) =>
 				button
 					.setButtonText(this.showDeveloperSettings ? 'Hide Advanced Settings' : 'Show Advanced Settings')
@@ -306,8 +291,26 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// Advanced developer settings only visible when explicitly enabled
+		// Advanced settings only visible when explicitly enabled
 		if (this.showDeveloperSettings) {
+			// Custom Prompts Advanced Settings
+			new Setting(containerEl).setName('Custom Prompts').setHeading();
+
+			new Setting(containerEl)
+				.setName('Allow system prompt override')
+				.setDesc(
+					'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
+				)
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
+						this.plugin.settings.allowSystemPromptOverride = value;
+						await this.plugin.saveSettings();
+					})
+				);
+
+			// API Configuration
+			new Setting(containerEl).setName('API Configuration').setHeading();
+
 			new Setting(containerEl)
 				.setName('Maximum Retries')
 				.setDesc('Maximum number of retries when a model request fails.')
