@@ -18,6 +18,7 @@ import {
 } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import type ObsidianGemini from '../main';
+import { getDefaultModelForRole } from '../models';
 
 /**
  * Configuration for GeminiClient
@@ -152,7 +153,7 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest
 	): Promise<GenerateContentParameters> {
 		const isExtended = 'userMessage' in request;
-		const model = request.model || this.config.model || 'gemini-2.5-flash';
+		const model = request.model || this.config.model || getDefaultModelForRole('chat');
 
 		// Build system instruction
 		let systemInstruction = '';

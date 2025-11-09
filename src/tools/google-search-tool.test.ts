@@ -1,6 +1,7 @@
 import { GoogleSearchTool, getGoogleSearchTool } from './google-search-tool';
 import { ToolExecutionContext } from './types';
 import { GoogleGenAI } from '@google/genai';
+import { getDefaultModelForRole } from '../models';
 
 // Mock Google Gen AI
 jest.mock('@google/genai', () => ({
@@ -182,7 +183,7 @@ describe('GoogleSearchTool', () => {
 
 			expect(mockGenAI.models.generateContent).toHaveBeenCalledWith(
 				expect.objectContaining({
-					model: 'gemini-2.5-pro'
+					model: getDefaultModelForRole('chat')
 				})
 			);
 		});
