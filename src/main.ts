@@ -120,7 +120,14 @@ export default class ObsidianGemini extends Plugin {
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
 
+	// Console override storage
+	private originalConsoleLog: typeof console.log;
+	private originalConsoleDebug: typeof console.debug;
+
 	async onload() {
+		// Override console methods to respect debug mode
+		this.overrideConsole();
+
 		await this.setupGeminiScribe();
 
 		// Add ribbon icon
@@ -478,10 +485,50 @@ export default class ObsidianGemini extends Plugin {
 		return this.modelManager;
 	}
 
+	/**
+	 * Override console methods to respect debug mode
+	 * Only affects console.log and console.debug
+	 * Preserves console.error and console.warn for important messages
+	 */
+	private overrideConsole() {
+		// Store original methods
+		this.originalConsoleLog = console.log;
+		this.originalConsoleDebug = console.debug;
+
+		// Override console.log to respect debug mode
+		console.log = (...args: any[]) => {
+			if (this.settings?.debugMode) {
+				this.originalConsoleLog.apply(console, args);
+			}
+		};
+
+		// Override console.debug to respect debug mode
+		console.debug = (...args: any[]) => {
+			if (this.settings?.debugMode) {
+				this.originalConsoleDebug.apply(console, args);
+			}
+		};
+	}
+
+	/**
+	 * Restore original console methods
+	 */
+	private restoreConsole() {
+		if (this.originalConsoleLog) {
+			console.log = this.originalConsoleLog;
+		}
+		if (this.originalConsoleDebug) {
+			console.debug = this.originalConsoleDebug;
+		}
+	}
+
 	// Optional: Clean up ribbon icon on unload
 	onunload() {
 		console.debug('Unloading Gemini Scribe');
 		this.history?.onUnload();
 		this.ribbonIcon?.remove();
+
+		// Restore original console methods
+		this.restoreConsole();
 	}
 }

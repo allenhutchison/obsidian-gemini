@@ -128,6 +128,41 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 - Handle TypeScript errors properly - ensure all properties are correctly typed
 - Use proper async/await patterns for all asynchronous operations
 
+### Console Logging
+
+The plugin implements a global console override system that automatically respects the debug mode setting:
+
+- **`console.log()` and `console.debug()`**: Automatically filtered based on the user's debug mode setting
+  - Only output when debug mode is enabled in settings
+  - No need to wrap with `if (debugMode)` checks
+  - Simply use `console.log()` or `console.debug()` directly for debug output
+
+- **`console.error()` and `console.warn()`**: Always visible regardless of debug mode
+  - Use for important errors and warnings that users should always see
+  - Critical failures, API errors, and data integrity issues
+
+- **Best Practices**:
+  - Use `console.log()` for debug information that helps development and troubleshooting
+  - Use `console.error()` for errors that indicate something went wrong
+  - Use `console.warn()` for warnings about deprecated features or potential issues
+  - Never manually check `if (debugMode)` before logging - the override handles this automatically
+
+Example:
+```typescript
+// ✅ Good - automatically filtered by debug mode
+console.log('Processing file:', file.path);
+console.debug('Tool execution context:', context);
+
+// ✅ Good - always visible for critical issues
+console.error('Failed to load API key:', error);
+console.warn('Model deprecated, using fallback');
+
+// ❌ Bad - unnecessary manual check
+if (this.plugin.settings.debugMode) {
+    console.log('Debug message');
+}
+```
+
 ## Testing Guidelines
 
 - Jest with ts-jest for TypeScript support
