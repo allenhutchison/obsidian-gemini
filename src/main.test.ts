@@ -42,4 +42,26 @@ describe('ObsidianGeminiSettings', () => {
 			expect(settings.topP).toBe(0.8);
 		});
 	});
+
+	describe('version tracking', () => {
+		it('should have default lastSeenVersion of 0.0.0', () => {
+			const defaultSettings: Partial<ObsidianGeminiSettings> = {
+				lastSeenVersion: '0.0.0',
+			};
+			expect(defaultSettings.lastSeenVersion).toBe('0.0.0');
+		});
+
+		it('should accept any version string', () => {
+			const settings: Partial<ObsidianGeminiSettings> = {
+				lastSeenVersion: '4.0.0',
+			};
+			expect(settings.lastSeenVersion).toBe('4.0.0');
+
+			settings.lastSeenVersion = '3.3.2';
+			expect(settings.lastSeenVersion).toBe('3.3.2');
+
+			settings.lastSeenVersion = '1.0.0-beta.1';
+			expect(settings.lastSeenVersion).toBe('1.0.0-beta.1');
+		});
+	});
 });

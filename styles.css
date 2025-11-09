@@ -3178,3 +3178,114 @@ If your plugin does not need CSS, delete this file.
 	line-height: 1.6;
 	color: var(--text-muted);
 }
+/* Update Notification Modal Styles */
+
+.gemini-update-notification-modal {
+	padding: 24px;
+	max-width: 600px;
+}
+
+.gemini-update-header {
+	margin: 0 0 16px 0;
+	font-size: 24px;
+	font-weight: 600;
+	color: var(--text-normal);
+	text-align: center;
+}
+
+.gemini-update-version {
+	margin: 0 0 24px 0;
+	text-align: center;
+	font-size: 15px;
+	color: var(--text-muted);
+}
+
+.gemini-update-highlights {
+	margin-bottom: 24px;
+	padding: 20px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+}
+
+.gemini-update-highlights h3 {
+	margin: 0 0 12px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.gemini-update-highlights ul {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+}
+
+.gemini-update-highlights li {
+	margin: 8px 0;
+	padding-left: 24px;
+	position: relative;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--text-normal);
+}
+
+.gemini-update-details {
+	margin-bottom: 24px;
+	padding: 16px;
+	background-color: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+}
+
+.gemini-update-details p {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--text-muted);
+}
+
+.gemini-update-message {
+	margin-bottom: 24px;
+	text-align: center;
+}
+
+.gemini-update-message p {
+	margin: 0;
+	font-size: 15px;
+	color: var(--text-muted);
+	line-height: 1.6;
+}
+
+.gemini-update-buttons {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	margin: 24px 0 20px 0;
+}
+
+.gemini-update-buttons button {
+	padding: 10px 24px;
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: 6px;
+}
+
+.gemini-update-links {
+	text-align: center;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-update-links a {
+	color: var(--interactive-accent);
+	text-decoration: none;
+	font-size: 14px;
+	transition: color 0.15s ease;
+}
+
+.gemini-update-links a:hover {
+	color: var(--interactive-accent-hover);
+	text-decoration: underline;
+}

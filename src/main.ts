@@ -15,6 +15,7 @@ import { GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
 import { RewriteInstructionsModal } from './ui/rewrite-modal';
 import { V4WelcomeModal } from './ui/v4-welcome-modal';
+import { UpdateNotificationModal } from './ui/update-notification-modal';
 import { HistoryArchiver } from './migrations/history-archiver';
 import { SessionManager } from './agent/session-manager';
 import { ToolRegistry } from './tools/tool-registry';
@@ -58,6 +59,8 @@ export interface ObsidianGeminiSettings {
 	loopDetectionTimeWindowSeconds: number;
 	// V4 upgrade tracking
 	hasSeenV4Welcome: boolean;
+	// Version tracking for update notifications
+	lastSeenVersion: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -89,6 +92,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	loopDetectionTimeWindowSeconds: 30,
 	// V4 upgrade tracking
 	hasSeenV4Welcome: false,
+	// Version tracking for update notifications
+	lastSeenVersion: '0.0.0',
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -199,6 +204,16 @@ export default class ObsidianGemini extends Plugin {
 				}
 			})
 		);
+
+		// Add command to view release notes
+		this.addCommand({
+			id: 'gemini-scribe-view-release-notes',
+			name: 'View Release Notes',
+			callback: () => {
+				const modal = new UpdateNotificationModal(this.app, this.manifest.version);
+				modal.open();
+			},
+		});
 
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
 
@@ -328,6 +343,9 @@ export default class ObsidianGemini extends Plugin {
 
 		// Check if history migration is needed
 		await this.checkAndOfferMigration();
+
+		// Check for version updates and show notification
+		await this.checkForUpdates();
 	}
 
 	/**
@@ -356,6 +374,32 @@ export default class ObsidianGemini extends Plugin {
 		} catch (error) {
 			console.error('Error checking for archiving:', error);
 			// Don't show error to user - archiving is optional
+		}
+	}
+
+	/**
+	 * Check for version updates and show notification
+	 */
+	private async checkForUpdates(): Promise<void> {
+		try {
+			const currentVersion = this.manifest.version;
+			const lastSeenVersion = this.settings.lastSeenVersion;
+
+			// If this is a new version, show update notification
+			if (currentVersion !== lastSeenVersion) {
+				// Don't show notification for first-time installs (0.0.0)
+				if (lastSeenVersion !== '0.0.0') {
+					const modal = new UpdateNotificationModal(this.app, currentVersion);
+					modal.open();
+				}
+
+				// Update the last seen version
+				this.settings.lastSeenVersion = currentVersion;
+				await this.saveData(this.settings);
+			}
+		} catch (error) {
+			console.error('Error checking for updates:', error);
+			// Don't show error to user - update notifications are optional
 		}
 	}
 
