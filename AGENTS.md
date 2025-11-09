@@ -56,13 +56,17 @@ The `npm version` command automatically:
 
 ## Architecture
 
-### Core Pattern: Direct Integration
+### Core Pattern: Factory + Decorator
 
-The plugin uses the Google Gemini SDK directly via the `GeminiClient` class for all AI model interactions.
+```
+src/main.ts → GeminiClientFactory.createFromPlugin() → GeminiClient → RetryDecorator → ModelApi
+```
+
+The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create Gemini API clients, wrapped with a retry decorator (`RetryDecorator`) for resilience. All API implementations follow the `ModelApi` interface. The factory supports different use cases (chat, summary, completions, rewrite) and provides retry logic with exponential backoff for handling transient API failures.
 
 ### Key Components
 
-1. **API Layer** (`src/api/`): Google Gemini SDK integration via `GeminiClient`
+1. **API Layer** (`src/api/`): Factory pattern (`GeminiClientFactory`) for creating Google Gemini clients, decorator pattern (`RetryDecorator`) for resilience, and interface abstraction (`ModelApi`) for consistent API interactions
 2. **Feature Modules**: Separate modules for chat, completions (`completions.ts`), summary (`summary.ts`), and rewrite (`rewrite.ts`)
 3. **Context System** (`src/files/file-context.ts`): Builds linked note trees for context-aware AI interactions
 4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates, stored in `[state-folder]/History/`
