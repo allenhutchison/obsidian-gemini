@@ -33,16 +33,9 @@ npm run format-check # Check formatting without changes
 Use npm's built-in version commands to create releases:
 
 ```bash
-# Step 1: Bump version (creates commit and tag locally)
 npm version patch  # Bump patch version (e.g., 4.0.0 → 4.0.1)
 npm version minor  # Bump minor version (e.g., 4.0.0 → 4.1.0)
 npm version major  # Bump major version (e.g., 3.3.2 → 4.0.0)
-
-# Step 2: Push the commit
-git push
-
-# Step 3: Push the tag
-git push origin <version>  # e.g., git push origin 4.0.0
 ```
 
 The `npm version` command automatically:
@@ -50,8 +43,7 @@ The `npm version` command automatically:
 - Runs `version-bump.mjs` to update `manifest.json` and `versions.json`
 - Creates a git commit with the version change
 - Creates a git tag (e.g., `4.0.0`)
-
-After running `npm version`, you must manually push both the commit and the tag as shown above.
+- Pushes the commit and tag to GitHub (via `postversion` script)
 
 **IMPORTANT**: Do NOT manually edit version numbers in `package.json`, `manifest.json`, or `versions.json`. Always use the npm version commands.
 
