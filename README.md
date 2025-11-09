@@ -10,16 +10,16 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 This release simplifies Gemini Scribe by focusing entirely on the powerful Agent Mode with tool calling:
 
-- **🔄 Single Unified Chat Interface:** Streamlined to one chat mode with full agent capabilities - no more switching between modes!
-- **📦 Automatic Migration:** Seamlessly converts your existing chat history to the new Agent Sessions format with backup preservation
-- **🗑️ Simplified Settings:** Removed legacy API provider options - now exclusively focused on Google Gemini for the best experience
-- **⚙️ Migration Controls:** New settings panel for managing history migration and viewing backups
+- **🤖 Single Unified Chat Interface:** Streamlined to one powerful agent mode with full tool calling - no more switching between modes!
+- **📦 History Archival:** Old note-based chat history is safely archived (not converted) when upgrading, preserving your conversations as readable markdown
+- **🎉 Welcome Experience:** Friendly welcome modal explains v4.0 changes and offers optional history archival
+- **🗑️ Simplified Codebase:** Removed legacy note-based chat and migration code - focused entirely on agent capabilities
 
 **What This Means:**
 - All conversations now support tool calling and agent features by default
 - Cleaner, more intuitive interface focused on what works best
-- Your existing chat history is automatically preserved and migrated
-- Full backward compatibility with automatic data conversion
+- Your old chat history is preserved as-is in an archive folder
+- Start fresh with powerful agent sessions featuring persistent context and permissions
 
 **Previous Updates:**
 - **🎯 Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance
@@ -31,29 +31,29 @@ This release simplifies Gemini Scribe by focusing entirely on the powerful Agent
 ## Features
 
 - **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, move and rename files, create folders, and even conduct deep research with proper citations. Features persistent sessions, granular permission controls, and session-specific model configuration.
-- **Context-Aware Chat:** Engage in conversations with Gemini AI, with the ability to include the content of your current active note as context. You can manually add other notes (including linked notes) to the context for highly relevant and personalized responses.
+- **Context-Aware Agent:** Add specific notes as persistent context for your agent sessions. The agent can access and reference these context files throughout your conversation, providing highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Simply select the text you want to improve, right-click to choose "Rewrite with Gemini", and provide instructions for how you'd like it rewritten.
 - **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
-- **Markdown-Based Chat History:** Store your chat history directly in your vault as markdown files. Each note's chat history is stored in a separate file in the `gemini-scribe/History/` folder, making it easy to backup, version control, and manage your AI interactions.
+- **Persistent Agent Sessions:** Store your agent conversation history directly in your vault as markdown files. Each session is stored in the `gemini-scribe/Agent-Sessions/` folder, making it easy to backup, version control, and continue conversations across sessions.
 - **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
-- **Custom Prompt System:** Create reusable AI instruction templates that can be applied to individual notes, allowing you to customize the AI's behavior for different types of content (e.g., technical documentation, creative writing, tutoring). Includes command palette commands for easy creation, application, and removal of custom prompts.
-- **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, general chat prompts, summarization prompts, selection rewrite prompts, completion prompts, and prompts to include the current date and time. These ensure consistent and effective AI interaction.
-- **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Chat history is stored locally in your Obsidian vault as markdown files.
-- **Robust History Management:**
-  - Per-note history files with automatic linking
-  - Automatic handling of file renames and moves
-  - Easy backup and version control of chat history
-  - Commands to manage and clear history
-  - Persistent agent sessions with full conversation history
+- **Custom Prompt System:** Create reusable AI instruction templates for agent sessions, allowing you to customize the AI's behavior for different workflows (e.g., technical documentation, creative writing, research). Includes command palette commands for easy creation and management.
+- **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, agent prompts, summarization prompts, selection rewrite prompts, and completion prompts. These ensure consistent and effective AI interaction.
+- **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Agent session history is stored locally in your Obsidian vault as markdown files.
+- **Robust Session Management:**
+  - Persistent agent sessions that survive restarts
+  - Session-specific permissions and settings
+  - Context files that persist across the session
+  - Full conversation history with tool execution logs
+  - Easy backup and version control of sessions
 
 ## Quick Start
 
 1. Install the plugin from Community Plugins
 2. Get your free API key from [Google AI Studio](https://aistudio.google.com/apikey)
 3. Add the API key in plugin settings
-4. Open chat with the ribbon icon or command palette
-5. Start chatting with your notes as context!
+4. Open Agent Chat with the ribbon icon or command palette
+5. Start using the AI agent to work with your vault!
 
 ## Installation
 
@@ -88,10 +88,8 @@ This release simplifies Gemini Scribe by focusing entirely on the powerful Agent
     - **Summary Frontmatter Key:** Specify the key to use when storing summaries in the frontmatter (default: `summary`).
     - **Your Name:** Enter your name, which the AI will use when addressing you.
     - **Chat History:**
-      - **Enable Chat History:** Toggle whether to save chat history.
-      - **Plugin State Folder:** Choose the folder within your vault to store plugin data (chat history and custom prompts).
-      - **Migration Status:** Shows the status of history migration from older versions
-      - **Migration Tools:** Re-run migration or view backup files
+      - **Enable Chat History:** Toggle whether to save agent session history.
+      - **Plugin State Folder:** Choose the folder within your vault to store plugin data (agent sessions and custom prompts).
     - **Custom Prompts:**
       - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
     - **UI Settings:**
