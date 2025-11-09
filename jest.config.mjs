@@ -15,9 +15,8 @@ export default {
 	// This pattern will find .test.ts or .spec.ts (and .js) files in the test directory.
 	testMatch: ['<rootDir>/test/**/?(*.)+(spec|test).[tj]s'],
 	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node', 'txt', 'hbs'],
-	// If you have path aliases in tsconfig.json (like "@/*"), configure moduleNameMapper here.
-	// For example:
-	// moduleNameMapper: {
-	//   '^@/(.*)$': '<rootDir>/src/$1',
-	// },
+	// Path aliases mapping (must match tsconfig.json paths)
+	moduleNameMapper: {
+		'^@/(.*)$': '<rootDir>/src/$1',
+	},
 };
