@@ -60,11 +60,17 @@ export class DeepResearchTool implements Tool {
 				};
 			}
 
+			// Ensure .md extension if outputFile is provided
+			let outputFile = params.outputFile;
+			if (outputFile && !outputFile.endsWith('.md')) {
+				outputFile += '.md';
+			}
+
 			// Conduct the research using the service
 			const result = await plugin.deepResearch.conductResearch({
 				topic: params.topic,
 				depth: params.depth,
-				outputFile: params.outputFile
+				outputFile: outputFile
 			});
 
 			// Add to context if in agent session and file was created

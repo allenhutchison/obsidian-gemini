@@ -184,7 +184,7 @@ describe('DeepResearchTool', () => {
 			});
 		});
 
-		it('should pass outputFile parameter to service', async () => {
+		it('should pass outputFile parameter to service with .md extension', async () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'Test',
 				report: 'Report',
@@ -194,6 +194,24 @@ describe('DeepResearchTool', () => {
 			});
 
 			await tool.execute({ topic: 'Test', outputFile: 'research.md' }, mockContext);
+
+			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
+				topic: 'Test',
+				depth: undefined,
+				outputFile: 'research.md'
+			});
+		});
+
+		it('should add .md extension if not present in outputFile', async () => {
+			mockDeepResearch.conductResearch.mockResolvedValue({
+				topic: 'Test',
+				report: 'Report',
+				searchCount: 3,
+				sourceCount: 5,
+				sectionCount: 2
+			});
+
+			await tool.execute({ topic: 'Test', outputFile: 'research' }, mockContext);
 
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'Test',

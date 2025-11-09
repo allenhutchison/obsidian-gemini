@@ -158,7 +158,7 @@ describe('DeepResearchService', () => {
 			const params: DeepResearchParams = {
 				topic: 'Test',
 				depth: 1,
-				outputFile: 'test-report'
+				outputFile: 'test-report.md' // Tool adds .md before calling service
 			};
 
 			const result = await service.conductResearch(params);
@@ -167,7 +167,7 @@ describe('DeepResearchService', () => {
 			expect(result.outputFile).toBe(mockFile);
 		});
 
-		it('should add .md extension if not present', async () => {
+		it('should save to exact path provided (extension handled by tool)', async () => {
 			mockGenerateContent.mockResolvedValue({
 				candidates: [
 					{
@@ -184,7 +184,7 @@ describe('DeepResearchService', () => {
 			const params: DeepResearchParams = {
 				topic: 'Test',
 				depth: 1,
-				outputFile: 'report'
+				outputFile: 'report.md'
 			};
 
 			await service.conductResearch(params);
@@ -220,8 +220,8 @@ describe('DeepResearchService', () => {
 			expect(mockVault.create).not.toHaveBeenCalled();
 		});
 
-		it('should handle search failures gracefully', async () => {
-			// Mock first call succeeds, second fails, third succeeds
+		it('should handle search failures gracefully with retry', async () => {
+			// Mock: first call succeeds, second fails 3 times (all retries), third succeeds
 			mockGenerateContent
 				.mockResolvedValueOnce({
 					candidates: [
@@ -232,7 +232,9 @@ describe('DeepResearchService', () => {
 						}
 					]
 				})
-				.mockRejectedValueOnce(new Error('Search failed'))
+				.mockRejectedValueOnce(new Error('Search failed attempt 1'))
+				.mockRejectedValueOnce(new Error('Search failed attempt 2'))
+				.mockRejectedValueOnce(new Error('Search failed attempt 3'))
 				.mockResolvedValueOnce({
 					candidates: [
 						{
@@ -251,6 +253,8 @@ describe('DeepResearchService', () => {
 			const result = await service.conductResearch(params);
 
 			expect(result).toBeTruthy();
+			// Should log warnings for retries and error after all retries exhausted
+			expect(mockLogger.warn).toHaveBeenCalled();
 			expect(mockLogger.error).toHaveBeenCalled();
 		});
 

@@ -6,6 +6,8 @@ import { GoogleGenAI } from '@google/genai';
 const INITIAL_SEARCHES_PER_ITERATION = 2;
 const FOLLOWUP_SEARCHES_PER_ITERATION = 2;
 const SUMMARY_MAX_LENGTH = 200;
+const MAX_SEARCH_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 1000;
 
 /**
  * Grounding chunk from Google's grounding metadata
@@ -237,47 +239,63 @@ Return only the queries, one per line.`;
 	}
 
 	/**
-	 * Perform a single search using Google Search
+	 * Perform a single search using Google Search with exponential backoff retry
 	 */
 	private async performSearch(genAI: GoogleGenAI, model: string, query: string): Promise<SearchResult | null> {
-		try {
-			const result = await genAI.models.generateContent({
-				model: model,
-				config: {
-					temperature: this.plugin.settings.temperature,
-					tools: [{ googleSearch: {} }]
-				},
-				contents: `Search for: ${query}`
-			});
+		let lastError: Error | unknown = null;
 
-			const text = this.extractText(result);
-			const metadata = result.candidates?.[0]?.groundingMetadata;
-
-			// Extract citations
-			const citations: Citation[] = [];
-			if (metadata?.groundingChunks) {
-				(metadata.groundingChunks as GroundingChunk[]).forEach((chunk, index) => {
-					if (chunk.web?.uri) {
-						citations.push({
-							id: `${query}-${index}`,
-							url: chunk.web.uri,
-							title: chunk.web.title || chunk.web.uri,
-							snippet: chunk.web.snippet || ''
-						});
-					}
+		for (let attempt = 0; attempt < MAX_SEARCH_RETRIES; attempt++) {
+			try {
+				const result = await genAI.models.generateContent({
+					model: model,
+					config: {
+						temperature: this.plugin.settings.temperature,
+						tools: [{ googleSearch: {} }]
+					},
+					contents: `Search for: ${query}`
 				});
-			}
 
-			return {
-				query: query,
-				content: text,
-				summary: text.substring(0, SUMMARY_MAX_LENGTH) + '...',
-				citations: citations
-			};
-		} catch (error) {
-			this.plugin.logger.error(`DeepResearch: Search failed for query "${query}":`, error);
-			return null;
+				const text = this.extractText(result);
+				const metadata = result.candidates?.[0]?.groundingMetadata;
+
+				// Extract citations
+				const citations: Citation[] = [];
+				if (metadata?.groundingChunks) {
+					(metadata.groundingChunks as GroundingChunk[]).forEach((chunk, index) => {
+						if (chunk.web?.uri) {
+							citations.push({
+								id: `${query}-${index}`,
+								url: chunk.web.uri,
+								title: chunk.web.title || chunk.web.uri,
+								snippet: chunk.web.snippet || ''
+							});
+						}
+					});
+				}
+
+				return {
+					query: query,
+					content: text,
+					summary: text.substring(0, SUMMARY_MAX_LENGTH) + '...',
+					citations: citations
+				};
+			} catch (error) {
+				lastError = error;
+
+				// Don't retry on last attempt
+				if (attempt < MAX_SEARCH_RETRIES - 1) {
+					const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+					this.plugin.logger.warn(
+						`DeepResearch: Search attempt ${attempt + 1} failed for "${query}", retrying in ${delay}ms...`
+					);
+					await new Promise(resolve => setTimeout(resolve, delay));
+				}
+			}
 		}
+
+		// All retries exhausted
+		this.plugin.logger.error(`DeepResearch: Search failed after ${MAX_SEARCH_RETRIES} attempts for query "${query}":`, lastError);
+		return null;
 	}
 
 	/**
@@ -402,11 +420,6 @@ Write 2-3 paragraphs with specific details and citations.`;
 	 */
 	private async saveReport(filePath: string, content: string): Promise<TFile | null> {
 		try {
-			// Ensure .md extension
-			if (!filePath.endsWith('.md')) {
-				filePath += '.md';
-			}
-
 			// Check if file exists
 			const existingFile = this.plugin.app.vault.getAbstractFileByPath(filePath);
 			if (existingFile instanceof TFile) {
