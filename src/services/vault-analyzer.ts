@@ -157,7 +157,7 @@ export class VaultAnalyzer {
 				(now - this.vaultInfoCache.timestamp) < this.CACHE_TTL_MS;
 
 			if (cacheValid) {
-				console.log('VaultAnalyzer: Using cached vault information');
+				this.plugin.logger.log('VaultAnalyzer: Using cached vault information');
 				return this.vaultInfoCache.vaultInfo;
 			}
 		}
@@ -188,7 +188,7 @@ export class VaultAnalyzer {
 				lastModified,
 				timestamp: Date.now()
 			};
-			console.log('VaultAnalyzer: Cached vault information for large vault');
+			this.plugin.logger.log('VaultAnalyzer: Cached vault information for large vault');
 		}
 
 		return vaultInfo;

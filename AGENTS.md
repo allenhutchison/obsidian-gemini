@@ -130,36 +130,56 @@ The plugin uses a factory pattern for API creation with a retry decorator for re
 
 ### Console Logging
 
-The plugin implements a global console override system that automatically respects the debug mode setting:
+The plugin uses a dedicated Logger service (`src/utils/logger.ts`) that respects the debug mode setting. This approach avoids global console patching, preventing conflicts with other plugins and Obsidian's debugging tools.
 
-- **`console.log()` and `console.debug()`**: Automatically filtered based on the user's debug mode setting
-  - Only output when debug mode is enabled in settings
-  - No need to wrap with `if (debugMode)` checks
-  - Simply use `console.log()` or `console.debug()` directly for debug output
+**Accessing the Logger:**
+- Plugin components: `this.plugin.logger`
+- Tool implementations: `context.plugin.logger` (via ToolExecutionContext)
+- Utility functions: Accept logger as parameter
 
-- **`console.error()` and `console.warn()`**: Always visible regardless of debug mode
+**Logger Methods:**
+- **`logger.log()` and `logger.debug()`**: Only output when debug mode is enabled
+  - Automatically filtered based on settings.debugMode
+  - Prefixed with `[Gemini Scribe]` for easy identification
+
+- **`logger.error()` and `logger.warn()`**: Always visible regardless of debug mode
   - Use for important errors and warnings that users should always see
   - Critical failures, API errors, and data integrity issues
 
-- **Best Practices**:
-  - Use `console.log()` for debug information that helps development and troubleshooting
-  - Use `console.error()` for errors that indicate something went wrong
-  - Use `console.warn()` for warnings about deprecated features or potential issues
-  - Never manually check `if (debugMode)` before logging - the override handles this automatically
+**Best Practices:**
+- Use `logger.log()` for debug information that helps development and troubleshooting
+- Use `logger.error()` for errors that indicate something went wrong
+- Use `logger.warn()` for warnings about deprecated features or potential issues
+- Never use native `console.log()` or `console.debug()` directly
+- Pass logger instance to utility functions that need logging
 
-Example:
+**Examples:**
 ```typescript
-// ✅ Good - automatically filtered by debug mode
-console.log('Processing file:', file.path);
-console.debug('Tool execution context:', context);
+// ✅ Good - in plugin components
+this.plugin.logger.log('Processing file:', file.path);
+this.plugin.logger.debug('Tool execution context:', context);
+
+// ✅ Good - in tool implementations
+async execute(params: any, context: ToolExecutionContext) {
+    const plugin = context.plugin;
+    plugin.logger.log('Executing tool with params:', params);
+}
+
+// ✅ Good - in utility functions
+export function processData(logger: Logger, data: any) {
+    logger.log('Processing data:', data);
+}
 
 // ✅ Good - always visible for critical issues
-console.error('Failed to load API key:', error);
-console.warn('Model deprecated, using fallback');
+this.plugin.logger.error('Failed to load API key:', error);
+this.plugin.logger.warn('Model deprecated, using fallback');
 
-// ❌ Bad - unnecessary manual check
+// ❌ Bad - using console directly
+console.log('Debug message');
+
+// ❌ Bad - manual debug mode checks (logger handles this)
 if (this.plugin.settings.debugMode) {
-    console.log('Debug message');
+    this.plugin.logger.log('Debug message');
 }
 ```
 

@@ -362,7 +362,7 @@ export class AgentView extends ItemView {
 					text = e.clipboardData.getData('text/plain') || '';
 				} catch (err) {
 					// Clipboard access might fail in popout
-					console.debug('Standard clipboard access failed:', err);
+					this.plugin.logger.debug('Standard clipboard access failed:', err);
 				}
 			}
 
@@ -372,7 +372,7 @@ export class AgentView extends ItemView {
 				try {
 					text = await navigator.clipboard.readText();
 				} catch (err) {
-					console.debug('Async clipboard access failed:', err);
+					this.plugin.logger.debug('Async clipboard access failed:', err);
 
 					// Method 3: As last resort, get the selection and use execCommand
 					// This is a fallback that might help in some browsers
@@ -690,9 +690,9 @@ export class AgentView extends ItemView {
 			
 			// Debug logging for table formatting
 			if (formattedMessage.includes('|')) {
-				console.log('Table formatting debug:');
-				console.log('Original message:', entry.message);
-				console.log('Formatted message:', formattedMessage);
+				this.plugin.logger.log('Table formatting debug:');
+				this.plugin.logger.log('Original message:', entry.message);
+				this.plugin.logger.log('Formatted message:', formattedMessage);
 			}
 		}
 		
@@ -1195,9 +1195,9 @@ These files are included in the context below. When the user asks you to write d
 				session: this.currentSession
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
-			console.log('Available tools from registry:', availableTools);
-			console.log('Number of tools:', availableTools.length);
-			console.log('Tool names:', availableTools.map(t => t.name));
+			this.plugin.logger.log('Available tools from registry:', availableTools);
+			this.plugin.logger.log('Number of tools:', availableTools.length);
+			this.plugin.logger.log('Tool names:', availableTools.map(t => t.name));
 
 			try {
 				// Get model config from session or use defaults
@@ -1343,7 +1343,7 @@ These files are included in the context below. When the user asks you to write d
 					}
 				} else {
 					// Fall back to non-streaming API
-					console.log('Agent view using non-streaming API');
+					this.plugin.logger.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
 
 					// Remove thinking indicator
@@ -1562,7 +1562,7 @@ User: ${history[0].message}`;
 					// Update UI
 					this.updateSessionHeader();
 
-					console.log(`Auto-labeled session: ${generatedTitle}`);
+					this.plugin.logger.log(`Auto-labeled session: ${generatedTitle}`);
 				}
 			} catch (error) {
 				console.error('Failed to auto-label session:', error);
@@ -2084,12 +2084,12 @@ User: ${history[0].message}`;
 					}
 				} else if (typeof result.data === 'object') {
 					// Debug logging
-					console.log('Tool result is object for:', toolName);
-					console.log('Result data keys:', Object.keys(result.data));
+					this.plugin.logger.log('Tool result is object for:', toolName);
+					this.plugin.logger.log('Result data keys:', Object.keys(result.data));
 					
 					// Special handling for google_search results with citations
 					if (result.data.answer && result.data.citations && toolName === 'google_search') {
-						console.log('Handling google_search result with citations');
+						this.plugin.logger.log('Handling google_search result with citations');
 						// Display the answer
 						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
 						answerDiv.createEl('h5', { text: 'Answer:' });

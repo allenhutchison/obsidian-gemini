@@ -24,6 +24,7 @@ import { getVaultTools } from './tools/vault-tools';
 import { SessionHistory } from './agent/session-history';
 import { AgentsMemory } from './services/agents-memory';
 import { VaultAnalyzer } from './services/vault-analyzer';
+import { Logger } from './utils/logger';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -113,6 +114,7 @@ export default class ObsidianGemini extends Plugin {
 	public agentsMemory: AgentsMemory;
 	public vaultAnalyzer: VaultAnalyzer;
 	public imageGeneration: ImageGeneration;
+	public logger: Logger;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -120,13 +122,9 @@ export default class ObsidianGemini extends Plugin {
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
 
-	// Console override storage
-	private originalConsoleLog: typeof console.log;
-	private originalConsoleDebug: typeof console.debug;
-
 	async onload() {
-		// Override console methods to respect debug mode
-		this.overrideConsole();
+		// Initialize logger early so it's available during setup
+		this.logger = new Logger(this);
 
 		await this.setupGeminiScribe();
 
@@ -425,8 +423,8 @@ export default class ObsidianGemini extends Plugin {
 
 		if (settingsChanged) {
 			this.settings = updatedSettings as ObsidianGeminiSettings; // Cast back to specific type
-			console.log('ObsidianGemini: Updating model versions in settings...');
-			changedSettingsInfo.forEach((info) => console.log(`- ${info}`));
+			this.logger.log('ObsidianGemini: Updating model versions in settings...');
+			changedSettingsInfo.forEach((info) => this.logger.log(`- ${info}`));
 			await this.saveData(this.settings);
 			new Notice('Gemini model settings updated to current defaults.');
 		}
@@ -465,7 +463,7 @@ export default class ObsidianGemini extends Plugin {
 
 					// Notify user of changes
 					if (result.changedSettingsInfo.length > 0) {
-						console.log('Model settings updated:', result.changedSettingsInfo.join(', '));
+						this.logger.log('Model settings updated:', result.changedSettingsInfo.join(', '));
 					}
 				}
 
@@ -485,52 +483,10 @@ export default class ObsidianGemini extends Plugin {
 		return this.modelManager;
 	}
 
-	/**
-	 * Override console methods to respect debug mode
-	 * Only affects console.log and console.debug
-	 * Preserves console.error and console.warn for important messages
-	 */
-	private overrideConsole() {
-		// Store original methods
-		this.originalConsoleLog = console.log;
-		this.originalConsoleDebug = console.debug;
-
-		// Override console.log to respect debug mode
-		console.log = (...args: any[]) => {
-			if (this.settings?.debugMode && typeof this.originalConsoleLog === 'function') {
-				this.originalConsoleLog.apply(console, args);
-			}
-		};
-
-		// Override console.debug to respect debug mode (if it exists)
-		if (typeof console.debug === 'function') {
-			console.debug = (...args: any[]) => {
-				if (this.settings?.debugMode && typeof this.originalConsoleDebug === 'function') {
-					this.originalConsoleDebug.apply(console, args);
-				}
-			};
-		}
-	}
-
-	/**
-	 * Restore original console methods
-	 */
-	private restoreConsole() {
-		if (this.originalConsoleLog) {
-			console.log = this.originalConsoleLog;
-		}
-		if (this.originalConsoleDebug) {
-			console.debug = this.originalConsoleDebug;
-		}
-	}
-
 	// Optional: Clean up ribbon icon on unload
 	onunload() {
-		console.debug('Unloading Gemini Scribe');
+		this.logger.debug('Unloading Gemini Scribe');
 		this.history?.onUnload();
 		this.ribbonIcon?.remove();
-
-		// Restore original console methods
-		this.restoreConsole();
 	}
 }

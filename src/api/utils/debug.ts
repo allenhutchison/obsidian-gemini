@@ -1,6 +1,8 @@
+import { Logger } from '../../utils/logger';
+
 /**
  * Utility for logging debug info for Gemini APIs.
- * Automatically respects debug mode via global console override.
+ * @param logger Logger instance from the plugin
  * @param title Title for the debug output
  * @param data Data to log (will be stringified)
  */
@@ -119,21 +121,21 @@ export function formatExtendedModelRequest(req: any): string {
 	].join('\n');
 }
 
-export function logDebugInfo(title: string, data: any) {
+export function logDebugInfo(logger: Logger, title: string, data: any) {
 	if (isExtendedModelRequest(data)) {
-		console.log(`[GeminiAPI Debug] ${title} (ExtendedModelRequest):\n${formatExtendedModelRequest(data)}`);
+		logger.log(`[GeminiAPI Debug] ${title} (ExtendedModelRequest):\n${formatExtendedModelRequest(data)}`);
 		return;
 	}
 	if (isBaseModelRequest(data)) {
-		console.log(`[GeminiAPI Debug] ${title} (BaseModelRequest):\n${formatBaseModelRequest(data)}`);
+		logger.log(`[GeminiAPI Debug] ${title} (BaseModelRequest):\n${formatBaseModelRequest(data)}`);
 		return;
 	}
 	let sanitizedData: any;
 	if (typeof data === 'string' && data.includes('File Label:')) {
 		sanitizedData = redactLinkedFileSections(data);
-		console.log(`[GeminiAPI Debug] ${title}:\n${sanitizedData}`);
+		logger.log(`[GeminiAPI Debug] ${title}:\n${sanitizedData}`);
 	} else {
 		sanitizedData = stripLinkedFileContents(data);
-		console.log(`[GeminiAPI Debug] ${title}:`, JSON.stringify(sanitizedData, null, 2));
+		logger.log(`[GeminiAPI Debug] ${title}:`, JSON.stringify(sanitizedData, null, 2));
 	}
 }
