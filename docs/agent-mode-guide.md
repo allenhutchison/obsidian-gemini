@@ -1,38 +1,40 @@
 # Agent Mode Guide
 
-Agent Mode transforms Obsidian Gemini Scribe into an AI assistant that can actively work with your vault through tool calling. This guide covers everything you need to know about using Agent Mode effectively and safely.
+Gemini Scribe v4.0 is **agent-first** - every conversation is powered by an AI assistant that can actively work with your vault through tool calling. This guide covers everything you need to know about using the agent effectively and safely.
 
-## What is Agent Mode?
+## What is the Agent?
 
-Agent Mode enables the AI to:
+In v4.0, the agent is always available and can:
 - Read and search files in your vault
 - Create, modify, and organize notes
 - Search the web for information
 - Fetch and analyze web pages
 - Execute multiple operations in sequence
-- Work autonomously while respecting permissions
+- Work autonomously while respecting your permissions
+
+> **New in v4.0**: Agent mode is no longer a separate feature you enable - it's the core of how Gemini Scribe works. Every chat is an agent session with full tool-calling capabilities.
 
 ## Getting Started
 
-### 1. Enable Agent Mode
-1. Open Settings → Gemini Scribe
-2. Toggle "Enable Agent Mode"
-3. Select which tool categories to enable:
-   - **Read Only**: File reading and searching
-   - **Vault Operations**: File creation, modification, deletion
-   - **Web Operations**: Web search and URL fetching
-
-### 2. Open Agent Chat
-- Use Command Palette: "Gemini Scribe: Open Agent Chat"
-- Or click the robot icon in the ribbon
+### 1. Open Agent Chat
+- Use Command Palette: "Gemini Scribe: Open Gemini Chat"
+- Or click the sparkles icon (⭐) in the ribbon
 - Or use your configured hotkey
 
+### 2. Initialize Vault Context (Recommended)
+1. In an empty agent session, click "Initialize Vault Context"
+2. The agent will analyze your vault structure and create AGENTS.md
+3. This helps the agent understand your vault organization
+4. Update periodically as your vault grows
+
 ### 3. Configure Permissions
-Choose which operations require confirmation:
+Choose which operations require confirmation in Settings → Gemini Scribe:
 - Create files
 - Modify files
 - Delete files
-- Move files
+- Move/rename files
+
+You can also set session-level permissions to bypass confirmations for trusted workflows.
 
 ## Core Features
 

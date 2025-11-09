@@ -1,18 +1,18 @@
 # Gemini Scribe Documentation
 
-Welcome to the comprehensive documentation for Gemini Scribe, an Obsidian plugin that integrates Google's Gemini AI models to enhance your note-taking and knowledge management workflow.
+Welcome to the comprehensive documentation for Gemini Scribe v4.0, an Obsidian plugin that integrates Google's Gemini AI models as an intelligent agent that can actively work with your vault.
+
+> **New in v4.0**: Gemini Scribe is now **agent-first** - every conversation is powered by an AI agent with tool-calling capabilities. The agent can search files, create notes, research topics, and execute multi-step tasks autonomously while respecting your permissions.
 
 ## Quick Navigation
 
 ### Core Features
-- **[Chat Interface Guide](chat-interface-guide.md)** - Learn how to effectively use the AI chat
-- **[Agent Mode Guide](agent-mode-guide.md)** - Use AI agent with tool-calling capabilities
+- **[Agent Mode Guide](agent-mode-guide.md)** - Your AI assistant with tool-calling capabilities (START HERE)
 - **[Custom Prompts Guide](custom-prompts-guide.md)** - Create reusable AI instruction templates
-- **[AI-Assisted Writing Guide](ai-writing-guide.md)** - Collaborate with AI to draft and refine documents
+- **[AI-Assisted Writing Guide](ai-writing-guide.md)** - Rewrite and refine text with AI assistance
 - **[IDE-Style Completions Guide](completions-guide.md)** - Get intelligent text suggestions as you type
 - **[Document Summarization Guide](summarization-guide.md)** - Generate concise summaries automatically
-- **[Chat History Guide](chat-history-guide.md)** - Manage and utilize your conversation history
-- **[Context System Guide](context-system-guide.md)** - Understand how AI uses your notes as context
+- **[Context System Guide](context-system-guide.md)** - Add persistent context files to agent sessions
 
 ### Configuration & Development
 - **[Settings Reference](settings-reference.md)** - Comprehensive guide to all plugin settings
@@ -23,141 +23,219 @@ Welcome to the comprehensive documentation for Gemini Scribe, an Obsidian plugin
 
 1. **Installation**: Install from Obsidian Community Plugins
 2. **API Key**: Get your free key from [Google AI Studio](https://aistudio.google.com/apikey)
-3. **Configuration**: Set up the plugin in Obsidian Settings
-4. **First Chat**: Open the chat and start interacting with your notes
+3. **Configuration**: Add your API key in Settings → Gemini Scribe
+4. **Initialize Context**: Click "Initialize Vault Context" to help the agent understand your vault
+5. **Start Chatting**: Open Agent Mode and start giving the AI tasks!
+
+## What's New in v4.0
+
+### 🤖 Agent-First Experience
+Every conversation is now an agent session with full tool-calling capabilities. No need to switch modes - the agent is always ready to help with vault operations, research, and multi-step tasks.
+
+### 🔧 Built-in Tool Calling
+The agent can:
+- **Search and read** files in your vault
+- **Create, modify, and organize** notes
+- **Research topics** with web search and URL fetching
+- **Execute complex workflows** autonomously
+- **Respect your permissions** with granular controls
+
+### 💾 Persistent Agent Sessions
+- Sessions survive Obsidian restarts
+- Full conversation history with tool execution logs
+- Session-specific permissions and settings
+- Context files that persist across the session
+
+### 📦 Old History Archived
+Your old note-based chat history from v3.x is safely preserved in the `History-Archive/` folder as readable markdown files.
 
 ## Feature Overview
 
-### 🤖 AI Chat Interface
-Engage in context-aware conversations with Gemini AI that understand your notes and their relationships.
-- [Full Guide](chat-interface-guide.md)
+### 🤖 Agent Mode (Core Feature)
+An AI assistant that can actively work with your vault through tool calling.
+- [Full Guide](agent-mode-guide.md)
+
+**Example Tasks:**
+- "Find all notes tagged with #important and create a summary"
+- "Research quantum computing and create a new note with your findings"
+- "Organize my meeting notes from this week into a weekly summary"
+- "Read my project notes and suggest next steps"
 
 ### 📝 Custom Prompts
-Create specialized AI behaviors for different types of content and workflows.
+Create specialized AI behaviors for different workflows.
 - [Full Guide](custom-prompts-guide.md)
 
+**Use Cases:**
+- Technical documentation templates
+- Creative writing assistants
+- Research note formatting
+- Study guide generation
+
 ### ✍️ AI-Assisted Writing
-Let Gemini help draft, edit, and refine your documents through conversational collaboration.
+Precisely rewrite any selected text with AI assistance.
 - [Full Guide](ai-writing-guide.md)
 
+**Example Uses:**
+- "Make this more concise"
+- "Fix grammar and spelling"
+- "Make it more formal/casual"
+- "Expand with more detail"
+
 ### ⚡ Smart Completions
-Get real-time, context-aware text suggestions as you type, similar to IDE code completion.
+Get real-time, context-aware text suggestions as you type.
 - [Full Guide](completions-guide.md)
 
+**Features:**
+- IDE-style inline suggestions
+- Context-aware predictions
+- Accept with Tab, dismiss with any key
+- Minimal latency with Gemini Flash-8B
+
 ### 📋 Auto Summarization
-Generate one-sentence summaries of your notes with a single command.
+Generate one-sentence summaries stored in frontmatter.
 - [Full Guide](summarization-guide.md)
 
-### 📚 Conversation History
-All chats are saved as searchable markdown files in your vault.
-- [Full Guide](chat-history-guide.md)
+**Benefits:**
+- Quick overviews of long notes
+- Searchable metadata
+- Note index generation
+- Document organization
 
-### 🔗 Intelligent Context
-The AI automatically includes relevant linked notes to provide comprehensive assistance.
+### 🔗 Agent Context Files
+Add specific notes as persistent context for your agent sessions.
 - [Full Guide](context-system-guide.md)
 
-## Common Workflows
+**How It Works:**
+- Type @ in chat to mention files
+- Context files persist throughout the session
+- Agent can reference and analyze context
+- Perfect for focused research and analysis
+
+## Common Agent Workflows
 
 ### Research Assistant
-1. Create a hub note linking to research materials
-2. Set context depth to 2
-3. Use chat to synthesize findings
-4. Save important insights to history
+```
+You: Research the latest developments in quantum computing and create
+     a comprehensive note with citations
 
-### Writing Projects
-1. Create outline with AI assistance
-2. Enable rewrite mode
-3. Iterate on sections through chat
-4. Use completions for flow
+Agent: I'll help you with that. Let me:
+1. Search the web for recent quantum computing developments
+2. Fetch and analyze relevant sources
+3. Create a structured note with findings and citations
+```
 
-### Knowledge Management
-1. Summarize notes for quick overview
-2. Use custom prompts for consistent formatting
-3. Build on chat history insights
-4. Connect ideas through context
+### Vault Organization
+```
+You: Find all my meeting notes from October and organize them by project
 
-### Learning and Study
-1. Create study notes with linked concepts
-2. Use AI to generate practice questions
-3. Get explanations of complex topics
-4. Review understanding through chat
+Agent: I'll organize your meeting notes. Let me:
+1. Search for meeting notes from October
+2. Analyze their content to identify projects
+3. Create project folders and move notes accordingly
+```
+
+### Knowledge Synthesis
+```
+You: Read all notes tagged #machine-learning and create a study guide
+
+Agent: I'll create a comprehensive study guide. Let me:
+1. Find all notes with the #machine-learning tag
+2. Read and analyze their content
+3. Organize key concepts and create a structured guide
+```
+
+### Content Creation
+```
+You: Based on my daily notes this week, write a weekly reflection
+
+Agent: I'll create your weekly reflection. Let me:
+1. Search for your daily notes from this week
+2. Read and analyze the entries
+3. Draft a thoughtful weekly reflection summarizing key themes
+```
 
 ## Best Practices
 
-### 1. Start Simple
-- Begin with basic chat interactions
-- Enable one feature at a time
-- Build complexity gradually
-- Learn what works for your workflow
+### 1. Start with the Agent
+- The agent is your primary interface - use it for everything
+- Be specific about what you want the agent to do
+- Let the agent break down complex tasks into steps
+- Review and approve actions when needed
 
-### 2. Organize for AI
-- Use clear note titles
-- Create meaningful links
-- Structure content logically
-- Maintain consistent formatting
+### 2. Initialize Vault Context
+- Use "Initialize Vault Context" to help the agent understand your vault
+- Update it periodically as your vault grows
+- The agent uses this to better understand your organization
 
-### 3. Leverage History
-- Review past conversations
-- Extract effective prompts
-- Build on previous insights
-- Create prompt libraries
+### 3. Use Context Files
+- Add relevant notes as context for focused sessions
+- Context files help the agent understand your specific needs
+- Perfect for project-specific work or research
 
-### 4. Balance Automation
-- Use AI as an assistant, not replacement
-- Review and edit AI suggestions
-- Maintain your unique voice
-- Verify important information
+### 4. Set Appropriate Permissions
+- Configure which operations require confirmation
+- Use session-level permissions for trusted workflows
+- Balance convenience with safety
+
+### 5. Leverage Persistent Sessions
+- Continue conversations across Obsidian restarts
+- Build on previous work in the same session
+- Use descriptive session titles for organization
 
 ## Troubleshooting Quick Reference
 
 ### Common Issues
 
-**No AI Response**
-- Check API key validity
+**Agent Not Responding**
+- Check API key validity in Settings
 - Verify internet connection
-- Ensure settings are correct
+- Ensure your model supports tool calling (all Gemini 2.0+ models do)
+
+**Tools Failing**
+- Check file permissions and paths
+- Verify files exist and are accessible
+- System folders (.obsidian, plugin folders) are protected from modifications
 
 **Poor Quality Output**
-- Provide more context
-- Use specific prompts
-- Check context depth settings
+- Add specific notes as context files
+- Be more specific in your requests
+- Try a more capable model (Gemini 2.0 Flash Experimental)
 
-**Performance Problems**
-- Reduce context depth
-- Use faster models (Flash)
-- Break up large requests
+**Performance Issues**
+- Use Gemini Flash for faster responses
+- Reduce context file count for quicker processing
+- Break up large requests into smaller tasks
 
-**Feature Not Working**
-- Verify feature is enabled
-- Check for conflicts
-- Restart Obsidian
-- Update plugin
+**Session Issues**
+- Try creating a new session
+- Check console (Ctrl/Cmd + Shift + I) for errors
+- Verify session files aren't corrupted
 
 ## Plugin Settings Overview
 
 ### Essential Settings
-- **API Key**: Your Gemini API key
-- **Chat Model**: AI model for conversations
-- **Context Depth**: How many linked notes to include
-- **History Folder**: Where to save conversations
+- **API Key**: Your Gemini API key (required)
+- **Chat Model**: AI model for agent conversations (default: Gemini 2.0 Flash Experimental)
+- **Plugin State Folder**: Where agent sessions and data are stored (default: gemini-scribe)
 
-### Feature Toggles
-- **Send Context**: Include note content in chats
-- **Enable Custom Prompts**: Use prompt templates
-- **Rewrite Files**: Allow AI to modify documents
-- **Search Grounding**: Include web search results
+### Agent Permissions
+Configure which operations require confirmation:
+- Create files
+- Modify files
+- Delete files
+- Move/rename files
 
 ### Model Selection
-- **Chat**: Gemini 1.5 Pro (best quality)
+- **Agent/Chat**: Gemini 2.0 Flash Experimental (recommended) or Gemini 1.5 Pro
 - **Completions**: Gemini 1.5 Flash-8B (fastest)
 - **Summary**: Gemini 1.5 Flash (balanced)
 
 ### Advanced Settings
-- **Temperature**: Control AI creativity (0-2.0, dynamically adjusted)
+- **Temperature**: Control AI creativity (0-2.0, dynamically adjusted per model)
 - **Top P**: Control response diversity (0-1.0)
 - **Model Discovery**: Automatic model updates from Google API
-- **Retry Configuration**: API failure handling and backoff settings
-- **Developer Options**: Advanced debugging and configuration tools
+- **Tool Loop Detection**: Prevent infinite tool execution loops
+- **Developer Options**: Advanced debugging and configuration
 
 *See the [Advanced Settings Guide](advanced-settings-guide.md) for detailed configuration instructions.*
 
@@ -166,42 +244,75 @@ The AI automatically includes relevant linked notes to provide comprehensive ass
 ### Getting Help
 - **Documentation**: You're here!
 - **GitHub Issues**: [Report bugs or request features](https://github.com/allenhutchison/obsidian-gemini/issues)
-- **Community**: Obsidian Discord server
+- **Release Notes**: Use "View Release Notes" command to see what's new
 
 ### Contributing
 - See [CLAUDE.md](../CLAUDE.md) for development guidelines
 - Pull requests welcome
-- Share your custom prompts
-- Report your experiences
+- Create custom tools and share them
+- Report your agent workflow successes
 
 ## Privacy and Security
 
 ### Data Handling
-- All API calls go directly to Google
+- All API calls go directly to Google's Gemini API
 - No third-party servers involved
-- Chat history stored locally
-- Your data stays in your vault
+- Agent sessions stored locally in your vault
+- Your data never leaves your control
 
 ### Best Practices
-- Review API key permissions
-- Don't share sensitive data in chats
-- Use vault encryption if needed
-- Regular backup recommended
+- Review API key permissions at Google AI Studio
+- Don't share sensitive data in agent conversations
+- Use vault encryption if working with confidential information
+- Regular backups recommended (agent sessions are just markdown files)
+- Review tool execution logs in session files
+
+### Safety Features
+- Tool loop detection prevents runaway executions
+- System folders protected from modifications
+- Granular permission controls per operation
+- Session-level permission overrides for trusted workflows
+- All tool calls logged in session history
 
 ## Quick Tips
 
-1. **Keyboard Shortcuts**: Set hotkeys for frequent commands
-2. **Template Integration**: Combine with Obsidian templates
-3. **Workflow Automation**: Use with QuickAdd or Templater
-4. **Mobile Support**: Works on mobile Obsidian apps
+1. **Initialize Context First**: Help the agent understand your vault structure
+2. **Be Specific**: Clear requests get better results
+3. **Use Context Files**: Add relevant notes with @ mentions
+4. **Review Sessions**: Check session files to see exactly what the agent did
+5. **Set Hotkeys**: Configure keyboard shortcuts for frequent commands
+6. **Trust but Verify**: Review agent actions, especially for destructive operations
+7. **Session Management**: Use descriptive titles and organize sessions by project
+
+## What's Different from v3.x?
+
+### Removed
+- ❌ Note-based chat mode (replaced by agent sessions)
+- ❌ Per-note chat history (replaced by persistent agent sessions)
+- ❌ Mode switching (agent is always available)
+
+### Added
+- ✅ Tool calling in every conversation
+- ✅ Persistent agent sessions
+- ✅ Vault context initialization (AGENTS.md)
+- ✅ Session-specific permissions
+- ✅ Context file system with @ mentions
+- ✅ Tool execution logging
+- ✅ Update notifications with release notes
+
+### Migrated
+- 📦 Old chat history → `History-Archive/` (readable markdown)
+- 🔄 Settings automatically updated
+- 🆕 Fresh start with agent sessions
 
 ## Next Steps
 
-1. Read the [Chat Interface Guide](chat-interface-guide.md) to get started
-2. Explore features that match your workflow
-3. Experiment with custom prompts
-4. Join the community discussion
+1. **[Read the Agent Mode Guide](agent-mode-guide.md)** - Learn how to work with the agent
+2. **Initialize Vault Context** - Click the button in an empty agent session
+3. **Try example tasks** - Start with simple requests and build up
+4. **Explore custom prompts** - Create templates for your workflows
+5. **Check the settings** - Configure permissions and models to your preference
 
 ---
 
-*Gemini Scribe is continuously evolving. Check for updates regularly and explore new features as they're added.*
+*Gemini Scribe v4.0 represents a major evolution toward an agent-first experience. The AI is no longer just a chat interface - it's an active collaborator that can work with your vault to help you think, organize, and create.*
