@@ -59,14 +59,14 @@ The `npm version` command automatically:
 ### Core Pattern: Factory + Decorator
 
 ```
-src/main.ts → ApiFactory.createApi() → RetryModelApiDecorator → ModelApi (Gemini/Ollama)
+src/main.ts → GeminiClientFactory.createFromPlugin() → GeminiClient → RetryDecorator → ModelApi
 ```
 
-The plugin uses a factory pattern for API creation with a retry decorator for resilience. All API implementations follow the `ModelApi` interface.
+The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create Gemini API clients, wrapped with a retry decorator (`RetryDecorator`) for resilience. All API implementations follow the `ModelApi` interface. The factory supports different use cases (chat, summary, completions, rewrite) and provides retry logic with exponential backoff for handling transient API failures.
 
 ### Key Components
 
-1. **API Layer** (`src/api/`): Abstracted model interface with implementations for Gemini and Ollama
+1. **API Layer** (`src/api/`): Factory pattern (`GeminiClientFactory`) for creating Google Gemini clients, decorator pattern (`RetryDecorator`) for resilience, and interface abstraction (`ModelApi`) for consistent API interactions
 2. **Feature Modules**: Separate modules for chat, completions (`completions.ts`), summary (`summary.ts`), and rewrite (`rewrite.ts`)
 3. **Context System** (`src/files/file-context.ts`): Builds linked note trees for context-aware AI interactions
 4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates, stored in `[state-folder]/History/`
