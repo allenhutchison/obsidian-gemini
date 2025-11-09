@@ -4,6 +4,9 @@
 
 import { App, Modal } from 'obsidian';
 
+// Repository configuration
+const REPOSITORY_URL = 'https://github.com/allenhutchison/obsidian-gemini';
+
 interface ReleaseNote {
 	title: string;
 	highlights: string[];
@@ -139,7 +142,7 @@ export class UpdateNotificationModal extends Modal {
 		const releaseNotesLink = contentEl.createDiv({ cls: 'gemini-update-links' });
 		const link = releaseNotesLink.createEl('a', {
 			text: '📖 View Full Release Notes',
-			href: `https://github.com/allenhutchison/obsidian-gemini/releases/tag/${this.newVersion}`
+			href: `${REPOSITORY_URL}/releases/tag/${this.newVersion}`
 		});
 		link.addEventListener('click', (e) => {
 			e.preventDefault();
