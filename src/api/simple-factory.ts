@@ -7,7 +7,7 @@
 
 import { GeminiClient, GeminiClientConfig } from './gemini-client';
 import { ModelApi } from './interfaces/model-api';
-import { GeminiPrompts } from '../prompts/gemini-prompts';
+import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
 import { getDefaultModelForRole } from '../models';
 import type ObsidianGemini from '../main';

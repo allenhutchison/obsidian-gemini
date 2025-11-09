@@ -1,5 +1,5 @@
 import ObsidianGemini from './main';
-import { GeminiPrompts } from './prompts/gemini-prompts';
+import { GeminiPrompts } from './prompts';
 import { BaseModelRequest } from './api/index';
 import { GeminiClientFactory } from './api/simple-factory';
 import { Notice } from 'obsidian';

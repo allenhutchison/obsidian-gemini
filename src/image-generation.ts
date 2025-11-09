@@ -1,7 +1,7 @@
 import ObsidianGemini from './main';
 import { Notice, App, Modal, Setting, TextAreaComponent } from 'obsidian';
 import { GeminiClient } from './api/gemini-client';
-import { GeminiPrompts } from './prompts/gemini-prompts';
+import { GeminiPrompts } from './prompts';
 import { GeminiClientFactory } from './api/simple-factory';
 import { BaseModelRequest } from './api/index';
 

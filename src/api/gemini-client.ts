@@ -16,7 +16,7 @@ import {
 	StreamingModelResponse,
 	ToolDefinition
 } from './interfaces/model-api';
-import { GeminiPrompts } from '../prompts/gemini-prompts';
+import { GeminiPrompts } from '../prompts';
 import type ObsidianGemini from '../main';
 import { getDefaultModelForRole } from '../models';
 
