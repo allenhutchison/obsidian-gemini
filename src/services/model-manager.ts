@@ -229,7 +229,9 @@ export class ModelManager {
 			}
 
 			// Log filtered models for debugging
-			console.debug(`Filtering out deprecated model ${model.value} - only Gemini 2.5+ supported`);
+			if (this.plugin.settings.debugMode) {
+				console.debug(`Filtering out deprecated model ${model.value} - only Gemini 2.5+ supported`);
+			}
 			return false;
 		});
 	}

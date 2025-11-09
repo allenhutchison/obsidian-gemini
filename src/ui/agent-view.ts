@@ -1195,9 +1195,11 @@ These files are included in the context below. When the user asks you to write d
 				session: this.currentSession
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
-			console.log('Available tools from registry:', availableTools);
-			console.log('Number of tools:', availableTools.length);
-			console.log('Tool names:', availableTools.map(t => t.name));
+			if (this.plugin.settings.debugMode) {
+				console.log('Available tools from registry:', availableTools);
+				console.log('Number of tools:', availableTools.length);
+				console.log('Tool names:', availableTools.map(t => t.name));
+			}
 
 			try {
 				// Get model config from session or use defaults
@@ -1343,7 +1345,9 @@ These files are included in the context below. When the user asks you to write d
 					}
 				} else {
 					// Fall back to non-streaming API
-					console.log('Agent view using non-streaming API');
+					if (this.plugin.settings.debugMode) {
+						console.log('Agent view using non-streaming API');
+					}
 					const response = await modelApi.generateModelResponse(request);
 
 					// Remove thinking indicator
@@ -1561,8 +1565,10 @@ User: ${history[0].message}`;
 					
 					// Update UI
 					this.updateSessionHeader();
-					
-					console.log(`Auto-labeled session: ${generatedTitle}`);
+
+					if (this.plugin.settings.debugMode) {
+						console.log(`Auto-labeled session: ${generatedTitle}`);
+					}
 				}
 			} catch (error) {
 				console.error('Failed to auto-label session:', error);
@@ -2084,12 +2090,16 @@ User: ${history[0].message}`;
 					}
 				} else if (typeof result.data === 'object') {
 					// Debug logging
-					console.log('Tool result is object for:', toolName);
-					console.log('Result data keys:', Object.keys(result.data));
+					if (this.plugin.settings.debugMode) {
+						console.log('Tool result is object for:', toolName);
+						console.log('Result data keys:', Object.keys(result.data));
+					}
 					
 					// Special handling for google_search results with citations
 					if (result.data.answer && result.data.citations && toolName === 'google_search') {
-						console.log('Handling google_search result with citations');
+						if (this.plugin.settings.debugMode) {
+							console.log('Handling google_search result with citations');
+						}
 						// Display the answer
 						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
 						answerDiv.createEl('h5', { text: 'Answer:' });
