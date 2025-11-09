@@ -25,7 +25,7 @@ Welcome to the comprehensive documentation for Gemini Scribe v4.0, an Obsidian p
 2. **API Key**: Get your free key from [Google AI Studio](https://aistudio.google.com/apikey)
 3. **Configuration**: Add your API key in Settings → Gemini Scribe
 4. **Initialize Context**: Click "Initialize Vault Context" to help the agent understand your vault
-5. **Start Chatting**: Open Agent Mode and start giving the AI tasks!
+5. **Start Chatting**: Open Gemini Chat and start giving the AI tasks!
 
 ## What's New in v4.0
 
@@ -189,7 +189,7 @@ Agent: I'll create your weekly reflection. Let me:
 **Agent Not Responding**
 - Check API key validity in Settings
 - Verify internet connection
-- Ensure your model supports tool calling (all Gemini 2.0+ models do)
+- Ensure your model supports tool calling (e.g., Gemini 1.5 Pro and newer models)
 
 **Tools Failing**
 - Check file permissions and paths
@@ -199,7 +199,7 @@ Agent: I'll create your weekly reflection. Let me:
 **Poor Quality Output**
 - Add specific notes as context files
 - Be more specific in your requests
-- Try a more capable model (Gemini 2.0 Flash Experimental)
+- Try a more capable model (e.g., Gemini 1.5 Pro)
 
 **Performance Issues**
 - Use Gemini Flash for faster responses
