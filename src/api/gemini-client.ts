@@ -436,10 +436,6 @@ export class GeminiClient implements ModelApi {
 			throw new Error('No image data in response. The model may have returned only text.');
 		} catch (error) {
 			this.plugin?.logger.error('[GeminiClient] Error generating image:', error);
-			// Log additional details if available
-			if (error && typeof error === 'object') {
-				this.plugin?.logger.error('[GeminiClient] Error details:', JSON.stringify(error, null, 2));
-			}
 			throw error;
 		}
 	}
