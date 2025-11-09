@@ -348,11 +348,11 @@ export default class ObsidianGemini extends Plugin {
 				// Show v4 welcome modal with archiving option
 				const modal = new V4WelcomeModal(this.app, this);
 				modal.open();
-
-				// Mark as seen so we don't show it again
-				this.settings.hasSeenV4Welcome = true;
-				await this.saveData(this.settings);
 			}
+
+			// Mark as seen so we don't perform this check again
+			this.settings.hasSeenV4Welcome = true;
+			await this.saveData(this.settings);
 		} catch (error) {
 			console.error('Error checking for archiving:', error);
 			// Don't show error to user - archiving is optional
