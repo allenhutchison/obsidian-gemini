@@ -182,7 +182,7 @@ describe('GoogleSearchTool', () => {
 
 			expect(mockGenAI.models.generateContent).toHaveBeenCalledWith(
 				expect.objectContaining({
-					model: 'gemini-1.5-flash-002'
+					model: 'gemini-2.5-pro'
 				})
 			);
 		});

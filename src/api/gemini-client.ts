@@ -24,6 +24,7 @@ import type ObsidianGemini from '../main';
  */
 export interface GeminiClientConfig {
 	apiKey: string;
+	model?: string;
 	temperature?: number;
 	topP?: number;
 	maxOutputTokens?: number;
@@ -151,7 +152,7 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest
 	): Promise<GenerateContentParameters> {
 		const isExtended = 'userMessage' in request;
-		const model = request.model || 'gemini-2.0-flash-exp';
+		const model = request.model || this.config.model || 'gemini-2.5-flash';
 
 		// Build system instruction
 		let systemInstruction = '';

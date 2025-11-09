@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
+import { getDefaultModelForRole } from '../models';
 
 /**
  * Google Search tool that uses a separate model instance with search grounding
@@ -37,9 +38,9 @@ export class GoogleSearchTool implements Tool {
 
 			// Create a separate model instance with Google Search enabled
 			const genAI = new GoogleGenAI({ apiKey: plugin.settings.apiKey });
-			
+
 			// Use the models API similar to gemini-api-new.ts
-			const modelToUse = plugin.settings.chatModelName || 'gemini-1.5-flash-002';
+			const modelToUse = plugin.settings.chatModelName || getDefaultModelForRole('chat');
 			const config = {
 				temperature: plugin.settings.temperature,
 				maxOutputTokens: 8192, // Default max tokens
