@@ -86,7 +86,7 @@ export class ScribeFile {
 		if (this.isFile(activeFile)) {
 			return activeFile;
 		} else {
-			logDebugInfo(this.plugin.settings.debugMode, 'File System', 'No active file found.');
+			logDebugInfo('File System', 'No active file found.');
 			return null;
 		}
 	}
@@ -135,7 +135,6 @@ export class ScribeFile {
 						normalizedLinks.push(normalizedPath);
 					} else {
 						logDebugInfo(
-							this.plugin.settings.debugMode,
 							'Link Normalization Warning',
 							`Link "${link.link}" in file "${file.path}" could not be normalized.`
 						);
@@ -150,7 +149,6 @@ export class ScribeFile {
 						normalizedEmbeds.push(normalizedPath);
 					} else {
 						logDebugInfo(
-							this.plugin.settings.debugMode,
 							'Link Normalization Warning',
 							`Embed "${embed.link}" in file "${file.path}" could not be normalized.`
 						);
@@ -165,7 +163,6 @@ export class ScribeFile {
 						normalizedFrontmatterLinks.push(normalizedPath);
 					} else {
 						logDebugInfo(
-							this.plugin.settings.debugMode,
 							'Link Normalization Warning',
 							`Frontmatter link "${link.link}" in file "${file.path}" could not be normalized.`
 						);
@@ -182,7 +179,6 @@ export class ScribeFile {
 								normalizedFrontmatterLinks.push(normalizedPath);
 							} else {
 								logDebugInfo(
-									this.plugin.settings.debugMode,
 									'Link Normalization Warning',
 									`Frontmatter link "${link}" in file "${file.path}" could not be normalized.`
 								);
@@ -194,7 +190,6 @@ export class ScribeFile {
 							normalizedFrontmatterLinks.push(normalizedPath);
 						} else {
 							logDebugInfo(
-								this.plugin.settings.debugMode,
 								'Link Normalization Warning',
 								`Frontmatter link "${cache.frontmatter.links}" in file "${file.path}" could not be normalized.`
 							);

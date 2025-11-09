@@ -1,6 +1,6 @@
 /**
  * Utility for logging debug info for Gemini APIs.
- * @param debugMode Whether debug mode is enabled
+ * Automatically respects debug mode via global console override.
  * @param title Title for the debug output
  * @param data Data to log (will be stringified)
  */
@@ -119,8 +119,7 @@ export function formatExtendedModelRequest(req: any): string {
 	].join('\n');
 }
 
-export function logDebugInfo(debugMode: boolean, title: string, data: any) {
-	if (!debugMode) return;
+export function logDebugInfo(title: string, data: any) {
 	if (isExtendedModelRequest(data)) {
 		console.log(`[GeminiAPI Debug] ${title} (ExtendedModelRequest):\n${formatExtendedModelRequest(data)}`);
 		return;
