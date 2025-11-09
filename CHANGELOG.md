@@ -1,6 +1,6 @@
 # Changelog
 
-## [4.0.0] - 2025-01-XX
+## [4.0.0] - 2025-11-09
 
 ### 🎉 Major Release: Unified Agent-First Experience
 
@@ -9,14 +9,24 @@ This major release simplifies Gemini Scribe by consolidating around a single, po
 ### ✨ New Features
 
 - **Unified Chat Interface**: Single chat mode with full agent capabilities - no more switching between modes
-- **Automatic History Migration**: Seamlessly converts existing chat history to Agent Sessions format
-  - Automatic migration modal on first launch
-  - Original files backed up to `History-Archive/`
-  - Re-run migration anytime from settings
-- **Migration Controls**: New settings panel for managing migration
-  - View migration status
-  - Re-run migration for new files
-  - Quick access to backup archive
+- **Automatic History Archival**: Old note-based chat history safely archived
+  - V4 welcome modal on first launch
+  - Original files preserved in `History-Archive/`
+  - Clean migration to agent-first experience
+- **AGENTS.md Vault Context**: Initialize vault understanding for the agent
+  - "Initialize Vault Context" button in empty agent sessions
+  - AI-powered vault analysis and organization understanding
+  - Persistent context file that helps agent understand your vault structure
+  - Refresh button to update context as vault grows
+- **Update Notification System**: Stay informed about new features
+  - Version-specific release notes displayed on updates
+  - Command palette command to view release notes anytime
+  - Smart detection skips notifications on first install
+- **Enhanced Documentation**: Complete docs overhaul for v4
+  - Agent-first documentation throughout
+  - Migration guide from v3.x
+  - Updated workflows and examples
+  - Improved troubleshooting guides
 - **Streamlined SDK Integration**: Now using `@google/genai` official SDK for better reliability
 
 ### 🔧 Improvements
@@ -25,6 +35,9 @@ This major release simplifies Gemini Scribe by consolidating around a single, po
 - **Better Documentation**: Comprehensive migration guide and updated README
 - **Improved Reliability**: Direct SDK integration reduces API compatibility issues
 - **Cleaner Architecture**: Removed 600+ lines of legacy code
+- **Context File Handling**: Fixed issues with @ mentioned files not being read properly
+- **Active File Management**: Better tracking of auto-added vs manually-added context files
+- **UI Responsiveness**: AGENTS.md button updates immediately after initialization
 
 ### 💔 Breaking Changes
 
@@ -85,9 +98,10 @@ See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for detailed migration instructions
 
 ### 🧪 Testing
 
-- All 288 existing tests pass
-- New migration tests added
+- All 367 tests pass (24 test suites)
+- New tests for update notifications, AGENTS.md, and context handling
 - Comprehensive integration test coverage
+- Manual QA performed on desktop platforms
 
 ---
 
