@@ -205,6 +205,16 @@ export default class ObsidianGemini extends Plugin {
 			})
 		);
 
+		// Add command to view release notes
+		this.addCommand({
+			id: 'gemini-scribe-view-release-notes',
+			name: 'View Release Notes',
+			callback: () => {
+				const modal = new UpdateNotificationModal(this.app, this, this.manifest.version);
+				modal.open();
+			},
+		});
+
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
 
 		this.app.workspace.onLayoutReady(() => this.onLayoutReady());
