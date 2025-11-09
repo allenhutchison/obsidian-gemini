@@ -1,15 +1,15 @@
-import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, MoveFileTool, getVaultTools } from './vault-tools';
-import { ToolExecutionContext } from './types';
+import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, MoveFileTool, getVaultTools } from '../../src/tools/vault-tools';
+import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock ScribeFile and ScribeDataView
-jest.mock('../files', () => ({
+jest.mock('../../src/files', () => ({
 	ScribeFile: jest.fn().mockImplementation(() => ({
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
 		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
 	}))
 }));
 
-jest.mock('../files/dataview-utils', () => ({
+jest.mock('../../src/files/dataview-utils', () => ({
 	ScribeDataView: jest.fn().mockImplementation(() => ({
 		getBacklinks: jest.fn().mockResolvedValue(new Set())
 	}))
@@ -428,7 +428,7 @@ describe('VaultTools', () => {
 		let tool: any;
 
 		beforeEach(() => {
-			const { GetActiveFileTool } = require('./vault-tools');
+			const { GetActiveFileTool } = require('../../src/tools/vault-tools');
 			tool = new GetActiveFileTool();
 		});
 

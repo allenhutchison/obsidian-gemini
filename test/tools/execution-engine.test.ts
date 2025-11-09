@@ -1,7 +1,7 @@
-import { ToolExecutionEngine } from './execution-engine';
-import { ToolRegistry } from './tool-registry';
-import { ReadFileTool, ListFilesTool, WriteFileTool } from './vault-tools';
-import { ToolCategory } from '../types/agent';
+import { ToolExecutionEngine } from '../../src/tools/execution-engine';
+import { ToolRegistry } from '../../src/tools/tool-registry';
+import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault-tools';
+import { ToolCategory } from '../../src/types/agent';
 import { Notice } from 'obsidian';
 
 // Mock Obsidian
@@ -24,7 +24,7 @@ jest.mock('obsidian', () => ({
 }));
 
 // Mock the confirmation modal
-jest.mock('../ui/tool-confirmation-modal', () => ({
+jest.mock('../../src/ui/tool-confirmation-modal', () => ({
 	ToolConfirmationModal: jest.fn()
 }));
 
@@ -119,7 +119,7 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 		} as any;
 
 		// Mock user declining confirmation
-		const { ToolConfirmationModal } = require('../ui/tool-confirmation-modal');
+		const { ToolConfirmationModal } = require('../../src/ui/tool-confirmation-modal');
 		ToolConfirmationModal.mockImplementation((app: any, tool: any, params: any, callback: Function) => ({
 			open: jest.fn(() => {
 				// Simulate user declining

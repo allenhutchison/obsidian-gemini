@@ -1,4 +1,4 @@
-import { ObsidianGeminiSettings } from './main';
+import { ObsidianGeminiSettings } from '../src/main';
 
 describe('ObsidianGeminiSettings', () => {
 	describe('temperature and topP settings', () => {

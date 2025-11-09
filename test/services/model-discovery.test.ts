@@ -1,4 +1,4 @@
-import { ModelDiscoveryService, GoogleModel, ModelDiscoveryResult } from './model-discovery';
+import { ModelDiscoveryService, GoogleModel, ModelDiscoveryResult } from '../../src/services/model-discovery';
 
 // Mock ObsidianGemini plugin
 const mockPlugin = {

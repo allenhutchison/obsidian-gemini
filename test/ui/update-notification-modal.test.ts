@@ -2,7 +2,7 @@
  * Tests for UpdateNotificationModal
  */
 
-import { UpdateNotificationModal } from './update-notification-modal';
+import { UpdateNotificationModal } from '../../src/ui/update-notification-modal';
 import { App } from 'obsidian';
 
 // Mock Obsidian

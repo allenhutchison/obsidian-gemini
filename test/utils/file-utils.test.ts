@@ -1,4 +1,4 @@
-import { shouldExcludePath, shouldExcludePathForPlugin, createFileFilter } from './file-utils';
+import { shouldExcludePath, shouldExcludePathForPlugin, createFileFilter } from '../../src/utils/file-utils';
 import { TFile, TFolder } from 'obsidian';
 
 describe('file-utils', () => {

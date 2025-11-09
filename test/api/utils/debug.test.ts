@@ -7,7 +7,7 @@ import {
 	stripFileContextNode,
 	stripLinkedFileContents,
 	redactLinkedFileSections,
-} from './debug';
+} from '../../../src/api/utils/debug';
 
 describe('isBaseModelRequest', () => {
 	it('should return true for a valid BaseModelRequest', () => {
