@@ -88,7 +88,7 @@ export class GeminiClientFactory {
       initialBackoffDelay: settings.initialBackoffDelay ?? 1000,
     };
 
-    return new RetryDecorator(client, retryConfig);
+    return new RetryDecorator(client, retryConfig, plugin.logger);
   }
 
   /**
@@ -113,7 +113,7 @@ export class GeminiClientFactory {
           initialBackoffDelay: 1000,
         };
 
-    return new RetryDecorator(client, retryConfig);
+    return new RetryDecorator(client, retryConfig, plugin?.logger);
   }
 
   /**

@@ -86,7 +86,7 @@ export class GeminiCompletions {
 				},
 			});
 		} catch (error) {
-			console.error('Error setting up completion commands:', error);
+			this.plugin.logger.error('Error setting up completion commands:', error);
 		}
 	}
 }

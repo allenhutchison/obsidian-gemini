@@ -86,7 +86,7 @@ export class SessionListModal extends Modal {
 						this.sessions.push(session);
 					}
 				} catch (error) {
-					console.error(`Failed to load session from ${file.path}:`, error);
+					this.plugin.logger.error(`Failed to load session from ${file.path}:`, error);
 				}
 			}
 			
@@ -100,7 +100,7 @@ export class SessionListModal extends Modal {
 				return 0;
 			});
 		} catch (error) {
-			console.error('Failed to load sessions:', error);
+			this.plugin.logger.error('Failed to load sessions:', error);
 			new Notice('Failed to load agent sessions');
 		}
 	}
@@ -190,7 +190,7 @@ export class SessionListModal extends Modal {
 				}
 			}
 		} catch (error) {
-			console.error('Failed to delete session:', error);
+			this.plugin.logger.error('Failed to delete session:', error);
 			new Notice('Failed to delete session');
 		}
 	}

@@ -19,7 +19,7 @@ export class GeminiSummary {
 	 * @param error - Optional error object for detailed logging
 	 */
 	private showError(message: string, error?: unknown): void {
-		console.error(message, error);
+		this.plugin.logger.error(message, error);
 		new Notice(message);
 	}
 

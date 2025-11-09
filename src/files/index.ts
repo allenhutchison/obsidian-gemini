@@ -51,7 +51,7 @@ export class ScribeFile {
 
 				contextParts.push(contextString);
 			} catch (error) {
-				console.error(`Failed to read file ${file.path}:`, error);
+				this.plugin.logger.error(`Failed to read file ${file.path}:`, error);
 			}
 		}
 

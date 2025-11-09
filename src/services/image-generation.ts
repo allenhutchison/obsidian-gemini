@@ -49,7 +49,7 @@ export class ImageGeneration {
 			new Notice('Image generated and inserted successfully!');
 		} catch (error) {
 			const errorMsg = `Failed to generate image: ${error instanceof Error ? error.message : String(error)}`;
-			console.error(errorMsg, error);
+			this.plugin.logger.error(errorMsg, error);
 			new Notice(errorMsg);
 		}
 	}
@@ -68,7 +68,7 @@ export class ImageGeneration {
 			// Save the image to vault
 			return await this.saveImageToVault(base64Data, prompt, targetNotePath);
 		} catch (error) {
-			console.error('Failed to generate image:', error);
+			this.plugin.logger.error('Failed to generate image:', error);
 			throw error;
 		}
 	}
@@ -270,7 +270,7 @@ class ImagePromptModal extends Modal {
 			new Notice('Prompt generated! Feel free to edit it before generating the image.');
 		} catch (error) {
 			const errorMsg = `Failed to generate prompt: ${error instanceof Error ? error.message : String(error)}`;
-			console.error(errorMsg, error);
+			this.plugin.logger.error(errorMsg, error);
 			new Notice(errorMsg);
 		} finally {
 			// Restore button state

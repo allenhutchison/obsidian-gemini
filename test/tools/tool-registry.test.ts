@@ -8,6 +8,15 @@ const mockPlugin = {
 		vault: {},
 		workspace: {},
 		metadataCache: {}
+	},
+	logger: {
+		log: jest.fn(),
+		debug: jest.fn(),
+		warn: jest.fn(),
+		error: jest.fn(),
+		child: jest.fn(function(this: any, prefix: string) {
+			return this;
+		})
 	}
 } as any;
 
@@ -79,13 +88,11 @@ describe('ToolRegistry', () => {
 		it('should warn when registering duplicate tool', () => {
 			const tool1 = new TestTool();
 			const tool2 = new TestTool();
-			const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-			
+
 			registry.registerTool(tool1);
 			registry.registerTool(tool2);
-			
-			expect(consoleSpy).toHaveBeenCalledWith('Tool test_tool is already registered, overwriting...');
-			consoleSpy.mockRestore();
+
+			expect(mockPlugin.logger.warn).toHaveBeenCalledWith('Tool test_tool is already registered, overwriting...');
 		});
 	});
 

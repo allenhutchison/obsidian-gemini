@@ -38,6 +38,15 @@ const mockPlugin = {
 	},
 	loadData: jest.fn(),
 	saveData: jest.fn(),
+	logger: {
+		log: jest.fn(),
+		debug: jest.fn(),
+		warn: jest.fn(),
+		error: jest.fn(),
+		child: jest.fn(function(this: any, prefix: string) {
+			return this;
+		})
+	}
 } as any;
 
 describe('ModelManager', () => {

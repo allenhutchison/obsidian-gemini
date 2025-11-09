@@ -59,7 +59,7 @@ export class ModelManager {
 				return this.filterModelsForVersion(dynamicModels, false);
 			}
 		} catch (error) {
-			console.warn('Model discovery failed, falling back to static models:', error);
+			this.plugin.logger.warn('Model discovery failed, falling back to static models:', error);
 		}
 
 		// Fallback to filtered static models
@@ -88,7 +88,7 @@ export class ModelManager {
 				return this.filterModelsForVersion(dynamicModels, true);
 			}
 		} catch (error) {
-			console.warn('Model discovery failed, falling back to static models:', error);
+			this.plugin.logger.warn('Model discovery failed, falling back to static models:', error);
 		}
 
 		// Fallback to filtered static models (image only)
@@ -311,7 +311,7 @@ export class ModelManager {
 			const discoveredModels = discovery.success ? discovery.models : [];
 			return ParameterValidationService.getParameterRanges(discoveredModels);
 		} catch (error) {
-			console.warn('Failed to get parameter ranges from discovered models:', error);
+			this.plugin.logger.warn('Failed to get parameter ranges from discovered models:', error);
 			return ParameterValidationService.getParameterRanges([]);
 		}
 	}
@@ -328,7 +328,7 @@ export class ModelManager {
 			const discovery = await this.discoveryService.discoverModels(false);
 			return discovery.success ? discovery.models : [];
 		} catch (error) {
-			console.warn('Failed to get discovered models:', error);
+			this.plugin.logger.warn('Failed to get discovered models:', error);
 			return [];
 		}
 	}

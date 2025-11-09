@@ -122,7 +122,7 @@ export class SessionManager {
 				const session = await this.loadSessionFromFile(file);
 				sessions.push(session);
 			} catch (error) {
-				console.warn(`Failed to load agent session from ${file.path}:`, error);
+				this.plugin.logger.warn(`Failed to load agent session from ${file.path}:`, error);
 			}
 		}
 

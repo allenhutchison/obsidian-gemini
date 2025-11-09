@@ -42,16 +42,17 @@ describe('getDefaultModelForRole', () => {
 		expect(getDefaultModelForRole('summary')).toBe('model-first');
 	});
 
-	it('should log a warning when falling back to the first model', () => {
+	it('should not log a warning when falling back to the first model (warning removed)', () => {
 		setTestModels([
 			{ value: 'fallback-model', label: 'Fallback Model' },
 			{ value: 'another-model', label: 'Another Model' },
 		]);
 		const consoleWarnSpy = jest.spyOn(console, 'warn');
-		getDefaultModelForRole('completions'); // No explicit default for completions
-		expect(consoleWarnSpy).toHaveBeenCalledWith(
-			"No default model specified for role 'completions'. Falling back to the first model in GEMINI_MODELS: Fallback Model"
-		);
+		const result = getDefaultModelForRole('completions'); // No explicit default for completions
+
+		// Should still fall back to first model, but no warning logged
+		expect(result).toBe('fallback-model');
+		expect(consoleWarnSpy).not.toHaveBeenCalled();
 		consoleWarnSpy.mockRestore();
 	});
 

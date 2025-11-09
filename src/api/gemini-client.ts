@@ -72,7 +72,7 @@ export class GeminiClient implements ModelApi {
 			const response = await this.ai.models.generateContent(params);
 			return this.extractModelResponse(response);
 		} catch (error) {
-			console.error('[GeminiClient] Error generating content:', error);
+			this.plugin?.logger.error('[GeminiClient] Error generating content:', error);
 			throw error;
 		}
 	}
@@ -133,7 +133,7 @@ export class GeminiClient implements ModelApi {
 						...(toolCalls && { toolCalls })
 					};
 				}
-				console.error('[GeminiClient] Streaming error:', error);
+				this.plugin?.logger.error('[GeminiClient] Streaming error:', error);
 				throw error;
 			}
 		})();
@@ -166,7 +166,7 @@ export class GeminiClient implements ModelApi {
 				try {
 					agentsMemory = await this.plugin.agentsMemory.read();
 				} catch (error) {
-					console.warn('Failed to load AGENTS.md:', error);
+					this.plugin.logger.warn('Failed to load AGENTS.md:', error);
 				}
 			}
 
@@ -435,11 +435,7 @@ export class GeminiClient implements ModelApi {
 			// If we get here, no image data was found
 			throw new Error('No image data in response. The model may have returned only text.');
 		} catch (error) {
-			console.error('[GeminiClient] Error generating image:', error);
-			// Log additional details if available
-			if (error && typeof error === 'object') {
-				console.error('[GeminiClient] Error details:', JSON.stringify(error, null, 2));
-			}
+			this.plugin?.logger.error('[GeminiClient] Error generating image:', error);
 			throw error;
 		}
 	}

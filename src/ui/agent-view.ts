@@ -398,7 +398,7 @@ export class AgentView extends ItemView {
 
 						return; // Exit early since we handled it with the timeout
 					} catch (execErr) {
-						console.warn('All paste methods failed:', execErr);
+						this.plugin.logger.warn('All paste methods failed:', execErr);
 						// If all else fails, we can't paste
 						new Notice('Unable to paste in popout window. Try pasting in the main window.');
 						return;
@@ -577,7 +577,7 @@ export class AgentView extends ItemView {
 			// Focus on input
 			this.userInput.focus();
 		} catch (error) {
-			console.error('Failed to create agent session:', error);
+			this.plugin.logger.error('Failed to create agent session:', error);
 			new Notice('Failed to create agent session');
 		}
 	}
@@ -603,7 +603,7 @@ export class AgentView extends ItemView {
 				await this.displayMessage(entry);
 			}
 		} catch (error) {
-			console.error('Failed to load session history:', error);
+			this.plugin.logger.error('Failed to load session history:', error);
 		}
 	}
 
@@ -794,7 +794,7 @@ export class AgentView extends ItemView {
 					})
 					.catch((err) => {
 						new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
-						console.error(err);
+						this.plugin.logger.error(err);
 					});
 			});
 		}
@@ -1161,13 +1161,13 @@ export class AgentView extends ItemView {
 					if (loadedPrompt) {
 						customPrompt = loadedPrompt;
 					} else {
-						console.warn(
+						this.plugin.logger.warn(
 							'Custom prompt file not found or failed to load:',
 							this.currentSession.modelConfig.promptTemplate
 						);
 					}
 				} catch (error) {
-					console.error('Error loading custom prompt:', error);
+					this.plugin.logger.error('Error loading custom prompt:', error);
 				}
 			}
 
@@ -1316,7 +1316,7 @@ These files are included in the context below. When the user asks you to write d
 								this.scrollToBottom();
 							} else {
 								// Empty response - might be thinking tokens
-								console.warn('Model returned empty response');
+								this.plugin.logger.warn('Model returned empty response');
 								new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
 								
 								// Remove thinking indicator if it hasn't been removed yet
@@ -1377,7 +1377,7 @@ These files are included in the context below. When the user asks you to write d
 							}
 						} else {
 							// Empty response - might be thinking tokens
-							console.warn('Model returned empty response');
+							this.plugin.logger.warn('Model returned empty response');
 							new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
 							
 							// Still save the user message to history
@@ -1395,7 +1395,7 @@ These files are included in the context below. When the user asks you to write d
 			}
 
 		} catch (error) {
-			console.error('Failed to send message:', error);
+			this.plugin.logger.error('Failed to send message:', error);
 			new Notice('Failed to send message');
 		} finally {
 			this.sendButton.disabled = false;
@@ -1408,7 +1408,7 @@ These files are included in the context below. When the user asks you to write d
 		try {
 			await this.plugin.sessionHistory.updateSessionMetadata(this.currentSession);
 		} catch (error) {
-			console.error('Failed to update session metadata:', error);
+			this.plugin.logger.error('Failed to update session metadata:', error);
 		}
 	}
 
@@ -1450,7 +1450,7 @@ These files are included in the context below. When the user asks you to write d
 			this.createSessionHeader();
 			this.createContextPanel();
 		} catch (error) {
-			console.error('Failed to load session:', error);
+			this.plugin.logger.error('Failed to load session:', error);
 			new Notice('Failed to load session');
 		}
 	}
@@ -1565,11 +1565,11 @@ User: ${history[0].message}`;
 					this.plugin.logger.log(`Auto-labeled session: ${generatedTitle}`);
 				}
 			} catch (error) {
-				console.error('Failed to auto-label session:', error);
+				this.plugin.logger.error('Failed to auto-label session:', error);
 				// Don't show error to user - auto-labeling is a nice-to-have feature
 			}
 		} catch (error) {
-			console.error('Error in auto-labeling:', error);
+			this.plugin.logger.error('Error in auto-labeling:', error);
 		}
 	}
 
@@ -1666,7 +1666,7 @@ User: ${history[0].message}`;
 					result: result
 				});
 			} catch (error) {
-				console.error(`Tool execution error for ${toolCall.name}:`, error);
+				this.plugin.logger.error(`Tool execution error for ${toolCall.name}:`, error);
 				toolResults.push({
 					toolName: toolCall.name,
 					toolArguments: toolCall.arguments || {},
@@ -1785,7 +1785,7 @@ User: ${history[0].message}`;
 					}
 				} else {
 					// Model returned empty response - this might happen with thinking tokens
-					console.warn('Model returned empty response after tool execution');
+					this.plugin.logger.warn('Model returned empty response after tool execution');
 					// Try a simpler prompt to get a response
 					const retryRequest: ExtendedModelRequest = {
 						userMessage: "Please summarize what you just did with the tools.",
@@ -1821,7 +1821,7 @@ User: ${history[0].message}`;
 				}
 			}
 		} catch (error) {
-			console.error('Failed to process tool results:', error);
+			this.plugin.logger.error('Failed to process tool results:', error);
 			new Notice('Failed to process tool results');
 		}
 	}
@@ -2005,7 +2005,7 @@ User: ${history[0].message}`;
 		}
 		
 		if (!toolMessage) {
-			console.warn(`Tool message not found for ${toolName}`);
+			this.plugin.logger.warn(`Tool message not found for ${toolName}`);
 			return;
 		}
 		
@@ -2177,7 +2177,7 @@ User: ${history[0].message}`;
 								img.src = this.plugin.app.vault.getResourcePath(imageFile);
 								img.alt = result.data.prompt || 'Generated image';
 							} catch (error) {
-								console.error('Failed to get resource path for image:', error);
+								this.plugin.logger.error('Failed to get resource path for image:', error);
 								img.onerror?.(new Event('error'));
 							}
 
@@ -2345,11 +2345,11 @@ User: ${history[0].message}`;
 					try {
 						window.open(linkEl.href, '_blank');
 					} catch (error) {
-						console.error('Failed to open documentation link:', error);
+						this.plugin.logger.error('Failed to open documentation link:', error);
 						new Notice('Failed to open documentation. Please check your browser settings.');
 					}
 				} else {
-					console.error('Invalid documentation URL');
+					this.plugin.logger.error('Invalid documentation URL');
 				}
 			});
 
@@ -2622,7 +2622,7 @@ User: ${history[0].message}`;
 						})
 						.catch((err) => {
 							new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
-							console.error('Failed to copy to clipboard', err);
+							this.plugin.logger.error('Failed to copy to clipboard', err);
 						});
 				});
 			}

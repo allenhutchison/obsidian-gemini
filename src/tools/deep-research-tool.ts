@@ -67,7 +67,7 @@ export class DeepResearchTool implements Tool {
 			const initialQueries = await this.generateSearchQueries(genAI, modelToUse, params.topic, []);
 			
 			for (const query of initialQueries.slice(0, 2)) { // Start with 2 searches
-				const searchResult = await this.performSearch(genAI, modelToUse, query);
+				const searchResult = await this.performSearch(genAI, modelToUse, query, plugin);
 				if (searchResult) {
 					research.searches.push(searchResult);
 					this.extractSources(searchResult, research.sources);
@@ -85,7 +85,7 @@ export class DeepResearchTool implements Tool {
 				);
 
 				for (const query of followUpQueries.slice(0, 2)) {
-					const searchResult = await this.performSearch(genAI, modelToUse, query);
+					const searchResult = await this.performSearch(genAI, modelToUse, query, plugin);
 					if (searchResult) {
 						research.searches.push(searchResult);
 						this.extractSources(searchResult, research.sources);
@@ -192,7 +192,8 @@ Return only the queries, one per line.`;
 	private async performSearch(
 		genAI: GoogleGenAI,
 		model: string,
-		query: string
+		query: string,
+		plugin: InstanceType<typeof ObsidianGemini>
 	): Promise<SearchResult | null> {
 		try {
 			const result = await genAI.models.generateContent({
@@ -229,7 +230,7 @@ Return only the queries, one per line.`;
 				citations: citations
 			};
 		} catch (error) {
-			console.error(`Search failed for query "${query}":`, error);
+			plugin.logger.error(`Search failed for query "${query}":`, error);
 			return null;
 		}
 	}
@@ -375,7 +376,7 @@ Write 2-3 paragraphs with specific details and citations.`;
 				return await plugin.app.vault.create(filePath, content);
 			}
 		} catch (error) {
-			console.error('Failed to save report:', error);
+			plugin.logger.error('Failed to save report:', error);
 			return null;
 		}
 	}

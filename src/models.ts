@@ -31,16 +31,12 @@ export function getDefaultModelForRole(role: ModelRole): string {
 	// If no specific default is found in GEMINI_MODELS, and assuming GEMINI_MODELS is never empty,
 	// fall back to the first model in the list.
 	if (GEMINI_MODELS.length > 0) {
-		console.warn(
-			`No default model specified for role '${role}'. Falling back to the first model in GEMINI_MODELS: ${GEMINI_MODELS[0].label}`
-		);
+		// Note: No default model specified for role, falling back to first model in GEMINI_MODELS
 		return GEMINI_MODELS[0].value;
 	}
 
 	// This case should ideally be unreachable if GEMINI_MODELS is guaranteed to be non-empty.
 	// Adding a safeguard for an extremely unlikely scenario.
-	console.error('CRITICAL: GEMINI_MODELS is empty. Cannot determine a fallback model.');
-	// Returning a hardcoded, very basic model name as an absolute last resort.
 	// This indicates a serious configuration problem.
 	throw new Error('CRITICAL: GEMINI_MODELS array is empty. Please configure available models.');
 }

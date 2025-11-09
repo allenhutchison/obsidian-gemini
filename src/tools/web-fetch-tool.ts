@@ -133,8 +133,8 @@ export class WebFetchTool implements Tool {
 			};
 
 		} catch (error) {
-			console.error('Web fetch error:', error);
-			
+			plugin.logger.error('Web fetch error:', error);
+
 			// Provide more specific error messages
 			if (error instanceof TypeError && error.message.includes('Failed to construct')) {
 				return {
@@ -272,9 +272,9 @@ export class WebFetchTool implements Tool {
 					fetchedAt: new Date().toISOString()
 				}
 			};
-			
+
 		} catch (error) {
-			console.error('Fallback fetch error:', error);
+			plugin.logger.error('Fallback fetch error:', error);
 			return {
 				success: false,
 				error: `Fallback fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`

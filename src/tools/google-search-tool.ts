@@ -72,7 +72,7 @@ export class GoogleSearchTool implements Tool {
 					text = result.text;
 				} catch (e) {
 					// If it fails, it might be a legacy format
-					console.warn('Failed to get text from result:', e);
+					plugin.logger.warn('Failed to get text from result:', e);
 				}
 			}
 
@@ -80,12 +80,7 @@ export class GoogleSearchTool implements Tool {
 			const searchMetadata = result.candidates?.[0]?.groundingMetadata;
 			let citations: Array<{title?: string; url: string; snippet?: string}> = [];
 			let textWithCitations = text;
-			
-			// Debug logging (commented out for cleaner test output)
-			// console.log('Search metadata:', searchMetadata);
-			// console.log('Has groundingChunks:', !!searchMetadata?.groundingChunks);
-			// console.log('Has groundingSupports:', !!searchMetadata?.groundingSupports);
-			
+
 			// Extract citations from groundingChunks
 			if (searchMetadata?.groundingChunks) {
 				const chunks = searchMetadata.groundingChunks;
@@ -128,12 +123,7 @@ export class GoogleSearchTool implements Tool {
 					}
 				}
 			}
-			
-			// Log citations for debugging (commented out for cleaner test output)
-			// if (citations.length > 0) {
-			// 	console.log('Google Search citations found:', citations);
-			// }
-			
+
 			return {
 				success: true,
 				data: {

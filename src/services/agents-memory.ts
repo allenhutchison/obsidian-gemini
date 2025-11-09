@@ -62,7 +62,7 @@ export class AgentsMemory {
 			}
 			return await this.plugin.app.vault.read(file);
 		} catch (error) {
-			console.error('Failed to read AGENTS.md:', error);
+			this.plugin.logger.error('Failed to read AGENTS.md:', error);
 			return null;
 		}
 	}
@@ -82,7 +82,7 @@ export class AgentsMemory {
 				await this.plugin.app.vault.create(this.memoryFilePath, content);
 			}
 		} catch (error) {
-			console.error('Failed to write AGENTS.md:', error);
+			this.plugin.logger.error('Failed to write AGENTS.md:', error);
 			throw new Error(`Failed to write AGENTS.md: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
 	}
@@ -100,7 +100,7 @@ export class AgentsMemory {
 			if (data[key] !== undefined) {
 				// Ensure value is a string
 				if (typeof data[key] !== 'string') {
-					console.warn(`AgentsMemory: Invalid type for ${key}, expected string but got ${typeof data[key]}`);
+					this.plugin.logger.warn(`AgentsMemory: Invalid type for ${key}, expected string but got ${typeof data[key]}`);
 					continue;
 				}
 				validatedData[key] = data[key];
@@ -137,7 +137,7 @@ export class AgentsMemory {
 				await this.write(newContent);
 			}
 		} catch (error) {
-			console.error('Failed to append to AGENTS.md:', error);
+			this.plugin.logger.error('Failed to append to AGENTS.md:', error);
 			throw new Error(`Failed to append to AGENTS.md: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
 	}

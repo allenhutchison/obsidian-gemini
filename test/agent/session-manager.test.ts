@@ -18,6 +18,15 @@ const mockPlugin = {
 	},
 	settings: {
 		historyFolder: 'gemini-scribe'
+	},
+	logger: {
+		log: jest.fn(),
+		debug: jest.fn(),
+		warn: jest.fn(),
+		error: jest.fn(),
+		child: jest.fn(function(this: any, prefix: string) {
+			return this;
+		})
 	}
 } as any;
 
@@ -323,8 +332,6 @@ describe('SessionManager', () => {
 					return createMockSession(file);
 				});
 
-			const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
 			const sessions = await sessionManager.getRecentAgentSessions();
 
 			// Should return the 2 sessions that loaded successfully
@@ -332,13 +339,11 @@ describe('SessionManager', () => {
 			expect(sessions[0].id).toBe('session3');
 			expect(sessions[1].id).toBe('session1');
 
-			// Should have logged a warning
-			expect(consoleSpy).toHaveBeenCalledWith(
+			// Should have logged a warning via logger
+			expect(mockPlugin.logger.warn).toHaveBeenCalledWith(
 				expect.stringContaining('Failed to load agent session'),
 				expect.any(Error)
 			);
-
-			consoleSpy.mockRestore();
 		});
 
 		it('should return empty array when no sessions exist', async () => {
