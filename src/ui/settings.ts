@@ -234,13 +234,13 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				text.setValue(this.plugin.settings.historyFolder);
 			});
 
-		// Chat History
-		new Setting(containerEl).setName('Chat History').setHeading();
+		// Session History
+		new Setting(containerEl).setName('Session History').setHeading();
 
 		new Setting(containerEl)
-			.setName('Enable Chat History')
+			.setName('Enable Session History')
 			.setDesc(
-				'Store chat history as markdown files in your vault. History files are automatically organized in the History subfolder.'
+				'Store agent session history as markdown files in your vault. Sessions are automatically saved in the Agent-Sessions subfolder with auto-generated titles based on conversation content.'
 			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.chatHistory).onChange(async (value) => {
