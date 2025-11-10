@@ -459,11 +459,30 @@ export class AgentView extends ItemView {
 		});
 	}
 
+	/**
+	 * Convert simple markdown formatting to HTML for progress status
+	 * Handles **bold** and basic text
+	 */
+	private formatProgressText(text: string): string {
+		if (!text) return '';
+
+		// Convert **text** to <strong>text</strong>
+		let formatted = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+		// Replace newlines with spaces for single-line display
+		formatted = formatted.replace(/\n+/g, ' ');
+
+		// Trim extra spaces
+		formatted = formatted.replace(/\s+/g, ' ').trim();
+
+		return formatted;
+	}
+
 	private showProgress(statusText: string, state: 'thinking' | 'tool' | 'waiting' | 'streaming') {
 		if (!this.progressBarContainer) return;
 
 		this.progressBarContainer.style.display = 'block';
-		this.progressStatus.textContent = statusText;
+		this.progressStatus.innerHTML = this.formatProgressText(statusText);
 
 		// Update state class for color coding
 		this.progressFill.className = 'gemini-agent-progress-fill';
@@ -478,7 +497,7 @@ export class AgentView extends ItemView {
 	private updateProgress(statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') {
 		if (!this.progressBarContainer || this.progressBarContainer.style.display === 'none') return;
 
-		this.progressStatus.textContent = statusText;
+		this.progressStatus.innerHTML = this.formatProgressText(statusText);
 
 		if (state) {
 			this.progressFill.className = 'gemini-agent-progress-fill';
@@ -1276,25 +1295,37 @@ These files are included in the context below. When the user asks you to write d
 					let accumulatedMarkdown = '';
 					let progressUpdated = false;
 
-					const streamResponse = modelApi.generateStreamingResponse(request, (chunk: string) => {
-						accumulatedMarkdown += chunk;
-
-						// Update progress to streaming state when first chunk arrives
-						if (!progressUpdated) {
-							this.updateProgress('Generating response...', 'streaming');
-							progressUpdated = true;
+					const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
+						// Handle thought content - show in progress bar
+						if (chunk.thought) {
+							// Truncate thought for display (max ~150 chars)
+							const displayThought = chunk.thought.length > 150
+								? chunk.thought.substring(0, 147) + '...'
+								: chunk.thought;
+							this.updateProgress(displayThought, 'thinking');
 						}
-						
-						// Create or update the model message container
-						if (!modelMessageContainer) {
-							// First chunk - create the container
-							modelMessageContainer = this.createStreamingMessageContainer('model');
-							this.updateStreamingMessage(modelMessageContainer, chunk);
-						} else {
-							// Update existing container with new chunk
-							this.updateStreamingMessage(modelMessageContainer, chunk);
-							// Use debounced scroll to avoid stuttering
-							this.debouncedScrollToBottom();
+
+						// Handle text content
+						if (chunk.text) {
+							accumulatedMarkdown += chunk.text;
+
+							// Update progress to streaming state when first text chunk arrives
+							if (!progressUpdated) {
+								this.updateProgress('Generating response...', 'streaming');
+								progressUpdated = true;
+							}
+
+							// Create or update the model message container
+							if (!modelMessageContainer) {
+								// First chunk - create the container
+								modelMessageContainer = this.createStreamingMessageContainer('model');
+								this.updateStreamingMessage(modelMessageContainer, chunk.text);
+							} else {
+								// Update existing container with new chunk
+								this.updateStreamingMessage(modelMessageContainer, chunk.text);
+								// Use debounced scroll to avoid stuttering
+								this.debouncedScrollToBottom();
+							}
 						}
 					});
 					

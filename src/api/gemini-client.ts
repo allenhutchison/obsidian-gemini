@@ -105,13 +105,20 @@ export class GeminiClient implements ModelApi {
 					const chunkText = this.extractTextFromChunk(chunk);
 					if (chunkText) {
 						accumulatedText += chunkText;
-						onChunk(chunkText);
 					}
 
 					// Extract thought content from chunk
 					const chunkThought = this.extractThoughtFromChunk(chunk);
 					if (chunkThought) {
 						accumulatedThoughts += chunkThought;
+					}
+
+					// Call callback with both text and thought if either is present
+					if (chunkText || chunkThought) {
+						onChunk({
+							text: chunkText,
+							...(chunkThought && { thought: chunkThought })
+						});
 					}
 
 					// Extract tool calls from chunk (usually in last chunk)
