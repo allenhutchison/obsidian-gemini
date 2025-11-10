@@ -1603,6 +1603,21 @@ If your plugin does not need CSS, delete this file.
 	cursor: not-allowed;
 }
 
+/* Stop button styling - red/warning color scheme */
+.gemini-agent-stop-btn {
+	background-color: var(--color-red);
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-stop-btn:hover:not(:disabled) {
+	background-color: color-mix(in srgb, var(--color-red) 85%, black);
+}
+
+.gemini-agent-stop-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
 /* Session Modal Styles */
 .modal.modal-container:has(.gemini-session-modal) {
 	width: 600px;

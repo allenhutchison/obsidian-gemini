@@ -62,6 +62,8 @@ export class AgentView extends ItemView {
 	private contextPanel: HTMLElement;
 	private sessionHeader: HTMLElement;
 	private currentStreamingResponse: { cancel: () => void } | null = null;
+	private isExecuting: boolean = false;
+	private cancellationRequested: boolean = false;
 	private mentionedFiles: TFile[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private scrollTimeout: NodeJS.Timeout | null = null;
@@ -426,7 +428,13 @@ export class AgentView extends ItemView {
 			}
 		});
 
-		this.sendButton.addEventListener('click', () => this.sendMessage());
+		this.sendButton.addEventListener('click', () => {
+			if (this.isExecuting) {
+				this.stopAgentLoop();
+			} else {
+				this.sendMessage();
+			}
+		});
 	}
 
 	private createProgressBar(container: HTMLElement) {
@@ -528,6 +536,49 @@ export class AgentView extends ItemView {
 
 		this.progressBarContainer.style.display = 'none';
 		this.chatTimer.stop();
+	}
+
+	/**
+	 * Stop the currently executing agent loop
+	 * Cancels streaming and prevents further tool execution
+	 */
+	private stopAgentLoop() {
+		this.plugin.logger.debug('[AgentView] User requested stop');
+
+		// Set cancellation flag to prevent further tool execution
+		this.cancellationRequested = true;
+
+		// Cancel current streaming if active
+		if (this.currentStreamingResponse) {
+			this.plugin.logger.debug('[AgentView] Cancelling active stream');
+			this.currentStreamingResponse.cancel();
+			this.currentStreamingResponse = null;
+		}
+
+		// Hide progress bar
+		this.hideProgress();
+
+		// Reset button state
+		this.isExecuting = false;
+		this.sendButton.disabled = false;
+		this.sendButton.textContent = 'Send';
+		this.sendButton.removeClass('gemini-agent-stop-btn');
+
+		// Show notification to user
+		new Notice('Agent execution stopped');
+
+		// Add cancellation message to chat
+		const messageContainer = this.chatContainer.createDiv({
+			cls: 'gemini-agent-message gemini-agent-system-message'
+		});
+
+		messageContainer.createEl('p', {
+			text: '⚠️ Execution stopped by user',
+			cls: 'gemini-agent-cancellation-notice'
+		});
+
+		// Scroll to show the cancellation message
+		this.scrollToBottom();
 	}
 
 	private updateContextFilesList(container: HTMLElement) {
@@ -1206,6 +1257,12 @@ export class AgentView extends ItemView {
 		this.mentionedFiles = [];
 		this.sendButton.disabled = true;
 
+		// Set execution state and change button to "Stop"
+		this.isExecuting = true;
+		this.cancellationRequested = false;
+		this.sendButton.textContent = 'Stop';
+		this.sendButton.addClass('gemini-agent-stop-btn');
+
 		// Show progress bar
 		this.showProgress('Thinking...', 'thinking');
 
@@ -1494,7 +1551,12 @@ These files are included in the context below. When the user asks you to write d
 			this.plugin.logger.error('Failed to send message:', error);
 			new Notice('Failed to send message');
 		} finally {
+			// Reset execution state and button
+			this.isExecuting = false;
 			this.sendButton.disabled = false;
+			this.sendButton.textContent = 'Send';
+			this.sendButton.removeClass('gemini-agent-stop-btn');
+			this.hideProgress();
 		}
 	}
 
@@ -1742,6 +1804,12 @@ User: ${history[0].message}`;
 		const sortedToolCalls = this.sortToolCallsByPriority(toolCalls);
 
 		for (const toolCall of sortedToolCalls) {
+			// Check if cancellation was requested
+			if (this.cancellationRequested) {
+				this.plugin.logger.debug('[AgentView] Cancellation detected, stopping tool execution');
+				break;
+			}
+
 			try {
 				// Generate unique ID for this tool execution
 				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1831,6 +1899,12 @@ User: ${history[0].message}`;
 			});
 		}
 
+		// Check if cancellation was requested before sending follow-up request
+		if (this.cancellationRequested) {
+			this.plugin.logger.debug('[AgentView] Cancellation detected, skipping follow-up request');
+			return;
+		}
+
 		// Send another request with the tool results
 		try {
 			// Get available tools again for the follow-up request
@@ -1868,6 +1942,12 @@ User: ${history[0].message}`;
 			
 			// Check if the follow-up response also contains tool calls
 			if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
+				// Check if cancellation was requested before recursive call
+				if (this.cancellationRequested) {
+					this.plugin.logger.debug('[AgentView] Cancellation detected, skipping recursive tool call');
+					return;
+				}
+
 				// Recursively handle additional tool calls
 				// Don't pass a user message since the tool results are already in history
 				await this.handleToolCalls(
