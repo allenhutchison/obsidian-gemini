@@ -27,6 +27,7 @@ import * as Handlebars from 'handlebars';
 import { AgentFactory } from '../agent/agent-factory';
 import { ChatTimer } from '../utils/timer-utils';
 import { shouldExcludePathForPlugin } from '../utils/file-utils';
+import { generateToolDescription } from '../utils/text-generation';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -48,6 +49,10 @@ const EXAMPLE_PROMPTS = [
 	{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
 ] as const;
 
+// Progress bar text truncation constants
+const PROGRESS_THOUGHT_MAX_LENGTH = 150;
+const PROGRESS_THOUGHT_DISPLAY_LENGTH = 147; // Leave room for "..."
+
 export class AgentView extends ItemView {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private currentSession: ChatSession | null = null;
@@ -63,6 +68,11 @@ export class AgentView extends ItemView {
 	private chatTimer: ChatTimer = new ChatTimer();
 	private activeFileChangeHandler: () => void;
 	private autoAddedActiveFile: TFile | null = null; // Track the auto-added active file
+	private progressBarContainer: HTMLElement;
+	private progressBar: HTMLElement;
+	private progressFill: HTMLElement;
+	private progressStatus: HTMLElement;
+	private progressTimer: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -122,6 +132,10 @@ export class AgentView extends ItemView {
 		// Chat container (will expand to fill available space)
 		this.chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
 		await this.showEmptyState();
+
+		// Progress bar container (fixed position above input)
+		const progressContainer = container.createDiv({ cls: 'gemini-agent-progress-container' });
+		this.createProgressBar(progressContainer);
 
 		// Input area
 		const inputArea = container.createDiv({ cls: 'gemini-agent-input-area' });
@@ -413,6 +427,107 @@ export class AgentView extends ItemView {
 		});
 
 		this.sendButton.addEventListener('click', () => this.sendMessage());
+	}
+
+	private createProgressBar(container: HTMLElement) {
+		this.progressBarContainer = container;
+		this.progressBarContainer.style.display = 'none'; // Hidden by default
+
+		// Progress bar wrapper
+		const barWrapper = this.progressBarContainer.createDiv({
+			cls: 'gemini-agent-progress-bar-wrapper'
+		});
+
+		this.progressBar = barWrapper.createDiv({
+			cls: 'gemini-agent-progress-bar'
+		});
+
+		this.progressFill = this.progressBar.createDiv({
+			cls: 'gemini-agent-progress-fill'
+		});
+
+		// Status text container
+		const statusContainer = this.progressBarContainer.createDiv({
+			cls: 'gemini-agent-progress-status-container'
+		});
+
+		this.progressStatus = statusContainer.createSpan({
+			cls: 'gemini-agent-progress-status-text'
+		});
+
+		this.progressTimer = statusContainer.createSpan({
+			cls: 'gemini-agent-progress-timer',
+			attr: {
+				'aria-live': 'polite',
+				'aria-label': 'Elapsed time'
+			}
+		});
+	}
+
+	/**
+	 * Escape HTML entities to prevent XSS
+	 */
+	private escapeHtml(text: string): string {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	/**
+	 * Convert simple markdown formatting to HTML for progress status
+	 * Handles **bold** and basic text
+	 * Note: Input is sanitized before markdown conversion to prevent XSS
+	 */
+	private formatProgressText(text: string): string {
+		if (!text) return '';
+
+		// First, escape HTML entities to prevent XSS
+		let formatted = this.escapeHtml(text);
+
+		// Then convert **text** to <strong>text</strong>
+		formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+		// Replace newlines with spaces for single-line display
+		formatted = formatted.replace(/\n+/g, ' ');
+
+		// Trim extra spaces
+		formatted = formatted.replace(/\s+/g, ' ').trim();
+
+		return formatted;
+	}
+
+	private showProgress(statusText: string, state: 'thinking' | 'tool' | 'waiting' | 'streaming') {
+		if (!this.progressBarContainer) return;
+
+		this.progressBarContainer.style.display = 'block';
+		this.progressStatus.innerHTML = this.formatProgressText(statusText);
+
+		// Update state class for color coding
+		this.progressFill.className = 'gemini-agent-progress-fill';
+		this.progressFill.addClass(`gemini-agent-progress-${state}`);
+
+		// Start timer if not already running
+		if (!this.chatTimer.isRunning()) {
+			this.chatTimer.start(this.progressTimer);
+		}
+	}
+
+	private updateProgress(statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') {
+		if (!this.progressBarContainer || this.progressBarContainer.style.display === 'none') return;
+
+		this.progressStatus.innerHTML = this.formatProgressText(statusText);
+
+		if (state) {
+			this.progressFill.className = 'gemini-agent-progress-fill';
+			this.progressFill.addClass(`gemini-agent-progress-${state}`);
+		}
+	}
+
+	private hideProgress() {
+		if (!this.progressBarContainer) return;
+
+		this.progressBarContainer.style.display = 'none';
+		this.chatTimer.stop();
 	}
 
 	private updateContextFilesList(container: HTMLElement) {
@@ -1090,36 +1205,9 @@ export class AgentView extends ItemView {
 		this.userInput.innerHTML = '';
 		this.mentionedFiles = [];
 		this.sendButton.disabled = true;
-		
-		// Show thinking indicator with timer
-		const thinkingMessage = this.chatContainer.createDiv({ 
-			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-thinking'
-		});
-		const thinkingContent = thinkingMessage.createDiv({ cls: 'gemini-agent-message-content' });
-		const thinkingContainer = thinkingContent.createDiv({ cls: 'gemini-agent-thinking-container' });
-		
-		// Add thinking text with dots
-		const thinkingTextContainer = thinkingContainer.createSpan({ cls: 'gemini-agent-thinking-text-container' });
-		thinkingTextContainer.createSpan({ text: 'Thinking', cls: 'gemini-agent-thinking-text' });
-		for (let i = 0; i < 3; i++) {
-			thinkingTextContainer.createSpan({ text: '.', cls: `gemini-agent-thinking-dot gemini-agent-thinking-dot-${i + 1}` });
-		}
-		
-		// Add timer display with accessibility
-		const timerDisplay = thinkingContainer.createSpan({
-			cls: 'gemini-agent-timer',
-			attr: {
-				'aria-live': 'polite',
-				'aria-label': 'Elapsed time'
-			}
-		});
-		timerDisplay.textContent = '0.0s';
 
-		// Start timer using utility
-		this.chatTimer.start(timerDisplay);
-		
-		// Scroll to thinking message
-		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+		// Show progress bar
+		this.showProgress('Thinking...', 'thinking');
 
 		// Display user message with formatted version (includes markdown links)
 		const userEntry: GeminiConversationEntry = {
@@ -1223,28 +1311,43 @@ These files are included in the context below. When the user asks you to write d
 					// Use streaming API with tool support
 					let modelMessageContainer: HTMLElement | null = null;
 					let accumulatedMarkdown = '';
-					let thinkingRemoved = false;
-					
-					const streamResponse = modelApi.generateStreamingResponse(request, (chunk: string) => {
-						accumulatedMarkdown += chunk;
-						
-						// Remove thinking indicator when first chunk arrives
-						if (!thinkingRemoved) {
-							thinkingMessage.remove();
-							this.chatTimer.stop();
-							thinkingRemoved = true;
+					let accumulatedThoughts = '';
+					let progressUpdated = false;
+
+					const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
+						// Handle thought content - show in progress bar
+						if (chunk.thought) {
+							accumulatedThoughts += chunk.thought;
+							this.progressStatus.title = accumulatedThoughts; // Show full thought on hover
+
+							// Truncate for display, showing the latest part
+							const displayThought = accumulatedThoughts.length > PROGRESS_THOUGHT_MAX_LENGTH
+								? '...' + accumulatedThoughts.slice(-PROGRESS_THOUGHT_DISPLAY_LENGTH)
+								: accumulatedThoughts;
+							this.updateProgress(displayThought, 'thinking');
 						}
-						
-						// Create or update the model message container
-						if (!modelMessageContainer) {
-							// First chunk - create the container
-							modelMessageContainer = this.createStreamingMessageContainer('model');
-							this.updateStreamingMessage(modelMessageContainer, chunk);
-						} else {
-							// Update existing container with new chunk
-							this.updateStreamingMessage(modelMessageContainer, chunk);
-							// Use debounced scroll to avoid stuttering
-							this.debouncedScrollToBottom();
+
+						// Handle text content
+						if (chunk.text) {
+							accumulatedMarkdown += chunk.text;
+
+							// Update progress to streaming state when first text chunk arrives
+							if (!progressUpdated) {
+								this.updateProgress('Generating response...', 'streaming');
+								progressUpdated = true;
+							}
+
+							// Create or update the model message container
+							if (!modelMessageContainer) {
+								// First chunk - create the container
+								modelMessageContainer = this.createStreamingMessageContainer('model');
+								this.updateStreamingMessage(modelMessageContainer, chunk.text);
+							} else {
+								// Update existing container with new chunk
+								this.updateStreamingMessage(modelMessageContainer, chunk.text);
+								// Use debounced scroll to avoid stuttering
+								this.debouncedScrollToBottom();
+							}
 						}
 					});
 					
@@ -1257,13 +1360,6 @@ These files are included in the context below. When the user asks you to write d
 
 						// Check if the model requested tool calls
 						if (response.toolCalls && response.toolCalls.length > 0) {
-							// Remove thinking indicator if it hasn't been removed yet
-							if (!thinkingRemoved) {
-								thinkingMessage.remove();
-								this.chatTimer.stop();
-								thinkingRemoved = true;
-							}
-							
 							// Save user message to history first
 							if (this.plugin.settings.chatHistory) {
 								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
@@ -1314,18 +1410,17 @@ These files are included in the context below. When the user asks you to write d
 								
 								// Ensure we're scrolled to bottom after streaming completes
 								this.scrollToBottom();
+
+								// Hide progress bar after successful response
+								this.hideProgress();
 							} else {
 								// Empty response - might be thinking tokens
 								this.plugin.logger.warn('Model returned empty response');
 								new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
-								
-								// Remove thinking indicator if it hasn't been removed yet
-								if (!thinkingRemoved) {
-									thinkingMessage.remove();
-									this.chatTimer.stop();
-									thinkingRemoved = true;
-								}
-								
+
+								// Hide progress bar
+								this.hideProgress();
+
 								// Still save the user message to history
 								if (this.plugin.settings.chatHistory) {
 									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
@@ -1334,11 +1429,8 @@ These files are included in the context below. When the user asks you to write d
 						}
 					} catch (error) {
 						this.currentStreamingResponse = null;
-						// Remove thinking indicator if it hasn't been removed yet
-						if (!thinkingRemoved) {
-							thinkingMessage.remove();
-							this.chatTimer.stop();
-						}
+						// Hide progress bar on error
+						this.hideProgress();
 						throw error;
 					}
 				} else {
@@ -1346,9 +1438,8 @@ These files are included in the context below. When the user asks you to write d
 					this.plugin.logger.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
 
-					// Remove thinking indicator
-					thinkingMessage.remove();
-					this.chatTimer.stop();
+					// Update progress to show response received
+					this.updateProgress('Processing response...', 'waiting');
 
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
@@ -1371,26 +1462,31 @@ These files are included in the context below. When the user asks you to write d
 							if (this.plugin.settings.chatHistory) {
 								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
 								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-								
+
 								// Auto-label session after first exchange
 								await this.autoLabelSessionIfNeeded();
 							}
+
+							// Hide progress bar after successful response
+							this.hideProgress();
 						} else {
 							// Empty response - might be thinking tokens
 							this.plugin.logger.warn('Model returned empty response');
 							new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
-							
+
 							// Still save the user message to history
 							if (this.plugin.settings.chatHistory) {
 								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
 							}
+
+							// Hide progress bar
+							this.hideProgress();
 						}
 					}
 				}
 			} catch (error) {
-				// Remove thinking indicator on error
-				thinkingMessage.remove();
-				this.chatTimer.stop();
+				// Hide progress bar on error
+				this.hideProgress();
 				throw error;
 			}
 
@@ -1650,6 +1746,20 @@ User: ${history[0].message}`;
 				// Generate unique ID for this tool execution
 				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+				// Update progress for this tool with human-friendly description
+				const tool = this.plugin.toolRegistry.getTool(toolCall.name);
+				const displayName = tool?.displayName || toolCall.name;
+
+				// Use tool's own progress description if available, otherwise use fallback
+				let toolDescription: string;
+				if (tool?.getProgressDescription) {
+					toolDescription = tool.getProgressDescription(toolCall.arguments);
+				} else {
+					toolDescription = generateToolDescription(this.plugin, toolCall.name, toolCall.arguments, displayName);
+				}
+
+				this.updateProgress(toolDescription, 'tool');
+
 				// Show tool execution in UI
 				await this.showToolExecution(toolCall.name, toolCall.arguments, toolExecutionId);
 
@@ -1744,9 +1854,16 @@ User: ${history[0].message}`;
 				renderContent: false,
 				availableTools: availableTools  // Include tools so model can chain calls
 			};
-			
+
+			// Update progress to show we're processing tool results
+			this.updateProgress('Processing results...', 'waiting');
+
 			// Use the same model API for follow-up requests
 			const modelApi = AgentFactory.createAgentModel(this.plugin, this.currentSession!);
+
+			// Update progress to show we're thinking about the response
+			this.updateProgress('Thinking...', 'thinking');
+
 			const followUpResponse = await modelApi.generateModelResponse(followUpRequest);
 			
 			// Check if the follow-up response also contains tool calls
@@ -1779,10 +1896,13 @@ User: ${history[0].message}`;
 					// Save final response to history
 					if (this.plugin.settings.chatHistory) {
 						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-						
+
 						// Auto-label session after first exchange
 						await this.autoLabelSessionIfNeeded();
 					}
+
+					// Hide progress bar after successful response
+					this.hideProgress();
 				} else {
 					// Model returned empty response - this might happen with thinking tokens
 					this.plugin.logger.warn('Model returned empty response after tool execution');
@@ -1813,16 +1933,21 @@ User: ${history[0].message}`;
 						// Save final response to history
 						if (this.plugin.settings.chatHistory) {
 							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-							
+
 							// Auto-label session after first exchange
 							await this.autoLabelSessionIfNeeded();
 						}
+
+						// Hide progress bar after successful retry response
+						this.hideProgress();
 					}
 				}
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to process tool results:', error);
 			new Notice('Failed to process tool results');
+			// Hide progress bar on error
+			this.hideProgress();
 		}
 	}
 

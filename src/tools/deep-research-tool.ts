@@ -37,6 +37,16 @@ export class DeepResearchTool implements Tool {
 		return `Conduct deep research on: "${params.topic}" with ${params.depth || 3} search iterations`;
 	};
 
+	getProgressDescription(params: { topic: string }): string {
+		if (params.topic) {
+			const topic = params.topic.length > 30
+				? params.topic.substring(0, 27) + '...'
+				: params.topic;
+			return `Researching "${topic}"`;
+		}
+		return 'Conducting research';
+	}
+
 	async execute(
 		params: { topic: string; depth?: number; outputFile?: string },
 		context: ToolExecutionContext

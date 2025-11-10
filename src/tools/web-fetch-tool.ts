@@ -32,6 +32,19 @@ export class WebFetchTool implements Tool {
 		required: ['url', 'query']
 	};
 
+	getProgressDescription(params: { url: string }): string {
+		if (params.url) {
+			// Extract domain for brevity
+			try {
+				const domain = new URL(params.url).hostname.replace('www.', '');
+				return `Fetching from ${domain}`;
+			} catch {
+				return 'Fetching web page';
+			}
+		}
+		return 'Fetching web page';
+	}
+
 	async execute(params: { url: string; query: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		

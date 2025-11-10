@@ -14,6 +14,7 @@ import { CustomPrompt } from '../../prompts/types';
 export interface ModelResponse {
 	markdown: string;
 	rendered: string;
+	thoughts?: string;
 	toolCalls?: ToolCall[];
 }
 
@@ -71,11 +72,21 @@ export interface ToolDefinition {
 }
 
 /**
+ * Streaming chunk data passed to callback
+ */
+export interface StreamChunk {
+	/** Text content chunk */
+	text: string;
+	/** Thought/reasoning content chunk (if available) */
+	thought?: string;
+}
+
+/**
  * Callback function for handling streaming responses
  *
- * @param chunk - The text chunk received from the stream
+ * @param chunk - The chunk data received from the stream
  */
-export type StreamCallback = (chunk: string) => void;
+export type StreamCallback = (chunk: StreamChunk) => void;
 
 /**
  * Represents a streaming response from a model

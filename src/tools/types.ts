@@ -55,12 +55,15 @@ export interface Tool {
 	
 	/** Execute the tool with given parameters */
 	execute(params: any, context: ToolExecutionContext): Promise<ToolResult>;
-	
+
 	/** Whether this tool requires user confirmation before execution */
 	requiresConfirmation?: boolean;
-	
+
 	/** Custom confirmation message (if requiresConfirmation is true) */
 	confirmationMessage?: (params: any) => string;
+
+	/** Get a human-friendly description of this tool execution for progress display */
+	getProgressDescription?: (params: any) => string;
 }
 
 /**

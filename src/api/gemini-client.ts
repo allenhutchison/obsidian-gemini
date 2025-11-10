@@ -21,6 +21,13 @@ import type ObsidianGemini from '../main';
 import { getDefaultModelForRole } from '../models';
 
 /**
+ * Extends Part to include the optional thought property
+ */
+interface PartWithThought extends Part {
+	thought?: boolean;
+}
+
+/**
  * Configuration for GeminiClient
  */
 export interface GeminiClientConfig {
@@ -87,6 +94,7 @@ export class GeminiClient implements ModelApi {
 		let cancelled = false;
 		let accumulatedText = '';
 		let accumulatedRendered = '';
+		let accumulatedThoughts = '';
 		let toolCalls: ToolCall[] | undefined;
 
 		const complete = (async (): Promise<ModelResponse> => {
@@ -104,7 +112,20 @@ export class GeminiClient implements ModelApi {
 					const chunkText = this.extractTextFromChunk(chunk);
 					if (chunkText) {
 						accumulatedText += chunkText;
-						onChunk(chunkText);
+					}
+
+					// Extract thought content from chunk
+					const chunkThought = this.extractThoughtFromChunk(chunk);
+					if (chunkThought) {
+						accumulatedThoughts += chunkThought;
+					}
+
+					// Call callback with both text and thought if either is present
+					if (chunkText || chunkThought) {
+						onChunk({
+							text: chunkText,
+							...(chunkThought && { thought: chunkThought })
+						});
 					}
 
 					// Extract tool calls from chunk (usually in last chunk)
@@ -123,6 +144,7 @@ export class GeminiClient implements ModelApi {
 				return {
 					markdown: accumulatedText,
 					rendered: accumulatedRendered,
+					...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
 					...(toolCalls && { toolCalls })
 				};
 			} catch (error) {
@@ -130,6 +152,7 @@ export class GeminiClient implements ModelApi {
 					return {
 						markdown: accumulatedText,
 						rendered: accumulatedRendered,
+						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
 						...(toolCalls && { toolCalls })
 					};
 				}
@@ -198,6 +221,14 @@ export class GeminiClient implements ModelApi {
 			...(this.config.maxOutputTokens && { maxOutputTokens: this.config.maxOutputTokens }),
 			...(systemInstruction && { systemInstruction }),
 		};
+
+		// Add thinking config if model supports it
+		if (this.supportsThinking(model)) {
+			config.thinkingConfig = {
+				includeThoughts: true,
+				thinkingBudget: -1 // -1 = automatic budget
+			};
+		}
 
 		// Add function calling tools
 		const hasTools = isExtended && (request as ExtendedModelRequest).availableTools?.length;
@@ -296,13 +327,19 @@ export class GeminiClient implements ModelApi {
 	private extractModelResponse(response: GenerateContentResponse): ModelResponse {
 		let markdown = '';
 		let rendered = '';
+		let thoughts = '';
 		let toolCalls: ToolCall[] | undefined;
 
-		// Extract text from candidates
+		// Extract text and thoughts from candidates
 		if (response.candidates?.[0]?.content?.parts) {
 			for (const part of response.candidates[0].content.parts) {
 				if ('text' in part && part.text) {
-					markdown += part.text;
+					// Separate thought content from regular content
+					if ((part as PartWithThought).thought) {
+						thoughts += part.text;
+					} else {
+						markdown += part.text;
+					}
 				}
 			}
 		}
@@ -316,6 +353,7 @@ export class GeminiClient implements ModelApi {
 		return {
 			markdown,
 			rendered,
+			...(thoughts && { thoughts }),
 			...(toolCalls && { toolCalls })
 		};
 	}
@@ -326,11 +364,45 @@ export class GeminiClient implements ModelApi {
 	private extractTextFromChunk(chunk: any): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
 			return chunk.candidates[0].content.parts
-				.filter((part: Part) => 'text' in part && part.text)
-				.map((part: Part) => (part as any).text)
+				.filter((part: Part) => 'text' in part && part.text && !(part as PartWithThought).thought)
+				.map((part: Part) => (part as PartWithThought).text)
 				.join('');
 		}
 		return '';
+	}
+
+	/**
+	 * Extract thought/reasoning content from streaming chunk
+	 */
+	private extractThoughtFromChunk(chunk: any): string {
+		if (chunk.candidates?.[0]?.content?.parts) {
+			return chunk.candidates[0].content.parts
+				.filter((part: Part) => (part as PartWithThought).thought && (part as PartWithThought).text)
+				.map((part: Part) => (part as PartWithThought).text)
+				.join('');
+		}
+		return '';
+	}
+
+	/**
+	 * Check if a model supports thinking/reasoning mode
+	 */
+	private supportsThinking(model: string | undefined): boolean {
+		if (!model) {
+			this.plugin?.logger.debug('[GeminiClient] No model specified for thinking check');
+			return false;
+		}
+
+		const modelLower = model.toLowerCase();
+		const supports = modelLower.includes('gemini-2.5') ||
+			modelLower.includes('gemini-3.') ||
+			modelLower.includes('thinking-exp');
+
+		if (supports) {
+			this.plugin?.logger.debug(`[GeminiClient] Enabling thinking mode for model: ${model}`);
+		}
+
+		return supports;
 	}
 
 	/**
