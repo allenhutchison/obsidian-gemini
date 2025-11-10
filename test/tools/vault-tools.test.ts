@@ -185,6 +185,22 @@ describe('VaultTools', () => {
 			expect(mockVault.create).toHaveBeenCalledWith('new.md', 'new content');
 		});
 
+		it('should create parent directories when creating file in non-existent folder', async () => {
+			// First call returns null (file doesn't exist)
+			// Second call also returns null (after creation check)
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.adapter.exists.mockResolvedValue(false); // Parent directory doesn't exist
+			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.create.mockResolvedValue(mockFile);
+
+			const result = await tool.execute({ path: 'folder/subfolder/new.md', content: 'new content' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(mockVault.adapter.exists).toHaveBeenCalledWith('folder/subfolder');
+			expect(mockVault.createFolder).toHaveBeenCalledWith('folder/subfolder');
+			expect(mockVault.create).toHaveBeenCalledWith('folder/subfolder/new.md', 'new content');
+		});
+
 		it('should have confirmation message', () => {
 			const message = tool.confirmationMessage!({ path: 'test.md', content: 'content' });
 			expect(message).toContain('Write content to file: test.md');
