@@ -85,20 +85,56 @@ function resolvePathToFile(
 }
 
 /**
- * Read file content
+ * Helper function to resolve a path to either a file or folder
+ * Similar to resolvePathToFile but returns both TFile and TFolder instances
+ *
+ * @param path - The path to resolve
+ * @param plugin - The plugin instance
+ * @returns Object with resolved file/folder (or null if not found) and its type
+ */
+function resolvePathToFileOrFolder(
+	path: string,
+	plugin: InstanceType<typeof ObsidianGemini>
+): { item: TFile | TFolder | null; type: 'file' | 'folder' | null } {
+	const normalizedPath = normalizePath(path);
+
+	// Strategy 1: Try direct path lookup
+	let item = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+
+	// If it's a folder, return it directly
+	if (item instanceof TFolder) {
+		return { item, type: 'folder' };
+	}
+
+	// If it's a file, return it directly
+	if (item instanceof TFile) {
+		return { item, type: 'file' };
+	}
+
+	// Strategy 2: Try file resolution strategies
+	const { file } = resolvePathToFile(path, plugin, false);
+	if (file) {
+		return { item: file, type: 'file' };
+	}
+
+	return { item: null, type: null };
+}
+
+/**
+ * Read file content or list folder contents
  */
 export class ReadFileTool implements Tool {
 	name = 'read_file';
 	displayName = 'Read File';
 	category = ToolCategory.READ_ONLY;
-	description = 'Read the full text contents of a markdown file from the vault. Returns the file content along with metadata including the canonical wikilink for the file, outgoing links (files this note links to), and backlinks (files that link to this note). The "wikilink" field contains the preferred way to reference this file (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]"). All links are in [[WikiLink]] format and can be passed directly to any vault tool - they will automatically resolve to the correct file path, even if the file is in a subfolder. Use this to traverse note relationships, follow connections between notes, or explore related content. Path can be a full path (e.g., "folder/note.md"), a simple filename (e.g., "note"), or a wikilink text (e.g., "My Note" from [[My Note]]). The .md extension is optional.';
+	description = 'Read the full text contents of a markdown file from the vault, or list the contents of a folder. For files, returns the file content along with metadata including the canonical wikilink for the file, outgoing links (files this note links to), and backlinks (files that link to this note). For folders, returns a list of all files and subfolders within that folder. The "wikilink" field contains the preferred way to reference this file (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]"). All links are in [[WikiLink]] format and can be passed directly to any vault tool - they will automatically resolve to the correct file path, even if the file is in a subfolder. Use this to traverse note relationships, follow connections between notes, or explore related content. Path can be a full path (e.g., "folder/note.md"), a simple filename (e.g., "note"), or a wikilink text (e.g., "My Note" from [[My Note]]). The .md extension is optional.';
 
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			path: {
 				type: 'string' as const,
-				description: 'Path to the file relative to vault root (e.g., "folder/note.md" or "folder/note"). Extension is optional - will try both with and without .md'
+				description: 'Path to the file or folder relative to vault root (e.g., "folder/note.md", "folder/note", or "folder"). Extension is optional for files - will try both with and without .md'
 			}
 		},
 		required: ['path']
@@ -125,30 +161,48 @@ export class ReadFileTool implements Tool {
 				};
 			}
 
-			// Check if path is a folder before trying to resolve as file
-			const abstractFile = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-			if (abstractFile && !(abstractFile instanceof TFile)) {
-				return {
-					success: false,
-					error: `Path is not a file: ${params.path}`
-				};
-			}
+			// Try to resolve as either file or folder
+			const { item, type } = resolvePathToFileOrFolder(params.path, plugin);
 
-			// Use shared file resolution helper with suggestions
-			const { file, suggestions } = resolvePathToFile(params.path, plugin, true);
-
-			if (!file) {
+			if (!item) {
 				// Provide helpful error message with suggestions
+				const { suggestions } = resolvePathToFile(params.path, plugin, true);
 				const suggestion = suggestions && suggestions.length > 0
 					? `\n\nDid you mean one of these?\n${suggestions.join('\n')}`
 					: '';
 
 				return {
 					success: false,
-					error: `File not found: ${params.path}${suggestion}`
+					error: `File or folder not found: ${params.path}${suggestion}`
 				};
 			}
 
+			// Handle folder - list its contents
+			if (item instanceof TFolder) {
+				const files = item.children
+					.filter(f => !shouldExcludePath(f.path, plugin))
+					.map(f => ({
+						name: f.name,
+						path: f.path,
+						type: f instanceof TFile ? 'file' : 'folder',
+						size: f instanceof TFile ? f.stat.size : undefined,
+						modified: f instanceof TFile ? f.stat.mtime : undefined
+					}));
+
+				return {
+					success: true,
+					data: {
+						path: item.path,
+						type: 'folder',
+						name: item.name,
+						contents: files,
+						count: files.length
+					}
+				};
+			}
+
+			// Handle file - read its contents
+			const file = item as TFile;
 			const content = await plugin.app.vault.read(file);
 
 			// Get link information using singleton instances
@@ -177,6 +231,7 @@ export class ReadFileTool implements Tool {
 				success: true,
 				data: {
 					path: file.path,  // Return the actual path that was found
+					type: 'file',
 					wikilink: canonicalWikilink,  // Canonical wikilink (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]")
 					content: content,
 					size: file.stat.size,
@@ -189,7 +244,7 @@ export class ReadFileTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}`
+				error: `Error reading file or folder: ${error instanceof Error ? error.message : 'Unknown error'}`
 			};
 		}
 	}
@@ -471,7 +526,7 @@ export class DeleteFileTool implements Tool {
 	category = ToolCategory.VAULT_OPERATIONS;
 	description = 'Permanently delete a file or folder from the vault. WARNING: This action cannot be undone! When deleting a folder, all contents are removed recursively. Returns the path and type (file/folder) that was deleted. Path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Always confirm with the user before executing this destructive operation.';
 	requiresConfirmation = true;
-	
+
 	parameters = {
 		type: 'object' as const,
 		properties: {
@@ -508,64 +563,63 @@ export class DeleteFileTool implements Tool {
 				};
 			}
 
-			// Use shared file resolution helper
-			const { file } = resolvePathToFile(params.path, plugin);
+			// Use shared file/folder resolution helper
+			const { item, type } = resolvePathToFileOrFolder(params.path, plugin);
 
-			if (!file) {
+			if (!item) {
 				return {
 					success: false,
 					error: `File or folder not found: ${params.path}`
 				};
 			}
-			
-			const type = file instanceof TFile ? 'file' : 'folder';
-			await plugin.app.vault.delete(file);
-			
+
+			await plugin.app.vault.delete(item);
+
 			return {
 				success: true,
 				data: {
-					path: params.path,
+					path: item.path,
 					type: type,
 					action: 'deleted'
 				}
 			};
-			
+
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error deleting file: ${error instanceof Error ? error.message : 'Unknown error'}`
+				error: `Error deleting file or folder: ${error instanceof Error ? error.message : 'Unknown error'}`
 			};
 		}
 	}
 }
 
 /**
- * Move or rename a file
+ * Move or rename a file or folder
  */
 export class MoveFileTool implements Tool {
 	name = 'move_file';
 	displayName = 'Move/Rename File';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Move a file to a different location or rename it. Provide both source and target paths (including filenames). Source path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Target directory will be created if it doesn\'t exist. Returns both paths and action status. Examples: rename "Note.md" to "New Name.md" in same folder, or move "Folder A/Note.md" to "Folder B/Subfolder/Note.md". Preserves all file metadata and updates internal links automatically.';
+	description = 'Move a file or folder to a different location or rename it. Provide both source and target paths (including filenames for files). Source path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Target directory will be created if it doesn\'t exist. When moving folders, all contents are moved recursively. Returns both paths and action status. Examples: rename "Note.md" to "New Name.md" in same folder, move "Folder A/Note.md" to "Folder B/Subfolder/Note.md", or move "Folder A" to "Folder B/Folder A". Preserves all file metadata and updates internal links automatically.';
 	requiresConfirmation = true;
-	
+
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			sourcePath: {
 				type: 'string' as const,
-				description: 'Current path of the file to move'
+				description: 'Current path of the file or folder to move'
 			},
 			targetPath: {
 				type: 'string' as const,
-				description: 'New path for the file (including filename)'
+				description: 'New path for the file or folder (including filename for files)'
 			}
 		},
 		required: ['sourcePath', 'targetPath']
 	};
 
 	confirmationMessage = (params: { sourcePath: string; targetPath: string }) => {
-		return `Move file from: ${params.sourcePath}\nTo: ${params.targetPath}`;
+		return `Move file or folder from: ${params.sourcePath}\nTo: ${params.targetPath}`;
 	};
 
 	getProgressDescription(params: { sourcePath: string; targetPath: string }): string {
@@ -600,27 +654,16 @@ export class MoveFileTool implements Tool {
 				};
 			}
 
-			// Check if source path is a folder before trying to resolve as file
-			const abstractFile = plugin.app.vault.getAbstractFileByPath(sourceNormalizedPath);
-			if (abstractFile && !(abstractFile instanceof TFile)) {
+			// Use shared file/folder resolution helper
+			const { item: sourceItem, type } = resolvePathToFileOrFolder(params.sourcePath, plugin);
+
+			if (!sourceItem) {
 				return {
 					success: false,
-					error: `Source path is not a file: ${params.sourcePath}`
+					error: `Source file or folder not found: ${params.sourcePath}`
 				};
 			}
 
-			// Use shared file resolution helper
-			const { file: sourceFile } = resolvePathToFile(params.sourcePath, plugin);
-
-			if (!sourceFile) {
-				return {
-					success: false,
-					error: `Source file not found: ${params.sourcePath}`
-				};
-			}
-			
-			// Target path is already normalized above
-			
 			// Check if target already exists
 			const targetExists = await plugin.app.vault.adapter.exists(targetNormalizedPath);
 			if (targetExists) {
@@ -629,31 +672,32 @@ export class MoveFileTool implements Tool {
 					error: `Target path already exists: ${params.targetPath}`
 				};
 			}
-			
-			// Ensure target directory exists
+
+			// Ensure target directory exists (for files and folders)
 			const targetDir = targetNormalizedPath.substring(0, targetNormalizedPath.lastIndexOf('/'));
 			if (targetDir && !(await plugin.app.vault.adapter.exists(targetDir))) {
 				await plugin.app.vault.createFolder(targetDir).catch(() => {
 					// Folder might already exist or parent folders need to be created
 				});
 			}
-			
+
 			// Perform the rename/move
-			await plugin.app.vault.rename(sourceFile, targetNormalizedPath);
-			
+			await plugin.app.vault.rename(sourceItem, targetNormalizedPath);
+
 			return {
 				success: true,
 				data: {
-					sourcePath: params.sourcePath,
+					sourcePath: sourceItem.path,
 					targetPath: targetNormalizedPath,
+					type: type,
 					action: 'moved'
 				}
 			};
-			
+
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error moving file: ${error instanceof Error ? error.message : 'Unknown error'}`
+				error: `Error moving file or folder: ${error instanceof Error ? error.message : 'Unknown error'}`
 			};
 		}
 	}
