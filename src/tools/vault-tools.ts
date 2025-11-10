@@ -736,7 +736,7 @@ export class SearchFileContentsTool implements Tool {
 			},
 			limit: {
 				type: 'number' as const,
-				description: 'Maximum number of matching results to return (default: 50)'
+				description: 'Maximum number of files with matches to return (default: 50)'
 			},
 			contextLines: {
 				type: 'number' as const,
@@ -817,7 +817,7 @@ export class SearchFileContentsTool implements Tool {
 				}
 
 				try {
-					const content = await plugin.app.vault.read(file);
+					const content = await plugin.app.vault.cachedRead(file);
 					const lines = content.split('\n');
 					const fileMatches: Array<{
 						lineNumber: number;
@@ -834,19 +834,10 @@ export class SearchFileContentsTool implements Tool {
 						searchRegex.lastIndex = 0;
 
 						if (searchRegex.test(line)) {
-							// Get context lines
-							const contextBefore: string[] = [];
-							const contextAfter: string[] = [];
-
-							// Lines before
-							for (let j = Math.max(0, i - contextLines); j < i; j++) {
-								contextBefore.push(lines[j]);
-							}
-
-							// Lines after
-							for (let j = i + 1; j <= Math.min(lines.length - 1, i + contextLines); j++) {
-								contextAfter.push(lines[j]);
-							}
+							// Get context lines using Array.slice()
+							const startBefore = Math.max(0, i - contextLines);
+							const contextBefore = lines.slice(startBefore, i);
+							const contextAfter = lines.slice(i + 1, i + 1 + contextLines);
 
 							fileMatches.push({
 								lineNumber: i + 1, // 1-indexed for user display

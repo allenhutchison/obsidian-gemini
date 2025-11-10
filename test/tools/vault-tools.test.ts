@@ -53,6 +53,7 @@ mockFolder.children = [mockFile];
 const mockVault = {
 	getAbstractFileByPath: jest.fn(),
 	read: jest.fn(),
+	cachedRead: jest.fn(),
 	create: jest.fn(),
 	modify: jest.fn(),
 	delete: jest.fn(),
@@ -446,7 +447,7 @@ describe('VaultTools', () => {
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read
+			mockVault.cachedRead
 				.mockResolvedValueOnce('This is a test file\nWith some content\nAnd more lines')
 				.mockResolvedValueOnce('Another file\nWithout the keyword\nJust text')
 				.mockResolvedValueOnce('A third file\nWith test in it\nAnd more data');
@@ -467,7 +468,7 @@ describe('VaultTools', () => {
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read.mockResolvedValue('This has TEST in uppercase');
+			mockVault.cachedRead.mockResolvedValue('This has TEST in uppercase');
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
@@ -482,7 +483,7 @@ describe('VaultTools', () => {
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read.mockResolvedValue('This has TEST in uppercase\nAnd test in lowercase');
+			mockVault.cachedRead.mockResolvedValue('This has TEST in uppercase\nAnd test in lowercase');
 
 			const result = await tool.execute({ query: 'test', caseSensitive: true }, mockContext);
 
@@ -497,7 +498,7 @@ describe('VaultTools', () => {
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read.mockResolvedValue('Test 123\nAnother line\nTest 456');
+			mockVault.cachedRead.mockResolvedValue('Test 123\nAnother line\nTest 456');
 
 			const result = await tool.execute({ query: 'Test \\d+', useRegex: true }, mockContext);
 
@@ -512,7 +513,7 @@ describe('VaultTools', () => {
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read.mockResolvedValue('Line 1\nLine 2\nThis is a match\nLine 4\nLine 5');
+			mockVault.cachedRead.mockResolvedValue('Line 1\nLine 2\nThis is a match\nLine 4\nLine 5');
 
 			const result = await tool.execute({ query: 'match', contextLines: 2 }, mockContext);
 
@@ -531,12 +532,12 @@ describe('VaultTools', () => {
 			})) as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read.mockResolvedValue('This contains the search term');
+			mockVault.cachedRead.mockResolvedValue('This contains the search term');
 
 			const result = await tool.execute({ query: 'search', limit: 5 }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data?.results.length).toBeLessThanOrEqual(5);
+			expect(result.data?.results.length).toBe(5);
 			expect(result.data?.truncated).toBe(true);
 		});
 
@@ -561,7 +562,7 @@ describe('VaultTools', () => {
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read
+			mockVault.cachedRead
 				.mockRejectedValueOnce(new Error('Cannot read file'))
 				.mockResolvedValueOnce('This contains test');
 
@@ -578,7 +579,7 @@ describe('VaultTools', () => {
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
-			mockVault.read.mockResolvedValue('Line 1\nLine 2\nMatch here\nLine 4\nAnother match\nLine 6');
+			mockVault.cachedRead.mockResolvedValue('Line 1\nLine 2\nMatch here\nLine 4\nAnother match\nLine 6');
 
 			const result = await tool.execute({ query: 'match', contextLines: 0 }, mockContext);
 
