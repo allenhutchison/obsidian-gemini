@@ -49,6 +49,10 @@ const EXAMPLE_PROMPTS = [
 	{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
 ] as const;
 
+// Progress bar text truncation constants
+const PROGRESS_THOUGHT_MAX_LENGTH = 150;
+const PROGRESS_THOUGHT_DISPLAY_LENGTH = 147; // Leave room for "..."
+
 export class AgentView extends ItemView {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private currentSession: ChatSession | null = null;
@@ -461,14 +465,27 @@ export class AgentView extends ItemView {
 	}
 
 	/**
+	 * Escape HTML entities to prevent XSS
+	 */
+	private escapeHtml(text: string): string {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	/**
 	 * Convert simple markdown formatting to HTML for progress status
 	 * Handles **bold** and basic text
+	 * Note: Input is sanitized before markdown conversion to prevent XSS
 	 */
 	private formatProgressText(text: string): string {
 		if (!text) return '';
 
-		// Convert **text** to <strong>text</strong>
-		let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+		// First, escape HTML entities to prevent XSS
+		let formatted = this.escapeHtml(text);
+
+		// Then convert **text** to <strong>text</strong>
+		formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
 		// Replace newlines with spaces for single-line display
 		formatted = formatted.replace(/\n+/g, ' ');
@@ -1304,8 +1321,8 @@ These files are included in the context below. When the user asks you to write d
 							this.progressStatus.title = accumulatedThoughts; // Show full thought on hover
 
 							// Truncate for display, showing the latest part
-							const displayThought = accumulatedThoughts.length > 150
-								? '...' + accumulatedThoughts.slice(-147)
+							const displayThought = accumulatedThoughts.length > PROGRESS_THOUGHT_MAX_LENGTH
+								? '...' + accumulatedThoughts.slice(-PROGRESS_THOUGHT_DISPLAY_LENGTH)
 								: accumulatedThoughts;
 							this.updateProgress(displayThought, 'thinking');
 						}

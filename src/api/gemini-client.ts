@@ -387,12 +387,22 @@ export class GeminiClient implements ModelApi {
 	/**
 	 * Check if a model supports thinking/reasoning mode
 	 */
-	private supportsThinking(model: string): boolean {
+	private supportsThinking(model: string | undefined): boolean {
+		if (!model) {
+			this.plugin?.logger.debug('[GeminiClient] No model specified for thinking check');
+			return false;
+		}
+
 		const modelLower = model.toLowerCase();
-		// Gemini 2.5+ and dedicated thinking models
-		return modelLower.includes('gemini-2.5') ||
+		const supports = modelLower.includes('gemini-2.5') ||
 			modelLower.includes('gemini-3.') ||
 			modelLower.includes('thinking-exp');
+
+		if (supports) {
+			this.plugin?.logger.debug(`[GeminiClient] Enabling thinking mode for model: ${model}`);
+		}
+
+		return supports;
 	}
 
 	/**
