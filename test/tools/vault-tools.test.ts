@@ -1,4 +1,4 @@
-import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, SearchFileContentsTool, MoveFileTool, getVaultTools } from '../../src/tools/vault-tools';
+import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, SearchFileContentsTool, MoveFileTool, DeleteFileTool, GetActiveFileTool, getVaultTools } from '../../src/tools/vault-tools';
 import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock ScribeFile and ScribeDataView
@@ -346,10 +346,9 @@ describe('VaultTools', () => {
 	});
 
 	describe('DeleteFileTool', () => {
-		let tool: any;
+		let tool: DeleteFileTool;
 
 		beforeEach(() => {
-			const { DeleteFileTool } = require('../../src/tools/vault-tools');
 			tool = new DeleteFileTool();
 		});
 
@@ -670,10 +669,9 @@ describe('VaultTools', () => {
 	});
 
 	describe('GetActiveFileTool', () => {
-		let tool: any;
+		let tool: GetActiveFileTool;
 
 		beforeEach(() => {
-			const { GetActiveFileTool } = require('../../src/tools/vault-tools');
 			tool = new GetActiveFileTool();
 		});
 

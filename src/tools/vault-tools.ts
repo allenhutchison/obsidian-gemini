@@ -90,12 +90,14 @@ function resolvePathToFile(
  *
  * @param path - The path to resolve
  * @param plugin - The plugin instance
- * @returns Object with resolved file/folder (or null if not found) and its type
+ * @param includeSuggestions - Whether to include suggestions if item not found
+ * @returns Object with resolved file/folder (or null if not found), its type, and optional suggestions
  */
 function resolvePathToFileOrFolder(
 	path: string,
-	plugin: InstanceType<typeof ObsidianGemini>
-): { item: TFile | TFolder | null; type: 'file' | 'folder' | null } {
+	plugin: InstanceType<typeof ObsidianGemini>,
+	includeSuggestions: boolean = false
+): { item: TFile | TFolder | null; type: 'file' | 'folder' | null; suggestions?: string[] } {
 	const normalizedPath = normalizePath(path);
 
 	// Strategy 1: Try direct path lookup
@@ -111,13 +113,13 @@ function resolvePathToFileOrFolder(
 		return { item, type: 'file' };
 	}
 
-	// Strategy 2: Try file resolution strategies
-	const { file } = resolvePathToFile(path, plugin, false);
+	// Strategy 2: Try file resolution strategies (with suggestions if requested)
+	const { file, suggestions } = resolvePathToFile(path, plugin, includeSuggestions);
 	if (file) {
 		return { item: file, type: 'file' };
 	}
 
-	return { item: null, type: null };
+	return { item: null, type: null, suggestions };
 }
 
 /**
@@ -161,12 +163,11 @@ export class ReadFileTool implements Tool {
 				};
 			}
 
-			// Try to resolve as either file or folder
-			const { item, type } = resolvePathToFileOrFolder(params.path, plugin);
+			// Try to resolve as either file or folder (with suggestions for errors)
+			const { item, type, suggestions } = resolvePathToFileOrFolder(params.path, plugin, true);
 
 			if (!item) {
 				// Provide helpful error message with suggestions
-				const { suggestions } = resolvePathToFile(params.path, plugin, true);
 				const suggestion = suggestions && suggestions.length > 0
 					? `\n\nDid you mean one of these?\n${suggestions.join('\n')}`
 					: '';
