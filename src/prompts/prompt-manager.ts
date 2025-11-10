@@ -265,7 +265,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 
 	// Show modal for selecting a prompt
 	private showPromptSelectionModal(file: TFile, prompts: PromptInfo[]): void {
-		const modal = new PromptSelectionModal(this.plugin.app, this, file, prompts);
+		const modal = new PromptSelectionModal(this.plugin.app, this.plugin, this, file, prompts);
 		modal.open();
 	}
 
@@ -416,13 +416,17 @@ This prompt will be applied to notes and will supplement the default system prom
 }
 
 class PromptSelectionModal extends SuggestModal<PromptInfo> {
+	private plugin: ObsidianGemini;
+
 	constructor(
 		app: App,
+		plugin: ObsidianGemini,
 		private promptManager: PromptManager,
 		private targetFile: TFile,
 		private prompts: PromptInfo[]
 	) {
 		super(app);
+		this.plugin = plugin;
 		this.setPlaceholder('Select a custom prompt to apply...');
 	}
 

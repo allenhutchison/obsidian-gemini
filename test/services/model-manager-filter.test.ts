@@ -31,7 +31,7 @@ describe('ModelManager Version Filtering', () => {
 					return this;
 				})
 			}
-		} as ObsidianGemini;
+		} as unknown as ObsidianGemini;
 
 		// Create model manager
 		modelManager = new ModelManager(mockPlugin);

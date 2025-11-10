@@ -21,7 +21,7 @@ export class SessionSettingsModal extends Modal {
 		this.session = session;
 		this.onSave = onSave;
 		// Clone current config or create new
-		this.modelConfig = { ...session.modelConfig } || {};
+		this.modelConfig = session.modelConfig ? { ...session.modelConfig } : {};
 	}
 
 	async onOpen() {
