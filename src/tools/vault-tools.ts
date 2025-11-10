@@ -104,6 +104,13 @@ export class ReadFileTool implements Tool {
 		required: ['path']
 	};
 
+	getProgressDescription(params: { path: string }): string {
+		if (params.path) {
+			return `Reading ${params.path}`;
+		}
+		return 'Reading file';
+	}
+
 	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
@@ -217,6 +224,13 @@ export class WriteFileTool implements Tool {
 		return `Write content to file: ${params.path}\n\nContent preview:\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
 	};
 
+	getProgressDescription(params: { path: string }): string {
+		if (params.path) {
+			return `Writing to ${params.path}`;
+		}
+		return 'Writing file';
+	}
+
 	async execute(params: { path: string; content: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		
@@ -306,6 +320,14 @@ export class ListFilesTool implements Tool {
 		required: ['path']
 	};
 
+	getProgressDescription(params: { path: string }): string {
+		if (params.path) {
+			const folder = params.path === '/' ? 'vault' : params.path;
+			return `Listing files in ${folder}`;
+		}
+		return 'Listing files';
+	}
+
 	async execute(params: { path: string; recursive?: boolean }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		
@@ -391,6 +413,13 @@ export class CreateFolderTool implements Tool {
 		return `Create folder: ${params.path}`;
 	};
 
+	getProgressDescription(params: { path: string }): string {
+		if (params.path) {
+			return `Creating folder ${params.path}`;
+		}
+		return 'Creating folder';
+	}
+
 	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		
@@ -457,6 +486,13 @@ export class DeleteFileTool implements Tool {
 	confirmationMessage = (params: { path: string }) => {
 		return `Delete file or folder: ${params.path}\n\nThis action cannot be undone.`;
 	};
+
+	getProgressDescription(params: { path: string }): string {
+		if (params.path) {
+			return `Deleting ${params.path}`;
+		}
+		return 'Deleting file';
+	}
 
 	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
@@ -531,6 +567,16 @@ export class MoveFileTool implements Tool {
 	confirmationMessage = (params: { sourcePath: string; targetPath: string }) => {
 		return `Move file from: ${params.sourcePath}\nTo: ${params.targetPath}`;
 	};
+
+	getProgressDescription(params: { sourcePath: string; targetPath: string }): string {
+		if (params.sourcePath && params.targetPath) {
+			// Extract just the filename for brevity
+			const source = params.sourcePath.split('/').pop() || params.sourcePath;
+			const target = params.targetPath.split('/').pop() || params.targetPath;
+			return `Moving ${source} to ${target}`;
+		}
+		return 'Moving file';
+	}
 
 	async execute(params: { sourcePath: string; targetPath: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
@@ -637,6 +683,13 @@ export class SearchFilesTool implements Tool {
 		required: ['pattern']
 	};
 
+	getProgressDescription(params: { pattern: string }): string {
+		if (params.pattern) {
+			return `Searching for "${params.pattern}"`;
+		}
+		return 'Searching files';
+	}
+
 	async execute(params: { pattern: string; limit?: number }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		
@@ -725,6 +778,10 @@ export class GetActiveFileTool implements Tool {
 		properties: {},
 		required: []
 	};
+
+	getProgressDescription(params: any): string {
+		return 'Getting active file';
+	}
 
 	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;

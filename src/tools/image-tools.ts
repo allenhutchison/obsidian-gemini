@@ -32,6 +32,16 @@ export class GenerateImageTool implements Tool {
 		return `Generate an image with prompt: "${params.prompt}"?\n\nThis will create a new image file in your vault.`;
 	};
 
+	getProgressDescription(params: { prompt: string }): string {
+		if (params.prompt) {
+			const prompt = params.prompt.length > 25
+				? params.prompt.substring(0, 22) + '...'
+				: params.prompt;
+			return `Generating image: "${prompt}"`;
+		}
+		return 'Generating image';
+	}
+
 	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 

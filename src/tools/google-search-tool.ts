@@ -24,6 +24,17 @@ export class GoogleSearchTool implements Tool {
 		required: ['query']
 	};
 
+	getProgressDescription(params: { query: string }): string {
+		if (params.query) {
+			// Truncate long queries
+			const query = params.query.length > 30
+				? params.query.substring(0, 27) + '...'
+				: params.query;
+			return `Searching Google for "${query}"`;
+		}
+		return 'Searching Google';
+	}
+
 	async execute(params: { query: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		

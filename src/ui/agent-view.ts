@@ -27,6 +27,7 @@ import * as Handlebars from 'handlebars';
 import { AgentFactory } from '../agent/agent-factory';
 import { ChatTimer } from '../utils/timer-utils';
 import { shouldExcludePathForPlugin } from '../utils/file-utils';
+import { generateToolDescription } from '../utils/text-generation';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -1724,10 +1725,19 @@ User: ${history[0].message}`;
 				// Generate unique ID for this tool execution
 				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-				// Update progress for this tool
+				// Update progress for this tool with human-friendly description
 				const tool = this.plugin.toolRegistry.getTool(toolCall.name);
 				const displayName = tool?.displayName || toolCall.name;
-				this.updateProgress(`Executing: ${displayName}`, 'tool');
+
+				// Use tool's own progress description if available, otherwise use fallback
+				let toolDescription: string;
+				if (tool?.getProgressDescription) {
+					toolDescription = tool.getProgressDescription(toolCall.arguments);
+				} else {
+					toolDescription = generateToolDescription(this.plugin, toolCall.name, toolCall.arguments, displayName);
+				}
+
+				this.updateProgress(toolDescription, 'tool');
 
 				// Show tool execution in UI
 				await this.showToolExecution(toolCall.name, toolCall.arguments, toolExecutionId);
