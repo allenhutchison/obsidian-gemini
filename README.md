@@ -115,7 +115,8 @@ Let the AI actively work with your vault through tool calling capabilities.
 3. Review and approve actions (if confirmation is enabled)
 
 **Available Tools:**
-- **Search Files:** Find notes by name or content patterns
+- **Search Files by Name:** Find notes by filename patterns (wildcards supported)
+- **Search File Contents:** Grep-style text search within note contents (supports regex and case-sensitive search)
 - **Read Files:** Access and analyze note contents
 - **Create Notes:** Generate new notes with specified content
 - **Edit Notes:** Modify existing notes with precision

@@ -711,6 +711,199 @@ export class SearchFilesTool implements Tool {
 }
 
 /**
+ * Search for text content within files
+ */
+export class SearchFileContentsTool implements Tool {
+	name = 'search_file_contents';
+	displayName = 'Search File Contents';
+	category = ToolCategory.READ_ONLY;
+	description = 'Search for text content within markdown files in the vault. Unlike search_files which only searches filenames, this tool searches inside file contents using grep-style text matching. Supports case-sensitive/insensitive search and regex patterns. Returns matching lines with context (lines before/after the match). Use this to find notes containing specific text, code snippets, or patterns. Examples: find all notes mentioning "meeting notes", search for TODO items, find files containing specific tags or phrases. Results include file path, line numbers, matching content, and surrounding context lines.';
+
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			query: {
+				type: 'string' as const,
+				description: 'Text or regex pattern to search for within file contents'
+			},
+			caseSensitive: {
+				type: 'boolean' as const,
+				description: 'Whether search should be case-sensitive (default: false)'
+			},
+			useRegex: {
+				type: 'boolean' as const,
+				description: 'Whether to treat query as a regular expression (default: false). When false, searches for literal text.'
+			},
+			limit: {
+				type: 'number' as const,
+				description: 'Maximum number of matching results to return (default: 50)'
+			},
+			contextLines: {
+				type: 'number' as const,
+				description: 'Number of lines before and after each match to include for context (default: 2, max: 5)'
+			}
+		},
+		required: ['query']
+	};
+
+	async execute(
+		params: {
+			query: string;
+			caseSensitive?: boolean;
+			useRegex?: boolean;
+			limit?: number;
+			contextLines?: number;
+		},
+		context: ToolExecutionContext
+	): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+
+		try {
+			const caseSensitive = params.caseSensitive ?? false;
+			const useRegex = params.useRegex ?? false;
+			const limit = params.limit ?? 50;
+			const contextLines = Math.min(params.contextLines ?? 2, 5); // Cap at 5 lines
+
+			// Validate query
+			if (!params.query || params.query.trim().length === 0) {
+				return {
+					success: false,
+					error: 'Query cannot be empty'
+				};
+			}
+
+			// Create search pattern
+			let searchRegex: RegExp;
+			try {
+				if (useRegex) {
+					// User provided regex pattern
+					searchRegex = new RegExp(params.query, caseSensitive ? 'g' : 'gi');
+				} else {
+					// Escape special regex characters for literal search
+					const escapedQuery = params.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+					searchRegex = new RegExp(escapedQuery, caseSensitive ? 'g' : 'gi');
+				}
+			} catch (error) {
+				return {
+					success: false,
+					error: `Invalid regex pattern: ${error instanceof Error ? error.message : 'Unknown error'}`
+				};
+			}
+
+			const allFiles = plugin.app.vault.getMarkdownFiles();
+			const results: Array<{
+				file: string;
+				path: string;
+				matches: Array<{
+					lineNumber: number;
+					lineContent: string;
+					contextBefore: string[];
+					contextAfter: string[];
+				}>;
+			}> = [];
+
+			let totalMatches = 0;
+
+			// Search through each file
+			for (const file of allFiles) {
+				// Skip system folders
+				if (shouldExcludePath(file.path, plugin)) {
+					continue;
+				}
+
+				// Check if we've hit the limit
+				if (results.length >= limit) {
+					break;
+				}
+
+				try {
+					const content = await plugin.app.vault.read(file);
+					const lines = content.split('\n');
+					const fileMatches: Array<{
+						lineNumber: number;
+						lineContent: string;
+						contextBefore: string[];
+						contextAfter: string[];
+					}> = [];
+
+					// Search each line
+					for (let i = 0; i < lines.length; i++) {
+						const line = lines[i];
+
+						// Reset regex lastIndex for global regex
+						searchRegex.lastIndex = 0;
+
+						if (searchRegex.test(line)) {
+							// Get context lines
+							const contextBefore: string[] = [];
+							const contextAfter: string[] = [];
+
+							// Lines before
+							for (let j = Math.max(0, i - contextLines); j < i; j++) {
+								contextBefore.push(lines[j]);
+							}
+
+							// Lines after
+							for (let j = i + 1; j <= Math.min(lines.length - 1, i + contextLines); j++) {
+								contextAfter.push(lines[j]);
+							}
+
+							fileMatches.push({
+								lineNumber: i + 1, // 1-indexed for user display
+								lineContent: line,
+								contextBefore,
+								contextAfter
+							});
+
+							totalMatches++;
+
+							// Limit matches per file to avoid overwhelming results
+							if (fileMatches.length >= 10) {
+								break;
+							}
+						}
+					}
+
+					// Add file to results if it has matches
+					if (fileMatches.length > 0) {
+						results.push({
+							file: file.name,
+							path: file.path,
+							matches: fileMatches
+						});
+					}
+
+				} catch (error) {
+					// Skip files that can't be read
+					plugin.logger.debug(`Error reading file ${file.path}:`, error);
+					continue;
+				}
+			}
+
+			return {
+				success: true,
+				data: {
+					query: params.query,
+					caseSensitive,
+					useRegex,
+					filesSearched: allFiles.length,
+					filesWithMatches: results.length,
+					totalMatches,
+					results,
+					truncated: results.length >= limit
+				}
+			};
+
+		} catch (error) {
+			return {
+				success: false,
+				error: `Error searching file contents: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
+	}
+}
+
+/**
  * Get the currently active file in the editor
  * This is a wrapper around ReadFileTool that automatically gets the active file
  */
@@ -782,6 +975,7 @@ export function getVaultTools(): Tool[] {
 		new DeleteFileTool(),
 		new MoveFileTool(),
 		new SearchFilesTool(),
+		new SearchFileContentsTool(),
 		new GetActiveFileTool()
 	];
 }

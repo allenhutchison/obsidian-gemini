@@ -71,11 +71,26 @@ Add persistent context files to your session:
 ### Read-Only Tools
 
 #### search_files
-Search for files by name pattern:
+Search for files by name pattern (searches filenames/paths only):
 ```
 Find all files containing "project"
 Search for "*.md" files in the Projects folder
 ```
+
+#### search_file_contents
+Search for text within file contents (grep-style search):
+```
+Find all notes mentioning "machine learning"
+Search for TODO items across my vault
+Find files containing the phrase "quarterly review" (case-insensitive)
+Search using regex pattern: "deadline.*2024"
+```
+
+Supports:
+- Case-sensitive and case-insensitive search
+- Regex patterns
+- Context lines before/after matches
+- Respects system folder exclusions
 
 #### read_file
 Read the contents of a specific file:

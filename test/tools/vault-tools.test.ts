@@ -1,4 +1,4 @@
-import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, MoveFileTool, getVaultTools } from '../../src/tools/vault-tools';
+import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, SearchFileContentsTool, MoveFileTool, getVaultTools } from '../../src/tools/vault-tools';
 import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock ScribeFile and ScribeDataView
@@ -424,6 +424,170 @@ describe('VaultTools', () => {
 		});
 	});
 
+	describe('SearchFileContentsTool', () => {
+		let tool: SearchFileContentsTool;
+
+		beforeEach(() => {
+			tool = new SearchFileContentsTool();
+			// Add logger to mockPlugin for the tool
+			mockPlugin.logger = {
+				debug: jest.fn(),
+				log: jest.fn(),
+				error: jest.fn(),
+				warn: jest.fn()
+			};
+		});
+
+		it('should search for text in file contents', async () => {
+			const files = [
+				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } },
+				{ name: 'file2.md', path: 'file2.md', stat: { size: 200, mtime: Date.now() } },
+				{ name: 'file3.md', path: 'file3.md', stat: { size: 300, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read
+				.mockResolvedValueOnce('This is a test file\nWith some content\nAnd more lines')
+				.mockResolvedValueOnce('Another file\nWithout the keyword\nJust text')
+				.mockResolvedValueOnce('A third file\nWith test in it\nAnd more data');
+
+			const result = await tool.execute({ query: 'test' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.filesWithMatches).toBe(2);
+			expect(result.data?.totalMatches).toBe(2);
+			expect(result.data?.results).toHaveLength(2);
+			expect(result.data?.results[0].file).toBe('file1.md');
+			expect(result.data?.results[1].file).toBe('file3.md');
+		});
+
+		it('should be case-insensitive by default', async () => {
+			const files = [
+				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read.mockResolvedValue('This has TEST in uppercase');
+
+			const result = await tool.execute({ query: 'test' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.filesWithMatches).toBe(1);
+			expect(result.data?.totalMatches).toBe(1);
+		});
+
+		it('should support case-sensitive search', async () => {
+			const files = [
+				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read.mockResolvedValue('This has TEST in uppercase\nAnd test in lowercase');
+
+			const result = await tool.execute({ query: 'test', caseSensitive: true }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.filesWithMatches).toBe(1);
+			expect(result.data?.totalMatches).toBe(1);
+		});
+
+		it('should support regex patterns', async () => {
+			const files = [
+				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read.mockResolvedValue('Test 123\nAnother line\nTest 456');
+
+			const result = await tool.execute({ query: 'Test \\d+', useRegex: true }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.filesWithMatches).toBe(1);
+			expect(result.data?.totalMatches).toBe(2);
+		});
+
+		it('should include context lines', async () => {
+			const files = [
+				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read.mockResolvedValue('Line 1\nLine 2\nThis is a match\nLine 4\nLine 5');
+
+			const result = await tool.execute({ query: 'match', contextLines: 2 }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.results[0].matches[0].contextBefore).toHaveLength(2);
+			expect(result.data?.results[0].matches[0].contextBefore).toEqual(['Line 1', 'Line 2']);
+			expect(result.data?.results[0].matches[0].contextAfter).toHaveLength(2);
+			expect(result.data?.results[0].matches[0].contextAfter).toEqual(['Line 4', 'Line 5']);
+		});
+
+		it('should respect limit parameter', async () => {
+			const files = Array.from({ length: 100 }, (_, i) => ({
+				name: `file${i}.md`,
+				path: `file${i}.md`,
+				stat: { size: 100, mtime: Date.now() }
+			})) as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read.mockResolvedValue('This contains the search term');
+
+			const result = await tool.execute({ query: 'search', limit: 5 }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.results.length).toBeLessThanOrEqual(5);
+			expect(result.data?.truncated).toBe(true);
+		});
+
+		it('should return error for empty query', async () => {
+			const result = await tool.execute({ query: '' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Query cannot be empty');
+		});
+
+		it('should return error for invalid regex', async () => {
+			const result = await tool.execute({ query: '[invalid(regex', useRegex: true }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Invalid regex pattern');
+		});
+
+		it('should skip files that cannot be read', async () => {
+			const files = [
+				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } },
+				{ name: 'file2.md', path: 'file2.md', stat: { size: 200, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read
+				.mockRejectedValueOnce(new Error('Cannot read file'))
+				.mockResolvedValueOnce('This contains test');
+
+			const result = await tool.execute({ query: 'test' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.filesWithMatches).toBe(1);
+			expect(result.data?.results[0].file).toBe('file2.md');
+		});
+
+		it('should return line numbers correctly', async () => {
+			const files = [
+				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
+			] as TFile[];
+
+			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.read.mockResolvedValue('Line 1\nLine 2\nMatch here\nLine 4\nAnother match\nLine 6');
+
+			const result = await tool.execute({ query: 'match', contextLines: 0 }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.results[0].matches[0].lineNumber).toBe(3);
+			expect(result.data?.results[0].matches[1].lineNumber).toBe(5);
+		});
+	});
+
 	describe('GetActiveFileTool', () => {
 		let tool: any;
 
@@ -522,7 +686,7 @@ describe('VaultTools', () => {
 		it('should return all vault tools', () => {
 			const tools = getVaultTools();
 
-			expect(tools).toHaveLength(8);
+			expect(tools).toHaveLength(9);
 			expect(tools.map(t => t.name)).toContain('read_file');
 			expect(tools.map(t => t.name)).toContain('write_file');
 			expect(tools.map(t => t.name)).toContain('list_files');
@@ -530,6 +694,7 @@ describe('VaultTools', () => {
 			expect(tools.map(t => t.name)).toContain('delete_file');
 			expect(tools.map(t => t.name)).toContain('move_file');
 			expect(tools.map(t => t.name)).toContain('search_files');
+			expect(tools.map(t => t.name)).toContain('search_file_contents');
 			expect(tools.map(t => t.name)).toContain('get_active_file');
 		});
 	});
