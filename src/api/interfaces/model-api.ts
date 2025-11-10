@@ -14,6 +14,7 @@ import { CustomPrompt } from '../../prompts/types';
 export interface ModelResponse {
 	markdown: string;
 	rendered: string;
+	thoughts?: string;
 	toolCalls?: ToolCall[];
 }
 

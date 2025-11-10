@@ -1336,6 +1336,104 @@ If your plugin does not need CSS, delete this file.
 	background-color: var(--background-primary);
 }
 
+/* Progress Bar Container - Fixed above input */
+.gemini-agent-progress-container {
+	position: relative;
+	padding: var(--size-2-2) var(--size-4-3);
+	background-color: var(--background-secondary);
+	border-top: 1px solid var(--background-modifier-border);
+	flex-shrink: 0;
+	z-index: 10;
+}
+
+/* Progress Bar Wrapper */
+.gemini-agent-progress-bar-wrapper {
+	width: 100%;
+	height: 4px;
+	background-color: var(--background-modifier-border);
+	border-radius: 2px;
+	overflow: hidden;
+	margin-bottom: var(--size-2-2);
+}
+
+/* Progress Bar */
+.gemini-agent-progress-bar {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+/* Indeterminate Progress Fill */
+.gemini-agent-progress-fill {
+	height: 100%;
+	width: 30%;
+	border-radius: 2px;
+	animation: progress-slide 1.5s ease-in-out infinite;
+}
+
+/* State Colors */
+.gemini-agent-progress-thinking {
+	background: linear-gradient(90deg,
+		var(--interactive-accent),
+		color-mix(in srgb, var(--interactive-accent) 80%, white)
+	);
+}
+
+.gemini-agent-progress-tool {
+	background: linear-gradient(90deg,
+		color-mix(in srgb, var(--color-green) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-green) 50%, white)
+	);
+}
+
+.gemini-agent-progress-waiting {
+	background: linear-gradient(90deg,
+		color-mix(in srgb, var(--color-yellow) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-yellow) 50%, white)
+	);
+}
+
+.gemini-agent-progress-streaming {
+	background: linear-gradient(90deg,
+		color-mix(in srgb, var(--color-purple) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-purple) 50%, white)
+	);
+}
+
+/* Indeterminate Animation */
+@keyframes progress-slide {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(333%); /* 100% / 30% = 333% to fully traverse */
+	}
+}
+
+/* Status Container */
+.gemini-agent-progress-status-container {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-small);
+}
+
+/* Status Text */
+.gemini-agent-progress-status-text {
+	flex: 1;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+/* Timer */
+.gemini-agent-progress-timer {
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+	min-width: 3.5em;
+	text-align: right;
+}
+
 /* Input Area */
 .gemini-agent-input-area {
 	display: flex;
