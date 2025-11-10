@@ -73,7 +73,10 @@ const mockMetadataCache = {
 const mockPlugin = {
 	app: {
 		vault: mockVault,
-		metadataCache: mockMetadataCache
+		metadataCache: mockMetadataCache,
+		workspace: {
+			getLeavesOfType: jest.fn().mockReturnValue([])
+		}
 	},
 	settings: {
 		historyFolder: 'test-history-folder'
@@ -81,6 +84,12 @@ const mockPlugin = {
 	gfile: {
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
 		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
+	},
+	logger: {
+		log: jest.fn(),
+		debug: jest.fn(),
+		error: jest.fn(),
+		warn: jest.fn()
 	}
 } as any;
 
@@ -184,6 +193,46 @@ describe('VaultTools', () => {
 				size: 11
 			});
 			expect(mockVault.create).toHaveBeenCalledWith('new.md', 'new content');
+		});
+
+		it('should create parent directories when creating file in non-existent folder', async () => {
+			// First call returns null (file doesn't exist), second call returns newly created file
+			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(mockFile);
+			mockVault.adapter.exists.mockResolvedValue(false); // Parent directory doesn't exist
+			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.create.mockResolvedValue(mockFile);
+
+			const result = await tool.execute({ path: 'folder/subfolder/new.md', content: 'new content' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(mockVault.adapter.exists).toHaveBeenCalledWith('folder/subfolder');
+			expect(mockVault.createFolder).toHaveBeenCalledWith('folder/subfolder');
+			expect(mockVault.create).toHaveBeenCalledWith('folder/subfolder/new.md', 'new content');
+		});
+
+		it('should create file when parent directory already exists', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(mockFile);
+			mockVault.adapter.exists.mockResolvedValue(true); // Parent directory exists
+			mockVault.create.mockResolvedValue(mockFile);
+
+			const result = await tool.execute({ path: 'existing-folder/new.md', content: 'new content' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(mockVault.adapter.exists).toHaveBeenCalledWith('existing-folder');
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
+			expect(mockVault.create).toHaveBeenCalledWith('existing-folder/new.md', 'new content');
+		});
+
+		it('should create root-level file without checking for parent directory', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(mockFile);
+			mockVault.create.mockResolvedValue(mockFile);
+
+			const result = await tool.execute({ path: 'root-file.md', content: 'new content' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(mockVault.adapter.exists).not.toHaveBeenCalled();
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
+			expect(mockVault.create).toHaveBeenCalledWith('root-file.md', 'new content');
 		});
 
 		it('should have confirmation message', () => {

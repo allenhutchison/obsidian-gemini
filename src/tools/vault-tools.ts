@@ -253,6 +253,20 @@ export class WriteFileTool implements Tool {
 				await plugin.app.vault.modify(file, params.content);
 			} else {
 				// File doesn't exist, create it
+				// First ensure parent directory exists
+				const lastSlashIndex = normalizedPath.lastIndexOf('/');
+				if (lastSlashIndex > 0) {
+					const parentDir = normalizedPath.substring(0, lastSlashIndex);
+					const parentExists = await plugin.app.vault.adapter.exists(parentDir);
+					if (!parentExists) {
+						// Create parent directory (this will create all intermediate directories)
+						plugin.logger.debug(`Creating parent directory: ${parentDir}`);
+						await plugin.app.vault.createFolder(parentDir).catch(() => {
+							// Folder might already exist due to race condition
+						});
+					}
+				}
+
 				await plugin.app.vault.create(normalizedPath, params.content);
 				// Get the newly created file
 				file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
