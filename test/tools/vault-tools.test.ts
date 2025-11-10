@@ -1,4 +1,4 @@
-import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, SearchFileContentsTool, MoveFileTool, getVaultTools } from '../../src/tools/vault-tools';
+import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, SearchFileContentsTool, MoveFileTool, DeleteFileTool, GetActiveFileTool, getVaultTools } from '../../src/tools/vault-tools';
 import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock ScribeFile and ScribeDataView
@@ -128,6 +128,7 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				path: 'test.md',
+				type: 'file',
 				wikilink: '[[test.md]]',
 				content: 'file content',
 				size: 100,
@@ -145,16 +146,27 @@ describe('VaultTools', () => {
 			const result = await tool.execute({ path: 'nonexistent.md' }, mockContext);
 
 			expect(result.success).toBe(false);
-			expect(result.error).toBe('File not found: nonexistent.md');
+			expect(result.error).toBe('File or folder not found: nonexistent.md');
 		});
 
-		it('should return error for folder path', async () => {
+		it('should list contents when given a folder path', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
 
 			const result = await tool.execute({ path: 'folder' }, mockContext);
 
-			expect(result.success).toBe(false);
-			expect(result.error).toBe('Path is not a file: folder');
+			expect(result.success).toBe(true);
+			expect(result.data?.type).toBe('folder');
+			expect(result.data?.path).toBe('folder');
+			expect(result.data?.name).toBe('folder');
+			expect(result.data?.contents).toBeDefined();
+			expect(result.data?.contents).toHaveLength(1);
+			expect(result.data?.contents[0]).toEqual({
+				name: 'test.md',
+				path: 'test.md',
+				type: 'file',
+				size: 100,
+				modified: mockFile.stat.mtime
+			});
 		});
 	});
 
@@ -382,6 +394,61 @@ describe('VaultTools', () => {
 		});
 	});
 
+	describe('DeleteFileTool', () => {
+		let tool: DeleteFileTool;
+
+		beforeEach(() => {
+			tool = new DeleteFileTool();
+		});
+
+		it('should delete a file successfully', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.delete.mockResolvedValue(undefined);
+
+			const result = await tool.execute({ path: 'test.md' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data).toEqual({
+				path: 'test.md',
+				type: 'file',
+				action: 'deleted'
+			});
+			expect(mockVault.delete).toHaveBeenCalledWith(mockFile);
+		});
+
+		it('should delete a folder successfully', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
+			mockVault.delete.mockResolvedValue(undefined);
+
+			const result = await tool.execute({ path: 'folder' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data).toEqual({
+				path: 'folder',
+				type: 'folder',
+				action: 'deleted'
+			});
+			expect(mockVault.delete).toHaveBeenCalledWith(mockFolder);
+		});
+
+		it('should return error for non-existent file or folder', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.getMarkdownFiles.mockReturnValue([]);
+			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
+
+			const result = await tool.execute({ path: 'nonexistent' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('not found');
+		});
+
+		it('should have confirmation message', () => {
+			const message = tool.confirmationMessage!({ path: 'test.md' });
+			expect(message).toContain('Delete file or folder: test.md');
+			expect(message).toContain('cannot be undone');
+		});
+	});
+
 	describe('MoveFileTool', () => {
 		let tool: MoveFileTool;
 
@@ -395,15 +462,16 @@ describe('VaultTools', () => {
 			mockVault.createFolder.mockResolvedValue(undefined);
 			mockVault.rename.mockResolvedValue(undefined);
 
-			const result = await tool.execute({ 
-				sourcePath: 'test.md', 
-				targetPath: 'folder/renamed.md' 
+			const result = await tool.execute({
+				sourcePath: 'test.md',
+				targetPath: 'folder/renamed.md'
 			}, mockContext);
 
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				sourcePath: 'test.md',
 				targetPath: 'folder/renamed.md',
+				type: 'file',
 				action: 'moved'
 			});
 			expect(mockVault.rename).toHaveBeenCalledWith(mockFile, 'folder/renamed.md');
@@ -411,26 +479,37 @@ describe('VaultTools', () => {
 
 		it('should return error for non-existent source file', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.getMarkdownFiles.mockReturnValue([]);
+			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
 
-			const result = await tool.execute({ 
-				sourcePath: 'nonexistent.md', 
-				targetPath: 'new.md' 
+			const result = await tool.execute({
+				sourcePath: 'nonexistent.md',
+				targetPath: 'new.md'
 			}, mockContext);
 
 			expect(result.success).toBe(false);
-			expect(result.error).toBe('Source file not found: nonexistent.md');
+			expect(result.error).toBe('Source file or folder not found: nonexistent.md');
 		});
 
-		it('should return error if source is a folder', async () => {
+		it('should move folder successfully', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
+			mockVault.adapter.exists.mockResolvedValue(false);
+			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.rename.mockResolvedValue(undefined);
 
-			const result = await tool.execute({ 
-				sourcePath: 'folder', 
-				targetPath: 'new-folder' 
+			const result = await tool.execute({
+				sourcePath: 'folder',
+				targetPath: 'new-folder'
 			}, mockContext);
 
-			expect(result.success).toBe(false);
-			expect(result.error).toBe('Source path is not a file: folder');
+			expect(result.success).toBe(true);
+			expect(result.data).toEqual({
+				sourcePath: 'folder',
+				targetPath: 'new-folder',
+				type: 'folder',
+				action: 'moved'
+			});
+			expect(mockVault.rename).toHaveBeenCalledWith(mockFolder, 'new-folder');
 		});
 
 		it('should return error if target already exists', async () => {
@@ -465,11 +544,11 @@ describe('VaultTools', () => {
 		});
 
 		it('should have confirmation message', () => {
-			const message = tool.confirmationMessage!({ 
-				sourcePath: 'old.md', 
-				targetPath: 'new.md' 
+			const message = tool.confirmationMessage!({
+				sourcePath: 'old.md',
+				targetPath: 'new.md'
 			});
-			expect(message).toContain('Move file from: old.md');
+			expect(message).toContain('Move file or folder from: old.md');
 			expect(message).toContain('To: new.md');
 		});
 	});
@@ -639,10 +718,9 @@ describe('VaultTools', () => {
 	});
 
 	describe('GetActiveFileTool', () => {
-		let tool: any;
+		let tool: GetActiveFileTool;
 
 		beforeEach(() => {
-			const { GetActiveFileTool } = require('../../src/tools/vault-tools');
 			tool = new GetActiveFileTool();
 		});
 
