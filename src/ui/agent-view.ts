@@ -468,7 +468,7 @@ export class AgentView extends ItemView {
 		if (!text) return '';
 
 		// Convert **text** to <strong>text</strong>
-		let formatted = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+		let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
 		// Replace newlines with spaces for single-line display
 		formatted = formatted.replace(/\n+/g, ' ');
@@ -1294,15 +1294,19 @@ These files are included in the context below. When the user asks you to write d
 					// Use streaming API with tool support
 					let modelMessageContainer: HTMLElement | null = null;
 					let accumulatedMarkdown = '';
+					let accumulatedThoughts = '';
 					let progressUpdated = false;
 
 					const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
 						// Handle thought content - show in progress bar
 						if (chunk.thought) {
-							// Truncate thought for display (max ~150 chars)
-							const displayThought = chunk.thought.length > 150
-								? chunk.thought.substring(0, 147) + '...'
-								: chunk.thought;
+							accumulatedThoughts += chunk.thought;
+							this.progressStatus.title = accumulatedThoughts; // Show full thought on hover
+
+							// Truncate for display, showing the latest part
+							const displayThought = accumulatedThoughts.length > 150
+								? '...' + accumulatedThoughts.slice(-147)
+								: accumulatedThoughts;
 							this.updateProgress(displayThought, 'thinking');
 						}
 

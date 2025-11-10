@@ -21,6 +21,13 @@ import type ObsidianGemini from '../main';
 import { getDefaultModelForRole } from '../models';
 
 /**
+ * Extends Part to include the optional thought property
+ */
+interface PartWithThought extends Part {
+	thought?: boolean;
+}
+
+/**
  * Configuration for GeminiClient
  */
 export interface GeminiClientConfig {
@@ -328,7 +335,7 @@ export class GeminiClient implements ModelApi {
 			for (const part of response.candidates[0].content.parts) {
 				if ('text' in part && part.text) {
 					// Separate thought content from regular content
-					if ((part as any).thought) {
+					if ((part as PartWithThought).thought) {
 						thoughts += part.text;
 					} else {
 						markdown += part.text;
@@ -357,8 +364,8 @@ export class GeminiClient implements ModelApi {
 	private extractTextFromChunk(chunk: any): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
 			return chunk.candidates[0].content.parts
-				.filter((part: Part) => 'text' in part && part.text && !(part as any).thought)
-				.map((part: Part) => (part as any).text)
+				.filter((part: Part) => 'text' in part && part.text && !(part as PartWithThought).thought)
+				.map((part: Part) => (part as PartWithThought).text)
 				.join('');
 		}
 		return '';
@@ -370,8 +377,8 @@ export class GeminiClient implements ModelApi {
 	private extractThoughtFromChunk(chunk: any): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
 			return chunk.candidates[0].content.parts
-				.filter((part: Part) => (part as any).thought && (part as any).text)
-				.map((part: Part) => (part as any).text)
+				.filter((part: Part) => (part as PartWithThought).thought && (part as PartWithThought).text)
+				.map((part: Part) => (part as PartWithThought).text)
 				.join('');
 		}
 		return '';
