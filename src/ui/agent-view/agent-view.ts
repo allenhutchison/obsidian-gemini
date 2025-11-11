@@ -171,27 +171,12 @@ export class AgentView extends ItemView {
 			focusInput: () => this.userInput.focus()
 		};
 
-		// Create a proxy object for autoAddedActiveFile that delegates to context
-		const autoAddedFileProxy = {
-			value: null as TFile | null
-		};
-
-		// Set up direct binding - the session component will access/modify this proxy
-		Object.defineProperty(autoAddedFileProxy, 'value', {
-			get: () => this.context.getAutoAddedActiveFile(),
-			set: (file: TFile | null) => {
-				if (file === null) {
-					this.context.clearAutoAddedActiveFile();
-				}
-			},
-			enumerable: true,
-			configurable: true
-		});
-
+		// Create session state with direct callback references to context
 		const sessionState: SessionState = {
 			mentionedFiles: this.fileChips.getMentionedFiles(),
 			allowedWithoutConfirmation: this.allowedWithoutConfirmation,
-			autoAddedActiveFile: autoAddedFileProxy,
+			getAutoAddedActiveFile: () => this.context.getAutoAddedActiveFile(),
+			clearAutoAddedActiveFile: () => this.context.clearAutoAddedActiveFile(),
 			userInput: this.userInput
 		};
 
@@ -344,10 +329,7 @@ These files are included in the context below. When the user asks you to write d
 							accumulatedThoughts += chunk.thought;
 
 							// Store full thought as title for hover
-							const progressStatus = this.progress['progressStatus'];
-							if (progressStatus) {
-								progressStatus.title = accumulatedThoughts;
-							}
+							this.progress.setStatusTitle(accumulatedThoughts);
 
 							// Truncate for display, showing the latest part
 							const displayThought = accumulatedThoughts.length > PROGRESS_THOUGHT_MAX_LENGTH

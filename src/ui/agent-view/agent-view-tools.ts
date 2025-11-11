@@ -7,6 +7,7 @@ import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { generateToolDescription } from '../../utils/text-generation';
+import { formatFileSize } from '../../utils/format-utils';
 
 // Tool execution result messages
 const TOOL_EXECUTION_FAILED_DEFAULT_MSG = 'Tool execution failed (no error message provided)';
@@ -326,50 +327,6 @@ export class AgentViewTools {
 			// Hide progress bar on error
 			this.context.hideProgress();
 		}
-	}
-
-	/**
-	 * Format tool results for the model
-	 */
-	private formatToolResultsForModel(toolResults: any[]): string {
-		let formatted = "Tool Execution Results:\n\n";
-
-		for (const result of toolResults) {
-			formatted += `### ${result.toolName}\n`;
-			if (result.result.success) {
-				formatted += `✅ Success\n`;
-				if (result.result.data) {
-					// Special handling for google_search results
-					if (result.toolName === 'google_search' && result.result.data.answer && result.result.data.citations) {
-						formatted += `**Search Query:** ${result.result.data.query}\n\n`;
-						formatted += `**Answer with citations:**\n${result.result.data.answer}\n\n`;
-
-						if (result.result.data.citations.length > 0) {
-							formatted += `**Sources:**\n`;
-							result.result.data.citations.forEach((citation: any, index: number) => {
-								formatted += `${index + 1}. [${citation.title || citation.url}](${citation.url})`;
-								if (citation.snippet) {
-									formatted += ` - ${citation.snippet}`;
-								}
-								formatted += '\n';
-							});
-							formatted += '\n';
-						}
-
-						formatted += `**IMPORTANT:** Please incorporate these citations into your response to the user. Use the inline citation numbers [1], [2], etc. when referencing information from these sources, and include a "Sources" section at the end of your response with the full citation links.\n`;
-					} else {
-						// Default JSON formatting for other tools
-						formatted += `\`\`\`json\n${JSON.stringify(result.result.data, null, 2)}\n\`\`\`\n`;
-					}
-				}
-			} else {
-				formatted += `❌ Failed\n`;
-				formatted += `Error: ${result.result.error}\n`;
-			}
-			formatted += '\n';
-		}
-
-		return formatted;
 	}
 
 	/**
@@ -733,7 +690,7 @@ export class AgentViewTools {
 
 						if (result.data.size) {
 							fileInfo.createSpan({
-								text: ` (${this.formatFileSize(result.data.size)})`,
+								text: ` (${formatFileSize(result.data.size)})`,
 								cls: 'gemini-agent-tool-file-size'
 							});
 						}
@@ -799,19 +756,6 @@ export class AgentViewTools {
 				toolContent.classList.add('gemini-agent-tool-expanded');
 			}
 		}
-	}
-
-	/**
-	 * Format file size in human-readable format
-	 */
-	private formatFileSize(bytes: number): string {
-		if (bytes === 0) return '0 Bytes';
-
-		const k = 1024;
-		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 	}
 
 	/**

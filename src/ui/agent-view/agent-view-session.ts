@@ -40,8 +40,11 @@ export interface SessionState {
 	/** Reference to allowed tools set */
 	allowedWithoutConfirmation: Set<string>;
 
-	/** Reference to auto-added file tracking (using object wrapper for mutability) */
-	autoAddedActiveFile: { value: TFile | null };
+	/** Get the current auto-added active file */
+	getAutoAddedActiveFile: () => TFile | null;
+
+	/** Clear the auto-added active file tracking */
+	clearAutoAddedActiveFile: () => void;
 
 	/** User input element */
 	userInput: HTMLDivElement;
@@ -85,7 +88,7 @@ export class AgentViewSession {
 			this.uiCallbacks.clearChat();
 			this.state.mentionedFiles.length = 0; // Clear any mentioned files from previous session
 			this.state.allowedWithoutConfirmation.clear(); // Clear session-level permissions
-			this.state.autoAddedActiveFile.value = null; // Clear auto-added file tracking
+			this.state.clearAutoAddedActiveFile(); // Clear auto-added file tracking
 
 			// Clear input if it has content
 			if (this.state.userInput) {
@@ -166,7 +169,7 @@ export class AgentViewSession {
 		try {
 			this.currentSession = session;
 			this.state.allowedWithoutConfirmation.clear(); // Clear session-level permissions when loading from history
-			this.state.autoAddedActiveFile.value = null; // Clear auto-added file tracking when loading a session
+			this.state.clearAutoAddedActiveFile(); // Clear auto-added file tracking when loading a session
 
 			// Clear chat and reload history
 			this.uiCallbacks.clearChat();

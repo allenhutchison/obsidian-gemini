@@ -107,6 +107,15 @@ export class AgentViewProgress {
 	}
 
 	/**
+	 * Sets the title attribute on the progress status element (for hover tooltip)
+	 */
+	setStatusTitle(title: string): void {
+		if (this.progressStatus) {
+			this.progressStatus.title = title;
+		}
+	}
+
+	/**
 	 * Escape HTML entities to prevent XSS
 	 */
 	private escapeHtml(text: string): string {

@@ -2,6 +2,7 @@ import { App, MarkdownRenderer, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
+import { formatFileSize } from '../../utils/format-utils';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
@@ -318,7 +319,8 @@ export class AgentViewMessages {
 				for (let i = 0; i < lines.length; i++) {
 					const line = lines[i];
 					const trimmedLine = line.trim();
-					const hasUnescapedPipe = /(?<!\\)\|/.test(line);
+					// Use safer method to detect unescaped pipes (avoiding regex backtracking)
+				const hasUnescapedPipe = line.split('\\|').join('').includes('|');
 					const nextLine = lines[i + 1];
 
 					// Check if we're starting a table
@@ -568,19 +570,6 @@ export class AgentViewMessages {
 				});
 			});
 		}
-	}
-
-	/**
-	 * Format file size in human-readable format
-	 */
-	formatFileSize(bytes: number): string {
-		if (bytes === 0) return '0 Bytes';
-
-		const k = 1024;
-		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 	}
 
 	/**
