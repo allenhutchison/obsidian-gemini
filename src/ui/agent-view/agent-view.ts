@@ -829,6 +829,53 @@ These files are included in the context below. When the user asks you to write d
 		};
 	}
 
+	/**
+	 * Public method to show tool execution (delegates to tools component)
+	 * Used by tests and external components
+	 */
+	async showToolExecution(toolName: string, parameters: any, executionId?: string): Promise<void> {
+		// Lazy initialization for tests that don't call onOpen()
+		if (!this.tools) {
+			this.ensureToolsInitialized();
+		}
+		return this.tools.showToolExecution(toolName, parameters, executionId);
+	}
+
+	/**
+	 * Public method to show tool result (delegates to tools component)
+	 * Used by tests and external components
+	 */
+	async showToolResult(toolName: string, result: any, executionId?: string): Promise<void> {
+		// Lazy initialization for tests that don't call onOpen()
+		if (!this.tools) {
+			this.ensureToolsInitialized();
+		}
+		return this.tools.showToolResult(toolName, result, executionId);
+	}
+
+	/**
+	 * Ensure tools component is initialized (for lazy initialization in tests)
+	 */
+	private ensureToolsInitialized(): void {
+		if (this.tools) return;
+
+		if (!this.chatContainer) {
+			throw new Error('Cannot initialize tools component: chatContainer is not set');
+		}
+
+		const toolsContext: ToolsContext = {
+			getCurrentSession: () => this.currentSession,
+			isCancellationRequested: () => this.cancellationRequested,
+			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
+				this.progress.update(statusText, state),
+			hideProgress: () => this.progress.hide(),
+			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
+			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded()
+		};
+
+		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
+	}
+
 	async onClose() {
 		// Cleanup components
 		if (this.messages) {

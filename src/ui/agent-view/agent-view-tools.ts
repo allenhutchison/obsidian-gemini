@@ -743,6 +743,13 @@ export class AgentViewTools {
 						}
 					}
 				}
+			} else {
+				// Success but no data - show a success message with tool name for context
+				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
+				resultContent.createEl('p', {
+					text: `${toolName}: ${OPERATION_COMPLETED_SUCCESSFULLY_MSG}`,
+					cls: 'gemini-agent-tool-success-message'
+				});
 			}
 		}
 
