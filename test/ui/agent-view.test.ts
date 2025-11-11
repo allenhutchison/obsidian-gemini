@@ -1,4 +1,4 @@
-import { AgentView } from '../../src/ui/agent-view';
+import { AgentView } from '../../src/ui/agent-view/agent-view';
 import { SessionManager } from '../../src/agent/session-manager';
 import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
@@ -9,8 +9,8 @@ import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
 jest.mock('../../src/agent/session-history');
 jest.mock('../../src/tools/tool-registry');
 jest.mock('../../src/tools/execution-engine');
-jest.mock('../../src/ui/file-picker-modal');
-jest.mock('../../src/ui/session-settings-modal');
+jest.mock('../../src/ui/agent-view/file-picker-modal');
+jest.mock('../../src/ui/agent-view/session-settings-modal');
 
 // Mock Obsidian
 jest.mock('obsidian', () => {

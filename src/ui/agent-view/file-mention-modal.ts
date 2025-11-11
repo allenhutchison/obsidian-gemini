@@ -1,6 +1,6 @@
 import { FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian';
-import { shouldExcludePathForPlugin } from '../utils/file-utils';
-import type ObsidianGemini from '../main';
+import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import type ObsidianGemini from '../../main';
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	private onSelect: (file: TAbstractFile) => void;

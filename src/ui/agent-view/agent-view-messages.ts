@@ -1,0 +1,594 @@
+import { App, MarkdownRenderer, Notice, setIcon } from 'obsidian';
+import { ChatSession } from '../../types/agent';
+import { GeminiConversationEntry } from '../../types/conversation';
+import type ObsidianGemini from '../../main';
+import { formatFileSize } from '../../utils/format-utils';
+
+// Documentation and help content
+const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
+const AGENT_MODE_GUIDE_URL = `${DOCS_BASE_URL}/agent-mode-guide.md`;
+
+const AGENT_CAPABILITIES = [
+	{ icon: 'search', text: 'Search and read files in your vault' },
+	{ icon: 'file-edit', text: 'Create, modify, and organize notes' },
+	{ icon: 'globe', text: 'Search the web and fetch information' },
+	{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' }
+] as const;
+
+const EXAMPLE_PROMPTS = [
+	{ icon: 'search', text: 'Find all notes tagged with #important' },
+	{ icon: 'file-plus', text: 'Create a weekly summary of my meeting notes' },
+	{ icon: 'globe', text: 'Research productivity methods and create notes' },
+	{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
+] as const;
+
+/**
+ * Callback for loading a session
+ */
+export type LoadSessionCallback = (session: ChatSession) => Promise<void>;
+
+/**
+ * Handles message display and streaming functionality for Agent View
+ */
+export class AgentViewMessages {
+	private app: App;
+	private chatContainer: HTMLElement;
+	private plugin: ObsidianGemini;
+	private userInput: HTMLDivElement;
+	private scrollTimeout: NodeJS.Timeout | null = null;
+	private viewContext: any; // For MarkdownRenderer context
+
+	constructor(
+		app: App,
+		chatContainer: HTMLElement,
+		plugin: ObsidianGemini,
+		userInput: HTMLDivElement,
+		viewContext: any
+	) {
+		this.app = app;
+		this.chatContainer = chatContainer;
+		this.plugin = plugin;
+		this.userInput = userInput;
+		this.viewContext = viewContext;
+	}
+
+	/**
+	 * Display a conversation entry as a message
+	 */
+	async displayMessage(entry: GeminiConversationEntry, currentSession: ChatSession | null) {
+		// Remove empty state if it exists
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) {
+			emptyState.remove();
+		}
+
+		const messageDiv = this.chatContainer.createDiv({
+			cls: `gemini-agent-message gemini-agent-message-${entry.role}`
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: entry.role === 'user' ? 'You' : entry.role === 'system' ? 'System' : 'Agent',
+			cls: 'gemini-agent-message-role'
+		});
+		header.createEl('span', {
+			text: entry.created_at.toLocaleTimeString(),
+			cls: 'gemini-agent-message-time'
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+
+		// Check if this is a tool execution message from history
+		const isToolExecution = entry.metadata?.toolName || entry.message.includes('Tool Execution Results:');
+
+		// Preserve line breaks in the message
+		// Convert single newlines to double newlines for proper markdown rendering
+		// But preserve existing double newlines and table formatting
+		let formattedMessage = entry.message;
+		if (entry.role === 'model') {
+			// Split by lines to handle tables specially
+			const lines = entry.message.split('\n');
+			const formattedLines: string[] = [];
+			let inTable = false;
+			let previousLineWasEmpty = true;
+
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i];
+				const nextLine = lines[i + 1];
+				const trimmedLine = line.trim();
+
+				// Improved table detection
+				// A table row must have at least one pipe that's not escaped
+				const hasUnescapedPipe = line.split('\\|').join('').includes('|');
+				const isTableDivider = /^\s*\|?\s*[:?\-]+\s*\|/.test(line);
+				const isTableRow = hasUnescapedPipe && !isTableDivider && trimmedLine !== '|';
+
+				// Check if we're starting a table
+				if ((isTableRow || isTableDivider) && !inTable) {
+					inTable = true;
+					// Add empty line before table if needed
+					if (!previousLineWasEmpty && formattedLines.length > 0) {
+						formattedLines.push('');
+					}
+				}
+
+				// Add the current line
+				formattedLines.push(line);
+
+				// Check if we're ending a table
+				if (inTable && !hasUnescapedPipe && trimmedLine !== '') {
+					inTable = false;
+					// Add empty line after table
+					formattedLines.push('');
+				} else if (inTable && trimmedLine === '') {
+					// Empty line also ends a table
+					inTable = false;
+				}
+
+				// For non-table content, add empty line between paragraphs
+				if (!inTable && !hasUnescapedPipe && trimmedLine !== '' &&
+					nextLine && nextLine.trim() !== '' && !nextLine.includes('|')) {
+					formattedLines.push('');
+				}
+
+				previousLineWasEmpty = trimmedLine === '';
+			}
+
+			formattedMessage = formattedLines.join('\n');
+
+			// Debug logging for table formatting
+			if (formattedMessage.includes('|')) {
+				this.plugin.logger.log('Table formatting debug:');
+				this.plugin.logger.log('Original message:', entry.message);
+				this.plugin.logger.log('Formatted message:', formattedMessage);
+			}
+		}
+
+		// Get source path for proper link resolution
+		const sourcePath = currentSession?.historyPath || '';
+
+		// Special handling for tool execution messages
+		if (isToolExecution && entry.message.includes('Tool Execution Results:')) {
+			// Extract tool execution sections and make them collapsible
+			const toolSections = formattedMessage.split(/### ([^\n]+)/);
+
+			if (toolSections.length > 1) {
+				// First part before any tool sections
+				const intro = toolSections[0].trim();
+				if (intro) {
+					const introDiv = content.createDiv();
+					await MarkdownRenderer.render(this.app, intro, introDiv, sourcePath, this.viewContext);
+				}
+
+				// Process each tool section
+				for (let i = 1; i < toolSections.length; i += 2) {
+					const toolName = toolSections[i];
+					const toolContent = toolSections[i + 1]?.trim() || '';
+
+					if (toolName && toolContent) {
+						// Create collapsible tool execution block
+						const toolDiv = content.createDiv({ cls: 'gemini-agent-tool-execution' });
+						const toolHeader = toolDiv.createDiv({ cls: 'gemini-agent-tool-header' });
+
+						// Add expand/collapse icon
+						const icon = toolHeader.createEl('span', { cls: 'gemini-agent-tool-icon' });
+						setIcon(icon, 'chevron-right');
+
+						// Tool name
+						toolHeader.createEl('span', {
+							text: `Tool: ${toolName}`,
+							cls: 'gemini-agent-tool-name'
+						});
+
+						// Tool status (if available)
+						if (toolContent.includes('✅')) {
+							toolHeader.createEl('span', {
+								text: 'Success',
+								cls: 'gemini-agent-tool-status gemini-agent-tool-status-success'
+							});
+						} else if (toolContent.includes('❌')) {
+							toolHeader.createEl('span', {
+								text: 'Failed',
+								cls: 'gemini-agent-tool-status gemini-agent-tool-status-error'
+							});
+						}
+
+						// Tool content (initially hidden)
+						const toolContentDiv = toolDiv.createDiv({
+							cls: 'gemini-agent-tool-content gemini-agent-tool-content-collapsed'
+						});
+
+						// Render the tool content
+						await MarkdownRenderer.render(this.app, toolContent, toolContentDiv, sourcePath, this.viewContext);
+
+						// Toggle handler
+						toolHeader.addEventListener('click', () => {
+							const isCollapsed = toolContentDiv.hasClass('gemini-agent-tool-content-collapsed');
+							if (isCollapsed) {
+								toolContentDiv.removeClass('gemini-agent-tool-content-collapsed');
+								setIcon(icon, 'chevron-down');
+							} else {
+								toolContentDiv.addClass('gemini-agent-tool-content-collapsed');
+								setIcon(icon, 'chevron-right');
+							}
+						});
+					}
+				}
+			} else {
+				// No tool sections found, render normally
+				await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
+			}
+		} else {
+			// Use markdown rendering like the regular chat view
+			await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
+		}
+
+		// Scroll to bottom after displaying message
+		this.scrollToBottom();
+
+		// Add a copy button for both user and model messages
+		if (entry.role === 'model' || entry.role === 'user') {
+			const copyButton = content.createEl('button', {
+				cls: 'gemini-agent-copy-button',
+			});
+			setIcon(copyButton, 'copy');
+
+			copyButton.addEventListener('click', () => {
+				// Use the original message text to preserve formatting
+				navigator.clipboard
+					.writeText(entry.message)
+					.then(() => {
+						new Notice('Message copied to clipboard.');
+					})
+					.catch((err) => {
+						new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
+						this.plugin.logger.error(err);
+					});
+			});
+		}
+
+		// Auto-scroll to bottom
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+	}
+
+	/**
+	 * Create empty message container for streaming
+	 */
+	createStreamingMessageContainer(role: 'user' | 'model' | 'system' = 'model'): HTMLElement {
+		// Remove empty state if it exists
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) {
+			emptyState.remove();
+		}
+
+		const messageDiv = this.chatContainer.createDiv({
+			cls: `gemini-agent-message gemini-agent-message-${role}`
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: role === 'user' ? 'You' : role === 'system' ? 'System' : 'Agent',
+			cls: 'gemini-agent-message-role'
+		});
+		header.createEl('span', {
+			text: new Date().toLocaleTimeString(),
+			cls: 'gemini-agent-message-time'
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+
+		return messageDiv;
+	}
+
+	/**
+	 * Update streaming message with new chunk
+	 */
+	async updateStreamingMessage(messageContainer: HTMLElement, newChunk: string): Promise<void> {
+		const messageDiv = messageContainer.querySelector('.gemini-agent-message-content') as HTMLElement;
+		if (messageDiv) {
+			// For streaming, append the new chunk as plain text to avoid re-rendering
+			// We'll do a final markdown render when streaming completes
+			const textNode = document.createTextNode(newChunk);
+			messageDiv.appendChild(textNode);
+		}
+	}
+
+	/**
+	 * Finalize streaming message with full markdown
+	 */
+	async finalizeStreamingMessage(
+		messageContainer: HTMLElement,
+		fullMarkdown: string,
+		entry: GeminiConversationEntry,
+		currentSession: ChatSession | null
+	): Promise<void> {
+		const messageDiv = messageContainer.querySelector('.gemini-agent-message-content') as HTMLElement;
+		if (messageDiv) {
+			// Clear the div and render the final markdown
+			messageDiv.empty();
+
+			// Apply the same formatting logic as displayMessage
+			let formattedMessage = fullMarkdown;
+			if (entry.role === 'model') {
+				// Apply the same formatting for tables and paragraphs
+				const lines = fullMarkdown.split('\n');
+				const formattedLines: string[] = [];
+				let inTable = false;
+				let previousLineWasEmpty = true;
+
+				for (let i = 0; i < lines.length; i++) {
+					const line = lines[i];
+					const trimmedLine = line.trim();
+					// Use safer method to detect unescaped pipes (avoiding regex backtracking)
+				const hasUnescapedPipe = line.split('\\|').join('').includes('|');
+					const nextLine = lines[i + 1];
+
+					// Check if we're starting a table
+					if (hasUnescapedPipe && !inTable) {
+						inTable = true;
+						// Add empty line before table if not already present
+						if (!previousLineWasEmpty) {
+							formattedLines.push('');
+						}
+					}
+
+					// Add the current line
+					formattedLines.push(line);
+
+					// Check if we're ending a table
+					if (inTable && !hasUnescapedPipe && trimmedLine !== '') {
+						inTable = false;
+						// Add empty line after table
+						formattedLines.push('');
+					} else if (inTable && trimmedLine === '') {
+						// Empty line also ends a table
+						inTable = false;
+					}
+
+					// For non-table content, add empty line between paragraphs
+					if (!inTable && !hasUnescapedPipe && trimmedLine !== '' &&
+						nextLine && nextLine.trim() !== '' && !nextLine.includes('|')) {
+						formattedLines.push('');
+					}
+
+					previousLineWasEmpty = trimmedLine === '';
+				}
+
+				formattedMessage = formattedLines.join('\n');
+			}
+
+			const sourcePath = currentSession?.historyPath || '';
+			await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
+
+			// Add a copy button for model messages
+			if (entry.role === 'model') {
+				const copyButton = messageDiv.createEl('button', {
+					cls: 'gemini-agent-copy-button',
+				});
+				setIcon(copyButton, 'copy');
+
+				copyButton.addEventListener('click', () => {
+					// Use the original message text to preserve formatting
+					navigator.clipboard
+						.writeText(entry.message)
+						.then(() => {
+							new Notice('Message copied to clipboard.');
+						})
+						.catch((err) => {
+							new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
+							this.plugin.logger.error('Failed to copy to clipboard', err);
+						});
+				});
+			}
+		}
+	}
+
+	/**
+	 * Scroll chat to bottom
+	 */
+	scrollToBottom() {
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+	}
+
+	/**
+	 * Debounced scroll to bottom for streaming
+	 */
+	debouncedScrollToBottom() {
+		// Clear existing timeout
+		if (this.scrollTimeout) {
+			clearTimeout(this.scrollTimeout);
+		}
+
+		// Set a new timeout to scroll after a brief delay
+		this.scrollTimeout = setTimeout(() => {
+			this.scrollToBottom();
+			this.scrollTimeout = null;
+		}, 50); // 50ms debounce
+	}
+
+	/**
+	 * Show empty state when no messages exist
+	 */
+	async showEmptyState(
+		currentSession: ChatSession | null,
+		onLoadSession: LoadSessionCallback
+	) {
+		if (this.chatContainer.children.length === 0) {
+			const emptyState = this.chatContainer.createDiv({ cls: 'gemini-agent-empty-chat' });
+
+			const icon = emptyState.createDiv({ cls: 'gemini-agent-empty-icon' });
+			setIcon(icon, 'sparkles');
+
+			emptyState.createEl('h3', {
+				text: 'Start a conversation',
+				cls: 'gemini-agent-empty-title'
+			});
+
+			emptyState.createEl('p', {
+				text: 'Your AI assistant that can actively work with your vault.',
+				cls: 'gemini-agent-empty-desc'
+			});
+
+			// What can the agent do section
+			const capabilities = emptyState.createDiv({ cls: 'gemini-agent-capabilities' });
+
+			capabilities.createEl('h4', {
+				text: 'What can the Agent do?',
+				cls: 'gemini-agent-capabilities-title'
+			});
+
+			const capList = capabilities.createEl('ul', { cls: 'gemini-agent-capabilities-list' });
+
+			AGENT_CAPABILITIES.forEach(item => {
+				const li = capList.createEl('li', { cls: 'gemini-agent-capability-item' });
+				const iconEl = li.createSpan({ cls: 'gemini-agent-capability-icon' });
+				setIcon(iconEl, item.icon);
+				li.createSpan({ text: item.text, cls: 'gemini-agent-capability-text' });
+			});
+
+			// Documentation link
+			const docsLink = capabilities.createDiv({ cls: 'gemini-agent-docs-link' });
+			const linkEl = docsLink.createEl('a', {
+				text: '📖 Learn more about Agent Mode',
+				cls: 'gemini-agent-docs-link-text'
+			});
+			linkEl.href = AGENT_MODE_GUIDE_URL;
+			linkEl.setAttribute('aria-label', 'Open Agent Mode documentation in new tab');
+			linkEl.addEventListener('click', (e) => {
+				e.preventDefault();
+				// Validate URL before opening
+				if (linkEl.href.startsWith(DOCS_BASE_URL)) {
+					try {
+						window.open(linkEl.href, '_blank');
+					} catch (error) {
+						this.plugin.logger.error('Failed to open documentation link:', error);
+						new Notice('Failed to open documentation. Please check your browser settings.');
+					}
+				} else {
+					this.plugin.logger.error('Invalid documentation URL');
+				}
+			});
+
+			// Check if AGENTS.md exists and show appropriate button
+			const agentsMemoryExists = await this.plugin.agentsMemory.exists();
+
+			const initButton = emptyState.createDiv({
+				cls: agentsMemoryExists
+					? 'gemini-agent-init-context-button gemini-agent-init-context-button-update'
+					: 'gemini-agent-init-context-button'
+			});
+
+			const buttonIcon = initButton.createDiv({ cls: 'gemini-agent-init-icon' });
+			setIcon(buttonIcon, agentsMemoryExists ? 'refresh-cw' : 'sparkles');
+
+			const buttonText = initButton.createDiv({ cls: 'gemini-agent-init-text' });
+
+			if (agentsMemoryExists) {
+				buttonText.createEl('strong', { text: 'Update Vault Context' });
+				buttonText.createEl('span', {
+					text: 'Refresh my understanding of your vault',
+					cls: 'gemini-agent-init-desc'
+				});
+			} else {
+				buttonText.createEl('strong', { text: 'Initialize Vault Context' });
+				buttonText.createEl('span', {
+					text: 'Help me understand your vault structure and organization',
+					cls: 'gemini-agent-init-desc'
+				});
+			}
+
+			initButton.addEventListener('click', async () => {
+				// Run the vault analyzer
+				if (this.plugin.vaultAnalyzer) {
+					await this.plugin.vaultAnalyzer.initializeAgentsMemory();
+					// Refresh the empty state to update the button
+					await this.showEmptyState(currentSession, onLoadSession);
+				}
+			});
+
+			// Try to get recent sessions (excluding the current session)
+			// Fetch 6 sessions since we might filter out the current one
+			const allRecentSessions = await this.plugin.sessionManager.getRecentAgentSessions(6);
+			const recentSessions = allRecentSessions
+				.filter(session => !this.isCurrentSession(session, currentSession))
+				.slice(0, 5); // Limit to 5 after filtering
+
+			if (recentSessions.length > 0) {
+				// Show recent sessions
+				emptyState.createEl('p', {
+					text: 'Recent sessions:',
+					cls: 'gemini-agent-suggestions-header'
+				});
+
+				const sessionsContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
+
+				recentSessions.forEach(session => {
+					const suggestion = sessionsContainer.createDiv({
+						cls: 'gemini-agent-suggestion gemini-agent-suggestion-session'
+					});
+
+					suggestion.createEl('span', {
+						text: session.title,
+						cls: 'gemini-agent-suggestion-title'
+					});
+
+					suggestion.createEl('span', {
+						text: new Date(session.lastActive).toLocaleDateString(),
+						cls: 'gemini-agent-suggestion-date'
+					});
+
+					suggestion.addEventListener('click', async () => {
+						await onLoadSession(session);
+					});
+				});
+			}
+
+			// Always show example prompts
+			emptyState.createEl('p', {
+				text: 'Try these examples:',
+				cls: 'gemini-agent-suggestions-header'
+			});
+
+			const examplesContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions gemini-agent-examples' });
+
+			EXAMPLE_PROMPTS.forEach(example => {
+				const suggestion = examplesContainer.createDiv({
+					cls: 'gemini-agent-suggestion gemini-agent-suggestion-example'
+				});
+
+				const iconEl = suggestion.createSpan({ cls: 'gemini-agent-example-icon' });
+				setIcon(iconEl, example.icon);
+
+				suggestion.createSpan({
+					text: example.text,
+					cls: 'gemini-agent-example-text'
+				});
+
+				suggestion.addEventListener('click', () => {
+					this.userInput.textContent = example.text;
+					this.userInput.focus();
+				});
+			});
+		}
+	}
+
+	/**
+	 * Check if a session is the current session
+	 * Compares both session ID and history path for robustness
+	 */
+	private isCurrentSession(session: ChatSession, currentSession: ChatSession | null): boolean {
+		if (!currentSession) return false;
+		return session.id === currentSession.id ||
+		       session.historyPath === currentSession.historyPath;
+	}
+
+	/**
+	 * Cleanup method to clear any pending timeouts
+	 */
+	cleanup() {
+		if (this.scrollTimeout) {
+			clearTimeout(this.scrollTimeout);
+			this.scrollTimeout = null;
+		}
+	}
+}

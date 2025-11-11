@@ -1,6 +1,6 @@
 import { Modal, App, TFile, TFolder, Notice, setIcon } from 'obsidian';
-import { ChatSession } from '../types/agent';
-import type ObsidianGemini from '../main';
+import { ChatSession } from '../../types/agent';
+import type ObsidianGemini from '../../main';
 
 interface SessionListCallbacks {
 	onSelect: (session: ChatSession) => void;

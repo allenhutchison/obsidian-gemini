@@ -1,6 +1,6 @@
 import { App, Modal, TFile, Setting } from 'obsidian';
-import { shouldExcludePathForPlugin } from '../utils/file-utils';
-import type ObsidianGemini from '../main';
+import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import type ObsidianGemini from '../../main';
 
 export class FilePickerModal extends Modal {
 	private onSelect: (files: TFile[]) => void;

@@ -2,7 +2,7 @@ import ObsidianGemini from '../main';
 import { ModelApi } from '../api/interfaces/model-api';
 import { GeminiClientFactory } from '../api/simple-factory';
 import { SessionManager } from './session-manager';
-import { AgentView } from '../ui/agent-view';
+import { AgentView } from '../ui/agent-view/agent-view';
 import { ToolExecutionEngine } from '../tools/execution-engine';
 import { ToolRegistry } from '../tools/tool-registry';
 import { ChatSession, SessionModelConfig } from '../types/agent';
