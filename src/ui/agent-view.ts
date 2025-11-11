@@ -1255,13 +1255,13 @@ export class AgentView extends ItemView {
 		// Clear input and mentioned files
 		this.userInput.innerHTML = '';
 		this.mentionedFiles = [];
-		this.sendButton.disabled = true;
 
 		// Set execution state and change button to "Stop"
 		this.isExecuting = true;
 		this.cancellationRequested = false;
 		this.sendButton.textContent = 'Stop';
 		this.sendButton.addClass('gemini-agent-stop-btn');
+		this.sendButton.disabled = false; // Re-enable so user can click stop
 
 		// Show progress bar
 		this.showProgress('Thinking...', 'thinking');
