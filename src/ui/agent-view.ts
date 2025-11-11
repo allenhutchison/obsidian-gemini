@@ -20,7 +20,7 @@ import {
 	execContextCommand
 } from '../utils/dom-context';
 import { ToolConverter } from '../tools/tool-converter';
-import { ToolExecutionContext } from '../tools/types';
+import { ToolExecutionContext, ToolResult } from '../tools/types';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import { CustomPrompt } from '../prompts/types';
 import * as Handlebars from 'handlebars';
@@ -48,6 +48,10 @@ const EXAMPLE_PROMPTS = [
 	{ icon: 'globe', text: 'Research productivity methods and create notes' },
 	{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
 ] as const;
+
+// Tool execution result messages
+const TOOL_EXECUTION_FAILED_DEFAULT_MSG = 'Tool execution failed (no error message provided)';
+const OPERATION_COMPLETED_SUCCESSFULLY_MSG = 'Operation completed successfully';
 
 // Progress bar text truncation constants
 const PROGRESS_THOUGHT_MAX_LENGTH = 150;
@@ -2106,7 +2110,7 @@ User: ${history[0].message}`;
 	/**
 	 * Show tool execution result in the UI as a chat message
 	 */
-	public async showToolResult(toolName: string, result: any, executionId?: string): Promise<void> {
+	public async showToolResult(toolName: string, result: ToolResult, executionId?: string): Promise<void> {
 		// Find the existing tool message
 		const toolMessages = this.chatContainer.querySelectorAll('.gemini-agent-message-tool');
 		let toolMessage: HTMLElement | null = null;
@@ -2166,7 +2170,7 @@ User: ${history[0].message}`;
 			// Always show error first if the tool failed
 			if (!result.success) {
 				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
-				const errorMessage = result.error || 'Tool execution failed (no error message provided)';
+				const errorMessage = result.error || TOOL_EXECUTION_FAILED_DEFAULT_MSG;
 				errorContent.createEl('p', {
 					text: errorMessage,
 					cls: 'gemini-agent-tool-error-message'
@@ -2412,7 +2416,7 @@ User: ${history[0].message}`;
 				// Success but no data - show a generic success message
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
 				resultContent.createEl('p', {
-					text: 'Operation completed successfully',
+					text: OPERATION_COMPLETED_SUCCESSFULLY_MSG,
 					cls: 'gemini-agent-tool-success-message'
 				});
 			}
