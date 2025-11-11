@@ -1470,8 +1470,11 @@ If your plugin does not need CSS, delete this file.
 	min-height: 40px;
 	max-height: 200px;
 	overflow-y: auto;
-	padding: var(--size-2-2) var(--size-4-2);
+	padding: var(--size-4-2);
 	position: relative;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 }
 
 .gemini-agent-input-rich:focus {
@@ -1593,9 +1596,22 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-send-btn {
-	align-self: flex-end;
-	padding: var(--size-4-2) var(--size-4-4);
-	min-width: 80px;
+	align-self: stretch;
+	padding: var(--size-4-2);
+	min-width: 50px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.gemini-agent-send-btn svg {
+	width: 20px;
+	height: 20px;
+	fill: var(--color-green, #10b981);
+}
+
+.gemini-agent-stop-btn svg {
+	fill: var(--color-red, #dc3545);
 }
 
 .gemini-agent-send-btn:disabled {

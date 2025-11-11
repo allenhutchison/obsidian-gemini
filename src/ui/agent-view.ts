@@ -355,10 +355,10 @@ export class AgentView extends ItemView {
 		});
 
 		this.sendButton = container.createEl('button', {
-			text: 'Send',
 			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
 			attr: { 'aria-label': 'Send message to agent' }
 		});
+		setIcon(this.sendButton, 'play');
 
 		// Event listeners
 		this.userInput.addEventListener('keydown', (e) => {
@@ -553,7 +553,8 @@ export class AgentView extends ItemView {
 		this.isExecuting = false;
 		this.cancellationRequested = false;
 		this.sendButton.disabled = false;
-		this.sendButton.textContent = 'Send';
+		this.sendButton.empty();
+		setIcon(this.sendButton, 'play');
 		this.sendButton.removeClass('gemini-agent-stop-btn');
 		this.sendButton.setAttribute('aria-label', 'Send message to agent');
 		this.hideProgress();
@@ -1304,7 +1305,8 @@ export class AgentView extends ItemView {
 		this.cancellationRequested = false;
 		this.currentExecutingTool = null;
 		this.lastCompletedTool = null;
-		this.sendButton.textContent = 'Stop';
+		this.sendButton.empty();
+		setIcon(this.sendButton, 'square');
 		this.sendButton.addClass('gemini-agent-stop-btn');
 		this.sendButton.disabled = false; // Re-enable so user can click stop
 		this.sendButton.setAttribute('aria-label', 'Stop agent execution');

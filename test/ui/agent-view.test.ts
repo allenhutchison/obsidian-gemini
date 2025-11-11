@@ -793,21 +793,20 @@ describe('AgentView UI Tests', () => {
 
 			// Set up button in initial state
 			const sendButton = document.createElement('button');
-			sendButton.textContent = 'Send';
 			sendButton.className = 'gemini-agent-send-btn';
 			sendButton.setAttribute('aria-label', 'Send message to agent');
+			// Add empty method mock
+			(sendButton as any).empty = jest.fn();
 			(agentView as any).sendButton = sendButton;
 
 			// Simulate starting execution
 			(agentView as any).isExecuting = true;
 			(agentView as any).cancellationRequested = false;
-			sendButton.textContent = 'Stop';
 			sendButton.classList.add('gemini-agent-stop-btn');
 			sendButton.disabled = false;
 			sendButton.setAttribute('aria-label', 'Stop agent execution');
 
-			// Verify button state
-			expect(sendButton.textContent).toBe('Stop');
+			// Verify button state (icon-based, so check class and aria-label)
 			expect(sendButton.classList.contains('gemini-agent-stop-btn')).toBe(true);
 			expect(sendButton.disabled).toBe(false);
 			expect(sendButton.getAttribute('aria-label')).toBe('Stop agent execution');
@@ -816,9 +815,8 @@ describe('AgentView UI Tests', () => {
 		it('should be clickable during execution', async () => {
 			await agentView.onOpen();
 
-			// Set up button in Stop mode
+			// Set up button in Stop mode (with icon, no text)
 			const sendButton = document.createElement('button');
-			sendButton.textContent = 'Stop';
 			sendButton.className = 'gemini-agent-stop-btn';
 			sendButton.disabled = false;
 			(agentView as any).sendButton = sendButton;
@@ -841,12 +839,12 @@ describe('AgentView UI Tests', () => {
 
 			// Set up button and execution state
 			const sendButton = document.createElement('button');
-			sendButton.textContent = 'Stop';
 			sendButton.className = 'gemini-agent-stop-btn';
-			// Add removeClass method like Obsidian provides
+			// Add Obsidian methods
 			(sendButton as any).removeClass = function(className: string) {
 				this.classList.remove(className);
 			};
+			(sendButton as any).empty = jest.fn();
 			(agentView as any).sendButton = sendButton;
 			(agentView as any).isExecuting = true;
 			(agentView as any).cancellationRequested = false;
@@ -881,12 +879,12 @@ describe('AgentView UI Tests', () => {
 			// (cancellationRequested is set to true, then reset to false by resetExecutionUiState)
 			expect(mockStreamingResponse.cancel).toHaveBeenCalled();
 
-			// Verify UI state reset
+			// Verify UI state reset (icon-based, so check class and aria-label)
 			expect((agentView as any).isExecuting).toBe(false);
 			expect((agentView as any).cancellationRequested).toBe(false);
-			expect(sendButton.textContent).toBe('Send');
 			expect(sendButton.classList.contains('gemini-agent-stop-btn')).toBe(false);
 			expect(sendButton.getAttribute('aria-label')).toBe('Send message to agent');
+			expect((sendButton as any).empty).toHaveBeenCalled();
 		});
 
 		it('should prevent further tool execution after cancellation', async () => {
@@ -906,12 +904,12 @@ describe('AgentView UI Tests', () => {
 			await agentView.onOpen();
 
 			const sendButton = document.createElement('button');
-			sendButton.textContent = 'Stop';
 			sendButton.className = 'gemini-agent-stop-btn';
-			// Add removeClass method like Obsidian provides
+			// Add Obsidian methods
 			(sendButton as any).removeClass = function(className: string) {
 				this.classList.remove(className);
 			};
+			(sendButton as any).empty = jest.fn();
 			(agentView as any).sendButton = sendButton;
 			(agentView as any).isExecuting = true;
 			(agentView as any).cancellationRequested = true;
@@ -919,13 +917,13 @@ describe('AgentView UI Tests', () => {
 			// Call resetExecutionUiState
 			await (agentView as any).resetExecutionUiState();
 
-			// Verify all state is reset
+			// Verify all state is reset (icon-based, so check class and aria-label)
 			expect((agentView as any).isExecuting).toBe(false);
 			expect((agentView as any).cancellationRequested).toBe(false);
-			expect(sendButton.textContent).toBe('Send');
 			expect(sendButton.disabled).toBe(false);
 			expect(sendButton.classList.contains('gemini-agent-stop-btn')).toBe(false);
 			expect(sendButton.getAttribute('aria-label')).toBe('Send message to agent');
+			expect((sendButton as any).empty).toHaveBeenCalled();
 		});
 
 		it('should not reset UI if already reset in finally block', async () => {
@@ -936,7 +934,6 @@ describe('AgentView UI Tests', () => {
 
 			// Simulate already reset state (isExecuting = false)
 			(agentView as any).isExecuting = false;
-			sendButton.textContent = 'Send';
 
 			// Track if resetExecutionUiState was called
 			const resetSpy = jest.spyOn(agentView as any, 'resetExecutionUiState');
