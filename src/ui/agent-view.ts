@@ -64,6 +64,8 @@ export class AgentView extends ItemView {
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private isExecuting: boolean = false;
 	private cancellationRequested: boolean = false;
+	private currentExecutingTool: string | null = null;
+	private lastCompletedTool: string | null = null;
 	private mentionedFiles: TFile[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private scrollTimeout: NodeJS.Timeout | null = null;
@@ -558,16 +560,37 @@ export class AgentView extends ItemView {
 	 * Cancels streaming and prevents further tool execution
 	 */
 	private stopAgentLoop() {
+		// Prevent duplicate stops (e.g., rapid button clicks)
+		if (this.cancellationRequested) {
+			this.plugin.logger.debug('[AgentView] Stop already requested, ignoring duplicate');
+			return;
+		}
+
 		this.plugin.logger.debug('[AgentView] User requested stop');
+
+		// Temporarily disable button to prevent rapid clicks (100ms debounce)
+		this.sendButton.disabled = true;
+		setTimeout(() => {
+			// Only re-enable if we're still in executing state
+			// (if execution completed naturally, the button will be reset anyway)
+			if (this.isExecuting) {
+				this.sendButton.disabled = false;
+			}
+		}, 100);
 
 		// Set cancellation flag to prevent further tool execution
 		this.cancellationRequested = true;
 
 		// Cancel current streaming if active
 		if (this.currentStreamingResponse) {
-			this.plugin.logger.debug('[AgentView] Cancelling active stream');
-			this.currentStreamingResponse.cancel();
-			this.currentStreamingResponse = null;
+			try {
+				this.plugin.logger.debug('[AgentView] Cancelling active stream');
+				this.currentStreamingResponse.cancel();
+			} catch (error) {
+				this.plugin.logger.error('[AgentView] Error cancelling stream:', error);
+			} finally {
+				this.currentStreamingResponse = null;
+			}
 		}
 
 		// Reset UI state
@@ -576,13 +599,20 @@ export class AgentView extends ItemView {
 		// Show notification to user
 		new Notice('Agent execution stopped');
 
-		// Add cancellation message to chat
+		// Add cancellation message to chat with last completed tool info
 		const messageContainer = this.chatContainer.createDiv({
 			cls: 'gemini-agent-message gemini-agent-system-message'
 		});
 
+		let cancellationText = '⚠️ Execution stopped by user';
+		if (this.lastCompletedTool) {
+			cancellationText += ` (cancelled after completing: ${this.lastCompletedTool})`;
+		} else if (this.currentExecutingTool) {
+			cancellationText += ` (interrupted during: ${this.currentExecutingTool})`;
+		}
+
 		messageContainer.createEl('p', {
-			text: '⚠️ Execution stopped by user',
+			text: cancellationText,
 			cls: 'gemini-agent-cancellation-notice'
 		});
 
@@ -1268,6 +1298,8 @@ export class AgentView extends ItemView {
 		// Set execution state and change button to "Stop"
 		this.isExecuting = true;
 		this.cancellationRequested = false;
+		this.currentExecutingTool = null;
+		this.lastCompletedTool = null;
 		this.sendButton.textContent = 'Stop';
 		this.sendButton.addClass('gemini-agent-stop-btn');
 		this.sendButton.disabled = false; // Re-enable so user can click stop
@@ -1840,8 +1872,15 @@ User: ${history[0].message}`;
 				// Show tool execution in UI
 				await this.showToolExecution(toolCall.name, toolCall.arguments, toolExecutionId);
 
+				// Track current executing tool
+				this.currentExecutingTool = toolCall.name;
+
 				// Execute the tool
 				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, context, this);
+
+				// Track as last completed tool
+				this.lastCompletedTool = toolCall.name;
+				this.currentExecutingTool = null;
 
 				// Show result in UI
 				await this.showToolResult(toolCall.name, result, toolExecutionId);
@@ -1995,6 +2034,13 @@ User: ${history[0].message}`;
 				} else {
 					// Model returned empty response - this might happen with thinking tokens
 					this.plugin.logger.warn('Model returned empty response after tool execution');
+
+					// Check if cancellation was requested before retry
+					if (this.cancellationRequested) {
+						this.plugin.logger.debug('[AgentView] Cancellation detected, skipping retry request');
+						return;
+					}
+
 					// Try a simpler prompt to get a response
 					const retryRequest: ExtendedModelRequest = {
 						userMessage: "Please summarize what you just did with the tools.",
@@ -2005,7 +2051,7 @@ User: ${history[0].message}`;
 						prompt: "Please summarize what you just did with the tools.",
 						renderContent: false
 					};
-					
+
 					// Use the same model API for retry requests
 					const modelApi2 = AgentFactory.createAgentModel(this.plugin, this.currentSession!);
 					const retryResponse = await modelApi2.generateModelResponse(retryRequest);
