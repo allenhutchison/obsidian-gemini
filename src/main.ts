@@ -1,6 +1,6 @@
 import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
-import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view';
+import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiSummary } from './summary';
 import { ImageGeneration } from './services/image-generation';
 import { ModelApi } from './api/index';
