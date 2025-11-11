@@ -2162,10 +2162,18 @@ User: ${history[0].message}`;
 			// Add result section
 			const resultSection = details.createDiv({ cls: 'gemini-agent-tool-section' });
 			resultSection.createEl('h4', { text: 'Result' });
-			
-			if (result.success && result.data) {
+
+			// Always show error first if the tool failed
+			if (!result.success) {
+				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
+				const errorMessage = result.error || 'Tool execution failed (no error message provided)';
+				errorContent.createEl('p', {
+					text: errorMessage,
+					cls: 'gemini-agent-tool-error-message'
+				});
+			} else if (result.data) {
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
-				
+
 				// Handle different types of results
 				if (typeof result.data === 'string') {
 					// For string results (like file content)
@@ -2174,7 +2182,7 @@ User: ${history[0].message}`;
 						const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
 						const code = codeBlock.createEl('code');
 						code.textContent = result.data.substring(0, 500) + '\n\n... (truncated)';
-						
+
 						// Add button to expand full content
 						const expandBtn = resultContent.createEl('button', {
 							text: 'Show full content',
@@ -2191,7 +2199,7 @@ User: ${history[0].message}`;
 				} else if (Array.isArray(result.data)) {
 					// For arrays (like file lists)
 					if (result.data.length === 0) {
-						resultContent.createEl('p', { 
+						resultContent.createEl('p', {
 							text: 'No results found',
 							cls: 'gemini-agent-tool-empty-result'
 						});
@@ -2201,7 +2209,7 @@ User: ${history[0].message}`;
 							list.createEl('li', { text: String(item) });
 						});
 						if (result.data.length > 10) {
-							resultContent.createEl('p', { 
+							resultContent.createEl('p', {
 								text: `... and ${result.data.length - 10} more`,
 								cls: 'gemini-agent-tool-more-items'
 							});
@@ -2211,47 +2219,47 @@ User: ${history[0].message}`;
 					// Debug logging
 					this.plugin.logger.log('Tool result is object for:', toolName);
 					this.plugin.logger.log('Result data keys:', Object.keys(result.data));
-					
+
 					// Special handling for google_search results with citations
 					if (result.data.answer && result.data.citations && toolName === 'google_search') {
 						this.plugin.logger.log('Handling google_search result with citations');
 						// Display the answer
 						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
 						answerDiv.createEl('h5', { text: 'Answer:' });
-						
+
 						// Render the answer with markdown links
 						const answerPara = answerDiv.createEl('p');
 						// Parse markdown links in the answer
 						const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 						let lastIndex = 0;
 						let match;
-						
+
 						while ((match = linkRegex.exec(result.data.answer)) !== null) {
 							// Add text before the link
 							if (match.index > lastIndex) {
 								answerPara.appendText(result.data.answer.substring(lastIndex, match.index));
 							}
-							
+
 							// Add the link
 							const link = answerPara.createEl('a', {
 								text: match[1],
 								href: match[2]
 							});
 							link.setAttribute('target', '_blank');
-							
+
 							lastIndex = linkRegex.lastIndex;
 						}
-						
+
 						// Add any remaining text
 						if (lastIndex < result.data.answer.length) {
 							answerPara.appendText(result.data.answer.substring(lastIndex));
 						}
-						
+
 						// Display citations if available
 						if (result.data.citations.length > 0) {
 							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
 							citationsDiv.createEl('h5', { text: 'Sources:' });
-							
+
 							const citationsList = citationsDiv.createEl('ul', { cls: 'gemini-agent-tool-citations-list' });
 							for (const citation of result.data.citations) {
 								const citationItem = citationsList.createEl('li');
@@ -2261,7 +2269,7 @@ User: ${history[0].message}`;
 									cls: 'gemini-agent-tool-citation-link'
 								});
 								link.setAttribute('target', '_blank');
-								
+
 								if (citation.snippet) {
 									citationItem.createEl('p', {
 										text: citation.snippet,
@@ -2344,21 +2352,21 @@ User: ${history[0].message}`;
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
 						fileInfo.createEl('strong', { text: 'File: ' });
 						fileInfo.createSpan({ text: result.data.path });
-						
+
 						if (result.data.size) {
-							fileInfo.createSpan({ 
+							fileInfo.createSpan({
 								text: ` (${this.formatFileSize(result.data.size)})`,
 								cls: 'gemini-agent-tool-file-size'
 							});
 						}
-						
+
 						const content = result.data.content;
 						if (content.length > 500) {
 							// Large content - show in a code block with truncation
 							const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
 							const code = codeBlock.createEl('code');
 							code.textContent = content.substring(0, 500) + '\n\n... (truncated)';
-							
+
 							// Add button to expand full content
 							const expandBtn = resultContent.createEl('button', {
 								text: 'Show full content',
@@ -2400,11 +2408,12 @@ User: ${history[0].message}`;
 						}
 					}
 				}
-			} else if (result.error) {
-				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
-				errorContent.createEl('p', { 
-					text: result.error,
-					cls: 'gemini-agent-tool-error-message'
+			} else {
+				// Success but no data - show a generic success message
+				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
+				resultContent.createEl('p', {
+					text: 'Operation completed successfully',
+					cls: 'gemini-agent-tool-success-message'
 				});
 			}
 		}
