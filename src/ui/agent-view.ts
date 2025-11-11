@@ -2168,7 +2168,8 @@ User: ${history[0].message}`;
 			resultSection.createEl('h4', { text: 'Result' });
 
 			// Always show error first if the tool failed
-			if (!result.success) {
+			// Defensive check: handle both false and undefined success values
+			if (result.success === false || result.success === undefined) {
 				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
 				const errorMessage = result.error || TOOL_EXECUTION_FAILED_DEFAULT_MSG;
 				errorContent.createEl('p', {
@@ -2413,10 +2414,10 @@ User: ${history[0].message}`;
 					}
 				}
 			} else {
-				// Success but no data - show a generic success message
+				// Success but no data - show a success message with tool name for context
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
 				resultContent.createEl('p', {
-					text: OPERATION_COMPLETED_SUCCESSFULLY_MSG,
+					text: `${toolName}: ${OPERATION_COMPLETED_SUCCESSFULLY_MSG}`,
 					cls: 'gemini-agent-tool-success-message'
 				});
 			}
