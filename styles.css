@@ -1603,6 +1603,19 @@ If your plugin does not need CSS, delete this file.
 	cursor: not-allowed;
 }
 
+/* Stop button styling - red/warning color scheme
+ * Uses Obsidian's --color-red variable which adapts to light/dark themes
+ * Fallback colors provided for custom themes that may not define these variables
+ */
+.gemini-agent-stop-btn {
+	background-color: var(--color-red, #dc3545);
+	color: var(--text-on-accent, #ffffff);
+}
+
+.gemini-agent-stop-btn:hover:not(:disabled) {
+	background-color: color-mix(in srgb, var(--color-red, #dc3545) 85%, black);
+}
+
 /* Session Modal Styles */
 .modal.modal-container:has(.gemini-session-modal) {
 	width: 600px;
