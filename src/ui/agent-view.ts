@@ -1630,8 +1630,10 @@ User: ${history[0].message}`;
 				});
 
 				// Extract and sanitize the title
+				// Note: Split into two replace calls to avoid ReDoS vulnerability
 				const generatedTitle = response.markdown.trim()
-					.replace(/^["']+|["']+$/g, '') // Remove quotes
+					.replace(/^["']+/, '') // Remove leading quotes
+					.replace(/["']+$/, '') // Remove trailing quotes
 					.substring(0, 50); // Ensure max length
 				
 				if (generatedTitle && generatedTitle.length > 0) {
