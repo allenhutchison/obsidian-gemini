@@ -521,6 +521,131 @@ describe('AgentView UI Tests', () => {
 		});
 	});
 
+	describe('Tool Result Display', () => {
+		beforeEach(async () => {
+			await agentView.onOpen();
+			const session = await plugin.sessionManager.createAgentSession();
+			await agentView['loadSession'](session.id);
+
+			// Create a mock chatContainer with proper DOM methods
+			const chatContainer = document.createElement('div');
+			chatContainer.className = 'gemini-agent-chat-container';
+
+			// Helper to add DOM methods to any element
+			const addDOMMethods = (el: any) => {
+				el.createDiv = function(options?: any) {
+					const div = document.createElement('div');
+					if (options?.cls) div.className = options.cls;
+					if (options?.text) div.textContent = options.text;
+					addDOMMethods(div);
+					this.appendChild(div);
+					return div;
+				};
+				el.createEl = function(tag: string, opts?: any) {
+					const elem = document.createElement(tag);
+					if (opts?.cls) elem.className = opts.cls;
+					if (opts?.text) elem.textContent = opts.text;
+					addDOMMethods(elem);
+					this.appendChild(elem);
+					return elem;
+				};
+				el.createSpan = function(opts?: any) {
+					return this.createEl('span', opts);
+				};
+			};
+
+			// Add helper methods to chat container
+			addDOMMethods(chatContainer);
+
+			(agentView as any).chatContainer = chatContainer;
+			agentView.containerEl.appendChild(chatContainer);
+		});
+
+		it('should display error message when tool fails with error', async () => {
+			// First, show the tool execution
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-1');
+
+			// Then show the result with error
+			await agentView.showToolResult('read_file', {
+				success: false,
+				error: 'File not found: test.md'
+			}, 'exec-1');
+
+			// Check that error is displayed
+			const errorContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-error-content');
+			expect(errorContent).toBeTruthy();
+
+			const errorMessage = errorContent?.querySelector('.gemini-agent-tool-error-message');
+			expect(errorMessage?.textContent).toBe('File not found: test.md');
+		});
+
+		it('should display fallback error when tool fails without error message', async () => {
+			// This is the exact scenario from issue #213
+			await agentView.showToolExecution('write_file', { path: 'test.md', content: 'test' }, 'exec-2');
+
+			// Tool fails but error property is undefined
+			await agentView.showToolResult('write_file', {
+				success: false
+			}, 'exec-2');
+
+			// Check that fallback error message is displayed
+			const errorContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-error-content');
+			expect(errorContent).toBeTruthy();
+
+			const errorMessage = errorContent?.querySelector('.gemini-agent-tool-error-message');
+			expect(errorMessage?.textContent).toBe('Tool execution failed (no error message provided)');
+		});
+
+		it('should display data when tool succeeds with data', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-3');
+
+			await agentView.showToolResult('read_file', {
+				success: true,
+				data: 'File content here'
+			}, 'exec-3');
+
+			// Check that result content is displayed
+			const resultContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-result-content');
+			expect(resultContent).toBeTruthy();
+
+			// Should contain the data
+			expect(resultContent?.textContent).toContain('File content here');
+		});
+
+		it('should display success message when tool succeeds without data', async () => {
+			await agentView.showToolExecution('delete_file', { path: 'test.md' }, 'exec-4');
+
+			await agentView.showToolResult('delete_file', {
+				success: true
+			}, 'exec-4');
+
+			// Check that success message is displayed
+			const resultContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-result-content');
+			expect(resultContent).toBeTruthy();
+
+			const successMessage = resultContent?.querySelector('.gemini-agent-tool-success-message');
+			expect(successMessage?.textContent).toContain('delete_file');
+			expect(successMessage?.textContent).toContain('Operation completed successfully');
+		});
+
+		it('should handle undefined success value defensively', async () => {
+			await agentView.showToolExecution('test_tool', {}, 'exec-5');
+
+			// Pass result with undefined success (edge case)
+			await agentView.showToolResult('test_tool', {
+				success: undefined as any,
+				error: 'Something went wrong'
+			}, 'exec-5');
+
+			// Should treat undefined as failure and show error
+			const errorContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-error-content');
+			expect(errorContent).toBeTruthy();
+
+			const errorMessage = errorContent?.querySelector('.gemini-agent-tool-error-message');
+			expect(errorMessage?.textContent).toBe('Something went wrong');
+		});
+	});
+
 	describe('View Lifecycle', () => {
 		it('should clean up resources on close', async () => {
 			await agentView.onOpen();
