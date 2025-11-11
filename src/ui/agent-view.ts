@@ -350,7 +350,8 @@ export class AgentView extends ItemView {
 
 		this.sendButton = container.createEl('button', {
 			text: 'Send',
-			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn'
+			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
+			attr: { 'aria-label': 'Send message to agent' }
 		});
 
 		// Event listeners
@@ -539,6 +540,20 @@ export class AgentView extends ItemView {
 	}
 
 	/**
+	 * Reset the execution UI state to idle
+	 * Restores button to "Send" state and hides progress indicators
+	 */
+	private resetExecutionUiState() {
+		this.isExecuting = false;
+		this.cancellationRequested = false;
+		this.sendButton.disabled = false;
+		this.sendButton.textContent = 'Send';
+		this.sendButton.removeClass('gemini-agent-stop-btn');
+		this.sendButton.setAttribute('aria-label', 'Send message to agent');
+		this.hideProgress();
+	}
+
+	/**
 	 * Stop the currently executing agent loop
 	 * Cancels streaming and prevents further tool execution
 	 */
@@ -555,14 +570,8 @@ export class AgentView extends ItemView {
 			this.currentStreamingResponse = null;
 		}
 
-		// Hide progress bar
-		this.hideProgress();
-
-		// Reset button state
-		this.isExecuting = false;
-		this.sendButton.disabled = false;
-		this.sendButton.textContent = 'Send';
-		this.sendButton.removeClass('gemini-agent-stop-btn');
+		// Reset UI state
+		this.resetExecutionUiState();
 
 		// Show notification to user
 		new Notice('Agent execution stopped');
@@ -1262,6 +1271,7 @@ export class AgentView extends ItemView {
 		this.sendButton.textContent = 'Stop';
 		this.sendButton.addClass('gemini-agent-stop-btn');
 		this.sendButton.disabled = false; // Re-enable so user can click stop
+		this.sendButton.setAttribute('aria-label', 'Stop agent execution');
 
 		// Show progress bar
 		this.showProgress('Thinking...', 'thinking');
@@ -1551,12 +1561,11 @@ These files are included in the context below. When the user asks you to write d
 			this.plugin.logger.error('Failed to send message:', error);
 			new Notice('Failed to send message');
 		} finally {
-			// Reset execution state and button
-			this.isExecuting = false;
-			this.sendButton.disabled = false;
-			this.sendButton.textContent = 'Send';
-			this.sendButton.removeClass('gemini-agent-stop-btn');
-			this.hideProgress();
+			// Reset execution state and button (unless already reset by stopAgentLoop)
+			// The check prevents redundant resets if user clicked stop
+			if (this.isExecuting) {
+				this.resetExecutionUiState();
+			}
 		}
 	}
 
