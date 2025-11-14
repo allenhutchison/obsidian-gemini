@@ -51,6 +51,8 @@ export class VaultAnalyzer {
 		modal.addStep('parse', 'Processing results');
 		modal.addStep('render', 'Rendering template');
 		modal.addStep('write', 'Writing AGENTS.md');
+		modal.addStep('examples', `Generating example prompts`);
+		modal.addStep('save-examples', 'Saving example prompts');
 
 		try {
 			// Step 1: Collect vault information
@@ -115,10 +117,46 @@ export class VaultAnalyzer {
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('write');
 
+			// Step 6: Generate example prompts
+			stepStart = Date.now();
+			modal.setStepInProgress('examples');
+			modal.updateStatus(`Generating example prompts with ${modelName}...`);
+
+			// Read existing prompts to help generate new, different ones
+			let existingPromptsString: string | undefined;
+			const existingPrompts = await this.plugin.examplePrompts.read();
+			if (existingPrompts && existingPrompts.length > 0) {
+				existingPromptsString = JSON.stringify(existingPrompts, null, 2);
+			}
+
+			const examplePromptsPrompt = this.plugin.prompts.examplePromptsPrompt(vaultInfo, existingPromptsString);
+			const examplePromptsResponse = await modelApi.generateModelResponse({
+				prompt: examplePromptsPrompt,
+				model: this.plugin.settings.chatModelName,
+				userMessage: '',
+				conversationHistory: [],
+				renderContent: false
+			});
+			await this.ensureMinimumDelay(stepStart);
+			modal.setStepComplete('examples');
+
+			// Step 7: Save example prompts
+			stepStart = Date.now();
+			modal.setStepInProgress('save-examples');
+			modal.updateStatus('Saving example prompts...');
+			const examplePrompts = this.parseExamplePromptsResponse(examplePromptsResponse.markdown);
+			if (examplePrompts && examplePrompts.length > 0) {
+				await this.plugin.examplePrompts.write(examplePrompts);
+			} else {
+				this.plugin.logger.warn('Failed to generate example prompts, skipping save');
+			}
+			await this.ensureMinimumDelay(stepStart);
+			modal.setStepComplete('save-examples');
+
 			// Success!
 			const action = existingContent ? 'updated' : 'created';
-			modal.setComplete(`AGENTS.md ${action} successfully!`);
-			new Notice(`AGENTS.md ${action} successfully!`);
+			modal.setComplete(`Vault context ${action} successfully!`);
+			new Notice(`Vault context ${action} successfully!`);
 
 			// Open the file for review
 			const memoryPath = this.plugin.agentsMemory.getMemoryFilePath();
@@ -317,6 +355,48 @@ export class VaultAnalyzer {
 			};
 		} catch (error) {
 			this.plugin.logger.error('Failed to parse analysis response:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Parse the JSON array response from example prompts generation
+	 */
+	private parseExamplePromptsResponse(response: string): Array<{ icon: string; text: string }> | null {
+		try {
+			// Try to extract JSON from code blocks
+			const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
+			let jsonString = jsonMatch ? jsonMatch[1] : response;
+
+			// Clean up the response - remove any extra text
+			jsonString = jsonString.trim();
+
+			// If it doesn't start with [, try to find the array
+			if (!jsonString.startsWith('[')) {
+				const arrayMatch = jsonString.match(/\[([\s\S]*)\]/);
+				if (arrayMatch) {
+					jsonString = arrayMatch[0];
+				}
+			}
+
+			const parsed = JSON.parse(jsonString);
+
+			// Validate the structure
+			if (!Array.isArray(parsed)) {
+				this.plugin.logger.error('Example prompts response is not an array');
+				return null;
+			}
+
+			// Validate each prompt has required fields
+			const valid = parsed.every(p => p.icon && p.text);
+			if (!valid) {
+				this.plugin.logger.error('Invalid example prompt structure');
+				return null;
+			}
+
+			return parsed;
+		} catch (error) {
+			this.plugin.logger.error('Failed to parse example prompts response:', error);
 			return null;
 		}
 	}

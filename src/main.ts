@@ -22,6 +22,7 @@ import { ToolExecutionEngine } from './tools/execution-engine';
 import { getVaultTools } from './tools/vault-tools';
 import { SessionHistory } from './agent/session-history';
 import { AgentsMemory } from './services/agents-memory';
+import { ExamplePromptsManager } from './services/example-prompts';
 import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
@@ -112,6 +113,7 @@ export default class ObsidianGemini extends Plugin {
 	public toolRegistry: ToolRegistry;
 	public toolExecutionEngine: ToolExecutionEngine;
 	public agentsMemory: AgentsMemory;
+	public examplePrompts: ExamplePromptsManager;
 	public vaultAnalyzer: VaultAnalyzer;
 	public deepResearch: DeepResearchService;
 	public imageGeneration: ImageGeneration;
@@ -257,8 +259,9 @@ export default class ObsidianGemini extends Plugin {
 		this.sessionManager = new SessionManager(this);
 		this.sessionHistory = new SessionHistory(this);
 
-		// Initialize agents memory
+		// Initialize agents memory and example prompts
 		this.agentsMemory = new AgentsMemory(this, agentsMemoryTemplateContent);
+		this.examplePrompts = new ExamplePromptsManager(this);
 		if (this.app.workspace.layoutReady) {
 			await this.history.onLayoutReady;
 		}

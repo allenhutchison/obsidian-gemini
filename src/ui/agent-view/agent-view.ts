@@ -585,7 +585,11 @@ These files are included in the context below. When the user asks you to write d
 	 * Show empty state (delegates to messages component)
 	 */
 	private async showEmptyState() {
-		await this.messages.showEmptyState(this.currentSession, (session) => this.loadSession(session));
+		await this.messages.showEmptyState(
+			this.currentSession,
+			(session) => this.loadSession(session),
+			() => this.sendMessage()
+		);
 	}
 
 	/**
