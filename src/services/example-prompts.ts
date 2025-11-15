@@ -1,8 +1,13 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 
+/**
+ * Represents an example prompt shown in the Agent Panel UI
+ */
 export interface ExamplePrompt {
+	/** Icon name from Lucide icon set */
 	icon: string;
+	/** The prompt text to display and execute */
 	text: string;
 }
 
@@ -21,6 +26,7 @@ export class ExamplePromptsManager {
 
 	/**
 	 * Get the path to the example-prompts.json file
+	 * @returns The normalized path to the prompts file
 	 */
 	getPromptsFilePath(): string {
 		return this.promptsFilePath;
@@ -28,6 +34,7 @@ export class ExamplePromptsManager {
 
 	/**
 	 * Check if example-prompts.json exists
+	 * @returns True if the file exists and is a TFile, false otherwise
 	 */
 	async exists(): Promise<boolean> {
 		const file = this.plugin.app.vault.getAbstractFileByPath(this.promptsFilePath);
@@ -36,7 +43,7 @@ export class ExamplePromptsManager {
 
 	/**
 	 * Read example prompts from the JSON file
-	 * Returns null if the file doesn't exist or can't be parsed
+	 * @returns Array of example prompts, or null if file doesn't exist or can't be parsed
 	 */
 	async read(): Promise<ExamplePrompt[] | null> {
 		try {
@@ -48,9 +55,15 @@ export class ExamplePromptsManager {
 			const content = await this.plugin.app.vault.read(file);
 			const prompts = JSON.parse(content);
 
-			// Validate structure
+			// Validate structure: must be array with valid prompt objects
 			if (Array.isArray(prompts) &&
-			    prompts.every(p => p.icon && p.text)) {
+			    prompts.every(p =>
+				    typeof p === 'object' &&
+				    typeof p.icon === 'string' &&
+				    typeof p.text === 'string' &&
+				    p.icon.length > 0 &&
+				    p.text.length > 0
+			    )) {
 				return prompts;
 			}
 
@@ -64,11 +77,20 @@ export class ExamplePromptsManager {
 
 	/**
 	 * Write example prompts to the JSON file
+	 * @param prompts - Array of example prompts to write
+	 * @throws Error if prompts array is invalid or write operation fails
 	 */
 	async write(prompts: ExamplePrompt[]): Promise<void> {
 		try {
-			// Validate input
-			if (!Array.isArray(prompts) || !prompts.every(p => p.icon && p.text)) {
+			// Validate input: must be array with valid prompt objects
+			if (!Array.isArray(prompts) ||
+			    !prompts.every(p =>
+				    typeof p === 'object' &&
+				    typeof p.icon === 'string' &&
+				    typeof p.text === 'string' &&
+				    p.icon.length > 0 &&
+				    p.text.length > 0
+			    )) {
 				throw new Error('Invalid example prompts structure');
 			}
 
