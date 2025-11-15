@@ -1,0 +1,52 @@
+You are analyzing an Obsidian vault to generate example prompts for the Agent Panel UI.
+These prompts help users understand what they can ask the AI agent to do.
+
+{{#if existingPrompts}}
+## Previous Example Prompts
+
+The user has seen these examples before:
+
+{{{existingPrompts}}}
+
+**IMPORTANT**: Generate a COMPLETELY NEW set of examples. Do not reuse or slightly modify the previous prompts. Think of fresh, different ways to demonstrate the agent's capabilities based on the current vault content.
+{{/if}}
+
+## Task
+
+Generate 3-4 actionable example prompts that would be useful for this specific vault. These should:
+- Be directly relevant to the vault's content and organization
+- Demonstrate different agent capabilities (search, creation, research, organization)
+- Use actual topics, folders, or tags from the vault
+- Be specific and actionable, not generic
+{{#if existingPrompts}}
+- Be DIFFERENT from the previous examples shown above - show new ways to use the agent
+{{/if}}
+
+## Output Format
+
+Return ONLY a JSON array with this structure:
+
+```json
+[
+  {"icon": "search", "text": "Find all notes about [specific topic from vault]"},
+  {"icon": "file-plus", "text": "Create a summary of [specific content type]"},
+  {"icon": "globe", "text": "Research [vault-relevant topic] and create notes"},
+  {"icon": "folder-tree", "text": "Organize [specific folder/section] by [relevant criteria]"}
+]
+```
+
+Available icons: 'search', 'file-plus', 'globe', 'folder-tree', 'link', 'tag', 'calendar',
+'book-open', 'lightbulb', 'sparkles'
+
+## Guidelines
+
+- Be specific to THIS vault's content - reference actual folders, topics, or tags you see
+- Make prompts actionable and clear
+- Vary the icon types to show different capabilities
+- Keep text concise but descriptive
+- **Use plain natural language** - do NOT use wiki link syntax like [[note name]]
+- Reference notes, folders, and topics by name without brackets or special markdown syntax
+- Write prompts as you would speak them naturally
+- Return ONLY the JSON array, no additional text
+
+Now analyze the vault structure and content provided below and generate the example prompts.

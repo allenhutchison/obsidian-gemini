@@ -15,7 +15,7 @@ const AGENT_CAPABILITIES = [
 	{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' }
 ] as const;
 
-const EXAMPLE_PROMPTS = [
+const DEFAULT_EXAMPLE_PROMPTS = [
 	{ icon: 'search', text: 'Find all notes tagged with #important' },
 	{ icon: 'file-plus', text: 'Create a weekly summary of my meeting notes' },
 	{ icon: 'globe', text: 'Research productivity methods and create notes' },
@@ -50,6 +50,24 @@ export class AgentViewMessages {
 		this.plugin = plugin;
 		this.userInput = userInput;
 		this.viewContext = viewContext;
+	}
+
+	/**
+	 * Load example prompts from example-prompts.json or fall back to defaults
+	 */
+	private async loadExamplePrompts(): Promise<Array<{ icon: string; text: string }>> {
+		try {
+			const prompts = await this.plugin.examplePrompts.read();
+			if (prompts && prompts.length > 0) {
+				return prompts;
+			}
+
+			// Fall back to defaults if no prompts or empty array
+			return [...DEFAULT_EXAMPLE_PROMPTS];
+		} catch (error) {
+			this.plugin.logger.warn('Failed to load example prompts, using defaults:', error);
+			return [...DEFAULT_EXAMPLE_PROMPTS];
+		}
 	}
 
 	/**
@@ -411,8 +429,15 @@ export class AgentViewMessages {
 	 */
 	async showEmptyState(
 		currentSession: ChatSession | null,
-		onLoadSession: LoadSessionCallback
+		onLoadSession: LoadSessionCallback,
+		onSendMessage: () => Promise<void>
 	) {
+		// Remove existing empty state if it exists (to support refreshing after AGENTS.md update)
+		const existingEmptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (existingEmptyState) {
+			existingEmptyState.remove();
+		}
+
 		if (this.chatContainer.children.length === 0) {
 			const emptyState = this.chatContainer.createDiv({ cls: 'gemini-agent-empty-chat' });
 
@@ -502,7 +527,7 @@ export class AgentViewMessages {
 				if (this.plugin.vaultAnalyzer) {
 					await this.plugin.vaultAnalyzer.initializeAgentsMemory();
 					// Refresh the empty state to update the button
-					await this.showEmptyState(currentSession, onLoadSession);
+					await this.showEmptyState(currentSession, onLoadSession, onSendMessage);
 				}
 			});
 
@@ -543,7 +568,9 @@ export class AgentViewMessages {
 				});
 			}
 
-			// Always show example prompts
+			// Always show example prompts (load from AGENTS.md or use defaults)
+			const examplePrompts = await this.loadExamplePrompts();
+
 			emptyState.createEl('p', {
 				text: 'Try these examples:',
 				cls: 'gemini-agent-suggestions-header'
@@ -551,7 +578,7 @@ export class AgentViewMessages {
 
 			const examplesContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions gemini-agent-examples' });
 
-			EXAMPLE_PROMPTS.forEach(example => {
+			examplePrompts.forEach(example => {
 				const suggestion = examplesContainer.createDiv({
 					cls: 'gemini-agent-suggestion gemini-agent-suggestion-example'
 				});
@@ -564,9 +591,9 @@ export class AgentViewMessages {
 					cls: 'gemini-agent-example-text'
 				});
 
-				suggestion.addEventListener('click', () => {
+				suggestion.addEventListener('click', async () => {
 					this.userInput.textContent = example.text;
-					this.userInput.focus();
+					await onSendMessage();
 				});
 			});
 		}
