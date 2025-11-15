@@ -17,19 +17,42 @@ export interface ExamplePrompt {
  */
 export class ExamplePromptsManager {
 	private plugin: InstanceType<typeof ObsidianGemini>;
-	private promptsFilePath: string;
 
 	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
-		this.promptsFilePath = normalizePath(`${plugin.settings.historyFolder}/example-prompts.json`);
 	}
 
 	/**
 	 * Get the path to the example-prompts.json file
+	 * Computed dynamically to handle settings changes
 	 * @returns The normalized path to the prompts file
 	 */
 	getPromptsFilePath(): string {
-		return this.promptsFilePath;
+		return normalizePath(`${this.plugin.settings.historyFolder}/example-prompts.json`);
+	}
+
+	/**
+	 * Validate a single example prompt object
+	 * @param prompt - The prompt to validate
+	 * @returns True if valid, false otherwise
+	 */
+	private isValidPrompt(prompt: any): prompt is ExamplePrompt {
+		return (
+			typeof prompt === 'object' &&
+			typeof prompt.icon === 'string' &&
+			typeof prompt.text === 'string' &&
+			prompt.icon.trim().length > 0 &&
+			prompt.text.trim().length > 0
+		);
+	}
+
+	/**
+	 * Validate an array of prompts
+	 * @param prompts - The prompts array to validate
+	 * @returns True if valid array of prompts, false otherwise
+	 */
+	private isValidPromptsArray(prompts: any): prompts is ExamplePrompt[] {
+		return Array.isArray(prompts) && prompts.every(p => this.isValidPrompt(p));
 	}
 
 	/**
@@ -37,7 +60,7 @@ export class ExamplePromptsManager {
 	 * @returns True if the file exists and is a TFile, false otherwise
 	 */
 	async exists(): Promise<boolean> {
-		const file = this.plugin.app.vault.getAbstractFileByPath(this.promptsFilePath);
+		const file = this.plugin.app.vault.getAbstractFileByPath(this.getPromptsFilePath());
 		return file instanceof TFile;
 	}
 
@@ -47,7 +70,7 @@ export class ExamplePromptsManager {
 	 */
 	async read(): Promise<ExamplePrompt[] | null> {
 		try {
-			const file = this.plugin.app.vault.getAbstractFileByPath(this.promptsFilePath);
+			const file = this.plugin.app.vault.getAbstractFileByPath(this.getPromptsFilePath());
 			if (!(file instanceof TFile)) {
 				return null;
 			}
@@ -55,20 +78,12 @@ export class ExamplePromptsManager {
 			const content = await this.plugin.app.vault.read(file);
 			const prompts = JSON.parse(content);
 
-			// Validate structure: must be array with valid prompt objects
-			if (Array.isArray(prompts) &&
-			    prompts.every(p =>
-				    typeof p === 'object' &&
-				    typeof p.icon === 'string' &&
-				    typeof p.text === 'string' &&
-				    p.icon.length > 0 &&
-				    p.text.length > 0
-			    )) {
-				return prompts;
+			if (!this.isValidPromptsArray(prompts)) {
+				this.plugin.logger.warn('Invalid example prompts structure in file');
+				return null;
 			}
 
-			this.plugin.logger.warn('Invalid example prompts structure in file');
-			return null;
+			return prompts;
 		} catch (error) {
 			this.plugin.logger.error('Failed to read example-prompts.json:', error);
 			return null;
@@ -82,27 +97,20 @@ export class ExamplePromptsManager {
 	 */
 	async write(prompts: ExamplePrompt[]): Promise<void> {
 		try {
-			// Validate input: must be array with valid prompt objects
-			if (!Array.isArray(prompts) ||
-			    !prompts.every(p =>
-				    typeof p === 'object' &&
-				    typeof p.icon === 'string' &&
-				    typeof p.text === 'string' &&
-				    p.icon.length > 0 &&
-				    p.text.length > 0
-			    )) {
+			if (!this.isValidPromptsArray(prompts)) {
 				throw new Error('Invalid example prompts structure');
 			}
 
 			const content = JSON.stringify(prompts, null, 2);
-			const file = this.plugin.app.vault.getAbstractFileByPath(this.promptsFilePath);
+			const filePath = this.getPromptsFilePath();
+			const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
 
 			if (file instanceof TFile) {
 				// Update existing file
 				await this.plugin.app.vault.modify(file, content);
 			} else {
 				// Create new file
-				await this.plugin.app.vault.create(this.promptsFilePath, content);
+				await this.plugin.app.vault.create(filePath, content);
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to write example-prompts.json:', error);

@@ -361,6 +361,8 @@ export class VaultAnalyzer {
 
 	/**
 	 * Parse the JSON array response from example prompts generation
+	 * @param response - The AI model response containing example prompts JSON
+	 * @returns Array of validated example prompts, or null if parsing fails
 	 */
 	private parseExamplePromptsResponse(response: string): Array<{ icon: string; text: string }> | null {
 		try {
@@ -376,27 +378,41 @@ export class VaultAnalyzer {
 				const arrayMatch = jsonString.match(/\[([\s\S]*)\]/);
 				if (arrayMatch) {
 					jsonString = arrayMatch[0];
+				} else {
+					this.plugin.logger.warn('Could not find JSON array in AI response for example prompts');
+					this.plugin.logger.debug('Response snippet:', response.substring(0, 200));
+					return null;
 				}
 			}
 
 			const parsed = JSON.parse(jsonString);
 
-			// Validate the structure
+			// Validate the structure: must be array
 			if (!Array.isArray(parsed)) {
-				this.plugin.logger.error('Example prompts response is not an array');
+				this.plugin.logger.warn('Example prompts response is not an array');
 				return null;
 			}
 
-			// Validate each prompt has required fields
-			const valid = parsed.every(p => p.icon && p.text);
-			if (!valid) {
-				this.plugin.logger.error('Invalid example prompt structure');
+			// Validate each prompt has required fields with proper types
+			const isValid = parsed.every(p =>
+				typeof p === 'object' &&
+				typeof p.icon === 'string' &&
+				typeof p.text === 'string' &&
+				p.icon.trim().length > 0 &&
+				p.text.trim().length > 0
+			);
+
+			if (!isValid) {
+				this.plugin.logger.warn('Invalid example prompt structure - missing or invalid fields');
+				this.plugin.logger.debug('Parsed data:', JSON.stringify(parsed, null, 2));
 				return null;
 			}
 
+			this.plugin.logger.log(`Successfully parsed ${parsed.length} example prompts`);
 			return parsed;
 		} catch (error) {
 			this.plugin.logger.error('Failed to parse example prompts response:', error);
+			this.plugin.logger.debug('Response that failed to parse:', response.substring(0, 500));
 			return null;
 		}
 	}

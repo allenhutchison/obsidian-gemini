@@ -153,6 +153,32 @@ describe('ExamplePromptsManager', () => {
 			expect(result).toBeNull();
 		});
 
+		it('should return null if icon is whitespace-only', async () => {
+			const mockFile = new TFile();
+			const invalidPrompts = [
+				{ icon: '   ', text: 'Valid text' }
+			];
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.read.mockResolvedValue(JSON.stringify(invalidPrompts));
+
+			const result = await examplePrompts.read();
+
+			expect(result).toBeNull();
+		});
+
+		it('should return null if text is whitespace-only', async () => {
+			const mockFile = new TFile();
+			const invalidPrompts = [
+				{ icon: 'search', text: '   ' }
+			];
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.read.mockResolvedValue(JSON.stringify(invalidPrompts));
+
+			const result = await examplePrompts.read();
+
+			expect(result).toBeNull();
+		});
+
 		it('should handle read errors gracefully', async () => {
 			const mockFile = new TFile();
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
@@ -215,6 +241,22 @@ describe('ExamplePromptsManager', () => {
 		it('should throw error if prompts are missing text field', async () => {
 			const invalidPrompts = [
 				{ icon: 'search' }
+			] as any;
+
+			await expect(examplePrompts.write(invalidPrompts)).rejects.toThrow('Invalid example prompts structure');
+		});
+
+		it('should throw error if icon is whitespace-only', async () => {
+			const invalidPrompts = [
+				{ icon: '   ', text: 'Valid text' }
+			] as any;
+
+			await expect(examplePrompts.write(invalidPrompts)).rejects.toThrow('Invalid example prompts structure');
+		});
+
+		it('should throw error if text is whitespace-only', async () => {
+			const invalidPrompts = [
+				{ icon: 'search', text: '   ' }
 			] as any;
 
 			await expect(examplePrompts.write(invalidPrompts)).rejects.toThrow('Invalid example prompts structure');
