@@ -8,6 +8,10 @@ jest.mock('../../src/models', () => ({
 		{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
 		{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
 	],
+	DEFAULT_GEMINI_MODELS: [
+		{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
+		{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary'] },
+	],
 	setGeminiModels: jest.fn(),
 	getUpdatedModelSettings: jest.fn((settings) => ({
 		updatedSettings: settings,
@@ -43,7 +47,7 @@ const mockPlugin = {
 		debug: jest.fn(),
 		warn: jest.fn(),
 		error: jest.fn(),
-		child: jest.fn(function(this: any, prefix: string) {
+		child: jest.fn(function (this: any, prefix: string) {
 			return this;
 		})
 	}

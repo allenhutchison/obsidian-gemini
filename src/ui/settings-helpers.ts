@@ -13,13 +13,35 @@ export async function selectModelSetting(
 		}[keyof ObsidianGeminiSettings]
 	>,
 	label: string,
-	description: string
+	description: string,
+	role: 'text' | 'image' = 'text'
 ) {
 	// Get available models (dynamic if enabled, static otherwise)
-	const availableModels =
-		plugin.settings.modelDiscovery?.enabled && plugin.getModelManager
-			? await plugin.getModelManager().getAvailableModels()
-			: GEMINI_MODELS;
+	let availableModels: import('../models').GeminiModel[];
+
+	if (plugin.settings.modelDiscovery?.enabled && plugin.getModelManager) {
+		if (role === 'image') {
+			availableModels = await plugin.getModelManager().getImageGenerationModels();
+		} else {
+			availableModels = await plugin.getModelManager().getAvailableModels();
+		}
+	} else {
+		// Fallback to static models, but we should still filter them by role if possible
+		// However, GEMINI_MODELS contains everything.
+		// Ideally we should use ModelManager to filter static models too.
+		if (plugin.getModelManager) {
+			if (role === 'image') {
+				availableModels = await plugin.getModelManager().getImageGenerationModels();
+			} else {
+				availableModels = await plugin.getModelManager().getAvailableModels();
+			}
+		} else {
+			// Fallback if ModelManager not available (unlikely)
+			availableModels = GEMINI_MODELS;
+		}
+	}
+
+	console.log(`selectModelSetting for ${label} (role=${role}): Found ${availableModels.length} models`, availableModels.map(m => m.value));
 
 	const dropdown = new Setting(containerEl)
 		.setName(label)

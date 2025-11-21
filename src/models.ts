@@ -7,12 +7,16 @@ export interface GeminiModel {
 	supportsImageGeneration?: boolean;
 }
 
-export let GEMINI_MODELS: GeminiModel[] = [
+export const DEFAULT_GEMINI_MODELS: GeminiModel[] = [
 	{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
-	{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', defaultForRoles: ['summary', 'rewrite'] },
-	{ value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite', defaultForRoles: ['completions'] },
-	{ value: 'gemini-2.5-flash-image-preview', label: 'Gemini 2.5 Flash Image', defaultForRoles: ['image'], supportsImageGeneration: true },
+	{ value: 'gemini-flash-latest', label: 'Gemini Flash Latest', defaultForRoles: ['summary', 'rewrite'] },
+	{ value: 'gemini-flash-lite-latest', label: 'Gemini Flash Lite Latest', defaultForRoles: ['completions'] },
+	{ value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
+	{ value: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image', defaultForRoles: ['image'], supportsImageGeneration: true },
+	{ value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image Preview', supportsImageGeneration: true },
 ];
+
+export let GEMINI_MODELS: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 /**
  * Set the models list (used by ModelManager for dynamic updates)
@@ -91,6 +95,18 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 				`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}' (legacy model update)`
 			);
 			newSettings.completionsModelName = newDefaultCompletions;
+			settingsChanged = true;
+		}
+	}
+
+	// Check image model - only update if truly needed
+	if (needsUpdate(newSettings.imageModelName)) {
+		const newDefaultImage = getDefaultModelForRole('image');
+		if (newDefaultImage) {
+			changedSettingsInfo.push(
+				`Image model: '${newSettings.imageModelName}' -> '${newDefaultImage}' (legacy model update)`
+			);
+			newSettings.imageModelName = newDefaultImage;
 			settingsChanged = true;
 		}
 	}

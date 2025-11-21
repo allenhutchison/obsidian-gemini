@@ -42,6 +42,7 @@ export interface ObsidianGeminiSettings {
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
+	imageModelName: string;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;
@@ -70,6 +71,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
+	imageModelName: getDefaultModelForRole('image'),
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
@@ -254,7 +256,7 @@ export default class ObsidianGemini extends Plugin {
 		// to be ready, otherwise it throws an error when trying to access the vault.
 		this.history = new GeminiHistory(this);
 		await this.history.setupHistoryCommands();
-		
+
 		// Initialize session manager and session history
 		this.sessionManager = new SessionManager(this);
 		this.sessionHistory = new SessionHistory(this);
@@ -269,13 +271,13 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize tool system
 		this.toolRegistry = new ToolRegistry(this);
 		this.toolExecutionEngine = new ToolExecutionEngine(this, this.toolRegistry);
-		
+
 		// Register vault tools
 		const vaultTools = getVaultTools();
 		for (const tool of vaultTools) {
 			this.toolRegistry.registerTool(tool);
 		}
-		
+
 		// Register web tools (Google Search and Web Fetch)
 		const { getWebTools } = await import('./tools/web-tools');
 		const webTools = getWebTools();
