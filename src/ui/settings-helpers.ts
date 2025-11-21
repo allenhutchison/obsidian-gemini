@@ -41,7 +41,7 @@ export async function selectModelSetting(
 		}
 	}
 
-	console.log(`selectModelSetting for ${label} (role=${role}): Found ${availableModels.length} models`, availableModels.map(m => m.value));
+	plugin.logger.debug(`selectModelSetting for ${label} (role=${role}): Found ${availableModels.length} models`, availableModels.map(m => m.value));
 
 	const dropdown = new Setting(containerEl)
 		.setName(label)
