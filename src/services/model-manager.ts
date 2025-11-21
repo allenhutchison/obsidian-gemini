@@ -229,6 +229,7 @@ export class ModelManager {
 				const isImageModel = model.supportsImageGeneration || modelValue.includes('image');
 				if (imageModelsOnly && isImageModel) {
 					this.plugin.logger.debug(`Model allowed (Nano Banana Image): ${model.value}`);
+					return true;
 				} else {
 					this.plugin.logger.debug(`Model excluded (nano/banana): ${model.value}`);
 					return false;
@@ -267,13 +268,6 @@ export class ModelManager {
 			if (modelValue.includes('computer')) {
 				this.plugin.logger.debug(`Model excluded (computer): ${model.value}`);
 				return false;
-			}
-			if (modelValue.includes('nano') || modelValue.includes('banana') ||
-				model.label.toLowerCase().includes('nano') || model.label.toLowerCase().includes('banana')) {
-				// Already handled above, but just in case logic flow changes
-				// This block is actually redundant because of the check at the top of the filter
-				// But let's keep it consistent if we want to move the top check down
-				// For now, I'll remove the redundant check here to avoid confusion
 			}
 
 			// 4. Filter by image generation capability

@@ -97,6 +97,50 @@ describe('ModelManager Version Filtering', () => {
 			expect(imageModelValues).not.toContain('gemini-2.0-flash');
 		});
 
+		it('should correctly identify stable versions and filter out previews', () => {
+			const models = [
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+				{ value: 'gemini-2.5-pro-preview-04-09', label: 'Gemini 2.5 Pro Preview' }, // Should be excluded
+				{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+				{ value: 'gemini-2.5-flash-preview-09-2025', label: 'Gemini 2.5 Flash Preview' }, // Should be excluded
+				{ value: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image', supportsImageGeneration: true },
+				{ value: 'gemini-2.5-flash-image-preview', label: 'Gemini 2.5 Flash Image Preview', supportsImageGeneration: true }, // Should be excluded
+				{ value: 'gemini-3.0-pro-preview', label: 'Gemini 3.0 Pro Preview' }, // Should be kept (no stable)
+			];
+
+			const filtered = modelManager['filterModelsForVersion'](models, false);
+			const values = filtered.map(m => m.value);
+
+			expect(values).toContain('gemini-2.5-pro');
+			expect(values).not.toContain('gemini-2.5-pro-preview-04-09');
+			expect(values).toContain('gemini-2.5-flash');
+			expect(values).not.toContain('gemini-2.5-flash-preview-09-2025');
+			expect(values).toContain('gemini-3.0-pro-preview');
+
+			// Check image models too
+			const imageFiltered = modelManager['filterModelsForVersion'](models, true);
+			const imageValues = imageFiltered.map(m => m.value);
+
+			expect(imageValues).toContain('gemini-2.5-flash-image');
+			expect(imageValues).not.toContain('gemini-2.5-flash-image-preview');
+		});
+
+		it('should allow Nano Banana image models', () => {
+			const models = [
+				{ value: 'nano-banana-image-model', label: 'Nano Banana Image', supportsImageGeneration: true },
+				{ value: 'some-other-nano-model', label: 'Nano Text', supportsImageGeneration: false },
+			];
+
+			const imageFiltered = modelManager['filterModelsForVersion'](models, true);
+			expect(imageFiltered.map(m => m.value)).toContain('nano-banana-image-model');
+
+			const textFiltered = modelManager['filterModelsForVersion'](models, false);
+			expect(textFiltered.map(m => m.value)).not.toContain('nano-banana-image-model');
+			expect(textFiltered.map(m => m.value)).not.toContain('some-other-nano-model');
+
+
+		});
+
 		it('should fall back to filtered static models on discovery failure', async () => {
 			// Enable discovery
 			mockPlugin.settings.modelDiscovery.enabled = true;
