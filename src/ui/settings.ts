@@ -43,8 +43,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		const ranges = await modelManager.getParameterRanges();
 		const displayInfo = await modelManager.getParameterDisplayInfo();
 
-		const desc = displayInfo.hasModelData 
-			? `Controls randomness. Lower values are more deterministic. ${displayInfo.temperature}` 
+		const desc = displayInfo.hasModelData
+			? `Controls randomness. Lower values are more deterministic. ${displayInfo.temperature}`
 			: 'Controls randomness. Lower values are more deterministic. (Default: 0.7)';
 
 		new Setting(containerEl)
@@ -60,15 +60,15 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						if (this.temperatureDebounceTimer) {
 							clearTimeout(this.temperatureDebounceTimer);
 						}
-						
+
 						// Set immediate value for responsive UI
 						this.plugin.settings.temperature = value;
-						
+
 						// Debounce validation and saving
 						this.temperatureDebounceTimer = setTimeout(async () => {
 							// Validate the value against model capabilities
 							const validation = await modelManager.validateParameters(value, this.plugin.settings.topP);
-							
+
 							if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
 								slider.setValue(validation.temperature.adjustedValue);
 								this.plugin.settings.temperature = validation.temperature.adjustedValue;
@@ -76,7 +76,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 									new Notice(validation.temperature.warning);
 								}
 							}
-							
+
 							await this.plugin.saveSettings();
 						}, 300);
 					})
@@ -91,8 +91,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		const ranges = await modelManager.getParameterRanges();
 		const displayInfo = await modelManager.getParameterDisplayInfo();
 
-		const desc = displayInfo.hasModelData 
-			? `Controls diversity. Lower values are more focused. ${displayInfo.topP}` 
+		const desc = displayInfo.hasModelData
+			? `Controls diversity. Lower values are more focused. ${displayInfo.topP}`
 			: 'Controls diversity. Lower values are more focused. (Default: 1)';
 
 		new Setting(containerEl)
@@ -108,15 +108,15 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						if (this.topPDebounceTimer) {
 							clearTimeout(this.topPDebounceTimer);
 						}
-						
+
 						// Set immediate value for responsive UI
 						this.plugin.settings.topP = value;
-						
+
 						// Debounce validation and saving
 						this.topPDebounceTimer = setTimeout(async () => {
 							// Validate the value against model capabilities
 							const validation = await modelManager.validateParameters(this.plugin.settings.temperature, value);
-							
+
 							if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
 								slider.setValue(validation.topP.adjustedValue);
 								this.plugin.settings.topP = validation.topP.adjustedValue;
@@ -124,7 +124,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 									new Notice(validation.topP.warning);
 								}
 							}
-							
+
 							await this.plugin.saveSettings();
 						}, 300);
 					})
@@ -193,6 +193,14 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			'completionsModelName',
 			'Completion Model',
 			'Model used for IDE-style inline completions as you type in notes.'
+		);
+		await selectModelSetting(
+			containerEl,
+			this.plugin,
+			'imageModelName',
+			'Image Model',
+			'Model used for image generation.',
+			'image'
 		);
 
 		new Setting(containerEl)

@@ -37,7 +37,7 @@ export class ImageGeneration {
 			new Notice('Generating image...');
 
 			// Generate the image
-			const base64Data = await this.client.generateImage(prompt);
+			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
 
 			// Save the image to vault
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
@@ -63,7 +63,7 @@ export class ImageGeneration {
 	async generateImage(prompt: string, targetNotePath?: string): Promise<string> {
 		try {
 			// Generate the image
-			const base64Data = await this.client.generateImage(prompt);
+			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
 
 			// Save the image to vault
 			return await this.saveImageToVault(base64Data, prompt, targetNotePath);

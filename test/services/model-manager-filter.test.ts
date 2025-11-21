@@ -27,7 +27,7 @@ describe('ModelManager Version Filtering', () => {
 				debug: jest.fn(),
 				warn: jest.fn(),
 				error: jest.fn(),
-				child: jest.fn(function(this: any, prefix: string) {
+				child: jest.fn(function (this: any, prefix: string) {
 					return this;
 				})
 			}
@@ -41,162 +41,104 @@ describe('ModelManager Version Filtering', () => {
 	});
 
 	describe('filterModelsForVersion', () => {
-		it('should keep Gemini 2.5 models', async () => {
-			const testModels: GeminiModel[] = [
+		it('should filter models correctly based on version and image capability', () => {
+			const models = [
 				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
 				{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-				{ value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite' },
+				{ value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }, // Should be excluded
+				{ value: 'gemini-2.0-flash-thinking-exp', label: 'Gemini 2.0 Flash Thinking' }, // Should be excluded
+				{ value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
+				{ value: 'gemini-flash-latest', label: 'Gemini Flash Latest' },
+				{ value: 'embedding-001', label: 'Embedding 001' }, // Should be excluded
+				{ value: 'aqa', label: 'AQA' }, // Should be excluded
+				{ value: 'tts-1-hd', label: 'TTS 1 HD' }, // Should be excluded
+				{ value: 'gemini-2.0-pro-exp-02-05-computer-use', label: 'Gemini 2.0 Pro Computer Use' }, // Should be excluded
+				{ value: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image', supportsImageGeneration: true },
+				{ value: 'models/nano-banana-pro-preview', label: 'Nano Banana Pro Preview' }, // Should be excluded
+				{ value: 'nano-banana-pro-preview', label: 'Nano Banana Pro Preview' }, // Should be excluded
+				{ value: 'imagen-3.0-generate-001', label: 'Imagen 3.0', supportsImageGeneration: true }, // Should be excluded
+				{ value: 'veo-2.0-generate-001', label: 'Veo 2.0', supportsImageGeneration: true }, // Should be excluded
 			];
 
-			// Use static models (discovery disabled)
-			const models = await modelManager.getAvailableModels();
+			// Test text models (imageModelsOnly = false)
+			const textModels = modelManager['filterModelsForVersion'](models, false);
+			const textModelValues = textModels.map(m => m.value);
 
-			// All 2.5 models should be included
-			expect(models.some(m => m.value === 'gemini-2.5-pro')).toBe(true);
-			expect(models.some(m => m.value === 'gemini-2.5-flash')).toBe(true);
-			expect(models.some(m => m.value === 'gemini-2.5-flash-lite-preview-06-17')).toBe(true);
+			expect(textModelValues).toContain('gemini-2.5-pro');
+			expect(textModelValues).toContain('gemini-2.5-flash');
+			expect(textModelValues).toContain('gemini-3-pro-preview');
+			expect(textModelValues).toContain('gemini-flash-latest');
+
+			// Exclusions
+			expect(textModelValues).not.toContain('gemini-2.0-flash-thinking-exp');
+			expect(textModelValues).not.toContain('gemini-2.0-flash');
+			expect(textModelValues).not.toContain('embedding-001');
+			expect(textModelValues).not.toContain('aqa');
+			expect(textModelValues).not.toContain('tts-1-hd');
+			expect(textModelValues).not.toContain('gemini-2.0-pro-exp-02-05-computer-use');
+			expect(textModelValues).not.toContain('gemini-2.5-flash-image');
+			expect(textModelValues).not.toContain('models/nano-banana-pro-preview');
+			expect(textModelValues).not.toContain('nano-banana-pro-preview');
+			expect(textModelValues).not.toContain('imagen-3.0-generate-001');
+			expect(textModelValues).not.toContain('veo-2.0-generate-001');
+
+			// Test image models (imageModelsOnly = true)
+			const imageModels = modelManager['filterModelsForVersion'](models, true);
+			const imageModelValues = imageModels.map(m => m.value);
+
+			expect(imageModelValues).toContain('gemini-2.5-flash-image');
+
+			// Exclusions for image models
+			expect(imageModelValues).not.toContain('imagen-3.0-generate-001');
+			expect(imageModelValues).not.toContain('veo-2.0-generate-001');
+			expect(imageModelValues).not.toContain('gemini-2.5-pro');
+			expect(imageModelValues).not.toContain('models/nano-banana-pro-preview');
+			expect(imageModelValues).not.toContain('nano-banana-pro-preview');
+			expect(imageModelValues).not.toContain('gemini-2.0-flash');
 		});
 
-		it('should filter out Gemini 2.0 models', async () => {
-			// Enable discovery
-			mockPlugin.settings.modelDiscovery.enabled = true;
+		it('should correctly identify stable versions and filter out previews', () => {
+			const models = [
+				{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+				{ value: 'gemini-2.5-pro-preview-04-09', label: 'Gemini 2.5 Pro Preview' }, // Should be excluded
+				{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+				{ value: 'gemini-2.5-flash-preview-09-2025', label: 'Gemini 2.5 Flash Preview' }, // Should be excluded
+				{ value: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image', supportsImageGeneration: true },
+				{ value: 'gemini-2.5-flash-image-preview', label: 'Gemini 2.5 Flash Image Preview', supportsImageGeneration: true }, // Should be excluded
+				{ value: 'gemini-3.0-pro-preview', label: 'Gemini 3.0 Pro Preview' }, // Should be kept (no stable)
+			];
 
-			// Mock discovery to return mixed versions
-			mockDiscoveryService.discoverModels.mockResolvedValue({
-				success: true,
-				models: [
-					{
-						name: 'models/gemini-2.5-pro',
-						version: '001',
-						displayName: 'Gemini 2.5 Pro',
-						description: 'Latest Pro model',
-						inputTokenLimit: 2097152,
-						outputTokenLimit: 8192,
-						supportedGenerationMethods: ['generateContent'],
-						maxTemperature: 2.0,
-						topP: 0.95,
-						topK: 40,
-					},
-					{
-						name: 'models/gemini-2.0-flash',
-						version: '001',
-						displayName: 'Gemini 2.0 Flash',
-						description: 'Older Flash model',
-						inputTokenLimit: 1048576,
-						outputTokenLimit: 8192,
-						supportedGenerationMethods: ['generateContent'],
-						maxTemperature: 2.0,
-						topP: 0.95,
-						topK: 40,
-					},
-					{
-						name: 'models/gemini-1.5-pro',
-						version: '001',
-						displayName: 'Gemini 1.5 Pro',
-						description: 'Legacy Pro model',
-						inputTokenLimit: 1048576,
-						outputTokenLimit: 8192,
-						supportedGenerationMethods: ['generateContent'],
-						maxTemperature: 2.0,
-						topP: 0.95,
-						topK: 40,
-					},
-				],
-				lastUpdated: Date.now(),
-			});
+			const filtered = modelManager['filterModelsForVersion'](models, false);
+			const values = filtered.map(m => m.value);
 
-			const models = await modelManager.getAvailableModels();
+			expect(values).toContain('gemini-2.5-pro');
+			expect(values).not.toContain('gemini-2.5-pro-preview-04-09');
+			expect(values).toContain('gemini-2.5-flash');
+			expect(values).not.toContain('gemini-2.5-flash-preview-09-2025');
+			expect(values).toContain('gemini-3.0-pro-preview');
 
-			// Only 2.5 models should be included
-			expect(models.some(m => m.value === 'gemini-2.5-pro')).toBe(true);
-			expect(models.some(m => m.value === 'gemini-2.0-flash')).toBe(false);
-			expect(models.some(m => m.value === 'gemini-1.5-pro')).toBe(false);
+			// Check image models too
+			const imageFiltered = modelManager['filterModelsForVersion'](models, true);
+			const imageValues = imageFiltered.map(m => m.value);
+
+			expect(imageValues).toContain('gemini-2.5-flash-image');
+			expect(imageValues).not.toContain('gemini-2.5-flash-image-preview');
 		});
 
-		it('should keep future versions (3.0+)', async () => {
-			// Enable discovery
-			mockPlugin.settings.modelDiscovery.enabled = true;
+		it('should allow Nano Banana image models', () => {
+			const models = [
+				{ value: 'nano-banana-image-model', label: 'Nano Banana Image', supportsImageGeneration: true },
+				{ value: 'some-other-nano-model', label: 'Nano Text', supportsImageGeneration: false },
+			];
 
-			// Mock discovery to return future versions
-			mockDiscoveryService.discoverModels.mockResolvedValue({
-				success: true,
-				models: [
-					{
-						name: 'models/gemini-3.0-ultra',
-						version: '001',
-						displayName: 'Gemini 3.0 Ultra',
-						description: 'Future Ultra model',
-						inputTokenLimit: 4194304,
-						outputTokenLimit: 16384,
-						supportedGenerationMethods: ['generateContent'],
-						maxTemperature: 2.0,
-						topP: 0.95,
-						topK: 40,
-					},
-					{
-						name: 'models/gemini-2.5-pro',
-						version: '001',
-						displayName: 'Gemini 2.5 Pro',
-						description: 'Current Pro model',
-						inputTokenLimit: 2097152,
-						outputTokenLimit: 8192,
-						supportedGenerationMethods: ['generateContent'],
-						maxTemperature: 2.0,
-						topP: 0.95,
-						topK: 40,
-					},
-				],
-				lastUpdated: Date.now(),
-			});
+			const imageFiltered = modelManager['filterModelsForVersion'](models, true);
+			expect(imageFiltered.map(m => m.value)).toContain('nano-banana-image-model');
 
-			const models = await modelManager.getAvailableModels();
+			const textFiltered = modelManager['filterModelsForVersion'](models, false);
+			expect(textFiltered.map(m => m.value)).not.toContain('nano-banana-image-model');
+			expect(textFiltered.map(m => m.value)).not.toContain('some-other-nano-model');
 
-			// Both 2.5 and 3.0 models should be included
-			expect(models.some(m => m.value === 'gemini-3.0-ultra')).toBe(true);
-			expect(models.some(m => m.value === 'gemini-2.5-pro')).toBe(true);
-		});
 
-		it('should handle version variants correctly', async () => {
-			// Enable discovery
-			mockPlugin.settings.modelDiscovery.enabled = true;
-
-			// Mock discovery to return various version formats
-			mockDiscoveryService.discoverModels.mockResolvedValue({
-				success: true,
-				models: [
-					{
-						name: 'models/gemini-2.5-pro-preview',
-						version: '001',
-						displayName: 'Gemini 2.5 Pro Preview',
-						description: 'Preview version',
-						inputTokenLimit: 2097152,
-						outputTokenLimit: 8192,
-						supportedGenerationMethods: ['generateContent'],
-						maxTemperature: 2.0,
-						topP: 0.95,
-						topK: 40,
-					},
-					{
-						name: 'models/gemini-2.5-flash-001',
-						version: '001',
-						displayName: 'Gemini 2.5 Flash 001',
-						description: 'Versioned model',
-						inputTokenLimit: 1048576,
-						outputTokenLimit: 8192,
-						supportedGenerationMethods: ['generateContent'],
-						maxTemperature: 2.0,
-						topP: 0.95,
-						topK: 40,
-					},
-				],
-				lastUpdated: Date.now(),
-			});
-
-			const models = await modelManager.getAvailableModels();
-
-			// All 2.5 variants should be included
-			expect(models.some(m => m.value === 'gemini-2.5-pro-preview')).toBe(true);
-			expect(models.some(m => m.value === 'gemini-2.5-flash-001')).toBe(true);
 		});
 
 		it('should fall back to filtered static models on discovery failure', async () => {
@@ -208,10 +150,19 @@ describe('ModelManager Version Filtering', () => {
 
 			const models = await modelManager.getAvailableModels();
 
-			// Should get filtered static models (all 2.5+)
+			// Should get filtered static models (all 2.5+, 3+, or latest)
 			expect(models.length).toBeGreaterThan(0);
 			models.forEach(model => {
-				expect(model.value.toLowerCase()).toContain('gemini-2.5');
+				const val = model.value.toLowerCase();
+				const isValid = (val.includes('gemini-2.5') ||
+					val.includes('gemini-3') ||
+					val.includes('latest')) &&
+					!val.includes('gemini-2.0') &&
+					!val.includes('imagen') &&
+					!val.includes('veo') &&
+					!val.includes('tts') &&
+					!val.includes('computer');
+				expect(isValid).toBe(true);
 			});
 		});
 	});

@@ -476,7 +476,7 @@ export class GeminiClient implements ModelApi {
 	 * @param model - Image generation model (defaults to gemini-2.5-flash-image-preview)
 	 * @returns Base64 encoded image data
 	 */
-	async generateImage(prompt: string, model: string = 'gemini-2.5-flash-image-preview'): Promise<string> {
+	async generateImage(prompt: string, model: string): Promise<string> {
 		try {
 			const params: GenerateContentParameters = {
 				model,

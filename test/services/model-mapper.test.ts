@@ -49,13 +49,15 @@ describe('ModelMapper', () => {
 			expect(result).toHaveLength(4);
 			expect(result[0]).toEqual({
 				value: 'gemini-2.5-pro-preview-06-05',
-				label: 'Gemini 2.5 Pro',
+				label: 'Gemini 2.5 Pro (gemini-2.5-pro-preview-06-05)',
 				defaultForRoles: ['chat'],
+				supportsImageGeneration: false,
 			});
 			expect(result[1]).toEqual({
 				value: 'gemini-2.5-flash',
-				label: 'Gemini 2.5 Flash',
+				label: 'Gemini 2.5 Flash (gemini-2.5-flash)',
 				defaultForRoles: ['summary'],
+				supportsImageGeneration: false,
 			});
 		});
 
@@ -66,12 +68,12 @@ describe('ModelMapper', () => {
 
 		it('should use displayName when available', () => {
 			const result = ModelMapper.mapToGeminiModels([mockGoogleModels[0]]);
-			expect(result[0].label).toBe('Gemini 2.5 Pro');
+			expect(result[0].label).toBe('Gemini 2.5 Pro (gemini-2.5-pro-preview-06-05)');
 		});
 
 		it('should generate label from model name when displayName is empty', () => {
 			const result = ModelMapper.mapToGeminiModels([mockGoogleModels[2]]);
-			expect(result[0].label).toBe('Gemini 2.0 Flash Lite');
+			expect(result[0].label).toBe('Gemini 2.0 Flash Lite (gemini-2.0-flash-lite)');
 		});
 	});
 

@@ -103,6 +103,7 @@ describe('getUpdatedModelSettings', () => {
 			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
 			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
 			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
+			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
 			{ value: 'gemini-another-model', label: 'Another Model' },
 		]);
 	});
@@ -116,6 +117,7 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'gemini-chat-default',
 			summaryModelName: 'gemini-summary-default',
 			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(false);
@@ -128,6 +130,7 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'invalid-chat-model',
 			summaryModelName: 'gemini-summary-default',
 			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
@@ -144,6 +147,7 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'gemini-chat-default',
 			summaryModelName: 'invalid-summary-model',
 			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
@@ -160,6 +164,7 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'gemini-chat-default',
 			summaryModelName: 'gemini-summary-default',
 			completionsModelName: 'invalid-completions-model',
+			imageModelName: 'gemini-image-default',
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
@@ -176,6 +181,7 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'invalid-chat-model',
 			summaryModelName: 'invalid-summary-model',
 			completionsModelName: 'gemini-completions-default', // This one is valid
+			imageModelName: 'gemini-image-default',
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
@@ -193,6 +199,7 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'invalid-chat-model',
 			summaryModelName: 'invalid-summary-model',
 			completionsModelName: 'invalid-completions-model',
+			imageModelName: 'invalid-image-model',
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
@@ -203,6 +210,7 @@ describe('getUpdatedModelSettings', () => {
 			"Chat model: 'invalid-chat-model' -> 'gemini-chat-default' (legacy model update)",
 			"Summary model: 'invalid-summary-model' -> 'gemini-summary-default' (legacy model update)",
 			"Completions model: 'invalid-completions-model' -> 'gemini-completions-default' (legacy model update)",
+			"Image model: 'invalid-image-model' -> 'gemini-image-default' (legacy model update)",
 		]);
 	});
 
@@ -217,12 +225,14 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'invalid-chat-model', // This needs update
 			summaryModelName: 'gemini-summary-default',
 			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default', // This one is valid (but not in list, so it will be updated too? No, wait, it's not in list so it will be updated to first model)
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
 		expect(result.updatedSettings.chatModelName).toBe('first-model-in-list'); // Falls back to first model
 		expect(result.changedSettingsInfo).toEqual([
 			"Chat model: 'invalid-chat-model' -> 'first-model-in-list' (legacy model update)",
+			"Image model: 'gemini-image-default' -> 'first-model-in-list' (legacy model update)",
 		]);
 	});
 
@@ -232,6 +242,7 @@ describe('getUpdatedModelSettings', () => {
 			chatModelName: 'any-model', // This will trigger a call to getDefaultModelForRole
 			summaryModelName: 'any-other-model',
 			completionsModelName: 'yet-another-model',
+			imageModelName: 'and-another-one',
 		};
 		// Expect getUpdatedModelSettings to throw the error from getDefaultModelForRole
 		expect(() => getUpdatedModelSettings(currentSettings)).toThrow(
