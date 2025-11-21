@@ -6,11 +6,22 @@ export class ModelMapper {
 	 * Convert Google API models to our internal GeminiModel format
 	 */
 	static mapToGeminiModels(googleModels: GoogleModel[]): GeminiModel[] {
-		const mappedModels = googleModels.map((model) => ({
-			value: this.extractModelId(model.name),
-			label: this.generateLabel(model),
-			defaultForRoles: this.inferDefaultRoles(model),
-		}));
+		const mappedModels = googleModels.map((model) => {
+			const value = this.extractModelId(model.name);
+			// Check for image generation support based on name or metadata
+			// Metadata is often unreliable (just says generateContent), so we rely on naming conventions
+			const supportsImageGeneration =
+				model.supportedGenerationMethods?.includes('generateImage') ||
+				value.includes('image') ||
+				model.displayName?.toLowerCase().includes('image');
+
+			return {
+				value,
+				label: this.generateLabel(model),
+				defaultForRoles: this.inferDefaultRoles(model),
+				supportsImageGeneration,
+			};
+		});
 
 		// Remove duplicates based on model value (ID)
 		return this.deduplicateModels(mappedModels);
@@ -27,16 +38,44 @@ export class ModelMapper {
 	 * Generate human-readable label from model data
 	 */
 	private static generateLabel(model: GoogleModel): string {
-		if (model.displayName) {
-			return model.displayName;
+		const modelId = this.extractModelId(model.name);
+		let displayName = model.displayName;
+
+		if (!displayName) {
+			// Generate label from model name if display name is missing
+			displayName = modelId
+				.split('-')
+				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+				.join(' ');
 		}
 
-		// Generate label from model name
-		const modelId = this.extractModelId(model.name);
-		return modelId
-			.split('-')
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(' ');
+		// Always format as "Display Name (model-name)"
+		return `${displayName} (${modelId})`;
+	}
+
+	/**
+	 * Remove duplicate models based on model ID (value)
+	 */
+	static deduplicateModels(models: GeminiModel[]): GeminiModel[] {
+		const seen = new Map<string, GeminiModel>();
+
+		// Unique by ID
+		for (const model of models) {
+			const existing = seen.get(model.value);
+
+			if (!existing) {
+				// First occurrence of this model ID
+				seen.set(model.value, model);
+			} else {
+				// Duplicate found - prefer the one with better label or more complete info
+				const preferNew = this.shouldPreferModel(model, existing);
+				if (preferNew) {
+					seen.set(model.value, model);
+				}
+			}
+		}
+
+		return Array.from(seen.values());
 	}
 
 	/**
@@ -47,7 +86,9 @@ export class ModelMapper {
 		const roles: ModelRole[] = [];
 
 		// Role inference logic based on model name patterns
-		if (modelId.includes('pro')) {
+		if (modelId.includes('image')) {
+			roles.push('image');
+		} else if (modelId.includes('pro')) {
 			roles.push('chat'); // Pro models for complex chat
 		} else if (modelId.includes('flash')) {
 			roles.push('summary'); // Flash models for quick tasks
@@ -204,29 +245,8 @@ export class ModelMapper {
 	}
 
 	/**
-	 * Remove duplicate models based on model ID (value)
+	 * Remove duplicate models based on model ID (value) and disambiguate labels
 	 */
-	static deduplicateModels(models: GeminiModel[]): GeminiModel[] {
-		const seen = new Map<string, GeminiModel>();
-
-		for (const model of models) {
-			const existing = seen.get(model.value);
-
-			if (!existing) {
-				// First occurrence of this model ID
-				seen.set(model.value, model);
-			} else {
-				// Duplicate found - prefer the one with better label or more complete info
-				const preferNew = this.shouldPreferModel(model, existing);
-				if (preferNew) {
-					seen.set(model.value, model);
-				}
-			}
-		}
-
-		return Array.from(seen.values());
-	}
-
 	/**
 	 * Determine which model to prefer when deduplicating
 	 */

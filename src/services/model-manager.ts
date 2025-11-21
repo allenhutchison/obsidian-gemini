@@ -207,11 +207,32 @@ export class ModelManager {
 	 */
 	private filterModelsForVersion(models: GeminiModel[], imageModelsOnly: boolean): GeminiModel[] {
 		this.plugin.logger.debug(`Filtering ${models.length} models. imageModelsOnly=${imageModelsOnly}`);
+
+		// Helper to check if a stable version exists for a preview model
+		const hasStableVersion = (previewModelValue: string, allModels: GeminiModel[]): boolean => {
+			// Pattern: gemini-1.5-pro-preview-04-09 -> stable: gemini-1.5-pro
+			// Pattern: gemini-2.5-flash-preview-09-2025 -> stable: gemini-2.5-flash
+			// Pattern: gemini-2.5-flash-image-preview -> stable: gemini-2.5-flash-image
+			const baseNameMatch = previewModelValue.match(/^(gemini-[\d.]+(?:-pro|-flash|-flash-lite)(?:-image)?)(?:-preview|-exp)/);
+			if (!baseNameMatch) return false;
+
+			const baseName = baseNameMatch[1];
+			// Check if the base name exists in the list (exact match)
+			return allModels.some(m => m.value === baseName);
+		};
+
 		return models.filter(model => {
 			const modelValue = model.value.toLowerCase();
 
 			if (modelValue.includes('nano') || modelValue.includes('banana')) {
-				this.plugin.logger.debug(`Checking exclusion for ${modelValue}: nano=${modelValue.includes('nano')}, banana=${modelValue.includes('banana')}`);
+				// Allow Nano Banana if it's an image model and we are looking for image models
+				const isImageModel = model.supportsImageGeneration || modelValue.includes('image');
+				if (imageModelsOnly && isImageModel) {
+					this.plugin.logger.debug(`Model allowed (Nano Banana Image): ${model.value}`);
+				} else {
+					this.plugin.logger.debug(`Model excluded (nano/banana): ${model.value}`);
+					return false;
+				}
 			}
 
 			// 1. Exclude known non-generative/specialized types
@@ -249,14 +270,16 @@ export class ModelManager {
 			}
 			if (modelValue.includes('nano') || modelValue.includes('banana') ||
 				model.label.toLowerCase().includes('nano') || model.label.toLowerCase().includes('banana')) {
-				this.plugin.logger.debug(`Model excluded (nano/banana): ${model.value}`);
-				return false;
+				// Already handled above, but just in case logic flow changes
+				// This block is actually redundant because of the check at the top of the filter
+				// But let's keep it consistent if we want to move the top check down
+				// For now, I'll remove the redundant check here to avoid confusion
 			}
 
 			// 4. Filter by image generation capability
 			if (imageModelsOnly) {
 				// Must be an image model
-				// Check for "image" in name (e.g. gemini-2.5-flash-image)
+				// Check for "image" in name (e.g. gemini-2.5-flash-image) OR supportsImageGeneration flag
 				// We already excluded imagen and veo above.
 				const isImageModel = model.supportsImageGeneration || modelValue.includes('image');
 				if (!isImageModel) {
@@ -270,7 +293,16 @@ export class ModelManager {
 				}
 			}
 
-			// 5. Version Check (for both text and image)
+			// 5. Clean up dated previews if stable version exists
+			// Apply to both text and image models
+			if (modelValue.includes('preview') || modelValue.includes('exp')) {
+				if (hasStableVersion(modelValue, models)) {
+					this.plugin.logger.debug(`Model filtered out (redundant preview): ${model.value}`);
+					return false;
+				}
+			}
+
+			// 6. Version Check (for both text and image)
 			// We want Gemini 2.5+, Gemini 3+, and "latest" aliases.
 
 			// Check for "latest" aliases
