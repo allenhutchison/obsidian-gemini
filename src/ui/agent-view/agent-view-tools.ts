@@ -166,7 +166,8 @@ export class AgentViewTools {
 					functionCall: {
 						name: tc.name,
 						args: tc.arguments || {}
-					}
+					},
+					thoughtSignature: tc.thoughtSignature
 				}))
 			},
 			// Tool results as functionResponse

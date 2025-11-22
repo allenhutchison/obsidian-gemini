@@ -417,7 +417,8 @@ export class GeminiClient implements ModelApi {
 			if ('functionCall' in part && part.functionCall && part.functionCall.name) {
 				toolCalls.push({
 					name: part.functionCall.name,
-					arguments: part.functionCall.args || {}
+					arguments: part.functionCall.args || {},
+					thoughtSignature: (part as any).thoughtSignature
 				});
 			}
 		}
