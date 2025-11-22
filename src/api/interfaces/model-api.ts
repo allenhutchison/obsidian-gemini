@@ -24,6 +24,7 @@ export interface ModelResponse {
 export interface ToolCall {
 	name: string;
 	arguments: Record<string, any>;
+	thoughtSignature?: string;
 }
 
 /**
