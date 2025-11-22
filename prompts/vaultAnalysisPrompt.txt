@@ -101,7 +101,8 @@ IMPORTANT: Use actual newline characters (`\n`) in your JSON strings for proper 
 - Write from the perspective of helping future AI agents understand this vault
 - Use proper Markdown formatting for readability
 - Keep descriptions concise but informative
-- {{> languageInstruction}}
+
+{{> languageInstruction}}
 {{#if existingContent}}
 - When updating existing content, preserve the user's voice and specific customizations
 - Only update sections that need updating based on new vault analysis

@@ -66,4 +66,26 @@ describe('GeminiPrompts', () => {
 		const prompt = geminiPrompts.generalPrompt({ userMessage: 'Hello' });
 		expect(prompt).toContain('My user interface is set to the language code: fr');
 	});
+
+
+	it('should inject language into example prompts prompt', () => {
+		const prompt = geminiPrompts.examplePromptsPrompt('Vault Info', 'Existing Prompts');
+		expect(prompt).toContain('My user interface is set to the language code: fr');
+	});
+
+	it('should inject language into image prompt generator', () => {
+		const prompt = geminiPrompts.imagePromptGenerator({ content: 'Image content' });
+		expect(prompt).toContain('My user interface is set to the language code: fr');
+	});
+
+	it('should default to "en" when no language is set', () => {
+		mockLocalStorage.getItem.mockReturnValue(null);
+		const prompt = geminiPrompts.systemPrompt({
+			userName: 'Test User',
+			date: '2023-10-27',
+			time: '12:00:00',
+			agentsMemory: '',
+		});
+		expect(prompt).toContain('My user interface is set to the language code: en');
+	});
 });

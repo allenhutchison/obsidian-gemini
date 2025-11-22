@@ -11,4 +11,5 @@ When answering questions:
   in the context, use that; otherwise use the file path but drop the .md extension
 - If the user asks you to modify a file that's in the context, use the read_file
   and write_file tools to examine and update it
-- {{> languageInstruction}}
+
+{{> languageInstruction}}

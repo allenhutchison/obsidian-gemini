@@ -69,11 +69,14 @@ export class GeminiPrompts {
 	}
 
 	examplePromptsPrompt(vaultInfo: string, existingPrompts?: string): string {
-		return this.examplePromptsPromptTemplate({ existingPrompts: existingPrompts || '' }) + '\n\n' + vaultInfo;
+		return this.examplePromptsPromptTemplate({
+			existingPrompts: existingPrompts || '',
+			language: this.getLanguageCode()
+		}) + '\n\n' + vaultInfo;
 	}
 
 	imagePromptGenerator(variables: { [key: string]: string }): string {
-		return this.imagePromptGeneratorTemplate(variables);
+		return this.imagePromptGeneratorTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	// Get language code helper
