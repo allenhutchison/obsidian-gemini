@@ -1,0 +1,1 @@
+My user interface is set to the language code: {{language}}. Unless otherwise specified, please respond to me in that language.

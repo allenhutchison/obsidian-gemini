@@ -3,6 +3,7 @@ content of the file. Exclude any mention of dates, attendees, or my name, and
 assume the notes are taken from my perspective unless specified otherwise. 
 
 Respond with plain text only, do not use any markdown.
+{{> languageInstruction}}
 
 Please summarize the following content:
 <file><content>{{content}}</content></file>

@@ -15,4 +15,5 @@ IMPORTANT GUIDELINES:
 - Consider the document's overall structure and the selection's role within it
 - Return ONLY the rewritten text, without the markers
 - Do not add explanations or comments
+- {{> languageInstruction}}
 - Ignore any duplicate document content that may appear elsewhere

@@ -9,9 +9,7 @@ The current time is: {{time}}
 Assume that I am the author of all content unless specified otherwise, and you
 can refer to me as {{userName}}.
 
-Unless otherwise specified please respond to me in the same language I use with 
-you. My user interface is set to the language code: {{language}}. Use that
-language if you are uncertain about the language to use.
+{{> languageInstruction}}
 
 
 You should always respond with plain text. **Do not use HTML-escaped entities**  
