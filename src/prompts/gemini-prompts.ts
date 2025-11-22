@@ -12,6 +12,7 @@ import agentToolsPromptContent from '../../prompts/agentToolsPrompt.txt';
 import vaultAnalysisPromptContent from '../../prompts/vaultAnalysisPrompt.txt';
 import examplePromptsPromptContent from '../../prompts/examplePromptsPrompt.txt';
 import imagePromptGeneratorContent from '../../prompts/imagePromptGenerator.txt';
+import languageInstructionContent from '../../prompts/languageInstruction.txt';
 
 export class GeminiPrompts {
 	private completionsPromptTemplate: Handlebars.TemplateDelegate;
@@ -36,42 +37,46 @@ export class GeminiPrompts {
 		this.vaultAnalysisPromptTemplate = Handlebars.compile(vaultAnalysisPromptContent);
 		this.examplePromptsPromptTemplate = Handlebars.compile(examplePromptsPromptContent);
 		this.imagePromptGeneratorTemplate = Handlebars.compile(imagePromptGeneratorContent);
+		Handlebars.registerPartial('languageInstruction', languageInstructionContent);
 	}
 
 	completionsPrompt(variables: { [key: string]: string }): string {
-		return this.completionsPromptTemplate(variables);
+		return this.completionsPromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	systemPrompt(variables: { [key: string]: string }): string {
-		return this.systemPromptTemplate(variables);
+		return this.systemPromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	generalPrompt(variables: { [key: string]: string }): string {
-		return this.generalPromptTemplate(variables);
+		return this.generalPromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	summaryPrompt(variables: { [key: string]: string }): string {
-		return this.summaryPromptTemplate(variables);
+		return this.summaryPromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	contextPrompt(variables: { [key: string]: string }): string {
-		return this.contextPromptTemplate(variables);
+		return this.contextPromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	selectionRewritePrompt(variables: { [key: string]: string }): string {
-		return this.selectionRewritePromptTemplate(variables);
+		return this.selectionRewritePromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	vaultAnalysisPrompt(variables: { [key: string]: string }): string {
-		return this.vaultAnalysisPromptTemplate(variables);
+		return this.vaultAnalysisPromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	examplePromptsPrompt(vaultInfo: string, existingPrompts?: string): string {
-		return this.examplePromptsPromptTemplate({ existingPrompts: existingPrompts || '' }) + '\n\n' + vaultInfo;
+		return this.examplePromptsPromptTemplate({
+			existingPrompts: existingPrompts || '',
+			language: this.getLanguageCode()
+		}) + '\n\n' + vaultInfo;
 	}
 
 	imagePromptGenerator(variables: { [key: string]: string }): string {
-		return this.imagePromptGeneratorTemplate(variables);
+		return this.imagePromptGeneratorTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	// Get language code helper

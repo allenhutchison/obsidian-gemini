@@ -9,6 +9,7 @@ Do **not** respond with just a single word unless absolutely necessary. Always a
 Use the entire file to understand context, but generate a continuation only at the cursor.
 
 Do not include explanations, punctuation at the start, extra whitespace, or newlines in your output. Just output the completion text.
+{{> languageInstruction}}
 
 Here is the file content and the location of the cursor:
 <file>

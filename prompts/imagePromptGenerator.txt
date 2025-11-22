@@ -6,6 +6,10 @@ The prompt should be:
 - Suitable for an AI image generation model
 - Creative but relevant to the content's themes
 
+{{> languageInstruction}}
+
+You are an expert image prompt generator.
+
 Respond with ONLY the image prompt text - no explanations, no markdown, no additional commentary.
 
 Content to analyze:

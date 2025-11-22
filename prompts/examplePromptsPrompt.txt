@@ -1,3 +1,5 @@
+{{> languageInstruction}}
+
 You are analyzing an Obsidian vault to generate example prompts for the Agent Panel UI.
 These prompts help users understand what they can ask the AI agent to do.
 
