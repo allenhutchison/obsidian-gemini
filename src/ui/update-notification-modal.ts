@@ -18,6 +18,18 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.1.0': {
+			title: '✨ Gemini Scribe 4.1 - Enhanced AI & Better UX',
+			highlights: [
+				'🌍 Multilingual support - prompts in your language',
+				'🧠 Gemini 2.5 Pro & Gemini 3 with thinking progress',
+				'🛑 Stop button to cancel long-running operations',
+				'💡 Dynamic example prompts based on your vault',
+				'🎨 Improved UI with icon buttons and progress indicators',
+				'🔍 Enhanced search with new file content tool'
+			],
+			details: 'This update brings powerful new AI models, multilingual support, and major UX improvements. Includes important security fixes and better vault operations.'
+		},
 		'4.0.0': {
 			title: '🎉 Welcome to Gemini Scribe 4.0!',
 			highlights: [
