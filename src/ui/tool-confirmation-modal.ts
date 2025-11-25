@@ -15,7 +15,13 @@ export class ToolConfirmationModal extends Modal {
 	}
 
 	onOpen() {
-		const { contentEl } = this;
+		const { contentEl, modalEl } = this;
+
+		// Ensure modal appears on top
+		if (modalEl) {
+			modalEl.style.zIndex = '9999';
+		}
+
 		contentEl.empty();
 		contentEl.addClass('gemini-tool-confirmation-modal');
 

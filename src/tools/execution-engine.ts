@@ -84,7 +84,16 @@ export class ToolExecutionEngine {
 			const isAllowedWithoutConfirmation = agentView?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
 			
 			if (!isAllowedWithoutConfirmation) {
+				// Update progress to show waiting for confirmation
+				const toolDisplay = tool.displayName || tool.name;
+				const confirmationMessage = `Waiting for confirmation: ${toolDisplay}`;
+				agentView?.updateProgress?.(confirmationMessage, 'waiting');
+
 				const result = await this.requestUserConfirmation(tool, toolCall.arguments);
+
+				// Update progress back to tool execution
+				agentView?.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
+
 				if (!result.confirmed) {
 					return {
 						success: false,
@@ -170,19 +179,31 @@ export class ToolExecutionEngine {
 	 * Request user confirmation for tool execution
 	 */
 	private async requestUserConfirmation(
-		tool: Tool, 
+		tool: Tool,
 		parameters: any
 	): Promise<{ confirmed: boolean; allowWithoutConfirmation?: boolean }> {
 		return new Promise((resolve) => {
-			const modal = new ToolConfirmationModal(
+			let modalInstance: ToolConfirmationModal | null = null;
+
+			// Add 60 second timeout
+			const timeoutId = setTimeout(() => {
+				if (modalInstance) {
+					modalInstance.close();
+				}
+				this.plugin.logger.warn(`Confirmation timeout for tool: ${tool.name}`);
+				resolve({ confirmed: false, allowWithoutConfirmation: false });
+			}, 60000); // 60 seconds
+
+			modalInstance = new ToolConfirmationModal(
 				this.plugin.app,
 				tool,
 				parameters,
 				(confirmed, allowWithoutConfirmation) => {
+					clearTimeout(timeoutId); // Clear timeout on user response
 					resolve({ confirmed, allowWithoutConfirmation: allowWithoutConfirmation || false });
 				}
 			);
-			modal.open();
+			modalInstance.open();
 		});
 	}
 
