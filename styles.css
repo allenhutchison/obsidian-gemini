@@ -2296,6 +2296,190 @@ If your plugin does not need CSS, delete this file.
 	}
 }
 
+/* Confirmation Request Message */
+.gemini-agent-confirmation-request {
+	background: var(--background-secondary-alt);
+	border: 2px solid var(--interactive-accent);
+	border-radius: var(--radius-m);
+	padding: var(--size-4-3);
+	margin: var(--size-4-2) 0;
+}
+
+/* Confirmation Card */
+.gemini-agent-confirmation-card {
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-4-3);
+	margin: var(--size-4-2) 0;
+}
+
+/* Tool Info Section */
+.gemini-agent-tool-info-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-2-3);
+}
+
+.gemini-agent-confirmation-tool-icon {
+	width: 24px;
+	height: 24px;
+	color: var(--text-accent);
+}
+
+.gemini-agent-tool-name {
+	font-weight: 600;
+	font-size: var(--font-ui-medium);
+	color: var(--text-normal);
+}
+
+.gemini-agent-tool-category {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	background: var(--background-modifier-border);
+	padding: 2px 8px;
+	border-radius: var(--radius-s);
+}
+
+.gemini-agent-tool-description {
+	color: var(--text-muted);
+	margin: var(--size-2-2) 0;
+}
+
+/* Parameters Section */
+.gemini-agent-params-section {
+	margin-top: var(--size-4-2);
+}
+
+.gemini-agent-params-header {
+	font-weight: 500;
+	margin-bottom: var(--size-2-2);
+}
+
+.gemini-agent-params-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.gemini-agent-param-item {
+	font-size: var(--font-ui-small);
+	padding: var(--size-2-1) var(--size-2-3);
+	background: var(--background-secondary);
+	border-radius: var(--radius-s);
+}
+
+.gemini-agent-param-item code {
+	color: var(--code-normal);
+	word-break: break-all;
+}
+
+.gemini-agent-confirmation-message {
+	margin-top: var(--size-4-2);
+	padding: var(--size-2-3);
+	background: var(--background-modifier-info);
+	border-left: 3px solid var(--text-accent);
+	border-radius: var(--radius-s);
+}
+
+.gemini-agent-confirmation-message p {
+	margin: 0;
+	color: var(--text-normal);
+}
+
+/* Action Buttons */
+.gemini-agent-confirmation-buttons {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-top: var(--size-4-3);
+}
+
+.gemini-agent-confirmation-btn {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-2) var(--size-4-3);
+	border-radius: var(--radius-m);
+	border: 1px solid var(--background-modifier-border);
+	background: var(--interactive-normal);
+	color: var(--text-normal);
+	cursor: pointer;
+	font-size: var(--font-ui-medium);
+	font-weight: 500;
+	transition: all 0.2s ease;
+}
+
+.gemini-agent-confirmation-btn:hover {
+	background: var(--interactive-hover);
+}
+
+.gemini-agent-confirmation-btn:active {
+	transform: translateY(1px);
+}
+
+.gemini-agent-confirmation-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.gemini-agent-confirmation-btn-confirm {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
+}
+
+.gemini-agent-confirmation-btn-confirm:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.gemini-agent-confirmation-btn-cancel {
+	background: var(--background-secondary);
+}
+
+.gemini-agent-confirmation-btn-icon {
+	display: flex;
+	align-items: center;
+}
+
+/* Checkbox */
+.gemini-agent-confirmation-checkbox {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	margin-left: auto;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.gemini-agent-checkbox-input {
+	cursor: pointer;
+}
+
+.gemini-agent-checkbox-label {
+	cursor: pointer;
+}
+
+/* Result Message */
+.gemini-agent-confirmation-result {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-3);
+	padding: var(--size-2-3);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+}
+
+.gemini-agent-result-icon {
+	color: var(--text-accent);
+}
+
+.gemini-agent-result-text {
+	font-size: var(--font-ui-medium);
+	color: var(--text-muted);
+}
+
 /* Empty chat state */
 .gemini-agent-empty-chat {
 	display: flex;

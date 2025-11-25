@@ -93,3 +93,24 @@ export interface ToolChoice {
 	type: 'auto' | 'none' | 'any' | 'tool';
 	toolName?: string; // When type is 'tool'
 }
+
+/**
+ * Interface for components that can provide in-chat confirmation UI
+ */
+export interface IConfirmationProvider {
+	/** Show a confirmation request in the chat UI */
+	showConfirmationInChat(
+		tool: Tool,
+		parameters: any,
+		executionId: string
+	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }>;
+
+	/** Check if a tool is allowed without confirmation for this session */
+	isToolAllowedWithoutConfirmation(toolName: string): boolean;
+
+	/** Allow a tool without confirmation for this session */
+	allowToolWithoutConfirmation(toolName: string): void;
+
+	/** Update progress display (optional) */
+	updateProgress?(message: string, status: string): void;
+}

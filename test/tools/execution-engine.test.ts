@@ -23,11 +23,6 @@ jest.mock('obsidian', () => ({
 	}
 }));
 
-// Mock the confirmation modal
-jest.mock('../../src/ui/tool-confirmation-modal', () => ({
-	ToolConfirmationModal: jest.fn()
-}));
-
 describe('ToolExecutionEngine - Confirmation Requirements', () => {
 	let plugin: any;
 	let registry: ToolRegistry;
@@ -118,23 +113,25 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 			}
 		} as any;
 
-		// Mock user declining confirmation
-		const { ToolConfirmationModal } = require('../../src/ui/tool-confirmation-modal');
-		ToolConfirmationModal.mockImplementation((app: any, tool: any, params: any, callback: Function) => ({
-			open: jest.fn(() => {
-				// Simulate user declining
-				callback(false);
-			})
-		}));
+		// Mock agentView with in-chat confirmation that declines
+		const mockAgentView = {
+			showConfirmationInChat: jest.fn().mockResolvedValue({
+				confirmed: false,
+				allowWithoutConfirmation: false
+			}),
+			isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
+			allowToolWithoutConfirmation: jest.fn()
+		};
 
 		// Test write_file - should require confirmation
 		const writeResult = await engine.executeTool({
 			name: 'write_file',
 			arguments: { path: 'test.md', content: 'new content' }
-		}, context);
+		}, context, mockAgentView);
 
 		expect(writeResult.success).toBe(false);
 		expect(writeResult.error).toBe('User declined tool execution');
+		expect(mockAgentView.showConfirmationInChat).toHaveBeenCalled();
 	});
 });
 

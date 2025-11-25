@@ -3,6 +3,7 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatFileSize } from '../../utils/format-utils';
+import { Tool } from '../../tools/types';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
@@ -607,6 +608,293 @@ export class AgentViewMessages {
 		if (!currentSession) return false;
 		return session.id === currentSession.id ||
 		       session.historyPath === currentSession.historyPath;
+	}
+
+	/**
+	 * Display a confirmation request message with interactive buttons
+	 * Returns a Promise that resolves when user clicks a button
+	 */
+	public async displayConfirmationRequest(
+		tool: Tool,
+		parameters: any,
+		executionId: string
+	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }> {
+		return new Promise((resolve) => {
+			let resolved = false; // Prevent double-resolution race condition
+
+			// Create system message container
+			const messageDiv = this.chatContainer.createDiv({
+				cls: 'gemini-agent-message gemini-agent-message-system gemini-agent-confirmation-request'
+			});
+
+			// Add header
+			const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+			header.createEl('span', { text: 'Permission Required', cls: 'gemini-agent-message-role' });
+			header.createEl('span', {
+				text: new Date().toLocaleTimeString(),
+				cls: 'gemini-agent-message-time'
+			});
+
+			// Create confirmation card
+			const card = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-card' });
+
+			// Tool info section
+			const toolInfo = card.createDiv({ cls: 'gemini-agent-tool-info' });
+
+			const toolHeader = toolInfo.createDiv({ cls: 'gemini-agent-tool-info-header' });
+			const iconContainer = toolHeader.createDiv({ cls: 'gemini-agent-confirmation-tool-icon' });
+			this.setToolIcon(iconContainer, tool.name);
+
+			toolHeader.createEl('span', {
+				text: tool.displayName || tool.name,
+				cls: 'gemini-agent-tool-name'
+			});
+
+			toolHeader.createEl('span', {
+				text: this.getCategoryLabel(tool.category),
+				cls: 'gemini-agent-tool-category'
+			});
+
+			// Tool description
+			toolInfo.createEl('p', {
+				text: tool.description,
+				cls: 'gemini-agent-tool-description'
+			});
+
+			// Parameters section
+			if (parameters && Object.keys(parameters).length > 0) {
+				const paramsSection = card.createDiv({ cls: 'gemini-agent-params-section' });
+				paramsSection.createEl('div', { text: 'Parameters:', cls: 'gemini-agent-params-header' });
+
+				const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-params-list' });
+				for (const [key, value] of Object.entries(parameters)) {
+					const paramItem = paramsList.createDiv({ cls: 'gemini-agent-param-item' });
+					paramItem.createEl('strong', { text: `${key}: ` });
+
+					const valueStr = this.formatParameterValue(value);
+					paramItem.createEl('code', { text: valueStr });
+				}
+			}
+
+			// Custom confirmation message
+			if (tool.confirmationMessage) {
+				try {
+					const customMsg = card.createDiv({ cls: 'gemini-agent-confirmation-message' });
+					customMsg.createEl('p', { text: tool.confirmationMessage(parameters) });
+				} catch (error) {
+					this.plugin.logger?.warn(`Error generating confirmation message for tool ${tool.name}:`, error);
+					// Continue without custom message - other parts of UI still work
+				}
+			}
+
+			// Action buttons container
+			const buttonsContainer = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-buttons' });
+
+			// Allow button
+			const allowBtn = buttonsContainer.createEl('button', {
+				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-confirm mod-cta'
+			});
+			const allowIcon = allowBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
+			setIcon(allowIcon, 'check');
+			allowBtn.createSpan({ text: 'Allow' });
+
+			// Cancel button
+			const cancelBtn = buttonsContainer.createEl('button', {
+				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-cancel'
+			});
+			const cancelIcon = cancelBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
+			setIcon(cancelIcon, 'x');
+			cancelBtn.createSpan({ text: 'Cancel' });
+
+			// "Don't ask again" checkbox
+			const checkboxContainer = buttonsContainer.createDiv({
+				cls: 'gemini-agent-confirmation-checkbox'
+			});
+			const checkboxId = `allow-without-confirmation-${executionId}`;
+			const checkbox = checkboxContainer.createEl('input', {
+				type: 'checkbox',
+				cls: 'gemini-agent-checkbox-input',
+				attr: { id: checkboxId }
+			});
+			const checkboxLabel = checkboxContainer.createEl('label', {
+				text: "Don't ask again this session",
+				cls: 'gemini-agent-checkbox-label',
+				attr: { for: checkboxId }
+			});
+
+			// Add 60 second timeout to prevent infinite wait
+			const timeoutId = setTimeout(() => {
+				if (resolved) return; // Already resolved by user
+				resolved = true;
+
+				// Clean up event listeners
+				allowBtn.removeEventListener('click', allowHandler);
+				cancelBtn.removeEventListener('click', cancelHandler);
+
+				// Update UI to show timeout
+				this.updateConfirmationTimeout(messageDiv, tool.displayName || tool.name);
+
+				// Show notice to user
+				new Notice('Confirmation request timed out. The agent has returned to ready state.');
+
+				// Log warning
+				this.plugin.logger?.warn(`Confirmation timeout for tool: ${tool.name}`);
+
+				// Resolve with declined
+				resolve({ confirmed: false, allowWithoutConfirmation: false });
+			}, 60000); // 60 seconds
+
+			// Button handlers
+			const handleResponse = (confirmed: boolean) => {
+				if (resolved) return; // Already resolved by timeout
+				resolved = true;
+
+				// Clear timeout
+				clearTimeout(timeoutId);
+
+				// Disable buttons to prevent double-click
+				allowBtn.disabled = true;
+				cancelBtn.disabled = true;
+
+				// Clean up event listeners to prevent memory leak
+				allowBtn.removeEventListener('click', allowHandler);
+				cancelBtn.removeEventListener('click', cancelHandler);
+
+				// Update message to show result
+				this.updateConfirmationResult(messageDiv, confirmed, tool.displayName || tool.name);
+
+				// Resolve Promise
+				resolve({
+					confirmed,
+					allowWithoutConfirmation: checkbox.checked
+				});
+
+				// Scroll to show result
+				this.debouncedScrollToBottom();
+			};
+
+			// Create named handlers so we can remove them later
+			const allowHandler = () => handleResponse(true);
+			const cancelHandler = () => handleResponse(false);
+
+			allowBtn.addEventListener('click', allowHandler);
+			cancelBtn.addEventListener('click', cancelHandler);
+
+			// Scroll to show confirmation
+			this.debouncedScrollToBottom();
+		});
+	}
+
+	/**
+	 * Update confirmation message after user responds
+	 */
+	private updateConfirmationResult(
+		messageDiv: HTMLElement,
+		confirmed: boolean,
+		toolName: string
+	) {
+		// Remove the card and buttons
+		messageDiv.empty();
+
+		// Add result message
+		const result = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-result' });
+
+		const icon = result.createSpan({ cls: 'gemini-agent-result-icon' });
+		setIcon(icon, confirmed ? 'check-circle' : 'x-circle');
+
+		result.createSpan({
+			text: confirmed
+				? `Permission granted: ${toolName} was allowed`
+				: `Permission denied: ${toolName} was cancelled`,
+			cls: 'gemini-agent-result-text'
+		});
+	}
+
+	/**
+	 * Update confirmation message after timeout
+	 */
+	private updateConfirmationTimeout(messageDiv: HTMLElement, toolName: string) {
+		// Remove the card and buttons
+		messageDiv.empty();
+
+		// Add timeout message
+		const result = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-result gemini-agent-confirmation-timeout' });
+
+		const icon = result.createSpan({ cls: 'gemini-agent-result-icon' });
+		setIcon(icon, 'clock');
+
+		result.createSpan({
+			text: `Request timed out: ${toolName} confirmation expired`,
+			cls: 'gemini-agent-result-text'
+		});
+	}
+
+	/**
+	 * Format parameter value for display with proper error handling
+	 */
+	private formatParameterValue(value: any): string {
+		const MAX_LENGTH = 100;
+
+		try {
+			// Handle null and undefined
+			if (value === null) return 'null';
+			if (value === undefined) return 'undefined';
+
+			// Handle functions
+			if (typeof value === 'function') return '[Function]';
+
+			// Handle strings
+			if (typeof value === 'string') {
+				return value.length > MAX_LENGTH
+					? value.substring(0, MAX_LENGTH) + `... (${value.length} chars)`
+					: value;
+			}
+
+			// Try to stringify other values
+			const stringified = JSON.stringify(value);
+
+			// Truncate if too long
+			if (stringified.length > MAX_LENGTH) {
+				return stringified.substring(0, MAX_LENGTH) + `... (${stringified.length} chars)`;
+			}
+
+			return stringified;
+		} catch (error) {
+			// Handle circular references and other serialization errors
+			this.plugin.logger?.warn('Error serializing parameter value:', error);
+			return '[Complex Object]';
+		}
+	}
+
+	/**
+	 * Get user-friendly category label
+	 */
+	private getCategoryLabel(category: string): string {
+		const labels: Record<string, string> = {
+			'read-only': 'Read Only',
+			'vault-operations': 'Vault Operation',
+			'external': 'External',
+			'web': 'Web Access',
+			'memory': 'Memory',
+			'deep-research': 'Deep Research'
+		};
+		return labels[category] || category;
+	}
+
+	/**
+	 * Set icon for tool based on tool name
+	 */
+	private setToolIcon(container: HTMLElement, toolName: string) {
+		const iconMap: Record<string, string> = {
+			'write_file': 'file-edit',
+			'delete_file': 'trash-2',
+			'move_file': 'file-symlink',
+			'create_folder': 'folder-plus',
+			'read_file': 'file-text',
+			'list_files': 'folder-open',
+			'search_files': 'search',
+		};
+		setIcon(container, iconMap[toolName] || 'tool');
 	}
 
 	/**

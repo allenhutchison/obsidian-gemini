@@ -1,7 +1,6 @@
-import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution } from './types';
+import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution, IConfirmationProvider } from './types';
 import { ToolRegistry } from './tool-registry';
 import { ChatSession } from '../types/agent';
-import { ToolConfirmationModal } from '../ui/tool-confirmation-modal';
 import { ToolLoopDetector } from './loop-detector';
 import type ObsidianGemini from '../main';
 
@@ -27,12 +26,15 @@ export class ToolExecutionEngine {
 	 * Execute a tool call with appropriate checks and UI feedback
 	 */
 	async executeTool(
-		toolCall: ToolCall, 
+		toolCall: ToolCall,
 		context: ToolExecutionContext,
-		agentView?: any // AgentView type to avoid circular dependency
+		agentView?: IConfirmationProvider
 	): Promise<ToolResult> {
+		// Get agent view - use provided one or get from plugin
+		const view = agentView || (this.plugin as any).agentView;
+
 		const tool = this.registry.getTool(toolCall.name);
-		
+
 		if (!tool) {
 			return {
 				success: false,
@@ -78,21 +80,21 @@ export class ToolExecutionEngine {
 
 		// Check if confirmation is required
 		const requiresConfirmation = this.registry.requiresConfirmation(toolCall.name, context);
-		
+
 		if (requiresConfirmation) {
 			// Check if this tool is allowed without confirmation for this session
-			const isAllowedWithoutConfirmation = agentView?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
-			
+			const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
+
 			if (!isAllowedWithoutConfirmation) {
 				// Update progress to show waiting for confirmation
 				const toolDisplay = tool.displayName || tool.name;
 				const confirmationMessage = `Waiting for confirmation: ${toolDisplay}`;
-				agentView?.updateProgress?.(confirmationMessage, 'waiting');
+				view?.updateProgress?.(confirmationMessage, 'waiting');
 
-				const result = await this.requestUserConfirmation(tool, toolCall.arguments);
+				const result = await this.requestUserConfirmation(tool, toolCall.arguments, view);
 
 				// Update progress back to tool execution
-				agentView?.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
+				view?.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
 
 				if (!result.confirmed) {
 					return {
@@ -101,8 +103,8 @@ export class ToolExecutionEngine {
 					};
 				}
 				// If user allowed this action without future confirmation
-				if (result.allowWithoutConfirmation && agentView) {
-					agentView.allowToolWithoutConfirmation(toolCall.name);
+				if (result.allowWithoutConfirmation && view) {
+					view.allowToolWithoutConfirmation(toolCall.name);
 				}
 			}
 		}
@@ -158,7 +160,7 @@ export class ToolExecutionEngine {
 	async executeToolCalls(
 		toolCalls: ToolCall[], 
 		context: ToolExecutionContext,
-		agentView?: any // AgentView type to avoid circular dependency
+		agentView?: IConfirmationProvider
 	): Promise<ToolResult[]> {
 		const results: ToolResult[] = [];
 		
@@ -180,38 +182,23 @@ export class ToolExecutionEngine {
 	 */
 	private async requestUserConfirmation(
 		tool: Tool,
-		parameters: any
+		parameters: any,
+		agentView?: IConfirmationProvider
 	): Promise<{ confirmed: boolean; allowWithoutConfirmation?: boolean }> {
-		return new Promise((resolve) => {
-			let modalInstance: ToolConfirmationModal | null = null;
-			let resolved = false; // Prevent double-resolution race condition
+		// Use provided agentView or get from plugin as fallback
+		const view = agentView || (this.plugin as any).agentView;
 
-			// Add 60 second timeout
-			const timeoutId = setTimeout(() => {
-				if (resolved) return; // Already resolved by user
-				resolved = true;
+		if (!view) {
+			// Fallback: if no agent view available, deny by default
+			this.plugin.logger?.warn('No agent view available for confirmation');
+			return { confirmed: false, allowWithoutConfirmation: false };
+		}
 
-				if (modalInstance) {
-					modalInstance.close();
-				}
-				this.plugin.logger.warn(`Confirmation timeout for tool: ${tool.name}`);
-				resolve({ confirmed: false, allowWithoutConfirmation: false });
-			}, 60000); // 60 seconds
+		// Generate unique execution ID for tracking
+		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-			modalInstance = new ToolConfirmationModal(
-				this.plugin.app,
-				tool,
-				parameters,
-				(confirmed, allowWithoutConfirmation) => {
-					if (resolved) return; // Already resolved by timeout
-					resolved = true;
-
-					clearTimeout(timeoutId); // Clear timeout on user response
-					resolve({ confirmed, allowWithoutConfirmation: allowWithoutConfirmation || false });
-				}
-			);
-			modalInstance.open();
-		});
+		// Show confirmation in chat instead of modal
+		return view.showConfirmationInChat(tool, parameters, executionId);
 	}
 
 	/**

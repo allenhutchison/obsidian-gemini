@@ -797,6 +797,19 @@ These files are included in the context below. When the user asks you to write d
 	}
 
 	/**
+	 * Show confirmation request in chat with interactive buttons
+	 * Returns Promise that resolves when user clicks a button
+	 */
+	public async showConfirmationInChat(
+		tool: any,
+		parameters: any,
+		executionId: string
+	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }> {
+		// Delegate to messages component
+		return this.messages.displayConfirmationRequest(tool, parameters, executionId);
+	}
+
+	/**
 	 * Register link click handler for internal Obsidian links
 	 */
 	private registerLinkClickHandler() {

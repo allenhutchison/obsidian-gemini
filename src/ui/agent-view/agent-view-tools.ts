@@ -120,7 +120,8 @@ export class AgentViewTools {
 				this.currentExecutingTool = toolCall.name;
 
 				// Execute the tool
-				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, toolContext, this);
+				// Note: Don't pass 'this' (AgentViewTools) - let execution engine get AgentView from plugin
+				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, toolContext);
 
 				// Track as last completed tool
 				this.lastCompletedTool = toolCall.name;
