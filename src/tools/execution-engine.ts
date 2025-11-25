@@ -86,7 +86,16 @@ export class ToolExecutionEngine {
 			const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
 
 			if (!isAllowedWithoutConfirmation) {
+				// Update progress to show waiting for confirmation
+				const toolDisplay = tool.displayName || tool.name;
+				const confirmationMessage = `Waiting for confirmation: ${toolDisplay}`;
+				view?.updateProgress?.(confirmationMessage, 'waiting');
+
 				const result = await this.requestUserConfirmation(tool, toolCall.arguments, view);
+
+				// Update progress back to tool execution
+				view?.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
+
 				if (!result.confirmed) {
 					return {
 						success: false,

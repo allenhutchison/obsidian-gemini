@@ -83,6 +83,7 @@ export interface ToolExecution {
 export interface ToolCall {
 	name: string;
 	arguments: Record<string, any>;
+	thoughtSignature?: string; // Gemini 3+ thought signature for function calls
 }
 
 /**
