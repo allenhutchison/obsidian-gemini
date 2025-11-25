@@ -386,7 +386,10 @@ export class GeminiClient implements ModelApi {
 
 			if (thoughtParts.length > 0) {
 				const thoughtText = thoughtParts.map((part: Part) => (part as PartWithThought).text).join('');
-				this.plugin?.logger.debug(`[GeminiClient] Extracted thought: ${thoughtText.substring(0, 100)}...`);
+				const preview = thoughtText.length > 100
+					? thoughtText.substring(0, 100) + '...'
+					: thoughtText;
+				this.plugin?.logger.debug(`[GeminiClient] Extracted thought: ${preview}`);
 				return thoughtText;
 			}
 		}
