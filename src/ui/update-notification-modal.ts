@@ -18,6 +18,17 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.1.1': {
+			title: '🐛 Gemini Scribe 4.1.1 - Stability & UX Improvements',
+			highlights: [
+				'💬 In-chat confirmations - no more hidden modal dialogs',
+				'🧠 Fixed Gemini 3 thinking mode display',
+				'🔧 Fixed Gemini 3 function calling with thought signatures',
+				'⏱️ Agent timeout protection prevents infinite hangs',
+				'🎨 Better visual feedback during tool execution'
+			],
+			details: 'This update focuses on stability and user experience. Confirmation dialogs are now inline in the chat, Gemini 3 models work properly with thinking mode and function calling, and the agent includes timeout protection to prevent getting stuck.'
+		},
 		'4.1.0': {
 			title: '✨ Gemini Scribe 4.1 - Enhanced AI & Better UX',
 			highlights: [

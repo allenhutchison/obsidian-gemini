@@ -32,22 +32,59 @@ npm run format-check # Check formatting without changes
 
 ### Versioning & Releases
 
-Use npm's built-in version commands to create releases:
+#### Release Process
 
-```bash
-npm version patch  # Bump patch version (e.g., 4.0.0 → 4.0.1)
-npm version minor  # Bump minor version (e.g., 4.0.0 → 4.1.0)
-npm version major  # Bump major version (e.g., 3.3.2 → 4.0.0)
-```
+Follow these steps to create a new release:
 
-The `npm version` command automatically:
-- Updates `package.json` version
-- Runs `version-bump.mjs` to update `manifest.json` and `versions.json`
-- Creates a git commit with the version change
-- Creates a git tag (e.g., `4.0.0`)
-- Pushes the commit and tag to GitHub (via `postversion` script)
+1. **Update Release Notes** (`src/ui/update-notification-modal.ts`)
+   - Add a new entry in the `getReleaseNotes()` function for the new version
+   - Include a title, highlights (bullet points), and details
+   - Follow the emoji pattern used in existing releases
+   - Place the new version at the top of the notes object
 
-**IMPORTANT**: Do NOT manually edit version numbers in `package.json`, `manifest.json`, or `versions.json`. Always use the npm version commands.
+2. **Run Tests and Build**
+   ```bash
+   npm test        # Ensure all tests pass
+   npm run build   # Verify production build succeeds
+   ```
+
+3. **Commit Release Notes**
+   ```bash
+   git add src/ui/update-notification-modal.ts
+   git commit -m "Add release notes for version X.Y.Z"
+   ```
+
+4. **Bump Version** (Choose appropriate semantic version)
+   ```bash
+   npm version patch  # Bug fixes (4.1.0 → 4.1.1)
+   npm version minor  # New features (4.1.0 → 4.2.0)
+   npm version major  # Breaking changes (4.1.0 → 5.0.0)
+   ```
+
+   The `npm version` command automatically:
+   - Updates `package.json` version
+   - Runs `version-bump.mjs` to update `manifest.json` and `versions.json`
+   - Creates a git commit with the version change
+   - Creates a git tag (e.g., `4.1.1`)
+   - Pushes the commit and tag to GitHub (via `postversion` script)
+
+5. **Create GitHub Release**
+   - Go to https://github.com/allenhutchison/obsidian-gemini/releases
+   - Click "Draft a new release"
+   - Select the tag that was just created
+   - Copy the release notes from `update-notification-modal.ts`
+   - Format as markdown (remove emoji if desired, keep bullet points)
+   - Publish the release
+
+6. **Verify Release**
+   - Check that the release appears on GitHub
+   - Verify the tag matches the version
+   - Test installation in a test vault (if needed)
+
+**IMPORTANT**:
+- Do NOT manually edit version numbers in `package.json`, `manifest.json`, or `versions.json`. Always use the npm version commands.
+- Always update release notes BEFORE running `npm version`
+- Ensure you're on the master branch and it's up to date before releasing
 
 ### Build System
 
