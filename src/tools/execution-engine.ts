@@ -1,4 +1,4 @@
-import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution } from './types';
+import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution, IConfirmationProvider } from './types';
 import { ToolRegistry } from './tool-registry';
 import { ChatSession } from '../types/agent';
 import { ToolLoopDetector } from './loop-detector';
@@ -28,7 +28,7 @@ export class ToolExecutionEngine {
 	async executeTool(
 		toolCall: ToolCall,
 		context: ToolExecutionContext,
-		agentView?: any // AgentView type to avoid circular dependency
+		agentView?: IConfirmationProvider
 	): Promise<ToolResult> {
 		// Get agent view - use provided one or get from plugin
 		const view = agentView || (this.plugin as any).agentView;
@@ -160,7 +160,7 @@ export class ToolExecutionEngine {
 	async executeToolCalls(
 		toolCalls: ToolCall[], 
 		context: ToolExecutionContext,
-		agentView?: any // AgentView type to avoid circular dependency
+		agentView?: IConfirmationProvider
 	): Promise<ToolResult[]> {
 		const results: ToolResult[] = [];
 		
@@ -183,7 +183,7 @@ export class ToolExecutionEngine {
 	private async requestUserConfirmation(
 		tool: Tool,
 		parameters: any,
-		agentView?: any
+		agentView?: IConfirmationProvider
 	): Promise<{ confirmed: boolean; allowWithoutConfirmation?: boolean }> {
 		// Use provided agentView or get from plugin as fallback
 		const view = agentView || (this.plugin as any).agentView;

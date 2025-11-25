@@ -620,6 +620,8 @@ export class AgentViewMessages {
 		executionId: string
 	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }> {
 		return new Promise((resolve) => {
+			let resolved = false; // Prevent double-resolution race condition
+
 			// Create system message container
 			const messageDiv = this.chatContainer.createDiv({
 				cls: 'gemini-agent-message gemini-agent-message-system gemini-agent-confirmation-request'
@@ -649,7 +651,7 @@ export class AgentViewMessages {
 			});
 
 			toolHeader.createEl('span', {
-				text: 'Vault Operation',
+				text: this.getCategoryLabel(tool.category),
 				cls: 'gemini-agent-tool-category'
 			});
 
@@ -669,18 +671,20 @@ export class AgentViewMessages {
 					const paramItem = paramsList.createDiv({ cls: 'gemini-agent-param-item' });
 					paramItem.createEl('strong', { text: `${key}: ` });
 
-					const valueStr = typeof value === 'string' && value.length > 100
-						? value.substring(0, 100) + `... (${value.length} chars)`
-						: JSON.stringify(value);
-
+					const valueStr = this.formatParameterValue(value);
 					paramItem.createEl('code', { text: valueStr });
 				}
 			}
 
 			// Custom confirmation message
 			if (tool.confirmationMessage) {
-				const customMsg = card.createDiv({ cls: 'gemini-agent-confirmation-message' });
-				customMsg.createEl('p', { text: tool.confirmationMessage(parameters) });
+				try {
+					const customMsg = card.createDiv({ cls: 'gemini-agent-confirmation-message' });
+					customMsg.createEl('p', { text: tool.confirmationMessage(parameters) });
+				} catch (error) {
+					this.plugin.logger?.warn(`Error generating confirmation message for tool ${tool.name}:`, error);
+					// Continue without custom message - other parts of UI still work
+				}
 			}
 
 			// Action buttons container
@@ -718,8 +722,36 @@ export class AgentViewMessages {
 				attr: { for: checkboxId }
 			});
 
+			// Add 60 second timeout to prevent infinite wait
+			const timeoutId = setTimeout(() => {
+				if (resolved) return; // Already resolved by user
+				resolved = true;
+
+				// Clean up event listeners
+				allowBtn.removeEventListener('click', allowHandler);
+				cancelBtn.removeEventListener('click', cancelHandler);
+
+				// Update UI to show timeout
+				this.updateConfirmationTimeout(messageDiv, tool.displayName || tool.name);
+
+				// Show notice to user
+				new Notice('Confirmation request timed out. The agent has returned to ready state.');
+
+				// Log warning
+				this.plugin.logger?.warn(`Confirmation timeout for tool: ${tool.name}`);
+
+				// Resolve with declined
+				resolve({ confirmed: false, allowWithoutConfirmation: false });
+			}, 60000); // 60 seconds
+
 			// Button handlers
 			const handleResponse = (confirmed: boolean) => {
+				if (resolved) return; // Already resolved by timeout
+				resolved = true;
+
+				// Clear timeout
+				clearTimeout(timeoutId);
+
 				// Disable buttons to prevent double-click
 				allowBtn.disabled = true;
 				cancelBtn.disabled = true;
@@ -776,6 +808,77 @@ export class AgentViewMessages {
 				: `Permission denied: ${toolName} was cancelled`,
 			cls: 'gemini-agent-result-text'
 		});
+	}
+
+	/**
+	 * Update confirmation message after timeout
+	 */
+	private updateConfirmationTimeout(messageDiv: HTMLElement, toolName: string) {
+		// Remove the card and buttons
+		messageDiv.empty();
+
+		// Add timeout message
+		const result = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-result gemini-agent-confirmation-timeout' });
+
+		const icon = result.createSpan({ cls: 'gemini-agent-result-icon' });
+		setIcon(icon, 'clock');
+
+		result.createSpan({
+			text: `Request timed out: ${toolName} confirmation expired`,
+			cls: 'gemini-agent-result-text'
+		});
+	}
+
+	/**
+	 * Format parameter value for display with proper error handling
+	 */
+	private formatParameterValue(value: any): string {
+		const MAX_LENGTH = 100;
+
+		try {
+			// Handle null and undefined
+			if (value === null) return 'null';
+			if (value === undefined) return 'undefined';
+
+			// Handle functions
+			if (typeof value === 'function') return '[Function]';
+
+			// Handle strings
+			if (typeof value === 'string') {
+				return value.length > MAX_LENGTH
+					? value.substring(0, MAX_LENGTH) + `... (${value.length} chars)`
+					: value;
+			}
+
+			// Try to stringify other values
+			const stringified = JSON.stringify(value);
+
+			// Truncate if too long
+			if (stringified.length > MAX_LENGTH) {
+				return stringified.substring(0, MAX_LENGTH) + `... (${stringified.length} chars)`;
+			}
+
+			return stringified;
+		} catch (error) {
+			// Handle circular references and other serialization errors
+			this.plugin.logger?.warn('Error serializing parameter value:', error);
+			return '[Complex Object]';
+		}
+	}
+
+	/**
+	 * Get user-friendly category label
+	 */
+	private getCategoryLabel(category: string): string {
+		const labels: Record<string, string> = {
+			'read-only': 'Read Only',
+			'vault-operations': 'Vault Operation',
+			'external': 'External',
+			'web': 'Web Access',
+			'memory': 'Memory',
+			'deep-research': 'Deep Research'
+		};
+		return labels[category] || category;
 	}
 
 	/**
