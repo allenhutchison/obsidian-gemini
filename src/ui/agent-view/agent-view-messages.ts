@@ -706,13 +706,16 @@ export class AgentViewMessages {
 			const checkboxContainer = buttonsContainer.createDiv({
 				cls: 'gemini-agent-confirmation-checkbox'
 			});
+			const checkboxId = `allow-without-confirmation-${executionId}`;
 			const checkbox = checkboxContainer.createEl('input', {
 				type: 'checkbox',
-				cls: 'gemini-agent-checkbox-input'
+				cls: 'gemini-agent-checkbox-input',
+				attr: { id: checkboxId }
 			});
 			const checkboxLabel = checkboxContainer.createEl('label', {
 				text: "Don't ask again this session",
-				cls: 'gemini-agent-checkbox-label'
+				cls: 'gemini-agent-checkbox-label',
+				attr: { for: checkboxId }
 			});
 
 			// Button handlers
@@ -720,6 +723,10 @@ export class AgentViewMessages {
 				// Disable buttons to prevent double-click
 				allowBtn.disabled = true;
 				cancelBtn.disabled = true;
+
+				// Clean up event listeners to prevent memory leak
+				allowBtn.removeEventListener('click', allowHandler);
+				cancelBtn.removeEventListener('click', cancelHandler);
 
 				// Update message to show result
 				this.updateConfirmationResult(messageDiv, confirmed, tool.displayName || tool.name);
@@ -734,8 +741,12 @@ export class AgentViewMessages {
 				this.debouncedScrollToBottom();
 			};
 
-			allowBtn.addEventListener('click', () => handleResponse(true));
-			cancelBtn.addEventListener('click', () => handleResponse(false));
+			// Create named handlers so we can remove them later
+			const allowHandler = () => handleResponse(true);
+			const cancelHandler = () => handleResponse(false);
+
+			allowBtn.addEventListener('click', allowHandler);
+			cancelBtn.addEventListener('click', cancelHandler);
 
 			// Scroll to show confirmation
 			this.debouncedScrollToBottom();

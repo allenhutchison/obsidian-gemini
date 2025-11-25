@@ -23,11 +23,6 @@ jest.mock('obsidian', () => ({
 	}
 }));
 
-// Mock the confirmation modal
-jest.mock('../../src/ui/tool-confirmation-modal', () => ({
-	ToolConfirmationModal: jest.fn()
-}));
-
 describe('ToolExecutionEngine - Confirmation Requirements', () => {
 	let plugin: any;
 	let registry: ToolRegistry;

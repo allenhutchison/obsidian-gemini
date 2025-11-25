@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution } from './types';
 import { ToolRegistry } from './tool-registry';
 import { ChatSession } from '../types/agent';
-import { ToolConfirmationModal } from '../ui/tool-confirmation-modal';
 import { ToolLoopDetector } from './loop-detector';
 import type ObsidianGemini from '../main';
 
