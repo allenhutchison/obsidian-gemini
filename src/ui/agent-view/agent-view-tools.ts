@@ -326,6 +326,19 @@ export class AgentViewTools {
 
 						// Hide progress bar after successful retry response
 						this.context.hideProgress();
+					} else {
+						// Always hide progress even if retry returns empty
+						this.plugin.logger.warn('Model returned empty response after retry');
+						this.context.hideProgress();
+
+						// Show error message to user
+						const errorEntry: GeminiConversationEntry = {
+							role: 'model',
+							message: 'I completed the requested actions but had trouble generating a summary. The tools were executed successfully.',
+							notePath: '',
+							created_at: new Date()
+						};
+						await this.context.displayMessage(errorEntry);
 					}
 				}
 			}
