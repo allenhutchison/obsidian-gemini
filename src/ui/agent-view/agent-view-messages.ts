@@ -3,6 +3,7 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatFileSize } from '../../utils/format-utils';
+import { Tool } from '../../tools/types';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
@@ -607,6 +608,179 @@ export class AgentViewMessages {
 		if (!currentSession) return false;
 		return session.id === currentSession.id ||
 		       session.historyPath === currentSession.historyPath;
+	}
+
+	/**
+	 * Display a confirmation request message with interactive buttons
+	 * Returns a Promise that resolves when user clicks a button
+	 */
+	public async displayConfirmationRequest(
+		tool: Tool,
+		parameters: any,
+		executionId: string
+	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }> {
+		return new Promise((resolve) => {
+			// Create system message container
+			const messageDiv = this.chatContainer.createDiv({
+				cls: 'gemini-agent-message gemini-agent-message-system gemini-agent-confirmation-request'
+			});
+
+			// Add header
+			const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+			header.createEl('span', { text: 'Permission Required', cls: 'gemini-agent-message-role' });
+			header.createEl('span', {
+				text: new Date().toLocaleTimeString(),
+				cls: 'gemini-agent-message-time'
+			});
+
+			// Create confirmation card
+			const card = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-card' });
+
+			// Tool info section
+			const toolInfo = card.createDiv({ cls: 'gemini-agent-tool-info' });
+
+			const toolHeader = toolInfo.createDiv({ cls: 'gemini-agent-tool-info-header' });
+			const iconContainer = toolHeader.createDiv({ cls: 'gemini-agent-confirmation-tool-icon' });
+			this.setToolIcon(iconContainer, tool.name);
+
+			toolHeader.createEl('span', {
+				text: tool.displayName || tool.name,
+				cls: 'gemini-agent-tool-name'
+			});
+
+			toolHeader.createEl('span', {
+				text: 'Vault Operation',
+				cls: 'gemini-agent-tool-category'
+			});
+
+			// Tool description
+			toolInfo.createEl('p', {
+				text: tool.description,
+				cls: 'gemini-agent-tool-description'
+			});
+
+			// Parameters section
+			if (parameters && Object.keys(parameters).length > 0) {
+				const paramsSection = card.createDiv({ cls: 'gemini-agent-params-section' });
+				paramsSection.createEl('div', { text: 'Parameters:', cls: 'gemini-agent-params-header' });
+
+				const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-params-list' });
+				for (const [key, value] of Object.entries(parameters)) {
+					const paramItem = paramsList.createDiv({ cls: 'gemini-agent-param-item' });
+					paramItem.createEl('strong', { text: `${key}: ` });
+
+					const valueStr = typeof value === 'string' && value.length > 100
+						? value.substring(0, 100) + `... (${value.length} chars)`
+						: JSON.stringify(value);
+
+					paramItem.createEl('code', { text: valueStr });
+				}
+			}
+
+			// Custom confirmation message
+			if (tool.confirmationMessage) {
+				const customMsg = card.createDiv({ cls: 'gemini-agent-confirmation-message' });
+				customMsg.createEl('p', { text: tool.confirmationMessage(parameters) });
+			}
+
+			// Action buttons container
+			const buttonsContainer = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-buttons' });
+
+			// Allow button
+			const allowBtn = buttonsContainer.createEl('button', {
+				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-confirm mod-cta'
+			});
+			const allowIcon = allowBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
+			setIcon(allowIcon, 'check');
+			allowBtn.createSpan({ text: 'Allow' });
+
+			// Cancel button
+			const cancelBtn = buttonsContainer.createEl('button', {
+				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-cancel'
+			});
+			const cancelIcon = cancelBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
+			setIcon(cancelIcon, 'x');
+			cancelBtn.createSpan({ text: 'Cancel' });
+
+			// "Don't ask again" checkbox
+			const checkboxContainer = buttonsContainer.createDiv({
+				cls: 'gemini-agent-confirmation-checkbox'
+			});
+			const checkbox = checkboxContainer.createEl('input', {
+				type: 'checkbox',
+				cls: 'gemini-agent-checkbox-input'
+			});
+			const checkboxLabel = checkboxContainer.createEl('label', {
+				text: "Don't ask again this session",
+				cls: 'gemini-agent-checkbox-label'
+			});
+
+			// Button handlers
+			const handleResponse = (confirmed: boolean) => {
+				// Disable buttons to prevent double-click
+				allowBtn.disabled = true;
+				cancelBtn.disabled = true;
+
+				// Update message to show result
+				this.updateConfirmationResult(messageDiv, confirmed, tool.displayName || tool.name);
+
+				// Resolve Promise
+				resolve({
+					confirmed,
+					allowWithoutConfirmation: checkbox.checked
+				});
+
+				// Scroll to show result
+				this.debouncedScrollToBottom();
+			};
+
+			allowBtn.addEventListener('click', () => handleResponse(true));
+			cancelBtn.addEventListener('click', () => handleResponse(false));
+
+			// Scroll to show confirmation
+			this.debouncedScrollToBottom();
+		});
+	}
+
+	/**
+	 * Update confirmation message after user responds
+	 */
+	private updateConfirmationResult(
+		messageDiv: HTMLElement,
+		confirmed: boolean,
+		toolName: string
+	) {
+		// Remove the card and buttons
+		messageDiv.empty();
+
+		// Add result message
+		const result = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-result' });
+
+		const icon = result.createSpan({ cls: 'gemini-agent-result-icon' });
+		setIcon(icon, confirmed ? 'check-circle' : 'x-circle');
+
+		result.createSpan({
+			text: confirmed
+				? `Permission granted: ${toolName} was allowed`
+				: `Permission denied: ${toolName} was cancelled`,
+			cls: 'gemini-agent-result-text'
+		});
+	}
+
+	/**
+	 * Set icon for tool based on tool name
+	 */
+	private setToolIcon(container: HTMLElement, toolName: string) {
+		const iconMap: Record<string, string> = {
+			'write_file': 'file-edit',
+			'delete_file': 'trash-2',
+			'move_file': 'file-symlink',
+			'create_folder': 'folder-plus',
+			'read_file': 'file-text',
+			'list_files': 'folder-open',
+			'search_files': 'search',
+		};
+		setIcon(container, iconMap[toolName] || 'tool');
 	}
 
 	/**

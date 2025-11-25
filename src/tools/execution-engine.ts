@@ -27,12 +27,15 @@ export class ToolExecutionEngine {
 	 * Execute a tool call with appropriate checks and UI feedback
 	 */
 	async executeTool(
-		toolCall: ToolCall, 
+		toolCall: ToolCall,
 		context: ToolExecutionContext,
 		agentView?: any // AgentView type to avoid circular dependency
 	): Promise<ToolResult> {
+		// Get agent view - use provided one or get from plugin
+		const view = agentView || (this.plugin as any).agentView;
+
 		const tool = this.registry.getTool(toolCall.name);
-		
+
 		if (!tool) {
 			return {
 				success: false,
@@ -78,13 +81,13 @@ export class ToolExecutionEngine {
 
 		// Check if confirmation is required
 		const requiresConfirmation = this.registry.requiresConfirmation(toolCall.name, context);
-		
+
 		if (requiresConfirmation) {
 			// Check if this tool is allowed without confirmation for this session
-			const isAllowedWithoutConfirmation = agentView?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
-			
+			const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
+
 			if (!isAllowedWithoutConfirmation) {
-				const result = await this.requestUserConfirmation(tool, toolCall.arguments);
+				const result = await this.requestUserConfirmation(tool, toolCall.arguments, view);
 				if (!result.confirmed) {
 					return {
 						success: false,
@@ -92,8 +95,8 @@ export class ToolExecutionEngine {
 					};
 				}
 				// If user allowed this action without future confirmation
-				if (result.allowWithoutConfirmation && agentView) {
-					agentView.allowToolWithoutConfirmation(toolCall.name);
+				if (result.allowWithoutConfirmation && view) {
+					view.allowToolWithoutConfirmation(toolCall.name);
 				}
 			}
 		}
@@ -170,20 +173,24 @@ export class ToolExecutionEngine {
 	 * Request user confirmation for tool execution
 	 */
 	private async requestUserConfirmation(
-		tool: Tool, 
-		parameters: any
+		tool: Tool,
+		parameters: any,
+		agentView?: any
 	): Promise<{ confirmed: boolean; allowWithoutConfirmation?: boolean }> {
-		return new Promise((resolve) => {
-			const modal = new ToolConfirmationModal(
-				this.plugin.app,
-				tool,
-				parameters,
-				(confirmed, allowWithoutConfirmation) => {
-					resolve({ confirmed, allowWithoutConfirmation: allowWithoutConfirmation || false });
-				}
-			);
-			modal.open();
-		});
+		// Use provided agentView or get from plugin as fallback
+		const view = agentView || (this.plugin as any).agentView;
+
+		if (!view) {
+			// Fallback: if no agent view available, deny by default
+			this.plugin.logger?.warn('No agent view available for confirmation');
+			return { confirmed: false, allowWithoutConfirmation: false };
+		}
+
+		// Generate unique execution ID for tracking
+		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+		// Show confirmation in chat instead of modal
+		return view.showConfirmationInChat(tool, parameters, executionId);
 	}
 
 	/**
