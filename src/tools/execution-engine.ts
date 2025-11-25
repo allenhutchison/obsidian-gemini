@@ -184,9 +184,13 @@ export class ToolExecutionEngine {
 	): Promise<{ confirmed: boolean; allowWithoutConfirmation?: boolean }> {
 		return new Promise((resolve) => {
 			let modalInstance: ToolConfirmationModal | null = null;
+			let resolved = false; // Prevent double-resolution race condition
 
 			// Add 60 second timeout
 			const timeoutId = setTimeout(() => {
+				if (resolved) return; // Already resolved by user
+				resolved = true;
+
 				if (modalInstance) {
 					modalInstance.close();
 				}
@@ -199,6 +203,9 @@ export class ToolExecutionEngine {
 				tool,
 				parameters,
 				(confirmed, allowWithoutConfirmation) => {
+					if (resolved) return; // Already resolved by timeout
+					resolved = true;
+
 					clearTimeout(timeoutId); // Clear timeout on user response
 					resolve({ confirmed, allowWithoutConfirmation: allowWithoutConfirmation || false });
 				}
