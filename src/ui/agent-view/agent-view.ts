@@ -326,6 +326,10 @@ These files are included in the context below. When the user asks you to write d
 					const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
 						// Handle thought content - show in progress bar
 						if (chunk.thought) {
+							const chunkPreview = chunk.thought.length > 100
+								? chunk.thought.substring(0, 100) + '...'
+								: chunk.thought;
+							this.plugin.logger.debug(`[AgentView] Received thought chunk: ${chunkPreview}`);
 							accumulatedThoughts += chunk.thought;
 
 							// Store full thought as title for hover
@@ -335,6 +339,10 @@ These files are included in the context below. When the user asks you to write d
 							const displayThought = accumulatedThoughts.length > PROGRESS_THOUGHT_MAX_LENGTH
 								? '...' + accumulatedThoughts.slice(-PROGRESS_THOUGHT_DISPLAY_LENGTH)
 								: accumulatedThoughts;
+							const displayPreview = displayThought.length > 50
+								? displayThought.substring(0, 50) + '...'
+								: displayThought;
+							this.plugin.logger.debug(`[AgentView] Updating progress with thought: ${displayPreview}`);
 							this.progress.update(displayThought, 'thinking');
 						}
 

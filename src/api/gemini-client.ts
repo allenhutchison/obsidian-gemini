@@ -118,6 +118,7 @@ export class GeminiClient implements ModelApi {
 					const chunkThought = this.extractThoughtFromChunk(chunk);
 					if (chunkThought) {
 						accumulatedThoughts += chunkThought;
+						this.plugin?.logger.debug(`[GeminiClient] Sending thought chunk to callback`);
 					}
 
 					// Call callback with both text and thought if either is present
@@ -380,10 +381,17 @@ export class GeminiClient implements ModelApi {
 	 */
 	private extractThoughtFromChunk(chunk: any): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
-			return chunk.candidates[0].content.parts
-				.filter((part: Part) => (part as PartWithThought).thought && (part as PartWithThought).text)
-				.map((part: Part) => (part as PartWithThought).text)
-				.join('');
+			const parts = chunk.candidates[0].content.parts;
+			const thoughtParts = parts.filter((part: Part) => (part as PartWithThought).thought && (part as PartWithThought).text);
+
+			if (thoughtParts.length > 0) {
+				const thoughtText = thoughtParts.map((part: Part) => (part as PartWithThought).text).join('');
+				const preview = thoughtText.length > 100
+					? thoughtText.substring(0, 100) + '...'
+					: thoughtText;
+				this.plugin?.logger.debug(`[GeminiClient] Extracted thought: ${preview}`);
+				return thoughtText;
+			}
 		}
 		return '';
 	}
@@ -399,7 +407,7 @@ export class GeminiClient implements ModelApi {
 
 		const modelLower = model.toLowerCase();
 		const supports = modelLower.includes('gemini-2.5') ||
-			modelLower.includes('gemini-3.') ||
+			modelLower.includes('gemini-3') ||
 			modelLower.includes('thinking-exp');
 
 		if (supports) {
