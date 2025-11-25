@@ -132,6 +132,8 @@ export class GeminiClient implements ModelApi {
 					// IMPORTANT: Keep the first tool calls we receive, as they contain the thought signature
 					// Later chunks may repeat the same tool calls without the signature
 					const chunkToolCalls = this.extractToolCallsFromChunk(chunk);
+					// Only set toolCalls once - preserve first chunk which has thought signatures
+					// The '!toolCalls' check prevents overwriting with subsequent chunks
 					if (chunkToolCalls?.length && !toolCalls) {
 						toolCalls = chunkToolCalls;
 					}
