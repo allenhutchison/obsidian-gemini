@@ -129,8 +129,10 @@ export class GeminiClient implements ModelApi {
 					}
 
 					// Extract tool calls from chunk (usually in last chunk)
+					// IMPORTANT: Keep the first tool calls we receive, as they contain the thought signature
+					// Later chunks may repeat the same tool calls without the signature
 					const chunkToolCalls = this.extractToolCallsFromChunk(chunk);
-					if (chunkToolCalls?.length) {
+					if (chunkToolCalls?.length && !toolCalls) {
 						toolCalls = chunkToolCalls;
 					}
 
@@ -415,10 +417,18 @@ export class GeminiClient implements ModelApi {
 		const toolCalls: ToolCall[] = [];
 		for (const part of parts) {
 			if ('functionCall' in part && part.functionCall && part.functionCall.name) {
+				const signature = (part as any).thoughtSignature;
+
+				// Debug logging to verify extraction
+				this.plugin?.logger.debug(
+					`[GeminiClient] Extracted tool call: ${part.functionCall.name}, ` +
+					`has signature: ${signature !== undefined}`
+				);
+
 				toolCalls.push({
 					name: part.functionCall.name,
 					arguments: part.functionCall.args || {},
-					thoughtSignature: (part as any).thoughtSignature
+					thoughtSignature: signature
 				});
 			}
 		}

@@ -157,6 +157,12 @@ export class AgentViewTools {
 		// 3. Model response with tool calls (as functionCall parts)
 		// 4. Tool results (as functionResponse parts)
 
+		// Debug logging for thought signature handling
+		this.plugin.logger.debug(
+			`[AgentViewTools] Building tool call parts: ${toolCalls.length} calls, ` +
+			`${toolCalls.filter(tc => tc.thoughtSignature).length} with signatures`
+		);
+
 		const updatedHistory = [
 			...conversationHistory,
 			// Model's tool calls
@@ -167,7 +173,7 @@ export class AgentViewTools {
 						name: tc.name,
 						args: tc.arguments || {}
 					},
-					thoughtSignature: tc.thoughtSignature
+					...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature })
 				}))
 			},
 			// Tool results as functionResponse
