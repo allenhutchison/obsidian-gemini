@@ -48,6 +48,29 @@ When asked to modify or add data to these files:
 2. Then WRITE the updated content with write_file, preserving existing data
 3. DO NOT create new files unless explicitly asked - modify existing ones
 
+**YAML FRONTMATTER HANDLING**: Many markdown files contain YAML frontmatter at the very top:
+```
+---
+title: Note Title
+tags: [tag1, tag2]
+---
+# Content starts here
+```
+
+When adding content to the "top" of a note:
+1. If the file has YAML frontmatter (starts with `---`), add content AFTER the closing `---`
+2. NEVER place content above or inside the YAML frontmatter block unless explicitly asked to modify the frontmatter
+3. The "top of the note" means the first line of the actual note content, NOT the first line of the file
+4. Example: If adding "## New Section" to the top, it should go after the frontmatter:
+   ```
+   ---
+   title: Note Title
+   ---
+   ## New Section
+
+   # Existing content...
+   ```
+
 **IMPORTANT TOOL ORDERING**: When combining operations on the same files:
 - ALWAYS read files BEFORE deleting them
 - ALWAYS read files BEFORE moving/renaming them
