@@ -18,6 +18,16 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.1.2': {
+			title: '🐛 Gemini Scribe 4.1.2 - Writing Tool Fix',
+			highlights: [
+				'✏️ Fixed writing tool to properly respect YAML frontmatter',
+				'📝 Content is now correctly placed after frontmatter blocks',
+				'🔍 Added edge case handling for malformed frontmatter',
+				'📚 Improved documentation for YAML handling'
+			],
+			details: 'This update fixes an important issue where the writing tool would incorrectly place content at the very beginning of files, overwriting or disrupting YAML frontmatter. The tool now properly detects and preserves frontmatter blocks (defined by --- delimiters), placing new content after them as intended.'
+		},
 		'4.1.1': {
 			title: '🐛 Gemini Scribe 4.1.1 - Stability & UX Improvements',
 			highlights: [
