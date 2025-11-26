@@ -58,10 +58,12 @@ tags: [tag1, tag2]
 ```
 
 When adding content to the "top" of a note:
-1. If the file has YAML frontmatter (starts with `---`), add content AFTER the closing `---`
-2. NEVER place content above or inside the YAML frontmatter block unless explicitly asked to modify the frontmatter
-3. The "top of the note" means the first line of the actual note content, NOT the first line of the file
-4. Example: If adding "## New Section" to the top, it should go after the frontmatter:
+1. If the file has YAML frontmatter (starts with `---` on line 1 and ends with `---`), add content AFTER the closing `---`
+2. If there is NO frontmatter, "top of the note" means the very first line of the file
+3. NEVER place content above or inside the YAML frontmatter block unless explicitly asked to modify the frontmatter
+4. The "top of the note" means the first line of the actual note content, NOT the first line of the file (when frontmatter is present)
+5. YAML frontmatter must start with `---` on line 1 (no spaces before) and end with `---` (no spaces before)
+6. Example: If adding "## New Section" to the top, it should go after the frontmatter:
    ```
    ---
    title: Note Title

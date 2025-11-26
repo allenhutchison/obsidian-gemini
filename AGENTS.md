@@ -157,6 +157,10 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
    - Tracks identical tool calls within time windows
    - Configurable thresholds and time windows
    - Session-specific tracking with automatic cleanup
+11. **YAML Frontmatter**: Agent instructions include guidance for respecting YAML frontmatter when modifying files
+   - The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentToolsPrompt.txt`)
+   - YAML frontmatter must start with `---` on line 1 and end with `---`
+   - Content is only placed before frontmatter when explicitly instructed to modify frontmatter
 
 ## Coding Style & Naming Conventions
 
