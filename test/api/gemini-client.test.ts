@@ -132,6 +132,13 @@ describe('GeminiClient', () => {
 				);
 			});
 
+			test('null', () => {
+				expect(testSupportsThinking(null as any)).toBe(false);
+				expect(mockLogger.debug).toHaveBeenCalledWith(
+					'[GeminiClient] No model specified for thinking check'
+				);
+			});
+
 			test('empty string', () => {
 				expect(testSupportsThinking('')).toBe(false);
 				expect(mockLogger.debug).toHaveBeenCalledWith(
@@ -204,7 +211,9 @@ describe('GeminiClient', () => {
 				expect(testSupportsThinking('thinking-preview')).toBe(false); // not "thinking-exp"
 			});
 
-			test('partial matches should not work', () => {
+			test('partial matches DO work (current behavior using .includes())', () => {
+				// NOTE: Current implementation allows partial matches because it uses .includes()
+				// This test documents the ACTUAL behavior, not necessarily desired behavior
 				expect(testSupportsThinking('my-gemini-3-model')).toBe(true); // contains "gemini-3"
 				expect(testSupportsThinking('custom-thinking-exp-model')).toBe(true); // contains "thinking-exp"
 			});
