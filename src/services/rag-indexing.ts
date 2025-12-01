@@ -555,7 +555,19 @@ export class RagIndexingService {
 	}
 
 	/**
-	 * Delete a file from the File Search Store
+	 * Delete a file from the index
+	 *
+	 * LIMITATION: This only removes the file from the local cache. The document
+	 * remains in Google's File Search Store as an orphaned file. This is a known
+	 * limitation - the File Search API doesn't provide a direct way to delete
+	 * individual documents from a store. The only way to fully clean up is to
+	 * delete and recreate the entire store.
+	 *
+	 * Impact: Deleted vault files will remain searchable until the store is recreated.
+	 * Workaround: Users can delete the store via settings when disabling RAG indexing.
+	 *
+	 * TODO: Investigate if Google adds document deletion API in the future.
+	 * See: https://github.com/allenhutchison/obsidian-gemini/issues/247
 	 */
 	private async deleteFile(path: string): Promise<void> {
 		if (!this.ai || !this.cache?.files[path]) {
@@ -563,10 +575,7 @@ export class RagIndexingService {
 		}
 
 		try {
-			const entry = this.cache.files[path];
-			// Note: File Search API doesn't have a direct delete for documents
-			// We'll just remove from cache and the document will be orphaned
-			// In production, we'd need to track document IDs and delete them
+			// Remove from local cache only - document remains orphaned in cloud
 			delete this.cache.files[path];
 			this.indexedCount = Object.keys(this.cache.files).length;
 			await this.saveCache();

@@ -492,9 +492,19 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			// Vault Search Index (RAG) Settings
 			new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
 
+			// Privacy warning
+			const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });
+			privacyWarning.createEl('div', {
+				cls: 'setting-item-description',
+				text: '⚠️ Privacy Notice: Enabling this feature uploads your vault files to Google Cloud for semantic search. ' +
+					'Files are processed and stored by Google. Consider excluding folders with sensitive information.'
+			});
+			privacyWarning.style.marginBottom = '1em';
+			privacyWarning.style.color = 'var(--text-warning)';
+
 			new Setting(containerEl)
 				.setName('Enable vault indexing')
-				.setDesc('Index your vault files for semantic search using Google File Search. Files are uploaded to Google Cloud for embedding and retrieval.')
+				.setDesc('Index your vault files for semantic search using Google File Search.')
 				.addToggle((toggle) =>
 					toggle.setValue(this.plugin.settings.ragIndexing.enabled).onChange(async (value) => {
 						if (!value && this.plugin.settings.ragIndexing.fileSearchStoreName) {

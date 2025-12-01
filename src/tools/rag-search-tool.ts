@@ -88,8 +88,9 @@ export class RagSearchTool implements Tool {
 			const ai = new GoogleGenAI({ apiKey: plugin.settings.apiKey });
 
 			// Perform search using generateContent with File Search tool
+			// Use the configured chat model for consistency
 			const response = await ai.models.generateContent({
-				model: 'gemini-2.5-flash',
+				model: plugin.settings.chatModelName,
 				contents: `Search for information about: ${params.query}\n\nProvide a summary of the most relevant findings from the indexed documents. Include specific file references when available.`,
 				config: {
 					tools: [
