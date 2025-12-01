@@ -553,10 +553,22 @@ export default class ObsidianGemini extends Plugin {
 		return this.modelManager;
 	}
 
-	// Optional: Clean up ribbon icon on unload
+	// Clean up resources on unload
 	onunload() {
 		this.logger.debug('Unloading Gemini Scribe');
 		this.history?.onUnload();
 		this.ribbonIcon?.remove();
+
+		// Clean up RAG indexing service
+		if (this.ragIndexing) {
+			// Unregister RAG tools from the tool registry
+			this.toolRegistry?.unregisterTool('vault_semantic_search');
+
+			// Destroy the service (async but we don't need to await in onunload)
+			this.ragIndexing.destroy().catch((error) => {
+				this.logger.error('Error destroying RAG indexing service:', error);
+			});
+			this.ragIndexing = null;
+		}
 	}
 }
