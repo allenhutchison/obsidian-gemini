@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
+import { Plugin, WorkspaceLeaf, Editor, MarkdownView, TFile } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiSummary } from './summary';
@@ -26,6 +26,7 @@ import { ExamplePromptsManager } from './services/example-prompts';
 import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
+import { RagIndexingService } from './services/rag-indexing';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -35,6 +36,13 @@ export interface ModelDiscoverySettings {
 	autoUpdateInterval: number; // hours
 	lastUpdate: number;
 	fallbackToStatic: boolean;
+}
+
+export interface RagIndexingSettings {
+	enabled: boolean;
+	fileSearchStoreName: string | null;
+	excludeFolders: string[];
+	autoSync: boolean;
 }
 
 export interface ObsidianGeminiSettings {
@@ -64,6 +72,8 @@ export interface ObsidianGeminiSettings {
 	hasSeenV4Welcome: boolean;
 	// Version tracking for update notifications
 	lastSeenVersion: string;
+	// RAG Indexing settings
+	ragIndexing: RagIndexingSettings;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -98,6 +108,13 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	hasSeenV4Welcome: false,
 	// Version tracking for update notifications
 	lastSeenVersion: '0.0.0',
+	// RAG Indexing settings
+	ragIndexing: {
+		enabled: false,
+		fileSearchStoreName: null,
+		excludeFolders: [],
+		autoSync: true,
+	},
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -120,6 +137,7 @@ export default class ObsidianGemini extends Plugin {
 	public deepResearch: DeepResearchService;
 	public imageGeneration: ImageGeneration;
 	public logger: Logger;
+	public ragIndexing: RagIndexingService | null = null;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -318,6 +336,49 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize image generation
 		this.imageGeneration = new ImageGeneration(this);
 		await this.imageGeneration.setupImageGenerationCommand();
+
+		// Initialize RAG indexing if enabled
+		if (this.settings.ragIndexing.enabled) {
+			this.ragIndexing = new RagIndexingService(this);
+			await this.ragIndexing.initialize();
+
+			// Register RAG search tools
+			const { getRagTools } = await import('./tools/rag-search-tool');
+			const ragTools = getRagTools();
+			for (const tool of ragTools) {
+				this.toolRegistry.registerTool(tool);
+			}
+
+			// Register file event listeners for auto-sync
+			this.registerEvent(
+				this.app.vault.on('create', (file) => {
+					if (file instanceof TFile) {
+						this.ragIndexing?.onFileCreate(file);
+					}
+				})
+			);
+			this.registerEvent(
+				this.app.vault.on('modify', (file) => {
+					if (file instanceof TFile) {
+						this.ragIndexing?.onFileModify(file);
+					}
+				})
+			);
+			this.registerEvent(
+				this.app.vault.on('delete', (file) => {
+					if (file instanceof TFile) {
+						this.ragIndexing?.onFileDelete(file);
+					}
+				})
+			);
+			this.registerEvent(
+				this.app.vault.on('rename', (file, oldPath) => {
+					if (file instanceof TFile) {
+						this.ragIndexing?.onFileRename(file, oldPath);
+					}
+				})
+			);
+		}
 	}
 
 	async activateAgentView() {

@@ -488,6 +488,102 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							})
 					);
 			}
+
+			// Vault Search Index (RAG) Settings
+			new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
+
+			new Setting(containerEl)
+				.setName('Enable vault indexing')
+				.setDesc('Index your vault files for semantic search using Google File Search. Files are uploaded to Google Cloud for embedding and retrieval.')
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.ragIndexing.enabled).onChange(async (value) => {
+						if (!value && this.plugin.settings.ragIndexing.fileSearchStoreName) {
+							// Show cleanup modal when disabling
+							const { RagCleanupModal } = await import('./rag-cleanup-modal');
+							const modal = new RagCleanupModal(this.app, this.plugin, async (deleteData) => {
+								if (deleteData && this.plugin.ragIndexing) {
+									await this.plugin.ragIndexing.deleteFileSearchStore();
+								}
+								this.plugin.settings.ragIndexing.enabled = false;
+								await this.plugin.saveSettings();
+								this.display();
+							});
+							modal.open();
+						} else {
+							this.plugin.settings.ragIndexing.enabled = value;
+							await this.plugin.saveSettings();
+							this.display();
+						}
+					})
+				);
+
+			if (this.plugin.settings.ragIndexing.enabled) {
+				// Index status
+				const indexCount = this.plugin.ragIndexing
+					? Object.keys((this.plugin.ragIndexing as any).cache?.files || {}).length
+					: 0;
+				const statusText = this.plugin.settings.ragIndexing.fileSearchStoreName
+					? `${indexCount} files indexed`
+					: 'Not yet indexed';
+
+				new Setting(containerEl)
+					.setName('Index status')
+					.setDesc(statusText)
+					.addButton((button) =>
+						button
+							.setButtonText('Reindex Vault')
+							.onClick(async () => {
+								if (!this.plugin.ragIndexing) {
+									new Notice('RAG indexing service not initialized');
+									return;
+								}
+
+								button.setButtonText('Indexing...');
+								button.setDisabled(true);
+
+								try {
+									const result = await this.plugin.ragIndexing.indexVault((progress) => {
+										button.setButtonText(`${progress.current}/${progress.total}`);
+									});
+
+									new Notice(`Indexed ${result.indexed} files (${result.skipped} skipped, ${result.failed} failed)`);
+									this.display();
+								} catch (error) {
+									new Notice(`Indexing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+								} finally {
+									button.setButtonText('Reindex Vault');
+									button.setDisabled(false);
+								}
+							})
+					);
+
+				new Setting(containerEl)
+					.setName('Auto-sync changes')
+					.setDesc('Automatically update the index when files are created, modified, or deleted.')
+					.addToggle((toggle) =>
+						toggle.setValue(this.plugin.settings.ragIndexing.autoSync).onChange(async (value) => {
+							this.plugin.settings.ragIndexing.autoSync = value;
+							await this.plugin.saveSettings();
+						})
+					);
+
+				new Setting(containerEl)
+					.setName('Exclude folders')
+					.setDesc('Folders to exclude from indexing (one per line). System folders are always excluded.')
+					.addTextArea((text) => {
+						text.inputEl.rows = 4;
+						text.inputEl.cols = 30;
+						text
+							.setValue(this.plugin.settings.ragIndexing.excludeFolders.join('\n'))
+							.onChange(async (value) => {
+								this.plugin.settings.ragIndexing.excludeFolders = value
+									.split('\n')
+									.map((f) => f.trim())
+									.filter((f) => f.length > 0);
+								await this.plugin.saveSettings();
+							});
+					});
+			}
 		}
 	}
 }
