@@ -557,6 +557,44 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							})
 					);
 
+				// Store name setting
+				const currentStoreName = this.plugin.settings.ragIndexing.fileSearchStoreName;
+				new Setting(containerEl)
+					.setName('Search index name')
+					.setDesc(currentStoreName
+						? `Current: ${currentStoreName}`
+						: 'No index created yet. Will be auto-generated on first index.')
+					.addText((text) => {
+						text.inputEl.style.width = '30ch';
+						text
+							.setPlaceholder('Auto-generated if empty')
+							.setValue(currentStoreName || '')
+							.onChange(async (value) => {
+								// Only update if the value changed and is not empty
+								const trimmedValue = value.trim();
+								if (trimmedValue && trimmedValue !== currentStoreName) {
+									this.plugin.settings.ragIndexing.fileSearchStoreName = trimmedValue;
+									await this.plugin.saveSettings();
+									// Note: Changing store name will require creating a new store on next index
+									new Notice('Store name updated. Reindex to apply changes.');
+								} else if (!trimmedValue && currentStoreName) {
+									// User cleared the field - keep existing name
+									text.setValue(currentStoreName);
+								}
+							});
+					})
+					.addButton((button) =>
+						button
+							.setButtonText('Copy')
+							.setTooltip('Copy store name to clipboard')
+							.onClick(async () => {
+								if (currentStoreName) {
+									await navigator.clipboard.writeText(currentStoreName);
+									new Notice('Store name copied to clipboard');
+								}
+							})
+					);
+
 				new Setting(containerEl)
 					.setName('Auto-sync changes')
 					.setDesc('Automatically update the index when files are created, modified, or deleted.')
@@ -567,14 +605,20 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						})
 					);
 
+				// Build the list of excluded folders including system folders
+				const systemFolders = [this.plugin.settings.historyFolder, '.obsidian'];
+				const userFolders = this.plugin.settings.ragIndexing.excludeFolders
+					.filter(f => !systemFolders.includes(f)); // Remove duplicates with system folders
+
 				new Setting(containerEl)
 					.setName('Exclude folders')
-					.setDesc('Folders to exclude from indexing (one per line). System folders are always excluded.')
+					.setDesc(`Always excluded: ${systemFolders.join(', ')}. Add additional folders below (one per line).`)
 					.addTextArea((text) => {
 						text.inputEl.rows = 4;
 						text.inputEl.cols = 30;
 						text
-							.setValue(this.plugin.settings.ragIndexing.excludeFolders.join('\n'))
+							.setPlaceholder('Additional folders to exclude...')
+							.setValue(userFolders.join('\n'))
 							.onChange(async (value) => {
 								this.plugin.settings.ragIndexing.excludeFolders = value
 									.split('\n')
