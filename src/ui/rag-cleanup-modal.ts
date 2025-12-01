@@ -1,20 +1,16 @@
 import { App, Modal, Setting } from 'obsidian';
-import type ObsidianGemini from '../main';
 
 /**
  * Modal shown when user disables RAG indexing to ask about data cleanup
  */
 export class RagCleanupModal extends Modal {
-	private plugin: InstanceType<typeof ObsidianGemini>;
 	private onConfirm: (deleteData: boolean) => void;
 
 	constructor(
 		app: App,
-		plugin: InstanceType<typeof ObsidianGemini>,
 		onConfirm: (deleteData: boolean) => void
 	) {
 		super(app);
-		this.plugin = plugin;
 		this.onConfirm = onConfirm;
 	}
 

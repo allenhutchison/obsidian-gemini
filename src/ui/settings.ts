@@ -500,7 +500,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						if (!value && this.plugin.settings.ragIndexing.fileSearchStoreName) {
 							// Show cleanup modal when disabling
 							const { RagCleanupModal } = await import('./rag-cleanup-modal');
-							const modal = new RagCleanupModal(this.app, this.plugin, async (deleteData) => {
+							const modal = new RagCleanupModal(this.app, async (deleteData) => {
 								if (deleteData && this.plugin.ragIndexing) {
 									await this.plugin.ragIndexing.deleteFileSearchStore();
 								}
@@ -519,9 +519,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 			if (this.plugin.settings.ragIndexing.enabled) {
 				// Index status
-				const indexCount = this.plugin.ragIndexing
-					? Object.keys((this.plugin.ragIndexing as any).cache?.files || {}).length
-					: 0;
+				const indexCount = this.plugin.ragIndexing?.getIndexedFileCount() ?? 0;
 				const statusText = this.plugin.settings.ragIndexing.fileSearchStoreName
 					? `${indexCount} files indexed`
 					: 'Not yet indexed';

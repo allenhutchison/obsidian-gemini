@@ -184,6 +184,13 @@ export class RagIndexingService {
 		return this.status !== 'disabled' && this.status !== 'error' && this.ai !== null;
 	}
 
+	/**
+	 * Get the number of indexed files
+	 */
+	getIndexedFileCount(): number {
+		return this.indexedCount;
+	}
+
 	// ==================== Cache Management ====================
 
 	/**
@@ -194,7 +201,20 @@ export class RagIndexingService {
 			const file = this.plugin.app.vault.getAbstractFileByPath(this.cachePath);
 			if (file instanceof TFile) {
 				const content = await this.plugin.app.vault.read(file);
-				this.cache = JSON.parse(content);
+				const parsed = JSON.parse(content);
+
+				// Validate cache version - reset if mismatched
+				if (parsed?.version !== CACHE_VERSION) {
+					this.plugin.logger.warn(`RAG Indexing: Cache version mismatch (got ${parsed?.version}, expected ${CACHE_VERSION}), resetting cache`);
+					this.cache = {
+						version: CACHE_VERSION,
+						storeName: parsed?.storeName || '',
+						lastSync: 0,
+						files: {},
+					};
+				} else {
+					this.cache = parsed;
+				}
 
 				// Count indexed files
 				if (this.cache?.files) {
@@ -258,9 +278,20 @@ export class RagIndexingService {
 				await this.ai.fileSearchStores.get({ name: existingStoreName });
 				this.plugin.logger.log(`RAG Indexing: Using existing store ${existingStoreName}`);
 				return;
-			} catch {
-				// Store doesn't exist anymore, create a new one
-				this.plugin.logger.warn('RAG Indexing: Stored name no longer exists, creating new store');
+			} catch (error) {
+				// Check if it's a 404/not found error vs other errors
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				const isNotFound = errorMessage.includes('404') ||
+					errorMessage.includes('not found') ||
+					errorMessage.includes('NOT_FOUND');
+
+				if (isNotFound) {
+					this.plugin.logger.warn('RAG Indexing: Store no longer exists, creating new store');
+				} else {
+					// For other errors (network, auth, etc.), log and re-throw
+					this.plugin.logger.error('RAG Indexing: Failed to verify store', error);
+					throw error;
+				}
 			}
 		}
 
@@ -779,6 +810,11 @@ export class RagIndexingService {
 		const changes = Array.from(this.pendingChanges.values());
 		this.pendingChanges.clear();
 
+		// Update status to show syncing activity
+		const previousStatus = this.status;
+		this.status = 'indexing';
+		this.updateStatusBar();
+
 		try {
 			for (const change of changes) {
 				switch (change.type) {
@@ -810,9 +846,12 @@ export class RagIndexingService {
 			}
 
 			this.indexedCount = Object.keys(this.cache?.files || {}).length;
+			this.status = 'idle';
 			this.updateStatusBar();
 		} catch (error) {
 			this.plugin.logger.error('RAG Indexing: Failed to process changes', error);
+			this.status = 'error';
+			this.updateStatusBar();
 		} finally {
 			this.isProcessing = false;
 		}
