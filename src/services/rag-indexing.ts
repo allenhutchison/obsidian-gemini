@@ -74,6 +74,7 @@ export class RagIndexingService {
 	private indexedCount: number = 0;
 	private isProcessing: boolean = false;
 	private indexingProgress: { current: number; total: number } = { current: 0, total: 0 };
+	private _indexingPromise: Promise<IndexResult> | null = null;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -545,12 +546,34 @@ export class RagIndexingService {
 
 	/**
 	 * Index the entire vault
+	 * If indexing is already in progress, returns the existing promise
 	 */
 	async indexVault(progressCallback?: (progress: IndexProgress) => void): Promise<IndexResult> {
+		// If indexing is already in progress, return the existing promise
+		// This prevents race conditions from concurrent calls
+		if (this._indexingPromise) {
+			this.plugin.logger.debug('RAG Indexing: indexVault already in progress, returning existing promise');
+			return this._indexingPromise;
+		}
+
 		if (!this.isReady()) {
 			throw new Error('RAG Indexing service is not ready');
 		}
 
+		// Create and store the indexing promise
+		this._indexingPromise = this._doIndexVault(progressCallback);
+
+		try {
+			return await this._indexingPromise;
+		} finally {
+			this._indexingPromise = null;
+		}
+	}
+
+	/**
+	 * Internal implementation of vault indexing
+	 */
+	private async _doIndexVault(progressCallback?: (progress: IndexProgress) => void): Promise<IndexResult> {
 		const startTime = Date.now();
 		const result: IndexResult = { indexed: 0, skipped: 0, failed: 0, duration: 0 };
 
