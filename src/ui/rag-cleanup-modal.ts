@@ -29,10 +29,12 @@ export class RagCleanupModal extends Modal {
 			text: 'If you keep the data, re-enabling will be faster.',
 			cls: 'setting-item-description'
 		});
-		noteEl.createEl('p', {
-			text: 'If you delete, you\'ll need to reindex all files.',
+
+		const warningEl = noteEl.createEl('p', {
+			text: '⚠️ If you delete, this action is permanent and cannot be undone. All indexed data will be permanently removed from Google Cloud, and you\'ll need to reindex all files.',
 			cls: 'setting-item-description'
 		});
+		warningEl.style.color = 'var(--text-warning)';
 
 		new Setting(contentEl)
 			.addButton((btn) =>
@@ -45,7 +47,7 @@ export class RagCleanupModal extends Modal {
 			)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Delete Data')
+					.setButtonText('Delete Permanently')
 					.setWarning()
 					.onClick(() => {
 						this.close();

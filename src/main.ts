@@ -144,6 +144,7 @@ export default class ObsidianGemini extends Plugin {
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
+	private ragListenersRegistered: boolean = false;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -339,45 +340,84 @@ export default class ObsidianGemini extends Plugin {
 
 		// Initialize RAG indexing if enabled
 		if (this.settings.ragIndexing.enabled) {
-			this.ragIndexing = new RagIndexingService(this);
-			await this.ragIndexing.initialize();
+			// Clean up existing instance if re-initializing (e.g., from saveSettings)
+			if (this.ragIndexing) {
+				// Unregister existing tools
+				const { getRagTools } = await import('./tools/rag-search-tool');
+				const ragTools = getRagTools();
+				for (const tool of ragTools) {
+					this.toolRegistry?.unregisterTool(tool.name);
+				}
 
-			// Register RAG search tools
+				// Destroy existing service
+				await this.ragIndexing.destroy();
+				this.ragIndexing = null;
+			}
+
+			try {
+				this.ragIndexing = new RagIndexingService(this);
+				await this.ragIndexing.initialize();
+
+				// Register RAG search tools
+				const { getRagTools } = await import('./tools/rag-search-tool');
+				const ragTools = getRagTools();
+				for (const tool of ragTools) {
+					this.toolRegistry.registerTool(tool);
+				}
+
+				// Register file event listeners for auto-sync (only once per plugin lifetime)
+				// These use optional chaining so they're safe even if ragIndexing is null
+				if (!this.ragListenersRegistered) {
+					this.registerEvent(
+						this.app.vault.on('create', (file) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileCreate(file);
+							}
+						})
+					);
+					this.registerEvent(
+						this.app.vault.on('modify', (file) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileModify(file);
+							}
+						})
+					);
+					this.registerEvent(
+						this.app.vault.on('delete', (file) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileDelete(file);
+							}
+						})
+					);
+					this.registerEvent(
+						this.app.vault.on('rename', (file, oldPath) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileRename(file, oldPath);
+							}
+						})
+					);
+					this.ragListenersRegistered = true;
+				}
+			} catch (error) {
+				this.logger.error('Failed to initialize RAG indexing:', error);
+				new Notice('Failed to initialize vault search index. Check console for details.');
+
+				// Clean up partial initialization
+				if (this.ragIndexing) {
+					await this.ragIndexing.destroy().catch(() => {});
+					this.ragIndexing = null;
+				}
+			}
+		} else if (this.ragIndexing) {
+			// RAG was disabled - clean up
 			const { getRagTools } = await import('./tools/rag-search-tool');
 			const ragTools = getRagTools();
 			for (const tool of ragTools) {
-				this.toolRegistry.registerTool(tool);
+				this.toolRegistry?.unregisterTool(tool.name);
 			}
 
-			// Register file event listeners for auto-sync
-			this.registerEvent(
-				this.app.vault.on('create', (file) => {
-					if (file instanceof TFile) {
-						this.ragIndexing?.onFileCreate(file);
-					}
-				})
-			);
-			this.registerEvent(
-				this.app.vault.on('modify', (file) => {
-					if (file instanceof TFile) {
-						this.ragIndexing?.onFileModify(file);
-					}
-				})
-			);
-			this.registerEvent(
-				this.app.vault.on('delete', (file) => {
-					if (file instanceof TFile) {
-						this.ragIndexing?.onFileDelete(file);
-					}
-				})
-			);
-			this.registerEvent(
-				this.app.vault.on('rename', (file, oldPath) => {
-					if (file instanceof TFile) {
-						this.ragIndexing?.onFileRename(file, oldPath);
-					}
-				})
-			);
+			await this.ragIndexing.destroy();
+			this.ragIndexing = null;
 		}
 	}
 
@@ -561,8 +601,16 @@ export default class ObsidianGemini extends Plugin {
 
 		// Clean up RAG indexing service
 		if (this.ragIndexing) {
-			// Unregister RAG tools from the tool registry
-			this.toolRegistry?.unregisterTool('vault_semantic_search');
+			// Unregister all RAG tools from the tool registry
+			// Import dynamically to get tool names, then unregister
+			import('./tools/rag-search-tool').then(({ getRagTools }) => {
+				const ragTools = getRagTools();
+				for (const tool of ragTools) {
+					this.toolRegistry?.unregisterTool(tool.name);
+				}
+			}).catch((error) => {
+				this.logger.error('Error unregistering RAG tools:', error);
+			});
 
 			// Destroy the service (async but we don't need to await in onunload)
 			this.ragIndexing.destroy().catch((error) => {

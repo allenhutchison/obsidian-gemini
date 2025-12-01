@@ -145,6 +145,15 @@ export class RagIndexingService {
 	 * Destroy the service and cleanup resources
 	 */
 	async destroy(): Promise<void> {
+		// Wait for any in-flight indexing to complete
+		if (this._indexingPromise) {
+			try {
+				await this._indexingPromise;
+			} catch (error) {
+				this.plugin.logger.error('RAG Indexing: Error while waiting for indexing during destroy', error);
+			}
+		}
+
 		// Clear pending changes
 		if (this.debounceTimer) {
 			clearTimeout(this.debounceTimer);

@@ -508,6 +508,9 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				.addToggle((toggle) =>
 					toggle.setValue(this.plugin.settings.ragIndexing.enabled).onChange(async (value) => {
 						if (!value && this.plugin.settings.ragIndexing.fileSearchStoreName) {
+							// Revert toggle immediately - will only change if user confirms
+							toggle.setValue(true);
+
 							// Show cleanup modal when disabling
 							const { RagCleanupModal } = await import('./rag-cleanup-modal');
 							const modal = new RagCleanupModal(this.app, async (deleteData) => {
@@ -628,10 +631,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							.setPlaceholder('Additional folders to exclude...')
 							.setValue(userFolders.join('\n'))
 							.onChange(async (value) => {
+								// Filter out system folders to prevent confusion
 								this.plugin.settings.ragIndexing.excludeFolders = value
 									.split('\n')
 									.map((f) => f.trim())
-									.filter((f) => f.length > 0);
+									.filter((f) => f.length > 0 && !systemFolders.includes(f));
 								await this.plugin.saveSettings();
 							});
 					});
