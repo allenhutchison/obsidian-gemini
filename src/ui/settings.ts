@@ -488,6 +488,163 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							})
 					);
 			}
+
+			// Vault Search Index (RAG) Settings
+			new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
+
+			// Privacy warning
+			const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });
+			privacyWarning.createEl('div', {
+				cls: 'setting-item-description',
+				text: '⚠️ Privacy Notice: Enabling this feature uploads your vault files to Google Cloud for semantic search. ' +
+					'Files are processed and stored by Google. Consider excluding folders with sensitive information.'
+			});
+			privacyWarning.style.marginBottom = '1em';
+			privacyWarning.style.color = 'var(--text-warning)';
+
+			new Setting(containerEl)
+				.setName('Enable vault indexing')
+				.setDesc('Index your vault files for semantic search using Google File Search.')
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.ragIndexing.enabled).onChange(async (value) => {
+						if (!value && this.plugin.settings.ragIndexing.fileSearchStoreName) {
+							// Revert toggle immediately - will only change if user confirms
+							toggle.setValue(true);
+
+							// Show cleanup modal when disabling
+							const { RagCleanupModal } = await import('./rag-cleanup-modal');
+							const modal = new RagCleanupModal(this.app, async (deleteData) => {
+								if (deleteData && this.plugin.ragIndexing) {
+									await this.plugin.ragIndexing.deleteFileSearchStore();
+								}
+								this.plugin.settings.ragIndexing.enabled = false;
+								await this.plugin.saveSettings();
+								this.display();
+							});
+							modal.open();
+						} else {
+							this.plugin.settings.ragIndexing.enabled = value;
+							await this.plugin.saveSettings();
+							this.display();
+						}
+					})
+				);
+
+			if (this.plugin.settings.ragIndexing.enabled) {
+				// Index status
+				const indexCount = this.plugin.ragIndexing?.getIndexedFileCount() ?? 0;
+				const statusText = this.plugin.settings.ragIndexing.fileSearchStoreName
+					? `${indexCount} files indexed`
+					: 'Not yet indexed';
+
+				new Setting(containerEl)
+					.setName('Index status')
+					.setDesc(statusText)
+					.addButton((button) =>
+						button
+							.setButtonText('Reindex Vault')
+							.onClick(async () => {
+								if (!this.plugin.ragIndexing) {
+									new Notice('RAG indexing service not initialized');
+									return;
+								}
+
+								button.setButtonText('Indexing...');
+								button.setDisabled(true);
+
+								try {
+									const result = await this.plugin.ragIndexing.indexVault((progress) => {
+										button.setButtonText(`${progress.current}/${progress.total}`);
+									});
+
+									new Notice(`Indexed ${result.indexed} files (${result.skipped} skipped, ${result.failed} failed)`);
+									this.display();
+								} catch (error) {
+									new Notice(`Indexing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+								} finally {
+									button.setButtonText('Reindex Vault');
+									button.setDisabled(false);
+								}
+							})
+					);
+
+				// Store name setting
+				const currentStoreName = this.plugin.settings.ragIndexing.fileSearchStoreName;
+				const storeNameSetting = new Setting(containerEl)
+					.setName('Search index name')
+					.setDesc(currentStoreName
+						? `Current: ${currentStoreName}. To change, disable indexing and delete the store first.`
+						: 'Will be auto-generated on first index, or enter a custom name.');
+
+				if (currentStoreName) {
+					// Store exists - show read-only with copy button
+					storeNameSetting
+						.addText((text) => {
+							text.inputEl.style.width = '30ch';
+							text.setValue(currentStoreName);
+							text.setDisabled(true);
+						})
+						.addButton((button) =>
+							button
+								.setButtonText('Copy')
+								.setTooltip('Copy store name to clipboard')
+								.onClick(async () => {
+									await navigator.clipboard.writeText(currentStoreName);
+									new Notice('Store name copied to clipboard');
+								})
+						);
+				} else {
+					// No store yet - allow editing
+					storeNameSetting.addText((text) => {
+						text.inputEl.style.width = '30ch';
+						text
+							.setPlaceholder('Auto-generated if empty')
+							.setValue('')
+							.onChange(async (value) => {
+								const trimmedValue = value.trim();
+								if (trimmedValue) {
+									this.plugin.settings.ragIndexing.fileSearchStoreName = trimmedValue;
+									await this.plugin.saveSettings();
+									new Notice('Store name set. Will be used when indexing starts.');
+								}
+							});
+					});
+				}
+
+				new Setting(containerEl)
+					.setName('Auto-sync changes')
+					.setDesc('Automatically update the index when files are created, modified, or deleted.')
+					.addToggle((toggle) =>
+						toggle.setValue(this.plugin.settings.ragIndexing.autoSync).onChange(async (value) => {
+							this.plugin.settings.ragIndexing.autoSync = value;
+							await this.plugin.saveSettings();
+						})
+					);
+
+				// Build the list of excluded folders including system folders
+				const systemFolders = [this.plugin.settings.historyFolder, '.obsidian'];
+				const userFolders = this.plugin.settings.ragIndexing.excludeFolders
+					.filter(f => !systemFolders.includes(f)); // Remove duplicates with system folders
+
+				new Setting(containerEl)
+					.setName('Exclude folders')
+					.setDesc(`Always excluded: ${systemFolders.join(', ')}. Add additional folders below (one per line).`)
+					.addTextArea((text) => {
+						text.inputEl.rows = 4;
+						text.inputEl.cols = 30;
+						text
+							.setPlaceholder('Additional folders to exclude...')
+							.setValue(userFolders.join('\n'))
+							.onChange(async (value) => {
+								// Filter out system folders to prevent confusion
+								this.plugin.settings.ragIndexing.excludeFolders = value
+									.split('\n')
+									.map((f) => f.trim())
+									.filter((f) => f.length > 0 && !systemFolders.includes(f));
+								await this.plugin.saveSettings();
+							});
+					});
+			}
 		}
 	}
 }

@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
+import { Plugin, WorkspaceLeaf, Editor, MarkdownView, TFile } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiSummary } from './summary';
@@ -26,6 +26,7 @@ import { ExamplePromptsManager } from './services/example-prompts';
 import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
+import { RagIndexingService } from './services/rag-indexing';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -35,6 +36,13 @@ export interface ModelDiscoverySettings {
 	autoUpdateInterval: number; // hours
 	lastUpdate: number;
 	fallbackToStatic: boolean;
+}
+
+export interface RagIndexingSettings {
+	enabled: boolean;
+	fileSearchStoreName: string | null;
+	excludeFolders: string[];
+	autoSync: boolean;
 }
 
 export interface ObsidianGeminiSettings {
@@ -64,6 +72,8 @@ export interface ObsidianGeminiSettings {
 	hasSeenV4Welcome: boolean;
 	// Version tracking for update notifications
 	lastSeenVersion: string;
+	// RAG Indexing settings
+	ragIndexing: RagIndexingSettings;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -98,6 +108,13 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	hasSeenV4Welcome: false,
 	// Version tracking for update notifications
 	lastSeenVersion: '0.0.0',
+	// RAG Indexing settings
+	ragIndexing: {
+		enabled: false,
+		fileSearchStoreName: null,
+		excludeFolders: [],
+		autoSync: true,
+	},
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -120,12 +137,14 @@ export default class ObsidianGemini extends Plugin {
 	public deepResearch: DeepResearchService;
 	public imageGeneration: ImageGeneration;
 	public logger: Logger;
+	public ragIndexing: RagIndexingService | null = null;
 
 	// Private members
 	private summarizer: GeminiSummary;
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
+	private ragListenersRegistered: boolean = false;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -318,6 +337,88 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize image generation
 		this.imageGeneration = new ImageGeneration(this);
 		await this.imageGeneration.setupImageGenerationCommand();
+
+		// Initialize RAG indexing if enabled
+		if (this.settings.ragIndexing.enabled) {
+			// Clean up existing instance if re-initializing (e.g., from saveSettings)
+			if (this.ragIndexing) {
+				// Unregister existing tools
+				const { getRagTools } = await import('./tools/rag-search-tool');
+				const ragTools = getRagTools();
+				for (const tool of ragTools) {
+					this.toolRegistry?.unregisterTool(tool.name);
+				}
+
+				// Destroy existing service
+				await this.ragIndexing.destroy();
+				this.ragIndexing = null;
+			}
+
+			try {
+				this.ragIndexing = new RagIndexingService(this);
+				await this.ragIndexing.initialize();
+
+				// Register RAG search tools
+				const { getRagTools } = await import('./tools/rag-search-tool');
+				const ragTools = getRagTools();
+				for (const tool of ragTools) {
+					this.toolRegistry.registerTool(tool);
+				}
+
+				// Register file event listeners for auto-sync (only once per plugin lifetime)
+				// These use optional chaining so they're safe even if ragIndexing is null
+				if (!this.ragListenersRegistered) {
+					this.registerEvent(
+						this.app.vault.on('create', (file) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileCreate(file);
+							}
+						})
+					);
+					this.registerEvent(
+						this.app.vault.on('modify', (file) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileModify(file);
+							}
+						})
+					);
+					this.registerEvent(
+						this.app.vault.on('delete', (file) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileDelete(file);
+							}
+						})
+					);
+					this.registerEvent(
+						this.app.vault.on('rename', (file, oldPath) => {
+							if (file instanceof TFile && this.ragIndexing) {
+								this.ragIndexing.onFileRename(file, oldPath);
+							}
+						})
+					);
+					this.ragListenersRegistered = true;
+				}
+			} catch (error) {
+				this.logger.error('Failed to initialize RAG indexing:', error);
+				new Notice('Failed to initialize vault search index. Check console for details.');
+
+				// Clean up partial initialization
+				if (this.ragIndexing) {
+					await this.ragIndexing.destroy().catch(() => {});
+					this.ragIndexing = null;
+				}
+			}
+		} else if (this.ragIndexing) {
+			// RAG was disabled - clean up
+			const { getRagTools } = await import('./tools/rag-search-tool');
+			const ragTools = getRagTools();
+			for (const tool of ragTools) {
+				this.toolRegistry?.unregisterTool(tool.name);
+			}
+
+			await this.ragIndexing.destroy();
+			this.ragIndexing = null;
+		}
 	}
 
 	async activateAgentView() {
@@ -492,10 +593,30 @@ export default class ObsidianGemini extends Plugin {
 		return this.modelManager;
 	}
 
-	// Optional: Clean up ribbon icon on unload
+	// Clean up resources on unload
 	onunload() {
 		this.logger.debug('Unloading Gemini Scribe');
 		this.history?.onUnload();
 		this.ribbonIcon?.remove();
+
+		// Clean up RAG indexing service
+		if (this.ragIndexing) {
+			// Unregister all RAG tools from the tool registry
+			// Import dynamically to get tool names, then unregister
+			import('./tools/rag-search-tool').then(({ getRagTools }) => {
+				const ragTools = getRagTools();
+				for (const tool of ragTools) {
+					this.toolRegistry?.unregisterTool(tool.name);
+				}
+			}).catch((error) => {
+				this.logger.error('Error unregistering RAG tools:', error);
+			});
+
+			// Destroy the service (async but we don't need to await in onunload)
+			this.ragIndexing.destroy().catch((error) => {
+				this.logger.error('Error destroying RAG indexing service:', error);
+			});
+			this.ragIndexing = null;
+		}
 	}
 }
