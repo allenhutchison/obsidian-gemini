@@ -570,41 +570,46 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 				// Store name setting
 				const currentStoreName = this.plugin.settings.ragIndexing.fileSearchStoreName;
-				new Setting(containerEl)
+				const storeNameSetting = new Setting(containerEl)
 					.setName('Search index name')
 					.setDesc(currentStoreName
-						? `Current: ${currentStoreName}`
-						: 'No index created yet. Will be auto-generated on first index.')
-					.addText((text) => {
+						? `Current: ${currentStoreName}. To change, disable indexing and delete the store first.`
+						: 'Will be auto-generated on first index, or enter a custom name.');
+
+				if (currentStoreName) {
+					// Store exists - show read-only with copy button
+					storeNameSetting
+						.addText((text) => {
+							text.inputEl.style.width = '30ch';
+							text.setValue(currentStoreName);
+							text.setDisabled(true);
+						})
+						.addButton((button) =>
+							button
+								.setButtonText('Copy')
+								.setTooltip('Copy store name to clipboard')
+								.onClick(async () => {
+									await navigator.clipboard.writeText(currentStoreName);
+									new Notice('Store name copied to clipboard');
+								})
+						);
+				} else {
+					// No store yet - allow editing
+					storeNameSetting.addText((text) => {
 						text.inputEl.style.width = '30ch';
 						text
 							.setPlaceholder('Auto-generated if empty')
-							.setValue(currentStoreName || '')
+							.setValue('')
 							.onChange(async (value) => {
-								// Only update if the value changed and is not empty
 								const trimmedValue = value.trim();
-								if (trimmedValue && trimmedValue !== currentStoreName) {
+								if (trimmedValue) {
 									this.plugin.settings.ragIndexing.fileSearchStoreName = trimmedValue;
 									await this.plugin.saveSettings();
-									// Note: Changing store name will require creating a new store on next index
-									new Notice('Store name updated. Reindex to apply changes.');
-								} else if (!trimmedValue && currentStoreName) {
-									// User cleared the field - keep existing name
-									text.setValue(currentStoreName);
+									new Notice('Store name set. Will be used when indexing starts.');
 								}
 							});
-					})
-					.addButton((button) =>
-						button
-							.setButtonText('Copy')
-							.setTooltip('Copy store name to clipboard')
-							.onClick(async () => {
-								if (currentStoreName) {
-									await navigator.clipboard.writeText(currentStoreName);
-									new Notice('Store name copied to clipboard');
-								}
-							})
-					);
+					});
+				}
 
 				new Setting(containerEl)
 					.setName('Auto-sync changes')

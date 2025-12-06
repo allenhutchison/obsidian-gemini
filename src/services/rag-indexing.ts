@@ -536,9 +536,9 @@ export class RagIndexingService {
 				delay = Math.min(delay * 1.5, maxDelay);
 			}
 
-			// Return the operation name as the resource identifier
-			// The operation name contains the document reference
-			return operation.name || null;
+			// Return the document resource name from the operation response
+			// Format: fileSearchStores/{store_id}/documents/{doc_id}
+			return operation.response?.documentName || null;
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -814,7 +814,9 @@ export class RagIndexingService {
 		}
 
 		this.debounceTimer = setTimeout(() => {
-			this.flushPendingChanges();
+			this.flushPendingChanges().catch((error) => {
+				this.plugin.logger.error('RAG Indexing: Error in debounced flush', error);
+			});
 		}, DEBOUNCE_MS);
 	}
 
@@ -872,6 +874,13 @@ export class RagIndexingService {
 			this.updateStatusBar();
 		} finally {
 			this.isProcessing = false;
+
+			// If new changes arrived while processing, immediately process them
+			if (this.pendingChanges.size > 0) {
+				// Use void to indicate intentional fire-and-forget
+				// Errors are already logged in the catch block above
+				void this.flushPendingChanges();
+			}
 		}
 	}
 }
