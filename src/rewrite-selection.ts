@@ -3,6 +3,7 @@ import { Editor, Notice } from 'obsidian';
 import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
 import { GeminiClientFactory } from './api/simple-factory';
+import { getErrorMessage } from './utils/error-utils';
 
 export class SelectionRewriter {
 	private plugin: InstanceType<typeof ObsidianGemini>;
@@ -78,7 +79,8 @@ export class SelectionRewriter {
 			new Notice('Text rewritten successfully');
 		} catch (error) {
 			this.plugin.logger.error('Failed to rewrite text:', error);
-			new Notice('Failed to rewrite text: ' + error.message);
+			const errorMessage = getErrorMessage(error);
+			new Notice(errorMessage, 8000);
 		}
 	}
 
@@ -133,7 +135,8 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 			new Notice('File rewritten successfully');
 		} catch (error) {
 			this.plugin.logger.error('Failed to rewrite file:', error);
-			new Notice('Failed to rewrite file: ' + error.message);
+			const errorMessage = getErrorMessage(error);
+			new Notice(errorMessage, 8000);
 		}
 	}
 }
