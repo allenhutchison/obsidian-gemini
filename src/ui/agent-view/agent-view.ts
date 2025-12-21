@@ -6,6 +6,7 @@ import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
+import { getErrorMessage } from '../../utils/error-utils';
 
 // Import all component modules
 import { AgentViewProgress } from './agent-view-progress';
@@ -533,7 +534,8 @@ These files are included in the context below. When the user asks you to write d
 
 		} catch (error) {
 			this.plugin.logger.error('Failed to send message:', error);
-			new Notice('Failed to send message');
+			const errorMessage = getErrorMessage(error);
+			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
 		} finally {
 			// Reset execution state and button (unless already reset by stopAgentLoop)
 			// The check prevents redundant resets if user clicked stop
