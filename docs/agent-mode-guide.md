@@ -254,10 +254,9 @@ User: Organize my daily notes into monthly folders
 Before clicking Allow, always review:
 
 1. **Tool Name**: What operation the agent wants to perform
-2. **Parameters**: The specific details (file paths, content snippets, etc.)
+2. **Parameters**: File paths, content snippets, and other details to verify
 3. **File Paths**: Ensure paths are correct and won't overwrite important files
 4. **Content Preview**: Check the content looks reasonable (for write operations)
-
 **Example - Be careful with destructive operations:**
 ```
 🔒 Permission Required
