@@ -189,7 +189,7 @@ Agent: I'll create your weekly reflection. Let me:
 **Agent Not Responding**
 - Check API key validity in Settings
 - Verify internet connection
-- Ensure your model supports tool calling (e.g., Gemini 1.5 Pro and newer models)
+- Ensure your model supports tool calling (all current models support this)
 
 **Tools Failing**
 - Check file permissions and paths
@@ -199,7 +199,7 @@ Agent: I'll create your weekly reflection. Let me:
 **Poor Quality Output**
 - Add specific notes as context files
 - Be more specific in your requests
-- Try a more capable model (e.g., Gemini 1.5 Pro)
+- Try Gemini 2.5 Pro for more capable responses
 
 **Performance Issues**
 - Use Gemini Flash for faster responses
@@ -215,7 +215,7 @@ Agent: I'll create your weekly reflection. Let me:
 
 ### Essential Settings
 - **API Key**: Your Gemini API key (required)
-- **Chat Model**: AI model for agent conversations (default: Gemini 2.0 Flash Experimental)
+- **Chat Model**: AI model for agent conversations (default: Gemini 2.5 Pro)
 - **Plugin State Folder**: Where agent sessions and data are stored (default: gemini-scribe)
 
 ### Agent Permissions
@@ -226,9 +226,9 @@ Configure which operations require confirmation:
 - Move/rename files
 
 ### Model Selection
-- **Agent/Chat**: Gemini 2.0 Flash Experimental (recommended) or Gemini 1.5 Pro
-- **Completions**: Gemini 1.5 Flash-8B (fastest)
-- **Summary**: Gemini 1.5 Flash (balanced)
+- **Agent/Chat**: Gemini 2.5 Pro (default, most capable)
+- **Completions**: Gemini Flash Lite Latest (default, fastest)
+- **Summary**: Gemini Flash Latest (default, balanced speed/quality)
 
 ### Advanced Settings
 - **Temperature**: Control AI creativity (0-2.0, dynamically adjusted per model)
