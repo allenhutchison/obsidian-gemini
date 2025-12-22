@@ -249,14 +249,42 @@ When adding features, ensure tests cover:
 
 ### Documentation Maintenance
 
-**CRITICAL**: Always keep documentation up to date when making changes:
+**🚨 CRITICAL - DOCUMENTATION IS MANDATORY 🚨**
 
-1. **Feature Addition**: Update README.md, user documentation, and any relevant guides
-2. **Feature Updates**: Modify existing documentation to reflect changes
-3. **Feature Removal**: Remove or update documentation that no longer applies
-4. **API Changes**: Update any code examples or integration guides
+Documentation updates are **REQUIRED**, not optional. Every code change MUST include corresponding documentation updates in the same PR/commit.
 
-Documentation should be updated in the same PR/commit as the feature changes.
+**When making ANY change:**
+
+1. **Feature Addition**:
+   - Update README.md with new feature description
+   - Create or update relevant user guides in `docs/`
+   - Add examples and use cases
+   - Update table of contents and navigation
+
+2. **Feature Updates**:
+   - Modify ALL affected documentation files
+   - Update code examples to reflect changes
+   - Revise screenshots or diagrams if needed
+
+3. **Feature Removal**:
+   - Remove or rewrite documentation for removed features
+   - Delete archived docs (users auto-update, no need for old docs)
+   - Update migration guides if needed
+
+4. **API/Settings Changes**:
+   - Update settings-reference.md
+   - Update code examples in guides
+   - Document breaking changes clearly
+
+**Documentation Review Checklist:**
+- [ ] README.md updated if user-facing change
+- [ ] Relevant guides in `docs/` updated
+- [ ] Code examples tested and current
+- [ ] Settings documentation matches actual defaults
+- [ ] No references to removed features
+- [ ] Internal doc links not broken
+
+**Remember**: Outdated documentation is worse than no documentation. If you change code, you MUST update docs.
 
 ### Implementation Planning
 
@@ -280,8 +308,10 @@ This keeps technical planning centralized and accessible for all contributors.
 
 - Write concise, imperative commit subjects (`Fix agent session cleanup`, `Improve prompt builder`); reference issues/PRs with `#123`
 - Commit generated artifacts (`main.js`, `manifest.json`, `versions.json`) alongside source changes; use `npm run version` for releases
+- **MANDATORY**: Include documentation updates in the same PR/commit as code changes (see Documentation Maintenance section)
 - PRs should explain motivation, highlight user-visible impact, list automated/manual tests, and attach screenshots or vault clips for UI tweaks
 - Flag reviewers who own the affected area and mention required follow-up or rollout notes
+- PR descriptions should explicitly list which documentation files were updated
 
 ## UI/UX Best Practices
 
@@ -305,5 +335,5 @@ This keeps technical planning centralized and accessible for all contributors.
 ## Security & Configuration
 
 - Never commit API keys or vault data; keep secrets in local Obsidian configuration
-- Document new network calls or permissions in `docs/` and align `AGENT_IMPLEMENTATION_PLAN.md` when agent capabilities shift
+- Document new network calls or permissions in `docs/` when adding features or capabilities
 - Always use native Obsidian API calls when possible. Documentation here: https://docs.obsidian.md/Home
