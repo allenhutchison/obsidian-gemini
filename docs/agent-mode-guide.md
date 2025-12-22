@@ -199,10 +199,9 @@ Parameters:
 
 **☑ Don't ask again this session** - Create session-level permission
 - Check this box before clicking Allow
-- The agent won't ask for confirmation again for this tool during the current session
+- The agent won't request confirmation for this tool again during the current session
 - Useful for repetitive operations you trust
 - **Important**: Permission resets when you create a new session or restart Obsidian
-
 ### After You Respond
 
 Once you click a button, the confirmation request updates to show the result:
