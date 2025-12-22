@@ -52,7 +52,25 @@ export async function selectModelSetting(
 				dropdown.addOption(model.value, model.label);
 			});
 
-			dropdown.setValue(String((plugin.settings as ObsidianGeminiSettings)[settingName])).onChange(async (value) => {
+			// Get current setting value
+			const currentValue = String((plugin.settings as ObsidianGeminiSettings)[settingName]);
+
+			// Check if current value exists in available models
+			const valueExists = availableModels.some(m => m.value === currentValue);
+
+			// If value doesn't exist in options, use first available model
+			if (!valueExists && availableModels.length > 0) {
+				const defaultValue = availableModels[0].value;
+				plugin.logger.warn(`${label}: Current value "${currentValue}" not found in available models. Defaulting to "${defaultValue}"`);
+				(plugin.settings as ObsidianGeminiSettings)[settingName] = defaultValue;
+				dropdown.setValue(defaultValue);
+				// Save the corrected setting
+				plugin.saveSettings().catch((e) => plugin.logger.error(`Failed to save corrected ${label} setting:`, e));
+			} else {
+				dropdown.setValue(currentValue);
+			}
+
+			dropdown.onChange(async (value) => {
 				(plugin.settings as ObsidianGeminiSettings)[settingName] = value as string;
 				await plugin.saveSettings();
 			});
