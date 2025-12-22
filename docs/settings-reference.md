@@ -58,25 +58,26 @@ All models are selected from available Gemini models. The plugin supports dynami
 ### Chat Model
 - **Setting**: `chatModelName`
 - **Type**: String
-- **Default**: `gemini-1.5-flash-8b` (or latest available)
+- **Default**: `gemini-2.5-pro`
 - **Description**: Model used for agent chat conversations
 - **Available Models**:
-  - `gemini-2.0-flash-exp` - Latest experimental model
-  - `gemini-1.5-flash` - Fast, efficient model
-  - `gemini-1.5-flash-8b` - Smaller, faster variant
-  - `gemini-1.5-pro` - Most capable model
+  - `gemini-2.5-pro` - Gemini 2.5 Pro (most capable, default for chat)
+  - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient)
+  - `gemini-flash-lite-latest` - Gemini Flash Lite Latest (lightweight)
+  - `gemini-3-pro-preview` - Gemini 3 Pro Preview (experimental)
+- **Note**: Model discovery automatically fetches the latest available models from Google's API
 
 ### Summary Model
 - **Setting**: `summaryModelName`
 - **Type**: String
-- **Default**: `gemini-1.5-flash-8b`
+- **Default**: `gemini-flash-latest`
 - **Description**: Model used for document summarization and selection-based text rewriting
 - **Used by**: Summarize Active File command, Rewrite text with AI command
 
 ### Completions Model
 - **Setting**: `completionsModelName`
 - **Type**: String
-- **Default**: `gemini-1.5-flash-8b`
+- **Default**: `gemini-flash-lite-latest`
 - **Description**: Model used for IDE-style auto-completions
 - **Note**: Completions must be enabled via command palette
 

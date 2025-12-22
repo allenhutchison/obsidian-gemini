@@ -1,513 +1,435 @@
 # Context System Guide
 
-The Context System is the intelligence behind Gemini Scribe's ability to understand your notes and their relationships. It automatically includes relevant content from your current note and linked notes when communicating with the AI.
+The Context System in Gemini Scribe v4.0+ allows you to provide the AI agent with specific files from your vault as reference material. This guide explains how context works and how to use it effectively.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [How Context Works](#how-context-works)
-- [Configuration](#configuration)
-- [Context Depth Explained](#context-depth-explained)
-- [Optimizing Context](#optimizing-context)
+- [Adding Context Files](#adding-context-files)
+- [Managing Context](#managing-context)
+- [Best Practices](#best-practices)
 - [Advanced Usage](#advanced-usage)
-- [Performance Considerations](#performance-considerations)
 - [Troubleshooting](#troubleshooting)
 
 ## Overview
 
-### What is the Context System?
+### What is Context?
 
-The Context System:
-- Automatically includes your current note in AI conversations
-- Follows links to include related notes
-- Builds a knowledge graph for the AI
-- Respects your privacy and vault structure
-- Works transparently in the background
+Context in Gemini Scribe refers to files from your vault that the AI agent can access and reference during conversations. Unlike previous versions that automatically traversed linked notes, v4.0+ uses an **explicit, session-based approach** where you manually select which files to include.
 
-### Why Context Matters
+### Key Features
 
-With context, the AI can:
-- Understand your specific content
-- Reference related information
-- Maintain consistency across notes
-- Provide relevant suggestions
-- Answer questions about your knowledge base
+- **Session-Based**: Context files persist for the entire session
+- **Manual Control**: You choose exactly which files to include
+- **@ Mentions**: Quick file selection via @ symbol
+- **Tool Integration**: Agent can read additional files on demand
+- **AGENTS.md**: Vault-wide context initialization
+
+### Why This Approach?
+
+The new context system provides:
+- **Clarity**: You know exactly what the AI can see
+- **Performance**: No automatic traversal means faster responses
+- **Flexibility**: Add or remove context as needed during conversation
+- **Control**: Precise management of what information the AI accesses
 
 ## How Context Works
 
-### The Context Building Process
+### Context vs. Tool Access
 
-1. **Current Note**: Always included (if enabled)
-2. **Link Discovery**: Finds all [[wiki-links]] and [markdown](links)
-3. **Depth Traversal**: Follows links based on your setting
-4. **Content Assembly**: Combines all relevant notes
-5. **AI Processing**: Sends context with your query
+**Context Files** (Always Available):
+- Added via @ mentions or file chips
+- Automatically included with every message
+- Persist throughout the session
+- Ideal for reference material you'll use repeatedly
 
-### What Gets Included
+**Tool-Based File Access** (On-Demand):
+- Agent uses `read_file` tool when needed
+- Not automatically included with messages
+- Ideal for files the agent discovers during conversation
+- More flexible but requires agent initiative
 
-**From Current Note**:
-- Full text content
-- Frontmatter metadata
-- Code blocks
-- Lists and tables
-- Embedded content
+### AGENTS.md - Vault Context
 
-**From Linked Notes**:
-- Notes referenced with [[wiki-links]]
-- Notes with [markdown links](note.md)
-- Embedded notes with ![[embedding]]
-- Transclusions and references
+AGENTS.md is a special file that provides the agent with an overview of your entire vault structure:
 
-### What's Excluded
+**What it contains:**
+- Vault folder structure
+- File organization patterns
+- Key notes and their purposes
+- Naming conventions
+- Tags and categories in use
 
-- Attachments (images, PDFs)
-- External links (websites)
-- Broken or missing links
-- Excluded folders (if configured)
-- System files
+**How to create it:**
+1. Open Agent Chat
+2. Click "Initialize Vault Context" button
+3. Agent analyzes your vault and creates AGENTS.md
+4. Update periodically as your vault evolves
 
-## Configuration
+**Benefits:**
+- Agent understands your vault organization
+- Better file discovery and suggestions
+- More relevant tool usage
+- Improved understanding of relationships
 
-### Basic Settings
+## Adding Context Files
 
-In Settings → Gemini Scribe:
+### Method 1: @ Mentions (Recommended)
 
-1. **Send Context**: Master toggle
-   - ON: Include note content
-   - OFF: Chat without context
+The fastest way to add context files:
 
-2. **Max Context Depth**: How deep to follow links
-   - 0: Only current note
-   - 1: Current + directly linked
-   - 2: Current + linked + their links
-   - 3+: Deeper traversal
+1. Type `@` in the chat input
+2. A file picker appears
+3. Start typing the file name
+4. Select from the filtered list
+5. File chip appears in input
+6. Send message - file is now persistent context
 
-### Depth Guidelines
-
-| Depth | Includes | Best For | Performance |
-|-------|----------|----------|-------------|
-| 0 | Current note only | Simple queries, isolated notes | Fastest |
-| 1 | Current + direct links | Most use cases | Fast |
-| 2 | Two levels of links | Research, wikis | Moderate |
-| 3+ | Deep traversal | Complex knowledge graphs | Slower |
-
-## Context Depth Explained
-
-### Depth 0: Current Note Only
-
+**Example:**
 ```
-Current Note: "Project Planning"
-Context includes: Only "Project Planning"
+User: @Project Plan Can you help me...
+[File chip appears for "Project Plan.md"]
+[File becomes persistent context for session]
 ```
 
-Use when:
-- Working on standalone documents
-- Note has no relevant links
-- Want fastest response
-- Discussing specific content
+### Method 2: File Selection Modal
 
-### Depth 1: Direct Links
+For adding multiple files at once:
 
-```
-Current Note: "Project Planning"
-  Links to: "Budget", "Timeline", "Team"
-Context includes: All 4 notes
-```
+1. Click the file icon in the session header
+2. Browse and select files
+3. Click "Add to Context"
+4. Files appear as chips in the session
 
-Use when:
-- Note has related documents
-- Need immediate references
-- Standard knowledge work
-- Balanced performance
+### Method 3: Drag and Drop
 
-### Depth 2: Secondary Links
+*(If implemented)* Drag files from the file explorer directly into the chat.
 
-```
-Current Note: "Project Planning"
-  Links to: "Budget"
-    Links to: "Q1 Expenses", "Q2 Projections"
-  Links to: "Timeline"
-    Links to: "Milestones", "Dependencies"
-Context includes: All 7 notes
-```
+### What Happens When You Add Context
 
-Use when:
-- Working with interconnected knowledge
-- Research projects
-- Complex documentation
-- Can accept slower responses
+1. **File is Read**: Content is loaded from your vault
+2. **Added to Session**: File persists as context
+3. **Included in Messages**: Content sent with every message
+4. **Visible Indicator**: File chip shows it's in context
+5. **Stays Active**: Remains until you remove it or end session
 
-### Depth 3+: Deep Traversal
+## Managing Context
 
-```
-Current Note: "Project Planning"
-  Links to: "Budget"
-    Links to: "Q1 Expenses"
-      Links to: "Vendor Contracts"
-        Links to: [continues...]
-```
+### Viewing Current Context
 
-Use when:
-- Entire knowledge base is relevant
-- Comprehensive analysis needed
-- Performance is not critical
-- Small, focused vaults
+Active context files are displayed:
+- As chips in the chat input area
+- In the session sidebar (if visible)
+- Indicated by visual markers
 
-## Optimizing Context
+### Removing Context Files
 
-### 1. Structure Your Notes
+To remove a file from context:
+1. Click the X on the file chip, or
+2. Open session settings and remove from context list
 
-**Hub Notes**:
+### Context Limits
+
+**Technical Limits:**
+- Maximum token limit per request (~2M tokens for Gemini 2.5+)
+- Large files count against this limit
+- Agent may not see all content if limit exceeded
+
+**Practical Recommendations:**
+- **1-5 files**: Ideal for most conversations
+- **5-10 files**: Works well for research projects
+- **10+ files**: May exceed token limits with large files
+
+**File Size Considerations:**
+- Small notes (<5KB): Minimal impact
+- Medium notes (5-50KB): Good for context
+- Large notes (>50KB): Use sparingly
+- Very large (>100KB): Consider summarizing first
+
+### Session Persistence
+
+Context files persist:
+- ✅ Throughout the current session
+- ✅ Across Obsidian restarts
+- ✅ When loading saved sessions
+- ❌ When creating a new session
+
+To reuse context:
+- Load a saved session with existing context
+- Or re-add files to new sessions
+
+## Best Practices
+
+### 1. Start Minimal, Expand as Needed
+
 ```markdown
-# Project Hub
-
-## Overview
-Main project documentation
-
-## Related Documents
-- [[Project Planning]]
-- [[Technical Specs]]
-- [[Meeting Notes]]
-- [[Decision Log]]
+❌ Add 20 files immediately
+✅ Start with 2-3 most relevant files
+✅ Add more if agent needs additional information
 ```
 
-**Atomic Notes**:
-- One concept per note
-- Clear, descriptive titles
-- Explicit links
-- Avoid deep nesting
+### 2. Use Relevant, Focused Files
 
-### 2. Strategic Linking
+**Good Context:**
+- Project overview documents
+- Reference materials for current task
+- Files with key terminology or concepts
+- Documents you'll reference repeatedly
 
-**Do Link**:
-- Related concepts
-- Supporting documents
-- References and sources
-- Definitions and glossaries
+**Poor Context:**
+- Random notes not related to conversation
+- Very large files (use summaries instead)
+- Duplicate information across files
+- Rarely-referenced materials
 
-**Don't Link**:
-- Every mention
-- Irrelevant tangents
-- Circular references
-- Archive/old versions
+### 3. Leverage AGENTS.md
 
-### 3. Context Boundaries
+Before adding lots of context files:
+1. Ensure AGENTS.md is current
+2. Let agent use tools to discover files
+3. Only add files you know you'll reference repeatedly
 
-**Create Boundaries**:
-```markdown
-# Technical Documentation
+### 4. Name Files Clearly
 
-Internal notes - don't follow these in context:
-<!-- [[Private Notes]] -->
-<!-- [[Draft Ideas]] -->
+The @ mention system works by file name:
+- Use descriptive file names
+- Avoid generic names like "Notes.md"
+- Consider prefixes for organization
+- Examples: "Project-Alpha-Overview.md", "Meeting-2024-Q1.md"
 
-Public documentation - include in context:
-- [[API Reference]]
-- [[User Guide]]
+### 5. Update Context During Conversation
+
+Context isn't static:
+```
+User: @Design Doc Let's review the design
+[Discuss design]
+
+User: Now I want to implement. Let me add the code structure
+      @Code Structure @API Design
+[Add new context files as conversation evolves]
 ```
 
-### 4. Metadata Usage
+### 6. Remove Unused Context
 
-Use frontmatter for context:
-```markdown
----
-project: Alpha
-status: active
-tags: [important, technical]
-related: 
-  - "[[Architecture Doc]]"
-  - "[[API Design]]"
----
-```
+If a file is no longer relevant:
+- Remove it to save token budget
+- Keeps context focused and relevant
+- Improves response quality
 
 ## Advanced Usage
 
-### 1. Context Windows
+### Use Case: Research Project
 
-**Managing Large Contexts**:
-- AI has token limits
-- Large contexts may be truncated
-- Prioritize important content
-- Use focused queries
-
-**Strategies**:
-1. Start specific, expand if needed
-2. Use depth 1 for most queries
-3. Increase depth selectively
-4. Break complex questions into parts
-
-### 2. Dynamic Context
-
-**Switching Context**:
-1. Change active note
-2. Context updates automatically
-3. New conversation perspective
-4. Different knowledge subset
-
-**Multi-Note Workflows**:
-- Open different notes for different contexts
-- Compare AI responses across contexts
-- Build comprehensive understanding
-
-### 3. Context-Aware Prompting
-
-**Reference Context**:
+**Setup:**
 ```
-"Based on the linked budget documents, what's our Q2 projection?"
+Context Files:
+1. Research Question.md - Your main question
+2. Literature Review.md - Key papers and findings
+3. Methodology.md - Approach and methods
 ```
 
-**Explore Connections**:
+**Workflow:**
+1. Agent has constant access to research foundation
+2. Can compare new findings to literature review
+3. Maintains consistency with methodology
+4. Add new sources as you discover them
+
+### Use Case: Software Project
+
+**Setup:**
 ```
-"How do the ideas in the linked notes relate to each other?"
+Context Files:
+1. README.md - Project overview
+2. ARCHITECTURE.md - System design
+3. API-Spec.md - Interface definitions
 ```
 
-**Synthesize Information**:
+**Workflow:**
+1. Agent understands project structure
+2. Suggests code that fits architecture
+3. Follows API specifications
+4. Can create files in proper locations
+
+### Use Case: Writing Project
+
+**Setup:**
 ```
-"Summarize the key themes across all the included context"
+Context Files:
+1. Character Profiles.md - Main characters
+2. World Building.md - Setting details
+3. Plot Outline.md - Story structure
 ```
 
-### 4. Specialized Vaults
+**Workflow:**
+1. Maintains character consistency
+2. Adheres to world-building rules
+3. Follows plot structure
+4. Helps develop scenes in context
 
-**Research Vault**:
-- High interconnection
-- Use depth 2-3
-- Focus on synthesis
+### Combining Context with Tools
 
-**Project Vault**:
-- Moderate linking
-- Use depth 1-2
-- Balance speed/context
+**Strategic Approach:**
+1. **Context Files**: Core reference material
+2. **AGENTS.md**: Vault structure understanding
+3. **Agent Tools**: Discovery and exploration
 
-**Journal Vault**:
-- Minimal linking
-- Use depth 0-1
-- Fast, focused responses
+**Example:**
+```
+User: Using our project architecture (in context),
+      find all the API endpoints in the codebase
+      and create a test plan
 
-## Performance Considerations
+Agent:
+1. References ARCHITECTURE.md (context)
+2. Uses search_files to find endpoints
+3. Uses read_file to examine each endpoint
+4. Creates test plan following architecture
+```
 
-### Context Size Impact
+### Session Templates
 
-| Context Size | Response Time | Quality |
-|--------------|---------------|---------|
-| < 1000 words | 1-2 seconds | Focused |
-| 1000-5000 | 2-5 seconds | Comprehensive |
-| 5000-10000 | 5-10 seconds | Very detailed |
-| > 10000 | 10+ seconds | May truncate |
+Create reusable session configurations:
 
-### Optimization Tips
+**Technical Writing Session:**
+- Context: Style Guide, Glossary, Product Overview
+- Model: Gemini 2.5 Pro
+- Custom Prompt: Technical writing assistant
 
-1. **Start Small**: Begin with depth 0-1
-2. **Monitor Performance**: Note response times
-3. **Adjust as Needed**: Increase depth gradually
-4. **Profile Your Vault**: Understand link density
+**Creative Writing Session:**
+- Context: Character profiles, world building
+- Model: Gemini 3 Pro (if available)
+- Custom Prompt: Creative writing coach
 
-### Memory and Processing
-
-**Large Vaults**:
-- More memory usage at higher depths
-- Exponential growth with depth
-- Consider vault structure
-- May need to limit depth
-
-**Circular References**:
-- Automatically detected
-- Prevented from infinite loops
-- Each note included once
-- No performance penalty
+**Research Session:**
+- Context: Research questions, literature review
+- Model: Gemini 2.5 Pro
+- Custom Prompt: Research assistant
 
 ## Troubleshooting
 
 ### Context Not Working
 
-1. **Check Settings**
-   - "Send Context" is ON
-   - Depth is greater than 0
-   - Note is open in editor
+**Issue**: Added file but agent doesn't reference it
 
-2. **Verify Links**
-   - Links use correct syntax
-   - Target notes exist
-   - No typos in note names
+**Checks:**
+1. Verify file chip is visible in chat
+2. Confirm file exists in vault
+3. Check file isn't corrupted
+4. Try re-adding the file
+5. Start a new message
 
-3. **Test Incrementally**
-   - Start with depth 0
-   - Verify current note included
-   - Increase depth gradually
+**Fix**: Remove and re-add the file, or create new session
 
-### Missing Expected Content
+### File Not Found in @ Mentions
 
-**Note Not Included**:
-- Check link syntax
-- Verify note exists
-- Look for typos
-- Check if within depth limit
+**Issue**: Can't find file when using @
 
-**Partial Content**:
-- May exceed token limit
-- Check for parsing errors
-- Verify markdown syntax
-- Look for special characters
+**Reasons:**
+1. File name typed incorrectly
+2. File is in excluded folder
+3. File doesn't exist
+4. Typo in search
+
+**Fix**:
+- Check file name spelling
+- Use file explorer to verify file exists
+- Try partial name matching
+- Check folder isn't excluded in settings
+
+### Token Limit Exceeded
+
+**Issue**: Error about request being too large
+
+**Causes:**
+- Too many context files
+- Files are very large
+- Long conversation history
+
+**Solutions:**
+1. Remove some context files
+2. Create a new session (clears history)
+3. Use summaries instead of full files
+4. Split conversation into focused sessions
+
+### Agent Ignoring Context
+
+**Issue**: Agent doesn't use context files even though they're added
+
+**Reasons:**
+1. Files aren't relevant to question
+2. Agent has sufficient knowledge without them
+3. Files are very long (truncated in context)
+4. Conversation history dominates attention
+
+**Solutions:**
+1. Explicitly reference context: "Based on the Design Doc..."
+2. Ask specific questions about context content
+3. Reduce conversation history by starting new session
+4. Verify context files contain relevant information
 
 ### Performance Issues
 
-**Slow Responses**:
-1. Reduce context depth
-2. Simplify note structure
-3. Break up large notes
-4. Use focused queries
+**Issue**: Slow responses with context files
 
-**Timeouts**:
-- Context too large
-- Network issues
-- Reduce depth
-- Try again with smaller context
+**Causes:**
+- Too many or too large files
+- Token limit approaching
+- Network latency
 
-### Unexpected Behavior
+**Optimizations:**
+1. Reduce number of context files
+2. Use smaller, focused files
+3. Remove unnecessary context
+4. Consider using Pro model (larger context window)
 
-**Wrong Context**:
-- Verify active note
-- Check for multiple windows
-- Ensure correct note focused
-- Restart if needed
+## Migration from v3.x
 
-**Inconsistent Results**:
-- Context may vary by query
-- Token limits affect inclusion
-- Order matters for large contexts
-- Try rephrasing query
+If you're upgrading from v3.x, the context system changed significantly:
 
-## Best Practices
+**Old System (v3.x):**
+- Automatic link traversal
+- "Send Context" toggle
+- "Max Context Depth" setting
+- Followed [[links]] automatically
 
-### 1. Vault Organization
+**New System (v4.0+):**
+- Manual file selection
+- No automatic traversal
+- @ mentions for adding files
+- Agent tools for file discovery
 
-**For Optimal Context**:
-- Clear hierarchy
-- Meaningful links
-- Avoid over-linking
-- Group related content
+**Why the Change:**
+- More control and transparency
+- Better performance
+- Clearer behavior
+- More flexible for different use cases
 
-### 2. Link Hygiene
+**Adaptation Tips:**
+1. Identify files you used to rely on automatic inclusion
+2. Add those explicitly as context
+3. Use AGENTS.md for vault awareness
+4. Let agent use tools for discovery
 
-**Regular Maintenance**:
-- Fix broken links
-- Remove outdated references
-- Update moved notes
-- Consolidate duplicates
+## Summary
 
-### 3. Context Testing
+The v4.0+ context system gives you precise control over what the AI agent can see:
 
-**Verify Context**:
-```
-"What notes are included in your current context?"
-"Summarize all the information you have access to"
-```
+**Key Takeaways:**
+- Context is **explicit and session-based**
+- Add files with **@ mentions**
+- Start with **2-3 focused files**
+- Let agent **use tools** for additional files
+- Use **AGENTS.md** for vault awareness
+- **Remove unused** context to stay efficient
 
-### 4. Progressive Enhancement
+**Remember:**
+- Quality over quantity for context files
+- AGENTS.md provides vault-wide understanding
+- Agent tools can read files on-demand
+- Session-based approach gives you full control
 
-1. Start with no context
-2. Add current note
-3. Include direct links
-4. Expand as needed
-
-## Use Case Examples
-
-### Academic Research
-
-```markdown
-# Literature Review
-
-## Core Papers
-- [[Smith 2023 - AI in Education]]
-- [[Jones 2024 - Learning Methods]]
-- [[Brown 2023 - Technology Impact]]
-
-## Synthesis
-[Your analysis here]
-```
-**Context Depth**: 2 (include papers and their references)
-
-### Project Management
-
-```markdown
-# Sprint Planning
-
-## This Sprint
-- [[Feature A Spec]]
-- [[Feature B Design]]
-- [[Bug Fixes List]]
-
-## Dependencies
-- [[API Documentation]]
-- [[Database Schema]]
-```
-**Context Depth**: 1 (include immediate dependencies)
-
-### Creative Writing
-
-```markdown
-# Chapter 5
-
-## Characters in Scene
-- [[Emma - Character Profile]]
-- [[David - Character Profile]]
-
-## Location
-- [[Coffee Shop - Setting]]
-
-## Previous Chapter
-- [[Chapter 4 - The Meeting]]
-```
-**Context Depth**: 1 (include character/setting details)
-
-### Technical Documentation
-
-```markdown
-# API Endpoint Reference
-
-## Authentication
-See: [[Auth Flow Documentation]]
-
-## Related Endpoints
-- [[User Endpoints]]
-- [[Data Endpoints]]
-
-## Examples
-- [[API Usage Examples]]
-```
-**Context Depth**: 1-2 (include related docs and examples)
-
-## Integration with Other Features
-
-### With Custom Prompts
-
-Context + Prompts = Powerful combination:
-- Prompt sets behavior
-- Context provides information
-- AI uses both effectively
-
-### With Rewrite
-
-Context informs rewrites:
-- Maintains consistency
-- References related docs
-- Preserves terminology
-
-### With Completions
-
-Context improves suggestions:
-- Relevant to your content
-- Consistent with linked notes
-- Aware of your terminology
-
-## Conclusion
-
-The Context System is the foundation of Gemini Scribe's intelligence. By understanding how to structure your notes and configure context depth, you can:
-
-- Get more relevant AI responses
-- Maintain consistency across your vault
-- Leverage your entire knowledge base
-- Balance performance with comprehensiveness
-
-Remember: Context is about quality, not quantity. Well-structured notes with thoughtful linking at moderate depth often outperform deep traversal of poorly organized content.
-
-Start with depth 1 for most use cases, experiment with your specific vault structure, and adjust based on your needs. The goal is to provide the AI with exactly the information it needs to help you effectively.
+For more information, see:
+- [Agent Mode Guide](agent-mode-guide.md) - Tool usage and capabilities
+- [Settings Reference](settings-reference.md) - Configuration options
+- [Custom Prompts Guide](custom-prompts-guide.md) - Behavior customization

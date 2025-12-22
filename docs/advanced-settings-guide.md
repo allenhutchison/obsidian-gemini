@@ -114,16 +114,25 @@ Monitor and control model discovery:
 
 ### Context Management
 
-**Context Depth Settings:**
-- **Depth 0**: Current note only (fastest)
-- **Depth 1**: Current note + direct links
-- **Depth 2**: Includes links of linked notes
-- **Depth 3+**: Exponentially more content
+In v4.0+, context is manually managed through session-based file selection:
+
+**Context File Selection:**
+- Use @ mentions in chat to add files as persistent context
+- Context files are included with every message in the session
+- Start with 2-3 relevant files and add more as needed
+- Remove unused context files to save token budget
+
+**AGENTS.md - Vault Context:**
+- Create AGENTS.md via "Initialize Vault Context" button
+- Provides AI with overview of your vault structure
+- Enables better file discovery without adding every file as context
+- Update periodically as your vault evolves
 
 **Optimization tips:**
-- Start with depth 1 for most use cases
-- Increase depth for complex research projects
-- Monitor API usage and response times
+- Start minimal (2-3 files) and expand as needed
+- Use AGENTS.md for vault-wide awareness instead of adding many context files
+- Let agent use tools to read additional files on-demand
+- Monitor token usage in long conversations
 - Use Flash models for faster responses
 
 ### Model Selection Strategy
@@ -186,8 +195,9 @@ Monitor and control model discovery:
 - Verify internet connection
 
 **Slow responses:**
-- Reduce context depth
+- Reduce number of context files in session
 - Use faster models (Flash variants)
+- Start new session to clear conversation history
 - Lower retry count for quicker failures
 
 ### Model Discovery Issues
@@ -234,8 +244,8 @@ Monitor and control model discovery:
 ```
 Temperature: 0.3-0.5 (focused analysis)
 Top P: 0.7-0.9 (balanced diversity)
-Context Depth: 2-3 (comprehensive context)
-Model: Gemini 1.5 Pro (best quality)
+Context Files: Research question, literature review, methodology notes
+Model: Gemini 2.5 Pro (best quality)
 ```
 
 ### Creative Writing
@@ -243,8 +253,8 @@ Model: Gemini 1.5 Pro (best quality)
 ```
 Temperature: 1.0-1.5 (high creativity)
 Top P: 0.9-1.0 (maximum diversity)
-Context Depth: 1-2 (relevant context)
-Model: Gemini 1.5 Pro (best quality)
+Context Files: Character profiles, world building notes, plot outline
+Model: Gemini 2.5 Pro (best quality)
 ```
 
 ### Technical Documentation
@@ -252,8 +262,8 @@ Model: Gemini 1.5 Pro (best quality)
 ```
 Temperature: 0.2-0.4 (consistent style)
 Top P: 0.5-0.8 (focused responses)
-Context Depth: 1-2 (relevant context)
-Model: Gemini 1.5 Flash (fast, accurate)
+Context Files: API specs, architecture docs, style guide
+Model: Gemini Flash Latest (fast, accurate)
 ```
 
 ### Brainstorming Sessions
@@ -261,8 +271,8 @@ Model: Gemini 1.5 Flash (fast, accurate)
 ```
 Temperature: 1.2-1.8 (maximum creativity)
 Top P: 0.9-1.0 (diverse ideas)
-Context Depth: 1-2 (some context)
-Model: Gemini 1.5 Pro (creative capability)
+Context Files: Project overview, relevant background materials
+Model: Gemini 2.5 Pro (creative capability)
 ```
 
 ## Support
