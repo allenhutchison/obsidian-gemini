@@ -170,7 +170,7 @@ When the agent needs to perform operations that require your approval (like crea
 
 Instead of popup modals, confirmation requests appear as interactive messages in the chat:
 
-```
+```text
 🔒 Permission Required
 
 📝 Write File
@@ -206,13 +206,13 @@ Parameters:
 
 Once you click a button, the confirmation request updates to show the result:
 
-```
+```text
 ✓ Permission granted: Write File was allowed
 ```
 
 or
 
-```
+```text
 ✗ Permission denied: Write File was cancelled
 ```
 
@@ -238,7 +238,7 @@ When you check "Don't ask again this session" and click Allow:
    - Restart Obsidian
 
 **Use case example:**
-```
+```text
 User: Organize my daily notes into monthly folders
 
 [Agent requests permission to move first file]
@@ -257,7 +257,7 @@ Before clicking Allow, always review:
 3. **File Paths**: Ensure paths are correct and won't overwrite important files
 4. **Content Preview**: Check the content looks reasonable (for write operations)
 **Example - Be careful with destructive operations:**
-```
+```text
 🔒 Permission Required
 
 🗑️ Delete File
