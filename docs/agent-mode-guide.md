@@ -34,7 +34,7 @@ Choose which operations require confirmation in Settings → Gemini Scribe:
 - Delete files
 - Move/rename files
 
-You can also set session-level permissions to bypass confirmations for trusted workflows.
+When the agent needs to perform these operations, an **in-chat confirmation request** appears with interactive buttons. You can also use "Don't ask again this session" for trusted workflows. See [Tool Confirmations](#tool-confirmations) for details.
 
 ## Core Features
 
@@ -162,6 +162,124 @@ Set session-specific permissions:
 - Temporarily enable additional tools
 - Restrict access for sensitive sessions
 
+## Tool Confirmations
+
+When the agent needs to perform operations that require your approval (like creating, modifying, or deleting files), an **in-chat confirmation request** appears directly in the conversation.
+
+### How Confirmations Work
+
+Instead of popup modals, confirmation requests appear as interactive messages in the chat:
+
+```text
+🔒 Permission Required
+
+📝 Write File
+Vault Operation • Requires Confirmation
+
+Create or update a file in the vault
+
+Parameters:
+• path: "notes/Meeting-Summary.md"
+• content: "# Meeting Summary..." (1,234 chars)
+
+[✓ Allow] [✗ Cancel] [☑ Don't ask again this session]
+```
+
+### Confirmation Actions
+
+**✓ Allow** - Approve this operation
+- The agent proceeds with the operation
+- Confirmation message updates to show approval
+- The agent continues with subsequent steps
+
+**✗ Cancel** - Decline this operation
+- The agent cancels the operation
+- Confirmation message updates to show cancellation
+- The agent may explain why it cannot continue or suggest alternatives
+
+**☑ Don't ask again this session** - Create session-level permission
+- Check this box before clicking Allow
+- The agent won't request confirmation for this tool again during the current session
+- Useful for repetitive operations you trust
+- **Important**: Permission resets when you create a new session or restart Obsidian
+### After You Respond
+
+Once you click a button, the confirmation request updates to show the result:
+
+```text
+✓ Permission granted: Write File was allowed
+```
+
+or
+
+```text
+✗ Permission denied: Write File was cancelled
+```
+
+### What Operations Require Confirmation
+
+By default, these operations require confirmation:
+
+- **write_file**: Creating or modifying files
+- **delete_file**: Removing files
+- **move_file**: Moving or renaming files
+
+You can configure which operations require confirmation in **Settings → Gemini Scribe → Agent Permissions**.
+
+### Session-Level Permissions
+
+When you check "Don't ask again this session" and click Allow:
+1. The permission is remembered for the current session only
+2. Future uses of that tool won't prompt for confirmation
+3. Other tool types still require confirmation (unless you've also allowed them)
+4. The permission is **cleared** when you:
+   - Create a new session
+   - Load a different session
+   - Restart Obsidian
+
+**Use case example:**
+```text
+User: Organize my daily notes into monthly folders
+
+[Agent requests permission to move first file]
+🔒 Permission Required - Move File
+[You check "Don't ask again this session" and click Allow]
+
+[Agent proceeds to move all remaining files without additional prompts]
+```
+
+### Reviewing Confirmation Details
+
+Before clicking Allow, always review:
+
+1. **Tool Name**: What operation the agent wants to perform
+2. **Parameters**: File paths, content snippets, and other details to verify
+3. **File Paths**: Ensure paths are correct and won't overwrite important files
+4. **Content Preview**: Check the content looks reasonable (for write operations)
+**Example - Be careful with destructive operations:**
+```text
+🔒 Permission Required
+
+🗑️ Delete File
+Vault Operation • Requires Confirmation
+
+Delete a file from the vault
+
+Parameters:
+• path: "important-research.md"  ⚠️ Double-check this path!
+
+[✓ Allow] [✗ Cancel] [☑ Don't ask again this session]
+```
+
+### Best Practices for Confirmations
+
+1. **Start Cautious**: Don't use "Don't ask again" until you trust the agent's behavior for your specific task
+2. **Review File Paths**: Always check paths before allowing file operations
+3. **Read-Only First**: Test with read-only operations before allowing writes
+4. **Backup Important Data**: Have backups before bulk operations
+5. **Cancel and Clarify**: If unsure, click Cancel and ask the agent to explain what it's trying to do
+6. **Session Scope**: Remember that "Don't ask again" only applies to the current session
+
 ## Best Practices
 
 ### 1. Start with Read-Only
@@ -180,10 +298,12 @@ Less clear: "Summarize my meetings"
 ```
 
 ### 3. Review Before Confirming
-When the agent proposes destructive operations:
-- Read the operation details carefully
-- Check file paths are correct
-- Ensure backups exist for important data
+When in-chat confirmation requests appear:
+- Read the tool name and operation type
+- Review all parameters (especially file paths)
+- Check content previews for write operations
+- Ensure you have backups for destructive operations
+- See the [Tool Confirmations](#tool-confirmations) section for detailed guidance
 
 ### 4. Leverage Context Files
 Add relevant files as context for better results:
@@ -262,9 +382,12 @@ Prevents infinite execution loops:
 - Non-destructive fallback behaviors
 
 ### Confirmation System
-- Destructive operations require confirmation
-- Bypass on per-session basis for trusted workflows
-- Visual indicators for operation types
+- In-chat confirmation requests for vault operations (create, modify, delete, move)
+- Interactive buttons to Allow or Cancel each operation
+- Review tool details and parameters before approving
+- "Don't ask again this session" option for repetitive trusted operations
+- Session-level permissions reset when session ends
+- See [Tool Confirmations](#tool-confirmations) for complete workflow details
 
 ## Troubleshooting
 
