@@ -18,6 +18,17 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.2.0': {
+			title: '✨ Gemini Scribe 4.2 - Semantic Search & Improved Errors',
+			highlights: [
+				'🔬 [Experimental] Semantic vault search using Google File Search API',
+				'🗂️ Background indexing keeps your vault searchable',
+				'💬 Clearer API error messages (quota, auth, rate limits)',
+				'🖼️ Fixed image model dropdown in settings',
+				'✏️ Fixed writing tool to respect YAML frontmatter'
+			],
+			details: "This update introduces experimental semantic search powered by Google's File Search API. When enabled in Advanced Settings, your vault is indexed in the background, allowing the AI to search by meaning rather than just keywords. Also includes improved error messages that clearly explain API issues like quota limits or authentication problems."
+		},
 		'4.1.2': {
 			title: '🐛 Gemini Scribe 4.1.2 - Writing Tool Fix',
 			highlights: [
