@@ -539,6 +539,14 @@ export class RagIndexingService {
 							});
 						} else if (event.type === 'file_complete') {
 							result.indexed++;
+							// Update cache for newly indexed file
+							if (this.cache && event.currentFile) {
+								this.cache.files[event.currentFile] = {
+									resourceName: storeName, // Store name as reference (individual doc names not available)
+									contentHash: `indexed:${Date.now()}`,
+									lastIndexed: Date.now(),
+								};
+							}
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
@@ -552,6 +560,14 @@ export class RagIndexingService {
 							this.updateStatusBar();
 						} else if (event.type === 'file_skipped') {
 							result.skipped++;
+							// Skipped files are already in cache (unchanged), ensure they're tracked
+							if (this.cache && event.currentFile && !this.cache.files[event.currentFile]) {
+								this.cache.files[event.currentFile] = {
+									resourceName: storeName,
+									contentHash: `skipped:${Date.now()}`,
+									lastIndexed: Date.now(),
+								};
+							}
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
@@ -571,8 +587,12 @@ export class RagIndexingService {
 				}
 			);
 
-			// Update local state - count is indexed + skipped (both are in the store)
-			this.indexedCount = result.indexed + result.skipped;
+			// Save cache and update local state
+			if (this.cache) {
+				this.cache.lastSync = Date.now();
+				await this.saveCache();
+			}
+			this.indexedCount = Object.keys(this.cache?.files || {}).length;
 			this.status = 'idle';
 			this.updateStatusBar();
 
@@ -715,7 +735,14 @@ export class RagIndexingService {
 							const content = await this.vaultAdapter.readFileForUpload(file.path, file.path);
 							if (content) {
 								await this.fileUploader.uploadContent(content, storeName);
-								this.indexedCount++;
+								// Update cache for new file
+								if (this.cache) {
+									this.cache.files[file.path] = {
+										resourceName: storeName,
+										contentHash: content.hash,
+										lastIndexed: Date.now(),
+									};
+								}
 							}
 						}
 						break;
@@ -727,6 +754,14 @@ export class RagIndexingService {
 							const content = await this.vaultAdapter.readFileForUpload(file.path, file.path);
 							if (content) {
 								await this.fileUploader.uploadContent(content, storeName);
+								// Update cache with new hash
+								if (this.cache) {
+									this.cache.files[file.path] = {
+										resourceName: storeName,
+										contentHash: content.hash,
+										lastIndexed: Date.now(),
+									};
+								}
 							}
 						}
 						break;
@@ -737,6 +772,12 @@ export class RagIndexingService {
 				}
 			}
 
+			// Save cache and update count
+			if (this.cache) {
+				this.cache.lastSync = Date.now();
+				await this.saveCache();
+			}
+			this.indexedCount = Object.keys(this.cache?.files || {}).length;
 			this.status = 'idle';
 			this.updateStatusBar();
 		} catch (error) {
