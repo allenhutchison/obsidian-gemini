@@ -41,5 +41,8 @@
 		"ts-loader": "^9.5.1",
 		"tslib": "2.4.0",
 		"typescript": "^5.9.3"
+	},
+	"dependencies": {
+		"@allenhutchison/gemini-utils": "file:../gemini-utils"
 	}
 }
