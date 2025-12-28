@@ -528,7 +528,7 @@ export class RagIndexingService {
 						debug: (msg, ...args) => this.plugin.logger.debug(msg, ...args),
 						error: (msg, ...args) => this.plugin.logger.error(msg, ...args),
 					},
-					onProgress: (event) => {
+					onProgress: async (event) => {
 						// Map gemini-utils progress events to our format
 						if (event.type === 'start') {
 							this.indexingProgress = { current: 0, total: event.totalFiles || 0 };
@@ -541,10 +541,11 @@ export class RagIndexingService {
 						} else if (event.type === 'file_complete') {
 							result.indexed++;
 							// Update cache for newly indexed file
-							if (this.cache && event.currentFile) {
+							if (this.cache && event.currentFile && this.vaultAdapter) {
+								const contentHash = await this.vaultAdapter.computeHash(event.currentFile);
 								this.cache.files[event.currentFile] = {
 									resourceName: storeName, // Store name as reference (individual doc names not available)
-									contentHash: `indexed:${Date.now()}`,
+									contentHash,
 									lastIndexed: Date.now(),
 								};
 							}
@@ -562,10 +563,11 @@ export class RagIndexingService {
 						} else if (event.type === 'file_skipped') {
 							result.skipped++;
 							// Skipped files are already in cache (unchanged), ensure they're tracked
-							if (this.cache && event.currentFile && !this.cache.files[event.currentFile]) {
+							if (this.cache && event.currentFile && !this.cache.files[event.currentFile] && this.vaultAdapter) {
+								const contentHash = await this.vaultAdapter.computeHash(event.currentFile);
 								this.cache.files[event.currentFile] = {
 									resourceName: storeName,
-									contentHash: `skipped:${Date.now()}`,
+									contentHash,
 									lastIndexed: Date.now(),
 								};
 							}
