@@ -120,7 +120,9 @@ export class RagIndexingService {
 			});
 
 			// Create file uploader with logger
-			this.fileUploader = new FileUploader(this.ai, {
+			// Note: Cast needed due to file: dependency type resolution between packages
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			this.fileUploader = new FileUploader(this.ai as any, {
 				debug: (msg, ...args) => this.plugin.logger.debug(msg, ...args),
 				error: (msg, ...args) => this.plugin.logger.error(msg, ...args),
 			});
@@ -171,6 +173,11 @@ export class RagIndexingService {
 			} catch (error) {
 				this.plugin.logger.error('RAG Indexing: Error while waiting for indexing during destroy', error);
 			}
+		}
+
+		// Wait for any in-flight change processing
+		while (this.isProcessing) {
+			await new Promise(resolve => setTimeout(resolve, 100));
 		}
 
 		// Clear pending changes
