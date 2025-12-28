@@ -1,6 +1,8 @@
 import { TFile, normalizePath, Notice } from 'obsidian';
 import { GoogleGenAI } from '@google/genai';
+import { FileUploader } from '@allenhutchison/gemini-utils';
 import type ObsidianGemini from '../main';
+import { ObsidianVaultAdapter } from './obsidian-file-adapter';
 
 /**
  * Represents a file that has been indexed in the File Search Store
@@ -66,6 +68,8 @@ const DEBOUNCE_MS = 2000;
 export class RagIndexingService {
 	private plugin: ObsidianGemini;
 	private ai: GoogleGenAI | null = null;
+	private fileUploader: FileUploader | null = null;
+	private vaultAdapter: ObsidianVaultAdapter | null = null;
 	private statusBarItem: HTMLElement | null = null;
 	private cache: RagIndexCache | null = null;
 	private pendingChanges: Map<string, PendingChange> = new Map();
@@ -105,6 +109,20 @@ export class RagIndexingService {
 		try {
 			// Initialize Google GenAI client
 			this.ai = new GoogleGenAI({ apiKey: this.plugin.settings.apiKey });
+
+			// Create vault adapter for file operations
+			this.vaultAdapter = new ObsidianVaultAdapter({
+				vault: this.plugin.app.vault,
+				metadataCache: this.plugin.app.metadataCache,
+				excludeFolders: this.plugin.settings.ragIndexing.excludeFolders,
+				historyFolder: this.plugin.settings.historyFolder,
+			});
+
+			// Create file uploader with logger
+			this.fileUploader = new FileUploader(this.ai, {
+				debug: (msg, ...args) => this.plugin.logger.debug(msg, ...args),
+				error: (msg, ...args) => this.plugin.logger.error(msg, ...args),
+			});
 
 			// Load cache from disk
 			await this.loadCache();
@@ -168,6 +186,8 @@ export class RagIndexingService {
 		}
 
 		this.ai = null;
+		this.fileUploader = null;
+		this.vaultAdapter = null;
 		this.cache = null;
 		this.status = 'disabled';
 	}
@@ -419,151 +439,6 @@ export class RagIndexingService {
 	// ==================== File Indexing ====================
 
 	/**
-	 * Compute a hash for change detection (mtime:size)
-	 */
-	private computeHash(file: TFile): string {
-		return `${file.stat.mtime}:${file.stat.size}`;
-	}
-
-	/**
-	 * Check if a file should be indexed
-	 */
-	private shouldIndexFile(file: TFile): boolean {
-		// Only index markdown files for MVP
-		if (file.extension !== 'md') return false;
-
-		// Exclude system folders
-		const path = file.path;
-		if (path.startsWith('.obsidian/')) return false;
-		if (path.startsWith(this.plugin.settings.historyFolder + '/')) return false;
-
-		// Check user-configured exclude folders
-		for (const folder of this.plugin.settings.ragIndexing.excludeFolders) {
-			if (path.startsWith(folder + '/') || path === folder) return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Extract metadata from a file for indexing
-	 */
-	private extractMetadata(file: TFile): Array<{ key: string; stringValue: string }> {
-		const metadata: Array<{ key: string; stringValue: string }> = [];
-
-		// Add path
-		metadata.push({ key: 'path', stringValue: file.path });
-
-		// Add folder
-		metadata.push({ key: 'folder', stringValue: file.parent?.path || '' });
-
-		// Extract frontmatter
-		const cache = this.plugin.app.metadataCache.getFileCache(file);
-		const fm = cache?.frontmatter;
-
-		if (fm) {
-			// Add tags
-			if (Array.isArray(fm.tags)) {
-				const tags = fm.tags.join(', ');
-				if (tags.length <= 256) {
-					metadata.push({ key: 'tags', stringValue: tags });
-				} else {
-					metadata.push({ key: 'tags', stringValue: tags.substring(0, 253) + '...' });
-				}
-			}
-
-			// Add aliases
-			if (Array.isArray(fm.aliases)) {
-				const aliases = fm.aliases.join(', ');
-				if (aliases.length <= 256) {
-					metadata.push({ key: 'aliases', stringValue: aliases });
-				} else {
-					metadata.push({ key: 'aliases', stringValue: aliases.substring(0, 253) + '...' });
-				}
-			}
-		}
-
-		return metadata;
-	}
-
-	/**
-	 * Upload a single file to the File Search Store with retry logic
-	 */
-	private async uploadFile(file: TFile, retryCount: number = 0): Promise<string | null> {
-		const MAX_RETRIES = 3;
-		const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff
-
-		if (!this.ai || !this.plugin.settings.ragIndexing.fileSearchStoreName) {
-			return null;
-		}
-
-		try {
-			const content = await this.plugin.app.vault.read(file);
-			const metadata = this.extractMetadata(file);
-
-			// Skip empty or very small files (less than 10 chars of content)
-			if (!content || content.trim().length < 10) {
-				this.plugin.logger.log(`RAG Indexing: Skipping empty/tiny file ${file.path}`);
-				return null;
-			}
-
-			// Create a Blob from the content
-			const blob = new Blob([content], { type: 'text/markdown' });
-
-			// Upload to File Search Store
-			let operation = await this.ai.fileSearchStores.uploadToFileSearchStore({
-				fileSearchStoreName: this.plugin.settings.ragIndexing.fileSearchStoreName,
-				file: blob,
-				config: {
-					displayName: file.path,
-					customMetadata: metadata,
-				},
-			});
-
-			// Poll for completion with exponential backoff
-			let delay = 500;
-			const maxDelay = 5000;
-			const timeout = 60000;
-			const startTime = Date.now();
-
-			while (!operation.done) {
-				if (Date.now() - startTime > timeout) {
-					throw new Error('Upload operation timed out');
-				}
-
-				await new Promise(resolve => setTimeout(resolve, delay));
-				operation = await this.ai!.operations.get({ operation });
-				delay = Math.min(delay * 1.5, maxDelay);
-			}
-
-			// Return the document resource name from the operation response
-			// Format: fileSearchStores/{store_id}/documents/{doc_id}
-			return operation.response?.documentName || null;
-		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : String(error);
-
-			// Check if it's a retryable error (network issues, parsing errors, rate limits)
-			const isRetryable =
-				errorMessage.includes('Unexpected end of input') ||
-				errorMessage.includes('SyntaxError') ||
-				errorMessage.includes('network') ||
-				errorMessage.includes('ECONNRESET') ||
-				errorMessage.includes('429') ||
-				errorMessage.includes('rate limit');
-
-			if (isRetryable && retryCount < MAX_RETRIES) {
-				const delay = RETRY_DELAYS[retryCount] || 4000;
-				this.plugin.logger.log(`RAG Indexing: Retrying ${file.path} in ${delay}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-				await new Promise(resolve => setTimeout(resolve, delay));
-				return this.uploadFile(file, retryCount + 1);
-			}
-
-			this.plugin.logger.error(`RAG Indexing: Failed to upload ${file.path} after ${retryCount} retries`, error);
-			return null;
-		}
-	}
-
-	/**
 	 * Delete a file from the index
 	 *
 	 * LIMITATION: This only removes the file from the local cache. The document
@@ -626,87 +501,80 @@ export class RagIndexingService {
 		const startTime = Date.now();
 		const result: IndexResult = { indexed: 0, skipped: 0, failed: 0, duration: 0 };
 
+		if (!this.fileUploader || !this.vaultAdapter) {
+			throw new Error('RAG Indexing service not properly initialized');
+		}
+
+		const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
+		if (!storeName) {
+			throw new Error('No File Search Store configured');
+		}
+
 		try {
 			this.status = 'indexing';
 			this.indexingProgress = { current: 0, total: 0 };
 			this.updateStatusBar();
 
-			// Get all markdown files
-			const files = this.plugin.app.vault.getMarkdownFiles()
-				.filter(f => this.shouldIndexFile(f));
-
-			this.indexingProgress.total = files.length;
-
-			progressCallback?.({
-				current: 0,
-				total: files.length,
-				phase: 'scanning',
-				message: `Found ${files.length} files to index`,
-			});
-
-			// Process files
-			for (let i = 0; i < files.length; i++) {
-				const file = files[i];
-				const hash = this.computeHash(file);
-
-				// Update progress
-				this.indexingProgress.current = i + 1;
-
-				// Check if file needs indexing
-				const existingEntry = this.cache?.files[file.path];
-				if (existingEntry && existingEntry.contentHash === hash) {
-					result.skipped++;
-					this.updateStatusBar();
-					continue;
+			// Use FileUploader with adapter - handles smart sync and parallel uploads
+			await this.fileUploader.uploadWithAdapter(
+				this.vaultAdapter,
+				'', // basePath - adapter handles this
+				storeName,
+				{
+					smartSync: true,
+					parallel: { maxConcurrent: 5 },
+					logger: {
+						debug: (msg, ...args) => this.plugin.logger.debug(msg, ...args),
+						error: (msg, ...args) => this.plugin.logger.error(msg, ...args),
+					},
+					onProgress: (event) => {
+						// Map gemini-utils progress events to our format
+						if (event.type === 'start') {
+							this.indexingProgress = { current: 0, total: event.totalFiles || 0 };
+							progressCallback?.({
+								current: 0,
+								total: event.totalFiles || 0,
+								phase: 'scanning',
+								message: `Found ${event.totalFiles} files to index`,
+							});
+						} else if (event.type === 'file_complete') {
+							result.indexed++;
+							this.indexingProgress = {
+								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
+								total: event.totalFiles || 0,
+							};
+							progressCallback?.({
+								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
+								total: event.totalFiles || 0,
+								currentFile: event.currentFile,
+								phase: 'indexing',
+							});
+							this.updateStatusBar();
+						} else if (event.type === 'file_skipped') {
+							result.skipped++;
+							this.indexingProgress = {
+								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
+								total: event.totalFiles || 0,
+							};
+							this.updateStatusBar();
+						} else if (event.type === 'file_error') {
+							result.failed++;
+						} else if (event.type === 'complete') {
+							progressCallback?.({
+								current: event.totalFiles || 0,
+								total: event.totalFiles || 0,
+								phase: 'complete',
+								message: `Indexed ${result.indexed}, skipped ${result.skipped}, failed ${result.failed}`,
+							});
+						}
+					},
 				}
+			);
 
-				progressCallback?.({
-					current: i + 1,
-					total: files.length,
-					currentFile: file.path,
-					phase: 'indexing',
-				});
-
-				this.updateStatusBar();
-
-				// Upload file
-				const resourceName = await this.uploadFile(file);
-				if (resourceName) {
-					// Update cache
-					if (this.cache) {
-						this.cache.files[file.path] = {
-							resourceName,
-							contentHash: hash,
-							lastIndexed: Date.now(),
-						};
-					}
-					result.indexed++;
-				} else {
-					result.failed++;
-				}
-
-				// Yield to event loop periodically
-				if (i % 10 === 0) {
-					await new Promise(resolve => setTimeout(resolve, 0));
-				}
-			}
-
-			// Save cache
-			if (this.cache) {
-				this.cache.lastSync = Date.now();
-				await this.saveCache();
-			}
-
-			this.indexedCount = Object.keys(this.cache?.files || {}).length;
+			// Update local state - count is indexed + skipped (both are in the store)
+			this.indexedCount = result.indexed + result.skipped;
 			this.status = 'idle';
 			this.updateStatusBar();
-
-			progressCallback?.({
-				current: files.length,
-				total: files.length,
-				phase: 'complete',
-				message: `Indexed ${result.indexed} files, skipped ${result.skipped}, failed ${result.failed}`,
-			});
 
 		} catch (error) {
 			this.status = 'error';
@@ -725,7 +593,7 @@ export class RagIndexingService {
 	 */
 	onFileCreate(file: TFile): void {
 		if (!this.isReady() || !this.plugin.settings.ragIndexing.autoSync) return;
-		if (!this.shouldIndexFile(file)) return;
+		if (!this.vaultAdapter?.shouldIndex(file.path)) return;
 
 		this.queueChange({
 			type: 'create',
@@ -739,7 +607,7 @@ export class RagIndexingService {
 	 */
 	onFileModify(file: TFile): void {
 		if (!this.isReady() || !this.plugin.settings.ragIndexing.autoSync) return;
-		if (!this.shouldIndexFile(file)) return;
+		if (!this.vaultAdapter?.shouldIndex(file.path)) return;
 
 		this.queueChange({
 			type: 'modify',
@@ -774,7 +642,7 @@ export class RagIndexingService {
 			timestamp: Date.now(),
 		});
 
-		if (this.shouldIndexFile(file)) {
+		if (this.vaultAdapter?.shouldIndex(file.path)) {
 			this.queueChange({
 				type: 'create',
 				path: file.path,
@@ -825,13 +693,16 @@ export class RagIndexingService {
 	 */
 	private async flushPendingChanges(): Promise<void> {
 		if (this.isProcessing || this.pendingChanges.size === 0) return;
+		if (!this.fileUploader || !this.vaultAdapter) return;
+
+		const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
+		if (!storeName) return;
 
 		this.isProcessing = true;
 		const changes = Array.from(this.pendingChanges.values());
 		this.pendingChanges.clear();
 
 		// Update status to show syncing activity
-		const previousStatus = this.status;
 		this.status = 'indexing';
 		this.updateStatusBar();
 
@@ -841,14 +712,11 @@ export class RagIndexingService {
 					case 'create':
 					case 'modify': {
 						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
-						if (file instanceof TFile) {
-							const resourceName = await this.uploadFile(file);
-							if (resourceName && this.cache) {
-								this.cache.files[file.path] = {
-									resourceName,
-									contentHash: this.computeHash(file),
-									lastIndexed: Date.now(),
-								};
+						if (file instanceof TFile && this.vaultAdapter.shouldIndex(file.path)) {
+							const content = await this.vaultAdapter.readFileForUpload(file.path, file.path);
+							if (content) {
+								await this.fileUploader.uploadContent(content, storeName);
+								this.indexedCount++;
 							}
 						}
 						break;
@@ -859,13 +727,6 @@ export class RagIndexingService {
 				}
 			}
 
-			// Save cache
-			if (this.cache) {
-				this.cache.lastSync = Date.now();
-				await this.saveCache();
-			}
-
-			this.indexedCount = Object.keys(this.cache?.files || {}).length;
 			this.status = 'idle';
 			this.updateStatusBar();
 		} catch (error) {
