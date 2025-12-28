@@ -43,6 +43,7 @@ export interface RagIndexingSettings {
 	fileSearchStoreName: string | null;
 	excludeFolders: string[];
 	autoSync: boolean;
+	includeAttachments: boolean;
 }
 
 export interface ObsidianGeminiSettings {
@@ -114,6 +115,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		fileSearchStoreName: null,
 		excludeFolders: [],
 		autoSync: true,
+		includeAttachments: false,
 	},
 };
 

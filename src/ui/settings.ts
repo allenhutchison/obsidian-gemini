@@ -566,6 +566,38 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 									button.setDisabled(false);
 								}
 							})
+					)
+					.addButton((button) =>
+						button
+							.setButtonText('Delete Index')
+							.setWarning()
+							.onClick(async () => {
+								if (!this.plugin.ragIndexing) {
+									new Notice('RAG indexing service not initialized');
+									return;
+								}
+
+								// Show confirmation modal
+								const { RagCleanupModal } = await import('./rag-cleanup-modal');
+								const modal = new RagCleanupModal(this.app, async (deleteData) => {
+									if (deleteData && this.plugin.ragIndexing) {
+										button.setButtonText('Deleting...');
+										button.setDisabled(true);
+
+										try {
+											await this.plugin.ragIndexing.deleteFileSearchStore();
+											new Notice('Index deleted. Use "Reindex Vault" to rebuild.');
+											this.display();
+										} catch (error) {
+											new Notice(`Failed to delete index: ${error instanceof Error ? error.message : 'Unknown error'}`);
+										} finally {
+											button.setButtonText('Delete Index');
+											button.setDisabled(false);
+										}
+									}
+								});
+								modal.open();
+							})
 					);
 
 				// Store name setting
@@ -618,6 +650,17 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						toggle.setValue(this.plugin.settings.ragIndexing.autoSync).onChange(async (value) => {
 							this.plugin.settings.ragIndexing.autoSync = value;
 							await this.plugin.saveSettings();
+						})
+					);
+
+				new Setting(containerEl)
+					.setName('Include attachments')
+					.setDesc('Index PDFs and other supported file types in addition to markdown notes. Requires reindexing.')
+					.addToggle((toggle) =>
+						toggle.setValue(this.plugin.settings.ragIndexing.includeAttachments).onChange(async (value) => {
+							this.plugin.settings.ragIndexing.includeAttachments = value;
+							await this.plugin.saveSettings();
+							new Notice('Attachment setting changed. Reindex vault to apply changes.');
 						})
 					);
 

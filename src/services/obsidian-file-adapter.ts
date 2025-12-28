@@ -1,5 +1,11 @@
 import { TFile, Vault, MetadataCache } from 'obsidian';
-import { FileSystemAdapter, FileInfo, FileContent } from '@allenhutchison/gemini-utils';
+import {
+	FileSystemAdapter,
+	FileInfo,
+	FileContent,
+	getMimeTypeWithFallback,
+	isExtensionSupportedWithFallback,
+} from '@allenhutchison/gemini-utils';
 
 /**
  * Obsidian Vault adapter for the gemini-utils FileSystemAdapter interface.
@@ -10,6 +16,7 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 	private metadataCache: MetadataCache;
 	private excludeFolders: string[];
 	private historyFolder: string;
+	private includeAttachments: boolean;
 	private logError?: (message: string, ...args: unknown[]) => void;
 
 	constructor(options: {
@@ -17,20 +24,25 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 		metadataCache: MetadataCache;
 		excludeFolders?: string[];
 		historyFolder?: string;
+		includeAttachments?: boolean;
 		logError?: (message: string, ...args: unknown[]) => void;
 	}) {
 		this.vault = options.vault;
 		this.metadataCache = options.metadataCache;
 		this.excludeFolders = options.excludeFolders || [];
 		this.historyFolder = options.historyFolder || '';
+		this.includeAttachments = options.includeAttachments || false;
 		this.logError = options.logError;
 	}
 
 	/**
-	 * List all markdown files in the vault that should be indexed.
+	 * List all files in the vault that should be indexed.
+	 * If includeAttachments is true, includes PDFs and other supported file types.
 	 */
 	async listFiles(_basePath: string): Promise<string[]> {
-		const files = this.vault.getMarkdownFiles();
+		const files = this.includeAttachments
+			? this.vault.getFiles()
+			: this.vault.getMarkdownFiles();
 		return files
 			.filter(file => this.shouldIndex(file.path))
 			.map(file => file.path);
@@ -45,16 +57,61 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 			return null;
 		}
 
+		const mimeResult = getMimeTypeWithFallback(filePath);
+		const mimeType = mimeResult?.mimeType || 'application/octet-stream';
+
 		return {
 			path: file.path,
 			size: file.stat.size,
 			mtime: new Date(file.stat.mtime).toISOString(),
-			mimeType: 'text/markdown',
+			mimeType,
 		};
 	}
 
 	/**
+	 * Check if a MIME type represents a text-based format.
+	 * Text types can be read with vault.read(), binary types need vault.readBinary().
+	 */
+	private isTextMimeType(mimeType: string): boolean {
+		// All text/* types are text
+		if (mimeType.startsWith('text/')) {
+			return true;
+		}
+
+		// Common text-based application/* types
+		const textApplicationTypes = new Set([
+			'application/json',
+			'application/ld+json',
+			'application/xml',
+			'application/javascript',
+			'application/x-javascript',
+			'application/x-python',
+			'application/yaml',
+			'application/x-yaml',
+			'application/x-sh',
+			'application/x-shellscript',
+			'application/typescript',
+			'application/x-typescript',
+			'application/sql',
+			'application/graphql',
+		]);
+
+		if (textApplicationTypes.has(mimeType)) {
+			return true;
+		}
+
+		// Match application/*+json and application/*+xml patterns (e.g., application/vnd.api+json)
+		if (mimeType.startsWith('application/') && (mimeType.endsWith('+json') || mimeType.endsWith('+xml'))) {
+			return true;
+		}
+
+		// Everything else (application/pdf, application/octet-stream, etc.) is binary
+		return false;
+	}
+
+	/**
 	 * Read file content for upload.
+	 * Handles both text files (markdown, code, etc.) and binary files (PDF, etc.).
 	 */
 	async readFileForUpload(filePath: string, relativePath: string): Promise<FileContent | null> {
 		const file = this.vault.getAbstractFileByPath(filePath);
@@ -63,24 +120,43 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 		}
 
 		try {
-			const content = await this.vault.read(file);
-
-			// Skip empty or very small files
-			if (!content || content.trim().length < 10) {
+			// Determine MIME type
+			const mimeResult = getMimeTypeWithFallback(filePath);
+			if (!mimeResult) {
+				this.logError?.(`Unsupported file type: ${filePath}`);
 				return null;
 			}
+			const mimeType = mimeResult.mimeType;
 
 			const hash = await this.computeHash(filePath);
+			let blob: Blob;
 
-			// Create a Blob from the content
-			const blob = new Blob([content], { type: 'text/markdown' });
+			// Check if this is a text or binary file based on MIME type
+			if (this.isTextMimeType(mimeType)) {
+				// Read text content
+				const content = await this.vault.read(file);
+
+				// Skip empty or very small text files
+				if (!content || content.trim().length < 10) {
+					return null;
+				}
+
+				blob = new Blob([content], { type: mimeType });
+			} else {
+				// Read binary content (PDF, Office docs, etc.)
+				const binaryContent = await this.vault.readBinary(file);
+				blob = new Blob([binaryContent], { type: mimeType });
+			}
 
 			// Extract Obsidian-specific metadata (folder, tags, aliases)
-			const customMetadata = this.extractMetadata(file);
+			// Only extract from markdown files (others don't have frontmatter)
+			const customMetadata = filePath.endsWith('.md')
+				? this.extractMetadata(file)
+				: [{ key: 'folder', stringValue: file.parent?.path || '' }];
 
 			return {
 				data: blob,
-				mimeType: 'text/markdown',
+				mimeType,
 				displayName: file.path,
 				relativePath,
 				hash,
@@ -108,11 +184,29 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 
 	/**
 	 * Check if a file should be indexed.
+	 * When includeAttachments is false, only markdown files are indexed.
+	 * When includeAttachments is true, any file type supported by gemini-utils is indexed.
 	 */
 	shouldIndex(filePath: string): boolean {
-		// Only index markdown files
-		if (!filePath.endsWith('.md')) {
-			return false;
+		// Check file type support
+		if (this.includeAttachments) {
+			// Extract extension safely - handle files without extensions or dotfiles
+			// Use the filename part only to avoid matching dots in folder paths
+			const filename = filePath.substring(filePath.lastIndexOf('/') + 1);
+			const dotIdx = filename.lastIndexOf('.');
+			if (dotIdx <= 0) {
+				// No extension (dotIdx === -1) or dotfile (dotIdx === 0) - not indexable
+				return false;
+			}
+			const ext = filename.substring(dotIdx);
+			if (!isExtensionSupportedWithFallback(ext)) {
+				return false;
+			}
+		} else {
+			// Only index markdown files
+			if (!filePath.endsWith('.md')) {
+				return false;
+			}
 		}
 
 		// Exclude system folders
