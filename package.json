@@ -43,6 +43,6 @@
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
-		"@allenhutchison/gemini-utils": "file:../gemini-utils"
+		"@allenhutchison/gemini-utils": "^0.2.0"
 	}
 }

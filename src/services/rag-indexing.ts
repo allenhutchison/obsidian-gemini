@@ -120,9 +120,7 @@ export class RagIndexingService {
 			});
 
 			// Create file uploader with logger
-			// Note: Cast needed due to file: dependency type resolution between packages
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			this.fileUploader = new FileUploader(this.ai as any, {
+			this.fileUploader = new FileUploader(this.ai, {
 				debug: (msg, ...args) => this.plugin.logger.debug(msg, ...args),
 				error: (msg, ...args) => this.plugin.logger.error(msg, ...args),
 			});
