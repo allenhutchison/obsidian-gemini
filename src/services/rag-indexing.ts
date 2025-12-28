@@ -116,6 +116,7 @@ export class RagIndexingService {
 				metadataCache: this.plugin.app.metadataCache,
 				excludeFolders: this.plugin.settings.ragIndexing.excludeFolders,
 				historyFolder: this.plugin.settings.historyFolder,
+				logError: (msg, ...args) => this.plugin.logger.error(msg, ...args),
 			});
 
 			// Create file uploader with logger

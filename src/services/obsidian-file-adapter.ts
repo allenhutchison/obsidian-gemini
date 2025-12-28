@@ -10,17 +10,20 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 	private metadataCache: MetadataCache;
 	private excludeFolders: string[];
 	private historyFolder: string;
+	private logError?: (message: string, ...args: unknown[]) => void;
 
 	constructor(options: {
 		vault: Vault;
 		metadataCache: MetadataCache;
 		excludeFolders?: string[];
 		historyFolder?: string;
+		logError?: (message: string, ...args: unknown[]) => void;
 	}) {
 		this.vault = options.vault;
 		this.metadataCache = options.metadataCache;
 		this.excludeFolders = options.excludeFolders || [];
 		this.historyFolder = options.historyFolder || '';
+		this.logError = options.logError;
 	}
 
 	/**
@@ -84,7 +87,8 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 				lastModified: new Date(file.stat.mtime).toISOString(),
 				customMetadata,
 			};
-		} catch {
+		} catch (error) {
+			this.logError?.(`Failed to read file for upload: ${filePath}`, error);
 			return null;
 		}
 	}
@@ -133,7 +137,7 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 
 	/**
 	 * Extract metadata from a file for indexing.
-	 * This is Obsidian-specific and provides rich metadata from frontmatter.
+	 * This is Obsidian-specific and provides rich metadata from frontmatter and inline tags.
 	 * Note: path, hash, and last_modified are added by FileUploader, so we only
 	 * add Obsidian-specific metadata here (folder, tags, aliases).
 	 */
@@ -143,29 +147,44 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 		// Add folder
 		metadata.push({ key: 'folder', stringValue: file.parent?.path || '' });
 
-		// Extract frontmatter
+		// Extract from cache
 		const cache = this.metadataCache.getFileCache(file);
 		const fm = cache?.frontmatter;
 
-		if (fm) {
-			// Add tags
-			if (Array.isArray(fm.tags)) {
-				const tags = fm.tags.join(', ');
-				if (tags.length <= 256) {
-					metadata.push({ key: 'tags', stringValue: tags });
-				} else {
-					metadata.push({ key: 'tags', stringValue: tags.substring(0, 253) + '...' });
-				}
-			}
+		// Collect all tags (frontmatter + inline)
+		const allTags: Set<string> = new Set();
 
-			// Add aliases
-			if (Array.isArray(fm.aliases)) {
-				const aliases = fm.aliases.join(', ');
-				if (aliases.length <= 256) {
-					metadata.push({ key: 'aliases', stringValue: aliases });
-				} else {
-					metadata.push({ key: 'aliases', stringValue: aliases.substring(0, 253) + '...' });
-				}
+		// Add frontmatter tags
+		if (fm && Array.isArray(fm.tags)) {
+			fm.tags.forEach((tag: string) => allTags.add(tag));
+		}
+
+		// Add inline tags from cache.tags (these include the # prefix)
+		if (cache?.tags) {
+			cache.tags.forEach(tagCache => {
+				// Remove # prefix for consistency with frontmatter tags
+				const tag = tagCache.tag.startsWith('#') ? tagCache.tag.slice(1) : tagCache.tag;
+				allTags.add(tag);
+			});
+		}
+
+		// Add combined tags
+		if (allTags.size > 0) {
+			const tags = Array.from(allTags).join(', ');
+			if (tags.length <= 256) {
+				metadata.push({ key: 'tags', stringValue: tags });
+			} else {
+				metadata.push({ key: 'tags', stringValue: tags.substring(0, 253) + '...' });
+			}
+		}
+
+		// Add aliases from frontmatter
+		if (fm && Array.isArray(fm.aliases)) {
+			const aliases = fm.aliases.join(', ');
+			if (aliases.length <= 256) {
+				metadata.push({ key: 'aliases', stringValue: aliases });
+			} else {
+				metadata.push({ key: 'aliases', stringValue: aliases.substring(0, 253) + '...' });
 			}
 		}
 
