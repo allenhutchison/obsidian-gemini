@@ -709,14 +709,24 @@ export class RagIndexingService {
 		try {
 			for (const change of changes) {
 				switch (change.type) {
-					case 'create':
-					case 'modify': {
+					case 'create': {
 						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
 						if (file instanceof TFile && this.vaultAdapter.shouldIndex(file.path)) {
 							const content = await this.vaultAdapter.readFileForUpload(file.path, file.path);
 							if (content) {
 								await this.fileUploader.uploadContent(content, storeName);
 								this.indexedCount++;
+							}
+						}
+						break;
+					}
+					case 'modify': {
+						// Update existing file - don't increment indexedCount since file is already indexed
+						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
+						if (file instanceof TFile && this.vaultAdapter.shouldIndex(file.path)) {
+							const content = await this.vaultAdapter.readFileForUpload(file.path, file.path);
+							if (content) {
+								await this.fileUploader.uploadContent(content, storeName);
 							}
 						}
 						break;
