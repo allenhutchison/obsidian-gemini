@@ -3644,24 +3644,33 @@ If your plugin does not need CSS, delete this file.
 	padding: 0;
 }
 
-.rag-status-header {
+/* Shared header styles for RAG modals */
+.rag-status-header,
+.rag-progress-header {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	margin-bottom: 16px;
 }
 
-.rag-status-header h2 {
+.rag-progress-header {
+	margin-bottom: 20px;
+}
+
+.rag-status-header h2,
+.rag-progress-header h2 {
 	margin: 0;
 }
 
-.rag-status-header-icon {
+.rag-status-header-icon,
+.rag-progress-header-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 }
 
-.rag-status-header-icon svg {
+.rag-status-header-icon svg,
+.rag-progress-header-icon svg {
 	width: 24px;
 	height: 24px;
 	color: var(--text-accent);
@@ -3722,29 +3731,6 @@ If your plugin does not need CSS, delete this file.
 .rag-progress-modal {
 	padding: 0;
 	min-width: 400px;
-}
-
-.rag-progress-header {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 20px;
-}
-
-.rag-progress-header h2 {
-	margin: 0;
-}
-
-.rag-progress-header-icon {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.rag-progress-header-icon svg {
-	width: 24px;
-	height: 24px;
-	color: var(--text-accent);
 }
 
 /* Progress bar */
