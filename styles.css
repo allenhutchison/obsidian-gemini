@@ -3600,3 +3600,119 @@ If your plugin does not need CSS, delete this file.
 	color: var(--interactive-accent-hover);
 	text-decoration: underline;
 }
+
+/* ==================== RAG Status Bar ==================== */
+
+.rag-status-bar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+}
+
+.rag-status-bar .rag-status-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.rag-status-bar .rag-status-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+.rag-status-bar .rag-status-text {
+	font-size: var(--font-ui-smaller);
+}
+
+/* Animated pulse for indexing state */
+.rag-status-bar.rag-indexing .rag-status-icon svg {
+	animation: rag-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rag-pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.4;
+	}
+}
+
+/* RAG Status Modal */
+.rag-status-modal {
+	padding: 0;
+}
+
+.rag-status-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.rag-status-header h2 {
+	margin: 0;
+}
+
+.rag-status-header-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.rag-status-header-icon svg {
+	width: 24px;
+	height: 24px;
+	color: var(--text-accent);
+}
+
+.rag-status-info {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 20px;
+	padding: 12px;
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+}
+
+.rag-status-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.rag-status-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.rag-status-value {
+	font-weight: 500;
+}
+
+.rag-status-store {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rag-status-ready {
+	color: var(--text-success);
+}
+
+.rag-status-indexing {
+	color: var(--text-accent);
+}
+
+.rag-status-error {
+	color: var(--text-error);
+}
+
+.rag-status-paused {
+	color: var(--text-warning);
+}
