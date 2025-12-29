@@ -1,4 +1,4 @@
-import { TFile, normalizePath, Notice } from 'obsidian';
+import { TFile, normalizePath, Notice, setIcon, setTooltip } from 'obsidian';
 import { GoogleGenAI } from '@google/genai';
 import { FileUploader } from '@allenhutchison/gemini-utils';
 import type ObsidianGemini from '../main';
@@ -227,6 +227,25 @@ export class RagIndexingService {
 		return this.indexedCount;
 	}
 
+	/**
+	 * Get full status info for display in modal
+	 */
+	getStatusInfo(): {
+		status: RagIndexStatus;
+		indexedCount: number;
+		storeName: string | null;
+		lastSync: number | null;
+		progress?: { current: number; total: number };
+	} {
+		return {
+			status: this.status,
+			indexedCount: this.indexedCount,
+			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
+			lastSync: this.cache?.lastSync || null,
+			progress: this.status === 'indexing' ? this.indexingProgress : undefined,
+		};
+	}
+
 	// ==================== Cache Management ====================
 
 	/**
@@ -401,9 +420,36 @@ export class RagIndexingService {
 
 		this.statusBarItem = this.plugin.addStatusBarItem();
 		this.statusBarItem.addClass('rag-status-bar');
-		this.statusBarItem.addEventListener('click', () => {
-			// TODO: Open status modal
-			new Notice(`RAG Index: ${this.indexedCount} files indexed`);
+
+		// Create icon container
+		const iconEl = this.statusBarItem.createSpan({ cls: 'rag-status-icon' });
+		setIcon(iconEl, 'database');
+
+		// Create text element for file count
+		this.statusBarItem.createSpan({ cls: 'rag-status-text' });
+
+		this.statusBarItem.addEventListener('click', async () => {
+			const { RagStatusModal } = await import('../ui/rag-status-modal');
+			const modal = new RagStatusModal(
+				this.plugin.app,
+				this.getStatusInfo(),
+				() => {
+					// Open settings to RAG section
+					// @ts-expect-error - Obsidian's setting API
+					this.plugin.app.setting.open();
+					// @ts-expect-error - Obsidian's setting API
+					this.plugin.app.setting.openTabById('gemini-scribe');
+				},
+				() => {
+					// Trigger reindex
+					this.indexVault().then((result) => {
+						new Notice(`RAG Indexing complete: ${result.indexed} files indexed`);
+					}).catch((error) => {
+						new Notice(`RAG Indexing failed: ${error.message}`);
+					});
+				}
+			);
+			modal.open();
 		});
 	}
 
@@ -413,7 +459,15 @@ export class RagIndexingService {
 	private updateStatusBar(): void {
 		if (!this.statusBarItem) return;
 
-		this.statusBarItem.empty();
+		const iconEl = this.statusBarItem.querySelector('.rag-status-icon') as HTMLElement;
+		const textEl = this.statusBarItem.querySelector('.rag-status-text') as HTMLElement;
+
+		if (!iconEl || !textEl) return;
+
+		// Remove animation class by default
+		this.statusBarItem.removeClass('rag-indexing');
+
+		let tooltip = '';
 
 		switch (this.status) {
 			case 'disabled':
@@ -421,25 +475,39 @@ export class RagIndexingService {
 				break;
 			case 'idle':
 				this.statusBarItem.style.display = '';
-				this.statusBarItem.setText(`RAG: ${this.indexedCount} files`);
+				setIcon(iconEl, 'database');
+				textEl.setText(`${this.indexedCount}`);
+				tooltip = `RAG Index: ${this.indexedCount} files indexed`;
 				break;
 			case 'indexing':
 				this.statusBarItem.style.display = '';
+				this.statusBarItem.addClass('rag-indexing');
+				setIcon(iconEl, 'upload-cloud');
 				if (this.indexingProgress.total > 0) {
 					const pct = Math.round((this.indexingProgress.current / this.indexingProgress.total) * 100);
-					this.statusBarItem.setText(`RAG: ${pct}% (${this.indexingProgress.current}/${this.indexingProgress.total})`);
+					textEl.setText(`${pct}%`);
+					tooltip = `RAG Index: Uploading ${this.indexingProgress.current}/${this.indexingProgress.total}...`;
 				} else {
-					this.statusBarItem.setText('RAG: Indexing...');
+					textEl.setText('...');
+					tooltip = 'RAG Index: Indexing...';
 				}
 				break;
 			case 'error':
 				this.statusBarItem.style.display = '';
-				this.statusBarItem.setText('RAG: Error');
+				setIcon(iconEl, 'alert-triangle');
+				textEl.setText('');
+				tooltip = 'RAG Index: Error - click for details';
 				break;
 			case 'paused':
 				this.statusBarItem.style.display = '';
-				this.statusBarItem.setText('RAG: Paused');
+				setIcon(iconEl, 'pause-circle');
+				textEl.setText('');
+				tooltip = 'RAG Index: Paused';
 				break;
+		}
+
+		if (tooltip) {
+			setTooltip(this.statusBarItem, tooltip, { placement: 'top' });
 		}
 	}
 
