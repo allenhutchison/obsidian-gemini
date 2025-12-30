@@ -59,6 +59,26 @@ interface PendingChange {
  */
 export type RagIndexStatus = 'disabled' | 'idle' | 'indexing' | 'error' | 'paused';
 
+/**
+ * Extended progress information for live UI updates
+ */
+export interface RagProgressInfo {
+	status: RagIndexStatus;
+	indexedCount: number;
+	skippedCount: number;
+	failedCount: number;
+	totalCount: number;
+	currentFile?: string;
+	startTime?: number;
+	storeName: string | null;
+	lastSync: number | null;
+}
+
+/**
+ * Callback for progress updates
+ */
+export type ProgressListener = (progress: RagProgressInfo) => void;
+
 const CACHE_VERSION = '1.0';
 const DEBOUNCE_MS = 2000;
 
@@ -79,6 +99,15 @@ export class RagIndexingService {
 	private isProcessing: boolean = false;
 	private indexingProgress: { current: number; total: number } = { current: 0, total: 0 };
 	private _indexingPromise: Promise<IndexResult> | null = null;
+
+	// Extended progress tracking
+	private progressListeners: Set<ProgressListener> = new Set();
+	private currentFile?: string;
+	private indexingStartTime?: number;
+	private runningIndexed: number = 0;
+	private runningSkipped: number = 0;
+	private runningFailed: number = 0;
+	private cancelRequested: boolean = false;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -144,12 +173,21 @@ export class RagIndexingService {
 			// If this is first time (no indexed files), start initial indexing
 			if (this.indexedCount === 0) {
 				new Notice('RAG Indexing: Starting initial vault indexing...');
-				// Run indexing in background (don't await)
-				this.indexVault((progress) => {
-					this.updateStatusBar();
-				}).then((result) => {
-					new Notice(`RAG Indexing complete: ${result.indexed} files indexed`);
-				}).catch((error) => {
+
+				// Open progress modal for initial indexing
+				import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
+					const progressModal = new RagProgressModal(
+						this.plugin.app,
+						this,
+						(result) => {
+							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+						}
+					);
+					progressModal.open();
+				});
+
+				// Run indexing in background (don't await - modal handles display)
+				this.indexVault().catch((error) => {
 					this.plugin.logger.error('RAG Indexing: Initial indexing failed', error);
 					new Notice(`RAG Indexing failed: ${error.message}`);
 				});
@@ -244,6 +282,67 @@ export class RagIndexingService {
 			lastSync: this.cache?.lastSync || null,
 			progress: this.status === 'indexing' ? this.indexingProgress : undefined,
 		};
+	}
+
+	/**
+	 * Get extended progress info for live UI updates
+	 */
+	getProgressInfo(): RagProgressInfo {
+		return {
+			status: this.status,
+			indexedCount: this.runningIndexed,
+			skippedCount: this.runningSkipped,
+			failedCount: this.runningFailed,
+			totalCount: this.indexingProgress.total,
+			currentFile: this.currentFile,
+			startTime: this.indexingStartTime,
+			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
+			lastSync: this.cache?.lastSync || null,
+		};
+	}
+
+	/**
+	 * Register a listener for progress updates
+	 */
+	addProgressListener(listener: ProgressListener): void {
+		this.progressListeners.add(listener);
+	}
+
+	/**
+	 * Remove a progress listener
+	 */
+	removeProgressListener(listener: ProgressListener): void {
+		this.progressListeners.delete(listener);
+	}
+
+	/**
+	 * Notify all progress listeners
+	 */
+	private notifyProgressListeners(): void {
+		const progress = this.getProgressInfo();
+		for (const listener of this.progressListeners) {
+			try {
+				listener(progress);
+			} catch (error) {
+				this.plugin.logger.error('RAG Indexing: Error in progress listener', error);
+			}
+		}
+	}
+
+	/**
+	 * Request cancellation of the current indexing operation
+	 */
+	cancelIndexing(): void {
+		if (this.status !== 'indexing') return;
+		this.cancelRequested = true;
+		this.plugin.logger.log('RAG Indexing: Cancellation requested');
+	}
+
+	/**
+	 * Check if indexing is in progress
+	 */
+	isIndexing(): boolean {
+		return this.status === 'indexing';
 	}
 
 	// ==================== Cache Management ====================
@@ -429,27 +528,49 @@ export class RagIndexingService {
 		this.statusBarItem.createSpan({ cls: 'rag-status-text' });
 
 		this.statusBarItem.addEventListener('click', async () => {
-			const { RagStatusModal } = await import('../ui/rag-status-modal');
-			const modal = new RagStatusModal(
-				this.plugin.app,
-				this.getStatusInfo(),
-				() => {
-					// Open settings to RAG section
-					// @ts-expect-error - Obsidian's setting API
-					this.plugin.app.setting.open();
-					// @ts-expect-error - Obsidian's setting API
-					this.plugin.app.setting.openTabById('gemini-scribe');
-				},
-				() => {
-					// Trigger reindex
-					this.indexVault().then((result) => {
-						new Notice(`RAG Indexing complete: ${result.indexed} files indexed`);
-					}).catch((error) => {
-						new Notice(`RAG Indexing failed: ${error.message}`);
-					});
-				}
-			);
-			modal.open();
+			// Show progress modal if indexing, otherwise show status modal
+			if (this.status === 'indexing') {
+				const { RagProgressModal } = await import('../ui/rag-progress-modal');
+				const modal = new RagProgressModal(
+					this.plugin.app,
+					this,
+					(result) => {
+						new Notice(`RAG Indexing: ${result.indexed} indexed, ${result.skipped} unchanged`);
+					}
+				);
+				modal.open();
+			} else {
+				const { RagStatusModal } = await import('../ui/rag-status-modal');
+				const modal = new RagStatusModal(
+					this.plugin.app,
+					this.getStatusInfo(),
+					() => {
+						// Open settings to RAG section
+						// @ts-expect-error - Obsidian's setting API
+						this.plugin.app.setting.open();
+						// @ts-expect-error - Obsidian's setting API
+						this.plugin.app.setting.openTabById('gemini-scribe');
+					},
+					async () => {
+						// Open progress modal and start reindexing
+						const { RagProgressModal } = await import('../ui/rag-progress-modal');
+						const progressModal = new RagProgressModal(
+							this.plugin.app,
+							this,
+							(result) => {
+								new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+							}
+						);
+						progressModal.open();
+
+						// Trigger reindex (don't await - modal handles progress)
+						this.indexVault().catch((error) => {
+							new Notice(`RAG Indexing failed: ${error.message}`);
+						});
+					}
+				);
+				modal.open();
+			}
 		});
 	}
 
@@ -586,9 +707,17 @@ export class RagIndexingService {
 		}
 
 		try {
+			// Reset progress tracking
 			this.status = 'indexing';
 			this.indexingProgress = { current: 0, total: 0 };
+			this.indexingStartTime = startTime;
+			this.runningIndexed = 0;
+			this.runningSkipped = 0;
+			this.runningFailed = 0;
+			this.currentFile = undefined;
+			this.cancelRequested = false;
 			this.updateStatusBar();
+			this.notifyProgressListeners();
 
 			// Use FileUploader with adapter - handles smart sync and parallel uploads
 			await this.fileUploader.uploadWithAdapter(
@@ -603,17 +732,28 @@ export class RagIndexingService {
 						error: (msg, ...args) => this.plugin.logger.error(msg, ...args),
 					},
 					onProgress: async (event) => {
+						// Check for cancellation
+						if (this.cancelRequested) {
+							throw new Error('Indexing cancelled by user');
+						}
+
 						// Map gemini-utils progress events to our format
 						if (event.type === 'start') {
 							this.indexingProgress = { current: 0, total: event.totalFiles || 0 };
+							this.notifyProgressListeners();
 							progressCallback?.({
 								current: 0,
 								total: event.totalFiles || 0,
 								phase: 'scanning',
 								message: `Found ${event.totalFiles} files to index`,
 							});
+						} else if (event.type === 'file_start') {
+							this.currentFile = event.currentFile;
+							this.notifyProgressListeners();
 						} else if (event.type === 'file_complete') {
 							result.indexed++;
+							this.runningIndexed++;
+							this.currentFile = event.currentFile;
 							// Update cache for newly indexed file
 							if (this.cache && event.currentFile && this.vaultAdapter) {
 								const contentHash = await this.vaultAdapter.computeHash(event.currentFile);
@@ -627,6 +767,7 @@ export class RagIndexingService {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
 							};
+							this.notifyProgressListeners();
 							progressCallback?.({
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
@@ -636,6 +777,8 @@ export class RagIndexingService {
 							this.updateStatusBar();
 						} else if (event.type === 'file_skipped') {
 							result.skipped++;
+							this.runningSkipped++;
+							this.currentFile = event.currentFile;
 							// Skipped files are already in cache (unchanged), ensure they're tracked
 							if (this.cache && event.currentFile && !this.cache.files[event.currentFile] && this.vaultAdapter) {
 								const contentHash = await this.vaultAdapter.computeHash(event.currentFile);
@@ -649,10 +792,15 @@ export class RagIndexingService {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
 							};
+							this.notifyProgressListeners();
 							this.updateStatusBar();
 						} else if (event.type === 'file_error') {
 							result.failed++;
+							this.runningFailed++;
+							this.notifyProgressListeners();
 						} else if (event.type === 'complete') {
+							this.currentFile = undefined;
+							this.notifyProgressListeners();
 							progressCallback?.({
 								current: event.totalFiles || 0,
 								total: event.totalFiles || 0,
@@ -671,11 +819,25 @@ export class RagIndexingService {
 			}
 			this.indexedCount = Object.keys(this.cache?.files || {}).length;
 			this.status = 'idle';
+			this.currentFile = undefined;
+			this.indexingStartTime = undefined;
 			this.updateStatusBar();
+			this.notifyProgressListeners();
 
 		} catch (error) {
-			this.status = 'error';
+			this.status = this.cancelRequested ? 'idle' : 'error';
+			this.currentFile = undefined;
+			this.indexingStartTime = undefined;
+			this.cancelRequested = false;
 			this.updateStatusBar();
+			this.notifyProgressListeners();
+
+			// Don't re-throw if cancelled, just return partial results
+			if (error instanceof Error && error.message === 'Indexing cancelled by user') {
+				this.plugin.logger.log('RAG Indexing: Cancelled by user');
+				result.duration = Date.now() - startTime;
+				return result;
+			}
 			throw error;
 		}
 
