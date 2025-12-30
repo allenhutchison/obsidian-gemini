@@ -766,13 +766,13 @@ export class RagIndexingService {
 									contentHash,
 									lastIndexed: Date.now(),
 								};
-								// Incremental cache save for durability
-								filesSinceLastSave++;
-								if (filesSinceLastSave >= CACHE_SAVE_INTERVAL) {
-									this.cache.lastSync = Date.now();
-									await this.saveCache();
-									filesSinceLastSave = 0;
-								}
+							}
+							// Incremental cache save for durability
+							filesSinceLastSave++;
+							if (this.cache && filesSinceLastSave >= CACHE_SAVE_INTERVAL) {
+								this.cache.lastSync = Date.now();
+								await this.saveCache();
+								filesSinceLastSave = 0;
 							}
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
@@ -1042,6 +1042,7 @@ export class RagIndexingService {
 					}
 					case 'delete':
 						await this.deleteFile(change.path);
+						changesSinceLastSave = 0; // Reset since deleteFile already saved the cache
 						break;
 				}
 			}
