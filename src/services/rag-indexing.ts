@@ -669,10 +669,12 @@ export class RagIndexingService {
 	 *
 	 * TODO: Investigate if Google adds document deletion API in the future.
 	 * See: https://github.com/allenhutchison/obsidian-gemini/issues/247
+	 *
+	 * @returns true if the cache was saved, false if file wasn't in cache or save failed
 	 */
-	private async deleteFile(path: string): Promise<void> {
+	private async deleteFile(path: string): Promise<boolean> {
 		if (!this.ai || !this.cache?.files[path]) {
-			return;
+			return false;
 		}
 
 		try {
@@ -680,8 +682,10 @@ export class RagIndexingService {
 			delete this.cache.files[path];
 			this.indexedCount = Object.keys(this.cache.files).length;
 			await this.saveCache();
+			return true;
 		} catch (error) {
 			this.plugin.logger.error(`RAG Indexing: Failed to delete ${path}`, error);
+			return false;
 		}
 	}
 
@@ -1040,11 +1044,13 @@ export class RagIndexingService {
 						}
 						break;
 					}
-					case 'delete':
-						await this.deleteFile(change.path);
-						// deleteFile saves cache when file exists; final save ensures durability regardless
-						changesSinceLastSave = 0;
+					case 'delete': {
+						const cacheSaved = await this.deleteFile(change.path);
+						if (cacheSaved) {
+							changesSinceLastSave = 0;
+						}
 						break;
+					}
 				}
 			}
 
