@@ -1042,7 +1042,8 @@ export class RagIndexingService {
 					}
 					case 'delete':
 						await this.deleteFile(change.path);
-						changesSinceLastSave = 0; // Reset since deleteFile already saved the cache
+						// deleteFile saves cache when file exists; final save ensures durability regardless
+						changesSinceLastSave = 0;
 						break;
 				}
 			}
