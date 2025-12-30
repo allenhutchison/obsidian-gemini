@@ -81,6 +81,7 @@ export type ProgressListener = (progress: RagProgressInfo) => void;
 
 const CACHE_VERSION = '1.0';
 const DEBOUNCE_MS = 2000;
+const CACHE_SAVE_INTERVAL = 10; // Save cache every N files for durability
 
 /**
  * Service for managing RAG indexing of vault files to Google's File Search API
@@ -719,6 +720,9 @@ export class RagIndexingService {
 			this.updateStatusBar();
 			this.notifyProgressListeners();
 
+			// Track files since last cache save for incremental durability
+			let filesSinceLastSave = 0;
+
 			// Use FileUploader with adapter - handles smart sync and parallel uploads
 			await this.fileUploader.uploadWithAdapter(
 				this.vaultAdapter,
@@ -762,6 +766,13 @@ export class RagIndexingService {
 									contentHash,
 									lastIndexed: Date.now(),
 								};
+								// Incremental cache save for durability
+								filesSinceLastSave++;
+								if (filesSinceLastSave >= CACHE_SAVE_INTERVAL) {
+									this.cache.lastSync = Date.now();
+									await this.saveCache();
+									filesSinceLastSave = 0;
+								}
 							}
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
@@ -787,6 +798,13 @@ export class RagIndexingService {
 									contentHash,
 									lastIndexed: Date.now(),
 								};
+							}
+							// Incremental cache save for durability (count skipped files too)
+							filesSinceLastSave++;
+							if (this.cache && filesSinceLastSave >= CACHE_SAVE_INTERVAL) {
+								this.cache.lastSync = Date.now();
+								await this.saveCache();
+								filesSinceLastSave = 0;
 							}
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
@@ -965,6 +983,9 @@ export class RagIndexingService {
 		this.status = 'indexing';
 		this.updateStatusBar();
 
+		// Track changes since last cache save for incremental durability
+		let changesSinceLastSave = 0;
+
 		try {
 			for (const change of changes) {
 				switch (change.type) {
@@ -981,6 +1002,13 @@ export class RagIndexingService {
 										contentHash: content.hash,
 										lastIndexed: Date.now(),
 									};
+									// Incremental cache save for durability
+									changesSinceLastSave++;
+									if (changesSinceLastSave >= CACHE_SAVE_INTERVAL) {
+										this.cache.lastSync = Date.now();
+										await this.saveCache();
+										changesSinceLastSave = 0;
+									}
 								}
 							}
 						}
@@ -1000,6 +1028,13 @@ export class RagIndexingService {
 										contentHash: content.hash,
 										lastIndexed: Date.now(),
 									};
+									// Incremental cache save for durability
+									changesSinceLastSave++;
+									if (changesSinceLastSave >= CACHE_SAVE_INTERVAL) {
+										this.cache.lastSync = Date.now();
+										await this.saveCache();
+										changesSinceLastSave = 0;
+									}
 								}
 							}
 						}
