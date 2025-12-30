@@ -81,7 +81,13 @@ export type ProgressListener = (progress: RagProgressInfo) => void;
 
 const CACHE_VERSION = '1.0';
 const DEBOUNCE_MS = 2000;
-const CACHE_SAVE_INTERVAL = 10; // Save cache every N files for durability
+
+/**
+ * Number of files/changes to process before saving the cache incrementally.
+ * Balances durability (lower = more frequent saves) vs performance (higher = fewer I/O ops).
+ * Set to 10 to limit potential data loss to ~10 files if Obsidian crashes during indexing.
+ */
+const CACHE_SAVE_INTERVAL = 10;
 
 /**
  * Service for managing RAG indexing of vault files to Google's File Search API
@@ -415,6 +421,20 @@ export class RagIndexingService {
 		} catch (error) {
 			this.plugin.logger.error('RAG Indexing: Failed to save cache', error);
 		}
+	}
+
+	/**
+	 * Increment counter and save cache if threshold reached.
+	 * Returns the new counter value (reset to 0 after save, otherwise incremented).
+	 */
+	private async incrementAndMaybeSaveCache(counter: number): Promise<number> {
+		counter++;
+		if (this.cache && counter >= CACHE_SAVE_INTERVAL) {
+			this.cache.lastSync = Date.now();
+			await this.saveCache();
+			return 0;
+		}
+		return counter;
 	}
 
 	// ==================== File Search Store Management ====================
@@ -768,12 +788,7 @@ export class RagIndexingService {
 								};
 							}
 							// Incremental cache save for durability
-							filesSinceLastSave++;
-							if (this.cache && filesSinceLastSave >= CACHE_SAVE_INTERVAL) {
-								this.cache.lastSync = Date.now();
-								await this.saveCache();
-								filesSinceLastSave = 0;
-							}
+							filesSinceLastSave = await this.incrementAndMaybeSaveCache(filesSinceLastSave);
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
@@ -800,12 +815,7 @@ export class RagIndexingService {
 								};
 							}
 							// Incremental cache save for durability (count skipped files too)
-							filesSinceLastSave++;
-							if (this.cache && filesSinceLastSave >= CACHE_SAVE_INTERVAL) {
-								this.cache.lastSync = Date.now();
-								await this.saveCache();
-								filesSinceLastSave = 0;
-							}
+							filesSinceLastSave = await this.incrementAndMaybeSaveCache(filesSinceLastSave);
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
@@ -1002,14 +1012,9 @@ export class RagIndexingService {
 										contentHash: content.hash,
 										lastIndexed: Date.now(),
 									};
-									// Incremental cache save for durability
-									changesSinceLastSave++;
-									if (changesSinceLastSave >= CACHE_SAVE_INTERVAL) {
-										this.cache.lastSync = Date.now();
-										await this.saveCache();
-										changesSinceLastSave = 0;
-									}
 								}
+								// Incremental cache save for durability
+								changesSinceLastSave = await this.incrementAndMaybeSaveCache(changesSinceLastSave);
 							}
 						}
 						break;
@@ -1028,14 +1033,9 @@ export class RagIndexingService {
 										contentHash: content.hash,
 										lastIndexed: Date.now(),
 									};
-									// Incremental cache save for durability
-									changesSinceLastSave++;
-									if (changesSinceLastSave >= CACHE_SAVE_INTERVAL) {
-										this.cache.lastSync = Date.now();
-										await this.saveCache();
-										changesSinceLastSave = 0;
-									}
 								}
+								// Incremental cache save for durability
+								changesSinceLastSave = await this.incrementAndMaybeSaveCache(changesSinceLastSave);
 							}
 						}
 						break;
