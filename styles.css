@@ -3728,9 +3728,13 @@ If your plugin does not need CSS, delete this file.
 
 /* ==================== RAG Progress Modal ==================== */
 
+.modal.modal-container:has(.rag-progress-modal) {
+	width: 450px;
+	max-width: 90vw;
+}
+
 .rag-progress-modal {
 	padding: 0;
-	min-width: 400px;
 }
 
 /* Progress bar */
