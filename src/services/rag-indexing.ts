@@ -83,6 +83,13 @@ const CACHE_VERSION = '1.0';
 const DEBOUNCE_MS = 2000;
 
 /**
+ * Number of files/changes to process before saving the cache incrementally.
+ * Balances durability (lower = more frequent saves) vs performance (higher = fewer I/O ops).
+ * Set to 10 to limit potential data loss to ~10 files if Obsidian crashes during indexing.
+ */
+const CACHE_SAVE_INTERVAL = 10;
+
+/**
  * Service for managing RAG indexing of vault files to Google's File Search API
  */
 export class RagIndexingService {
@@ -416,6 +423,20 @@ export class RagIndexingService {
 		}
 	}
 
+	/**
+	 * Increment counter and save cache if threshold reached.
+	 * Returns the new counter value (reset to 0 after save, otherwise incremented).
+	 */
+	private async incrementAndMaybeSaveCache(counter: number): Promise<number> {
+		counter++;
+		if (this.cache && counter >= CACHE_SAVE_INTERVAL) {
+			this.cache.lastSync = Date.now();
+			await this.saveCache();
+			return 0;
+		}
+		return counter;
+	}
+
 	// ==================== File Search Store Management ====================
 
 	/**
@@ -648,10 +669,12 @@ export class RagIndexingService {
 	 *
 	 * TODO: Investigate if Google adds document deletion API in the future.
 	 * See: https://github.com/allenhutchison/obsidian-gemini/issues/247
+	 *
+	 * @returns true if the cache was saved, false if file wasn't in cache or save failed
 	 */
-	private async deleteFile(path: string): Promise<void> {
+	private async deleteFile(path: string): Promise<boolean> {
 		if (!this.ai || !this.cache?.files[path]) {
-			return;
+			return false;
 		}
 
 		try {
@@ -659,8 +682,10 @@ export class RagIndexingService {
 			delete this.cache.files[path];
 			this.indexedCount = Object.keys(this.cache.files).length;
 			await this.saveCache();
+			return true;
 		} catch (error) {
 			this.plugin.logger.error(`RAG Indexing: Failed to delete ${path}`, error);
+			return false;
 		}
 	}
 
@@ -719,6 +744,9 @@ export class RagIndexingService {
 			this.updateStatusBar();
 			this.notifyProgressListeners();
 
+			// Track files since last cache save for incremental durability
+			let filesSinceLastSave = 0;
+
 			// Use FileUploader with adapter - handles smart sync and parallel uploads
 			await this.fileUploader.uploadWithAdapter(
 				this.vaultAdapter,
@@ -763,6 +791,8 @@ export class RagIndexingService {
 									lastIndexed: Date.now(),
 								};
 							}
+							// Incremental cache save for durability
+							filesSinceLastSave = await this.incrementAndMaybeSaveCache(filesSinceLastSave);
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
@@ -788,6 +818,8 @@ export class RagIndexingService {
 									lastIndexed: Date.now(),
 								};
 							}
+							// Incremental cache save for durability (count skipped files too)
+							filesSinceLastSave = await this.incrementAndMaybeSaveCache(filesSinceLastSave);
 							this.indexingProgress = {
 								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
 								total: event.totalFiles || 0,
@@ -965,6 +997,9 @@ export class RagIndexingService {
 		this.status = 'indexing';
 		this.updateStatusBar();
 
+		// Track changes since last cache save for incremental durability
+		let changesSinceLastSave = 0;
+
 		try {
 			for (const change of changes) {
 				switch (change.type) {
@@ -982,6 +1017,8 @@ export class RagIndexingService {
 										lastIndexed: Date.now(),
 									};
 								}
+								// Incremental cache save for durability
+								changesSinceLastSave = await this.incrementAndMaybeSaveCache(changesSinceLastSave);
 							}
 						}
 						break;
@@ -1001,13 +1038,19 @@ export class RagIndexingService {
 										lastIndexed: Date.now(),
 									};
 								}
+								// Incremental cache save for durability
+								changesSinceLastSave = await this.incrementAndMaybeSaveCache(changesSinceLastSave);
 							}
 						}
 						break;
 					}
-					case 'delete':
-						await this.deleteFile(change.path);
+					case 'delete': {
+						const cacheSaved = await this.deleteFile(change.path);
+						if (cacheSaved) {
+							changesSinceLastSave = 0;
+						}
 						break;
+					}
 				}
 			}
 
