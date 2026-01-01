@@ -94,6 +94,7 @@ const CACHE_SAVE_INTERVAL = 10;
  */
 const RATE_LIMIT_BASE_DELAY_MS = 30000; // 30 seconds base delay
 const RATE_LIMIT_MAX_DELAY_MS = 300000; // 5 minutes max delay
+const RATE_LIMIT_MAX_RETRIES = 5; // Maximum retry attempts before failing
 
 /**
  * Service for managing RAG indexing of vault files to Google's File Search API
@@ -985,6 +986,21 @@ export class RagIndexingService {
 		} catch (error) {
 			// Handle rate limit with auto-retry
 			if (this.rateLimitDetected || (error instanceof Error && error.message === 'Rate limit detected')) {
+				// Check if we've exceeded max retries
+				if (this.consecutiveRateLimits >= RATE_LIMIT_MAX_RETRIES) {
+					this.plugin.logger.error(
+						`RAG Indexing: Max rate limit retries (${RATE_LIMIT_MAX_RETRIES}) exceeded`
+					);
+					this.resetRateLimitTracking();
+					this.status = 'error';
+					this.currentFile = undefined;
+					this.indexingStartTime = undefined;
+					this.updateStatusBar();
+					this.notifyProgressListeners();
+					result.duration = Date.now() - startTime;
+					return result;
+				}
+
 				// Save progress before waiting
 				if (this.cache) {
 					this.cache.lastSync = Date.now();
