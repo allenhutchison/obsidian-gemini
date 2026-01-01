@@ -951,10 +951,9 @@ export class RagIndexingService {
 							this.runningFailed++;
 							this.notifyProgressListeners();
 
-							// Check for rate limit error and abort if detected
+							// Re-throw rate limit errors to trigger cooldown
 							if (event.error && this.isRateLimitError(event.error)) {
-								this.rateLimitDetected = true;
-								throw new Error('Rate limit detected');
+								throw event.error;
 							}
 						} else if (event.type === 'complete') {
 							this.currentFile = undefined;
@@ -985,7 +984,7 @@ export class RagIndexingService {
 
 		} catch (error) {
 			// Handle rate limit with auto-retry
-			if (this.rateLimitDetected || (error instanceof Error && error.message === 'Rate limit detected')) {
+			if (this.isRateLimitError(error)) {
 				// Check if we've exceeded max retries
 				if (this.consecutiveRateLimits >= RATE_LIMIT_MAX_RETRIES) {
 					this.plugin.logger.error(
