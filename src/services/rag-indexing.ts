@@ -57,7 +57,7 @@ interface PendingChange {
 /**
  * Status of the RAG indexing service
  */
-export type RagIndexStatus = 'disabled' | 'idle' | 'indexing' | 'error' | 'paused';
+export type RagIndexStatus = 'disabled' | 'idle' | 'indexing' | 'error' | 'paused' | 'rate_limited';
 
 /**
  * Extended progress information for live UI updates
@@ -90,6 +90,13 @@ const DEBOUNCE_MS = 2000;
 const CACHE_SAVE_INTERVAL = 10;
 
 /**
+ * Rate limit handling configuration
+ */
+const RATE_LIMIT_BASE_DELAY_MS = 30000; // 30 seconds base delay
+const RATE_LIMIT_MAX_DELAY_MS = 300000; // 5 minutes max delay
+const RATE_LIMIT_MAX_RETRIES = 5; // Maximum retry attempts before failing
+
+/**
  * Service for managing RAG indexing of vault files to Google's File Search API
  */
 export class RagIndexingService {
@@ -115,6 +122,12 @@ export class RagIndexingService {
 	private runningSkipped: number = 0;
 	private runningFailed: number = 0;
 	private cancelRequested: boolean = false;
+
+	// Rate limit handling
+	private rateLimitDetected: boolean = false;
+	private consecutiveRateLimits: number = 0;
+	private rateLimitResumeTime?: number;
+	private rateLimitTimer?: ReturnType<typeof setInterval>;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -230,6 +243,12 @@ export class RagIndexingService {
 			this.debounceTimer = null;
 		}
 		this.pendingChanges.clear();
+
+		// Clear rate limit timer
+		if (this.rateLimitTimer) {
+			clearInterval(this.rateLimitTimer);
+			this.rateLimitTimer = undefined;
+		}
 
 		// Remove status bar
 		if (this.statusBarItem) {
@@ -435,6 +454,99 @@ export class RagIndexingService {
 			return 0;
 		}
 		return counter;
+	}
+
+	// ==================== Rate Limit Handling ====================
+
+	/**
+	 * Check if an error is a rate limit (429) error from the API.
+	 * Google's API returns errors with status codes or specific messages.
+	 */
+	private isRateLimitError(error: unknown): boolean {
+		if (!error) return false;
+
+		const errorStr = String(error).toLowerCase();
+		const message = error instanceof Error ? error.message.toLowerCase() : '';
+
+		// Check for common rate limit indicators
+		return (
+			errorStr.includes('429') ||
+			errorStr.includes('resource_exhausted') ||
+			errorStr.includes('rate limit') ||
+			errorStr.includes('quota exceeded') ||
+			errorStr.includes('too many requests') ||
+			message.includes('429') ||
+			message.includes('resource_exhausted') ||
+			message.includes('rate limit') ||
+			message.includes('quota exceeded') ||
+			message.includes('too many requests')
+		);
+	}
+
+	/**
+	 * Handle a rate limit by pausing operations with exponential backoff.
+	 * Returns a promise that resolves when the cooldown is complete.
+	 */
+	private async handleRateLimit(): Promise<void> {
+		this.consecutiveRateLimits++;
+		this.rateLimitDetected = true;
+
+		// Calculate delay with exponential backoff, capped at max
+		const delay = Math.min(
+			RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, this.consecutiveRateLimits - 1),
+			RATE_LIMIT_MAX_DELAY_MS
+		);
+
+		this.rateLimitResumeTime = Date.now() + delay;
+		this.status = 'rate_limited';
+
+		this.plugin.logger.warn(
+			`RAG Indexing: Rate limited. Waiting ${Math.round(delay / 1000)}s before retry ` +
+			`(attempt ${this.consecutiveRateLimits})`
+		);
+
+		// Update status bar with countdown
+		this.updateStatusBar();
+		this.notifyProgressListeners();
+
+		// Start countdown timer for status bar updates
+		this.rateLimitTimer = setInterval(() => {
+			this.updateStatusBar();
+		}, 1000);
+
+		// Wait for cooldown
+		await new Promise(resolve => setTimeout(resolve, delay));
+
+		// Clear timer and reset state
+		if (this.rateLimitTimer) {
+			clearInterval(this.rateLimitTimer);
+			this.rateLimitTimer = undefined;
+		}
+		this.rateLimitResumeTime = undefined;
+		this.rateLimitDetected = false;
+
+		this.plugin.logger.log('RAG Indexing: Rate limit cooldown complete, resuming...');
+	}
+
+	/**
+	 * Reset rate limit tracking after successful operations.
+	 */
+	private resetRateLimitTracking(): void {
+		this.consecutiveRateLimits = 0;
+		this.rateLimitDetected = false;
+		this.rateLimitResumeTime = undefined;
+		if (this.rateLimitTimer) {
+			clearInterval(this.rateLimitTimer);
+			this.rateLimitTimer = undefined;
+		}
+	}
+
+	/**
+	 * Get remaining seconds until rate limit cooldown ends.
+	 */
+	getRateLimitRemainingSeconds(): number {
+		if (!this.rateLimitResumeTime) return 0;
+		return Math.max(0, Math.ceil((this.rateLimitResumeTime - Date.now()) / 1000));
 	}
 
 	// ==================== File Search Store Management ====================
@@ -646,6 +758,14 @@ export class RagIndexingService {
 				textEl.setText('');
 				tooltip = 'RAG Index: Paused';
 				break;
+			case 'rate_limited': {
+				this.statusBarItem.style.display = '';
+				setIcon(iconEl, 'clock');
+				const remaining = this.getRateLimitRemainingSeconds();
+				textEl.setText(`${remaining}s`);
+				tooltip = `RAG Index: Rate limited - waiting ${remaining}s`;
+				break;
+			}
 		}
 
 		if (tooltip) {
@@ -830,6 +950,11 @@ export class RagIndexingService {
 							result.failed++;
 							this.runningFailed++;
 							this.notifyProgressListeners();
+
+							// Re-throw rate limit errors to trigger cooldown
+							if (event.error && this.isRateLimitError(event.error)) {
+								throw event.error;
+							}
 						} else if (event.type === 'complete') {
 							this.currentFile = undefined;
 							this.notifyProgressListeners();
@@ -853,10 +978,51 @@ export class RagIndexingService {
 			this.status = 'idle';
 			this.currentFile = undefined;
 			this.indexingStartTime = undefined;
+			this.resetRateLimitTracking(); // Success - reset rate limit counter
 			this.updateStatusBar();
 			this.notifyProgressListeners();
 
 		} catch (error) {
+			// Handle rate limit with auto-retry
+			if (this.isRateLimitError(error)) {
+				// Check if we've exceeded max retries
+				if (this.consecutiveRateLimits >= RATE_LIMIT_MAX_RETRIES) {
+					this.plugin.logger.error(
+						`RAG Indexing: Max rate limit retries (${RATE_LIMIT_MAX_RETRIES}) exceeded`
+					);
+					this.resetRateLimitTracking();
+					this.status = 'error';
+					this.currentFile = undefined;
+					this.indexingStartTime = undefined;
+					this.updateStatusBar();
+					this.notifyProgressListeners();
+					result.duration = Date.now() - startTime;
+					return result;
+				}
+
+				// Save progress before waiting
+				if (this.cache) {
+					this.cache.lastSync = Date.now();
+					await this.saveCache();
+				}
+
+				// Wait for cooldown
+				await this.handleRateLimit();
+
+				// Auto-retry - smart sync will skip already-indexed files
+				this.status = 'indexing';
+				this.updateStatusBar();
+				this.notifyProgressListeners();
+
+				// Recursive retry - return combined results
+				const retryResult = await this._doIndexVault(progressCallback);
+				result.indexed += retryResult.indexed;
+				result.skipped += retryResult.skipped;
+				result.failed += retryResult.failed;
+				result.duration = Date.now() - startTime;
+				return result;
+			}
+
 			this.status = this.cancelRequested ? 'idle' : 'error';
 			this.currentFile = undefined;
 			this.indexingStartTime = undefined;
@@ -999,9 +1165,12 @@ export class RagIndexingService {
 
 		// Track changes since last cache save for incremental durability
 		let changesSinceLastSave = 0;
+		let currentChangeIndex = 0;
 
 		try {
-			for (const change of changes) {
+			for (let i = 0; i < changes.length; i++) {
+				currentChangeIndex = i;
+				const change = changes[i];
 				switch (change.type) {
 					case 'create': {
 						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
@@ -1061,11 +1230,32 @@ export class RagIndexingService {
 			}
 			this.indexedCount = Object.keys(this.cache?.files || {}).length;
 			this.status = 'idle';
+			this.resetRateLimitTracking(); // Success - reset rate limit counter
 			this.updateStatusBar();
 		} catch (error) {
-			this.plugin.logger.error('RAG Indexing: Failed to process changes', error);
-			this.status = 'error';
-			this.updateStatusBar();
+			// Check for rate limit error
+			if (this.isRateLimitError(error)) {
+				// Save progress before waiting
+				if (this.cache) {
+					this.cache.lastSync = Date.now();
+					await this.saveCache();
+				}
+
+				// Re-queue unprocessed changes for retry after cooldown
+				for (let i = currentChangeIndex; i < changes.length; i++) {
+					this.pendingChanges.set(changes[i].path, changes[i]);
+				}
+
+				// Wait for cooldown
+				await this.handleRateLimit();
+
+				this.status = 'idle';
+				this.updateStatusBar();
+			} else {
+				this.plugin.logger.error('RAG Indexing: Failed to process changes', error);
+				this.status = 'error';
+				this.updateStatusBar();
+			}
 		} finally {
 			this.isProcessing = false;
 
