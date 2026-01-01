@@ -1166,9 +1166,12 @@ export class RagIndexingService {
 
 		// Track changes since last cache save for incremental durability
 		let changesSinceLastSave = 0;
+		let currentChangeIndex = 0;
 
 		try {
-			for (const change of changes) {
+			for (let i = 0; i < changes.length; i++) {
+				currentChangeIndex = i;
+				const change = changes[i];
 				switch (change.type) {
 					case 'create': {
 						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
@@ -1239,11 +1242,14 @@ export class RagIndexingService {
 					await this.saveCache();
 				}
 
+				// Re-queue unprocessed changes for retry after cooldown
+				for (let i = currentChangeIndex; i < changes.length; i++) {
+					this.pendingChanges.set(changes[i].path, changes[i]);
+				}
+
 				// Wait for cooldown
 				await this.handleRateLimit();
 
-				// Re-queue remaining changes for retry
-				// Note: Already processed changes are saved in cache
 				this.status = 'idle';
 				this.updateStatusBar();
 			} else {
