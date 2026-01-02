@@ -1,6 +1,5 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
-import { GoogleGenAI } from '@google/genai';
 import type ObsidianGemini from '../main';
 
 /**
@@ -84,8 +83,14 @@ export class RagSearchTool implements Tool {
 			// Validate and clamp maxResults
 			const maxResults = Math.min(Math.max(params.maxResults || 5, 1), 20);
 
-			// Create API client
-			const ai = new GoogleGenAI({ apiKey: plugin.settings.apiKey });
+			// Reuse API client from RAG indexing service
+			const ai = plugin.ragIndexing.getClient();
+			if (!ai) {
+				return {
+					success: false,
+					error: 'RAG API client not available. Please wait for service initialization.'
+				};
+			}
 
 			// Perform search using generateContent with File Search tool
 			// Use the configured chat model for consistency
