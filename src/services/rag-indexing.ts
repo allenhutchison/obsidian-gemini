@@ -909,8 +909,8 @@ export class RagIndexingService {
 			}
 
 			// Clear the store name in settings to force recreation
-			this.plugin.settings.ragIndexing.fileSearchStoreName = '';
-			await this.plugin.saveSettings();
+			this.plugin.settings.ragIndexing.fileSearchStoreName = null;
+			await this.plugin.saveData(this.plugin.settings);
 
 			// Recreate the store
 			await this.ensureFileSearchStore();
