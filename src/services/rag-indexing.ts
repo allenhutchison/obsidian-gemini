@@ -897,7 +897,10 @@ export class RagIndexingService {
 			const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
 			if (storeName && this.ai) {
 				try {
-					await this.ai.fileSearchStores.delete({ name: storeName });
+					await this.ai.fileSearchStores.delete({
+						name: storeName,
+						config: { force: true },
+					});
 					this.plugin.logger.log(`RAG Indexing: Deleted store ${storeName}`);
 				} catch (deleteError) {
 					// Store may not exist, that's OK
@@ -1159,7 +1162,11 @@ export class RagIndexingService {
 			this.indexingStartTime = undefined;
 			this.cancelRequested = false;
 
-			// Clear resume flags on cancellation or error (intentional stop)
+			// Clear resume flags on cancellation or error.
+			// Design decision: We clear flags even for unexpected errors (not just cancellation)
+			// to avoid stale resume prompts. While this means users can't auto-resume after
+			// unexpected errors, it prevents confusing UX from corrupted states. Users can
+			// still manually trigger reindexing. Rate limits are handled separately with retry.
 			if (this.cache) {
 				this.cache.indexingInProgress = false;
 				this.cache.indexingStartedAt = undefined;
