@@ -289,6 +289,13 @@ export class RagIndexingService {
 	}
 
 	/**
+	 * Get the GoogleGenAI client for reuse by other components
+	 */
+	getClient(): GoogleGenAI | null {
+		return this.ai;
+	}
+
+	/**
 	 * Check if the service is enabled and ready
 	 */
 	isReady(): boolean {
