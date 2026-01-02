@@ -3726,6 +3726,46 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-warning);
 }
 
+/* ==================== RAG Resume Modal ==================== */
+
+.rag-resume-stats {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 16px 0;
+	padding: 12px;
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+}
+
+.rag-resume-stat-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.rag-resume-stat-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.rag-resume-stat-value {
+	font-weight: 500;
+}
+
+.rag-resume-file {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rag-resume-note {
+	margin: 16px 0;
+}
+
 /* ==================== RAG Progress Modal ==================== */
 
 .modal.modal-container:has(.rag-progress-modal) {

@@ -21,6 +21,10 @@ export interface RagIndexCache {
 	storeName: string;
 	lastSync: number;
 	files: Record<string, IndexedFileEntry>;
+	// Resume capability fields
+	indexingInProgress?: boolean;     // True while indexing is active
+	indexingStartedAt?: number;       // Timestamp when current indexing started
+	lastIndexedFile?: string;         // Last successfully indexed file path
 }
 
 /**
@@ -189,6 +193,13 @@ export class RagIndexingService {
 			this.updateStatusBar();
 
 			this.plugin.logger.log('RAG Indexing: Initialized successfully');
+
+			// Check for interrupted indexing
+			if (this.cache?.indexingInProgress) {
+				this.plugin.logger.log('RAG Indexing: Detected interrupted indexing, prompting user');
+				await this.handleInterruptedIndexing();
+				return; // handleInterruptedIndexing will trigger indexing if needed
+			}
 
 			// If this is first time (no indexed files), start initial indexing
 			if (this.indexedCount === 0) {
@@ -810,6 +821,109 @@ export class RagIndexingService {
 	}
 
 	/**
+	 * Handle interrupted indexing by prompting user to resume or start fresh
+	 */
+	private async handleInterruptedIndexing(): Promise<void> {
+		if (!this.cache) return;
+
+		const resumeInfo = {
+			filesIndexed: Object.keys(this.cache.files).length,
+			interruptedAt: this.cache.indexingStartedAt || this.cache.lastSync,
+			lastFile: this.cache.lastIndexedFile,
+		};
+
+		// Show modal and wait for user choice
+		const { RagResumeModal } = await import('../ui/rag-resume-modal');
+
+		return new Promise<void>((resolve) => {
+			const modal = new RagResumeModal(
+				this.plugin.app,
+				resumeInfo,
+				async (resume: boolean) => {
+					if (resume) {
+						// Resume: just start indexing - smart sync will skip already-indexed files
+						new Notice('RAG Indexing: Resuming interrupted indexing...');
+						this.startResumeIndexing();
+					} else {
+						// Start fresh: clear cache and store, then reindex
+						new Notice('RAG Indexing: Starting fresh...');
+						await this.startFresh();
+					}
+					resolve();
+				}
+			);
+			modal.open();
+		});
+	}
+
+	/**
+	 * Start resume indexing with progress modal
+	 */
+	private startResumeIndexing(): void {
+		import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
+			const progressModal = new RagProgressModal(
+				this.plugin.app,
+				this,
+				(result) => {
+					new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+				}
+			);
+			progressModal.open();
+		});
+
+		// Run indexing in background (don't await - modal handles display)
+		this.indexVault().catch((error) => {
+			this.plugin.logger.error('RAG Indexing: Resume indexing failed', error);
+			new Notice(`RAG Indexing failed: ${error.message}`);
+		});
+	}
+
+	/**
+	 * Clear cache and store, then start fresh indexing
+	 */
+	private async startFresh(): Promise<void> {
+		try {
+			// Clear local cache
+			this.cache = {
+				version: CACHE_VERSION,
+				storeName: '',
+				lastSync: 0,
+				files: {},
+			};
+			await this.saveCache();
+			this.indexedCount = 0;
+
+			// Delete and recreate the store
+			const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
+			if (storeName && this.ai) {
+				try {
+					await this.ai.fileSearchStores.delete({
+						name: storeName,
+						config: { force: true },
+					});
+					this.plugin.logger.log(`RAG Indexing: Deleted store ${storeName}`);
+				} catch (deleteError) {
+					// Store may not exist, that's OK
+					this.plugin.logger.debug('RAG Indexing: Store deletion failed (may not exist)', deleteError);
+				}
+			}
+
+			// Clear the store name in settings to force recreation
+			this.plugin.settings.ragIndexing.fileSearchStoreName = null;
+			await this.plugin.saveData(this.plugin.settings);
+
+			// Recreate the store
+			await this.ensureFileSearchStore();
+
+			// Start fresh indexing
+			this.startResumeIndexing(); // Reuses same logic for starting indexing with modal
+		} catch (error) {
+			this.plugin.logger.error('RAG Indexing: Failed to start fresh', error);
+			new Notice(`RAG Indexing: Failed to start fresh: ${(error as Error).message}`);
+		}
+	}
+
+	/**
 	 * Index the entire vault
 	 * If indexing is already in progress, returns the existing promise
 	 */
@@ -864,6 +978,14 @@ export class RagIndexingService {
 			this.updateStatusBar();
 			this.notifyProgressListeners();
 
+			// Mark indexing as in progress for resume capability
+			if (this.cache) {
+				this.cache.indexingInProgress = true;
+				this.cache.indexingStartedAt = startTime;
+				this.cache.lastIndexedFile = undefined;
+				await this.saveCache();
+			}
+
 			// Track files since last cache save for incremental durability
 			let filesSinceLastSave = 0;
 
@@ -910,6 +1032,8 @@ export class RagIndexingService {
 									contentHash,
 									lastIndexed: Date.now(),
 								};
+								// Track last indexed file for resume capability
+								this.cache.lastIndexedFile = event.currentFile;
 							}
 							// Incremental cache save for durability
 							filesSinceLastSave = await this.incrementAndMaybeSaveCache(filesSinceLastSave);
@@ -969,9 +1093,12 @@ export class RagIndexingService {
 				}
 			);
 
-			// Save cache and update local state
+			// Save cache and update local state - clear resume flags on success
 			if (this.cache) {
 				this.cache.lastSync = Date.now();
+				this.cache.indexingInProgress = false;
+				this.cache.indexingStartedAt = undefined;
+				this.cache.lastIndexedFile = undefined;
 				await this.saveCache();
 			}
 			this.indexedCount = Object.keys(this.cache?.files || {}).length;
@@ -994,6 +1121,13 @@ export class RagIndexingService {
 					this.status = 'error';
 					this.currentFile = undefined;
 					this.indexingStartTime = undefined;
+					// Clear resume flags on explicit failure
+					if (this.cache) {
+						this.cache.indexingInProgress = false;
+						this.cache.indexingStartedAt = undefined;
+						this.cache.lastIndexedFile = undefined;
+						await this.saveCache();
+					}
 					this.updateStatusBar();
 					this.notifyProgressListeners();
 					result.duration = Date.now() - startTime;
@@ -1027,6 +1161,19 @@ export class RagIndexingService {
 			this.currentFile = undefined;
 			this.indexingStartTime = undefined;
 			this.cancelRequested = false;
+
+			// Clear resume flags on cancellation or error.
+			// Design decision: We clear flags even for unexpected errors (not just cancellation)
+			// to avoid stale resume prompts. While this means users can't auto-resume after
+			// unexpected errors, it prevents confusing UX from corrupted states. Users can
+			// still manually trigger reindexing. Rate limits are handled separately with retry.
+			if (this.cache) {
+				this.cache.indexingInProgress = false;
+				this.cache.indexingStartedAt = undefined;
+				this.cache.lastIndexedFile = undefined;
+				await this.saveCache();
+			}
+
 			this.updateStatusBar();
 			this.notifyProgressListeners();
 
