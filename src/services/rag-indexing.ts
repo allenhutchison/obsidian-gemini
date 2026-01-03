@@ -49,6 +49,15 @@ export interface IndexResult {
 }
 
 /**
+ * Represents a file that failed to index with error details
+ */
+export interface FailedFileEntry {
+	path: string;
+	error: string;
+	timestamp: number;
+}
+
+/**
  * Pending file change for debouncing
  */
 interface PendingChange {
@@ -126,6 +135,9 @@ export class RagIndexingService {
 	private runningSkipped: number = 0;
 	private runningFailed: number = 0;
 	private cancelRequested: boolean = false;
+
+	// Failure tracking for detailed status
+	private failedFiles: FailedFileEntry[] = [];
 
 	// Rate limit handling
 	private rateLimitDetected: boolean = false;
@@ -343,6 +355,67 @@ export class RagIndexingService {
 			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
 			lastSync: this.cache?.lastSync || null,
 		};
+	}
+
+	/**
+	 * Get the number of pending file changes awaiting sync
+	 */
+	getPendingCount(): number {
+		return this.pendingChanges.size;
+	}
+
+	/**
+	 * Get detailed status information for the status modal
+	 */
+	getDetailedStatus(): {
+		status: RagIndexStatus;
+		indexedCount: number;
+		failedCount: number;
+		pendingCount: number;
+		storeName: string | null;
+		lastSync: number | null;
+		indexedFiles: Array<{ path: string; lastIndexed: number }>;
+		failedFiles: FailedFileEntry[];
+	} {
+		// Build indexed files list from cache, sorted by lastIndexed (newest first)
+		const indexedFiles = this.cache
+			? Object.entries(this.cache.files)
+				.map(([path, entry]) => ({ path, lastIndexed: entry.lastIndexed }))
+				.sort((a, b) => b.lastIndexed - a.lastIndexed)
+			: [];
+
+		return {
+			status: this.status,
+			indexedCount: this.indexedCount,
+			failedCount: this.failedFiles.length,
+			pendingCount: this.pendingChanges.size,
+			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
+			lastSync: this.cache?.lastSync || null,
+			indexedFiles,
+			failedFiles: [...this.failedFiles],
+		};
+	}
+
+	/**
+	 * Immediately process pending changes (bypass debounce)
+	 * Returns true if sync was started, false if nothing to sync or already processing
+	 */
+	async syncPendingChanges(): Promise<boolean> {
+		if (this.pendingChanges.size === 0) {
+			return false;
+		}
+		if (this.isProcessing || this.status === 'indexing') {
+			return false;
+		}
+
+		// Clear debounce timer and process immediately
+		if (this.debounceTimer) {
+			clearTimeout(this.debounceTimer);
+			this.debounceTimer = null;
+		}
+
+		await this.flushPendingChanges();
+		return true;
 	}
 
 	/**
@@ -694,7 +767,7 @@ export class RagIndexingService {
 				const { RagStatusModal } = await import('../ui/rag-status-modal');
 				const modal = new RagStatusModal(
 					this.plugin.app,
-					this.getStatusInfo(),
+					this.getDetailedStatus(),
 					() => {
 						// Open settings to RAG section
 						// @ts-expect-error - Obsidian's setting API
@@ -718,6 +791,14 @@ export class RagIndexingService {
 						this.indexVault().catch((error) => {
 							new Notice(`RAG Indexing failed: ${error.message}`);
 						});
+					},
+					async () => {
+						// Sync pending changes immediately
+						const synced = await this.syncPendingChanges();
+						if (synced) {
+							new Notice('RAG Index: Syncing pending changes...');
+						}
+						return synced;
 					}
 				);
 				modal.open();
@@ -980,6 +1061,7 @@ export class RagIndexingService {
 			this.runningIndexed = 0;
 			this.runningSkipped = 0;
 			this.runningFailed = 0;
+			this.failedFiles = [];
 			this.currentFile = undefined;
 			this.cancelRequested = false;
 			this.updateStatusBar();
@@ -1080,6 +1162,16 @@ export class RagIndexingService {
 						} else if (event.type === 'file_error') {
 							result.failed++;
 							this.runningFailed++;
+
+							// Track failed file with error details
+							if (event.currentFile) {
+								this.failedFiles.push({
+									path: event.currentFile,
+									error: event.error?.message || 'Unknown error',
+									timestamp: Date.now(),
+								});
+							}
+
 							this.notifyProgressListeners();
 
 							// Re-throw rate limit errors to trigger cooldown
