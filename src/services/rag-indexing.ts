@@ -283,6 +283,7 @@ export class RagIndexingService {
 		this.fileUploader = null;
 		this.vaultAdapter = null;
 		this.cache = null;
+		this.failedFiles = [];
 		this.status = 'disabled';
 	}
 
@@ -1165,9 +1166,12 @@ export class RagIndexingService {
 
 							// Track failed file with error details
 							if (event.currentFile) {
+								const errorMessage = event.error instanceof Error
+									? event.error.message
+									: String(event.error || 'Unknown error');
 								this.failedFiles.push({
 									path: event.currentFile,
-									error: event.error?.message || 'Unknown error',
+									error: errorMessage,
 									timestamp: Date.now(),
 								});
 							}

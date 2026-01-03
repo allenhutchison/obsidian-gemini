@@ -1,4 +1,4 @@
-import { App, Modal, Setting, setIcon } from 'obsidian';
+import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type { RagIndexStatus, FailedFileEntry } from '../services/rag-indexing';
 
 /**
@@ -30,6 +30,7 @@ export class RagStatusModal extends Modal {
 	private searchQuery: string = '';
 	private showAllFiles: boolean = false;
 	private readonly MAX_FILES_INITIAL = 200;
+	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(
 		app: App,
@@ -62,6 +63,14 @@ export class RagStatusModal extends Modal {
 		// Tab content container
 		const contentContainer = contentEl.createDiv({ cls: 'rag-status-content' });
 		this.renderTabContent(contentContainer);
+	}
+
+	onClose() {
+		// Clear any pending debounce timer to prevent updates after modal is closed
+		if (this.debounceTimer) {
+			clearTimeout(this.debounceTimer);
+			this.debounceTimer = null;
+		}
 	}
 
 	private renderTabs(container: HTMLElement): void {
@@ -173,7 +182,9 @@ export class RagStatusModal extends Modal {
 						try {
 							await this.onSyncNow();
 							this.close();
-						} catch {
+						} catch (error) {
+							const message = error instanceof Error ? error.message : String(error);
+							new Notice(`Sync failed: ${message}`);
 							btn.setButtonText('Sync Now');
 							btn.setDisabled(false);
 						}
@@ -211,10 +222,11 @@ export class RagStatusModal extends Modal {
 			},
 		});
 
-		let debounceTimer: ReturnType<typeof setTimeout>;
 		searchInput.addEventListener('input', (e) => {
-			clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => {
+			if (this.debounceTimer) {
+				clearTimeout(this.debounceTimer);
+			}
+			this.debounceTimer = setTimeout(() => {
 				this.searchQuery = (e.target as HTMLInputElement).value;
 				this.renderFileList(listContainer);
 			}, 150);

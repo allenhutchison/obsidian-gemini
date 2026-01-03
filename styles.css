@@ -3808,6 +3808,7 @@ If your plugin does not need CSS, delete this file.
 	align-items: center;
 	padding: 8px 12px;
 	border-bottom: 1px solid var(--background-modifier-border);
+	transition: background 0.15s ease;
 }
 
 .rag-status-file-item:last-child {
