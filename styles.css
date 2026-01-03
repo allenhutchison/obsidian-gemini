@@ -3726,6 +3726,191 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-warning);
 }
 
+.rag-status-rate-limited {
+	color: var(--text-warning);
+}
+
+/* ==================== RAG Status Modal Tabs ==================== */
+
+.modal.modal-container:has(.rag-status-modal) {
+	width: 600px;
+	max-width: 90vw;
+}
+
+.rag-status-tabs {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 16px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding-bottom: 8px;
+}
+
+.rag-status-tab {
+	padding: 8px 16px;
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.rag-status-tab:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.rag-status-tab-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.rag-status-tab-active:hover {
+	background: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
+}
+
+.rag-status-content {
+	min-height: 200px;
+}
+
+/* ==================== RAG Status Modal Search ==================== */
+
+.rag-status-search-container {
+	margin-bottom: 12px;
+}
+
+.rag-status-search {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	font-size: var(--font-ui-small);
+}
+
+.rag-status-search:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+}
+
+/* ==================== RAG Status Modal File List ==================== */
+
+.rag-status-file-list {
+	max-height: 350px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+}
+
+.rag-status-file-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	transition: background 0.15s ease;
+}
+
+.rag-status-file-item:last-child {
+	border-bottom: none;
+}
+
+.rag-status-file-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.rag-status-file-path {
+	flex: 1;
+	min-width: 0;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rag-status-file-time {
+	flex-shrink: 0;
+	margin-left: 12px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.rag-status-show-more {
+	padding: 12px;
+	text-align: center;
+	color: var(--text-accent);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+}
+
+.rag-status-show-more:hover {
+	background: var(--background-modifier-hover);
+}
+
+.rag-status-empty {
+	padding: 24px;
+	text-align: center;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+/* ==================== RAG Status Modal Failure List ==================== */
+
+.rag-status-failure-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.rag-status-failure-item {
+	padding: 12px;
+	background: var(--background-secondary);
+	border-radius: var(--radius-s);
+	border-left: 3px solid var(--text-error);
+}
+
+.rag-status-failure-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+.rag-status-failure-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-error);
+}
+
+.rag-status-failure-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+.rag-status-failure-path {
+	flex: 1;
+	min-width: 0;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rag-status-failure-time {
+	flex-shrink: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.rag-status-failure-error {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	padding-left: 24px;
+}
+
 /* ==================== RAG Resume Modal ==================== */
 
 .rag-resume-stats {
