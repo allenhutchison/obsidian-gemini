@@ -481,6 +481,12 @@ export class RagIndexingService {
 			return;
 		}
 
+		// Cancel any pending debounce timer to prevent flush after pause
+		if (this.debounceTimer) {
+			clearTimeout(this.debounceTimer);
+			this.debounceTimer = null;
+		}
+
 		this.status = 'paused';
 		this.updateStatusBar();
 		this.plugin.logger.log('RAG Indexing: Paused');
