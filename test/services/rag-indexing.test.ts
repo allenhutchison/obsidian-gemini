@@ -347,6 +347,23 @@ describe('RagIndexingService', () => {
 
 			expect((service as any).debounceTimer).not.toBeNull();
 		});
+
+		it('should call flushPendingChanges after debounce timer fires', async () => {
+			const flushSpy = jest.spyOn(service as any, 'flushPendingChanges').mockResolvedValue(undefined);
+
+			(service as any).queueChange({
+				type: 'create',
+				path: 'test.md',
+				timestamp: Date.now(),
+			});
+
+			expect((service as any).debounceTimer).not.toBeNull();
+
+			// Advance timer past debounce period (2000ms)
+			jest.advanceTimersByTime(2500);
+
+			expect(flushSpy).toHaveBeenCalled();
+		});
 	});
 
 	describe('file event handlers', () => {
@@ -655,6 +672,24 @@ describe('RagIndexingService', () => {
 			(service as any).rateLimitResumeTime = undefined;
 			expect(service.getRateLimitRemainingSeconds()).toBe(0);
 		});
+
+		it('should set and clear rate limit timer during handleRateLimit', async () => {
+			(service as any).consecutiveRateLimits = 0;
+			(service as any).status = 'idle';
+
+			const handlePromise = (service as any).handleRateLimit();
+
+			// Verify timer is set during cooldown
+			expect((service as any).rateLimitTimer).not.toBeUndefined();
+			expect((service as any).status).toBe('rate_limited');
+
+			// Advance through the base delay (30000ms)
+			jest.advanceTimersByTime(35000);
+			await handlePromise;
+
+			// Verify timer is cleared after cooldown
+			expect((service as any).rateLimitTimer).toBeUndefined();
+		});
 	});
 
 	describe('cache management', () => {
@@ -794,6 +829,34 @@ describe('RagIndexingService', () => {
 			(service as any).status = 'disabled';
 
 			await expect(service.indexVault()).rejects.toThrow('RAG Indexing service is not ready');
+		});
+
+		it('should only call _doIndexVault once for concurrent indexVault calls', async () => {
+			(service as any).status = 'idle';
+			(service as any).ai = {};
+
+			// Create a slow-resolving promise to simulate indexing in progress
+			let resolveIndexing: (result: any) => void;
+			const slowPromise = new Promise<any>((resolve) => {
+				resolveIndexing = resolve;
+			});
+
+			// Mock _doIndexVault to return our controlled promise
+			const doIndexSpy = jest.spyOn(service as any, '_doIndexVault').mockReturnValue(slowPromise);
+
+			// Start two concurrent index operations
+			const promise1 = service.indexVault();
+			const promise2 = service.indexVault();
+
+			// _doIndexVault should only be called once
+			expect(doIndexSpy).toHaveBeenCalledTimes(1);
+
+			// Resolve and verify both get the same result
+			resolveIndexing!({ indexed: 10, skipped: 5, failed: 0, duration: 500 });
+
+			const [result1, result2] = await Promise.all([promise1, promise2]);
+			expect(result1).toEqual(result2);
+			expect(result1).toEqual({ indexed: 10, skipped: 5, failed: 0, duration: 500 });
 		});
 	});
 
