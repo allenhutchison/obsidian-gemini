@@ -585,6 +585,10 @@ export class RagIndexingService {
 					const errorMessage = createError instanceof Error ? createError.message : String(createError);
 					if (errorMessage.includes('File already exists')) {
 						// Fall back to direct adapter write
+						this.plugin.logger.debug(
+							`RAG Indexing: Cache file exists but not in metadata cache, using adapter.write`,
+							{ path: this.cachePath, error: errorMessage }
+						);
 						await this.plugin.app.vault.adapter.write(this.cachePath, content);
 					} else {
 						throw createError;
