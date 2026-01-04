@@ -9,7 +9,7 @@ import { ObsidianVaultAdapter } from './obsidian-file-adapter';
  */
 export interface IndexedFileEntry {
 	resourceName: string;  // Gemini file resource name
-	contentHash: string;   // mtime:size for fast change detection
+	contentHash: string;   // SHA-256 hash for reliable change detection
 	lastIndexed: number;   // Timestamp
 }
 
