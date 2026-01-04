@@ -520,9 +520,25 @@ export class RagIndexingService {
 	 */
 	private async loadCache(): Promise<void> {
 		try {
+			let content: string | null = null;
+
+			// Try to get file from metadata cache first
 			const file = this.plugin.app.vault.getAbstractFileByPath(this.cachePath);
 			if (file instanceof TFile) {
-				const content = await this.plugin.app.vault.read(file);
+				content = await this.plugin.app.vault.read(file);
+			} else {
+				// File not in metadata cache - try reading directly from disk
+				// This handles startup race conditions where file exists but isn't indexed yet
+				const exists = await this.plugin.app.vault.adapter.exists(this.cachePath);
+				if (exists) {
+					this.plugin.logger.debug(
+						'RAG Indexing: Cache file exists on disk but not in metadata cache, using adapter.read'
+					);
+					content = await this.plugin.app.vault.adapter.read(this.cachePath);
+				}
+			}
+
+			if (content) {
 				const parsed = JSON.parse(content);
 
 				// Validate cache version - reset if mismatched
@@ -545,7 +561,7 @@ export class RagIndexingService {
 
 				this.plugin.logger.log(`RAG Indexing: Loaded cache with ${this.indexedCount} files`);
 			} else {
-				// Initialize empty cache
+				// Initialize empty cache - no file exists
 				this.cache = {
 					version: CACHE_VERSION,
 					storeName: '',

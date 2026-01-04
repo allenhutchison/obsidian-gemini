@@ -428,6 +428,19 @@ export default class ObsidianGemini extends Plugin {
 		await this.imageGeneration.setupImageGenerationCommand();
 
 		// Initialize RAG indexing if enabled
+		// On startup, defer to onLayoutReady() to ensure metadata cache is ready
+		// On settings change (layout already ready), initialize immediately
+		if (this.app.workspace.layoutReady) {
+			await this.initializeRagIndexing();
+		}
+		// If layout not ready, onLayoutReady() will call initializeRagIndexing()
+	}
+
+	/**
+	 * Initialize or re-initialize RAG indexing service
+	 * Should only be called when workspace layout is ready
+	 */
+	async initializeRagIndexing(): Promise<void> {
 		if (this.settings.ragIndexing.enabled) {
 			// Clean up existing instance if re-initializing (e.g., from saveSettings)
 			if (this.ragIndexing) {
@@ -544,6 +557,12 @@ export default class ObsidianGemini extends Plugin {
 		}
 
 		await this.history.onLayoutReady();
+
+		// Initialize RAG indexing now that metadata cache is ready
+		// (deferred from setupGeminiScribe if layout wasn't ready)
+		if (!this.ragIndexing && this.settings.ragIndexing.enabled) {
+			await this.initializeRagIndexing();
+		}
 
 		// Check if history migration is needed
 		await this.checkAndOfferMigration();
