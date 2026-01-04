@@ -4,33 +4,32 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 > **Note:** This plugin requires a Google Gemini API key. Free tier available at [Google AI Studio](https://aistudio.google.com/apikey).
 
-## What's New in v4.0.0
+## What's New in v4.2.1
 
-**🎉 Major Update: Unified Agent-First Experience**
+**🔧 RAG Stability & New Features**
 
-This release simplifies Gemini Scribe by focusing entirely on the powerful Agent Mode with tool calling:
+This release brings major improvements to the semantic vault search feature:
 
-- **🤖 Single Unified Chat Interface:** Streamlined to one powerful agent mode with full tool calling - no more switching between modes!
-- **📦 History Archival:** Old note-based chat history is safely archived (not converted) when upgrading, preserving your conversations as readable markdown
-- **🎉 Welcome Experience:** Friendly welcome modal explains v4.0 changes and offers optional history archival
-- **🗑️ Simplified Codebase:** Removed legacy note-based chat and migration code - focused entirely on agent capabilities
+- **🐛 Fixed RAG re-indexing on every restart** - Your vault no longer re-indexes unnecessarily
+- **📄 PDF and attachment indexing** - Index PDFs and other supported file types
+- **⏸️ Pause/resume commands** - Control syncing with `Gemini Scribe: Pause/Resume RAG sync`
+- **📊 Detailed status modal** - View indexed files, failures, and search your index
+- **🔄 Resume interrupted indexing** - Continue after crash or restart
+- **⚡ Rate limit handling** - Automatic retry with exponential backoff
+- **💾 Incremental saves** - Cache saves during indexing for durability
 
-**What This Means:**
-- All conversations now support tool calling and agent features by default
-- Cleaner, more intuitive interface focused on what works best
-- Your old chat history is preserved as-is in an archive folder
-- Start fresh with powerful agent sessions featuring persistent context and permissions
+**Previous Updates (v4.2.0):**
+- **🔬 Semantic Vault Search:** [Experimental] Search your vault by meaning using Google's File Search API
+- **💬 Clearer API Errors:** Better explanations for quota, auth, and rate limit issues
 
-**Previous Updates:**
-- **🎯 Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance
-- **Dynamic Model Parameter Controls:** Automatic discovery of temperature and Top P ranges
-- **Model Discovery System:** Automatic fetching of the latest Gemini models
-- **Enhanced Custom Prompts System:** Improved prompt management with better tracking
-- **Improved Plugin Compatibility:** Native Obsidian APIs for better plugin compatibility
+**Previous Updates (v4.0.0):**
+- **🤖 Unified Agent Mode:** Single powerful chat with tool calling
+- **📦 History Archival:** Old chat preserved as readable markdown
 
 ## Features
 
 - **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, move and rename files, create folders, and even conduct deep research with proper citations. Features persistent sessions, granular permission controls, and session-specific model configuration.
+- **Semantic Vault Search:** [Experimental] Search your vault by meaning, not just keywords. Uses Google's File Search API to index your notes in the background. The AI can find relevant content even when you don't remember exact words. Supports PDFs and attachments, with pause/resume controls and detailed status tracking.
 - **Context-Aware Agent:** Add specific notes as persistent context for your agent sessions. The agent can access and reference these context files throughout your conversation, providing highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Simply select the text you want to improve, right-click to choose "Rewrite with Gemini", and provide instructions for how you'd like it rewritten.

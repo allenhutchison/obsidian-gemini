@@ -18,6 +18,19 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.2.1': {
+			title: '🔧 Gemini Scribe 4.2.1 - RAG Stability & New Features',
+			highlights: [
+				'🐛 Fixed RAG re-indexing on every Obsidian restart',
+				'📄 PDF and attachment indexing support',
+				'⏸️ Pause/resume commands for RAG sync',
+				'📊 Detailed status modal with file lists and search',
+				'🔄 Resume interrupted indexing after crash/restart',
+				'⚡ Rate limit handling with automatic retry',
+				'💾 Incremental cache saves for durability'
+			],
+			details: 'This update brings major stability improvements to RAG indexing. The vault no longer re-indexes on every restart, and you can now index PDFs and attachments. New pause/resume commands give you control over syncing, and interrupted indexing can be resumed. The status modal now shows detailed file lists with search functionality.'
+		},
 		'4.2.0': {
 			title: '✨ Gemini Scribe 4.2 - Semantic Search & Improved Errors',
 			highlights: [
