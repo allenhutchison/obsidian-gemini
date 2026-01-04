@@ -577,7 +577,19 @@ export class RagIndexingService {
 			if (file instanceof TFile) {
 				await this.plugin.app.vault.modify(file, content);
 			} else {
-				await this.plugin.app.vault.create(this.cachePath, content);
+				try {
+					await this.plugin.app.vault.create(this.cachePath, content);
+				} catch (createError) {
+					// Handle race condition where file exists on disk but not in metadata cache
+					// This can happen on Linux or during startup
+					const errorMessage = createError instanceof Error ? createError.message : String(createError);
+					if (errorMessage.includes('File already exists')) {
+						// Fall back to direct adapter write
+						await this.plugin.app.vault.adapter.write(this.cachePath, content);
+					} else {
+						throw createError;
+					}
+				}
 			}
 		} catch (error) {
 			this.plugin.logger.error('RAG Indexing: Failed to save cache', error);
