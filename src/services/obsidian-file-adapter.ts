@@ -170,16 +170,27 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 	}
 
 	/**
-	 * Compute a hash for change detection.
-	 * Uses mtime:size for fast comparison (matching existing rag-indexing behavior).
+	 * Compute a SHA-256 hash of file content for change detection.
+	 * Uses actual content hashing to reliably detect changes across restarts.
 	 */
 	async computeHash(filePath: string): Promise<string> {
 		const file = this.vault.getAbstractFileByPath(filePath);
 		if (!(file instanceof TFile)) {
+			// File doesn't exist or isn't a file - return empty to signal "not hashable"
 			return '';
 		}
 
-		return `${file.stat.mtime}:${file.stat.size}`;
+		try {
+			const content = await this.vault.readBinary(file);
+			const hashBuffer = await crypto.subtle.digest('SHA-256', content);
+			const hashArray = Array.from(new Uint8Array(hashBuffer));
+			return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+		} catch (error) {
+			// Throw error for existing files that fail to hash - prevents storing
+			// empty hashes that would break change detection in smartSync
+			const message = error instanceof Error ? error.message : String(error);
+			throw new Error(`Failed to compute hash for ${filePath}: ${message}`);
+		}
 	}
 
 	/**
