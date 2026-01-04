@@ -463,6 +463,56 @@ export class RagIndexingService {
 		return this.status === 'indexing';
 	}
 
+	/**
+	 * Check if sync is paused
+	 */
+	isPaused(): boolean {
+		return this.status === 'paused';
+	}
+
+	/**
+	 * Pause automatic syncing. Does not interrupt current indexing operation.
+	 * While paused, file changes are still queued but not processed.
+	 */
+	pause(): void {
+		// Can only pause from idle state
+		if (this.status !== 'idle') {
+			this.plugin.logger.log(`RAG Indexing: Cannot pause from ${this.status} state`);
+			return;
+		}
+
+		// Cancel any pending debounce timer to prevent flush after pause
+		if (this.debounceTimer) {
+			clearTimeout(this.debounceTimer);
+			this.debounceTimer = null;
+		}
+
+		this.status = 'paused';
+		this.updateStatusBar();
+		this.plugin.logger.log('RAG Indexing: Paused');
+	}
+
+	/**
+	 * Resume automatic syncing after being paused.
+	 * Triggers sync of any pending changes that accumulated while paused.
+	 */
+	resume(): void {
+		if (this.status !== 'paused') {
+			this.plugin.logger.log(`RAG Indexing: Cannot resume from ${this.status} state`);
+			return;
+		}
+
+		this.status = 'idle';
+		this.updateStatusBar();
+		this.plugin.logger.log('RAG Indexing: Resumed');
+
+		// Process any pending changes that accumulated while paused
+		if (this.pendingChanges.size > 0) {
+			this.plugin.logger.log(`RAG Indexing: Processing ${this.pendingChanges.size} pending changes`);
+			this.flushPendingChanges();
+		}
+	}
+
 	// ==================== Cache Management ====================
 
 	/**
@@ -1381,6 +1431,11 @@ export class RagIndexingService {
 			}
 		} else {
 			this.pendingChanges.set(change.path, change);
+		}
+
+		// Don't start debounce timer when paused - changes will be processed on resume
+		if (this.status === 'paused') {
+			return;
 		}
 
 		// Reset debounce timer

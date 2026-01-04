@@ -246,6 +246,93 @@ export default class ObsidianGemini extends Plugin {
 			},
 		});
 
+		// RAG indexing commands
+		this.addCommand({
+			id: 'gemini-scribe-rag-pause',
+			name: 'Pause RAG Sync',
+			callback: () => {
+				if (!this.ragIndexing) {
+					new Notice('RAG indexing is not enabled');
+					return;
+				}
+				if (this.ragIndexing.isPaused()) {
+					new Notice('RAG sync is already paused');
+					return;
+				}
+				if (this.ragIndexing.isIndexing()) {
+					new Notice('Cannot pause while indexing is in progress');
+					return;
+				}
+				this.ragIndexing.pause();
+				new Notice('RAG sync paused');
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-rag-resume',
+			name: 'Resume RAG Sync',
+			callback: () => {
+				if (!this.ragIndexing) {
+					new Notice('RAG indexing is not enabled');
+					return;
+				}
+				if (!this.ragIndexing.isPaused()) {
+					new Notice('RAG sync is not paused');
+					return;
+				}
+				this.ragIndexing.resume();
+				new Notice('RAG sync resumed');
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-rag-status',
+			name: 'Show RAG Status',
+			callback: async () => {
+				if (!this.ragIndexing) {
+					new Notice('RAG indexing is not enabled');
+					return;
+				}
+				// Trigger the same modal as clicking the status bar
+				const { RagStatusModal } = await import('./ui/rag-status-modal');
+				const modal = new RagStatusModal(
+					this.app,
+					this.ragIndexing.getDetailedStatus(),
+					() => {
+						// Open settings to RAG section
+						// @ts-expect-error - Obsidian's setting API
+						this.app.setting.open();
+						// @ts-expect-error - Obsidian's setting API
+						this.app.setting.openTabById('gemini-scribe');
+					},
+					async () => {
+						// Reindex
+						const { RagProgressModal } = await import('./ui/rag-progress-modal');
+						const progressModal = new RagProgressModal(
+							this.app,
+							this.ragIndexing!,
+							(result) => {
+								new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+							}
+						);
+						progressModal.open();
+						this.ragIndexing!.indexVault().catch((error) => {
+							new Notice(`RAG Indexing failed: ${error.message}`);
+						});
+					},
+					async () => {
+						// Sync now
+						const synced = await this.ragIndexing!.syncPendingChanges();
+						if (synced) {
+							new Notice('RAG Index: Syncing pending changes...');
+						}
+						return synced;
+					}
+				);
+				modal.open();
+			},
+		});
+
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
 
 		this.app.workspace.onLayoutReady(() => this.onLayoutReady());
