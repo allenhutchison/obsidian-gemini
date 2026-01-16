@@ -987,5 +987,53 @@ describe('AgentView UI Tests', () => {
 			expect(sendMessageCalled).toBe(false);
 			expect(stopAgentLoopCalled).toBe(true);
 		});
+
+		it('should reset cancellationRequested when starting new execution', async () => {
+			await agentView.onOpen();
+
+			const sendButton = document.createElement('button');
+			// Add Obsidian methods
+			(sendButton as any).empty = jest.fn();
+			(sendButton as any).addClass = jest.fn();
+			(agentView as any).sendButton = sendButton;
+
+			// Set up mock session
+			(agentView as any).currentSession = {
+				id: 'test-session',
+				context: { contextFiles: [] }
+			};
+
+			// Set up mock fileChips that returns a message (to pass early return check)
+			(agentView as any).fileChips = {
+				extractMessageContent: () => ({ text: 'test message', files: [], formattedMessage: 'test message' }),
+				clearMentionedFiles: jest.fn()
+			};
+
+			// Mock userInput
+			(agentView as any).userInput = { innerHTML: '' };
+
+			// Mock progress bar
+			(agentView as any).progress = {
+				show: jest.fn(),
+				hide: jest.fn(),
+				update: jest.fn()
+			};
+
+			// Set cancellation flag (simulating previous stop)
+			(agentView as any).cancellationRequested = true;
+
+			// Mock displayMessage to throw early and stop execution after flag reset
+			(agentView as any).displayMessage = jest.fn().mockRejectedValue(new Error('Stop execution here'));
+
+			// Call sendMessage - it will fail at displayMessage but the flag should be reset by then
+			try {
+				await (agentView as any).sendMessage();
+			} catch {
+				// Expected to fail
+			}
+
+			// Verify cancellationRequested was reset to false at start of sendMessage (line 212)
+			expect((agentView as any).cancellationRequested).toBe(false);
+		});
 	});
 });
