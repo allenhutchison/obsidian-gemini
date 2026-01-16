@@ -34,7 +34,6 @@
 		"jest": "^29.7.0",
 		"jest-environment-jsdom": "^29.7.0",
 		"obsidian": "latest",
-		"obsidian-dataview": "^0.5.67",
 		"prettier": "^3.3.3",
 		"raw-loader": "^4.0.2",
 		"ts-jest": "^29.3.4",

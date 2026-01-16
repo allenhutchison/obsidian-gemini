@@ -212,4 +212,30 @@ export class ScribeFile {
 		const allLinks = new Set([...links, ...embeds, ...frontmatterLinks]);
 		return allLinks;
 	}
+
+	/**
+	 * Get all files that link to the specified file (backlinks).
+	 * Uses Obsidian's native metadataCache.resolvedLinks to compute backlinks.
+	 *
+	 * @param file - The file to find backlinks for
+	 * @returns A Set of TFile objects that link to the specified file
+	 */
+	getBacklinks(file: TFile): Set<TFile> {
+		const backlinks = new Set<TFile>();
+		const resolvedLinks = this.plugin.app.metadataCache.resolvedLinks;
+
+		// resolvedLinks is { [sourcePath: string]: { [targetPath: string]: number } }
+		// We need to find all sources that link TO our file
+		for (const sourcePath in resolvedLinks) {
+			const links = resolvedLinks[sourcePath];
+			if (file.path in links) {
+				const sourceFile = this.plugin.app.vault.getAbstractFileByPath(sourcePath);
+				if (sourceFile instanceof TFile) {
+					backlinks.add(sourceFile);
+				}
+			}
+		}
+
+		return backlinks;
+	}
 }
