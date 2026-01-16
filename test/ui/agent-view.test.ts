@@ -875,13 +875,13 @@ describe('AgentView UI Tests', () => {
 			// Call stopAgentLoop
 			await (agentView as any).stopAgentLoop();
 
-			// Verify cancellation flag was set before cleanup
-			// (cancellationRequested is set to true, then reset to false by resetExecutionUiState)
+			// Verify streaming response was cancelled
 			expect(mockStreamingResponse.cancel).toHaveBeenCalled();
 
 			// Verify UI state reset (icon-based, so check class and aria-label)
 			expect((agentView as any).isExecuting).toBe(false);
-			expect((agentView as any).cancellationRequested).toBe(false);
+			// cancellationRequested stays true so tool loops can see it - only reset on new sendMessage()
+			expect((agentView as any).cancellationRequested).toBe(true);
 			expect(sendButton.classList.contains('gemini-agent-stop-btn')).toBe(false);
 			expect(sendButton.getAttribute('aria-label')).toBe('Send message to agent');
 			expect((sendButton as any).empty).toHaveBeenCalled();
@@ -917,9 +917,11 @@ describe('AgentView UI Tests', () => {
 			// Call resetExecutionUiState
 			await (agentView as any).resetExecutionUiState();
 
-			// Verify all state is reset (icon-based, so check class and aria-label)
+			// Verify UI state is reset
 			expect((agentView as any).isExecuting).toBe(false);
-			expect((agentView as any).cancellationRequested).toBe(false);
+			// cancellationRequested is NOT reset by resetExecutionUiState - it stays true
+			// so tool loops can check it. It's only reset in sendMessage() when starting new execution.
+			expect((agentView as any).cancellationRequested).toBe(true);
 			expect(sendButton.disabled).toBe(false);
 			expect(sendButton.classList.contains('gemini-agent-stop-btn')).toBe(false);
 			expect(sendButton.getAttribute('aria-label')).toBe('Send message to agent');
