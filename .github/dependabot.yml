@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - "allenhutchison"
+    groups:
+      # Group all production dependencies together
+      production-dependencies:
+        dependency-type: "production"
+      # Group all dev dependencies together
+      dev-dependencies:
+        dependency-type: "development"
