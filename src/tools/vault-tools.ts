@@ -3,7 +3,6 @@ import { ToolCategory } from '../types/agent';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ScribeFile } from '../files';
-import { ScribeDataView } from '../files/dataview-utils';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
 
 /**
@@ -206,9 +205,8 @@ export class ReadFileTool implements Tool {
 			const file = item as TFile;
 			const content = await plugin.app.vault.read(file);
 
-			// Get link information using singleton instances
+			// Get link information using singleton instance
 			const scribeFile = plugin.gfile;
-			const scribeDataView = new ScribeDataView(scribeFile, plugin);
 
 			// Get outgoing links (files this file links to)
 			// Filter out links to system folders (plugin state, .obsidian, etc.)
@@ -219,7 +217,7 @@ export class ReadFileTool implements Tool {
 
 			// Get backlinks (files that link to this file)
 			// Filter out backlinks from system folders
-			const backlinksSet = await scribeDataView.getBacklinks(file);
+			const backlinksSet = scribeFile.getBacklinks(file);
 			const backlinks = Array.from(backlinksSet)
 				.filter(backlinkFile => !shouldExcludePath(backlinkFile.path, plugin))
 				.map(backlinkFile => scribeFile.getLinkText(backlinkFile, file.path));

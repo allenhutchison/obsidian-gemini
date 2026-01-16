@@ -1,17 +1,12 @@
 import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, SearchFileContentsTool, MoveFileTool, DeleteFileTool, GetActiveFileTool, getVaultTools } from '../../src/tools/vault-tools';
 import { ToolExecutionContext } from '../../src/tools/types';
 
-// Mock ScribeFile and ScribeDataView
+// Mock ScribeFile
 jest.mock('../../src/files', () => ({
 	ScribeFile: jest.fn().mockImplementation(() => ({
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
-		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
-	}))
-}));
-
-jest.mock('../../src/files/dataview-utils', () => ({
-	ScribeDataView: jest.fn().mockImplementation(() => ({
-		getBacklinks: jest.fn().mockResolvedValue(new Set())
+		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
+		getBacklinks: jest.fn().mockReturnValue(new Set())
 	}))
 }));
 
@@ -83,7 +78,8 @@ const mockPlugin = {
 	},
 	gfile: {
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
-		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`)
+		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
+		getBacklinks: jest.fn().mockReturnValue(new Set())
 	},
 	logger: {
 		log: jest.fn(),
