@@ -408,7 +408,13 @@ export class AgentViewUI {
 			}
 		});
 
-		sendButton.addEventListener('click', () => callbacks.sendMessage());
+		sendButton.addEventListener('click', () => {
+			if (sendButton.hasClass('gemini-agent-stop-btn')) {
+				callbacks.stopAgentLoop();
+			} else {
+				callbacks.sendMessage();
+			}
+		});
 
 		return { userInput, sendButton };
 	}

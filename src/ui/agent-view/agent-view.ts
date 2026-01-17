@@ -576,7 +576,9 @@ These files are included in the context below. When the user asks you to write d
 	 */
 	private resetExecutionUiState() {
 		this.isExecuting = false;
-		this.cancellationRequested = false;
+		// Note: Don't reset cancellationRequested here - it needs to stay true
+		// so that tool loops can see it. It's reset in sendMessage() when starting
+		// a new execution.
 		this.sendButton.disabled = false;
 		this.sendButton.empty();
 		setIcon(this.sendButton, 'play');
