@@ -6,7 +6,7 @@ import type ObsidianGemini from '../main';
  * Search result from RAG semantic search
  */
 interface RagSearchResult {
-	path: string;
+	path?: string;
 	excerpt: string;
 	relevance?: number;
 }
@@ -14,12 +14,19 @@ interface RagSearchResult {
 /**
  * Tool for semantic search across indexed vault files
  * Uses Google's File Search API for RAG-based retrieval
+ *
+ * Note: Google's File Search API has a limitation where the grounding response
+ * doesn't include the source file path (displayName/title/uri), only the text
+ * content and fileSearchStore name. The file paths are stored in customMetadata
+ * during upload but aren't returned in search results. This means results
+ * may not include the source file path.
  */
 export class RagSearchTool implements Tool {
 	name = 'vault_semantic_search';
 	displayName = 'Semantic Vault Search';
 	category = ToolCategory.READ_ONLY;
-	description = 'Search across all indexed vault files using semantic search. Returns relevant passages from your notes based on meaning, not just keywords. Use this when you need to find information across the entire vault based on concepts or topics.';
+	description =
+		'Search across all indexed vault files using semantic search. Returns relevant passages from your notes based on meaning, not just keywords. Optionally filter by folder path or tags. Use this when you need to find information across the vault based on concepts or topics.';
 
 	parameters = {
 		type: 'object' as const,
@@ -31,6 +38,15 @@ export class RagSearchTool implements Tool {
 			maxResults: {
 				type: 'number' as const,
 				description: 'Maximum number of results to return (default: 5, max: 20)'
+			},
+			folder: {
+				type: 'string' as const,
+				description: 'Limit search to files in this folder path (e.g., "projects" or "projects/2024")'
+			},
+			tags: {
+				type: 'array' as const,
+				items: { type: 'string' as const },
+				description: 'Filter by tags. Multiple tags use OR logic (matches any tag).'
 			}
 		},
 		required: ['query']
@@ -43,7 +59,86 @@ export class RagSearchTool implements Tool {
 		return `Searching vault for "${truncatedQuery}"`;
 	}
 
-	async execute(params: { query: string; maxResults?: number }, context: ToolExecutionContext): Promise<ToolResult> {
+	/**
+	 * Escape a value for use in AIP-160 filter expressions.
+	 * Prevents injection attacks by escaping backslashes and double quotes.
+	 */
+	private escapeFilterValue(value: string): string {
+		// First escape backslashes, then escape double quotes (RE2-style)
+		return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+	}
+
+	/**
+	 * Build a metadata filter expression for Google's File Search API.
+	 * Uses AIP-160 filter syntax.
+	 */
+	private buildMetadataFilter(folder?: string, tags?: string[]): string | undefined {
+		const conditions: string[] = [];
+
+		if (folder && folder.trim()) {
+			// Folder filter - exact match on folder path
+			const escapedFolder = this.escapeFilterValue(folder.trim());
+			conditions.push(`folder="${escapedFolder}"`);
+		}
+
+		if (tags && tags.length > 0) {
+			// Filter out empty tags
+			const validTags = tags.filter((tag) => tag && tag.trim());
+			if (validTags.length > 0) {
+				// OR logic for tags - match files with any of the specified tags
+				const tagConditions = validTags
+					.map((tag) => {
+						const escapedTag = this.escapeFilterValue(tag.trim());
+						return `tags="${escapedTag}"`;
+					})
+					.join(' OR ');
+				if (validTags.length > 1) {
+					conditions.push(`(${tagConditions})`);
+				} else {
+					conditions.push(tagConditions);
+				}
+			}
+		}
+
+		return conditions.length > 0 ? conditions.join(' AND ') : undefined;
+	}
+
+	/**
+	 * Extract file path from retrievedContext.
+	 * Note: Google's File Search API grounding response may not include
+	 * title or uri fields, only text and fileSearchStore.
+	 */
+	private extractPathFromContext(context: { uri?: string; title?: string }): string | undefined {
+		// Try title first (should be the displayName which is set to file.path)
+		if (context.title) {
+			return context.title;
+		}
+
+		// Try to extract path from uri
+		// URI format may be like: fileSearchStores/xxx/files/yyy
+		if (context.uri) {
+			const uriParts = context.uri.split('/');
+			const lastPart = uriParts[uriParts.length - 1];
+			// Check for filename with extension (but not dotfiles like .hidden or .gitignore)
+			// Requires at least one non-dot character before the extension
+			if (lastPart && /[^.]\.\w+$/.test(lastPart)) {
+				// Looks like a filename with extension
+				return lastPart;
+			}
+			// Only return uri if it looks meaningful (not just the store name)
+			if (!context.uri.startsWith('fileSearchStores/') || context.uri.includes('/files/')) {
+				return context.uri;
+			}
+		}
+
+		// API doesn't provide file path in grounding response
+		return undefined;
+	}
+
+	async execute(
+		params: { query: string; maxResults?: number; folder?: string; tags?: string[] },
+		context: ToolExecutionContext
+	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {
@@ -83,6 +178,9 @@ export class RagSearchTool implements Tool {
 			// Validate and clamp maxResults
 			const maxResults = Math.min(Math.max(params.maxResults || 5, 1), 20);
 
+			// Build metadata filter if folder or tags are specified
+			const metadataFilter = this.buildMetadataFilter(params.folder, params.tags);
+
 			// Reuse API client from RAG indexing service
 			const ai = plugin.ragIndexing.getClient();
 			if (!ai) {
@@ -90,6 +188,14 @@ export class RagSearchTool implements Tool {
 					success: false,
 					error: 'RAG API client not available. Please wait for service initialization.'
 				};
+			}
+
+			// Build fileSearch config with optional metadata filter
+			const fileSearchConfig: { fileSearchStoreNames: string[]; metadataFilter?: string } = {
+				fileSearchStoreNames: [storeName]
+			};
+			if (metadataFilter) {
+				fileSearchConfig.metadataFilter = metadataFilter;
 			}
 
 			// Perform search using generateContent with File Search tool
@@ -100,9 +206,7 @@ export class RagSearchTool implements Tool {
 				config: {
 					tools: [
 						{
-							fileSearch: {
-								fileSearchStoreNames: [storeName]
-							}
+							fileSearch: fileSearchConfig
 						}
 					]
 				}
@@ -113,13 +217,21 @@ export class RagSearchTool implements Tool {
 
 			// Get grounding metadata for citations
 			const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+			plugin.logger.debug('RAG Search grounding metadata:', JSON.stringify(groundingMetadata, null, 2));
+
 			if (groundingMetadata?.groundingChunks) {
 				for (const chunk of groundingMetadata.groundingChunks.slice(0, maxResults)) {
 					if (chunk.retrievedContext) {
-						results.push({
-							path: chunk.retrievedContext.title || 'Unknown',
-							excerpt: chunk.retrievedContext.text || '',
-						});
+						// Try to extract path from title or uri
+						// Note: Google's File Search API may not include source file info in grounding response
+						const path = this.extractPathFromContext(chunk.retrievedContext);
+						const result: RagSearchResult = {
+							excerpt: chunk.retrievedContext.text || ''
+						};
+						if (path) {
+							result.path = path;
+						}
+						results.push(result);
 					}
 				}
 			}
