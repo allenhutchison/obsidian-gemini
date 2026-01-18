@@ -76,6 +76,41 @@ describe('RagSearchTool', () => {
 		});
 	});
 
+	describe('escapeFilterValue', () => {
+		// Access private method for testing
+		const escapeValue = (value: string) => {
+			return (tool as any).escapeFilterValue(value);
+		};
+
+		it('should return unchanged string when no special characters', () => {
+			expect(escapeValue('projects')).toBe('projects');
+			expect(escapeValue('folder/subfolder')).toBe('folder/subfolder');
+			expect(escapeValue('my-tag')).toBe('my-tag');
+		});
+
+		it('should escape double quotes', () => {
+			expect(escapeValue('test"value')).toBe('test\\"value');
+			expect(escapeValue('"quoted"')).toBe('\\"quoted\\"');
+		});
+
+		it('should escape backslashes', () => {
+			expect(escapeValue('path\\to\\folder')).toBe('path\\\\to\\\\folder');
+			expect(escapeValue('single\\')).toBe('single\\\\');
+		});
+
+		it('should escape backslashes before quotes (correct order)', () => {
+			// Backslash followed by quote should become \\" not \"
+			expect(escapeValue('test\\"value')).toBe('test\\\\\\"value');
+		});
+
+		it('should handle malicious injection payloads', () => {
+			// Attempt to break out of quoted string and inject OR condition
+			expect(escapeValue('projects" OR folder="hack')).toBe('projects\\" OR folder=\\"hack');
+			// Attempt to inject with backslash escape
+			expect(escapeValue('projects\\" OR folder="hack')).toBe('projects\\\\\\" OR folder=\\"hack');
+		});
+	});
+
 	describe('buildMetadataFilter', () => {
 		// Access private method for testing
 		const buildFilter = (folder?: string, tags?: string[]) => {
@@ -140,6 +175,30 @@ describe('RagSearchTool', () => {
 
 		it('should handle empty folder with valid tags', () => {
 			expect(buildFilter('', ['architecture'])).toBe('tags="architecture"');
+		});
+
+		it('should escape quotes in folder to prevent injection', () => {
+			// Malicious folder trying to inject additional conditions
+			expect(buildFilter('projects" OR folder="hack')).toBe('folder="projects\\" OR folder=\\"hack"');
+		});
+
+		it('should escape quotes in tags to prevent injection', () => {
+			// Malicious tag trying to inject additional conditions
+			expect(buildFilter(undefined, ['tag" OR tags="hack'])).toBe('tags="tag\\" OR tags=\\"hack"');
+		});
+
+		it('should escape backslashes in folder', () => {
+			expect(buildFilter('path\\to\\folder')).toBe('folder="path\\\\to\\\\folder"');
+		});
+
+		it('should escape backslashes in tags', () => {
+			expect(buildFilter(undefined, ['tag\\with\\backslash'])).toBe('tags="tag\\\\with\\\\backslash"');
+		});
+
+		it('should handle combined injection attempt with folder and tags', () => {
+			expect(buildFilter('projects" OR 1=1 --', ['tag" OR 1=1 --'])).toBe(
+				'folder="projects\\" OR 1=1 --" AND tags="tag\\" OR 1=1 --"'
+			);
 		});
 	});
 

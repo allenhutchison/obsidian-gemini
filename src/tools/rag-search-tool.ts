@@ -60,6 +60,15 @@ export class RagSearchTool implements Tool {
 	}
 
 	/**
+	 * Escape a value for use in AIP-160 filter expressions.
+	 * Prevents injection attacks by escaping backslashes and double quotes.
+	 */
+	private escapeFilterValue(value: string): string {
+		// First escape backslashes, then escape double quotes (RE2-style)
+		return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+	}
+
+	/**
 	 * Build a metadata filter expression for Google's File Search API.
 	 * Uses AIP-160 filter syntax.
 	 */
@@ -68,7 +77,8 @@ export class RagSearchTool implements Tool {
 
 		if (folder && folder.trim()) {
 			// Folder filter - exact match on folder path
-			conditions.push(`folder="${folder.trim()}"`);
+			const escapedFolder = this.escapeFilterValue(folder.trim());
+			conditions.push(`folder="${escapedFolder}"`);
 		}
 
 		if (tags && tags.length > 0) {
@@ -76,7 +86,12 @@ export class RagSearchTool implements Tool {
 			const validTags = tags.filter((tag) => tag && tag.trim());
 			if (validTags.length > 0) {
 				// OR logic for tags - match files with any of the specified tags
-				const tagConditions = validTags.map((tag) => `tags="${tag.trim()}"`).join(' OR ');
+				const tagConditions = validTags
+					.map((tag) => {
+						const escapedTag = this.escapeFilterValue(tag.trim());
+						return `tags="${escapedTag}"`;
+					})
+					.join(' OR ');
 				if (validTags.length > 1) {
 					conditions.push(`(${tagConditions})`);
 				} else {
