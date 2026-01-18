@@ -119,7 +119,9 @@ export class RagSearchTool implements Tool {
 		if (context.uri) {
 			const uriParts = context.uri.split('/');
 			const lastPart = uriParts[uriParts.length - 1];
-			if (lastPart && lastPart.includes('.')) {
+			// Check for filename with extension (but not dotfiles like .hidden or .gitignore)
+			// Requires at least one non-dot character before the extension
+			if (lastPart && /[^.]\.\w+$/.test(lastPart)) {
 				// Looks like a filename with extension
 				return lastPart;
 			}

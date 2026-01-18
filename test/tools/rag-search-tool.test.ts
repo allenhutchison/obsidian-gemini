@@ -520,12 +520,25 @@ describe('RagSearchTool', () => {
 			expect(extractPath({ title: 'test.md', uri: 'some/uri' })).toBe('test.md');
 		});
 
+		it('should return whitespace-only title as-is', () => {
+			// Whitespace-only title is truthy, so it gets returned
+			expect(extractPath({ title: '   ' })).toBe('   ');
+		});
+
 		it('should extract filename from uri when title is missing', () => {
 			expect(extractPath({ uri: 'stores/abc/files/document.md' })).toBe('document.md');
 			expect(extractPath({ uri: 'path/to/file.txt' })).toBe('file.txt');
 		});
 
-		it('should return uri when it contains files segment', () => {
+		it('should not treat dotfiles as having extensions', () => {
+			// .hidden is a dotfile, not a file with extension
+			expect(extractPath({ uri: 'path/to/.hidden' })).toBe('path/to/.hidden');
+			// .gitignore should be treated as dotfile, not as file with .gitignore extension
+			expect(extractPath({ uri: 'path/to/.gitignore' })).toBe('path/to/.gitignore');
+		});
+
+		it('should return full uri for opaque file IDs without extension', () => {
+			// When the URI contains /files/ segment but the ID has no extension
 			expect(extractPath({ uri: 'fileSearchStores/abc/files/opaque-id' })).toBe(
 				'fileSearchStores/abc/files/opaque-id'
 			);
