@@ -100,6 +100,35 @@ Custom prompts allow you to create reusable AI instruction templates that modify
 
 See the [Custom Prompts Guide](custom-prompts-guide.md) for detailed instructions.
 
+## Skills Import
+
+Import external SKILL.md files from a configured folder into your vault as custom prompts.
+
+### Skills Folder Path
+- **Setting**: `skillsFolderPath`
+- **Type**: String
+- **Default**: Empty (disabled)
+- **Description**: Absolute path to an external folder containing SKILL.md files to import
+- **Example**: `/Users/yourname/skills` or `C:\Users\yourname\skills`
+
+### Using Skills Import
+1. Configure the **Skills Folder Path** in plugin settings under "Advanced Settings"
+2. Place SKILL.md files in that folder (each in its own subfolder is recommended)
+3. Run the command **"Gemini Scribe: Import Skills from External Folder"** from the command palette
+4. Skills are imported as `Skill-<Name>.md` files in your Prompts folder
+5. Select imported skills as custom prompts in your agent sessions
+
+### SKILL.md Format
+Each SKILL.md file should have YAML frontmatter with a `name` field:
+```yaml
+---
+name: my-skill-name
+description: What this skill does
+---
+# Skill Instructions
+Your skill instructions here...
+```
+
 ## UI Settings
 
 ### Enable Streaming

@@ -688,6 +688,23 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							});
 					});
 			}
+
+			// Skills Integration Settings
+			new Setting(containerEl).setName('Skills Integration').setHeading();
+
+			new Setting(containerEl)
+				.setName('Skills Folder Path')
+				.setDesc('Absolute path to the folder containing your external skills (e.g., /Users/username/Skills/obsidian-skills).')
+				.addText((text) => {
+					text
+						.setPlaceholder('/path/to/skills')
+						.setValue(this.plugin.settings.skillsFolderPath || '')
+						.onChange(async (value) => {
+							this.plugin.settings.skillsFolderPath = value.trim();
+							await this.plugin.saveSettings();
+						});
+					text.inputEl.style.width = '100%';
+				});
 		}
 	}
 }

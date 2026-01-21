@@ -11,6 +11,13 @@ import {
 	execContextCommand
 } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import {
+	ImageAttachment,
+	generateAttachmentId,
+	fileToBase64,
+	getMimeType,
+	isSupportedImageType
+} from './image-attachment';
 
 /**
  * Callbacks interface for UI interactions
@@ -29,6 +36,9 @@ export interface UICallbacks {
 	updateSessionMetadata: () => Promise<void>;
 	loadSession: (session: ChatSession) => Promise<void>;
 	isCurrentSession: (session: ChatSession) => boolean;
+	addImageAttachment: (attachment: ImageAttachment) => void;
+	removeImageAttachment: (id: string) => void;
+	getImageAttachments: () => ImageAttachment[];
 }
 
 /**
@@ -40,6 +50,7 @@ export interface AgentUIElements {
 	chatContainer: HTMLElement;
 	userInput: HTMLDivElement;
 	sendButton: HTMLButtonElement;
+	imagePreviewContainer: HTMLElement;
 	progressContainer: HTMLElement;
 	progressBar: HTMLElement;
 	progressFill: HTMLElement;
@@ -54,7 +65,7 @@ export class AgentViewUI {
 	constructor(
 		private app: App,
 		private plugin: ObsidianGemini
-	) {}
+	) { }
 
 	/**
 	 * Creates the main agent interface
@@ -82,7 +93,7 @@ export class AgentViewUI {
 
 		// Input area
 		const inputArea = container.createDiv({ cls: 'gemini-agent-input-area' });
-		const { userInput, sendButton } = this.createInputArea(inputArea, callbacks);
+		const { userInput, sendButton, imagePreviewContainer } = this.createInputArea(inputArea, callbacks);
 
 		return {
 			sessionHeader,
@@ -90,6 +101,7 @@ export class AgentViewUI {
 			chatContainer,
 			userInput,
 			sendButton,
+			imagePreviewContainer,
 			progressContainer,
 			...progressElements
 		};
@@ -317,9 +329,15 @@ export class AgentViewUI {
 	createInputArea(
 		container: HTMLElement,
 		callbacks: UICallbacks
-	): { userInput: HTMLDivElement; sendButton: HTMLButtonElement } {
+	): { userInput: HTMLDivElement; sendButton: HTMLButtonElement; imagePreviewContainer: HTMLElement } {
+		// Image preview container (shows thumbnails of attached images)
+		const imagePreviewContainer = container.createDiv({ cls: 'gemini-agent-image-preview' });
+
+		// Row container for input + send button
+		const inputRow = container.createDiv({ cls: 'gemini-agent-input-row' });
+
 		// Create contenteditable div for rich input
-		const userInput = container.createDiv({
+		const userInput = inputRow.createDiv({
 			cls: 'gemini-agent-input gemini-agent-input-rich',
 			attr: {
 				contenteditable: 'true',
@@ -327,7 +345,7 @@ export class AgentViewUI {
 			}
 		}) as HTMLDivElement;
 
-		const sendButton = container.createEl('button', {
+		const sendButton = inputRow.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
 			attr: { 'aria-label': 'Send message to agent' }
 		});
@@ -335,6 +353,11 @@ export class AgentViewUI {
 
 		// Event listeners
 		userInput.addEventListener('keydown', (e) => {
+			// Prevent submission if IME composition is active (for Chinese/Japanese/etc)
+			if (e.isComposing) {
+				return;
+			}
+
 			if (e.key === 'Enter' && !e.shiftKey) {
 				e.preventDefault();
 				callbacks.sendMessage();
@@ -345,9 +368,32 @@ export class AgentViewUI {
 			}
 		});
 
-		// Handle paste to strip formatting
+		// Handle paste - check for images first, then text
 		userInput.addEventListener('paste', async (e) => {
-			// Try to prevent default first
+			// Check for image files in clipboard
+			if (e.clipboardData?.files?.length) {
+				for (const file of Array.from(e.clipboardData.files)) {
+					if (isSupportedImageType(file.type)) {
+						e.preventDefault();
+						try {
+							const base64 = await fileToBase64(file);
+							const attachment: ImageAttachment = {
+								base64,
+								mimeType: getMimeType(file),
+								id: generateAttachmentId()
+							};
+							callbacks.addImageAttachment(attachment);
+							new Notice('Image attached');
+						} catch (err) {
+							this.plugin.logger.error('Failed to process pasted image:', err);
+							new Notice('Failed to attach image');
+						}
+						return; // Image handled, don't process as text
+					}
+				}
+			}
+
+			// No image found, handle as text paste
 			e.preventDefault();
 
 			let text = '';
@@ -416,7 +462,7 @@ export class AgentViewUI {
 			}
 		});
 
-		return { userInput, sendButton };
+		return { userInput, sendButton, imagePreviewContainer };
 	}
 
 	/**
@@ -523,6 +569,47 @@ export class AgentViewUI {
 				removeBtn.addEventListener('click', () => {
 					callbacks.removeContextFile(file);
 				});
+			});
+		}
+	}
+
+	/**
+	 * Updates the image preview container with thumbnails
+	 */
+	updateImagePreview(
+		container: HTMLElement,
+		attachments: ImageAttachment[],
+		onRemove: (id: string) => void
+	): void {
+		container.empty();
+
+		if (attachments.length === 0) {
+			container.style.display = 'none';
+			return;
+		}
+
+		container.style.display = 'flex';
+
+		for (const attachment of attachments) {
+			const thumbWrapper = container.createDiv({ cls: 'gemini-agent-image-thumb' });
+
+			// Create image element
+			const img = thumbWrapper.createEl('img', {
+				attr: {
+					src: `data:${attachment.mimeType};base64,${attachment.base64}`,
+					alt: 'Attached image'
+				}
+			});
+
+			// Create remove button
+			const removeBtn = thumbWrapper.createEl('button', {
+				text: '×',
+				cls: 'gemini-agent-image-remove',
+				attr: { title: 'Remove image' }
+			});
+
+			removeBtn.addEventListener('click', () => {
+				onRemove(attachment.id);
 			});
 		}
 	}
