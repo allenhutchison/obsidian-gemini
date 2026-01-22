@@ -357,6 +357,45 @@ export class AgentViewUI {
 			}
 		});
 
+		// Handle drag and drop for images
+		userInput.addEventListener('dragover', (e) => {
+			e.preventDefault(); // allow drop
+			userInput.addClass('gemini-agent-input-dragover');
+		});
+
+		userInput.addEventListener('dragleave', (e) => {
+			userInput.removeClass('gemini-agent-input-dragover');
+		});
+
+		userInput.addEventListener('drop', async (e) => {
+			e.preventDefault();
+			userInput.removeClass('gemini-agent-input-dragover');
+
+			if (e.dataTransfer?.files?.length) {
+				let hasImage = false;
+				for (const file of Array.from(e.dataTransfer.files)) {
+					if (isSupportedImageType(file.type)) {
+						hasImage = true;
+						try {
+							const base64 = await fileToBase64(file);
+							const attachment: ImageAttachment = {
+								base64,
+								mimeType: getMimeType(file),
+								id: generateAttachmentId(),
+							};
+							callbacks.addImageAttachment(attachment);
+						} catch (err) {
+							this.plugin.logger.error('Failed to process dropped image:', err);
+							new Notice('Failed to attach image');
+						}
+					}
+				}
+				if (hasImage) {
+					new Notice('Image(s) attached');
+				}
+			}
+		});
+
 		// Handle paste - check for images first, then text
 		userInput.addEventListener('paste', async (e) => {
 			// Check for image files in clipboard

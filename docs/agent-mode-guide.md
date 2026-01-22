@@ -54,6 +54,13 @@ Agent: I'll help you find and summarize your meeting notes. Let me:
 [Executes write_file tool to create summary]
 ```
 
+### Image Support
+You can include images in your chat for the AI to analyze:
+- **Paste** images directly from your clipboard into the input box
+- **Drag and drop** image files into the input box
+- Local images are automatically saved to your vault attachments folder
+- The AI can see the image content and its path for referencing
+
 ### Context Files
 Add persistent context files to your session:
 1. Type @ in the chat input

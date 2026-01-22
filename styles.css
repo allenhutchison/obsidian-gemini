@@ -4199,3 +4199,8 @@ If your plugin does not need CSS, delete this file.
 .gemini-agent-image-remove:hover {
 	background-color: var(--text-error);
 }
+
+.gemini-agent-input-dragover {
+	background-color: var(--background-modifier-hover) !important;
+	border-color: var(--interactive-accent) !important;
+}
