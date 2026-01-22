@@ -27,32 +27,32 @@ export class AgentViewProgress {
 
 		// Progress bar wrapper
 		const barWrapper = this.progressBarContainer.createDiv({
-			cls: 'gemini-agent-progress-bar-wrapper'
+			cls: 'gemini-agent-progress-bar-wrapper',
 		});
 
 		this.progressBar = barWrapper.createDiv({
-			cls: 'gemini-agent-progress-bar'
+			cls: 'gemini-agent-progress-bar',
 		});
 
 		this.progressFill = this.progressBar.createDiv({
-			cls: 'gemini-agent-progress-fill'
+			cls: 'gemini-agent-progress-fill',
 		});
 
 		// Status text container
 		const statusContainer = this.progressBarContainer.createDiv({
-			cls: 'gemini-agent-progress-status-container'
+			cls: 'gemini-agent-progress-status-container',
 		});
 
 		this.progressStatus = statusContainer.createSpan({
-			cls: 'gemini-agent-progress-status-text'
+			cls: 'gemini-agent-progress-status-text',
 		});
 
 		this.progressTimer = statusContainer.createSpan({
 			cls: 'gemini-agent-progress-timer',
 			attr: {
 				'aria-live': 'polite',
-				'aria-label': 'Elapsed time'
-			}
+				'aria-label': 'Elapsed time',
+			},
 		});
 	}
 

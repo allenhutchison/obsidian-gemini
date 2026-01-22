@@ -188,22 +188,15 @@ export default class ObsidianGemini extends Plugin {
 					async (instructions) => {
 						const rewriter = new SelectionRewriter(this);
 						if (isFullFile) {
-							await rewriter.rewriteFullFile(
-								editor,
-								instructions
-							);
+							await rewriter.rewriteFullFile(editor, instructions);
 						} else {
-							await rewriter.rewriteSelection(
-								editor,
-								selection,
-								instructions
-							);
+							await rewriter.rewriteSelection(editor, selection, instructions);
 						}
 					},
 					isFullFile
 				);
 				modal.open();
-			}
+			},
 		});
 
 		// Add context menu item for selection rewrite
@@ -221,11 +214,7 @@ export default class ObsidianGemini extends Plugin {
 									selection,
 									async (instructions) => {
 										const rewriter = new SelectionRewriter(this);
-										await rewriter.rewriteSelection(
-											editor,
-											selection,
-											instructions
-										);
+										await rewriter.rewriteSelection(editor, selection, instructions);
 									},
 									false // Context menu is always for selection, not full file
 								);
@@ -308,13 +297,9 @@ export default class ObsidianGemini extends Plugin {
 					async () => {
 						// Reindex
 						const { RagProgressModal } = await import('./ui/rag-progress-modal');
-						const progressModal = new RagProgressModal(
-							this.app,
-							this.ragIndexing!,
-							(result) => {
-								new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
-							}
-						);
+						const progressModal = new RagProgressModal(this.app, this.ragIndexing!, (result) => {
+							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+						});
 						progressModal.open();
 						this.ragIndexing!.indexVault().catch((error) => {
 							new Notice(`RAG Indexing failed: ${error.message}`);
@@ -711,14 +696,16 @@ export default class ObsidianGemini extends Plugin {
 		if (this.ragIndexing) {
 			// Unregister all RAG tools from the tool registry
 			// Import dynamically to get tool names, then unregister
-			import('./tools/rag-search-tool').then(({ getRagTools }) => {
-				const ragTools = getRagTools();
-				for (const tool of ragTools) {
-					this.toolRegistry?.unregisterTool(tool.name);
-				}
-			}).catch((error) => {
-				this.logger.error('Error unregistering RAG tools:', error);
-			});
+			import('./tools/rag-search-tool')
+				.then(({ getRagTools }) => {
+					const ragTools = getRagTools();
+					for (const tool of ragTools) {
+						this.toolRegistry?.unregisterTool(tool.name);
+					}
+				})
+				.catch((error) => {
+					this.logger.error('Error unregistering RAG tools:', error);
+				});
 
 			// Destroy the service (async but we don't need to await in onunload)
 			this.ragIndexing.destroy().catch((error) => {

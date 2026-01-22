@@ -8,7 +8,7 @@ jest.mock('obsidian', () => ({
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
-	}
+	},
 }));
 
 // Mock Handlebars
@@ -17,7 +17,7 @@ jest.mock('handlebars', () => ({
 		return (data: any) => {
 			// Simple template rendering for testing
 			let result = template;
-			Object.keys(data).forEach(key => {
+			Object.keys(data).forEach((key) => {
 				const value = data[key];
 				// Handle {{#if}} blocks
 				const ifRegex = new RegExp(`{{#if ${key}}}([\\s\\S]*?){{/if}}`, 'g');
@@ -29,7 +29,7 @@ jest.mock('handlebars', () => ({
 			});
 			return result;
 		};
-	})
+	}),
 }));
 
 describe('AgentsMemory', () => {
@@ -49,8 +49,8 @@ describe('AgentsMemory', () => {
 			modify: jest.fn(),
 			create: jest.fn(),
 			adapter: {
-				read: jest.fn()
-			}
+				read: jest.fn(),
+			},
 		};
 
 		mockAdapter = mockVault.adapter;
@@ -58,20 +58,20 @@ describe('AgentsMemory', () => {
 		// Setup mock plugin
 		mockPlugin = {
 			app: {
-				vault: mockVault
+				vault: mockVault,
 			},
 			settings: {
-				historyFolder: 'test-folder'
+				historyFolder: 'test-folder',
 			},
 			logger: {
 				log: jest.fn(),
 				debug: jest.fn(),
 				warn: jest.fn(),
 				error: jest.fn(),
-				child: jest.fn(function(this: any, prefix: string) {
+				child: jest.fn(function (this: any, prefix: string) {
 					return this;
-				})
-			}
+				}),
+			},
 		};
 
 		// Simple test template
@@ -249,7 +249,7 @@ describe('AgentsMemory', () => {
 	describe('render', () => {
 		it('should render template with data', () => {
 			const data: AgentsMemoryData = {
-				vaultOverview: 'Test vault overview'
+				vaultOverview: 'Test vault overview',
 			};
 
 			const result = agentsMemory.render(data);
@@ -260,7 +260,7 @@ describe('AgentsMemory', () => {
 		it('should render template with multiple fields', () => {
 			const data: AgentsMemoryData = {
 				vaultOverview: 'Overview',
-				keyTopics: 'Topics'
+				keyTopics: 'Topics',
 			};
 
 			const result = agentsMemory.render(data);
@@ -305,7 +305,7 @@ describe('AgentsMemory', () => {
 			mockAdapter.read.mockResolvedValue('{{#if vaultOverview}}{{{vaultOverview}}}{{/if}}');
 
 			const data: AgentsMemoryData = {
-				vaultOverview: 'Custom overview'
+				vaultOverview: 'Custom overview',
 			};
 
 			await agentsMemory.initialize(data);

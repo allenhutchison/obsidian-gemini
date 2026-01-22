@@ -120,8 +120,7 @@ export class AgentViewSession {
 	 */
 	isCurrentSession(session: ChatSession): boolean {
 		if (!this.currentSession) return false;
-		return session.id === this.currentSession.id ||
-		       session.historyPath === this.currentSession.historyPath;
+		return session.id === this.currentSession.id || session.historyPath === this.currentSession.historyPath;
 	}
 
 	/**
@@ -191,8 +190,10 @@ export class AgentViewSession {
 		if (!this.currentSession) return;
 
 		// Check if this is still using a default title
-		if (!this.currentSession.title.startsWith('Agent Session') &&
-			!this.currentSession.title.startsWith('New Agent Session')) {
+		if (
+			!this.currentSession.title.startsWith('Agent Session') &&
+			!this.currentSession.title.startsWith('New Agent Session')
+		) {
 			return; // Already has a custom title
 		}
 
@@ -201,8 +202,8 @@ export class AgentViewSession {
 
 		// Only auto-label after we have at least a user message and an AI response
 		// Check for at least one user message and one model message
-		const hasUserMessage = history.some(entry => entry.role === 'user');
-		const hasModelMessage = history.some(entry => entry.role === 'model');
+		const hasUserMessage = history.some((entry) => entry.role === 'user');
+		const hasModelMessage = history.some((entry) => entry.role === 'model');
 
 		if (!hasUserMessage || !hasModelMessage) return;
 
@@ -216,7 +217,7 @@ export class AgentViewSession {
 			// Generate a title based on the conversation
 			const titlePrompt = `Based on this conversation, suggest a concise title (max 50 characters) that captures the main topic or purpose. Return only the title text, no quotes or explanation.
 
-Context Files: ${this.currentSession.context.contextFiles.map(f => f.basename).join(', ')}
+Context Files: ${this.currentSession.context.contextFiles.map((f) => f.basename).join(', ')}
 
 User: ${history[0].message}`;
 
@@ -228,13 +229,14 @@ User: ${history[0].message}`;
 					conversationHistory: [],
 					model: this.plugin.settings.chatModelName,
 					prompt: titlePrompt,
-					renderContent: false
+					renderContent: false,
 				});
 
 				// Extract and sanitize the title
-				const generatedTitle = response.markdown.trim()
+				const generatedTitle = response.markdown
+					.trim()
 					.replace(/^["']+/, '') // Remove leading quotes
-				.replace(/["']+$/, '') // Remove trailing quotes
+					.replace(/["']+$/, '') // Remove trailing quotes
 					.substring(0, 50); // Ensure max length
 
 				if (generatedTitle && generatedTitle.length > 0) {

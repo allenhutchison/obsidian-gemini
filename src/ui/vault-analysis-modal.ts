@@ -26,13 +26,13 @@ export class VaultAnalysisModal extends Modal {
 		// Header
 		contentEl.createEl('h2', {
 			text: '🔍 Analyzing Vault',
-			cls: 'gemini-vault-analysis-header'
+			cls: 'gemini-vault-analysis-header',
 		});
 
 		// Description
 		const description = contentEl.createDiv({ cls: 'gemini-vault-analysis-description' });
 		description.createEl('p', {
-			text: 'Generating context for AGENTS.md...'
+			text: 'Generating context for AGENTS.md...',
 		});
 
 		// Current status with spinner

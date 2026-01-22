@@ -49,8 +49,8 @@ const mockPlugin = {
 		error: jest.fn(),
 		child: jest.fn(function (this: any, prefix: string) {
 			return this;
-		})
-	}
+		}),
+	},
 } as any;
 
 describe('ModelManager', () => {
@@ -78,7 +78,7 @@ describe('ModelManager', () => {
 			const result = await manager.getAvailableModels();
 
 			// Should return static models WITHOUT image generation models (filtered out by default)
-			const expectedModels = ModelManager.getStaticModels().filter(m => !m.supportsImageGeneration);
+			const expectedModels = ModelManager.getStaticModels().filter((m) => !m.supportsImageGeneration);
 			expect(result).toEqual(expectedModels);
 		});
 
@@ -162,7 +162,7 @@ describe('ModelManager', () => {
 			const result = await modelManager.getAvailableModels();
 
 			// Should return static models WITHOUT image generation models (filtered out by default)
-			const expectedModels = ModelManager.getStaticModels().filter(m => !m.supportsImageGeneration);
+			const expectedModels = ModelManager.getStaticModels().filter((m) => !m.supportsImageGeneration);
 			expect(result).toEqual(expectedModels);
 		});
 
@@ -172,7 +172,7 @@ describe('ModelManager', () => {
 			const result = await modelManager.getAvailableModels();
 
 			// Should return static models WITHOUT image generation models (filtered out by default)
-			const expectedModels = ModelManager.getStaticModels().filter(m => !m.supportsImageGeneration);
+			const expectedModels = ModelManager.getStaticModels().filter((m) => !m.supportsImageGeneration);
 			expect(result).toEqual(expectedModels);
 		});
 	});

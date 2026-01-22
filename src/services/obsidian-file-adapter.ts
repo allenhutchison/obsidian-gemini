@@ -40,12 +40,8 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 	 * If includeAttachments is true, includes PDFs and other supported file types.
 	 */
 	async listFiles(_basePath: string): Promise<string[]> {
-		const files = this.includeAttachments
-			? this.vault.getFiles()
-			: this.vault.getMarkdownFiles();
-		return files
-			.filter(file => this.shouldIndex(file.path))
-			.map(file => file.path);
+		const files = this.includeAttachments ? this.vault.getFiles() : this.vault.getMarkdownFiles();
+		return files.filter((file) => this.shouldIndex(file.path)).map((file) => file.path);
 	}
 
 	/**
@@ -266,7 +262,7 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 
 		// Add inline tags from cache.tags (these include the # prefix)
 		if (cache?.tags) {
-			cache.tags.forEach(tagCache => {
+			cache.tags.forEach((tagCache) => {
 				// Remove # prefix for consistency with frontmatter tags
 				const tag = tagCache.tag.startsWith('#') ? tagCache.tag.slice(1) : tagCache.tag;
 				allTags.add(tag);

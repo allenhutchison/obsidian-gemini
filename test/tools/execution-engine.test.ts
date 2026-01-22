@@ -8,7 +8,7 @@ import { Notice } from 'obsidian';
 jest.mock('obsidian', () => ({
 	...jest.requireActual('../../__mocks__/obsidian.js'),
 	Notice: jest.fn().mockImplementation(() => ({
-		hide: jest.fn()
+		hide: jest.fn(),
 	})),
 	normalizePath: jest.fn((path: string) => path),
 	TFile: class TFile {
@@ -20,7 +20,7 @@ jest.mock('obsidian', () => ({
 		path: string = '';
 		name: string = '';
 		children: any[] = [];
-	}
+	},
 }));
 
 describe('ToolExecutionEngine - Confirmation Requirements', () => {
@@ -33,20 +33,20 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 		plugin = {
 			settings: {
 				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60
+				loopDetectionTimeWindowSeconds: 60,
 			},
 			app: {
 				vault: {
 					getAbstractFileByPath: jest.fn(),
 					read: jest.fn().mockResolvedValue('file content'),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
-					getRoot: jest.fn().mockReturnValue({ children: [] })
+					getRoot: jest.fn().mockReturnValue({ children: [] }),
 				},
 				metadataCache: {
-					getFirstLinkpathDest: jest.fn().mockReturnValue(null)
-				}
+					getFirstLinkpathDest: jest.fn().mockReturnValue(null),
+				},
 			},
-			agentView: null
+			agentView: null,
 		};
 
 		// Create registry and engine
@@ -73,26 +73,32 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [ToolCategory.READ_ONLY],
-					requireConfirmation: [] // No confirmations required
-				}
-			}
+					requireConfirmation: [], // No confirmations required
+				},
+			},
 		} as any;
 
 		// Test read_file - should not require confirmation
-		const readResult = await engine.executeTool({
-			name: 'read_file',
-			arguments: { path: 'test.md' }
-		}, context);
+		const readResult = await engine.executeTool(
+			{
+				name: 'read_file',
+				arguments: { path: 'test.md' },
+			},
+			context
+		);
 
 		// Tool should execute without confirmation
 		expect(readResult.success).toBe(false); // Will fail because file doesn't exist, but that's ok
 		expect(readResult.error).toBe('File or folder not found: test.md');
 
 		// Test list_files - should not require confirmation
-		const listResult = await engine.executeTool({
-			name: 'list_files',
-			arguments: { path: '' }
-		}, context);
+		const listResult = await engine.executeTool(
+			{
+				name: 'list_files',
+				arguments: { path: '' },
+			},
+			context
+		);
 
 		expect(listResult.success).toBe(true);
 		expect(listResult.data).toBeDefined();
@@ -108,26 +114,30 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [ToolCategory.VAULT_OPERATIONS],
-					requireConfirmation: ['modify_files'] // Require confirmation for file modifications
-				}
-			}
+					requireConfirmation: ['modify_files'], // Require confirmation for file modifications
+				},
+			},
 		} as any;
 
 		// Mock agentView with in-chat confirmation that declines
 		const mockAgentView = {
 			showConfirmationInChat: jest.fn().mockResolvedValue({
 				confirmed: false,
-				allowWithoutConfirmation: false
+				allowWithoutConfirmation: false,
 			}),
 			isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
-			allowToolWithoutConfirmation: jest.fn()
+			allowToolWithoutConfirmation: jest.fn(),
 		};
 
 		// Test write_file - should require confirmation
-		const writeResult = await engine.executeTool({
-			name: 'write_file',
-			arguments: { path: 'test.md', content: 'new content' }
-		}, context, mockAgentView);
+		const writeResult = await engine.executeTool(
+			{
+				name: 'write_file',
+				arguments: { path: 'test.md', content: 'new content' },
+			},
+			context,
+			mockAgentView
+		);
 
 		expect(writeResult.success).toBe(false);
 		expect(writeResult.error).toBe('User declined tool execution');
@@ -145,20 +155,20 @@ describe('ToolExecutionEngine - Error Handling', () => {
 		plugin = {
 			settings: {
 				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60
+				loopDetectionTimeWindowSeconds: 60,
 			},
 			app: {
 				vault: {
 					getAbstractFileByPath: jest.fn(),
 					read: jest.fn().mockResolvedValue('file content'),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
-					getRoot: jest.fn().mockReturnValue({ children: [] })
+					getRoot: jest.fn().mockReturnValue({ children: [] }),
 				},
 				metadataCache: {
-					getFirstLinkpathDest: jest.fn().mockReturnValue(null)
-				}
+					getFirstLinkpathDest: jest.fn().mockReturnValue(null),
+				},
 			},
-			agentView: null
+			agentView: null,
 		};
 
 		// Create registry and engine
@@ -180,15 +190,18 @@ describe('ToolExecutionEngine - Error Handling', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [ToolCategory.READ_ONLY],
-					requireConfirmation: []
-				}
-			}
+					requireConfirmation: [],
+				},
+			},
 		} as any;
 
-		const result = await engine.executeTool({
-			name: 'non_existent_tool',
-			arguments: {}
-		}, context);
+		const result = await engine.executeTool(
+			{
+				name: 'non_existent_tool',
+				arguments: {},
+			},
+			context
+		);
 
 		expect(result.success).toBe(false);
 		expect(result.error).toBe('Tool non_existent_tool not found');
@@ -204,18 +217,21 @@ describe('ToolExecutionEngine - Error Handling', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [ToolCategory.READ_ONLY], // Only READ_ONLY enabled
-					requireConfirmation: []
-				}
-			}
+					requireConfirmation: [],
+				},
+			},
 		} as any;
 
 		// Register a VAULT_OPERATIONS tool
 		registry.registerTool(new WriteFileTool());
 
-		const result = await engine.executeTool({
-			name: 'write_file',
-			arguments: { path: 'test.md', content: 'content' }
-		}, context);
+		const result = await engine.executeTool(
+			{
+				name: 'write_file',
+				arguments: { path: 'test.md', content: 'content' },
+			},
+			context
+		);
 
 		expect(result.success).toBe(false);
 		expect(result.error).toBe('Tool write_file is not enabled for this session');
@@ -231,9 +247,9 @@ describe('ToolExecutionEngine - Error Handling', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [ToolCategory.READ_ONLY],
-					requireConfirmation: []
-				}
-			}
+					requireConfirmation: [],
+				},
+			},
 		} as any;
 
 		// Register a tool that throws
@@ -244,16 +260,19 @@ describe('ToolExecutionEngine - Error Handling', () => {
 			parameters: {
 				type: 'object' as const,
 				properties: {},
-				required: []
+				required: [],
 			},
-			execute: jest.fn().mockRejectedValue(new Error('Tool execution failed'))
+			execute: jest.fn().mockRejectedValue(new Error('Tool execution failed')),
 		};
 		registry.registerTool(errorTool);
 
-		const result = await engine.executeTool({
-			name: 'error_tool',
-			arguments: {}
-		}, context);
+		const result = await engine.executeTool(
+			{
+				name: 'error_tool',
+				arguments: {},
+			},
+			context
+		);
 
 		expect(result.success).toBe(false);
 		expect(result.error).toBe('Tool execution failed');
@@ -269,18 +288,21 @@ describe('ToolExecutionEngine - Error Handling', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [ToolCategory.READ_ONLY],
-					requireConfirmation: []
-				}
-			}
+					requireConfirmation: [],
+				},
+			},
 		} as any;
 
 		registry.registerTool(new ReadFileTool());
 
 		// Missing required 'path' argument
-		const result = await engine.executeTool({
-			name: 'read_file',
-			arguments: {}
-		}, context);
+		const result = await engine.executeTool(
+			{
+				name: 'read_file',
+				arguments: {},
+			},
+			context
+		);
 
 		expect(result.success).toBe(false);
 		expect(result.error).toContain('Invalid parameters');
@@ -296,19 +318,22 @@ describe('ToolExecutionEngine - Error Handling', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [ToolCategory.READ_ONLY],
-					requireConfirmation: []
-				}
-			}
+					requireConfirmation: [],
+				},
+			},
 		} as any;
 
 		registry.registerTool(new ListFilesTool());
 
 		// Execute multiple tool calls
-		const results = await engine.executeToolCalls([
-			{ name: 'list_files', arguments: { path: '' } }, // Should succeed
-			{ name: 'non_existent', arguments: {} }, // Should fail
-			{ name: 'list_files', arguments: { path: 'folder' } } // Should succeed
-		], context);
+		const results = await engine.executeToolCalls(
+			[
+				{ name: 'list_files', arguments: { path: '' } }, // Should succeed
+				{ name: 'non_existent', arguments: {} }, // Should fail
+				{ name: 'list_files', arguments: { path: 'folder' } }, // Should succeed
+			],
+			context
+		);
 
 		// Should only have 2 results because execution stops on error by default
 		expect(results).toHaveLength(2);

@@ -10,9 +10,7 @@ export class ScribeFile {
 		this.plugin = plugin;
 	}
 
-	async getCurrentFileContent(
-		renderContent: boolean = false
-	): Promise<string | null> {
+	async getCurrentFileContent(renderContent: boolean = false): Promise<string | null> {
 		const activeFile = this.getActiveFile();
 		if (activeFile) {
 			// Just return the current file content (no link traversal)
@@ -23,10 +21,7 @@ export class ScribeFile {
 		}
 	}
 
-	async buildFileContext(
-		files: TFile[],
-		renderContent: boolean = false
-	): Promise<string | null> {
+	async buildFileContext(files: TFile[], renderContent: boolean = false): Promise<string | null> {
 		if (files.length === 0) {
 			return null;
 		}
@@ -46,7 +41,7 @@ export class ScribeFile {
 					file_label: 'Context File',
 					file_name: file.path,
 					wikilink: this.getLinkText(file, file.path),
-					file_contents: fileContent
+					file_contents: fileContent,
 				});
 
 				contextParts.push(contextString);
@@ -150,8 +145,8 @@ export class ScribeFile {
 						normalizedEmbeds.push(normalizedPath);
 					} else {
 						logDebugInfo(
-					this.plugin.logger,
-					'Link Normalization Warning',
+							this.plugin.logger,
+							'Link Normalization Warning',
 							`Embed "${embed.link}" in file "${file.path}" could not be normalized.`
 						);
 					}
@@ -165,8 +160,8 @@ export class ScribeFile {
 						normalizedFrontmatterLinks.push(normalizedPath);
 					} else {
 						logDebugInfo(
-					this.plugin.logger,
-					'Link Normalization Warning',
+							this.plugin.logger,
+							'Link Normalization Warning',
 							`Frontmatter link "${link.link}" in file "${file.path}" could not be normalized.`
 						);
 					}
@@ -182,8 +177,8 @@ export class ScribeFile {
 								normalizedFrontmatterLinks.push(normalizedPath);
 							} else {
 								logDebugInfo(
-					this.plugin.logger,
-					'Link Normalization Warning',
+									this.plugin.logger,
+									'Link Normalization Warning',
 									`Frontmatter link "${link}" in file "${file.path}" could not be normalized.`
 								);
 							}
@@ -194,8 +189,8 @@ export class ScribeFile {
 							normalizedFrontmatterLinks.push(normalizedPath);
 						} else {
 							logDebugInfo(
-					this.plugin.logger,
-					'Link Normalization Warning',
+								this.plugin.logger,
+								'Link Normalization Warning',
 								`Frontmatter link "${cache.frontmatter.links}" in file "${file.path}" could not be normalized.`
 							);
 						}

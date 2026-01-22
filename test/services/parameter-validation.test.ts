@@ -5,11 +5,11 @@ describe('ParameterValidationService', () => {
 	describe('getParameterRanges', () => {
 		it('should return default ranges when no models are provided', () => {
 			const ranges = ParameterValidationService.getParameterRanges([]);
-			
+
 			expect(ranges.temperature.min).toBe(0);
 			expect(ranges.temperature.max).toBe(2);
 			expect(ranges.temperature.step).toBe(0.1);
-			
+
 			expect(ranges.topP.min).toBe(0);
 			expect(ranges.topP.max).toBe(1);
 			expect(ranges.topP.step).toBe(0.01);
@@ -40,7 +40,7 @@ describe('ParameterValidationService', () => {
 			];
 
 			const ranges = ParameterValidationService.getParameterRanges(models);
-			
+
 			expect(ranges.temperature.max).toBe(2.5); // Should use the highest maxTemperature
 		});
 
@@ -59,7 +59,7 @@ describe('ParameterValidationService', () => {
 			];
 
 			const ranges = ParameterValidationService.getParameterRanges(models);
-			
+
 			// Should fall back to defaults
 			expect(ranges.temperature.max).toBe(2);
 			expect(ranges.topP.max).toBe(1);
@@ -79,7 +79,7 @@ describe('ParameterValidationService', () => {
 			}));
 
 			const ranges = ParameterValidationService.getParameterRanges(models);
-			
+
 			expect(ranges.temperature.max).toBe(1.9); // Should handle large arrays without failing
 		});
 
@@ -98,7 +98,7 @@ describe('ParameterValidationService', () => {
 			];
 
 			const ranges = ParameterValidationService.getParameterRanges(models);
-			
+
 			expect(ranges.topP.min).toBe(0);
 			expect(ranges.topP.max).toBe(1); // Always 0-1 for topP
 		});
@@ -107,7 +107,7 @@ describe('ParameterValidationService', () => {
 	describe('validateTemperature', () => {
 		it('should accept valid temperature values', () => {
 			const result = ParameterValidationService.validateTemperature(0.7);
-			
+
 			expect(result.isValid).toBe(true);
 			expect(result.adjustedValue).toBeUndefined();
 			expect(result.warning).toBeUndefined();
@@ -115,7 +115,7 @@ describe('ParameterValidationService', () => {
 
 		it('should reject and adjust temperature values outside range', () => {
 			const result = ParameterValidationService.validateTemperature(3.0);
-			
+
 			expect(result.isValid).toBe(false);
 			expect(result.adjustedValue).toBe(2); // Should be adjusted to max
 			expect(result.warning).toContain('Temperature 3');
@@ -135,12 +135,8 @@ describe('ParameterValidationService', () => {
 				},
 			];
 
-			const result = ParameterValidationService.validateTemperature(
-				1.5, 
-				'models/gemini-limited', 
-				models
-			);
-			
+			const result = ParameterValidationService.validateTemperature(1.5, 'models/gemini-limited', models);
+
 			expect(result.isValid).toBe(false);
 			expect(result.adjustedValue).toBe(1.0);
 			expect(result.warning).toContain('exceeds models/gemini-limited limit of 1');
@@ -150,7 +146,7 @@ describe('ParameterValidationService', () => {
 	describe('validateTopP', () => {
 		it('should accept valid topP values', () => {
 			const result = ParameterValidationService.validateTopP(0.9);
-			
+
 			expect(result.isValid).toBe(true);
 			expect(result.adjustedValue).toBeUndefined();
 			expect(result.warning).toBeUndefined();
@@ -158,7 +154,7 @@ describe('ParameterValidationService', () => {
 
 		it('should reject and adjust topP values outside range', () => {
 			const result = ParameterValidationService.validateTopP(1.5);
-			
+
 			expect(result.isValid).toBe(false);
 			expect(result.adjustedValue).toBe(1); // Should be adjusted to max
 			expect(result.warning).toContain('Top P 1.5');
@@ -167,7 +163,7 @@ describe('ParameterValidationService', () => {
 		it('should accept zero values', () => {
 			const tempResult = ParameterValidationService.validateTemperature(0);
 			const topPResult = ParameterValidationService.validateTopP(0);
-			
+
 			expect(tempResult.isValid).toBe(true);
 			expect(topPResult.isValid).toBe(true);
 		});
@@ -190,7 +186,7 @@ describe('ParameterValidationService', () => {
 			];
 
 			const info = ParameterValidationService.getParameterDisplayInfo(models);
-			
+
 			expect(info.hasModelData).toBe(true);
 			expect(info.temperature).toContain('Range: 0 to 1.5');
 			expect(info.topP).toContain('Range: 0 to 1');
@@ -232,13 +228,13 @@ describe('ParameterValidationService', () => {
 			];
 
 			const info = ParameterValidationService.getParameterDisplayInfo(models);
-			
+
 			expect(info.topP).toContain('model defaults: 0.95, 1'); // Should show unique values, sorted
 		});
 
 		it('should provide fallback info without model data', () => {
 			const info = ParameterValidationService.getParameterDisplayInfo([]);
-			
+
 			expect(info.hasModelData).toBe(false);
 			expect(info.temperature).toContain('Range: 0 to 2');
 			expect(info.topP).toContain('Range: 0 to 1');
@@ -273,7 +269,7 @@ describe('ParameterValidationService', () => {
 			];
 
 			const info = ParameterValidationService.getModelParameterInfo(models);
-			
+
 			expect(info).toHaveLength(2);
 			expect(info[0]).toEqual({
 				modelName: 'models/gemini-1',

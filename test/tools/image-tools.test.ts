@@ -3,14 +3,14 @@ import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock the image generation service
 const mockImageGeneration = {
-	generateImage: jest.fn()
+	generateImage: jest.fn(),
 };
 
 const mockPlugin = {
 	imageGeneration: mockImageGeneration,
 	settings: {
-		historyFolder: 'test-history-folder'
-	}
+		historyFolder: 'test-history-folder',
+	},
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -22,9 +22,9 @@ const mockContext: ToolExecutionContext = {
 			contextFiles: [],
 			contextDepth: 2,
 			enabledTools: [],
-			requireConfirmation: []
-		}
-	}
+			requireConfirmation: [],
+		},
+	},
 } as any;
 
 describe('ImageTools', () => {
@@ -43,21 +43,15 @@ describe('ImageTools', () => {
 			const imagePath = 'attachments/generated-image-123.png';
 			mockImageGeneration.generateImage.mockResolvedValue(imagePath);
 
-			const result = await tool.execute(
-				{ prompt: 'a loaf of bread' },
-				mockContext
-			);
+			const result = await tool.execute({ prompt: 'a loaf of bread' }, mockContext);
 
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				path: imagePath,
 				prompt: 'a loaf of bread',
-				wikilink: `![[${imagePath}]]`
+				wikilink: `![[${imagePath}]]`,
 			});
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith(
-				'a loaf of bread',
-				undefined
-			);
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a loaf of bread', undefined);
 		});
 
 		it('should pass target_note parameter when provided', async () => {
@@ -67,16 +61,13 @@ describe('ImageTools', () => {
 			const result = await tool.execute(
 				{
 					prompt: 'a sunset',
-					target_note: 'my-note.md'
+					target_note: 'my-note.md',
 				},
 				mockContext
 			);
 
 			expect(result.success).toBe(true);
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith(
-				'a sunset',
-				'my-note.md'
-			);
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a sunset', 'my-note.md');
 		});
 
 		it('should return error when image generation service is not available', async () => {
@@ -84,48 +75,34 @@ describe('ImageTools', () => {
 				...mockContext,
 				plugin: {
 					...mockPlugin,
-					imageGeneration: null
-				}
+					imageGeneration: null,
+				},
 			};
 
-			const result = await tool.execute(
-				{ prompt: 'test' },
-				contextNoService
-			);
+			const result = await tool.execute({ prompt: 'test' }, contextNoService);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Image generation service not available');
 		});
 
 		it('should return error when prompt is empty', async () => {
-			const result = await tool.execute(
-				{ prompt: '' },
-				mockContext
-			);
+			const result = await tool.execute({ prompt: '' }, mockContext);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Prompt is required and must be a non-empty string');
 		});
 
 		it('should return error when prompt is not a string', async () => {
-			const result = await tool.execute(
-				{ prompt: 123 as any },
-				mockContext
-			);
+			const result = await tool.execute({ prompt: 123 as any }, mockContext);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Prompt is required and must be a non-empty string');
 		});
 
 		it('should handle image generation errors', async () => {
-			mockImageGeneration.generateImage.mockRejectedValue(
-				new Error('API error')
-			);
+			mockImageGeneration.generateImage.mockRejectedValue(new Error('API error'));
 
-			const result = await tool.execute(
-				{ prompt: 'test' },
-				mockContext
-			);
+			const result = await tool.execute({ prompt: 'test' }, mockContext);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Failed to generate image: API error');

@@ -113,7 +113,7 @@ export class DeepResearchService {
 			topic: params.topic,
 			searches: [],
 			sources: new Map<string, Source>(),
-			sections: []
+			sections: [],
 		};
 
 		// Create AI instance
@@ -172,7 +172,7 @@ export class DeepResearchService {
 		// Save to file if requested
 		let outputFile: TFile | undefined;
 		if (params.outputFile) {
-			outputFile = await this.saveReport(params.outputFile, report) || undefined;
+			outputFile = (await this.saveReport(params.outputFile, report)) || undefined;
 		}
 
 		return {
@@ -181,7 +181,7 @@ export class DeepResearchService {
 			searchCount: research.searches.length,
 			sourceCount: research.sources.size,
 			sectionCount: research.sections.length,
-			outputFile: outputFile
+			outputFile: outputFile,
 		};
 	}
 
@@ -202,7 +202,7 @@ Return only the queries, one per line.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: this.plugin.settings.temperature }
+			config: { temperature: this.plugin.settings.temperature },
 		});
 
 		const text = this.extractText(result);
@@ -231,7 +231,7 @@ Return only the queries, one per line.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: this.plugin.settings.temperature }
+			config: { temperature: this.plugin.settings.temperature },
 		});
 
 		const text = this.extractText(result);
@@ -250,9 +250,9 @@ Return only the queries, one per line.`;
 					model: model,
 					config: {
 						temperature: this.plugin.settings.temperature,
-						tools: [{ googleSearch: {} }]
+						tools: [{ googleSearch: {} }],
 					},
-					contents: `Search for: ${query}`
+					contents: `Search for: ${query}`,
 				});
 
 				const text = this.extractText(result);
@@ -267,7 +267,7 @@ Return only the queries, one per line.`;
 								id: `${query}-${index}`,
 								url: chunk.web.uri,
 								title: chunk.web.title || chunk.web.uri,
-								snippet: chunk.web.snippet || ''
+								snippet: chunk.web.snippet || '',
 							});
 						}
 					});
@@ -277,7 +277,7 @@ Return only the queries, one per line.`;
 					query: query,
 					content: text,
 					summary: text.substring(0, SUMMARY_MAX_LENGTH) + '...',
-					citations: citations
+					citations: citations,
 				};
 			} catch (error) {
 				lastError = error;
@@ -288,13 +288,16 @@ Return only the queries, one per line.`;
 					this.plugin.logger.warn(
 						`DeepResearch: Search attempt ${attempt + 1} failed for "${query}", retrying in ${delay}ms...`
 					);
-					await new Promise(resolve => setTimeout(resolve, delay));
+					await new Promise((resolve) => setTimeout(resolve, delay));
 				}
 			}
 		}
 
 		// All retries exhausted
-		this.plugin.logger.error(`DeepResearch: Search failed after ${MAX_SEARCH_RETRIES} attempts for query "${query}":`, lastError);
+		this.plugin.logger.error(
+			`DeepResearch: Search failed after ${MAX_SEARCH_RETRIES} attempts for query "${query}":`,
+			lastError
+		);
 		return null;
 	}
 
@@ -307,7 +310,7 @@ Return only the queries, one per line.`;
 				sources.set(citation.url, {
 					url: citation.url,
 					title: citation.title,
-					citations: []
+					citations: [],
 				});
 			}
 			sources.get(citation.url)!.citations.push(citation);
@@ -336,7 +339,7 @@ Return only the section titles, one per line.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: this.plugin.settings.temperature }
+			config: { temperature: this.plugin.settings.temperature },
 		});
 
 		const text = this.extractText(result);
@@ -368,7 +371,7 @@ Write 2-3 paragraphs with specific details and citations.`;
 		const result = await genAI.models.generateContent({
 			model: model,
 			contents: prompt,
-			config: { temperature: this.plugin.settings.temperature }
+			config: { temperature: this.plugin.settings.temperature },
 		});
 
 		const content = this.extractText(result);
@@ -384,7 +387,7 @@ Write 2-3 paragraphs with specific details and citations.`;
 		return {
 			title: sectionTitle,
 			content: content,
-			citations: Array.from(citationRefs)
+			citations: Array.from(citationRefs),
 		};
 	}
 

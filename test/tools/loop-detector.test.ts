@@ -19,7 +19,7 @@ describe('ToolLoopDetector', () => {
 		// Record different tool calls
 		detector.recordExecution(sessionId, { name: 'tool1', arguments: { arg: 'value1' } });
 		detector.recordExecution(sessionId, { name: 'tool2', arguments: { arg: 'value2' } });
-		
+
 		// Should not detect loop for a new different tool
 		expect(detector.isLoopDetected(sessionId, { name: 'tool3', arguments: { arg: 'value3' } })).toBe(false);
 	});
@@ -30,7 +30,7 @@ describe('ToolLoopDetector', () => {
 		// Record same tool with different arguments
 		detector.recordExecution(sessionId, { name: 'read_file', arguments: { path: 'file1.md' } });
 		detector.recordExecution(sessionId, { name: 'read_file', arguments: { path: 'file2.md' } });
-		
+
 		// Should not detect loop for same tool with yet another different argument
 		expect(detector.isLoopDetected(sessionId, { name: 'read_file', arguments: { path: 'file3.md' } })).toBe(false);
 	});
@@ -42,13 +42,13 @@ describe('ToolLoopDetector', () => {
 		// Record two identical calls
 		detector.recordExecution(sessionId, toolCall);
 		detector.recordExecution(sessionId, toolCall);
-		
+
 		// Should not detect loop yet (threshold is 3)
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(false);
-		
+
 		// Record third call
 		detector.recordExecution(sessionId, toolCall);
-		
+
 		// Now should detect loop
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(true);
 	});
@@ -99,7 +99,7 @@ describe('ToolLoopDetector', () => {
 
 		// Should not detect loop after clearing
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(false);
-		
+
 		// Should need 3 calls again to trigger loop
 		detector.recordExecution(sessionId, toolCall);
 		detector.recordExecution(sessionId, toolCall);
@@ -119,7 +119,7 @@ describe('ToolLoopDetector', () => {
 		detector.recordExecution(sessionId, call1);
 		detector.recordExecution(sessionId, call2);
 		detector.recordExecution(sessionId, call3);
-		
+
 		// Should detect loop since arguments are identical
 		expect(detector.isLoopDetected(sessionId, call1)).toBe(true);
 	});
@@ -136,7 +136,7 @@ describe('ToolLoopDetector', () => {
 		detector.recordExecution(sessionId, call2);
 		detector.recordExecution(sessionId, call1);
 		detector.recordExecution(sessionId, call2);
-		
+
 		// Neither should trigger loop since they alternate
 		expect(detector.isLoopDetected(sessionId, call1)).toBe(false);
 		expect(detector.isLoopDetected(sessionId, call2)).toBe(false);
@@ -151,7 +151,7 @@ describe('ToolLoopDetector', () => {
 		detector.recordExecution(sessionId, toolCall);
 
 		const info = detector.getLoopInfo(sessionId, toolCall);
-		
+
 		expect(info.isLoop).toBe(false);
 		expect(info.identicalCallCount).toBe(2);
 		expect(info.consecutiveCallCount).toBe(2);
@@ -172,10 +172,10 @@ describe('ToolLoopDetector', () => {
 		// Null/undefined handling
 		const nullCall: ToolCall = { name: 'tool2', arguments: { value: null } };
 		const undefinedCall: ToolCall = { name: 'tool2', arguments: { value: undefined } };
-		
+
 		detector.recordExecution(sessionId, nullCall);
 		detector.recordExecution(sessionId, undefinedCall);
-		
+
 		// Should be treated as different
 		expect(detector.isLoopDetected(sessionId, nullCall)).toBe(false);
 	});
@@ -187,13 +187,13 @@ describe('ToolLoopDetector', () => {
 		// Record 2 calls
 		detector.recordExecution(sessionId, toolCall);
 		detector.recordExecution(sessionId, toolCall);
-		
+
 		// Should not detect loop with threshold of 3
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(false);
 
 		// Update config to lower threshold
 		detector.updateConfig(2, 60);
-		
+
 		// Now should detect loop
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(true);
 	});

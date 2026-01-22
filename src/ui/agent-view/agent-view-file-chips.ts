@@ -3,7 +3,7 @@ import {
 	getDOMContext,
 	createContextElement,
 	createContextTextNode,
-	insertNodeAtCursor
+	insertNodeAtCursor,
 } from '../../utils/dom-context';
 
 /**
@@ -91,13 +91,13 @@ export class AgentViewFileChips {
 		// File name
 		chip.createSpan({
 			text: file.basename,
-			cls: 'gemini-agent-file-chip-name'
+			cls: 'gemini-agent-file-chip-name',
 		});
 
 		// Remove button
 		const removeBtn = chip.createSpan({
 			text: '×',
-			cls: 'gemini-agent-file-chip-remove'
+			cls: 'gemini-agent-file-chip-remove',
 		});
 
 		removeBtn.addEventListener('click', (e) => {
@@ -128,13 +128,13 @@ export class AgentViewFileChips {
 		// Folder name with file count
 		chip.createSpan({
 			text: `${folder.name}/ (${fileCount} files)`,
-			cls: 'gemini-agent-folder-chip-name'
+			cls: 'gemini-agent-folder-chip-name',
 		});
 
 		// Remove button
 		const removeBtn = chip.createSpan({
 			text: '×',
-			cls: 'gemini-agent-folder-chip-remove'
+			cls: 'gemini-agent-folder-chip-remove',
 		});
 
 		removeBtn.addEventListener('click', (e) => {
@@ -252,7 +252,7 @@ export class AgentViewFileChips {
 		return {
 			text,
 			files: [...this.mentionedFiles],
-			formattedMessage
+			formattedMessage,
 		};
 	}
 }

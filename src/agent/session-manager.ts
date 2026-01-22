@@ -1,5 +1,12 @@
 import { TFile, TFolder } from 'obsidian';
-import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, ChatMessage, SessionModelConfig } from '../types/agent';
+import {
+	ChatSession,
+	SessionType,
+	AgentContext,
+	DEFAULT_CONTEXTS,
+	ChatMessage,
+	SessionModelConfig,
+} from '../types/agent';
 import type ObsidianGemini from '../main';
 
 /**
@@ -26,11 +33,11 @@ export class SessionManager {
 			contextFiles: [sourceFile],
 			// Create new arrays to avoid sharing references between sessions
 			enabledTools: [...DEFAULT_CONTEXTS.NOTE_CHAT.enabledTools],
-			requireConfirmation: [...DEFAULT_CONTEXTS.NOTE_CHAT.requireConfirmation]
+			requireConfirmation: [...DEFAULT_CONTEXTS.NOTE_CHAT.requireConfirmation],
 		};
 
 		const sessionTitle = this.sanitizeFileName(`${sourceFile.basename} Chat`);
-		
+
 		const session: ChatSession = {
 			id: this.generateSessionId(),
 			type: SessionType.NOTE_CHAT,
@@ -39,7 +46,7 @@ export class SessionManager {
 			created: new Date(),
 			lastActive: new Date(),
 			historyPath: `${this.getHistoryFolderPath()}/${sessionTitle}.md`,
-			sourceNotePath: sourceFile.path
+			sourceNotePath: sourceFile.path,
 		};
 
 		this.activeSessions.set(session.id, session);
@@ -56,12 +63,14 @@ export class SessionManager {
 			// Create new arrays to avoid sharing references between sessions
 			contextFiles: [...(initialContext?.contextFiles ?? [])],
 			enabledTools: [...(initialContext?.enabledTools ?? DEFAULT_CONTEXTS.AGENT_SESSION.enabledTools)],
-			requireConfirmation: [...(initialContext?.requireConfirmation ?? DEFAULT_CONTEXTS.AGENT_SESSION.requireConfirmation)]
+			requireConfirmation: [
+				...(initialContext?.requireConfirmation ?? DEFAULT_CONTEXTS.AGENT_SESSION.requireConfirmation),
+			],
 		};
 
 		const rawTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
 		const sessionTitle = this.sanitizeFileName(rawTitle);
-		
+
 		const session: ChatSession = {
 			id: this.generateSessionId(),
 			type: SessionType.AGENT_SESSION,
@@ -69,7 +78,7 @@ export class SessionManager {
 			context,
 			created: new Date(),
 			lastActive: new Date(),
-			historyPath: `${this.getAgentSessionsFolderPath()}/${sessionTitle}.md`
+			historyPath: `${this.getAgentSessionsFolderPath()}/${sessionTitle}.md`,
 		};
 
 		this.activeSessions.set(session.id, session);
@@ -81,11 +90,9 @@ export class SessionManager {
 	 */
 	async getNoteChatSession(sourceFile: TFile): Promise<ChatSession> {
 		// Check if we already have an active session for this note
-		const existingSession = Array.from(this.activeSessions.values())
-			.find(session => 
-				session.type === SessionType.NOTE_CHAT && 
-				session.sourceNotePath === sourceFile.path
-			);
+		const existingSession = Array.from(this.activeSessions.values()).find(
+			(session) => session.type === SessionType.NOTE_CHAT && session.sourceNotePath === sourceFile.path
+		);
 
 		if (existingSession) {
 			existingSession.lastActive = new Date();
@@ -96,7 +103,7 @@ export class SessionManager {
 		const sanitizedTitle = this.sanitizeFileName(`${sourceFile.basename} Chat`);
 		const historyPath = `${this.getHistoryFolderPath()}/${sanitizedTitle}.md`;
 		const historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
-		
+
 		if (historyFile instanceof TFile) {
 			// Load existing session from history file
 			return this.loadSessionFromFile(historyFile);
@@ -137,7 +144,7 @@ export class SessionManager {
 		if (session) {
 			session.context = { ...session.context, ...context };
 			session.lastActive = new Date();
-			
+
 			// Save metadata to history file for agent sessions
 			if (session.type === SessionType.AGENT_SESSION) {
 				await this.plugin.history.updateSessionMetadata(session);
@@ -159,7 +166,7 @@ export class SessionManager {
 				session.modelConfig = modelConfig;
 			}
 			session.lastActive = new Date();
-			
+
 			// Save metadata to history file for agent sessions
 			if (session.type === SessionType.AGENT_SESSION) {
 				await this.plugin.history.updateSessionMetadata(session);
@@ -173,11 +180,11 @@ export class SessionManager {
 	async addContextFiles(sessionId: string, files: TFile[]): Promise<void> {
 		const session = this.activeSessions.get(sessionId);
 		if (session) {
-			const existingPaths = session.context.contextFiles.map(f => f.path);
-			const newFiles = files.filter(f => !existingPaths.includes(f.path));
+			const existingPaths = session.context.contextFiles.map((f) => f.path);
+			const newFiles = files.filter((f) => !existingPaths.includes(f.path));
 			session.context.contextFiles.push(...newFiles);
 			session.lastActive = new Date();
-			
+
 			// Save metadata to history file for agent sessions
 			if (session.type === SessionType.AGENT_SESSION) {
 				await this.plugin.history.updateSessionMetadata(session);
@@ -191,10 +198,9 @@ export class SessionManager {
 	async removeContextFiles(sessionId: string, filePaths: string[]): Promise<void> {
 		const session = this.activeSessions.get(sessionId);
 		if (session) {
-			session.context.contextFiles = session.context.contextFiles
-				.filter(f => !filePaths.includes(f.path));
+			session.context.contextFiles = session.context.contextFiles.filter((f) => !filePaths.includes(f.path));
 			session.lastActive = new Date();
-			
+
 			// Save metadata to history file for agent sessions
 			if (session.type === SessionType.AGENT_SESSION) {
 				await this.plugin.history.updateSessionMetadata(session);
@@ -212,15 +218,12 @@ export class SessionManager {
 		}
 
 		// Create new agent session with expanded capabilities
-		const agentSession = await this.createAgentSession(
-			title || `${noteSession.title} (Agent)`,
-			{
-				contextFiles: noteSession.context.contextFiles
-			}
-		);
+		const agentSession = await this.createAgentSession(title || `${noteSession.title} (Agent)`, {
+			contextFiles: noteSession.context.contextFiles,
+		});
 
 		// TODO: Copy message history from note session to agent session
-		
+
 		return agentSession;
 	}
 
@@ -251,7 +254,7 @@ export class SessionManager {
 
 		// Determine session type based on folder location
 		const isAgentSession = file.path.startsWith(this.getAgentSessionsFolderPath());
-		
+
 		const session: ChatSession = {
 			id: frontmatter?.session_id || this.generateSessionId(),
 			type: isAgentSession ? SessionType.AGENT_SESSION : SessionType.NOTE_CHAT,
@@ -262,7 +265,7 @@ export class SessionManager {
 			lastActive: new Date(file.stat.mtime),
 			historyPath: file.path,
 			sourceNotePath: frontmatter?.source_note_path,
-			metadata: frontmatter?.metadata
+			metadata: frontmatter?.metadata,
 		};
 
 		this.activeSessions.set(session.id, session);
@@ -282,13 +285,13 @@ export class SessionManager {
 		if (frontmatter.context_files) {
 			for (const fileRef of frontmatter.context_files) {
 				let file: TFile | null = null;
-				
+
 				// Handle both old path format and new wikilink format
 				if (typeof fileRef === 'string') {
 					if (fileRef.startsWith('[[') && fileRef.endsWith(']]')) {
 						// New wikilink format: [[filename]]
 						const linkpath = fileRef.slice(2, -2); // Remove [[ and ]]
-						
+
 						// Use Obsidian's link resolution to find the file
 						const resolvedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, '');
 						file = resolvedFile instanceof TFile ? resolvedFile : null;
@@ -298,7 +301,7 @@ export class SessionManager {
 						file = foundFile instanceof TFile ? foundFile : null;
 					}
 				}
-				
+
 				if (file instanceof TFile) {
 					contextFiles.push(file);
 				}
@@ -310,7 +313,7 @@ export class SessionManager {
 			enabledTools: frontmatter.enabled_tools || DEFAULT_CONTEXTS.NOTE_CHAT.enabledTools,
 			requireConfirmation: frontmatter.require_confirmation || [],
 			maxContextChars: frontmatter.max_context_chars,
-			maxCharsPerFile: frontmatter.max_chars_per_file
+			maxCharsPerFile: frontmatter.max_chars_per_file,
 		};
 	}
 
@@ -371,7 +374,7 @@ export class SessionManager {
 	 */
 	private async getOrCreateAgentSessionsFolder(): Promise<TFolder> {
 		const folderPath = this.getAgentSessionsFolderPath();
-		
+
 		let folder = this.plugin.app.vault.getAbstractFileByPath(folderPath);
 		if (!(folder instanceof TFolder)) {
 			await this.plugin.app.vault.createFolder(folderPath);
@@ -380,7 +383,7 @@ export class SessionManager {
 				throw new Error(`Failed to create or access folder: ${folderPath}`);
 			}
 		}
-		
+
 		return folder;
 	}
 
@@ -391,9 +394,9 @@ export class SessionManager {
 		// Characters that are forbidden in file names on most operating systems
 		// Including: \ / : * ? " < > |
 		return fileName
-			.replace(/[\\/:*?"<>|]/g, '-')  // Replace forbidden chars with dash
-			.replace(/\s+/g, ' ')          // Normalize whitespace
-			.trim()                        // Remove leading/trailing whitespace
-			.slice(0, 100);               // Limit length to prevent issues
+			.replace(/[\\/:*?"<>|]/g, '-') // Replace forbidden chars with dash
+			.replace(/\s+/g, ' ') // Normalize whitespace
+			.trim() // Remove leading/trailing whitespace
+			.slice(0, 100); // Limit length to prevent issues
 	}
 }

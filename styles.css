@@ -12,109 +12,109 @@ If your plugin does not need CSS, delete this file.
 
 /* Modal container */
 .modal.gemini-scribe-rewrite-modal {
-    width: 90vw;
-    max-width: 500px;
+	width: 90vw;
+	max-width: 500px;
 }
 
 .modal.gemini-scribe-rewrite-modal .modal-content {
-    padding: 0 !important;
-    overflow: hidden;
+	padding: 0 !important;
+	overflow: hidden;
 }
 
 .modal.gemini-scribe-rewrite-modal h2 {
-    margin: 0;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--background-modifier-border);
-    font-size: 18px;
-    font-weight: 600;
+	margin: 0;
+	padding: 20px 24px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 18px;
+	font-weight: 600;
 }
 
 /* Section styling */
 .gemini-scribe-section {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--background-modifier-border);
+	padding: 20px 24px;
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .gemini-scribe-section:last-of-type {
-    border-bottom: none;
+	border-bottom: none;
 }
 
 /* Label styling */
 .gemini-scribe-label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 8px;
-    color: var(--text-muted);
-    font-size: 13px;
+	display: block;
+	font-weight: 500;
+	margin-bottom: 8px;
+	color: var(--text-muted);
+	font-size: 13px;
 }
 
 /* Selected text preview */
 .gemini-scribe-preview-text {
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    padding: 12px;
-    max-height: 200px;
-    overflow-y: auto;
-    overflow-x: hidden;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 12px;
+	max-height: 200px;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 .gemini-scribe-preview-content {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    word-break: break-word;
-    font-size: 14px;
-    color: var(--text-normal);
-    line-height: 1.5;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	word-break: break-word;
+	font-size: 14px;
+	color: var(--text-normal);
+	line-height: 1.5;
 }
 
 /* Instructions input */
 .gemini-scribe-instructions-input {
-    width: 100%;
-    min-height: 120px;
-    resize: vertical;
-    font-family: var(--font-text);
-    font-size: 14px;
-    padding: 12px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background-color: var(--background-primary);
-    color: var(--text-normal);
-    line-height: 1.5;
-    box-sizing: border-box;
+	width: 100%;
+	min-height: 120px;
+	resize: vertical;
+	font-family: var(--font-text);
+	font-size: 14px;
+	padding: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	line-height: 1.5;
+	box-sizing: border-box;
 }
 
 .gemini-scribe-instructions-input::placeholder {
-    color: var(--text-faint);
-    opacity: 0.6;
+	color: var(--text-faint);
+	opacity: 0.6;
 }
 
 .gemini-scribe-instructions-input:focus {
-    outline: none;
-    border-color: var(--interactive-accent);
+	outline: none;
+	border-color: var(--interactive-accent);
 }
 
 /* Submit button */
 .gemini-scribe-submit-button {
-    width: calc(100% - 48px);
-    margin: 20px 24px;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+	width: calc(100% - 48px);
+	margin: 20px 24px;
+	padding: 10px 20px;
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.15s ease;
 }
 
 .gemini-scribe-submit-button.mod-cta {
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-    border: none;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
 }
 
 .gemini-scribe-submit-button.mod-cta:hover {
-    background-color: var(--interactive-accent-hover);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	background-color: var(--interactive-accent-hover);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Prompt indicator styling */
@@ -453,7 +453,7 @@ If your plugin does not need CSS, delete this file.
 	margin-top: 8px;
 }
 
-.gemini-scribe-context-depth input[type="range"] {
+.gemini-scribe-context-depth input[type='range'] {
 	flex: 1;
 	max-width: 100px;
 }
@@ -819,7 +819,6 @@ If your plugin does not need CSS, delete this file.
 	line-height: 1.5;
 }
 
-
 /* Allow without confirmation */
 .gemini-tool-allow-container {
 	margin-top: 20px;
@@ -1126,7 +1125,10 @@ If your plugin does not need CSS, delete this file.
 	overflow: hidden;
 	opacity: 0;
 	padding: 0 !important;
-	transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+	transition:
+		max-height 0.3s ease,
+		opacity 0.3s ease,
+		padding 0.3s ease;
 	border-bottom: none;
 }
 
@@ -1180,7 +1182,10 @@ If your plugin does not need CSS, delete this file.
 	flex-shrink: 0;
 	max-height: 200px;
 	overflow-y: auto;
-	transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+	transition:
+		max-height 0.3s ease,
+		opacity 0.3s ease,
+		padding 0.3s ease;
 	opacity: 1;
 }
 
@@ -1315,7 +1320,7 @@ If your plugin does not need CSS, delete this file.
 	font-weight: 500;
 }
 
-.gemini-agent-depth-control input[type="range"] {
+.gemini-agent-depth-control input[type='range'] {
 	flex: 1;
 	max-width: 150px;
 }
@@ -1373,28 +1378,32 @@ If your plugin does not need CSS, delete this file.
 
 /* State Colors */
 .gemini-agent-progress-thinking {
-	background: linear-gradient(90deg,
+	background: linear-gradient(
+		90deg,
 		var(--interactive-accent),
 		color-mix(in srgb, var(--interactive-accent) 80%, white)
 	);
 }
 
 .gemini-agent-progress-tool {
-	background: linear-gradient(90deg,
+	background: linear-gradient(
+		90deg,
 		color-mix(in srgb, var(--color-green) 70%, var(--interactive-accent) 30%),
 		color-mix(in srgb, var(--color-green) 50%, white)
 	);
 }
 
 .gemini-agent-progress-waiting {
-	background: linear-gradient(90deg,
+	background: linear-gradient(
+		90deg,
 		color-mix(in srgb, var(--color-yellow) 70%, var(--interactive-accent) 30%),
 		color-mix(in srgb, var(--color-yellow) 50%, white)
 	);
 }
 
 .gemini-agent-progress-streaming {
-	background: linear-gradient(90deg,
+	background: linear-gradient(
+		90deg,
 		color-mix(in srgb, var(--color-purple) 70%, var(--interactive-accent) 30%),
 		color-mix(in srgb, var(--color-purple) 50%, white)
 	);
@@ -2034,9 +2043,15 @@ If your plugin does not need CSS, delete this file.
 }
 
 @keyframes pulse {
-	0% { opacity: 1; }
-	50% { opacity: 0.7; }
-	100% { opacity: 1; }
+	0% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
+	100% {
+		opacity: 1;
+	}
 }
 
 /* Tool details */
@@ -2286,7 +2301,9 @@ If your plugin does not need CSS, delete this file.
 }
 
 @keyframes thinking-bounce {
-	0%, 80%, 100% {
+	0%,
+	80%,
+	100% {
 		transform: scale(0.8);
 		opacity: 0.5;
 	}
@@ -3631,7 +3648,8 @@ If your plugin does not need CSS, delete this file.
 }
 
 @keyframes rag-pulse {
-	0%, 100% {
+	0%,
+	100% {
 		opacity: 1;
 	}
 	50% {
@@ -3751,7 +3769,9 @@ If your plugin does not need CSS, delete this file.
 	cursor: pointer;
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
-	transition: background 0.15s ease, color 0.15s ease;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
 }
 
 .rag-status-tab:hover {

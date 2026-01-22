@@ -96,7 +96,13 @@ export class AgentsMemory {
 		const validatedData: AgentsMemoryData = {};
 
 		// Only include string properties that are defined
-		for (const key of ['vaultOverview', 'organization', 'keyTopics', 'userPreferences', 'customInstructions'] as const) {
+		for (const key of [
+			'vaultOverview',
+			'organization',
+			'keyTopics',
+			'userPreferences',
+			'customInstructions',
+		] as const) {
 			if (data[key] !== undefined) {
 				// Ensure value is a string
 				if (typeof data[key] !== 'string') {

@@ -34,7 +34,11 @@ export class AgentViewContext {
 	/**
 	 * Updates the context files list display
 	 */
-	updateContextFilesList(container: HTMLElement, currentSession: ChatSession | null, onRemove: (file: TFile) => void): void {
+	updateContextFilesList(
+		container: HTMLElement,
+		currentSession: ChatSession | null,
+		onRemove: (file: TFile) => void
+	): void {
 		container.empty();
 
 		const hasContextFiles = currentSession && currentSession.context.contextFiles.length > 0;
@@ -42,7 +46,7 @@ export class AgentViewContext {
 		if (!hasContextFiles) {
 			container.createEl('p', {
 				text: 'No context files',
-				cls: 'gemini-agent-empty-state'
+				cls: 'gemini-agent-empty-state',
 			});
 			return;
 		}
@@ -52,7 +56,7 @@ export class AgentViewContext {
 
 		// Show all context files with remove buttons
 		if (currentSession) {
-			currentSession.context.contextFiles.forEach(file => {
+			currentSession.context.contextFiles.forEach((file) => {
 				const isActiveFile = file === activeFile;
 
 				const fileItem = container.createDiv({ cls: 'gemini-agent-file-item' });
@@ -64,7 +68,7 @@ export class AgentViewContext {
 				const fileName = fileItem.createEl('span', {
 					text: file.basename,
 					cls: 'gemini-agent-file-name',
-					title: file.path // Show full path on hover
+					title: file.path, // Show full path on hover
 				});
 
 				// Add "Active" badge if this is the currently open file
@@ -72,14 +76,14 @@ export class AgentViewContext {
 					const badge = fileItem.createEl('span', {
 						text: 'Active',
 						cls: 'gemini-agent-active-badge',
-						title: 'This is the currently open file'
+						title: 'This is the currently open file',
 					});
 				}
 
 				const removeBtn = fileItem.createEl('button', {
 					text: '×',
 					cls: 'gemini-agent-remove-btn',
-					title: 'Remove file'
+					title: 'Remove file',
 				});
 
 				removeBtn.addEventListener('click', () => {
@@ -160,7 +164,7 @@ export class AgentViewContext {
 	addFilesToContext(files: TFile[], currentSession: ChatSession | null): void {
 		if (!currentSession) return;
 
-		files.forEach(file => {
+		files.forEach((file) => {
 			this.addFileToContext(file, currentSession);
 		});
 	}

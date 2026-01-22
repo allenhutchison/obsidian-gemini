@@ -9,16 +9,16 @@ jest.mock('obsidian', () => ({
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
-	}
+	},
 }));
 
 // Mock DeepResearchService
 const mockDeepResearch = {
-	conductResearch: jest.fn()
+	conductResearch: jest.fn(),
 };
 
 const mockPlugin = {
-	deepResearch: mockDeepResearch
+	deepResearch: mockDeepResearch,
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -30,9 +30,9 @@ const mockContext: ToolExecutionContext = {
 			contextFiles: [],
 			contextDepth: 2,
 			enabledTools: [],
-			requireConfirmation: []
-		}
-	}
+			requireConfirmation: [],
+		},
+	},
 } as any;
 
 describe('DeepResearchTool', () => {
@@ -130,7 +130,7 @@ describe('DeepResearchTool', () => {
 		it('should return error if deep research service is not available', async () => {
 			const contextWithoutService = {
 				plugin: { deepResearch: null } as any,
-				session: mockContext.session
+				session: mockContext.session,
 			};
 
 			const result = await tool.execute({ topic: 'Test' }, contextWithoutService);
@@ -145,7 +145,7 @@ describe('DeepResearchTool', () => {
 				report: '# AI Ethics\n\nResearch report...',
 				searchCount: 5,
 				sourceCount: 10,
-				sectionCount: 3
+				sectionCount: 3,
 			});
 
 			const result = await tool.execute({ topic: 'AI Ethics' }, mockContext);
@@ -157,12 +157,12 @@ describe('DeepResearchTool', () => {
 				searches: 5,
 				sources: 10,
 				sections: 3,
-				outputFile: undefined
+				outputFile: undefined,
 			});
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'AI Ethics',
 				depth: undefined,
-				outputFile: undefined
+				outputFile: undefined,
 			});
 		});
 
@@ -172,7 +172,7 @@ describe('DeepResearchTool', () => {
 				report: 'Report',
 				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2
+				sectionCount: 2,
 			});
 
 			await tool.execute({ topic: 'Test', depth: 5 }, mockContext);
@@ -180,7 +180,7 @@ describe('DeepResearchTool', () => {
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'Test',
 				depth: 5,
-				outputFile: undefined
+				outputFile: undefined,
 			});
 		});
 
@@ -190,7 +190,7 @@ describe('DeepResearchTool', () => {
 				report: 'Report',
 				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2
+				sectionCount: 2,
 			});
 
 			await tool.execute({ topic: 'Test', outputFile: 'research.md' }, mockContext);
@@ -198,7 +198,7 @@ describe('DeepResearchTool', () => {
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'Test',
 				depth: undefined,
-				outputFile: 'research.md'
+				outputFile: 'research.md',
 			});
 		});
 
@@ -208,7 +208,7 @@ describe('DeepResearchTool', () => {
 				report: 'Report',
 				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2
+				sectionCount: 2,
 			});
 
 			await tool.execute({ topic: 'Test', outputFile: 'research' }, mockContext);
@@ -216,7 +216,7 @@ describe('DeepResearchTool', () => {
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'Test',
 				depth: undefined,
-				outputFile: 'research.md'
+				outputFile: 'research.md',
 			});
 		});
 
@@ -230,7 +230,7 @@ describe('DeepResearchTool', () => {
 				searchCount: 3,
 				sourceCount: 5,
 				sectionCount: 2,
-				outputFile: mockFile
+				outputFile: mockFile,
 			});
 
 			const result = await tool.execute({ topic: 'Test', outputFile: 'research-report' }, mockContext);
@@ -250,12 +250,12 @@ describe('DeepResearchTool', () => {
 				searchCount: 3,
 				sourceCount: 5,
 				sectionCount: 2,
-				outputFile: mockFile
+				outputFile: mockFile,
 			});
 
 			const contextWithoutSession = {
 				plugin: mockPlugin,
-				session: null
+				session: null,
 			} as any;
 
 			const result = await tool.execute({ topic: 'Test', outputFile: 'research-report' }, contextWithoutSession);
@@ -270,7 +270,7 @@ describe('DeepResearchTool', () => {
 				report: 'Report',
 				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2
+				sectionCount: 2,
 			});
 
 			const initialFiles = mockContext.session!.context.contextFiles.length;

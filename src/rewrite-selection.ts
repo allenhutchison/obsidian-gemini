@@ -22,7 +22,7 @@ export class SelectionRewriter {
 		selectionEnd: number;
 	}): string {
 		// Insert markers to show where selection is in the document
-		const documentWithMarkers = 
+		const documentWithMarkers =
 			params.fullContent.substring(0, params.selectionStart) +
 			'[SELECTION_START]' +
 			params.selectedText +
@@ -32,15 +32,11 @@ export class SelectionRewriter {
 		return this.prompts.selectionRewritePrompt({
 			selectedText: params.selectedText,
 			instructions: params.instructions,
-			documentWithMarkers: documentWithMarkers
+			documentWithMarkers: documentWithMarkers,
 		});
 	}
 
-	async rewriteSelection(
-		editor: Editor,
-		selectedText: string,
-		instructions: string
-	): Promise<void> {
+	async rewriteSelection(editor: Editor, selectedText: string, instructions: string): Promise<void> {
 		const from = editor.getCursor('from');
 		const to = editor.getCursor('to');
 
@@ -53,7 +49,7 @@ export class SelectionRewriter {
 			instructions,
 			fullContent: editor.getValue(),
 			selectionStart,
-			selectionEnd
+			selectionEnd,
 		});
 
 		// Send request without conversation history
@@ -61,7 +57,7 @@ export class SelectionRewriter {
 		const request: ExtendedModelRequest = {
 			prompt,
 			conversationHistory: [], // Empty history for rewrite operations
-			userMessage: instructions
+			userMessage: instructions,
 		};
 
 		try {
@@ -84,10 +80,7 @@ export class SelectionRewriter {
 		}
 	}
 
-	private buildFullFilePrompt(params: {
-		fileContent: string;
-		instructions: string;
-	}): string {
+	private buildFullFilePrompt(params: { fileContent: string; instructions: string }): string {
 		return `You are rewriting an entire markdown document based on user instructions.
 
 # Current Document Content
@@ -103,21 +96,18 @@ ${params.instructions}
 Rewrite the entire document according to the user's instructions. Maintain the markdown formatting and structure unless the instructions specifically ask you to change it. Return ONLY the rewritten document content, no explanations or metadata.`;
 	}
 
-	async rewriteFullFile(
-		editor: Editor,
-		instructions: string
-	): Promise<void> {
+	async rewriteFullFile(editor: Editor, instructions: string): Promise<void> {
 		const fileContent = editor.getValue();
 
 		const prompt = this.buildFullFilePrompt({
 			fileContent,
-			instructions
+			instructions,
 		});
 
 		const request: ExtendedModelRequest = {
 			prompt,
 			conversationHistory: [],
-			userMessage: instructions
+			userMessage: instructions,
 		};
 
 		try {

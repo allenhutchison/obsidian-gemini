@@ -21,8 +21,8 @@ class Modal {
 		this.app = app;
 		this.modalEl = {
 			classList: {
-				add: jest.fn()
-			}
+				add: jest.fn(),
+			},
 		};
 		this.contentEl = {
 			empty: jest.fn(),
@@ -54,9 +54,13 @@ class Setting {
 		this.settingEl = containerEl;
 		this.components = [];
 	}
-	setName(name) { return this; }
-	setDesc(desc) { return this; }
-	addText(cb) { 
+	setName(name) {
+		return this;
+	}
+	setDesc(desc) {
+		return this;
+	}
+	addText(cb) {
 		const component = { setValue: jest.fn(), setPlaceholder: jest.fn() };
 		cb(component);
 		this.components.push(component);
@@ -69,10 +73,10 @@ class Setting {
 		return this;
 	}
 	addDropdown(cb) {
-		const component = { 
-			setValue: jest.fn(), 
+		const component = {
+			setValue: jest.fn(),
 			addOption: jest.fn(),
-			selectEl: { value: '' }
+			selectEl: { value: '' },
 		};
 		cb(component);
 		this.components.push(component);
@@ -85,10 +89,10 @@ class Setting {
 		return this;
 	}
 	addButton(cb) {
-		const component = { 
-			setButtonText: jest.fn(), 
+		const component = {
+			setButtonText: jest.fn(),
 			setCta: jest.fn(),
-			onClick: jest.fn()
+			onClick: jest.fn(),
 		};
 		cb(component);
 		this.components.push(component);
@@ -109,11 +113,15 @@ class FuzzySuggestModal extends Modal {
 		super(app);
 		this.inputEl = {
 			value: '',
-			addEventListener: jest.fn()
+			addEventListener: jest.fn(),
 		};
 	}
-	getItems() { return []; }
-	getItemText(item) { return ''; }
+	getItems() {
+		return [];
+	}
+	getItemText(item) {
+		return '';
+	}
 	onChooseItem(item, evt) {}
 }
 
@@ -126,18 +134,22 @@ class TAbstractFile {
 
 const Menu = jest.fn().mockImplementation(() => ({
 	addItem: jest.fn().mockReturnThis(),
-	showAtMouseEvent: jest.fn()
+	showAtMouseEvent: jest.fn(),
 }));
 
 class AbstractInputSuggest {
 	constructor() {
 		this.inputEl = null;
 	}
-	
-	getValue() { return ''; }
+
+	getValue() {
+		return '';
+	}
 	setValue() {}
 	onInputChanged() {}
-	getSuggestions() { return []; }
+	getSuggestions() {
+		return [];
+	}
 	renderSuggestion() {}
 	selectSuggestion() {}
 }
@@ -152,7 +164,7 @@ class PluginSettingTab {
 			createDiv: jest.fn(),
 		};
 	}
-	
+
 	display() {}
 	hide() {}
 }
@@ -166,8 +178,10 @@ class SuggestModal extends Modal {
 			value: '',
 		};
 	}
-	
-	getSuggestions() { return []; }
+
+	getSuggestions() {
+		return [];
+	}
 	renderSuggestion() {}
 	onChooseSuggestion() {}
 }
@@ -177,15 +191,23 @@ class Plugin {
 		this.app = app;
 		this.manifest = manifest;
 	}
-	
+
 	onload() {}
 	onunload() {}
-	addCommand() { return jest.fn(); }
-	addRibbonIcon() { return { remove: jest.fn() }; }
+	addCommand() {
+		return jest.fn();
+	}
+	addRibbonIcon() {
+		return { remove: jest.fn() };
+	}
 	addSettingTab() {}
 	registerView() {}
-	loadData() { return Promise.resolve({}); }
-	saveData() { return Promise.resolve(); }
+	loadData() {
+		return Promise.resolve({});
+	}
+	saveData() {
+		return Promise.resolve();
+	}
 }
 
 module.exports = {

@@ -11,7 +11,7 @@ export class SessionSettingsModal extends Modal {
 	private topPSlider: SliderComponent | null = null;
 
 	constructor(
-		app: any, 
+		app: any,
 		plugin: InstanceType<typeof ObsidianGemini>,
 		session: ChatSession,
 		onSave: (config: SessionModelConfig) => Promise<void>
@@ -34,26 +34,24 @@ export class SessionSettingsModal extends Modal {
 		const models = await this.plugin.getModelManager().getAvailableModels();
 
 		// Model selection
-		const modelSetting = new Setting(contentEl)
-			.setName('Model')
-			.setDesc('Select the AI model for this session');
-		
+		const modelSetting = new Setting(contentEl).setName('Model').setDesc('Select the AI model for this session');
+
 		let modelDropdown: DropdownComponent;
 		modelSetting
 			.addDropdown((dropdown: DropdownComponent) => {
 				modelDropdown = dropdown;
-				
+
 				// Add default option with a special value
 				dropdown.addOption('__default__', 'Use default');
-				
+
 				// Add available models
 				models.forEach((model: any) => {
 					dropdown.addOption(model.value, model.label);
 				});
-				
+
 				// Set current value
 				dropdown.setValue(this.modelConfig.model || '__default__');
-				
+
 				dropdown.onChange(async (value) => {
 					if (value === '__default__') {
 						delete this.modelConfig.model;
@@ -87,7 +85,7 @@ export class SessionSettingsModal extends Modal {
 				this.tempSlider = slider;
 				const defaultTemp = this.plugin.settings.temperature;
 				const currentTemp = this.modelConfig.temperature ?? defaultTemp;
-				
+
 				slider
 					.setLimits(0, 2, 0.1)
 					.setValue(currentTemp)
@@ -102,7 +100,7 @@ export class SessionSettingsModal extends Modal {
 						// Save immediately
 						await this.saveConfig();
 					});
-				
+
 				// Show current value
 				slider.sliderEl.addEventListener('input', () => {
 					const valueEl = contentEl.querySelector('.temperature-value');
@@ -135,7 +133,7 @@ export class SessionSettingsModal extends Modal {
 				this.topPSlider = slider;
 				const defaultTopP = this.plugin.settings.topP;
 				const currentTopP = this.modelConfig.topP ?? defaultTopP;
-				
+
 				slider
 					.setLimits(0, 1, 0.05)
 					.setValue(currentTopP)
@@ -150,7 +148,7 @@ export class SessionSettingsModal extends Modal {
 						// Save immediately
 						await this.saveConfig();
 					});
-				
+
 				// Show current value
 				slider.sliderEl.addEventListener('input', () => {
 					const valueEl = contentEl.querySelector('.top-p-value');
@@ -179,33 +177,33 @@ export class SessionSettingsModal extends Modal {
 		const promptSetting = new Setting(contentEl)
 			.setName('Prompt Template')
 			.setDesc('Select a custom prompt template for this session');
-		
+
 		let promptDropdown: DropdownComponent;
 		promptSetting
 			.addDropdown((dropdown: DropdownComponent) => {
 				promptDropdown = dropdown;
-				
+
 				// Add default option with special value
 				dropdown.addOption('__default__', 'Use default prompt');
-				
+
 				// Get prompt files
 				const promptsFolder = `${this.plugin.settings.historyFolder}/Prompts`;
 				const folder = this.plugin.app.vault.getAbstractFileByPath(promptsFolder);
-				
+
 				if (folder && folder instanceof TFolder) {
 					const promptFiles = folder.children
 						.filter((f): f is TFile => f instanceof TFile && f.extension === 'md')
-						.map(f => f.path);
-					
-					promptFiles.forEach(path => {
+						.map((f) => f.path);
+
+					promptFiles.forEach((path) => {
 						const name = path.split('/').pop()?.replace('.md', '') || path;
 						dropdown.addOption(path, name);
 					});
 				}
-				
+
 				// Set current value
 				dropdown.setValue(this.modelConfig.promptTemplate || '__default__');
-				
+
 				dropdown.onChange(async (value) => {
 					if (value === '__default__') {
 						delete this.modelConfig.promptTemplate;
@@ -232,9 +230,9 @@ export class SessionSettingsModal extends Modal {
 			});
 
 		// Info section
-		contentEl.createDiv({ 
+		contentEl.createDiv({
 			text: 'These settings override the global defaults for this session only. Changes are saved automatically.',
-			cls: 'setting-item-description'
+			cls: 'setting-item-description',
 		});
 	}
 
@@ -242,11 +240,11 @@ export class SessionSettingsModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 	}
-	
+
 	private async saveConfig() {
 		// Create a clean config object with only defined values
 		const cleanConfig: SessionModelConfig = {};
-		
+
 		// Check each property - if it exists and is not undefined, include it
 		// The delete operations ensure these properties don't exist when set to default
 		if (this.modelConfig.model !== undefined) {
@@ -261,7 +259,7 @@ export class SessionSettingsModal extends Modal {
 		if (this.modelConfig.promptTemplate !== undefined) {
 			cleanConfig.promptTemplate = this.modelConfig.promptTemplate;
 		}
-		
+
 		await this.onSave(cleanConfig);
 	}
 }

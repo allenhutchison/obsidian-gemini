@@ -24,7 +24,7 @@ export class RewriteInstructionsModal extends Modal {
 		const previewSection = contentEl.createDiv({ cls: 'gemini-scribe-section' });
 		previewSection.createEl('label', {
 			text: this.isFullFile ? 'File content:' : 'Selected text:',
-			cls: 'gemini-scribe-label'
+			cls: 'gemini-scribe-label',
 		});
 
 		const previewTextContainer = previewSection.createDiv({ cls: 'gemini-scribe-preview-text' });
@@ -42,7 +42,7 @@ export class RewriteInstructionsModal extends Modal {
 		const instructionsSection = contentEl.createDiv({ cls: 'gemini-scribe-section' });
 		instructionsSection.createEl('label', {
 			text: 'Instructions:',
-			cls: 'gemini-scribe-label'
+			cls: 'gemini-scribe-label',
 		});
 
 		const placeholder = this.isFullFile
@@ -51,13 +51,13 @@ export class RewriteInstructionsModal extends Modal {
 
 		this.instructionsEl = instructionsSection.createEl('textarea', {
 			placeholder,
-			cls: 'gemini-scribe-instructions-input'
+			cls: 'gemini-scribe-instructions-input',
 		});
 
 		// Submit button - full width
-		const submitBtn = contentEl.createEl('button', { 
+		const submitBtn = contentEl.createEl('button', {
 			text: 'Rewrite',
-			cls: 'gemini-scribe-submit-button mod-cta'
+			cls: 'gemini-scribe-submit-button mod-cta',
 		});
 
 		submitBtn.onclick = () => this.submit();
