@@ -3,7 +3,14 @@
  */
 
 // Re-export the interfaces
-export type { ModelApi, ModelResponse, BaseModelRequest, ExtendedModelRequest, ToolCall, ToolDefinition } from './interfaces/model-api';
+export type {
+	ModelApi,
+	ModelResponse,
+	BaseModelRequest,
+	ExtendedModelRequest,
+	ToolCall,
+	ToolDefinition,
+} from './interfaces/model-api';
 
 // Export the simplified factory
 export { GeminiClientFactory, ModelUseCase } from './simple-factory';

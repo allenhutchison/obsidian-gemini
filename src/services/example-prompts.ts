@@ -52,7 +52,7 @@ export class ExamplePromptsManager {
 	 * @returns True if valid array of prompts, false otherwise
 	 */
 	private isValidPromptsArray(prompts: any): prompts is ExamplePrompt[] {
-		return Array.isArray(prompts) && prompts.every(p => this.isValidPrompt(p));
+		return Array.isArray(prompts) && prompts.every((p) => this.isValidPrompt(p));
 	}
 
 	/**
@@ -114,7 +114,9 @@ export class ExamplePromptsManager {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to write example-prompts.json:', error);
-			throw new Error(`Failed to write example-prompts.json: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			throw new Error(
+				`Failed to write example-prompts.json: ${error instanceof Error ? error.message : 'Unknown error'}`
+			);
 		}
 	}
 }

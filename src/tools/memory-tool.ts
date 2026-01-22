@@ -10,17 +10,19 @@ export class UpdateMemoryTool implements Tool {
 	name = 'update_memory';
 	displayName = 'Update Memory';
 	category = ToolCategory.VAULT_OPERATIONS;
-	description = 'Update the AGENTS.md file to remember information about this vault. Use this when the user explicitly asks you to remember something, or when you discover important information about how the vault is organized or should be used. The content will be appended to the AGENTS.md file.';
+	description =
+		'Update the AGENTS.md file to remember information about this vault. Use this when the user explicitly asks you to remember something, or when you discover important information about how the vault is organized or should be used. The content will be appended to the AGENTS.md file.';
 
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			content: {
 				type: 'string' as const,
-				description: 'The information to remember. Should be clear, concise Markdown text that will be appended to AGENTS.md.'
-			}
+				description:
+					'The information to remember. Should be clear, concise Markdown text that will be appended to AGENTS.md.',
+			},
 		},
-		required: ['content']
+		required: ['content'],
 	};
 
 	requiresConfirmation = true;
@@ -41,7 +43,7 @@ export class UpdateMemoryTool implements Tool {
 			if (!params.content || typeof params.content !== 'string' || params.content.trim().length === 0) {
 				return {
 					success: false,
-					error: 'Content is required and must be a non-empty string'
+					error: 'Content is required and must be a non-empty string',
 				};
 			}
 
@@ -49,7 +51,7 @@ export class UpdateMemoryTool implements Tool {
 			if (!plugin.agentsMemory) {
 				return {
 					success: false,
-					error: 'Agents memory service not available'
+					error: 'Agents memory service not available',
 				};
 			}
 
@@ -62,13 +64,13 @@ export class UpdateMemoryTool implements Tool {
 				success: true,
 				data: {
 					path: memoryPath,
-					message: 'Memory updated successfully'
-				}
+					message: 'Memory updated successfully',
+				},
 			};
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to update memory: ${error instanceof Error ? error.message : String(error)}`
+				error: `Failed to update memory: ${error instanceof Error ? error.message : String(error)}`,
 			};
 		}
 	}
@@ -81,12 +83,13 @@ export class ReadMemoryTool implements Tool {
 	name = 'read_memory';
 	displayName = 'Read Memory';
 	category = ToolCategory.READ_ONLY;
-	description = 'Read the current contents of the AGENTS.md file to see what information has been remembered about this vault. This file contains persistent context about the vault structure, organization, key topics, user preferences, and custom instructions.';
+	description =
+		'Read the current contents of the AGENTS.md file to see what information has been remembered about this vault. This file contains persistent context about the vault structure, organization, key topics, user preferences, and custom instructions.';
 
 	parameters = {
 		type: 'object' as const,
 		properties: {},
-		required: []
+		required: [],
 	};
 
 	getProgressDescription(params: any): string {
@@ -101,7 +104,7 @@ export class ReadMemoryTool implements Tool {
 			if (!plugin.agentsMemory) {
 				return {
 					success: false,
-					error: 'Agents memory service not available'
+					error: 'Agents memory service not available',
 				};
 			}
 
@@ -114,8 +117,8 @@ export class ReadMemoryTool implements Tool {
 					data: {
 						content: '',
 						exists: false,
-						message: 'AGENTS.md does not exist yet. Use update_memory to create it.'
-					}
+						message: 'AGENTS.md does not exist yet. Use update_memory to create it.',
+					},
 				};
 			}
 
@@ -126,13 +129,13 @@ export class ReadMemoryTool implements Tool {
 				data: {
 					path: memoryPath,
 					content: content,
-					exists: true
-				}
+					exists: true,
+				},
 			};
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to read memory: ${error instanceof Error ? error.message : String(error)}`
+				error: `Failed to read memory: ${error instanceof Error ? error.message : String(error)}`,
 			};
 		}
 	}
@@ -142,8 +145,5 @@ export class ReadMemoryTool implements Tool {
  * Get all memory-related tools
  */
 export function getMemoryTools(): Tool[] {
-	return [
-		new UpdateMemoryTool(),
-		new ReadMemoryTool()
-	];
+	return [new UpdateMemoryTool(), new ReadMemoryTool()];
 }

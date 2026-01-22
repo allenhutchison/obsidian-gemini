@@ -7,9 +7,5 @@ import { DeepResearchTool } from './deep-research-tool';
  * Get web-related tools
  */
 export function getWebTools(): Tool[] {
-	return [
-		new GoogleSearchTool(),
-		new WebFetchTool(),
-		new DeepResearchTool()
-	];
+	return [new GoogleSearchTool(), new WebFetchTool(), new DeepResearchTool()];
 }

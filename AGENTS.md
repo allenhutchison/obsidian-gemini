@@ -43,18 +43,21 @@ Follow these steps to create a new release:
    - Place the new version at the top of the notes object
 
 2. **Run Tests and Build**
+
    ```bash
    npm test        # Ensure all tests pass
    npm run build   # Verify production build succeeds
    ```
 
 3. **Commit Release Notes**
+
    ```bash
    git add src/ui/update-notification-modal.ts
    git commit -m "Add release notes for version X.Y.Z"
    ```
 
 4. **Bump Version** (Choose appropriate semantic version)
+
    ```bash
    npm version patch  # Bug fixes (4.1.0 → 4.1.1)
    npm version minor  # New features (4.1.0 → 4.2.0)
@@ -82,6 +85,7 @@ Follow these steps to create a new release:
    - Test installation in a test vault (if needed)
 
 **IMPORTANT**:
+
 - Do NOT manually edit version numbers in `package.json`, `manifest.json`, or `versions.json`. Always use the npm version commands.
 - Always update release notes BEFORE running `npm version`
 - Ensure you're on the master branch and it's up to date before releasing
@@ -154,13 +158,16 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
    - Sort tool calls to execute reads before writes/deletes
    - Prevents race conditions where files are deleted before being read
 10. **Loop Detection**: Tool execution includes loop detection to prevent infinite cycles:
-   - Tracks identical tool calls within time windows
-   - Configurable thresholds and time windows
-   - Session-specific tracking with automatic cleanup
+
+- Tracks identical tool calls within time windows
+- Configurable thresholds and time windows
+- Session-specific tracking with automatic cleanup
+
 11. **YAML Frontmatter**: Agent instructions include guidance for respecting YAML frontmatter when modifying files
-   - The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentToolsPrompt.txt`)
-   - YAML frontmatter must start with `---` on line 1 and end with `---`
-   - Content is only placed before frontmatter when explicitly instructed to modify frontmatter
+
+- The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentToolsPrompt.txt`)
+- YAML frontmatter must start with `---` on line 1 and end with `---`
+- Content is only placed before frontmatter when explicitly instructed to modify frontmatter
 
 ## Coding Style & Naming Conventions
 
@@ -176,11 +183,13 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 The plugin uses a dedicated Logger service (`src/utils/logger.ts`) that respects the debug mode setting. This approach avoids global console patching, preventing conflicts with other plugins and Obsidian's debugging tools.
 
 **Accessing the Logger:**
+
 - Plugin components: `this.plugin.logger`
 - Tool implementations: `context.plugin.logger` (via ToolExecutionContext)
 - Utility functions: Accept logger as parameter
 
 **Logger Methods:**
+
 - **`logger.log()` and `logger.debug()`**: Only output when debug mode is enabled
   - Automatically filtered based on settings.debugMode
   - Prefixed with `[Gemini Scribe]` for easy identification
@@ -190,6 +199,7 @@ The plugin uses a dedicated Logger service (`src/utils/logger.ts`) that respects
   - Critical failures, API errors, and data integrity issues
 
 **Best Practices:**
+
 - Use `logger.log()` for debug information that helps development and troubleshooting
 - Use `logger.error()` for errors that indicate something went wrong
 - Use `logger.warn()` for warnings about deprecated features or potential issues
@@ -197,6 +207,7 @@ The plugin uses a dedicated Logger service (`src/utils/logger.ts`) that respects
 - Pass logger instance to utility functions that need logging
 
 **Examples:**
+
 ```typescript
 // ✅ Good - in plugin components
 this.plugin.logger.log('Processing file:', file.path);
@@ -277,6 +288,7 @@ Documentation updates are **REQUIRED**, not optional. Every code change MUST inc
    - Document breaking changes clearly
 
 **Documentation Review Checklist:**
+
 - [ ] README.md updated if user-facing change
 - [ ] Relevant guides in `docs/` updated
 - [ ] Code examples tested and current

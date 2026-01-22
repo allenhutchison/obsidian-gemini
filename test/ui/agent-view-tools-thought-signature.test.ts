@@ -12,22 +12,24 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 	 * This mirrors the actual implementation in agent-view-tools.ts:165-171
 	 */
 	function buildPartsFromToolCalls(toolCalls: any[]): any[] {
-		return toolCalls.map(tc => ({
+		return toolCalls.map((tc) => ({
 			functionCall: {
 				name: tc.name,
-				args: tc.arguments || {}
+				args: tc.arguments || {},
 			},
-			...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature })
+			...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature }),
 		}));
 	}
 
 	describe('Single tool call scenarios', () => {
 		test('should include thoughtSignature when present', () => {
-			const toolCalls = [{
-				name: 'google_search',
-				arguments: { query: 'test' },
-				thoughtSignature: 'encrypted_signature_abc123'
-			}];
+			const toolCalls = [
+				{
+					name: 'google_search',
+					arguments: { query: 'test' },
+					thoughtSignature: 'encrypted_signature_abc123',
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -38,11 +40,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should omit thoughtSignature property when undefined', () => {
-			const toolCalls = [{
-				name: 'google_search',
-				arguments: { query: 'test' },
-				thoughtSignature: undefined
-			}];
+			const toolCalls = [
+				{
+					name: 'google_search',
+					arguments: { query: 'test' },
+					thoughtSignature: undefined,
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -53,11 +57,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should omit thoughtSignature property when null', () => {
-			const toolCalls = [{
-				name: 'google_search',
-				arguments: { query: 'test' },
-				thoughtSignature: null
-			}];
+			const toolCalls = [
+				{
+					name: 'google_search',
+					arguments: { query: 'test' },
+					thoughtSignature: null,
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -67,11 +73,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should omit thoughtSignature property when empty string', () => {
-			const toolCalls = [{
-				name: 'google_search',
-				arguments: { query: 'test' },
-				thoughtSignature: ''
-			}];
+			const toolCalls = [
+				{
+					name: 'google_search',
+					arguments: { query: 'test' },
+					thoughtSignature: '',
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -81,11 +89,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should omit thoughtSignature property when not provided at all', () => {
-			const toolCalls = [{
-				name: 'google_search',
-				arguments: { query: 'test' }
-				// no thoughtSignature property
-			}];
+			const toolCalls = [
+				{
+					name: 'google_search',
+					arguments: { query: 'test' },
+					// no thoughtSignature property
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -100,18 +110,18 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 				{
 					name: 'read_file',
 					arguments: { path: 'file1.md' },
-					thoughtSignature: 'signature_1'
+					thoughtSignature: 'signature_1',
 				},
 				{
 					name: 'read_file',
 					arguments: { path: 'file2.md' },
-					thoughtSignature: 'signature_2'
+					thoughtSignature: 'signature_2',
 				},
 				{
 					name: 'google_search',
 					arguments: { query: 'test' },
-					thoughtSignature: 'signature_3'
-				}
+					thoughtSignature: 'signature_3',
+				},
 			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
@@ -127,13 +137,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 				{
 					name: 'read_file',
 					arguments: { path: 'file1.md' },
-					thoughtSignature: undefined
+					thoughtSignature: undefined,
 				},
 				{
 					name: 'write_file',
 					arguments: { path: 'file2.md', content: 'test' },
-					thoughtSignature: undefined
-				}
+					thoughtSignature: undefined,
+				},
 			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
@@ -149,18 +159,18 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 				{
 					name: 'read_file',
 					arguments: { path: 'file1.md' },
-					thoughtSignature: 'main_signature'
+					thoughtSignature: 'main_signature',
 				},
 				{
 					name: 'read_file',
 					arguments: { path: 'file2.md' },
-					thoughtSignature: undefined
+					thoughtSignature: undefined,
 				},
 				{
 					name: 'read_file',
 					arguments: { path: 'file3.md' },
-					thoughtSignature: undefined
-				}
+					thoughtSignature: undefined,
+				},
 			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
@@ -176,18 +186,18 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 				{
 					name: 'google_search',
 					arguments: { query: 'AI' },
-					thoughtSignature: 'sig_1'
+					thoughtSignature: 'sig_1',
 				},
 				{
 					name: 'read_file',
 					arguments: { path: 'notes.md' },
-					thoughtSignature: undefined
+					thoughtSignature: undefined,
 				},
 				{
 					name: 'web_fetch',
 					arguments: { url: 'https://example.com' },
-					thoughtSignature: 'sig_2'
-				}
+					thoughtSignature: 'sig_2',
+				},
 			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
@@ -207,10 +217,12 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should handle tool call with no arguments', () => {
-			const toolCalls = [{
-				name: 'list_files',
-				thoughtSignature: 'signature_xyz'
-			}];
+			const toolCalls = [
+				{
+					name: 'list_files',
+					thoughtSignature: 'signature_xyz',
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -220,11 +232,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should handle tool call with empty arguments object', () => {
-			const toolCalls = [{
-				name: 'list_files',
-				arguments: {},
-				thoughtSignature: 'signature_xyz'
-			}];
+			const toolCalls = [
+				{
+					name: 'list_files',
+					arguments: {},
+					thoughtSignature: 'signature_xyz',
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -234,16 +248,18 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should handle tool call with complex arguments', () => {
-			const toolCalls = [{
-				name: 'complex_tool',
-				arguments: {
-					nested: { key: 'value' },
-					array: [1, 2, 3],
-					boolean: true,
-					number: 42
+			const toolCalls = [
+				{
+					name: 'complex_tool',
+					arguments: {
+						nested: { key: 'value' },
+						array: [1, 2, 3],
+						boolean: true,
+						number: 42,
+					},
+					thoughtSignature: 'complex_sig',
 				},
-				thoughtSignature: 'complex_sig'
-			}];
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 
@@ -252,7 +268,7 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 				nested: { key: 'value' },
 				array: [1, 2, 3],
 				boolean: true,
-				number: 42
+				number: 42,
 			});
 			expect(parts[0]).toHaveProperty('thoughtSignature', 'complex_sig');
 		});
@@ -260,11 +276,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 
 	describe('JSON serialization behavior', () => {
 		test('serialized JSON should not contain thoughtSignature when undefined', () => {
-			const toolCalls = [{
-				name: 'test_tool',
-				arguments: { test: 'value' },
-				thoughtSignature: undefined
-			}];
+			const toolCalls = [
+				{
+					name: 'test_tool',
+					arguments: { test: 'value' },
+					thoughtSignature: undefined,
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 			const serialized = JSON.stringify(parts);
@@ -275,11 +293,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('serialized JSON should contain thoughtSignature when present', () => {
-			const toolCalls = [{
-				name: 'test_tool',
-				arguments: { test: 'value' },
-				thoughtSignature: 'my_signature'
-			}];
+			const toolCalls = [
+				{
+					name: 'test_tool',
+					arguments: { test: 'value' },
+					thoughtSignature: 'my_signature',
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
 			const serialized = JSON.stringify(parts);
@@ -290,39 +310,47 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 		});
 
 		test('should match expected API format for Gemini 3', () => {
-			const toolCalls = [{
-				name: 'google_search',
-				arguments: { query: 'quantum physics' },
-				thoughtSignature: 'encrypted_thoughts_xyz'
-			}];
+			const toolCalls = [
+				{
+					name: 'google_search',
+					arguments: { query: 'quantum physics' },
+					thoughtSignature: 'encrypted_thoughts_xyz',
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
-			const expected = [{
-				functionCall: {
-					name: 'google_search',
-					args: { query: 'quantum physics' }
+			const expected = [
+				{
+					functionCall: {
+						name: 'google_search',
+						args: { query: 'quantum physics' },
+					},
+					thoughtSignature: 'encrypted_thoughts_xyz',
 				},
-				thoughtSignature: 'encrypted_thoughts_xyz'
-			}];
+			];
 
 			expect(parts).toEqual(expected);
 		});
 
 		test('should match expected API format for Gemini 2.5 (no signature)', () => {
-			const toolCalls = [{
-				name: 'google_search',
-				arguments: { query: 'quantum physics' },
-				thoughtSignature: undefined
-			}];
+			const toolCalls = [
+				{
+					name: 'google_search',
+					arguments: { query: 'quantum physics' },
+					thoughtSignature: undefined,
+				},
+			];
 
 			const parts = buildPartsFromToolCalls(toolCalls);
-			const expected = [{
-				functionCall: {
-					name: 'google_search',
-					args: { query: 'quantum physics' }
-				}
-				// no thoughtSignature property
-			}];
+			const expected = [
+				{
+					functionCall: {
+						name: 'google_search',
+						args: { query: 'quantum physics' },
+					},
+					// no thoughtSignature property
+				},
+			];
 
 			expect(parts).toEqual(expected);
 		});
@@ -337,18 +365,18 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 				{
 					name: 'read_file',
 					arguments: { path: 'research.md' },
-					thoughtSignature: 'turn1_sig'  // Only first has signature
+					thoughtSignature: 'turn1_sig', // Only first has signature
 				},
 				{
 					name: 'read_file',
 					arguments: { path: 'notes.md' },
-					thoughtSignature: undefined
+					thoughtSignature: undefined,
 				},
 				{
 					name: 'google_search',
 					arguments: { query: 'latest findings' },
-					thoughtSignature: undefined
-				}
+					thoughtSignature: undefined,
+				},
 			];
 
 			const turn1Parts = buildPartsFromToolCalls(turn1ToolCalls);
@@ -363,13 +391,13 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 				{
 					name: 'write_file',
 					arguments: { path: 'summary.md', content: 'findings' },
-					thoughtSignature: 'turn2_sig'
+					thoughtSignature: 'turn2_sig',
 				},
 				{
 					name: 'list_files',
 					arguments: { path: '/' },
-					thoughtSignature: undefined
-				}
+					thoughtSignature: undefined,
+				},
 			];
 
 			const turn2Parts = buildPartsFromToolCalls(turn2ToolCalls);

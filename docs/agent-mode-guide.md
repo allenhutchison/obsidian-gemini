@@ -5,6 +5,7 @@ Gemini Scribe v4.0 is **agent-first** - every conversation is powered by an AI a
 ## What is the Agent?
 
 In v4.0, the agent is always available and can:
+
 - Read and search files in your vault
 - Create, modify, and organize notes
 - Search the web for information
@@ -17,18 +18,22 @@ In v4.0, the agent is always available and can:
 ## Getting Started
 
 ### 1. Open Agent Chat
+
 - Use Command Palette: "Gemini Scribe: Open Gemini Chat"
 - Or click the sparkles icon (⭐) in the ribbon
 - Or use your configured hotkey
 
 ### 2. Initialize Vault Context (Recommended)
+
 1. In an empty agent session, click "Initialize Vault Context"
 2. The agent will analyze your vault structure and create AGENTS.md
 3. This helps the agent understand your vault organization
 4. Update periodically as your vault grows
 
 ### 3. Configure Permissions
+
 Choose which operations require confirmation in Settings → Gemini Scribe:
+
 - Create files
 - Modify files
 - Delete files
@@ -39,6 +44,7 @@ When the agent needs to perform these operations, an **in-chat confirmation requ
 ## Core Features
 
 ### Tool Calling
+
 The agent can execute various tools to help with your tasks:
 
 ```
@@ -55,7 +61,9 @@ Agent: I'll help you find and summarize your meeting notes. Let me:
 ```
 
 ### Image Support
+
 You can include images in your chat for the AI to analyze:
+
 - **Paste** images directly from your clipboard into the input box
 - **Drag and drop** image files into the input box
 - **Click** on any image in the chat to open it in a preview tab
@@ -63,12 +71,15 @@ You can include images in your chat for the AI to analyze:
 - The AI can see the image content and its path for referencing
 
 ### Context Files
+
 Add persistent context files to your session:
+
 1. Type @ in the chat input
 2. Select files from the suggestion list
 3. These files remain available throughout the session
 
 ### Session Management
+
 - Each conversation is a separate session
 - Sessions persist across Obsidian restarts
 - Access previous sessions from the dropdown
@@ -79,14 +90,18 @@ Add persistent context files to your session:
 ### Read-Only Tools
 
 #### search_files
+
 Search for files by name pattern (searches filenames/paths only):
+
 ```
 Find all files containing "project"
 Search for "*.md" files in the Projects folder
 ```
 
 #### search_file_contents
+
 Search for text within file contents (grep-style search):
+
 ```
 Find all notes mentioning "machine learning"
 Search for TODO items across my vault
@@ -95,20 +110,25 @@ Search using regex pattern: "deadline.*2024"
 ```
 
 Supports:
+
 - Case-sensitive and case-insensitive search
 - Regex patterns
 - Context lines before/after matches
 - Respects system folder exclusions
 
 #### read_file
+
 Read the contents of a specific file:
+
 ```
 Read the contents of my daily note
 Show me what's in Projects/Todo.md
 ```
 
 #### list_files
+
 List files in a folder:
+
 ```
 Show me all files in the Archive folder
 List the contents of my Templates directory
@@ -117,21 +137,27 @@ List the contents of my Templates directory
 ### Vault Operations
 
 #### write_file
+
 Create or update files:
+
 ```
 Create a new note called "Meeting Minutes"
 Update my todo list with these items
 ```
 
 #### delete_file
+
 Remove files (requires confirmation):
+
 ```
 Delete the old draft file
 Remove temporary notes from yesterday
 ```
 
 #### move_file
+
 Move or rename files:
+
 ```
 Move completed tasks to the Archive folder
 Rename "Untitled" to "Project Proposal"
@@ -140,14 +166,18 @@ Rename "Untitled" to "Project Proposal"
 ### Web Operations
 
 #### google_search
+
 Search the web for current information:
+
 ```
 Search for the latest Obsidian plugin development docs
 Find recent research on productivity methods
 ```
 
 #### fetch_url
+
 Retrieve and analyze web page content:
+
 ```
 Get the content from this documentation page
 Analyze this blog post and summarize key points
@@ -156,7 +186,9 @@ Analyze this blog post and summarize key points
 ## Session Configuration
 
 ### Session-Level Settings
+
 Override global settings for specific conversations:
+
 1. Click the settings icon next to session name
 2. Configure:
    - Model (e.g., use GPT-4 for complex tasks)
@@ -165,7 +197,9 @@ Override global settings for specific conversations:
    - Custom prompt template
 
 ### Permissions
+
 Set session-specific permissions:
+
 - Bypass confirmations for trusted operations
 - Temporarily enable additional tools
 - Restrict access for sensitive sessions
@@ -196,20 +230,24 @@ Parameters:
 ### Confirmation Actions
 
 **✓ Allow** - Approve this operation
+
 - The agent proceeds with the operation
 - Confirmation message updates to show approval
 - The agent continues with subsequent steps
 
 **✗ Cancel** - Decline this operation
+
 - The agent cancels the operation
 - Confirmation message updates to show cancellation
 - The agent may explain why it cannot continue or suggest alternatives
 
 **☑ Don't ask again this session** - Create session-level permission
+
 - Check this box before clicking Allow
 - The agent won't request confirmation for this tool again during the current session
 - Useful for repetitive operations you trust
 - **Important**: Permission resets when you create a new session or restart Obsidian
+
 ### After You Respond
 
 Once you click a button, the confirmation request updates to show the result:
@@ -237,6 +275,7 @@ You can configure which operations require confirmation in **Settings → Gemini
 ### Session-Level Permissions
 
 When you check "Don't ask again this session" and click Allow:
+
 1. The permission is remembered for the current session only
 2. Future uses of that tool won't prompt for confirmation
 3. Other tool types still require confirmation (unless you've also allowed them)
@@ -246,6 +285,7 @@ When you check "Don't ask again this session" and click Allow:
    - Restart Obsidian
 
 **Use case example:**
+
 ```text
 User: Organize my daily notes into monthly folders
 
@@ -264,7 +304,8 @@ Before clicking Allow, always review:
 2. **Parameters**: File paths, content snippets, and other details to verify
 3. **File Paths**: Ensure paths are correct and won't overwrite important files
 4. **Content Preview**: Check the content looks reasonable (for write operations)
-**Example - Be careful with destructive operations:**
+   **Example - Be careful with destructive operations:**
+
 ```text
 🔒 Permission Required
 
@@ -291,7 +332,9 @@ Parameters:
 ## Best Practices
 
 ### 1. Start with Read-Only
+
 Begin with read-only operations to understand how the agent works:
+
 ```
 Show me all my notes tagged with #important
 Find notes I haven't updated in 30 days
@@ -299,14 +342,18 @@ Search for broken links in my vault
 ```
 
 ### 2. Use Clear Instructions
+
 Be specific about what you want:
+
 ```
 Good: "Create a weekly summary of all notes tagged #meeting from the past 7 days"
 Less clear: "Summarize my meetings"
 ```
 
 ### 3. Review Before Confirming
+
 When in-chat confirmation requests appear:
+
 - Read the tool name and operation type
 - Review all parameters (especially file paths)
 - Check content previews for write operations
@@ -314,12 +361,15 @@ When in-chat confirmation requests appear:
 - See the [Tool Confirmations](#tool-confirmations) section for detailed guidance
 
 ### 4. Leverage Context Files
+
 Add relevant files as context for better results:
+
 - Template files for consistent formatting
 - Style guides for writing tasks
 - Reference documents for research
 
 ### 5. Use Sessions Effectively
+
 - Create new sessions for different projects
 - Name sessions descriptively
 - Review session history for insights
@@ -327,6 +377,7 @@ Add relevant files as context for better results:
 ## Advanced Usage
 
 ### Multi-Step Workflows
+
 The agent excels at complex, multi-step tasks:
 
 ```
@@ -345,6 +396,7 @@ Let me start by searching for research notes...
 ```
 
 ### Template-Based Operations
+
 Use templates for consistent results:
 
 ```
@@ -358,6 +410,7 @@ Agent: I'll create a new project structure for you.
 ```
 
 ### Research Assistant
+
 Combine vault and web operations:
 
 ```
@@ -373,23 +426,29 @@ Agent: I'll research productivity methods and create notes.
 ## Safety Features
 
 ### Protected Folders
+
 The following folders are automatically protected:
+
 - `.obsidian/` - Plugin configurations
 - `gemini-scribe/` - Plugin state files
 - Any folder containing plugin data
 
 ### Loop Detection
+
 Prevents infinite execution loops:
+
 - Detects repeated identical operations
 - Stops after threshold (default: 3)
 - Configurable time window
 
 ### Error Handling
+
 - Operations stop on errors (configurable)
 - Clear error messages explain failures
 - Non-destructive fallback behaviors
 
 ### Confirmation System
+
 - In-chat confirmation requests for vault operations (create, modify, delete, move)
 - Interactive buttons to Allow or Cancel each operation
 - Review tool details and parameters before approving
@@ -400,22 +459,26 @@ Prevents infinite execution loops:
 ## Troubleshooting
 
 ### Agent Not Responding
+
 1. Check agent mode is enabled
 2. Verify API key supports function calling
 3. Ensure selected model supports tools (e.g., Gemini 1.5 Pro)
 
 ### Tools Not Available
+
 1. Check tool category is enabled in settings
 2. Verify session has proper permissions
 3. Some tools may be incompatible with search grounding
 
 ### Operations Failing
+
 1. Check file paths are correct
 2. Ensure you have vault permissions
 3. Verify files aren't open in other applications
 4. Check for protected folder restrictions
 
 ### Performance Issues
+
 1. Reduce number of context files
 2. Use more specific search patterns
 3. Break complex tasks into steps
@@ -424,26 +487,31 @@ Prevents infinite execution loops:
 ## Examples and Recipes
 
 ### Daily Review
+
 ```
 Review all notes modified today, summarize key points, and update my daily journal
 ```
 
 ### Knowledge Management
+
 ```
 Find all notes without tags, analyze their content, and suggest appropriate tags
 ```
 
 ### Content Creation
+
 ```
 Create a blog post outline based on my notes about [topic], then draft the introduction
 ```
 
 ### Vault Maintenance
+
 ```
 Find duplicate notes, broken links, and orphaned files, then create a cleanup report
 ```
 
 ### Research Project
+
 ```
 Search for information about [topic], create structured notes, and link to relevant existing notes
 ```
@@ -462,6 +530,7 @@ Search for information about [topic], create structured notes, and link to relev
 ## Future Possibilities
 
 As agent mode evolves, consider these use cases:
+
 - Automated vault organization
 - Intelligent note linking
 - Research automation

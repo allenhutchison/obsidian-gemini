@@ -9,4 +9,4 @@
 
 ## Reporting a Vulnerability
 
-Report security vulnerabilities as issues in the repository. 
+Report security vulnerabilities as issues in the repository.

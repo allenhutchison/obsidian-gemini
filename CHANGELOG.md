@@ -42,18 +42,21 @@ This major release simplifies Gemini Scribe by consolidating around a single, po
 ### 💔 Breaking Changes
 
 #### 1. Single Chat Interface Only
+
 - **Removed**: Note-centric chat mode and separate GeminiView
 - **Impact**: All conversations now use Agent Mode with tool calling
 - **Action Required**: None - migration handles conversion automatically
 - **Benefit**: Simpler, more powerful interface for all users
 
 #### 2. Gemini-Only Support
+
 - **Removed**: API provider selection and Ollama support
 - **Impact**: Plugin now exclusively uses Google Gemini
 - **Action Required**: Ensure you have a valid Gemini API key
 - **Benefit**: Focused development on the best-supported platform
 
 #### 3. History File Location Change
+
 - **Old**: `[Plugin State Folder]/History/[Note Name] - Gemini History.md`
 - **New**: `[Plugin State Folder]/Agent-Sessions/[Session Title].md`
 - **Impact**: History files reorganized by session instead of by note
@@ -61,6 +64,7 @@ This major release simplifies Gemini Scribe by consolidating around a single, po
 - **Benefit**: More flexible session management
 
 #### 4. Agent Mode Always Enabled
+
 - **Removed**: "Enable Agent Mode" toggle in settings
 - **Impact**: Tool calling always available
 - **Action Required**: None - all features work the same
@@ -83,12 +87,14 @@ This major release simplifies Gemini Scribe by consolidating around a single, po
 ### 🔄 Migration Notes
 
 **First Launch After Upgrade:**
+
 1. Plugin checks for old history files
 2. Migration modal appears if files found
 3. Choose to migrate now or later
 4. All original files backed up safely
 
 **Migration Safety:**
+
 - Original files always preserved in `History-Archive/`
 - Migration can be re-run multiple times safely
 - Detailed error reporting if any files fail
@@ -110,6 +116,7 @@ See [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for detailed migration instruc
 ### 🎉 New Features
 
 #### Agent Mode
+
 - **AI Agent with Tool Calling**: New agent mode that can actively work with your vault
   - Read, write, and manage files with permission controls
   - Search files and folders with pattern matching
@@ -120,6 +127,7 @@ See [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for detailed migration instruc
   - Loop detection to prevent infinite tool execution
 
 #### Session Configuration
+
 - **Session-level Settings**: Override global settings per session
   - Custom model selection per conversation
   - Temperature and Top-P controls
@@ -127,6 +135,7 @@ See [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for detailed migration instruc
   - Settings persist with session history
 
 #### Custom Prompts
+
 - **Enhanced Prompt System**: Create reusable prompt templates
   - Handlebars template support
   - Access to note content, selection, and metadata
@@ -152,6 +161,7 @@ See [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for detailed migration instruc
 ### 💔 Breaking Changes
 
 #### 1. Folder Structure Reorganization
+
 - **Old**: All files in `gemini-scribe/` folder
 - **New**: Files organized into subfolders:
   - `gemini-scribe/History/` - Chat history files
@@ -160,24 +170,29 @@ See [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for detailed migration instruc
 - **Migration**: Automatic on first launch, but verify your files are properly moved
 
 #### 2. History Filename Format
+
 - History filenames have been flattened for better compatibility
 - Legacy files are automatically migrated
 - External integrations may need to update file path references
 
 #### 3. Full-File Rewrite Removal
+
 - **Removed**: Complete file rewriting feature and UI
 - **Replacement**: Use the new selection-based rewriting (right-click on selected text)
 - **Impact**: Update your workflows to use selection-based approach
 
 #### 4. Database Export Removal
+
 - **Removed**: All database export/import functionality
 - **Impact**: Rely on markdown history files for persistence
 
 #### 5. Custom Prompts Default
+
 - **Changed**: Custom prompts now disabled by default
 - **Action Required**: Enable in settings if you use custom prompts
 
 #### 6. New Required Settings
+
 - Several new settings with defaults that may affect behavior:
   - `temperature` (0.7) - Response creativity
   - `topP` (1.0) - Response diversity

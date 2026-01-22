@@ -6,11 +6,11 @@ import { ToolCategory } from '../../src/types/agent';
 const mockAgentsMemory = {
 	read: jest.fn(),
 	append: jest.fn(),
-	getMemoryFilePath: jest.fn()
+	getMemoryFilePath: jest.fn(),
 };
 
 const mockPlugin = {
-	agentsMemory: mockAgentsMemory
+	agentsMemory: mockAgentsMemory,
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -22,9 +22,9 @@ const mockContext: ToolExecutionContext = {
 			contextFiles: [],
 			contextDepth: 2,
 			enabledTools: [],
-			requireConfirmation: []
-		}
-	}
+			requireConfirmation: [],
+		},
+	},
 } as any;
 
 describe('Memory Tools', () => {
@@ -69,7 +69,7 @@ describe('Memory Tools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				path: 'test-folder/AGENTS.md',
-				message: 'Memory updated successfully'
+				message: 'Memory updated successfully',
 			});
 			expect(mockAgentsMemory.append).toHaveBeenCalledWith('New memory content');
 		});
@@ -116,7 +116,7 @@ describe('Memory Tools', () => {
 		it('should return error if agents memory service is not available', async () => {
 			const contextWithoutMemory = {
 				plugin: { agentsMemory: null } as any,
-				session: mockContext.session
+				session: mockContext.session,
 			};
 
 			const result = await tool.execute({ content: 'Test' }, contextWithoutMemory);
@@ -173,7 +173,7 @@ describe('Memory Tools', () => {
 			expect(result.data).toEqual({
 				path: 'test-folder/AGENTS.md',
 				content: '# AGENTS.md\n\nVault memory content',
-				exists: true
+				exists: true,
 			});
 			expect(mockAgentsMemory.read).toHaveBeenCalled();
 		});
@@ -188,7 +188,7 @@ describe('Memory Tools', () => {
 			expect(result.data).toEqual({
 				content: '',
 				exists: false,
-				message: 'AGENTS.md does not exist yet. Use update_memory to create it.'
+				message: 'AGENTS.md does not exist yet. Use update_memory to create it.',
 			});
 		});
 
@@ -206,7 +206,7 @@ describe('Memory Tools', () => {
 		it('should return error if agents memory service is not available', async () => {
 			const contextWithoutMemory = {
 				plugin: { agentsMemory: null } as any,
-				session: mockContext.session
+				session: mockContext.session,
 			};
 
 			const result = await tool.execute({}, contextWithoutMemory);
@@ -266,7 +266,7 @@ describe('Memory Tools', () => {
 		it('should return tools with correct names', () => {
 			const tools = getMemoryTools();
 
-			const toolNames = tools.map(t => t.name);
+			const toolNames = tools.map((t) => t.name);
 			expect(toolNames).toContain('update_memory');
 			expect(toolNames).toContain('read_memory');
 		});

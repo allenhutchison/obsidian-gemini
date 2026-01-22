@@ -41,7 +41,10 @@ export async function selectModelSetting(
 		}
 	}
 
-	plugin.logger.debug(`selectModelSetting for ${label} (role=${role}): Found ${availableModels.length} models`, availableModels.map(m => m.value));
+	plugin.logger.debug(
+		`selectModelSetting for ${label} (role=${role}): Found ${availableModels.length} models`,
+		availableModels.map((m) => m.value)
+	);
 
 	const dropdown = new Setting(containerEl)
 		.setName(label)
@@ -56,12 +59,14 @@ export async function selectModelSetting(
 			const currentValue = String((plugin.settings as ObsidianGeminiSettings)[settingName]);
 
 			// Check if current value exists in available models
-			const valueExists = availableModels.some(m => m.value === currentValue);
+			const valueExists = availableModels.some((m) => m.value === currentValue);
 
 			// If value doesn't exist in options, use first available model
 			if (!valueExists && availableModels.length > 0) {
 				const defaultValue = availableModels[0].value;
-				plugin.logger.warn(`${label}: Current value "${currentValue}" not found in available models. Defaulting to "${defaultValue}"`);
+				plugin.logger.warn(
+					`${label}: Current value "${currentValue}" not found in available models. Defaulting to "${defaultValue}"`
+				);
 				(plugin.settings as ObsidianGeminiSettings)[settingName] = defaultValue;
 				dropdown.setValue(defaultValue);
 				// Save the corrected setting

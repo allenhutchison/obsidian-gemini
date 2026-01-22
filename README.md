@@ -19,10 +19,12 @@ This release brings major improvements to the semantic vault search feature:
 - **💾 Incremental saves** - Cache saves during indexing for durability
 
 **Previous Updates (v4.2.0):**
+
 - **🔬 Semantic Vault Search:** [Experimental] Search your vault by meaning using Google's File Search API
 - **💬 Clearer API Errors:** Better explanations for quota, auth, and rate limit issues
 
 **Previous Updates (v4.0.0):**
+
 - **🤖 Unified Agent Mode:** Single powerful chat with tool calling
 - **📦 History Archival:** Old chat preserved as readable markdown
 
@@ -58,7 +60,6 @@ This release brings major improvements to the semantic vault search feature:
 ## Installation
 
 1.  **Community Plugins (Recommended):**
-
     - Open Obsidian Settings.
     - Navigate to "Community plugins".
     - Ensure "Restricted mode" is OFF.
@@ -74,7 +75,6 @@ This release brings major improvements to the semantic vault search feature:
 ## Configuration
 
 1.  **Obtain a Gemini API Key:**
-
     - Visit the [Google AI Studio](https://aistudio.google.com/apikey).
     - Create a new API key.
 
@@ -110,11 +110,13 @@ This release brings major improvements to the semantic vault search feature:
 Let the AI actively work with your vault through tool calling capabilities.
 
 **Quick Start:**
+
 1. Open Agent Chat with the command palette or ribbon icon
 2. Ask the agent to help with vault operations
 3. Review and approve actions (if confirmation is enabled)
 
 **Available Tools:**
+
 - **Search Files by Name:** Find notes by filename patterns (wildcards supported)
 - **Search File Contents:** Grep-style text search within note contents (supports regex and case-sensitive search)
 - **Read Files:** Access and analyze note contents
@@ -129,6 +131,7 @@ Let the AI actively work with your vault through tool calling capabilities.
 - **Deep Research:** Conduct comprehensive multi-source research with citations
 
 **Key Features:**
+
 - **Persistent Sessions:** Continue conversations across Obsidian restarts
 - **Permission Controls:** Choose which tools require confirmation
 - **Context Files:** Add specific notes as persistent context
@@ -136,6 +139,7 @@ Let the AI actively work with your vault through tool calling capabilities.
 - **Safety Features:** System folders are protected from modifications
 
 **Example Commands:**
+
 - "Find all notes about project planning"
 - "Create a new note summarizing my meeting notes from this week"
 - "Research the latest developments in quantum computing and save a report"
@@ -148,6 +152,7 @@ Let the AI actively work with your vault through tool calling capabilities.
 Create reusable AI instruction templates to customize behavior for different types of content.
 
 **Quick Start:**
+
 1. Create a prompt file in `[Plugin State Folder]/Prompts/`
 2. Add to your note's frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
 3. The AI will use your custom instructions for that note
@@ -159,6 +164,7 @@ Create reusable AI instruction templates to customize behavior for different typ
 For detailed guides on all features, visit the [Documentation Hub](docs/README.md):
 
 **Core Features:**
+
 - [Chat Interface Guide](docs/chat-interface-guide.md)
 - [Agent Mode Guide](docs/agent-mode-guide.md) - AI agent with tool-calling capabilities
 - [Custom Prompts Guide](docs/custom-prompts-guide.md)
@@ -169,17 +175,18 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
 - [Context System Guide](docs/context-system-guide.md)
 
 **Configuration & Development:**
+
 - [Settings Reference](docs/settings-reference.md) - Complete settings documentation
 - [Advanced Settings Guide](docs/advanced-settings-guide.md)
 - [Tool Development Guide](docs/tool-development-guide.md) - Create custom agent tools
 
 **Migration & Updates:**
+
 - [Changelog](CHANGELOG.md) - Recent changes and migration notes
 
 ### Chat Interface
 
 1.  **Open Chat:**
-
     - Use command palette "Gemini Scribe: Open Gemini Chat" or click the ribbon icon
     - All chats now have full agent capabilities with tool calling
 
@@ -208,21 +215,23 @@ For detailed guides on all features, visit the [Documentation Hub](docs/README.m
 Precisely rewrite any portion of your text with AI assistance. This feature provides surgical precision for improving specific sections without affecting the rest of your document.
 
 1.  **Select Text:** Highlight the text you want to rewrite in any Markdown file.
-2.  **Access Rewrite Options:** 
+2.  **Access Rewrite Options:**
     - **Right-click method:** Right-click the selected text and choose "Rewrite with Gemini"
     - **Command method:** Use the command palette (Ctrl/Cmd + P) and search for "Rewrite selected text with AI"
 3.  **Provide Instructions:** A modal will appear showing your selected text. Enter instructions for how you'd like it rewritten (e.g., "Make this more concise", "Fix grammar", "Make it more formal").
 4.  **Review and Apply:** The AI will rewrite only your selected text based on your instructions, maintaining consistency with the surrounding content.
 
 **Examples of rewrite instructions:**
+
 - "Make this more concise"
-- "Fix grammar and spelling" 
+- "Fix grammar and spelling"
 - "Make it more formal/casual"
 - "Expand with more detail"
 - "Simplify the language"
 - "Make it more technical"
 
 **Benefits:**
+
 - **Precise control:** Only rewrites what you select
 - **Context-aware:** Maintains consistency with surrounding text and linked documents
 - **Safe:** No risk of accidentally modifying your entire document
@@ -275,7 +284,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
 - **API Key Errors:** Ensure your API key is correct and has the necessary permissions. Get a new key at [Google AI Studio](https://aistudio.google.com/apikey).
 - **No Responses:** Check your internet connection and make sure your API key is valid.
 - **Slow Responses:** The speed of responses depends on the Gemini model and the complexity of your request. Larger context windows will take longer.
-- **Completions Not Showing:** 
+- **Completions Not Showing:**
   - Ensure completions are enabled via the command palette
   - Try typing a few words and pausing to trigger the suggestion
   - Check that you're in a Markdown file

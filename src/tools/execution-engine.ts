@@ -38,7 +38,7 @@ export class ToolExecutionEngine {
 		if (!tool) {
 			return {
 				success: false,
-				error: `Tool ${toolCall.name} not found`
+				error: `Tool ${toolCall.name} not found`,
 			};
 		}
 
@@ -47,7 +47,7 @@ export class ToolExecutionEngine {
 		if (!validation.valid) {
 			return {
 				success: false,
-				error: `Invalid parameters: ${validation.errors?.join(', ')}`
+				error: `Invalid parameters: ${validation.errors?.join(', ')}`,
 			};
 		}
 
@@ -64,7 +64,7 @@ export class ToolExecutionEngine {
 				this.plugin.logger.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);
 				return {
 					success: false,
-					error: `Execution loop detected: ${toolCall.name} has been called ${loopInfo.identicalCallCount} times with the same parameters in the last ${loopInfo.timeWindowMs / 1000} seconds. Please try a different approach.`
+					error: `Execution loop detected: ${toolCall.name} has been called ${loopInfo.identicalCallCount} times with the same parameters in the last ${loopInfo.timeWindowMs / 1000} seconds. Please try a different approach.`,
 				};
 			}
 		}
@@ -74,7 +74,7 @@ export class ToolExecutionEngine {
 		if (!enabledTools.includes(tool)) {
 			return {
 				success: false,
-				error: `Tool ${tool.name} is not enabled for this session`
+				error: `Tool ${tool.name} is not enabled for this session`,
 			};
 		}
 
@@ -99,7 +99,7 @@ export class ToolExecutionEngine {
 				if (!result.confirmed) {
 					return {
 						success: false,
-						error: 'User declined tool execution'
+						error: 'User declined tool execution',
 					};
 				}
 				// If user allowed this action without future confirmation
@@ -116,7 +116,7 @@ export class ToolExecutionEngine {
 		try {
 			// Record the execution attempt
 			this.loopDetector.recordExecution(context.session.id, toolCall);
-			
+
 			// Execute the tool
 			const result = await tool.execute(toolCall.arguments, context);
 
@@ -126,30 +126,28 @@ export class ToolExecutionEngine {
 				parameters: toolCall.arguments,
 				result: result,
 				timestamp: new Date(),
-				confirmed: requiresConfirmation
+				confirmed: requiresConfirmation,
 			};
 
 			this.addToHistory(context.session.id, execution);
 
 			// Update UI with result
 			executionNotice.hide();
-			
+
 			// Tool execution results are now shown in the chat UI
 			// No need for separate notices
-			
-			return result;
 
+			return result;
 		} catch (error) {
 			executionNotice.hide();
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 			// Error is shown in chat UI, no need for notice
-			
+
 			const errorResult = {
 				success: false,
-				error: errorMessage
+				error: errorMessage,
 			};
-			
-			
+
 			return errorResult;
 		}
 	}
@@ -158,22 +156,22 @@ export class ToolExecutionEngine {
 	 * Execute multiple tool calls in sequence
 	 */
 	async executeToolCalls(
-		toolCalls: ToolCall[], 
+		toolCalls: ToolCall[],
 		context: ToolExecutionContext,
 		agentView?: IConfirmationProvider
 	): Promise<ToolResult[]> {
 		const results: ToolResult[] = [];
-		
+
 		for (const toolCall of toolCalls) {
 			const result = await this.executeTool(toolCall, context, agentView);
 			results.push(result);
-			
+
 			// Stop execution chain if a tool fails (unless configured otherwise)
 			if (!result.success && this.plugin.settings.stopOnToolError !== false) {
 				break;
 			}
 		}
-		
+
 		return results;
 	}
 
@@ -231,18 +229,18 @@ export class ToolExecutionEngine {
 	formatToolResult(execution: ToolExecution): string {
 		const icon = execution.result.success ? '✓' : '✗';
 		const status = execution.result.success ? 'Success' : 'Failed';
-		
+
 		let formatted = `### Tool Execution: ${execution.toolName}\n\n`;
 		formatted += `**Status:** ${icon} ${status}\n\n`;
-		
+
 		if (execution.result.data) {
 			formatted += `**Result:**\n\`\`\`json\n${JSON.stringify(execution.result.data, null, 2)}\n\`\`\`\n`;
 		}
-		
+
 		if (execution.result.error) {
 			formatted += `**Error:** ${execution.result.error}\n`;
 		}
-		
+
 		return formatted;
 	}
 
@@ -251,17 +249,17 @@ export class ToolExecutionEngine {
 	 */
 	getAvailableToolsDescription(context: ToolExecutionContext): string {
 		const tools = this.registry.getEnabledTools(context);
-		
+
 		if (tools.length === 0) {
 			return 'No tools are currently available.';
 		}
-		
+
 		let description = '## Available Tools\n\n';
-		
+
 		for (const tool of tools) {
 			description += `### ${tool.name}\n`;
 			description += `${tool.description}\n\n`;
-			
+
 			if (tool.parameters.properties && Object.keys(tool.parameters.properties).length > 0) {
 				description += '**Parameters:**\n';
 				for (const [param, schema] of Object.entries(tool.parameters.properties)) {
@@ -271,7 +269,7 @@ export class ToolExecutionEngine {
 				description += '\n';
 			}
 		}
-		
+
 		return description;
 	}
 }

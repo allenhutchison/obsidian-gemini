@@ -5,20 +5,24 @@ const GoogleGenerativeAI = jest.fn().mockImplementation(() => ({
 		generateContent: jest.fn().mockResolvedValue({
 			response: {
 				text: () => 'Mock response text',
-				candidates: [{
-					groundingMetadata: {
-						webSearchQueries: ['test query'],
-						groundingAttributions: [{
-							uri: 'https://example.com',
-							content: 'Mock content'
-						}]
-					}
-				}]
-			}
-		})
-	})
+				candidates: [
+					{
+						groundingMetadata: {
+							webSearchQueries: ['test query'],
+							groundingAttributions: [
+								{
+									uri: 'https://example.com',
+									content: 'Mock content',
+								},
+							],
+						},
+					},
+				],
+			},
+		}),
+	}),
 }));
 
 module.exports = {
-	GoogleGenerativeAI
+	GoogleGenerativeAI,
 };

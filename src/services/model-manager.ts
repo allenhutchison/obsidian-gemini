@@ -69,7 +69,10 @@ export class ModelManager {
 
 		// If dynamic discovery is disabled, return filtered static models
 		if (!this.plugin.settings.modelDiscovery?.enabled) {
-			this.plugin.logger.debug(`getImageGenerationModels (discovery disabled): returning ${staticImageModels.length} static models`, staticImageModels.map(m => m.value));
+			this.plugin.logger.debug(
+				`getImageGenerationModels (discovery disabled): returning ${staticImageModels.length} static models`,
+				staticImageModels.map((m) => m.value)
+			);
 			return staticImageModels;
 		}
 
@@ -88,11 +91,17 @@ export class ModelManager {
 				// Sort models by preference (stable first, then by family)
 				dynamicModels = ModelMapper.sortModelsByPreference(dynamicModels);
 
-				this.plugin.logger.debug(`getImageGenerationModels: About to filter ${dynamicModels.length} models for image generation`, dynamicModels.map(m => ({ value: m.value, supportsImageGeneration: m.supportsImageGeneration })));
+				this.plugin.logger.debug(
+					`getImageGenerationModels: About to filter ${dynamicModels.length} models for image generation`,
+					dynamicModels.map((m) => ({ value: m.value, supportsImageGeneration: m.supportsImageGeneration }))
+				);
 
 				// Filter for image generation models only
 				const filtered = this.filterModelsForVersion(dynamicModels, true);
-				this.plugin.logger.debug(`getImageGenerationModels (discovery enabled): filtered ${filtered.length} from ${dynamicModels.length} models`, filtered.map(m => m.value));
+				this.plugin.logger.debug(
+					`getImageGenerationModels (discovery enabled): filtered ${filtered.length} from ${dynamicModels.length} models`,
+					filtered.map((m) => m.value)
+				);
 
 				// If filtering removed everything, fall back to static models
 				if (filtered.length === 0) {
@@ -107,7 +116,9 @@ export class ModelManager {
 		}
 
 		// Fallback to filtered static models (image only)
-		this.plugin.logger.debug(`getImageGenerationModels (fallback): returning ${staticImageModels.length} static models`);
+		this.plugin.logger.debug(
+			`getImageGenerationModels (fallback): returning ${staticImageModels.length} static models`
+		);
 		return staticImageModels;
 	}
 
@@ -213,15 +224,17 @@ export class ModelManager {
 			// Pattern: gemini-1.5-pro-preview-04-09 -> stable: gemini-1.5-pro
 			// Pattern: gemini-2.5-flash-preview-09-2025 -> stable: gemini-2.5-flash
 			// Pattern: gemini-2.5-flash-image-preview -> stable: gemini-2.5-flash-image
-			const baseNameMatch = previewModelValue.match(/^(gemini-[\d.]+(?:-pro|-flash|-flash-lite)(?:-image)?)(?:-preview|-exp)/);
+			const baseNameMatch = previewModelValue.match(
+				/^(gemini-[\d.]+(?:-pro|-flash|-flash-lite)(?:-image)?)(?:-preview|-exp)/
+			);
 			if (!baseNameMatch) return false;
 
 			const baseName = baseNameMatch[1];
 			// Check if the base name exists in the list (exact match)
-			return allModels.some(m => m.value === baseName);
+			return allModels.some((m) => m.value === baseName);
 		};
 
-		return models.filter(model => {
+		return models.filter((model) => {
 			const modelValue = model.value.toLowerCase();
 
 			if (modelValue.includes('nano') || modelValue.includes('banana')) {
@@ -315,7 +328,9 @@ export class ModelManager {
 			}
 
 			// Log why this model was filtered out
-			this.plugin.logger.debug(`Model filtered out (failed version check): ${model.value} (imageModelsOnly=${imageModelsOnly})`);
+			this.plugin.logger.debug(
+				`Model filtered out (failed version check): ${model.value} (imageModelsOnly=${imageModelsOnly})`
+			);
 			return false;
 		});
 	}
@@ -422,7 +437,11 @@ export class ModelManager {
 	/**
 	 * Validate parameter values against model capabilities
 	 */
-	async validateParameters(temperature: number, topP: number, modelName?: string): Promise<{
+	async validateParameters(
+		temperature: number,
+		topP: number,
+		modelName?: string
+	): Promise<{
 		temperature: { isValid: boolean; adjustedValue?: number; warning?: string };
 		topP: { isValid: boolean; adjustedValue?: number; warning?: string };
 	}> {

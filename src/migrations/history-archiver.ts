@@ -50,9 +50,7 @@ export class HistoryArchiver {
 
 		// Check for markdown files in History folder
 		const files = this.plugin.app.vault.getMarkdownFiles();
-		const historyFiles = files.filter(file =>
-			normalizePath(file.path).startsWith(this.historyFolder + '/')
-		);
+		const historyFiles = files.filter((file) => normalizePath(file.path).startsWith(this.historyFolder + '/'));
 
 		return historyFiles.length > 0;
 	}
@@ -66,7 +64,7 @@ export class HistoryArchiver {
 			filesArchived: 0,
 			archivePath: this.archiveFolder,
 			alreadyArchived: false,
-			errors: []
+			errors: [],
 		};
 
 		try {
@@ -89,9 +87,7 @@ export class HistoryArchiver {
 
 			// Count files before archiving
 			const files = this.plugin.app.vault.getMarkdownFiles();
-			const historyFiles = files.filter(file =>
-				normalizePath(file.path).startsWith(this.historyFolder + '/')
-			);
+			const historyFiles = files.filter((file) => normalizePath(file.path).startsWith(this.historyFolder + '/'));
 			report.filesArchived = historyFiles.length;
 
 			if (historyFiles.length === 0) {
@@ -101,10 +97,7 @@ export class HistoryArchiver {
 			}
 
 			// Rename History folder to History-Archive
-			await this.plugin.app.fileManager.renameFile(
-				historyFolderObj as TFolder,
-				this.archiveFolder
-			);
+			await this.plugin.app.fileManager.renameFile(historyFolderObj as TFolder, this.archiveFolder);
 
 			// Create a README in the archive explaining what happened
 			await this.createArchiveReadme(historyFiles.length);

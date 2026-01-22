@@ -103,10 +103,11 @@ export class ModelDiscoveryService {
 		);
 
 		const detailedModels = detailedResults
-			.filter((result): result is PromiseFulfilledResult<GoogleModel> => 
-				result.status === 'fulfilled' && result.value !== null
+			.filter(
+				(result): result is PromiseFulfilledResult<GoogleModel> =>
+					result.status === 'fulfilled' && result.value !== null
 			)
-			.map(result => result.value);
+			.map((result) => result.value);
 
 		const failedCount = detailedResults.length - detailedModels.length;
 		if (failedCount > 0) {
@@ -131,7 +132,7 @@ export class ModelDiscoveryService {
 			}
 
 			const detailedData = await response.json();
-			
+
 			// Merge the detailed information with the basic model data
 			return {
 				...model,

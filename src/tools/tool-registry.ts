@@ -48,7 +48,7 @@ export class ToolRegistry {
 	 * Get tools by category
 	 */
 	getToolsByCategory(category: string): Tool[] {
-		return this.getAllTools().filter(tool => tool.category === category);
+		return this.getAllTools().filter((tool) => tool.category === category);
 	}
 
 	/**
@@ -56,9 +56,7 @@ export class ToolRegistry {
 	 */
 	getEnabledTools(context: ToolExecutionContext): Tool[] {
 		const enabledCategories = context.session.context.enabledTools;
-		return this.getAllTools().filter(tool => 
-			enabledCategories.includes(tool.category as ToolCategory)
-		);
+		return this.getAllTools().filter((tool) => enabledCategories.includes(tool.category as ToolCategory));
 	}
 
 	/**
@@ -73,11 +71,11 @@ export class ToolRegistry {
 
 		// Check session-level confirmation requirements
 		const confirmActions = context.session.context.requireConfirmation;
-		
+
 		// Map tool categories to destructive actions
 		const categoryActionMap: Record<string, DestructiveAction> = {
 			[ToolCategory.VAULT_OPERATIONS]: DestructiveAction.MODIFY_FILES,
-			[ToolCategory.EXTERNAL_MCP]: DestructiveAction.EXTERNAL_API_CALLS
+			[ToolCategory.EXTERNAL_MCP]: DestructiveAction.EXTERNAL_API_CALLS,
 		};
 
 		const action = categoryActionMap[tool.category];
@@ -96,14 +94,14 @@ export class ToolRegistry {
 		};
 	}> {
 		const enabledTools = this.getEnabledTools(context);
-		
-		return enabledTools.map(tool => ({
+
+		return enabledTools.map((tool) => ({
 			type: 'function' as const,
 			function: {
 				name: tool.name,
 				description: tool.description,
-				parameters: tool.parameters
-			}
+				parameters: tool.parameters,
+			},
 		}));
 	}
 
@@ -150,7 +148,7 @@ export class ToolRegistry {
 
 		return {
 			valid: errors.length === 0,
-			errors: errors.length > 0 ? errors : undefined
+			errors: errors.length > 0 ? errors : undefined,
 		};
 	}
 }

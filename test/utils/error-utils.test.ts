@@ -54,9 +54,7 @@ describe('error-utils', () => {
 
 			test('504 Gateway Timeout', () => {
 				const error = { status: 504, message: 'Gateway timeout' };
-				expect(getErrorMessage(error)).toBe(
-					'Gateway timeout: The API request took too long. Please try again.'
-				);
+				expect(getErrorMessage(error)).toBe('Gateway timeout: The API request took too long. Please try again.');
 			});
 
 			test('Generic 5xx error', () => {
@@ -93,16 +91,12 @@ describe('error-utils', () => {
 		describe('Error message pattern matching', () => {
 			test('API key error', () => {
 				const error = new Error('Invalid API key provided');
-				expect(getErrorMessage(error)).toBe(
-					'Invalid API key. Please check your Google Gemini API key in settings.'
-				);
+				expect(getErrorMessage(error)).toBe('Invalid API key. Please check your Google Gemini API key in settings.');
 			});
 
 			test('API_KEY error code', () => {
 				const error = new Error('INVALID_API_KEY: The key is not valid');
-				expect(getErrorMessage(error)).toBe(
-					'Invalid API key. Please check your Google Gemini API key in settings.'
-				);
+				expect(getErrorMessage(error)).toBe('Invalid API key. Please check your Google Gemini API key in settings.');
 			});
 
 			test('Permission denied error', () => {
@@ -121,30 +115,22 @@ describe('error-utils', () => {
 
 			test('Rate limit error', () => {
 				const error = new Error('Rate limit exceeded');
-				expect(getErrorMessage(error)).toBe(
-					'API rate limit exceeded. Please wait a moment and try again.'
-				);
+				expect(getErrorMessage(error)).toBe('API rate limit exceeded. Please wait a moment and try again.');
 			});
 
 			test('Quota exceeded error', () => {
 				const error = new Error('Quota exceeded for this project');
-				expect(getErrorMessage(error)).toBe(
-					'API rate limit exceeded. Please wait a moment and try again.'
-				);
+				expect(getErrorMessage(error)).toBe('API rate limit exceeded. Please wait a moment and try again.');
 			});
 
 			test('RESOURCE_EXHAUSTED error', () => {
 				const error = new Error('RESOURCE_EXHAUSTED: Too many requests');
-				expect(getErrorMessage(error)).toBe(
-					'API rate limit exceeded. Please wait a moment and try again.'
-				);
+				expect(getErrorMessage(error)).toBe('API rate limit exceeded. Please wait a moment and try again.');
 			});
 
 			test('Model not found error', () => {
 				const error = new Error('Model gemini-xyz does not exist');
-				expect(getErrorMessage(error)).toBe(
-					'The selected model is not available. Please check your model settings.'
-				);
+				expect(getErrorMessage(error)).toBe('The selected model is not available. Please check your model settings.');
 			});
 
 			test('Network fetch error', () => {
@@ -170,30 +156,22 @@ describe('error-utils', () => {
 
 			test('Timeout error', () => {
 				const error = new Error('Request timeout after 30s');
-				expect(getErrorMessage(error)).toBe(
-					'Request timed out. The API took too long to respond. Please try again.'
-				);
+				expect(getErrorMessage(error)).toBe('Request timed out. The API took too long to respond. Please try again.');
 			});
 
 			test('Service unavailable error', () => {
 				const error = new Error('Service temporarily unavailable');
-				expect(getErrorMessage(error)).toBe(
-					'Google Gemini API is temporarily unavailable. Please try again later.'
-				);
+				expect(getErrorMessage(error)).toBe('Google Gemini API is temporarily unavailable. Please try again later.');
 			});
 
 			test('Safety filter error', () => {
 				const error = new Error('Content blocked by safety filters');
-				expect(getErrorMessage(error)).toBe(
-					'Content was blocked by safety filters. Please rephrase your request.'
-				);
+				expect(getErrorMessage(error)).toBe('Content was blocked by safety filters. Please rephrase your request.');
 			});
 
 			test('SAFETY error code', () => {
 				const error = new Error('SAFETY: Harmful content detected');
-				expect(getErrorMessage(error)).toBe(
-					'Content was blocked by safety filters. Please rephrase your request.'
-				);
+				expect(getErrorMessage(error)).toBe('Content was blocked by safety filters. Please rephrase your request.');
 			});
 
 			test('Token limit error', () => {
@@ -238,16 +216,12 @@ describe('error-utils', () => {
 
 			test('Empty string error', () => {
 				const error = new Error('');
-				expect(getErrorMessage(error)).toBe(
-					'An error occurred while communicating with the Gemini API'
-				);
+				expect(getErrorMessage(error)).toBe('An error occurred while communicating with the Gemini API');
 			});
 
 			test('Error without message property', () => {
 				const error = {} as Error;
-				expect(getErrorMessage(error)).toBe(
-					'An unknown error occurred while communicating with the Gemini API'
-				);
+				expect(getErrorMessage(error)).toBe('An unknown error occurred while communicating with the Gemini API');
 			});
 
 			test('Object with nested error message', () => {
@@ -262,9 +236,7 @@ describe('error-utils', () => {
 
 			test('Empty object', () => {
 				const error = {};
-				expect(getErrorMessage(error)).toBe(
-					'An unknown error occurred while communicating with the Gemini API'
-				);
+				expect(getErrorMessage(error)).toBe('An unknown error occurred while communicating with the Gemini API');
 			});
 
 			test('Complex object with toString', () => {
@@ -310,15 +282,14 @@ describe('error-utils', () => {
 		test('Extract first clause (before colon)', () => {
 			const error = new Error('Network error: connection failed');
 			const short = getShortErrorMessage(error);
-			expect(short).toBe(
-				'Network error'
-			);
+			expect(short).toBe('Network error');
 		});
 
 		test('Truncate very long messages', () => {
 			// Create an error message that doesn't match any patterns
 			// so it returns "API error: <message>" where message is long
-			const longMessage = 'This is a very long error message that does not match any patterns and should be truncated when extracting the short version of the error message for display purposes';
+			const longMessage =
+				'This is a very long error message that does not match any patterns and should be truncated when extracting the short version of the error message for display purposes';
 			const error = new Error(longMessage);
 			const short = getShortErrorMessage(error);
 			// The short message will be "API error" after splitting on ':'

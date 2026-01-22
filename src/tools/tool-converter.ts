@@ -12,7 +12,7 @@ export class ToolConverter {
 		return {
 			name: tool.name,
 			description: tool.description,
-			parameters: tool.parameters
+			parameters: tool.parameters,
 		};
 	}
 
@@ -20,7 +20,7 @@ export class ToolConverter {
 	 * Convert multiple Tools to ToolDefinitions
 	 */
 	static toToolDefinitions(tools: Tool[]): ToolDefinition[] {
-		return tools.map(tool => this.toToolDefinition(tool));
+		return tools.map((tool) => this.toToolDefinition(tool));
 	}
 
 	/**
@@ -33,16 +33,18 @@ export class ToolConverter {
 		}
 
 		// Gemini expects tools wrapped in a function_declarations array
-		return [{
-			function_declarations: tools.map(tool => ({
-				name: tool.name,
-				description: tool.description,
-				parameters: {
-					type: 'object',
-					properties: tool.parameters.properties || {},
-					required: tool.parameters.required || []
-				}
-			}))
-		}];
+		return [
+			{
+				function_declarations: tools.map((tool) => ({
+					name: tool.name,
+					description: tool.description,
+					parameters: {
+						type: 'object',
+						properties: tool.parameters.properties || {},
+						required: tool.parameters.required || [],
+					},
+				})),
+			},
+		];
 	}
 }
