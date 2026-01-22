@@ -24,13 +24,16 @@ export interface ToolExecutionContext {
  */
 export interface ToolParameterSchema {
 	type: 'object';
-	properties: Record<string, {
-		type: 'string' | 'number' | 'boolean' | 'array';
-		description: string;
-		required?: boolean;
-		enum?: any[];
-		items?: { type: string };
-	}>;
+	properties: Record<
+		string,
+		{
+			type: 'string' | 'number' | 'boolean' | 'array';
+			description: string;
+			required?: boolean;
+			enum?: any[];
+			items?: { type: string };
+		}
+	>;
 	required?: string[];
 }
 
@@ -40,19 +43,19 @@ export interface ToolParameterSchema {
 export interface Tool {
 	/** Unique identifier for the tool */
 	name: string;
-	
+
 	/** Human-friendly display name */
 	displayName?: string;
-	
+
 	/** Category this tool belongs to */
 	category: string;
-	
+
 	/** Human-readable description */
 	description: string;
-	
+
 	/** Schema defining the tool's parameters */
 	parameters: ToolParameterSchema;
-	
+
 	/** Execute the tool with given parameters */
 	execute(params: any, context: ToolExecutionContext): Promise<ToolResult>;
 

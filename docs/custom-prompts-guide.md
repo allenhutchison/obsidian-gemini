@@ -40,8 +40,9 @@ Custom prompts are stored in: `[Your Plugin State Folder]/Prompts/`
 For example, if your plugin state folder is `gemini-scribe`, prompts will be in `gemini-scribe/Prompts/`.
 
 The plugin automatically creates this folder structure and adds an example prompt when you first enable the feature:
+
 - `gemini-scribe/` - Main plugin state folder
-- `gemini-scribe/Prompts/` - Custom prompt templates  
+- `gemini-scribe/Prompts/` - Custom prompt templates
 - `gemini-scribe/History/` - Chat history files (if chat history is enabled)
 
 ## Creating Custom Prompts
@@ -70,11 +71,11 @@ Every custom prompt file has two parts:
 
 ```yaml
 ---
-name: "Your Prompt Name"              # Required: Display name
-description: "What this prompt does"   # Required: Brief description
-version: 1                            # Optional: Version number
-override_system_prompt: false         # Optional: Replace system prompt entirely
-tags: ["category", "use-case"]        # Optional: For organization
+name: 'Your Prompt Name' # Required: Display name
+description: 'What this prompt does' # Required: Brief description
+version: 1 # Optional: Version number
+override_system_prompt: false # Optional: Replace system prompt entirely
+tags: ['category', 'use-case'] # Optional: For organization
 ---
 ```
 
@@ -82,28 +83,31 @@ tags: ["category", "use-case"]        # Optional: For organization
 
 ```markdown
 ---
-name: "Technical Documentation"
-description: "Helps write clear, structured technical documentation"
+name: 'Technical Documentation'
+description: 'Helps write clear, structured technical documentation'
 version: 1
 override_system_prompt: false
-tags: ["documentation", "technical"]
+tags: ['documentation', 'technical']
 ---
 
 You are a technical documentation specialist. When assisting with content:
 
 ## Writing Style
+
 - Use clear, concise language
 - Define technical terms on first use
 - Include code examples where relevant
 - Follow consistent formatting
 
 ## Structure
+
 - Start with a brief overview
 - Use logical heading hierarchy
 - Include step-by-step instructions
 - Add troubleshooting sections when appropriate
 
 ## Code Examples
+
 - Provide working, tested examples
 - Include comments explaining complex parts
 - Show both basic and advanced usage
@@ -119,6 +123,7 @@ Always aim for documentation that is both comprehensive and accessible to reader
 Gemini Scribe provides three convenient command palette commands for working with custom prompts:
 
 #### 1. Create New Custom Prompt
+
 - **Command**: "Gemini Scribe: Create New Custom Prompt"
 - **Purpose**: Creates a new custom prompt file with a proper template
 - **How it works**:
@@ -128,6 +133,7 @@ Gemini Scribe provides three convenient command palette commands for working wit
   4. Automatically opens the file for editing
 
 #### 2. Apply Custom Prompt to Current Note
+
 - **Command**: "Gemini Scribe: Apply Custom Prompt to Current Note"
 - **Purpose**: Applies a custom prompt to the currently active note
 - **How it works**:
@@ -136,6 +142,7 @@ Gemini Scribe provides three convenient command palette commands for working wit
   3. Automatically adds the prompt reference to the note's frontmatter
 
 #### 3. Remove Custom Prompt from Current Note
+
 - **Command**: "Gemini Scribe: Remove Custom Prompt from Current Note"
 - **Purpose**: Removes the custom prompt from the currently active note
 - **How it works**:
@@ -148,28 +155,32 @@ You can also manually add prompts to your note's frontmatter using a wikilink:
 
 ```markdown
 ---
-gemini-scribe-prompt: "[[Technical Documentation]]"
-title: "API Reference Guide"
+gemini-scribe-prompt: '[[Technical Documentation]]'
+title: 'API Reference Guide'
 ---
 
 # My API Documentation
+
 ...
 ```
 
 ### Visual Indicator
 
 When a custom prompt is active, you'll see an indicator in the chat interface:
+
 - Look for "Using prompt: [Prompt Name]" below the chat input
 - This confirms the AI is using your custom instructions
 
 ### Switching Prompts
 
 To change the prompt for a note:
+
 1. Edit the note's frontmatter
 2. Update the `gemini-scribe-prompt` value
 3. The change takes effect immediately
 
 To remove a custom prompt:
+
 - Delete the `gemini-scribe-prompt` line from frontmatter
 - The AI will revert to default behavior
 
@@ -198,6 +209,7 @@ Create specialized prompts for:
 ### Organizing Prompts
 
 Use descriptive filenames and tags:
+
 ```
 Prompts/
 ├── Writing/
@@ -218,11 +230,11 @@ Prompts/
 
 ```markdown
 ---
-name: "Creative Writing Coach"
-description: "Helps with storytelling, character development, and narrative flow"
+name: 'Creative Writing Coach'
+description: 'Helps with storytelling, character development, and narrative flow'
 version: 1
 override_system_prompt: false
-tags: ["creative", "writing", "fiction"]
+tags: ['creative', 'writing', 'fiction']
 ---
 
 You are a creative writing coach specializing in fiction. Focus on:
@@ -240,11 +252,11 @@ When reviewing text, provide specific suggestions for improvement while preservi
 
 ```markdown
 ---
-name: "Programming Tutor"
-description: "Patient programming teacher who explains concepts clearly"
+name: 'Programming Tutor'
+description: 'Patient programming teacher who explains concepts clearly'
 version: 1
 override_system_prompt: false
-tags: ["education", "programming", "tutorial"]
+tags: ['education', 'programming', 'tutorial']
 ---
 
 You are a patient programming tutor. When helping with code:
@@ -262,26 +274,29 @@ Always use encouraging language and celebrate small victories in the learning pr
 
 ```markdown
 ---
-name: "Research Synthesizer"
-description: "Helps analyze and synthesize research materials"
+name: 'Research Synthesizer'
+description: 'Helps analyze and synthesize research materials'
 version: 1
 override_system_prompt: false
-tags: ["research", "academic", "analysis"]
+tags: ['research', 'academic', 'analysis']
 ---
 
 You are a research assistant skilled in academic analysis. Your role includes:
 
 ## Literature Analysis
+
 - Identify key themes and patterns across sources
 - Note methodological approaches and their strengths/limitations
 - Highlight gaps in current research
 
 ## Synthesis Skills
+
 - Connect ideas from multiple sources
 - Create coherent narratives from diverse materials
 - Distinguish between correlation and causation
 
 ## Critical Evaluation
+
 - Assess source credibility and potential biases
 - Compare conflicting findings
 - Suggest areas for further investigation
@@ -292,26 +307,31 @@ Always maintain academic objectivity and cite sources appropriately.
 ## Best Practices
 
 ### 1. Keep Instructions Clear and Specific
+
 - Use bullet points and sections for organization
 - Be explicit about desired behaviors
 - Include examples when helpful
 
 ### 2. Test Your Prompts
+
 - Try the prompt with various types of content
 - Refine based on AI responses
 - Iterate to improve effectiveness
 
 ### 3. Version Control
+
 - Use the `version` field to track changes
 - Keep backups of effective prompts
 - Document what works well
 
 ### 4. Share and Collaborate
+
 - Export prompts as markdown files
 - Share with team members
 - Build a library of proven prompts
 
 ### 5. Balance Specificity and Flexibility
+
 - Too specific: AI becomes rigid
 - Too general: No meaningful behavior change
 - Find the sweet spot for your use case

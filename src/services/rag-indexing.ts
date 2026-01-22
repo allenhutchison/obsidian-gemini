@@ -8,9 +8,9 @@ import { ObsidianVaultAdapter } from './obsidian-file-adapter';
  * Represents a file that has been indexed in the File Search Store
  */
 export interface IndexedFileEntry {
-	resourceName: string;  // Gemini file resource name
-	contentHash: string;   // SHA-256 hash for reliable change detection
-	lastIndexed: number;   // Timestamp
+	resourceName: string; // Gemini file resource name
+	contentHash: string; // SHA-256 hash for reliable change detection
+	lastIndexed: number; // Timestamp
 }
 
 /**
@@ -22,9 +22,9 @@ export interface RagIndexCache {
 	lastSync: number;
 	files: Record<string, IndexedFileEntry>;
 	// Resume capability fields
-	indexingInProgress?: boolean;     // True while indexing is active
-	indexingStartedAt?: number;       // Timestamp when current indexing started
-	lastIndexedFile?: string;         // Last successfully indexed file path
+	indexingInProgress?: boolean; // True while indexing is active
+	indexingStartedAt?: number; // Timestamp when current indexing started
+	lastIndexedFile?: string; // Last successfully indexed file path
 }
 
 /**
@@ -219,13 +219,9 @@ export class RagIndexingService {
 
 				// Open progress modal for initial indexing
 				import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
-					const progressModal = new RagProgressModal(
-						this.plugin.app,
-						this,
-						(result) => {
-							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
-						}
-					);
+					const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
+						new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+					});
 					progressModal.open();
 				});
 
@@ -257,7 +253,7 @@ export class RagIndexingService {
 
 		// Wait for any in-flight change processing
 		while (this.isProcessing) {
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
 
 		// Clear pending changes
@@ -381,8 +377,8 @@ export class RagIndexingService {
 		// Build indexed files list from cache, sorted by lastIndexed (newest first)
 		const indexedFiles = this.cache
 			? Object.entries(this.cache.files)
-				.map(([path, entry]) => ({ path, lastIndexed: entry.lastIndexed }))
-				.sort((a, b) => b.lastIndexed - a.lastIndexed)
+					.map(([path, entry]) => ({ path, lastIndexed: entry.lastIndexed }))
+					.sort((a, b) => b.lastIndexed - a.lastIndexed)
 			: [];
 
 		return {
@@ -543,7 +539,9 @@ export class RagIndexingService {
 
 				// Validate cache version - reset if mismatched
 				if (parsed?.version !== CACHE_VERSION) {
-					this.plugin.logger.warn(`RAG Indexing: Cache version mismatch (got ${parsed?.version}, expected ${CACHE_VERSION}), resetting cache`);
+					this.plugin.logger.warn(
+						`RAG Indexing: Cache version mismatch (got ${parsed?.version}, expected ${CACHE_VERSION}), resetting cache`
+					);
 					this.cache = {
 						version: CACHE_VERSION,
 						storeName: parsed?.storeName || '',
@@ -601,10 +599,10 @@ export class RagIndexingService {
 					const errorMessage = createError instanceof Error ? createError.message : String(createError);
 					if (errorMessage.includes('File already exists')) {
 						// Fall back to direct adapter write
-						this.plugin.logger.debug(
-							`RAG Indexing: Cache file exists but not in metadata cache, using adapter.write`,
-							{ path: this.cachePath, error: errorMessage }
-						);
+						this.plugin.logger.debug(`RAG Indexing: Cache file exists but not in metadata cache, using adapter.write`, {
+							path: this.cachePath,
+							error: errorMessage,
+						});
 						await this.plugin.app.vault.adapter.write(this.cachePath, content);
 					} else {
 						throw createError;
@@ -676,7 +674,7 @@ export class RagIndexingService {
 
 		this.plugin.logger.warn(
 			`RAG Indexing: Rate limited. Waiting ${Math.round(delay / 1000)}s before retry ` +
-			`(attempt ${this.consecutiveRateLimits})`
+				`(attempt ${this.consecutiveRateLimits})`
 		);
 
 		// Update status bar with countdown
@@ -689,7 +687,7 @@ export class RagIndexingService {
 		}, 1000);
 
 		// Wait for cooldown
-		await new Promise(resolve => setTimeout(resolve, delay));
+		await new Promise((resolve) => setTimeout(resolve, delay));
 
 		// Clear timer and reset state
 		if (this.rateLimitTimer) {
@@ -742,9 +740,8 @@ export class RagIndexingService {
 			} catch (error) {
 				// Check if it's a 404/not found error vs other errors
 				const errorMessage = error instanceof Error ? error.message : String(error);
-				const isNotFound = errorMessage.includes('404') ||
-					errorMessage.includes('not found') ||
-					errorMessage.includes('NOT_FOUND');
+				const isNotFound =
+					errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('NOT_FOUND');
 
 				if (isNotFound) {
 					this.plugin.logger.warn('RAG Indexing: Store no longer exists, creating new store');
@@ -838,13 +835,9 @@ export class RagIndexingService {
 			// Show progress modal if indexing, otherwise show status modal
 			if (this.status === 'indexing') {
 				const { RagProgressModal } = await import('../ui/rag-progress-modal');
-				const modal = new RagProgressModal(
-					this.plugin.app,
-					this,
-					(result) => {
-						new Notice(`RAG Indexing: ${result.indexed} indexed, ${result.skipped} unchanged`);
-					}
-				);
+				const modal = new RagProgressModal(this.plugin.app, this, (result) => {
+					new Notice(`RAG Indexing: ${result.indexed} indexed, ${result.skipped} unchanged`);
+				});
 				modal.open();
 			} else {
 				const { RagStatusModal } = await import('../ui/rag-status-modal');
@@ -861,13 +854,9 @@ export class RagIndexingService {
 					async () => {
 						// Open progress modal and start reindexing
 						const { RagProgressModal } = await import('../ui/rag-progress-modal');
-						const progressModal = new RagProgressModal(
-							this.plugin.app,
-							this,
-							(result) => {
-								new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
-							}
-						);
+						const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
+							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+						});
 						progressModal.open();
 
 						// Trigger reindex (don't await - modal handles progress)
@@ -1007,22 +996,18 @@ export class RagIndexingService {
 		const { RagResumeModal } = await import('../ui/rag-resume-modal');
 
 		return new Promise<void>((resolve) => {
-			const modal = new RagResumeModal(
-				this.plugin.app,
-				resumeInfo,
-				async (resume: boolean) => {
-					if (resume) {
-						// Resume: just start indexing - smart sync will skip already-indexed files
-						new Notice('RAG Indexing: Resuming interrupted indexing...');
-						this.startResumeIndexing();
-					} else {
-						// Start fresh: clear cache and store, then reindex
-						new Notice('RAG Indexing: Starting fresh...');
-						await this.startFresh();
-					}
-					resolve();
+			const modal = new RagResumeModal(this.plugin.app, resumeInfo, async (resume: boolean) => {
+				if (resume) {
+					// Resume: just start indexing - smart sync will skip already-indexed files
+					new Notice('RAG Indexing: Resuming interrupted indexing...');
+					this.startResumeIndexing();
+				} else {
+					// Start fresh: clear cache and store, then reindex
+					new Notice('RAG Indexing: Starting fresh...');
+					await this.startFresh();
 				}
-			);
+				resolve();
+			});
 			modal.open();
 		});
 	}
@@ -1032,13 +1017,9 @@ export class RagIndexingService {
 	 */
 	private startResumeIndexing(): void {
 		import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
-			const progressModal = new RagProgressModal(
-				this.plugin.app,
-				this,
-				(result) => {
-					new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
-				}
-			);
+			const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
+				new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+			});
 			progressModal.open();
 		});
 
@@ -1248,9 +1229,8 @@ export class RagIndexingService {
 
 							// Track failed file with error details
 							if (event.currentFile) {
-								const errorMessage = event.error instanceof Error
-									? event.error.message
-									: String(event.error || 'Unknown error');
+								const errorMessage =
+									event.error instanceof Error ? event.error.message : String(event.error || 'Unknown error');
 								this.failedFiles.push({
 									path: event.currentFile,
 									error: errorMessage,
@@ -1293,15 +1273,12 @@ export class RagIndexingService {
 			this.resetRateLimitTracking(); // Success - reset rate limit counter
 			this.updateStatusBar();
 			this.notifyProgressListeners();
-
 		} catch (error) {
 			// Handle rate limit with auto-retry
 			if (this.isRateLimitError(error)) {
 				// Check if we've exceeded max retries
 				if (this.consecutiveRateLimits >= RATE_LIMIT_MAX_RETRIES) {
-					this.plugin.logger.error(
-						`RAG Indexing: Max rate limit retries (${RATE_LIMIT_MAX_RETRIES}) exceeded`
-					);
+					this.plugin.logger.error(`RAG Indexing: Max rate limit retries (${RATE_LIMIT_MAX_RETRIES}) exceeded`);
 					this.resetRateLimitTracking();
 					this.status = 'error';
 					this.currentFile = undefined;

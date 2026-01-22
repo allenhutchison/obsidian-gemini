@@ -18,29 +18,28 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 
 		// Add all markdown files except those in excluded folders
 		const allFiles = this.app.vault.getMarkdownFiles();
-		const filteredFiles = allFiles.filter((file: TFile) =>
-			!shouldExcludePathForPlugin(file.path, this.plugin)
-		);
+		const filteredFiles = allFiles.filter((file: TFile) => !shouldExcludePathForPlugin(file.path, this.plugin));
 		items.push(...filteredFiles);
 
 		// Add all folders except system and plugin folders
 		const addFolders = (folder: TFolder) => {
 			// Skip excluded folders
 			if (shouldExcludePathForPlugin(folder.path, this.plugin)) return;
-			
-			if (folder.path) { // Don't add root folder
+
+			if (folder.path) {
+				// Don't add root folder
 				items.push(folder);
 			}
-			
+
 			for (const child of folder.children) {
 				if (child instanceof TFolder) {
 					addFolders(child);
 				}
 			}
 		};
-		
+
 		addFolders(this.app.vault.getRoot());
-		
+
 		return items;
 	}
 

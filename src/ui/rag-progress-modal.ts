@@ -114,11 +114,9 @@ export class RagProgressModal extends Modal {
 		const buttonSetting = new Setting(contentEl);
 		buttonSetting.addButton((btn) => {
 			this.backgroundBtn = btn.buttonEl;
-			btn
-				.setButtonText('Run in Background')
-				.onClick(() => {
-					this.close();
-				});
+			btn.setButtonText('Run in Background').onClick(() => {
+				this.close();
+			});
 		});
 		buttonSetting.addButton((btn) => {
 			this.cancelBtn = btn.buttonEl;

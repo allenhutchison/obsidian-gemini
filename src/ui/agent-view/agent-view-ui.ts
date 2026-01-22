@@ -5,11 +5,7 @@ import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
 import { ChatSession } from '../../types/agent';
-import {
-	insertTextAtCursor,
-	moveCursorToEnd,
-	execContextCommand
-} from '../../utils/dom-context';
+import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 
 /**
@@ -54,7 +50,7 @@ export class AgentViewUI {
 	constructor(
 		private app: App,
 		private plugin: ObsidianGemini
-	) { }
+	) {}
 
 	/**
 	 * Creates the main agent interface
@@ -71,7 +67,9 @@ export class AgentViewUI {
 		const sessionHeader = container.createDiv({ cls: 'gemini-agent-header gemini-agent-header-compact' });
 
 		// Collapsible context panel
-		const contextPanel = container.createDiv({ cls: 'gemini-agent-context-panel gemini-agent-context-panel-collapsed' });
+		const contextPanel = container.createDiv({
+			cls: 'gemini-agent-context-panel gemini-agent-context-panel-collapsed',
+		});
 
 		// Chat container (will expand to fill available space)
 		const chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
@@ -91,7 +89,7 @@ export class AgentViewUI {
 			userInput,
 			sendButton,
 			progressContainer,
-			...progressElements
+			...progressElements,
 		};
 	}
 
@@ -112,7 +110,7 @@ export class AgentViewUI {
 		// Toggle button for context panel
 		const toggleBtn = leftSection.createEl('button', {
 			cls: 'gemini-agent-toggle-btn',
-			title: 'Toggle context panel'
+			title: 'Toggle context panel',
 		});
 		setIcon(toggleBtn, 'chevron-down');
 
@@ -133,7 +131,7 @@ export class AgentViewUI {
 		// Session title (inline, not as large)
 		const title = titleContainer.createEl('span', {
 			text: currentSession?.title || 'New Agent Session',
-			cls: 'gemini-agent-title-compact'
+			cls: 'gemini-agent-title-compact',
 		});
 
 		// Make title editable on double-click
@@ -143,7 +141,7 @@ export class AgentViewUI {
 			const input = titleContainer.createEl('input', {
 				type: 'text',
 				value: currentSession.title,
-				cls: 'gemini-agent-title-input-compact'
+				cls: 'gemini-agent-title-input-compact',
 			});
 
 			title.style.display = 'none';
@@ -192,7 +190,7 @@ export class AgentViewUI {
 
 			const contextBadge = leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
-				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`
+				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`,
 			});
 		}
 
@@ -229,16 +227,16 @@ export class AgentViewUI {
 						cls: 'gemini-agent-prompt-badge',
 						text: promptName,
 						attr: {
-							title: tooltipParts.join('\n')
-						}
+							title: tooltipParts.join('\n'),
+						},
 					});
 				} else {
 					// Show settings icon for other custom settings
 					const settingsIndicator = leftSection.createEl('span', {
 						cls: 'gemini-agent-settings-indicator',
 						attr: {
-							title: tooltipParts.join('\n')
-						}
+							title: tooltipParts.join('\n'),
+						},
 					});
 					setIcon(settingsIndicator, 'sliders-horizontal');
 				}
@@ -251,21 +249,21 @@ export class AgentViewUI {
 		// Settings button
 		const settingsBtn = rightSection.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-icon',
-			title: 'Session Settings'
+			title: 'Session Settings',
 		});
 		setIcon(settingsBtn, 'settings');
 		settingsBtn.addEventListener('click', () => callbacks.showSessionSettings());
 
 		const newSessionBtn = rightSection.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-icon',
-			title: 'New Session'
+			title: 'New Session',
 		});
 		setIcon(newSessionBtn, 'plus');
 		newSessionBtn.addEventListener('click', () => callbacks.createNewSession());
 
 		const listSessionsBtn = rightSection.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-icon',
-			title: 'Browse Sessions'
+			title: 'Browse Sessions',
 		});
 		setIcon(listSessionsBtn, 'list');
 		listSessionsBtn.addEventListener('click', () => callbacks.showSessionList());
@@ -287,11 +285,7 @@ export class AgentViewUI {
 	/**
 	 * Creates the collapsible context panel
 	 */
-	createContextPanel(
-		contextPanel: HTMLElement,
-		currentSession: ChatSession | null,
-		callbacks: UICallbacks
-	): void {
+	createContextPanel(contextPanel: HTMLElement, currentSession: ChatSession | null, callbacks: UICallbacks): void {
 		contextPanel.empty();
 
 		// Compact context controls
@@ -300,7 +294,7 @@ export class AgentViewUI {
 		// Add files button
 		const addButton = controlsRow.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-sm',
-			title: 'Add context files'
+			title: 'Add context files',
 		});
 		setIcon(addButton, 'plus');
 		addButton.createSpan({ text: ' Add Files' });
@@ -323,13 +317,13 @@ export class AgentViewUI {
 			cls: 'gemini-agent-input gemini-agent-input-rich',
 			attr: {
 				contenteditable: 'true',
-				'data-placeholder': 'Message the agent... (@ to mention files)'
-			}
+				'data-placeholder': 'Message the agent... (@ to mention files)',
+			},
 		}) as HTMLDivElement;
 
 		const sendButton = container.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
-			attr: { 'aria-label': 'Send message to agent' }
+			attr: { 'aria-label': 'Send message to agent' },
 		});
 		setIcon(sendButton, 'play');
 
@@ -427,9 +421,7 @@ export class AgentViewUI {
 	/**
 	 * Creates the progress bar
 	 */
-	private createProgressBar(
-		container: HTMLElement
-	): {
+	private createProgressBar(container: HTMLElement): {
 		progressBar: HTMLElement;
 		progressFill: HTMLElement;
 		progressStatus: HTMLElement;
@@ -439,32 +431,32 @@ export class AgentViewUI {
 
 		// Progress bar wrapper
 		const barWrapper = container.createDiv({
-			cls: 'gemini-agent-progress-bar-wrapper'
+			cls: 'gemini-agent-progress-bar-wrapper',
 		});
 
 		const progressBar = barWrapper.createDiv({
-			cls: 'gemini-agent-progress-bar'
+			cls: 'gemini-agent-progress-bar',
 		});
 
 		const progressFill = progressBar.createDiv({
-			cls: 'gemini-agent-progress-fill'
+			cls: 'gemini-agent-progress-fill',
 		});
 
 		// Status text container
 		const statusContainer = container.createDiv({
-			cls: 'gemini-agent-progress-status-container'
+			cls: 'gemini-agent-progress-status-container',
 		});
 
 		const progressStatus = statusContainer.createSpan({
-			cls: 'gemini-agent-progress-status-text'
+			cls: 'gemini-agent-progress-status-text',
 		});
 
 		const progressTimer = statusContainer.createSpan({
 			cls: 'gemini-agent-progress-timer',
 			attr: {
 				'aria-live': 'polite',
-				'aria-label': 'Elapsed time'
-			}
+				'aria-label': 'Elapsed time',
+			},
 		});
 
 		return { progressBar, progressFill, progressStatus, progressTimer };
@@ -473,11 +465,7 @@ export class AgentViewUI {
 	/**
 	 * Updates the context files list display
 	 */
-	updateContextFilesList(
-		container: HTMLElement,
-		currentSession: ChatSession | null,
-		callbacks: UICallbacks
-	): void {
+	updateContextFilesList(container: HTMLElement, currentSession: ChatSession | null, callbacks: UICallbacks): void {
 		container.empty();
 
 		const hasContextFiles = currentSession && currentSession.context.contextFiles.length > 0;
@@ -485,7 +473,7 @@ export class AgentViewUI {
 		if (!hasContextFiles) {
 			container.createEl('p', {
 				text: 'No context files',
-				cls: 'gemini-agent-empty-state'
+				cls: 'gemini-agent-empty-state',
 			});
 			return;
 		}
@@ -495,7 +483,7 @@ export class AgentViewUI {
 
 		// Show all context files with remove buttons
 		if (currentSession) {
-			currentSession.context.contextFiles.forEach(file => {
+			currentSession.context.contextFiles.forEach((file) => {
 				const isActiveFile = file === activeFile;
 
 				const fileItem = container.createDiv({ cls: 'gemini-agent-file-item' });
@@ -507,7 +495,7 @@ export class AgentViewUI {
 				const fileName = fileItem.createEl('span', {
 					text: file.basename,
 					cls: 'gemini-agent-file-name',
-					title: file.path // Show full path on hover
+					title: file.path, // Show full path on hover
 				});
 
 				// Add "Active" badge if this is the currently open file
@@ -515,14 +503,14 @@ export class AgentViewUI {
 					const badge = fileItem.createEl('span', {
 						text: 'Active',
 						cls: 'gemini-agent-active-badge',
-						title: 'This is the currently open file'
+						title: 'This is the currently open file',
 					});
 				}
 
 				const removeBtn = fileItem.createEl('button', {
 					text: '×',
 					cls: 'gemini-agent-remove-btn',
-					title: 'Remove file'
+					title: 'Remove file',
 				});
 
 				removeBtn.addEventListener('click', () => {

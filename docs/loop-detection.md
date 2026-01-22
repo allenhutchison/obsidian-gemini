@@ -21,18 +21,20 @@ Loop detection can be configured in Settings > Developer Settings > Tool Loop De
 ## Example Scenario
 
 If the AI tries to read the same file 3 times within 30 seconds:
+
 ```
 1. read_file("notes/example.md") - Success
-2. read_file("notes/example.md") - Success  
+2. read_file("notes/example.md") - Success
 3. read_file("notes/example.md") - Loop detected! Execution blocked
 ```
 
 The AI will receive an error message:
+
 > Execution loop detected: read_file has been called 3 times with the same parameters in the last 30 seconds. Please try a different approach.
 
 ## Implementation Details
 
 - Uses deterministic key generation for tool calls to ensure consistent detection
-- Automatically cleans up old execution history to prevent memory issues  
+- Automatically cleans up old execution history to prevent memory issues
 - Session-specific tracking - each agent session has its own loop detection history
 - History is cleared when creating new sessions or loading from history

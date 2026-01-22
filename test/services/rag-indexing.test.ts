@@ -472,9 +472,7 @@ describe('RagIndexingService', () => {
 		it('should return comprehensive status info', () => {
 			(service as any).status = 'idle';
 			(service as any).indexedCount = 10;
-			(service as any).failedFiles = [
-				{ path: 'failed.md', error: 'Test error', timestamp: Date.now() },
-			];
+			(service as any).failedFiles = [{ path: 'failed.md', error: 'Test error', timestamp: Date.now() }];
 			(service as any).pendingChanges = new Map([
 				['pending.md', { type: 'create', path: 'pending.md', timestamp: Date.now() }],
 			]);

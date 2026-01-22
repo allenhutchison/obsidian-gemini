@@ -23,27 +23,33 @@ jest.mock('obsidian', () => {
 			app: any = {};
 			leaf: any = {};
 			navigation = true;
-			
+
 			constructor(leaf: any) {
 				this.leaf = leaf;
 			}
-			
+
 			load() {}
 			onload() {}
 			onunload() {}
-			getViewType() { return 'test'; }
-			getDisplayText() { return 'Test'; }
-			getIcon() { return 'test'; }
+			getViewType() {
+				return 'test';
+			}
+			getDisplayText() {
+				return 'Test';
+			}
+			getIcon() {
+				return 'test';
+			}
 		},
 		MarkdownRenderer: {
-			render: jest.fn().mockResolvedValue(undefined)
+			render: jest.fn().mockResolvedValue(undefined),
 		},
 		setIcon: jest.fn(),
 		Notice: jest.fn(),
 		Menu: jest.fn().mockImplementation(() => ({
 			addItem: jest.fn().mockReturnThis(),
-			showAtMouseEvent: jest.fn()
-		}))
+			showAtMouseEvent: jest.fn(),
+		})),
 	};
 });
 
@@ -64,13 +70,13 @@ describe('AgentView UI Tests', () => {
 				enabledTools: ['read_files', 'write_files'],
 				temperature: 0.7,
 				topP: 0.95,
-				chatHistory: true
+				chatHistory: true,
 			},
 			logger: {
 				debug: jest.fn(),
 				log: jest.fn(),
 				warn: jest.fn(),
-				error: jest.fn()
+				error: jest.fn(),
 			},
 			sessionManager: null, // Will be set after plugin is created
 			toolRegistry: null, // Will be set after plugin is created
@@ -78,7 +84,7 @@ describe('AgentView UI Tests', () => {
 			app: {
 				workspace: {
 					getLeaf: jest.fn(),
-					revealLeaf: jest.fn()
+					revealLeaf: jest.fn(),
 				},
 				vault: {
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
@@ -86,32 +92,34 @@ describe('AgentView UI Tests', () => {
 					create: jest.fn(),
 					createFolder: jest.fn(),
 					adapter: {
-						exists: jest.fn().mockResolvedValue(false)
-					}
+						exists: jest.fn().mockResolvedValue(false),
+					},
 				},
 				fileManager: {
-					processFrontMatter: jest.fn()
-				}
+					processFrontMatter: jest.fn(),
+				},
 			},
 			prompts: {
 				agentSystemPrompt: jest.fn().mockReturnValue('System prompt'),
-				agentContextPrompt: jest.fn().mockReturnValue('Context prompt')
+				agentContextPrompt: jest.fn().mockReturnValue('Context prompt'),
 			},
 			geminiApi: {
 				generateModelResponse: jest.fn().mockResolvedValue({
 					markdown: 'Test response',
-					candidates: [{
-						content: {
-							parts: [{ text: 'Test response' }]
-						}
-					}]
-				})
-			}
+					candidates: [
+						{
+							content: {
+								parts: [{ text: 'Test response' }],
+							},
+						},
+					],
+				}),
+			},
 		};
 
 		// Create instances after plugin is defined
 		plugin.history = {
-			updateSessionMetadata: jest.fn()
+			updateSessionMetadata: jest.fn(),
 		};
 		plugin.sessionManager = new SessionManager(plugin);
 		plugin.toolRegistry = new ToolRegistry(plugin);
@@ -120,23 +128,23 @@ describe('AgentView UI Tests', () => {
 		// Create view with mocked containerEl
 		leaf = {} as WorkspaceLeaf;
 		agentView = new AgentView(leaf, plugin);
-		
+
 		// Mock the containerEl structure that Obsidian provides
 		const mockContainer = document.createElement('div');
 		const contentContainer = document.createElement('div');
-		
+
 		// Add empty() method to contentContainer
-		(contentContainer as any).empty = function() {
+		(contentContainer as any).empty = function () {
 			this.innerHTML = '';
 		};
-		
+
 		// Add addClass method
-		(contentContainer as any).addClass = function(className: string) {
+		(contentContainer as any).addClass = function (className: string) {
 			this.classList.add(className);
 		};
-		
+
 		// Add createEl method
-		(contentContainer as any).createEl = function(tag: string, options?: any) {
+		(contentContainer as any).createEl = function (tag: string, options?: any) {
 			const el = document.createElement(tag);
 			if (options?.cls) el.className = options.cls;
 			if (options?.text) el.textContent = options.text;
@@ -148,29 +156,29 @@ describe('AgentView UI Tests', () => {
 			this.appendChild(el);
 			return el;
 		};
-		
+
 		// Add createDiv method
-		(contentContainer as any).createDiv = function(options?: any) {
+		(contentContainer as any).createDiv = function (options?: any) {
 			return this.createEl('div', options);
 		};
-		
+
 		mockContainer.appendChild(document.createElement('div')); // children[0]
 		mockContainer.appendChild(contentContainer); // children[1]
-		
+
 		agentView.containerEl = mockContainer;
-		
+
 		// Mock onOpen to avoid DOM creation issues
 		agentView.onOpen = jest.fn(async () => {
 			// Just mark as opened, don't try to create DOM
 			(agentView as any).opened = true;
 		});
-		
+
 		// Mock onClose
 		agentView.onClose = jest.fn(async () => {
 			(agentView as any).currentSession = null;
 			(agentView as any).opened = false;
 		});
-		
+
 		// Mock private methods that are used in tests
 		(agentView as any).displayMessage = jest.fn(async (entry: any) => {
 			const messageEl = document.createElement('div');
@@ -178,8 +186,7 @@ describe('AgentView UI Tests', () => {
 			messageEl.textContent = entry.message;
 			agentView.containerEl.appendChild(messageEl);
 		});
-		
-		
+
 		(agentView as any).loadSession = jest.fn(async (sessionId: string) => {
 			(agentView as any).currentSession = plugin.sessionManager.getSession(sessionId);
 			// Update header
@@ -188,7 +195,7 @@ describe('AgentView UI Tests', () => {
 				header.textContent = (agentView as any).currentSession.title;
 			}
 		});
-		
+
 		(agentView as any).openSessionSettings = jest.fn();
 	});
 
@@ -205,42 +212,42 @@ describe('AgentView UI Tests', () => {
 
 			// Mock the session list in the view's createAgentInterface
 			await agentView.onOpen();
-			
+
 			// Create mock session dropdown structure
 			const sessionSelector = document.createElement('div');
 			sessionSelector.className = 'session-selector';
 			const select = document.createElement('select');
-			
+
 			// Add options
 			const newOption = document.createElement('option');
 			newOption.value = 'new';
 			newOption.text = 'New Session';
 			select.appendChild(newOption);
-			
+
 			const option1 = document.createElement('option');
 			option1.value = session1.id;
 			option1.text = session1.title;
 			select.appendChild(option1);
-			
+
 			const option2 = document.createElement('option');
 			option2.value = session2.id;
 			option2.text = session2.title;
 			select.appendChild(option2);
-			
+
 			sessionSelector.appendChild(select);
 			agentView.containerEl.appendChild(sessionSelector);
 
 			// Check session dropdown
 			const sessionDropdown = agentView.containerEl.querySelector('.session-selector select') as HTMLSelectElement;
 			expect(sessionDropdown).toBeTruthy();
-			
+
 			// Should have options for new session + existing sessions
 			expect(sessionDropdown.options.length).toBeGreaterThanOrEqual(3);
 		});
 
 		it('should handle session switching', async () => {
 			await agentView.onOpen();
-			
+
 			// Create header element that loadSession expects
 			const header = document.createElement('div');
 			header.className = 'gemini-agent-header';
@@ -251,7 +258,7 @@ describe('AgentView UI Tests', () => {
 			await agentView['loadSession'](session.id);
 
 			expect(agentView['currentSession']).toBe(session);
-			
+
 			// Check UI updates
 			const headerEl = agentView.containerEl.querySelector('.gemini-agent-header');
 			expect(headerEl?.textContent).toContain(session.title);
@@ -265,14 +272,14 @@ describe('AgentView UI Tests', () => {
 			await plugin.sessionManager.updateSessionModelConfig(session.id, {
 				model: 'custom-model',
 				temperature: 0.5,
-				promptTemplate: 'custom-prompt.md'
+				promptTemplate: 'custom-prompt.md',
 			});
 
 			// Create badge elements
 			const promptBadge = document.createElement('div');
 			promptBadge.className = 'gemini-agent-prompt-badge';
 			agentView.containerEl.appendChild(promptBadge);
-			
+
 			const settingsIndicator = document.createElement('div');
 			settingsIndicator.className = 'gemini-agent-settings-indicator';
 			agentView.containerEl.appendChild(settingsIndicator);
@@ -280,7 +287,9 @@ describe('AgentView UI Tests', () => {
 			await agentView['loadSession'](session.id);
 
 			// Check for configuration indicators
-			const badges = agentView.containerEl.querySelectorAll('.gemini-agent-prompt-badge, .gemini-agent-settings-indicator');
+			const badges = agentView.containerEl.querySelectorAll(
+				'.gemini-agent-prompt-badge, .gemini-agent-settings-indicator'
+			);
 			expect(badges.length).toBeGreaterThan(0);
 		});
 	});
@@ -296,15 +305,15 @@ describe('AgentView UI Tests', () => {
 				message: 'Hello, agent!',
 				role: 'user',
 				notePath: 'test.md',
-				created_at: new Date()
+				created_at: new Date(),
 			});
-			
+
 			// Add assistant message
 			await agentView['displayMessage']({
 				message: 'Hello! How can I help?',
 				role: 'model',
 				notePath: 'test.md',
-				created_at: new Date()
+				created_at: new Date(),
 			});
 
 			// Check messages in DOM
@@ -323,7 +332,7 @@ describe('AgentView UI Tests', () => {
 			const toolCall = {
 				name: 'read_file',
 				arguments: { path: 'test.md' },
-				result: { success: true, data: 'File content' }
+				result: { success: true, data: 'File content' },
 			};
 
 			// Skip this test as displayToolCall doesn't exist
@@ -332,7 +341,7 @@ describe('AgentView UI Tests', () => {
 			// Check collapsible tool call display
 			const toolCallEl = agentView.containerEl.querySelector('.tool-call');
 			expect(toolCallEl).toBeTruthy();
-			
+
 			const details = toolCallEl?.querySelector('details');
 			expect(details).toBeTruthy();
 			expect(details?.querySelector('summary')?.textContent).toContain('read_file');
@@ -348,7 +357,7 @@ describe('AgentView UI Tests', () => {
 			// Mock file search
 			const mockFiles = [
 				{ path: 'note1.md', basename: 'note1' },
-				{ path: 'note2.md', basename: 'note2' }
+				{ path: 'note2.md', basename: 'note2' },
 			];
 			plugin.app.vault.getMarkdownFiles.mockReturnValue(mockFiles);
 
@@ -360,7 +369,7 @@ describe('AgentView UI Tests', () => {
 
 			// Trigger @ mention
 			input.textContent = 'Check @';
-			
+
 			// Simulate input event
 			const event = new Event('input', { bubbles: true });
 			input.dispatchEvent(event);
@@ -371,13 +380,10 @@ describe('AgentView UI Tests', () => {
 
 		it('should display context files as chips', async () => {
 			await agentView.onOpen();
-			
+
 			// Create session with context files
 			const session = await plugin.sessionManager.createAgentSession('Test Session', {
-				contextFiles: [
-					{ path: 'file1.md', basename: 'file1' } as any,
-					{ path: 'file2.md', basename: 'file2' } as any
-				]
+				contextFiles: [{ path: 'file1.md', basename: 'file1' } as any, { path: 'file2.md', basename: 'file2' } as any],
 			});
 
 			// Create mock chips
@@ -385,7 +391,7 @@ describe('AgentView UI Tests', () => {
 			chip1.className = 'context-file-chip';
 			chip1.textContent = 'file1';
 			agentView.containerEl.appendChild(chip1);
-			
+
 			const chip2 = document.createElement('div');
 			chip2.className = 'context-file-chip';
 			chip2.textContent = 'file2';
@@ -412,7 +418,7 @@ describe('AgentView UI Tests', () => {
 			input.contentEditable = 'true';
 			input.textContent = 'Test message';
 			agentView.containerEl.appendChild(input);
-			
+
 			const sendButton = document.createElement('button');
 			sendButton.className = 'gemini-agent-send';
 			sendButton.onclick = async () => {
@@ -426,11 +432,11 @@ describe('AgentView UI Tests', () => {
 			sendButton.click();
 
 			// Wait for async operations
-			await new Promise(resolve => setTimeout(resolve, 10));
+			await new Promise((resolve) => setTimeout(resolve, 10));
 
 			// Should call API
 			expect(plugin.geminiApi.generateModelResponse).toHaveBeenCalled();
-			
+
 			// Input should be cleared
 			expect(input.textContent).toBe('');
 		});
@@ -445,17 +451,17 @@ describe('AgentView UI Tests', () => {
 			input.className = 'gemini-agent-input';
 			input.contentEditable = 'true';
 			agentView.containerEl.appendChild(input);
-			
+
 			// Simulate Shift+Enter for new line
 			const event = new KeyboardEvent('keydown', {
 				key: 'Enter',
 				shiftKey: true,
-				bubbles: true
+				bubbles: true,
 			});
-			
+
 			input.textContent = 'Line 1';
 			input.dispatchEvent(event);
-			
+
 			// Should not submit with Shift+Enter
 			expect(plugin.geminiApi.generateModelResponse).not.toHaveBeenCalled();
 		});
@@ -474,10 +480,10 @@ describe('AgentView UI Tests', () => {
 				(agentView as any).openSessionSettings();
 			};
 			agentView.containerEl.appendChild(settingsButton);
-			
+
 			// Click settings button
 			settingsButton.click();
-			
+
 			// Check that openSessionSettings was called
 			expect((agentView as any).openSessionSettings).toHaveBeenCalled();
 		});
@@ -498,7 +504,7 @@ describe('AgentView UI Tests', () => {
 			input.contentEditable = 'true';
 			input.textContent = 'Test';
 			agentView.containerEl.appendChild(input);
-			
+
 			const sendButton = document.createElement('button');
 			sendButton.className = 'gemini-agent-send';
 			sendButton.onclick = async () => {
@@ -514,7 +520,7 @@ describe('AgentView UI Tests', () => {
 			sendButton.click();
 
 			// Wait for error handling
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			// Should show error notice
 			expect(jest.mocked(Notice)).toHaveBeenCalledWith(expect.stringContaining('Error'));
@@ -533,7 +539,7 @@ describe('AgentView UI Tests', () => {
 
 			// Helper to add DOM methods to any element
 			const addDOMMethods = (el: any) => {
-				el.createDiv = function(options?: any) {
+				el.createDiv = function (options?: any) {
 					const div = document.createElement('div');
 					if (options?.cls) div.className = options.cls;
 					if (options?.text) div.textContent = options.text;
@@ -541,7 +547,7 @@ describe('AgentView UI Tests', () => {
 					this.appendChild(div);
 					return div;
 				};
-				el.createEl = function(tag: string, opts?: any) {
+				el.createEl = function (tag: string, opts?: any) {
 					const elem = document.createElement(tag);
 					if (opts?.cls) elem.className = opts.cls;
 					if (opts?.text) elem.textContent = opts.text;
@@ -549,7 +555,7 @@ describe('AgentView UI Tests', () => {
 					this.appendChild(elem);
 					return elem;
 				};
-				el.createSpan = function(opts?: any) {
+				el.createSpan = function (opts?: any) {
 					return this.createEl('span', opts);
 				};
 			};
@@ -566,10 +572,14 @@ describe('AgentView UI Tests', () => {
 			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-1');
 
 			// Then show the result with error
-			await agentView.showToolResult('read_file', {
-				success: false,
-				error: 'File not found: test.md'
-			}, 'exec-1');
+			await agentView.showToolResult(
+				'read_file',
+				{
+					success: false,
+					error: 'File not found: test.md',
+				},
+				'exec-1'
+			);
 
 			// Check that error is displayed
 			const errorContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-error-content');
@@ -584,9 +594,13 @@ describe('AgentView UI Tests', () => {
 			await agentView.showToolExecution('write_file', { path: 'test.md', content: 'test' }, 'exec-2');
 
 			// Tool fails but error property is undefined
-			await agentView.showToolResult('write_file', {
-				success: false
-			}, 'exec-2');
+			await agentView.showToolResult(
+				'write_file',
+				{
+					success: false,
+				},
+				'exec-2'
+			);
 
 			// Check that fallback error message is displayed
 			const errorContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-error-content');
@@ -599,10 +613,14 @@ describe('AgentView UI Tests', () => {
 		it('should display data when tool succeeds with data', async () => {
 			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-3');
 
-			await agentView.showToolResult('read_file', {
-				success: true,
-				data: 'File content here'
-			}, 'exec-3');
+			await agentView.showToolResult(
+				'read_file',
+				{
+					success: true,
+					data: 'File content here',
+				},
+				'exec-3'
+			);
 
 			// Check that result content is displayed
 			const resultContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-result-content');
@@ -615,9 +633,13 @@ describe('AgentView UI Tests', () => {
 		it('should display success message when tool succeeds without data', async () => {
 			await agentView.showToolExecution('delete_file', { path: 'test.md' }, 'exec-4');
 
-			await agentView.showToolResult('delete_file', {
-				success: true
-			}, 'exec-4');
+			await agentView.showToolResult(
+				'delete_file',
+				{
+					success: true,
+				},
+				'exec-4'
+			);
 
 			// Check that success message is displayed
 			const resultContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-result-content');
@@ -632,10 +654,14 @@ describe('AgentView UI Tests', () => {
 			await agentView.showToolExecution('test_tool', {}, 'exec-5');
 
 			// Pass result with undefined success (edge case)
-			await agentView.showToolResult('test_tool', {
-				success: undefined as any,
-				error: 'Something went wrong'
-			}, 'exec-5');
+			await agentView.showToolResult(
+				'test_tool',
+				{
+					success: undefined as any,
+					error: 'Something went wrong',
+				},
+				'exec-5'
+			);
 
 			// Should treat undefined as failure and show error
 			const errorContent = (agentView as any).chatContainer.querySelector('.gemini-agent-tool-error-content');
@@ -673,7 +699,8 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).currentSession = session2;
 
 			// Mock getRecentAgentSessions to return all 3 sessions
-			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
+			const mockGetRecent = jest
+				.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
 				.mockResolvedValue([session3, session2, session1]); // Most recent first
 
 			// Test isCurrentSession helper
@@ -683,9 +710,7 @@ describe('AgentView UI Tests', () => {
 
 			// Filter sessions (simulating what showEmptyState does)
 			const allSessions = await plugin.sessionManager.getRecentAgentSessions(6);
-			const filteredSessions = allSessions.filter((session: any) =>
-				!(agentView as any).isCurrentSession(session)
-			);
+			const filteredSessions = allSessions.filter((session: any) => !(agentView as any).isCurrentSession(session));
 
 			// Should exclude session2 (current session)
 			expect(filteredSessions).toHaveLength(2);
@@ -709,14 +734,13 @@ describe('AgentView UI Tests', () => {
 			expect((agentView as any).isCurrentSession(session2)).toBe(false);
 
 			// Mock getRecentAgentSessions
-			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
+			const mockGetRecent = jest
+				.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
 				.mockResolvedValue([session2, session1]);
 
 			// Filter sessions
 			const allSessions = await plugin.sessionManager.getRecentAgentSessions(6);
-			const filteredSessions = allSessions.filter((session: any) =>
-				!(agentView as any).isCurrentSession(session)
-			);
+			const filteredSessions = allSessions.filter((session: any) => !(agentView as any).isCurrentSession(session));
 
 			// Should include all sessions when currentSession is null
 			expect(filteredSessions).toHaveLength(2);
@@ -738,8 +762,7 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).currentSession = currentSession;
 
 			// Mock getRecentAgentSessions to return all 6 sessions
-			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
-				.mockResolvedValue(sessions);
+			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions').mockResolvedValue(sessions);
 
 			// Fetch and filter (simulating what showEmptyState does)
 			const allSessions = await plugin.sessionManager.getRecentAgentSessions(6);
@@ -754,8 +777,8 @@ describe('AgentView UI Tests', () => {
 			expect(filteredSessions).not.toContain(currentSession);
 
 			// Should include the other 5 sessions
-			const otherSessions = sessions.filter(s => s !== currentSession);
-			otherSessions.forEach(session => {
+			const otherSessions = sessions.filter((s) => s !== currentSession);
+			otherSessions.forEach((session) => {
 				expect(filteredSessions).toContain(session);
 			});
 
@@ -779,7 +802,7 @@ describe('AgentView UI Tests', () => {
 			const sessionWithSamePath = {
 				...session2,
 				id: 'different-id',
-				historyPath: session1.historyPath // Same path as current session
+				historyPath: session1.historyPath, // Same path as current session
 			};
 			expect((agentView as any).isCurrentSession(sessionWithSamePath)).toBe(true);
 		});
@@ -827,7 +850,9 @@ describe('AgentView UI Tests', () => {
 
 			// Should be able to click
 			let clicked = false;
-			sendButton.onclick = () => { clicked = true; };
+			sendButton.onclick = () => {
+				clicked = true;
+			};
 			sendButton.click();
 			expect(clicked).toBe(true);
 		});
@@ -841,7 +866,7 @@ describe('AgentView UI Tests', () => {
 			const sendButton = document.createElement('button');
 			sendButton.className = 'gemini-agent-stop-btn';
 			// Add Obsidian methods
-			(sendButton as any).removeClass = function(className: string) {
+			(sendButton as any).removeClass = function (className: string) {
 				this.classList.remove(className);
 			};
 			(sendButton as any).empty = jest.fn();
@@ -851,10 +876,10 @@ describe('AgentView UI Tests', () => {
 
 			// Mock chatContainer
 			const mockChatContainer = document.createElement('div');
-			(mockChatContainer as any).createDiv = function(options?: any) {
+			(mockChatContainer as any).createDiv = function (options?: any) {
 				const el = document.createElement('div');
 				if (options?.cls) el.className = options.cls;
-				(el as any).createEl = function(tag: string, options?: any) {
+				(el as any).createEl = function (tag: string, options?: any) {
 					const child = document.createElement(tag);
 					if (options?.text) child.textContent = options.text;
 					if (options?.cls) child.className = options.cls;
@@ -868,7 +893,7 @@ describe('AgentView UI Tests', () => {
 
 			// Mock streaming response
 			const mockStreamingResponse = {
-				cancel: jest.fn()
+				cancel: jest.fn(),
 			};
 			(agentView as any).currentStreamingResponse = mockStreamingResponse;
 
@@ -906,7 +931,7 @@ describe('AgentView UI Tests', () => {
 			const sendButton = document.createElement('button');
 			sendButton.className = 'gemini-agent-stop-btn';
 			// Add Obsidian methods
-			(sendButton as any).removeClass = function(className: string) {
+			(sendButton as any).removeClass = function (className: string) {
 				this.classList.remove(className);
 			};
 			(sendButton as any).empty = jest.fn();
@@ -959,8 +984,12 @@ describe('AgentView UI Tests', () => {
 			let stopAgentLoopCalled = false;
 
 			// Mock the methods
-			(agentView as any).sendMessage = jest.fn(() => { sendMessageCalled = true; });
-			(agentView as any).stopAgentLoop = jest.fn(() => { stopAgentLoopCalled = true; });
+			(agentView as any).sendMessage = jest.fn(() => {
+				sendMessageCalled = true;
+			});
+			(agentView as any).stopAgentLoop = jest.fn(() => {
+				stopAgentLoopCalled = true;
+			});
 
 			// Simulate button click handler
 			const handleClick = () => {
@@ -1000,13 +1029,13 @@ describe('AgentView UI Tests', () => {
 			// Set up mock session
 			(agentView as any).currentSession = {
 				id: 'test-session',
-				context: { contextFiles: [] }
+				context: { contextFiles: [] },
 			};
 
 			// Set up mock fileChips that returns a message (to pass early return check)
 			(agentView as any).fileChips = {
 				extractMessageContent: () => ({ text: 'test message', files: [], formattedMessage: 'test message' }),
-				clearMentionedFiles: jest.fn()
+				clearMentionedFiles: jest.fn(),
 			};
 
 			// Mock userInput
@@ -1016,7 +1045,7 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).progress = {
 				show: jest.fn(),
 				hide: jest.fn(),
-				update: jest.fn()
+				update: jest.fn(),
 			};
 
 			// Set cancellation flag (simulating previous stop)

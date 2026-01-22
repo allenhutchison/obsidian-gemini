@@ -28,19 +28,19 @@ export class ToolLoopDetector {
 	recordExecution(sessionId: string, toolCall: ToolCall) {
 		const key = this.getToolCallKey(toolCall);
 		const timestamp = Date.now();
-		
+
 		if (!this.executionHistory.has(sessionId)) {
 			this.executionHistory.set(sessionId, []);
 		}
-		
+
 		const history = this.executionHistory.get(sessionId)!;
 		history.push({ key, timestamp, toolCall });
-		
+
 		// Keep history size manageable
 		if (history.length > this.maxHistorySize) {
 			history.shift();
 		}
-		
+
 		// Clean up old entries
 		this.cleanupOldEntries(sessionId);
 	}
@@ -52,13 +52,12 @@ export class ToolLoopDetector {
 		const key = this.getToolCallKey(toolCall);
 		const history = this.executionHistory.get(sessionId) || [];
 		const now = Date.now();
-		
+
 		// Count recent identical calls
-		const recentIdenticalCalls = history.filter(record => 
-			record.key === key && 
-			(now - record.timestamp) < this.timeWindowMs
+		const recentIdenticalCalls = history.filter(
+			(record) => record.key === key && now - record.timestamp < this.timeWindowMs
 		);
-		
+
 		return recentIdenticalCalls.length >= this.loopThreshold;
 	}
 
@@ -69,20 +68,19 @@ export class ToolLoopDetector {
 		const key = this.getToolCallKey(toolCall);
 		const history = this.executionHistory.get(sessionId) || [];
 		const now = Date.now();
-		
-		const recentIdenticalCalls = history.filter(record => 
-			record.key === key && 
-			(now - record.timestamp) < this.timeWindowMs
+
+		const recentIdenticalCalls = history.filter(
+			(record) => record.key === key && now - record.timestamp < this.timeWindowMs
 		);
-		
+
 		const consecutiveCalls = this.countConsecutiveCalls(history, key);
-		
+
 		return {
 			isLoop: recentIdenticalCalls.length >= this.loopThreshold,
 			identicalCallCount: recentIdenticalCalls.length,
 			consecutiveCallCount: consecutiveCalls,
 			timeWindowMs: this.timeWindowMs,
-			lastCallTimestamp: recentIdenticalCalls[recentIdenticalCalls.length - 1]?.timestamp
+			lastCallTimestamp: recentIdenticalCalls[recentIdenticalCalls.length - 1]?.timestamp,
 		};
 	}
 
@@ -107,8 +105,8 @@ export class ToolLoopDetector {
 	 */
 	private sortObject(obj: any): any {
 		if (obj === null || typeof obj !== 'object') return obj;
-		if (Array.isArray(obj)) return obj.map(item => this.sortObject(item));
-		
+		if (Array.isArray(obj)) return obj.map((item) => this.sortObject(item));
+
 		return Object.keys(obj)
 			.sort()
 			.reduce((sorted: any, key) => {
@@ -138,12 +136,12 @@ export class ToolLoopDetector {
 	private cleanupOldEntries(sessionId: string) {
 		const history = this.executionHistory.get(sessionId);
 		if (!history) return;
-		
+
 		const now = Date.now();
-		const filtered = history.filter(record => 
-			(now - record.timestamp) < this.timeWindowMs * 2 // Keep 2x window for analysis
+		const filtered = history.filter(
+			(record) => now - record.timestamp < this.timeWindowMs * 2 // Keep 2x window for analysis
 		);
-		
+
 		this.executionHistory.set(sessionId, filtered);
 	}
 }

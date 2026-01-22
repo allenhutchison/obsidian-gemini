@@ -1,6 +1,12 @@
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
 import { ToolRegistry } from '../../src/tools/tool-registry';
-import { ReadFileTool, WriteFileTool, SearchFilesTool, DeleteFileTool, ListFilesTool } from '../../src/tools/vault-tools';
+import {
+	ReadFileTool,
+	WriteFileTool,
+	SearchFilesTool,
+	DeleteFileTool,
+	ListFilesTool,
+} from '../../src/tools/vault-tools';
 import { GoogleSearchTool } from '../../src/tools/google-search-tool';
 import { WebFetchTool } from '../../src/tools/web-fetch-tool';
 import { SessionType, ToolCategory } from '../../src/types/agent';
@@ -16,7 +22,7 @@ jest.mock('obsidian', () => ({
 		name: string = '';
 		basename: string = '';
 		stat = { size: 0, mtime: Date.now(), ctime: Date.now() };
-	}
+	},
 }));
 
 jest.mock('@google/genai');
@@ -26,8 +32,8 @@ jest.mock('../../src/files', () => ({
 	ScribeFile: jest.fn().mockImplementation(() => ({
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
 		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-		getBacklinks: jest.fn().mockReturnValue(new Set())
-	}))
+		getBacklinks: jest.fn().mockReturnValue(new Set()),
+	})),
 }));
 
 describe('Tool Integration Tests', () => {
@@ -44,7 +50,7 @@ describe('Tool Integration Tests', () => {
 				searchGrounding: true,
 				searchGroundingThreshold: 0.7,
 				loopDetectionThreshold: 3,
-				loopDetectionTimeWindowSeconds: 60
+				loopDetectionTimeWindowSeconds: 60,
 			},
 			app: {
 				vault: {
@@ -57,19 +63,19 @@ describe('Tool Integration Tests', () => {
 					processFrontMatter: jest.fn(),
 					getRoot: jest.fn().mockReturnValue({
 						children: [],
-						path: '/'
-					})
+						path: '/',
+					}),
 				},
 				metadataCache: {
 					getFileCache: jest.fn(),
-					getFirstLinkpathDest: jest.fn().mockReturnValue(null)
-				}
+					getFirstLinkpathDest: jest.fn().mockReturnValue(null),
+				},
 			},
 			gfile: {
 				getUniqueLinks: jest.fn().mockReturnValue(new Set()),
 				getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-				getBacklinks: jest.fn().mockReturnValue(new Set())
-			}
+				getBacklinks: jest.fn().mockReturnValue(new Set()),
+			},
 		};
 
 		// Create registry and register all tools
@@ -97,55 +103,58 @@ describe('Tool Integration Tests', () => {
 						contextDepth: 2,
 						enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
 						requireConfirmation: [],
-						bypassConfirmationFor: ['modify_files']
-					}
-				}
+						bypassConfirmationFor: ['modify_files'],
+					},
+				},
 			} as any;
 
 			// Mock search results
-			const mockFiles = [
-				createMockFile('project/todo.md', 'todo'),
-				createMockFile('project/done.md', 'done')
-			];
+			const mockFiles = [createMockFile('project/todo.md', 'todo'), createMockFile('project/done.md', 'done')];
 			plugin.app.vault.getMarkdownFiles.mockReturnValue(mockFiles);
 
 			// Mock file content
 			plugin.app.vault.read.mockResolvedValue('# TODO\n- [ ] Task 1\n- [x] Task 2');
 
 			// 1. Search for files
-			const searchResult = await engine.executeTool({
-				name: 'search_files',
-				arguments: { pattern: 'todo' }
-			}, context);
+			const searchResult = await engine.executeTool(
+				{
+					name: 'search_files',
+					arguments: { pattern: 'todo' },
+				},
+				context
+			);
 
 			expect(searchResult.success).toBe(true);
 			expect(searchResult.data.matches).toHaveLength(1);
 
 			// 2. Read the found file - need to mock it exists
 			plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFiles[0]);
-			const readResult = await engine.executeTool({
-				name: 'read_file',
-				arguments: { path: 'project/todo.md' }
-			}, context);
+			const readResult = await engine.executeTool(
+				{
+					name: 'read_file',
+					arguments: { path: 'project/todo.md' },
+				},
+				context
+			);
 
 			expect(readResult.success).toBe(true);
 			expect(readResult.data.content).toContain('TODO');
 
 			// 3. Write updated content
 			plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFiles[0]);
-			const writeResult = await engine.executeTool({
-				name: 'write_file',
-				arguments: { 
-					path: 'project/todo.md',
-					content: '# TODO\n- [ ] Task 1\n- [x] Task 2\n- [ ] Task 3'
-				}
-			}, context);
+			const writeResult = await engine.executeTool(
+				{
+					name: 'write_file',
+					arguments: {
+						path: 'project/todo.md',
+						content: '# TODO\n- [ ] Task 1\n- [x] Task 2\n- [ ] Task 3',
+					},
+				},
+				context
+			);
 
 			expect(writeResult.success).toBe(true);
-			expect(plugin.app.vault.modify).toHaveBeenCalledWith(
-				mockFiles[0],
-				expect.stringContaining('Task 3')
-			);
+			expect(plugin.app.vault.modify).toHaveBeenCalledWith(mockFiles[0], expect.stringContaining('Task 3'));
 		});
 
 		it.skip('should handle list files workflow', async () => {
@@ -158,9 +167,9 @@ describe('Tool Integration Tests', () => {
 						contextFiles: [],
 						enabledTools: [ToolCategory.VAULT_OPERATIONS],
 						requireConfirmation: [],
-						bypassConfirmationFor: ['manage_properties']
-					}
-				}
+						bypassConfirmationFor: ['manage_properties'],
+					},
+				},
 			} as any;
 
 			// Mock file structure
@@ -169,28 +178,34 @@ describe('Tool Integration Tests', () => {
 				children: [
 					createMockFile('notes/meeting.md', 'meeting'),
 					createMockFile('notes/todo.md', 'todo'),
-					{ path: 'notes/subfolder', children: [] }
-				]
+					{ path: 'notes/subfolder', children: [] },
+				],
 			};
 			plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFolder);
 
 			// Mock root folder for empty path
 			plugin.app.vault.getRoot = jest.fn().mockReturnValue(mockFolder);
-			
+
 			// 1. List files in root
-			const listResult = await engine.executeTool({
-				name: 'list_files',
-				arguments: { path: '' }
-			}, context);
+			const listResult = await engine.executeTool(
+				{
+					name: 'list_files',
+					arguments: { path: '' },
+				},
+				context
+			);
 
 			expect(listResult.success).toBe(true);
 			expect(listResult.data.files).toBeInstanceOf(Array);
 
 			// 2. List files in subfolder
-			const subfolderResult = await engine.executeTool({
-				name: 'list_files',
-				arguments: { path: 'notes' }
-			}, context);
+			const subfolderResult = await engine.executeTool(
+				{
+					name: 'list_files',
+					arguments: { path: 'notes' },
+				},
+				context
+			);
 
 			expect(subfolderResult.success).toBe(true);
 		});
@@ -206,9 +221,9 @@ describe('Tool Integration Tests', () => {
 					context: {
 						contextFiles: [],
 						enabledTools: [ToolCategory.READ_ONLY],
-						requireConfirmation: []
-					}
-				}
+						requireConfirmation: [],
+					},
+				},
 			} as any;
 
 			// The google search tool is disabled without proper API key
@@ -221,16 +236,19 @@ describe('Tool Integration Tests', () => {
 						query: 'obsidian plugins',
 						answer: 'Search results for Obsidian plugins',
 						originalAnswer: 'Search results for Obsidian plugins',
-						citations: []
-					}
+						citations: [],
+					},
 				});
 			}
 
 			// 1. Search the web
-			const searchResult = await engine.executeTool({
-				name: 'google_search',
-				arguments: { query: 'obsidian plugins' }
-			}, context);
+			const searchResult = await engine.executeTool(
+				{
+					name: 'google_search',
+					arguments: { query: 'obsidian plugins' },
+				},
+				context
+			);
 
 			expect(searchResult.success).toBe(true);
 			expect(searchResult.data.answer).toContain('Search results');
@@ -240,16 +258,19 @@ describe('Tool Integration Tests', () => {
 			global.fetch = jest.fn().mockResolvedValue({
 				ok: true,
 				text: async () => '<html><body><h1>Obsidian Plugins</h1></body></html>',
-				headers: new Headers({ 'content-type': 'text/html' })
+				headers: new Headers({ 'content-type': 'text/html' }),
 			});
 
-			const fetchResult = await engine.executeTool({
-				name: 'fetch_url',
-				arguments: { 
-					url: 'https://obsidian.md/plugins',
-					prompt: 'Extract the main heading'
-				}
-			}, context);
+			const fetchResult = await engine.executeTool(
+				{
+					name: 'fetch_url',
+					arguments: {
+						url: 'https://obsidian.md/plugins',
+						prompt: 'Extract the main heading',
+					},
+				},
+				context
+			);
 
 			expect(fetchResult.success).toBe(true);
 			// Result depends on mock implementation
@@ -266,16 +287,19 @@ describe('Tool Integration Tests', () => {
 					context: {
 						contextFiles: [],
 						enabledTools: [ToolCategory.READ_ONLY], // Only read operations
-						requireConfirmation: []
-					}
-				}
+						requireConfirmation: [],
+					},
+				},
 			} as any;
 
 			// Try to execute write operation
-			const writeResult = await engine.executeTool({
-				name: 'write_file',
-				arguments: { path: 'test.md', content: 'content' }
-			}, context);
+			const writeResult = await engine.executeTool(
+				{
+					name: 'write_file',
+					arguments: { path: 'test.md', content: 'content' },
+				},
+				context
+			);
 
 			expect(writeResult.success).toBe(false);
 			expect(writeResult.error).toContain('not enabled');
@@ -284,10 +308,13 @@ describe('Tool Integration Tests', () => {
 			plugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockFile('test.md', 'test'));
 			plugin.app.vault.read.mockResolvedValue('file content');
 
-			const readResult = await engine.executeTool({
-				name: 'read_file',
-				arguments: { path: 'test.md' }
-			}, context);
+			const readResult = await engine.executeTool(
+				{
+					name: 'read_file',
+					arguments: { path: 'test.md' },
+				},
+				context
+			);
 
 			expect(readResult.success).toBe(true);
 		});
@@ -302,27 +329,33 @@ describe('Tool Integration Tests', () => {
 						contextFiles: [],
 						enabledTools: [ToolCategory.VAULT_OPERATIONS],
 						requireConfirmation: [],
-						bypassConfirmationFor: ['modify_files', 'delete_files']
-					}
-				}
+						bypassConfirmationFor: ['modify_files', 'delete_files'],
+					},
+				},
 			} as any;
 
 			// Try operations on one system path only
 			const systemPath = 'gemini-scribe/config.md';
-			
+
 			// Write should fail
-			const writeResult = await engine.executeTool({
-				name: 'write_file',
-				arguments: { path: systemPath, content: 'hacked' }
-			}, context);
+			const writeResult = await engine.executeTool(
+				{
+					name: 'write_file',
+					arguments: { path: systemPath, content: 'hacked' },
+				},
+				context
+			);
 			expect(writeResult.success).toBe(false);
 			expect(writeResult.error).toContain('protected');
 
 			// Delete should fail
-			const deleteResult = await engine.executeTool({
-				name: 'delete_file',
-				arguments: { path: systemPath }
-			}, context);
+			const deleteResult = await engine.executeTool(
+				{
+					name: 'delete_file',
+					arguments: { path: systemPath },
+				},
+				context
+			);
 			expect(deleteResult.success).toBe(false);
 			expect(deleteResult.error).toContain('protected');
 		});
@@ -339,24 +372,24 @@ describe('Tool Integration Tests', () => {
 						contextFiles: [],
 						enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
 						requireConfirmation: [],
-						bypassConfirmationFor: ['modify_files']
-					}
-				}
+						bypassConfirmationFor: ['modify_files'],
+					},
+				},
 			} as any;
 
 			// Execute multiple tools with one failure
 			const toolCalls = [
 				{ name: 'search_files', arguments: { pattern: 'test' } },
 				{ name: 'read_file', arguments: { path: 'nonexistent.md' } }, // Will fail
-				{ name: 'list_files', arguments: { path: '' } }
+				{ name: 'list_files', arguments: { path: '' } },
 			];
 
 			// Mock getRoot for list_files
-			plugin.app.vault.getRoot = jest.fn().mockReturnValue({ 
+			plugin.app.vault.getRoot = jest.fn().mockReturnValue({
 				children: [],
-				path: '/'
+				path: '/',
 			});
-			
+
 			// Execute tools sequentially
 			const results = [];
 			for (const call of toolCalls) {

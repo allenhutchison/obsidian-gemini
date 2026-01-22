@@ -14,8 +14,8 @@ export class SessionListModal extends Modal {
 	private currentSessionId: string | null;
 
 	constructor(
-		app: App, 
-		plugin: InstanceType<typeof ObsidianGemini>, 
+		app: App,
+		plugin: InstanceType<typeof ObsidianGemini>,
 		callbacks: SessionListCallbacks,
 		currentSessionId: string | null = null
 	) {
@@ -38,11 +38,11 @@ export class SessionListModal extends Modal {
 
 		// Create session list
 		const listContainer = contentEl.createDiv({ cls: 'gemini-session-list' });
-		
+
 		if (this.sessions.length === 0) {
-			listContainer.createEl('p', { 
+			listContainer.createEl('p', {
 				text: 'No agent sessions found',
-				cls: 'gemini-agent-empty-state'
+				cls: 'gemini-agent-empty-state',
 			});
 		} else {
 			this.renderSessionList(listContainer);
@@ -50,9 +50,9 @@ export class SessionListModal extends Modal {
 
 		// Add create new session button at the bottom
 		const footer = contentEl.createDiv({ cls: 'modal-button-container' });
-		const newSessionBtn = footer.createEl('button', { 
+		const newSessionBtn = footer.createEl('button', {
 			text: 'New Session',
-			cls: 'mod-cta'
+			cls: 'mod-cta',
 		});
 		newSessionBtn.addEventListener('click', async () => {
 			this.close();
@@ -74,9 +74,7 @@ export class SessionListModal extends Modal {
 			const folder = this.app.vault.getAbstractFileByPath(sessionFolder);
 
 			// Get all markdown files in the session folder
-			const files = this.app.vault.getMarkdownFiles().filter(f =>
-				f.path.startsWith(sessionFolder + '/')
-			);
+			const files = this.app.vault.getMarkdownFiles().filter((f) => f.path.startsWith(sessionFolder + '/'));
 
 			// Load each session
 			for (const file of files) {
@@ -89,7 +87,7 @@ export class SessionListModal extends Modal {
 					this.plugin.logger.error(`Failed to load session from ${file.path}:`, error);
 				}
 			}
-			
+
 			// Sort sessions by last modified date (newest first)
 			this.sessions.sort((a, b) => {
 				const aFile = this.app.vault.getAbstractFileByPath(a.historyPath);
@@ -107,23 +105,23 @@ export class SessionListModal extends Modal {
 
 	private renderSessionList(container: HTMLElement) {
 		for (const session of this.sessions) {
-			const sessionItem = container.createDiv({ 
-				cls: `gemini-session-item ${session.id === this.currentSessionId ? 'gemini-session-item-active' : ''}`
+			const sessionItem = container.createDiv({
+				cls: `gemini-session-item ${session.id === this.currentSessionId ? 'gemini-session-item-active' : ''}`,
 			});
 
 			// Session info
 			const infoDiv = sessionItem.createDiv({ cls: 'gemini-session-info' });
-			infoDiv.createDiv({ 
+			infoDiv.createDiv({
 				text: session.title,
-				cls: 'gemini-session-title'
+				cls: 'gemini-session-title',
 			});
 
 			const metaDiv = infoDiv.createDiv({ cls: 'gemini-session-meta' });
-			
+
 			// Show file count and last modified
 			const fileCount = session.context.contextFiles.length;
 			const fileText = fileCount === 1 ? '1 file' : `${fileCount} files`;
-			
+
 			const file = this.app.vault.getAbstractFileByPath(session.historyPath);
 			if (file && file instanceof TFile) {
 				const lastModified = new Date(file.stat.mtime);
@@ -136,22 +134,22 @@ export class SessionListModal extends Modal {
 
 			// Actions
 			const actionsDiv = sessionItem.createDiv({ cls: 'gemini-session-actions' });
-			
+
 			// Open button
-			const openBtn = actionsDiv.createEl('button', { 
+			const openBtn = actionsDiv.createEl('button', {
 				cls: 'gemini-session-action-btn',
-				title: 'Open session'
+				title: 'Open session',
 			});
 			setIcon(openBtn, 'arrow-right');
-			
+
 			// Delete button
 			if (this.callbacks.onDelete) {
-				const deleteBtn = actionsDiv.createEl('button', { 
+				const deleteBtn = actionsDiv.createEl('button', {
 					cls: 'gemini-session-action-btn delete',
-					title: 'Delete session'
+					title: 'Delete session',
 				});
 				setIcon(deleteBtn, 'trash-2');
-				
+
 				deleteBtn.addEventListener('click', async (e) => {
 					e.stopPropagation();
 					if (confirm(`Delete session "${session.title}"?`)) {
@@ -174,7 +172,7 @@ export class SessionListModal extends Modal {
 			if (file) {
 				await this.app.vault.delete(file);
 				new Notice(`Session "${session.title}" deleted`);
-				
+
 				// Reload the list
 				const { contentEl } = this;
 				const listContainer = contentEl.querySelector('.gemini-session-list');
@@ -183,7 +181,7 @@ export class SessionListModal extends Modal {
 					await this.loadSessions();
 					this.renderSessionList(listContainer as HTMLElement);
 				}
-				
+
 				// Call the delete callback if provided
 				if (this.callbacks.onDelete) {
 					this.callbacks.onDelete(session);

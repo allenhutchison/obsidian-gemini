@@ -16,16 +16,16 @@ describe('RagSearchTool', () => {
 					apiKey: 'test-api-key',
 					chatModelName: 'gemini-1.5-flash-002',
 					ragIndexing: {
-						enabled: false
-					}
+						enabled: false,
+					},
 				},
 				ragIndexing: null,
 				logger: {
 					log: jest.fn(),
 					debug: jest.fn(),
 					error: jest.fn(),
-					warn: jest.fn()
-				}
+					warn: jest.fn(),
+				},
 			},
 			session: {
 				id: 'test-session',
@@ -34,9 +34,9 @@ describe('RagSearchTool', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [],
-					requireConfirmation: []
-				}
-			}
+					requireConfirmation: [],
+				},
+			},
 		} as any;
 	});
 
@@ -55,23 +55,23 @@ describe('RagSearchTool', () => {
 				properties: {
 					query: {
 						type: 'string',
-						description: 'The search query. Can be a question, topic, or concept to search for.'
+						description: 'The search query. Can be a question, topic, or concept to search for.',
 					},
 					maxResults: {
 						type: 'number',
-						description: 'Maximum number of results to return (default: 5, max: 20)'
+						description: 'Maximum number of results to return (default: 5, max: 20)',
 					},
 					folder: {
 						type: 'string',
-						description: 'Limit search to files in this folder path (e.g., "projects" or "projects/2024")'
+						description: 'Limit search to files in this folder path (e.g., "projects" or "projects/2024")',
 					},
 					tags: {
 						type: 'array',
 						items: { type: 'string' },
-						description: 'Filter by tags. Multiple tags use OR logic (matches any tag).'
-					}
+						description: 'Filter by tags. Multiple tags use OR logic (matches any tag).',
+					},
 				},
-				required: ['query']
+				required: ['query'],
 			});
 		});
 	});
@@ -142,9 +142,7 @@ describe('RagSearchTool', () => {
 		});
 
 		it('should build filter for multiple tags with OR logic', () => {
-			expect(buildFilter(undefined, ['architecture', 'design'])).toBe(
-				'(tags="architecture" OR tags="design")'
-			);
+			expect(buildFilter(undefined, ['architecture', 'design'])).toBe('(tags="architecture" OR tags="design")');
 			expect(buildFilter(undefined, ['a', 'b', 'c'])).toBe('(tags="a" OR tags="b" OR tags="c")');
 		});
 
@@ -238,7 +236,7 @@ describe('RagSearchTool', () => {
 			mockContext.plugin.ragIndexing = {
 				isReady: () => false,
 				getStoreName: () => null,
-				getClient: () => null
+				getClient: () => null,
 			};
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
@@ -251,7 +249,7 @@ describe('RagSearchTool', () => {
 			mockContext.plugin.ragIndexing = {
 				isReady: () => true,
 				getStoreName: () => null,
-				getClient: () => null
+				getClient: () => null,
 			};
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
@@ -264,7 +262,7 @@ describe('RagSearchTool', () => {
 			mockContext.plugin.ragIndexing = {
 				isReady: () => true,
 				getStoreName: () => 'test-store',
-				getClient: () => null
+				getClient: () => null,
 			};
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
@@ -279,22 +277,22 @@ describe('RagSearchTool', () => {
 		beforeEach(() => {
 			mockAi = {
 				models: {
-					generateContent: jest.fn()
-				}
+					generateContent: jest.fn(),
+				},
 			};
 
 			mockContext.plugin.settings.ragIndexing.enabled = true;
 			mockContext.plugin.ragIndexing = {
 				isReady: () => true,
 				getStoreName: () => 'test-store',
-				getClient: () => mockAi
+				getClient: () => mockAi,
 			};
 		});
 
 		it('should execute search without filters', async () => {
 			mockAi.models.generateContent.mockResolvedValue({
 				text: 'Search results',
-				candidates: [{ groundingMetadata: { groundingChunks: [] } }]
+				candidates: [{ groundingMetadata: { groundingChunks: [] } }],
 			});
 
 			await tool.execute({ query: 'test' }, mockContext);
@@ -306,18 +304,18 @@ describe('RagSearchTool', () => {
 					tools: [
 						{
 							fileSearch: {
-								fileSearchStoreNames: ['test-store']
-							}
-						}
-					]
-				}
+								fileSearchStoreNames: ['test-store'],
+							},
+						},
+					],
+				},
 			});
 		});
 
 		it('should execute search with folder filter', async () => {
 			mockAi.models.generateContent.mockResolvedValue({
 				text: 'Search results',
-				candidates: [{ groundingMetadata: { groundingChunks: [] } }]
+				candidates: [{ groundingMetadata: { groundingChunks: [] } }],
 			});
 
 			await tool.execute({ query: 'test', folder: 'projects' }, mockContext);
@@ -330,18 +328,18 @@ describe('RagSearchTool', () => {
 						{
 							fileSearch: {
 								fileSearchStoreNames: ['test-store'],
-								metadataFilter: 'folder="projects"'
-							}
-						}
-					]
-				}
+								metadataFilter: 'folder="projects"',
+							},
+						},
+					],
+				},
 			});
 		});
 
 		it('should execute search with tags filter', async () => {
 			mockAi.models.generateContent.mockResolvedValue({
 				text: 'Search results',
-				candidates: [{ groundingMetadata: { groundingChunks: [] } }]
+				candidates: [{ groundingMetadata: { groundingChunks: [] } }],
 			});
 
 			await tool.execute({ query: 'test', tags: ['architecture', 'design'] }, mockContext);
@@ -354,18 +352,18 @@ describe('RagSearchTool', () => {
 						{
 							fileSearch: {
 								fileSearchStoreNames: ['test-store'],
-								metadataFilter: '(tags="architecture" OR tags="design")'
-							}
-						}
-					]
-				}
+								metadataFilter: '(tags="architecture" OR tags="design")',
+							},
+						},
+					],
+				},
 			});
 		});
 
 		it('should execute search with folder and tags filters', async () => {
 			mockAi.models.generateContent.mockResolvedValue({
 				text: 'Search results',
-				candidates: [{ groundingMetadata: { groundingChunks: [] } }]
+				candidates: [{ groundingMetadata: { groundingChunks: [] } }],
 			});
 
 			await tool.execute({ query: 'test', folder: 'projects', tags: ['architecture'] }, mockContext);
@@ -378,11 +376,11 @@ describe('RagSearchTool', () => {
 						{
 							fileSearch: {
 								fileSearchStoreNames: ['test-store'],
-								metadataFilter: 'folder="projects" AND tags="architecture"'
-							}
-						}
-					]
-				}
+								metadataFilter: 'folder="projects" AND tags="architecture"',
+							},
+						},
+					],
+				},
 			});
 		});
 
@@ -405,13 +403,13 @@ describe('RagSearchTool', () => {
 								{
 									retrievedContext: {
 										title: 'notes/test.md',
-										text: 'Relevant excerpt from the note'
-									}
-								}
-							]
-						}
-					}
-				]
+										text: 'Relevant excerpt from the note',
+									},
+								},
+							],
+						},
+					},
+				],
 			});
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
@@ -423,11 +421,11 @@ describe('RagSearchTool', () => {
 				results: [
 					{
 						path: 'notes/test.md',
-						excerpt: 'Relevant excerpt from the note'
-					}
+						excerpt: 'Relevant excerpt from the note',
+					},
 				],
 				totalMatches: 1,
-				message: 'Found 1 relevant passages'
+				message: 'Found 1 relevant passages',
 			});
 		});
 
@@ -441,13 +439,13 @@ describe('RagSearchTool', () => {
 								{
 									retrievedContext: {
 										uri: 'fileSearchStores/abc123/files/document.md',
-										text: 'Content from the document'
-									}
-								}
-							]
-						}
-					}
-				]
+										text: 'Content from the document',
+									},
+								},
+							],
+						},
+					},
+				],
 			});
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
@@ -466,13 +464,13 @@ describe('RagSearchTool', () => {
 								{
 									retrievedContext: {
 										uri: 'fileSearchStores/abc123/files/document.md',
-										text: 'Content'
-									}
-								}
-							]
-						}
-					}
-				]
+										text: 'Content',
+									},
+								},
+							],
+						},
+					},
+				],
 			});
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
@@ -492,13 +490,13 @@ describe('RagSearchTool', () => {
 								{
 									retrievedContext: {
 										text: 'Content without path info',
-										fileSearchStore: 'fileSearchStores/store-name'
-									}
-								}
-							]
-						}
-					}
-				]
+										fileSearchStore: 'fileSearchStores/store-name',
+									},
+								},
+							],
+						},
+					},
+				],
 			});
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
@@ -539,9 +537,7 @@ describe('RagSearchTool', () => {
 
 		it('should return full uri for opaque file IDs without extension', () => {
 			// When the URI contains /files/ segment but the ID has no extension
-			expect(extractPath({ uri: 'fileSearchStores/abc/files/opaque-id' })).toBe(
-				'fileSearchStores/abc/files/opaque-id'
-			);
+			expect(extractPath({ uri: 'fileSearchStores/abc/files/opaque-id' })).toBe('fileSearchStores/abc/files/opaque-id');
 		});
 
 		it('should return undefined for store-only uri', () => {

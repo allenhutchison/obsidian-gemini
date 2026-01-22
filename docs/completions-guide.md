@@ -19,6 +19,7 @@ IDE-Style Completions bring intelligent, context-aware text suggestions to your 
 ### What are IDE-Style Completions?
 
 Completions provide:
+
 - Real-time text suggestions as you type
 - Context-aware predictions based on surrounding content
 - Single-keypress acceptance (Tab)
@@ -62,6 +63,7 @@ Completions provide:
 ### Context Understanding
 
 The AI considers:
+
 - Previous paragraphs
 - Current sentence
 - Document structure
@@ -71,6 +73,7 @@ The AI considers:
 ### Smart Predictions
 
 Completions understand:
+
 - **Lists**: Continues numbered or bulleted lists
 - **Headers**: Suggests appropriate content
 - **Code blocks**: Language-aware suggestions
@@ -91,11 +94,13 @@ Completions understand:
 ### Accepting Completions
 
 **Full acceptance**: Press `Tab` once
+
 - Entire suggestion is inserted
 - Cursor moves to end
 - Continue typing normally
 
 **Dismissing**: Press any other key
+
 - Suggestion disappears
 - Your keypress is processed normally
 - No text is inserted
@@ -103,10 +108,11 @@ Completions understand:
 ### When Completions Appear
 
 Suggestions trigger when:
+
 - You pause mid-sentence
 - After punctuation (. ! ?)
 - At the start of new lines
-- After list markers (-, *, 1.)
+- After list markers (-, \*, 1.)
 - Inside markdown structures
 
 ## Configuration
@@ -116,21 +122,23 @@ Suggestions trigger when:
 In Settings → Gemini Scribe:
 
 **Completion Model**
+
 - Gemini 1.5 Flash-8B (fastest, recommended)
 - Gemini 1.5 Flash (balanced)
 - Gemini 1.5 Pro (highest quality, slower)
 
 ### Model Comparison
 
-| Model | Speed | Quality | Best For |
-|-------|-------|---------|----------|
-| Flash-8B | ~500ms | Good | Most writing, note-taking |
-| Flash | ~750ms | Better | Important documents |
-| Pro | ~2s | Best | Critical content |
+| Model    | Speed  | Quality | Best For                  |
+| -------- | ------ | ------- | ------------------------- |
+| Flash-8B | ~500ms | Good    | Most writing, note-taking |
+| Flash    | ~750ms | Better  | Important documents       |
+| Pro      | ~2s    | Best    | Critical content          |
 
 ### Performance Tuning
 
 Completions are optimized for:
+
 - 750ms debounce (prevents excessive API calls)
 - Smart context extraction
 - Efficient caching
@@ -141,6 +149,7 @@ Completions are optimized for:
 ### 1. Note-Taking
 
 **Meeting Notes**
+
 ```
 Type: "Action items from today's meeting:"
 Pause...
@@ -149,6 +158,7 @@ Tab to accept, continue with your items
 ```
 
 **Daily Notes**
+
 ```
 Type: "Today I learned"
 Pause...
@@ -158,6 +168,7 @@ Suggestion: "about the importance of consistent documentation practices"
 ### 2. Technical Writing
 
 **Documentation**
+
 ```
 Type: "To install the package, run"
 Pause...
@@ -165,6 +176,7 @@ Suggestion: "`npm install package-name`"
 ```
 
 **Code Comments**
+
 ```
 Type: "This function"
 Pause...
@@ -174,6 +186,7 @@ Suggestion: "handles user authentication and returns a JWT token"
 ### 3. Creative Writing
 
 **Story Continuation**
+
 ```
 Type: "The old lighthouse keeper"
 Pause...
@@ -181,6 +194,7 @@ Suggestion: "watched the storm clouds gather on the horizon"
 ```
 
 **Descriptions**
+
 ```
 Type: "The room was"
 Pause...
@@ -190,6 +204,7 @@ Suggestion: "dimly lit by a single candle flickering in the corner"
 ### 4. Academic Writing
 
 **Research Notes**
+
 ```
 Type: "The study demonstrates that"
 Pause...
@@ -197,6 +212,7 @@ Suggestion: "increased exposure to natural light improves cognitive performance"
 ```
 
 **Citations**
+
 ```
 Type: "According to Smith (2023),"
 Pause...
@@ -208,6 +224,7 @@ Suggestion: "the correlation between these variables is statistically significan
 ### 1. List Completion
 
 Start a list and let AI continue:
+
 ```
 1. First step
 2. [pause]
@@ -217,6 +234,7 @@ Start a list and let AI continue:
 ### 2. Markdown Formatting
 
 **Bold/Italic**
+
 ```
 Type: "This is **important"
 Pause...
@@ -224,6 +242,7 @@ Suggestion: "** because it affects all users"
 ```
 
 **Links**
+
 ```
 Type: "See [[Project"
 Pause...
@@ -251,6 +270,7 @@ Suggestion: "average(numbers):"
 ### 5. Template Expansion
 
 Create shortcuts:
+
 ```
 Type: "mtg"
 Pause...
@@ -262,12 +282,14 @@ Suggestion: "Meeting Notes - [Date]"
 ### 1. Completion Patterns
 
 **Sentence Starters**
+
 - "The main advantage is"
 - "In conclusion,"
 - "For example,"
 - "This means that"
 
 **Transition Phrases**
+
 - "Furthermore,"
 - "On the other hand,"
 - "As a result,"
@@ -275,11 +297,13 @@ Suggestion: "Meeting Notes - [Date]"
 ### 2. Speed Techniques
 
 **Partial Acceptance**
+
 - Type the beginning
 - Let AI complete
 - Edit if needed
 
 **Rapid Documentation**
+
 - Start sections
 - Accept completions
 - Refine later
@@ -287,6 +311,7 @@ Suggestion: "Meeting Notes - [Date]"
 ### 3. Learning from Suggestions
 
 Observe how AI:
+
 - Structures sentences
 - Uses transitions
 - Maintains consistency
@@ -295,6 +320,7 @@ Observe how AI:
 ### 4. Custom Patterns
 
 Train the AI by:
+
 - Using consistent formats
 - Repeating structures
 - Building templates
@@ -302,11 +328,13 @@ Train the AI by:
 ### 5. Efficient Workflows
 
 **Outlining**
+
 1. Type main points
 2. Let AI expand
 3. Reorganize as needed
 
 **Brainstorming**
+
 1. Start ideas
 2. See AI suggestions
 3. Build on interesting ones
@@ -334,16 +362,19 @@ Train the AI by:
 ### Poor Quality Suggestions
 
 **Too generic**
+
 - Provide more context
 - Write clearer beginnings
 - Use specific terminology
 
 **Wrong style**
+
 - Be consistent in document
 - Use clear formatting
 - Maintain tone
 
 **Irrelevant**
+
 - Check document structure
 - Ensure logical flow
 - Provide better context
@@ -351,11 +382,13 @@ Train the AI by:
 ### Performance Issues
 
 **Slow suggestions**
+
 - Switch to Flash-8B model
 - Check network speed
 - Reduce document size
 
 **Disrupting flow**
+
 - Type without pausing
 - Disable for focused writing
 - Adjust mental timing
@@ -363,11 +396,13 @@ Train the AI by:
 ### Conflicts
 
 **With other plugins**
+
 - Disable conflicting completions
 - Check for keybinding conflicts
 - Report compatibility issues
 
 **With templates**
+
 - Completions work alongside templates
 - May suggest template syntax
 - Edit suggestions as needed
@@ -377,12 +412,14 @@ Train the AI by:
 ### 1. Context is Key
 
 Write clear beginnings:
+
 - ❌ "The thing is"
 - ✅ "The main challenge with this approach is"
 
 ### 2. Pause Strategically
 
 Pause when you:
+
 - Need the next idea
 - Want formatting help
 - Seek specific information
@@ -391,6 +428,7 @@ Pause when you:
 ### 3. Edit and Refine
 
 Completions are suggestions:
+
 - Review before accepting
 - Edit after accepting
 - Don't accept blindly
@@ -399,6 +437,7 @@ Completions are suggestions:
 ### 4. Use for First Drafts
 
 Completions excel at:
+
 - Getting ideas flowing
 - Overcoming blank pages
 - Rapid prototyping
@@ -407,6 +446,7 @@ Completions excel at:
 ### 5. Disable When Needed
 
 Turn off for:
+
 - Final editing
 - Precise writing
 - Personal journaling
@@ -415,6 +455,7 @@ Turn off for:
 ## Common Patterns
 
 ### Email Templates
+
 ```
 "Thank you for" → "your email regarding..."
 "I hope this" → "message finds you well"
@@ -422,6 +463,7 @@ Turn off for:
 ```
 
 ### Technical Documentation
+
 ```
 "To configure" → "the settings, follow these steps:"
 "The API returns" → "a JSON response containing..."
@@ -429,6 +471,7 @@ Turn off for:
 ```
 
 ### Academic Writing
+
 ```
 "This research" → "contributes to the existing literature by..."
 "The findings suggest" → "a strong correlation between..."
@@ -436,6 +479,7 @@ Turn off for:
 ```
 
 ### Note Organization
+
 ```
 "## Summary" → [AI provides section structure]
 "### Key Points" → [AI suggests bullet points]
@@ -445,16 +489,19 @@ Turn off for:
 ## Integration with Other Features
 
 ### With Custom Prompts
+
 - Completions respect active prompts
 - Suggestions match prompt style
 - Consistency across features
 
 ### With Chat
+
 - Similar AI understanding
 - Complementary workflows
 - Shared context awareness
 
 ### With Rewrite
+
 - Completions for drafting
 - Rewrite for major edits
 - Combined for efficiency

@@ -19,18 +19,18 @@ export class DeepResearchTool implements Tool {
 		properties: {
 			topic: {
 				type: 'string' as const,
-				description: 'The research topic or question'
+				description: 'The research topic or question',
 			},
 			depth: {
 				type: 'number' as const,
-				description: 'Number of search iterations (1-5, default: 3)'
+				description: 'Number of search iterations (1-5, default: 3)',
 			},
 			outputFile: {
 				type: 'string' as const,
-				description: 'Path for the output report file (optional)'
-			}
+				description: 'Path for the output report file (optional)',
+			},
 		},
-		required: ['topic']
+		required: ['topic'],
 	};
 
 	confirmationMessage = (params: { topic: string; depth?: number }) => {
@@ -39,9 +39,7 @@ export class DeepResearchTool implements Tool {
 
 	getProgressDescription(params: { topic: string }): string {
 		if (params.topic) {
-			const topic = params.topic.length > 30
-				? params.topic.substring(0, 27) + '...'
-				: params.topic;
+			const topic = params.topic.length > 30 ? params.topic.substring(0, 27) + '...' : params.topic;
 			return `Researching "${topic}"`;
 		}
 		return 'Conducting research';
@@ -58,7 +56,7 @@ export class DeepResearchTool implements Tool {
 			if (!params.topic || typeof params.topic !== 'string' || params.topic.trim().length === 0) {
 				return {
 					success: false,
-					error: 'Topic is required and must be a non-empty string'
+					error: 'Topic is required and must be a non-empty string',
 				};
 			}
 
@@ -66,7 +64,7 @@ export class DeepResearchTool implements Tool {
 			if (!plugin.deepResearch) {
 				return {
 					success: false,
-					error: 'Deep research service not available'
+					error: 'Deep research service not available',
 				};
 			}
 
@@ -80,7 +78,7 @@ export class DeepResearchTool implements Tool {
 			const result = await plugin.deepResearch.conductResearch({
 				topic: params.topic,
 				depth: params.depth,
-				outputFile: outputFile
+				outputFile: outputFile,
 			});
 
 			// Add to context if in agent session and file was created
@@ -96,13 +94,13 @@ export class DeepResearchTool implements Tool {
 					searches: result.searchCount,
 					sources: result.sourceCount,
 					sections: result.sectionCount,
-					outputFile: result.outputFile?.path
-				}
+					outputFile: result.outputFile?.path,
+				},
 			};
 		} catch (error) {
 			return {
 				success: false,
-				error: `Deep research failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+				error: `Deep research failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
 			};
 		}
 	}

@@ -34,7 +34,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		}
 	}
 
-
 	/**
 	 * Create temperature setting with dynamic ranges based on model capabilities
 	 */
@@ -140,11 +139,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Documentation')
 			.setDesc('View the complete plugin documentation and guides')
-			.addButton(button => button
-				.setButtonText('View Documentation')
-				.onClick(() => {
+			.addButton((button) =>
+				button.setButtonText('View Documentation').onClick(() => {
 					window.open('https://github.com/allenhutchison/obsidian-gemini/tree/master/docs', '_blank');
-				}));
+				})
+			);
 
 		new Setting(containerEl)
 			.setName('API Key')
@@ -164,13 +163,13 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		// Add note about model version filtering
 		new Setting(containerEl)
 			.setName('Model Versions')
-			.setDesc('ℹ️ Only Gemini 2.5+ models are shown. Older model versions have been deprecated by Google and are no longer supported.')
+			.setDesc(
+				'ℹ️ Only Gemini 2.5+ models are shown. Older model versions have been deprecated by Google and are no longer supported.'
+			)
 			.addButton((button) =>
-				button
-					.setButtonText('Learn More')
-					.onClick(() => {
-						window.open('https://ai.google.dev/gemini-api/docs/models/gemini');
-					})
+				button.setButtonText('Learn More').onClick(() => {
+					window.open('https://ai.google.dev/gemini-api/docs/models/gemini');
+				})
 			);
 
 		await selectModelSetting(
@@ -229,11 +228,12 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 			);
 
-
 		// Plugin State Folder
 		new Setting(containerEl)
 			.setName('Plugin State Folder')
-			.setDesc('Folder where plugin data is stored. Agent sessions are saved in Agent-Sessions/, custom prompts in Prompts/.')
+			.setDesc(
+				'Folder where plugin data is stored. Agent sessions are saved in Agent-Sessions/, custom prompts in Prompts/.'
+			)
 			.addText((text) => {
 				const folderSuggest = new FolderSuggest(this.app, text.inputEl, async (folder) => {
 					this.plugin.settings.historyFolder = folder;
@@ -271,7 +271,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
-
 
 		// Advanced Settings
 		new Setting(containerEl).setName('Advanced Settings').setHeading();
@@ -334,7 +333,9 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 			new Setting(containerEl)
 				.setName('Initial Backoff Delay (ms)')
-				.setDesc('Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.')
+				.setDesc(
+					'Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.'
+				)
 				.addText((text) =>
 					text
 						.setPlaceholder('e.g., 1000')
@@ -437,7 +438,9 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 			new Setting(containerEl)
 				.setName('Stop on tool error')
-				.setDesc('Stop agent execution when a tool call fails. If disabled, the agent will continue executing subsequent tools.')
+				.setDesc(
+					'Stop agent execution when a tool call fails. If disabled, the agent will continue executing subsequent tools.'
+				)
 				.addToggle((toggle) =>
 					toggle.setValue(this.plugin.settings.stopOnToolError).onChange(async (value) => {
 						this.plugin.settings.stopOnToolError = value;
@@ -496,8 +499,9 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });
 			privacyWarning.createEl('div', {
 				cls: 'setting-item-description',
-				text: '⚠️ Privacy Notice: Enabling this feature uploads your vault files to Google Cloud for semantic search. ' +
-					'Files are processed and stored by Google. Consider excluding folders with sensitive information.'
+				text:
+					'⚠️ Privacy Notice: Enabling this feature uploads your vault files to Google Cloud for semantic search. ' +
+					'Files are processed and stored by Google. Consider excluding folders with sensitive information.',
 			});
 			privacyWarning.style.marginBottom = '1em';
 			privacyWarning.style.color = 'var(--text-warning)';
@@ -541,31 +545,29 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					.setName('Index status')
 					.setDesc(statusText)
 					.addButton((button) =>
-						button
-							.setButtonText('Reindex Vault')
-							.onClick(async () => {
-								if (!this.plugin.ragIndexing) {
-									new Notice('RAG indexing service not initialized');
-									return;
-								}
+						button.setButtonText('Reindex Vault').onClick(async () => {
+							if (!this.plugin.ragIndexing) {
+								new Notice('RAG indexing service not initialized');
+								return;
+							}
 
-								button.setButtonText('Indexing...');
-								button.setDisabled(true);
+							button.setButtonText('Indexing...');
+							button.setDisabled(true);
 
-								try {
-									const result = await this.plugin.ragIndexing.indexVault((progress) => {
-										button.setButtonText(`${progress.current}/${progress.total}`);
-									});
+							try {
+								const result = await this.plugin.ragIndexing.indexVault((progress) => {
+									button.setButtonText(`${progress.current}/${progress.total}`);
+								});
 
-									new Notice(`Indexed ${result.indexed} files (${result.skipped} skipped, ${result.failed} failed)`);
-									this.display();
-								} catch (error) {
-									new Notice(`Indexing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-								} finally {
-									button.setButtonText('Reindex Vault');
-									button.setDisabled(false);
-								}
-							})
+								new Notice(`Indexed ${result.indexed} files (${result.skipped} skipped, ${result.failed} failed)`);
+								this.display();
+							} catch (error) {
+								new Notice(`Indexing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+							} finally {
+								button.setButtonText('Reindex Vault');
+								button.setDisabled(false);
+							}
+						})
 					)
 					.addButton((button) =>
 						button
@@ -604,9 +606,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				const currentStoreName = this.plugin.settings.ragIndexing.fileSearchStoreName;
 				const storeNameSetting = new Setting(containerEl)
 					.setName('Search index name')
-					.setDesc(currentStoreName
-						? `Current: ${currentStoreName}. To change, disable indexing and delete the store first.`
-						: 'Will be auto-generated on first index, or enter a custom name.');
+					.setDesc(
+						currentStoreName
+							? `Current: ${currentStoreName}. To change, disable indexing and delete the store first.`
+							: 'Will be auto-generated on first index, or enter a custom name.'
+					);
 
 				if (currentStoreName) {
 					// Store exists - show read-only with copy button
@@ -666,8 +670,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 				// Build the list of excluded folders including system folders
 				const systemFolders = [this.plugin.settings.historyFolder, '.obsidian'];
-				const userFolders = this.plugin.settings.ragIndexing.excludeFolders
-					.filter(f => !systemFolders.includes(f)); // Remove duplicates with system folders
+				const userFolders = this.plugin.settings.ragIndexing.excludeFolders.filter((f) => !systemFolders.includes(f)); // Remove duplicates with system folders
 
 				new Setting(containerEl)
 					.setName('Exclude folders')

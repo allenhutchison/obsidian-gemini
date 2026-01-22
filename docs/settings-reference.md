@@ -3,6 +3,7 @@
 This document provides a comprehensive reference for all Obsidian Gemini Scribe settings in v4.0.0.
 
 ## Table of Contents
+
 - [Basic Settings](#basic-settings)
 - [Model Configuration](#model-configuration)
 - [Custom Prompts](#custom-prompts)
@@ -13,6 +14,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 ## Basic Settings
 
 ### API Key
+
 - **Setting**: `apiKey`
 - **Type**: String
 - **Required**: Yes
@@ -20,12 +22,14 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 - **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
 
 ### Your Name
+
 - **Setting**: `userName`
 - **Type**: String
 - **Default**: `"User"`
 - **Description**: Name used by the AI when addressing you in responses
 
 ### Plugin State Folder
+
 - **Setting**: `historyFolder`
 - **Type**: String
 - **Default**: `gemini-scribe`
@@ -39,6 +43,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
   ```
 
 ### Enable Chat History
+
 - **Setting**: `chatHistory`
 - **Type**: Boolean
 - **Default**: `false`
@@ -46,6 +51,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 - **Note**: Chat history is stored in Agent Sessions folder in v4.0.0
 
 ### Summary Frontmatter Key
+
 - **Setting**: `summaryFrontmatterKey`
 - **Type**: String
 - **Default**: `"summary"`
@@ -56,6 +62,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 All models are selected from available Gemini models. The plugin supports dynamic model discovery to automatically fetch the latest models from Google's API.
 
 ### Chat Model
+
 - **Setting**: `chatModelName`
 - **Type**: String
 - **Default**: `gemini-2.5-pro`
@@ -68,6 +75,7 @@ All models are selected from available Gemini models. The plugin supports dynami
 - **Note**: Model discovery automatically fetches the latest available models from Google's API
 
 ### Summary Model
+
 - **Setting**: `summaryModelName`
 - **Type**: String
 - **Default**: `gemini-flash-latest`
@@ -75,6 +83,7 @@ All models are selected from available Gemini models. The plugin supports dynami
 - **Used by**: Summarize Active File command, Rewrite text with AI command
 
 ### Completions Model
+
 - **Setting**: `completionsModelName`
 - **Type**: String
 - **Default**: `gemini-flash-lite-latest`
@@ -86,6 +95,7 @@ All models are selected from available Gemini models. The plugin supports dynami
 Custom prompts allow you to create reusable AI instruction templates that modify how the AI behaves for specific notes or sessions.
 
 ### Allow System Prompt Override
+
 - **Setting**: `allowSystemPromptOverride`
 - **Type**: Boolean
 - **Default**: `false`
@@ -93,6 +103,7 @@ Custom prompts allow you to create reusable AI instruction templates that modify
 - **Warning**: Enabling this may break expected functionality if custom prompts don't include essential instructions
 
 ### Creating Custom Prompts
+
 1. Create a markdown file in `[Plugin State Folder]/Prompts/`
 2. Write your custom instructions in the file
 3. Reference it in note frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
@@ -103,6 +114,7 @@ See the [Custom Prompts Guide](custom-prompts-guide.md) for detailed instruction
 ## UI Settings
 
 ### Enable Streaming
+
 - **Setting**: `streamingEnabled`
 - **Type**: Boolean
 - **Default**: `true`
@@ -114,6 +126,7 @@ See the [Custom Prompts Guide](custom-prompts-guide.md) for detailed instruction
 Advanced settings for developers and power users. Access by clicking "Show Advanced Settings" in the plugin settings.
 
 ### Debug Mode
+
 - **Setting**: `debugMode`
 - **Type**: Boolean
 - **Default**: `false`
@@ -123,6 +136,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 ### API Configuration
 
 #### Maximum Retries
+
 - **Setting**: `maxRetries`
 - **Type**: Number
 - **Default**: `3`
@@ -130,6 +144,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 - **Note**: Uses exponential backoff between retries
 
 #### Initial Backoff Delay
+
 - **Setting**: `initialBackoffDelay`
 - **Type**: Number (milliseconds)
 - **Default**: `1000`
@@ -139,6 +154,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 ### Model Parameters
 
 #### Temperature
+
 - **Setting**: `temperature`
 - **Type**: Number (0.0-2.0)
 - **Default**: `0.7`
@@ -149,6 +165,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 - **Note**: Ranges automatically adjusted based on selected model's capabilities
 
 #### Top-P
+
 - **Setting**: `topP`
 - **Type**: Number (0.0-1.0)
 - **Default**: `1.0`
@@ -162,12 +179,14 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 Dynamic model discovery automatically fetches the latest available Gemini models and their capabilities from Google's API.
 
 #### Enable Model Discovery
+
 - **Setting**: `modelDiscovery.enabled`
 - **Type**: Boolean
 - **Default**: `true`
 - **Description**: Automatically discover and update available Gemini models
 
 #### Auto-Update Interval
+
 - **Setting**: `modelDiscovery.autoUpdateInterval`
 - **Type**: Number (hours)
 - **Default**: `24`
@@ -175,6 +194,7 @@ Dynamic model discovery automatically fetches the latest available Gemini models
 - **Range**: 0-168 hours (0-7 days)
 
 #### Fallback to Static Models
+
 - **Setting**: `modelDiscovery.fallbackToStatic`
 - **Type**: Boolean
 - **Default**: `true`
@@ -182,6 +202,7 @@ Dynamic model discovery automatically fetches the latest available Gemini models
 - **Recommendation**: Keep enabled for reliability
 
 #### Last Update
+
 - **Setting**: `modelDiscovery.lastUpdate`
 - **Type**: Number (timestamp)
 - **Description**: Timestamp of last successful model discovery
@@ -190,6 +211,7 @@ Dynamic model discovery automatically fetches the latest available Gemini models
 ### Tool Execution
 
 #### Stop on Tool Error
+
 - **Setting**: `stopOnToolError`
 - **Type**: Boolean
 - **Default**: `true`
@@ -202,12 +224,14 @@ Dynamic model discovery automatically fetches the latest available Gemini models
 Prevents the AI agent from executing identical tools repeatedly, which can cause infinite loops.
 
 #### Enable Loop Detection
+
 - **Setting**: `loopDetectionEnabled`
 - **Type**: Boolean
 - **Default**: `true`
 - **Description**: Detect and prevent infinite tool execution loops
 
 #### Loop Threshold
+
 - **Setting**: `loopDetectionThreshold`
 - **Type**: Number
 - **Default**: `3`
@@ -215,6 +239,7 @@ Prevents the AI agent from executing identical tools repeatedly, which can cause
 - **Description**: Number of identical tool calls before a loop is detected
 
 #### Time Window
+
 - **Setting**: `loopDetectionTimeWindowSeconds`
 - **Type**: Number (seconds)
 - **Default**: `30`
@@ -227,21 +252,25 @@ Prevents the AI agent from executing identical tools repeatedly, which can cause
 Session settings override global defaults for specific agent sessions. Access via the settings icon in the session header.
 
 ### Model Configuration
+
 - **Model**: Override the default chat model for this session
 - **Temperature**: Session-specific temperature setting
 - **Top-P**: Session-specific top-p setting
 - **Custom Prompt**: Select a custom prompt template for this session
 
 ### Context Files
+
 - Add specific notes as persistent context for the session
 - Context files are automatically included with every message
 - Use @ mentions in chat to add files
 - Active note is automatically included by default
 
 ### Permissions
+
 Session-level permissions allow bypassing confirmation dialogs for specific operations during the current session only.
 
 Available permission bypasses:
+
 - File creation
 - File modification
 - File deletion
@@ -252,6 +281,7 @@ Available permission bypasses:
 ## Settings Migration
 
 When upgrading from v3.x to v4.0.0:
+
 1. History files are automatically migrated to Agent Sessions format
 2. Backups are created in `History-Archive` folder
 3. Obsolete settings (sendContext, maxContextDepth, searchGrounding) are removed
@@ -274,18 +304,21 @@ When upgrading from v3.x to v4.0.0:
 ## Troubleshooting
 
 ### Models not appearing
+
 1. Check API key is valid
 2. Enable Model Discovery in Developer Settings
 3. Click "Refresh models" button
 4. Check console for errors (with Debug Mode enabled)
 
 ### Tool execution issues
+
 1. Enable Debug Mode
 2. Check Loop Detection settings
 3. Review Stop on Tool Error setting
 4. Examine console logs for specific errors
 
 ### Chat history not saving
+
 1. Verify "Enable Chat History" is toggled on
 2. Check Plugin State Folder path is valid
 3. Ensure you have write permissions to vault

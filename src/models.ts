@@ -12,7 +12,12 @@ export const DEFAULT_GEMINI_MODELS: GeminiModel[] = [
 	{ value: 'gemini-flash-latest', label: 'Gemini Flash Latest', defaultForRoles: ['summary', 'rewrite'] },
 	{ value: 'gemini-flash-lite-latest', label: 'Gemini Flash Lite Latest', defaultForRoles: ['completions'] },
 	{ value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
-	{ value: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image', defaultForRoles: ['image'], supportsImageGeneration: true },
+	{
+		value: 'gemini-2.5-flash-image',
+		label: 'Gemini 2.5 Flash Image',
+		defaultForRoles: ['image'],
+		supportsImageGeneration: true,
+	},
 	{ value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image Preview', supportsImageGeneration: true },
 ];
 

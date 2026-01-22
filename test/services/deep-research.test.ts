@@ -7,7 +7,7 @@ jest.mock('obsidian', () => ({
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
-	}
+	},
 }));
 
 // Mock Google GenAI
@@ -16,9 +16,9 @@ const mockGenerateContent = jest.fn();
 jest.mock('@google/genai', () => ({
 	GoogleGenAI: jest.fn().mockImplementation(() => ({
 		models: {
-			generateContent: mockGenerateContent
-		}
-	}))
+			generateContent: mockGenerateContent,
+		},
+	})),
 }));
 
 describe('DeepResearchService', () => {
@@ -37,26 +37,26 @@ describe('DeepResearchService', () => {
 			log: jest.fn(),
 			error: jest.fn(),
 			warn: jest.fn(),
-			debug: jest.fn()
+			debug: jest.fn(),
 		};
 
 		// Setup mock vault
 		mockVault = {
 			getAbstractFileByPath: jest.fn(),
 			modify: jest.fn(),
-			create: jest.fn()
+			create: jest.fn(),
 		};
 
 		// Setup mock plugin
 		mockPlugin = {
 			app: {
-				vault: mockVault
+				vault: mockVault,
 			},
 			settings: {
 				apiKey: 'test-api-key',
-				chatModelName: 'gemini-2.5-flash'
+				chatModelName: 'gemini-2.5-flash',
 			},
-			logger: mockLogger
+			logger: mockLogger,
 		};
 
 		service = new DeepResearchService(mockPlugin);
@@ -67,7 +67,7 @@ describe('DeepResearchService', () => {
 			mockPlugin.settings.apiKey = '';
 
 			const params: DeepResearchParams = {
-				topic: 'Test Topic'
+				topic: 'Test Topic',
 			};
 
 			await expect(service.conductResearch(params)).rejects.toThrow('Google API key not configured');
@@ -79,7 +79,7 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Query 1\nQuery 2' }]
+							parts: [{ text: 'Query 1\nQuery 2' }],
 						},
 						groundingMetadata: {
 							groundingChunks: [
@@ -87,17 +87,17 @@ describe('DeepResearchService', () => {
 									web: {
 										uri: 'https://example.com',
 										title: 'Example',
-										snippet: 'Test snippet'
-									}
-								}
-							]
-						}
-					}
-				]
+										snippet: 'Test snippet',
+									},
+								},
+							],
+						},
+					},
+				],
 			});
 
 			const params: DeepResearchParams = {
-				topic: 'AI Research'
+				topic: 'AI Research',
 			};
 
 			const result = await service.conductResearch(params);
@@ -113,16 +113,16 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Query 1' }]
-						}
-					}
-				]
+							parts: [{ text: 'Query 1' }],
+						},
+					},
+				],
 			});
 
 			// Test depth > 5
 			const params1: DeepResearchParams = {
 				topic: 'Test',
-				depth: 10
+				depth: 10,
 			};
 
 			await service.conductResearch(params1);
@@ -131,7 +131,7 @@ describe('DeepResearchService', () => {
 			// Test depth < 1
 			const params2: DeepResearchParams = {
 				topic: 'Test',
-				depth: 0
+				depth: 0,
 			};
 
 			await service.conductResearch(params2);
@@ -145,10 +145,10 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Test query' }]
-						}
-					}
-				]
+							parts: [{ text: 'Test query' }],
+						},
+					},
+				],
 			});
 
 			const mockFile = new TFile();
@@ -158,7 +158,7 @@ describe('DeepResearchService', () => {
 			const params: DeepResearchParams = {
 				topic: 'Test',
 				depth: 1,
-				outputFile: 'test-report.md' // Tool adds .md before calling service
+				outputFile: 'test-report.md', // Tool adds .md before calling service
 			};
 
 			const result = await service.conductResearch(params);
@@ -172,10 +172,10 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Test' }]
-						}
-					}
-				]
+							parts: [{ text: 'Test' }],
+						},
+					},
+				],
 			});
 
 			const mockFile = new TFile();
@@ -184,7 +184,7 @@ describe('DeepResearchService', () => {
 			const params: DeepResearchParams = {
 				topic: 'Test',
 				depth: 1,
-				outputFile: 'report.md'
+				outputFile: 'report.md',
 			};
 
 			await service.conductResearch(params);
@@ -197,10 +197,10 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Test' }]
-						}
-					}
-				]
+							parts: [{ text: 'Test' }],
+						},
+					},
+				],
 			});
 
 			const mockFile = new TFile();
@@ -211,7 +211,7 @@ describe('DeepResearchService', () => {
 			const params: DeepResearchParams = {
 				topic: 'Test',
 				depth: 1,
-				outputFile: 'existing-report.md'
+				outputFile: 'existing-report.md',
 			};
 
 			await service.conductResearch(params);
@@ -227,10 +227,10 @@ describe('DeepResearchService', () => {
 					candidates: [
 						{
 							content: {
-								parts: [{ text: 'Query 1\nQuery 2' }]
-							}
-						}
-					]
+								parts: [{ text: 'Query 1\nQuery 2' }],
+							},
+						},
+					],
 				})
 				.mockRejectedValueOnce(new Error('Search failed attempt 1'))
 				.mockRejectedValueOnce(new Error('Search failed attempt 2'))
@@ -239,15 +239,15 @@ describe('DeepResearchService', () => {
 					candidates: [
 						{
 							content: {
-								parts: [{ text: 'Search result' }]
-							}
-						}
-					]
+								parts: [{ text: 'Search result' }],
+							},
+						},
+					],
 				});
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1
+				depth: 1,
 			};
 
 			const result = await service.conductResearch(params);
@@ -263,7 +263,7 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Section Title\nSearch result with citation [1]' }]
+							parts: [{ text: 'Section Title\nSearch result with citation [1]' }],
 						},
 						groundingMetadata: {
 							groundingChunks: [
@@ -271,18 +271,18 @@ describe('DeepResearchService', () => {
 									web: {
 										uri: 'https://source.com',
 										title: 'Source Title',
-										snippet: 'Source snippet'
-									}
-								}
-							]
-						}
-					}
-				]
+										snippet: 'Source snippet',
+									},
+								},
+							],
+						},
+					},
+				],
 			});
 
 			const params: DeepResearchParams = {
 				topic: 'Test Topic',
-				depth: 1
+				depth: 1,
 			};
 
 			const result = await service.conductResearch(params);
@@ -297,10 +297,10 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Test' }]
-						}
-					}
-				]
+							parts: [{ text: 'Test' }],
+						},
+					},
+				],
 			});
 
 			mockVault.create.mockRejectedValue(new Error('Save failed'));
@@ -308,7 +308,7 @@ describe('DeepResearchService', () => {
 			const params: DeepResearchParams = {
 				topic: 'Test',
 				depth: 1,
-				outputFile: 'test.md'
+				outputFile: 'test.md',
 			};
 
 			const result = await service.conductResearch(params);
@@ -321,12 +321,12 @@ describe('DeepResearchService', () => {
 	describe('error handling', () => {
 		it('should handle missing candidates in AI response', async () => {
 			mockGenerateContent.mockResolvedValue({
-				candidates: []
+				candidates: [],
 			});
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1
+				depth: 1,
 			};
 
 			const result = await service.conductResearch(params);
@@ -340,16 +340,16 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Test result' }]
-						}
+							parts: [{ text: 'Test result' }],
+						},
 						// No groundingMetadata
-					}
-				]
+					},
+				],
 			});
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1
+				depth: 1,
 			};
 
 			const result = await service.conductResearch(params);
@@ -365,15 +365,15 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Test' }]
-						}
-					}
-				]
+							parts: [{ text: 'Test' }],
+						},
+					},
+				],
 			});
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1
+				depth: 1,
 			};
 
 			const result = await service.conductResearch(params);
@@ -386,7 +386,7 @@ describe('DeepResearchService', () => {
 				candidates: [
 					{
 						content: {
-							parts: [{ text: 'Test' }]
+							parts: [{ text: 'Test' }],
 						},
 						groundingMetadata: {
 							groundingChunks: [
@@ -394,25 +394,25 @@ describe('DeepResearchService', () => {
 									web: {
 										uri: 'https://source1.com',
 										title: 'Source 1',
-										snippet: 'Snippet 1'
-									}
+										snippet: 'Snippet 1',
+									},
 								},
 								{
 									web: {
 										uri: 'https://source2.com',
 										title: 'Source 2',
-										snippet: 'Snippet 2'
-									}
-								}
-							]
-						}
-					}
-				]
+										snippet: 'Snippet 2',
+									},
+								},
+							],
+						},
+					},
+				],
 			});
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1
+				depth: 1,
 			};
 
 			const result = await service.conductResearch(params);

@@ -11,25 +11,24 @@ export class GoogleSearchTool implements Tool {
 	name = 'google_search';
 	displayName = 'Google Search';
 	category = ToolCategory.READ_ONLY;
-	description = 'Search Google for current, up-to-date information from the web using Google\'s Search Grounding feature. Returns AI-generated answer with inline citations and source links. Use this to find recent news, facts, statistics, or any information that might have changed since the AI model\'s training cutoff. Results include structured citations with URLs, titles, and snippets from authoritative web sources.';
-	
+	description =
+		"Search Google for current, up-to-date information from the web using Google's Search Grounding feature. Returns AI-generated answer with inline citations and source links. Use this to find recent news, facts, statistics, or any information that might have changed since the AI model's training cutoff. Results include structured citations with URLs, titles, and snippets from authoritative web sources.";
+
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			query: {
 				type: 'string' as const,
-				description: 'The search query to send to Google'
-			}
+				description: 'The search query to send to Google',
+			},
 		},
-		required: ['query']
+		required: ['query'],
 	};
 
 	getProgressDescription(params: { query: string }): string {
 		if (params.query) {
 			// Truncate long queries
-			const query = params.query.length > 30
-				? params.query.substring(0, 27) + '...'
-				: params.query;
+			const query = params.query.length > 30 ? params.query.substring(0, 27) + '...' : params.query;
 			return `Searching Google for "${query}"`;
 		}
 		return 'Searching Google';
@@ -37,13 +36,13 @@ export class GoogleSearchTool implements Tool {
 
 	async execute(params: { query: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
-		
+
 		try {
 			// Check if API key is available
 			if (!plugin.settings.apiKey) {
 				return {
 					success: false,
-					error: 'Google API key not configured'
+					error: 'Google API key not configured',
 				};
 			}
 
@@ -55,7 +54,7 @@ export class GoogleSearchTool implements Tool {
 			const config = {
 				temperature: plugin.settings.temperature,
 				maxOutputTokens: 8192, // Default max tokens
-				tools: [{ googleSearch: {} }]
+				tools: [{ googleSearch: {} }],
 			};
 
 			// Create a simple prompt that encourages the model to search
@@ -65,9 +64,9 @@ export class GoogleSearchTool implements Tool {
 			const result = await genAI.models.generateContent({
 				model: modelToUse,
 				config: config,
-				contents: prompt
+				contents: prompt,
 			});
-			
+
 			// Extract text from response
 			let text = '';
 			if (result.candidates?.[0]?.content?.parts) {
@@ -89,7 +88,7 @@ export class GoogleSearchTool implements Tool {
 
 			// Extract search results metadata and citations if available
 			const searchMetadata = result.candidates?.[0]?.groundingMetadata;
-			let citations: Array<{title?: string; url: string; snippet?: string}> = [];
+			let citations: Array<{ title?: string; url: string; snippet?: string }> = [];
 			let textWithCitations = text;
 
 			// Extract citations from groundingChunks
@@ -100,9 +99,9 @@ export class GoogleSearchTool implements Tool {
 					.map((chunk: any, index: number) => ({
 						url: chunk.web.uri,
 						title: chunk.web.title || chunk.web.uri,
-						snippet: chunk.web.snippet || ''
+						snippet: chunk.web.snippet || '',
 					}));
-				
+
 				// Add inline citations to text if supports are available
 				if (searchMetadata.groundingSupports) {
 					const supports = searchMetadata.groundingSupports;
@@ -110,13 +109,13 @@ export class GoogleSearchTool implements Tool {
 					const sortedSupports = [...supports].sort(
 						(a: any, b: any) => (b.segment?.endIndex ?? 0) - (a.segment?.endIndex ?? 0)
 					);
-					
+
 					for (const support of sortedSupports) {
 						const endIndex = support.segment?.endIndex;
 						if (endIndex === undefined || !support.groundingChunkIndices?.length) {
 							continue;
 						}
-						
+
 						const citationLinks = support.groundingChunkIndices
 							.map((i: number) => {
 								const uri = chunks[i]?.web?.uri;
@@ -126,10 +125,11 @@ export class GoogleSearchTool implements Tool {
 								return null;
 							})
 							.filter(Boolean);
-						
+
 						if (citationLinks.length > 0) {
 							const citationString = ` ${citationLinks.join(', ')}`;
-							textWithCitations = textWithCitations.slice(0, endIndex) + citationString + textWithCitations.slice(endIndex);
+							textWithCitations =
+								textWithCitations.slice(0, endIndex) + citationString + textWithCitations.slice(endIndex);
 						}
 					}
 				}
@@ -142,14 +142,13 @@ export class GoogleSearchTool implements Tool {
 					answer: textWithCitations, // Text with inline citations
 					originalAnswer: text, // Original text without citations
 					citations: citations,
-					searchGrounding: searchMetadata || undefined
-				}
+					searchGrounding: searchMetadata || undefined,
+				},
 			};
-			
 		} catch (error) {
 			return {
 				success: false,
-				error: `Google search failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+				error: `Google search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
 			};
 		}
 	}

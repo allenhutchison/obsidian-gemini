@@ -16,7 +16,7 @@ export class ImageGeneration {
 				apiKey: plugin.settings.apiKey,
 				temperature: plugin.settings.temperature,
 				topP: plugin.settings.topP,
-				streamingEnabled: false
+				streamingEnabled: false,
 			},
 			this.prompts,
 			plugin
@@ -104,9 +104,9 @@ export class ImageGeneration {
 		// Create a safe filename from the prompt (truncate and sanitize)
 		const sanitizedPrompt = prompt
 			.substring(0, 50)
-			.replace(/[^a-zA-Z0-9\-_]/g, '-')  // More restrictive: only alphanumeric, hyphens, and underscores
-			.replace(/-+/g, '-')  // Collapse multiple dashes
-			.replace(/^-|-$/g, '');  // Trim leading/trailing dashes
+			.replace(/[^a-zA-Z0-9\-_]/g, '-') // More restrictive: only alphanumeric, hyphens, and underscores
+			.replace(/-+/g, '-') // Collapse multiple dashes
+			.replace(/^-|-$/g, ''); // Trim leading/trailing dashes
 
 		const timestamp = Date.now();
 		const filename = `generated-${sanitizedPrompt}-${timestamp}.png`;
@@ -123,7 +123,7 @@ export class ImageGeneration {
 		}
 
 		// Convert binary string to Uint8Array
-		const bytes = Uint8Array.from(binaryData, c => c.charCodeAt(0));
+		const bytes = Uint8Array.from(binaryData, (c) => c.charCodeAt(0));
 
 		// Determine reference note path for attachment folder
 		let referenceNotePath: string;
@@ -140,10 +140,7 @@ export class ImageGeneration {
 		}
 
 		// Use Obsidian's built-in method to get the correct path for attachments
-		const path = await this.plugin.app.fileManager.getAvailablePathForAttachment(
-			filename,
-			referenceNotePath
-		);
+		const path = await this.plugin.app.fileManager.getAvailablePathForAttachment(filename, referenceNotePath);
 
 		// Save to vault
 		await this.plugin.app.vault.createBinary(path, bytes.buffer);
@@ -164,7 +161,7 @@ export class ImageGeneration {
 				if (prompt) {
 					await this.generateAndInsertImage(prompt);
 				}
-			}
+			},
 		});
 	}
 
@@ -191,7 +188,12 @@ class ImagePromptModal extends Modal {
 	private prompt = '';
 	private textArea: TextAreaComponent | null = null;
 
-	constructor(app: App, plugin: InstanceType<typeof ObsidianGemini>, imageGeneration: ImageGeneration, onSubmit: (prompt: string) => void) {
+	constructor(
+		app: App,
+		plugin: InstanceType<typeof ObsidianGemini>,
+		imageGeneration: ImageGeneration,
+		onSubmit: (prompt: string) => void
+	) {
 		super(app);
 		this.plugin = plugin;
 		this.imageGeneration = imageGeneration;
@@ -209,7 +211,8 @@ class ImagePromptModal extends Modal {
 			.setDesc('Describe the image you want to generate')
 			.addTextArea((text) => {
 				this.textArea = text;
-				text.setPlaceholder('A serene landscape with mountains and a lake...')
+				text
+					.setPlaceholder('A serene landscape with mountains and a lake...')
 					.setValue(this.prompt)
 					.onChange((value) => {
 						this.prompt = value;
@@ -223,7 +226,7 @@ class ImagePromptModal extends Modal {
 		// Add "Generate from Page" button
 		new Setting(contentEl)
 			.setName('Generate prompt from current page')
-			.setDesc('Let AI suggest an image prompt based on this page\'s content')
+			.setDesc("Let AI suggest an image prompt based on this page's content")
 			.addButton((btn) =>
 				btn
 					.setButtonText('Generate Prompt from Page')

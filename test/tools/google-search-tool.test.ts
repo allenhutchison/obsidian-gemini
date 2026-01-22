@@ -5,7 +5,7 @@ import { getDefaultModelForRole } from '../../src/models';
 
 // Mock Google Gen AI
 jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn()
+	GoogleGenAI: jest.fn(),
 }));
 
 describe('GoogleSearchTool', () => {
@@ -16,27 +16,27 @@ describe('GoogleSearchTool', () => {
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		
+
 		tool = new GoogleSearchTool();
-		
+
 		// Mock genAI methods
 		mockGenAI = {
 			models: {
-				generateContent: jest.fn()
-			}
+				generateContent: jest.fn(),
+			},
 		};
-		
+
 		// Mock GoogleGenAI constructor
 		(GoogleGenAI as jest.Mock).mockImplementation(() => mockGenAI);
-		
+
 		// Mock context
 		mockContext = {
 			plugin: {
 				settings: {
 					apiKey: 'test-api-key',
 					chatModelName: 'gemini-1.5-flash-002',
-					temperature: 0.7
-				}
+					temperature: 0.7,
+				},
 			},
 			session: {
 				id: 'test-session',
@@ -45,9 +45,9 @@ describe('GoogleSearchTool', () => {
 					contextFiles: [],
 					contextDepth: 2,
 					enabledTools: [],
-					requireConfirmation: []
-				}
-			}
+					requireConfirmation: [],
+				},
+			},
 		} as any;
 	});
 
@@ -64,10 +64,10 @@ describe('GoogleSearchTool', () => {
 				properties: {
 					query: {
 						type: 'string',
-						description: 'The search query to send to Google'
-					}
+						description: 'The search query to send to Google',
+					},
 				},
-				required: ['query']
+				required: ['query'],
 			});
 		});
 	});
@@ -75,21 +75,23 @@ describe('GoogleSearchTool', () => {
 	describe('execute', () => {
 		it('should perform search successfully', async () => {
 			const mockResponse = {
-				candidates: [{
-					content: {
-						parts: [{
-							text: 'Here are the search results for your query...'
-						}]
+				candidates: [
+					{
+						content: {
+							parts: [
+								{
+									text: 'Here are the search results for your query...',
+								},
+							],
+						},
+						groundingMetadata: {
+							webSearchQueries: ['test query'],
+							groundingAttributions: [{ uri: 'https://example.com', content: 'Example content' }],
+						},
 					},
-					groundingMetadata: {
-						webSearchQueries: ['test query'],
-						groundingAttributions: [
-							{ uri: 'https://example.com', content: 'Example content' }
-						]
-					}
-				}]
+				],
 			};
-			
+
 			mockGenAI.models.generateContent.mockResolvedValue(mockResponse);
 
 			const result = await tool.execute({ query: 'test query' }, mockContext);
@@ -102,10 +104,8 @@ describe('GoogleSearchTool', () => {
 				citations: [],
 				searchGrounding: {
 					webSearchQueries: ['test query'],
-					groundingAttributions: [
-						{ uri: 'https://example.com', content: 'Example content' }
-					]
-				}
+					groundingAttributions: [{ uri: 'https://example.com', content: 'Example content' }],
+				},
 			});
 
 			// Verify API call was made with search grounding
@@ -114,23 +114,27 @@ describe('GoogleSearchTool', () => {
 				config: {
 					temperature: 0.7,
 					maxOutputTokens: 8192,
-					tools: [{ googleSearch: {} }]
+					tools: [{ googleSearch: {} }],
 				},
-				contents: expect.stringContaining('test query')
+				contents: expect.stringContaining('test query'),
 			});
 		});
 
 		it('should handle search without grounding metadata', async () => {
 			const mockResponse = {
-				candidates: [{
-					content: {
-						parts: [{
-							text: 'Basic search response without metadata'
-						}]
-					}
-				}]
+				candidates: [
+					{
+						content: {
+							parts: [
+								{
+									text: 'Basic search response without metadata',
+								},
+							],
+						},
+					},
+				],
 			};
-			
+
 			mockGenAI.models.generateContent.mockResolvedValue(mockResponse);
 
 			const result = await tool.execute({ query: 'another query' }, mockContext);
@@ -141,7 +145,7 @@ describe('GoogleSearchTool', () => {
 				answer: 'Basic search response without metadata',
 				originalAnswer: 'Basic search response without metadata',
 				citations: [],
-				searchGrounding: undefined
+				searchGrounding: undefined,
 			});
 		});
 
@@ -166,24 +170,28 @@ describe('GoogleSearchTool', () => {
 
 		it('should use default model when not specified', async () => {
 			mockContext.plugin.settings.chatModelName = undefined;
-			
+
 			const mockResponse = {
-				candidates: [{
-					content: {
-						parts: [{
-							text: 'Response with default model'
-						}]
-					}
-				}]
+				candidates: [
+					{
+						content: {
+							parts: [
+								{
+									text: 'Response with default model',
+								},
+							],
+						},
+					},
+				],
 			};
-			
+
 			mockGenAI.models.generateContent.mockResolvedValue(mockResponse);
 
 			await tool.execute({ query: 'test' }, mockContext);
 
 			expect(mockGenAI.models.generateContent).toHaveBeenCalledWith(
 				expect.objectContaining({
-					model: getDefaultModelForRole('chat')
+					model: getDefaultModelForRole('chat'),
 				})
 			);
 		});

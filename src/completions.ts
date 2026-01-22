@@ -51,7 +51,7 @@ export class GeminiCompletions {
 	async generateNextSentence(contentBeforeCursor: string, contentAfterCursor: string): Promise<string> {
 		// Create a completions-specific model API
 		const modelApi = GeminiClientFactory.createCompletionsModel(this.plugin);
-		
+
 		let request: BaseModelRequest = {
 			prompt: this.prompts.completionsPrompt({
 				contentBeforeCursor: contentBeforeCursor,

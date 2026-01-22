@@ -27,9 +27,10 @@ function getReleaseNotes(version: string): ReleaseNote | null {
 				'📊 Detailed status modal with file lists and search',
 				'🔄 Resume interrupted indexing after crash/restart',
 				'⚡ Rate limit handling with automatic retry',
-				'💾 Incremental cache saves for durability'
+				'💾 Incremental cache saves for durability',
 			],
-			details: 'This update brings major stability improvements to RAG indexing. The vault no longer re-indexes on every restart, and you can now index PDFs and attachments. New pause/resume commands give you control over syncing, and interrupted indexing can be resumed. The status modal now shows detailed file lists with search functionality.'
+			details:
+				'This update brings major stability improvements to RAG indexing. The vault no longer re-indexes on every restart, and you can now index PDFs and attachments. New pause/resume commands give you control over syncing, and interrupted indexing can be resumed. The status modal now shows detailed file lists with search functionality.',
 		},
 		'4.2.0': {
 			title: '✨ Gemini Scribe 4.2 - Semantic Search & Improved Errors',
@@ -38,9 +39,10 @@ function getReleaseNotes(version: string): ReleaseNote | null {
 				'🗂️ Background indexing keeps your vault searchable',
 				'💬 Clearer API error messages (quota, auth, rate limits)',
 				'🖼️ Fixed image model dropdown in settings',
-				'✏️ Fixed writing tool to respect YAML frontmatter'
+				'✏️ Fixed writing tool to respect YAML frontmatter',
 			],
-			details: "This update introduces experimental semantic search powered by Google's File Search API. When enabled in Advanced Settings, your vault is indexed in the background, allowing the AI to search by meaning rather than just keywords. Also includes improved error messages that clearly explain API issues like quota limits or authentication problems."
+			details:
+				"This update introduces experimental semantic search powered by Google's File Search API. When enabled in Advanced Settings, your vault is indexed in the background, allowing the AI to search by meaning rather than just keywords. Also includes improved error messages that clearly explain API issues like quota limits or authentication problems.",
 		},
 		'4.1.2': {
 			title: '🐛 Gemini Scribe 4.1.2 - Writing Tool Fix',
@@ -48,9 +50,10 @@ function getReleaseNotes(version: string): ReleaseNote | null {
 				'✏️ Fixed writing tool to properly respect YAML frontmatter',
 				'📝 Content is now correctly placed after frontmatter blocks',
 				'🔍 Added edge case handling for malformed frontmatter',
-				'📚 Improved documentation for YAML handling'
+				'📚 Improved documentation for YAML handling',
 			],
-			details: 'This update fixes an important issue where the writing tool would incorrectly place content at the very beginning of files, overwriting or disrupting YAML frontmatter. The tool now properly detects and preserves frontmatter blocks (defined by --- delimiters), placing new content after them as intended.'
+			details:
+				'This update fixes an important issue where the writing tool would incorrectly place content at the very beginning of files, overwriting or disrupting YAML frontmatter. The tool now properly detects and preserves frontmatter blocks (defined by --- delimiters), placing new content after them as intended.',
 		},
 		'4.1.1': {
 			title: '🐛 Gemini Scribe 4.1.1 - Stability & UX Improvements',
@@ -59,9 +62,10 @@ function getReleaseNotes(version: string): ReleaseNote | null {
 				'🧠 Fixed Gemini 3 thinking mode display',
 				'🔧 Fixed Gemini 3 function calling with thought signatures',
 				'⏱️ Agent timeout protection prevents infinite hangs',
-				'🎨 Better visual feedback during tool execution'
+				'🎨 Better visual feedback during tool execution',
 			],
-			details: 'This update focuses on stability and user experience. Confirmation dialogs are now inline in the chat, Gemini 3 models work properly with thinking mode and function calling, and the agent includes timeout protection to prevent getting stuck.'
+			details:
+				'This update focuses on stability and user experience. Confirmation dialogs are now inline in the chat, Gemini 3 models work properly with thinking mode and function calling, and the agent includes timeout protection to prevent getting stuck.',
 		},
 		'4.1.0': {
 			title: '✨ Gemini Scribe 4.1 - Enhanced AI & Better UX',
@@ -71,9 +75,10 @@ function getReleaseNotes(version: string): ReleaseNote | null {
 				'🛑 Stop button to cancel long-running operations',
 				'💡 Dynamic example prompts based on your vault',
 				'🎨 Improved UI with icon buttons and progress indicators',
-				'🔍 Enhanced search with new file content tool'
+				'🔍 Enhanced search with new file content tool',
 			],
-			details: 'This update brings powerful new AI models, multilingual support, and major UX improvements. Includes important security fixes and better vault operations.'
+			details:
+				'This update brings powerful new AI models, multilingual support, and major UX improvements. Includes important security fixes and better vault operations.',
 		},
 		'4.0.0': {
 			title: '🎉 Welcome to Gemini Scribe 4.0!',
@@ -81,10 +86,11 @@ function getReleaseNotes(version: string): ReleaseNote | null {
 				'🤖 Unified agent-first interface - one powerful chat mode',
 				'🔧 Tool calling built-in to every conversation',
 				'💾 Persistent agent sessions with full history',
-				'📦 Old history safely archived as readable markdown'
+				'📦 Old history safely archived as readable markdown',
 			],
-			details: 'This is a major update focused entirely on the powerful Agent Mode. The old note-based chat has been removed in favor of a unified agent experience with tool calling, persistent sessions, and better context management.'
-		}
+			details:
+				'This is a major update focused entirely on the powerful Agent Mode. The old note-based chat has been removed in favor of a unified agent experience with tool calling, persistent sessions, and better context management.',
+		},
 	};
 
 	return notes[version] || null;
@@ -126,13 +132,13 @@ export class UpdateNotificationModal extends Modal {
 		// Header
 		contentEl.createEl('h2', {
 			text: releaseNotes.title,
-			cls: 'gemini-update-header'
+			cls: 'gemini-update-header',
 		});
 
 		// Version info
 		contentEl.createEl('p', {
 			text: `You've been updated to version ${this.newVersion}`,
-			cls: 'gemini-update-version'
+			cls: 'gemini-update-version',
 		});
 
 		// Highlights
@@ -140,7 +146,7 @@ export class UpdateNotificationModal extends Modal {
 			const highlightsDiv = contentEl.createDiv({ cls: 'gemini-update-highlights' });
 			highlightsDiv.createEl('h3', { text: "What's New:" });
 			const list = highlightsDiv.createEl('ul');
-			releaseNotes.highlights.forEach(highlight => {
+			releaseNotes.highlights.forEach((highlight) => {
 				list.createEl('li', { text: highlight });
 			});
 		}
@@ -161,19 +167,19 @@ export class UpdateNotificationModal extends Modal {
 		// Header
 		contentEl.createEl('h2', {
 			text: `🎉 Gemini Scribe Updated!`,
-			cls: 'gemini-update-header'
+			cls: 'gemini-update-header',
 		});
 
 		// Version info
 		contentEl.createEl('p', {
 			text: `You've been updated to version ${this.newVersion}`,
-			cls: 'gemini-update-version'
+			cls: 'gemini-update-version',
 		});
 
 		// Generic message
 		const message = contentEl.createDiv({ cls: 'gemini-update-message' });
 		message.createEl('p', {
-			text: 'Thank you for using Gemini Scribe! This update includes improvements and bug fixes.'
+			text: 'Thank you for using Gemini Scribe! This update includes improvements and bug fixes.',
 		});
 
 		// Action buttons
@@ -189,7 +195,7 @@ export class UpdateNotificationModal extends Modal {
 		// Close button
 		const closeButton = buttonContainer.createEl('button', {
 			text: 'Get Started',
-			cls: 'mod-cta'
+			cls: 'mod-cta',
 		});
 		closeButton.addEventListener('click', () => {
 			this.close();
@@ -199,7 +205,7 @@ export class UpdateNotificationModal extends Modal {
 		const releaseNotesLink = contentEl.createDiv({ cls: 'gemini-update-links' });
 		const link = releaseNotesLink.createEl('a', {
 			text: '📖 View Full Release Notes',
-			href: `${REPOSITORY_URL}/releases/tag/${this.newVersion}`
+			href: `${REPOSITORY_URL}/releases/tag/${this.newVersion}`,
 		});
 		link.addEventListener('click', (e) => {
 			e.preventDefault();

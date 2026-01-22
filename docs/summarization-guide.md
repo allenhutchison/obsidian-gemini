@@ -64,6 +64,7 @@ The Document Summarization feature uses AI to generate concise, one-sentence sum
 ### Example
 
 **Before:**
+
 ```markdown
 # Meeting Notes - Project Alpha
 
@@ -72,9 +73,10 @@ Discussed timeline changes, budget concerns, and new feature requests...
 ```
 
 **After:**
+
 ```markdown
 ---
-summary: "Project Alpha meeting covered timeline adjustments due to budget constraints and approved three new feature requests for Q2 development."
+summary: 'Project Alpha meeting covered timeline adjustments due to budget constraints and approved three new feature requests for Q2 development.'
 ---
 
 # Meeting Notes - Project Alpha
@@ -100,56 +102,61 @@ In Settings → Gemini Scribe:
 
 ### Model Selection Guide
 
-| Model | Speed | Quality | Best For |
-|-------|-------|---------|----------|
-| Flash-8B | Fastest | Good | Daily notes, quick captures |
-| Flash | Fast | Better | Most use cases |
-| Pro | Slower | Best | Important documents, publications |
+| Model    | Speed   | Quality | Best For                          |
+| -------- | ------- | ------- | --------------------------------- |
+| Flash-8B | Fastest | Good    | Daily notes, quick captures       |
+| Flash    | Fast    | Better  | Most use cases                    |
+| Pro      | Slower  | Best    | Important documents, publications |
 
 ## Use Cases
 
 ### 1. Daily Notes
 
 Summarize daily notes for monthly reviews:
+
 ```markdown
 ---
-summary: "Completed API integration, attended planning meeting, and started documentation for new features."
+summary: 'Completed API integration, attended planning meeting, and started documentation for new features.'
 ---
 ```
 
 ### 2. Meeting Notes
 
 Quick overview of meeting outcomes:
+
 ```markdown
 ---
-summary: "Team agreed to extend deadline by two weeks and allocate additional resources to testing phase."
+summary: 'Team agreed to extend deadline by two weeks and allocate additional resources to testing phase.'
 ---
 ```
 
 ### 3. Research Notes
 
 Capture essence of research findings:
+
 ```markdown
 ---
-summary: "Study demonstrates 40% improvement in performance using new caching strategy with minimal memory overhead."
+summary: 'Study demonstrates 40% improvement in performance using new caching strategy with minimal memory overhead.'
 ---
 ```
 
 ### 4. Book Notes
 
 Summarize key takeaways:
+
 ```markdown
 ---
-summary: "Explores how deliberate practice and focused attention lead to expertise, emphasizing quality over quantity in skill development."
+summary: 'Explores how deliberate practice and focused attention lead to expertise, emphasizing quality over quantity in skill development.'
 ---
 ```
 
 ### 5. Project Documentation
 
 Create quick project descriptions:
+
 ```markdown
 ---
-summary: "Customer feedback system using React frontend and Node.js backend with real-time updates via WebSocket."
+summary: 'Customer feedback system using React frontend and Node.js backend with real-time updates via WebSocket.'
 ---
 ```
 
@@ -158,6 +165,7 @@ summary: "Customer feedback system using React frontend and Node.js backend with
 ### 1. Well-Structured Notes
 
 The AI summarizes better when notes are organized:
+
 - Use clear headings
 - Include introduction paragraphs
 - Group related content
@@ -179,6 +187,7 @@ The AI summarizes better when notes are organized:
 ### 4. Update Summaries
 
 Regenerate summaries when:
+
 - Note content changes significantly
 - You refine the note structure
 - Original summary seems inaccurate
@@ -188,6 +197,7 @@ Regenerate summaries when:
 ### 1. Dataview Queries
 
 List notes with summaries:
+
 ```dataview
 TABLE summary
 FROM "Projects"
@@ -198,6 +208,7 @@ SORT file.mtime DESC
 ### 2. Search and Filter
 
 Find notes by summary content:
+
 - Search: `summary:"budget"`
 - Filter in graph view
 - Use in Smart Folders
@@ -205,10 +216,11 @@ Find notes by summary content:
 ### 3. Note Templates
 
 Include summary field in templates:
+
 ```markdown
 ---
-created: {{date}}
-summary: 
+created: { { date } }
+summary:
 tags: []
 ---
 ```
@@ -216,6 +228,7 @@ tags: []
 ### 4. Index Pages
 
 Create automatic indexes:
+
 ```dataview
 LIST summary
 FROM "Meetings"
@@ -225,6 +238,7 @@ WHERE date(file.name) >= date(today) - dur(7 days)
 ### 5. Export and Share
 
 Summaries make sharing easier:
+
 - Include in exported PDFs
 - Use in email descriptions
 - Add to project overviews
@@ -234,6 +248,7 @@ Summaries make sharing easier:
 ### 1. Batch Summarization
 
 Summarize multiple notes:
+
 1. Use Templater or QuickAdd
 2. Create macro to run command
 3. Apply to selected notes
@@ -241,6 +256,7 @@ Summarize multiple notes:
 ### 2. Custom Summary Styles
 
 Influence summary style by note structure:
+
 - **Action-focused**: Start with verbs
 - **Descriptive**: Use adjectives
 - **Technical**: Include specific terms
@@ -248,20 +264,25 @@ Influence summary style by note structure:
 ### 3. Summary Templates
 
 Guide AI with structure:
+
 ```markdown
 # Purpose
+
 [What this note achieves]
 
 # Key Points
+
 [Main ideas]
 
 # Conclusion
+
 [Final thoughts]
 ```
 
 ### 4. Multi-Language Support
 
 The AI can summarize in various languages:
+
 - Writes summary in note's primary language
 - Handles mixed-language content
 - Maintains technical terms appropriately
@@ -283,16 +304,19 @@ The AI can summarize in various languages:
 ### Poor Quality Summaries
 
 **Too Generic**
+
 - Add more specific content
 - Include concrete examples
 - State main purpose clearly
 
 **Too Long**
+
 - This is rare but can happen with complex notes
 - Consider breaking into multiple notes
 - Focus on key message
 
 **Missing Key Points**
+
 - Reorganize with clear headings
 - Put important info early
 - Use emphasis for key concepts
@@ -300,11 +324,13 @@ The AI can summarize in various languages:
 ### Performance Issues
 
 **Slow Generation**
+
 - Switch to faster model (Flash-8B)
 - Check internet connection
 - Reduce note length if extreme
 
 **Failures**
+
 - Very long notes may timeout
 - Check for special characters
 - Ensure proper markdown syntax
@@ -332,6 +358,7 @@ The AI can summarize in various languages:
 ### 4. Integration
 
 Combine with other features:
+
 - Use summaries in custom prompts
 - Reference in chat conversations
 - Include in rewrite operations
@@ -339,18 +366,23 @@ Combine with other features:
 ## Examples of Good Summaries
 
 ### Technical Note
+
 "Implemented Redis caching layer reducing API response time by 60% through strategic key expiration and lazy loading patterns."
 
 ### Meeting Note
+
 "Q3 planning meeting established three priority initiatives: mobile app launch, API v2 development, and customer dashboard redesign."
 
 ### Research Note
+
 "Analysis of 50 user interviews reveals primary pain points in onboarding flow, with 80% citing confusion around initial configuration steps."
 
 ### Personal Note
+
 "Reflections on productivity experiment show morning writing sessions yield 3x output compared to evening work, suggesting schedule adjustment needed."
 
 ### Tutorial Note
+
 "Step-by-step guide for configuring GitHub Actions CI/CD pipeline with automated testing, security scanning, and deployment to AWS."
 
 ## Conclusion
