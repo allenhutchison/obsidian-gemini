@@ -61,7 +61,7 @@ export class AgentViewUI {
 	constructor(
 		private app: App,
 		private plugin: ObsidianGemini
-	) {}
+	) { }
 
 	/**
 	 * Creates the main agent interface
@@ -359,8 +359,12 @@ export class AgentViewUI {
 
 		// Handle drag and drop for images
 		userInput.addEventListener('dragover', (e) => {
-			e.preventDefault(); // allow drop
+			e.preventDefault();
+			e.stopPropagation();
 			userInput.addClass('gemini-agent-input-dragover');
+			if (e.dataTransfer) {
+				e.dataTransfer.dropEffect = 'copy';
+			}
 		});
 
 		userInput.addEventListener('dragleave', (e) => {
@@ -369,6 +373,7 @@ export class AgentViewUI {
 
 		userInput.addEventListener('drop', async (e) => {
 			e.preventDefault();
+			e.stopPropagation();
 			userInput.removeClass('gemini-agent-input-dragover');
 
 			if (e.dataTransfer?.files?.length) {
