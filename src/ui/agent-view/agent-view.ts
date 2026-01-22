@@ -272,12 +272,24 @@ export class AgentView extends ItemView {
 
 			// Add mention note if files were mentioned
 			if (files.length > 0) {
-				const fileNames = files.map((f) => f.basename).join(', ');
-				additionalInstructions += `\n\nIMPORTANT: The user has specifically referenced the following files using @ mentions: ${fileNames}
-These files are included in the context below. When the user asks you to write data to or modify these files, you should:
-1. First use the read_file tool to examine their current contents
-2. Then use the write_file tool to update them with the new or modified content
-3. If adding new data, integrate it appropriately with the existing content rather than creating a new file`;
+				additionalInstructions += `\n\nIMPORTANT: The user has referenced files using Obsidian wikilink syntax in their message.
+
+UNDERSTANDING WIKILINKS:
+When you see a wikilink like [[Food/Mint.md|Mint]], this means:
+- FULL PATH to use for all operations: "Food/Mint.md" (the part BEFORE the | symbol)
+- Display name shown to user: "Mint" (the part AFTER the | symbol)
+
+CRITICAL RULES for handling mentioned files:
+1. ALWAYS use the FULL PATH from the wikilink (before |) when calling any file tools
+2. NEVER use just the display name (after |) as the file path
+3. When the user says "save to" or "write to" a mentioned file, use write_file with the FULL PATH
+
+Example interpretations:
+- "Save the answer to [[Food/Mint.md|Mint]]" → Use write_file with path: "Food/Mint.md"
+- "Update [[Projects/Todo.md|Todo]] with..." → Use write_file with path: "Projects/Todo.md"
+- "Add to [[Daily Notes/2024-01-20.md|today's note]]" → Use path: "Daily Notes/2024-01-20.md"
+
+The mentioned files are included in the context below for reference.`;
 			}
 
 			// Add context information if available
