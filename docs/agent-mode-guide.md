@@ -58,6 +58,7 @@ Agent: I'll help you find and summarize your meeting notes. Let me:
 You can include images in your chat for the AI to analyze:
 - **Paste** images directly from your clipboard into the input box
 - **Drag and drop** image files into the input box
+- **Click** on any image in the chat to open it in a preview tab
 - Local images are automatically saved to your vault attachments folder
 - The AI can see the image content and its path for referencing
 

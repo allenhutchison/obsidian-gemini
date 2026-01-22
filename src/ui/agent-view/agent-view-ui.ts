@@ -61,7 +61,7 @@ export class AgentViewUI {
 	constructor(
 		private app: App,
 		private plugin: ObsidianGemini
-	) { }
+	) {}
 
 	/**
 	 * Creates the main agent interface

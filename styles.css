@@ -1403,27 +1403,35 @@ If your plugin does not need CSS, delete this file.
 
 /* State Colors */
 .gemini-agent-progress-thinking {
-	background: linear-gradient(90deg,
-			var(--interactive-accent),
-			color-mix(in srgb, var(--interactive-accent) 80%, white));
+	background: linear-gradient(
+		90deg,
+		var(--interactive-accent),
+		color-mix(in srgb, var(--interactive-accent) 80%, white)
+	);
 }
 
 .gemini-agent-progress-tool {
-	background: linear-gradient(90deg,
-			color-mix(in srgb, var(--color-green) 70%, var(--interactive-accent) 30%),
-			color-mix(in srgb, var(--color-green) 50%, white));
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-green) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-green) 50%, white)
+	);
 }
 
 .gemini-agent-progress-waiting {
-	background: linear-gradient(90deg,
-			color-mix(in srgb, var(--color-yellow) 70%, var(--interactive-accent) 30%),
-			color-mix(in srgb, var(--color-yellow) 50%, white));
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-yellow) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-yellow) 50%, white)
+	);
 }
 
 .gemini-agent-progress-streaming {
-	background: linear-gradient(90deg,
-			color-mix(in srgb, var(--color-purple) 70%, var(--interactive-accent) 30%),
-			color-mix(in srgb, var(--color-purple) 50%, white));
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-purple) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-purple) 50%, white)
+	);
 }
 
 /* Indeterminate Animation */
@@ -1680,7 +1688,7 @@ If your plugin does not need CSS, delete this file.
 	box-sizing: border-box;
 }
 
-.gemini-session-modal>* {
+.gemini-session-modal > * {
 	overflow-x: hidden;
 	max-width: 100%;
 }
@@ -2336,7 +2344,6 @@ If your plugin does not need CSS, delete this file.
 }
 
 @keyframes thinking-bounce {
-
 	0%,
 	80%,
 	100% {
@@ -3689,7 +3696,6 @@ If your plugin does not need CSS, delete this file.
 }
 
 @keyframes rag-pulse {
-
 	0%,
 	100% {
 		opacity: 1;

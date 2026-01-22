@@ -13,14 +13,14 @@ const AGENT_CAPABILITIES = [
 	{ icon: 'search', text: 'Search and read files in your vault' },
 	{ icon: 'file-edit', text: 'Create, modify, and organize notes' },
 	{ icon: 'globe', text: 'Search the web and fetch information' },
-	{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' }
+	{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' },
 ] as const;
 
 const DEFAULT_EXAMPLE_PROMPTS = [
 	{ icon: 'search', text: 'Find all notes tagged with #important' },
 	{ icon: 'file-plus', text: 'Create a weekly summary of my meeting notes' },
 	{ icon: 'globe', text: 'Research productivity methods and create notes' },
-	{ icon: 'folder-tree', text: 'Organize my research notes by topic' }
+	{ icon: 'folder-tree', text: 'Organize my research notes by topic' },
 ] as const;
 
 /**
@@ -82,17 +82,17 @@ export class AgentViewMessages {
 		}
 
 		const messageDiv = this.chatContainer.createDiv({
-			cls: `gemini-agent-message gemini-agent-message-${entry.role}`
+			cls: `gemini-agent-message gemini-agent-message-${entry.role}`,
 		});
 
 		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
 		header.createEl('span', {
 			text: entry.role === 'user' ? 'You' : entry.role === 'system' ? 'System' : 'Agent',
-			cls: 'gemini-agent-message-role'
+			cls: 'gemini-agent-message-role',
 		});
 		header.createEl('span', {
 			text: entry.created_at.toLocaleTimeString(),
-			cls: 'gemini-agent-message-time'
+			cls: 'gemini-agent-message-time',
 		});
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
@@ -145,8 +145,14 @@ export class AgentViewMessages {
 				}
 
 				// For non-table content, add empty line between paragraphs
-				if (!inTable && !hasUnescapedPipe && trimmedLine !== '' &&
-					nextLine && nextLine.trim() !== '' && !nextLine.includes('|')) {
+				if (
+					!inTable &&
+					!hasUnescapedPipe &&
+					trimmedLine !== '' &&
+					nextLine &&
+					nextLine.trim() !== '' &&
+					!nextLine.includes('|')
+				) {
 					formattedLines.push('');
 				}
 
@@ -196,25 +202,25 @@ export class AgentViewMessages {
 						// Tool name
 						toolHeader.createEl('span', {
 							text: `Tool: ${toolName}`,
-							cls: 'gemini-agent-tool-name'
+							cls: 'gemini-agent-tool-name',
 						});
 
 						// Tool status (if available)
 						if (toolContent.includes('✅')) {
 							toolHeader.createEl('span', {
 								text: 'Success',
-								cls: 'gemini-agent-tool-status gemini-agent-tool-status-success'
+								cls: 'gemini-agent-tool-status gemini-agent-tool-status-success',
 							});
 						} else if (toolContent.includes('❌')) {
 							toolHeader.createEl('span', {
 								text: 'Failed',
-								cls: 'gemini-agent-tool-status gemini-agent-tool-status-error'
+								cls: 'gemini-agent-tool-status gemini-agent-tool-status-error',
 							});
 						}
 
 						// Tool content (initially hidden)
 						const toolContentDiv = toolDiv.createDiv({
-							cls: 'gemini-agent-tool-content gemini-agent-tool-content-collapsed'
+							cls: 'gemini-agent-tool-content gemini-agent-tool-content-collapsed',
 						});
 
 						// Render the tool content
@@ -284,17 +290,17 @@ export class AgentViewMessages {
 		}
 
 		const messageDiv = this.chatContainer.createDiv({
-			cls: `gemini-agent-message gemini-agent-message-${role}`
+			cls: `gemini-agent-message gemini-agent-message-${role}`,
 		});
 
 		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
 		header.createEl('span', {
 			text: role === 'user' ? 'You' : role === 'system' ? 'System' : 'Agent',
-			cls: 'gemini-agent-message-role'
+			cls: 'gemini-agent-message-role',
 		});
 		header.createEl('span', {
 			text: new Date().toLocaleTimeString(),
-			cls: 'gemini-agent-message-time'
+			cls: 'gemini-agent-message-time',
 		});
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
@@ -368,8 +374,14 @@ export class AgentViewMessages {
 					}
 
 					// For non-table content, add empty line between paragraphs
-					if (!inTable && !hasUnescapedPipe && trimmedLine !== '' &&
-						nextLine && nextLine.trim() !== '' && !nextLine.includes('|')) {
+					if (
+						!inTable &&
+						!hasUnescapedPipe &&
+						trimmedLine !== '' &&
+						nextLine &&
+						nextLine.trim() !== '' &&
+						!nextLine.includes('|')
+					) {
 						formattedLines.push('');
 					}
 
@@ -476,12 +488,12 @@ export class AgentViewMessages {
 
 			emptyState.createEl('h3', {
 				text: 'Start a conversation',
-				cls: 'gemini-agent-empty-title'
+				cls: 'gemini-agent-empty-title',
 			});
 
 			emptyState.createEl('p', {
 				text: 'Your AI assistant that can actively work with your vault.',
-				cls: 'gemini-agent-empty-desc'
+				cls: 'gemini-agent-empty-desc',
 			});
 
 			// What can the agent do section
@@ -489,12 +501,12 @@ export class AgentViewMessages {
 
 			capabilities.createEl('h4', {
 				text: 'What can the Agent do?',
-				cls: 'gemini-agent-capabilities-title'
+				cls: 'gemini-agent-capabilities-title',
 			});
 
 			const capList = capabilities.createEl('ul', { cls: 'gemini-agent-capabilities-list' });
 
-			AGENT_CAPABILITIES.forEach(item => {
+			AGENT_CAPABILITIES.forEach((item) => {
 				const li = capList.createEl('li', { cls: 'gemini-agent-capability-item' });
 				const iconEl = li.createSpan({ cls: 'gemini-agent-capability-icon' });
 				setIcon(iconEl, item.icon);
@@ -505,7 +517,7 @@ export class AgentViewMessages {
 			const docsLink = capabilities.createDiv({ cls: 'gemini-agent-docs-link' });
 			const linkEl = docsLink.createEl('a', {
 				text: '📖 Learn more about Agent Mode',
-				cls: 'gemini-agent-docs-link-text'
+				cls: 'gemini-agent-docs-link-text',
 			});
 			linkEl.href = AGENT_MODE_GUIDE_URL;
 			linkEl.setAttribute('aria-label', 'Open Agent Mode documentation in new tab');
@@ -530,7 +542,7 @@ export class AgentViewMessages {
 			const initButton = emptyState.createDiv({
 				cls: agentsMemoryExists
 					? 'gemini-agent-init-context-button gemini-agent-init-context-button-update'
-					: 'gemini-agent-init-context-button'
+					: 'gemini-agent-init-context-button',
 			});
 
 			const buttonIcon = initButton.createDiv({ cls: 'gemini-agent-init-icon' });
@@ -542,13 +554,13 @@ export class AgentViewMessages {
 				buttonText.createEl('strong', { text: 'Update Vault Context' });
 				buttonText.createEl('span', {
 					text: 'Refresh my understanding of your vault',
-					cls: 'gemini-agent-init-desc'
+					cls: 'gemini-agent-init-desc',
 				});
 			} else {
 				buttonText.createEl('strong', { text: 'Initialize Vault Context' });
 				buttonText.createEl('span', {
 					text: 'Help me understand your vault structure and organization',
-					cls: 'gemini-agent-init-desc'
+					cls: 'gemini-agent-init-desc',
 				});
 			}
 
@@ -565,31 +577,31 @@ export class AgentViewMessages {
 			// Fetch 6 sessions since we might filter out the current one
 			const allRecentSessions = await this.plugin.sessionManager.getRecentAgentSessions(6);
 			const recentSessions = allRecentSessions
-				.filter(session => !this.isCurrentSession(session, currentSession))
+				.filter((session) => !this.isCurrentSession(session, currentSession))
 				.slice(0, 5); // Limit to 5 after filtering
 
 			if (recentSessions.length > 0) {
 				// Show recent sessions
 				emptyState.createEl('p', {
 					text: 'Recent sessions:',
-					cls: 'gemini-agent-suggestions-header'
+					cls: 'gemini-agent-suggestions-header',
 				});
 
 				const sessionsContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions' });
 
-				recentSessions.forEach(session => {
+				recentSessions.forEach((session) => {
 					const suggestion = sessionsContainer.createDiv({
-						cls: 'gemini-agent-suggestion gemini-agent-suggestion-session'
+						cls: 'gemini-agent-suggestion gemini-agent-suggestion-session',
 					});
 
 					suggestion.createEl('span', {
 						text: session.title,
-						cls: 'gemini-agent-suggestion-title'
+						cls: 'gemini-agent-suggestion-title',
 					});
 
 					suggestion.createEl('span', {
 						text: new Date(session.lastActive).toLocaleDateString(),
-						cls: 'gemini-agent-suggestion-date'
+						cls: 'gemini-agent-suggestion-date',
 					});
 
 					suggestion.addEventListener('click', async () => {
@@ -603,14 +615,14 @@ export class AgentViewMessages {
 
 			emptyState.createEl('p', {
 				text: 'Try these examples:',
-				cls: 'gemini-agent-suggestions-header'
+				cls: 'gemini-agent-suggestions-header',
 			});
 
 			const examplesContainer = emptyState.createDiv({ cls: 'gemini-agent-suggestions gemini-agent-examples' });
 
-			examplePrompts.forEach(example => {
+			examplePrompts.forEach((example) => {
 				const suggestion = examplesContainer.createDiv({
-					cls: 'gemini-agent-suggestion gemini-agent-suggestion-example'
+					cls: 'gemini-agent-suggestion gemini-agent-suggestion-example',
 				});
 
 				const iconEl = suggestion.createSpan({ cls: 'gemini-agent-example-icon' });
@@ -618,7 +630,7 @@ export class AgentViewMessages {
 
 				suggestion.createSpan({
 					text: example.text,
-					cls: 'gemini-agent-example-text'
+					cls: 'gemini-agent-example-text',
 				});
 
 				suggestion.addEventListener('click', async () => {
@@ -635,8 +647,7 @@ export class AgentViewMessages {
 	 */
 	private isCurrentSession(session: ChatSession, currentSession: ChatSession | null): boolean {
 		if (!currentSession) return false;
-		return session.id === currentSession.id ||
-			session.historyPath === currentSession.historyPath;
+		return session.id === currentSession.id || session.historyPath === currentSession.historyPath;
 	}
 
 	/**
@@ -653,7 +664,7 @@ export class AgentViewMessages {
 
 			// Create system message container
 			const messageDiv = this.chatContainer.createDiv({
-				cls: 'gemini-agent-message gemini-agent-message-system gemini-agent-confirmation-request'
+				cls: 'gemini-agent-message gemini-agent-message-system gemini-agent-confirmation-request',
 			});
 
 			// Add header
@@ -661,7 +672,7 @@ export class AgentViewMessages {
 			header.createEl('span', { text: 'Permission Required', cls: 'gemini-agent-message-role' });
 			header.createEl('span', {
 				text: new Date().toLocaleTimeString(),
-				cls: 'gemini-agent-message-time'
+				cls: 'gemini-agent-message-time',
 			});
 
 			// Create confirmation card
@@ -676,18 +687,18 @@ export class AgentViewMessages {
 
 			toolHeader.createEl('span', {
 				text: tool.displayName || tool.name,
-				cls: 'gemini-agent-tool-name'
+				cls: 'gemini-agent-tool-name',
 			});
 
 			toolHeader.createEl('span', {
 				text: this.getCategoryLabel(tool.category),
-				cls: 'gemini-agent-tool-category'
+				cls: 'gemini-agent-tool-category',
 			});
 
 			// Tool description
 			toolInfo.createEl('p', {
 				text: tool.description,
-				cls: 'gemini-agent-tool-description'
+				cls: 'gemini-agent-tool-description',
 			});
 
 			// Parameters section
@@ -721,7 +732,7 @@ export class AgentViewMessages {
 
 			// Allow button
 			const allowBtn = buttonsContainer.createEl('button', {
-				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-confirm mod-cta'
+				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-confirm mod-cta',
 			});
 			const allowIcon = allowBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
 			setIcon(allowIcon, 'check');
@@ -729,7 +740,7 @@ export class AgentViewMessages {
 
 			// Cancel button
 			const cancelBtn = buttonsContainer.createEl('button', {
-				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-cancel'
+				cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-cancel',
 			});
 			const cancelIcon = cancelBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
 			setIcon(cancelIcon, 'x');
@@ -737,18 +748,18 @@ export class AgentViewMessages {
 
 			// "Don't ask again" checkbox
 			const checkboxContainer = buttonsContainer.createDiv({
-				cls: 'gemini-agent-confirmation-checkbox'
+				cls: 'gemini-agent-confirmation-checkbox',
 			});
 			const checkboxId = `allow-without-confirmation-${executionId}`;
 			const checkbox = checkboxContainer.createEl('input', {
 				type: 'checkbox',
 				cls: 'gemini-agent-checkbox-input',
-				attr: { id: checkboxId }
+				attr: { id: checkboxId },
 			});
 			const checkboxLabel = checkboxContainer.createEl('label', {
 				text: "Don't ask again this session",
 				cls: 'gemini-agent-checkbox-label',
-				attr: { for: checkboxId }
+				attr: { for: checkboxId },
 			});
 
 			// Add 60 second timeout to prevent infinite wait
@@ -795,7 +806,7 @@ export class AgentViewMessages {
 				// Resolve Promise
 				resolve({
 					confirmed,
-					allowWithoutConfirmation: checkbox.checked
+					allowWithoutConfirmation: checkbox.checked,
 				});
 
 				// Scroll to show result
@@ -817,11 +828,7 @@ export class AgentViewMessages {
 	/**
 	 * Update confirmation message after user responds
 	 */
-	private updateConfirmationResult(
-		messageDiv: HTMLElement,
-		confirmed: boolean,
-		toolName: string
-	) {
+	private updateConfirmationResult(messageDiv: HTMLElement, confirmed: boolean, toolName: string) {
 		// Remove the card and buttons
 		messageDiv.empty();
 
@@ -832,10 +839,8 @@ export class AgentViewMessages {
 		setIcon(icon, confirmed ? 'check-circle' : 'x-circle');
 
 		result.createSpan({
-			text: confirmed
-				? `Permission granted: ${toolName} was allowed`
-				: `Permission denied: ${toolName} was cancelled`,
-			cls: 'gemini-agent-result-text'
+			text: confirmed ? `Permission granted: ${toolName} was allowed` : `Permission denied: ${toolName} was cancelled`,
+			cls: 'gemini-agent-result-text',
 		});
 	}
 
@@ -854,7 +859,7 @@ export class AgentViewMessages {
 
 		result.createSpan({
 			text: `Request timed out: ${toolName} confirmation expired`,
-			cls: 'gemini-agent-result-text'
+			cls: 'gemini-agent-result-text',
 		});
 	}
 
@@ -874,9 +879,7 @@ export class AgentViewMessages {
 
 			// Handle strings
 			if (typeof value === 'string') {
-				return value.length > MAX_LENGTH
-					? value.substring(0, MAX_LENGTH) + `... (${value.length} chars)`
-					: value;
+				return value.length > MAX_LENGTH ? value.substring(0, MAX_LENGTH) + `... (${value.length} chars)` : value;
 			}
 
 			// Try to stringify other values
@@ -902,10 +905,10 @@ export class AgentViewMessages {
 		const labels: Record<string, string> = {
 			'read-only': 'Read Only',
 			'vault-operations': 'Vault Operation',
-			'external': 'External',
-			'web': 'Web Access',
-			'memory': 'Memory',
-			'deep-research': 'Deep Research'
+			external: 'External',
+			web: 'Web Access',
+			memory: 'Memory',
+			'deep-research': 'Deep Research',
 		};
 		return labels[category] || category;
 	}
@@ -915,13 +918,13 @@ export class AgentViewMessages {
 	 */
 	private setToolIcon(container: HTMLElement, toolName: string) {
 		const iconMap: Record<string, string> = {
-			'write_file': 'file-edit',
-			'delete_file': 'trash-2',
-			'move_file': 'file-symlink',
-			'create_folder': 'folder-plus',
-			'read_file': 'file-text',
-			'list_files': 'folder-open',
-			'search_files': 'search',
+			write_file: 'file-edit',
+			delete_file: 'trash-2',
+			move_file: 'file-symlink',
+			create_folder: 'folder-plus',
+			read_file: 'file-text',
+			list_files: 'folder-open',
+			search_files: 'search',
 		};
 		setIcon(container, iconMap[toolName] || 'tool');
 	}
