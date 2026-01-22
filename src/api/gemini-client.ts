@@ -14,7 +14,7 @@ import {
 	ToolCall,
 	StreamCallback,
 	StreamingModelResponse,
-	ToolDefinition
+	ToolDefinition,
 } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import type ObsidianGemini from '../main';
@@ -55,7 +55,7 @@ export class GeminiClient implements ModelApi {
 			temperature: 1.0,
 			topP: 0.95,
 			streamingEnabled: true,
-			...config
+			...config,
 		};
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
@@ -125,7 +125,7 @@ export class GeminiClient implements ModelApi {
 					if (chunkText || chunkThought) {
 						onChunk({
 							text: chunkText,
-							...(chunkThought && { thought: chunkThought })
+							...(chunkThought && { thought: chunkThought }),
 						});
 					}
 
@@ -150,7 +150,7 @@ export class GeminiClient implements ModelApi {
 					markdown: accumulatedText,
 					rendered: accumulatedRendered,
 					...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-					...(toolCalls && { toolCalls })
+					...(toolCalls && { toolCalls }),
 				};
 			} catch (error) {
 				if (cancelled) {
@@ -158,7 +158,7 @@ export class GeminiClient implements ModelApi {
 						markdown: accumulatedText,
 						rendered: accumulatedRendered,
 						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-						...(toolCalls && { toolCalls })
+						...(toolCalls && { toolCalls }),
 					};
 				}
 				this.plugin?.logger.error('[GeminiClient] Streaming error:', error);
@@ -170,7 +170,7 @@ export class GeminiClient implements ModelApi {
 			complete,
 			cancel: () => {
 				cancelled = true;
-			}
+			},
 		};
 	}
 
@@ -231,7 +231,7 @@ export class GeminiClient implements ModelApi {
 		if (this.supportsThinking(model)) {
 			config.thinkingConfig = {
 				includeThoughts: true,
-				thinkingBudget: -1 // -1 = automatic budget
+				thinkingBudget: -1, // -1 = automatic budget
 			};
 		}
 
@@ -239,14 +239,14 @@ export class GeminiClient implements ModelApi {
 		const hasTools = isExtended && (request as ExtendedModelRequest).availableTools?.length;
 		if (hasTools) {
 			const tools = (request as ExtendedModelRequest).availableTools!;
-			const functionDeclarations = tools.map(tool => ({
+			const functionDeclarations = tools.map((tool) => ({
 				name: tool.name,
 				description: tool.description,
 				parameters: {
 					type: 'object' as const,
 					properties: tool.parameters.properties || {},
-					required: tool.parameters.required || []
-				}
+					required: tool.parameters.required || [],
+				},
 			}));
 
 			config.tools = config.tools || [];
@@ -268,7 +268,7 @@ export class GeminiClient implements ModelApi {
 		const params: GenerateContentParameters = {
 			model,
 			contents: finalContents,
-			config
+			config,
 		};
 
 		return params;
@@ -281,10 +281,12 @@ export class GeminiClient implements ModelApi {
 		if (!('userMessage' in request)) {
 			// BaseModelRequest - just send the prompt as user message
 			if (!request.prompt) return [];
-			return [{
-				role: 'user',
-				parts: [{ text: request.prompt }]
-			}];
+			return [
+				{
+					role: 'user',
+					parts: [{ text: request.prompt }],
+				},
+			];
 		}
 
 		const extReq = request as ExtendedModelRequest;
@@ -301,7 +303,7 @@ export class GeminiClient implements ModelApi {
 				else if ('role' in entry && 'text' in entry) {
 					contents.push({
 						role: entry.role === 'user' ? 'user' : 'model',
-						parts: [{ text: entry.text }]
+						parts: [{ text: entry.text }],
 					});
 				}
 				// Support our internal format with role and message
@@ -309,7 +311,7 @@ export class GeminiClient implements ModelApi {
 					const msg = entry as any;
 					contents.push({
 						role: msg.role === 'user' ? 'user' : 'model',
-						parts: [{ text: msg.message }]
+						parts: [{ text: msg.message }],
 					});
 				}
 			}
@@ -319,7 +321,7 @@ export class GeminiClient implements ModelApi {
 		if (extReq.userMessage && extReq.userMessage.trim()) {
 			contents.push({
 				role: 'user',
-				parts: [{ text: extReq.userMessage }]
+				parts: [{ text: extReq.userMessage }],
 			});
 		}
 
@@ -359,7 +361,7 @@ export class GeminiClient implements ModelApi {
 			markdown,
 			rendered,
 			...(thoughts && { thoughts }),
-			...(toolCalls && { toolCalls })
+			...(toolCalls && { toolCalls }),
 		};
 	}
 
@@ -382,13 +384,13 @@ export class GeminiClient implements ModelApi {
 	private extractThoughtFromChunk(chunk: any): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
 			const parts = chunk.candidates[0].content.parts;
-			const thoughtParts = parts.filter((part: Part) => (part as PartWithThought).thought && (part as PartWithThought).text);
+			const thoughtParts = parts.filter(
+				(part: Part) => (part as PartWithThought).thought && (part as PartWithThought).text
+			);
 
 			if (thoughtParts.length > 0) {
 				const thoughtText = thoughtParts.map((part: Part) => (part as PartWithThought).text).join('');
-				const preview = thoughtText.length > 100
-					? thoughtText.substring(0, 100) + '...'
-					: thoughtText;
+				const preview = thoughtText.length > 100 ? thoughtText.substring(0, 100) + '...' : thoughtText;
 				this.plugin?.logger.debug(`[GeminiClient] Extracted thought: ${preview}`);
 				return thoughtText;
 			}
@@ -406,9 +408,8 @@ export class GeminiClient implements ModelApi {
 		}
 
 		const modelLower = model.toLowerCase();
-		const supports = modelLower.includes('gemini-2.5') ||
-			modelLower.includes('gemini-3') ||
-			modelLower.includes('thinking-exp');
+		const supports =
+			modelLower.includes('gemini-2.5') || modelLower.includes('gemini-3') || modelLower.includes('thinking-exp');
 
 		if (supports) {
 			this.plugin?.logger.debug(`[GeminiClient] Enabling thinking mode for model: ${model}`);
@@ -432,13 +433,13 @@ export class GeminiClient implements ModelApi {
 				// Debug logging to verify extraction
 				this.plugin?.logger.debug(
 					`[GeminiClient] Extracted tool call: ${part.functionCall.name}, ` +
-					`has signature: ${signature !== undefined}`
+						`has signature: ${signature !== undefined}`
 				);
 
 				toolCalls.push({
 					name: part.functionCall.name,
 					arguments: part.functionCall.args || {},
-					thoughtSignature: signature
+					thoughtSignature: signature,
 				});
 			}
 		}
@@ -505,7 +506,7 @@ export class GeminiClient implements ModelApi {
 				config: {
 					// Image generation typically doesn't need temperature/topP
 					// but we can include them if needed
-				}
+				},
 			};
 
 			const response = await this.ai.models.generateContent(params);

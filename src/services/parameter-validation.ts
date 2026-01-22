@@ -40,12 +40,13 @@ export class ParameterValidationService {
 
 		// Find the maximum temperature across all models
 		const maxTemperatures = discoveredModels
-			.map(model => model.maxTemperature)
-			.filter(temp => temp !== undefined && temp !== null) as number[];
+			.map((model) => model.maxTemperature)
+			.filter((temp) => temp !== undefined && temp !== null) as number[];
 
-		const maxTemp = maxTemperatures.length > 0 
-			? maxTemperatures.reduce((max, temp) => Math.max(max, temp), 0)
-			: this.DEFAULT_RANGES.temperature.max;
+		const maxTemp =
+			maxTemperatures.length > 0
+				? maxTemperatures.reduce((max, temp) => Math.max(max, temp), 0)
+				: this.DEFAULT_RANGES.temperature.max;
 
 		return {
 			temperature: {
@@ -65,7 +66,7 @@ export class ParameterValidationService {
 	 * Get parameter information for specific models
 	 */
 	static getModelParameterInfo(discoveredModels: GoogleModel[]): ModelParameterInfo[] {
-		return discoveredModels.map(model => ({
+		return discoveredModels.map((model) => ({
 			modelName: model.name,
 			maxTemperature: model.maxTemperature,
 			topP: model.topP,
@@ -76,14 +77,18 @@ export class ParameterValidationService {
 	/**
 	 * Validate temperature value against model capabilities
 	 */
-	static validateTemperature(value: number, modelName?: string, discoveredModels: GoogleModel[] = []): {
+	static validateTemperature(
+		value: number,
+		modelName?: string,
+		discoveredModels: GoogleModel[] = []
+	): {
 		isValid: boolean;
 		adjustedValue?: number;
 		warning?: string;
 	} {
 		// If we have specific model information, check against that model's limits first
 		if (modelName) {
-			const modelInfo = discoveredModels.find(m => m.name === modelName || m.displayName === modelName);
+			const modelInfo = discoveredModels.find((m) => m.name === modelName || m.displayName === modelName);
 			if (modelInfo?.maxTemperature !== undefined && value > modelInfo.maxTemperature) {
 				return {
 					isValid: false,
@@ -95,7 +100,7 @@ export class ParameterValidationService {
 
 		// Then check against global ranges
 		const ranges = this.getParameterRanges(discoveredModels);
-		
+
 		if (value < ranges.temperature.min || value > ranges.temperature.max) {
 			const adjustedValue = Math.max(ranges.temperature.min, Math.min(ranges.temperature.max, value));
 			return {
@@ -111,13 +116,17 @@ export class ParameterValidationService {
 	/**
 	 * Validate topP value against model capabilities
 	 */
-	static validateTopP(value: number, modelName?: string, discoveredModels: GoogleModel[] = []): {
+	static validateTopP(
+		value: number,
+		modelName?: string,
+		discoveredModels: GoogleModel[] = []
+	): {
 		isValid: boolean;
 		adjustedValue?: number;
 		warning?: string;
 	} {
 		const ranges = this.getParameterRanges(discoveredModels);
-		
+
 		if (value < ranges.topP.min || value > ranges.topP.max) {
 			const adjustedValue = Math.max(ranges.topP.min, Math.min(ranges.topP.max, value));
 			return {
@@ -143,14 +152,15 @@ export class ParameterValidationService {
 
 		// Get unique default topP values from discovered models for informational purposes
 		const defaultTopPValues = discoveredModels
-			.map(model => model.topP)
-			.filter(topP => topP !== undefined && topP !== null) as number[];
+			.map((model) => model.topP)
+			.filter((topP) => topP !== undefined && topP !== null) as number[];
 
 		const uniqueTopPValues = [...new Set(defaultTopPValues)].sort((a, b) => a - b);
 
-		const topPInfo = uniqueTopPValues.length > 0 
-			? `Range: ${ranges.topP.min} to ${ranges.topP.max} (model defaults: ${uniqueTopPValues.join(', ')})`
-			: `Range: ${ranges.topP.min} to ${ranges.topP.max}`;
+		const topPInfo =
+			uniqueTopPValues.length > 0
+				? `Range: ${ranges.topP.min} to ${ranges.topP.max} (model defaults: ${uniqueTopPValues.join(', ')})`
+				: `Range: ${ranges.topP.min} to ${ranges.topP.max}`;
 
 		return {
 			temperature: `Range: ${ranges.temperature.min} to ${ranges.temperature.max}`,

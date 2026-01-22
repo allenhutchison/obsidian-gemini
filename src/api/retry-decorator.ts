@@ -43,10 +43,7 @@ export class RetryDecorator implements ModelApi {
 	/**
 	 * Execute a function with retry logic and exponential backoff
 	 */
-	private async executeWithRetry<T>(
-		operation: () => Promise<T>,
-		operationName: string
-	): Promise<T> {
+	private async executeWithRetry<T>(operation: () => Promise<T>, operationName: string): Promise<T> {
 		let lastError: Error | undefined;
 
 		for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
@@ -57,10 +54,7 @@ export class RetryDecorator implements ModelApi {
 
 				// Don't retry if we've exhausted our attempts
 				if (attempt === this.config.maxRetries) {
-					this.logger?.error(
-						`${operationName} failed after ${this.config.maxRetries + 1} attempts:`,
-						error
-					);
+					this.logger?.error(`${operationName} failed after ${this.config.maxRetries + 1} attempts:`, error);
 					throw error;
 				}
 
@@ -69,7 +63,7 @@ export class RetryDecorator implements ModelApi {
 
 				this.logger?.warn(
 					`${operationName} failed (attempt ${attempt + 1}/${this.config.maxRetries + 1}). ` +
-					`Retrying in ${backoffDelay}ms...`,
+						`Retrying in ${backoffDelay}ms...`,
 					error
 				);
 
@@ -84,13 +78,8 @@ export class RetryDecorator implements ModelApi {
 	/**
 	 * Generate a non-streaming response with retry logic
 	 */
-	async generateModelResponse(
-		request: BaseModelRequest | ExtendedModelRequest
-	): Promise<ModelResponse> {
-		return this.executeWithRetry(
-			() => this.wrappedApi.generateModelResponse(request),
-			'generateModelResponse'
-		);
+	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
+		return this.executeWithRetry(() => this.wrappedApi.generateModelResponse(request), 'generateModelResponse');
 	}
 
 	/**
@@ -131,17 +120,14 @@ export class RetryDecorator implements ModelApi {
 
 					this.logger?.warn(
 						`Streaming failed (attempt ${currentAttempt}/${this.config.maxRetries + 1}). ` +
-						`Retrying in ${backoffDelay}ms...`,
+							`Retrying in ${backoffDelay}ms...`,
 						error
 					);
 
 					await this.sleep(backoffDelay);
 					return attemptStream();
 				} else {
-					this.logger?.error(
-						`Streaming failed after ${this.config.maxRetries + 1} attempts:`,
-						error
-					);
+					this.logger?.error(`Streaming failed after ${this.config.maxRetries + 1} attempts:`, error);
 					throw error;
 				}
 			}
@@ -154,7 +140,7 @@ export class RetryDecorator implements ModelApi {
 				if (currentStream) {
 					currentStream.cancel();
 				}
-			}
+			},
 		};
 	}
 }

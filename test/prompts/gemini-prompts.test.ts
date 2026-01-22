@@ -67,7 +67,6 @@ describe('GeminiPrompts', () => {
 		expect(prompt).toContain('My user interface is set to the language code: fr');
 	});
 
-
 	it('should inject language into example prompts prompt', () => {
 		const prompt = geminiPrompts.examplePromptsPrompt('Vault Info', 'Existing Prompts');
 		expect(prompt).toContain('My user interface is set to the language code: fr');

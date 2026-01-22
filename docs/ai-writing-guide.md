@@ -18,6 +18,7 @@ The Selection-Based Text Rewriting feature allows you to precisely improve any p
 ### What is Selection-Based Text Rewriting?
 
 Selection-Based Text Rewriting allows you to:
+
 - **Select any text** in your document for AI improvement
 - **Provide specific instructions** for how to rewrite it
 - **Maintain document flow** with context-aware improvements
@@ -67,6 +68,7 @@ Selection-Based Text Rewriting allows you to:
 ### Context Awareness
 
 The AI has access to:
+
 - **Full document content** to understand context and maintain consistency
 - **Linked documents** from your vault (if context sending is enabled)
 - **Selection markers** showing exactly what to rewrite
@@ -77,6 +79,7 @@ The AI has access to:
 ### Clear and Specific Instructions
 
 **Good Examples:**
+
 ```
 "Make this more concise while keeping the key points"
 "Fix grammar and improve sentence flow"
@@ -87,6 +90,7 @@ The AI has access to:
 ```
 
 **Avoid Vague Instructions:**
+
 ```
 "Make it better" (too vague)
 "Change this" (no direction)
@@ -96,30 +100,35 @@ The AI has access to:
 ### Instruction Categories
 
 #### **Style Adjustments**
+
 - "Make this more formal/casual"
 - "Adjust the tone to be more friendly"
 - "Make this sound more confident"
 - "Write in a more conversational style"
 
 #### **Structure Improvements**
+
 - "Break this into shorter sentences"
 - "Combine these ideas into one paragraph"
 - "Add better transitions between ideas"
 - "Reorganize for better logical flow"
 
 #### **Content Enhancement**
+
 - "Add more specific examples"
 - "Include relevant statistics or data"
 - "Expand with more detail"
 - "Add a compelling introduction"
 
 #### **Clarity and Concision**
+
 - "Make this more concise without losing meaning"
 - "Simplify the language for beginners"
 - "Clarify the main argument"
 - "Remove redundant information"
 
 #### **Technical Adjustments**
+
 - "Fix grammar and spelling errors"
 - "Improve sentence structure"
 - "Correct any factual inaccuracies"
@@ -130,6 +139,7 @@ The AI has access to:
 ### 📝 Content Improvement
 
 **Scenario**: Rough draft paragraph needs polishing
+
 ```
 Selected text: "The thing about productivity is its hard to measure and people have different ideas about what it means."
 
@@ -141,6 +151,7 @@ Result: "Productivity is challenging to measure because people have varying defi
 ### 📊 Technical Writing
 
 **Scenario**: Making complex content accessible
+
 ```
 Instruction: "Simplify this technical explanation for a general audience"
 ```
@@ -148,6 +159,7 @@ Instruction: "Simplify this technical explanation for a general audience"
 ### ✍️ Creative Writing
 
 **Scenario**: Enhancing narrative descriptions
+
 ```
 Instruction: "Make this description more vivid and engaging"
 ```
@@ -155,6 +167,7 @@ Instruction: "Make this description more vivid and engaging"
 ### 📧 Professional Communication
 
 **Scenario**: Adjusting tone for business context
+
 ```
 Instruction: "Make this more professional while keeping it friendly"
 ```
@@ -162,6 +175,7 @@ Instruction: "Make this more professional while keeping it friendly"
 ### 🔍 Research Notes
 
 **Scenario**: Organizing scattered thoughts
+
 ```
 Instruction: "Organize these ideas into a logical sequence with better transitions"
 ```
@@ -202,6 +216,7 @@ For complex improvements, use multiple rewrite sessions:
 ### Context-Specific Instructions
 
 Reference other parts of your document:
+
 ```
 "Make this introduction match the formal tone used in the conclusion"
 "Adjust this to be consistent with the writing style in the previous section"
@@ -211,6 +226,7 @@ Reference other parts of your document:
 ### Template-Style Instructions
 
 Create reusable instruction patterns:
+
 ```
 "Convert to FAQ format with questions and answers"
 "Rewrite as a step-by-step tutorial"
@@ -221,6 +237,7 @@ Create reusable instruction patterns:
 ### Collaborative Iteration
 
 Use the chat feature alongside selection rewriting:
+
 1. **Ask questions** in chat about what would work best
 2. **Get suggestions** for improvement approaches
 3. **Use chat feedback** to refine your rewrite instructions

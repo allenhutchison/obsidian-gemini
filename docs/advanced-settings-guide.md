@@ -23,6 +23,7 @@ Advanced settings are hidden by default to keep the interface clean. To access t
 - **Higher values** (1.0-2.0): More creative, varied responses
 
 **When to adjust:**
+
 - Creative writing: Use higher temperature (1.0-1.5)
 - Technical documentation: Use lower temperature (0.2-0.5)
 - General chat: Default (0.7) works well
@@ -37,6 +38,7 @@ Advanced settings are hidden by default to keep the interface clean. To access t
 - **Higher values** (0.8-1.0): More diverse, exploratory responses
 
 **When to adjust:**
+
 - Focused analysis: Use lower Top P (0.3-0.7)
 - Brainstorming: Use higher Top P (0.9-1.0)
 - Balanced responses: Use default values
@@ -57,16 +59,19 @@ Gemini Scribe automatically discovers the parameter limits for your available mo
 Configure how the plugin handles API failures:
 
 **Maximum Retries**
+
 - **Default**: 3 attempts
 - **Range**: 0-10 retries
 - **Purpose**: Handles temporary network issues or API rate limits
 
 **Initial Backoff Delay**
+
 - **Default**: 1000ms (1 second)
 - **Range**: 100-10000ms
 - **Purpose**: Time to wait before first retry (uses exponential backoff)
 
 **How retry works:**
+
 1. First attempt fails
 2. Wait initial delay (e.g., 1 second)
 3. Second attempt fails
@@ -82,16 +87,19 @@ Configure how the plugin handles API failures:
 Automatically fetch available models from Google's API:
 
 **Enable Dynamic Model Discovery**
+
 - **Default**: Enabled
 - **Purpose**: Keeps model list current with Google's latest releases
 - **Updates**: Model parameter limits and availability
 
 **Auto-update Interval**
+
 - **Default**: 24 hours
 - **Range**: 0-168 hours (7 days)
 - **0 = Manual only**: Disable automatic updates
 
 **Fallback to Static Models**
+
 - **Default**: Enabled
 - **Purpose**: Use built-in model list when API discovery fails
 - **Recommended**: Keep enabled for reliability
@@ -101,11 +109,13 @@ Automatically fetch available models from Google's API:
 Monitor and control model discovery:
 
 **Status Indicators:**
+
 - ✓ Working: Discovery successful, shows last update time
 - ✗ Not working: Shows error details
 - Model count: Number of models found
 
 **Manual Refresh:**
+
 - Click "Refresh models" to update immediately
 - Useful when new models are released
 - Shows success/failure status
@@ -117,18 +127,21 @@ Monitor and control model discovery:
 In v4.0+, context is manually managed through session-based file selection:
 
 **Context File Selection:**
+
 - Use @ mentions in chat to add files as persistent context
 - Context files are included with every message in the session
 - Start with 2-3 relevant files and add more as needed
 - Remove unused context files to save token budget
 
 **AGENTS.md - Vault Context:**
+
 - Create AGENTS.md via "Initialize Vault Context" button
 - Provides AI with overview of your vault structure
 - Enables better file discovery without adding every file as context
 - Update periodically as your vault evolves
 
 **Optimization tips:**
+
 - Start minimal (2-3 files) and expand as needed
 - Use AGENTS.md for vault-wide awareness instead of adding many context files
 - Let agent use tools to read additional files on-demand
@@ -138,14 +151,17 @@ In v4.0+, context is manually managed through session-based file selection:
 ### Model Selection Strategy
 
 **For Chat (Quality focused):**
+
 - Primary: Gemini 1.5 Pro
 - Alternative: Gemini 1.5 Flash (faster)
 
 **For Completions (Speed focused):**
+
 - Primary: Gemini 1.5 Flash-8B
 - Alternative: Gemini 1.5 Flash
 
 **For Summaries (Balanced):**
+
 - Primary: Gemini 1.5 Flash
 - Alternative: Gemini 1.5 Pro (more detailed)
 
@@ -177,11 +193,13 @@ In v4.0+, context is manually managed through session-based file selection:
 ### Parameter Issues
 
 **Temperature/Top P not taking effect:**
+
 - Check if model supports the parameter range
 - Verify settings are saved (restart Obsidian if needed)
 - Look for validation warnings in notices
 
 **Extreme responses:**
+
 - Lower temperature if too random
 - Adjust Top P if responses are too narrow/broad
 - Reset to defaults if unsure
@@ -189,12 +207,14 @@ In v4.0+, context is manually managed through session-based file selection:
 ### API Problems
 
 **Frequent failures:**
+
 - Increase retry count
 - Extend initial backoff delay
 - Check API key permissions
 - Verify internet connection
 
 **Slow responses:**
+
 - Reduce number of context files in session
 - Use faster models (Flash variants)
 - Start new session to clear conversation history
@@ -203,12 +223,14 @@ In v4.0+, context is manually managed through session-based file selection:
 ### Model Discovery Issues
 
 **Discovery failing:**
+
 - Check API key validity
 - Verify network connectivity
 - Try manual refresh
 - Enable fallback to static models
 
 **Models not updating:**
+
 - Check auto-update interval
 - Force refresh manually
 - Clear plugin cache (restart Obsidian)
@@ -286,4 +308,4 @@ For issues with advanced settings:
 
 ---
 
-*Advanced settings provide powerful control over AI behavior. Start conservative and adjust based on your specific needs and content.*
+_Advanced settings provide powerful control over AI behavior. Start conservative and adjust based on your specific needs and content._

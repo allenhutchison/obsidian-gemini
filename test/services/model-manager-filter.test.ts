@@ -29,8 +29,8 @@ describe('ModelManager Version Filtering', () => {
 				error: jest.fn(),
 				child: jest.fn(function (this: any, prefix: string) {
 					return this;
-				})
-			}
+				}),
+			},
 		} as unknown as ObsidianGemini;
 
 		// Create model manager
@@ -62,7 +62,7 @@ describe('ModelManager Version Filtering', () => {
 
 			// Test text models (imageModelsOnly = false)
 			const textModels = modelManager['filterModelsForVersion'](models, false);
-			const textModelValues = textModels.map(m => m.value);
+			const textModelValues = textModels.map((m) => m.value);
 
 			expect(textModelValues).toContain('gemini-2.5-pro');
 			expect(textModelValues).toContain('gemini-2.5-flash');
@@ -84,7 +84,7 @@ describe('ModelManager Version Filtering', () => {
 
 			// Test image models (imageModelsOnly = true)
 			const imageModels = modelManager['filterModelsForVersion'](models, true);
-			const imageModelValues = imageModels.map(m => m.value);
+			const imageModelValues = imageModels.map((m) => m.value);
 
 			expect(imageModelValues).toContain('gemini-2.5-flash-image');
 
@@ -104,12 +104,16 @@ describe('ModelManager Version Filtering', () => {
 				{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
 				{ value: 'gemini-2.5-flash-preview-09-2025', label: 'Gemini 2.5 Flash Preview' }, // Should be excluded
 				{ value: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image', supportsImageGeneration: true },
-				{ value: 'gemini-2.5-flash-image-preview', label: 'Gemini 2.5 Flash Image Preview', supportsImageGeneration: true }, // Should be excluded
+				{
+					value: 'gemini-2.5-flash-image-preview',
+					label: 'Gemini 2.5 Flash Image Preview',
+					supportsImageGeneration: true,
+				}, // Should be excluded
 				{ value: 'gemini-3.0-pro-preview', label: 'Gemini 3.0 Pro Preview' }, // Should be kept (no stable)
 			];
 
 			const filtered = modelManager['filterModelsForVersion'](models, false);
-			const values = filtered.map(m => m.value);
+			const values = filtered.map((m) => m.value);
 
 			expect(values).toContain('gemini-2.5-pro');
 			expect(values).not.toContain('gemini-2.5-pro-preview-04-09');
@@ -119,7 +123,7 @@ describe('ModelManager Version Filtering', () => {
 
 			// Check image models too
 			const imageFiltered = modelManager['filterModelsForVersion'](models, true);
-			const imageValues = imageFiltered.map(m => m.value);
+			const imageValues = imageFiltered.map((m) => m.value);
 
 			expect(imageValues).toContain('gemini-2.5-flash-image');
 			expect(imageValues).not.toContain('gemini-2.5-flash-image-preview');
@@ -132,13 +136,11 @@ describe('ModelManager Version Filtering', () => {
 			];
 
 			const imageFiltered = modelManager['filterModelsForVersion'](models, true);
-			expect(imageFiltered.map(m => m.value)).toContain('nano-banana-image-model');
+			expect(imageFiltered.map((m) => m.value)).toContain('nano-banana-image-model');
 
 			const textFiltered = modelManager['filterModelsForVersion'](models, false);
-			expect(textFiltered.map(m => m.value)).not.toContain('nano-banana-image-model');
-			expect(textFiltered.map(m => m.value)).not.toContain('some-other-nano-model');
-
-
+			expect(textFiltered.map((m) => m.value)).not.toContain('nano-banana-image-model');
+			expect(textFiltered.map((m) => m.value)).not.toContain('some-other-nano-model');
 		});
 
 		it('should fall back to filtered static models on discovery failure', async () => {
@@ -152,11 +154,10 @@ describe('ModelManager Version Filtering', () => {
 
 			// Should get filtered static models (all 2.5+, 3+, or latest)
 			expect(models.length).toBeGreaterThan(0);
-			models.forEach(model => {
+			models.forEach((model) => {
 				const val = model.value.toLowerCase();
-				const isValid = (val.includes('gemini-2.5') ||
-					val.includes('gemini-3') ||
-					val.includes('latest')) &&
+				const isValid =
+					(val.includes('gemini-2.5') || val.includes('gemini-3') || val.includes('latest')) &&
 					!val.includes('gemini-2.0') &&
 					!val.includes('imagen') &&
 					!val.includes('veo') &&

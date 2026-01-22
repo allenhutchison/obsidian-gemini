@@ -79,10 +79,7 @@ export class AgentFactory {
 	 * @param session The current chat session
 	 * @returns Configured ModelApi instance
 	 */
-	static createAgentModel(
-		plugin: InstanceType<typeof ObsidianGemini>,
-		session: ChatSession
-	): ModelApi {
+	static createAgentModel(plugin: InstanceType<typeof ObsidianGemini>, session: ChatSession): ModelApi {
 		// Use session's model configuration if available
 		return GeminiClientFactory.createChatModel(plugin, session.modelConfig);
 	}

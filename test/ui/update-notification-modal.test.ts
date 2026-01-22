@@ -12,17 +12,17 @@ jest.mock('obsidian', () => {
 		const element = document.createElement(tag);
 
 		// Add Obsidian-specific methods
-		(element as any).empty = function() {
+		(element as any).empty = function () {
 			this.innerHTML = '';
 			return this;
 		};
 
-		(element as any).addClass = function(cls: string) {
+		(element as any).addClass = function (cls: string) {
 			this.classList.add(cls);
 			return this;
 		};
 
-		(element as any).createEl = function(tag: string, options?: any) {
+		(element as any).createEl = function (tag: string, options?: any) {
 			const el = createMockElement(tag);
 			if (options?.text) el.textContent = options.text;
 			if (options?.cls) el.classList.add(options.cls);
@@ -31,7 +31,7 @@ jest.mock('obsidian', () => {
 			return el;
 		};
 
-		(element as any).createDiv = function(options?: any) {
+		(element as any).createDiv = function (options?: any) {
 			return this.createEl('div', options);
 		};
 
@@ -50,7 +50,7 @@ jest.mock('obsidian', () => {
 
 			open() {}
 			close() {}
-		}
+		},
 	};
 });
 

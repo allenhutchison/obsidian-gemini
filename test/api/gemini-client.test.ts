@@ -4,8 +4,8 @@ import { GeminiPrompts } from '../../src/prompts';
 // Mock @google/genai
 jest.mock('@google/genai', () => ({
 	GoogleGenAI: jest.fn().mockImplementation(() => ({
-		getModel: jest.fn()
-	}))
+		getModel: jest.fn(),
+	})),
 }));
 
 // Mock window.localStorage
@@ -13,11 +13,11 @@ const mockLocalStorage = {
 	getItem: jest.fn().mockReturnValue('en'),
 	setItem: jest.fn(),
 	removeItem: jest.fn(),
-	clear: jest.fn()
+	clear: jest.fn(),
 };
 Object.defineProperty(window, 'localStorage', {
 	value: mockLocalStorage,
-	writable: true
+	writable: true,
 });
 
 describe('GeminiClient', () => {
@@ -31,18 +31,18 @@ describe('GeminiClient', () => {
 			log: jest.fn(),
 			debug: jest.fn(),
 			error: jest.fn(),
-			warn: jest.fn()
+			warn: jest.fn(),
 		};
 
 		// Setup mock plugin
 		mockPlugin = {
-			logger: mockLogger
+			logger: mockLogger,
 		};
 
 		// Create client with minimal config
 		const config: GeminiClientConfig = {
 			apiKey: 'test-api-key',
-			model: 'gemini-pro'
+			model: 'gemini-pro',
 		};
 
 		const prompts = new GeminiPrompts(mockPlugin);
@@ -106,60 +106,44 @@ describe('GeminiClient', () => {
 		describe('should return false for models that do not support thinking', () => {
 			test('gemini-1.5-pro', () => {
 				expect(testSupportsThinking('gemini-1.5-pro')).toBe(false);
-				expect(mockLogger.debug).not.toHaveBeenCalledWith(
-					expect.stringContaining('Enabling thinking mode')
-				);
+				expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining('Enabling thinking mode'));
 			});
 
 			test('gemini-1.5-flash', () => {
 				expect(testSupportsThinking('gemini-1.5-flash')).toBe(false);
-				expect(mockLogger.debug).not.toHaveBeenCalledWith(
-					expect.stringContaining('Enabling thinking mode')
-				);
+				expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining('Enabling thinking mode'));
 			});
 
 			test('gemini-pro', () => {
 				expect(testSupportsThinking('gemini-pro')).toBe(false);
-				expect(mockLogger.debug).not.toHaveBeenCalledWith(
-					expect.stringContaining('Enabling thinking mode')
-				);
+				expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining('Enabling thinking mode'));
 			});
 
 			test('undefined', () => {
 				expect(testSupportsThinking(undefined)).toBe(false);
-				expect(mockLogger.debug).toHaveBeenCalledWith(
-					'[GeminiClient] No model specified for thinking check'
-				);
+				expect(mockLogger.debug).toHaveBeenCalledWith('[GeminiClient] No model specified for thinking check');
 			});
 
 			test('null', () => {
 				expect(testSupportsThinking(null as any)).toBe(false);
-				expect(mockLogger.debug).toHaveBeenCalledWith(
-					'[GeminiClient] No model specified for thinking check'
-				);
+				expect(mockLogger.debug).toHaveBeenCalledWith('[GeminiClient] No model specified for thinking check');
 			});
 
 			test('empty string', () => {
 				expect(testSupportsThinking('')).toBe(false);
-				expect(mockLogger.debug).toHaveBeenCalledWith(
-					'[GeminiClient] No model specified for thinking check'
-				);
+				expect(mockLogger.debug).toHaveBeenCalledWith('[GeminiClient] No model specified for thinking check');
 			});
 		});
 
 		describe('edge cases', () => {
 			test('case insensitivity - uppercase', () => {
 				expect(testSupportsThinking('GEMINI-3-PRO')).toBe(true);
-				expect(mockLogger.debug).toHaveBeenCalledWith(
-					'[GeminiClient] Enabling thinking mode for model: GEMINI-3-PRO'
-				);
+				expect(mockLogger.debug).toHaveBeenCalledWith('[GeminiClient] Enabling thinking mode for model: GEMINI-3-PRO');
 			});
 
 			test('case insensitivity - mixed case', () => {
 				expect(testSupportsThinking('Gemini-3-Pro')).toBe(true);
-				expect(mockLogger.debug).toHaveBeenCalledWith(
-					'[GeminiClient] Enabling thinking mode for model: Gemini-3-Pro'
-				);
+				expect(mockLogger.debug).toHaveBeenCalledWith('[GeminiClient] Enabling thinking mode for model: Gemini-3-Pro');
 			});
 
 			test('case insensitivity - Gemini 2.5', () => {

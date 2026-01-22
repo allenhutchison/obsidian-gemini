@@ -13,12 +13,12 @@ async function fetchModels() {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 		const data = await response.json();
-		
+
 		console.log('Successfully fetched models from Google API:');
 		console.log('----------------------------------------');
-		
+
 		if (data.models) {
-			data.models.forEach(model => {
+			data.models.forEach((model) => {
 				console.log(`Name: ${model.name}`);
 				console.log(`Display Name: ${model.displayName || '(none)'}`);
 				console.log(`Description: ${model.description || '(none)'}`);

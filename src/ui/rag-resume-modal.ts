@@ -13,11 +13,7 @@ export class RagResumeModal extends Modal {
 	private resumeInfo: ResumeInfo;
 	private onChoice: (resume: boolean) => void;
 
-	constructor(
-		app: App,
-		resumeInfo: ResumeInfo,
-		onChoice: (resume: boolean) => void
-	) {
+	constructor(app: App, resumeInfo: ResumeInfo, onChoice: (resume: boolean) => void) {
 		super(app);
 		this.resumeInfo = resumeInfo;
 		this.onChoice = onChoice;
@@ -30,7 +26,7 @@ export class RagResumeModal extends Modal {
 		contentEl.createEl('h2', { text: 'Resume Indexing?' });
 
 		contentEl.createEl('p', {
-			text: 'A previous indexing operation was interrupted. Would you like to resume or start fresh?'
+			text: 'A previous indexing operation was interrupted. Would you like to resume or start fresh?',
 		});
 
 		// Stats section
@@ -55,7 +51,7 @@ export class RagResumeModal extends Modal {
 		const noteEl = contentEl.createEl('div', { cls: 'rag-resume-note' });
 		noteEl.createEl('p', {
 			text: 'Resume will continue from where you left off, skipping already-indexed files.',
-			cls: 'setting-item-description'
+			cls: 'setting-item-description',
 		});
 
 		// Buttons

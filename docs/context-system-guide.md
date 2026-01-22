@@ -29,6 +29,7 @@ Context in Gemini Scribe refers to files from your vault that the AI agent can a
 ### Why This Approach?
 
 The new context system provides:
+
 - **Clarity**: You know exactly what the AI can see
 - **Performance**: No automatic traversal means faster responses
 - **Flexibility**: Add or remove context as needed during conversation
@@ -39,12 +40,14 @@ The new context system provides:
 ### Context vs. Tool Access
 
 **Context Files** (Always Available):
+
 - Added via @ mentions or file chips
 - Automatically included with every message
 - Persist throughout the session
 - Ideal for reference material you'll use repeatedly
 
 **Tool-Based File Access** (On-Demand):
+
 - Agent uses `read_file` tool when needed
 - Not automatically included with messages
 - Ideal for files the agent discovers during conversation
@@ -55,6 +58,7 @@ The new context system provides:
 AGENTS.md is a special file that provides the agent with an overview of your entire vault structure:
 
 **What it contains:**
+
 - Vault folder structure
 - File organization patterns
 - Key notes and their purposes
@@ -62,12 +66,14 @@ AGENTS.md is a special file that provides the agent with an overview of your ent
 - Tags and categories in use
 
 **How to create it:**
+
 1. Open Agent Chat
 2. Click "Initialize Vault Context" button
 3. Agent analyzes your vault and creates AGENTS.md
 4. Update periodically as your vault evolves
 
 **Benefits:**
+
 - Agent understands your vault organization
 - Better file discovery and suggestions
 - More relevant tool usage
@@ -87,6 +93,7 @@ The fastest way to add context files:
 6. Send message - file is now persistent context
 
 **Example:**
+
 ```
 User: @Project Plan Can you help me...
 [File chip appears for "Project Plan.md"]
@@ -104,7 +111,7 @@ For adding multiple files at once:
 
 ### Method 3: Drag and Drop
 
-*(If implemented)* Drag files from the file explorer directly into the chat.
+_(If implemented)_ Drag files from the file explorer directly into the chat.
 
 ### What Happens When You Add Context
 
@@ -119,6 +126,7 @@ For adding multiple files at once:
 ### Viewing Current Context
 
 Active context files are displayed:
+
 - As chips in the chat input area
 - In the session sidebar (if visible)
 - Indicated by visual markers
@@ -126,22 +134,26 @@ Active context files are displayed:
 ### Removing Context Files
 
 To remove a file from context:
+
 1. Click the X on the file chip, or
 2. Open session settings and remove from context list
 
 ### Context Limits
 
 **Technical Limits:**
+
 - Maximum token limit per request (~2M tokens for Gemini 2.5+)
 - Large files count against this limit
 - Agent may not see all content if limit exceeded
 
 **Practical Recommendations:**
+
 - **1-5 files**: Ideal for most conversations
 - **5-10 files**: Works well for research projects
 - **10+ files**: May exceed token limits with large files
 
 **File Size Considerations:**
+
 - Small notes (<5KB): Minimal impact
 - Medium notes (5-50KB): Good for context
 - Large notes (>50KB): Use sparingly
@@ -150,12 +162,14 @@ To remove a file from context:
 ### Session Persistence
 
 Context files persist:
+
 - ✅ Throughout the current session
 - ✅ Across Obsidian restarts
 - ✅ When loading saved sessions
 - ❌ When creating a new session
 
 To reuse context:
+
 - Load a saved session with existing context
 - Or re-add files to new sessions
 
@@ -172,12 +186,14 @@ To reuse context:
 ### 2. Use Relevant, Focused Files
 
 **Good Context:**
+
 - Project overview documents
 - Reference materials for current task
 - Files with key terminology or concepts
 - Documents you'll reference repeatedly
 
 **Poor Context:**
+
 - Random notes not related to conversation
 - Very large files (use summaries instead)
 - Duplicate information across files
@@ -186,6 +202,7 @@ To reuse context:
 ### 3. Leverage AGENTS.md
 
 Before adding lots of context files:
+
 1. Ensure AGENTS.md is current
 2. Let agent use tools to discover files
 3. Only add files you know you'll reference repeatedly
@@ -193,6 +210,7 @@ Before adding lots of context files:
 ### 4. Name Files Clearly
 
 The @ mention system works by file name:
+
 - Use descriptive file names
 - Avoid generic names like "Notes.md"
 - Consider prefixes for organization
@@ -201,6 +219,7 @@ The @ mention system works by file name:
 ### 5. Update Context During Conversation
 
 Context isn't static:
+
 ```
 User: @Design Doc Let's review the design
 [Discuss design]
@@ -213,6 +232,7 @@ User: Now I want to implement. Let me add the code structure
 ### 6. Remove Unused Context
 
 If a file is no longer relevant:
+
 - Remove it to save token budget
 - Keeps context focused and relevant
 - Improves response quality
@@ -222,6 +242,7 @@ If a file is no longer relevant:
 ### Use Case: Research Project
 
 **Setup:**
+
 ```
 Context Files:
 1. Research Question.md - Your main question
@@ -230,6 +251,7 @@ Context Files:
 ```
 
 **Workflow:**
+
 1. Agent has constant access to research foundation
 2. Can compare new findings to literature review
 3. Maintains consistency with methodology
@@ -238,6 +260,7 @@ Context Files:
 ### Use Case: Software Project
 
 **Setup:**
+
 ```
 Context Files:
 1. README.md - Project overview
@@ -246,6 +269,7 @@ Context Files:
 ```
 
 **Workflow:**
+
 1. Agent understands project structure
 2. Suggests code that fits architecture
 3. Follows API specifications
@@ -254,6 +278,7 @@ Context Files:
 ### Use Case: Writing Project
 
 **Setup:**
+
 ```
 Context Files:
 1. Character Profiles.md - Main characters
@@ -262,6 +287,7 @@ Context Files:
 ```
 
 **Workflow:**
+
 1. Maintains character consistency
 2. Adheres to world-building rules
 3. Follows plot structure
@@ -270,11 +296,13 @@ Context Files:
 ### Combining Context with Tools
 
 **Strategic Approach:**
+
 1. **Context Files**: Core reference material
 2. **AGENTS.md**: Vault structure understanding
 3. **Agent Tools**: Discovery and exploration
 
 **Example:**
+
 ```
 User: Using our project architecture (in context),
       find all the API endpoints in the codebase
@@ -292,16 +320,19 @@ Agent:
 Create reusable session configurations:
 
 **Technical Writing Session:**
+
 - Context: Style Guide, Glossary, Product Overview
 - Model: Gemini 2.5 Pro
 - Custom Prompt: Technical writing assistant
 
 **Creative Writing Session:**
+
 - Context: Character profiles, world building
 - Model: Gemini 3 Pro (if available)
 - Custom Prompt: Creative writing coach
 
 **Research Session:**
+
 - Context: Research questions, literature review
 - Model: Gemini 2.5 Pro
 - Custom Prompt: Research assistant
@@ -313,6 +344,7 @@ Create reusable session configurations:
 **Issue**: Added file but agent doesn't reference it
 
 **Checks:**
+
 1. Verify file chip is visible in chat
 2. Confirm file exists in vault
 3. Check file isn't corrupted
@@ -326,12 +358,14 @@ Create reusable session configurations:
 **Issue**: Can't find file when using @
 
 **Reasons:**
+
 1. File name typed incorrectly
 2. File is in excluded folder
 3. File doesn't exist
 4. Typo in search
 
 **Fix**:
+
 - Check file name spelling
 - Use file explorer to verify file exists
 - Try partial name matching
@@ -342,11 +376,13 @@ Create reusable session configurations:
 **Issue**: Error about request being too large
 
 **Causes:**
+
 - Too many context files
 - Files are very large
 - Long conversation history
 
 **Solutions:**
+
 1. Remove some context files
 2. Create a new session (clears history)
 3. Use summaries instead of full files
@@ -357,12 +393,14 @@ Create reusable session configurations:
 **Issue**: Agent doesn't use context files even though they're added
 
 **Reasons:**
+
 1. Files aren't relevant to question
 2. Agent has sufficient knowledge without them
 3. Files are very long (truncated in context)
 4. Conversation history dominates attention
 
 **Solutions:**
+
 1. Explicitly reference context: "Based on the Design Doc..."
 2. Ask specific questions about context content
 3. Reduce conversation history by starting new session
@@ -373,11 +411,13 @@ Create reusable session configurations:
 **Issue**: Slow responses with context files
 
 **Causes:**
+
 - Too many or too large files
 - Token limit approaching
 - Network latency
 
 **Optimizations:**
+
 1. Reduce number of context files
 2. Use smaller, focused files
 3. Remove unnecessary context
@@ -388,24 +428,28 @@ Create reusable session configurations:
 If you're upgrading from v3.x, the context system changed significantly:
 
 **Old System (v3.x):**
+
 - Automatic link traversal
 - "Send Context" toggle
 - "Max Context Depth" setting
 - Followed [[links]] automatically
 
 **New System (v4.0+):**
+
 - Manual file selection
 - No automatic traversal
 - @ mentions for adding files
 - Agent tools for file discovery
 
 **Why the Change:**
+
 - More control and transparency
 - Better performance
 - Clearer behavior
 - More flexible for different use cases
 
 **Adaptation Tips:**
+
 1. Identify files you used to rely on automatic inclusion
 2. Add those explicitly as context
 3. Use AGENTS.md for vault awareness
@@ -416,6 +460,7 @@ If you're upgrading from v3.x, the context system changed significantly:
 The v4.0+ context system gives you precise control over what the AI agent can see:
 
 **Key Takeaways:**
+
 - Context is **explicit and session-based**
 - Add files with **@ mentions**
 - Start with **2-3 focused files**
@@ -424,12 +469,14 @@ The v4.0+ context system gives you precise control over what the AI agent can se
 - **Remove unused** context to stay efficient
 
 **Remember:**
+
 - Quality over quantity for context files
 - AGENTS.md provides vault-wide understanding
 - Agent tools can read files on-demand
 - Session-based approach gives you full control
 
 For more information, see:
+
 - [Agent Mode Guide](agent-mode-guide.md) - Tool usage and capabilities
 - [Settings Reference](settings-reference.md) - Configuration options
 - [Custom Prompts Guide](custom-prompts-guide.md) - Behavior customization

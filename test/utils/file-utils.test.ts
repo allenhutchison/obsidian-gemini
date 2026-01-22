@@ -45,8 +45,8 @@ describe('file-utils', () => {
 	describe('shouldExcludePathForPlugin', () => {
 		const mockPlugin = {
 			settings: {
-				historyFolder: 'gemini-scribe'
-			}
+				historyFolder: 'gemini-scribe',
+			},
 		} as any;
 
 		it('should use plugin settings for exclusion', () => {
@@ -59,8 +59,8 @@ describe('file-utils', () => {
 		it('should work with different configured folder names', () => {
 			const customPlugin = {
 				settings: {
-					historyFolder: 'my-custom-folder'
-				}
+					historyFolder: 'my-custom-folder',
+				},
 			} as any;
 
 			expect(shouldExcludePathForPlugin('my-custom-folder', customPlugin)).toBe(true);

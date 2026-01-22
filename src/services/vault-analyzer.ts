@@ -30,7 +30,7 @@ export class VaultAnalyzer {
 		const elapsed = Date.now() - startTime;
 		const remaining = minimumMs - elapsed;
 		if (remaining > 0) {
-			await new Promise(resolve => setTimeout(resolve, remaining));
+			await new Promise((resolve) => setTimeout(resolve, remaining));
 		}
 	}
 
@@ -79,7 +79,7 @@ export class VaultAnalyzer {
 				model: this.plugin.settings.chatModelName,
 				userMessage: '',
 				conversationHistory: [],
-				renderContent: false
+				renderContent: false,
 			});
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('analyze');
@@ -135,7 +135,7 @@ export class VaultAnalyzer {
 				model: this.plugin.settings.chatModelName,
 				userMessage: '',
 				conversationHistory: [],
-				renderContent: false
+				renderContent: false,
 			});
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('examples');
@@ -182,9 +182,7 @@ export class VaultAnalyzer {
 		const fileCount = allFiles.length;
 
 		// Calculate vault fingerprint (file count + most recent modification)
-		const lastModified = allFiles.length > 0
-			? Math.max(...allFiles.map(f => f.stat.mtime))
-			: 0;
+		const lastModified = allFiles.length > 0 ? Math.max(...allFiles.map((f) => f.stat.mtime)) : 0;
 
 		// Check if we can use cached data (for large vaults)
 		if (this.vaultInfoCache && fileCount > 1000) {
@@ -192,7 +190,7 @@ export class VaultAnalyzer {
 			const cacheValid =
 				this.vaultInfoCache.fileCount === fileCount &&
 				this.vaultInfoCache.lastModified === lastModified &&
-				(now - this.vaultInfoCache.timestamp) < this.CACHE_TTL_MS;
+				now - this.vaultInfoCache.timestamp < this.CACHE_TTL_MS;
 
 			if (cacheValid) {
 				this.plugin.logger.log('VaultAnalyzer: Using cached vault information');
@@ -215,7 +213,7 @@ export class VaultAnalyzer {
 		vaultInfo += '## Folder Structure\n\n';
 		vaultInfo += folderStructure;
 		vaultInfo += '\n## Sample File Names\n\n';
-		vaultInfo += sampleFiles.map(f => `- ${f}`).join('\n');
+		vaultInfo += sampleFiles.map((f) => `- ${f}`).join('\n');
 		vaultInfo += '\n\n';
 
 		// Update cache for large vaults
@@ -224,7 +222,7 @@ export class VaultAnalyzer {
 				vaultInfo,
 				fileCount,
 				lastModified,
-				timestamp: Date.now()
+				timestamp: Date.now(),
 			};
 			this.plugin.logger.log('VaultAnalyzer: Cached vault information for large vault');
 		}
@@ -254,20 +252,20 @@ export class VaultAnalyzer {
 		}
 
 		// Sort children: folders first, then files
-		const folders = folder.children.filter(c => c instanceof TFolder) as TFolder[];
-		const files = folder.children.filter(c => c instanceof TFile && c.extension === 'md') as TFile[];
+		const folders = folder.children.filter((c) => c instanceof TFolder) as TFolder[];
+		const files = folder.children.filter((c) => c instanceof TFile && c.extension === 'md') as TFile[];
 
 		// Add subfolders recursively
 		folders
 			.sort((a, b) => a.name.localeCompare(b.name))
-			.forEach(subfolder => {
+			.forEach((subfolder) => {
 				structure += this.buildFolderStructure(subfolder, depth + 1, maxDepth);
 			});
 
 		// Add files (limit to prevent overwhelming output)
 		if (files.length > 0 && depth < maxDepth) {
 			const displayFiles = files.slice(0, 5);
-			displayFiles.forEach(file => {
+			displayFiles.forEach((file) => {
 				structure += `${indent}  - ${file.basename}\n`;
 			});
 			if (files.length > 5) {
@@ -285,7 +283,7 @@ export class VaultAnalyzer {
 		let count = 0;
 
 		const countRecursive = (f: TFolder) => {
-			f.children.forEach(child => {
+			f.children.forEach((child) => {
 				if (child instanceof TFile && child.extension === 'md') {
 					count++;
 				} else if (child instanceof TFolder) {
@@ -304,16 +302,12 @@ export class VaultAnalyzer {
 	private getSampleFileNames(files: TFile[], limit: number = 20): string[] {
 		// Get files from different parts of the vault for diversity
 		const skipPaths = [this.plugin.settings.historyFolder, '.obsidian'];
-		const filteredFiles = files.filter(f =>
-			!skipPaths.some(skip => f.path.startsWith(skip))
-		);
+		const filteredFiles = files.filter((f) => !skipPaths.some((skip) => f.path.startsWith(skip)));
 
 		// Sort by modification time to get recent files
-		const sortedFiles = filteredFiles
-			.sort((a, b) => b.stat.mtime - a.stat.mtime)
-			.slice(0, limit);
+		const sortedFiles = filteredFiles.sort((a, b) => b.stat.mtime - a.stat.mtime).slice(0, limit);
 
-		return sortedFiles.map(f => {
+		return sortedFiles.map((f) => {
 			const folderPath = f.parent?.path || '';
 			return folderPath ? `${folderPath}/${f.basename}` : f.basename;
 		});
@@ -324,7 +318,7 @@ export class VaultAnalyzer {
 	 */
 	private buildAnalysisPrompt(vaultInfo: string, existingContent: string | null): string {
 		const basePrompt = this.plugin.prompts.vaultAnalysisPrompt({
-			existingContent: existingContent || ''
+			existingContent: existingContent || '',
 		});
 
 		return `${basePrompt}\n\n${vaultInfo}`;
@@ -351,7 +345,7 @@ export class VaultAnalyzer {
 				organization: parsed.organization || '',
 				keyTopics: parsed.keyTopics || '',
 				userPreferences: parsed.userPreferences || '',
-				customInstructions: parsed.customInstructions || ''
+				customInstructions: parsed.customInstructions || '',
 			};
 		} catch (error) {
 			this.plugin.logger.error('Failed to parse analysis response:', error);
@@ -394,12 +388,13 @@ export class VaultAnalyzer {
 			}
 
 			// Validate each prompt has required fields with proper types
-			const isValid = parsed.every(p =>
-				typeof p === 'object' &&
-				typeof p.icon === 'string' &&
-				typeof p.text === 'string' &&
-				p.icon.trim().length > 0 &&
-				p.text.trim().length > 0
+			const isValid = parsed.every(
+				(p) =>
+					typeof p === 'object' &&
+					typeof p.icon === 'string' &&
+					typeof p.text === 'string' &&
+					p.icon.trim().length > 0 &&
+					p.text.trim().length > 0
 			);
 
 			if (!isValid) {

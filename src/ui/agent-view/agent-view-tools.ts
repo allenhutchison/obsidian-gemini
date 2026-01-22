@@ -46,15 +46,15 @@ export class AgentViewTools {
 	private sortToolCallsByPriority(toolCalls: any[]): any[] {
 		// Define priority order (lower number = higher priority)
 		const toolPriority: Record<string, number> = {
-			'read_file': 1,
-			'list_files': 2,
-			'search_files': 3,
-			'google_search': 4,
-			'web_fetch': 5,
-			'write_file': 6,
-			'create_folder': 7,
-			'move_file': 8,
-			'delete_file': 9  // Destructive operations last
+			read_file: 1,
+			list_files: 2,
+			search_files: 3,
+			google_search: 4,
+			web_fetch: 5,
+			write_file: 6,
+			create_folder: 7,
+			move_file: 8,
+			delete_file: 9, // Destructive operations last
 		};
 
 		// Sort by priority, maintaining original order for same priority
@@ -82,7 +82,7 @@ export class AgentViewTools {
 		const toolResults: any[] = [];
 		const toolContext: ToolExecutionContext = {
 			plugin: this.plugin,
-			session: currentSession
+			session: currentSession,
 		};
 
 		// Sort tool calls to prioritize reads before destructive operations
@@ -134,7 +134,7 @@ export class AgentViewTools {
 				toolResults.push({
 					toolName: toolCall.name,
 					toolArguments: toolCall.arguments,
-					result: result
+					result: result,
 				});
 			} catch (error) {
 				this.plugin.logger.error(`Tool execution error for ${toolCall.name}:`, error);
@@ -143,8 +143,8 @@ export class AgentViewTools {
 					toolArguments: toolCall.arguments || {},
 					result: {
 						success: false,
-						error: error instanceof Error ? error.message : 'Unknown error'
-					}
+						error: error instanceof Error ? error.message : 'Unknown error',
+					},
 				});
 			}
 		}
@@ -161,7 +161,7 @@ export class AgentViewTools {
 		// Debug logging for thought signature handling
 		this.plugin.logger.debug(
 			`[AgentViewTools] Building tool call parts: ${toolCalls.length} calls, ` +
-			`${toolCalls.filter(tc => tc.thoughtSignature).length} with signatures`
+				`${toolCalls.filter((tc) => tc.thoughtSignature).length} with signatures`
 		);
 
 		const updatedHistory = [
@@ -169,24 +169,24 @@ export class AgentViewTools {
 			// Model's tool calls
 			{
 				role: 'model',
-				parts: toolCalls.map(tc => ({
+				parts: toolCalls.map((tc) => ({
 					functionCall: {
 						name: tc.name,
-						args: tc.arguments || {}
+						args: tc.arguments || {},
 					},
-					...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature })
-				}))
+					...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature }),
+				})),
 			},
 			// Tool results as functionResponse
 			{
 				role: 'user',
-				parts: toolResults.map(tr => ({
+				parts: toolResults.map((tr) => ({
 					functionResponse: {
 						name: tr.toolName,
-						response: tr.result
-					}
-				}))
-			}
+						response: tr.result,
+					},
+				})),
+			},
 		];
 
 		// Only add user message if it's non-empty
@@ -195,7 +195,7 @@ export class AgentViewTools {
 			// Insert user message before the model's tool calls
 			updatedHistory.splice(conversationHistory.length, 0, {
 				role: 'user',
-				parts: [{ text: userMessage }]
+				parts: [{ text: userMessage }],
 			});
 		}
 
@@ -210,7 +210,7 @@ export class AgentViewTools {
 			// Get available tools again for the follow-up request
 			const availableToolsContext: ToolExecutionContext = {
 				plugin: this.plugin,
-				session: currentSession
+				session: currentSession,
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(availableToolsContext);
 
@@ -218,15 +218,17 @@ export class AgentViewTools {
 			const modelConfig = currentSession?.modelConfig || {};
 
 			const followUpRequest: ExtendedModelRequest = {
-				userMessage: "", // Empty since tool results are already in conversation history
+				userMessage: '', // Empty since tool results are already in conversation history
 				conversationHistory: updatedHistory,
 				model: modelConfig.model || this.plugin.settings.chatModelName,
 				temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 				topP: modelConfig.topP ?? this.plugin.settings.topP,
-				prompt: this.plugin.prompts.generalPrompt({ userMessage: "Respond to the user based on the tool execution results" }),
+				prompt: this.plugin.prompts.generalPrompt({
+					userMessage: 'Respond to the user based on the tool execution results',
+				}),
 				customPrompt: customPrompt, // Pass custom prompt through to follow-up requests
 				renderContent: false,
-				availableTools: availableTools  // Include tools so model can chain calls
+				availableTools: availableTools, // Include tools so model can chain calls
 			};
 
 			// Update progress to show we're processing tool results
@@ -252,13 +254,13 @@ export class AgentViewTools {
 				// Don't pass a user message since the tool results are already in history
 				await this.handleToolCalls(
 					followUpResponse.toolCalls,
-					"", // Empty message - tool results already in history
+					'', // Empty message - tool results already in history
 					updatedHistory,
 					{
 						role: 'system',
 						message: 'Continuing with additional tool calls...',
 						notePath: '',
-						created_at: new Date()
+						created_at: new Date(),
 					},
 					customPrompt // Pass custom prompt through recursive calls
 				);
@@ -269,7 +271,7 @@ export class AgentViewTools {
 						role: 'model',
 						message: followUpResponse.markdown,
 						notePath: '',
-						created_at: new Date()
+						created_at: new Date(),
 					};
 					await this.context.displayMessage(aiEntry);
 
@@ -295,13 +297,13 @@ export class AgentViewTools {
 
 					// Try a simpler prompt to get a response
 					const retryRequest: ExtendedModelRequest = {
-						userMessage: "Please summarize what you just did with the tools.",
+						userMessage: 'Please summarize what you just did with the tools.',
 						conversationHistory: updatedHistory,
 						model: modelConfig.model || this.plugin.settings.chatModelName,
 						temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 						topP: modelConfig.topP ?? this.plugin.settings.topP,
-						prompt: "Please summarize what you just did with the tools.",
-						renderContent: false
+						prompt: 'Please summarize what you just did with the tools.',
+						renderContent: false,
 					};
 
 					// Use the same model API for retry requests
@@ -313,7 +315,7 @@ export class AgentViewTools {
 							role: 'model',
 							message: retryResponse.markdown,
 							notePath: '',
-							created_at: new Date()
+							created_at: new Date(),
 						};
 						await this.context.displayMessage(aiEntry);
 
@@ -335,9 +337,10 @@ export class AgentViewTools {
 						// Show error message to user
 						const errorEntry: GeminiConversationEntry = {
 							role: 'model',
-							message: 'I completed the requested actions but had trouble generating a summary. The tools were executed successfully.',
+							message:
+								'I completed the requested actions but had trouble generating a summary. The tools were executed successfully.',
 							notePath: '',
-							created_at: new Date()
+							created_at: new Date(),
 						};
 						await this.context.displayMessage(errorEntry);
 					}
@@ -362,7 +365,7 @@ export class AgentViewTools {
 
 		// Create collapsible tool message
 		const toolMessage = this.chatContainer.createDiv({
-			cls: 'gemini-agent-message gemini-agent-message-tool'
+			cls: 'gemini-agent-message gemini-agent-message-tool',
 		});
 
 		const toolContent = toolMessage.createDiv({ cls: 'gemini-agent-tool-message' });
@@ -376,14 +379,14 @@ export class AgentViewTools {
 		const icon = header.createSpan({ cls: 'gemini-agent-tool-icon' });
 		// Use tool-specific icons
 		const toolIcons: Record<string, string> = {
-			'read_file': 'file-text',
-			'write_file': 'file-edit',
-			'list_files': 'folder-open',
-			'create_folder': 'folder-plus',
-			'delete_file': 'trash-2',
-			'move_file': 'file-symlink',
-			'search_files': 'search',
-			'google_search': 'globe'
+			read_file: 'file-text',
+			write_file: 'file-edit',
+			list_files: 'folder-open',
+			create_folder: 'folder-plus',
+			delete_file: 'trash-2',
+			move_file: 'file-symlink',
+			search_files: 'search',
+			google_search: 'globe',
 		};
 		setIcon(icon, toolIcons[toolName] || 'wrench');
 
@@ -393,12 +396,12 @@ export class AgentViewTools {
 
 		header.createSpan({
 			text: `Executing: ${displayName}`,
-			cls: 'gemini-agent-tool-title'
+			cls: 'gemini-agent-tool-title',
 		});
 
 		const status = header.createSpan({
 			text: 'Running...',
-			cls: 'gemini-agent-tool-status gemini-agent-tool-status-running'
+			cls: 'gemini-agent-tool-status gemini-agent-tool-status-running',
 		});
 
 		// Details (hidden by default)
@@ -415,13 +418,13 @@ export class AgentViewTools {
 				const paramItem = paramsList.createDiv({ cls: 'gemini-agent-tool-param-item' });
 				paramItem.createSpan({
 					text: key,
-					cls: 'gemini-agent-tool-param-key'
+					cls: 'gemini-agent-tool-param-key',
 				});
 
 				const valueStr = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
 				const valueEl = paramItem.createEl('code', {
 					text: valueStr,
-					cls: 'gemini-agent-tool-param-value'
+					cls: 'gemini-agent-tool-param-value',
 				});
 
 				// Truncate long values
@@ -525,7 +528,7 @@ export class AgentViewTools {
 				const errorMessage = result.error || TOOL_EXECUTION_FAILED_DEFAULT_MSG;
 				errorContent.createEl('p', {
 					text: errorMessage,
-					cls: 'gemini-agent-tool-error-message'
+					cls: 'gemini-agent-tool-error-message',
 				});
 			} else if (result.data) {
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
@@ -542,14 +545,15 @@ export class AgentViewTools {
 						// Add button to expand full content
 						const expandBtn = resultContent.createEl('button', {
 							text: 'Show full content',
-							cls: 'gemini-agent-tool-expand-content'
+							cls: 'gemini-agent-tool-expand-content',
 						});
 						expandBtn.addEventListener('click', () => {
 							code.textContent = result.data;
 							expandBtn.remove();
 						});
 					} else {
-						resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
+						resultContent
+							.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
 							.createEl('code', { text: result.data });
 					}
 				} else if (Array.isArray(result.data)) {
@@ -557,7 +561,7 @@ export class AgentViewTools {
 					if (result.data.length === 0) {
 						resultContent.createEl('p', {
 							text: 'No results found',
-							cls: 'gemini-agent-tool-empty-result'
+							cls: 'gemini-agent-tool-empty-result',
 						});
 					} else {
 						const list = resultContent.createEl('ul', { cls: 'gemini-agent-tool-result-list' });
@@ -567,7 +571,7 @@ export class AgentViewTools {
 						if (result.data.length > 10) {
 							resultContent.createEl('p', {
 								text: `... and ${result.data.length - 10} more`,
-								cls: 'gemini-agent-tool-more-items'
+								cls: 'gemini-agent-tool-more-items',
 							});
 						}
 					}
@@ -599,7 +603,7 @@ export class AgentViewTools {
 							// Add the link
 							const link = answerPara.createEl('a', {
 								text: match[1],
-								href: match[2]
+								href: match[2],
 							});
 							link.setAttribute('target', '_blank');
 
@@ -622,19 +626,19 @@ export class AgentViewTools {
 								const link = citationItem.createEl('a', {
 									text: citation.title || citation.url,
 									href: citation.url,
-									cls: 'gemini-agent-tool-citation-link'
+									cls: 'gemini-agent-tool-citation-link',
 								});
 								link.setAttribute('target', '_blank');
 
 								if (citation.snippet) {
 									citationItem.createEl('p', {
 										text: citation.snippet,
-										cls: 'gemini-agent-tool-citation-snippet'
+										cls: 'gemini-agent-tool-citation-snippet',
 									});
 								}
 							}
 						}
-					// Special handling for generate_image results
+						// Special handling for generate_image results
 					} else if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
 						// Display the generated image
 						const imageDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-image-result' });
@@ -646,7 +650,7 @@ export class AgentViewTools {
 							// Create image element
 							const imgContainer = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-container' });
 							const img = imgContainer.createEl('img', {
-								cls: 'gemini-agent-tool-image'
+								cls: 'gemini-agent-tool-image',
 							});
 
 							// Add loading states and error handling
@@ -657,7 +661,7 @@ export class AgentViewTools {
 								imgContainer.removeClass('loading');
 								imgContainer.createEl('p', {
 									text: 'Failed to load image preview',
-									cls: 'gemini-agent-tool-image-error'
+									cls: 'gemini-agent-tool-image-error',
 								});
 							};
 
@@ -680,13 +684,13 @@ export class AgentViewTools {
 							imageInfo.createEl('strong', { text: 'Wikilink: ' });
 							const wikilinkCode = imageInfo.createEl('code', {
 								text: result.data.wikilink,
-								cls: 'gemini-agent-tool-wikilink'
+								cls: 'gemini-agent-tool-wikilink',
 							});
 
 							// Add copy button for wikilink
 							const copyBtn = imageInfo.createEl('button', {
 								text: 'Copy',
-								cls: 'gemini-agent-tool-copy-wikilink'
+								cls: 'gemini-agent-tool-copy-wikilink',
 							});
 							copyBtn.addEventListener('click', () => {
 								navigator.clipboard.writeText(result.data.wikilink).then(() => {
@@ -699,10 +703,10 @@ export class AgentViewTools {
 						} else {
 							imageDiv.createEl('p', {
 								text: `Image saved to: ${result.data.path}`,
-								cls: 'gemini-agent-tool-image-path'
+								cls: 'gemini-agent-tool-image-path',
 							});
 						}
-					// Special handling for read_file results
+						// Special handling for read_file results
 					} else if (result.data.content && result.data.path) {
 						// This is a file read result
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
@@ -712,7 +716,7 @@ export class AgentViewTools {
 						if (result.data.size) {
 							fileInfo.createSpan({
 								text: ` (${formatFileSize(result.data.size)})`,
-								cls: 'gemini-agent-tool-file-size'
+								cls: 'gemini-agent-tool-file-size',
 							});
 						}
 
@@ -726,14 +730,15 @@ export class AgentViewTools {
 							// Add button to expand full content
 							const expandBtn = resultContent.createEl('button', {
 								text: 'Show full content',
-								cls: 'gemini-agent-tool-expand-content'
+								cls: 'gemini-agent-tool-expand-content',
 							});
 							expandBtn.addEventListener('click', () => {
 								code.textContent = content;
 								expandBtn.remove();
 							});
 						} else {
-							resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
+							resultContent
+								.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
 								.createEl('code', { text: content });
 						}
 					} else {
@@ -753,13 +758,13 @@ export class AgentViewTools {
 							const item = resultList.createDiv({ cls: 'gemini-agent-tool-result-item' });
 							item.createSpan({
 								text: key + ':',
-								cls: 'gemini-agent-tool-result-key'
+								cls: 'gemini-agent-tool-result-key',
 							});
 
 							const valueStr = typeof value === 'string' ? value : JSON.stringify(value) || String(value);
 							item.createSpan({
 								text: valueStr.length > 100 ? valueStr.substring(0, 100) + '...' : valueStr,
-								cls: 'gemini-agent-tool-result-value'
+								cls: 'gemini-agent-tool-result-value',
 							});
 						}
 					}
@@ -769,7 +774,7 @@ export class AgentViewTools {
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
 				resultContent.createEl('p', {
 					text: `${toolName}: ${OPERATION_COMPLETED_SUCCESSFULLY_MSG}`,
-					cls: 'gemini-agent-tool-success-message'
+					cls: 'gemini-agent-tool-success-message',
 				});
 			}
 		}

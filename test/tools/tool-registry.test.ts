@@ -7,17 +7,17 @@ const mockPlugin = {
 	app: {
 		vault: {},
 		workspace: {},
-		metadataCache: {}
+		metadataCache: {},
 	},
 	logger: {
 		log: jest.fn(),
 		debug: jest.fn(),
 		warn: jest.fn(),
 		error: jest.fn(),
-		child: jest.fn(function(this: any, prefix: string) {
+		child: jest.fn(function (this: any, prefix: string) {
 			return this;
-		})
-	}
+		}),
+	},
 } as any;
 
 // Create a test tool
@@ -25,22 +25,22 @@ class TestTool implements Tool {
 	name = 'test_tool';
 	category = ToolCategory.READ_ONLY;
 	description = 'A test tool';
-	
+
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			message: {
 				type: 'string' as const,
-				description: 'A test message'
-			}
+				description: 'A test message',
+			},
 		},
-		required: ['message']
+		required: ['message'],
 	};
 
 	async execute(params: { message: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		return {
 			success: true,
-			data: { response: `Hello, ${params.message}!` }
+			data: { response: `Hello, ${params.message}!` },
 		};
 	}
 }
@@ -50,22 +50,22 @@ class DestructiveTestTool implements Tool {
 	category = ToolCategory.VAULT_OPERATIONS;
 	description = 'A destructive test tool';
 	requiresConfirmation = true;
-	
+
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			action: {
 				type: 'string' as const,
-				description: 'The action to perform'
-			}
+				description: 'The action to perform',
+			},
 		},
-		required: ['action']
+		required: ['action'],
 	};
 
 	async execute(params: { action: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		return {
 			success: true,
-			data: { performed: params.action }
+			data: { performed: params.action },
 		};
 	}
 }
@@ -81,7 +81,7 @@ describe('ToolRegistry', () => {
 		it('should register a tool successfully', () => {
 			const tool = new TestTool();
 			registry.registerTool(tool);
-			
+
 			expect(registry.getTool('test_tool')).toBe(tool);
 		});
 
@@ -104,7 +104,7 @@ describe('ToolRegistry', () => {
 		it('should return registered tool', () => {
 			const tool = new TestTool();
 			registry.registerTool(tool);
-			
+
 			expect(registry.getTool('test_tool')).toBe(tool);
 		});
 	});
@@ -113,13 +113,13 @@ describe('ToolRegistry', () => {
 		it('should return tools by category', () => {
 			const readOnlyTool = new TestTool();
 			const vaultTool = new DestructiveTestTool();
-			
+
 			registry.registerTool(readOnlyTool);
 			registry.registerTool(vaultTool);
-			
+
 			const readOnlyTools = registry.getToolsByCategory(ToolCategory.READ_ONLY);
 			const vaultTools = registry.getToolsByCategory(ToolCategory.VAULT_OPERATIONS);
-			
+
 			expect(readOnlyTools).toHaveLength(1);
 			expect(readOnlyTools[0]).toBe(readOnlyTool);
 			expect(vaultTools).toHaveLength(1);
@@ -166,16 +166,16 @@ describe('ToolRegistry', () => {
 		it('should return tools enabled for context', () => {
 			const readOnlyTool = new TestTool();
 			const vaultTool = new DestructiveTestTool();
-			
+
 			registry.registerTool(readOnlyTool);
 			registry.registerTool(vaultTool);
 
 			const context = {
 				session: {
 					context: {
-						enabledTools: [ToolCategory.READ_ONLY]
-					}
-				}
+						enabledTools: [ToolCategory.READ_ONLY],
+					},
+				},
 			} as any;
 
 			const enabledTools = registry.getEnabledTools(context);
@@ -187,9 +187,9 @@ describe('ToolRegistry', () => {
 			const context = {
 				session: {
 					context: {
-						enabledTools: []
-					}
-				}
+						enabledTools: [],
+					},
+				},
 			} as any;
 
 			const enabledTools = registry.getEnabledTools(context);
@@ -207,9 +207,9 @@ describe('ToolRegistry', () => {
 			const context = {
 				session: {
 					context: {
-						requireConfirmation: []
-					}
-				}
+						requireConfirmation: [],
+					},
+				},
 			} as any;
 
 			expect(registry.requiresConfirmation('test_tool', context)).toBe(false);
@@ -219,9 +219,9 @@ describe('ToolRegistry', () => {
 			const context = {
 				session: {
 					context: {
-						requireConfirmation: []
-					}
-				}
+						requireConfirmation: [],
+					},
+				},
 			} as any;
 
 			expect(registry.requiresConfirmation('destructive_tool', context)).toBe(true);
@@ -232,7 +232,7 @@ describe('ToolRegistry', () => {
 		it('should return all registered tools', () => {
 			const tool1 = new TestTool();
 			const tool2 = new DestructiveTestTool();
-			
+
 			registry.registerTool(tool1);
 			registry.registerTool(tool2);
 

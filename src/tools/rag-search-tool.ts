@@ -33,29 +33,27 @@ export class RagSearchTool implements Tool {
 		properties: {
 			query: {
 				type: 'string' as const,
-				description: 'The search query. Can be a question, topic, or concept to search for.'
+				description: 'The search query. Can be a question, topic, or concept to search for.',
 			},
 			maxResults: {
 				type: 'number' as const,
-				description: 'Maximum number of results to return (default: 5, max: 20)'
+				description: 'Maximum number of results to return (default: 5, max: 20)',
 			},
 			folder: {
 				type: 'string' as const,
-				description: 'Limit search to files in this folder path (e.g., "projects" or "projects/2024")'
+				description: 'Limit search to files in this folder path (e.g., "projects" or "projects/2024")',
 			},
 			tags: {
 				type: 'array' as const,
 				items: { type: 'string' as const },
-				description: 'Filter by tags. Multiple tags use OR logic (matches any tag).'
-			}
+				description: 'Filter by tags. Multiple tags use OR logic (matches any tag).',
+			},
 		},
-		required: ['query']
+		required: ['query'],
 	};
 
 	getProgressDescription(params: { query: string }): string {
-		const truncatedQuery = params.query.length > 50
-			? params.query.substring(0, 47) + '...'
-			: params.query;
+		const truncatedQuery = params.query.length > 50 ? params.query.substring(0, 47) + '...' : params.query;
 		return `Searching vault for "${truncatedQuery}"`;
 	}
 
@@ -146,7 +144,7 @@ export class RagSearchTool implements Tool {
 			if (!params.query || typeof params.query !== 'string' || params.query.trim().length === 0) {
 				return {
 					success: false,
-					error: 'Query is required and must be a non-empty string'
+					error: 'Query is required and must be a non-empty string',
 				};
 			}
 
@@ -154,7 +152,7 @@ export class RagSearchTool implements Tool {
 			if (!plugin.settings.ragIndexing.enabled) {
 				return {
 					success: false,
-					error: 'RAG indexing is not enabled. Enable it in settings to use semantic search.'
+					error: 'RAG indexing is not enabled. Enable it in settings to use semantic search.',
 				};
 			}
 
@@ -162,7 +160,7 @@ export class RagSearchTool implements Tool {
 			if (!plugin.ragIndexing?.isReady()) {
 				return {
 					success: false,
-					error: 'RAG indexing service is not ready. Please wait for initialization to complete.'
+					error: 'RAG indexing service is not ready. Please wait for initialization to complete.',
 				};
 			}
 
@@ -171,7 +169,7 @@ export class RagSearchTool implements Tool {
 			if (!storeName) {
 				return {
 					success: false,
-					error: 'No File Search Store configured. Please reindex your vault.'
+					error: 'No File Search Store configured. Please reindex your vault.',
 				};
 			}
 
@@ -186,13 +184,13 @@ export class RagSearchTool implements Tool {
 			if (!ai) {
 				return {
 					success: false,
-					error: 'RAG API client not available. Please wait for service initialization.'
+					error: 'RAG API client not available. Please wait for service initialization.',
 				};
 			}
 
 			// Build fileSearch config with optional metadata filter
 			const fileSearchConfig: { fileSearchStoreNames: string[]; metadataFilter?: string } = {
-				fileSearchStoreNames: [storeName]
+				fileSearchStoreNames: [storeName],
 			};
 			if (metadataFilter) {
 				fileSearchConfig.metadataFilter = metadataFilter;
@@ -206,10 +204,10 @@ export class RagSearchTool implements Tool {
 				config: {
 					tools: [
 						{
-							fileSearch: fileSearchConfig
-						}
-					]
-				}
+							fileSearch: fileSearchConfig,
+						},
+					],
+				},
 			});
 
 			// Extract results from response
@@ -226,7 +224,7 @@ export class RagSearchTool implements Tool {
 						// Note: Google's File Search API may not include source file info in grounding response
 						const path = this.extractPathFromContext(chunk.retrievedContext);
 						const result: RagSearchResult = {
-							excerpt: chunk.retrievedContext.text || ''
+							excerpt: chunk.retrievedContext.text || '',
 						};
 						if (path) {
 							result.path = path;
@@ -246,16 +244,14 @@ export class RagSearchTool implements Tool {
 					summary: textResponse,
 					results: results,
 					totalMatches: results.length,
-					message: results.length > 0
-						? `Found ${results.length} relevant passages`
-						: 'No relevant passages found'
-				}
+					message: results.length > 0 ? `Found ${results.length} relevant passages` : 'No relevant passages found',
+				},
 			};
 		} catch (error) {
 			plugin.logger.error('RAG Search failed:', error);
 			return {
 				success: false,
-				error: `Search failed: ${error instanceof Error ? error.message : String(error)}`
+				error: `Search failed: ${error instanceof Error ? error.message : String(error)}`,
 			};
 		}
 	}
@@ -265,7 +261,5 @@ export class RagSearchTool implements Tool {
  * Get all RAG-related tools
  */
 export function getRagTools(): Tool[] {
-	return [
-		new RagSearchTool()
-	];
+	return [new RagSearchTool()];
 }

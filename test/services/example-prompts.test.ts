@@ -8,7 +8,7 @@ jest.mock('obsidian', () => ({
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
-	}
+	},
 }));
 
 describe('ExamplePromptsManager', () => {
@@ -25,23 +25,23 @@ describe('ExamplePromptsManager', () => {
 			getAbstractFileByPath: jest.fn(),
 			read: jest.fn(),
 			modify: jest.fn(),
-			create: jest.fn()
+			create: jest.fn(),
 		};
 
 		// Setup mock plugin
 		mockPlugin = {
 			app: {
-				vault: mockVault
+				vault: mockVault,
 			},
 			settings: {
-				historyFolder: 'test-folder'
+				historyFolder: 'test-folder',
 			},
 			logger: {
 				log: jest.fn(),
 				debug: jest.fn(),
 				warn: jest.fn(),
-				error: jest.fn()
-			}
+				error: jest.fn(),
+			},
 		};
 
 		examplePrompts = new ExamplePromptsManager(mockPlugin);
@@ -87,7 +87,7 @@ describe('ExamplePromptsManager', () => {
 			const mockFile = new TFile();
 			const validPrompts: ExamplePrompt[] = [
 				{ icon: 'search', text: 'Find all notes' },
-				{ icon: 'file-plus', text: 'Create a summary' }
+				{ icon: 'file-plus', text: 'Create a summary' },
 			];
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockVault.read.mockResolvedValue(JSON.stringify(validPrompts));
@@ -122,10 +122,7 @@ describe('ExamplePromptsManager', () => {
 			const result = await examplePrompts.read();
 
 			expect(result).toBeNull();
-			expect(mockPlugin.logger.error).toHaveBeenCalledWith(
-				'Failed to read example-prompts.json:',
-				expect.any(Error)
-			);
+			expect(mockPlugin.logger.error).toHaveBeenCalledWith('Failed to read example-prompts.json:', expect.any(Error));
 		});
 
 		it('should return null if content is not an array', async () => {
@@ -143,7 +140,7 @@ describe('ExamplePromptsManager', () => {
 			const mockFile = new TFile();
 			const invalidPrompts = [
 				{ icon: 'search' }, // missing text
-				{ text: 'Create a summary' } // missing icon
+				{ text: 'Create a summary' }, // missing icon
 			];
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockVault.read.mockResolvedValue(JSON.stringify(invalidPrompts));
@@ -155,9 +152,7 @@ describe('ExamplePromptsManager', () => {
 
 		it('should return null if icon is whitespace-only', async () => {
 			const mockFile = new TFile();
-			const invalidPrompts = [
-				{ icon: '   ', text: 'Valid text' }
-			];
+			const invalidPrompts = [{ icon: '   ', text: 'Valid text' }];
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockVault.read.mockResolvedValue(JSON.stringify(invalidPrompts));
 
@@ -168,9 +163,7 @@ describe('ExamplePromptsManager', () => {
 
 		it('should return null if text is whitespace-only', async () => {
 			const mockFile = new TFile();
-			const invalidPrompts = [
-				{ icon: 'search', text: '   ' }
-			];
+			const invalidPrompts = [{ icon: 'search', text: '   ' }];
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockVault.read.mockResolvedValue(JSON.stringify(invalidPrompts));
 
@@ -195,7 +188,7 @@ describe('ExamplePromptsManager', () => {
 		it('should write valid prompts to new file', async () => {
 			const validPrompts: ExamplePrompt[] = [
 				{ icon: 'search', text: 'Find all notes' },
-				{ icon: 'file-plus', text: 'Create a summary' }
+				{ icon: 'file-plus', text: 'Create a summary' },
 			];
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.create.mockResolvedValue(undefined);
@@ -211,18 +204,13 @@ describe('ExamplePromptsManager', () => {
 
 		it('should update existing file', async () => {
 			const mockFile = new TFile();
-			const validPrompts: ExamplePrompt[] = [
-				{ icon: 'globe', text: 'Research topics' }
-			];
+			const validPrompts: ExamplePrompt[] = [{ icon: 'globe', text: 'Research topics' }];
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockVault.modify.mockResolvedValue(undefined);
 
 			await examplePrompts.write(validPrompts);
 
-			expect(mockVault.modify).toHaveBeenCalledWith(
-				mockFile,
-				JSON.stringify(validPrompts, null, 2)
-			);
+			expect(mockVault.modify).toHaveBeenCalledWith(mockFile, JSON.stringify(validPrompts, null, 2));
 			expect(mockVault.create).not.toHaveBeenCalled();
 		});
 
@@ -231,41 +219,31 @@ describe('ExamplePromptsManager', () => {
 		});
 
 		it('should throw error if prompts are missing icon field', async () => {
-			const invalidPrompts = [
-				{ text: 'Missing icon' }
-			] as any;
+			const invalidPrompts = [{ text: 'Missing icon' }] as any;
 
 			await expect(examplePrompts.write(invalidPrompts)).rejects.toThrow('Invalid example prompts structure');
 		});
 
 		it('should throw error if prompts are missing text field', async () => {
-			const invalidPrompts = [
-				{ icon: 'search' }
-			] as any;
+			const invalidPrompts = [{ icon: 'search' }] as any;
 
 			await expect(examplePrompts.write(invalidPrompts)).rejects.toThrow('Invalid example prompts structure');
 		});
 
 		it('should throw error if icon is whitespace-only', async () => {
-			const invalidPrompts = [
-				{ icon: '   ', text: 'Valid text' }
-			] as any;
+			const invalidPrompts = [{ icon: '   ', text: 'Valid text' }] as any;
 
 			await expect(examplePrompts.write(invalidPrompts)).rejects.toThrow('Invalid example prompts structure');
 		});
 
 		it('should throw error if text is whitespace-only', async () => {
-			const invalidPrompts = [
-				{ icon: 'search', text: '   ' }
-			] as any;
+			const invalidPrompts = [{ icon: 'search', text: '   ' }] as any;
 
 			await expect(examplePrompts.write(invalidPrompts)).rejects.toThrow('Invalid example prompts structure');
 		});
 
 		it('should throw error on write failure', async () => {
-			const validPrompts: ExamplePrompt[] = [
-				{ icon: 'search', text: 'Find notes' }
-			];
+			const validPrompts: ExamplePrompt[] = [{ icon: 'search', text: 'Find notes' }];
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.create.mockRejectedValue(new Error('Write error'));
 
@@ -276,19 +254,14 @@ describe('ExamplePromptsManager', () => {
 		});
 
 		it('should format JSON with proper indentation', async () => {
-			const prompts: ExamplePrompt[] = [
-				{ icon: 'search', text: 'Test' }
-			];
+			const prompts: ExamplePrompt[] = [{ icon: 'search', text: 'Test' }];
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.create.mockResolvedValue(undefined);
 
 			await examplePrompts.write(prompts);
 
 			const expectedJSON = JSON.stringify(prompts, null, 2);
-			expect(mockVault.create).toHaveBeenCalledWith(
-				'test-folder/example-prompts.json',
-				expectedJSON
-			);
+			expect(mockVault.create).toHaveBeenCalledWith('test-folder/example-prompts.json', expectedJSON);
 		});
 	});
 });

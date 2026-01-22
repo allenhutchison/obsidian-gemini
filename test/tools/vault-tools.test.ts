@@ -1,4 +1,14 @@
-import { ReadFileTool, WriteFileTool, ListFilesTool, SearchFilesTool, SearchFileContentsTool, MoveFileTool, DeleteFileTool, GetActiveFileTool, getVaultTools } from '../../src/tools/vault-tools';
+import {
+	ReadFileTool,
+	WriteFileTool,
+	ListFilesTool,
+	SearchFilesTool,
+	SearchFileContentsTool,
+	MoveFileTool,
+	DeleteFileTool,
+	GetActiveFileTool,
+	getVaultTools,
+} from '../../src/tools/vault-tools';
 import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock ScribeFile
@@ -6,8 +16,8 @@ jest.mock('../../src/files', () => ({
 	ScribeFile: jest.fn().mockImplementation(() => ({
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
 		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-		getBacklinks: jest.fn().mockReturnValue(new Set())
-	}))
+		getBacklinks: jest.fn().mockReturnValue(new Set()),
+	})),
 }));
 
 // Use the existing mock by extending it
@@ -24,20 +34,20 @@ jest.mock('obsidian', () => ({
 			this.name = '';
 			this.children = [];
 		}
-	}
+	},
 }));
 
 // Import the mocked classes
 import { TFile, TFolder } from 'obsidian';
 
-// Mock Obsidian objects  
+// Mock Obsidian objects
 const mockFile = new TFile();
 (mockFile as any).path = 'test.md';
 (mockFile as any).name = 'test.md';
 (mockFile as any).stat = {
 	size: 100,
 	mtime: Date.now(),
-	ctime: Date.now()
+	ctime: Date.now(),
 };
 
 const mockFolder = new TFolder();
@@ -57,12 +67,12 @@ const mockVault = {
 	getRoot: jest.fn(),
 	rename: jest.fn(),
 	adapter: {
-		exists: jest.fn()
-	}
+		exists: jest.fn(),
+	},
 };
 
 const mockMetadataCache = {
-	getFirstLinkpathDest: jest.fn()
+	getFirstLinkpathDest: jest.fn(),
 };
 
 const mockPlugin = {
@@ -70,23 +80,23 @@ const mockPlugin = {
 		vault: mockVault,
 		metadataCache: mockMetadataCache,
 		workspace: {
-			getLeavesOfType: jest.fn().mockReturnValue([])
-		}
+			getLeavesOfType: jest.fn().mockReturnValue([]),
+		},
 	},
 	settings: {
-		historyFolder: 'test-history-folder'
+		historyFolder: 'test-history-folder',
 	},
 	gfile: {
 		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
 		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-		getBacklinks: jest.fn().mockReturnValue(new Set())
+		getBacklinks: jest.fn().mockReturnValue(new Set()),
 	},
 	logger: {
 		log: jest.fn(),
 		debug: jest.fn(),
 		error: jest.fn(),
-		warn: jest.fn()
-	}
+		warn: jest.fn(),
+	},
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -98,9 +108,9 @@ const mockContext: ToolExecutionContext = {
 			contextFiles: [],
 			contextDepth: 2,
 			enabledTools: [],
-			requireConfirmation: []
-		}
-	}
+			requireConfirmation: [],
+		},
+	},
 } as any;
 
 describe('VaultTools', () => {
@@ -130,7 +140,7 @@ describe('VaultTools', () => {
 				size: 100,
 				modified: mockFile.stat.mtime,
 				outgoingLinks: [],
-				backlinks: []
+				backlinks: [],
 			});
 		});
 
@@ -161,7 +171,7 @@ describe('VaultTools', () => {
 				path: 'test.md',
 				type: 'file',
 				size: 100,
-				modified: mockFile.stat.mtime
+				modified: mockFile.stat.mtime,
 			});
 		});
 	});
@@ -183,7 +193,7 @@ describe('VaultTools', () => {
 			expect(result.data).toEqual({
 				path: 'test.md',
 				action: 'modified',
-				size: 11
+				size: 11,
 			});
 			expect(mockVault.modify).toHaveBeenCalledWith(mockFile, 'new content');
 		});
@@ -198,7 +208,7 @@ describe('VaultTools', () => {
 			expect(result.data).toEqual({
 				path: 'new.md',
 				action: 'created',
-				size: 11
+				size: 11,
 			});
 			expect(mockVault.create).toHaveBeenCalledWith('new.md', 'new content');
 		});
@@ -265,14 +275,16 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				path: 'folder',
-				files: [{
-					name: 'test.md',
-					path: 'test.md',
-					type: 'file',
-					size: 100,
-					modified: mockFile.stat.mtime
-				}],
-				count: 1
+				files: [
+					{
+						name: 'test.md',
+						path: 'test.md',
+						type: 'file',
+						size: 100,
+						modified: mockFile.stat.mtime,
+					},
+				],
+				count: 1,
 			});
 		});
 
@@ -309,7 +321,7 @@ describe('VaultTools', () => {
 			const files = [
 				{ name: 'test.md', path: 'test.md', stat: { size: 100, mtime: Date.now() } },
 				{ name: 'another.md', path: 'another.md', stat: { size: 200, mtime: Date.now() } },
-				{ name: 'document.md', path: 'folder/document.md', stat: { size: 300, mtime: Date.now() } }
+				{ name: 'document.md', path: 'folder/document.md', stat: { size: 300, mtime: Date.now() } },
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
@@ -326,7 +338,7 @@ describe('VaultTools', () => {
 				{ name: 'Test.md', path: 'Test.md', stat: { size: 100, mtime: Date.now() } },
 				{ name: 'TestCase.md', path: 'TestCase.md', stat: { size: 200, mtime: Date.now() } },
 				{ name: 'UnitTest.md', path: 'UnitTest.md', stat: { size: 150, mtime: Date.now() } },
-				{ name: 'README.md', path: 'README.md', stat: { size: 300, mtime: Date.now() } }
+				{ name: 'README.md', path: 'README.md', stat: { size: 300, mtime: Date.now() } },
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
@@ -362,7 +374,7 @@ describe('VaultTools', () => {
 			const files = [
 				{ name: 'TEST.md', path: 'TEST.md', stat: { size: 100, mtime: Date.now() } },
 				{ name: 'test.md', path: 'test.md', stat: { size: 200, mtime: Date.now() } },
-				{ name: 'Test.md', path: 'Test.md', stat: { size: 300, mtime: Date.now() } }
+				{ name: 'Test.md', path: 'Test.md', stat: { size: 300, mtime: Date.now() } },
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
@@ -374,11 +386,13 @@ describe('VaultTools', () => {
 		});
 
 		it('should limit results', async () => {
-			const files = Array(100).fill(null).map((_, i) => ({
-				name: `test${i}.md`,
-				path: `test${i}.md`,
-				stat: { size: 100, mtime: Date.now() }
-			})) as TFile[];
+			const files = Array(100)
+				.fill(null)
+				.map((_, i) => ({
+					name: `test${i}.md`,
+					path: `test${i}.md`,
+					stat: { size: 100, mtime: Date.now() },
+				})) as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
 
@@ -407,7 +421,7 @@ describe('VaultTools', () => {
 			expect(result.data).toEqual({
 				path: 'test.md',
 				type: 'file',
-				action: 'deleted'
+				action: 'deleted',
 			});
 			expect(mockVault.delete).toHaveBeenCalledWith(mockFile);
 		});
@@ -422,7 +436,7 @@ describe('VaultTools', () => {
 			expect(result.data).toEqual({
 				path: 'folder',
 				type: 'folder',
-				action: 'deleted'
+				action: 'deleted',
 			});
 			expect(mockVault.delete).toHaveBeenCalledWith(mockFolder);
 		});
@@ -458,17 +472,20 @@ describe('VaultTools', () => {
 			mockVault.createFolder.mockResolvedValue(undefined);
 			mockVault.rename.mockResolvedValue(undefined);
 
-			const result = await tool.execute({
-				sourcePath: 'test.md',
-				targetPath: 'folder/renamed.md'
-			}, mockContext);
+			const result = await tool.execute(
+				{
+					sourcePath: 'test.md',
+					targetPath: 'folder/renamed.md',
+				},
+				mockContext
+			);
 
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				sourcePath: 'test.md',
 				targetPath: 'folder/renamed.md',
 				type: 'file',
-				action: 'moved'
+				action: 'moved',
 			});
 			expect(mockVault.rename).toHaveBeenCalledWith(mockFile, 'folder/renamed.md');
 		});
@@ -478,10 +495,13 @@ describe('VaultTools', () => {
 			mockVault.getMarkdownFiles.mockReturnValue([]);
 			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
 
-			const result = await tool.execute({
-				sourcePath: 'nonexistent.md',
-				targetPath: 'new.md'
-			}, mockContext);
+			const result = await tool.execute(
+				{
+					sourcePath: 'nonexistent.md',
+					targetPath: 'new.md',
+				},
+				mockContext
+			);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Source file or folder not found: nonexistent.md');
@@ -493,17 +513,20 @@ describe('VaultTools', () => {
 			mockVault.createFolder.mockResolvedValue(undefined);
 			mockVault.rename.mockResolvedValue(undefined);
 
-			const result = await tool.execute({
-				sourcePath: 'folder',
-				targetPath: 'new-folder'
-			}, mockContext);
+			const result = await tool.execute(
+				{
+					sourcePath: 'folder',
+					targetPath: 'new-folder',
+				},
+				mockContext
+			);
 
 			expect(result.success).toBe(true);
 			expect(result.data).toEqual({
 				sourcePath: 'folder',
 				targetPath: 'new-folder',
 				type: 'folder',
-				action: 'moved'
+				action: 'moved',
 			});
 			expect(mockVault.rename).toHaveBeenCalledWith(mockFolder, 'new-folder');
 		});
@@ -512,10 +535,13 @@ describe('VaultTools', () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockVault.adapter.exists.mockResolvedValue(true);
 
-			const result = await tool.execute({ 
-				sourcePath: 'test.md', 
-				targetPath: 'existing.md' 
-			}, mockContext);
+			const result = await tool.execute(
+				{
+					sourcePath: 'test.md',
+					targetPath: 'existing.md',
+				},
+				mockContext
+			);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Target path already exists: existing.md');
@@ -529,10 +555,13 @@ describe('VaultTools', () => {
 			mockVault.createFolder.mockResolvedValue(undefined);
 			mockVault.rename.mockResolvedValue(undefined);
 
-			const result = await tool.execute({ 
-				sourcePath: 'test.md', 
-				targetPath: 'new-folder/moved.md' 
-			}, mockContext);
+			const result = await tool.execute(
+				{
+					sourcePath: 'test.md',
+					targetPath: 'new-folder/moved.md',
+				},
+				mockContext
+			);
 
 			expect(result.success).toBe(true);
 			expect(mockVault.createFolder).toHaveBeenCalledWith('new-folder');
@@ -542,7 +571,7 @@ describe('VaultTools', () => {
 		it('should have confirmation message', () => {
 			const message = tool.confirmationMessage!({
 				sourcePath: 'old.md',
-				targetPath: 'new.md'
+				targetPath: 'new.md',
 			});
 			expect(message).toContain('Move file or folder from: old.md');
 			expect(message).toContain('To: new.md');
@@ -559,7 +588,7 @@ describe('VaultTools', () => {
 				debug: jest.fn(),
 				log: jest.fn(),
 				error: jest.fn(),
-				warn: jest.fn()
+				warn: jest.fn(),
 			};
 		});
 
@@ -567,7 +596,7 @@ describe('VaultTools', () => {
 			const files = [
 				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } },
 				{ name: 'file2.md', path: 'file2.md', stat: { size: 200, mtime: Date.now() } },
-				{ name: 'file3.md', path: 'file3.md', stat: { size: 300, mtime: Date.now() } }
+				{ name: 'file3.md', path: 'file3.md', stat: { size: 300, mtime: Date.now() } },
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
@@ -587,9 +616,7 @@ describe('VaultTools', () => {
 		});
 
 		it('should be case-insensitive by default', async () => {
-			const files = [
-				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
-			] as TFile[];
+			const files = [{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
 			mockVault.cachedRead.mockResolvedValue('This has TEST in uppercase');
@@ -602,9 +629,7 @@ describe('VaultTools', () => {
 		});
 
 		it('should support case-sensitive search', async () => {
-			const files = [
-				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
-			] as TFile[];
+			const files = [{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
 			mockVault.cachedRead.mockResolvedValue('This has TEST in uppercase\nAnd test in lowercase');
@@ -617,9 +642,7 @@ describe('VaultTools', () => {
 		});
 
 		it('should support regex patterns', async () => {
-			const files = [
-				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
-			] as TFile[];
+			const files = [{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
 			mockVault.cachedRead.mockResolvedValue('Test 123\nAnother line\nTest 456');
@@ -632,9 +655,7 @@ describe('VaultTools', () => {
 		});
 
 		it('should include context lines', async () => {
-			const files = [
-				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
-			] as TFile[];
+			const files = [{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
 			mockVault.cachedRead.mockResolvedValue('Line 1\nLine 2\nThis is a match\nLine 4\nLine 5');
@@ -652,7 +673,7 @@ describe('VaultTools', () => {
 			const files = Array.from({ length: 100 }, (_, i) => ({
 				name: `file${i}.md`,
 				path: `file${i}.md`,
-				stat: { size: 100, mtime: Date.now() }
+				stat: { size: 100, mtime: Date.now() },
 			})) as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
@@ -682,7 +703,7 @@ describe('VaultTools', () => {
 		it('should skip files that cannot be read', async () => {
 			const files = [
 				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } },
-				{ name: 'file2.md', path: 'file2.md', stat: { size: 200, mtime: Date.now() } }
+				{ name: 'file2.md', path: 'file2.md', stat: { size: 200, mtime: Date.now() } },
 			] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
@@ -698,9 +719,7 @@ describe('VaultTools', () => {
 		});
 
 		it('should return line numbers correctly', async () => {
-			const files = [
-				{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }
-			] as TFile[];
+			const files = [{ name: 'file1.md', path: 'file1.md', stat: { size: 100, mtime: Date.now() } }] as TFile[];
 
 			mockVault.getMarkdownFiles.mockReturnValue(files);
 			mockVault.cachedRead.mockResolvedValue('Line 1\nLine 2\nMatch here\nLine 4\nAnother match\nLine 6');
@@ -728,11 +747,11 @@ describe('VaultTools', () => {
 			(mockActiveFile as any).stat = {
 				size: 200,
 				mtime: Date.now(),
-				ctime: Date.now()
+				ctime: Date.now(),
 			};
 
 			const mockWorkspace = {
-				getActiveFile: jest.fn().mockReturnValue(mockActiveFile)
+				getActiveFile: jest.fn().mockReturnValue(mockActiveFile),
 			};
 
 			const contextWithWorkspace = {
@@ -741,9 +760,9 @@ describe('VaultTools', () => {
 					...mockPlugin,
 					app: {
 						...mockPlugin.app,
-						workspace: mockWorkspace
-					}
-				}
+						workspace: mockWorkspace,
+					},
+				},
 			};
 
 			mockVault.getAbstractFileByPath.mockReturnValue(mockActiveFile);
@@ -759,7 +778,7 @@ describe('VaultTools', () => {
 
 		it('should return error when no file is active', async () => {
 			const mockWorkspace = {
-				getActiveFile: jest.fn().mockReturnValue(null)
+				getActiveFile: jest.fn().mockReturnValue(null),
 			};
 
 			const contextWithWorkspace = {
@@ -768,9 +787,9 @@ describe('VaultTools', () => {
 					...mockPlugin,
 					app: {
 						...mockPlugin.app,
-						workspace: mockWorkspace
-					}
-				}
+						workspace: mockWorkspace,
+					},
+				},
 			};
 
 			const result = await tool.execute({}, contextWithWorkspace);
@@ -785,7 +804,7 @@ describe('VaultTools', () => {
 			(mockActiveFile as any).extension = 'png';
 
 			const mockWorkspace = {
-				getActiveFile: jest.fn().mockReturnValue(mockActiveFile)
+				getActiveFile: jest.fn().mockReturnValue(mockActiveFile),
 			};
 
 			const contextWithWorkspace = {
@@ -794,9 +813,9 @@ describe('VaultTools', () => {
 					...mockPlugin,
 					app: {
 						...mockPlugin.app,
-						workspace: mockWorkspace
-					}
-				}
+						workspace: mockWorkspace,
+					},
+				},
 			};
 
 			const result = await tool.execute({}, contextWithWorkspace);
@@ -811,15 +830,15 @@ describe('VaultTools', () => {
 			const tools = getVaultTools();
 
 			expect(tools).toHaveLength(9);
-			expect(tools.map(t => t.name)).toContain('read_file');
-			expect(tools.map(t => t.name)).toContain('write_file');
-			expect(tools.map(t => t.name)).toContain('list_files');
-			expect(tools.map(t => t.name)).toContain('create_folder');
-			expect(tools.map(t => t.name)).toContain('delete_file');
-			expect(tools.map(t => t.name)).toContain('move_file');
-			expect(tools.map(t => t.name)).toContain('search_files');
-			expect(tools.map(t => t.name)).toContain('search_file_contents');
-			expect(tools.map(t => t.name)).toContain('get_active_file');
+			expect(tools.map((t) => t.name)).toContain('read_file');
+			expect(tools.map((t) => t.name)).toContain('write_file');
+			expect(tools.map((t) => t.name)).toContain('list_files');
+			expect(tools.map((t) => t.name)).toContain('create_folder');
+			expect(tools.map((t) => t.name)).toContain('delete_file');
+			expect(tools.map((t) => t.name)).toContain('move_file');
+			expect(tools.map((t) => t.name)).toContain('search_files');
+			expect(tools.map((t) => t.name)).toContain('search_file_contents');
+			expect(tools.map((t) => t.name)).toContain('get_active_file');
 		});
 	});
 });

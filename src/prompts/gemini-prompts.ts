@@ -69,10 +69,14 @@ export class GeminiPrompts {
 	}
 
 	examplePromptsPrompt(vaultInfo: string, existingPrompts?: string): string {
-		return this.examplePromptsPromptTemplate({
-			existingPrompts: existingPrompts || '',
-			language: this.getLanguageCode()
-		}) + '\n\n' + vaultInfo;
+		return (
+			this.examplePromptsPromptTemplate({
+				existingPrompts: existingPrompts || '',
+				language: this.getLanguageCode(),
+			}) +
+			'\n\n' +
+			vaultInfo
+		);
 	}
 
 	imagePromptGenerator(variables: { [key: string]: string }): string {
@@ -137,8 +141,7 @@ export class GeminiPrompts {
 		if (availableTools && availableTools.length > 0) {
 			const toolsList = this.formatToolsList(availableTools);
 			// Check if RAG indexing is enabled and ready
-			const ragEnabled = !!(this.plugin?.settings.ragIndexing.enabled &&
-				this.plugin?.ragIndexing?.isReady());
+			const ragEnabled = !!(this.plugin?.settings.ragIndexing.enabled && this.plugin?.ragIndexing?.isReady());
 			const toolsPrompt = this.agentToolsPromptTemplate({ toolsList, ragEnabled });
 			fullPrompt += '\n\n' + toolsPrompt;
 		}

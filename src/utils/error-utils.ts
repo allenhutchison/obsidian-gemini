@@ -35,27 +35,47 @@ export function getErrorMessage(error: unknown): string {
 		const messageLower = message.toLowerCase();
 
 		// API key errors
-		if (messageLower.includes('api key') || messageLower.includes('api_key') || messageLower.includes('invalid_api_key')) {
+		if (
+			messageLower.includes('api key') ||
+			messageLower.includes('api_key') ||
+			messageLower.includes('invalid_api_key')
+		) {
 			return 'Invalid API key. Please check your Google Gemini API key in settings.';
 		}
 
 		// Authentication/permission errors
-		if (messageLower.includes('permission') || messageLower.includes('forbidden') || messageLower.includes('unauthorized')) {
+		if (
+			messageLower.includes('permission') ||
+			messageLower.includes('forbidden') ||
+			messageLower.includes('unauthorized')
+		) {
 			return 'Authentication failed. Please verify your API key has access to the Gemini API.';
 		}
 
 		// Rate limiting
-		if (messageLower.includes('rate limit') || messageLower.includes('quota') || messageLower.includes('resource_exhausted')) {
+		if (
+			messageLower.includes('rate limit') ||
+			messageLower.includes('quota') ||
+			messageLower.includes('resource_exhausted')
+		) {
 			return 'API rate limit exceeded. Please wait a moment and try again.';
 		}
 
 		// Model not found
-		if (messageLower.includes('model') && (messageLower.includes('not found') || messageLower.includes('does not exist'))) {
+		if (
+			messageLower.includes('model') &&
+			(messageLower.includes('not found') || messageLower.includes('does not exist'))
+		) {
 			return 'The selected model is not available. Please check your model settings.';
 		}
 
 		// Network errors
-		if (messageLower.includes('fetch') || messageLower.includes('network') || messageLower.includes('econnrefused') || messageLower.includes('etimedout')) {
+		if (
+			messageLower.includes('fetch') ||
+			messageLower.includes('network') ||
+			messageLower.includes('econnrefused') ||
+			messageLower.includes('etimedout')
+		) {
 			return 'Network error: Unable to connect to Google Gemini API. Please check your internet connection.';
 		}
 
@@ -75,7 +95,11 @@ export function getErrorMessage(error: unknown): string {
 		}
 
 		// Token limit errors
-		if (messageLower.includes('token limit') || messageLower.includes('too long') || messageLower.includes('max tokens')) {
+		if (
+			messageLower.includes('token limit') ||
+			messageLower.includes('too long') ||
+			messageLower.includes('max tokens')
+		) {
 			return 'Request exceeds token limit. Please reduce the length of your message or conversation history.';
 		}
 
