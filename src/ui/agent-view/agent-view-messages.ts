@@ -245,6 +245,9 @@ export class AgentViewMessages {
 		// Scroll to bottom after displaying message
 		this.scrollToBottom();
 
+		// Setup image click handlers
+		this.setupImageClickHandlers(content, sourcePath);
+
 		// Add a copy button for both user and model messages
 		if (entry.role === 'model' || entry.role === 'user') {
 			const copyButton = content.createEl('button', {
@@ -339,7 +342,7 @@ export class AgentViewMessages {
 					const line = lines[i];
 					const trimmedLine = line.trim();
 					// Use safer method to detect unescaped pipes (avoiding regex backtracking)
-				const hasUnescapedPipe = line.split('\\|').join('').includes('|');
+					const hasUnescapedPipe = line.split('\\|').join('').includes('|');
 					const nextLine = lines[i + 1];
 
 					// Check if we're starting a table
@@ -399,6 +402,32 @@ export class AgentViewMessages {
 						});
 				});
 			}
+
+			// Setup image click handlers
+			this.setupImageClickHandlers(messageDiv, sourcePath);
+		}
+	}
+
+	/**
+	 * Setup click handlers for images to open them in preview
+	 */
+	private setupImageClickHandlers(container: HTMLElement, sourcePath: string): void {
+		const images = container.findAll('img');
+		for (const img of images) {
+			img.addClass('gemini-agent-clickable-image');
+			img.addEventListener('click', async (e) => {
+				e.stopPropagation();
+
+				// Try to get file path from alt text (standard Obsidian behavior)
+				const altText = img.getAttribute('alt');
+				if (altText) {
+					const file = this.app.metadataCache.getFirstLinkpathDest(altText, sourcePath);
+					if (file) {
+						const leaf = this.app.workspace.getLeaf('tab');
+						await leaf.openFile(file);
+					}
+				}
+			});
 		}
 	}
 
@@ -607,7 +636,7 @@ export class AgentViewMessages {
 	private isCurrentSession(session: ChatSession, currentSession: ChatSession | null): boolean {
 		if (!currentSession) return false;
 		return session.id === currentSession.id ||
-		       session.historyPath === currentSession.historyPath;
+			session.historyPath === currentSession.historyPath;
 	}
 
 	/**
