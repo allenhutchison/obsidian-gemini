@@ -247,9 +247,10 @@ export class AgentView extends ItemView {
 		let displayMessage = formattedMessage;
 		if (savedImagePaths.length > 0) {
 			const imageLinks = savedImagePaths.map((path) => `![[${path}]]`).join('\n');
-			// Add a context note that will be saved to history, ensuring the AI remembers the paths in future turns
-			const contextNote = `\n> [!info] Image Context\n> Images saved to vault:\n> ${savedImagePaths.map((p) => `- \`${p}\``).join('\n> ')}`;
-			displayMessage = displayMessage + '\n\n' + imageLinks + '\n' + contextNote;
+			// Add a hidden context note that will be saved to history
+			// HTML comments are invisible in Obsidian Preview but visible to the model in the history file
+			const contextNote = `\n<!-- IMAGE_CONTEXT: Images saved to vault at:\n${savedImagePaths.map((p) => `- ${p}`).join('\n')}\n-->`;
+			displayMessage = displayMessage + '\n\n' + imageLinks + contextNote;
 		}
 
 		// Display user message with formatted version (includes markdown links and images)
