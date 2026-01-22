@@ -101,9 +101,7 @@ export class AgentView extends ItemView {
 			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 			this.updateSessionHeader();
 		};
-		this.registerEvent(
-			this.app.workspace.on('active-leaf-change', this.activeFileChangeHandler)
-		);
+		this.registerEvent(this.app.workspace.on('active-leaf-change', this.activeFileChangeHandler));
 
 		// Create default agent session
 		await this.createNewSession();
@@ -127,7 +125,7 @@ export class AgentView extends ItemView {
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
 			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
 			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
-			getImageAttachments: () => this.pendingImageAttachments
+			getImageAttachments: () => this.pendingImageAttachments,
 		};
 
 		// Create the main interface using AgentViewUI
@@ -164,7 +162,7 @@ export class AgentView extends ItemView {
 				this.progress.update(statusText, state),
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded()
+			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
 		};
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
 
@@ -176,7 +174,7 @@ export class AgentView extends ItemView {
 			updateContextPanel: () => this.updateContextPanel(),
 			showEmptyState: () => this.showEmptyState(),
 			addActiveFileToContext: () => this.context.addActiveFileToContext(this.currentSession),
-			focusInput: () => this.userInput.focus()
+			focusInput: () => this.userInput.focus(),
 		};
 
 		// Create session state with direct callback references to context
@@ -185,7 +183,7 @@ export class AgentView extends ItemView {
 			allowedWithoutConfirmation: this.allowedWithoutConfirmation,
 			getAutoAddedActiveFile: () => this.context.getAutoAddedActiveFile(),
 			clearAutoAddedActiveFile: () => this.context.clearAutoAddedActiveFile(),
-			userInput: this.userInput
+			userInput: this.userInput,
 		};
 
 		this.session = new AgentViewSession(this.app, this.plugin, sessionCallbacks, sessionState);
@@ -248,7 +246,7 @@ export class AgentView extends ItemView {
 		// Build message with image thumbnails for display (use wikilinks for saved images)
 		let displayMessage = formattedMessage;
 		if (savedImagePaths.length > 0) {
-			const imageLinks = savedImagePaths.map(path => `![[${path}]]`).join('\n');
+			const imageLinks = savedImagePaths.map((path) => `![[${path}]]`).join('\n');
 			displayMessage = displayMessage + '\n\n' + imageLinks;
 		}
 
@@ -257,7 +255,7 @@ export class AgentView extends ItemView {
 			role: 'user',
 			message: displayMessage, // Use formatted message with images for display
 			notePath: '',
-			created_at: new Date()
+			created_at: new Date(),
 		};
 		await this.displayMessage(userEntry);
 
@@ -266,7 +264,7 @@ export class AgentView extends ItemView {
 			const allContextFiles = [...this.currentSession.context.contextFiles];
 
 			// Add mentioned files to context temporarily
-			files.forEach(file => {
+			files.forEach((file) => {
 				if (!allContextFiles.includes(file)) {
 					allContextFiles.push(file);
 				}
@@ -307,7 +305,7 @@ export class AgentView extends ItemView {
 
 			// Add mention note if files were mentioned
 			if (files.length > 0) {
-				const fileNames = files.map(f => f.basename).join(', ');
+				const fileNames = files.map((f) => f.basename).join(', ');
 				additionalInstructions += `\n\nIMPORTANT: The user has specifically referenced the following files using @ mentions: ${fileNames}
 These files are included in the context below. When the user asks you to write data to or modify these files, you should:
 1. First use the read_file tool to examine their current contents
@@ -317,7 +315,7 @@ These files are included in the context below. When the user asks you to write d
 
 			// Add image path information if images were attached
 			if (savedImagePaths.length > 0) {
-				const pathList = savedImagePaths.map(p => `- ${p}`).join('\n');
+				const pathList = savedImagePaths.map((p) => `- ${p}`).join('\n');
 				additionalInstructions += `\n\nIMAGE ATTACHMENTS: The user has attached ${savedImagePaths.length} image(s) to this message. The images have been saved to the vault at these paths:
 ${pathList}
 To embed any of these images in a note, use the wikilink format: ![[path/to/image.png]]
@@ -332,12 +330,15 @@ To reference an image in your response, use the path shown above.`;
 			// Get available tools for this session
 			const toolContext: ToolExecutionContext = {
 				plugin: this.plugin,
-				session: this.currentSession
+				session: this.currentSession,
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 			this.plugin.logger.log('Available tools from registry:', availableTools);
 			this.plugin.logger.log('Number of tools:', availableTools.length);
-			this.plugin.logger.log('Tool names:', availableTools.map(t => t.name));
+			this.plugin.logger.log(
+				'Tool names:',
+				availableTools.map((t) => t.name)
+			);
 
 			try {
 				// Get model config from session or use defaults
@@ -353,7 +354,7 @@ To reference an image in your response, use the path shown above.`;
 					customPrompt: customPrompt, // Custom prompt template (if configured)
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
-					imageAttachments: imageAttachments.map(a => ({ base64: a.base64, mimeType: a.mimeType }))
+					imageAttachments: imageAttachments.map((a) => ({ base64: a.base64, mimeType: a.mimeType })),
 				};
 
 				// Create model API for this session
@@ -370,9 +371,7 @@ To reference an image in your response, use the path shown above.`;
 					const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
 						// Handle thought content - show in progress bar
 						if (chunk.thought) {
-							const chunkPreview = chunk.thought.length > 100
-								? chunk.thought.substring(0, 100) + '...'
-								: chunk.thought;
+							const chunkPreview = chunk.thought.length > 100 ? chunk.thought.substring(0, 100) + '...' : chunk.thought;
 							this.plugin.logger.debug(`[AgentView] Received thought chunk: ${chunkPreview}`);
 							accumulatedThoughts += chunk.thought;
 
@@ -380,12 +379,12 @@ To reference an image in your response, use the path shown above.`;
 							this.progress.setStatusTitle(accumulatedThoughts);
 
 							// Truncate for display, showing the latest part
-							const displayThought = accumulatedThoughts.length > PROGRESS_THOUGHT_MAX_LENGTH
-								? '...' + accumulatedThoughts.slice(-PROGRESS_THOUGHT_DISPLAY_LENGTH)
-								: accumulatedThoughts;
-							const displayPreview = displayThought.length > 50
-								? displayThought.substring(0, 50) + '...'
-								: displayThought;
+							const displayThought =
+								accumulatedThoughts.length > PROGRESS_THOUGHT_MAX_LENGTH
+									? '...' + accumulatedThoughts.slice(-PROGRESS_THOUGHT_DISPLAY_LENGTH)
+									: accumulatedThoughts;
+							const displayPreview =
+								displayThought.length > 50 ? displayThought.substring(0, 50) + '...' : displayThought;
 							this.plugin.logger.debug(`[AgentView] Updating progress with thought: ${displayPreview}`);
 							this.progress.update(displayThought, 'thinking');
 						}
@@ -434,7 +433,7 @@ To reference an image in your response, use the path shown above.`;
 									role: 'model',
 									message: accumulatedMarkdown,
 									notePath: '',
-									created_at: new Date()
+									created_at: new Date(),
 								};
 								await this.messages.finalizeStreamingMessage(
 									modelMessageContainer,
@@ -465,7 +464,7 @@ To reference an image in your response, use the path shown above.`;
 									role: 'model',
 									message: response.markdown,
 									notePath: '',
-									created_at: new Date()
+									created_at: new Date(),
 								};
 
 								// Finalize the streaming message with proper rendering
@@ -495,7 +494,9 @@ To reference an image in your response, use the path shown above.`;
 							} else {
 								// Empty response - might be thinking tokens
 								this.plugin.logger.warn('Model returned empty response');
-								new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
+								new Notice(
+									'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.'
+								);
 
 								// Hide progress bar
 								this.progress.hide();
@@ -523,13 +524,7 @@ To reference an image in your response, use the path shown above.`;
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
 						// Execute tools and handle results
-						await this.tools.handleToolCalls(
-							response.toolCalls,
-							message,
-							conversationHistory,
-							userEntry,
-							customPrompt
-						);
+						await this.tools.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry, customPrompt);
 					} else {
 						// Normal response without tool calls
 						// Only display if response has content
@@ -539,7 +534,7 @@ To reference an image in your response, use the path shown above.`;
 								role: 'model',
 								message: response.markdown,
 								notePath: '',
-								created_at: new Date()
+								created_at: new Date(),
 							};
 							await this.displayMessage(aiEntry);
 
@@ -557,7 +552,9 @@ To reference an image in your response, use the path shown above.`;
 						} else {
 							// Empty response - might be thinking tokens
 							this.plugin.logger.warn('Model returned empty response');
-							new Notice('Model returned an empty response. This might happen with thinking models. Try rephrasing your question.');
+							new Notice(
+								'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.'
+							);
 
 							// Still save the user message to history
 							if (this.plugin.settings.chatHistory) {
@@ -574,7 +571,6 @@ To reference an image in your response, use the path shown above.`;
 				this.progress.hide();
 				throw error;
 			}
-
 		} catch (error) {
 			this.plugin.logger.error('Failed to send message:', error);
 			const errorMessage = getErrorMessage(error);
@@ -665,11 +661,7 @@ To reference an image in your response, use the path shown above.`;
 	 * Update context files list display
 	 */
 	private updateContextFilesList(container: HTMLElement) {
-		this.context.updateContextFilesList(
-			container,
-			this.currentSession,
-			(file: TFile) => this.removeContextFile(file)
-		);
+		this.context.updateContextFilesList(container, this.currentSession, (file: TFile) => this.removeContextFile(file));
 	}
 
 	/**
@@ -739,7 +731,7 @@ To reference an image in your response, use the path shown above.`;
 		this.fileChips.insertChipAtCursor(chip);
 
 		// Add all files from folder to mentioned files
-		files.forEach(file => this.fileChips.addMentionedFile(file));
+		files.forEach((file) => this.fileChips.addMentionedFile(file));
 	}
 
 	/**
@@ -758,7 +750,7 @@ To reference an image in your response, use the path shown above.`;
 					if (this.currentSession && this.currentSession.id === session.id) {
 						this.createNewSession();
 					}
-				}
+				},
 			},
 			this.currentSession?.id || null
 		);
@@ -812,8 +804,7 @@ To reference an image in your response, use the path shown above.`;
 	 */
 	private isCurrentSession(session: ChatSession): boolean {
 		if (!this.currentSession) return false;
-		return session.id === this.currentSession.id ||
-			session.historyPath === this.currentSession.historyPath;
+		return session.id === this.currentSession.id || session.historyPath === this.currentSession.historyPath;
 	}
 
 	/**
@@ -900,7 +891,7 @@ To reference an image in your response, use the path shown above.`;
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
 			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
 			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
-			getImageAttachments: () => this.pendingImageAttachments
+			getImageAttachments: () => this.pendingImageAttachments,
 		};
 	}
 
@@ -909,10 +900,8 @@ To reference an image in your response, use the path shown above.`;
 	 */
 	private addImageAttachment(attachment: ImageAttachment): void {
 		this.pendingImageAttachments.push(attachment);
-		this.ui.updateImagePreview(
-			this.imagePreviewContainer,
-			this.pendingImageAttachments,
-			(id) => this.removeImageAttachment(id)
+		this.ui.updateImagePreview(this.imagePreviewContainer, this.pendingImageAttachments, (id) =>
+			this.removeImageAttachment(id)
 		);
 	}
 
@@ -920,11 +909,9 @@ To reference an image in your response, use the path shown above.`;
 	 * Remove an image attachment from pending list
 	 */
 	private removeImageAttachment(id: string): void {
-		this.pendingImageAttachments = this.pendingImageAttachments.filter(a => a.id !== id);
-		this.ui.updateImagePreview(
-			this.imagePreviewContainer,
-			this.pendingImageAttachments,
-			(id) => this.removeImageAttachment(id)
+		this.pendingImageAttachments = this.pendingImageAttachments.filter((a) => a.id !== id);
+		this.ui.updateImagePreview(this.imagePreviewContainer, this.pendingImageAttachments, (id) =>
+			this.removeImageAttachment(id)
 		);
 	}
 
@@ -969,7 +956,7 @@ To reference an image in your response, use the path shown above.`;
 				this.progress.update(statusText, state),
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded()
+			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
 		};
 
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
