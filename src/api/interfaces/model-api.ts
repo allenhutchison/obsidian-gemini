@@ -41,6 +41,14 @@ export interface BaseModelRequest {
 }
 
 /**
+ * Represents an image attachment for multimodal input
+ */
+export interface ImagePart {
+	base64: string;
+	mimeType: string;
+}
+
+/**
  * Represents an extended model request with conversation history and a user message.
  *
  * @extends BaseModelRequest
@@ -50,6 +58,7 @@ export interface BaseModelRequest {
  * @property renderContent - Whether to render the content in responses (default: true)
  * @property customPrompt - Optional custom prompt to modify system behavior
  * @property availableTools - Optional array of tool definitions for function calling
+ * @property imageAttachments - Optional array of image attachments for multimodal input
  */
 export interface ExtendedModelRequest extends BaseModelRequest {
 	conversationHistory: any[];
@@ -57,6 +66,7 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 	renderContent?: boolean;
 	customPrompt?: CustomPrompt;
 	availableTools?: ToolDefinition[];
+	imageAttachments?: ImagePart[];
 }
 
 /**
