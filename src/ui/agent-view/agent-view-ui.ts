@@ -54,7 +54,7 @@ export class AgentViewUI {
 	constructor(
 		private app: App,
 		private plugin: ObsidianGemini
-	) {}
+	) { }
 
 	/**
 	 * Creates the main agent interface
@@ -335,6 +335,11 @@ export class AgentViewUI {
 
 		// Event listeners
 		userInput.addEventListener('keydown', (e) => {
+			// Prevent submission if IME composition is active (for Chinese/Japanese/etc)
+			if (e.isComposing) {
+				return;
+			}
+
 			if (e.key === 'Enter' && !e.shiftKey) {
 				e.preventDefault();
 				callbacks.sendMessage();
