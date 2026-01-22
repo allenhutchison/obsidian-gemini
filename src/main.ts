@@ -27,6 +27,7 @@ import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
 import { RagIndexingService } from './services/rag-indexing';
+import { SkillImporter } from './services/skill-importer';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -75,6 +76,8 @@ export interface ObsidianGeminiSettings {
 	lastSeenVersion: string;
 	// RAG Indexing settings
 	ragIndexing: RagIndexingSettings;
+	// Skills Integration
+	skillsFolderPath: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -117,6 +120,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		autoSync: true,
 		includeAttachments: false,
 	},
+	skillsFolderPath: '',
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -140,6 +144,7 @@ export default class ObsidianGemini extends Plugin {
 	public imageGeneration: ImageGeneration;
 	public logger: Logger;
 	public ragIndexing: RagIndexingService | null = null;
+	public skillImporter: SkillImporter;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -152,6 +157,7 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize logger early so it's available during setup
 		this.logger = new Logger(this);
 
+		this.skillImporter = new SkillImporter(this);
 		await this.setupGeminiScribe();
 
 		// Add ribbon icon
@@ -232,6 +238,15 @@ export default class ObsidianGemini extends Plugin {
 			callback: () => {
 				const modal = new UpdateNotificationModal(this.app, this.manifest.version);
 				modal.open();
+			},
+		});
+
+		// Import Skills Command
+		this.addCommand({
+			id: 'gemini-scribe-import-skills',
+			name: 'Import Skills from External Folder',
+			callback: async () => {
+				await this.skillImporter.importSkills();
 			},
 		});
 
@@ -491,7 +506,7 @@ export default class ObsidianGemini extends Plugin {
 
 				// Clean up partial initialization
 				if (this.ragIndexing) {
-					await this.ragIndexing.destroy().catch(() => {});
+					await this.ragIndexing.destroy().catch(() => { });
 					this.ragIndexing = null;
 				}
 			}
