@@ -61,7 +61,7 @@ export class AgentViewUI {
 	constructor(
 		private app: App,
 		private plugin: ObsidianGemini
-	) {}
+	) { }
 
 	/**
 	 * Creates the main agent interface
@@ -628,7 +628,7 @@ export class AgentViewUI {
 			const removeBtn = thumbWrapper.createEl('button', {
 				text: '×',
 				cls: 'gemini-agent-image-remove',
-				attr: { title: 'Remove image' },
+				attr: { title: 'Remove image', 'aria-label': 'Remove image' },
 			});
 
 			removeBtn.addEventListener('click', () => {

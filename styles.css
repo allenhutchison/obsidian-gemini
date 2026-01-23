@@ -4192,7 +4192,8 @@ If your plugin does not need CSS, delete this file.
 	transition: opacity 0.15s ease;
 }
 
-.gemini-agent-image-thumb:hover .gemini-agent-image-remove {
+.gemini-agent-image-thumb:hover .gemini-agent-image-remove,
+.gemini-agent-image-remove:focus-visible {
 	opacity: 1;
 }
 

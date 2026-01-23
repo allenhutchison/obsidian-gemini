@@ -105,20 +105,26 @@ export async function saveImageToVault(app: App, attachment: ImageAttachment, fo
 		await app.vault.createFolder(folderPath);
 	}
 
-	// Generate filename
+	// Generate filename with random suffix to prevent collisions
 	const ext = getExtensionFromMimeType(attachment.mimeType);
-	const filename = `pasted-image-${Date.now()}.${ext}`;
+	const randomSuffix = Math.random().toString(36).substring(2, 8);
+	const filename = `pasted-image-${Date.now()}-${randomSuffix}.${ext}`;
 	const filePath = folderPath ? `${folderPath}/${filename}` : filename;
 
-	// Convert base64 to binary
-	const binaryString = atob(attachment.base64);
-	const bytes = new Uint8Array(binaryString.length);
-	for (let i = 0; i < binaryString.length; i++) {
-		bytes[i] = binaryString.charCodeAt(i);
-	}
+	try {
+		// Convert base64 to binary
+		const binaryString = atob(attachment.base64);
+		const bytes = new Uint8Array(binaryString.length);
+		for (let i = 0; i < binaryString.length; i++) {
+			bytes[i] = binaryString.charCodeAt(i);
+		}
 
-	// Create file in vault
-	await app.vault.createBinary(filePath, bytes.buffer as ArrayBuffer);
+		// Create file in vault
+		await app.vault.createBinary(filePath, bytes.buffer as ArrayBuffer);
+	} catch (error) {
+		console.error('Failed to save image attachment:', error);
+		throw new Error('Failed to process image data');
+	}
 
 	return filePath;
 }
