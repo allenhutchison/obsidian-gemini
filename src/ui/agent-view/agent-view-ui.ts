@@ -381,13 +381,19 @@ export class AgentViewUI {
 
 			// First check if there are any supported images in the drop
 			const files = e.dataTransfer?.files;
-			const hasImages = files?.length
-				? Array.from(files).some((file) => isSupportedImageType(file.type))
-				: false;
+			const fileArray = files?.length ? Array.from(files) : [];
+			const hasImages = fileArray.some((file) => isSupportedImageType(file.type));
 
 			// Only prevent default behavior if we have images to handle
 			// This allows text/URL drops to work normally
 			if (!hasImages) {
+				// Check if there were unsupported image formats
+				const unsupportedImages = fileArray.filter(
+					(file) => file.type.startsWith('image/') && !isSupportedImageType(file.type)
+				);
+				if (unsupportedImages.length > 0) {
+					new Notice('Unsupported image format. Please use PNG, JPEG, GIF, or WebP.');
+				}
 				return;
 			}
 
@@ -396,7 +402,8 @@ export class AgentViewUI {
 
 			// Process all supported images
 			let imagesProcessed = 0;
-			for (const file of Array.from(files!)) {
+			let unsupportedCount = 0;
+			for (const file of fileArray) {
 				if (isSupportedImageType(file.type)) {
 					try {
 						const base64 = await fileToBase64(file);
@@ -411,11 +418,16 @@ export class AgentViewUI {
 						this.plugin.logger.error('Failed to process dropped image:', err);
 						new Notice('Failed to attach image');
 					}
+				} else if (file.type.startsWith('image/')) {
+					unsupportedCount++;
 				}
 			}
 
 			if (imagesProcessed > 0) {
 				new Notice(imagesProcessed === 1 ? 'Image attached' : `${imagesProcessed} images attached`);
+			}
+			if (unsupportedCount > 0) {
+				new Notice(`${unsupportedCount} image(s) skipped: unsupported format. Use PNG, JPEG, GIF, or WebP.`);
 			}
 		});
 
@@ -423,6 +435,7 @@ export class AgentViewUI {
 		userInput.addEventListener('paste', async (e) => {
 			// Check for image files in clipboard
 			let imagesProcessed = 0;
+			let unsupportedCount = 0;
 			if (e.clipboardData?.files?.length) {
 				for (const file of Array.from(e.clipboardData.files)) {
 					if (isSupportedImageType(file.type)) {
@@ -443,8 +456,17 @@ export class AgentViewUI {
 							this.plugin.logger.error('Failed to process pasted image:', err);
 							new Notice('Failed to attach image');
 						}
+					} else if (file.type.startsWith('image/')) {
+						unsupportedCount++;
 					}
 				}
+			}
+
+			// Notify about unsupported formats
+			if (unsupportedCount > 0 && imagesProcessed === 0) {
+				new Notice('Unsupported image format. Please use PNG, JPEG, GIF, or WebP.');
+			} else if (unsupportedCount > 0) {
+				new Notice(`${unsupportedCount} image(s) skipped: unsupported format.`);
 			}
 
 			// If images were processed, show notice and skip text handling

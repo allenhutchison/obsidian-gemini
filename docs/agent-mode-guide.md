@@ -82,15 +82,17 @@ You can include images in your chat for multimodal AI analysis:
 4. The AI receives both the image content and its vault path for referencing
 5. Images appear in the chat with wikilink embeds (e.g., `![[attachments/pasted-image.png]]`)
 
+> **Privacy Note**: Images are sent to the Gemini API for analysis. Avoid pasting images containing sensitive, confidential, or personal information.
+
 **Usage Examples:**
 
-```
+```text
 User: [pastes screenshot] What's wrong with this error message?
 
 Agent: I can see a TypeScript error in your screenshot. The issue is...
 ```
 
-```
+```text
 User: [drops multiple images] Compare these two diagrams and summarize the differences
 
 Agent: Looking at both images, I can see the following differences...
@@ -107,7 +109,7 @@ Images work alongside @ mentions and context files. You can:
 **Edge Cases:**
 
 - Large images are sent as-is (no automatic compression)
-- Unsupported formats are silently ignored
+- Unsupported formats (non-PNG/JPEG/GIF/WebP) are ignored with a notification
 - If image processing fails, you'll see a notification
 
 ### Context Files
