@@ -192,8 +192,10 @@ export class AgentViewFileChips {
 			if (filePath) {
 				const file = this.app.vault.getAbstractFileByPath(filePath);
 				if (file instanceof TFile) {
-					// Create markdown link
-					const link = document.createTextNode(`[[${file.basename}]]`);
+					// Create wikilink with full path and basename alias
+					// Format: [[full/path/to/file.md|DisplayName]]
+					const wikilink = `[[${file.path}|${file.basename}]]`;
+					const link = document.createTextNode(wikilink);
 					chip.replaceWith(link);
 				}
 			}
@@ -204,9 +206,14 @@ export class AgentViewFileChips {
 			const folderPath = chip.getAttribute('data-folder-path');
 			const fileCount = chip.getAttribute('data-file-count');
 			if (folderPath) {
-				// Create text representation of folder
-				const text = document.createTextNode(`📁 ${folderPath}/ (${fileCount} files)`);
-				chip.replaceWith(text);
+				const folder = this.app.vault.getAbstractFileByPath(folderPath);
+				if (folder instanceof TFolder) {
+					// Create wikilink-style representation for folder
+					// Shows full path to be clear about location
+					const folderLink = `[[${folderPath}/|${folder.name}/]] (${fileCount} files)`;
+					const text = document.createTextNode(folderLink);
+					chip.replaceWith(text);
+				}
 			}
 		});
 
