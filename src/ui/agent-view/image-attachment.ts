@@ -2,7 +2,7 @@
  * Image attachment types and helpers for chat input
  */
 
-import { App, TFile } from 'obsidian';
+import { App } from 'obsidian';
 
 /**
  * Represents a pending image attachment
@@ -111,20 +111,15 @@ export async function saveImageToVault(app: App, attachment: ImageAttachment, fo
 	const filename = `pasted-image-${Date.now()}-${randomSuffix}.${ext}`;
 	const filePath = folderPath ? `${folderPath}/${filename}` : filename;
 
-	try {
-		// Convert base64 to binary
-		const binaryString = atob(attachment.base64);
-		const bytes = new Uint8Array(binaryString.length);
-		for (let i = 0; i < binaryString.length; i++) {
-			bytes[i] = binaryString.charCodeAt(i);
-		}
-
-		// Create file in vault
-		await app.vault.createBinary(filePath, bytes.buffer as ArrayBuffer);
-	} catch (error) {
-		console.error('Failed to save image attachment:', error);
-		throw new Error('Failed to process image data');
+	// Convert base64 to binary
+	const binaryString = atob(attachment.base64);
+	const bytes = new Uint8Array(binaryString.length);
+	for (let i = 0; i < binaryString.length; i++) {
+		bytes[i] = binaryString.charCodeAt(i);
 	}
+
+	// Create file in vault
+	await app.vault.createBinary(filePath, bytes.buffer as ArrayBuffer);
 
 	return filePath;
 }
