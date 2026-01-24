@@ -93,6 +93,18 @@ export function getAttachmentFolder(app: App): string {
 }
 
 /**
+ * Validate base64 string format
+ */
+function isValidBase64(str: string): boolean {
+	if (!str || typeof str !== 'string') {
+		return false;
+	}
+	// Base64 should only contain valid characters
+	const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+	return base64Regex.test(str);
+}
+
+/**
  * Save an image attachment to the vault
  * Returns the path of the saved file
  */
@@ -111,11 +123,20 @@ export async function saveImageToVault(app: App, attachment: ImageAttachment, fo
 	const filename = `pasted-image-${Date.now()}-${randomSuffix}.${ext}`;
 	const filePath = folderPath ? `${folderPath}/${filename}` : filename;
 
-	// Convert base64 to binary
-	const binaryString = atob(attachment.base64);
-	const bytes = new Uint8Array(binaryString.length);
-	for (let i = 0; i < binaryString.length; i++) {
-		bytes[i] = binaryString.charCodeAt(i);
+	// Validate and convert base64 to binary with error handling
+	if (!isValidBase64(attachment.base64)) {
+		throw new Error('Invalid base64 image data');
+	}
+
+	let bytes: Uint8Array;
+	try {
+		const binaryString = atob(attachment.base64);
+		bytes = new Uint8Array(binaryString.length);
+		for (let i = 0; i < binaryString.length; i++) {
+			bytes[i] = binaryString.charCodeAt(i);
+		}
+	} catch (error) {
+		throw new Error('Failed to decode base64 image data');
 	}
 
 	// Create file in vault

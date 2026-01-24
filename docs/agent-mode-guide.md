@@ -62,13 +62,53 @@ Agent: I'll help you find and summarize your meeting notes. Let me:
 
 ### Image Support
 
-You can include images in your chat for the AI to analyze:
+You can include images in your chat for multimodal AI analysis:
 
-- **Paste** images directly from your clipboard into the input box
+**Adding Images:**
+
+- **Paste** images directly from your clipboard (Ctrl/Cmd+V)
 - **Drag and drop** image files into the input box
-- **Click** on any image in the chat to open it in a preview tab
-- Local images are automatically saved to your vault attachments folder
-- The AI can see the image content and its path for referencing
+- Multiple images can be attached to a single message
+
+**Supported Formats:**
+
+- PNG, JPEG, GIF, WebP
+
+**How It Works:**
+
+1. When you paste or drop an image, a thumbnail preview appears above the input
+2. Click the × button on any thumbnail to remove it before sending
+3. When you send the message, images are saved to your vault's attachment folder
+4. The AI receives both the image content and its vault path for referencing
+5. Images appear in the chat with wikilink embeds (e.g., `![[attachments/pasted-image.png]]`)
+
+**Usage Examples:**
+
+```
+User: [pastes screenshot] What's wrong with this error message?
+
+Agent: I can see a TypeScript error in your screenshot. The issue is...
+```
+
+```
+User: [drops multiple images] Compare these two diagrams and summarize the differences
+
+Agent: Looking at both images, I can see the following differences...
+```
+
+**Combining with Context Files:**
+
+Images work alongside @ mentions and context files. You can:
+
+- Reference images in context files: "Look at the screenshot and update @ProjectNotes with the solution"
+- Ask the agent to embed images in notes it creates
+- Use image paths in wikilinks: `![[path/to/image.png]]`
+
+**Edge Cases:**
+
+- Large images are sent as-is (no automatic compression)
+- Unsupported formats are silently ignored
+- If image processing fails, you'll see a notification
 
 ### Context Files
 

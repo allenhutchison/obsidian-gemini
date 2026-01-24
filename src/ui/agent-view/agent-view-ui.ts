@@ -409,10 +409,14 @@ export class AgentViewUI {
 		// Handle paste - check for images first, then text
 		userInput.addEventListener('paste', async (e) => {
 			// Check for image files in clipboard
+			let imagesProcessed = 0;
 			if (e.clipboardData?.files?.length) {
 				for (const file of Array.from(e.clipboardData.files)) {
 					if (isSupportedImageType(file.type)) {
-						e.preventDefault();
+						// Prevent default once when we find the first image
+						if (imagesProcessed === 0) {
+							e.preventDefault();
+						}
 						try {
 							const base64 = await fileToBase64(file);
 							const attachment: ImageAttachment = {
@@ -421,17 +425,22 @@ export class AgentViewUI {
 								id: generateAttachmentId(),
 							};
 							callbacks.addImageAttachment(attachment);
-							new Notice('Image attached');
+							imagesProcessed++;
 						} catch (err) {
 							this.plugin.logger.error('Failed to process pasted image:', err);
 							new Notice('Failed to attach image');
 						}
-						return; // Image handled, don't process as text
 					}
 				}
 			}
 
-			// No image found, handle as text paste
+			// If images were processed, show notice and skip text handling
+			if (imagesProcessed > 0) {
+				new Notice(imagesProcessed === 1 ? 'Image attached' : `${imagesProcessed} images attached`);
+				return;
+			}
+
+			// No images found, handle as text paste
 			e.preventDefault();
 
 			let text = '';
