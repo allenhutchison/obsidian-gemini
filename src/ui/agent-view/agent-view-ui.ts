@@ -377,32 +377,45 @@ export class AgentViewUI {
 		});
 
 		userInput.addEventListener('drop', async (e) => {
-			e.preventDefault();
-			e.stopPropagation();
 			userInput.removeClass('gemini-agent-input-dragover');
 
-			if (e.dataTransfer?.files?.length) {
-				let hasImage = false;
-				for (const file of Array.from(e.dataTransfer.files)) {
-					if (isSupportedImageType(file.type)) {
-						hasImage = true;
-						try {
-							const base64 = await fileToBase64(file);
-							const attachment: ImageAttachment = {
-								base64,
-								mimeType: getMimeType(file),
-								id: generateAttachmentId(),
-							};
-							callbacks.addImageAttachment(attachment);
-						} catch (err) {
-							this.plugin.logger.error('Failed to process dropped image:', err);
-							new Notice('Failed to attach image');
-						}
+			// First check if there are any supported images in the drop
+			const files = e.dataTransfer?.files;
+			const hasImages = files?.length
+				? Array.from(files).some((file) => isSupportedImageType(file.type))
+				: false;
+
+			// Only prevent default behavior if we have images to handle
+			// This allows text/URL drops to work normally
+			if (!hasImages) {
+				return;
+			}
+
+			e.preventDefault();
+			e.stopPropagation();
+
+			// Process all supported images
+			let imagesProcessed = 0;
+			for (const file of Array.from(files!)) {
+				if (isSupportedImageType(file.type)) {
+					try {
+						const base64 = await fileToBase64(file);
+						const attachment: ImageAttachment = {
+							base64,
+							mimeType: getMimeType(file),
+							id: generateAttachmentId(),
+						};
+						callbacks.addImageAttachment(attachment);
+						imagesProcessed++;
+					} catch (err) {
+						this.plugin.logger.error('Failed to process dropped image:', err);
+						new Notice('Failed to attach image');
 					}
 				}
-				if (hasImage) {
-					new Notice('Image(s) attached');
-				}
+			}
+
+			if (imagesProcessed > 0) {
+				new Notice(imagesProcessed === 1 ? 'Image attached' : `${imagesProcessed} images attached`);
 			}
 		});
 

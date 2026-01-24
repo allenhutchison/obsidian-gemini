@@ -216,7 +216,9 @@ export class AgentView extends ItemView {
 
 		// Save images to vault and get their paths
 		const savedImagePaths: string[] = [];
-		for (const attachment of imageAttachments) {
+		const failedSaves: number[] = [];
+		for (let i = 0; i < imageAttachments.length; i++) {
+			const attachment = imageAttachments[i];
 			try {
 				const { saveImageToVault } = await import('./image-attachment');
 				const path = await saveImageToVault(this.app, attachment);
@@ -224,7 +226,18 @@ export class AgentView extends ItemView {
 				savedImagePaths.push(path);
 			} catch (err) {
 				this.plugin.logger.error('Failed to save image to vault:', err);
+				failedSaves.push(i + 1);
 			}
+		}
+
+		// Notify user of any save failures (images will still be sent to AI)
+		if (failedSaves.length > 0) {
+			const failedList = failedSaves.join(', ');
+			new Notice(
+				`Failed to save ${failedSaves.length === 1 ? 'image' : 'images'} #${failedList} to vault. ` +
+					`${failedSaves.length === 1 ? 'It' : 'They'} will still be sent to the AI but won't be stored locally.`,
+				5000
+			);
 		}
 
 		// Clear input and mentioned files
