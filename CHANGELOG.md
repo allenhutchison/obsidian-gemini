@@ -229,4 +229,4 @@ See [MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for detailed migration instruc
 
 ## Previous Versions
 
-See [GitHub Releases](https://github.com/allen-n/obsidian-gemini/releases) for earlier versions.
+See [GitHub Releases](https://github.com/allenhutchison/obsidian-gemini/releases) for earlier versions.

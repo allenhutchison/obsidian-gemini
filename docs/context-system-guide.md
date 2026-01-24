@@ -111,7 +111,7 @@ For adding multiple files at once:
 
 ### Method 3: Drag and Drop
 
-_(If implemented)_ Drag files from the file explorer directly into the chat.
+Drag files from the file explorer directly into the chat.
 
 ### What Happens When You Add Context
 

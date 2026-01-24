@@ -317,11 +317,31 @@ export class GeminiClient implements ModelApi {
 			}
 		}
 
-		// Add current user message (only if non-empty)
+		// Build user message parts (text + images)
+		const userParts: Part[] = [];
+
+		// Add text content if present
 		if (extReq.userMessage && extReq.userMessage.trim()) {
+			userParts.push({ text: extReq.userMessage });
+		}
+
+		// Add image attachments as inlineData parts
+		if (extReq.imageAttachments && extReq.imageAttachments.length > 0) {
+			for (const img of extReq.imageAttachments) {
+				userParts.push({
+					inlineData: {
+						mimeType: img.mimeType,
+						data: img.base64,
+					},
+				});
+			}
+		}
+
+		// Add current user message with all parts (only if there are parts)
+		if (userParts.length > 0) {
 			contents.push({
 				role: 'user',
-				parts: [{ text: extReq.userMessage }],
+				parts: userParts,
 			});
 		}
 

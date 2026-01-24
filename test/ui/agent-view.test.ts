@@ -1048,6 +1048,14 @@ describe('AgentView UI Tests', () => {
 				update: jest.fn(),
 			};
 
+			// Mock image attachment support (added in image-paste feature)
+			(agentView as any).pendingImageAttachments = [];
+			(agentView as any).imagePreviewContainer = document.createElement('div');
+			(agentView as any).ui = {
+				...((agentView as any).ui || {}),
+				updateImagePreview: jest.fn(),
+			};
+
 			// Set cancellation flag (simulating previous stop)
 			(agentView as any).cancellationRequested = true;
 
@@ -1061,7 +1069,7 @@ describe('AgentView UI Tests', () => {
 				// Expected to fail
 			}
 
-			// Verify cancellationRequested was reset to false at start of sendMessage (line 212)
+			// Verify cancellationRequested was reset to false at start of sendMessage
 			expect((agentView as any).cancellationRequested).toBe(false);
 		});
 	});

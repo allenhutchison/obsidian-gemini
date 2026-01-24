@@ -138,44 +138,57 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-scribe-chatbox {
 	display: flex;
-	flex-direction: column; /* Messages flow vertically */
-	overflow-y: auto; /* Add scrollbar if needed */
+	flex-direction: column;
+	/* Messages flow vertically */
+	overflow-y: auto;
+	/* Add scrollbar if needed */
 	flex-grow: 1;
 	padding: var(--size-2-1);
 	background-color: var(--background-primary);
 }
 
 .gemini-scribe-message-container {
-	margin-bottom: var(--size-2-2); /* Space between messages */
+	margin-bottom: var(--size-2-2);
+	/* Space between messages */
 }
 
 .gemini-scribe-sender-indicator {
 	font-weight: bold;
-	margin-bottom: var(--size-1-2); /* Space between indicator and message */
-	color: var(--text-muted); /* Use theme's muted text color */
+	margin-bottom: var(--size-1-2);
+	/* Space between indicator and message */
+	color: var(--text-muted);
+	/* Use theme's muted text color */
 }
 
 .gemini-scribe-message {
 	user-select: text;
-	-webkit-user-select: text; /* For older WebKit browsers */
-	-ms-user-select: text; /* For older Internet Explorer */
-	padding: var(--size-2-1) var(--size-2-2); /* Padding within message bubbles */
-	border-radius: var(--radius-s); /* Rounded corners for the bubbles */
+	-webkit-user-select: text;
+	/* For older WebKit browsers */
+	-ms-user-select: text;
+	/* For older Internet Explorer */
+	padding: var(--size-2-1) var(--size-2-2);
+	/* Padding within message bubbles */
+	border-radius: var(--radius-s);
+	/* Rounded corners for the bubbles */
 	box-sizing: border-box;
-	color: var(--text-normal); /* Use theme's normal text color */
+	color: var(--text-normal);
+	/* Use theme's normal text color */
 	width: 100%;
 }
 
 .gemini-scribe-message.user {
-	background-color: var(--background-secondary); /* Use theme's modifier background color */
+	background-color: var(--background-secondary);
+	/* Use theme's modifier background color */
 }
 
 .gemini-scribe-message.model {
-	background-color: var(--background-secondary); /* Use theme's primary background color */
+	background-color: var(--background-secondary);
+	/* Use theme's primary background color */
 }
 
 .gemini-scribe-message.grounding {
-	background-color: var(--background-secondary); /* Use theme's primary background color */
+	background-color: var(--background-secondary);
+	/* Use theme's primary background color */
 }
 
 .gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button {
@@ -204,8 +217,10 @@ If your plugin does not need CSS, delete this file.
 /* Style the input area */
 .gemini-scribe-input-area {
 	display: flex;
-	align-items: flex-start; /* Align items to top */
-	margin-top: var(--size-2-1); /* Separate input area from chatbox */
+	align-items: flex-start;
+	/* Align items to top */
+	margin-top: var(--size-2-1);
+	/* Separate input area from chatbox */
 	margin-bottom: var(--size-2-1);
 	width: 100%;
 }
@@ -217,18 +232,26 @@ If your plugin does not need CSS, delete this file.
 	margin-right: var(--size-2-2);
 	flex-grow: 1;
 	background-color: var(--background-modifier-form-field);
-	width: 100%; /* Ensure the input takes the full width of the container */
-	height: 50px; /* Adjust the height as needed */
-	font-size: 16px; /* Adjust the font size as needed */
-	resize: vertical; /* Allow vertical resizing */
-	overflow: auto; /* Ensure the text wraps inside the box */
-	white-space: pre-wrap; /* Ensure the text wraps inside the box */
+	width: 100%;
+	/* Ensure the input takes the full width of the container */
+	height: 50px;
+	/* Adjust the height as needed */
+	font-size: 16px;
+	/* Adjust the font size as needed */
+	resize: vertical;
+	/* Allow vertical resizing */
+	overflow: auto;
+	/* Ensure the text wraps inside the box */
+	white-space: pre-wrap;
+	/* Ensure the text wraps inside the box */
 }
 
 /* Optional: Style the placeholder text */
 .gemini-scribe-input-area .gemini-scribe-chat-input::placeholder {
-	color: var(--text-muted); /* Adjust the color as needed */
-	opacity: 1; /* Ensure the placeholder text is fully opaque */
+	color: var(--text-muted);
+	/* Adjust the color as needed */
+	opacity: 1;
+	/* Ensure the placeholder text is fully opaque */
 }
 
 /* Create a container for send button and timer */
@@ -302,8 +325,10 @@ If your plugin does not need CSS, delete this file.
 	display: flex;
 	align-items: center;
 	margin-top: var(--size-2-1);
-	width: 100%; /* Match the width of the input area */
-	padding: 0; /* Remove padding to align with input area */
+	width: 100%;
+	/* Match the width of the input area */
+	padding: 0;
+	/* Remove padding to align with input area */
 	background-color: var(--background-secondary);
 	border-radius: var(--radius-s);
 }
@@ -1414,8 +1439,10 @@ If your plugin does not need CSS, delete this file.
 	0% {
 		transform: translateX(-100%);
 	}
+
 	100% {
-		transform: translateX(333%); /* 100% / 30% = 333% to fully traverse */
+		transform: translateX(333%);
+		/* 100% / 30% = 333% to fully traverse */
 	}
 }
 
@@ -1446,11 +1473,18 @@ If your plugin does not need CSS, delete this file.
 /* Input Area */
 .gemini-agent-input-area {
 	display: flex;
+	flex-direction: column;
 	gap: var(--size-2-2);
 	padding: var(--size-4-3);
 	background-color: var(--background-secondary);
 	border-top: 1px solid var(--background-modifier-border);
 	flex-shrink: 0;
+}
+
+/* Wrapper for input + send button */
+.gemini-agent-input-row {
+	display: flex;
+	gap: var(--size-2-2);
 }
 
 .gemini-agent-input {
@@ -1669,7 +1703,8 @@ If your plugin does not need CSS, delete this file.
 	overflow-y: auto;
 	overflow-x: hidden !important;
 	margin: var(--size-4-3) 20px;
-	padding-right: 5px; /* Add some padding for scrollbar */
+	padding-right: 5px;
+	/* Add some padding for scrollbar */
 }
 
 .gemini-session-item {
@@ -1700,7 +1735,8 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-session-info {
 	flex: 1;
-	min-width: 0; /* Allow flex item to shrink below content size */
+	min-width: 0;
+	/* Allow flex item to shrink below content size */
 	overflow: hidden;
 }
 
@@ -1724,7 +1760,8 @@ If your plugin does not need CSS, delete this file.
 .gemini-session-actions {
 	display: flex;
 	gap: var(--size-2-1);
-	flex-shrink: 0; /* Prevent action buttons from shrinking */
+	flex-shrink: 0;
+	/* Prevent action buttons from shrinking */
 }
 
 .gemini-session-action-btn {
@@ -1764,6 +1801,7 @@ If your plugin does not need CSS, delete this file.
 		opacity: 0;
 		transform: translateY(10px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -2067,6 +2105,7 @@ If your plugin does not need CSS, delete this file.
 		opacity: 0;
 		transform: translateY(-10px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -2192,10 +2231,12 @@ If your plugin does not need CSS, delete this file.
 	0% {
 		transform: scale(1);
 	}
+
 	50% {
 		transform: scale(1.02);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	}
+
 	100% {
 		transform: scale(1);
 	}
@@ -2307,6 +2348,7 @@ If your plugin does not need CSS, delete this file.
 		transform: scale(0.8);
 		opacity: 0.5;
 	}
+
 	40% {
 		transform: scale(1.2);
 		opacity: 1;
@@ -3047,10 +3089,12 @@ If your plugin does not need CSS, delete this file.
 		stroke-dasharray: 1, 150;
 		stroke-dashoffset: 0;
 	}
+
 	50% {
 		stroke-dasharray: 90, 150;
 		stroke-dashoffset: -35;
 	}
+
 	100% {
 		stroke-dasharray: 90, 150;
 		stroke-dashoffset: -124;
@@ -3290,6 +3334,7 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-error);
 	word-wrap: break-word;
 }
+
 /* V4 Welcome Modal Styles */
 
 .gemini-v4-welcome-modal {
@@ -3506,6 +3551,7 @@ If your plugin does not need CSS, delete this file.
 	line-height: 1.6;
 	color: var(--text-muted);
 }
+
 /* Update Notification Modal Styles */
 
 .gemini-update-notification-modal {
@@ -3652,6 +3698,7 @@ If your plugin does not need CSS, delete this file.
 	100% {
 		opacity: 1;
 	}
+
 	50% {
 		opacity: 0.4;
 	}
@@ -4097,4 +4144,71 @@ If your plugin does not need CSS, delete this file.
 
 .rag-progress-stat-value {
 	font-size: var(--font-ui-small);
+}
+
+/* Image Attachment Preview */
+.gemini-agent-image-preview {
+	display: none;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 8px 0;
+}
+
+.gemini-agent-image-thumb {
+	position: relative;
+	width: 60px;
+	height: 60px;
+	border-radius: 6px;
+	overflow: hidden;
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-image-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.gemini-agent-image-remove {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	background-color: rgba(0, 0, 0, 0.6);
+	color: white;
+	border: none;
+	border-radius: 50%;
+	font-size: 12px;
+	line-height: 1;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.gemini-agent-image-thumb:hover .gemini-agent-image-remove,
+.gemini-agent-image-remove:focus-visible {
+	opacity: 1;
+}
+
+.gemini-agent-image-remove:hover {
+	background-color: var(--text-error);
+}
+
+.gemini-agent-input-dragover {
+	background-color: var(--background-modifier-hover) !important;
+	border-color: var(--interactive-accent) !important;
+}
+
+.gemini-agent-clickable-image {
+	cursor: pointer;
+	transition: opacity 0.2s ease;
+}
+
+.gemini-agent-clickable-image:hover {
+	opacity: 0.9;
 }

@@ -16,6 +16,7 @@ import { AgentViewContext } from './agent-view-context';
 import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view-session';
 import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-tools';
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
+import { ImageAttachment } from './image-attachment';
 
 // Import modals from agent-view directory
 import { FilePickerModal } from './file-picker-modal';
@@ -59,6 +60,8 @@ export class AgentView extends ItemView {
 	private cancellationRequested: boolean = false;
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private activeFileChangeHandler: () => void;
+	private pendingImageAttachments: ImageAttachment[] = [];
+	private imagePreviewContainer: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -120,6 +123,9 @@ export class AgentView extends ItemView {
 			updateSessionMetadata: () => this.updateSessionMetadata(),
 			loadSession: (session: ChatSession) => this.loadSession(session),
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
+			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
+			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
+			getImageAttachments: () => this.pendingImageAttachments,
 		};
 
 		// Create the main interface using AgentViewUI
@@ -131,6 +137,7 @@ export class AgentView extends ItemView {
 		this.chatContainer = elements.chatContainer;
 		this.userInput = elements.userInput;
 		this.sendButton = elements.sendButton;
+		this.imagePreviewContainer = elements.imagePreviewContainer;
 
 		// Initialize progress bar with the created elements
 		this.progress.createProgressBar(elements.progressContainer);
@@ -199,7 +206,39 @@ export class AgentView extends ItemView {
 		}
 
 		const { text: message, files, formattedMessage } = this.fileChips.extractMessageContent();
-		if (!message && files.length === 0) return;
+		// Allow sending with only images (no text)
+		if (!message && files.length === 0 && this.pendingImageAttachments.length === 0) return;
+
+		// Capture pending images and clear them
+		const imageAttachments = [...this.pendingImageAttachments];
+		this.pendingImageAttachments = [];
+		this.ui.updateImagePreview(this.imagePreviewContainer, [], (id) => this.removeImageAttachment(id));
+
+		// Save images to vault and get their paths
+		const savedImagePaths: string[] = [];
+		const failedSaves: number[] = [];
+		for (let i = 0; i < imageAttachments.length; i++) {
+			const attachment = imageAttachments[i];
+			try {
+				const { saveImageToVault } = await import('./image-attachment');
+				const path = await saveImageToVault(this.app, attachment);
+				attachment.vaultPath = path;
+				savedImagePaths.push(path);
+			} catch (err) {
+				this.plugin.logger.error('Failed to save image to vault:', err);
+				failedSaves.push(i + 1);
+			}
+		}
+
+		// Notify user of any save failures (images will still be sent to AI)
+		if (failedSaves.length > 0) {
+			const failedList = failedSaves.join(', ');
+			new Notice(
+				`Failed to save ${failedSaves.length === 1 ? 'image' : 'images'} #${failedList} to vault. ` +
+					`${failedSaves.length === 1 ? 'It' : 'They'} will still be sent to the AI but won't be stored locally.`,
+				5000
+			);
+		}
 
 		// Clear input and mentioned files
 		this.userInput.innerHTML = '';
@@ -217,10 +256,19 @@ export class AgentView extends ItemView {
 		// Show progress bar
 		this.progress.show('Thinking...', 'thinking');
 
-		// Display user message with formatted version (includes markdown links)
+		// Build message with image thumbnails for display (use wikilinks for saved images)
+		let displayMessage = formattedMessage;
+		if (savedImagePaths.length > 0) {
+			const imageLinks = savedImagePaths.map((path) => `![[${path}]]`).join('\n');
+			// Explicitly show the path context to ensure AI reliability (User preference: reliability > hidden)
+			const contextNote = `\n> [!info] Image Source\n> ${savedImagePaths.map((p) => `\`${p}\``).join('\n> ')}`;
+			displayMessage = displayMessage + '\n\n' + imageLinks + contextNote;
+		}
+
+		// Display user message with formatted version (includes markdown links and images)
 		const userEntry: GeminiConversationEntry = {
 			role: 'user',
-			message: formattedMessage, // Use formatted message for display/history
+			message: displayMessage, // Use formatted message with images for display
 			notePath: '',
 			created_at: new Date(),
 		};
@@ -292,6 +340,15 @@ Example interpretations:
 The mentioned files are included in the context below for reference.`;
 			}
 
+			// Add image path information if images were attached
+			if (savedImagePaths.length > 0) {
+				const pathList = savedImagePaths.map((p) => `- ${p}`).join('\n');
+				additionalInstructions += `\n\nIMAGE ATTACHMENTS: The user has attached ${savedImagePaths.length} image(s) to this message. The images have been saved to the vault at these paths:
+${pathList}
+To embed any of these images in a note, use the wikilink format: ![[path/to/image.png]]
+To reference an image in your response, use the path shown above.`;
+			}
+
 			// Add context information if available
 			if (contextInfo) {
 				additionalInstructions += `\n\n${contextInfo}`;
@@ -324,6 +381,7 @@ The mentioned files are included in the context below for reference.`;
 					customPrompt: customPrompt, // Custom prompt template (if configured)
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
+					imageAttachments: imageAttachments.map((a) => ({ base64: a.base64, mimeType: a.mimeType })),
 				};
 
 				// Create model API for this session
@@ -858,7 +916,30 @@ The mentioned files are included in the context below for reference.`;
 			updateSessionMetadata: () => this.updateSessionMetadata(),
 			loadSession: (session: ChatSession) => this.loadSession(session),
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
+			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
+			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
+			getImageAttachments: () => this.pendingImageAttachments,
 		};
+	}
+
+	/**
+	 * Add an image attachment to pending list
+	 */
+	private addImageAttachment(attachment: ImageAttachment): void {
+		this.pendingImageAttachments.push(attachment);
+		this.ui.updateImagePreview(this.imagePreviewContainer, this.pendingImageAttachments, (id) =>
+			this.removeImageAttachment(id)
+		);
+	}
+
+	/**
+	 * Remove an image attachment from pending list
+	 */
+	private removeImageAttachment(id: string): void {
+		this.pendingImageAttachments = this.pendingImageAttachments.filter((a) => a.id !== id);
+		this.ui.updateImagePreview(this.imagePreviewContainer, this.pendingImageAttachments, (id) =>
+			this.removeImageAttachment(id)
+		);
 	}
 
 	/**
