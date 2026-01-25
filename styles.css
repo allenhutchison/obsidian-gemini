@@ -4215,9 +4215,12 @@ If your plugin does not need CSS, delete this file.
 
 /* Selection Response Modal Styles */
 
-.modal.gemini-scribe-selection-response-modal {
+.modal-container:has(.gemini-scribe-selection-response-modal) {
 	width: 90vw;
 	max-width: 600px;
+}
+
+.modal.gemini-scribe-selection-response-modal {
 	max-height: 80vh;
 }
 
@@ -4350,7 +4353,7 @@ If your plugin does not need CSS, delete this file.
 
 /* Ask Question Modal Styles */
 
-.modal.gemini-scribe-ask-question-modal {
+.modal-container:has(.gemini-scribe-ask-question-modal) {
 	width: 90vw;
 	max-width: 500px;
 }

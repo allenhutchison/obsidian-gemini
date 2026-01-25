@@ -227,7 +227,14 @@ You are a subject matter expert with comprehensive knowledge across multiple dom
 
 Focus on being helpful while maintaining intellectual honesty.`;
 
-		await this.vault.create(examplePromptPath, exampleContent);
+		try {
+			await this.vault.create(examplePromptPath, exampleContent);
+		} catch (error) {
+			// Ignore if file was created concurrently (race condition); rethrow otherwise
+			if (!(error instanceof Error) || !/exist/i.test(error.message)) {
+				throw error;
+			}
+		}
 	}
 
 	// Create default selection action prompts on first use
@@ -294,9 +301,16 @@ Please provide a concise summary of the following text:
 			const promptPath = normalizePath(`${promptsDir}/${prompt.filename}`);
 			const existingFile = this.vault.getAbstractFileByPath(promptPath);
 			if (!existingFile) {
-				const createdFile = await this.vault.create(promptPath, prompt.content);
-				// Wait for metadata cache to index the new file
-				await this.waitForMetadataCache(createdFile);
+				try {
+					const createdFile = await this.vault.create(promptPath, prompt.content);
+					// Wait for metadata cache to index the new file
+					await this.waitForMetadataCache(createdFile);
+				} catch (error) {
+					// Ignore if file was created concurrently (race condition); rethrow otherwise
+					if (!(error instanceof Error) || !/exist/i.test(error.message)) {
+						throw error;
+					}
+				}
 			}
 		}
 	}

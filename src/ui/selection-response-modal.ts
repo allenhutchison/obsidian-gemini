@@ -2,6 +2,81 @@ import { App, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian'
 import type ObsidianGemini from '../main';
 
 /**
+ * Normalize newlines in AI responses for proper Markdown rendering.
+ * Converts single newlines to double newlines while preserving tables and code blocks.
+ */
+function normalizeNewlines(text: string): string {
+	const lines = text.split('\n');
+	const formattedLines: string[] = [];
+	let inTable = false;
+	let inCodeBlock = false;
+	let previousLineWasEmpty = true;
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		const nextLine = lines[i + 1];
+		const trimmedLine = line.trim();
+
+		// Track code blocks (fenced with ``` or ~~~)
+		if (trimmedLine.startsWith('```') || trimmedLine.startsWith('~~~')) {
+			inCodeBlock = !inCodeBlock;
+			formattedLines.push(line);
+			previousLineWasEmpty = false;
+			continue;
+		}
+
+		// Don't modify content inside code blocks
+		if (inCodeBlock) {
+			formattedLines.push(line);
+			previousLineWasEmpty = trimmedLine === '';
+			continue;
+		}
+
+		// Improved table detection
+		const hasUnescapedPipe = line.split('\\|').join('').includes('|');
+		const isTableDivider = /^\s*\|?\s*[:\-]+\s*\|/.test(line);
+		const isTableRow = hasUnescapedPipe && !isTableDivider && trimmedLine !== '|';
+
+		// Check if we're starting a table
+		if ((isTableRow || isTableDivider) && !inTable) {
+			inTable = true;
+			if (!previousLineWasEmpty && formattedLines.length > 0) {
+				formattedLines.push('');
+			}
+		}
+
+		// Add the current line
+		formattedLines.push(line);
+
+		// Check if we're ending a table
+		if (inTable && !hasUnescapedPipe && trimmedLine !== '') {
+			inTable = false;
+			formattedLines.push('');
+		} else if (inTable && trimmedLine === '') {
+			inTable = false;
+		}
+
+		// For non-table content, add empty line between paragraphs
+		if (
+			!inTable &&
+			!hasUnescapedPipe &&
+			trimmedLine !== '' &&
+			nextLine &&
+			nextLine.trim() !== '' &&
+			!nextLine.includes('|') &&
+			!nextLine.trim().startsWith('```') &&
+			!nextLine.trim().startsWith('~~~')
+		) {
+			formattedLines.push('');
+		}
+
+		previousLineWasEmpty = trimmedLine === '';
+	}
+
+	return formattedLines.join('\n');
+}
+
+/**
  * Modal that displays an AI response to a selection and allows inserting it as a callout.
  */
 export class SelectionResponseModal extends Modal {
@@ -86,9 +161,12 @@ export class SelectionResponseModal extends Modal {
 		this.responseContainer.style.display = 'block';
 		this.actionsContainer.style.display = 'flex';
 
+		// Normalize newlines for proper Markdown rendering
+		const normalizedResponse = normalizeNewlines(response);
+
 		// Render markdown response
 		this.responseContainer.empty();
-		await MarkdownRenderer.render(this.app, response, this.responseContainer, '', this.plugin);
+		await MarkdownRenderer.render(this.app, normalizedResponse, this.responseContainer, '', this.plugin);
 	}
 
 	/**
@@ -110,8 +188,11 @@ export class SelectionResponseModal extends Modal {
 	private insertAsCallout() {
 		if (!this.response) return;
 
+		// Normalize newlines for consistent formatting in the callout
+		const normalizedResponse = normalizeNewlines(this.response);
+
 		// Format response as a callout
-		const calloutLines = this.response.split('\n').map((line) => `> ${line}`);
+		const calloutLines = normalizedResponse.split('\n').map((line) => `> ${line}`);
 		const callout = `\n\n> [!info] AI Response\n${calloutLines.join('\n')}\n`;
 
 		// Insert after the selection
