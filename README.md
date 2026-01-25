@@ -34,7 +34,10 @@ This release brings major improvements to the semantic vault search feature:
 - **Semantic Vault Search:** [Experimental] Search your vault by meaning, not just keywords. Uses Google's File Search API to index your notes in the background. The AI can find relevant content even when you don't remember exact words. Supports PDFs and attachments, with pause/resume controls and detailed status tracking.
 - **Context-Aware Agent:** Add specific notes as persistent context for your agent sessions. The agent can access and reference these context files throughout your conversation, providing highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
-- **Selection-Based Text Rewriting:** Precisely rewrite any selected text with AI assistance. Simply select the text you want to improve, right-click to choose "Rewrite with Gemini", and provide instructions for how you'd like it rewritten.
+- **Selection-Based AI Features:** Work with selected text in powerful ways:
+  - **Rewrite**: Transform selected text with custom instructions - right-click and choose "Rewrite with Gemini"
+  - **Explain Selection**: Get AI explanations using customizable prompts - right-click and choose "Explain Selection"
+  - **Ask about Selection**: Ask any question about selected text - right-click and choose "Ask about Selection"
 - **IDE-Style Completions:** Get real-time, context-aware text completions as you type, similar to IDEs. Accept completions with `Tab` or dismiss with any other key. This feature uses a dedicated Gemini model for optimized completion generation.
 - **Persistent Agent Sessions:** Store your agent conversation history directly in your vault as markdown files. Each session is stored in the `gemini-scribe/Agent-Sessions/` folder, making it easy to backup, version control, and continue conversations across sessions.
 - **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
