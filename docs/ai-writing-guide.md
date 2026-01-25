@@ -265,7 +265,13 @@ Please explain the following text in very simple terms:
 **Technical Deep Dive**
 
 ```markdown
-## tags: ["selection-action", "technical"]
+---
+name: 'Technical Deep Dive'
+description: 'Provide deep technical analysis of content'
+version: 1
+override_system_prompt: false
+tags: ['selection-action', 'technical']
+---
 
 Provide a deep technical analysis of this content:
 
@@ -277,7 +283,13 @@ Provide a deep technical analysis of this content:
 **Study Helper**
 
 ```markdown
-## tags: ["selection-action", "study"]
+---
+name: 'Study Helper'
+description: 'Help study and memorize content'
+version: 1
+override_system_prompt: false
+tags: ['selection-action', 'study']
+---
 
 Help me study this content:
 

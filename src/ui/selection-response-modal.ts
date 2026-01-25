@@ -132,8 +132,19 @@ export class SelectionResponseModal extends Modal {
 	private async copyResponse() {
 		if (!this.response) return;
 
-		await navigator.clipboard.writeText(this.response);
-		new Notice('Response copied to clipboard');
+		if (!navigator.clipboard) {
+			new Notice('Clipboard not available');
+			return;
+		}
+
+		try {
+			await navigator.clipboard.writeText(this.response);
+			new Notice('Response copied to clipboard');
+		} catch (error) {
+			console.error('Failed to copy to clipboard:', error);
+			const message = error instanceof Error ? error.message : 'Unknown error';
+			new Notice(`Failed to copy: ${message}`);
+		}
 	}
 
 	onClose() {

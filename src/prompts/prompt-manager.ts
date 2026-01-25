@@ -62,8 +62,16 @@ export class PromptManager {
 				contentWithoutFrontmatter = this.extractContentWithoutFrontmatter(fullContent);
 			}
 
-			// Parse tags - ensure it's an array
-			const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
+			// Parse tags - normalize to array of lowercase strings
+			let rawTags = frontmatter.tags;
+			if (typeof rawTags === 'string') {
+				rawTags = [rawTags];
+			} else if (!Array.isArray(rawTags)) {
+				rawTags = [];
+			}
+			const tags = rawTags
+				.filter((t: unknown): t is string => typeof t === 'string')
+				.map((t: string) => t.toLowerCase());
 
 			return {
 				name: frontmatter.name || 'Unnamed Prompt',
@@ -185,8 +193,11 @@ export class PromptManager {
 
 	// List prompts filtered by a specific tag
 	async listPromptsByTag(tag: string): Promise<PromptInfo[]> {
+		const normalizedTag = String(tag).toLowerCase();
 		const allPrompts = await this.listAvailablePrompts();
-		return allPrompts.filter((prompt) => prompt.tags.some((t) => t.toLowerCase() === tag.toLowerCase()));
+		return allPrompts.filter((prompt) =>
+			prompt.tags.some((t) => typeof t === 'string' && t.toLowerCase() === normalizedTag)
+		);
 	}
 
 	// Create default example prompts on first run
@@ -283,9 +294,39 @@ Please provide a concise summary of the following text:
 			const promptPath = normalizePath(`${promptsDir}/${prompt.filename}`);
 			const existingFile = this.vault.getAbstractFileByPath(promptPath);
 			if (!existingFile) {
-				await this.vault.create(promptPath, prompt.content);
+				const createdFile = await this.vault.create(promptPath, prompt.content);
+				// Wait for metadata cache to index the new file
+				await this.waitForMetadataCache(createdFile);
 			}
 		}
+	}
+
+	// Wait for metadata cache to index a file
+	private waitForMetadataCache(file: TFile): Promise<void> {
+		return new Promise((resolve) => {
+			// Check if already cached
+			const cache = this.plugin.app.metadataCache.getFileCache(file);
+			if (cache?.frontmatter) {
+				resolve();
+				return;
+			}
+
+			// Wait for the cache to be updated
+			const onCacheChange = (changedFile: TFile) => {
+				if (changedFile.path === file.path) {
+					this.plugin.app.metadataCache.off('changed', onCacheChange);
+					resolve();
+				}
+			};
+
+			this.plugin.app.metadataCache.on('changed', onCacheChange);
+
+			// Timeout after 2 seconds to prevent hanging
+			setTimeout(() => {
+				this.plugin.app.metadataCache.off('changed', onCacheChange);
+				resolve();
+			}, 2000);
+		});
 	}
 
 	// Setup commands for prompt management
