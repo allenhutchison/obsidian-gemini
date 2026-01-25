@@ -18,6 +18,21 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.3.0': {
+			title: '✨ Gemini Scribe 4.3 - Images & Selection Actions',
+			highlights: [
+				'🖼️ Multimodal image support - attach images to your chats',
+				'✨ Explain Selection - get AI explanations of selected text',
+				'❓ Ask about Selection - ask questions about selected text',
+				'🔍 Folder and tags filtering for semantic search',
+				'🔗 Fixed @ mentions to use proper wikilink paths',
+				'⌨️ Fixed IME composition issues for international keyboards',
+				'🛑 Fixed Stop button to properly halt pending tool executions',
+				'📦 Removed obsidian-dataview dependency',
+			],
+			details:
+				'This update adds multimodal capabilities - you can now attach images to your agent conversations. New selection-based actions let you quickly explain or ask questions about any selected text via the right-click menu. Semantic search now supports folder and tag filtering. Several bug fixes improve reliability for international users and tool execution.',
+		},
 		'4.2.1': {
 			title: '🔧 Gemini Scribe 4.2.1 - RAG Stability & New Features',
 			highlights: [
