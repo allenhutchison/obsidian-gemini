@@ -114,8 +114,13 @@ export class SelectionActionService {
 			}
 
 			// Call the Gemini API
+			// Note: GeminiClientFactory.createChatModel wraps the client with RetryDecorator
+			// which provides automatic retry with exponential backoff for transient failures
 			const modelApi = GeminiClientFactory.createChatModel(this.plugin);
-			const response = await modelApi.generateModelResponse({
+
+			// Add timeout protection (60 seconds) to prevent indefinite hanging
+			const timeoutMs = 60000;
+			const responsePromise = modelApi.generateModelResponse({
 				userMessage: userMessage,
 				conversationHistory: [],
 				model: this.plugin.settings.chatModelName,
@@ -124,6 +129,12 @@ export class SelectionActionService {
 				topP: this.plugin.settings.topP,
 				renderContent: false,
 			});
+
+			const timeoutPromise = new Promise<never>((_, reject) => {
+				setTimeout(() => reject(new Error('Request timed out after 60 seconds')), timeoutMs);
+			});
+
+			const response = await Promise.race([responsePromise, timeoutPromise]);
 
 			// Show the response
 			if (response.markdown && response.markdown.trim()) {
