@@ -29,14 +29,7 @@ export class RewriteInstructionsModal extends Modal {
 
 		const previewTextContainer = previewSection.createDiv({ cls: 'gemini-scribe-preview-text' });
 		const previewDiv = previewTextContainer.createDiv({ cls: 'gemini-scribe-preview-content' });
-
-		// Show truncated preview for full files
-		if (this.isFullFile && this.selectedText.length > 500) {
-			const preview = this.selectedText.substring(0, 500) + '\n\n... (file truncated for preview)';
-			previewDiv.setText(preview);
-		} else {
-			previewDiv.setText(this.selectedText);
-		}
+		previewDiv.setText(this.selectedText);
 
 		// Instructions input
 		const instructionsSection = contentEl.createDiv({ cls: 'gemini-scribe-section' });
