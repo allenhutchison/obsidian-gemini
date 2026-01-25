@@ -4212,3 +4212,203 @@ If your plugin does not need CSS, delete this file.
 .gemini-agent-clickable-image:hover {
 	opacity: 0.9;
 }
+
+/* Selection Response Modal Styles */
+
+.modal-container:has(.gemini-scribe-selection-response-modal) {
+	width: 90vw;
+	max-width: 600px;
+}
+
+.modal.gemini-scribe-selection-response-modal {
+	max-height: 80vh;
+}
+
+.modal.gemini-scribe-selection-response-modal .modal-content {
+	padding: 0 !important;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	max-height: calc(80vh - 60px);
+}
+
+.modal.gemini-scribe-selection-response-modal h2 {
+	margin: 0;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 18px;
+	font-weight: 600;
+	flex-shrink: 0;
+}
+
+.gemini-scribe-selection-preview {
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+	flex-shrink: 0;
+}
+
+.gemini-scribe-preview-header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.gemini-scribe-preview-label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.gemini-scribe-selection-preview .gemini-scribe-preview-content {
+	font-size: 13px;
+	color: var(--text-muted);
+	line-height: 1.4;
+	max-height: 100px;
+	overflow-y: auto;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.gemini-scribe-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 40px 20px;
+	color: var(--text-muted);
+}
+
+.gemini-scribe-spinner {
+	animation: gemini-spin 1s linear infinite;
+}
+
+@keyframes gemini-spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.gemini-scribe-response-container {
+	padding: 20px;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 100px;
+	max-height: 400px;
+}
+
+.gemini-scribe-response-container p:first-child {
+	margin-top: 0;
+}
+
+.gemini-scribe-response-container p:last-child {
+	margin-bottom: 0;
+}
+
+.gemini-scribe-error {
+	color: var(--text-error);
+	padding: 12px;
+	background-color: var(--background-modifier-error);
+	border-radius: 4px;
+}
+
+.gemini-scribe-actions {
+	display: flex;
+	gap: 8px;
+	padding: 16px 20px;
+	border-top: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+	flex-shrink: 0;
+}
+
+.gemini-scribe-actions button {
+	padding: 8px 16px;
+	font-size: 14px;
+	border-radius: 4px;
+	cursor: pointer;
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	transition: all 0.15s ease;
+}
+
+.gemini-scribe-actions button:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-scribe-actions button.mod-cta {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+}
+
+.gemini-scribe-actions button.mod-cta:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+/* Ask Question Modal Styles */
+
+.modal-container:has(.gemini-scribe-ask-question-modal) {
+	width: 90vw;
+	max-width: 500px;
+}
+
+.modal.gemini-scribe-ask-question-modal .modal-content {
+	padding: 0 !important;
+	overflow: hidden;
+}
+
+.modal.gemini-scribe-ask-question-modal h2 {
+	margin: 0;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.gemini-scribe-question-section {
+	padding: 16px 20px;
+}
+
+.gemini-scribe-question-section .gemini-scribe-label {
+	display: block;
+	font-weight: 500;
+	margin-bottom: 8px;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+
+.gemini-scribe-question-input {
+	width: 100%;
+	min-height: 80px;
+	resize: vertical;
+	font-family: var(--font-text);
+	font-size: 14px;
+	padding: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	line-height: 1.5;
+	box-sizing: border-box;
+}
+
+.gemini-scribe-question-input::placeholder {
+	color: var(--text-faint);
+	opacity: 0.6;
+}
+
+.gemini-scribe-question-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}
+
+.modal.gemini-scribe-ask-question-modal .gemini-scribe-submit-button {
+	width: calc(100% - 40px);
+	margin: 16px 20px;
+}

@@ -62,8 +62,16 @@ export class PromptManager {
 				contentWithoutFrontmatter = this.extractContentWithoutFrontmatter(fullContent);
 			}
 
-			// Parse tags - ensure it's an array
-			const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
+			// Parse tags - normalize to array of lowercase strings
+			let rawTags = frontmatter.tags;
+			if (typeof rawTags === 'string') {
+				rawTags = [rawTags];
+			} else if (!Array.isArray(rawTags)) {
+				rawTags = [];
+			}
+			const tags = rawTags
+				.filter((t: unknown): t is string => typeof t === 'string')
+				.map((t: string) => t.toLowerCase());
 
 			return {
 				name: frontmatter.name || 'Unnamed Prompt',
@@ -183,6 +191,15 @@ export class PromptManager {
 		return prompts;
 	}
 
+	// List prompts filtered by a specific tag
+	async listPromptsByTag(tag: string): Promise<PromptInfo[]> {
+		const normalizedTag = String(tag).toLowerCase();
+		const allPrompts = await this.listAvailablePrompts();
+		return allPrompts.filter((prompt) =>
+			prompt.tags.some((t) => typeof t === 'string' && t.toLowerCase() === normalizedTag)
+		);
+	}
+
 	// Create default example prompts on first run
 	async createDefaultPrompts(): Promise<void> {
 		const promptsDir = this.getPromptsDirectory();
@@ -210,7 +227,120 @@ You are a subject matter expert with comprehensive knowledge across multiple dom
 
 Focus on being helpful while maintaining intellectual honesty.`;
 
-		await this.vault.create(examplePromptPath, exampleContent);
+		try {
+			await this.vault.create(examplePromptPath, exampleContent);
+		} catch (error) {
+			// Ignore if file was created concurrently (race condition); rethrow otherwise
+			if (!(error instanceof Error) || !/exist/i.test(error.message)) {
+				throw error;
+			}
+		}
+	}
+
+	// Create default selection action prompts on first use
+	async createDefaultSelectionPrompts(): Promise<void> {
+		const promptsDir = this.getPromptsDirectory();
+		await this.ensurePromptsDirectory();
+
+		const defaultPrompts = [
+			{
+				filename: 'explain-selection.md',
+				content: `---
+name: "Explain Selection"
+description: "Get a clear explanation of the selected text"
+version: 1
+override_system_prompt: false
+tags: ["selection-action", "explain"]
+---
+
+Please explain the following text in a clear and accessible way:
+
+- Break down any complex concepts
+- Define technical terms if present
+- Provide relevant context if helpful
+- Use examples to illustrate key points`,
+			},
+			{
+				filename: 'explain-code.md',
+				content: `---
+name: "Explain Code"
+description: "Get a detailed walkthrough of selected code"
+version: 1
+override_system_prompt: false
+tags: ["selection-action", "code", "explain"]
+---
+
+Please provide a detailed explanation of this code:
+
+- Explain what the code does step by step
+- Describe the purpose of key variables and functions
+- Note any patterns or techniques being used
+- Mention potential edge cases or considerations
+- Suggest improvements if appropriate`,
+			},
+			{
+				filename: 'summarize-selection.md',
+				content: `---
+name: "Summarize Selection"
+description: "Get a concise summary of the selected text"
+version: 1
+override_system_prompt: false
+tags: ["selection-action", "summarize"]
+---
+
+Please provide a concise summary of the following text:
+
+- Capture the main points and key takeaways
+- Keep it brief but comprehensive
+- Preserve the essential meaning
+- Use bullet points if appropriate`,
+			},
+		];
+
+		for (const prompt of defaultPrompts) {
+			const promptPath = normalizePath(`${promptsDir}/${prompt.filename}`);
+			const existingFile = this.vault.getAbstractFileByPath(promptPath);
+			if (!existingFile) {
+				try {
+					const createdFile = await this.vault.create(promptPath, prompt.content);
+					// Wait for metadata cache to index the new file
+					await this.waitForMetadataCache(createdFile);
+				} catch (error) {
+					// Ignore if file was created concurrently (race condition); rethrow otherwise
+					if (!(error instanceof Error) || !/exist/i.test(error.message)) {
+						throw error;
+					}
+				}
+			}
+		}
+	}
+
+	// Wait for metadata cache to index a file
+	private waitForMetadataCache(file: TFile): Promise<void> {
+		return new Promise((resolve) => {
+			// Check if already cached
+			const cache = this.plugin.app.metadataCache.getFileCache(file);
+			if (cache?.frontmatter) {
+				resolve();
+				return;
+			}
+
+			// Wait for the cache to be updated
+			const onCacheChange = (changedFile: TFile) => {
+				if (changedFile.path === file.path) {
+					this.plugin.app.metadataCache.off('changed', onCacheChange);
+					resolve();
+				}
+			};
+
+			this.plugin.app.metadataCache.on('changed', onCacheChange);
+
+			// Timeout after 2 seconds to prevent hanging
+			setTimeout(() => {
+				this.plugin.app.metadataCache.off('changed', onCacheChange);
+				resolve();
+			}, 2000);
+		});
 	}
 
 	// Setup commands for prompt management

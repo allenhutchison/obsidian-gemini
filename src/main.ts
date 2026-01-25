@@ -27,6 +27,7 @@ import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
 import { RagIndexingService } from './services/rag-indexing';
+import { SelectionActionService } from './services/selection-action-service';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -140,6 +141,7 @@ export default class ObsidianGemini extends Plugin {
 	public imageGeneration: ImageGeneration;
 	public logger: Logger;
 	public ragIndexing: RagIndexingService | null = null;
+	public selectionActionService: SelectionActionService;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -199,11 +201,30 @@ export default class ObsidianGemini extends Plugin {
 			},
 		});
 
-		// Add context menu item for selection rewrite
+		// Add explain selection command
+		this.addCommand({
+			id: 'gemini-scribe-explain-selection',
+			name: 'Explain selection with AI',
+			editorCallback: async (editor: Editor, view: MarkdownView) => {
+				await this.selectionActionService.handleExplainSelection(editor, view.file);
+			},
+		});
+
+		// Add ask about selection command
+		this.addCommand({
+			id: 'gemini-scribe-ask-selection',
+			name: 'Ask about selection',
+			editorCallback: async (editor: Editor, view: MarkdownView) => {
+				await this.selectionActionService.handleAskAboutSelection(editor, view.file);
+			},
+		});
+
+		// Add context menu items for selection actions
 		this.registerEvent(
 			this.app.workspace.on('editor-menu', (menu, editor, view) => {
 				const selection = editor.getSelection();
 				if (selection) {
+					// Rewrite with Gemini
 					menu.addItem((item) => {
 						item
 							.setTitle('Rewrite with Gemini')
@@ -219,6 +240,28 @@ export default class ObsidianGemini extends Plugin {
 									false // Context menu is always for selection, not full file
 								);
 								modal.open();
+							});
+					});
+
+					// Explain Selection
+					menu.addItem((item) => {
+						item
+							.setTitle('Explain Selection')
+							.setIcon('help-circle')
+							.onClick(async () => {
+								const sourceFile = view.file;
+								await this.selectionActionService.handleExplainSelection(editor, sourceFile);
+							});
+					});
+
+					// Ask about Selection
+					menu.addItem((item) => {
+						item
+							.setTitle('Ask about Selection')
+							.setIcon('message-circle')
+							.onClick(async () => {
+								const sourceFile = view.file;
+								await this.selectionActionService.handleAskAboutSelection(editor, sourceFile);
 							});
 					});
 				}
@@ -411,6 +454,9 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize image generation
 		this.imageGeneration = new ImageGeneration(this);
 		await this.imageGeneration.setupImageGenerationCommand();
+
+		// Initialize selection action service
+		this.selectionActionService = new SelectionActionService(this);
 
 		// Initialize RAG indexing if enabled
 		// On startup, defer to onLayoutReady() to ensure metadata cache is ready

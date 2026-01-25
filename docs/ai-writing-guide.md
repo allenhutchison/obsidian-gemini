@@ -1,19 +1,47 @@
-# Selection-Based Text Rewriting Guide
+# Selection-Based AI Features Guide
 
-The Selection-Based Text Rewriting feature allows you to precisely improve any portion of your text with AI assistance. Unlike traditional full-document rewriting, this feature provides surgical precision for refining specific sections while maintaining consistency with your overall document.
+This guide covers all selection-based AI features in Gemini Scribe, allowing you to work with selected text in powerful ways.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Getting Started](#getting-started)
-- [How It Works](#how-it-works)
-- [Writing Effective Instructions](#writing-effective-instructions)
-- [Common Use Cases](#common-use-cases)
+- [Text Rewriting](#text-rewriting)
+  - [Getting Started](#getting-started)
+  - [How It Works](#how-it-works)
+  - [Writing Effective Instructions](#writing-effective-instructions)
+  - [Common Use Cases](#common-use-cases)
+- [Explain Selection](#explain-selection)
+  - [How to Use](#how-to-use-explain)
+  - [Default Prompts](#default-prompts)
+  - [Creating Custom Prompts](#creating-custom-explain-prompts)
+- [Ask about Selection](#ask-about-selection)
+  - [How to Use](#how-to-use-ask)
+  - [Example Questions](#example-questions)
 - [Best Practices](#best-practices)
 - [Advanced Techniques](#advanced-techniques)
 - [Tips and Tricks](#tips-and-tricks)
 
+---
+
 ## Overview
+
+Gemini Scribe provides three powerful ways to work with selected text:
+
+| Feature     | Purpose                              | Output                         |
+| ----------- | ------------------------------------ | ------------------------------ |
+| **Rewrite** | Transform and improve selected text  | Replaces selection in document |
+| **Explain** | Get AI explanations of selected text | Modal with insert/copy options |
+| **Ask**     | Ask questions about selected text    | Modal with insert/copy options |
+
+All features are accessible via:
+
+- **Right-click context menu** when text is selected
+- **Command palette** (Ctrl/Cmd + P)
+- **Keyboard shortcuts** (configurable in Obsidian settings)
+
+---
+
+# Text Rewriting
 
 ### What is Selection-Based Text Rewriting?
 
@@ -179,6 +207,147 @@ Instruction: "Make this more professional while keeping it friendly"
 ```
 Instruction: "Organize these ideas into a logical sequence with better transitions"
 ```
+
+---
+
+# Explain Selection
+
+The Explain Selection feature lets you get AI-powered explanations of any selected text. Perfect for understanding complex content, code, or unfamiliar concepts.
+
+## How to Use Explain {#how-to-use-explain}
+
+1. **Select text** in your document
+2. **Right-click** and choose "Explain Selection"
+3. **Pick a prompt** from the selection modal (prompts tagged with `selection-action`)
+4. **View the response** in a modal window
+5. **Choose an action**:
+   - **Insert as Callout**: Adds the explanation as a callout block after your selection
+   - **Copy**: Copies the explanation to clipboard
+   - **Close**: Dismiss the modal
+
+### Keyboard Shortcut
+
+You can assign a keyboard shortcut to "Explain selection with AI" in Obsidian's Hotkeys settings.
+
+## Default Prompts
+
+When you first use Explain Selection, three default prompts are created in your Prompts folder:
+
+| Prompt                  | Description                     | Best For           |
+| ----------------------- | ------------------------------- | ------------------ |
+| **Explain Selection**   | General explanation of the text | Most content types |
+| **Explain Code**        | Detailed code walkthrough       | Programming code   |
+| **Summarize Selection** | Concise summary                 | Long passages      |
+
+## Creating Custom Explain Prompts {#creating-custom-explain-prompts}
+
+Create your own prompts for specific use cases by adding files to your Prompts folder with the `selection-action` tag:
+
+```markdown
+---
+name: 'Explain for Beginners'
+description: 'Explain in simple terms for beginners'
+version: 1
+override_system_prompt: false
+tags: ['selection-action', 'explain', 'beginner']
+---
+
+Please explain the following text in very simple terms:
+
+- Use everyday language, avoid jargon
+- Provide real-world analogies where helpful
+- Break down complex ideas into small steps
+- Assume the reader has no prior knowledge
+```
+
+### Example Custom Prompts
+
+**Technical Deep Dive**
+
+```markdown
+---
+name: 'Technical Deep Dive'
+description: 'Provide deep technical analysis of content'
+version: 1
+override_system_prompt: false
+tags: ['selection-action', 'technical']
+---
+
+Provide a deep technical analysis of this content:
+
+- Explain underlying concepts and mechanisms
+- Discuss edge cases and limitations
+- Suggest related topics to explore
+```
+
+**Study Helper**
+
+```markdown
+---
+name: 'Study Helper'
+description: 'Help study and memorize content'
+version: 1
+override_system_prompt: false
+tags: ['selection-action', 'study']
+---
+
+Help me study this content:
+
+- Identify key concepts to remember
+- Create potential exam questions
+- Suggest memory aids or mnemonics
+```
+
+---
+
+# Ask about Selection
+
+The Ask about Selection feature lets you ask any question about selected text. The AI will analyze the selection and answer your specific question.
+
+## How to Use Ask {#how-to-use-ask}
+
+1. **Select text** in your document
+2. **Right-click** and choose "Ask about Selection"
+3. **Type your question** in the modal
+4. **Press Enter** or click "Ask"
+5. **View the response** and choose an action:
+   - **Insert as Callout**: Adds the Q&A as a callout block
+   - **Copy**: Copies the response to clipboard
+   - **Close**: Dismiss the modal
+
+### Keyboard Shortcut
+
+You can assign a keyboard shortcut to "Ask about selection" in Obsidian's Hotkeys settings.
+
+## Example Questions
+
+### For Code
+
+- "What does this function return?"
+- "Are there any bugs in this code?"
+- "How could I optimize this?"
+- "What design pattern is being used here?"
+
+### For Text
+
+- "What is the main argument?"
+- "Is this statement accurate?"
+- "What are the key takeaways?"
+- "How does this relate to [topic]?"
+
+### For Data
+
+- "What trends do you see in this data?"
+- "Are there any outliers?"
+- "What conclusions can be drawn?"
+
+### For Research
+
+- "What methodology is being used?"
+- "What are the limitations of this study?"
+- "How does this compare to other research?"
+
+---
 
 ## Best Practices
 

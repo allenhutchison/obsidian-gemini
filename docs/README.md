@@ -86,16 +86,21 @@ Create specialized AI behaviors for different workflows.
 
 ### ✍️ AI-Assisted Writing
 
-Precisely rewrite any selected text with AI assistance.
+Work with selected text using AI - rewrite, explain, or ask questions.
 
 - [Full Guide](ai-writing-guide.md)
 
+**Features:**
+
+- **Rewrite**: Transform selected text with custom instructions
+- **Explain Selection**: Get AI explanations with customizable prompts
+- **Ask about Selection**: Ask any question about selected text
+
 **Example Uses:**
 
-- "Make this more concise"
-- "Fix grammar and spelling"
-- "Make it more formal/casual"
-- "Expand with more detail"
+- "Make this more concise" (rewrite)
+- "Explain this code" (explain)
+- "What are the key points?" (ask)
 
 ### ⚡ Smart Completions
 
