@@ -27,13 +27,14 @@ This guide covers all selection-based AI features in Gemini Scribe, allowing you
 
 Gemini Scribe provides three powerful ways to work with selected text:
 
-| Feature | Purpose | Output |
-|---------|---------|--------|
-| **Rewrite** | Transform and improve selected text | Replaces selection in document |
+| Feature     | Purpose                              | Output                         |
+| ----------- | ------------------------------------ | ------------------------------ |
+| **Rewrite** | Transform and improve selected text  | Replaces selection in document |
 | **Explain** | Get AI explanations of selected text | Modal with insert/copy options |
-| **Ask** | Ask questions about selected text | Modal with insert/copy options |
+| **Ask**     | Ask questions about selected text    | Modal with insert/copy options |
 
 All features are accessible via:
+
 - **Right-click context menu** when text is selected
 - **Command palette** (Ctrl/Cmd + P)
 - **Keyboard shortcuts** (configurable in Obsidian settings)
@@ -232,11 +233,11 @@ You can assign a keyboard shortcut to "Explain selection with AI" in Obsidian's 
 
 When you first use Explain Selection, three default prompts are created in your Prompts folder:
 
-| Prompt | Description | Best For |
-|--------|-------------|----------|
-| **Explain Selection** | General explanation of the text | Most content types |
-| **Explain Code** | Detailed code walkthrough | Programming code |
-| **Summarize Selection** | Concise summary | Long passages |
+| Prompt                  | Description                     | Best For           |
+| ----------------------- | ------------------------------- | ------------------ |
+| **Explain Selection**   | General explanation of the text | Most content types |
+| **Explain Code**        | Detailed code walkthrough       | Programming code   |
+| **Summarize Selection** | Concise summary                 | Long passages      |
 
 ## Creating Custom Explain Prompts {#creating-custom-explain-prompts}
 
@@ -244,11 +245,11 @@ Create your own prompts for specific use cases by adding files to your Prompts f
 
 ```markdown
 ---
-name: "Explain for Beginners"
-description: "Explain in simple terms for beginners"
+name: 'Explain for Beginners'
+description: 'Explain in simple terms for beginners'
 version: 1
 override_system_prompt: false
-tags: ["selection-action", "explain", "beginner"]
+tags: ['selection-action', 'explain', 'beginner']
 ---
 
 Please explain the following text in very simple terms:
@@ -262,20 +263,24 @@ Please explain the following text in very simple terms:
 ### Example Custom Prompts
 
 **Technical Deep Dive**
+
 ```markdown
-tags: ["selection-action", "technical"]
----
+## tags: ["selection-action", "technical"]
+
 Provide a deep technical analysis of this content:
+
 - Explain underlying concepts and mechanisms
 - Discuss edge cases and limitations
 - Suggest related topics to explore
 ```
 
 **Study Helper**
+
 ```markdown
-tags: ["selection-action", "study"]
----
+## tags: ["selection-action", "study"]
+
 Help me study this content:
+
 - Identify key concepts to remember
 - Create potential exam questions
 - Suggest memory aids or mnemonics
@@ -305,23 +310,27 @@ You can assign a keyboard shortcut to "Ask about selection" in Obsidian's Hotkey
 ## Example Questions
 
 ### For Code
+
 - "What does this function return?"
 - "Are there any bugs in this code?"
 - "How could I optimize this?"
 - "What design pattern is being used here?"
 
 ### For Text
+
 - "What is the main argument?"
 - "Is this statement accurate?"
 - "What are the key takeaways?"
 - "How does this relate to [topic]?"
 
 ### For Data
+
 - "What trends do you see in this data?"
 - "Are there any outliers?"
 - "What conclusions can be drawn?"
 
 ### For Research
+
 - "What methodology is being used?"
 - "What are the limitations of this study?"
 - "How does this compare to other research?"
