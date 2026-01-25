@@ -222,7 +222,7 @@ export class SelectionResponseModal extends Modal {
 			await navigator.clipboard.writeText(this.response);
 			new Notice('Response copied to clipboard');
 		} catch (error) {
-			console.error('Failed to copy to clipboard:', error);
+			this.plugin.logger.error('Failed to copy to clipboard:', error);
 			const message = error instanceof Error ? error.message : 'Unknown error';
 			new Notice(`Failed to copy: ${message}`);
 		}
