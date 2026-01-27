@@ -4,29 +4,28 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 > **Note:** This plugin requires a Google Gemini API key. Free tier available at [Google AI Studio](https://aistudio.google.com/apikey).
 
-## What's New in v4.2.1
+## What's New in v4.3.1
 
-**🔧 RAG Stability & New Features**
+**🔧 Setup Experience Fix**
 
-This release brings major improvements to the semantic vault search feature:
+This release fixes a critical issue for new users:
 
-- **🐛 Fixed RAG re-indexing on every restart** - Your vault no longer re-indexes unnecessarily
-- **📄 PDF and attachment indexing** - Index PDFs and other supported file types
-- **⏸️ Pause/resume commands** - Control syncing with `Gemini Scribe: Pause/Resume RAG sync`
-- **📊 Detailed status modal** - View indexed files, failures, and search your index
-- **🔄 Resume interrupted indexing** - Continue after crash or restart
-- **⚡ Rate limit handling** - Automatic retry with exponential backoff
-- **💾 Incremental saves** - Cache saves during indexing for durability
+- **🔑 Fixed plugin setup** - New users can now access settings to configure their API key
+- **⚙️ Settings always accessible** - Plugin loads partially when unconfigured
+- **🔄 Auto-activation** - Plugin automatically activates when API key is added
 
-**Previous Updates (v4.2.0):**
+**Previous Updates (v4.3.0):**
+
+- **🖼️ Multimodal image support** - Attach images to your chats
+- **✨ Selection actions** - Explain or ask questions about selected text
+- **🔍 Folder/tag filtering** - Filter semantic search by folders and tags
+- **🔗 Fixed @ mentions** - Proper wikilink paths for file references
+
+**Previous Updates (v4.2.x):**
 
 - **🔬 Semantic Vault Search:** [Experimental] Search your vault by meaning using Google's File Search API
-- **💬 Clearer API Errors:** Better explanations for quota, auth, and rate limit issues
-
-**Previous Updates (v4.0.0):**
-
-- **🤖 Unified Agent Mode:** Single powerful chat with tool calling
-- **📦 History Archival:** Old chat preserved as readable markdown
+- **📄 PDF and attachment indexing** - Index PDFs and other supported file types
+- **⏸️ Pause/resume commands** - Control syncing with `Gemini Scribe: Pause/Resume RAG sync`
 
 ## Features
 

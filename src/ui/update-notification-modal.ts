@@ -18,6 +18,17 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.3.1': {
+			title: '🔧 Gemini Scribe 4.3.1 - Setup Experience Fix',
+			highlights: [
+				'🔑 Fixed plugin setup for new users without API key',
+				'⚙️ Settings are now always accessible, even before configuration',
+				'🛡️ Graceful error handling when API key is missing',
+				'🔄 Plugin automatically activates when API key is added',
+			],
+			details:
+				'This update fixes a critical issue where new users could not access settings to configure their API key. The plugin now loads partially when unconfigured, allowing access to settings. Once configured, the plugin automatically activates without needing to restart Obsidian.',
+		},
 		'4.3.0': {
 			title: '✨ Gemini Scribe 4.3 - Images & Selection Actions',
 			highlights: [
