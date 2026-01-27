@@ -154,7 +154,26 @@ export default class ObsidianGemini extends Plugin {
 		// Initialize logger early so it's available during setup
 		this.logger = new Logger(this);
 
-		await this.setupGeminiScribe();
+		// Load settings early
+		await this.loadSettings();
+
+		// Add settings tab early so users can configure API key even if plugin fails to fully initialize
+		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
+
+		// Try to setup the plugin, but don't fail if API key is missing
+		try {
+			await this.setupGeminiScribe();
+		} catch (error) {
+			this.logger.error('Failed to initialize Gemini Scribe:', error);
+			// Show a helpful notice if it's an API key error
+			if (error instanceof Error && error.message.includes('API key')) {
+				new Notice('Gemini Scribe: Please configure your API key in settings to enable the plugin.');
+			} else {
+				new Notice('Gemini Scribe failed to initialize. Please check the console for details.');
+			}
+			// Return early - plugin is partially loaded with settings available
+			return;
+		}
 
 		// Add ribbon icon
 		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Gemini Scribe: Agent Mode', () => {
@@ -361,13 +380,11 @@ export default class ObsidianGemini extends Plugin {
 			},
 		});
 
-		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
-
 		this.app.workspace.onLayoutReady(() => this.onLayoutReady());
 	}
 
 	async setupGeminiScribe() {
-		await this.loadSettings();
+		// Settings are already loaded in onload()
 
 		// Initialize prompts
 		this.prompts = new GeminiPrompts(this);
@@ -681,7 +698,15 @@ export default class ObsidianGemini extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-		await this.setupGeminiScribe();
+
+		// Re-initialize the plugin if we have an API key now
+		// This allows users to configure the API key and have the plugin start working
+		try {
+			await this.setupGeminiScribe();
+		} catch (error) {
+			this.logger.error('Failed to re-initialize after settings change:', error);
+			// Don't show notice here as it may be annoying during normal settings changes
+		}
 
 		// If model discovery settings changed, update models
 		if (this.settings.modelDiscovery.enabled && this.modelManager) {
