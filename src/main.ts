@@ -149,6 +149,8 @@ export default class ObsidianGemini extends Plugin {
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
 	private ragListenersRegistered: boolean = false;
+	private isGeminiInitialized: boolean = false;
+	private previousApiKey: string = '';
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -163,6 +165,8 @@ export default class ObsidianGemini extends Plugin {
 		// Try to setup the plugin, but don't fail if API key is missing
 		try {
 			await this.setupGeminiScribe();
+			this.isGeminiInitialized = true;
+			this.previousApiKey = this.settings.apiKey;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
 			// Show a helpful notice if it's an API key error
@@ -171,12 +175,35 @@ export default class ObsidianGemini extends Plugin {
 			} else {
 				new Notice('Gemini Scribe failed to initialize. Please check the console for details.');
 			}
-			// Return early - plugin is partially loaded with settings available
-			return;
+			this.isGeminiInitialized = false;
 		}
 
+		// Always register UI components and commands
+		this.registerUIAndCommands();
+
+		this.app.workspace.onLayoutReady(() => this.onLayoutReady());
+	}
+
+	/**
+	 * Check if the plugin is initialized and show a notice if not
+	 * @returns true if initialized, false otherwise
+	 */
+	private checkInitialized(): boolean {
+		if (!this.isGeminiInitialized) {
+			new Notice('Please configure your API key in Gemini Scribe settings first.');
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Register UI components and commands
+	 * This runs regardless of whether Gemini initialization succeeded
+	 */
+	private registerUIAndCommands() {
 		// Add ribbon icon
 		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Gemini Scribe: Agent Mode', () => {
+			if (!this.checkInitialized()) return;
 			this.activateAgentView();
 		});
 
@@ -187,7 +214,10 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-open-agent-view',
 			name: 'Open Gemini Chat',
-			callback: () => this.activateAgentView(),
+			callback: () => {
+				if (!this.checkInitialized()) return;
+				this.activateAgentView();
+			},
 		});
 
 		// Add rewrite command (works with selection or full file)
@@ -195,6 +225,7 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-rewrite-selection',
 			name: 'Rewrite text with AI',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
+				if (!this.checkInitialized()) return;
 				const selection = editor.getSelection();
 				const hasSelection = selection.length > 0;
 
@@ -225,6 +256,7 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-explain-selection',
 			name: 'Explain selection with AI',
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
+				if (!this.checkInitialized()) return;
 				await this.selectionActionService.handleExplainSelection(editor, view.file);
 			},
 		});
@@ -234,6 +266,7 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-ask-selection',
 			name: 'Ask about selection',
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
+				if (!this.checkInitialized()) return;
 				await this.selectionActionService.handleAskAboutSelection(editor, view.file);
 			},
 		});
@@ -249,6 +282,7 @@ export default class ObsidianGemini extends Plugin {
 							.setTitle('Rewrite with Gemini')
 							.setIcon('bot-message-square')
 							.onClick(() => {
+								if (!this.checkInitialized()) return;
 								const modal = new RewriteInstructionsModal(
 									this.app,
 									selection,
@@ -268,6 +302,7 @@ export default class ObsidianGemini extends Plugin {
 							.setTitle('Explain Selection')
 							.setIcon('help-circle')
 							.onClick(async () => {
+								if (!this.checkInitialized()) return;
 								const sourceFile = view.file;
 								await this.selectionActionService.handleExplainSelection(editor, sourceFile);
 							});
@@ -279,6 +314,7 @@ export default class ObsidianGemini extends Plugin {
 							.setTitle('Ask about Selection')
 							.setIcon('message-circle')
 							.onClick(async () => {
+								if (!this.checkInitialized()) return;
 								const sourceFile = view.file;
 								await this.selectionActionService.handleAskAboutSelection(editor, sourceFile);
 							});
@@ -379,12 +415,77 @@ export default class ObsidianGemini extends Plugin {
 				modal.open();
 			},
 		});
+	}
 
-		this.app.workspace.onLayoutReady(() => this.onLayoutReady());
+	/**
+	 * Cleanup existing instances before re-initialization
+	 */
+	private async teardownGeminiScribe() {
+		// Unregister all tools
+		if (this.toolRegistry) {
+			// Unregister vault tools
+			const vaultTools = getVaultTools();
+			for (const tool of vaultTools) {
+				this.toolRegistry.unregisterTool(tool.name);
+			}
+
+			// Unregister web tools
+			try {
+				const { getWebTools } = await import('./tools/web-tools');
+				const webTools = getWebTools();
+				for (const tool of webTools) {
+					this.toolRegistry.unregisterTool(tool.name);
+				}
+			} catch (e) {
+				this.logger.debug('Failed to unregister web tools:', e);
+			}
+
+			// Unregister memory tools
+			try {
+				const { getMemoryTools } = await import('./tools/memory-tool');
+				const memoryTools = getMemoryTools();
+				for (const tool of memoryTools) {
+					this.toolRegistry.unregisterTool(tool.name);
+				}
+			} catch (e) {
+				this.logger.debug('Failed to unregister memory tools:', e);
+			}
+
+			// Unregister image tools
+			try {
+				const { getImageTools } = await import('./tools/image-tools');
+				const imageTools = getImageTools();
+				for (const tool of imageTools) {
+					this.toolRegistry.unregisterTool(tool.name);
+				}
+			} catch (e) {
+				this.logger.debug('Failed to unregister image tools:', e);
+			}
+		}
+
+		// Clean up completions
+		if (this.completions) {
+			// Note: GeminiCompletions doesn't have a cleanup method currently
+			// but we'll null it out to ensure garbage collection
+			this.completions = null as any;
+		}
+
+		// Clean up summarizer
+		if (this.summarizer) {
+			this.summarizer = null as any;
+		}
+
+		// Note: We don't clean up history, sessionManager, etc. as they
+		// maintain user data that should persist across re-initializations
 	}
 
 	async setupGeminiScribe() {
 		// Settings are already loaded in onload()
+
+		// If re-initializing, cleanup first
+		if (this.isGeminiInitialized) {
+			await this.teardownGeminiScribe();
+		}
 
 		// Initialize prompts
 		this.prompts = new GeminiPrompts(this);
@@ -699,13 +800,27 @@ export default class ObsidianGemini extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 
-		// Re-initialize the plugin if we have an API key now
-		// This allows users to configure the API key and have the plugin start working
-		try {
-			await this.setupGeminiScribe();
-		} catch (error) {
-			this.logger.error('Failed to re-initialize after settings change:', error);
-			// Don't show notice here as it may be annoying during normal settings changes
+		// Check if we need to re-initialize
+		const apiKeyChanged = this.previousApiKey !== this.settings.apiKey;
+		const needsInit = !this.isGeminiInitialized && this.settings.apiKey;
+
+		// Only re-initialize if API key changed or if not initialized but now have key
+		if (apiKeyChanged || needsInit) {
+			try {
+				await this.setupGeminiScribe();
+				this.isGeminiInitialized = true;
+				this.previousApiKey = this.settings.apiKey;
+
+				// If this is the first successful initialization, we may need to
+				// re-register UI components to make them functional
+				if (needsInit && !apiKeyChanged) {
+					new Notice('Gemini Scribe is now ready to use!');
+				}
+			} catch (error) {
+				this.logger.error('Failed to re-initialize after settings change:', error);
+				this.isGeminiInitialized = false;
+				// Don't show notice here as it may be annoying during normal settings changes
+			}
 		}
 
 		// If model discovery settings changed, update models
