@@ -1,17 +1,23 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import type ObsidianGemini from '../main';
+import { ResearchScope } from '../services/deep-research';
 
 /**
- * Deep Research Tool that conducts comprehensive research with multiple searches
- * and generates a well-cited report
+ * Deep Research Tool that conducts comprehensive research using Google's Deep Research API
+ * and generates a well-cited report. Supports vault-only, web-only, or combined research.
  */
 export class DeepResearchTool implements Tool {
 	name = 'deep_research';
 	displayName = 'Deep Research';
 	category = ToolCategory.READ_ONLY;
 	description =
-		'Conduct comprehensive, multi-phase research on a complex topic using iterative Google searches and AI synthesis. Performs multiple rounds of targeted searches (1-5 iterations), analyzes information gaps, generates follow-up queries, and compiles findings into a well-structured markdown report with inline citations. Returns a professional research document with sections, summaries, and a complete sources bibliography. Optionally saves the report to a vault file. Use this for in-depth research projects, literature reviews, or when you need a thorough analysis with proper academic-style citations. WARNING: This tool performs many API calls and may take several minutes to complete.';
+		"Conduct comprehensive research on a topic using Google's Deep Research model. " +
+		'Can search your vault notes (via RAG), the web, or both. ' +
+		'Generates a well-structured markdown report with citations. ' +
+		'Use scope="vault_only" to synthesize existing notes, ' +
+		'scope="web_only" for internet research, or scope="both" (default) for comprehensive research. ' +
+		'WARNING: This tool may take several minutes to complete as it performs deep analysis.';
 	requiresConfirmation = true;
 
 	parameters = {
@@ -21,9 +27,10 @@ export class DeepResearchTool implements Tool {
 				type: 'string' as const,
 				description: 'The research topic or question',
 			},
-			depth: {
-				type: 'number' as const,
-				description: 'Number of search iterations (1-5, default: 3)',
+			scope: {
+				type: 'string' as const,
+				enum: ['vault_only', 'web_only', 'both'],
+				description: 'Research scope: vault_only (your notes), web_only (internet), or both (default)',
 			},
 			outputFile: {
 				type: 'string' as const,
@@ -33,20 +40,27 @@ export class DeepResearchTool implements Tool {
 		required: ['topic'],
 	};
 
-	confirmationMessage = (params: { topic: string; depth?: number }) => {
-		return `Conduct deep research on: "${params.topic}" with ${params.depth || 3} search iterations`;
+	confirmationMessage = (params: { topic: string; scope?: ResearchScope }) => {
+		const scopeText =
+			params.scope === 'vault_only'
+				? ' using vault notes only'
+				: params.scope === 'web_only'
+					? ' using web search only'
+					: ' using vault and web';
+		return `Conduct deep research on: "${params.topic}"${scopeText}`;
 	};
 
-	getProgressDescription(params: { topic: string }): string {
+	getProgressDescription(params: { topic: string; scope?: ResearchScope }): string {
 		if (params.topic) {
-			const topic = params.topic.length > 30 ? params.topic.substring(0, 27) + '...' : params.topic;
-			return `Researching "${topic}"`;
+			const topic = params.topic.length > 25 ? params.topic.substring(0, 22) + '...' : params.topic;
+			const scopeText = params.scope === 'vault_only' ? ' (vault)' : params.scope === 'web_only' ? ' (web)' : '';
+			return `Researching "${topic}"${scopeText}`;
 		}
 		return 'Conducting research';
 	}
 
 	async execute(
-		params: { topic: string; depth?: number; outputFile?: string },
+		params: { topic: string; scope?: ResearchScope; outputFile?: string },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
@@ -77,7 +91,7 @@ export class DeepResearchTool implements Tool {
 			// Conduct the research using the service
 			const result = await plugin.deepResearch.conductResearch({
 				topic: params.topic,
-				depth: params.depth,
+				scope: params.scope,
 				outputFile: outputFile,
 			});
 
@@ -91,9 +105,7 @@ export class DeepResearchTool implements Tool {
 				data: {
 					topic: result.topic,
 					report: result.report,
-					searches: result.searchCount,
 					sources: result.sourceCount,
-					sections: result.sectionCount,
 					outputFile: result.outputFile?.path,
 				},
 			};

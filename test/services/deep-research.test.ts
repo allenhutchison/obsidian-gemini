@@ -1,4 +1,4 @@
-import { DeepResearchService, ResearchResult, DeepResearchParams } from '../../src/services/deep-research';
+import { DeepResearchService, DeepResearchParams } from '../../src/services/deep-research';
 import { TFile } from 'obsidian';
 
 // Mock obsidian
@@ -10,15 +10,26 @@ jest.mock('obsidian', () => ({
 	},
 }));
 
-// Mock Google GenAI
-const mockGenerateContent = jest.fn();
+// Mock ResearchManager and ReportGenerator from gemini-utils
+const mockStartResearch = jest.fn();
+const mockPoll = jest.fn();
+const mockCancel = jest.fn();
+const mockGenerateMarkdown = jest.fn();
 
-jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn().mockImplementation(() => ({
-		models: {
-			generateContent: mockGenerateContent,
-		},
+jest.mock('@allenhutchison/gemini-utils', () => ({
+	ResearchManager: jest.fn().mockImplementation(() => ({
+		startResearch: mockStartResearch,
+		poll: mockPoll,
+		cancel: mockCancel,
 	})),
+	ReportGenerator: jest.fn().mockImplementation(() => ({
+		generateMarkdown: mockGenerateMarkdown,
+	})),
+}));
+
+// Mock Google GenAI
+jest.mock('@google/genai', () => ({
+	GoogleGenAI: jest.fn().mockImplementation(() => ({})),
 }));
 
 describe('DeepResearchService', () => {
@@ -26,11 +37,15 @@ describe('DeepResearchService', () => {
 	let mockPlugin: any;
 	let mockVault: any;
 	let mockLogger: any;
+	let mockRagIndexing: any;
 
 	beforeEach(() => {
 		// Reset mocks
 		jest.clearAllMocks();
-		mockGenerateContent.mockClear();
+		mockStartResearch.mockClear();
+		mockPoll.mockClear();
+		mockCancel.mockClear();
+		mockGenerateMarkdown.mockClear();
 
 		// Setup mock logger
 		mockLogger = {
@@ -47,6 +62,11 @@ describe('DeepResearchService', () => {
 			create: jest.fn(),
 		};
 
+		// Setup mock RAG indexing
+		mockRagIndexing = {
+			getStoreName: jest.fn().mockReturnValue('stores/test-store'),
+		};
+
 		// Setup mock plugin
 		mockPlugin = {
 			app: {
@@ -54,9 +74,9 @@ describe('DeepResearchService', () => {
 			},
 			settings: {
 				apiKey: 'test-api-key',
-				chatModelName: 'gemini-2.5-flash',
 			},
 			logger: mockLogger,
+			ragIndexing: mockRagIndexing,
 		};
 
 		service = new DeepResearchService(mockPlugin);
@@ -73,28 +93,24 @@ describe('DeepResearchService', () => {
 			await expect(service.conductResearch(params)).rejects.toThrow('Google API key not configured');
 		});
 
-		it('should conduct research with default depth', async () => {
-			// Mock AI responses
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
+		it('should conduct research with default scope (both)', async () => {
+			// Mock successful research
+			mockStartResearch.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'in_progress',
+			});
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [
 					{
-						content: {
-							parts: [{ text: 'Query 1\nQuery 2' }],
-						},
-						groundingMetadata: {
-							groundingChunks: [
-								{
-									web: {
-										uri: 'https://example.com',
-										title: 'Example',
-										snippet: 'Test snippet',
-									},
-								},
-							],
-						},
+						type: 'text',
+						text: 'Research results here',
+						annotations: [{ source: 'https://example.com' }],
 					},
 				],
 			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\nResearch results here\n');
 
 			const params: DeepResearchParams = {
 				topic: 'AI Research',
@@ -103,53 +119,102 @@ describe('DeepResearchService', () => {
 			const result = await service.conductResearch(params);
 
 			expect(result.topic).toBe('AI Research');
-			expect(result.report).toBeTruthy();
-			expect(result.searchCount).toBeGreaterThan(0);
+			expect(result.report).toContain('AI Research');
+			expect(result.sourceCount).toBe(1);
+			expect(mockStartResearch).toHaveBeenCalledWith({
+				input: 'AI Research',
+				fileSearchStoreNames: ['stores/test-store'],
+			});
 			expect(mockLogger.log).toHaveBeenCalled();
 		});
 
-		it('should clamp depth between 1 and 5', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Query 1' }],
-						},
-					},
-				],
+		it('should conduct research with web_only scope', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [],
 			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
-			// Test depth > 5
-			const params1: DeepResearchParams = {
+			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 10,
+				scope: 'web_only',
 			};
 
-			await service.conductResearch(params1);
-			// Should clamp to 5 iterations
+			await service.conductResearch(params);
 
-			// Test depth < 1
-			const params2: DeepResearchParams = {
+			expect(mockStartResearch).toHaveBeenCalledWith({
+				input: 'Test',
+				fileSearchStoreNames: undefined,
+			});
+		});
+
+		it('should conduct research with vault_only scope', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [],
+			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
+
+			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 0,
+				scope: 'vault_only',
 			};
 
-			await service.conductResearch(params2);
-			// Should clamp to 1 iteration
+			await service.conductResearch(params);
 
-			expect(mockGenerateContent).toHaveBeenCalled();
+			expect(mockStartResearch).toHaveBeenCalledWith({
+				input: 'Test',
+				fileSearchStoreNames: ['stores/test-store'],
+			});
+		});
+
+		it('should throw error for vault_only scope when RAG is not configured', async () => {
+			mockRagIndexing.getStoreName.mockReturnValue(null);
+
+			const params: DeepResearchParams = {
+				topic: 'Test',
+				scope: 'vault_only',
+			};
+
+			await expect(service.conductResearch(params)).rejects.toThrow(
+				'Vault-only research requires RAG indexing to be enabled and configured'
+			);
+		});
+
+		it('should fall back to web-only when RAG is not configured with default scope', async () => {
+			mockRagIndexing.getStoreName.mockReturnValue(null);
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [],
+			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
+
+			const params: DeepResearchParams = {
+				topic: 'Test',
+			};
+
+			await service.conductResearch(params);
+
+			expect(mockStartResearch).toHaveBeenCalledWith({
+				input: 'Test',
+				fileSearchStoreNames: undefined,
+			});
 		});
 
 		it('should save report to file if outputFile is specified', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Test query' }],
-						},
-					},
-				],
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [],
 			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
 			const mockFile = new TFile();
 			mockFile.path = 'test-report.md';
@@ -157,8 +222,7 @@ describe('DeepResearchService', () => {
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1,
-				outputFile: 'test-report.md', // Tool adds .md before calling service
+				outputFile: 'test-report.md',
 			};
 
 			const result = await service.conductResearch(params);
@@ -167,41 +231,14 @@ describe('DeepResearchService', () => {
 			expect(result.outputFile).toBe(mockFile);
 		});
 
-		it('should save to exact path provided (extension handled by tool)', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Test' }],
-						},
-					},
-				],
-			});
-
-			const mockFile = new TFile();
-			mockVault.create.mockResolvedValue(mockFile);
-
-			const params: DeepResearchParams = {
-				topic: 'Test',
-				depth: 1,
-				outputFile: 'report.md',
-			};
-
-			await service.conductResearch(params);
-
-			expect(mockVault.create).toHaveBeenCalledWith('report.md', expect.any(String));
-		});
-
 		it('should modify existing file if it exists', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Test' }],
-						},
-					},
-				],
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [],
 			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
 			const mockFile = new TFile();
 			mockFile.path = 'existing-report.md';
@@ -210,7 +247,6 @@ describe('DeepResearchService', () => {
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1,
 				outputFile: 'existing-report.md',
 			};
 
@@ -220,94 +256,47 @@ describe('DeepResearchService', () => {
 			expect(mockVault.create).not.toHaveBeenCalled();
 		});
 
-		it('should handle search failures gracefully with retry', async () => {
-			// Mock: first call succeeds, second fails 3 times (all retries), third succeeds
-			mockGenerateContent
-				.mockResolvedValueOnce({
-					candidates: [
-						{
-							content: {
-								parts: [{ text: 'Query 1\nQuery 2' }],
-							},
-						},
-					],
-				})
-				.mockRejectedValueOnce(new Error('Search failed attempt 1'))
-				.mockRejectedValueOnce(new Error('Search failed attempt 2'))
-				.mockRejectedValueOnce(new Error('Search failed attempt 3'))
-				.mockResolvedValueOnce({
-					candidates: [
-						{
-							content: {
-								parts: [{ text: 'Search result' }],
-							},
-						},
-					],
-				});
+		it('should handle failed research status', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'failed',
+				error: { message: 'Research quota exceeded' },
+			});
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1,
 			};
 
-			const result = await service.conductResearch(params);
-
-			expect(result).toBeTruthy();
-			// Should log warnings for retries and error after all retries exhausted
-			expect(mockLogger.warn).toHaveBeenCalled();
-			expect(mockLogger.error).toHaveBeenCalled();
+			await expect(service.conductResearch(params)).rejects.toThrow('Research failed: Research quota exceeded');
 		});
 
-		it('should generate report with sections and sources', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Section Title\nSearch result with citation [1]' }],
-						},
-						groundingMetadata: {
-							groundingChunks: [
-								{
-									web: {
-										uri: 'https://source.com',
-										title: 'Source Title',
-										snippet: 'Source snippet',
-									},
-								},
-							],
-						},
-					},
-				],
+		it('should handle cancelled research status', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'cancelled',
 			});
 
 			const params: DeepResearchParams = {
-				topic: 'Test Topic',
-				depth: 1,
+				topic: 'Test',
 			};
 
-			const result = await service.conductResearch(params);
-
-			expect(result.report).toContain('# Test Topic');
-			expect(result.report).toContain('## Sources');
-			expect(result.sectionCount).toBeGreaterThan(0);
+			await expect(service.conductResearch(params)).rejects.toThrow('Research was cancelled');
 		});
 
 		it('should return null outputFile if save fails', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Test' }],
-						},
-					},
-				],
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [],
 			});
-
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 			mockVault.create.mockRejectedValue(new Error('Save failed'));
 
 			const params: DeepResearchParams = {
 				topic: 'Test',
-				depth: 1,
 				outputFile: 'test.md',
 			};
 
@@ -318,109 +307,105 @@ describe('DeepResearchService', () => {
 		});
 	});
 
-	describe('error handling', () => {
-		it('should handle missing candidates in AI response', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [],
-			});
+	describe('cancelResearch', () => {
+		it('should cancel ongoing research', async () => {
+			// Start research first
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockImplementation(
+				() =>
+					new Promise((resolve) => {
+						// Simulate long-running research
+						setTimeout(() => resolve({ id: 'interaction-123', status: 'completed', outputs: [] }), 10000);
+					})
+			);
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
-			const params: DeepResearchParams = {
-				topic: 'Test',
-				depth: 1,
-			};
+			// Start research but don't await
+			void service.conductResearch({ topic: 'Test' });
 
-			const result = await service.conductResearch(params);
+			// Wait a bit for research to start
+			await new Promise((resolve) => setTimeout(resolve, 50));
 
-			expect(result).toBeTruthy();
-			// Should handle gracefully with empty text
+			// Cancel
+			await service.cancelResearch();
+
+			expect(mockCancel).toHaveBeenCalledWith('interaction-123');
 		});
 
-		it('should handle missing groundingMetadata', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Test result' }],
-						},
-						// No groundingMetadata
-					},
-				],
-			});
+		it('should not call cancel if no research is in progress', async () => {
+			await service.cancelResearch();
 
-			const params: DeepResearchParams = {
-				topic: 'Test',
-				depth: 1,
-			};
+			expect(mockCancel).not.toHaveBeenCalled();
+		});
+	});
 
-			const result = await service.conductResearch(params);
-
-			expect(result).toBeTruthy();
-			expect(result.sourceCount).toBeGreaterThanOrEqual(0);
+	describe('isResearching', () => {
+		it('should return false when no research is in progress', () => {
+			expect(service.isResearching()).toBe(false);
 		});
 	});
 
 	describe('report formatting', () => {
-		it('should include date in report', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
-					{
-						content: {
-							parts: [{ text: 'Test' }],
-						},
-					},
-				],
+		it('should include topic and date in report', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [{ type: 'text', text: 'Content here' }],
 			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\nContent here\n');
 
 			const params: DeepResearchParams = {
-				topic: 'Test',
-				depth: 1,
+				topic: 'Test Topic',
 			};
 
 			const result = await service.conductResearch(params);
 
+			expect(result.report).toContain('# Test Topic');
 			expect(result.report).toContain('*Generated on');
 		});
 
-		it('should format sources with numbering', async () => {
-			mockGenerateContent.mockResolvedValue({
-				candidates: [
+		it('should count unique sources from annotations', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [
 					{
-						content: {
-							parts: [{ text: 'Test' }],
-						},
-						groundingMetadata: {
-							groundingChunks: [
-								{
-									web: {
-										uri: 'https://source1.com',
-										title: 'Source 1',
-										snippet: 'Snippet 1',
-									},
-								},
-								{
-									web: {
-										uri: 'https://source2.com',
-										title: 'Source 2',
-										snippet: 'Snippet 2',
-									},
-								},
-							],
-						},
+						type: 'text',
+						text: 'Content',
+						annotations: [
+							{ source: 'https://source1.com' },
+							{ source: 'https://source2.com' },
+							{ source: 'https://source1.com' }, // Duplicate
+						],
+					},
+					{
+						type: 'text',
+						text: 'More content',
+						annotations: [{ source: 'https://source3.com' }],
 					},
 				],
 			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
-			const params: DeepResearchParams = {
-				topic: 'Test',
-				depth: 1,
-			};
+			const result = await service.conductResearch({ topic: 'Test' });
 
-			const result = await service.conductResearch(params);
+			expect(result.sourceCount).toBe(3); // Unique sources
+		});
 
-			expect(result.report).toContain('[1]');
-			if (result.sourceCount > 1) {
-				expect(result.report).toContain('[2]');
-			}
+		it('should handle outputs without annotations', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				outputs: [{ type: 'text', text: 'Content without sources' }],
+			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
+
+			const result = await service.conductResearch({ topic: 'Test' });
+
+			expect(result.sourceCount).toBe(0);
 		});
 	});
 });
