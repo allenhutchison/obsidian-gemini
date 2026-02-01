@@ -29,8 +29,8 @@ export class UpdateFrontmatterTool implements Tool {
 				description: 'The property key to update',
 			},
 			value: {
-				type: ['string', 'number', 'boolean', 'array'] as const,
-				description: 'The new value for the property',
+				type: 'string' as const, // Accepting string and parsing/inferring later, or broad type if supported
+				description: 'The new value for the property (string, number, boolean, or array)',
 			},
 		},
 		required: ['path', 'key', 'value'],
@@ -69,7 +69,7 @@ export class UpdateFrontmatterTool implements Tool {
 
 			return {
 				success: true,
-				output: `Successfully updated property "${key}" to "${value}" in ${path}`,
+				data: `Successfully updated property "${key}" to "${value}" in ${path}`,
 			};
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -148,7 +148,7 @@ export class AppendContentTool implements Tool {
 
 			return {
 				success: true,
-				output: `Successfully appended content to ${path}`,
+				data: `Successfully appended content to ${path}`,
 			};
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : 'Unknown error';
