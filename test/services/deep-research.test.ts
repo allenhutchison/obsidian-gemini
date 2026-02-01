@@ -309,27 +309,33 @@ describe('DeepResearchService', () => {
 
 	describe('cancelResearch', () => {
 		it('should cancel ongoing research', async () => {
+			// Create a controllable promise for the poll
+			let pollResolve: (value: any) => void;
+			const pollPromise = new Promise((resolve) => {
+				pollResolve = resolve;
+			});
+
 			// Start research first
 			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
-			mockPoll.mockImplementation(
-				() =>
-					new Promise((resolve) => {
-						// Simulate long-running research
-						setTimeout(() => resolve({ id: 'interaction-123', status: 'completed', outputs: [] }), 10000);
-					})
-			);
+			mockPoll.mockReturnValue(pollPromise);
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
-			// Start research but don't await
-			void service.conductResearch({ topic: 'Test' });
+			// Start research but don't await - capture the promise to check later
+			const researchPromise = service.conductResearch({ topic: 'Test' });
 
-			// Wait a bit for research to start
-			await new Promise((resolve) => setTimeout(resolve, 50));
+			// Wait a tick for the async operations to start
+			await Promise.resolve();
 
-			// Cancel
+			// Cancel the research
 			await service.cancelResearch();
 
 			expect(mockCancel).toHaveBeenCalledWith('interaction-123');
+
+			// Now resolve the poll to clean up - simulate cancelled status
+			pollResolve!({ id: 'interaction-123', status: 'cancelled', outputs: [] });
+
+			// The research should throw due to cancellation
+			await expect(researchPromise).rejects.toThrow('Research was cancelled');
 		});
 
 		it('should not call cancel if no research is in progress', async () => {

@@ -1,8 +1,13 @@
-import { TFile } from 'obsidian';
+import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
 import { ResearchManager, ReportGenerator, Interaction } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
+
+/**
+ * System folders that should not be written to
+ */
+const PROTECTED_FOLDER_SEGMENTS = ['.obsidian'];
 
 /**
  * Research scope options
@@ -125,12 +130,19 @@ export class DeepResearchService {
 			fileSearchStoreNames,
 		});
 
-		this.currentInteractionId = interaction.id ?? null;
-		this.plugin.logger.log(`DeepResearch: Research started with interaction ID: ${interaction.id}`);
+		// Extract and validate interaction ID
+		const interactionId = interaction.id;
+		if (!interactionId) {
+			this.plugin.logger.error('DeepResearch: Research started but no interaction ID was returned');
+			throw new Error('Research failed: No interaction ID returned from API');
+		}
+
+		this.currentInteractionId = interactionId;
+		this.plugin.logger.log(`DeepResearch: Research started with interaction ID: ${interactionId}`);
 
 		try {
 			// Poll until complete
-			const completed = await researchManager.poll(interaction.id!);
+			const completed = await researchManager.poll(interactionId);
 
 			// Check status
 			if (completed.status === 'failed') {
@@ -228,19 +240,53 @@ export class DeepResearchService {
 	}
 
 	/**
+	 * Validate and normalize the output file path.
+	 * Throws an error if the path is inside a protected system folder.
+	 */
+	private validateAndNormalizeFilePath(rawFilePath: string): string {
+		// Normalize the path using Obsidian's normalizePath (handles slashes, removes redundant separators)
+		const normalizedPath = normalizePath(rawFilePath);
+
+		// Split into segments to check for protected folders
+		const segments = normalizedPath.split('/');
+
+		// Check for protected folder segments
+		for (const segment of segments) {
+			if (PROTECTED_FOLDER_SEGMENTS.includes(segment)) {
+				throw new Error(
+					`Cannot write report to protected system folder: "${segment}". Please choose a different output location.`
+				);
+			}
+		}
+
+		// Check if path is inside the plugin's history folder
+		const historyFolder = this.plugin.settings.historyFolder;
+		if (historyFolder && normalizedPath.startsWith(historyFolder + '/')) {
+			throw new Error(
+				`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`
+			);
+		}
+
+		return normalizedPath;
+	}
+
+	/**
 	 * Save the research report to a file
 	 */
 	private async saveReport(filePath: string, content: string): Promise<TFile | null> {
 		try {
+			// Validate and normalize the file path before any write operations
+			const normalizedPath = this.validateAndNormalizeFilePath(filePath);
+
 			// Check if file exists
-			const existingFile = this.plugin.app.vault.getAbstractFileByPath(filePath);
+			const existingFile = this.plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			if (existingFile instanceof TFile) {
 				// Update existing file
 				await this.plugin.app.vault.modify(existingFile, content);
 				return existingFile;
 			} else {
 				// Create new file
-				return await this.plugin.app.vault.create(filePath, content);
+				return await this.plugin.app.vault.create(normalizedPath, content);
 			}
 		} catch (error) {
 			this.plugin.logger.error('DeepResearch: Failed to save report:', error);
