@@ -457,8 +457,22 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 			trustedModeSetting.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.alwaysAllowReadWrite ?? false).onChange(async (value) => {
-					this.plugin.settings.alwaysAllowReadWrite = value;
-					await this.plugin.saveSettings();
+					if (value) {
+						// Revert toggle until user confirms
+						toggle.setValue(false);
+						const { TrustedModeConfirmationModal } = await import('./trusted-mode-modal');
+						const modal = new TrustedModeConfirmationModal(this.app, async (confirmed) => {
+							if (confirmed) {
+								toggle.setValue(true);
+								this.plugin.settings.alwaysAllowReadWrite = true;
+								await this.plugin.saveSettings();
+							}
+						});
+						modal.open();
+					} else {
+						this.plugin.settings.alwaysAllowReadWrite = value;
+						await this.plugin.saveSettings();
+					}
 				})
 			);
 

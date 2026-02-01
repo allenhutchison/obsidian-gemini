@@ -538,9 +538,7 @@ export default class ObsidianGemini extends Plugin {
 
 		// Register extended vault tools (Frontmatter & Append)
 		// Dynamically import to avoid circular dependencies if any
-		const { UpdateFrontmatterTool, AppendContentTool } = await import(
-			'./tools/vault-tools-extended'
-		);
+		const { UpdateFrontmatterTool, AppendContentTool } = await import('./tools/vault-tools-extended');
 		this.toolRegistry.registerTool(new UpdateFrontmatterTool());
 		this.toolRegistry.registerTool(new AppendContentTool());
 
@@ -557,7 +555,7 @@ export default class ObsidianGemini extends Plugin {
 				// Easier approach: Use the WebFetchTool class directly if possible, or just re-register
 				// However, getWebTools returns instances.
 				const { WebFetchTool } = await import('./tools/web-fetch-tool');
-				this.toolRegistry.registerTool(new WebFetchTool(this).setName('fetch_url'));
+				this.toolRegistry.registerTool(new WebFetchTool().setName('fetch_url'));
 			}
 		}
 
@@ -677,7 +675,7 @@ export default class ObsidianGemini extends Plugin {
 
 				// Clean up partial initialization
 				if (this.ragIndexing) {
-					await this.ragIndexing.destroy().catch(() => { });
+					await this.ragIndexing.destroy().catch(() => {});
 					this.ragIndexing = null;
 				}
 			}
