@@ -1,1 +1,4 @@
 **/*.hbs
+package-lock.json
+manifest.json
+versions.json
