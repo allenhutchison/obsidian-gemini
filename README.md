@@ -140,15 +140,15 @@ Let the AI actively work with your vault through tool calling capabilities.
 - **Session Configuration:** Override model, temperature, and prompt per session
 - **Safety Features:** System folders are protected from modifications
 - **Tool Permission System**:
-    - Granular control over which tools the agent can use
-    - **Trusted Mode**: Optional setting to allow file modifications without constant confirmation prompts (Use with caution!)
+  - Granular control over which tools the agent can use
+  - **Trusted Mode**: Optional setting to allow file modifications without constant confirmation prompts (Use with caution!)
 - **New Power Tools**:
-    - `update_frontmatter`: Safely modify note properties (status, tags, dates) without rewriting content. Critical for "Bases" and "Projects" workflows.
-    - `append_content`: Efficiently add text to the end of notes (great for logs and journals).
-    - `fetch_url`: Alias for Web Fetch, ensuring compatibility with standard agent prompts.
+  - `update_frontmatter`: Safely modify note properties (status, tags, dates) without rewriting content. Critical for "Bases" and "Projects" workflows.
+  - `append_content`: Efficiently add text to the end of notes (great for logs and journals).
+  - `fetch_url`: Alias for Web Fetch, ensuring compatibility with standard agent prompts.
 - **RAG (Retrieval Augmented Generation)**:
-    - Index your vault for semantic search
-    - Retrieve relevant context based on user queries
+  - Index your vault for semantic search
+  - Retrieve relevant context based on user queries
 
 **Example Commands:**
 
