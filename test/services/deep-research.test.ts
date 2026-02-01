@@ -323,8 +323,9 @@ describe('DeepResearchService', () => {
 			// Start research but don't await - capture the promise to check later
 			const researchPromise = service.conductResearch({ topic: 'Test' });
 
-			// Wait a tick for the async operations to start
-			await Promise.resolve();
+			// Wait for startResearch to complete and currentInteractionId to be set
+			// Need to flush multiple promise microtasks due to retry wrapper
+			await new Promise((resolve) => setTimeout(resolve, 0));
 
 			// Cancel the research
 			await service.cancelResearch();

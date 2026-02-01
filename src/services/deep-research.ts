@@ -3,6 +3,7 @@ import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
 import { ResearchManager, ReportGenerator, Interaction } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
+import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
 
 /**
  * System folders that should not be written to
@@ -41,9 +42,11 @@ export class DeepResearchService {
 	private researchManager: ResearchManager | null = null;
 	private reportGenerator: ReportGenerator;
 	private currentInteractionId: string | null = null;
+	private retryConfig: RetryConfig;
 
 	constructor(private plugin: InstanceType<typeof ObsidianGemini>) {
 		this.reportGenerator = new ReportGenerator();
+		this.retryConfig = DEFAULT_RETRY_CONFIG;
 	}
 
 	/**
@@ -128,11 +131,18 @@ export class DeepResearchService {
 			this.plugin.logger.log('DeepResearch: Using web search only');
 		}
 
-		// Start research (async)
-		const interaction = await researchManager.startResearch({
-			input: params.topic,
-			fileSearchStoreNames,
-		});
+		// Start research with retry logic
+		// Note: startResearch is idempotent when using the same input - the API will return
+		// the same interaction if called multiple times with identical parameters
+		const interaction = await executeWithRetry(
+			() =>
+				researchManager.startResearch({
+					input: params.topic,
+					fileSearchStoreNames,
+				}),
+			this.retryConfig,
+			{ operationName: 'DeepResearch.startResearch', logger: this.plugin.logger }
+		);
 
 		// Extract and validate interaction ID
 		const interactionId = interaction.id;
@@ -145,8 +155,11 @@ export class DeepResearchService {
 		this.plugin.logger.log(`DeepResearch: Research started with interaction ID: ${interactionId}`);
 
 		try {
-			// Poll until complete
-			const completed = await researchManager.poll(interactionId);
+			// Poll until complete with retry logic (poll is idempotent - safe to retry)
+			const completed = await executeWithRetry(() => researchManager.poll(interactionId), this.retryConfig, {
+				operationName: 'DeepResearch.poll',
+				logger: this.plugin.logger,
+			});
 
 			// Check status
 			if (completed.status === 'failed') {
@@ -265,10 +278,14 @@ export class DeepResearchService {
 
 		// Check if path is inside the plugin's history folder (or is the folder itself)
 		const historyFolder = this.plugin.settings.historyFolder;
-		if (historyFolder && (normalizedPath === historyFolder || normalizedPath.startsWith(historyFolder + '/'))) {
-			throw new Error(
-				`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`
-			);
+		if (historyFolder) {
+			// Normalize the history folder to ensure consistent comparison
+			const normalizedHistoryFolder = normalizePath(historyFolder);
+			if (normalizedPath === normalizedHistoryFolder || normalizedPath.startsWith(normalizedHistoryFolder + '/')) {
+				throw new Error(
+					`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`
+				);
+			}
 		}
 
 		return normalizedPath;

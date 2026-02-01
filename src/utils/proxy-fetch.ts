@@ -1,4 +1,65 @@
-import { requestUrl, RequestUrlParam } from 'obsidian';
+import { requestUrl, RequestUrlParam, RequestUrlResponse } from 'obsidian';
+import {
+	executeWithRetry,
+	RetryConfig,
+	DEFAULT_RETRY_CONFIG,
+	isRetryableHttpStatus,
+	isTransientNetworkError,
+} from './retry';
+
+/**
+ * HTTP methods that are safe to retry (idempotent)
+ */
+const IDEMPOTENT_METHODS = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'];
+
+/**
+ * Check if an HTTP request error or response is retryable
+ */
+function isRetryableHttpError(error: unknown, status?: number): boolean {
+	if (status !== undefined) {
+		return isRetryableHttpStatus(status);
+	}
+	return isTransientNetworkError(error);
+}
+
+/**
+ * Execute requestUrl with exponential backoff retry for idempotent methods.
+ * Exported for use by other tools that need retry logic (e.g., web-fetch-tool).
+ */
+export async function requestUrlWithRetry(
+	reqParam: RequestUrlParam,
+	config: RetryConfig = DEFAULT_RETRY_CONFIG
+): Promise<RequestUrlResponse> {
+	const method = (reqParam.method || 'GET').toUpperCase();
+	const isIdempotent = IDEMPOTENT_METHODS.includes(method);
+
+	// For non-idempotent methods, just make the request without retry
+	if (!isIdempotent) {
+		return requestUrl(reqParam);
+	}
+
+	// For idempotent methods, use retry with custom logic for HTTP status codes
+	return executeWithRetry(
+		async () => {
+			const response = await requestUrl(reqParam);
+
+			// Throw on retryable status codes so the retry logic can handle them
+			if (isRetryableHttpStatus(response.status)) {
+				const error = new Error(`HTTP ${response.status}`);
+				(error as any).status = response.status;
+				(error as any).response = response;
+				throw error;
+			}
+
+			return response;
+		},
+		config,
+		{
+			operationName: `HTTP ${method} ${reqParam.url}`,
+			isRetryable: (error) => isRetryableHttpError(error),
+		}
+	);
+}
 
 /**
  * Helper function to convert Headers-like objects to a plain object
@@ -116,7 +177,8 @@ export async function proxyFetch(input: RequestInfo | URL, init?: RequestInit): 
 	}
 
 	try {
-		const response = await requestUrl(reqParam);
+		// Use retry wrapper for automatic exponential backoff on idempotent methods
+		const response = await requestUrlWithRetry(reqParam);
 
 		// Convert headers to Headers object
 		const respHeaders = new Headers(response.headers);

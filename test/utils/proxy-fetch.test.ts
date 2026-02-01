@@ -180,11 +180,12 @@ describe('proxyFetch', () => {
 
 	describe('error handling', () => {
 		it('should throw TypeError on network error', async () => {
-			mockRequestUrl.mockRejectedValue(new Error('Network unavailable'));
+			// Use a non-retryable error message to avoid retry delays in tests
+			mockRequestUrl.mockRejectedValue(new Error('Invalid URL format'));
 
 			await expect(proxyFetch('https://api.example.com/data')).rejects.toThrow(TypeError);
 			await expect(proxyFetch('https://api.example.com/data')).rejects.toThrow(
-				'Network request failed: Network unavailable'
+				'Network request failed: Invalid URL format'
 			);
 		});
 
@@ -192,6 +193,27 @@ describe('proxyFetch', () => {
 			mockRequestUrl.mockRejectedValue('Unknown error');
 
 			await expect(proxyFetch('https://api.example.com/data')).rejects.toBe('Unknown error');
+		});
+
+		it('should retry on transient network errors for GET requests', async () => {
+			// First call fails with transient error, second succeeds
+			mockRequestUrl.mockRejectedValueOnce(new Error('ECONNRESET')).mockResolvedValueOnce({
+				status: 200,
+				headers: {},
+				arrayBuffer: new ArrayBuffer(0),
+			});
+
+			const response = await proxyFetch('https://api.example.com/data');
+
+			expect(response.status).toBe(200);
+			expect(mockRequestUrl).toHaveBeenCalledTimes(2);
+		});
+
+		it('should not retry POST requests on transient errors', async () => {
+			mockRequestUrl.mockRejectedValue(new Error('ECONNRESET'));
+
+			await expect(proxyFetch('https://api.example.com/data', { method: 'POST' })).rejects.toThrow(TypeError);
+			expect(mockRequestUrl).toHaveBeenCalledTimes(1);
 		});
 	});
 });
