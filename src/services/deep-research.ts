@@ -68,6 +68,10 @@ export class DeepResearchService {
 			if (interactions && interactions._client) {
 				this.plugin.logger.log('[DeepResearch] Injecting proxyFetch into interactions client');
 				interactions._client.fetch = proxyFetch;
+			} else {
+				this.plugin.logger.warn(
+					'[DeepResearch] Could not inject proxyFetch - SDK structure may have changed. CORS issues may occur.'
+				);
 			}
 
 			this.researchManager = new ResearchManager(genAI);
