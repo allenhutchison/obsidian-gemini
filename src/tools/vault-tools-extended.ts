@@ -1,6 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
-import { TFile } from 'obsidian';
+import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 
 /**
@@ -41,8 +41,9 @@ export class UpdateFrontmatterTool implements Tool {
 		const { path, key, value } = params;
 
 		// Check for system folder protection
-		const historyFolder = plugin.settings.historyFolder;
-		if (path.startsWith(historyFolder + '/') || path.startsWith('.obsidian/')) {
+		const normalizedPath = normalizePath(path);
+		const normalizedHistoryFolder = normalizePath(plugin.settings.historyFolder);
+		if (normalizedPath.startsWith(normalizedHistoryFolder + '/') || normalizedPath.startsWith('.obsidian/')) {
 			return {
 				success: false,
 				error: `Cannot modify files in protected system folder: ${path}`,
@@ -50,9 +51,9 @@ export class UpdateFrontmatterTool implements Tool {
 		}
 
 		try {
-			const file = plugin.app.vault.getAbstractFileByPath(path);
+			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 
-			if (!file || !(file instanceof TFile)) {
+			if (!file || !(file instanceof TFile) || file.extension !== 'md') {
 				return {
 					success: false,
 					error: `File not found or is not a markdown file: ${path}`,
@@ -64,7 +65,7 @@ export class UpdateFrontmatterTool implements Tool {
 				frontmatter[key] = value;
 			});
 
-			plugin.logger.log(`Updated frontmatter for ${path}: ${key} = ${value}`);
+			plugin.logger.debug(`Updated frontmatter for ${path}: ${key} = ${value}`);
 
 			return {
 				success: true,
@@ -115,8 +116,9 @@ export class AppendContentTool implements Tool {
 		const { path, content } = params;
 
 		// Check for system folder protection
-		const historyFolder = plugin.settings.historyFolder;
-		if (path.startsWith(historyFolder + '/') || path.startsWith('.obsidian/')) {
+		const normalizedPath = normalizePath(path);
+		const normalizedHistoryFolder = normalizePath(plugin.settings.historyFolder);
+		if (normalizedPath.startsWith(normalizedHistoryFolder + '/') || normalizedPath.startsWith('.obsidian/')) {
 			return {
 				success: false,
 				error: `Cannot modify files in protected system folder: ${path}`,
@@ -124,7 +126,7 @@ export class AppendContentTool implements Tool {
 		}
 
 		try {
-			const file = plugin.app.vault.getAbstractFileByPath(path);
+			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 
 			if (!file || !(file instanceof TFile)) {
 				return {
@@ -142,7 +144,7 @@ export class AppendContentTool implements Tool {
 
 			await plugin.app.vault.append(file, contentToAppend);
 
-			plugin.logger.log(`Appended ${contentToAppend.length} chars to ${path}`);
+			plugin.logger.debug(`Appended ${contentToAppend.length} chars to ${path}`);
 
 			return {
 				success: true,
