@@ -259,9 +259,9 @@ export class DeepResearchService {
 			}
 		}
 
-		// Check if path is inside the plugin's history folder
+		// Check if path is inside the plugin's history folder (or is the folder itself)
 		const historyFolder = this.plugin.settings.historyFolder;
-		if (historyFolder && normalizedPath.startsWith(historyFolder + '/')) {
+		if (historyFolder && (normalizedPath === historyFolder || normalizedPath.startsWith(historyFolder + '/'))) {
 			throw new Error(
 				`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`
 			);

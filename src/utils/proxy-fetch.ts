@@ -83,8 +83,12 @@ export async function proxyFetch(input: RequestInfo | URL, init?: RequestInit): 
 	if (init?.body !== undefined) {
 		if (typeof init.body === 'string') {
 			body = init.body;
-		} else if (init.body instanceof ArrayBuffer || ArrayBuffer.isView(init.body)) {
-			body = init.body as ArrayBuffer;
+		} else if (init.body instanceof ArrayBuffer) {
+			body = init.body;
+		} else if (ArrayBuffer.isView(init.body)) {
+			// Extract the exact byte range from the ArrayBufferView (TypedArray or DataView)
+			const view = init.body;
+			body = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
 		} else {
 			// Try to stringify if it's an object (though usually fetch expects string/buffer)
 			try {
