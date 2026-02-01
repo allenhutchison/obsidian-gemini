@@ -70,6 +70,8 @@ export interface ObsidianGeminiSettings {
 	loopDetectionEnabled: boolean;
 	loopDetectionThreshold: number;
 	loopDetectionTimeWindowSeconds: number;
+	// Trusted Mode
+	alwaysAllowReadWrite: boolean;
 	// V4 upgrade tracking
 	hasSeenV4Welcome: boolean;
 	// Version tracking for update notifications
@@ -106,6 +108,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	loopDetectionEnabled: true,
 	loopDetectionThreshold: 3,
 	loopDetectionTimeWindowSeconds: 30,
+	// Trusted Mode
+	alwaysAllowReadWrite: false,
 	// V4 upgrade tracking
 	hasSeenV4Welcome: false,
 	// Version tracking for update notifications
@@ -532,11 +536,29 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 
+		// Register extended vault tools (Frontmatter & Append)
+		// Dynamically import to avoid circular dependencies if any
+		const { UpdateFrontmatterTool, AppendContentTool } = await import(
+			'./tools/vault-tools-extended'
+		);
+		this.toolRegistry.registerTool(new UpdateFrontmatterTool());
+		this.toolRegistry.registerTool(new AppendContentTool());
+
 		// Register web tools (Google Search and Web Fetch)
 		const { getWebTools } = await import('./tools/web-tools');
 		const webTools = getWebTools();
 		for (const tool of webTools) {
 			this.toolRegistry.registerTool(tool);
+			// Register fetch_url alias for WebFetchTool
+			// This is required for compatibility with AGENTS.md which expects 'fetch_url'
+			if (tool.name === 'web_fetch') {
+				// We need to cast to any or instantiate a new class to set the name
+				// Since setToolName is not on the interface, we'll try to clone it or instantiate new
+				// Easier approach: Use the WebFetchTool class directly if possible, or just re-register
+				// However, getWebTools returns instances.
+				const { WebFetchTool } = await import('./tools/web-fetch-tool');
+				this.toolRegistry.registerTool(new WebFetchTool(this).setName('fetch_url'));
+			}
 		}
 
 		// Register memory tools
@@ -655,7 +677,7 @@ export default class ObsidianGemini extends Plugin {
 
 				// Clean up partial initialization
 				if (this.ragIndexing) {
-					await this.ragIndexing.destroy().catch(() => {});
+					await this.ragIndexing.destroy().catch(() => { });
 					this.ragIndexing = null;
 				}
 			}

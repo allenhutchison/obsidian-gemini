@@ -448,6 +448,20 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 				);
 
+			// Trusted Mode Setting
+			const trustedModeSetting = new Setting(containerEl)
+				.setName('Trusted Mode (Always Allow Read/Write)')
+				.setDesc('DANGEROUS: Allow the agent to create/edit/delete files without asking for confirmation.');
+
+			trustedModeSetting.descEl.style.color = 'var(--text-warning)';
+
+			trustedModeSetting.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.alwaysAllowReadWrite ?? false).onChange(async (value) => {
+					this.plugin.settings.alwaysAllowReadWrite = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
 			// Tool Loop Detection Settings
 			new Setting(containerEl).setName('Tool Loop Detection').setHeading();
 
