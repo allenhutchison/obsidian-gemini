@@ -45,7 +45,7 @@
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
-		"@allenhutchison/gemini-utils": "^0.4.3"
+		"@allenhutchison/gemini-utils": "^0.5.0"
 	},
 	"lint-staged": {
 		"*": "prettier --write --ignore-unknown"
