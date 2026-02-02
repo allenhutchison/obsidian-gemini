@@ -201,13 +201,23 @@ export class DeepResearchService {
 	 */
 	async cancelResearch(): Promise<void> {
 		if (this.currentInteractionId && this.researchManager) {
-			this.plugin.logger.log(`DeepResearch: Cancelling research ${this.currentInteractionId}`);
+			const interactionId = this.currentInteractionId;
+			this.plugin.logger.log(`DeepResearch: Cancelling research ${interactionId}`);
 			try {
-				await this.researchManager.cancel(this.currentInteractionId);
+				// Use retry logic for cancel - same pattern as poll()
+				await executeWithRetry(() => this.researchManager!.cancel(interactionId), this.retryConfig, {
+					operationName: 'DeepResearch.cancel',
+					logger: this.plugin.logger,
+				});
+				// Only clear the interaction ID if cancel succeeds
+				this.currentInteractionId = null;
 			} catch (error) {
-				this.plugin.logger.error('DeepResearch: Failed to cancel research:', error);
+				// All retries failed - leave currentInteractionId intact so UI reflects still-running session
+				this.plugin.logger.error(
+					`DeepResearch: Failed to cancel research ${interactionId} after all retry attempts:`,
+					error
+				);
 			}
-			this.currentInteractionId = null;
 		}
 	}
 
