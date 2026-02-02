@@ -27,9 +27,15 @@ jest.mock('@allenhutchison/gemini-utils', () => ({
 	})),
 }));
 
-// Mock Google GenAI
+// Mock Google GenAI with interactions structure for proxyFetch injection
 jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn().mockImplementation(() => ({})),
+	GoogleGenAI: jest.fn().mockImplementation(() => ({
+		interactions: {
+			_client: {
+				fetch: undefined,
+			},
+		},
+	})),
 }));
 
 describe('DeepResearchService', () => {

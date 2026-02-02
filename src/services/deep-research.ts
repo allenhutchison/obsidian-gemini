@@ -72,8 +72,10 @@ export class DeepResearchService {
 				this.plugin.logger.log('[DeepResearch] Injecting proxyFetch into interactions client');
 				interactions._client.fetch = proxyFetch;
 			} else {
-				this.plugin.logger.warn(
-					'[DeepResearch] Could not inject proxyFetch - SDK structure may have changed. CORS issues may occur.'
+				// Fail fast - without proxyFetch injection, all research requests will fail with CORS errors
+				throw new Error(
+					'Failed to initialize research client: SDK structure has changed and proxyFetch injection failed. ' +
+						'Please update the plugin or report this issue at https://github.com/allenhutchison/obsidian-gemini/issues'
 				);
 			}
 
@@ -241,8 +243,12 @@ export class DeepResearchService {
 		// Add our custom header with topic and date
 		const header = `# ${topic}\n\n*Generated on ${new Date().toLocaleDateString()}*\n\n---\n\n`;
 
-		// Replace the generic header from ReportGenerator
-		const reportBody = baseReport.replace(/^# Research Report\n\n/, '');
+		// Replace the generic header from ReportGenerator (if present)
+		// Use test-then-replace pattern to handle potential format changes gracefully
+		const genericHeaderPattern = /^# Research Report\n\n/;
+		const reportBody = genericHeaderPattern.test(baseReport)
+			? baseReport.replace(genericHeaderPattern, '')
+			: baseReport;
 
 		return header + reportBody;
 	}
