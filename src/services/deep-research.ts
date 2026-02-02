@@ -154,46 +154,49 @@ export class DeepResearchService {
 		this.currentInteractionId = interactionId;
 		this.plugin.logger.log(`DeepResearch: Research started with interaction ID: ${interactionId}`);
 
-		try {
-			// Poll until complete with retry logic (poll is idempotent - safe to retry)
-			const completed = await executeWithRetry(() => researchManager.poll(interactionId), this.retryConfig, {
-				operationName: 'DeepResearch.poll',
-				logger: this.plugin.logger,
-			});
+		// Poll until complete with retry logic (poll is idempotent - safe to retry)
+		const completed = await executeWithRetry(() => researchManager.poll(interactionId), this.retryConfig, {
+			operationName: 'DeepResearch.poll',
+			logger: this.plugin.logger,
+		});
 
-			// Check status
-			if (completed.status === 'failed') {
-				const errorMessage = (completed as any).error?.message || 'Unknown error';
-				throw new Error(`Research failed: ${errorMessage}`);
-			}
-
-			if (completed.status === 'cancelled') {
-				throw new Error('Research was cancelled');
-			}
-
-			this.plugin.logger.log('DeepResearch: Research completed, generating report');
-
-			// Generate markdown report from outputs
-			const report = this.generateReport(params.topic, completed);
-
-			// Count sources from outputs
-			const sourceCount = this.countSources(completed);
-
-			// Save to file if requested
-			let outputFile: TFile | undefined;
-			if (params.outputFile) {
-				outputFile = (await this.saveReport(params.outputFile, report)) || undefined;
-			}
-
-			return {
-				topic: params.topic,
-				report,
-				sourceCount,
-				outputFile,
-			};
-		} finally {
+		// Check status
+		if (completed.status === 'failed') {
+			const errorMessage = (completed as any).error?.message || 'Unknown error';
+			// Clear interaction ID on terminal failure state
 			this.currentInteractionId = null;
+			throw new Error(`Research failed: ${errorMessage}`);
 		}
+
+		if (completed.status === 'cancelled') {
+			// Clear interaction ID on terminal cancelled state
+			this.currentInteractionId = null;
+			throw new Error('Research was cancelled');
+		}
+
+		// Research completed successfully - clear the interaction ID
+		this.currentInteractionId = null;
+
+		this.plugin.logger.log('DeepResearch: Research completed, generating report');
+
+		// Generate markdown report from outputs
+		const report = this.generateReport(params.topic, completed);
+
+		// Count sources from outputs
+		const sourceCount = this.countSources(completed);
+
+		// Save to file if requested
+		let outputFile: TFile | undefined;
+		if (params.outputFile) {
+			outputFile = (await this.saveReport(params.outputFile, report)) || undefined;
+		}
+
+		return {
+			topic: params.topic,
+			report,
+			sourceCount,
+			outputFile,
+		};
 	}
 
 	/**
@@ -305,10 +308,11 @@ export class DeepResearchService {
 	 * Save the research report to a file
 	 */
 	private async saveReport(filePath: string, content: string): Promise<TFile | null> {
-		try {
-			// Validate and normalize the file path before any write operations
-			const normalizedPath = this.validateAndNormalizeFilePath(filePath);
+		// Validate and normalize the file path before any write operations
+		// Let validation errors propagate so callers can handle user-fixable path errors
+		const normalizedPath = this.validateAndNormalizeFilePath(filePath);
 
+		try {
 			// Check if file exists
 			const existingFile = this.plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			if (existingFile instanceof TFile) {
@@ -320,6 +324,7 @@ export class DeepResearchService {
 				return await this.plugin.app.vault.create(normalizedPath, content);
 			}
 		} catch (error) {
+			// Only catch and log IO/write errors, not validation errors
 			this.plugin.logger.error('DeepResearch: Failed to save report:', error);
 			return null;
 		}
