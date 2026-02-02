@@ -1,4 +1,4 @@
-import { App, TFile, Notice, setIcon } from 'obsidian';
+import { App, TFile, TFolder, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
@@ -35,6 +35,7 @@ export interface UICallbacks {
 	addImageAttachment: (attachment: ImageAttachment) => void;
 	removeImageAttachment: (id: string) => void;
 	getImageAttachments: () => ImageAttachment[];
+	handleDroppedFiles: (files: (TFile | TFolder)[]) => void;
 }
 
 /**
@@ -378,6 +379,82 @@ export class AgentViewUI {
 
 		userInput.addEventListener('drop', async (e) => {
 			userInput.removeClass('gemini-agent-input-dragover');
+
+			// --- Handle Vault File Drops ---
+			const droppedFiles: (TFile | TFolder)[] = [];
+
+			// Helper to resolve path to file/folder
+			const resolvePath = (path: string): TFile | TFolder | null => {
+				const abstractFile = this.app.vault.getAbstractFileByPath(path);
+				if (abstractFile instanceof TFile || abstractFile instanceof TFolder) {
+					return abstractFile;
+				}
+				// Try to resolve as a link (closest match)
+				const resolved = this.app.metadataCache.getFirstLinkpathDest(path, '');
+				return resolved;
+			};
+
+			// 1. Check for File objects (Electron drag from file system)
+			if (e.dataTransfer?.files?.length) {
+				const adapter = this.app.vault.adapter;
+				if (adapter && 'basePath' in adapter) {
+					const basePath = (adapter as any).basePath;
+
+					for (const file of Array.from(e.dataTransfer.files)) {
+						const rawPath = (file as any).path; // Electron adds .path
+						if (rawPath && typeof rawPath === 'string' && rawPath.startsWith(basePath)) {
+							let relPath = rawPath.substring(basePath.length);
+							relPath = relPath.replace(/\\/g, '/'); // Normalize to forward slashes
+							if (relPath.startsWith('/')) relPath = relPath.substring(1);
+
+							const validFile = resolvePath(relPath);
+							if (validFile) droppedFiles.push(validFile);
+						}
+					}
+				}
+			}
+
+			// 2. Check for Text links (Obsidian internal drag)
+			if (droppedFiles.length === 0 && e.dataTransfer) {
+				const text = e.dataTransfer.getData('text/plain');
+				if (text) {
+					const lines = text.split('\n');
+					for (const line of lines) {
+						const trimmed = line.trim();
+						if (!trimmed) continue;
+
+						// Check Wikilink: [[Path|Name]] or [[Path]]
+						const wikiMatch = trimmed.match(/^\[\[(.*?)(\|.*)?\]\]$/);
+						if (wikiMatch) {
+							const resolved = resolvePath(wikiMatch[1]);
+							if (resolved) droppedFiles.push(resolved);
+							continue;
+						}
+
+						// Check Markdown Link: [Name](Path)
+						const mdMatch = trimmed.match(/^\[(.*?)\]\((.*?)\)$/);
+						if (mdMatch) {
+							try {
+								const path = decodeURIComponent(mdMatch[2]);
+								const resolved = resolvePath(path);
+								if (resolved) droppedFiles.push(resolved);
+							} catch (err) {
+								// Ignore decoding errors
+							}
+							continue;
+						}
+					}
+				}
+			}
+
+			// If valid vault files were found, add them and stop
+			if (droppedFiles.length > 0) {
+				e.preventDefault();
+				e.stopPropagation();
+				callbacks.handleDroppedFiles(droppedFiles);
+				return;
+			}
+			// --- End Vault File Drops ---
 
 			// First check if there are any supported images in the drop
 			const files = e.dataTransfer?.files;

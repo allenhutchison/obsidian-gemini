@@ -126,6 +126,15 @@ export class AgentView extends ItemView {
 			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
 			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
 			getImageAttachments: () => this.pendingImageAttachments,
+			handleDroppedFiles: (files: (TFile | TFolder)[]) => {
+				files.forEach((file) => {
+					if (file instanceof TFile) {
+						this.insertFileChip(file);
+					} else if (file instanceof TFolder) {
+						this.insertFolderChip(file);
+					}
+				});
+			},
 		};
 
 		// Create the main interface using AgentViewUI
@@ -919,6 +928,15 @@ To reference an image in your response, use the path shown above.`;
 			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
 			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
 			getImageAttachments: () => this.pendingImageAttachments,
+			handleDroppedFiles: (files: (TFile | TFolder)[]) => {
+				files.forEach((file) => {
+					if (file instanceof TFile) {
+						this.insertFileChip(file);
+					} else if (file instanceof TFolder) {
+						this.insertFolderChip(file);
+					}
+				});
+			},
 		};
 	}
 
