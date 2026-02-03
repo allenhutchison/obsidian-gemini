@@ -53,26 +53,33 @@ describe('DeepResearchTool', () => {
 			expect(tool.category).toBe(ToolCategory.READ_ONLY);
 			expect(tool.requiresConfirmation).toBe(true);
 			expect(tool.description).toContain('comprehensive');
-			expect(tool.description).toContain('multi-phase');
+			expect(tool.description).toContain('Deep Research model');
 		});
 
 		it('should have confirmation message function', () => {
 			const message = tool.confirmationMessage!({ topic: 'AI Ethics' });
 			expect(message).toContain('Conduct deep research on: "AI Ethics"');
-			expect(message).toContain('3 search iterations');
+			expect(message).toContain('using vault and web');
 		});
 
-		it('should include custom depth in confirmation message', () => {
-			const message = tool.confirmationMessage!({ topic: 'Test', depth: 5 });
-			expect(message).toContain('5 search iterations');
+		it('should include scope in confirmation message', () => {
+			const messageVault = tool.confirmationMessage!({ topic: 'Test', scope: 'vault_only' });
+			expect(messageVault).toContain('using vault notes only');
+
+			const messageWeb = tool.confirmationMessage!({ topic: 'Test', scope: 'web_only' });
+			expect(messageWeb).toContain('using web search only');
+
+			const messageBoth = tool.confirmationMessage!({ topic: 'Test', scope: 'both' });
+			expect(messageBoth).toContain('using vault and web');
 		});
 
 		it('should have correct parameter schema', () => {
 			expect(tool.parameters.type).toBe('object');
 			expect(tool.parameters.properties).toHaveProperty('topic');
-			expect(tool.parameters.properties).toHaveProperty('depth');
+			expect(tool.parameters.properties).toHaveProperty('scope');
 			expect(tool.parameters.properties).toHaveProperty('outputFile');
 			expect(tool.parameters.required).toContain('topic');
+			expect(tool.parameters.required).not.toContain('scope');
 		});
 
 		it('should define topic as required string parameter', () => {
@@ -80,14 +87,49 @@ describe('DeepResearchTool', () => {
 			expect(tool.parameters.properties.topic.description).toBeTruthy();
 		});
 
-		it('should define depth as optional number parameter', () => {
-			expect(tool.parameters.properties.depth.type).toBe('number');
-			expect(tool.parameters.required).not.toContain('depth');
+		it('should define scope as optional enum parameter', () => {
+			expect(tool.parameters.properties.scope.type).toBe('string');
+			expect(tool.parameters.properties.scope.enum).toEqual(['vault_only', 'web_only', 'both']);
+			expect(tool.parameters.required).not.toContain('scope');
 		});
 
 		it('should define outputFile as optional string parameter', () => {
 			expect(tool.parameters.properties.outputFile.type).toBe('string');
 			expect(tool.parameters.required).not.toContain('outputFile');
+		});
+	});
+
+	describe('getProgressDescription', () => {
+		let tool: DeepResearchTool;
+
+		beforeEach(() => {
+			tool = new DeepResearchTool();
+		});
+
+		it('should return topic in progress description', () => {
+			const desc = tool.getProgressDescription!({ topic: 'AI Ethics' });
+			expect(desc).toBe('Researching "AI Ethics"');
+		});
+
+		it('should truncate long topics', () => {
+			const desc = tool.getProgressDescription!({ topic: 'This is a very long research topic' });
+			expect(desc).toBe('Researching "This is a very long re..."');
+		});
+
+		it('should include scope in progress description', () => {
+			const descVault = tool.getProgressDescription!({ topic: 'Test', scope: 'vault_only' });
+			expect(descVault).toBe('Researching "Test" (vault)');
+
+			const descWeb = tool.getProgressDescription!({ topic: 'Test', scope: 'web_only' });
+			expect(descWeb).toBe('Researching "Test" (web)');
+
+			const descBoth = tool.getProgressDescription!({ topic: 'Test', scope: 'both' });
+			expect(descBoth).toBe('Researching "Test"');
+		});
+
+		it('should return default message when no topic', () => {
+			const desc = tool.getProgressDescription!({ topic: '' });
+			expect(desc).toBe('Conducting research');
 		});
 	});
 
@@ -143,9 +185,7 @@ describe('DeepResearchTool', () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'AI Ethics',
 				report: '# AI Ethics\n\nResearch report...',
-				searchCount: 5,
 				sourceCount: 10,
-				sectionCount: 3,
 			});
 
 			const result = await tool.execute({ topic: 'AI Ethics' }, mockContext);
@@ -154,32 +194,28 @@ describe('DeepResearchTool', () => {
 			expect(result.data).toEqual({
 				topic: 'AI Ethics',
 				report: expect.any(String),
-				searches: 5,
 				sources: 10,
-				sections: 3,
 				outputFile: undefined,
 			});
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'AI Ethics',
-				depth: undefined,
+				scope: undefined,
 				outputFile: undefined,
 			});
 		});
 
-		it('should pass depth parameter to service', async () => {
+		it('should pass scope parameter to service', async () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'Test',
 				report: 'Report',
-				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2,
 			});
 
-			await tool.execute({ topic: 'Test', depth: 5 }, mockContext);
+			await tool.execute({ topic: 'Test', scope: 'vault_only' }, mockContext);
 
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'Test',
-				depth: 5,
+				scope: 'vault_only',
 				outputFile: undefined,
 			});
 		});
@@ -188,16 +224,14 @@ describe('DeepResearchTool', () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'Test',
 				report: 'Report',
-				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2,
 			});
 
 			await tool.execute({ topic: 'Test', outputFile: 'research.md' }, mockContext);
 
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'Test',
-				depth: undefined,
+				scope: undefined,
 				outputFile: 'research.md',
 			});
 		});
@@ -206,16 +240,14 @@ describe('DeepResearchTool', () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'Test',
 				report: 'Report',
-				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2,
 			});
 
 			await tool.execute({ topic: 'Test', outputFile: 'research' }, mockContext);
 
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith({
 				topic: 'Test',
-				depth: undefined,
+				scope: undefined,
 				outputFile: 'research.md',
 			});
 		});
@@ -227,9 +259,7 @@ describe('DeepResearchTool', () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'Test',
 				report: 'Report',
-				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2,
 				outputFile: mockFile,
 			});
 
@@ -247,9 +277,7 @@ describe('DeepResearchTool', () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'Test',
 				report: 'Report',
-				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2,
 				outputFile: mockFile,
 			});
 
@@ -268,9 +296,7 @@ describe('DeepResearchTool', () => {
 			mockDeepResearch.conductResearch.mockResolvedValue({
 				topic: 'Test',
 				report: 'Report',
-				searchCount: 3,
 				sourceCount: 5,
-				sectionCount: 2,
 			});
 
 			const initialFiles = mockContext.session!.context.contextFiles.length;
@@ -296,6 +322,17 @@ describe('DeepResearchTool', () => {
 
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('Deep research failed: Unknown error');
+		});
+
+		it('should handle vault_only scope error gracefully', async () => {
+			mockDeepResearch.conductResearch.mockRejectedValue(
+				new Error('Vault-only research requires RAG indexing to be enabled and configured')
+			);
+
+			const result = await tool.execute({ topic: 'Test', scope: 'vault_only' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Vault-only research requires RAG indexing');
 		});
 	});
 

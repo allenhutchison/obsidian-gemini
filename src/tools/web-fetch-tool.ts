@@ -2,7 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
-import { requestUrl } from 'obsidian';
+import { requestUrlWithRetry } from '../utils/proxy-fetch';
 
 /**
  * Web fetch tool using Google's URL Context feature
@@ -210,8 +210,8 @@ export class WebFetchTool implements Tool {
 		plugin: InstanceType<typeof ObsidianGemini>
 	): Promise<ToolResult> {
 		try {
-			// Fetch the URL content directly
-			const response = await requestUrl({
+			// Fetch the URL content directly with retry logic for transient errors
+			const response = await requestUrlWithRetry({
 				url: params.url,
 				method: 'GET',
 				headers: {
