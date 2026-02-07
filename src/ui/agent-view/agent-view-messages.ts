@@ -4,6 +4,8 @@ import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatFileSize } from '../../utils/format-utils';
 import { Tool } from '../../tools/types';
+import { A2UIRenderer } from '../a2ui/renderer';
+import { A2UIComponent } from '../a2ui/types';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
@@ -244,8 +246,38 @@ export class AgentViewMessages {
 				await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
 			}
 		} else {
-			// Use markdown rendering like the regular chat view
-			await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
+			// Check for A2UI code block
+			const a2uiMatch = formattedMessage.match(/```json:a2ui\n([\s\S]*?)\n```/);
+			if (a2uiMatch) {
+				try {
+					// Extract JSON and render A2UI
+					const jsonString = a2uiMatch[1];
+					const uiContent = JSON.parse(jsonString) as A2UIComponent;
+
+					// Render any text BEFORE the A2UI block
+					const preText = formattedMessage.substring(0, a2uiMatch.index);
+					if (preText.trim()) {
+						await MarkdownRenderer.render(this.app, preText, content, sourcePath, this.viewContext);
+					}
+
+					// Render A2UI
+					const renderer = new A2UIRenderer(this.app, content, uiContent, sourcePath);
+					renderer.onload(); // Manually trigger load since we're not attaching to DOM tree normally
+
+					// Render any text AFTER the A2UI block
+					const postText = formattedMessage.substring((a2uiMatch.index || 0) + a2uiMatch[0].length);
+					if (postText.trim()) {
+						await MarkdownRenderer.render(this.app, postText, content, sourcePath, this.viewContext);
+					}
+				} catch (e) {
+					console.error('Failed to render A2UI in chat:', e);
+					// Fallback to normal markdown rendering if parsing fails
+					await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
+				}
+			} else {
+				// Use markdown rendering like the regular chat view
+				await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
+			}
 		}
 
 		// Scroll to bottom after displaying message
@@ -392,7 +424,39 @@ export class AgentViewMessages {
 			}
 
 			const sourcePath = currentSession?.historyPath || '';
-			await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
+
+			// Check for A2UI code block (same logic as displayMessage)
+			const a2uiMatch = formattedMessage.match(/```json:a2ui\n([\s\S]*?)\n```/);
+			if (a2uiMatch) {
+				try {
+					const jsonString = a2uiMatch[1];
+					// Only try to render if JSON looks complete-ish (ends with curly brace)
+					if (jsonString.trim().endsWith('}')) {
+						const uiContent = JSON.parse(jsonString) as A2UIComponent;
+
+						const preText = formattedMessage.substring(0, a2uiMatch.index);
+						if (preText.trim()) {
+							await MarkdownRenderer.render(this.app, preText, messageDiv, sourcePath, this.viewContext);
+						}
+
+						const renderer = new A2UIRenderer(this.app, messageDiv, uiContent, sourcePath);
+						renderer.onload();
+
+						const postText = formattedMessage.substring((a2uiMatch.index || 0) + a2uiMatch[0].length);
+						if (postText.trim()) {
+							await MarkdownRenderer.render(this.app, postText, messageDiv, sourcePath, this.viewContext);
+						}
+					} else {
+						// JSON incomplete, render as text/markdown for now (streaming)
+						await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
+					}
+				} catch (e) {
+					// Fallback
+					await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
+				}
+			} else {
+				await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
+			}
 
 			// Add a copy button for model messages
 			if (entry.role === 'model') {

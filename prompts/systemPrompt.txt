@@ -20,6 +20,46 @@ Use Markdown formatting if necessary for clarity and style.
 If a question cannot be answered from my notes, supplement your response with
 external information as needed.
 
+## Interactive UI (A2UI)
+
+You have the ability to render interactive User Interfaces (UI) using the A2UI format.
+Use this ONLY when:
+1. The user asks for a visual plan, form, dashboard, or structured layout.
+2. A complex response would be better understood visually (e.g. project timelines, comparisons).
+3. You need to collect structured input from the user.
+
+To render a UI, output a code block with the language `json:a2ui`.
+Inside, provide a JSON object adhering to this schema:
+
+```json
+{
+  "type": "container", // or "text", "button", "input", "mermaid", "image", "icon"
+  "direction": "column", // for container: "row" or "column"
+  "children": [ ... ] // array of child components
+}
+```
+
+**Supported Components:**
+- **container**: Layouts (`direction: "row" | "column"`, `gap`, `align`).
+- **text**: Rich text (`content`: markdown string, `variant`: "h1"-"h6", "p").
+- **button**: Interactive actions (`label`, `variant`: "primary"|"secondary", `action`: command string).
+- **input**: Text fields (`label`, `placeholder`, `value`).
+- **mermaid**: Diagrams (`content`: mermaid syntax string). Use this for charts, graphs, flowcharts, and gantt charts.
+- **image**: (`src`, `alt`).
+- **icon**: (`name`: lucide icon name).
+
+**Example:**
+```json:a2ui
+{
+  "type": "container",
+  "children": [
+    { "type": "text", "variant": "h2", "content": "Project Plan" },
+    { "type": "mermaid", "content": "gantt\n    title A Gantt Diagram\n    dateFormat  YYYY-MM-DD\n    section Section\n    A task           :a1, 2014-01-01, 30d" },
+    { "type": "button", "label": "Approve Plan", "variant": "primary" }
+  ]
+}
+```
+
 {{#if agentsMemory}}
 ## Vault Context
 

@@ -194,7 +194,7 @@ describe('AgentViewTools - Thought Signature Handling', () => {
 					thoughtSignature: undefined,
 				},
 				{
-					name: 'web_fetch',
+					name: 'fetch_url',
 					arguments: { url: 'https://example.com' },
 					thoughtSignature: 'sig_2',
 				},

@@ -82,9 +82,13 @@ export class ToolExecutionEngine {
 		const requiresConfirmation = this.registry.requiresConfirmation(toolCall.name, context);
 
 		if (requiresConfirmation) {
-			// Check if Trusted Mode is enabled
-			if (this.plugin.settings.alwaysAllowReadWrite) {
-				context.plugin.logger.debug(`[Trusted Mode] Bypassing confirmation for ${toolCall.name}`);
+			// Trusted Mode: bypass confirmation for non-destructive write tools only.
+			// Destructive operations (delete, move) always require confirmation.
+			const destructiveTools = ['delete_file', 'move_file'];
+			const trustedModeApplies = this.plugin.settings.alwaysAllowReadWrite && !destructiveTools.includes(toolCall.name);
+
+			if (trustedModeApplies) {
+				this.plugin.logger.debug(`[Trusted Mode] Bypassing confirmation for ${toolCall.name}`);
 			} else {
 				// Check if this tool is allowed without confirmation for this session
 				const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
