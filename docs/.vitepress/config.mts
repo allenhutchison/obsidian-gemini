@@ -7,6 +7,8 @@ export default defineConfig({
 	cleanUrls: true,
 	lastUpdated: true,
 
+	head: [['link', { rel: 'icon', type: 'image/png', href: '/obsidian-gemini/favicon.png' }]],
+
 	themeConfig: {
 		nav: [
 			{ text: 'Guide', link: '/guide/getting-started' },
