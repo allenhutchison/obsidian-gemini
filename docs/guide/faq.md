@@ -93,7 +93,7 @@ The depth traversal setting was removed in v4.0 when Agent Mode became the defau
 
 ### My custom prompt template isn't being applied
 
-If the agent is ignoring your custom prompt, check that your model's rate limits haven't been exceeded — rate limit errors can appear as generic "failed" messages. Also verify: (1) the prompt file exists in `[Plugin State Folder]/Prompts/`, (2) the frontmatter reference uses correct wikilink syntax `[[Prompt Name]]`, and (3) "Enable Custom Prompts" is toggled on in settings. ([#330](https://github.com/allenhutchison/obsidian-gemini/discussions/330))
+If the agent is ignoring your custom prompt, check that your model's rate limits haven't been exceeded — rate limit errors can appear as generic "failed" messages. Also verify: (1) the prompt file exists in `[Plugin State Folder]/Prompts/`, and (2) the frontmatter reference uses correct wikilink syntax `[[Prompt Name]]`. ([#330](https://github.com/allenhutchison/obsidian-gemini/discussions/330))
 
 ---
 
