@@ -2,7 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
-import { requestUrl } from 'obsidian';
+import { requestUrlWithRetry } from '../utils/proxy-fetch';
 
 /**
  * Web fetch tool using Google's URL Context feature
@@ -12,19 +12,11 @@ import { requestUrl } from 'obsidian';
  * The model will fetch and analyze the content at the URL.
  */
 export class WebFetchTool implements Tool {
-	name = 'web_fetch';
-	displayName = 'Web Fetch';
+	name = 'fetch_url';
+	displayName = 'Fetch URL';
 	category = ToolCategory.READ_ONLY;
 	description =
 		"Fetch and analyze content from a specific URL using Google's URL Context feature and AI. Provide a URL and a query describing what information to extract or questions to answer about the page content. The AI will read the page and provide a targeted analysis based on your query. Returns the analyzed content, URL metadata, and fetch timestamp. Falls back to direct HTTP fetch if URL Context fails. Use this to extract specific information from web pages, documentation, articles, or any publicly accessible URL.";
-
-	setName(name: string): this {
-		if (!name || name.trim().length === 0) {
-			throw new Error('Tool name cannot be empty');
-		}
-		this.name = name;
-		return this;
-	}
 
 	parameters = {
 		type: 'object' as const,
@@ -210,8 +202,8 @@ export class WebFetchTool implements Tool {
 		plugin: InstanceType<typeof ObsidianGemini>
 	): Promise<ToolResult> {
 		try {
-			// Fetch the URL content directly
-			const response = await requestUrl({
+			// Fetch the URL content directly with retry logic for transient errors
+			const response = await requestUrlWithRetry({
 				url: params.url,
 				method: 'GET',
 				headers: {

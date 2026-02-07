@@ -1,7 +1,8 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
-import { TFile } from 'obsidian';
+import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
 
 /**
  * Tool to safely update YAML frontmatter without touching content
@@ -15,44 +16,71 @@ export class UpdateFrontmatterTool implements Tool {
 	description =
 		'Update a specific YAML frontmatter property in a file. ' +
 		'This tool is safe to use as it only modifies metadata and preserves the note content. ' +
-		'Use it to update status, tags, dates, or any other property.';
+		'Use it to update status, tags, dates, or any other property. ' +
+		'Path can be a full path (e.g., "folder/note.md"), a simple filename, or a wikilink text. The .md extension is optional.';
 
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			path: {
 				type: 'string' as const,
-				description: 'Absolute path to the file to update',
+				description:
+					'Path to the file relative to vault root (e.g., "folder/note.md", "folder/note", or "note"). Extension is optional.',
 			},
 			key: {
 				type: 'string' as const,
 				description: 'The property key to update',
 			},
 			value: {
-				type: ['string', 'number', 'boolean', 'array'] as const,
-				description: 'The new value for the property',
+				type: 'string' as const,
+				description: 'The new value for the property (string, number, boolean, or array)',
 			},
 		},
 		required: ['path', 'key', 'value'],
 	};
 
+	confirmationMessage = (params: { path: string; key: string; value: any }) => {
+		return `Update frontmatter in ${params.path}: set "${params.key}" to "${params.value}"`;
+	};
+
+	getProgressDescription(params: { path: string; key: string }): string {
+		if (params.path) {
+			return `Updating frontmatter in ${params.path}`;
+		}
+		return 'Updating frontmatter';
+	}
+
 	async execute(params: { path: string; key: string; value: any }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		const { path, key, value } = params;
 
-		// Check for system folder protection
-		const historyFolder = plugin.settings.historyFolder;
-		if (path.startsWith(historyFolder + '/') || path.startsWith('.obsidian/')) {
-			return {
-				success: false,
-				error: `Cannot modify files in protected system folder: ${path}`,
-			};
-		}
-
 		try {
-			const file = plugin.app.vault.getAbstractFileByPath(path);
+			const normalizedPath = normalizePath(path);
 
-			if (!file || !(file instanceof TFile)) {
+			// Check if path is excluded
+			if (shouldExcludePath(normalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot modify files in system folder: ${path}`,
+				};
+			}
+
+			// Try direct path lookup, then with .md extension
+			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			if (!file && !normalizedPath.endsWith('.md')) {
+				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+			}
+
+			// Try wikilink resolution
+			if (!file) {
+				const linkPath = path.replace(/^\[\[/, '').replace(/\]\]$/, '').replace(/\.md$/, '');
+				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+				if (resolved) {
+					file = resolved;
+				}
+			}
+
+			if (!file || !(file instanceof TFile) || file.extension !== 'md') {
 				return {
 					success: false,
 					error: `File not found or is not a markdown file: ${path}`,
@@ -64,11 +92,16 @@ export class UpdateFrontmatterTool implements Tool {
 				frontmatter[key] = value;
 			});
 
-			plugin.logger.log(`Updated frontmatter for ${path}: ${key} = ${value}`);
+			plugin.logger.debug(`Updated frontmatter for ${file.path}: ${key} = ${value}`);
 
 			return {
 				success: true,
-				output: `Successfully updated property "${key}" to "${value}" in ${path}`,
+				data: {
+					path: file.path,
+					key,
+					value,
+					action: 'updated',
+				},
 			};
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -93,14 +126,16 @@ export class AppendContentTool implements Tool {
 	description =
 		'Append text to the end of a file. ' +
 		'Useful for adding log entries, diary updates, or new sections without rewriting the entire file. ' +
-		'If the file does not exist, an error is returned (use write_file to create new files).';
+		'If the file does not exist, an error is returned (use write_file to create new files). ' +
+		'Path can be a full path (e.g., "folder/note.md"), a simple filename, or a wikilink text. The .md extension is optional.';
 
 	parameters = {
 		type: 'object' as const,
 		properties: {
 			path: {
 				type: 'string' as const,
-				description: 'Absolute path to the file',
+				description:
+					'Path to the file relative to vault root (e.g., "folder/note.md", "folder/note", or "note"). Extension is optional.',
 			},
 			content: {
 				type: 'string' as const,
@@ -110,21 +145,46 @@ export class AppendContentTool implements Tool {
 		required: ['path', 'content'],
 	};
 
+	confirmationMessage = (params: { path: string; content: string }) => {
+		return `Append content to file: ${params.path}\n\nContent preview:\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+	};
+
+	getProgressDescription(params: { path: string }): string {
+		if (params.path) {
+			return `Appending to ${params.path}`;
+		}
+		return 'Appending content';
+	}
+
 	async execute(params: { path: string; content: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		const { path, content } = params;
 
-		// Check for system folder protection
-		const historyFolder = plugin.settings.historyFolder;
-		if (path.startsWith(historyFolder + '/') || path.startsWith('.obsidian/')) {
-			return {
-				success: false,
-				error: `Cannot modify files in protected system folder: ${path}`,
-			};
-		}
-
 		try {
-			const file = plugin.app.vault.getAbstractFileByPath(path);
+			const normalizedPath = normalizePath(path);
+
+			// Check if path is excluded
+			if (shouldExcludePath(normalizedPath, plugin)) {
+				return {
+					success: false,
+					error: `Cannot modify files in system folder: ${path}`,
+				};
+			}
+
+			// Try direct path lookup, then with .md extension
+			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			if (!file && !normalizedPath.endsWith('.md')) {
+				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+			}
+
+			// Try wikilink resolution
+			if (!file) {
+				const linkPath = path.replace(/^\[\[/, '').replace(/\]\]$/, '').replace(/\.md$/, '');
+				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+				if (resolved) {
+					file = resolved;
+				}
+			}
 
 			if (!file || !(file instanceof TFile)) {
 				return {
@@ -142,11 +202,15 @@ export class AppendContentTool implements Tool {
 
 			await plugin.app.vault.append(file, contentToAppend);
 
-			plugin.logger.log(`Appended ${contentToAppend.length} chars to ${path}`);
+			plugin.logger.debug(`Appended ${contentToAppend.length} chars to ${file.path}`);
 
 			return {
 				success: true,
-				output: `Successfully appended content to ${path}`,
+				data: {
+					path: file.path,
+					action: 'appended',
+					size: contentToAppend.length,
+				},
 			};
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -157,4 +221,11 @@ export class AppendContentTool implements Tool {
 			};
 		}
 	}
+}
+
+/**
+ * Get all extended vault tools
+ */
+export function getExtendedVaultTools(): Tool[] {
+	return [new UpdateFrontmatterTool(), new AppendContentTool()];
 }

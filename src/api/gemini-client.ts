@@ -19,12 +19,14 @@ import {
 import { GeminiPrompts } from '../prompts';
 import type ObsidianGemini from '../main';
 import { getDefaultModelForRole } from '../models';
+import { decodeHtmlEntities } from '../utils/html-entities';
 
 /**
  * Extends Part to include the optional thought property
  */
 interface PartWithThought extends Part {
 	thought?: boolean;
+	thoughtSignature?: string;
 }
 
 /**
@@ -371,6 +373,9 @@ export class GeminiClient implements ModelApi {
 			}
 		}
 
+		// Decode HTML entities that Gemini sometimes returns
+		markdown = decodeHtmlEntities(markdown);
+
 		// Extract tool calls
 		toolCalls = this.extractToolCallsFromResponse(response);
 
@@ -390,10 +395,11 @@ export class GeminiClient implements ModelApi {
 	 */
 	private extractTextFromChunk(chunk: any): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
-			return chunk.candidates[0].content.parts
+			const text = chunk.candidates[0].content.parts
 				.filter((part: Part) => 'text' in part && part.text && !(part as PartWithThought).thought)
 				.map((part: Part) => (part as PartWithThought).text)
 				.join('');
+			return decodeHtmlEntities(text);
 		}
 		return '';
 	}
@@ -448,7 +454,7 @@ export class GeminiClient implements ModelApi {
 		const toolCalls: ToolCall[] = [];
 		for (const part of parts) {
 			if ('functionCall' in part && part.functionCall && part.functionCall.name) {
-				const signature = (part as any).thoughtSignature;
+				const signature = (part as PartWithThought).thoughtSignature;
 
 				// Debug logging to verify extraction
 				this.plugin?.logger.debug(

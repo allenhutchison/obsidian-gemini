@@ -20,11 +20,11 @@ export class TrustedModeConfirmationModal extends Modal {
 		const container = contentEl.createEl('div');
 
 		container.createEl('p', {
-			text: 'Trusted Mode allows the AI agent to create, edit, and delete files in your vault without asking for confirmation.',
+			text: 'Trusted Mode allows the AI agent to create and edit files in your vault without asking for confirmation. Destructive operations (delete, move) will still require confirmation.',
 		});
 
 		const warningEl = container.createEl('p', {
-			text: '⚠️ This grants the AI full write access to your vault. While convenient, it carries risks if the model hallucinates or makes mistakes.',
+			text: 'This grants the AI write access to your vault. While convenient, it carries risks if the model hallucinates or makes mistakes.',
 		});
 		warningEl.style.color = 'var(--text-warning)';
 
