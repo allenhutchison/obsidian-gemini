@@ -84,7 +84,7 @@ export class ToolExecutionEngine {
 		if (requiresConfirmation) {
 			// Check if Trusted Mode is enabled
 			if (this.plugin.settings.alwaysAllowReadWrite) {
-				context.plugin.logger.debug(`[Trusted Mode] Bypassing confirmation for ${toolCall.name}`);
+				context.plugin.logger.log(`[Trusted Mode] Bypassing confirmation for ${toolCall.name}`);
 			} else {
 				// Check if this tool is allowed without confirmation for this session
 				const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;

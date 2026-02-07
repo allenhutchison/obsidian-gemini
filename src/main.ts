@@ -433,10 +433,6 @@ export default class ObsidianGemini extends Plugin {
 				this.toolRegistry.unregisterTool(tool.name);
 			}
 
-			// Unregister extended vault tools
-			this.toolRegistry.unregisterTool('update_frontmatter');
-			this.toolRegistry.unregisterTool('append_content');
-
 			// Unregister web tools
 			try {
 				const { getWebTools } = await import('./tools/web-tools');
@@ -447,9 +443,6 @@ export default class ObsidianGemini extends Plugin {
 			} catch (e) {
 				this.logger.debug('Failed to unregister web tools:', e);
 			}
-
-			// Unregister fetch_url alias
-			this.toolRegistry.unregisterTool('fetch_url');
 
 			// Unregister memory tools
 			try {
