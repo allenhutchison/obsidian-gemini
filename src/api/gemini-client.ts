@@ -26,6 +26,7 @@ import { decodeHtmlEntities } from '../utils/html-entities';
  */
 interface PartWithThought extends Part {
 	thought?: boolean;
+	thoughtSignature?: string;
 }
 
 /**
@@ -453,7 +454,7 @@ export class GeminiClient implements ModelApi {
 		const toolCalls: ToolCall[] = [];
 		for (const part of parts) {
 			if ('functionCall' in part && part.functionCall && part.functionCall.name) {
-				const signature = (part as any).thoughtSignature;
+				const signature = (part as PartWithThought).thoughtSignature;
 
 				// Debug logging to verify extraction
 				this.plugin?.logger.debug(
