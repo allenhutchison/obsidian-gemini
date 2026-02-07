@@ -42,11 +42,15 @@ Inside, provide a JSON object adhering to this schema:
 **Supported Components:**
 - **container**: Layouts (`direction: "row" | "column"`, `gap`, `align`).
 - **text**: Rich text (`content`: markdown string, `variant`: "h1"-"h6", "p").
-- **button**: Interactive actions (`label`, `variant`: "primary"|"secondary", `action`: command string).
+- **button**: Interactive actions (`label`, `variant`: "primary"|"secondary", `action`: "save-note" | "run-command", `payload`: object).
 - **input**: Text fields (`label`, `placeholder`, `value`).
 - **mermaid**: Diagrams (`content`: mermaid syntax string). Use this for charts, graphs, flowcharts, and gantt charts.
 - **image**: (`src`, `alt`).
 - **icon**: (`name`: lucide icon name).
+
+**Actions:**
+- `action: "save-note"`: Saves the A2UI content (or `payload.content`) to a new file in the user's Inbox. Use this for "Save Plan", "Save Summary", etc.
+- `action: "run-command"`: Runs an Obsidian command. `payload.commandId` is required.
 
 **Example:**
 ```json:a2ui
@@ -55,7 +59,7 @@ Inside, provide a JSON object adhering to this schema:
   "children": [
     { "type": "text", "variant": "h2", "content": "Project Plan" },
     { "type": "mermaid", "content": "gantt\n    title A Gantt Diagram\n    dateFormat  YYYY-MM-DD\n    section Section\n    A task           :a1, 2014-01-01, 30d" },
-    { "type": "button", "label": "Approve Plan", "variant": "primary" }
+    { "type": "button", "label": "Save Plan to Note", "variant": "primary", "action": "save-note", "payload": { "content": "# Project Plan\n\n(Full markdown content here...)" } }
   ]
 }
 ```

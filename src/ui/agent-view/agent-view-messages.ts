@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Notice, setIcon } from 'obsidian';
+import { App, MarkdownRenderer, Notice, setIcon, normalizePath } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -53,6 +53,79 @@ export class AgentViewMessages {
 		this.plugin = plugin;
 		this.userInput = userInput;
 		this.viewContext = viewContext;
+
+		// Listen for A2UI actions
+		// Bind handleAction once so we can remove it later
+		this.handleAction = this.handleAction.bind(this);
+		this.chatContainer.addEventListener('a2ui-action', this.handleAction);
+	}
+
+	/**
+	 * Handle A2UI actions
+	 */
+	private async handleAction(e: Event) {
+		const customEvent = e as CustomEvent;
+		const { action, payload } = customEvent.detail;
+
+		if (action === 'save-note') {
+			try {
+				// Use payload as content, or try to find content in the event target's container if payload is empty/missing
+				let content = payload?.content;
+
+				// If no content in payload, try to find the parent container's A2UI JSON to save
+				if (!content) {
+					// This is a heuristic: try to find the nearest code block or render the whole component as markdown
+					// For now, let's assume the payload SHOULD contain the content or we save a generic message
+					content = JSON.stringify(payload, null, 2);
+				}
+
+				// If the payload has a 'content' property (standard for save-note), use it.
+				// Otherwise, if payload is an object, stringify it.
+				// If payload is a string, use it.
+				let fileContent = '';
+				if (typeof payload === 'string') {
+					fileContent = payload;
+				} else if (payload && typeof payload.content === 'string') {
+					fileContent = payload.content;
+				} else {
+					// Fallback: Serialize the whole payload
+					fileContent = JSON.stringify(payload, null, 2);
+				}
+
+				// Default filename
+				const filename = `A2UI-Save-${Date.now()}.md`;
+				const folder = this.plugin.settings.historyFolder || '/'; // Or use root
+
+				// Create the file
+				const finalPath = normalizePath(`${folder}/${filename}`);
+				// Ensure folder exists (simplified check, might need mkdir)
+				if (folder && folder !== '/' && !(await this.plugin.app.vault.adapter.exists(normalizePath(folder)))) {
+					await this.plugin.app.vault.createFolder(normalizePath(folder));
+				}
+
+				const createdFile = await this.plugin.app.vault.create(finalPath, fileContent);
+
+				new Notice(`Saved to ${createdFile.path}`);
+
+				// Open the file
+				const leaf = this.plugin.app.workspace.getLeaf(true);
+				await leaf.openFile(createdFile);
+
+			} catch (error) {
+				console.error('Failed to save note from A2UI action:', error);
+				new Notice('Failed to save note. Check console.');
+			}
+		} else if (action === 'run-command') {
+			// Execute an obsidian command
+			const commandId = payload?.commandId;
+			if (commandId) {
+				// @ts-ignore - app.commands is internal API but widely used
+				// @ts-ignore
+				this.app.commands.executeCommandById(commandId);
+			}
+		} else {
+			new Notice(`Action '${action}' not implemented yet.`);
+		}
 	}
 
 	/**
@@ -1001,5 +1074,7 @@ export class AgentViewMessages {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
 		}
+		// Remove event listener
+		this.chatContainer.removeEventListener('a2ui-action', this.handleAction);
 	}
 }
