@@ -2528,6 +2528,7 @@ If your plugin does not need CSS, delete this file.
 	padding: var(--size-2-3);
 	border-radius: var(--radius-s);
 	background: var(--background-secondary);
+	animation: fadeIn 0.2s ease-in;
 }
 
 .gemini-agent-result-icon {
