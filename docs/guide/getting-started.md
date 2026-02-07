@@ -89,26 +89,31 @@ Add specific notes as persistent context for your agent sessions using @ mention
 ## Troubleshooting
 
 **Agent Not Responding**
+
 - Check API key validity in Settings
 - Verify internet connection
 - Ensure your model supports tool calling (all current models support this)
 
 **Tools Failing**
+
 - Check file permissions and paths
 - Verify files exist and are accessible
 - System folders (.obsidian, plugin folders) are protected from modifications
 
 **Poor Quality Output**
+
 - Add specific notes as context files
 - Be more specific in your requests
 - Try Gemini 2.5 Pro for more capable responses
 
 **Performance Issues**
+
 - Use Gemini Flash for faster responses
 - Reduce context file count for quicker processing
 - Break up large requests into smaller tasks
 
 **Session Issues**
+
 - Try creating a new session
 - Check console (Ctrl/Cmd + Shift + I) for errors
 - Verify session files aren't corrupted
