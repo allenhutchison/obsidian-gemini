@@ -35,6 +35,7 @@ export default defineConfig({
 						{ text: 'Summarization', link: '/guide/summarization' },
 						{ text: 'Context System', link: '/guide/context-system' },
 						{ text: 'Semantic Search', link: '/guide/semantic-search' },
+						{ text: 'Deep Research', link: '/guide/deep-research' },
 					],
 				},
 			],
