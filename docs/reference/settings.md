@@ -109,7 +109,7 @@ Custom prompts allow you to create reusable AI instruction templates that modify
 3. Reference it in note frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
 4. Or select it in session settings modal
 
-See the [Custom Prompts Guide](custom-prompts-guide.md) for detailed instructions.
+See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 
 ## UI Settings
 
@@ -323,4 +323,4 @@ When upgrading from v3.x to v4.0.0:
 2. Check Plugin State Folder path is valid
 3. Ensure you have write permissions to vault
 
-For more help, see [Documentation Hub](README.md) or [open an issue](https://github.com/allenhutchison/obsidian-gemini/issues).
+For more help, see the [Getting Started Guide](/guide/getting-started) or [open an issue](https://github.com/allenhutchison/obsidian-gemini/issues).

@@ -477,6 +477,6 @@ The v4.0+ context system gives you precise control over what the AI agent can se
 
 For more information, see:
 
-- [Agent Mode Guide](agent-mode-guide.md) - Tool usage and capabilities
-- [Settings Reference](settings-reference.md) - Configuration options
-- [Custom Prompts Guide](custom-prompts-guide.md) - Behavior customization
+- [Agent Mode Guide](/guide/agent-mode) - Tool usage and capabilities
+- [Settings Reference](/reference/settings) - Configuration options
+- [Custom Prompts Guide](/guide/custom-prompts) - Behavior customization

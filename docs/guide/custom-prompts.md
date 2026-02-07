@@ -83,7 +83,7 @@ tags: ['category', 'use-case'] # Optional: For organization
 
 | Tag                | Purpose                                                                                                                                   |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `selection-action` | Makes the prompt available in the "Explain Selection" feature. See [AI Writing Guide](ai-writing-guide.md#explain-selection) for details. |
+| `selection-action` | Makes the prompt available in the "Explain Selection" feature. See [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
 
 ### Example: Technical Documentation Assistant
 
