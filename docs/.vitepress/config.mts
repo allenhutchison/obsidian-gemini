@@ -34,6 +34,7 @@ export default defineConfig({
 						{ text: 'Completions', link: '/guide/completions' },
 						{ text: 'Summarization', link: '/guide/summarization' },
 						{ text: 'Context System', link: '/guide/context-system' },
+						{ text: 'Semantic Search', link: '/guide/semantic-search' },
 					],
 				},
 			],
