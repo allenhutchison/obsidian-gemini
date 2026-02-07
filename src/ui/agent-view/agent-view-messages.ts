@@ -54,8 +54,7 @@ export class AgentViewMessages {
 		this.userInput = userInput;
 		this.viewContext = viewContext;
 
-		// Listen for A2UI actions
-		// Bind handleAction once so we can remove it later
+		// Bind event handler once
 		this.handleAction = this.handleAction.bind(this);
 		this.chatContainer.addEventListener('a2ui-action', this.handleAction);
 	}
@@ -69,59 +68,45 @@ export class AgentViewMessages {
 
 		if (action === 'save-note') {
 			try {
-				// Use payload as content, or try to find content in the event target's container if payload is empty/missing
-				let content = payload?.content;
-
-				// If no content in payload, try to find the parent container's A2UI JSON to save
-				if (!content) {
-					// This is a heuristic: try to find the nearest code block or render the whole component as markdown
-					// For now, let's assume the payload SHOULD contain the content or we save a generic message
-					content = JSON.stringify(payload, null, 2);
-				}
-
-				// If the payload has a 'content' property (standard for save-note), use it.
-				// Otherwise, if payload is an object, stringify it.
-				// If payload is a string, use it.
+				// Use payload or payload.content
 				let fileContent = '';
 				if (typeof payload === 'string') {
 					fileContent = payload;
 				} else if (payload && typeof payload.content === 'string') {
 					fileContent = payload.content;
 				} else {
-					// Fallback: Serialize the whole payload
 					fileContent = JSON.stringify(payload, null, 2);
 				}
 
-				// Default filename
 				const filename = `A2UI-Save-${Date.now()}.md`;
-				const folder = this.plugin.settings.historyFolder || '/'; // Or use root
-
-				// Create the file
+				const folder = this.plugin.settings.historyFolder || '/';
 				const finalPath = normalizePath(`${folder}/${filename}`);
-				// Ensure folder exists (simplified check, might need mkdir)
+
+				// Ensure folder exists
 				if (folder && folder !== '/' && !(await this.plugin.app.vault.adapter.exists(normalizePath(folder)))) {
 					await this.plugin.app.vault.createFolder(normalizePath(folder));
 				}
 
 				const createdFile = await this.plugin.app.vault.create(finalPath, fileContent);
-
 				new Notice(`Saved to ${createdFile.path}`);
 
-				// Open the file
 				const leaf = this.plugin.app.workspace.getLeaf(true);
 				await leaf.openFile(createdFile);
 
 			} catch (error) {
-				console.error('Failed to save note from A2UI action:', error);
+				this.plugin.logger.error('Failed to save note from A2UI action:', error);
 				new Notice('Failed to save note. Check console.');
 			}
 		} else if (action === 'run-command') {
-			// Execute an obsidian command
 			const commandId = payload?.commandId;
 			if (commandId) {
-				// @ts-ignore - app.commands is internal API but widely used
-				// @ts-ignore
-				this.app.commands.executeCommandById(commandId);
+				// Security: Confirm with user
+				// Use native confirm or a modal? Native confirm is blocking but safe enough here
+				// Ideally we'd use a nice Obsidian modal, but window.confirm works for now
+				if (window.confirm(`Allow agent to run command: "${commandId}"?`)) {
+					// @ts-ignore - app.commands is internal API
+					this.app.commands.executeCommandById(commandId);
+				}
 			}
 		} else {
 			new Notice(`Action '${action}' not implemented yet.`);
@@ -319,38 +304,8 @@ export class AgentViewMessages {
 				await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
 			}
 		} else {
-			// Check for A2UI code block
-			const a2uiMatch = formattedMessage.match(/```json:a2ui\n([\s\S]*?)\n```/);
-			if (a2uiMatch) {
-				try {
-					// Extract JSON and render A2UI
-					const jsonString = a2uiMatch[1];
-					const uiContent = JSON.parse(jsonString) as A2UIComponent;
-
-					// Render any text BEFORE the A2UI block
-					const preText = formattedMessage.substring(0, a2uiMatch.index);
-					if (preText.trim()) {
-						await MarkdownRenderer.render(this.app, preText, content, sourcePath, this.viewContext);
-					}
-
-					// Render A2UI
-					const renderer = new A2UIRenderer(this.app, content, uiContent, sourcePath);
-					renderer.onload(); // Manually trigger load since we're not attaching to DOM tree normally
-
-					// Render any text AFTER the A2UI block
-					const postText = formattedMessage.substring((a2uiMatch.index || 0) + a2uiMatch[0].length);
-					if (postText.trim()) {
-						await MarkdownRenderer.render(this.app, postText, content, sourcePath, this.viewContext);
-					}
-				} catch (e) {
-					console.error('Failed to render A2UI in chat:', e);
-					// Fallback to normal markdown rendering if parsing fails
-					await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
-				}
-			} else {
-				// Use markdown rendering like the regular chat view
-				await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
-			}
+			// Render content (supporting A2UI blocks)
+			await this.renderMessageContent(content, formattedMessage, sourcePath);
 		}
 
 		// Scroll to bottom after displaying message
@@ -498,38 +453,7 @@ export class AgentViewMessages {
 
 			const sourcePath = currentSession?.historyPath || '';
 
-			// Check for A2UI code block (same logic as displayMessage)
-			const a2uiMatch = formattedMessage.match(/```json:a2ui\n([\s\S]*?)\n```/);
-			if (a2uiMatch) {
-				try {
-					const jsonString = a2uiMatch[1];
-					// Only try to render if JSON looks complete-ish (ends with curly brace)
-					if (jsonString.trim().endsWith('}')) {
-						const uiContent = JSON.parse(jsonString) as A2UIComponent;
-
-						const preText = formattedMessage.substring(0, a2uiMatch.index);
-						if (preText.trim()) {
-							await MarkdownRenderer.render(this.app, preText, messageDiv, sourcePath, this.viewContext);
-						}
-
-						const renderer = new A2UIRenderer(this.app, messageDiv, uiContent, sourcePath);
-						renderer.onload();
-
-						const postText = formattedMessage.substring((a2uiMatch.index || 0) + a2uiMatch[0].length);
-						if (postText.trim()) {
-							await MarkdownRenderer.render(this.app, postText, messageDiv, sourcePath, this.viewContext);
-						}
-					} else {
-						// JSON incomplete, render as text/markdown for now (streaming)
-						await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
-					}
-				} catch (e) {
-					// Fallback
-					await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
-				}
-			} else {
-				await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
-			}
+			await this.renderMessageContent(messageDiv, formattedMessage, sourcePath);
 
 			// Add a copy button for model messages
 			if (entry.role === 'model') {
@@ -1069,12 +993,57 @@ export class AgentViewMessages {
 	/**
 	 * Cleanup method to clear any pending timeouts
 	 */
+	/**
+	 * Helper to render message content, detecting and rendering A2UI blocks
+	 */
+	private async renderMessageContent(
+		container: HTMLElement,
+		formattedMessage: string,
+		sourcePath: string,
+	): Promise<void> {
+		const a2uiRegex = /```json:a2ui\n([\s\S]*?)\n```/g;
+		let lastIndex = 0;
+		let match: RegExpExecArray | null;
+
+		// Iterate over all A2UI blocks
+		while ((match = a2uiRegex.exec(formattedMessage)) !== null) {
+			// Render text before this A2UI block
+			const preText = formattedMessage.substring(lastIndex, match.index);
+			if (preText.trim()) {
+				await MarkdownRenderer.render(this.app, preText, container, sourcePath, this.viewContext);
+			}
+
+			try {
+				const jsonString = match[1];
+				// Simple heuristic for incomplete JSON during streaming
+				if (jsonString.trim().endsWith('}')) {
+					const uiContent = JSON.parse(jsonString) as A2UIComponent;
+					const renderer = new A2UIRenderer(this.app, container, uiContent, sourcePath);
+					renderer.onload();
+				} else {
+					// Fallback for incomplete JSON: render as code block
+					await MarkdownRenderer.render(this.app, match[0], container, sourcePath, this.viewContext);
+				}
+			} catch {
+				// Fallback: render as code block if parsing fails
+				await MarkdownRenderer.render(this.app, match[0], container, sourcePath, this.viewContext);
+			}
+
+			lastIndex = match.index + match[0].length;
+		}
+
+		// Render remaining text
+		const remaining = formattedMessage.substring(lastIndex);
+		if (remaining.trim()) {
+			await MarkdownRenderer.render(this.app, remaining, container, sourcePath, this.viewContext);
+		}
+	}
+
 	cleanup() {
 		if (this.scrollTimeout) {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
 		}
-		// Remove event listener
 		this.chatContainer.removeEventListener('a2ui-action', this.handleAction);
 	}
 }

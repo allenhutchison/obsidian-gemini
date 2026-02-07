@@ -39,16 +39,44 @@ export class A2UIRenderer extends MarkdownRenderChild {
 	}
 
 	onload() {
-		this.render(this.containerEl, this.uiRoot);
+		// Handle async rendering and errors
+		this.render(this.containerEl, this.uiRoot).catch((err) => {
+			console.error('A2UI render failed:', err);
+			this.containerEl.createDiv({
+				text: 'Failed to render A2UI component',
+				cls: 'a2ui-error',
+			});
+		});
 	}
 
 	private async render(parent: HTMLElement, component: A2UIComponent) {
 		const wrapper = parent.createDiv({ cls: `a2ui-component a2ui-${component.type}` });
+
+		// Sanitize styles - only allow specific safe properties
 		if (component.style) {
-			Object.assign(wrapper.style, component.style);
+			const allowedStyles = [
+				'color', 'backgroundColor', 'fontSize', 'fontWeight', 'textAlign',
+				'margin', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
+				'padding', 'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight',
+				'width', 'height', 'maxWidth', 'maxHeight', 'minWidth', 'minHeight',
+				'border', 'borderRadius', 'display', 'flex', 'flexDirection',
+				'justifyContent', 'alignItems', 'gap', 'flexWrap'
+			];
+
+			for (const [key, value] of Object.entries(component.style)) {
+				if (allowedStyles.includes(key) && typeof value === 'string') {
+					// Basic value sanitization to prevent injection
+					if (!value.includes('javascript:') && !value.includes('url(')) {
+						wrapper.style.setProperty(key.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`), value);
+					}
+				}
+			}
 		}
+
 		if (component.cls) {
-			wrapper.addClass(component.cls);
+			// Basic sanitization for class names
+			const safeClass = component.cls.replace(/[^a-zA-Z0-9-_ ]/g, '');
+			wrapper.addClass(safeClass);
 		}
 
 		switch (component.type) {
@@ -122,19 +150,12 @@ export class A2UIRenderer extends MarkdownRenderChild {
 	}
 
 	private async renderText(parent: HTMLElement, component: A2UIText) {
-		// Markdown rendering handles basic HTML tags based on the content,
-		// but we can wrap it if variant is specific.
-		// However, MarkdownRenderer.render clears the container.
-		// So we create a child div for the content.
 		const contentDiv = parent.createDiv({ cls: 'a2ui-markdown-content' });
 
-		// Apply variant styling (simplified mapping to classes or styles)
 		if (component.variant) {
 			contentDiv.addClass(`a2ui-text-${component.variant}`);
-			// Add basic typography styles if needed
 			if (component.variant.startsWith('h')) {
 				contentDiv.style.fontWeight = 'bold';
-				// Adjust font size relative to variant if desired
 			}
 		}
 
@@ -158,8 +179,6 @@ export class A2UIRenderer extends MarkdownRenderChild {
 
 		if (component.action) {
 			btn.onClick(() => {
-				// Dispatch event that the plugin main logic can listen for
-				// We bubble it up to the document or a known container
 				const event = new CustomEvent('a2ui-action', {
 					detail: {
 						action: component.action,
@@ -207,7 +226,6 @@ export class A2UIRenderer extends MarkdownRenderChild {
 	}
 
 	private renderSwitch(parent: HTMLElement, component: A2UISwitch) {
-		// Switches often need a label next to them
 		parent.style.flexDirection = 'row';
 		parent.style.alignItems = 'center';
 		parent.style.gap = '0.5rem';
@@ -221,27 +239,30 @@ export class A2UIRenderer extends MarkdownRenderChild {
 	}
 
 	private renderImage(parent: HTMLElement, component: A2UIImage) {
+		// Validate Source - only allow vault-relative, data URIs, or strictly local paths
+		// Reject explicit http/https to prevent tracking pixels unless explicitly wanted (safest is to block)
+		const src = component.src;
+		if (src && !src.startsWith('app://') && !src.startsWith('data:') && !src.startsWith('/') && !src.startsWith('./')) {
+			parent.createDiv({ text: 'External images not allowed', cls: 'a2ui-error' });
+			return;
+		}
+
 		const img = parent.createEl('img', {
 			attr: {
-				src: component.src,
+				src: src,
 				alt: component.alt || '',
 			},
 		});
 
-		// Basic sizing
 		if (component.width) img.style.width = component.width;
 		if (component.height) img.style.height = component.height;
 	}
 
 	private renderIcon(parent: HTMLElement, component: A2UIIcon) {
-		// setIcon requires an HTMLElement
 		const iconSpan = parent.createSpan({ cls: 'a2ui-icon-span' });
 		setIcon(iconSpan, component.name || 'help-circle');
 
 		if (component.size) {
-			// Lucide icons are SVGs, we scale the container or the svg
-			// Obsidian's setIcon puts an SVG inside.
-			// CSS can target svg
 			iconSpan.style.width = component.size;
 			iconSpan.style.height = component.size;
 			iconSpan.style.display = 'inline-block';
@@ -249,8 +270,9 @@ export class A2UIRenderer extends MarkdownRenderChild {
 	}
 
 	private async renderMermaid(parent: HTMLElement, component: A2UIMermaid) {
-		// Render mermaid via standard Markdown code block logic
-		const mermaidBlock = '```mermaid\n' + (component.content || '') + '\n```';
+		// Sanitize mermaid content (basic prevention of breaking out of code block)
+		const cleanContent = (component.content || '').replace(/```/g, "'''");
+		const mermaidBlock = '```mermaid\n' + cleanContent + '\n```';
 
 		await MarkdownRenderer.render(
 			this.app,

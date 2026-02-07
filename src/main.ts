@@ -191,10 +191,17 @@ export default class ObsidianGemini extends Plugin {
 		this.registerMarkdownCodeBlockProcessor('json:a2ui', (source, el, ctx) => {
 			try {
 				const uiContent = JSON.parse(source) as A2UIComponent;
+
+				// Basic schema validation
+				if (!uiContent || typeof uiContent.type !== 'string') {
+					throw new Error('Invalid A2UI component: missing "type" field');
+				}
+
 				ctx.addChild(new A2UIRenderer(this.app, el, uiContent, ctx.sourcePath));
 			} catch (e) {
-				console.error('Failed to parse A2UI JSON:', e);
-				el.createEl('pre', { text: 'Error parsing A2UI JSON: ' + e.message });
+				this.logger.error('Failed to parse A2UI JSON:', e);
+				const msg = e instanceof Error ? e.message : String(e);
+				el.createEl('pre', { text: 'Error parsing A2UI JSON: ' + msg });
 				el.createEl('code', { text: source });
 			}
 		});

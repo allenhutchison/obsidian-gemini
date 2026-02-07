@@ -12,7 +12,7 @@ export type A2UIComponentType =
 export interface A2UIBaseComponent {
 	id?: string;
 	type: A2UIComponentType;
-	style?: Record<string, string>; // Inline styles
+	style?: Record<string, string>; // Inline styles (sanitized)
 	cls?: string; // CSS classes
 }
 
@@ -96,8 +96,3 @@ export type A2UIComponent =
 	| A2UIImage
 	| A2UIIcon
 	| A2UIMermaid;
-
-export interface A2UIResponse {
-	title?: string;
-	root: A2UIComponent;
-}
