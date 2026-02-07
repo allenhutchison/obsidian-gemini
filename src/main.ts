@@ -434,8 +434,15 @@ export default class ObsidianGemini extends Plugin {
 			}
 
 			// Unregister extended vault tools
-			this.toolRegistry.unregisterTool('update_frontmatter');
-			this.toolRegistry.unregisterTool('append_content');
+			try {
+				const { getExtendedVaultTools } = await import('./tools/vault-tools-extended');
+				const extendedTools = getExtendedVaultTools();
+				for (const tool of extendedTools) {
+					this.toolRegistry.unregisterTool(tool.name);
+				}
+			} catch (e) {
+				this.logger.debug('Failed to unregister extended vault tools:', e);
+			}
 
 			// Unregister web tools
 			try {
@@ -447,9 +454,6 @@ export default class ObsidianGemini extends Plugin {
 			} catch (e) {
 				this.logger.debug('Failed to unregister web tools:', e);
 			}
-
-			// Unregister fetch_url alias
-			this.toolRegistry.unregisterTool('fetch_url');
 
 			// Unregister memory tools
 			try {
@@ -544,26 +548,17 @@ export default class ObsidianGemini extends Plugin {
 		}
 
 		// Register extended vault tools (Frontmatter & Append)
-		// Dynamically import to avoid circular dependencies if any
-		const { UpdateFrontmatterTool, AppendContentTool } = await import('./tools/vault-tools-extended');
-		this.toolRegistry.registerTool(new UpdateFrontmatterTool());
-		this.toolRegistry.registerTool(new AppendContentTool());
+		const { getExtendedVaultTools } = await import('./tools/vault-tools-extended');
+		const extendedVaultTools = getExtendedVaultTools();
+		for (const tool of extendedVaultTools) {
+			this.toolRegistry.registerTool(tool);
+		}
 
 		// Register web tools (Google Search and Web Fetch)
 		const { getWebTools } = await import('./tools/web-tools');
 		const webTools = getWebTools();
 		for (const tool of webTools) {
 			this.toolRegistry.registerTool(tool);
-			// Register fetch_url alias for WebFetchTool
-			// This is required for compatibility with AGENTS.md which expects 'fetch_url'
-			if (tool.name === 'web_fetch') {
-				// We need to cast to any or instantiate a new class to set the name
-				// Since setToolName is not on the interface, we'll try to clone it or instantiate new
-				// Easier approach: Use the WebFetchTool class directly if possible, or just re-register
-				// However, getWebTools returns instances.
-				const { WebFetchTool } = await import('./tools/web-fetch-tool');
-				this.toolRegistry.registerTool(new WebFetchTool().setName('fetch_url'));
-			}
 		}
 
 		// Register memory tools

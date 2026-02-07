@@ -50,7 +50,7 @@ export class AgentViewTools {
 			list_files: 2,
 			search_files: 3,
 			google_search: 4,
-			web_fetch: 5,
+			fetch_url: 5,
 			write_file: 6,
 			create_folder: 7,
 			move_file: 8,

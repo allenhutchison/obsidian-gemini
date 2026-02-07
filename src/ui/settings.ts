@@ -450,8 +450,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 			// Trusted Mode Setting
 			const trustedModeSetting = new Setting(containerEl)
-				.setName('Trusted Mode (Always Allow Read/Write)')
-				.setDesc('DANGEROUS: Allow the agent to create/edit/delete files without asking for confirmation.');
+				.setName('Trusted Mode')
+				.setDesc(
+					'Allow the agent to create and edit files without confirmation. Destructive operations (delete, move) always require confirmation.'
+				);
 
 			trustedModeSetting.descEl.style.color = 'var(--text-warning)';
 
