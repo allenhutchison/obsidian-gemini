@@ -70,6 +70,8 @@ export interface ObsidianGeminiSettings {
 	loopDetectionEnabled: boolean;
 	loopDetectionThreshold: number;
 	loopDetectionTimeWindowSeconds: number;
+	// Trusted Mode
+	alwaysAllowReadWrite: boolean;
 	// V4 upgrade tracking
 	hasSeenV4Welcome: boolean;
 	// Version tracking for update notifications
@@ -106,6 +108,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	loopDetectionEnabled: true,
 	loopDetectionThreshold: 3,
 	loopDetectionTimeWindowSeconds: 30,
+	// Trusted Mode
+	alwaysAllowReadWrite: false,
 	// V4 upgrade tracking
 	hasSeenV4Welcome: false,
 	// Version tracking for update notifications
@@ -429,6 +433,17 @@ export default class ObsidianGemini extends Plugin {
 				this.toolRegistry.unregisterTool(tool.name);
 			}
 
+			// Unregister extended vault tools
+			try {
+				const { getExtendedVaultTools } = await import('./tools/vault-tools-extended');
+				const extendedTools = getExtendedVaultTools();
+				for (const tool of extendedTools) {
+					this.toolRegistry.unregisterTool(tool.name);
+				}
+			} catch (e) {
+				this.logger.debug('Failed to unregister extended vault tools:', e);
+			}
+
 			// Unregister web tools
 			try {
 				const { getWebTools } = await import('./tools/web-tools');
@@ -529,6 +544,13 @@ export default class ObsidianGemini extends Plugin {
 		// Register vault tools
 		const vaultTools = getVaultTools();
 		for (const tool of vaultTools) {
+			this.toolRegistry.registerTool(tool);
+		}
+
+		// Register extended vault tools (Frontmatter & Append)
+		const { getExtendedVaultTools } = await import('./tools/vault-tools-extended');
+		const extendedVaultTools = getExtendedVaultTools();
+		for (const tool of extendedVaultTools) {
 			this.toolRegistry.registerTool(tool);
 		}
 

@@ -82,29 +82,38 @@ export class ToolExecutionEngine {
 		const requiresConfirmation = this.registry.requiresConfirmation(toolCall.name, context);
 
 		if (requiresConfirmation) {
-			// Check if this tool is allowed without confirmation for this session
-			const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
+			// Trusted Mode: bypass confirmation for non-destructive write tools only.
+			// Destructive operations (delete, move) always require confirmation.
+			const destructiveTools = ['delete_file', 'move_file'];
+			const trustedModeApplies = this.plugin.settings.alwaysAllowReadWrite && !destructiveTools.includes(toolCall.name);
 
-			if (!isAllowedWithoutConfirmation) {
-				// Update progress to show waiting for confirmation
-				const toolDisplay = tool.displayName || tool.name;
-				const confirmationMessage = `Waiting for confirmation: ${toolDisplay}`;
-				view?.updateProgress?.(confirmationMessage, 'waiting');
+			if (trustedModeApplies) {
+				this.plugin.logger.debug(`[Trusted Mode] Bypassing confirmation for ${toolCall.name}`);
+			} else {
+				// Check if this tool is allowed without confirmation for this session
+				const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
 
-				const result = await this.requestUserConfirmation(tool, toolCall.arguments, view);
+				if (!isAllowedWithoutConfirmation) {
+					// Update progress to show waiting for confirmation
+					const toolDisplay = tool.displayName || tool.name;
+					const confirmationMessage = `Waiting for confirmation: ${toolDisplay}`;
+					view?.updateProgress?.(confirmationMessage, 'waiting');
 
-				// Update progress back to tool execution
-				view?.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
+					const result = await this.requestUserConfirmation(tool, toolCall.arguments, view);
 
-				if (!result.confirmed) {
-					return {
-						success: false,
-						error: 'User declined tool execution',
-					};
-				}
-				// If user allowed this action without future confirmation
-				if (result.allowWithoutConfirmation && view) {
-					view.allowToolWithoutConfirmation(toolCall.name);
+					// Update progress back to tool execution
+					view?.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
+
+					if (!result.confirmed) {
+						return {
+							success: false,
+							error: 'User declined tool execution',
+						};
+					}
+					// If user allowed this action without future confirmation
+					if (result.allowWithoutConfirmation && view) {
+						view.allowToolWithoutConfirmation(toolCall.name);
+					}
 				}
 			}
 		}
