@@ -581,3 +581,8 @@ As agent mode evolves, consider these use cases:
 - Workflow automation
 
 Remember: The agent is a powerful tool, but you remain in control. Use it to augment your thinking, not replace it.
+
+## Further Reading
+
+- [What I Did On My Summer Vacation](https://allen.hutchison.org/2025/09/24/what-i-did-on-my-summer-vacation/) — The story behind Agent Mode's development
+- [Everything Becomes an Agent](https://allen.hutchison.org/2026/01/15/everything-becomes-an-agent/) — How every AI project evolves into an agent, and the patterns behind tools, memory, and autonomy

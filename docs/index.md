@@ -12,6 +12,9 @@ hero:
     - theme: alt
       text: View on GitHub
       link: https://github.com/allenhutchison/obsidian-gemini
+    - theme: alt
+      text: Blog
+      link: https://allen.hutchison.org/gemini-scribe/
 
 features:
   - title: Agent Mode

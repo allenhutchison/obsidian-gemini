@@ -119,3 +119,9 @@ Add specific notes as persistent context for your agent sessions using @ mention
 - Verify session files aren't corrupted
 
 For detailed configuration, see the [Settings Reference](/reference/settings) and [Advanced Settings Guide](/reference/advanced-settings).
+
+## Further Reading
+
+- [Introducing Gemini Scribe: Your AI Writing Assistant for Obsidian](https://allen.hutchison.org/2024/11/23/introducing-gemini-scribe-your-ai-writing-assistant-for-obsidian/) — The original announcement and motivation behind the plugin
+- [Gemini Scribe Supercharged: A Faster, More Powerful Workflow Awaits](https://allen.hutchison.org/2025/07/03/gemini-scribe-supercharged-a-faster-more-powerful-workflow-awaits/) — Major upgrades including streaming, prompt system, and model controls
+- [Great Video on Gemini Scribe and Obsidian](https://allen.hutchison.org/2026/02/01/great-video-on-gemini-scribe-and-obsidian/) — A deep dive video exploring Gemini Scribe as an autonomous engine for a self-organizing second brain

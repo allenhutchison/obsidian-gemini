@@ -391,3 +391,7 @@ Always maintain academic objectivity and cite sources appropriately.
 Custom prompts are a powerful way to tailor Gemini Scribe to your specific needs. By creating thoughtful, well-structured prompts, you can transform the AI into a specialized assistant for any task. Start with the examples provided, experiment with your own ideas, and build a library of prompts that enhance your Obsidian workflow.
 
 Remember: The best prompt is one that consistently produces the results you need. Don't hesitate to experiment and refine until you find what works for you.
+
+## Further Reading
+
+- [Prompts are Code: Treating AI Instructions Like Software](https://allen.hutchison.org/2024/12/30/prompts-are-code-treating-ai-instructions-like-software/) — The philosophy behind treating prompts as versioned, testable code

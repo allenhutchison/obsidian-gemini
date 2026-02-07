@@ -190,3 +190,7 @@ Click the status bar icon to see the Failures tab. Common causes:
 - **Network issues** — Check your internet connection
 
 For persistent issues, try **Delete Index** followed by **Reindex Vault** for a clean start.
+
+## Further Reading
+
+- [Gemini Scribe Update: Chat History Supercharged](https://allen.hutchison.org/2025/03/29/gemini-scribe-update-lets-talk-about-how-your-chat-history-is-now-supercharged/) — The evolution of data storage in Gemini Scribe, from databases to markdown

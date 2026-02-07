@@ -466,3 +466,7 @@ Use the chat feature alongside selection rewriting:
 4. **Iterate**: Refine instructions based on previous results
 
 Remember: The Selection-Based Text Rewriting feature is designed to be your collaborative writing partner, helping you refine and improve your content with precision and control.
+
+## Further Reading
+
+- [A More Precise Way to Rewrite in Gemini Scribe](https://allen.hutchison.org/2025/08/10/a-more-precise-way-to-rewrite-in-gemini-scribe/) — How selection-based rewriting replaced full-file rewrites for safer, more targeted editing
