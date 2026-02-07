@@ -33,7 +33,7 @@ Inside, provide a JSON object adhering to this schema:
 
 ```json
 {
-  "type": "container", // or "text", "button", "input", "mermaid", "image", "icon"
+  "type": "container", // or "text", "button", "input", "select", "switch", "mermaid", "image", "icon"
   "direction": "column", // for container: "row" or "column"
   "children": [ ... ] // array of child components
 }

@@ -82,9 +82,10 @@ export class AgentViewMessages {
 				const folder = this.plugin.settings.historyFolder || '/';
 				const finalPath = normalizePath(`${folder}/${filename}`);
 
-				// Ensure folder exists
-				if (folder && folder !== '/' && !(await this.plugin.app.vault.adapter.exists(normalizePath(folder)))) {
-					await this.plugin.app.vault.createFolder(normalizePath(folder));
+				// Ensure folder exists using Obsidian API
+				const normalizedFolder = normalizePath(folder);
+				if (folder && folder !== '/' && !this.plugin.app.vault.getAbstractFileByPath(normalizedFolder)) {
+					await this.plugin.app.vault.createFolder(normalizedFolder);
 				}
 
 				const createdFile = await this.plugin.app.vault.create(finalPath, fileContent);
@@ -92,7 +93,6 @@ export class AgentViewMessages {
 
 				const leaf = this.plugin.app.workspace.getLeaf(true);
 				await leaf.openFile(createdFile);
-
 			} catch (error) {
 				this.plugin.logger.error('Failed to save note from A2UI action:', error);
 				new Notice('Failed to save note. Check console.');
@@ -101,8 +101,6 @@ export class AgentViewMessages {
 			const commandId = payload?.commandId;
 			if (commandId) {
 				// Security: Confirm with user
-				// Use native confirm or a modal? Native confirm is blocking but safe enough here
-				// Ideally we'd use a nice Obsidian modal, but window.confirm works for now
 				if (window.confirm(`Allow agent to run command: "${commandId}"?`)) {
 					// @ts-ignore - app.commands is internal API
 					this.app.commands.executeCommandById(commandId);
@@ -999,7 +997,7 @@ export class AgentViewMessages {
 	private async renderMessageContent(
 		container: HTMLElement,
 		formattedMessage: string,
-		sourcePath: string,
+		sourcePath: string
 	): Promise<void> {
 		const a2uiRegex = /```json:a2ui\n([\s\S]*?)\n```/g;
 		let lastIndex = 0;
@@ -1039,6 +1037,9 @@ export class AgentViewMessages {
 		}
 	}
 
+	/**
+	 * Cleanup method to clear any pending timeouts
+	 */
 	cleanup() {
 		if (this.scrollTimeout) {
 			clearTimeout(this.scrollTimeout);

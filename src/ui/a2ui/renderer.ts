@@ -26,12 +26,7 @@ export class A2UIRenderer extends MarkdownRenderChild {
 	private sourcePath: string;
 	private app: App;
 
-	constructor(
-		app: App,
-		containerEl: HTMLElement,
-		uiRoot: A2UIComponent,
-		sourcePath: string
-	) {
+	constructor(app: App, containerEl: HTMLElement, uiRoot: A2UIComponent, sourcePath: string) {
 		super(containerEl);
 		this.app = app;
 		this.uiRoot = uiRoot;
@@ -55,19 +50,46 @@ export class A2UIRenderer extends MarkdownRenderChild {
 		// Sanitize styles - only allow specific safe properties
 		if (component.style) {
 			const allowedStyles = [
-				'color', 'backgroundColor', 'fontSize', 'fontWeight', 'textAlign',
-				'margin', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
-				'padding', 'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight',
-				'width', 'height', 'maxWidth', 'maxHeight', 'minWidth', 'minHeight',
-				'border', 'borderRadius', 'display', 'flex', 'flexDirection',
-				'justifyContent', 'alignItems', 'gap', 'flexWrap'
+				'color',
+				'backgroundColor',
+				'fontSize',
+				'fontWeight',
+				'textAlign',
+				'margin',
+				'marginTop',
+				'marginBottom',
+				'marginLeft',
+				'marginRight',
+				'padding',
+				'paddingTop',
+				'paddingBottom',
+				'paddingLeft',
+				'paddingRight',
+				'width',
+				'height',
+				'maxWidth',
+				'maxHeight',
+				'minWidth',
+				'minHeight',
+				'border',
+				'borderRadius',
+				'display',
+				'flex',
+				'flexDirection',
+				'justifyContent',
+				'alignItems',
+				'gap',
+				'flexWrap',
 			];
 
 			for (const [key, value] of Object.entries(component.style)) {
 				if (allowedStyles.includes(key) && typeof value === 'string') {
 					// Basic value sanitization to prevent injection
 					if (!value.includes('javascript:') && !value.includes('url(')) {
-						wrapper.style.setProperty(key.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`), value);
+						wrapper.style.setProperty(
+							key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`),
+							value
+						);
 					}
 				}
 			}
@@ -159,13 +181,7 @@ export class A2UIRenderer extends MarkdownRenderChild {
 			}
 		}
 
-		await MarkdownRenderer.render(
-			this.app,
-			component.content || '',
-			contentDiv,
-			this.sourcePath,
-			this
-		);
+		await MarkdownRenderer.render(this.app, component.content || '', contentDiv, this.sourcePath, this);
 	}
 
 	private renderButton(parent: HTMLElement, component: A2UIButton) {
@@ -230,19 +246,25 @@ export class A2UIRenderer extends MarkdownRenderChild {
 		parent.style.alignItems = 'center';
 		parent.style.gap = '0.5rem';
 
-		const toggle = new ToggleComponent(parent);
-		if (component.checked) toggle.setValue(component.checked);
-
+		// Render label BEFORE toggle as requested in review
 		if (component.label) {
 			parent.createSpan({ text: component.label });
 		}
+
+		const toggle = new ToggleComponent(parent);
+		if (component.checked) toggle.setValue(component.checked);
 	}
 
 	private renderImage(parent: HTMLElement, component: A2UIImage) {
-		// Validate Source - only allow vault-relative, data URIs, or strictly local paths
-		// Reject explicit http/https to prevent tracking pixels unless explicitly wanted (safest is to block)
 		const src = component.src;
-		if (src && !src.startsWith('app://') && !src.startsWith('data:') && !src.startsWith('/') && !src.startsWith('./')) {
+		// Validate Source - reject only explicit external schemes
+		// Allow vault-relative paths, app://, data:
+		// Logic: If it contains '://' or starts with '//', it must be a whitelisted scheme (app, data)
+		// Otherwise (no scheme), assume it is a local path
+		const isExternal = src.includes('://') || src.startsWith('//');
+		const isSafeScheme = src.startsWith('app://') || src.startsWith('data:');
+
+		if (isExternal && !isSafeScheme) {
 			parent.createDiv({ text: 'External images not allowed', cls: 'a2ui-error' });
 			return;
 		}
@@ -274,12 +296,6 @@ export class A2UIRenderer extends MarkdownRenderChild {
 		const cleanContent = (component.content || '').replace(/```/g, "'''");
 		const mermaidBlock = '```mermaid\n' + cleanContent + '\n```';
 
-		await MarkdownRenderer.render(
-			this.app,
-			mermaidBlock,
-			parent,
-			this.sourcePath,
-			this
-		);
+		await MarkdownRenderer.render(this.app, mermaidBlock, parent, this.sourcePath, this);
 	}
 }
