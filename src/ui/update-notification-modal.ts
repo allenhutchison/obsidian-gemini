@@ -18,6 +18,19 @@ interface ReleaseNote {
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
 	const notes: Record<string, ReleaseNote> = {
+		'4.4.0': {
+			title: '✨ Gemini Scribe 4.4 - Deep Research & Quality of Life',
+			highlights: [
+				'🔬 Deep research migrated to gemini-utils ResearchManager',
+				'🛡️ Trusted Mode with extended vault tools',
+				'🔤 Fixed HTML entities appearing in chat responses',
+				'📝 HTML markup now preserved in saved chat history',
+				'🔧 Better empty response messages list executed tools',
+				'✨ Subtle fade-in animation for confirmation results',
+			],
+			details:
+				'This update brings an improved deep research engine, trusted mode for streamlined tool execution, and several quality-of-life fixes. HTML entities returned by Gemini models are now properly decoded, and markup is preserved in saved history files. Empty response messages now list which tools were executed for better transparency.',
+		},
 		'4.3.1': {
 			title: '🔧 Gemini Scribe 4.3.1 - Setup Experience Fix',
 			highlights: [
