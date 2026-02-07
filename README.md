@@ -163,32 +163,26 @@ Create reusable AI instruction templates to customize behavior for different typ
 2. Add to your note's frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
 3. The AI will use your custom instructions for that note
 
-**Learn More:** See the comprehensive [Custom Prompts Guide](docs/custom-prompts-guide.md) for detailed instructions, examples, and best practices.
+**Learn More:** See the comprehensive [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed instructions, examples, and best practices.
 
 ### Documentation
 
-For detailed guides on all features, visit the [Documentation Hub](docs/README.md):
+For detailed guides on all features, visit the [Documentation Site](https://allenhutchison.github.io/obsidian-gemini/):
 
 **Core Features:**
 
-- [Chat Interface Guide](docs/chat-interface-guide.md)
-- [Agent Mode Guide](docs/agent-mode-guide.md) - AI agent with tool-calling capabilities
-- [Custom Prompts Guide](docs/custom-prompts-guide.md)
-- [AI-Assisted Writing Guide](docs/ai-writing-guide.md)
-- [Completions Guide](docs/completions-guide.md)
-- [Summarization Guide](docs/summarization-guide.md)
-- [Chat History Guide](docs/chat-history-guide.md)
-- [Context System Guide](docs/context-system-guide.md)
+- [Agent Mode Guide](docs/guide/agent-mode.md) - AI agent with tool-calling capabilities
+- [Custom Prompts Guide](docs/guide/custom-prompts.md)
+- [AI-Assisted Writing Guide](docs/guide/ai-writing.md)
+- [Completions Guide](docs/guide/completions.md)
+- [Summarization Guide](docs/guide/summarization.md)
+- [Context System Guide](docs/guide/context-system.md)
 
 **Configuration & Development:**
 
-- [Settings Reference](docs/settings-reference.md) - Complete settings documentation
-- [Advanced Settings Guide](docs/advanced-settings-guide.md)
-- [Tool Development Guide](docs/tool-development-guide.md) - Create custom agent tools
-
-**Migration & Updates:**
-
-- [Changelog](CHANGELOG.md) - Recent changes and migration notes
+- [Settings Reference](docs/reference/settings.md) - Complete settings documentation
+- [Advanced Settings Guide](docs/reference/advanced-settings.md)
+- [Tool Development Guide](docs/contributing/tool-development.md) - Create custom agent tools
 
 ### Chat Interface
 
@@ -283,7 +277,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
    - Use command palette: "Gemini Scribe: Remove Custom Prompt from Current Note"
    - Or manually delete the frontmatter field
 
-**Tip:** See the comprehensive [Custom Prompts Guide](docs/custom-prompts-guide.md) for examples and best practices.
+**Tip:** See the comprehensive [Custom Prompts Guide](docs/guide/custom-prompts.md) for examples and best practices.
 
 ## Troubleshooting
 
@@ -301,12 +295,12 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - Verify the prompt file exists in the Prompts folder
   - Check that the wikilink syntax is correct: `[[Prompt Name]]`
   - Try using the command palette commands for easier management
-  - See the [Custom Prompts Guide](docs/custom-prompts-guide.md) for detailed troubleshooting
+  - See the [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed troubleshooting
 - **Parameter/Advanced Settings Issues:**
   - Check if your model supports the temperature range you're using
   - Reset temperature and Top P to defaults if getting unexpected responses
   - Enable model discovery to get latest parameter limits
-  - See the [Advanced Settings Guide](docs/advanced-settings-guide.md) for detailed configuration help
+  - See the [Advanced Settings Guide](docs/reference/advanced-settings.md) for detailed configuration help
 - **Agent Mode / Tool Issues:**
   - Verify your Gemini model supports function calling (all Gemini 2.0+ models do)
   - If tools fail, check file permissions and paths

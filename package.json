@@ -18,7 +18,10 @@
 		"format": "prettier --write .",
 		"format-check": "prettier --check .",
 		"test": "jest",
-		"prepare": "husky"
+		"prepare": "husky",
+		"docs:dev": "vitepress dev docs",
+		"docs:build": "vitepress build docs",
+		"docs:preview": "vitepress preview docs"
 	},
 	"keywords": [],
 	"author": "",
@@ -42,7 +45,8 @@
 		"ts-jest": "^29.3.4",
 		"ts-loader": "^9.5.1",
 		"tslib": "2.8.1",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"vitepress": "^1.6.4"
 	},
 	"dependencies": {
 		"@allenhutchison/gemini-utils": "^0.5.0"
