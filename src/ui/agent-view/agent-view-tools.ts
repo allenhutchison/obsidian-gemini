@@ -334,11 +334,22 @@ export class AgentViewTools {
 						this.plugin.logger.warn('Model returned empty response after retry');
 						this.context.hideProgress();
 
-						// Show error message to user
+						// Show error message to user with executed tool names
+						const executedToolNames = toolResults
+							.filter((r) => r.result?.success !== false)
+							.map((r) => {
+								const tool = this.plugin.toolRegistry.getTool(r.toolName);
+								return tool?.displayName || r.toolName;
+							})
+							.join(', ');
+
+						const emptyResponseMessage = executedToolNames
+							? `I completed the requested actions (${executedToolNames}) but had trouble generating a summary. The operations were successful.`
+							: 'I completed the requested actions but had trouble generating a summary. The operations were successful.';
+
 						const errorEntry: GeminiConversationEntry = {
 							role: 'model',
-							message:
-								'I completed the requested actions but had trouble generating a summary. The tools were executed successfully.',
+							message: emptyResponseMessage,
 							notePath: '',
 							created_at: new Date(),
 						};
