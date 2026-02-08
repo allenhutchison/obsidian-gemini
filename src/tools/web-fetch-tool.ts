@@ -221,9 +221,9 @@ export class WebFetchTool implements Tool {
 			// Convert HTML to text (basic conversion)
 			let content = response.text;
 
-			// Remove script and style tags
-			content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-			content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+			// Remove script and style tags (handle tolerant HTML end tags like </script foo="bar">)
+			content = content.replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, '');
+			content = content.replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, '');
 
 			// Extract title
 			const titleMatch = content.match(/<title[^>]*>([^<]+)<\/title>/i);
