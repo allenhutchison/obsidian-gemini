@@ -64,6 +64,7 @@ const context = await esbuild.context({
 	],
 	loader: {
 		'.hbs': 'text',
+		'.json': 'json',
 	},
 });
 

@@ -36,11 +36,11 @@ npm run format-check # Check formatting without changes
 
 Follow these steps to create a new release:
 
-1. **Update Release Notes** (`src/ui/update-notification-modal.ts`)
-   - Add a new entry in the `getReleaseNotes()` function for the new version
-   - Include a title, highlights (bullet points), and details
+1. **Update Release Notes** (`src/release-notes.json`)
+   - Add a new entry at the top of the JSON object for the new version
+   - Include a title, highlights (array of bullet points), and details
    - Follow the emoji pattern used in existing releases
-   - Place the new version at the top of the notes object
+   - This file is the single source of truth for both the in-app modal and the docs site changelog
 
 2. **Run Tests and Build**
 
@@ -52,7 +52,7 @@ Follow these steps to create a new release:
 3. **Commit Release Notes**
 
    ```bash
-   git add src/ui/update-notification-modal.ts
+   git add src/release-notes.json
    git commit -m "Add release notes for version X.Y.Z"
    ```
 
@@ -75,7 +75,7 @@ Follow these steps to create a new release:
    - Go to https://github.com/allenhutchison/obsidian-gemini/releases
    - Click "Draft a new release"
    - Select the tag that was just created
-   - Copy the release notes from `update-notification-modal.ts`
+   - Copy the release notes from `src/release-notes.json`
    - Format as markdown (remove emoji if desired, keep bullet points)
    - Publish the release
 

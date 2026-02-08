@@ -14,6 +14,7 @@ export default defineConfig({
 			{ text: 'Guide', link: '/guide/getting-started' },
 			{ text: 'Reference', link: '/reference/settings' },
 			{ text: 'Contributing', link: '/contributing/tool-development' },
+			{ text: 'Changelog', link: '/changelog' },
 		],
 
 		sidebar: {
