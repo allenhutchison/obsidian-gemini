@@ -400,6 +400,8 @@ export class AgentViewUI {
 				if (adapter && 'basePath' in adapter) {
 					// (adapter as any).basePath is a private Obsidian API, but standard for accessing the file system path
 					const basePath = (adapter as any).basePath;
+					// Note: normalizePath is intended for vault-relative paths but is used here to normalize slashes
+					// on absolute OS paths for consistency across platforms (Windows backslashes vs POSIX slashes)
 					const normalizedBase = normalizePath(basePath);
 
 					for (const file of Array.from(e.dataTransfer.files)) {
@@ -414,7 +416,11 @@ export class AgentViewUI {
 								if (relPath.startsWith('/')) relPath = relPath.substring(1);
 
 								const validFile = resolvePath(relPath);
-								if (validFile) droppedFiles.push(validFile);
+								if (validFile) {
+									droppedFiles.push(validFile);
+								} else {
+									this.plugin.logger.debug(`[AgentViewUI] Failed to resolve dropped file path: ${relPath}`);
+								}
 							}
 						}
 					}
@@ -434,7 +440,12 @@ export class AgentViewUI {
 						const wikiMatch = trimmed.match(/^\[\[(.*?)(\|.*)?\]\]$/);
 						if (wikiMatch) {
 							const resolved = resolvePath(wikiMatch[1]);
-							if (resolved) droppedFiles.push(resolved);
+							// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
+							if (resolved) {
+								droppedFiles.push(resolved);
+							} else {
+								this.plugin.logger.debug(`[AgentViewUI] Failed to resolve wikilink: ${wikiMatch[1]}`);
+							}
 							continue;
 						}
 
@@ -445,9 +456,14 @@ export class AgentViewUI {
 								const path = decodeURIComponent(mdMatch[2]);
 								const resolved = resolvePath(path);
 								// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
-								if (resolved) droppedFiles.push(resolved);
+								if (resolved) {
+									droppedFiles.push(resolved);
+								} else {
+									this.plugin.logger.debug(`[AgentViewUI] Failed to resolve markdown link: ${path}`);
+								}
 							} catch (err) {
 								// Ignore decoding errors
+								this.plugin.logger.debug(`[AgentViewUI] Failed to decode markdown link path: ${mdMatch[2]}`);
 							}
 							continue;
 						}
@@ -463,6 +479,11 @@ export class AgentViewUI {
 				// Deduplicate files
 				const uniqueFiles = [...new Map(droppedFiles.map((f) => [f.path, f])).values()];
 				callbacks.handleDroppedFiles(uniqueFiles);
+
+				new Notice(
+					`Added ${uniqueFiles.length} file${uniqueFiles.length === 1 ? '' : 's'} to context`,
+					2000
+				);
 				return;
 			}
 			// --- End Vault File Drops ---
