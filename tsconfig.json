@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"baseUrl": ".",
+		"resolveJsonModule": true,
 		"paths": {
 			"@/*": ["src/*"]
 		},
@@ -20,5 +21,6 @@
 		"declarationMap": true,
 		"composite": true
 	},
-	"include": ["**/*.ts"]
+	"include": ["**/*.ts"],
+	"exclude": ["docs/.vitepress/**"]
 }

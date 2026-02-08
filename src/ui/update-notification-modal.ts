@@ -3,6 +3,7 @@
  */
 
 import { App, Modal } from 'obsidian';
+import releaseNotesData from '../release-notes.json';
 
 // Repository configuration
 const REPOSITORY_URL = 'https://github.com/allenhutchison/obsidian-gemini';
@@ -17,121 +18,7 @@ interface ReleaseNote {
  * Get release notes for a specific version
  */
 function getReleaseNotes(version: string): ReleaseNote | null {
-	const notes: Record<string, ReleaseNote> = {
-		'4.4.0': {
-			title: '✨ Gemini Scribe 4.4 - Deep Research & Quality of Life',
-			highlights: [
-				'🔬 Deep research migrated to gemini-utils ResearchManager',
-				'🛡️ Trusted Mode with extended vault tools',
-				'🔤 Fixed HTML entities appearing in chat responses',
-				'📝 HTML markup now preserved in saved chat history',
-				'🔧 Better empty response messages list executed tools',
-				'✨ Subtle fade-in animation for confirmation results',
-			],
-			details:
-				'This update brings an improved deep research engine, trusted mode for streamlined tool execution, and several quality-of-life fixes. HTML entities returned by Gemini models are now properly decoded, and markup is preserved in saved history files. Empty response messages now list which tools were executed for better transparency.',
-		},
-		'4.3.1': {
-			title: '🔧 Gemini Scribe 4.3.1 - Setup Experience Fix',
-			highlights: [
-				'🔑 Fixed plugin setup for new users without API key',
-				'⚙️ Settings are now always accessible, even before configuration',
-				'🛡️ Graceful error handling when API key is missing',
-				'🔄 Plugin automatically activates when API key is added',
-			],
-			details:
-				'This update fixes a critical issue where new users could not access settings to configure their API key. The plugin now loads partially when unconfigured, allowing access to settings. Once configured, the plugin automatically activates without needing to restart Obsidian.',
-		},
-		'4.3.0': {
-			title: '✨ Gemini Scribe 4.3 - Images & Selection Actions',
-			highlights: [
-				'🖼️ Multimodal image support - attach images to your chats',
-				'✨ Explain Selection - get AI explanations of selected text',
-				'❓ Ask about Selection - ask questions about selected text',
-				'🔍 Folder and tags filtering for semantic search',
-				'🔗 Fixed @ mentions to use proper wikilink paths',
-				'⌨️ Fixed IME composition issues for international keyboards',
-				'🛑 Fixed Stop button to properly halt pending tool executions',
-				'📦 Removed obsidian-dataview dependency',
-			],
-			details:
-				'This update adds multimodal capabilities - you can now attach images to your agent conversations. New selection-based actions let you quickly explain or ask questions about any selected text via the right-click menu. Semantic search now supports folder and tag filtering. Several bug fixes improve reliability for international users and tool execution.',
-		},
-		'4.2.1': {
-			title: '🔧 Gemini Scribe 4.2.1 - RAG Stability & New Features',
-			highlights: [
-				'🐛 Fixed RAG re-indexing on every Obsidian restart',
-				'📄 PDF and attachment indexing support',
-				'⏸️ Pause/resume commands for RAG sync',
-				'📊 Detailed status modal with file lists and search',
-				'🔄 Resume interrupted indexing after crash/restart',
-				'⚡ Rate limit handling with automatic retry',
-				'💾 Incremental cache saves for durability',
-			],
-			details:
-				'This update brings major stability improvements to RAG indexing. The vault no longer re-indexes on every restart, and you can now index PDFs and attachments. New pause/resume commands give you control over syncing, and interrupted indexing can be resumed. The status modal now shows detailed file lists with search functionality.',
-		},
-		'4.2.0': {
-			title: '✨ Gemini Scribe 4.2 - Semantic Search & Improved Errors',
-			highlights: [
-				'🔬 [Experimental] Semantic vault search using Google File Search API',
-				'🗂️ Background indexing keeps your vault searchable',
-				'💬 Clearer API error messages (quota, auth, rate limits)',
-				'🖼️ Fixed image model dropdown in settings',
-				'✏️ Fixed writing tool to respect YAML frontmatter',
-			],
-			details:
-				"This update introduces experimental semantic search powered by Google's File Search API. When enabled in Advanced Settings, your vault is indexed in the background, allowing the AI to search by meaning rather than just keywords. Also includes improved error messages that clearly explain API issues like quota limits or authentication problems.",
-		},
-		'4.1.2': {
-			title: '🐛 Gemini Scribe 4.1.2 - Writing Tool Fix',
-			highlights: [
-				'✏️ Fixed writing tool to properly respect YAML frontmatter',
-				'📝 Content is now correctly placed after frontmatter blocks',
-				'🔍 Added edge case handling for malformed frontmatter',
-				'📚 Improved documentation for YAML handling',
-			],
-			details:
-				'This update fixes an important issue where the writing tool would incorrectly place content at the very beginning of files, overwriting or disrupting YAML frontmatter. The tool now properly detects and preserves frontmatter blocks (defined by --- delimiters), placing new content after them as intended.',
-		},
-		'4.1.1': {
-			title: '🐛 Gemini Scribe 4.1.1 - Stability & UX Improvements',
-			highlights: [
-				'💬 In-chat confirmations - no more hidden modal dialogs',
-				'🧠 Fixed Gemini 3 thinking mode display',
-				'🔧 Fixed Gemini 3 function calling with thought signatures',
-				'⏱️ Agent timeout protection prevents infinite hangs',
-				'🎨 Better visual feedback during tool execution',
-			],
-			details:
-				'This update focuses on stability and user experience. Confirmation dialogs are now inline in the chat, Gemini 3 models work properly with thinking mode and function calling, and the agent includes timeout protection to prevent getting stuck.',
-		},
-		'4.1.0': {
-			title: '✨ Gemini Scribe 4.1 - Enhanced AI & Better UX',
-			highlights: [
-				'🌍 Multilingual support - prompts in your language',
-				'🧠 Gemini 2.5 Pro & Gemini 3 with thinking progress',
-				'🛑 Stop button to cancel long-running operations',
-				'💡 Dynamic example prompts based on your vault',
-				'🎨 Improved UI with icon buttons and progress indicators',
-				'🔍 Enhanced search with new file content tool',
-			],
-			details:
-				'This update brings powerful new AI models, multilingual support, and major UX improvements. Includes important security fixes and better vault operations.',
-		},
-		'4.0.0': {
-			title: '🎉 Welcome to Gemini Scribe 4.0!',
-			highlights: [
-				'🤖 Unified agent-first interface - one powerful chat mode',
-				'🔧 Tool calling built-in to every conversation',
-				'💾 Persistent agent sessions with full history',
-				'📦 Old history safely archived as readable markdown',
-			],
-			details:
-				'This is a major update focused entirely on the powerful Agent Mode. The old note-based chat has been removed in favor of a unified agent experience with tool calling, persistent sessions, and better context management.',
-		},
-	};
-
+	const notes = releaseNotesData as Record<string, ReleaseNote>;
 	return notes[version] || null;
 }
 

@@ -2,3 +2,5 @@
 package-lock.json
 manifest.json
 versions.json
+docs/.vitepress/dist
+docs/.vitepress/cache

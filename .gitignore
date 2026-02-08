@@ -36,3 +36,7 @@ test-scripts/
 
 # TypeScript incremental compilation info
 *.tsbuildinfo
+
+# VitePress
+docs/.vitepress/dist/
+docs/.vitepress/cache/

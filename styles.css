@@ -4413,3 +4413,24 @@ If your plugin does not need CSS, delete this file.
 	width: calc(100% - 40px);
 	margin: 16px 20px;
 }
+
+/* MCP settings — constrain long server descriptions and tool names */
+.mcp-server-setting {
+	min-width: 0;
+}
+
+.mcp-server-desc {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mcp-tool-setting {
+	min-width: 0;
+}
+
+.mcp-tool-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

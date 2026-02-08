@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, setIcon } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 
@@ -128,6 +128,151 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						}, 300);
 					})
 			);
+	}
+
+	/**
+	 * Create MCP server settings section
+	 */
+	private async createMCPSettings(containerEl: HTMLElement): Promise<void> {
+		new Setting(containerEl).setName('MCP Servers').setHeading();
+
+		new Setting(containerEl)
+			.setName('Enable MCP servers')
+			.setDesc('Connect to local Model Context Protocol servers to extend the agent with external tools. Desktop only.')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.mcpEnabled).onChange(async (value) => {
+					this.plugin.settings.mcpEnabled = value;
+					await this.plugin.saveSettings();
+
+					if (value && this.plugin.mcpManager) {
+						await this.plugin.mcpManager.connectAllEnabled();
+					} else if (!value && this.plugin.mcpManager) {
+						await this.plugin.mcpManager.disconnectAll();
+					}
+
+					this.display();
+				})
+			);
+
+		if (!this.plugin.settings.mcpEnabled) return;
+
+		const servers = this.plugin.settings.mcpServers || [];
+
+		if (servers.length === 0) {
+			containerEl.createEl('p', {
+				text: 'No MCP servers configured. Click "Add Server" to get started.',
+				cls: 'setting-item-description',
+			});
+		} else {
+			for (const server of servers) {
+				const mcpManager = this.plugin.mcpManager;
+				const status = mcpManager?.getServerStatus(server.name);
+				const statusText = status?.status || 'disconnected';
+
+				let iconName: string;
+				if (status?.status === 'connected') {
+					iconName = 'check-circle';
+				} else if (status?.status === 'error') {
+					iconName = 'alert-circle';
+				} else {
+					iconName = 'circle';
+				}
+
+				const setting = new Setting(containerEl)
+					.setName(server.name)
+					.setDesc(`${server.command} ${server.args.join(' ')} — ${statusText}`);
+				setting.settingEl.addClass('mcp-server-setting');
+				setting.descEl.addClass('mcp-server-desc');
+				setIcon(setting.nameEl, iconName);
+
+				setting
+					.addButton((btn) =>
+						btn.setButtonText('Edit').onClick(async () => {
+							if (!mcpManager) return;
+							const { MCPServerModal } = await import('./mcp-server-modal');
+							const oldName = server.name;
+							const modal = new MCPServerModal(this.app, mcpManager, server, async (updated) => {
+								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers || [];
+
+								// Reject duplicate names (allow keeping the same name)
+								if (updated.name !== oldName && this.plugin.settings.mcpServers.some((s) => s.name === updated.name)) {
+									new Notice(`A server named "${updated.name}" already exists`);
+									return;
+								}
+
+								const idx = this.plugin.settings.mcpServers.findIndex((s) => s.name === oldName);
+								if (idx >= 0) {
+									this.plugin.settings.mcpServers[idx] = updated;
+								}
+								await this.plugin.saveSettings();
+
+								// Disconnect old name first if it was connected (handles renames)
+								if (mcpManager?.isConnected(oldName)) {
+									await mcpManager.disconnectServer(oldName);
+									if (updated.enabled) {
+										try {
+											await mcpManager.connectServer(updated);
+										} catch (error) {
+											new Notice(
+												`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
+											);
+										}
+									}
+								}
+
+								this.display();
+							});
+							modal.open();
+						})
+					)
+					.addButton((btn) =>
+						btn
+							.setButtonText('Delete')
+							.setWarning()
+							.onClick(async () => {
+								// Disconnect first if connected
+								if (mcpManager?.isConnected(server.name)) {
+									await mcpManager.disconnectServer(server.name);
+								}
+								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers.filter((s) => s.name !== server.name);
+								await this.plugin.saveSettings();
+								this.display();
+							})
+					);
+			}
+		}
+
+		new Setting(containerEl).addButton((btn) =>
+			btn
+				.setButtonText('Add Server')
+				.setCta()
+				.onClick(async () => {
+					if (!this.plugin.mcpManager) return;
+					const { MCPServerModal } = await import('./mcp-server-modal');
+					const modal = new MCPServerModal(this.app, this.plugin.mcpManager, null, async (config) => {
+						this.plugin.settings.mcpServers = this.plugin.settings.mcpServers || [];
+						// Check for duplicate name
+						if (this.plugin.settings.mcpServers.some((s) => s.name === config.name)) {
+							new Notice(`A server named "${config.name}" already exists`);
+							return;
+						}
+						this.plugin.settings.mcpServers.push(config);
+						await this.plugin.saveSettings();
+
+						// Connect if enabled
+						if (config.enabled && this.plugin.mcpManager) {
+							try {
+								await this.plugin.mcpManager.connectServer(config);
+							} catch (error) {
+								new Notice(`Server saved but failed to connect: ${error instanceof Error ? error.message : error}`);
+							}
+						}
+
+						this.display();
+					});
+					modal.open();
+				})
+		);
 	}
 
 	async display(): Promise<void> {
@@ -552,6 +697,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 								await this.plugin.saveSettings();
 							})
 					);
+			}
+
+			// MCP Server Settings (desktop only)
+			if (!(this.app as any).isMobile) {
+				await this.createMCPSettings(containerEl);
 			}
 
 			// Vault Search Index (RAG) Settings
