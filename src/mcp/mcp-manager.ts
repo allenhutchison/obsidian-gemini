@@ -6,6 +6,61 @@ import type ObsidianGemini from '../main';
 import { Logger } from '../utils/logger';
 
 /**
+ * Patch the global setTimeout to return objects with .unref() in Electron's renderer.
+ *
+ * The MCP SDK internally calls setTimeout(...).unref(), which works in Node.js
+ * (where setTimeout returns a Timeout object) but fails in Electron's renderer
+ * (where setTimeout returns a number, like in browsers).
+ *
+ * This polyfill wraps the return value so .unref() is a safe no-op.
+ */
+function patchSetTimeoutForElectron(): void {
+	const origSetTimeout = globalThis.setTimeout;
+	if (typeof origSetTimeout === 'function') {
+		// Test if unref already works (true Node.js environment)
+		const testTimer = origSetTimeout(() => {}, 0);
+		if (typeof (testTimer as any).unref === 'function') {
+			// Already has .unref() — no patch needed
+			clearTimeout(testTimer as any);
+			return;
+		}
+		clearTimeout(testTimer as any);
+
+		// Patch: wrap return value to add .unref() and .ref() as no-ops
+		(globalThis as any).setTimeout = function patchedSetTimeout(
+			callback: (...args: any[]) => void,
+			ms?: number,
+			...args: any[]
+		): any {
+			const id = origSetTimeout(callback, ms, ...args);
+			return {
+				[Symbol.toPrimitive]() {
+					return id;
+				},
+				unref() {
+					return this;
+				},
+				ref() {
+					return this;
+				},
+				// Preserve the raw id so clearTimeout still works
+				__timerId: id,
+			};
+		} as any;
+
+		// Also patch clearTimeout to handle our wrapper objects
+		const origClearTimeout = globalThis.clearTimeout;
+		(globalThis as any).clearTimeout = function patchedClearTimeout(id: any): void {
+			if (id && typeof id === 'object' && '__timerId' in id) {
+				origClearTimeout(id.__timerId);
+			} else {
+				origClearTimeout(id);
+			}
+		} as any;
+	}
+}
+
+/**
  * Runtime connection info for an MCP server
  */
 interface ServerConnection {
@@ -62,20 +117,27 @@ export class MCPManager {
 	 * Connect to a single MCP server, discover its tools, and register them.
 	 */
 	async connectServer(config: MCPServerConfig): Promise<void> {
+		// Patch setTimeout for Electron compatibility before any MCP SDK calls
+		patchSetTimeoutForElectron();
+
 		// Disconnect if already connected
 		if (this.connections.has(config.name)) {
 			await this.disconnectServer(config.name);
 		}
 
 		this.updateState(config.name, { status: MCPConnectionStatus.CONNECTING, toolNames: [] });
+		this.logger.debug(`MCP: Connecting to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`);
 
 		try {
+			const env = config.env
+				? { ...(process.env as Record<string, string>), ...config.env }
+				: undefined;
+
+			this.logger.debug(`MCP: Creating StdioClientTransport for "${config.name}"`);
 			const transport = new StdioClientTransport({
 				command: config.command,
 				args: config.args,
-				env: config.env
-				? { ...(process.env as Record<string, string>), ...config.env }
-				: undefined,
+				env,
 			});
 
 			const client = new Client({
@@ -83,9 +145,12 @@ export class MCPManager {
 				version: this.plugin.manifest.version,
 			});
 
+			this.logger.debug(`MCP: Calling client.connect() for "${config.name}"...`);
 			await client.connect(transport);
+			this.logger.debug(`MCP: client.connect() succeeded for "${config.name}"`);
 
 			// Discover tools
+			this.logger.debug(`MCP: Listing tools for "${config.name}"...`);
 			const { tools } = await client.listTools();
 			this.logger.log(`MCP: Server "${config.name}" connected with ${tools.length} tool(s)`);
 
@@ -96,6 +161,7 @@ export class MCPManager {
 				const wrapper = new MCPToolWrapper(client, config.name, toolDef, trusted);
 				toolWrappers.push(wrapper);
 				this.plugin.toolRegistry.registerTool(wrapper);
+				this.logger.debug(`MCP: Registered tool "${wrapper.name}" (trusted: ${trusted})`);
 			}
 
 			this.connections.set(config.name, { client, transport, toolWrappers });
@@ -105,6 +171,11 @@ export class MCPManager {
 			});
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : String(error);
+			const errorStack = error instanceof Error ? error.stack : undefined;
+			this.logger.error(`MCP: Connection failed for "${config.name}": ${errorMsg}`);
+			if (errorStack) {
+				this.logger.debug(`MCP: Stack trace:`, errorStack);
+			}
 			this.updateState(config.name, {
 				status: MCPConnectionStatus.ERROR,
 				error: errorMsg,
@@ -213,14 +284,18 @@ export class MCPManager {
 	 * Used by the settings UI to populate tool trust checkboxes.
 	 */
 	async queryToolsForConfig(config: MCPServerConfig): Promise<string[]> {
+		// Patch setTimeout for Electron compatibility before any MCP SDK calls
+		patchSetTimeoutForElectron();
+
 		let transport: StdioClientTransport | null = null;
+		this.logger.debug(`MCP: Test connection to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`);
 		try {
 			transport = new StdioClientTransport({
 				command: config.command,
 				args: config.args,
 				env: config.env
-				? { ...(process.env as Record<string, string>), ...config.env }
-				: undefined,
+					? { ...(process.env as Record<string, string>), ...config.env }
+					: undefined,
 			});
 
 			const client = new Client({
@@ -228,13 +303,22 @@ export class MCPManager {
 				version: this.plugin.manifest.version,
 			});
 
+			this.logger.debug(`MCP: Test — calling client.connect()...`);
 			await client.connect(transport);
+			this.logger.debug(`MCP: Test — connected, listing tools...`);
 			const { tools } = await client.listTools();
 			const toolNames = tools.map((t) => t.name);
+			this.logger.debug(`MCP: Test — found ${toolNames.length} tool(s): ${toolNames.join(', ')}`);
 
 			await transport.close();
 			return toolNames;
 		} catch (error) {
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			const errorStack = error instanceof Error ? error.stack : undefined;
+			this.logger.error(`MCP: Test connection failed: ${errorMsg}`);
+			if (errorStack) {
+				this.logger.debug(`MCP: Stack trace:`, errorStack);
+			}
 			if (transport) {
 				try {
 					await transport.close();
