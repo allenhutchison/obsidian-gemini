@@ -130,6 +130,7 @@ describe('A2UIRenderer', () => {
 				addClass: (containerEl as any).addClass,
 				createDiv: (containerEl as any).createDiv,
 				createEl: (containerEl as any).createEl,
+				createSpan: (containerEl as any).createSpan,
 			});
 			this.appendChild(div);
 			return div;
@@ -143,9 +144,24 @@ describe('A2UIRenderer', () => {
 				addClass: (containerEl as any).addClass,
 				createDiv: (containerEl as any).createDiv,
 				createEl: (containerEl as any).createEl,
+				createSpan: (containerEl as any).createSpan,
 			});
 			this.appendChild(elem);
 			return elem;
+		};
+		(containerEl as any).createSpan = function (opts?: any) {
+			const span = document.createElement('span');
+			if (opts?.cls) span.className = opts.cls;
+			if (opts?.text) span.textContent = opts.text;
+			Object.assign(span, {
+				empty: (containerEl as any).empty,
+				addClass: (containerEl as any).addClass,
+				createDiv: (containerEl as any).createDiv,
+				createEl: (containerEl as any).createEl,
+				createSpan: (containerEl as any).createSpan,
+			});
+			this.appendChild(span);
+			return span;
 		};
 	});
 
