@@ -272,6 +272,38 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				})
 			);
 
+		// A2UI Save Folder Setting
+		new Setting(containerEl)
+			.setName('A2UI Save Folder')
+			.setDesc(
+				this.plugin.settings.a2uiSaveFolder
+					? `Current: ${this.plugin.settings.a2uiSaveFolder}. Clear to prompt for location next time.`
+					: 'Not set. Will prompt for location when saving A2UI content.'
+			)
+			.addText((text) => {
+				const folderSuggest = new FolderSuggest(this.app, text.inputEl, async (folder) => {
+					this.plugin.settings.a2uiSaveFolder = folder;
+					await this.plugin.saveSettings();
+					this.display(); // Refresh to update description
+				});
+				text.setValue(this.plugin.settings.a2uiSaveFolder || '');
+				text.setPlaceholder('Leave empty to prompt on save');
+				text.onChange(async (value) => {
+					this.plugin.settings.a2uiSaveFolder = value;
+					await this.plugin.saveSettings();
+				});
+			})
+			.addButton((button) =>
+				button
+					.setButtonText('Reset')
+					.setTooltip('Clear saved folder to prompt again next time')
+					.onClick(async () => {
+						this.plugin.settings.a2uiSaveFolder = '';
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+
 		// Advanced Settings
 		new Setting(containerEl).setName('Advanced Settings').setHeading();
 

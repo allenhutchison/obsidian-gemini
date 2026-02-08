@@ -80,6 +80,8 @@ export interface ObsidianGeminiSettings {
 	lastSeenVersion: string;
 	// RAG Indexing settings
 	ragIndexing: RagIndexingSettings;
+	// A2UI settings
+	a2uiSaveFolder: string; // Empty = ask on first save, otherwise folder path
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -124,6 +126,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		autoSync: true,
 		includeAttachments: false,
 	},
+	// A2UI settings
+	a2uiSaveFolder: '', // Empty = ask user on first save
 };
 
 export default class ObsidianGemini extends Plugin {

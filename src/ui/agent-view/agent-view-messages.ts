@@ -67,55 +67,65 @@ export class AgentViewMessages {
 		const { action, payload } = customEvent.detail;
 
 		if (action === 'save-note') {
-			try {
-				// Use payload or payload.content
-				let fileContent = '';
-				if (typeof payload === 'string') {
-					fileContent = payload;
-				} else if (payload && typeof payload.content === 'string') {
-					fileContent = payload.content;
-				} else {
-					fileContent = JSON.stringify(payload, null, 2);
-				}
-
-				const filename = `A2UI-Save-${Date.now()}.md`;
-				// Use a safe subfolder instead of the root of history
-				const historyFolder = this.plugin.settings.historyFolder || 'gemini-scribe';
-				const folder = `${historyFolder}/saved`;
-				const finalPath = normalizePath(`${folder}/${filename}`);
-
-				// Ensure folder exists using Obsidian API
-				const normalizedFolder = normalizePath(folder);
-				if (folder && folder !== '/' && !this.plugin.app.vault.getAbstractFileByPath(normalizedFolder)) {
-					await this.plugin.app.vault.createFolder(normalizedFolder);
-				}
-
-				const createdFile = await this.plugin.app.vault.create(finalPath, fileContent);
-				new Notice(`Saved to ${createdFile.path}`);
-
-				const leaf = this.plugin.app.workspace.getLeaf(true);
-				await leaf.openFile(createdFile);
-			} catch (error) {
-				this.plugin.logger.error('Failed to save note from A2UI action:', error);
-				new Notice('Failed to save note. Check console.');
+			// Use payload or payload.content
+			let fileContent = '';
+			if (typeof payload === 'string') {
+				fileContent = payload;
+			} else if (payload && typeof payload.content === 'string') {
+				fileContent = payload.content;
+			} else {
+				fileContent = JSON.stringify(payload, null, 2);
 			}
-		} else if (action === 'run-command') {
-			const commandId = payload?.commandId;
-			if (commandId) {
-				this.plugin.logger.log(`A2UI run-command requested: ${commandId}`);
-				// Security: Confirm with user
-				if (window.confirm(`Allow agent to run command: "${commandId}"?`)) {
-					try {
-						// @ts-ignore - app.commands is internal API
-						this.app.commands.executeCommandById(commandId);
-					} catch (error) {
-						this.plugin.logger.error(`Failed to execute command "${commandId}":`, error);
-						new Notice(`Failed to run command: ${commandId}`);
+
+			// Check if we have a saved folder preference
+			const savedFolder = this.plugin.settings.a2uiSaveFolder;
+
+			if (savedFolder) {
+				// Use saved folder preference
+				await this.saveToFolder(fileContent, savedFolder);
+			} else {
+				// Show folder selection modal on first use
+				const { A2UIFolderSelectModal } = await import('../a2ui/folder-select-modal');
+				const modal = new A2UIFolderSelectModal(this.app, async (folder, remember) => {
+					if (remember) {
+						// Save folder preference
+						this.plugin.settings.a2uiSaveFolder = folder;
+						await this.plugin.saveSettings();
 					}
-				}
+					await this.saveToFolder(fileContent, folder);
+				});
+				modal.open();
 			}
 		} else {
-			new Notice(`Action '${action}' not implemented yet.`);
+			// Visual-only mode: no other actions supported
+			this.plugin.logger.warn(`A2UI action '${action}' is not supported in visual-only mode.`);
+		}
+	}
+
+	/**
+	 * Save content to a specific folder
+	 */
+	private async saveToFolder(content: string, folder: string) {
+		try {
+			const filename = `A2UI-Save-${Date.now()}.md`;
+			const finalPath = normalizePath(folder ? `${folder}/${filename}` : filename);
+
+			// Ensure folder exists
+			if (folder) {
+				const normalizedFolder = normalizePath(folder);
+				if (!this.plugin.app.vault.getAbstractFileByPath(normalizedFolder)) {
+					await this.plugin.app.vault.createFolder(normalizedFolder);
+				}
+			}
+
+			const createdFile = await this.plugin.app.vault.create(finalPath, content);
+			new Notice(`Saved to ${createdFile.path}`);
+
+			const leaf = this.plugin.app.workspace.getLeaf(true);
+			await leaf.openFile(createdFile);
+		} catch (error) {
+			this.plugin.logger.error('Failed to save note from A2UI action:', error);
+			new Notice('Failed to save note. Check console.');
 		}
 	}
 

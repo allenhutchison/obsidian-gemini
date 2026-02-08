@@ -35,8 +35,7 @@ export class A2UIRenderer extends MarkdownRenderChild {
 
 	onload() {
 		// Handle async rendering and errors
-		this.render(this.containerEl, this.uiRoot).catch((err) => {
-			console.error('A2UI render failed:', err);
+		this.render(this.containerEl, this.uiRoot).catch(() => {
 			this.containerEl.createDiv({
 				text: 'Failed to render A2UI component',
 				cls: 'a2ui-error',
@@ -135,7 +134,6 @@ export class A2UIRenderer extends MarkdownRenderChild {
 				await this.renderMermaid(wrapper, component as A2UIMermaid);
 				break;
 			default:
-				console.warn('Unknown A2UI component type:', (component as any).type);
 				wrapper.createDiv({
 					text: `Unknown component: ${(component as any).type}`,
 					cls: 'a2ui-error',
@@ -257,7 +255,7 @@ export class A2UIRenderer extends MarkdownRenderChild {
 		}
 
 		const toggle = new ToggleComponent(parent);
-		if (component.checked) toggle.setValue(component.checked);
+		if (component.checked !== undefined) toggle.setValue(component.checked);
 	}
 
 	private renderImage(parent: HTMLElement, component: A2UIImage) {
