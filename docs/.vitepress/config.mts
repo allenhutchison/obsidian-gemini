@@ -37,6 +37,7 @@ export default defineConfig({
 						{ text: 'Context System', link: '/guide/context-system' },
 						{ text: 'Semantic Search', link: '/guide/semantic-search' },
 						{ text: 'Deep Research', link: '/guide/deep-research' },
+						{ text: 'MCP Servers', link: '/guide/mcp-servers' },
 					],
 				},
 			],

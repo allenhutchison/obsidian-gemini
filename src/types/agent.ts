@@ -166,11 +166,12 @@ export const DEFAULT_CONTEXTS = {
 
 	AGENT_SESSION: {
 		contextFiles: [],
-		enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
+		enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS, ToolCategory.EXTERNAL_MCP],
 		requireConfirmation: [
 			DestructiveAction.MODIFY_FILES,
 			DestructiveAction.CREATE_FILES,
 			DestructiveAction.DELETE_FILES,
+			DestructiveAction.EXTERNAL_API_CALLS,
 		],
 		maxContextChars: 100000,
 		maxCharsPerFile: 15000,
