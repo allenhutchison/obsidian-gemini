@@ -3,6 +3,7 @@ import { ToolCategory } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
 import { requestUrlWithRetry } from '../utils/proxy-fetch';
+import { decodeHtmlEntities } from '../utils/html-entities';
 
 /**
  * Web fetch tool using Google's URL Context feature
@@ -229,13 +230,8 @@ export class WebFetchTool implements Tool {
 			const titleMatch = content.match(/<title[^>]*>([^<]+)<\/title>/i);
 			const title = titleMatch ? titleMatch[1].trim() : params.url;
 
-			// Convert common HTML entities
-			content = content.replace(/&nbsp;/g, ' ');
-			content = content.replace(/&amp;/g, '&');
-			content = content.replace(/&lt;/g, '<');
-			content = content.replace(/&gt;/g, '>');
-			content = content.replace(/&quot;/g, '"');
-			content = content.replace(/&#39;/g, "'");
+			// Convert HTML entities
+			content = decodeHtmlEntities(content);
 
 			// Remove HTML tags but keep text
 			content = content.replace(/<[^>]+>/g, ' ');
