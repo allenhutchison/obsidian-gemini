@@ -1,0 +1,222 @@
+{
+	"4.4.0": {
+		"title": "✨ Gemini Scribe 4.4 - Deep Research & Quality of Life",
+		"highlights": [
+			"🔬 Deep research migrated to gemini-utils ResearchManager",
+			"🛡️ Trusted Mode with extended vault tools",
+			"🔤 Fixed HTML entities appearing in chat responses",
+			"📝 HTML markup now preserved in saved chat history",
+			"🔧 Better empty response messages list executed tools",
+			"✨ Subtle fade-in animation for confirmation results"
+		],
+		"details": "This update brings an improved deep research engine, trusted mode for streamlined tool execution, and several quality-of-life fixes. HTML entities returned by Gemini models are now properly decoded, and markup is preserved in saved history files. Empty response messages now list which tools were executed for better transparency."
+	},
+	"4.3.1": {
+		"title": "🔧 Gemini Scribe 4.3.1 - Setup Experience Fix",
+		"highlights": [
+			"🔑 Fixed plugin setup for new users without API key",
+			"⚙️ Settings are now always accessible, even before configuration",
+			"🛡️ Graceful error handling when API key is missing",
+			"🔄 Plugin automatically activates when API key is added"
+		],
+		"details": "This update fixes a critical issue where new users could not access settings to configure their API key. The plugin now loads partially when unconfigured, allowing access to settings. Once configured, the plugin automatically activates without needing to restart Obsidian."
+	},
+	"4.3.0": {
+		"title": "✨ Gemini Scribe 4.3 - Images & Selection Actions",
+		"highlights": [
+			"🖼️ Multimodal image support - attach images to your chats",
+			"✨ Explain Selection - get AI explanations of selected text",
+			"❓ Ask about Selection - ask questions about selected text",
+			"🔍 Folder and tags filtering for semantic search",
+			"🔗 Fixed @ mentions to use proper wikilink paths",
+			"⌨️ Fixed IME composition issues for international keyboards",
+			"🛑 Fixed Stop button to properly halt pending tool executions",
+			"📦 Removed obsidian-dataview dependency"
+		],
+		"details": "This update adds multimodal capabilities - you can now attach images to your agent conversations. New selection-based actions let you quickly explain or ask questions about any selected text via the right-click menu. Semantic search now supports folder and tag filtering. Several bug fixes improve reliability for international users and tool execution."
+	},
+	"4.2.1": {
+		"title": "🔧 Gemini Scribe 4.2.1 - RAG Stability & New Features",
+		"highlights": [
+			"🐛 Fixed RAG re-indexing on every Obsidian restart",
+			"📄 PDF and attachment indexing support",
+			"⏸️ Pause/resume commands for RAG sync",
+			"📊 Detailed status modal with file lists and search",
+			"🔄 Resume interrupted indexing after crash/restart",
+			"⚡ Rate limit handling with automatic retry",
+			"💾 Incremental cache saves for durability"
+		],
+		"details": "This update brings major stability improvements to RAG indexing. The vault no longer re-indexes on every restart, and you can now index PDFs and attachments. New pause/resume commands give you control over syncing, and interrupted indexing can be resumed. The status modal now shows detailed file lists with search functionality."
+	},
+	"4.2.0": {
+		"title": "✨ Gemini Scribe 4.2 - Semantic Search & Improved Errors",
+		"highlights": [
+			"🔬 [Experimental] Semantic vault search using Google File Search API",
+			"🗂️ Background indexing keeps your vault searchable",
+			"💬 Clearer API error messages (quota, auth, rate limits)",
+			"🖼️ Fixed image model dropdown in settings",
+			"✏️ Fixed writing tool to respect YAML frontmatter"
+		],
+		"details": "This update introduces experimental semantic search powered by Google's File Search API. When enabled in Advanced Settings, your vault is indexed in the background, allowing the AI to search by meaning rather than just keywords. Also includes improved error messages that clearly explain API issues like quota limits or authentication problems."
+	},
+	"4.1.2": {
+		"title": "🐛 Gemini Scribe 4.1.2 - Writing Tool Fix",
+		"highlights": [
+			"✏️ Fixed writing tool to properly respect YAML frontmatter",
+			"📝 Content is now correctly placed after frontmatter blocks",
+			"🔍 Added edge case handling for malformed frontmatter",
+			"📚 Improved documentation for YAML handling"
+		],
+		"details": "This update fixes an important issue where the writing tool would incorrectly place content at the very beginning of files, overwriting or disrupting YAML frontmatter. The tool now properly detects and preserves frontmatter blocks (defined by --- delimiters), placing new content after them as intended."
+	},
+	"4.1.1": {
+		"title": "🐛 Gemini Scribe 4.1.1 - Stability & UX Improvements",
+		"highlights": [
+			"💬 In-chat confirmations - no more hidden modal dialogs",
+			"🧠 Fixed Gemini 3 thinking mode display",
+			"🔧 Fixed Gemini 3 function calling with thought signatures",
+			"⏱️ Agent timeout protection prevents infinite hangs",
+			"🎨 Better visual feedback during tool execution"
+		],
+		"details": "This update focuses on stability and user experience. Confirmation dialogs are now inline in the chat, Gemini 3 models work properly with thinking mode and function calling, and the agent includes timeout protection to prevent getting stuck."
+	},
+	"4.1.0": {
+		"title": "✨ Gemini Scribe 4.1 - Enhanced AI & Better UX",
+		"highlights": [
+			"🌍 Multilingual support - prompts in your language",
+			"🧠 Gemini 2.5 Pro & Gemini 3 with thinking progress",
+			"🛑 Stop button to cancel long-running operations",
+			"💡 Dynamic example prompts based on your vault",
+			"🎨 Improved UI with icon buttons and progress indicators",
+			"🔍 Enhanced search with new file content tool"
+		],
+		"details": "This update brings powerful new AI models, multilingual support, and major UX improvements. Includes important security fixes and better vault operations."
+	},
+	"4.0.0": {
+		"title": "🎉 Welcome to Gemini Scribe 4.0!",
+		"highlights": [
+			"🤖 Unified agent-first interface - one powerful chat mode",
+			"🔧 Tool calling built-in to every conversation",
+			"💾 Persistent agent sessions with full history",
+			"📦 Old history safely archived as readable markdown"
+		],
+		"details": "This is a major update focused entirely on the powerful Agent Mode. The old note-based chat has been removed in favor of a unified agent experience with tool calling, persistent sessions, and better context management."
+	},
+	"3.3.2": {
+		"title": "🔧 Gemini Scribe 3.3.2 - SDK & Context Fixes",
+		"highlights": [
+			"⏱️ Added timer to thinking indicator in agent mode",
+			"📦 Updated @google/genai SDK to resolve urlContext type errors",
+			"🔧 Fixed Gemini API content format and restored file context"
+		],
+		"details": "This maintenance release updates the Google GenAI SDK to fix type errors with urlContext, fixes API content formatting, and adds a timer to the thinking indicator in agent mode."
+	},
+	"3.3.1": {
+		"title": "🐛 Gemini Scribe 3.3.1 - Popout Window & Model Fixes",
+		"highlights": [
+			"📋 Fixed paste functionality in popout/detached windows",
+			"🔗 Fixed @ mention file chip insertion in popout windows",
+			"🤖 Fixed models not being used correctly for summary and rewrite tasks",
+			"🏷️ Fixed agent session auto-title generation",
+			"🧩 New reusable DOM context utility module"
+		],
+		"details": "This release fixes several issues with popout/detached windows including paste and @ mentions, corrects model selection for summary and rewrite tasks, and adds a new DOM context utility for better window handling."
+	},
+	"3.3.0": {
+		"title": "✨ Gemini Scribe 3.3 - Agent Mode",
+		"highlights": [
+			"🤖 AI Agent with tool calling - read, write, search, and manage vault files",
+			"🔍 Google Search integration for web information",
+			"🌐 Web page fetching and analysis",
+			"💬 Session management with persistent conversation history",
+			"📎 Context file management with @ mentions",
+			"🛡️ Safety features: permissions, loop detection, system folder protection",
+			"📋 Copy button for user messages",
+			"🎨 Professional UI with collapsible tool messages and animations"
+		],
+		"details": "A major feature release introducing Agent Mode - an AI-powered assistant that can actively work with your vault through tool calling. Includes comprehensive file operations, Google Search, web fetching, session management, and safety features like loop detection and system folder protection."
+	},
+	"3.1.0": {
+		"title": "⚙️ Gemini Scribe 3.1 - Dynamic Parameters & Advanced Settings",
+		"highlights": [
+			"🌡️ Smart temperature ranges that auto-adjust based on model capabilities",
+			"🎛️ Model-aware Top P controls with proper validation",
+			"🔧 New Advanced Settings panel for developer-focused options",
+			"🔍 Automatic model discovery with parameter limit detection",
+			"💾 Smart 24-hour model cache with manual refresh",
+			"🧪 Comprehensive new test coverage"
+		],
+		"details": "This release adds dynamic model parameter controls that automatically adjust ranges based on your Gemini model's actual capabilities. The new Advanced Settings panel organizes developer options cleanly, and the model discovery system automatically fetches available models with their parameter limits."
+	},
+	"3.0.0": {
+		"title": "🎉 Gemini Scribe 3.0 - Major Release",
+		"highlights": [
+			"📁 Plugin state folder restructured for better organization",
+			"📝 Enhanced custom prompt system with command palette commands",
+			"🔍 Dynamic model discovery from Google's API",
+			"⚡ Real-time streaming responses in chat",
+			"🔧 Replaced low-level file operations with native Obsidian APIs",
+			"🚀 Automatic migration from flat folder structure"
+		],
+		"details": "A major release with significant architectural improvements. Plugin data is now organized into subdirectories (History, Prompts, Agent-Sessions), custom prompts get command palette integration, and model discovery pulls available models directly from Google's API. Includes automatic migration for existing users."
+	},
+	"2.2.0": {
+		"title": "⚡ Gemini Scribe 2.2 - Streaming Responses",
+		"highlights": [
+			"⚡ Real-time streaming AI responses in chat",
+			"🔄 Intelligent streaming retry with automatic fallback",
+			"🧪 Comprehensive test coverage for streaming",
+			"📚 Added implementation planning guidelines",
+			"🐛 Fixed UI stuttering and duplicate content during display"
+		],
+		"details": "This release adds real-time streaming support for AI responses. See responses appear progressively as they're generated, with smart fallback to standard responses if streaming isn't available. Includes new CI/CD workflows and improved developer experience."
+	},
+	"2.1.0": {
+		"title": "🔧 Gemini Scribe 2.1 - Retry Logic & Stability",
+		"highlights": [
+			"🔄 Retry logic for model API requests with exponential backoff",
+			"🧪 Improved test coverage for models and debug modules",
+			"🔤 Fixed HTML entity decoding in model responses",
+			"🔗 Fixed README links to new repository"
+		],
+		"details": "This release adds robust retry logic for API requests with exponential backoff, fixes HTML entity handling in model responses, and improves test coverage across the codebase."
+	},
+	"2.0.3": {
+		"title": "🐛 Gemini Scribe 2.0.3 - Context Handling Fix",
+		"highlights": [
+			"🔧 Fixed linked notes being processed when Send Context is disabled",
+			"📄 Context Depth 0 now correctly includes only the active file",
+			"⚡ Prevented unnecessary file context processing when disabled"
+		],
+		"details": "This release corrects context handling behavior. The Send Context toggle now strictly controls whether file content is gathered, and Context Depth of 0 properly includes only the active file without linked notes."
+	},
+	"2.0.2": {
+		"title": "🐛 Gemini Scribe 2.0.2 - Stability Patch",
+		"highlights": ["🐛 Bug fixes and stability improvements"],
+		"details": "A stability patch with minor bug fixes following the 2.0.0 major release."
+	},
+	"2.0.0": {
+		"title": "🎉 Gemini Scribe 2.0 - API Abstraction & History V2",
+		"highlights": [
+			"🏗️ Major internal refactor: API abstraction layer",
+			"📝 History V2 with improved storage and management",
+			"🔧 New model management system",
+			"⚠️ Breaking: significant internal changes"
+		],
+		"details": "A major internal refactor introducing an API abstraction layer, new model management system, and History V2. This release modernizes the plugin's architecture for better extensibility and reliability."
+	},
+	"1.8.1": {
+		"title": "🐛 Gemini Scribe 1.8.1 - Patch",
+		"highlights": ["🐛 Bug fixes and minor improvements"],
+		"details": "A minor patch release with bug fixes following the 1.8.0 release."
+	},
+	"1.8.0": {
+		"title": "📱 Gemini Scribe 1.8 - Mobile Support",
+		"highlights": [
+			"📱 Plugin now works on mobile with history enabled",
+			"📁 Flattened history filenames for cross-platform compatibility",
+			"🔄 Automatic migration of legacy history files"
+		],
+		"details": "This release enables mobile support by flattening history filenames for cross-platform compatibility. Existing history files are automatically migrated to the new naming format."
+	}
+}
