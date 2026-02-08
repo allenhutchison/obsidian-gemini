@@ -129,8 +129,14 @@ export class MCPManager {
 
 	/**
 	 * Connect to a single MCP server, discover its tools, and register them.
+	 * MCP stdio servers require child_process and are desktop-only.
 	 */
 	async connectServer(config: MCPServerConfig): Promise<void> {
+		if ((this.plugin.app as any).isMobile) {
+			this.logger.warn('MCP: Server connections are not supported on mobile');
+			return;
+		}
+
 		// Patch setTimeout for Electron compatibility before any MCP SDK calls
 		patchSetTimeoutForElectron();
 
@@ -299,6 +305,10 @@ export class MCPManager {
 	 * Used by the settings UI to populate tool trust checkboxes.
 	 */
 	async queryToolsForConfig(config: MCPServerConfig): Promise<string[]> {
+		if ((this.plugin.app as any).isMobile) {
+			throw new Error('MCP server connections are not supported on mobile');
+		}
+
 		// Patch setTimeout for Electron compatibility before any MCP SDK calls
 		patchSetTimeoutForElectron();
 
