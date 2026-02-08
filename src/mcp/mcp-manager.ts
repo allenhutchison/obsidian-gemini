@@ -150,9 +150,10 @@ export class MCPManager {
 			`MCP: Connecting to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`
 		);
 
+		let transport: StdioClientTransport | null = null;
 		try {
 			this.logger.debug(`MCP: Creating StdioClientTransport for "${config.name}"`);
-			const transport = new StdioClientTransport({
+			transport = new StdioClientTransport({
 				command: config.command,
 				args: config.args,
 				env: buildEnv(config.env),
@@ -188,6 +189,15 @@ export class MCPManager {
 				toolNames: tools.map((t) => t.name),
 			});
 		} catch (error) {
+			// Kill the spawned process if transport was created
+			if (transport) {
+				try {
+					await transport.close();
+				} catch {
+					// Ignore close errors during cleanup
+				}
+			}
+
 			const errorMsg = error instanceof Error ? error.message : String(error);
 			const errorStack = error instanceof Error ? error.stack : undefined;
 			this.logger.error(`MCP: Connection failed for "${config.name}": ${errorMsg}`);

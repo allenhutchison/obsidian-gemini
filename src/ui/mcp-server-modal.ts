@@ -9,7 +9,7 @@ import { MCPManager } from '../mcp/mcp-manager';
 export class MCPServerModal extends Modal {
 	private config: MCPServerConfig;
 	private mcpManager: MCPManager;
-	private onSave: (config: MCPServerConfig) => void;
+	private onSave: (config: MCPServerConfig) => Promise<void> | void;
 	private isEdit: boolean;
 	private discoveredTools: string[] = [];
 	private toolTrustContainer: HTMLElement | null = null;
@@ -18,7 +18,7 @@ export class MCPServerModal extends Modal {
 		app: App,
 		mcpManager: MCPManager,
 		config: MCPServerConfig | null,
-		onSave: (config: MCPServerConfig) => void
+		onSave: (config: MCPServerConfig) => Promise<void> | void
 	) {
 		super(app);
 		this.mcpManager = mcpManager;
@@ -189,7 +189,7 @@ export class MCPServerModal extends Modal {
 				btn
 					.setButtonText('Save')
 					.setCta()
-					.onClick(() => {
+					.onClick(async () => {
 						if (!this.config.name) {
 							new Notice('Server name is required');
 							return;
@@ -198,7 +198,7 @@ export class MCPServerModal extends Modal {
 							new Notice('Command is required');
 							return;
 						}
-						this.onSave(this.config);
+						await this.onSave(this.config);
 						this.close();
 					})
 			);
@@ -220,7 +220,7 @@ export class MCPServerModal extends Modal {
 		for (const toolName of this.discoveredTools) {
 			const isTrusted = this.config.trustedTools.includes(toolName);
 
-			new Setting(this.toolTrustContainer).setName(toolName).addToggle((toggle) =>
+			const toolSetting = new Setting(this.toolTrustContainer).setName(toolName).addToggle((toggle) =>
 				toggle.setValue(isTrusted).onChange((value) => {
 					if (value) {
 						if (!this.config.trustedTools.includes(toolName)) {
@@ -231,6 +231,8 @@ export class MCPServerModal extends Modal {
 					}
 				})
 			);
+			toolSetting.settingEl.addClass('mcp-tool-setting');
+			toolSetting.nameEl.addClass('mcp-tool-name');
 		}
 	}
 

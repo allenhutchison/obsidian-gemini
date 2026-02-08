@@ -181,6 +181,8 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				const setting = new Setting(containerEl)
 					.setName(server.name)
 					.setDesc(`${server.command} ${server.args.join(' ')} — ${statusText}`);
+				setting.settingEl.addClass('mcp-server-setting');
+				setting.descEl.addClass('mcp-server-desc');
 				setIcon(setting.nameEl, iconName);
 
 				setting
