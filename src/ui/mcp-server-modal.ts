@@ -27,7 +27,12 @@ export class MCPServerModal extends Modal {
 
 		// Clone or create default config
 		this.config = config
-			? { ...config, args: [...config.args], trustedTools: [...config.trustedTools], env: config.env ? { ...config.env } : undefined }
+			? {
+					...config,
+					args: [...config.args],
+					trustedTools: [...config.trustedTools],
+					env: config.env ? { ...config.env } : undefined,
+				}
 			: {
 					name: '',
 					command: '',
@@ -133,7 +138,9 @@ export class MCPServerModal extends Modal {
 			);
 
 		// Test connection button
-		const testSetting = new Setting(contentEl).setName('Test connection').setDesc('Connect temporarily to discover available tools');
+		const testSetting = new Setting(contentEl)
+			.setName('Test connection')
+			.setDesc('Connect temporarily to discover available tools');
 
 		testSetting.addButton((button) =>
 			button.setButtonText('Test Connection').onClick(async () => {
@@ -209,19 +216,17 @@ export class MCPServerModal extends Modal {
 		for (const toolName of this.discoveredTools) {
 			const isTrusted = this.config.trustedTools.includes(toolName);
 
-			new Setting(this.toolTrustContainer)
-				.setName(toolName)
-				.addToggle((toggle) =>
-					toggle.setValue(isTrusted).onChange((value) => {
-						if (value) {
-							if (!this.config.trustedTools.includes(toolName)) {
-								this.config.trustedTools.push(toolName);
-							}
-						} else {
-							this.config.trustedTools = this.config.trustedTools.filter((t) => t !== toolName);
+			new Setting(this.toolTrustContainer).setName(toolName).addToggle((toggle) =>
+				toggle.setValue(isTrusted).onChange((value) => {
+					if (value) {
+						if (!this.config.trustedTools.includes(toolName)) {
+							this.config.trustedTools.push(toolName);
 						}
-					})
-				);
+					} else {
+						this.config.trustedTools = this.config.trustedTools.filter((t) => t !== toolName);
+					}
+				})
+			);
 		}
 	}
 

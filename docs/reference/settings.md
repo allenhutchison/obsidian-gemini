@@ -267,14 +267,14 @@ MCP (Model Context Protocol) server support allows the agent to use tools from e
 
 Each server configuration includes:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | String | Unique server name |
-| `command` | String | Command to spawn the server |
-| `args` | String[] | Command arguments |
-| `env` | Object | Optional environment variables |
-| `enabled` | Boolean | Connect on plugin load |
-| `trustedTools` | String[] | Tools that skip confirmation |
+| Field          | Type     | Description                    |
+| -------------- | -------- | ------------------------------ |
+| `name`         | String   | Unique server name             |
+| `command`      | String   | Command to spawn the server    |
+| `args`         | String[] | Command arguments              |
+| `env`          | Object   | Optional environment variables |
+| `enabled`      | Boolean  | Connect on plugin load         |
+| `trustedTools` | String[] | Tools that skip confirmation   |
 
 See the [MCP Servers Guide](/guide/mcp-servers) for setup instructions.
 

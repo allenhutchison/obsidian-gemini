@@ -58,6 +58,7 @@ The MCP project provides a reference filesystem server. To set it up:
 **Command**: `npx`
 
 **Arguments** (one per line):
+
 ```
 -y
 @modelcontextprotocol/server-filesystem

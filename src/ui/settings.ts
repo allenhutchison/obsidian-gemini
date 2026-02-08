@@ -185,10 +185,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers || [];
 
 								// Reject duplicate names (allow keeping the same name)
-								if (
-									updated.name !== oldName &&
-									this.plugin.settings.mcpServers.some((s) => s.name === updated.name)
-								) {
+								if (updated.name !== oldName && this.plugin.settings.mcpServers.some((s) => s.name === updated.name)) {
 									new Notice(`A server named "${updated.name}" already exists`);
 									return;
 								}
@@ -225,9 +222,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 								if (mcpManager?.isConnected(server.name)) {
 									await mcpManager.disconnectServer(server.name);
 								}
-								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers.filter(
-									(s) => s.name !== server.name
-								);
+								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers.filter((s) => s.name !== server.name);
 								await this.plugin.saveSettings();
 								this.display();
 							})
@@ -256,9 +251,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							try {
 								await this.plugin.mcpManager.connectServer(config);
 							} catch (error) {
-								new Notice(
-									`Server saved but failed to connect: ${error instanceof Error ? error.message : error}`
-								);
+								new Notice(`Server saved but failed to connect: ${error instanceof Error ? error.message : error}`);
 							}
 						}
 
