@@ -1,4 +1,4 @@
-import { Tool, ToolResult, ToolExecutionContext } from './types';
+import { Tool, ToolExecutionContext } from './types';
 import { ToolCategory, DestructiveAction } from '../types/agent';
 import type ObsidianGemini from '../main';
 
@@ -60,7 +60,12 @@ export class ToolRegistry {
 	}
 
 	/**
-	 * Check if a tool requires confirmation based on session settings
+	 * Check if a tool requires confirmation based on session settings.
+	 *
+	 * For MCP tools, per-tool trust (requiresConfirmation = false) takes
+	 * precedence over the session-level category check so that trusted
+	 * tools can skip confirmation even though EXTERNAL_API_CALLS is in
+	 * the default session context.
 	 */
 	requiresConfirmation(toolName: string, context: ToolExecutionContext): boolean {
 		const tool = this.getTool(toolName);
@@ -69,13 +74,18 @@ export class ToolRegistry {
 		// Check if tool explicitly requires confirmation
 		if (tool.requiresConfirmation) return true;
 
+		// MCP tools have per-tool trust: if the tool explicitly opted out
+		// of confirmation, honour that instead of the category-level check.
+		if (tool.category === ToolCategory.EXTERNAL_MCP) {
+			return false;
+		}
+
 		// Check session-level confirmation requirements
 		const confirmActions = context.session.context.requireConfirmation;
 
 		// Map tool categories to destructive actions
 		const categoryActionMap: Record<string, DestructiveAction> = {
 			[ToolCategory.VAULT_OPERATIONS]: DestructiveAction.MODIFY_FILES,
-			[ToolCategory.EXTERNAL_MCP]: DestructiveAction.EXTERNAL_API_CALLS,
 		};
 
 		const action = categoryActionMap[tool.category];
