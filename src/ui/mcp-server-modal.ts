@@ -43,7 +43,11 @@ export class MCPServerModal extends Modal {
 				};
 
 		if (this.isEdit) {
-			this.discoveredTools = [...this.config.trustedTools];
+			// Pre-populate from the connected server's tool list if available,
+			// otherwise fall back to trustedTools (so at minimum trusted tools show).
+			const serverState = mcpManager.getServerStatus(this.config.name);
+			this.discoveredTools =
+				serverState.toolNames.length > 0 ? [...serverState.toolNames] : [...this.config.trustedTools];
 		}
 	}
 
@@ -157,7 +161,7 @@ export class MCPServerModal extends Modal {
 					const tools = await this.mcpManager.queryToolsForConfig(this.config);
 					this.discoveredTools = tools;
 					testSetting.setDesc(`Connected successfully! Found ${tools.length} tool(s).`);
-					this.renderToolTrust(contentEl);
+					this.renderToolTrust();
 				} catch (error) {
 					const msg = error instanceof Error ? error.message : String(error);
 					testSetting.setDesc(`Connection failed: ${msg}`);
@@ -171,7 +175,7 @@ export class MCPServerModal extends Modal {
 		// Tool trust section placeholder
 		this.toolTrustContainer = contentEl.createDiv({ cls: 'mcp-tool-trust-container' });
 		if (this.discoveredTools.length > 0) {
-			this.renderToolTrust(contentEl);
+			this.renderToolTrust();
 		}
 
 		// Action buttons
@@ -200,7 +204,7 @@ export class MCPServerModal extends Modal {
 			);
 	}
 
-	private renderToolTrust(_containerEl: HTMLElement) {
+	private renderToolTrust() {
 		if (!this.toolTrustContainer) return;
 		this.toolTrustContainer.empty();
 

@@ -51,12 +51,12 @@ export class MCPToolWrapper implements Tool {
 			const textParts: string[] = [];
 			if (Array.isArray(result.content)) {
 				for (const content of result.content) {
-					if (content.type === 'text') {
-						textParts.push(content.text as string);
-					} else if (content.type === 'image') {
-						textParts.push(`[Image: ${(content as any).mimeType || 'image'}]`);
-					} else if (content.type === 'resource') {
-						textParts.push(`[Resource: ${(content as any).uri || 'unknown'}]`);
+					if (content.type === 'text' && 'text' in content) {
+						textParts.push(String(content.text));
+					} else if (content.type === 'image' && 'mimeType' in content) {
+						textParts.push(`[Image: ${content.mimeType || 'image'}]`);
+					} else if (content.type === 'resource' && 'uri' in content) {
+						textParts.push(`[Resource: ${content.uri || 'unknown'}]`);
 					}
 				}
 			}
