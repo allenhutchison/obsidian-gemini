@@ -257,18 +257,21 @@ export class MCPManager {
 			return;
 		}
 
-		// Unregister old tools
-		for (const wrapper of conn.toolWrappers) {
-			this.plugin.toolRegistry.unregisterTool(wrapper.name);
-		}
-
-		// Re-query and re-register
+		// Re-query and build new wrappers first so a listTools() failure
+		// doesn't leave us with no tools registered.
 		const { tools } = await conn.client.listTools();
 		const newWrappers: MCPToolWrapper[] = [];
 		for (const toolDef of tools) {
 			const trusted = config.trustedTools.includes(toolDef.name);
 			const wrapper = new MCPToolWrapper(conn.client, config.name, toolDef, trusted);
 			newWrappers.push(wrapper);
+		}
+
+		// Swap registrations
+		for (const wrapper of conn.toolWrappers) {
+			this.plugin.toolRegistry.unregisterTool(wrapper.name);
+		}
+		for (const wrapper of newWrappers) {
 			this.plugin.toolRegistry.registerTool(wrapper);
 		}
 

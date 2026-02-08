@@ -122,7 +122,7 @@ function convertInputSchema(inputSchema?: MCPToolDefinition['inputSchema']): Too
 	return {
 		type: 'object',
 		properties,
-		required: inputSchema.required,
+		required: inputSchema.required ?? [],
 	};
 }
 
