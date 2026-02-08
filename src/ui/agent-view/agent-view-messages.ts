@@ -3,6 +3,7 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatFileSize } from '../../utils/format-utils';
+import { formatModelMessage } from '../../utils/markdown-formatting';
 import { Tool } from '../../tools/types';
 
 // Documentation and help content
@@ -100,66 +101,11 @@ export class AgentViewMessages {
 		// Check if this is a tool execution message from history
 		const isToolExecution = entry.metadata?.toolName || entry.message.includes('Tool Execution Results:');
 
-		// Preserve line breaks in the message
 		// Convert single newlines to double newlines for proper markdown rendering
-		// But preserve existing double newlines and table formatting
+		// while preserving table formatting
 		let formattedMessage = entry.message;
 		if (entry.role === 'model') {
-			// Split by lines to handle tables specially
-			const lines = entry.message.split('\n');
-			const formattedLines: string[] = [];
-			let inTable = false;
-			let previousLineWasEmpty = true;
-
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i];
-				const nextLine = lines[i + 1];
-				const trimmedLine = line.trim();
-
-				// Improved table detection
-				// A table row must have at least one pipe that's not escaped
-				const hasUnescapedPipe = line.split('\\|').join('').includes('|');
-				const isTableDivider = /^\s*\|?\s*[:?\-]+\s*\|/.test(line);
-				const isTableRow = hasUnescapedPipe && !isTableDivider && trimmedLine !== '|';
-
-				// Check if we're starting a table
-				if ((isTableRow || isTableDivider) && !inTable) {
-					inTable = true;
-					// Add empty line before table if needed
-					if (!previousLineWasEmpty && formattedLines.length > 0) {
-						formattedLines.push('');
-					}
-				}
-
-				// Add the current line
-				formattedLines.push(line);
-
-				// Check if we're ending a table
-				if (inTable && !hasUnescapedPipe && trimmedLine !== '') {
-					inTable = false;
-					// Add empty line after table
-					formattedLines.push('');
-				} else if (inTable && trimmedLine === '') {
-					// Empty line also ends a table
-					inTable = false;
-				}
-
-				// For non-table content, add empty line between paragraphs
-				if (
-					!inTable &&
-					!hasUnescapedPipe &&
-					trimmedLine !== '' &&
-					nextLine &&
-					nextLine.trim() !== '' &&
-					!nextLine.includes('|')
-				) {
-					formattedLines.push('');
-				}
-
-				previousLineWasEmpty = trimmedLine === '';
-			}
-
-			formattedMessage = formattedLines.join('\n');
+			formattedMessage = formatModelMessage(entry.message);
 
 			// Debug logging for table formatting
 			if (formattedMessage.includes('|')) {
