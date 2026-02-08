@@ -44,7 +44,10 @@ jest.mock('obsidian', () => {
 	return {
 		App: jest.fn(),
 		MarkdownRenderer: {
-			render: jest.fn().mockResolvedValue(undefined),
+			render: jest.fn().mockImplementation((app, content, el) => {
+				el.textContent = content;
+				return Promise.resolve();
+			}),
 		},
 		MarkdownRenderChild: class {
 			containerEl: HTMLElement;
@@ -204,6 +207,13 @@ describe('A2UIRenderer', () => {
 
 			const container = containerEl.querySelector('.a2ui-container');
 			expect(container).toBeTruthy();
+
+			// Verify children were rendered
+			const children = containerEl.querySelectorAll('.a2ui-text');
+			expect(children.length).toBe(2);
+			expect(children[0].textContent).toBe('Child 1');
+			expect(children[1].textContent).toBe('Child 2');
+			expect(MarkdownRenderer.render).toHaveBeenCalledTimes(2);
 		});
 
 		it('should render a button component', async () => {
@@ -409,30 +419,10 @@ describe('A2UIRenderer', () => {
 
 			// The renderer will catch the error in onload
 			expect(() => renderer.onload()).not.toThrow();
+
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			const errorEl = containerEl.querySelector('.a2ui-error');
+			expect(errorEl).toBeTruthy();
 		});
-	});
-});
-
-describe('A2UIFolderSelectModal', () => {
-	// Import dynamically to avoid issues
-	let A2UIFolderSelectModal: any;
-
-	beforeAll(async () => {
-		// Mock Obsidian Modal
-		jest.mock('../../src/ui/a2ui/folder-select-modal', () => {
-			return {
-				A2UIFolderSelectModal: jest.fn().mockImplementation((app, onSelect) => ({
-					open: jest.fn(),
-					close: jest.fn(),
-					onOpen: jest.fn(),
-					onClose: jest.fn(),
-				})),
-			};
-		});
-	});
-
-	it('should be importable', async () => {
-		const module = await import('../../src/ui/a2ui/folder-select-modal');
-		expect(module.A2UIFolderSelectModal).toBeDefined();
 	});
 });
