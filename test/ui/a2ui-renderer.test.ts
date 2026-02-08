@@ -1,43 +1,14 @@
 import { A2UIRenderer } from '../../src/ui/a2ui/renderer';
 import { A2UIComponent, A2UIContainer, A2UIText, A2UIButton, A2UIMermaid } from '../../src/ui/a2ui/types';
 import { App, MarkdownRenderer, ButtonComponent, ToggleComponent, DropdownComponent, TextComponent } from 'obsidian';
+import { attachObsidianMockMethods } from '../test-helper';
 
 // Mock Obsidian
 jest.mock('obsidian', () => {
+	const { attachObsidianMockMethods } = require('../test-helper');
 	const mockEl = () => {
 		const el = document.createElement('div');
-		(el as any).empty = function () {
-			this.innerHTML = '';
-		};
-		(el as any).addClass = function (cls: string) {
-			this.classList.add(cls);
-		};
-		(el as any).createDiv = function (opts?: any) {
-			const div = document.createElement('div');
-			if (opts?.cls) div.className = opts.cls;
-			if (opts?.text) div.textContent = opts.text;
-			Object.assign(div, {
-				empty: (el as any).empty,
-				addClass: (el as any).addClass,
-				createDiv: (el as any).createDiv,
-				createEl: (el as any).createEl,
-			});
-			this.appendChild(div);
-			return div;
-		};
-		(el as any).createEl = function (tag: string, opts?: any) {
-			const elem = document.createElement(tag);
-			if (opts?.cls) elem.className = opts.cls;
-			if (opts?.text) elem.textContent = opts.text;
-			Object.assign(elem, {
-				empty: (el as any).empty,
-				addClass: (el as any).addClass,
-				createDiv: (el as any).createDiv,
-				createEl: (el as any).createEl,
-			});
-			this.appendChild(elem);
-			return elem;
-		};
+		attachObsidianMockMethods(el);
 		return el;
 	};
 
@@ -117,55 +88,7 @@ describe('A2UIRenderer', () => {
 	beforeEach(() => {
 		app = {} as App;
 		containerEl = document.createElement('div');
-		// Add Obsidian-like methods to containerEl
-		(containerEl as any).empty = function () {
-			this.innerHTML = '';
-		};
-		(containerEl as any).addClass = function (cls: string) {
-			this.classList.add(cls);
-		};
-		(containerEl as any).createDiv = function (opts?: any) {
-			const div = document.createElement('div');
-			if (opts?.cls) div.className = opts.cls;
-			if (opts?.text) div.textContent = opts.text;
-			Object.assign(div, {
-				empty: (containerEl as any).empty,
-				addClass: (containerEl as any).addClass,
-				createDiv: (containerEl as any).createDiv,
-				createEl: (containerEl as any).createEl,
-				createSpan: (containerEl as any).createSpan,
-			});
-			this.appendChild(div);
-			return div;
-		};
-		(containerEl as any).createEl = function (tag: string, opts?: any) {
-			const elem = document.createElement(tag);
-			if (opts?.cls) elem.className = opts.cls;
-			if (opts?.text) elem.textContent = opts.text;
-			Object.assign(elem, {
-				empty: (containerEl as any).empty,
-				addClass: (containerEl as any).addClass,
-				createDiv: (containerEl as any).createDiv,
-				createEl: (containerEl as any).createEl,
-				createSpan: (containerEl as any).createSpan,
-			});
-			this.appendChild(elem);
-			return elem;
-		};
-		(containerEl as any).createSpan = function (opts?: any) {
-			const span = document.createElement('span');
-			if (opts?.cls) span.className = opts.cls;
-			if (opts?.text) span.textContent = opts.text;
-			Object.assign(span, {
-				empty: (containerEl as any).empty,
-				addClass: (containerEl as any).addClass,
-				createDiv: (containerEl as any).createDiv,
-				createEl: (containerEl as any).createEl,
-				createSpan: (containerEl as any).createSpan,
-			});
-			this.appendChild(span);
-			return span;
-		};
+		attachObsidianMockMethods(containerEl);
 	});
 
 	afterEach(() => {
@@ -245,6 +168,9 @@ describe('A2UIRenderer', () => {
 			// Should not throw, should create wrapper with error indication
 			const wrapper = containerEl.querySelector('.a2ui-unknown-type');
 			expect(wrapper).toBeTruthy();
+			const errorEl = wrapper?.querySelector('.a2ui-error');
+			expect(errorEl).toBeTruthy();
+			expect(errorEl?.textContent).toContain('Unknown component: unknown-type');
 		});
 	});
 
