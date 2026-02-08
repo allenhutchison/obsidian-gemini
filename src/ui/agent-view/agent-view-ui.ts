@@ -478,9 +478,20 @@ export class AgentViewUI {
 
 				// Deduplicate files
 				const uniqueFiles = [...new Map(droppedFiles.map((f) => [f.path, f])).values()];
-				callbacks.handleDroppedFiles(uniqueFiles);
 
-				new Notice(`Added ${uniqueFiles.length} file${uniqueFiles.length === 1 ? '' : 's'} to context`, 2000);
+				// Filter out system folders and excluded files
+				const filteredFiles = uniqueFiles.filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin));
+
+				if (filteredFiles.length === 0) {
+					if (uniqueFiles.length > 0) {
+						new Notice('Dropped files were excluded (system or plugin files)', 3000);
+					}
+					return;
+				}
+
+				callbacks.handleDroppedFiles(filteredFiles);
+
+				new Notice(`Added ${filteredFiles.length} file${filteredFiles.length === 1 ? '' : 's'} to context`, 2000);
 				return;
 			}
 			// --- End Vault File Drops ---
