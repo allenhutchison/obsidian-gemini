@@ -3,6 +3,7 @@ import { ToolCategory } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
 import { requestUrlWithRetry } from '../utils/proxy-fetch';
+import TurndownService from 'turndown';
 import { decodeHtmlEntities } from '../utils/html-entities';
 
 /**
@@ -219,25 +220,23 @@ export class WebFetchTool implements Tool {
 				};
 			}
 
-			// Convert HTML to text (basic conversion)
-			let content = response.text;
+			// Convert HTML to Markdown using turndown for safe, structured extraction
+			const rawHtml = response.text;
 
-			// Remove script and style tags
-			content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-			content = content.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+			// Extract title before conversion
+			const titleMatch = rawHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
+			const title = titleMatch ? decodeHtmlEntities(titleMatch[1].trim()) : params.url;
 
-			// Extract title
-			const titleMatch = content.match(/<title[^>]*>([^<]+)<\/title>/i);
-			const title = titleMatch ? titleMatch[1].trim() : params.url;
+			// Configure turndown to strip scripts and styles, convert to clean Markdown
+			const turndownService = new TurndownService({
+				headingStyle: 'atx',
+				codeBlockStyle: 'fenced',
+			});
 
-			// Convert HTML entities
-			content = decodeHtmlEntities(content);
+			// Remove script, style, nav, and footer elements entirely
+			turndownService.remove(['script', 'style', 'nav', 'footer', 'noscript']);
 
-			// Remove HTML tags but keep text
-			content = content.replace(/<[^>]+>/g, ' ');
-
-			// Clean up whitespace
-			content = content.replace(/\s+/g, ' ').trim();
+			let content = turndownService.turndown(rawHtml);
 
 			// Truncate if too long
 			if (content.length > 10000) {
