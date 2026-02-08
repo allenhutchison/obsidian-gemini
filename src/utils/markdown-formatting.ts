@@ -65,7 +65,7 @@ export function formatModelMessage(text: string): string {
 			trimmedLine !== '' &&
 			nextLine &&
 			nextLine.trim() !== '' &&
-			!nextLine.includes('|')
+			!hasUnescapedPipe(nextLine)
 		) {
 			formattedLines.push('');
 		}

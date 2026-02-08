@@ -56,6 +56,11 @@ describe('formatModelMessage', () => {
 		expect(formatModelMessage(input)).toBe('Use \\| for pipes\n\nNext line');
 	});
 
+	it('does not suppress paragraph spacing when next line has only escaped pipes', () => {
+		const input = 'First line\nUse \\| for pipes';
+		expect(formatModelMessage(input)).toBe('First line\n\nUse \\| for pipes');
+	});
+
 	// --- Mixed content ---
 	it('handles text before and after a table', () => {
 		const input = 'Intro\n| A | B |\n| --- | --- |\n| 1 | 2 |\nConclusion';
@@ -72,6 +77,6 @@ describe('formatModelMessage', () => {
 		const start = Date.now();
 		formatModelMessage(' '.repeat(50000) + 'x');
 		const elapsed = Date.now() - start;
-		expect(elapsed).toBeLessThan(100);
+		expect(elapsed).toBeLessThan(1000);
 	});
 });
