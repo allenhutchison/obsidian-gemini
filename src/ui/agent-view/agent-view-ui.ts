@@ -480,10 +480,7 @@ export class AgentViewUI {
 				const uniqueFiles = [...new Map(droppedFiles.map((f) => [f.path, f])).values()];
 				callbacks.handleDroppedFiles(uniqueFiles);
 
-				new Notice(
-					`Added ${uniqueFiles.length} file${uniqueFiles.length === 1 ? '' : 's'} to context`,
-					2000
-				);
+				new Notice(`Added ${uniqueFiles.length} file${uniqueFiles.length === 1 ? '' : 's'} to context`, 2000);
 				return;
 			}
 			// --- End Vault File Drops ---
