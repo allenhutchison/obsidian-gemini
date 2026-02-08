@@ -1,5 +1,5 @@
-import { WebFetchTool } from '../../src/tools/web-fetch-tool';
-import { ToolExecutionContext } from '../../src/tools/types';
+import { WebFetchTool } from './web-fetch-tool';
+import { ToolExecutionContext } from './types';
 import { GoogleGenAI } from '@google/genai';
 
 // Mock Google Gen AI
@@ -8,11 +8,11 @@ jest.mock('@google/genai', () => ({
 }));
 
 // Mock proxy-fetch
-jest.mock('../../src/utils/proxy-fetch', () => ({
+jest.mock('../utils/proxy-fetch', () => ({
 	requestUrlWithRetry: jest.fn(),
 }));
 
-import { requestUrlWithRetry } from '../../src/utils/proxy-fetch';
+import { requestUrlWithRetry } from '../utils/proxy-fetch';
 
 describe('WebFetchTool', () => {
 	let tool: WebFetchTool;
