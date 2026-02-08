@@ -30,7 +30,7 @@ When you connect an MCP server to Gemini Scribe, its tools appear alongside the 
 
 In the server configuration modal:
 
-- **Server name**: A unique, friendly name (e.g., "filesystem", "github")
+- **Server name**: A unique, friendly name (e.g., "filesystem", "GitHub")
 - **Command**: The executable to run (e.g., `npx`, `python`, `/usr/local/bin/my-server`)
 - **Arguments**: One argument per line
 - **Environment variables**: Optional `KEY=VALUE` pairs, one per line
@@ -59,7 +59,7 @@ The MCP project provides a reference filesystem server. To set it up:
 
 **Arguments** (one per line):
 
-```
+```text
 -y
 @modelcontextprotocol/server-filesystem
 /path/to/allowed/directory

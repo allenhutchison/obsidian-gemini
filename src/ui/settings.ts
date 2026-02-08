@@ -143,6 +143,13 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				toggle.setValue(this.plugin.settings.mcpEnabled).onChange(async (value) => {
 					this.plugin.settings.mcpEnabled = value;
 					await this.plugin.saveSettings();
+
+					if (value && this.plugin.mcpManager) {
+						await this.plugin.mcpManager.connectAllEnabled();
+					} else if (!value && this.plugin.mcpManager) {
+						await this.plugin.mcpManager.disconnectAll();
+					}
+
 					this.display();
 				})
 			);
@@ -199,12 +206,14 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 								// Disconnect old name first if it was connected (handles renames)
 								if (mcpManager?.isConnected(oldName)) {
 									await mcpManager.disconnectServer(oldName);
-									try {
-										await mcpManager.connectServer(updated);
-									} catch (error) {
-										new Notice(
-											`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
-										);
+									if (updated.enabled) {
+										try {
+											await mcpManager.connectServer(updated);
+										} catch (error) {
+											new Notice(
+												`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
+											);
+										}
 									}
 								}
 
