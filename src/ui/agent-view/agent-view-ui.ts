@@ -1,4 +1,4 @@
-import { App, TFile, TFolder, Notice, setIcon } from 'obsidian';
+import { App, TFile, TFolder, Notice, setIcon, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
@@ -398,17 +398,24 @@ export class AgentViewUI {
 			if (e.dataTransfer?.files?.length) {
 				const adapter = this.app.vault.adapter;
 				if (adapter && 'basePath' in adapter) {
+					// (adapter as any).basePath is a private Obsidian API, but standard for accessing the file system path
 					const basePath = (adapter as any).basePath;
+					const normalizedBase = normalizePath(basePath);
 
 					for (const file of Array.from(e.dataTransfer.files)) {
-						const rawPath = (file as any).path; // Electron adds .path
-						if (rawPath && typeof rawPath === 'string' && rawPath.startsWith(basePath)) {
-							let relPath = rawPath.substring(basePath.length);
-							relPath = relPath.replace(/\\/g, '/'); // Normalize to forward slashes
-							if (relPath.startsWith('/')) relPath = relPath.substring(1);
+						// (file as any).path is an Electron extension that provides the full filesystem path
+						const rawPath = (file as any).path;
 
-							const validFile = resolvePath(relPath);
-							if (validFile) droppedFiles.push(validFile);
+						if (rawPath && typeof rawPath === 'string') {
+							const normalizedRaw = normalizePath(rawPath);
+
+							if (normalizedRaw.startsWith(normalizedBase)) {
+								let relPath = normalizedRaw.substring(normalizedBase.length);
+								if (relPath.startsWith('/')) relPath = relPath.substring(1);
+
+								const validFile = resolvePath(relPath);
+								if (validFile) droppedFiles.push(validFile);
+							}
 						}
 					}
 				}
@@ -437,6 +444,7 @@ export class AgentViewUI {
 							try {
 								const path = decodeURIComponent(mdMatch[2]);
 								const resolved = resolvePath(path);
+								// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
 								if (resolved) droppedFiles.push(resolved);
 							} catch (err) {
 								// Ignore decoding errors
@@ -451,7 +459,10 @@ export class AgentViewUI {
 			if (droppedFiles.length > 0) {
 				e.preventDefault();
 				e.stopPropagation();
-				callbacks.handleDroppedFiles(droppedFiles);
+
+				// Deduplicate files
+				const uniqueFiles = [...new Map(droppedFiles.map((f) => [f.path, f])).values()];
+				callbacks.handleDroppedFiles(uniqueFiles);
 				return;
 			}
 			// --- End Vault File Drops ---

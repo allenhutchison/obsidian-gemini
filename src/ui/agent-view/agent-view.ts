@@ -126,15 +126,7 @@ export class AgentView extends ItemView {
 			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
 			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
 			getImageAttachments: () => this.pendingImageAttachments,
-			handleDroppedFiles: (files: (TFile | TFolder)[]) => {
-				files.forEach((file) => {
-					if (file instanceof TFile) {
-						this.insertFileChip(file);
-					} else if (file instanceof TFolder) {
-						this.insertFolderChip(file);
-					}
-				});
-			},
+			handleDroppedFiles: (files: (TFile | TFolder)[]) => this.handleDroppedFiles(files),
 		};
 
 		// Create the main interface using AgentViewUI
@@ -928,16 +920,21 @@ To reference an image in your response, use the path shown above.`;
 			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
 			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
 			getImageAttachments: () => this.pendingImageAttachments,
-			handleDroppedFiles: (files: (TFile | TFolder)[]) => {
-				files.forEach((file) => {
-					if (file instanceof TFile) {
-						this.insertFileChip(file);
-					} else if (file instanceof TFolder) {
-						this.insertFolderChip(file);
-					}
-				});
-			},
+			handleDroppedFiles: (files: (TFile | TFolder)[]) => this.handleDroppedFiles(files),
 		};
+	}
+
+	/**
+	 * Handle dropped files by inserting chips
+	 */
+	private handleDroppedFiles(files: (TFile | TFolder)[]) {
+		for (const file of files) {
+			if (file instanceof TFile) {
+				this.insertFileChip(file);
+			} else if (file instanceof TFolder) {
+				this.insertFolderChip(file);
+			}
+		}
 	}
 
 	/**
