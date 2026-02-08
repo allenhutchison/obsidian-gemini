@@ -54,5 +54,8 @@
 	},
 	"lint-staged": {
 		"*": "prettier --write --ignore-unknown"
+	},
+	"overrides": {
+		"esbuild": "0.27.3"
 	}
 }
