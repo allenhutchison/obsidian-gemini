@@ -79,7 +79,9 @@ export class AgentViewMessages {
 				}
 
 				const filename = `A2UI-Save-${Date.now()}.md`;
-				const folder = this.plugin.settings.historyFolder || '/';
+				// Use a safe subfolder instead of the root of history
+				const historyFolder = this.plugin.settings.historyFolder || 'gemini-scribe';
+				const folder = `${historyFolder}/saved`;
 				const finalPath = normalizePath(`${folder}/${filename}`);
 
 				// Ensure folder exists using Obsidian API
@@ -100,10 +102,16 @@ export class AgentViewMessages {
 		} else if (action === 'run-command') {
 			const commandId = payload?.commandId;
 			if (commandId) {
+				this.plugin.logger.log(`A2UI run-command requested: ${commandId}`);
 				// Security: Confirm with user
 				if (window.confirm(`Allow agent to run command: "${commandId}"?`)) {
-					// @ts-ignore - app.commands is internal API
-					this.app.commands.executeCommandById(commandId);
+					try {
+						// @ts-ignore - app.commands is internal API
+						this.app.commands.executeCommandById(commandId);
+					} catch (error) {
+						this.plugin.logger.error(`Failed to execute command "${commandId}":`, error);
+						new Notice(`Failed to run command: ${commandId}`);
+					}
 				}
 			}
 		} else {

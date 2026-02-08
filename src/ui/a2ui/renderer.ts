@@ -84,8 +84,13 @@ export class A2UIRenderer extends MarkdownRenderChild {
 
 			for (const [key, value] of Object.entries(component.style)) {
 				if (allowedStyles.includes(key) && typeof value === 'string') {
-					// Basic value sanitization to prevent injection
-					if (!value.includes('javascript:') && !value.includes('url(')) {
+					// Hardened sanitization: case-insensitive check
+					const lowerValue = value.toLowerCase();
+					if (
+						!lowerValue.includes('javascript:') &&
+						!lowerValue.includes('url(') &&
+						!lowerValue.includes('expression(')
+					) {
 						wrapper.style.setProperty(
 							key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`),
 							value
