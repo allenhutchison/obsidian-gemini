@@ -3,7 +3,6 @@
  */
 
 import { App, Modal } from 'obsidian';
-// @ts-ignore - JSON imported via esbuild loader
 import releaseNotesData from '../release-notes.json';
 
 // Repository configuration
