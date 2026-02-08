@@ -42,6 +42,7 @@ This release fixes a critical issue for new users:
 - **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
 - **Custom Prompt System:** Create reusable AI instruction templates for agent sessions, allowing you to customize the AI's behavior for different workflows (e.g., technical documentation, creative writing, research). Includes command palette commands for easy creation and management.
 - **Image Paste Support:** Paste images directly into the chat input to send them to Gemini for multimodal analysis. Images are automatically saved to your Obsidian attachment folder, displayed as thumbnails before sending, and the AI receives the image path for embedding in notes.
+- **MCP Server Support:** Connect to local [Model Context Protocol](https://modelcontextprotocol.io/) servers to extend the agent with external tools. Configure per-tool trust settings, and MCP tools integrate seamlessly with the existing confirmation flow and loop detection. Desktop only.
 - **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, agent prompts, summarization prompts, selection rewrite prompts, and completion prompts. These ensure consistent and effective AI interaction.
 - **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Agent session history is stored locally in your Obsidian vault as markdown files.
 - **Robust Session Management:**
@@ -177,6 +178,7 @@ For detailed guides on all features, visit the [Documentation Site](https://alle
 - [Completions Guide](docs/guide/completions.md)
 - [Summarization Guide](docs/guide/summarization.md)
 - [Context System Guide](docs/guide/context-system.md)
+- [MCP Servers Guide](docs/guide/mcp-servers.md) - Connect external tool servers
 
 **Configuration & Development:**
 

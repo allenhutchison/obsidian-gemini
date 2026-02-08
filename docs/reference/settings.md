@@ -247,6 +247,37 @@ Prevents the AI agent from executing identical tools repeatedly, which can cause
 - **Description**: Time window for detecting repeated calls
 - **Example**: If threshold is 3 and window is 30s, calling the same tool 3+ times within 30 seconds triggers detection
 
+### MCP Servers
+
+MCP (Model Context Protocol) server support allows the agent to use tools from external MCP servers. Desktop only.
+
+#### Enable MCP Servers
+
+- **Setting**: `mcpEnabled`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Enable connections to local MCP servers for external tool integration
+
+#### Server List
+
+- **Setting**: `mcpServers`
+- **Type**: Array of server configurations
+- **Default**: `[]`
+- **Description**: List of MCP server configurations
+
+Each server configuration includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | String | Unique server name |
+| `command` | String | Command to spawn the server |
+| `args` | String[] | Command arguments |
+| `env` | Object | Optional environment variables |
+| `enabled` | Boolean | Connect on plugin load |
+| `trustedTools` | String[] | Tools that skip confirmation |
+
+See the [MCP Servers Guide](/guide/mcp-servers) for setup instructions.
+
 ## Session-Level Settings
 
 Session settings override global defaults for specific agent sessions. Access via the settings icon in the session header.

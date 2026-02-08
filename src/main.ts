@@ -28,6 +28,8 @@ import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
 import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
+import { MCPManager } from './mcp/mcp-manager';
+import { MCPServerConfig } from './mcp/types';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -78,6 +80,9 @@ export interface ObsidianGeminiSettings {
 	lastSeenVersion: string;
 	// RAG Indexing settings
 	ragIndexing: RagIndexingSettings;
+	// MCP server settings
+	mcpEnabled: boolean;
+	mcpServers: MCPServerConfig[];
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -122,6 +127,9 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		autoSync: true,
 		includeAttachments: false,
 	},
+	// MCP server settings
+	mcpEnabled: false,
+	mcpServers: [],
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -146,6 +154,7 @@ export default class ObsidianGemini extends Plugin {
 	public logger: Logger;
 	public ragIndexing: RagIndexingService | null = null;
 	public selectionActionService: SelectionActionService;
+	public mcpManager: MCPManager | null = null;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -478,6 +487,12 @@ export default class ObsidianGemini extends Plugin {
 			}
 		}
 
+		// Disconnect MCP servers
+		if (this.mcpManager) {
+			await this.mcpManager.disconnectAll();
+			this.mcpManager = null;
+		}
+
 		// Clean up completions
 		if (this.completions) {
 			// Note: GeminiCompletions doesn't have a cleanup method currently
@@ -573,6 +588,12 @@ export default class ObsidianGemini extends Plugin {
 		const imageTools = getImageTools();
 		for (const tool of imageTools) {
 			this.toolRegistry.registerTool(tool);
+		}
+
+		// Initialize MCP server connections (desktop only)
+		this.mcpManager = new MCPManager(this);
+		if (this.settings.mcpEnabled && !(this.app as any).isMobile) {
+			await this.mcpManager.connectAllEnabled();
 		}
 
 		// Initialize completions
@@ -899,6 +920,14 @@ export default class ObsidianGemini extends Plugin {
 		this.logger.debug('Unloading Gemini Scribe');
 		this.history?.onUnload();
 		this.ribbonIcon?.remove();
+
+		// Disconnect MCP servers
+		if (this.mcpManager) {
+			this.mcpManager.disconnectAll().catch((error) => {
+				this.logger.error('Error disconnecting MCP servers:', error);
+			});
+			this.mcpManager = null;
+		}
 
 		// Clean up RAG indexing service
 		if (this.ragIndexing) {

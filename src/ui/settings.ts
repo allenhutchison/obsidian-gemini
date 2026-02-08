@@ -130,6 +130,120 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			);
 	}
 
+	/**
+	 * Create MCP server settings section
+	 */
+	private async createMCPSettings(containerEl: HTMLElement): Promise<void> {
+		new Setting(containerEl).setName('MCP Servers').setHeading();
+
+		new Setting(containerEl)
+			.setName('Enable MCP servers')
+			.setDesc('Connect to local Model Context Protocol servers to extend the agent with external tools. Desktop only.')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.mcpEnabled).onChange(async (value) => {
+					this.plugin.settings.mcpEnabled = value;
+					await this.plugin.saveSettings();
+					this.display();
+				})
+			);
+
+		if (!this.plugin.settings.mcpEnabled) return;
+
+		const servers = this.plugin.settings.mcpServers || [];
+
+		if (servers.length === 0) {
+			containerEl.createEl('p', {
+				text: 'No MCP servers configured. Click "Add Server" to get started.',
+				cls: 'setting-item-description',
+			});
+		} else {
+			for (const server of servers) {
+				const mcpManager = this.plugin.mcpManager;
+				const status = mcpManager?.getServerStatus(server.name);
+				const statusIcon = status?.status === 'connected' ? '🟢' : status?.status === 'error' ? '🔴' : '⚪';
+				const statusText = status?.status || 'disconnected';
+
+				new Setting(containerEl)
+					.setName(`${statusIcon} ${server.name}`)
+					.setDesc(`${server.command} ${server.args.join(' ')} — ${statusText}`)
+					.addButton((btn) =>
+						btn.setButtonText('Edit').onClick(async () => {
+							const { MCPServerModal } = await import('./mcp-server-modal');
+							const modal = new MCPServerModal(this.app, this.plugin.mcpManager!, server, async (updated) => {
+								const idx = this.plugin.settings.mcpServers.findIndex((s) => s.name === server.name);
+								if (idx >= 0) {
+									this.plugin.settings.mcpServers[idx] = updated;
+								}
+								await this.plugin.saveSettings();
+
+								// Reconnect if connected and config changed
+								if (mcpManager?.isConnected(server.name)) {
+									try {
+										await mcpManager.connectServer(updated);
+									} catch (error) {
+											new Notice(
+											`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
+										);
+									}
+								}
+
+								this.display();
+							});
+							modal.open();
+						})
+					)
+					.addButton((btn) =>
+						btn
+							.setButtonText('Delete')
+							.setWarning()
+							.onClick(async () => {
+								// Disconnect first if connected
+								if (mcpManager?.isConnected(server.name)) {
+									await mcpManager.disconnectServer(server.name);
+								}
+								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers.filter(
+									(s) => s.name !== server.name
+								);
+								await this.plugin.saveSettings();
+								this.display();
+							})
+					);
+			}
+		}
+
+		new Setting(containerEl).addButton((btn) =>
+			btn
+				.setButtonText('Add Server')
+				.setCta()
+				.onClick(async () => {
+					const { MCPServerModal } = await import('./mcp-server-modal');
+					const modal = new MCPServerModal(this.app, this.plugin.mcpManager!, null, async (config) => {
+						// Check for duplicate name
+						if (this.plugin.settings.mcpServers.some((s) => s.name === config.name)) {
+							new Notice(`A server named "${config.name}" already exists`);
+							return;
+						}
+						this.plugin.settings.mcpServers.push(config);
+						await this.plugin.saveSettings();
+
+						// Connect if enabled
+						if (config.enabled && this.plugin.mcpManager) {
+							try {
+								await this.plugin.mcpManager.connectServer(config);
+							} catch (error) {
+								new Notice(
+									`Server saved but failed to connect: ${error instanceof Error ? error.message : error}`
+								);
+							}
+						}
+
+						this.display();
+					});
+					modal.open();
+				})
+		);
+	}
+
 	async display(): Promise<void> {
 		const { containerEl } = this;
 
@@ -520,6 +634,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 								await this.plugin.saveSettings();
 							})
 					);
+			}
+
+			// MCP Server Settings (desktop only)
+			if (!(this.app as any).isMobile) {
+				await this.createMCPSettings(containerEl);
 			}
 
 			// Vault Search Index (RAG) Settings
