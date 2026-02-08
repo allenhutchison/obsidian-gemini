@@ -428,6 +428,8 @@ export class AgentViewUI {
 			}
 
 			// 2. Check for Text links (Obsidian internal drag)
+			// Skip internal link parsing if we already found filesystem files to prevent double-counting
+			// (Obsidian sometimes puts both File objects and text links in the same drop)
 			if (droppedFiles.length === 0 && e.dataTransfer) {
 				const text = e.dataTransfer.getData('text/plain');
 				if (text) {

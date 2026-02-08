@@ -4,7 +4,10 @@ import ObsidianGemini from '../../src/main';
 import { shouldExcludePathForPlugin } from '../../src/utils/file-utils';
 
 // Mock dependencies
-jest.mock('obsidian');
+jest.mock('obsidian', () => ({
+	...jest.requireActual('../../__mocks__/obsidian.js'),
+	normalizePath: jest.fn((p: string) => p),
+}));
 jest.mock('../../src/main');
 jest.mock('../../src/ui/agent-view/file-picker-modal');
 jest.mock('../../src/ui/agent-view/session-list-modal');
@@ -197,38 +200,40 @@ describe('AgentViewUI', () => {
 			// Override normalizePath mock for this test to simulate Windows behavior
 			(normalizePath as jest.Mock).mockImplementation((path) => path.replace(/\\/g, '/'));
 
-			// Mock Windows-style paths
-			(app.vault.adapter as any).basePath = 'C:\\Users\\test\\vault';
+			try {
+				// Mock Windows-style paths
+				(app.vault.adapter as any).basePath = 'C:\\Users\\test\\vault';
 
-			const mockFile = {
-				path: 'folder/note.md',
-			} as unknown as TFile;
-			Object.setPrototypeOf(mockFile, TFile.prototype);
+				const mockFile = {
+					path: 'folder/note.md',
+				} as unknown as TFile;
+				Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+				(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
 
-			// Simulate Windows file path
-			const droppedFile = {
-				path: 'C:\\Users\\test\\vault\\folder\\note.md',
-			};
+				// Simulate Windows file path
+				const droppedFile = {
+					path: 'C:\\Users\\test\\vault\\folder\\note.md',
+				};
 
-			const dataTransfer = {
-				files: [droppedFile],
-				types: ['Files'],
-			};
-			Object.defineProperty(dataTransfer.files, 'length', { value: 1 });
-			(dataTransfer.files as any)[Symbol.iterator] = function* () {
-				yield droppedFile;
-			};
+				const dataTransfer = {
+					files: [droppedFile],
+					types: ['Files'],
+				};
+				Object.defineProperty(dataTransfer.files, 'length', { value: 1 });
+				(dataTransfer.files as any)[Symbol.iterator] = function* () {
+					yield droppedFile;
+				};
 
-			await triggerDrop(dataTransfer);
+				await triggerDrop(dataTransfer);
 
-			expect(callbacks.handleDroppedFiles).toHaveBeenCalledWith([mockFile]);
-			// normalizePath replaces backslashes with forward slashes in 'folder/note.md'
-			expect(app.vault.getAbstractFileByPath).toHaveBeenCalledWith('folder/note.md');
-
-			// Reset mock
-			(normalizePath as jest.Mock).mockImplementation((path) => path);
+				expect(callbacks.handleDroppedFiles).toHaveBeenCalledWith([mockFile]);
+				// normalizePath replaces backslashes with forward slashes in 'folder/note.md'
+				expect(app.vault.getAbstractFileByPath).toHaveBeenCalledWith('folder/note.md');
+			} finally {
+				// Reset mock
+				(normalizePath as jest.Mock).mockImplementation((path) => path);
+			}
 		});
 
 		it('should handle internal Wikilink drops', async () => {
