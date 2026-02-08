@@ -6,7 +6,7 @@ A2UI enables AI agents to render interactive User Interfaces within Obsidian not
 
 When the agent outputs a `json:a2ui` code block, Obsidian renders it as an interactive UI component instead of raw JSON:
 
-````
+````text
 ┌──────────────────────┐      ┌────────────────────────┐
 │  Agent Output        │  →   │  Rendered Result       │
 ├──────────────────────┤      ├────────────────────────┤
@@ -46,7 +46,7 @@ When the agent outputs a `json:a2ui` code block, Obsidian renders it as an inter
 | Type        | Properties                              | Description                          |
 | ----------- | --------------------------------------- | ------------------------------------ |
 | `container` | `direction`, `gap`, `align`, `children` | Layout wrapper (row/column)          |
-| `text`      | `content`, `variant` (h1-h6, p)         | Rich markdown text                   |
+| `text`      | `content`, `variant` (h1-h6, p)         | Rich Markdown text                   |
 | `button`    | `label`, `variant`, `action`, `payload` | Interactive button                   |
 | `mermaid`   | `content`                               | Charts, flowcharts, Gantt            |
 | `image`     | `src`, `alt`                            | Vault images (external URLs blocked) |
@@ -85,7 +85,7 @@ The A2UI documentation is not embedded in the system prompt. Instead:
 1. System prompt contains a 3-line hint (~40 tokens)
 2. Agent loads full docs via `read_file` when needed (~400 tokens)
 
-**Result:** 91% reduction in base context when A2UI is not being used.
+**Result:** 90% reduction in base context when A2UI is not being used.
 
 ### Files
 

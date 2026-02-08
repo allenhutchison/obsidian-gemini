@@ -29,7 +29,7 @@ Render interactive User Interfaces using `json:a2ui` code blocks.
 | Type        | Properties                              | Description               |
 | ----------- | --------------------------------------- | ------------------------- |
 | `container` | `direction`, `gap`, `align`, `children` | Layout wrapper            |
-| `text`      | `content`, `variant` (h1-h6, p)         | Rich markdown text        |
+| `text`      | `content`, `variant` (h1-h6, p)         | Rich Markdown text        |
 | `button`    | `label`, `variant`, `action`, `payload` | Interactive button        |
 | `mermaid`   | `content`                               | Charts, flowcharts, Gantt |
 | `image`     | `src`, `alt`                            | Local vault images        |
