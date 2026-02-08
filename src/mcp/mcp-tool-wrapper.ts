@@ -114,7 +114,6 @@ function convertInputSchema(inputSchema?: MCPToolDefinition['inputSchema']): Too
 		properties[key] = {
 			type: mapJsonSchemaType(schema?.type),
 			description: schema?.description || `Parameter "${key}"`,
-			required: inputSchema.required?.includes(key),
 			...(schema?.enum ? { enum: schema.enum } : {}),
 			...(schema?.items ? { items: { type: mapJsonSchemaType(schema.items.type) } } : {}),
 		};
