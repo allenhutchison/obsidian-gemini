@@ -188,9 +188,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				setting
 					.addButton((btn) =>
 						btn.setButtonText('Edit').onClick(async () => {
+							if (!mcpManager) return;
 							const { MCPServerModal } = await import('./mcp-server-modal');
 							const oldName = server.name;
-							const modal = new MCPServerModal(this.app, this.plugin.mcpManager!, server, async (updated) => {
+							const modal = new MCPServerModal(this.app, mcpManager, server, async (updated) => {
 								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers || [];
 
 								// Reject duplicate names (allow keeping the same name)
@@ -246,8 +247,9 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				.setButtonText('Add Server')
 				.setCta()
 				.onClick(async () => {
+					if (!this.plugin.mcpManager) return;
 					const { MCPServerModal } = await import('./mcp-server-modal');
-					const modal = new MCPServerModal(this.app, this.plugin.mcpManager!, null, async (config) => {
+					const modal = new MCPServerModal(this.app, this.plugin.mcpManager, null, async (config) => {
 						this.plugin.settings.mcpServers = this.plugin.settings.mcpServers || [];
 						// Check for duplicate name
 						if (this.plugin.settings.mcpServers.some((s) => s.name === config.name)) {
