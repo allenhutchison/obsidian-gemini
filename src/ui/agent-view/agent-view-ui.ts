@@ -1,4 +1,4 @@
-import { App, TFile, Notice, setIcon } from 'obsidian';
+import { App, TFile, TFolder, Notice, setIcon, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
@@ -35,6 +35,7 @@ export interface UICallbacks {
 	addImageAttachment: (attachment: ImageAttachment) => void;
 	removeImageAttachment: (id: string) => void;
 	getImageAttachments: () => ImageAttachment[];
+	handleDroppedFiles: (files: (TFile | TFolder)[]) => void;
 }
 
 /**
@@ -378,6 +379,124 @@ export class AgentViewUI {
 
 		userInput.addEventListener('drop', async (e) => {
 			userInput.removeClass('gemini-agent-input-dragover');
+
+			// --- Handle Vault File Drops ---
+			const droppedFiles: (TFile | TFolder)[] = [];
+
+			// Helper to resolve path to file/folder
+			const resolvePath = (path: string): TFile | TFolder | null => {
+				const abstractFile = this.app.vault.getAbstractFileByPath(path);
+				if (abstractFile instanceof TFile || abstractFile instanceof TFolder) {
+					return abstractFile;
+				}
+				// Try to resolve as a link (closest match)
+				const resolved = this.app.metadataCache.getFirstLinkpathDest(path, '');
+				return resolved;
+			};
+
+			// 1. Check for File objects (Electron drag from file system)
+			if (e.dataTransfer?.files?.length) {
+				const adapter = this.app.vault.adapter;
+				if (adapter && 'basePath' in adapter) {
+					// (adapter as any).basePath is a private Obsidian API, but standard for accessing the file system path
+					const basePath = (adapter as any).basePath;
+					// Note: normalizePath is intended for vault-relative paths but is used here to normalize slashes
+					// on absolute OS paths for consistency across platforms (Windows backslashes vs POSIX slashes)
+					const normalizedBase = normalizePath(basePath);
+
+					for (const file of Array.from(e.dataTransfer.files)) {
+						// (file as any).path is an Electron extension that provides the full filesystem path
+						const rawPath = (file as any).path;
+
+						if (rawPath && typeof rawPath === 'string') {
+							const normalizedRaw = normalizePath(rawPath);
+
+							if (normalizedRaw.startsWith(normalizedBase)) {
+								let relPath = normalizedRaw.substring(normalizedBase.length);
+								if (relPath.startsWith('/')) relPath = relPath.substring(1);
+
+								const validFile = resolvePath(relPath);
+								if (validFile) {
+									droppedFiles.push(validFile);
+								} else {
+									this.plugin.logger.debug(`[AgentViewUI] Failed to resolve dropped file path: ${relPath}`);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// 2. Check for Text links (Obsidian internal drag)
+			// Skip internal link parsing if we already found filesystem files to prevent double-counting
+			// (Obsidian sometimes puts both File objects and text links in the same drop)
+			if (droppedFiles.length === 0 && e.dataTransfer) {
+				const text = e.dataTransfer.getData('text/plain');
+				if (text) {
+					const lines = text.split('\n');
+					for (const line of lines) {
+						const trimmed = line.trim();
+						if (!trimmed) continue;
+
+						// Check Wikilink: [[Path|Name]] or [[Path]]
+						const wikiMatch = trimmed.match(/^\[\[(.*?)(\|.*)?\]\]$/);
+						if (wikiMatch) {
+							const resolved = resolvePath(wikiMatch[1]);
+							// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
+							if (resolved) {
+								droppedFiles.push(resolved);
+							} else {
+								this.plugin.logger.debug(`[AgentViewUI] Failed to resolve wikilink: ${wikiMatch[1]}`);
+							}
+							continue;
+						}
+
+						// Check Markdown Link: [Name](Path)
+						const mdMatch = trimmed.match(/^\[(.*?)\]\((.*?)\)$/);
+						if (mdMatch) {
+							try {
+								const path = decodeURIComponent(mdMatch[2]);
+								const resolved = resolvePath(path);
+								// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
+								if (resolved) {
+									droppedFiles.push(resolved);
+								} else {
+									this.plugin.logger.debug(`[AgentViewUI] Failed to resolve markdown link: ${path}`);
+								}
+							} catch (err) {
+								// Ignore decoding errors
+								this.plugin.logger.debug(`[AgentViewUI] Failed to decode markdown link path: ${mdMatch[2]}`);
+							}
+							continue;
+						}
+					}
+				}
+			}
+
+			// If valid vault files were found, add them and stop
+			if (droppedFiles.length > 0) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				// Deduplicate files
+				const uniqueFiles = [...new Map(droppedFiles.map((f) => [f.path, f])).values()];
+
+				// Filter out system folders and excluded files
+				const filteredFiles = uniqueFiles.filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin));
+
+				if (filteredFiles.length === 0) {
+					if (uniqueFiles.length > 0) {
+						new Notice('Dropped files were excluded (system or plugin files)', 3000);
+					}
+					return;
+				}
+
+				callbacks.handleDroppedFiles(filteredFiles);
+
+				new Notice(`Added ${filteredFiles.length} file${filteredFiles.length === 1 ? '' : 's'} to context`, 2000);
+				return;
+			}
+			// --- End Vault File Drops ---
 
 			// First check if there are any supported images in the drop
 			const files = e.dataTransfer?.files;
