@@ -8,7 +8,7 @@ Obsidian Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI 
 
 - `src/` contains TypeScript plugin code; `src/main.ts` is the entry point with domain folders such as `agent/`, `api/`, `tools/`, `ui/`, and `services/`, plus shared utilities in `utils/`.
 - `docs/` hosts user and operator guides; `prompts/` ships default agent prompts; `test-scripts/` holds manual integration runners.
-- Unit tests live beside their code as `*.test.ts`; generated artifacts (`main.js`, `manifest.json`, `styles.css`) stay in the repo root for Obsidian.
+- Unit tests live in the `test/` directory mirroring `src/` structure as `*.test.ts`; generated artifacts (`main.js`, `manifest.json`, `styles.css`) stay in the repo root for Obsidian.
 
 ## Commands
 
