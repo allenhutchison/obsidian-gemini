@@ -8,7 +8,7 @@
  */
 
 /** Matches a markdown table divider line (e.g. | --- | :---: |). */
-const TABLE_DIVIDER_RE = /^[\s|]*[:?\-]+\s*\|/;
+const tableDividerRe = /^[\s|]*[:?\-]+\s*\|/;
 
 /** Returns true if the line contains at least one unescaped pipe character. */
 function hasUnescapedPipe(line: string): boolean {
@@ -33,7 +33,7 @@ export function formatModelMessage(text: string): string {
 		const trimmedLine = line.trim();
 
 		const lineHasPipe = hasUnescapedPipe(line);
-		const isTableDivider = TABLE_DIVIDER_RE.test(line);
+		const isTableDivider = tableDividerRe.test(line);
 		const isTableRow = lineHasPipe && !isTableDivider && trimmedLine !== '|';
 
 		// Check if we're starting a table
@@ -51,8 +51,10 @@ export function formatModelMessage(text: string): string {
 		// Check if we're ending a table
 		if (inTable && !lineHasPipe && trimmedLine !== '') {
 			inTable = false;
-			// Add empty line after table
-			formattedLines.push('');
+			// Add empty line after table if not already blank
+			if (formattedLines[formattedLines.length - 1] !== '') {
+				formattedLines.push('');
+			}
 		} else if (inTable && trimmedLine === '') {
 			// Empty line also ends a table
 			inTable = false;
@@ -65,7 +67,8 @@ export function formatModelMessage(text: string): string {
 			trimmedLine !== '' &&
 			nextLine &&
 			nextLine.trim() !== '' &&
-			!hasUnescapedPipe(nextLine)
+			!hasUnescapedPipe(nextLine) &&
+			formattedLines[formattedLines.length - 1] !== ''
 		) {
 			formattedLines.push('');
 		}
