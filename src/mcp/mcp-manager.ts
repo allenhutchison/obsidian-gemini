@@ -70,6 +70,20 @@ interface ServerConnection {
 }
 
 /**
+ * Build a clean Record<string, string> from process.env by filtering
+ * out entries whose value is undefined, then merge any user-supplied
+ * env vars on top.
+ */
+function buildEnv(extra?: Record<string, string>): Record<string, string> | undefined {
+	if (!extra) return undefined;
+	const base: Record<string, string> = {};
+	for (const [k, v] of Object.entries(process.env)) {
+		if (v !== undefined) base[k] = v;
+	}
+	return { ...base, ...extra };
+}
+
+/**
  * Manages MCP server connections and tool registration.
  *
  * Follows the existing service pattern: constructor receives plugin instance,
@@ -129,15 +143,11 @@ export class MCPManager {
 		this.logger.debug(`MCP: Connecting to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`);
 
 		try {
-			const env = config.env
-				? { ...(process.env as Record<string, string>), ...config.env }
-				: undefined;
-
 			this.logger.debug(`MCP: Creating StdioClientTransport for "${config.name}"`);
 			const transport = new StdioClientTransport({
 				command: config.command,
 				args: config.args,
-				env,
+				env: buildEnv(config.env),
 			});
 
 			const client = new Client({
@@ -293,9 +303,7 @@ export class MCPManager {
 			transport = new StdioClientTransport({
 				command: config.command,
 				args: config.args,
-				env: config.env
-					? { ...(process.env as Record<string, string>), ...config.env }
-					: undefined,
+				env: buildEnv(config.env),
 			});
 
 			const client = new Client({

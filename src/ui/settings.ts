@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, setIcon } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 
@@ -160,28 +160,52 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			for (const server of servers) {
 				const mcpManager = this.plugin.mcpManager;
 				const status = mcpManager?.getServerStatus(server.name);
-				const statusIcon = status?.status === 'connected' ? '🟢' : status?.status === 'error' ? '🔴' : '⚪';
 				const statusText = status?.status || 'disconnected';
 
-				new Setting(containerEl)
-					.setName(`${statusIcon} ${server.name}`)
-					.setDesc(`${server.command} ${server.args.join(' ')} — ${statusText}`)
+				let iconName: string;
+				if (status?.status === 'connected') {
+					iconName = 'check-circle';
+				} else if (status?.status === 'error') {
+					iconName = 'alert-circle';
+				} else {
+					iconName = 'circle';
+				}
+
+				const setting = new Setting(containerEl)
+					.setName(server.name)
+					.setDesc(`${server.command} ${server.args.join(' ')} — ${statusText}`);
+				setIcon(setting.nameEl, iconName);
+
+				setting
 					.addButton((btn) =>
 						btn.setButtonText('Edit').onClick(async () => {
 							const { MCPServerModal } = await import('./mcp-server-modal');
+							const oldName = server.name;
 							const modal = new MCPServerModal(this.app, this.plugin.mcpManager!, server, async (updated) => {
-								const idx = this.plugin.settings.mcpServers.findIndex((s) => s.name === server.name);
+								this.plugin.settings.mcpServers = this.plugin.settings.mcpServers || [];
+
+								// Reject duplicate names (allow keeping the same name)
+								if (
+									updated.name !== oldName &&
+									this.plugin.settings.mcpServers.some((s) => s.name === updated.name)
+								) {
+									new Notice(`A server named "${updated.name}" already exists`);
+									return;
+								}
+
+								const idx = this.plugin.settings.mcpServers.findIndex((s) => s.name === oldName);
 								if (idx >= 0) {
 									this.plugin.settings.mcpServers[idx] = updated;
 								}
 								await this.plugin.saveSettings();
 
-								// Reconnect if connected and config changed
-								if (mcpManager?.isConnected(server.name)) {
+								// Disconnect old name first if it was connected (handles renames)
+								if (mcpManager?.isConnected(oldName)) {
+									await mcpManager.disconnectServer(oldName);
 									try {
 										await mcpManager.connectServer(updated);
 									} catch (error) {
-											new Notice(
+										new Notice(
 											`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
 										);
 									}
@@ -218,6 +242,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				.onClick(async () => {
 					const { MCPServerModal } = await import('./mcp-server-modal');
 					const modal = new MCPServerModal(this.app, this.plugin.mcpManager!, null, async (config) => {
+						this.plugin.settings.mcpServers = this.plugin.settings.mcpServers || [];
 						// Check for duplicate name
 						if (this.plugin.settings.mcpServers.some((s) => s.name === config.name)) {
 							new Notice(`A server named "${config.name}" already exists`);
