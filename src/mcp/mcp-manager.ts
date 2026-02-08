@@ -140,7 +140,9 @@ export class MCPManager {
 		}
 
 		this.updateState(config.name, { status: MCPConnectionStatus.CONNECTING, toolNames: [] });
-		this.logger.debug(`MCP: Connecting to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`);
+		this.logger.debug(
+			`MCP: Connecting to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`
+		);
 
 		try {
 			this.logger.debug(`MCP: Creating StdioClientTransport for "${config.name}"`);
@@ -244,7 +246,10 @@ export class MCPManager {
 		}
 
 		const config = this.plugin.settings.mcpServers.find((s) => s.name === serverName);
-		if (!config) return;
+		if (!config) {
+			this.logger.warn(`MCP: Cannot refresh tools — config not found for "${serverName}"`);
+			return;
+		}
 
 		// Unregister old tools
 		for (const wrapper of conn.toolWrappers) {
@@ -298,7 +303,9 @@ export class MCPManager {
 		patchSetTimeoutForElectron();
 
 		let transport: StdioClientTransport | null = null;
-		this.logger.debug(`MCP: Test connection to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`);
+		this.logger.debug(
+			`MCP: Test connection to "${config.name}" — command: ${config.command}, args: [${config.args.join(', ')}]`
+		);
 		try {
 			transport = new StdioClientTransport({
 				command: config.command,
