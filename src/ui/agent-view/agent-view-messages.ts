@@ -1,9 +1,11 @@
-import { App, MarkdownRenderer, Notice, setIcon } from 'obsidian';
+import { App, MarkdownRenderer, Notice, setIcon, normalizePath } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatFileSize } from '../../utils/format-utils';
 import { Tool } from '../../tools/types';
+import { A2UIRenderer } from '../a2ui/renderer';
+import { A2UIComponent } from '../a2ui/types';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
@@ -51,6 +53,70 @@ export class AgentViewMessages {
 		this.plugin = plugin;
 		this.userInput = userInput;
 		this.viewContext = viewContext;
+
+		// Bind event handler once
+		this.handleAction = this.handleAction.bind(this);
+		this.chatContainer.addEventListener('a2ui-action', this.handleAction);
+	}
+
+	/**
+	 * Handle A2UI actions
+	 */
+	private async handleAction(e: Event) {
+		const customEvent = e as CustomEvent;
+		const { action, payload } = customEvent.detail;
+
+		if (action === 'save-note') {
+			try {
+				// Use payload or payload.content
+				let fileContent = '';
+				if (typeof payload === 'string') {
+					fileContent = payload;
+				} else if (payload && typeof payload.content === 'string') {
+					fileContent = payload.content;
+				} else {
+					fileContent = JSON.stringify(payload, null, 2);
+				}
+
+				const filename = `A2UI-Save-${Date.now()}.md`;
+				// Use a safe subfolder instead of the root of history
+				const historyFolder = this.plugin.settings.historyFolder || 'gemini-scribe';
+				const folder = `${historyFolder}/saved`;
+				const finalPath = normalizePath(`${folder}/${filename}`);
+
+				// Ensure folder exists using Obsidian API
+				const normalizedFolder = normalizePath(folder);
+				if (folder && folder !== '/' && !this.plugin.app.vault.getAbstractFileByPath(normalizedFolder)) {
+					await this.plugin.app.vault.createFolder(normalizedFolder);
+				}
+
+				const createdFile = await this.plugin.app.vault.create(finalPath, fileContent);
+				new Notice(`Saved to ${createdFile.path}`);
+
+				const leaf = this.plugin.app.workspace.getLeaf(true);
+				await leaf.openFile(createdFile);
+			} catch (error) {
+				this.plugin.logger.error('Failed to save note from A2UI action:', error);
+				new Notice('Failed to save note. Check console.');
+			}
+		} else if (action === 'run-command') {
+			const commandId = payload?.commandId;
+			if (commandId) {
+				this.plugin.logger.log(`A2UI run-command requested: ${commandId}`);
+				// Security: Confirm with user
+				if (window.confirm(`Allow agent to run command: "${commandId}"?`)) {
+					try {
+						// @ts-ignore - app.commands is internal API
+						this.app.commands.executeCommandById(commandId);
+					} catch (error) {
+						this.plugin.logger.error(`Failed to execute command "${commandId}":`, error);
+						new Notice(`Failed to run command: ${commandId}`);
+					}
+				}
+			}
+		} else {
+			new Notice(`Action '${action}' not implemented yet.`);
+		}
 	}
 
 	/**
@@ -244,8 +310,8 @@ export class AgentViewMessages {
 				await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
 			}
 		} else {
-			// Use markdown rendering like the regular chat view
-			await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
+			// Render content (supporting A2UI blocks)
+			await this.renderMessageContent(content, formattedMessage, sourcePath);
 		}
 
 		// Scroll to bottom after displaying message
@@ -392,7 +458,8 @@ export class AgentViewMessages {
 			}
 
 			const sourcePath = currentSession?.historyPath || '';
-			await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
+
+			await this.renderMessageContent(messageDiv, formattedMessage, sourcePath);
 
 			// Add a copy button for model messages
 			if (entry.role === 'model') {
@@ -932,10 +999,60 @@ export class AgentViewMessages {
 	/**
 	 * Cleanup method to clear any pending timeouts
 	 */
+	/**
+	 * Helper to render message content, detecting and rendering A2UI blocks
+	 */
+	private async renderMessageContent(
+		container: HTMLElement,
+		formattedMessage: string,
+		sourcePath: string
+	): Promise<void> {
+		const a2uiRegex = /```json:a2ui\n([\s\S]*?)\n```/g;
+		let lastIndex = 0;
+		let match: RegExpExecArray | null;
+
+		// Iterate over all A2UI blocks
+		while ((match = a2uiRegex.exec(formattedMessage)) !== null) {
+			// Render text before this A2UI block
+			const preText = formattedMessage.substring(lastIndex, match.index);
+			if (preText.trim()) {
+				await MarkdownRenderer.render(this.app, preText, container, sourcePath, this.viewContext);
+			}
+
+			try {
+				const jsonString = match[1];
+				// Simple heuristic for incomplete JSON during streaming
+				if (jsonString.trim().endsWith('}')) {
+					const uiContent = JSON.parse(jsonString) as A2UIComponent;
+					const renderer = new A2UIRenderer(this.app, container, uiContent, sourcePath);
+					renderer.onload();
+				} else {
+					// Fallback for incomplete JSON: render as code block
+					await MarkdownRenderer.render(this.app, match[0], container, sourcePath, this.viewContext);
+				}
+			} catch {
+				// Fallback: render as code block if parsing fails
+				await MarkdownRenderer.render(this.app, match[0], container, sourcePath, this.viewContext);
+			}
+
+			lastIndex = match.index + match[0].length;
+		}
+
+		// Render remaining text
+		const remaining = formattedMessage.substring(lastIndex);
+		if (remaining.trim()) {
+			await MarkdownRenderer.render(this.app, remaining, container, sourcePath, this.viewContext);
+		}
+	}
+
+	/**
+	 * Cleanup method to clear any pending timeouts
+	 */
 	cleanup() {
 		if (this.scrollTimeout) {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
 		}
+		this.chatContainer.removeEventListener('a2ui-action', this.handleAction);
 	}
 }
