@@ -68,7 +68,6 @@ describe('Gemini API Tools Formatting', () => {
 		}
 
 		// Check the result
-		console.log('Tools array:', JSON.stringify(tools, null, 2));
 
 		expect(tools).toHaveLength(2);
 		expect(tools[0]).toEqual({ googleSearch: {} });
@@ -108,7 +107,6 @@ describe('Gemini API Tools Formatting', () => {
 		}
 
 		// Check the result
-		console.log('Tools array with no custom tools:', JSON.stringify(tools, null, 2));
 
 		// Should only have Google Search
 		expect(tools).toHaveLength(1);

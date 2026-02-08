@@ -257,7 +257,11 @@ describe('A2UIRenderer', () => {
 
 			const wrapper = containerEl.querySelector('.a2ui-container') as HTMLElement;
 			expect(wrapper).toBeTruthy();
-			// Styles should be applied (checking via style attribute or computed)
+			expect(wrapper.style.padding).toBe('10px');
+			expect(wrapper.style.margin).toBe('5px');
+			// Browsers/JSDOM normalize colors to rgb()
+			const validColors = ['#fff', 'rgb(255, 255, 255)'];
+			expect(validColors).toContain(wrapper.style.backgroundColor);
 		});
 
 		it('should block javascript: URLs in styles', async () => {
@@ -352,7 +356,8 @@ describe('A2UIRenderer', () => {
 			await new Promise((resolve) => setTimeout(resolve, 10));
 
 			expect(ButtonComponent).toHaveBeenCalled();
-			// Button should still render but without action handler
+			const buttonMock = (ButtonComponent as jest.Mock).mock.results[0].value;
+			expect(buttonMock.onClick).not.toHaveBeenCalled();
 		});
 	});
 
