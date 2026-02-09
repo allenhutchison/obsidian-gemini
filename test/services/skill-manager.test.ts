@@ -288,24 +288,23 @@ No frontmatter here.
 	});
 
 	describe('loadSkills', () => {
-		it('should load skills from folder structure', async () => {
-			// Create mock folder structure
-			const mockSkillFolder = {
-				path: 'Gemini/Skills/test-skill',
-				children: [{ path: 'Gemini/Skills/test-skill/SKILL.md', name: 'SKILL.md' }],
-			};
+		// Get the mocked classes to create proper instances that pass instanceof checks
+		const { TFile: MockTFile, TFolder: MockTFolder } = jest.requireMock('obsidian');
 
-			const mockRootFolder = {
-				path: 'Gemini/Skills',
-				children: [mockSkillFolder],
-			};
+		it('should load skills from folder structure', async () => {
+			// Create mock folder structure using mocked classes
+			const mockSkillFile = new MockTFile('Gemini/Skills/test-skill/SKILL.md');
+			mockSkillFile.extension = 'md';
+
+			const mockSkillFolder = new MockTFolder('Gemini/Skills/test-skill');
+			mockSkillFolder.children = [mockSkillFile];
+
+			const mockRootFolder = new MockTFolder('Gemini/Skills');
+			mockRootFolder.children = [mockSkillFolder];
 
 			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
 				if (path === 'Gemini/Skills') return mockRootFolder;
-				if (path === 'Gemini/Skills/test-skill') return mockSkillFolder;
-				if (path === 'Gemini/Skills/test-skill/SKILL.md') {
-					return { path: 'Gemini/Skills/test-skill/SKILL.md' };
-				}
+				if (path === 'Gemini/Skills/test-skill/SKILL.md') return mockSkillFile;
 				return null;
 			});
 
@@ -326,12 +325,12 @@ Do something.
 		});
 
 		it('should skip non-folder entries in skills directory', async () => {
-			const mockRootFolder = {
-				path: 'Gemini/Skills',
-				children: [
-					{ path: 'Gemini/Skills/README.md', name: 'README.md' }, // Not a folder
-				],
-			};
+			// Create a non-folder file in the root using mocked class
+			const mockReadmeFile = new MockTFile('Gemini/Skills/README.md');
+			mockReadmeFile.extension = 'md';
+
+			const mockRootFolder = new MockTFolder('Gemini/Skills');
+			mockRootFolder.children = [mockReadmeFile]; // Contains a file, not a folder
 
 			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
 				if (path === 'Gemini/Skills') return mockRootFolder;
@@ -340,7 +339,7 @@ Do something.
 
 			await skillManager.loadSkills();
 
-			// Should have no skills
+			// Should have no skills because README.md is not a folder
 			const skills = skillManager.getAvailableSkills();
 			expect(skills.length).toBe(0);
 		});

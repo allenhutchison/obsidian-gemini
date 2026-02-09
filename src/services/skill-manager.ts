@@ -10,6 +10,7 @@ import { DEFAULT_SKILL_STRUCTURES } from './default-skills';
 export class SkillManager {
 	private skills: Map<string, Skill> = new Map();
 	private readonly plugin: InstanceType<typeof ObsidianGemini>;
+	private initialized = false;
 
 	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
@@ -19,9 +20,18 @@ export class SkillManager {
 	 * Initialize the skill manager by loading all skills from the configured folder
 	 */
 	async initialize(): Promise<void> {
+		if (this.initialized) return;
 		await this.ensureDefaultSkills();
 		await this.loadSkills();
 		this.registerFileWatcher();
+		this.initialized = true;
+	}
+
+	/**
+	 * Check if the manager has been initialized
+	 */
+	isInitialized(): boolean {
+		return this.initialized;
 	}
 
 	/**
@@ -254,6 +264,13 @@ export class SkillManager {
 		this.plugin.registerEvent(
 			this.plugin.app.vault.on('modify', async (file) => {
 				if (file instanceof TFile && this.isInSkillsFolder(file)) {
+					// Remove any existing skill with this source path (handles name changes)
+					for (const [name, skill] of this.skills) {
+						if (skill.sourcePath === file.path) {
+							this.skills.delete(name);
+							break;
+						}
+					}
 					const result = await this.parseSkillFile(file);
 					if (result.success && result.skill) {
 						this.skills.set(result.skill.name, result.skill);
@@ -308,10 +325,9 @@ export class SkillManager {
 		const skillsFolder = this.getSkillsFolder();
 		if (!skillsFolder) return false;
 
-		// Check if file is directly in skills folder (not in subfolders)
+		// Check if file is anywhere within the skills folder tree (including subfolders)
 		const normalizedSkillsFolder = normalizePath(skillsFolder);
-		const fileDir = file.path.substring(0, file.path.lastIndexOf('/'));
-		return fileDir === normalizedSkillsFolder && file.extension === 'md';
+		return file.path.startsWith(normalizedSkillsFolder + '/') && file.extension === 'md';
 	}
 
 	/**

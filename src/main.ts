@@ -768,8 +768,8 @@ export default class ObsidianGemini extends Plugin {
 			await this.initializeRagIndexing();
 		}
 
-		// Initialize skill manager if not already initialized
-		if (this.skillManager && this.skillManager.getAvailableSkills().length === 0) {
+		// Initialize skill manager (idempotent - safe to call multiple times)
+		if (this.skillManager) {
 			await this.skillManager.initialize();
 		}
 

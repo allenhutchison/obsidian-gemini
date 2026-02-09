@@ -53,13 +53,11 @@ export class ToolRegistry {
 
 	/**
 	 * Get tools that are enabled for the current session.
-	 * Filters by category, and optionally by skill requirements if an active skill is set.
+	 * Filters by enabled tool categories from session settings.
 	 */
 	getEnabledTools(context: ToolExecutionContext): Tool[] {
 		const enabledCategories = context.session.context.enabledTools;
-		const tools = this.getAllTools().filter((tool) => enabledCategories.includes(tool.category as ToolCategory));
-
-		return tools;
+		return this.getAllTools().filter((tool) => enabledCategories.includes(tool.category as ToolCategory));
 	}
 
 	/**

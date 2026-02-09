@@ -106,10 +106,13 @@ related: "[[Other Note]]"
 ## Tool Integration
 
 When working with Obsidian notes:
-1. Use \`read_file\` to check existing note structure before editing
-2. Use \`create_file\` for new notes (always include frontmatter)
-3. Use \`update_file\` for modifications (preserve existing frontmatter)
-4. Use \`list_folder\` to discover related notes
+1. Use \`get_active_file\` to identify current context
+2. Use \`read_file\` to check existing note structure before editing
+3. Use \`write_file\` for new notes (always include frontmatter)
+4. Use \`update_frontmatter\` for metadata changes (safer than full rewrite)
+5. Use \`append_content\` to add text to end of note
+6. Use \`write_file\` only for full content replacement
+7. Use \`list_files\` to discover related notes
 
 ## Deep Reference
 
@@ -476,8 +479,9 @@ filter:
 
 ## Tool Integration
 
-1. Use \`create_file\` to create .base files
-2. Use \`read_file\` to check existing base structure
+1. Use \`write_file\` to create .base files
+2. Use \`update_frontmatter\` to modifying base definitions (properties)
+3. Use \`read_file\` to check existing base structure
 3. Always validate YAML syntax before writing
 
 ## Deep Reference
@@ -705,8 +709,9 @@ description: Create and edit Obsidian Canvas files (.canvas) with nodes, groups,
 
 ## Tool Integration
 
-1. Use \`create_file\` with .canvas extension
-2. Output must be valid JSON
+1. Use \`read_file\` to check existing canvas structure (crucial!)
+2. Use \`write_file\` with .canvas extension
+3. Output must be valid JSON
 3. Generate unique IDs for each node/edge
 
 ## Deep Reference
