@@ -480,9 +480,9 @@ filter:
 ## Tool Integration
 
 1. Use \`write_file\` to create .base files
-2. Use \`update_frontmatter\` to modifying base definitions (properties)
+2. Use \`update_frontmatter\` for modifying base definitions (properties)
 3. Use \`read_file\` to check existing base structure
-3. Always validate YAML syntax before writing
+4. Always validate YAML syntax before writing
 
 ## Deep Reference
 
@@ -712,7 +712,7 @@ description: Create and edit Obsidian Canvas files (.canvas) with nodes, groups,
 1. Use \`read_file\` to check existing canvas structure (crucial!)
 2. Use \`write_file\` with .canvas extension
 3. Output must be valid JSON
-3. Generate unique IDs for each node/edge
+4. Generate unique IDs for each node/edge
 
 ## Deep Reference
 

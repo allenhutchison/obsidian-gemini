@@ -499,6 +499,12 @@ export default class ObsidianGemini extends Plugin {
 			this.mcpManager = null;
 		}
 
+		// Clean up skill manager
+		if (this.skillManager) {
+			this.skillManager.unload();
+			this.skillManager = null as any;
+		}
+
 		// Clean up completions
 		if (this.completions) {
 			// Note: GeminiCompletions doesn't have a cleanup method currently

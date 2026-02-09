@@ -29,6 +29,7 @@ const createMockPlugin = (vault: any) => ({
 		skillsFolder: 'Gemini/Skills',
 	},
 	saveSettings: jest.fn(),
+	registerEvent: jest.fn(),
 	logger: mockLogger,
 });
 

@@ -1,4 +1,4 @@
-import { TFile, TFolder, normalizePath } from 'obsidian';
+import { TFile, TFolder, normalizePath, EventRef } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { Skill, SkillFrontmatter, SkillParseResult } from '../types/skill';
 import { DEFAULT_SKILL_STRUCTURES } from './default-skills';
@@ -11,6 +11,7 @@ export class SkillManager {
 	private skills: Map<string, Skill> = new Map();
 	private readonly plugin: InstanceType<typeof ObsidianGemini>;
 	private initialized = false;
+	private watchers: EventRef[] = [];
 
 	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
@@ -32,6 +33,18 @@ export class SkillManager {
 	 */
 	isInitialized(): boolean {
 		return this.initialized;
+	}
+
+	/**
+	 * Unload the skill manager and clean up event listeners
+	 */
+	unload(): void {
+		// Unregister file watchers
+		for (const ref of this.watchers) {
+			this.plugin.app.vault.offref(ref);
+		}
+		this.watchers = [];
+		this.initialized = false;
 	}
 
 	/**
@@ -76,12 +89,17 @@ export class SkillManager {
 	 */
 	private async ensureFolderExists(path: string): Promise<void> {
 		const folder = this.plugin.app.vault.getAbstractFileByPath(path);
-		if (!folder) {
-			try {
-				await this.plugin.app.vault.createFolder(path);
-			} catch (e) {
-				// Ignore if already exists (race condition)
+		if (folder) {
+			if (!(folder instanceof TFolder)) {
+				this.plugin.logger.warn(`[SkillManager] Cannot create folder ${path}: File with same name exists`);
 			}
+			return;
+		}
+
+		try {
+			await this.plugin.app.vault.createFolder(path);
+		} catch (e) {
+			// Ignore if already exists (race condition)
 		}
 	}
 
@@ -209,7 +227,8 @@ export class SkillManager {
 		const result: SkillFrontmatter = { name: '' };
 		const lines = yaml.split('\n');
 
-		for (const line of lines) {
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
 			const match = line.match(/^(\w+):\s*(.*)$/);
 			if (!match) continue;
 
@@ -223,13 +242,37 @@ export class SkillManager {
 					result.description = value.trim().replace(/^["']|["']$/g, '');
 					break;
 				case 'tools':
-					// Handle array format: [tool1, tool2] or - tool1
-					if (value.startsWith('[')) {
+					// Handle array format: [tool1, tool2]
+					if (value.trim().startsWith('[')) {
 						result.tools = value
 							.slice(1, -1)
 							.split(',')
 							.map((t) => t.trim().replace(/^["']|["']$/g, ''))
 							.filter((t) => t.length > 0);
+					} else {
+						// Handle list format:
+						// tools:
+						//   - tool1
+						//   - tool2
+						const tools: string[] = [];
+						// Check subsequent lines
+						let j = i + 1;
+						while (j < lines.length) {
+							const nextLine = lines[j];
+							const listMatch = nextLine.match(/^\s*-\s+(.+)$/);
+							if (listMatch) {
+								tools.push(listMatch[1].trim().replace(/^["']|["']$/g, ''));
+								j++;
+							} else if (nextLine.trim() === '' || nextLine.trim().startsWith('#')) {
+								j++; // Skip empty lines or comments
+							} else {
+								break; // End of list
+							}
+						}
+						if (tools.length > 0) {
+							result.tools = tools;
+							i = j - 1; // Advance main loop
+						}
 					}
 					break;
 				case 'license':
@@ -248,74 +291,77 @@ export class SkillManager {
 		const skillsFolder = this.getSkillsFolder();
 		if (!skillsFolder) return;
 
-		// Watch for file changes in the skills folder
-		this.plugin.registerEvent(
-			this.plugin.app.vault.on('create', async (file) => {
-				if (file instanceof TFile && this.isInSkillsFolder(file)) {
+		// Watch for file creation
+		const createRef = this.plugin.app.vault.on('create', async (file) => {
+			if (file instanceof TFile && this.isInSkillsFolder(file)) {
+				const result = await this.parseSkillFile(file);
+				if (result.success && result.skill) {
+					this.skills.set(result.skill.name, result.skill);
+					this.plugin.logger.log(`[SkillManager] Added skill: ${result.skill.name}`);
+				}
+			}
+		});
+		this.watchers.push(createRef);
+		this.plugin.registerEvent(createRef);
+
+		// Watch for file modification
+		const modifyRef = this.plugin.app.vault.on('modify', async (file) => {
+			if (file instanceof TFile && this.isInSkillsFolder(file)) {
+				// Remove any existing skill with this source path (handles name changes)
+				for (const [name, skill] of this.skills) {
+					if (skill.sourcePath === file.path) {
+						this.skills.delete(name);
+						break;
+					}
+				}
+				const result = await this.parseSkillFile(file);
+				if (result.success && result.skill) {
+					this.skills.set(result.skill.name, result.skill);
+					this.plugin.logger.log(`[SkillManager] Updated skill: ${result.skill.name}`);
+				}
+			}
+		});
+		this.watchers.push(modifyRef);
+		this.plugin.registerEvent(modifyRef);
+
+		// Watch for file deletion
+		const deleteRef = this.plugin.app.vault.on('delete', async (file) => {
+			if (file instanceof TFile && this.isInSkillsFolder(file)) {
+				// Find and remove the skill by source path
+				for (const [name, skill] of this.skills) {
+					if (skill.sourcePath === file.path) {
+						this.skills.delete(name);
+						this.plugin.logger.log(`[SkillManager] Removed skill: ${name}`);
+						break;
+					}
+				}
+			}
+		});
+		this.watchers.push(deleteRef);
+		this.plugin.registerEvent(deleteRef);
+
+		// Watch for file rename
+		const renameRef = this.plugin.app.vault.on('rename', async (file, oldPath) => {
+			if (file instanceof TFile) {
+				// Remove old skill if it was in skills folder
+				for (const [name, skill] of this.skills) {
+					if (skill.sourcePath === oldPath) {
+						this.skills.delete(name);
+						break;
+					}
+				}
+				// Add new skill if new location is in skills folder
+				if (this.isInSkillsFolder(file)) {
 					const result = await this.parseSkillFile(file);
 					if (result.success && result.skill) {
 						this.skills.set(result.skill.name, result.skill);
-						this.plugin.logger.log(`[SkillManager] Added skill: ${result.skill.name}`);
+						this.plugin.logger.log(`[SkillManager] Renamed skill: ${result.skill.name}`);
 					}
 				}
-			})
-		);
-
-		this.plugin.registerEvent(
-			this.plugin.app.vault.on('modify', async (file) => {
-				if (file instanceof TFile && this.isInSkillsFolder(file)) {
-					// Remove any existing skill with this source path (handles name changes)
-					for (const [name, skill] of this.skills) {
-						if (skill.sourcePath === file.path) {
-							this.skills.delete(name);
-							break;
-						}
-					}
-					const result = await this.parseSkillFile(file);
-					if (result.success && result.skill) {
-						this.skills.set(result.skill.name, result.skill);
-						this.plugin.logger.log(`[SkillManager] Updated skill: ${result.skill.name}`);
-					}
-				}
-			})
-		);
-
-		this.plugin.registerEvent(
-			this.plugin.app.vault.on('delete', (file) => {
-				if (file instanceof TFile && this.isInSkillsFolder(file)) {
-					// Find and remove the skill by source path
-					for (const [name, skill] of this.skills) {
-						if (skill.sourcePath === file.path) {
-							this.skills.delete(name);
-							this.plugin.logger.log(`[SkillManager] Removed skill: ${name}`);
-							break;
-						}
-					}
-				}
-			})
-		);
-
-		this.plugin.registerEvent(
-			this.plugin.app.vault.on('rename', async (file, oldPath) => {
-				if (file instanceof TFile) {
-					// Remove old skill if it was in skills folder
-					for (const [name, skill] of this.skills) {
-						if (skill.sourcePath === oldPath) {
-							this.skills.delete(name);
-							break;
-						}
-					}
-					// Add new skill if new location is in skills folder
-					if (this.isInSkillsFolder(file)) {
-						const result = await this.parseSkillFile(file);
-						if (result.success && result.skill) {
-							this.skills.set(result.skill.name, result.skill);
-							this.plugin.logger.log(`[SkillManager] Renamed skill: ${result.skill.name}`);
-						}
-					}
-				}
-			})
-		);
+			}
+		});
+		this.watchers.push(renameRef);
+		this.plugin.registerEvent(renameRef);
 	}
 
 	/**
