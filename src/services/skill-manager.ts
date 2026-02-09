@@ -39,6 +39,7 @@ export class SkillManager {
 	 * Unload the skill manager and clean up event listeners
 	 */
 	unload(): void {
+		this.skills.clear();
 		// Unregister file watchers
 		for (const ref of this.watchers) {
 			this.plugin.app.vault.offref(ref);
@@ -60,9 +61,9 @@ export class SkillManager {
 
 		// Create each skill with its references
 		for (const skillStructure of DEFAULT_SKILL_STRUCTURES) {
-			const skillFolderPath = `${skillsFolder}/${skillStructure.skillName}`;
-			const skillFilePath = `${skillFolderPath}/SKILL.md`;
-			const referencesFolderPath = `${skillFolderPath}/references`;
+			const skillFolderPath = normalizePath(`${skillsFolder}/${skillStructure.skillName}`);
+			const skillFilePath = normalizePath(`${skillFolderPath}/SKILL.md`);
+			const referencesFolderPath = normalizePath(`${skillFolderPath}/references`);
 
 			// Create skill folder
 			await this.ensureFolderExists(skillFolderPath);
@@ -75,7 +76,7 @@ export class SkillManager {
 				await this.ensureFolderExists(referencesFolderPath);
 
 				for (const [filename, content] of Object.entries(skillStructure.references)) {
-					const refFilePath = `${referencesFolderPath}/${filename}`;
+					const refFilePath = normalizePath(`${referencesFolderPath}/${filename}`);
 					await this.createFileIfNotExists(refFilePath, content);
 				}
 			}
@@ -241,7 +242,7 @@ export class SkillManager {
 				case 'description':
 					result.description = value.trim().replace(/^["']|["']$/g, '');
 					break;
-				case 'tools':
+				case 'tools': {
 					// Handle array format: [tool1, tool2]
 					const trimmedValue = value.trim();
 					if (trimmedValue.startsWith('[')) {
@@ -273,9 +274,13 @@ export class SkillManager {
 						if (tools.length > 0) {
 							result.tools = tools;
 							i = j - 1; // Advance main loop
+						} else if (trimmedValue.length > 0) {
+							// Single inline value: tools: read_file
+							result.tools = [trimmedValue.replace(/^["']|["']$/g, '')];
 						}
 					}
 					break;
+				}
 				case 'license':
 					result.license = value.trim().replace(/^["']|["']$/g, '');
 					break;
@@ -405,7 +410,8 @@ export class SkillManager {
 
 		const skillEntries = skills
 			.map((skill) => {
-				const toolsList = skill.tools.length > 0 ? `\n    <tools>${skill.tools.join(', ')}</tools>` : '';
+				const toolsList =
+					skill.tools.length > 0 ? `\n    <tools>${this.escapeXml(skill.tools.join(', '))}</tools>` : '';
 				return `  <skill>
     <name>${this.escapeXml(skill.name)}</name>
     <description>${this.escapeXml(skill.description)}</description>
