@@ -497,6 +497,29 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			// Create topP setting with dynamic ranges
 			await this.createTopPSetting(containerEl);
 
+			// Skills Settings
+			new Setting(containerEl).setName('Skills').setHeading();
+
+			new Setting(containerEl)
+				.setName('Skills folder location')
+				.setDesc('Folder where agent skills are stored (SKILL.md files)')
+				.addText((text) => {
+					new FolderSuggest(this.app, text.inputEl, async (folder) => {
+						this.plugin.settings.skillsFolder = folder;
+						await this.plugin.saveSettings();
+						await this.plugin.skillManager?.loadSkills();
+					});
+					text
+						.setPlaceholder('Example: skills')
+						.setValue(this.plugin.settings.skillsFolder)
+						.onChange(async (value) => {
+							this.plugin.settings.skillsFolder = value;
+							await this.plugin.saveSettings();
+							//Reload skills when folder changes
+							await this.plugin.skillManager?.loadSkills();
+						});
+				});
+
 			// Model Discovery Settings (visible in developer settings)
 			new Setting(containerEl).setName('Model Discovery').setHeading();
 
@@ -671,6 +694,37 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			if (!(this.app as any).isMobile) {
 				await this.createMCPSettings(containerEl);
 			}
+
+			// Skills Settings
+			new Setting(containerEl).setName('Skills').setHeading();
+
+			new Setting(containerEl)
+				.setName('Skills folder')
+				.setDesc(
+					'Vault folder containing skill files (.md). Skills add custom personas and tool configurations to Scribe.'
+				)
+				.addText((text) => {
+					text.inputEl.style.width = '25ch';
+					text
+						.setPlaceholder('e.g., Gemini/Skills')
+						.setValue(this.plugin.settings.skillsFolder)
+						.onChange(async (value) => {
+							this.plugin.settings.skillsFolder = value.trim();
+							await this.plugin.saveSettings();
+							// Reload skills when folder changes
+							if (this.plugin.skillManager) {
+								await this.plugin.skillManager.loadSkills();
+							}
+						});
+				});
+
+			// Show available skills count
+			const skillCount = this.plugin.skillManager?.getAvailableSkills().length ?? 0;
+			new Setting(containerEl)
+				.setName('Available skills')
+				.setDesc(
+					`${skillCount} skill${skillCount !== 1 ? 's' : ''} loaded from ${this.plugin.settings.skillsFolder || '(not configured)'}`
+				);
 
 			// Vault Search Index (RAG) Settings
 			new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
