@@ -243,8 +243,9 @@ export class SkillManager {
 					break;
 				case 'tools':
 					// Handle array format: [tool1, tool2]
-					if (value.trim().startsWith('[')) {
-						result.tools = value
+					const trimmedValue = value.trim();
+					if (trimmedValue.startsWith('[')) {
+						result.tools = trimmedValue
 							.slice(1, -1)
 							.split(',')
 							.map((t) => t.trim().replace(/^["']|["']$/g, ''))

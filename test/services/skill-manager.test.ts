@@ -186,7 +186,8 @@ No frontmatter here.
 
 		it('should not create folders if they already exist', async () => {
 			// Simulate all folders exist
-			mockVault.getAbstractFileByPath.mockReturnValue({ path: 'exists' });
+			const { TFolder: MockTFolder } = jest.requireMock('obsidian');
+			mockVault.getAbstractFileByPath.mockReturnValue(new MockTFolder('exists'));
 
 			await (skillManager as any).ensureDefaultSkills();
 
@@ -267,7 +268,8 @@ No frontmatter here.
 
 		it('should not create files if they already exist', async () => {
 			// Simulate all files exist
-			mockVault.getAbstractFileByPath.mockReturnValue({ path: 'exists' });
+			const { TFile: MockTFile } = jest.requireMock('obsidian');
+			mockVault.getAbstractFileByPath.mockReturnValue(new MockTFile('exists.md'));
 
 			await (skillManager as any).ensureDefaultSkills();
 
