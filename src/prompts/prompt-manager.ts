@@ -37,29 +37,16 @@ export class PromptManager {
 			const cache = this.plugin.app.metadataCache.getFileCache(file);
 			const frontmatter = cache?.frontmatter || {};
 
-			// Get the content without frontmatter using sections
-			let contentWithoutFrontmatter = '';
+			// Get content without frontmatter using frontmatterPosition
+			const fullContent = await this.vault.read(file);
+			let contentWithoutFrontmatter: string;
 
-			// If there are sections, concatenate them (they don't include frontmatter)
-			if (cache?.sections) {
-				const fullContent = await this.vault.read(file);
-				const lines = fullContent.split('\n');
-
-				for (const section of cache.sections) {
-					// Skip frontmatter section
-					if (section.type === 'yaml') continue;
-
-					const startLine = section.position.start.line;
-					const endLine = section.position.end.line;
-
-					for (let i = startLine; i <= endLine && i < lines.length; i++) {
-						contentWithoutFrontmatter += lines[i] + '\n';
-					}
-				}
+			if (cache?.frontmatterPosition) {
+				// Skip to content after frontmatter (frontmatterPosition.end.offset includes closing ---)
+				contentWithoutFrontmatter = fullContent.slice(cache.frontmatterPosition.end.offset).trim();
 			} else {
-				// Fallback if no sections found
-				const fullContent = await this.vault.read(file);
-				contentWithoutFrontmatter = this.extractContentWithoutFrontmatter(fullContent);
+				// No frontmatter - use full content
+				contentWithoutFrontmatter = fullContent;
 			}
 
 			// Parse tags - normalize to array of lowercase strings
@@ -85,18 +72,6 @@ export class PromptManager {
 			this.plugin.logger.error('Error loading prompt file:', error);
 			return null;
 		}
-	}
-
-	// Extract content without frontmatter block
-	private extractContentWithoutFrontmatter(content: string): string {
-		const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
-		const match = content.match(frontmatterRegex);
-
-		if (match) {
-			return match[2]; // Return content after frontmatter
-		}
-
-		return content; // No frontmatter found, return entire content
 	}
 
 	// Get prompt from note's frontmatter
