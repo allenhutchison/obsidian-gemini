@@ -25,9 +25,11 @@ data.json
 coverage/
 
 
-# Gemini CLI (keep skills/, ignore everything else)
+# Agent tool configs (keep skills symlinks, ignore everything else)
 .gemini/*
 !.gemini/skills/
+.claude/*
+!.claude/skills/
 
 # Obsidian debug logs
 obsidian.md-*.log
