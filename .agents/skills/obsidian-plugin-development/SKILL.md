@@ -9,7 +9,7 @@ description: >-
   common patterns, and the full TypeScript API surface.
 metadata:
   author: obsidian-gemini
-  version: "1.0"
+  version: '1.0'
 compatibility: Requires Node.js, npm, and TypeScript. Targets the obsidian npm package.
 ---
 
@@ -18,6 +18,7 @@ compatibility: Requires Node.js, npm, and TypeScript. Targets the obsidian npm p
 ## When to use this skill
 
 Use this skill when:
+
 - Creating or modifying an Obsidian plugin
 - Working with the `obsidian` npm package TypeScript API
 - Building plugin UI: views, modals, settings tabs, commands, ribbon icons, context menus, status bar
@@ -49,14 +50,14 @@ my-plugin/
 
 ```json
 {
-  "id": "my-plugin",
-  "name": "My Plugin",
-  "version": "1.0.0",
-  "minAppVersion": "1.0.0",
-  "description": "Description of plugin",
-  "author": "Author Name",
-  "authorUrl": "https://example.com",
-  "isDesktopOnly": false
+	"id": "my-plugin",
+	"name": "My Plugin",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Description of plugin",
+	"author": "Author Name",
+	"authorUrl": "https://example.com",
+	"isDesktopOnly": false
 }
 ```
 
@@ -66,30 +67,30 @@ my-plugin/
 import { Plugin } from 'obsidian';
 
 export default class MyPlugin extends Plugin {
-  settings: MySettings;
+	settings: MySettings;
 
-  async onload() {
-    // Called when plugin is activated
-    await this.loadSettings();
-    this.addSettingTab(new MySettingTab(this.app, this));
-    this.addCommand({ id: 'my-cmd', name: 'My Command', callback: () => {} });
-    this.addRibbonIcon('icon-name', 'Tooltip', () => {});
-    this.registerView('view-type', (leaf) => new MyView(leaf));
-    this.registerEvent(this.app.vault.on('modify', (file) => {}));
-  }
+	async onload() {
+		// Called when plugin is activated
+		await this.loadSettings();
+		this.addSettingTab(new MySettingTab(this.app, this));
+		this.addCommand({ id: 'my-cmd', name: 'My Command', callback: () => {} });
+		this.addRibbonIcon('icon-name', 'Tooltip', () => {});
+		this.registerView('view-type', (leaf) => new MyView(leaf));
+		this.registerEvent(this.app.vault.on('modify', (file) => {}));
+	}
 
-  onunload() {
-    // Called when plugin is deactivated - cleanup happens automatically
-    // for anything registered via this.register*() or this.add*()
-  }
+	onunload() {
+		// Called when plugin is deactivated - cleanup happens automatically
+		// for anything registered via this.register*() or this.add*()
+	}
 
-  async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  }
+	async loadSettings() {
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+	}
 
-  async saveSettings() {
-    await this.saveData(this.settings);
-  }
+	async saveSettings() {
+		await this.saveData(this.settings);
+	}
 }
 ```
 
@@ -97,19 +98,19 @@ export default class MyPlugin extends Plugin {
 
 The `app` object (available as `this.app` in Plugin subclasses) provides access to the entire API:
 
-| Property | Class | Purpose |
-|----------|-------|---------|
-| `app.vault` | `Vault` | File CRUD operations |
-| `app.workspace` | `Workspace` | Panes, tabs, views, layout |
-| `app.metadataCache` | `MetadataCache` | Cached file metadata, link resolution |
-| `app.fileManager` | `FileManager` | High-level file operations, frontmatter |
+| Property            | Class           | Purpose                                 |
+| ------------------- | --------------- | --------------------------------------- |
+| `app.vault`         | `Vault`         | File CRUD operations                    |
+| `app.workspace`     | `Workspace`     | Panes, tabs, views, layout              |
+| `app.metadataCache` | `MetadataCache` | Cached file metadata, link resolution   |
+| `app.fileManager`   | `FileManager`   | High-level file operations, frontmatter |
 
 ### Vault - File operations
 
 ```typescript
 // Read
-const content = await this.app.vault.read(file);           // async read
-const cached = await this.app.vault.cachedRead(file);      // faster, may be stale
+const content = await this.app.vault.read(file); // async read
+const cached = await this.app.vault.cachedRead(file); // faster, may be stale
 
 // Create
 const newFile = await this.app.vault.create('path/file.md', 'content');
@@ -121,17 +122,19 @@ await this.app.vault.append(file, '\nappended text');
 
 // Atomic read-modify-write
 await this.app.vault.process(file, (data) => {
-  return data.replace('old', 'new');
+	return data.replace('old', 'new');
 });
 
 // Delete and rename
 await this.app.vault.delete(file);
-await this.app.vault.trash(file, true);  // system trash
+await this.app.vault.trash(file, true); // system trash
 await this.app.vault.rename(file, 'new/path.md');
 
 // Find files
 const file = this.app.vault.getAbstractFileByPath('notes/note.md');
-if (file instanceof TFile) { /* use it */ }
+if (file instanceof TFile) {
+	/* use it */
+}
 const allMd = this.app.vault.getMarkdownFiles();
 const allFiles = this.app.vault.getFiles();
 ```
@@ -146,19 +149,23 @@ const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 const file = this.app.workspace.getActiveFile();
 
 // Open files
-const leaf = this.app.workspace.getLeaf('tab');  // 'tab' | 'split' | 'window'
+const leaf = this.app.workspace.getLeaf('tab'); // 'tab' | 'split' | 'window'
 await leaf.openFile(file);
 await this.app.workspace.openLinkText('Note Name', '', true);
 
 // Find views
 const leaves = this.app.workspace.getLeavesOfType('my-view');
-this.app.workspace.iterateAllLeaves((leaf) => { /* ... */ });
+this.app.workspace.iterateAllLeaves((leaf) => {
+	/* ... */
+});
 
 // Sidebar leaves
 const rightLeaf = this.app.workspace.getRightLeaf(false);
 
 // Layout readiness
-this.app.workspace.onLayoutReady(() => { /* safe to access UI */ });
+this.app.workspace.onLayoutReady(() => {
+	/* safe to access UI */
+});
 ```
 
 ### MetadataCache - Parsed file metadata
@@ -166,12 +173,12 @@ this.app.workspace.onLayoutReady(() => { /* safe to access UI */ });
 ```typescript
 const cache = this.app.metadataCache.getFileCache(file);
 if (cache) {
-  cache.headings;    // HeadingCache[]
-  cache.tags;        // TagCache[]
-  cache.links;       // LinkCache[]
-  cache.embeds;      // EmbedCache[]
-  cache.frontmatter; // FrontMatterCache
-  cache.sections;    // SectionCache[]
+	cache.headings; // HeadingCache[]
+	cache.tags; // TagCache[]
+	cache.links; // LinkCache[]
+	cache.embeds; // EmbedCache[]
+	cache.frontmatter; // FrontMatterCache
+	cache.sections; // SectionCache[]
 }
 
 // Resolve a wikilink to a TFile
@@ -183,8 +190,8 @@ const target = this.app.metadataCache.getFirstLinkpathDest('Note', 'source/path.
 ```typescript
 // Process frontmatter (atomic read-modify-write for YAML)
 await this.app.fileManager.processFrontMatter(file, (fm) => {
-  fm.tags = ['tag1', 'tag2'];
-  fm.modified = new Date().toISOString();
+	fm.tags = ['tag1', 'tag2'];
+	fm.modified = new Date().toISOString();
 });
 
 // Rename with metadata updates (updates links across vault)
@@ -196,24 +203,24 @@ await this.app.fileManager.renameFile(file, 'new/path.md');
 ```typescript
 const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 if (view) {
-  const editor = view.editor;
+	const editor = view.editor;
 
-  // Cursor and selection
-  const cursor = editor.getCursor();          // { line, ch }
-  const selection = editor.getSelection();
-  editor.replaceSelection('replacement');
-  editor.setSelection(anchor, head);
+	// Cursor and selection
+	const cursor = editor.getCursor(); // { line, ch }
+	const selection = editor.getSelection();
+	editor.replaceSelection('replacement');
+	editor.setSelection(anchor, head);
 
-  // Content
-  const value = editor.getValue();
-  const line = editor.getLine(lineNum);
-  editor.replaceRange('text', from, to);
+	// Content
+	const value = editor.getValue();
+	const line = editor.getLine(lineNum);
+	editor.replaceRange('text', from, to);
 
-  // Batch operations
-  editor.transaction({ changes: [{ from, to, text: 'new' }] });
+	// Batch operations
+	editor.transaction({ changes: [{ from, to, text: 'new' }] });
 
-  // Scroll
-  editor.scrollIntoView({ from, to }, true);
+	// Scroll
+	editor.scrollIntoView({ from, to }, true);
 }
 ```
 
@@ -223,20 +230,26 @@ if (view) {
 
 ```typescript
 this.addCommand({
-  id: 'unique-command-id',
-  name: 'Human-readable name',
-  callback: () => { /* runs always */ },
-  // OR for editor commands:
-  editorCallback: (editor: Editor, view: MarkdownView) => { /* runs when editor active */ },
-  // OR conditional:
-  checkCallback: (checking: boolean) => {
-    if (canRun) {
-      if (!checking) { doStuff(); }
-      return true;
-    }
-    return false;
-  },
-  hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'p' }],
+	id: 'unique-command-id',
+	name: 'Human-readable name',
+	callback: () => {
+		/* runs always */
+	},
+	// OR for editor commands:
+	editorCallback: (editor: Editor, view: MarkdownView) => {
+		/* runs when editor active */
+	},
+	// OR conditional:
+	checkCallback: (checking: boolean) => {
+		if (canRun) {
+			if (!checking) {
+				doStuff();
+			}
+			return true;
+		}
+		return false;
+	},
+	hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'p' }],
 });
 ```
 
@@ -244,17 +257,19 @@ this.addCommand({
 
 ```typescript
 class MyModal extends Modal {
-  constructor(app: App) { super(app); }
+	constructor(app: App) {
+		super(app);
+	}
 
-  onOpen() {
-    this.setTitle('My Modal');
-    this.contentEl.createEl('p', { text: 'Content here' });
-    new Setting(this.contentEl)
-      .setName('Option')
-      .addToggle(t => t.setValue(true).onChange(v => {}));
-  }
+	onOpen() {
+		this.setTitle('My Modal');
+		this.contentEl.createEl('p', { text: 'Content here' });
+		new Setting(this.contentEl).setName('Option').addToggle((t) => t.setValue(true).onChange((v) => {}));
+	}
 
-  onClose() { this.contentEl.empty(); }
+	onClose() {
+		this.contentEl.empty();
+	}
 }
 
 // Usage: new MyModal(this.app).open();
@@ -264,30 +279,32 @@ class MyModal extends Modal {
 
 ```typescript
 class MySettingTab extends PluginSettingTab {
-  plugin: MyPlugin;
-  constructor(app: App, plugin: MyPlugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
+	plugin: MyPlugin;
+	constructor(app: App, plugin: MyPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
 
-  display() {
-    const { containerEl } = this;
-    containerEl.empty();
+	display() {
+		const { containerEl } = this;
+		containerEl.empty();
 
-    new Setting(containerEl)
-      .setName('Setting name')
-      .setDesc('Description')
-      .addText(text => text
-        .setPlaceholder('placeholder')
-        .setValue(this.plugin.settings.value)
-        .onChange(async (v) => {
-          this.plugin.settings.value = v;
-          await this.plugin.saveSettings();
-        }));
+		new Setting(containerEl)
+			.setName('Setting name')
+			.setDesc('Description')
+			.addText((text) =>
+				text
+					.setPlaceholder('placeholder')
+					.setValue(this.plugin.settings.value)
+					.onChange(async (v) => {
+						this.plugin.settings.value = v;
+						await this.plugin.saveSettings();
+					})
+			);
 
-    // Setting control types: addText, addTextArea, addToggle, addDropdown,
-    // addSlider, addButton, addExtraButton, addColorPicker, addSearch
-  }
+		// Setting control types: addText, addTextArea, addToggle, addDropdown,
+		// addSlider, addButton, addExtraButton, addColorPicker, addSearch
+	}
 }
 ```
 
@@ -327,7 +344,7 @@ async activateView() {
 
 ```typescript
 // Ribbon icon
-this.addRibbonIcon('dice', 'Tooltip text', (evt) => { });
+this.addRibbonIcon('dice', 'Tooltip text', (evt) => {});
 
 // Status bar
 const statusEl = this.addStatusBarItem();
@@ -335,36 +352,39 @@ statusEl.setText('Status text');
 
 // Notice (toast)
 new Notice('Message to user');
-new Notice('Persistent message', 0);  // 0 = no auto-dismiss
+new Notice('Persistent message', 0); // 0 = no auto-dismiss
 
 // Context menu
 this.registerEvent(
-  this.app.workspace.on('file-menu', (menu, file) => {
-    menu.addItem((item) => {
-      item.setTitle('My action').setIcon('icon').onClick(() => {});
-    });
-  })
+	this.app.workspace.on('file-menu', (menu, file) => {
+		menu.addItem((item) => {
+			item
+				.setTitle('My action')
+				.setIcon('icon')
+				.onClick(() => {});
+		});
+	})
 );
 
 // Editor context menu
 this.registerEvent(
-  this.app.workspace.on('editor-menu', (menu, editor, info) => {
-    menu.addItem((item) => {
-      item.setTitle('Editor action').onClick(() => {});
-    });
-  })
+	this.app.workspace.on('editor-menu', (menu, editor, info) => {
+		menu.addItem((item) => {
+			item.setTitle('Editor action').onClick(() => {});
+		});
+	})
 );
 
 // HTML elements (Obsidian extends HTMLElement)
 const div = containerEl.createDiv({ cls: 'my-class', text: 'Hello' });
 const el = containerEl.createEl('span', { cls: 'highlight', attr: { 'data-id': '1' } });
-el.empty();  // remove all children
+el.empty(); // remove all children
 el.addClass('new-class');
 el.toggleClass('active', true);
 
 // Icons (Lucide icons built in)
 import { setIcon } from 'obsidian';
-setIcon(element, 'lucide-icon-name');  // e.g. 'bot', 'settings', 'file-text'
+setIcon(element, 'lucide-icon-name'); // e.g. 'bot', 'settings', 'file-text'
 ```
 
 ## Events
@@ -403,14 +423,14 @@ Always use `requestUrl` instead of `fetch` for cross-platform compatibility (des
 import { requestUrl } from 'obsidian';
 
 const response = await requestUrl({
-  url: 'https://api.example.com/data',
-  method: 'POST',
-  headers: { 'Authorization': 'Bearer TOKEN' },
-  contentType: 'application/json',
-  body: JSON.stringify({ key: 'value' }),
+	url: 'https://api.example.com/data',
+	method: 'POST',
+	headers: { Authorization: 'Bearer TOKEN' },
+	contentType: 'application/json',
+	body: JSON.stringify({ key: 'value' }),
 });
-const data = response.json;   // parsed JSON
-const text = response.text;   // raw text
+const data = response.json; // parsed JSON
+const text = response.text; // raw text
 const status = response.status;
 ```
 
@@ -420,11 +440,11 @@ const status = response.status;
 import { MarkdownRenderer } from 'obsidian';
 
 await MarkdownRenderer.render(
-  this.app,
-  '# Heading\nSome **bold** and a [[link]].',
-  containerEl,
-  '',        // sourcePath for resolving links
-  this       // Component for lifecycle management
+	this.app,
+	'# Heading\nSome **bold** and a [[link]].',
+	containerEl,
+	'', // sourcePath for resolving links
+	this // Component for lifecycle management
 );
 ```
 
@@ -446,6 +466,7 @@ await MarkdownRenderer.render(
 Obsidian 1.12+ includes a CLI for terminal-based vault interaction. See [the CLI reference](references/cli-reference.md) for complete command documentation.
 
 Key developer commands:
+
 - `obsidian dev:eval code="expression"` - Execute JavaScript in the app console
 - `obsidian dev:console` - View captured console messages
 - `obsidian dev:dom query="selector"` - Query DOM elements

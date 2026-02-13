@@ -4,43 +4,46 @@
 
 ### Always prefer Obsidian API over low-level alternatives
 
-| Do this | Not this | Why |
-|---------|----------|-----|
-| `vault.getMarkdownFiles()` | `vault.adapter.list()` | Adapter is low-level, may miss files |
-| `fileManager.processFrontMatter()` | Manual YAML parsing | Atomic, handles edge cases |
-| `app.metadataCache.getFileCache()` | Re-parsing files yourself | Uses cached data, much faster |
-| `app.metadataCache.getFirstLinkpathDest()` | Manual link resolution | Handles aliases, relative paths |
-| `fileManager.renameFile()` | `vault.rename()` | Updates all links across the vault |
-| `app.workspace.openLinkText()` | Manual leaf creation | Handles link resolution, settings |
-| `requestUrl()` | `fetch()` | Works on both desktop and mobile |
+| Do this                                    | Not this                  | Why                                  |
+| ------------------------------------------ | ------------------------- | ------------------------------------ |
+| `vault.getMarkdownFiles()`                 | `vault.adapter.list()`    | Adapter is low-level, may miss files |
+| `fileManager.processFrontMatter()`         | Manual YAML parsing       | Atomic, handles edge cases           |
+| `app.metadataCache.getFileCache()`         | Re-parsing files yourself | Uses cached data, much faster        |
+| `app.metadataCache.getFirstLinkpathDest()` | Manual link resolution    | Handles aliases, relative paths      |
+| `fileManager.renameFile()`                 | `vault.rename()`          | Updates all links across the vault   |
+| `app.workspace.openLinkText()`             | Manual leaf creation      | Handles link resolution, settings    |
+| `requestUrl()`                             | `fetch()`                 | Works on both desktop and mobile     |
 
 ### File operations
 
 1. **Always check `instanceof`** when using `getAbstractFileByPath()`:
+
 ```typescript
 const file = this.app.vault.getAbstractFileByPath(path);
 if (file instanceof TFile) {
-  // Safe to use as TFile
+	// Safe to use as TFile
 } else if (file instanceof TFolder) {
-  // It's a folder
+	// It's a folder
 } else {
-  // Not found (null)
+	// Not found (null)
 }
 ```
 
 2. **Never construct TFile/TFolder directly**. Always get them from the Vault API.
 
 3. **Use normalized paths**. Obsidian uses forward slashes on all platforms:
+
 ```typescript
 import { normalizePath } from 'obsidian';
 const safePath = normalizePath('folder/subfolder/note.md');
 ```
 
 4. **Use `vault.process()` for read-modify-write**:
+
 ```typescript
 // GOOD: atomic operation
 await this.app.vault.process(file, (data) => {
-  return data.replace('old', 'new');
+	return data.replace('old', 'new');
 });
 
 // BAD: race condition possible
@@ -49,10 +52,11 @@ await this.app.vault.modify(file, data.replace('old', 'new'));
 ```
 
 5. **Use `fileManager.processFrontMatter()` for YAML**:
+
 ```typescript
 // GOOD: handles edge cases, atomic
 await this.app.fileManager.processFrontMatter(file, (fm) => {
-  fm.tags = ['tag1', 'tag2'];
+	fm.tags = ['tag1', 'tag2'];
 });
 
 // BAD: fragile YAML parsing
@@ -100,10 +104,10 @@ Use `addChild()` for components that need lifecycle management:
 
 ```typescript
 class MyView extends ItemView {
-  async onOpen() {
-    const childComponent = this.addChild(new MyChildComponent());
-    // childComponent.onunload() will be called when MyView closes
-  }
+	async onOpen() {
+		const childComponent = this.addChild(new MyChildComponent());
+		// childComponent.onunload() will be called when MyView closes
+	}
 }
 ```
 
@@ -114,11 +118,15 @@ class MyView extends ItemView {
 ```typescript
 // GOOD: auto-cleaned on unload
 this.registerEvent(
-  this.app.vault.on('modify', (file) => { /* ... */ })
+	this.app.vault.on('modify', (file) => {
+		/* ... */
+	})
 );
 
 // BAD: memory leak, never cleaned up
-this.app.vault.on('modify', (file) => { /* ... */ });
+this.app.vault.on('modify', (file) => {
+	/* ... */
+});
 ```
 
 ### Debounce frequent events
@@ -143,15 +151,15 @@ async onload() {
 
 ### Key workspace events and when to use them
 
-| Event | Fires when | Common use |
-|-------|-----------|------------|
-| `file-open` | A file is opened in any pane | Update UI based on current file |
-| `active-leaf-change` | The focused pane changes | Update sidebar panels |
-| `layout-change` | Workspace layout changes | Recalculate positions |
-| `editor-change` | Editor content is modified | Auto-save, live preview |
-| `file-menu` | Right-click on file in explorer | Add context menu items |
-| `editor-menu` | Right-click in editor | Add editor context menu items |
-| `resize` | Window resizes | Reflow custom UI |
+| Event                | Fires when                      | Common use                      |
+| -------------------- | ------------------------------- | ------------------------------- |
+| `file-open`          | A file is opened in any pane    | Update UI based on current file |
+| `active-leaf-change` | The focused pane changes        | Update sidebar panels           |
+| `layout-change`      | Workspace layout changes        | Recalculate positions           |
+| `editor-change`      | Editor content is modified      | Auto-save, live preview         |
+| `file-menu`          | Right-click on file in explorer | Add context menu items          |
+| `editor-menu`        | Right-click in editor           | Add editor context menu items   |
+| `resize`             | Window resizes                  | Reflow custom UI                |
 
 ## Settings patterns
 
@@ -204,57 +212,61 @@ async loadSettings() {
 ### Styling
 
 1. **Use Obsidian CSS variables** for consistent theming:
+
 ```css
 .my-plugin-container {
-  color: var(--text-normal);
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  padding: var(--size-4-2);
-  border-radius: var(--radius-s);
+	color: var(--text-normal);
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
 }
 
 .my-plugin-header {
-  color: var(--text-accent);
-  font-size: var(--font-ui-medium);
+	color: var(--text-accent);
+	font-size: var(--font-ui-medium);
 }
 
 .my-plugin-muted {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
 }
 ```
 
 2. **Test with both light and dark themes**. Never hardcode colors.
 
 3. **Use `:has()` selectors** for modal sizing:
+
 ```css
 .modal:has(.my-plugin-modal) {
-  width: 600px;
-  max-width: 90vw;
+	width: 600px;
+	max-width: 90vw;
 }
 ```
 
 4. **Handle text overflow**:
+
 ```css
 .my-plugin-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 ```
 
 ### Icons
 
 Use Obsidian's built-in Lucide icons:
+
 ```typescript
 import { setIcon } from 'obsidian';
 
 // In views or modals
-setIcon(element, 'bot');         // Robot icon
-setIcon(element, 'settings');    // Gear icon
-setIcon(element, 'file-text');   // Document icon
-setIcon(element, 'search');      // Search icon
-setIcon(element, 'refresh-cw');  // Refresh icon
+setIcon(element, 'bot'); // Robot icon
+setIcon(element, 'settings'); // Gear icon
+setIcon(element, 'file-text'); // Document icon
+setIcon(element, 'search'); // Search icon
+setIcon(element, 'refresh-cw'); // Refresh icon
 
 // For ribbon and commands, use icon name directly
 this.addRibbonIcon('dice', 'Random note', () => {});
@@ -264,6 +276,7 @@ this.addCommand({ id: 'cmd', name: 'Cmd', icon: 'star', callback: () => {} });
 ### HTML element creation
 
 Use Obsidian's DOM helpers instead of `document.createElement`:
+
 ```typescript
 // GOOD: Obsidian helpers
 const div = container.createDiv({ cls: 'my-class', text: 'Content' });
@@ -273,8 +286,8 @@ const link = container.createEl('a', { href: '#', text: 'Click me' });
 
 // With attributes
 const input = container.createEl('input', {
-  attr: { type: 'text', placeholder: 'Search...' },
-  cls: 'my-input'
+	attr: { type: 'text', placeholder: 'Search...' },
+	cls: 'my-input',
 });
 
 // Clear children
@@ -289,19 +302,20 @@ element.toggleClass('visible', isVisible);
 ### Views with state
 
 Save and restore view state for persistence across sessions:
+
 ```typescript
 class MyView extends ItemView {
-  state: { filter: string; sortBy: string };
+	state: { filter: string; sortBy: string };
 
-  getState(): any {
-    return this.state;
-  }
+	getState(): any {
+		return this.state;
+	}
 
-  async setState(state: any, result: ViewStateResult): Promise<void> {
-    this.state = state || { filter: '', sortBy: 'name' };
-    this.refresh();  // Re-render with restored state
-    super.setState(state, result);
-  }
+	async setState(state: any, result: ViewStateResult): Promise<void> {
+		this.state = state || { filter: '', sortBy: 'name' };
+		this.refresh(); // Re-render with restored state
+		super.setState(state, result);
+	}
 }
 ```
 
@@ -328,7 +342,7 @@ private getMetadata(file: TFile): CachedMetadata | null {
 ```typescript
 // Completions: 750ms debounce is a good default
 const debouncedComplete = debounce(async () => {
-  await this.triggerCompletion();
+	await this.triggerCompletion();
 }, 750);
 ```
 
@@ -347,14 +361,14 @@ const content = await this.app.vault.read(file);
 ```typescript
 // GOOD: Single reflow
 const fragment = document.createDocumentFragment();
-items.forEach(item => {
-  const el = fragment.createDiv({ text: item.name });
+items.forEach((item) => {
+	const el = fragment.createDiv({ text: item.name });
 });
 container.append(fragment);
 
 // BAD: Multiple reflows
-items.forEach(item => {
-  container.createDiv({ text: item.name });
+items.forEach((item) => {
+	container.createDiv({ text: item.name });
 });
 ```
 
@@ -364,15 +378,15 @@ items.forEach(item => {
 
 ```typescript
 try {
-  const response = await requestUrl({
-    url: 'https://api.example.com/data',
-    throw: true,
-  });
-  return response.json;
+	const response = await requestUrl({
+		url: 'https://api.example.com/data',
+		throw: true,
+	});
+	return response.json;
 } catch (error) {
-  new Notice('Failed to fetch data. Check your connection.');
-  console.error('API request failed:', error);
-  return null;
+	new Notice('Failed to fetch data. Check your connection.');
+	console.error('API request failed:', error);
+	return null;
 }
 ```
 
@@ -381,8 +395,8 @@ try {
 ```typescript
 const file = this.app.vault.getAbstractFileByPath(path);
 if (!(file instanceof TFile)) {
-  new Notice(`File not found: ${path}`);
-  return;
+	new Notice(`File not found: ${path}`);
+	return;
 }
 await this.app.vault.read(file);
 ```
@@ -404,17 +418,17 @@ When preparing a plugin for the Obsidian community:
 
 ## Common anti-patterns
 
-| Anti-pattern | Better approach |
-|-------------|----------------|
-| `vault.adapter.list()` | `vault.getMarkdownFiles()` or `vault.getFiles()` |
-| `vault.adapter.read()` | `vault.read()` or `vault.cachedRead()` |
-| Manual YAML parsing | `fileManager.processFrontMatter()` |
-| `document.createElement()` | `container.createEl()` / `createDiv()` |
-| `el.innerHTML = '...'` | `el.createEl()` and `textContent` |
-| `fetch()` | `requestUrl()` |
-| Global `console.log()` in production | Conditional debug logging |
-| `new Date().toISOString()` for display | `moment()` (Obsidian bundles moment.js) |
-| Hardcoded colors | CSS variables (`var(--text-normal)`) |
-| Manual event cleanup in `onunload` | `this.registerEvent()` |
-| `setTimeout` without cleanup | `this.registerInterval()` |
-| Polling for file changes | Vault/MetadataCache events |
+| Anti-pattern                           | Better approach                                  |
+| -------------------------------------- | ------------------------------------------------ |
+| `vault.adapter.list()`                 | `vault.getMarkdownFiles()` or `vault.getFiles()` |
+| `vault.adapter.read()`                 | `vault.read()` or `vault.cachedRead()`           |
+| Manual YAML parsing                    | `fileManager.processFrontMatter()`               |
+| `document.createElement()`             | `container.createEl()` / `createDiv()`           |
+| `el.innerHTML = '...'`                 | `el.createEl()` and `textContent`                |
+| `fetch()`                              | `requestUrl()`                                   |
+| Global `console.log()` in production   | Conditional debug logging                        |
+| `new Date().toISOString()` for display | `moment()` (Obsidian bundles moment.js)          |
+| Hardcoded colors                       | CSS variables (`var(--text-normal)`)             |
+| Manual event cleanup in `onunload`     | `this.registerEvent()`                           |
+| `setTimeout` without cleanup           | `this.registerInterval()`                        |
+| Polling for file changes               | Vault/MetadataCache events                       |
