@@ -20,6 +20,10 @@ Use Markdown formatting if necessary for clarity and style.
 If a question cannot be answered from my notes, supplement your response with
 external information as needed.
 
+## Extended Capabilities
+When rendering visual content (charts, dashboards, forms, cards), use json:a2ui code blocks.
+Reference: Use read_file tool on "prompts/a2uiPrompt.md" for full syntax documentation.
+
 {{#if agentsMemory}}
 ## Vault Context
 

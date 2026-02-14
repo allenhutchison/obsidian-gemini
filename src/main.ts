@@ -28,6 +28,8 @@ import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
 import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
+import { A2UIRenderer } from './ui/a2ui/renderer';
+import { A2UIComponent } from './ui/a2ui/types';
 import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
 
@@ -80,6 +82,8 @@ export interface ObsidianGeminiSettings {
 	lastSeenVersion: string;
 	// RAG Indexing settings
 	ragIndexing: RagIndexingSettings;
+	// A2UI settings
+	a2uiSaveFolder: string; // Empty = ask on first save, otherwise folder path
 	// MCP server settings
 	mcpEnabled: boolean;
 	mcpServers: MCPServerConfig[];
@@ -127,6 +131,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 		autoSync: true,
 		includeAttachments: false,
 	},
+	// A2UI settings
+	a2uiSaveFolder: '', // Empty = ask user on first save
 	// MCP server settings
 	mcpEnabled: false,
 	mcpServers: [],
@@ -193,6 +199,25 @@ export default class ObsidianGemini extends Plugin {
 
 		// Always register UI components and commands
 		this.registerUIAndCommands();
+
+		// Register A2UI Markdown Code Block Processor
+		this.registerMarkdownCodeBlockProcessor('json:a2ui', (source, el, ctx) => {
+			try {
+				const uiContent = JSON.parse(source) as A2UIComponent;
+
+				// Basic schema validation
+				if (!uiContent || typeof uiContent.type !== 'string') {
+					throw new Error('Invalid A2UI component: missing "type" field');
+				}
+
+				ctx.addChild(new A2UIRenderer(this.app, el, uiContent, ctx.sourcePath));
+			} catch (e) {
+				this.logger.error('Failed to parse A2UI JSON:', e);
+				const msg = e instanceof Error ? e.message : String(e);
+				el.createEl('pre', { text: 'Error parsing A2UI JSON: ' + msg });
+				el.createEl('code', { text: source });
+			}
+		});
 
 		this.app.workspace.onLayoutReady(() => this.onLayoutReady());
 	}

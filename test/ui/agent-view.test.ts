@@ -41,6 +41,15 @@ jest.mock('obsidian', () => {
 				return 'test';
 			}
 		},
+		MarkdownRenderChild: class {
+			containerEl: HTMLElement;
+			constructor(containerEl: HTMLElement) {
+				this.containerEl = containerEl;
+			}
+			load() {}
+			onload() {}
+			onunload() {}
+		},
 		MarkdownRenderer: {
 			render: jest.fn().mockResolvedValue(undefined),
 		},

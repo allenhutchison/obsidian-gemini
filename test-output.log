@@ -1,0 +1,64 @@
+FAIL test/ui/a2ui-renderer.test.ts
+  A2UIRenderer
+    Component Rendering
+      ÔêÜ should render a text component (34 ms)
+      ÔêÜ should render a container with children (14 ms)
+      ÔêÜ should render a button component (26 ms)
+      ÔêÜ should handle unknown component type gracefully (17 ms)
+    Style Sanitization
+      ÔêÜ should apply allowed styles (29 ms)
+      ÔêÜ should block javascript: URLs in styles (16 ms)
+      ÔêÜ should block url() in styles (14 ms)
+      ÔêÜ should block expression() in styles (IE attack vector) (16 ms)
+    Button Actions
+      ÔêÜ should dispatch a2ui-action event on button click (15 ms)
+      ÔêÜ should not set up onClick for buttons without action (15 ms)
+    Switch Component
+      ├ù should handle checked = false correctly (16 ms)
+      ├ù should handle checked = undefined correctly (14 ms)
+    Error Handling
+      ÔêÜ should display error div on render failure (3 ms)
+  A2UIFolderSelectModal
+    ÔêÜ should be importable (1 ms)
+
+  ÔùÅ A2UIRenderer ÔÇ║ Switch Component ÔÇ║ should handle checked = false correctly
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      354 | 			await new Promise((resolve) => setTimeout(resolve, 10));
+      355 |
+    > 356 | 			expect(ToggleComponent).toHaveBeenCalled();
+          | 			                        ^
+      357 | 			const toggleMock = (ToggleComponent as jest.Mock).mock.results[0].value;
+      358 | 			// setValue should be called with false
+      359 | 			expect(toggleMock.setValue).toHaveBeenCalledWith(false);
+
+      at test/ui/a2ui-renderer.test.ts:356:28
+      at fulfilled (node_modules/tslib/tslib.js:167:62)
+
+  ÔùÅ A2UIRenderer ÔÇ║ Switch Component ÔÇ║ should handle checked = undefined correctly
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      372 | 			await new Promise((resolve) => setTimeout(resolve, 10));
+      373 |
+    > 374 | 			expect(ToggleComponent).toHaveBeenCalled();
+          | 			                        ^
+      375 | 			const toggleMock = (ToggleComponent as jest.Mock).mock.results[0].value;
+      376 | 			// setValue should NOT be called when checked is undefined
+      377 | 			expect(toggleMock.setValue).not.toHaveBeenCalled();
+
+      at test/ui/a2ui-renderer.test.ts:374:28
+      at fulfilled (node_modules/tslib/tslib.js:167:62)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 12 passed, 14 total
+Snapshots:   0 total
+Time:        1.655 s
+Ran all test suites.
