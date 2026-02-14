@@ -52,7 +52,8 @@ export class ToolRegistry {
 	}
 
 	/**
-	 * Get tools that are enabled for the current session
+	 * Get tools that are enabled for the current session.
+	 * Filters by enabled tool categories from session settings.
 	 */
 	getEnabledTools(context: ToolExecutionContext): Tool[] {
 		const enabledCategories = context.session.context.enabledTools;

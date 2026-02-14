@@ -382,6 +382,7 @@ To reference an image in your response, use the path shown above.`;
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
 					imageAttachments: imageAttachments.map((a) => ({ base64: a.base64, mimeType: a.mimeType })),
+					// Skills are AI-discovered via <available_skills> prompt injection
 				};
 
 				// Create model API for this session

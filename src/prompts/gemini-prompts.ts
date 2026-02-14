@@ -117,9 +117,15 @@ export class GeminiPrompts {
 	 * @param availableTools - Optional array of tool definitions
 	 * @param customPrompt - Optional custom prompt to append or override
 	 * @param agentsMemory - Optional AGENTS.md content to include
+	 * @param skillsXML - Optional available skills XML for AI-driven discovery
 	 * @returns Complete system prompt
 	 */
-	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt, agentsMemory?: string | null): string {
+	getSystemPromptWithCustom(
+		availableTools?: any[],
+		customPrompt?: CustomPrompt,
+		agentsMemory?: string | null,
+		skillsXML?: string | null
+	): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
 			this.plugin?.logger.warn('System prompt override enabled. Base functionality may be affected.');
@@ -136,6 +142,13 @@ export class GeminiPrompts {
 		});
 
 		let fullPrompt = baseSystemPrompt;
+
+		// Add available skills for AI-driven discovery (per Agent Skills spec)
+		// The AI reads skill descriptions and activates relevant ones autonomously
+		if (skillsXML) {
+			fullPrompt += `\n\n## Available Skills\n\n${skillsXML}`;
+			this.plugin?.logger.log('[Prompts] Injected available skills for AI discovery');
+		}
 
 		// Add tool instructions if tools are provided
 		if (availableTools && availableTools.length > 0) {

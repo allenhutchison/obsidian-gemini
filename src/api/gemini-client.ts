@@ -200,12 +200,14 @@ export class GeminiClient implements ModelApi {
 				}
 			}
 
-			// Build unified system prompt with tools, custom prompt, and agents memory
-			// This includes: base system prompt + vault context (AGENTS.md) + tool instructions (if tools) + custom prompt (if provided)
+			// Build unified system prompt with tools, custom prompt, agents memory, and available skills
+			// This includes: base system prompt + vault context (AGENTS.md) + available skills + tool instructions + custom prompt
+			const skillsXML = this.plugin?.skillManager?.getSkillsPromptXML() ?? null;
 			systemInstruction = this.prompts.getSystemPromptWithCustom(
 				extReq.availableTools,
 				extReq.customPrompt,
-				agentsMemory
+				agentsMemory,
+				skillsXML
 			);
 
 			// Append additional instructions from prompt field (e.g., generalPrompt, contextPrompt)

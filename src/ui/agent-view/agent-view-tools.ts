@@ -229,6 +229,7 @@ export class AgentViewTools {
 				customPrompt: customPrompt, // Pass custom prompt through to follow-up requests
 				renderContent: false,
 				availableTools: availableTools, // Include tools so model can chain calls
+				// Skills are AI-discovered via <available_skills> prompt injection
 			};
 
 			// Update progress to show we're processing tool results

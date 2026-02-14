@@ -30,6 +30,7 @@ import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
+import { SkillManager } from './services/skill-manager';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -83,6 +84,8 @@ export interface ObsidianGeminiSettings {
 	// MCP server settings
 	mcpEnabled: boolean;
 	mcpServers: MCPServerConfig[];
+	// Skills settings
+	skillsFolder: string;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -130,6 +133,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	// MCP server settings
 	mcpEnabled: false,
 	mcpServers: [],
+	// Skills settings
+	skillsFolder: 'Gemini/Skills',
 };
 
 export default class ObsidianGemini extends Plugin {
@@ -155,6 +160,7 @@ export default class ObsidianGemini extends Plugin {
 	public ragIndexing: RagIndexingService | null = null;
 	public selectionActionService: SelectionActionService;
 	public mcpManager: MCPManager | null = null;
+	public skillManager: SkillManager;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -493,6 +499,12 @@ export default class ObsidianGemini extends Plugin {
 			this.mcpManager = null;
 		}
 
+		// Clean up skill manager
+		if (this.skillManager) {
+			this.skillManager.unload();
+			this.skillManager = null as any;
+		}
+
 		// Clean up completions
 		if (this.completions) {
 			// Note: GeminiCompletions doesn't have a cleanup method currently
@@ -594,6 +606,12 @@ export default class ObsidianGemini extends Plugin {
 		this.mcpManager = new MCPManager(this);
 		if (this.settings.mcpEnabled && !(this.app as any).isMobile) {
 			await this.mcpManager.connectAllEnabled();
+		}
+
+		// Initialize skill manager
+		this.skillManager = new SkillManager(this);
+		if (this.app.workspace.layoutReady) {
+			await this.skillManager.initialize();
 		}
 
 		// Initialize completions
@@ -754,6 +772,11 @@ export default class ObsidianGemini extends Plugin {
 		// (deferred from setupGeminiScribe if layout wasn't ready)
 		if (!this.ragIndexing && this.settings.ragIndexing.enabled) {
 			await this.initializeRagIndexing();
+		}
+
+		// Initialize skill manager (idempotent - safe to call multiple times)
+		if (this.skillManager) {
+			await this.skillManager.initialize();
 		}
 
 		// Check if history migration is needed
