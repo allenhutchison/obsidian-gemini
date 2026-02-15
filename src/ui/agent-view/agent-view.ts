@@ -216,20 +216,20 @@ export class AgentView extends ItemView {
 		this.ui.updateAttachmentPreview(this.imagePreviewContainer, [], (id) => this.removeAttachment(id));
 
 		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
-		const savedPaths: string[] = [];
+		const savedAttachments: Array<{ attachment: InlineAttachment; path: string }> = [];
 		const failedSaves: number[] = [];
 		for (let i = 0; i < attachments.length; i++) {
 			const attachment = attachments[i];
 			if (attachment.vaultPath) {
 				// Already in vault (from drag-drop), skip saving
-				savedPaths.push(attachment.vaultPath);
+				savedAttachments.push({ attachment, path: attachment.vaultPath });
 				continue;
 			}
 			try {
 				const { saveAttachmentToVault } = await import('./inline-attachment');
 				const path = await saveAttachmentToVault(this.app, attachment);
 				attachment.vaultPath = path;
-				savedPaths.push(path);
+				savedAttachments.push({ attachment, path });
 			} catch (err) {
 				this.plugin.logger.error('Failed to save attachment to vault:', err);
 				failedSaves.push(i + 1);
@@ -264,20 +264,20 @@ export class AgentView extends ItemView {
 
 		// Build message with attachment previews for display
 		let displayMessage = formattedMessage;
-		if (savedPaths.length > 0) {
+		if (savedAttachments.length > 0) {
 			const imagePaths: string[] = [];
 			const otherPaths: { path: string; label: string }[] = [];
 
-			for (let i = 0; i < savedPaths.length; i++) {
-				const mimeType = attachments[i]?.mimeType || '';
+			for (const { attachment, path } of savedAttachments) {
+				const mimeType = attachment.mimeType || '';
 				if (mimeType.startsWith('image/')) {
-					imagePaths.push(savedPaths[i]);
+					imagePaths.push(path);
 				} else {
 					let label = 'Attachment';
 					if (mimeType.startsWith('audio/')) label = 'Audio';
 					else if (mimeType.startsWith('video/')) label = 'Video';
 					else if (mimeType === 'application/pdf') label = 'PDF';
-					otherPaths.push({ path: savedPaths[i], label });
+					otherPaths.push({ path, label });
 				}
 			}
 
@@ -374,13 +374,13 @@ Example interpretations:
 The mentioned files are included in the context below for reference.`;
 			}
 
-			// Add image path information if images were attached
-			if (savedPaths.length > 0) {
-				const pathList = savedPaths.map((p) => `- ${p}`).join('\n');
-				additionalInstructions += `\n\nIMAGE ATTACHMENTS: The user has attached ${savedPaths.length} image(s) to this message. The images have been saved to the vault at these paths:
+			// Add attachment path information if attachments were saved
+			if (savedAttachments.length > 0) {
+				const pathList = savedAttachments.map(({ path }) => `- ${path}`).join('\n');
+				additionalInstructions += `\n\nATTACHMENTS: The user has attached ${savedAttachments.length} file(s) to this message. They have been saved to the vault at these paths:
 ${pathList}
-To embed any of these images in a note, use the wikilink format: ![[path/to/image.png]]
-To reference an image in your response, use the path shown above.`;
+To embed images in a note, use the wikilink format: ![[path/to/image.png]]
+To reference an attachment in your response, use the path shown above.`;
 			}
 
 			// Add context information if available

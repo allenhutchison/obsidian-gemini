@@ -122,6 +122,15 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
    - Web fetch tool using Google's URL Context API
    - Session-level permission system for bypassing confirmations
    - Tool loop detection to prevent infinite execution cycles
+7. **Attachment Pipeline** (`src/ui/agent-view/agent-view.ts`, `src/ui/agent-view/agent-view-ui.ts`, `src/ui/agent-view/inline-attachment.ts`, `src/utils/file-classification.ts`): Unified drag-and-drop and paste pipeline for file attachments
+   - Files dropped or pasted into the agent view are classified by extension using `classifyFile()` from `file-classification.ts`
+   - **Text files** (`.md`, `.ts`, `.json`, etc.) → context chips (AI reads content)
+   - **Gemini-supported binary files** (images, audio, video, PDF) → base64 inline attachments sent to the model via `inlineAttachments` on `ExtendedModelRequest`
+   - **Unsupported files** (`.zip`, `.exe`, etc.) → user notification
+   - Cumulative 20 MB size limit enforced across vault drops, external drops, and paste
+   - Folder drops recursively expand and classify all contained files
+   - `InlineAttachment` (renamed from `ImageAttachment`) holds base64 data, MIME type, and optional vault path
+   - Image attachments show thumbnails; non-image attachments show Lucide icon + filename label
 
 ### Model Configuration
 

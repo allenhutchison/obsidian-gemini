@@ -621,8 +621,13 @@ export class AgentViewUI {
 			// Process all supported images from non-vault sources
 			let imagesProcessed = 0;
 			let unsupportedCount = 0;
+			let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
 			for (const file of fileArray) {
 				if (isSupportedImageType(file.type)) {
+					if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+						new Notice('Attachment size limit (20 MB) reached. Some images were skipped.');
+						break;
+					}
 					try {
 						const base64 = await fileToBase64(file);
 						const attachment: InlineAttachment = {
@@ -631,6 +636,7 @@ export class AgentViewUI {
 							id: generateAttachmentId(),
 						};
 						callbacks.addAttachment(attachment);
+						cumulativeSize += file.size;
 						imagesProcessed++;
 					} catch (err) {
 						this.plugin.logger.error('Failed to process dropped image:', err);
@@ -655,8 +661,13 @@ export class AgentViewUI {
 			let imagesProcessed = 0;
 			let unsupportedCount = 0;
 			if (e.clipboardData?.files?.length) {
+				let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
 				for (const file of Array.from(e.clipboardData.files)) {
 					if (isSupportedImageType(file.type)) {
+						if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+							new Notice('Attachment size limit (20 MB) reached. Some images were skipped.');
+							break;
+						}
 						// Prevent default once when we find the first image
 						if (imagesProcessed === 0) {
 							e.preventDefault();
@@ -669,6 +680,7 @@ export class AgentViewUI {
 								id: generateAttachmentId(),
 							};
 							callbacks.addAttachment(attachment);
+							cumulativeSize += file.size;
 							imagesProcessed++;
 						} catch (err) {
 							this.plugin.logger.error('Failed to process pasted image:', err);
@@ -928,6 +940,13 @@ export class AgentViewUI {
 	/** Backward-compatible alias */
 	updateImagePreview(container: HTMLElement, attachments: InlineAttachment[], onRemove: (id: string) => void): void {
 		this.updateAttachmentPreview(container, attachments, onRemove);
+	}
+
+	/**
+	 * Compute the cumulative base64 byte size of all existing attachments.
+	 */
+	private getCurrentAttachmentSize(callbacks: UICallbacks): number {
+		return callbacks.getAttachments().reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0);
 	}
 
 	/**
