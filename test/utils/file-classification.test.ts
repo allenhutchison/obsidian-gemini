@@ -166,7 +166,7 @@ describe('file-classification', () => {
 		it('should include video types', () => {
 			expect(GEMINI_INLINE_BINARY_MIMES['mp4']).toBe('video/mp4');
 			expect(GEMINI_INLINE_BINARY_MIMES['webm']).toBe('video/webm');
-			expect(GEMINI_INLINE_BINARY_MIMES['mov']).toBe('video/mov');
+			expect(GEMINI_INLINE_BINARY_MIMES['mov']).toBe('video/quicktime');
 		});
 
 		it('should include PDF', () => {

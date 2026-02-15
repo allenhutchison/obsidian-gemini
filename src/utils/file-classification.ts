@@ -27,16 +27,13 @@ export const GEMINI_INLINE_BINARY_MIMES: Record<string, string> = {
 	// Audio
 	wav: 'audio/wav',
 	mp3: 'audio/mp3',
-	aiff: 'audio/aiff',
 	aac: 'audio/aac',
-	ogg: 'audio/ogg',
 	flac: 'audio/flac',
 
 	// Video
 	mp4: 'video/mp4',
 	mpeg: 'video/mpeg',
-	mov: 'video/mov',
-	avi: 'video/x-msvideo',
+	mov: 'video/quicktime',
 	flv: 'video/x-flv',
 	mpg: 'video/mpeg',
 	webm: 'video/webm',

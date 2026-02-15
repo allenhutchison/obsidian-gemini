@@ -262,13 +262,41 @@ export class AgentView extends ItemView {
 		// Show progress bar
 		this.progress.show('Thinking...', 'thinking');
 
-		// Build message with image thumbnails for display (use wikilinks for saved images)
+		// Build message with attachment previews for display
 		let displayMessage = formattedMessage;
 		if (savedPaths.length > 0) {
-			const imageLinks = savedPaths.map((path) => `![[${path}]]`).join('\n');
-			// Explicitly show the path context to ensure AI reliability (User preference: reliability > hidden)
-			const contextNote = `\n> [!info] Image Source\n> ${savedPaths.map((p) => `\`${p}\``).join('\n> ')}`;
-			displayMessage = displayMessage + '\n\n' + imageLinks + contextNote;
+			const imagePaths: string[] = [];
+			const otherPaths: { path: string; label: string }[] = [];
+
+			for (let i = 0; i < savedPaths.length; i++) {
+				const mimeType = attachments[i]?.mimeType || '';
+				if (mimeType.startsWith('image/')) {
+					imagePaths.push(savedPaths[i]);
+				} else {
+					let label = 'Attachment';
+					if (mimeType.startsWith('audio/')) label = 'Audio';
+					else if (mimeType.startsWith('video/')) label = 'Video';
+					else if (mimeType === 'application/pdf') label = 'PDF';
+					otherPaths.push({ path: savedPaths[i], label });
+				}
+			}
+
+			const parts: string[] = [];
+
+			if (imagePaths.length > 0) {
+				const imageLinks = imagePaths.map((path) => `![[${path}]]`).join('\n');
+				const contextNote = `\n> [!info] Image Source\n> ${imagePaths.map((p) => `\`${p}\``).join('\n> ')}`;
+				parts.push(imageLinks + contextNote);
+			}
+
+			if (otherPaths.length > 0) {
+				const contextNote = `> [!info] Attachment Source\n> ${otherPaths.map((o) => `\`${o.path}\` (${o.label})`).join('\n> ')}`;
+				parts.push(contextNote);
+			}
+
+			if (parts.length > 0) {
+				displayMessage = displayMessage + '\n\n' + parts.join('\n\n');
+			}
 		}
 
 		// Display user message with formatted version (includes markdown links and images)
