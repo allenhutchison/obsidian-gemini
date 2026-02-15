@@ -156,6 +156,15 @@ describe('PromptManager', () => {
 	describe('loadPromptFromFile', () => {
 		it('should load and parse valid prompt file', async () => {
 			const mockFile = new TFile();
+			const frontmatterContent = `---
+name: "Test Prompt"
+description: "Test description"
+version: 1
+override_system_prompt: false
+tags: [test]
+---`;
+			const mockContent = `${frontmatterContent}
+Test prompt content`;
 			const mockCache = {
 				frontmatter: {
 					name: 'Test Prompt',
@@ -164,15 +173,11 @@ describe('PromptManager', () => {
 					override_system_prompt: false,
 					tags: ['test'],
 				},
+				frontmatterPosition: {
+					start: { line: 0, col: 0, offset: 0 },
+					end: { line: 6, col: 3, offset: frontmatterContent.length },
+				},
 			};
-			const mockContent = `---
-name: "Test Prompt"
-description: "Test description"
-version: 1
-override_system_prompt: false
-tags: [test]
----
-Test prompt content`;
 
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(mockCache);
@@ -387,6 +392,15 @@ Content`;
 
 	describe('frontmatter parsing via Obsidian API', () => {
 		it('should parse complex YAML frontmatter correctly', async () => {
+			const frontmatterContent = `---
+name: "Complex Prompt"
+description: "A prompt with various YAML features"
+version: 2
+override_system_prompt: true
+tags: [ai, assistant, complex]
+---`;
+			const mockContent = `${frontmatterContent}
+This is the prompt content`;
 			const mockCache = {
 				frontmatter: {
 					name: 'Complex Prompt',
@@ -395,15 +409,11 @@ Content`;
 					override_system_prompt: true,
 					tags: ['ai', 'assistant', 'complex'],
 				},
+				frontmatterPosition: {
+					start: { line: 0, col: 0, offset: 0 },
+					end: { line: 6, col: 3, offset: frontmatterContent.length },
+				},
 			};
-			const mockContent = `---
-name: "Complex Prompt"
-description: "A prompt with various YAML features"
-version: 2
-override_system_prompt: true
-tags: [ai, assistant, complex]
----
-This is the prompt content`;
 
 			const mockFile = new TFile();
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);

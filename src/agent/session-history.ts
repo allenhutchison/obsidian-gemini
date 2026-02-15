@@ -41,7 +41,7 @@ export class SessionHistory {
 
 		try {
 			const content = await this.plugin.app.vault.read(historyFile);
-			return this.parseHistoryContent(content);
+			return this.parseHistoryContent(content, historyFile);
 		} catch (error) {
 			this.plugin.logger.error(`Error reading agent session history from ${historyPath}:`, error);
 			return [];
@@ -56,22 +56,23 @@ export class SessionHistory {
 
 		const historyPath = session.historyPath;
 
-		// Ensure the Agent-Sessions folder exists
-		await this.ensureAgentSessionsFolder();
+		let historyFile: TFile;
+		const existingFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
 
-		let historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
-		let existingContent = '';
-
-		if (historyFile instanceof TFile) {
-			// Read existing content
-			try {
-				existingContent = await this.plugin.app.vault.read(historyFile);
-			} catch (error) {
-				this.plugin.logger.error(`Error reading existing history from ${historyPath}:`, error);
-			}
+		// Create file if it doesn't exist
+		if (existingFile instanceof TFile) {
+			historyFile = existingFile;
 		} else {
-			// Create new file with session metadata
-			existingContent = this.generateSessionFrontmatter(session);
+			historyFile = await this.createNewSessionFile(session);
+		}
+
+		// Read existing content
+		let existingContent: string;
+		try {
+			existingContent = await this.plugin.app.vault.read(historyFile);
+		} catch (error) {
+			this.plugin.logger.error(`Error reading existing history from ${historyPath}:`, error);
+			throw error; // Don't proceed if we can't read the file safely
 		}
 
 		// Generate the new entry content
@@ -95,13 +96,8 @@ export class SessionHistory {
 		const newContent = existingContent + '\n' + entryContent;
 
 		try {
-			if (historyFile instanceof TFile) {
-				// Update existing file
-				await this.plugin.app.vault.modify(historyFile, newContent);
-			} else {
-				// Create new file
-				await this.plugin.app.vault.create(historyPath, newContent);
-			}
+			// File is guaranteed to exist at this point
+			await this.plugin.app.vault.modify(historyFile, newContent);
 
 			// Update session's lastActive time
 			session.lastActive = new Date();
@@ -118,67 +114,16 @@ export class SessionHistory {
 		if (!this.plugin.settings.chatHistory) return;
 
 		const historyPath = session.historyPath;
-		let historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
+		const existingFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
 
-		if (!(historyFile instanceof TFile)) {
-			// File doesn't exist yet, create it with just frontmatter
-			const content = this.generateSessionFrontmatter(session);
-			await this.ensureAgentSessionsFolder();
-			await this.plugin.app.vault.create(historyPath, content);
+		if (!(existingFile instanceof TFile)) {
+			// File doesn't exist yet, create it with frontmatter
+			await this.createNewSessionFile(session);
 			return;
 		}
 
-		// Convert file paths to Obsidian wikilink format for frontmatter
-		const contextFileLinks = session.context.contextFiles.map((f) => `[[${f.basename}]]`);
-
-		// Update existing file's frontmatter
-		await this.plugin.app.fileManager.processFrontMatter(historyFile, (frontmatter: any) => {
-			frontmatter.session_id = session.id;
-			frontmatter.type = session.type;
-			frontmatter.title = session.title;
-			frontmatter.context_files = contextFileLinks;
-			frontmatter.enabled_tools = session.context.enabledTools;
-			frontmatter.require_confirmation = session.context.requireConfirmation;
-			frontmatter.created = session.created.toISOString();
-			frontmatter.last_active = session.lastActive.toISOString();
-			if (session.sourceNotePath) {
-				frontmatter.source_note_path = session.sourceNotePath;
-			} else {
-				delete frontmatter.source_note_path;
-			}
-
-			// Handle model config - delete properties when not present or set to default
-			if (session.modelConfig && session.modelConfig.model) {
-				frontmatter.model = session.modelConfig.model;
-			} else {
-				delete frontmatter.model;
-			}
-
-			if (session.modelConfig && session.modelConfig.temperature !== undefined) {
-				frontmatter.temperature = session.modelConfig.temperature;
-			} else {
-				delete frontmatter.temperature;
-			}
-
-			if (session.modelConfig && session.modelConfig.topP !== undefined) {
-				frontmatter.top_p = session.modelConfig.topP;
-			} else {
-				delete frontmatter.top_p;
-			}
-
-			if (session.modelConfig && session.modelConfig.promptTemplate) {
-				frontmatter.prompt_template = session.modelConfig.promptTemplate;
-			} else {
-				delete frontmatter.prompt_template;
-			}
-
-			// Save additional metadata
-			if (session.metadata) {
-				frontmatter.metadata = session.metadata;
-			} else {
-				delete frontmatter.metadata;
-			}
-		});
+		// Update existing file's frontmatter using the shared method
+		await this.applySessionFrontmatter(existingFile, session);
 	}
 
 	/**
@@ -220,15 +165,20 @@ export class SessionHistory {
 	/**
 	 * Parse history file content into conversation entries
 	 */
-	private parseHistoryContent(content: string): GeminiConversationEntry[] {
+	private parseHistoryContent(content: string, file: TFile): GeminiConversationEntry[] {
 		const entries: GeminiConversationEntry[] = [];
 
-		// Split content by entry separator (---)
-		const entrySeparator = /^---\s*$/m;
-		const sections = content.split(entrySeparator);
+		// Use metadata cache to find where frontmatter ends
+		const cache = this.plugin.app.metadataCache.getFileCache(file);
+		let contentAfterFrontmatter = content;
 
-		// Skip the frontmatter section (first two sections)
-		const contentSections = sections.slice(2);
+		if (cache?.frontmatterPosition) {
+			contentAfterFrontmatter = content.slice(cache.frontmatterPosition.end.offset);
+		}
+
+		// Split remaining content by entry separator (---)
+		const entrySeparator = /^---\s*$/m;
+		const contentSections = contentAfterFrontmatter.split(entrySeparator);
 
 		for (const section of contentSections) {
 			if (!section.trim()) continue;
@@ -314,56 +264,91 @@ export class SessionHistory {
 	}
 
 	/**
-	 * Generate frontmatter for a new session file
+	 * Create a new session file with proper frontmatter using Obsidian API
 	 */
-	private generateSessionFrontmatter(session: ChatSession): string {
-		// Convert file paths to Obsidian wikilink format for frontmatter
-		const contextFileLinks = session.context.contextFiles.map((f) => {
-			// Use just the basename without extension for cleaner links
-			const basename = f.basename;
-			return `[[${basename}]]`;
-		});
+	private async createNewSessionFile(session: ChatSession): Promise<TFile> {
+		const historyPath = session.historyPath;
+		const initialContent = `# ${session.title}\n\n`;
 
-		const frontmatter: any = {
-			session_id: session.id,
-			type: session.type,
-			title: session.title,
-			context_files: contextFileLinks,
-			enabled_tools: session.context.enabledTools,
-			require_confirmation: session.context.requireConfirmation,
-			created: session.created.toISOString(),
-			last_active: session.lastActive.toISOString(),
-		};
+		await this.ensureAgentSessionsFolder();
+		const file = await this.plugin.app.vault.create(historyPath, initialContent);
 
-		// Only add optional fields if they have values
-		if (session.sourceNotePath) {
-			frontmatter.source_note_path = session.sourceNotePath;
-		}
+		// Use Obsidian API to add frontmatter properly
+		await this.applySessionFrontmatter(file, session);
 
-		// Only add model config fields if they have values
-		if (session.modelConfig) {
-			if (session.modelConfig.model) {
+		return file;
+	}
+
+	/**
+	 * Apply session metadata to file frontmatter using Obsidian API
+	 */
+	private async applySessionFrontmatter(file: TFile, session: ChatSession): Promise<void> {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			// Required fields - always set
+			frontmatter.session_id = session.id;
+			frontmatter.type = session.type;
+			frontmatter.title = session.title;
+			frontmatter.created = session.created.toISOString();
+			frontmatter.last_active = session.lastActive.toISOString();
+
+			// Optional fields - set when present, delete when absent to remove stale values
+			if (session.sourceNotePath) {
+				frontmatter.source_note_path = session.sourceNotePath;
+			} else {
+				delete frontmatter.source_note_path;
+			}
+
+			// Context fields
+			if (session.context?.contextFiles?.length) {
+				frontmatter.context_files = session.context.contextFiles.map((f) => `[[${f.basename}]]`);
+			} else {
+				delete frontmatter.context_files;
+			}
+
+			if (session.context?.enabledTools?.length) {
+				frontmatter.enabled_tools = session.context.enabledTools;
+			} else {
+				delete frontmatter.enabled_tools;
+			}
+
+			if (session.context?.requireConfirmation !== undefined) {
+				frontmatter.require_confirmation = session.context.requireConfirmation;
+			} else {
+				delete frontmatter.require_confirmation;
+			}
+
+			// Model config fields
+			if (session.modelConfig?.model) {
 				frontmatter.model = session.modelConfig.model;
+			} else {
+				delete frontmatter.model;
 			}
-			if (session.modelConfig.temperature !== undefined) {
+
+			if (session.modelConfig?.temperature !== undefined) {
 				frontmatter.temperature = session.modelConfig.temperature;
+			} else {
+				delete frontmatter.temperature;
 			}
-			if (session.modelConfig.topP !== undefined) {
+
+			if (session.modelConfig?.topP !== undefined) {
 				frontmatter.top_p = session.modelConfig.topP;
+			} else {
+				delete frontmatter.top_p;
 			}
-			if (session.modelConfig.promptTemplate) {
+
+			if (session.modelConfig?.promptTemplate) {
 				frontmatter.prompt_template = session.modelConfig.promptTemplate;
+			} else {
+				delete frontmatter.prompt_template;
 			}
-		}
 
-		// Add metadata if present
-		if (session.metadata) {
-			frontmatter.metadata = session.metadata;
-		}
-
-		return `---\n${Object.entries(frontmatter)
-			.map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-			.join('\n')}\n---\n\n# ${session.title}\n\n`;
+			// Additional metadata
+			if (session.metadata) {
+				frontmatter.metadata = session.metadata;
+			} else {
+				delete frontmatter.metadata;
+			}
+		});
 	}
 
 	/**
