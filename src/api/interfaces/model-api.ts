@@ -41,12 +41,15 @@ export interface BaseModelRequest {
 }
 
 /**
- * Represents an image attachment for multimodal input
+ * Represents an inline data attachment for multimodal input (images, audio, video, PDF)
  */
-export interface ImagePart {
+export interface InlineDataPart {
 	base64: string;
 	mimeType: string;
 }
+
+/** Backward-compatible alias */
+export type ImagePart = InlineDataPart;
 
 /**
  * Represents an extended model request with conversation history and a user message.
@@ -58,7 +61,8 @@ export interface ImagePart {
  * @property renderContent - Whether to render the content in responses (default: true)
  * @property customPrompt - Optional custom prompt to modify system behavior
  * @property availableTools - Optional array of tool definitions for function calling
- * @property imageAttachments - Optional array of image attachments for multimodal input
+ * @property inlineAttachments - Optional array of inline data attachments for multimodal input
+ * @property imageAttachments - Deprecated alias for inlineAttachments
  */
 export interface ExtendedModelRequest extends BaseModelRequest {
 	conversationHistory: any[];
@@ -66,7 +70,9 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 	renderContent?: boolean;
 	customPrompt?: CustomPrompt;
 	availableTools?: ToolDefinition[];
-	imageAttachments?: ImagePart[];
+	inlineAttachments?: InlineDataPart[];
+	/** @deprecated Use inlineAttachments instead */
+	imageAttachments?: InlineDataPart[];
 }
 
 /**

@@ -1,4 +1,4 @@
-import { App, TFile, TFolder, Notice, setIcon, normalizePath } from 'obsidian';
+import { App, TFile, TFolder, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
@@ -8,12 +8,18 @@ import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import {
-	ImageAttachment,
+	InlineAttachment,
 	generateAttachmentId,
 	fileToBase64,
 	getMimeType,
 	isSupportedImageType,
-} from './image-attachment';
+} from './inline-attachment';
+import {
+	classifyFile,
+	FileCategory,
+	arrayBufferToBase64,
+	GEMINI_INLINE_DATA_LIMIT,
+} from '../../utils/file-classification';
 
 /**
  * Callbacks interface for UI interactions
@@ -32,10 +38,10 @@ export interface UICallbacks {
 	updateSessionMetadata: () => Promise<void>;
 	loadSession: (session: ChatSession) => Promise<void>;
 	isCurrentSession: (session: ChatSession) => boolean;
-	addImageAttachment: (attachment: ImageAttachment) => void;
-	removeImageAttachment: (id: string) => void;
-	getImageAttachments: () => ImageAttachment[];
-	handleDroppedFiles: (files: (TFile | TFolder)[]) => void;
+	addAttachment: (attachment: InlineAttachment) => void;
+	removeAttachment: (id: string) => void;
+	getAttachments: () => InlineAttachment[];
+	handleDroppedFiles: (files: TFile[]) => void;
 }
 
 /**
@@ -398,18 +404,17 @@ export class AgentViewUI {
 			if (e.dataTransfer?.files?.length) {
 				const adapter = this.app.vault.adapter;
 				if (adapter && 'basePath' in adapter) {
-					// (adapter as any).basePath is a private Obsidian API, but standard for accessing the file system path
 					const basePath = (adapter as any).basePath;
-					// Note: normalizePath is intended for vault-relative paths but is used here to normalize slashes
-					// on absolute OS paths for consistency across platforms (Windows backslashes vs POSIX slashes)
-					const normalizedBase = normalizePath(basePath);
+					// Normalize slashes for cross-platform consistency (Windows backslashes vs POSIX)
+					// Using explicit replace instead of normalizePath which is intended for vault-relative paths
+					const normalizedBase = basePath.replace(/\\/g, '/');
 
 					for (const file of Array.from(e.dataTransfer.files)) {
 						// (file as any).path is an Electron extension that provides the full filesystem path
 						const rawPath = (file as any).path;
 
 						if (rawPath && typeof rawPath === 'string') {
-							const normalizedRaw = normalizePath(rawPath);
+							const normalizedRaw = rawPath.replace(/\\/g, '/');
 
 							if (normalizedRaw.startsWith(normalizedBase)) {
 								let relPath = normalizedRaw.substring(normalizedBase.length);
@@ -473,7 +478,7 @@ export class AgentViewUI {
 				}
 			}
 
-			// If valid vault files were found, add them and stop
+			// If valid vault files were found, classify and route them
 			if (droppedFiles.length > 0) {
 				e.preventDefault();
 				e.stopPropagation();
@@ -491,24 +496,118 @@ export class AgentViewUI {
 					return;
 				}
 
-				callbacks.handleDroppedFiles(filteredFiles);
+				// Expand folders → collect all child TFiles recursively
+				const allTFiles: TFile[] = [];
+				for (const file of filteredFiles) {
+					if (file instanceof TFolder) {
+						const children = this.collectFilesFromFolder(file);
+						allTFiles.push(...children.filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin)));
+					} else if (file instanceof TFile) {
+						allTFiles.push(file);
+					}
+				}
 
-				new Notice(`Added ${filteredFiles.length} file${filteredFiles.length === 1 ? '' : 's'} to context`, 2000);
+				// Deduplicate again after folder expansion
+				const dedupedFiles = [...new Map(allTFiles.map((f) => [f.path, f])).values()];
+
+				// Classify each file
+				const textFiles: TFile[] = [];
+				const binaryFiles: TFile[] = [];
+				const unsupportedExts: string[] = [];
+
+				for (const file of dedupedFiles) {
+					const result = classifyFile(file.extension);
+					switch (result.category) {
+						case FileCategory.TEXT:
+							textFiles.push(file);
+							break;
+						case FileCategory.GEMINI_BINARY:
+							binaryFiles.push(file);
+							break;
+						case FileCategory.UNSUPPORTED:
+							unsupportedExts.push(`.${file.extension}`);
+							break;
+					}
+				}
+
+				// Route text files → context chips
+				if (textFiles.length > 0) {
+					callbacks.handleDroppedFiles(textFiles);
+				}
+
+				// Route binary files → inline attachments
+				let binaryCount = 0;
+				let cumulativeSize = 0;
+				const sizeLimitExceeded: string[] = [];
+
+				for (const file of binaryFiles) {
+					try {
+						const buffer = await this.app.vault.readBinary(file);
+						cumulativeSize += buffer.byteLength;
+
+						if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
+							sizeLimitExceeded.push(file.name);
+							cumulativeSize -= buffer.byteLength;
+							continue;
+						}
+
+						const base64 = arrayBufferToBase64(buffer);
+						const classification = classifyFile(file.extension);
+						const attachment: InlineAttachment = {
+							base64,
+							mimeType: classification.mimeType,
+							id: generateAttachmentId(),
+							vaultPath: file.path,
+							fileName: file.name,
+						};
+						callbacks.addAttachment(attachment);
+						binaryCount++;
+					} catch (err) {
+						this.plugin.logger.error(`Failed to read binary file ${file.path}:`, err);
+						new Notice(`Failed to attach ${file.name}`);
+					}
+				}
+
+				// Show notices
+				const parts: string[] = [];
+				if (textFiles.length > 0) {
+					parts.push(`${textFiles.length} text file${textFiles.length === 1 ? '' : 's'} added to context`);
+				}
+				if (binaryCount > 0) {
+					parts.push(`${binaryCount} file${binaryCount === 1 ? '' : 's'} attached`);
+				}
+				if (parts.length > 0) {
+					new Notice(parts.join(', '), 3000);
+				}
+
+				if (sizeLimitExceeded.length > 0) {
+					new Notice(
+						`Skipped ${sizeLimitExceeded.length} file${sizeLimitExceeded.length === 1 ? '' : 's'} (exceeds 20MB cumulative limit): ${sizeLimitExceeded.join(', ')}`,
+						5000
+					);
+				}
+
+				if (unsupportedExts.length > 0) {
+					const uniqueExts = [...new Set(unsupportedExts)];
+					new Notice(
+						`Skipped unsupported file type${uniqueExts.length === 1 ? '' : 's'}: ${uniqueExts.join(', ')}`,
+						4000
+					);
+				}
+
 				return;
 			}
 			// --- End Vault File Drops ---
 
-			// First check if there are any supported images in the drop
+			// Non-vault drops: handle images from external sources (browser, desktop)
 			const files = e.dataTransfer?.files;
 			const fileArray = files?.length ? Array.from(files) : [];
 			const hasImages = fileArray.some((file) => isSupportedImageType(file.type));
 
 			// Only prevent default behavior if we have images to handle
-			// This allows text/URL drops to work normally
 			if (!hasImages) {
-				// Check if there were unsupported image formats
 				const unsupportedImages = fileArray.filter(
-					(file) => file.type.startsWith('image/') && !isSupportedImageType(file.type)
+					(file) => file.type?.startsWith('image/') && !isSupportedImageType(file.type)
 				);
 				if (unsupportedImages.length > 0) {
 					new Notice('Unsupported image format. Please use PNG, JPEG, GIF, or WebP.');
@@ -519,19 +618,19 @@ export class AgentViewUI {
 			e.preventDefault();
 			e.stopPropagation();
 
-			// Process all supported images
+			// Process all supported images from non-vault sources
 			let imagesProcessed = 0;
 			let unsupportedCount = 0;
 			for (const file of fileArray) {
 				if (isSupportedImageType(file.type)) {
 					try {
 						const base64 = await fileToBase64(file);
-						const attachment: ImageAttachment = {
+						const attachment: InlineAttachment = {
 							base64,
 							mimeType: getMimeType(file),
 							id: generateAttachmentId(),
 						};
-						callbacks.addImageAttachment(attachment);
+						callbacks.addAttachment(attachment);
 						imagesProcessed++;
 					} catch (err) {
 						this.plugin.logger.error('Failed to process dropped image:', err);
@@ -564,12 +663,12 @@ export class AgentViewUI {
 						}
 						try {
 							const base64 = await fileToBase64(file);
-							const attachment: ImageAttachment = {
+							const attachment: InlineAttachment = {
 								base64,
 								mimeType: getMimeType(file),
 								id: generateAttachmentId(),
 							};
-							callbacks.addImageAttachment(attachment);
+							callbacks.addAttachment(attachment);
 							imagesProcessed++;
 						} catch (err) {
 							this.plugin.logger.error('Failed to process pasted image:', err);
@@ -769,9 +868,13 @@ export class AgentViewUI {
 	}
 
 	/**
-	 * Updates the image preview container with thumbnails
+	 * Updates the attachment preview container with thumbnails or file icons
 	 */
-	updateImagePreview(container: HTMLElement, attachments: ImageAttachment[], onRemove: (id: string) => void): void {
+	updateAttachmentPreview(
+		container: HTMLElement,
+		attachments: InlineAttachment[],
+		onRemove: (id: string) => void
+	): void {
 		container.empty();
 
 		if (attachments.length === 0) {
@@ -784,24 +887,71 @@ export class AgentViewUI {
 		for (const attachment of attachments) {
 			const thumbWrapper = container.createDiv({ cls: 'gemini-agent-image-thumb' });
 
-			// Create image element
-			const img = thumbWrapper.createEl('img', {
-				attr: {
-					src: `data:${attachment.mimeType};base64,${attachment.base64}`,
-					alt: 'Attached image',
-				},
-			});
+			if (attachment.mimeType.startsWith('image/')) {
+				// Image: show thumbnail
+				thumbWrapper.createEl('img', {
+					attr: {
+						src: `data:${attachment.mimeType};base64,${attachment.base64}`,
+						alt: attachment.fileName || 'Attached image',
+					},
+				});
+			} else {
+				// Non-image binary: show icon + filename
+				thumbWrapper.addClass('gemini-agent-attachment-file');
+
+				const iconEl = thumbWrapper.createDiv({ cls: 'gemini-agent-attachment-icon' });
+				const iconName = this.getIconForMimeType(attachment.mimeType);
+				setIcon(iconEl, iconName);
+
+				if (attachment.fileName) {
+					thumbWrapper.createDiv({
+						cls: 'gemini-agent-attachment-label',
+						text: attachment.fileName,
+						attr: { title: attachment.fileName },
+					});
+				}
+			}
 
 			// Create remove button
 			const removeBtn = thumbWrapper.createEl('button', {
 				text: '×',
 				cls: 'gemini-agent-image-remove',
-				attr: { title: 'Remove image', 'aria-label': 'Remove image' },
+				attr: { title: 'Remove attachment', 'aria-label': 'Remove attachment' },
 			});
 
 			removeBtn.addEventListener('click', () => {
 				onRemove(attachment.id);
 			});
 		}
+	}
+
+	/** Backward-compatible alias */
+	updateImagePreview(container: HTMLElement, attachments: InlineAttachment[], onRemove: (id: string) => void): void {
+		this.updateAttachmentPreview(container, attachments, onRemove);
+	}
+
+	/**
+	 * Recursively collect all TFile children from a folder
+	 */
+	private collectFilesFromFolder(folder: TFolder): TFile[] {
+		const files: TFile[] = [];
+		for (const child of folder.children) {
+			if (child instanceof TFile) {
+				files.push(child);
+			} else if (child instanceof TFolder) {
+				files.push(...this.collectFilesFromFolder(child));
+			}
+		}
+		return files;
+	}
+
+	/**
+	 * Get a Lucide icon name for a MIME type
+	 */
+	private getIconForMimeType(mimeType: string): string {
+		if (mimeType === 'application/pdf') return 'file-text';
+		if (mimeType.startsWith('audio/')) return 'music';
+		if (mimeType.startsWith('video/')) return 'video';
+		return 'file';
 	}
 }

@@ -1,28 +1,34 @@
 /**
- * Image attachment types and helpers for chat input
+ * Inline attachment types and helpers for chat input.
+ * Supports images, audio, video, PDF, and other binary types sent as inline data to Gemini.
  */
 
 import { App } from 'obsidian';
 
 /**
- * Represents a pending image attachment
+ * Represents a pending inline attachment (image, audio, video, PDF, etc.)
  */
-export interface ImageAttachment {
-	/** Base64 encoded image data (without data URI prefix) */
+export interface InlineAttachment {
+	/** Base64 encoded data (without data URI prefix) */
 	base64: string;
-	/** MIME type (e.g., 'image/png', 'image/jpeg') */
+	/** MIME type (e.g., 'image/png', 'application/pdf') */
 	mimeType: string;
 	/** Unique ID for UI management */
 	id: string;
 	/** Path in vault after saving (optional, set after save) */
 	vaultPath?: string;
+	/** Original file name (for display in non-image previews) */
+	fileName?: string;
 }
+
+/** Backward-compatible alias */
+export type ImageAttachment = InlineAttachment;
 
 /**
  * Generate a unique ID for an attachment
  */
 export function generateAttachmentId(): string {
-	return `img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+	return `att-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
 /**
@@ -66,8 +72,25 @@ export function getExtensionFromMimeType(mimeType: string): string {
 		'image/jpeg': 'jpg',
 		'image/gif': 'gif',
 		'image/webp': 'webp',
+		'image/heic': 'heic',
+		'image/heif': 'heif',
+		'audio/wav': 'wav',
+		'audio/mp3': 'mp3',
+		'audio/aiff': 'aiff',
+		'audio/aac': 'aac',
+		'audio/ogg': 'ogg',
+		'audio/flac': 'flac',
+		'video/mp4': 'mp4',
+		'video/mpeg': 'mpeg',
+		'video/mov': 'mov',
+		'video/x-msvideo': 'avi',
+		'video/x-flv': 'flv',
+		'video/webm': 'webm',
+		'video/x-ms-wmv': 'wmv',
+		'video/3gpp': '3gp',
+		'application/pdf': 'pdf',
 	};
-	return map[mimeType] || 'png';
+	return map[mimeType] || 'bin';
 }
 
 /**
@@ -105,10 +128,10 @@ function isValidBase64(str: string): boolean {
 }
 
 /**
- * Save an image attachment to the vault
- * Returns the path of the saved file
+ * Save an attachment to the vault.
+ * Returns the path of the saved file.
  */
-export async function saveImageToVault(app: App, attachment: ImageAttachment, folder?: string): Promise<string> {
+export async function saveAttachmentToVault(app: App, attachment: InlineAttachment, folder?: string): Promise<string> {
 	// Use provided folder or get from Obsidian config
 	const folderPath = folder ?? getAttachmentFolder(app);
 
@@ -120,12 +143,13 @@ export async function saveImageToVault(app: App, attachment: ImageAttachment, fo
 	// Generate filename with random suffix to prevent collisions
 	const ext = getExtensionFromMimeType(attachment.mimeType);
 	const randomSuffix = Math.random().toString(36).substring(2, 8);
-	const filename = `pasted-image-${Date.now()}-${randomSuffix}.${ext}`;
+	const prefix = attachment.mimeType.startsWith('image/') ? 'pasted-image' : 'attachment';
+	const filename = `${prefix}-${Date.now()}-${randomSuffix}.${ext}`;
 	const filePath = folderPath ? `${folderPath}/${filename}` : filename;
 
 	// Validate and convert base64 to binary with error handling
 	if (!isValidBase64(attachment.base64)) {
-		throw new Error('Invalid base64 image data');
+		throw new Error('Invalid base64 data');
 	}
 
 	let bytes: Uint8Array;
@@ -136,7 +160,7 @@ export async function saveImageToVault(app: App, attachment: ImageAttachment, fo
 			bytes[i] = binaryString.charCodeAt(i);
 		}
 	} catch (error) {
-		throw new Error('Failed to decode base64 image data');
+		throw new Error('Failed to decode base64 data');
 	}
 
 	// Create file in vault
@@ -144,3 +168,6 @@ export async function saveImageToVault(app: App, attachment: ImageAttachment, fo
 
 	return filePath;
 }
+
+/** Backward-compatible alias */
+export const saveImageToVault = saveAttachmentToVault;
