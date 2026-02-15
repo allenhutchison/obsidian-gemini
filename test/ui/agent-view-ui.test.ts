@@ -109,7 +109,9 @@ describe('AgentViewUI', () => {
 			const el = document.createElement(tag);
 			if (options?.cls) el.className = options.cls;
 			if (options?.attr) {
-				Object.entries(options.attr).forEach(([k, v]) => el.setAttribute(k, v as string));
+				Object.entries(options.attr).forEach(([k, v]) => {
+					el.setAttribute(k, v as string);
+				});
 			}
 			if (options?.text) el.textContent = options.text;
 			return el;

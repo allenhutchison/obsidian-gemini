@@ -85,8 +85,8 @@ When you drop a file, the plugin classifies it based on its extension:
 **Supported Binary Formats:**
 
 - **Images**: PNG, JPEG, GIF, WebP, HEIC, HEIF
-- **Audio**: WAV, MP3, AIFF, AAC, OGG, FLAC
-- **Video**: MP4, MPEG, MOV, AVI, FLV, WebM, WMV, 3GP
+- **Audio**: WAV, MP3, AAC, FLAC
+- **Video**: MP4, MPEG, MOV, FLV, MPG, WebM, WMV, 3GP
 - **Documents**: PDF
 
 **How It Works:**

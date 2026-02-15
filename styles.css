@@ -4206,6 +4206,7 @@ If your plugin does not need CSS, delete this file.
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+	min-width: 0;
 	background-color: var(--background-secondary);
 	width: auto;
 	min-width: 60px;
@@ -4228,6 +4229,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-attachment-label {
+	display: block;
 	font-size: 9px;
 	color: var(--text-muted);
 	text-overflow: ellipsis;
