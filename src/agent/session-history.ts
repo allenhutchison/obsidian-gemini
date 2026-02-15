@@ -283,39 +283,70 @@ export class SessionHistory {
 	 * Apply session metadata to file frontmatter using Obsidian API
 	 */
 	private async applySessionFrontmatter(file: TFile, session: ChatSession): Promise<void> {
-		const contextFileLinks = session.context.contextFiles.map((f) => `[[${f.basename}]]`);
-
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			// Required fields - always set
 			frontmatter.session_id = session.id;
 			frontmatter.type = session.type;
 			frontmatter.title = session.title;
-			frontmatter.context_files = contextFileLinks;
-			frontmatter.enabled_tools = session.context.enabledTools;
-			frontmatter.require_confirmation = session.context.requireConfirmation;
 			frontmatter.created = session.created.toISOString();
 			frontmatter.last_active = session.lastActive.toISOString();
 
+			// Optional fields - set when present, delete when absent to remove stale values
 			if (session.sourceNotePath) {
 				frontmatter.source_note_path = session.sourceNotePath;
+			} else {
+				delete frontmatter.source_note_path;
+			}
+
+			// Context fields
+			if (session.context?.contextFiles?.length) {
+				frontmatter.context_files = session.context.contextFiles.map((f) => `[[${f.basename}]]`);
+			} else {
+				delete frontmatter.context_files;
+			}
+
+			if (session.context?.enabledTools?.length) {
+				frontmatter.enabled_tools = session.context.enabledTools;
+			} else {
+				delete frontmatter.enabled_tools;
+			}
+
+			if (session.context?.requireConfirmation !== undefined) {
+				frontmatter.require_confirmation = session.context.requireConfirmation;
+			} else {
+				delete frontmatter.require_confirmation;
 			}
 
 			// Model config fields
 			if (session.modelConfig?.model) {
 				frontmatter.model = session.modelConfig.model;
+			} else {
+				delete frontmatter.model;
 			}
+
 			if (session.modelConfig?.temperature !== undefined) {
 				frontmatter.temperature = session.modelConfig.temperature;
+			} else {
+				delete frontmatter.temperature;
 			}
+
 			if (session.modelConfig?.topP !== undefined) {
 				frontmatter.top_p = session.modelConfig.topP;
+			} else {
+				delete frontmatter.top_p;
 			}
+
 			if (session.modelConfig?.promptTemplate) {
 				frontmatter.prompt_template = session.modelConfig.promptTemplate;
+			} else {
+				delete frontmatter.prompt_template;
 			}
 
 			// Additional metadata
 			if (session.metadata) {
 				frontmatter.metadata = session.metadata;
+			} else {
+				delete frontmatter.metadata;
 			}
 		});
 	}
