@@ -464,6 +464,26 @@ export class AgentViewUI {
 						const trimmed = line.trim();
 						if (!trimmed) continue;
 
+						// Check Obsidian URI: obsidian://open?vault=...&file=...
+						if (trimmed.startsWith('obsidian://')) {
+							try {
+								const url = new URL(trimmed);
+								const filePath = url.searchParams.get('file');
+								if (filePath) {
+									const decoded = decodeURIComponent(filePath);
+									const resolved = resolvePath(decoded);
+									if (resolved) {
+										droppedFiles.push(resolved);
+									} else {
+										this.plugin.logger.debug(`[AgentViewUI] Failed to resolve obsidian URI file param: ${decoded}`);
+									}
+								}
+							} catch (err) {
+								this.plugin.logger.debug(`[AgentViewUI] Failed to parse obsidian URI: ${trimmed}`);
+							}
+							continue;
+						}
+
 						// Check Wikilink: [[Path|Name]] or [[Path]]
 						const wikiMatch = trimmed.match(/^\[\[(.*?)(\|.*)?\]\]$/);
 						if (wikiMatch) {
