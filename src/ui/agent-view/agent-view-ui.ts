@@ -389,6 +389,27 @@ export class AgentViewUI {
 			// --- Handle Vault File Drops ---
 			const droppedFiles: (TFile | TFolder)[] = [];
 
+			// Debug: log all dataTransfer types and data
+			if (e.dataTransfer) {
+				this.plugin.logger.debug('[AgentViewUI] Drop event dataTransfer types:', Array.from(e.dataTransfer.types));
+				for (const type of Array.from(e.dataTransfer.types)) {
+					if (type !== 'Files') {
+						this.plugin.logger.debug(`[AgentViewUI] dataTransfer[${type}]:`, e.dataTransfer.getData(type));
+					}
+				}
+				if (e.dataTransfer.files?.length) {
+					this.plugin.logger.debug(
+						'[AgentViewUI] dataTransfer files:',
+						Array.from(e.dataTransfer.files).map((f) => ({
+							name: f.name,
+							type: f.type,
+							size: f.size,
+							path: (f as any).path,
+						}))
+					);
+				}
+			}
+
 			// Helper to resolve path to file/folder
 			const resolvePath = (path: string): TFile | TFolder | null => {
 				const abstractFile = this.app.vault.getAbstractFileByPath(path);
@@ -473,6 +494,14 @@ export class AgentViewUI {
 								this.plugin.logger.debug(`[AgentViewUI] Failed to decode markdown link path: ${mdMatch[2]}`);
 							}
 							continue;
+						}
+
+						// Fallback: try resolving as a plain vault path
+						const plainResolved = resolvePath(trimmed);
+						if (plainResolved) {
+							droppedFiles.push(plainResolved);
+						} else {
+							this.plugin.logger.debug(`[AgentViewUI] Could not resolve dropped text as vault path: ${trimmed}`);
 						}
 					}
 				}
