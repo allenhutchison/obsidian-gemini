@@ -97,6 +97,40 @@ export function classifyFile(extension: string): FileClassification {
 }
 
 /**
+ * Detect whether a WebM buffer contains a video track by searching for
+ * video codec IDs (V_VP8, V_VP9, V_AV1) in the Matroska container header.
+ * Returns 'audio/webm' if no video track is found, 'video/webm' otherwise.
+ */
+export function detectWebmMimeType(buffer: ArrayBuffer): string {
+	const bytes = new Uint8Array(buffer);
+	// Only scan the first 4KB — track metadata is near the start
+	const scanLimit = Math.min(bytes.length, 4096);
+
+	// Look for video codec ID strings: "V_VP8", "V_VP9", "V_AV1"
+	const videoSignatures = [
+		[0x56, 0x5f, 0x56, 0x50, 0x38], // V_VP8
+		[0x56, 0x5f, 0x56, 0x50, 0x39], // V_VP9
+		[0x56, 0x5f, 0x41, 0x56, 0x31], // V_AV1
+	];
+
+	for (let i = 0; i < scanLimit - 5; i++) {
+		for (const sig of videoSignatures) {
+			if (
+				bytes[i] === sig[0] &&
+				bytes[i + 1] === sig[1] &&
+				bytes[i + 2] === sig[2] &&
+				bytes[i + 3] === sig[3] &&
+				bytes[i + 4] === sig[4]
+			) {
+				return 'video/webm';
+			}
+		}
+	}
+
+	return 'audio/webm';
+}
+
+/**
  * Convert an ArrayBuffer to a base64 string.
  */
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {

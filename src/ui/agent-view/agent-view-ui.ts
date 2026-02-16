@@ -18,6 +18,7 @@ import {
 	classifyFile,
 	FileCategory,
 	arrayBufferToBase64,
+	detectWebmMimeType,
 	GEMINI_INLINE_DATA_LIMIT,
 } from '../../utils/file-classification';
 
@@ -602,9 +603,12 @@ export class AgentViewUI {
 
 						const base64 = arrayBufferToBase64(buffer);
 						const classification = classifyFile(file.extension);
+						// For .webm files, detect audio vs video from container header
+						const mimeType =
+							file.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
 						const attachment: InlineAttachment = {
 							base64,
-							mimeType: classification.mimeType,
+							mimeType,
 							id: generateAttachmentId(),
 							vaultPath: file.path,
 							fileName: file.name,

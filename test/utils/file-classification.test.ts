@@ -2,6 +2,7 @@ import {
 	classifyFile,
 	FileCategory,
 	arrayBufferToBase64,
+	detectWebmMimeType,
 	GEMINI_INLINE_DATA_LIMIT,
 	GEMINI_INLINE_BINARY_MIMES,
 } from '../../src/utils/file-classification';
@@ -141,6 +142,34 @@ describe('file-classification', () => {
 			const result = arrayBufferToBase64(buffer);
 			// Verify it's valid base64
 			expect(() => atob(result)).not.toThrow();
+		});
+	});
+
+	describe('detectWebmMimeType', () => {
+		it('should return video/webm when VP8 codec is present', () => {
+			// Create a buffer with "V_VP8" embedded
+			const data = new Uint8Array([0x00, 0x56, 0x5f, 0x56, 0x50, 0x38, 0x00]);
+			expect(detectWebmMimeType(data.buffer)).toBe('video/webm');
+		});
+
+		it('should return video/webm when VP9 codec is present', () => {
+			const data = new Uint8Array([0x00, 0x56, 0x5f, 0x56, 0x50, 0x39, 0x00]);
+			expect(detectWebmMimeType(data.buffer)).toBe('video/webm');
+		});
+
+		it('should return video/webm when AV1 codec is present', () => {
+			const data = new Uint8Array([0x00, 0x56, 0x5f, 0x41, 0x56, 0x31, 0x00]);
+			expect(detectWebmMimeType(data.buffer)).toBe('video/webm');
+		});
+
+		it('should return audio/webm when no video codec is found', () => {
+			// Buffer with no video codec signatures
+			const data = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x00, 0x00, 0x00]);
+			expect(detectWebmMimeType(data.buffer)).toBe('audio/webm');
+		});
+
+		it('should return audio/webm for empty buffer', () => {
+			expect(detectWebmMimeType(new ArrayBuffer(0))).toBe('audio/webm');
 		});
 	});
 
