@@ -91,11 +91,11 @@ When you drop a file, the plugin classifies it based on its extension:
 
 **How It Works:**
 
-1. When you add a binary file, a preview appears above the input (thumbnail for images, icon for other types)
+1. When you add a binary file, a preview appears above the input (thumbnail for images, icon + filename for other types)
 2. Click the × button on any preview to remove it before sending
 3. Pasted/external images are saved to your vault's attachment folder; vault files are referenced in place
 4. The AI receives both the file content and its vault path for referencing
-5. Files appear in the chat with wikilink embeds (e.g., `![[attachments/pasted-image.png]]`)
+5. Images appear in the chat as wikilink embeds (e.g., `![[attachments/pasted-image.png]]`); non-image attachments (PDF, audio, video) are listed by vault path and type label
 
 **Size Limits:**
 

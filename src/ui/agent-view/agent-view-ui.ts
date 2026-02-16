@@ -587,7 +587,7 @@ export class AgentViewUI {
 
 				// Route binary files → inline attachments
 				let binaryCount = 0;
-				let cumulativeSize = 0;
+				let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
 				const sizeLimitExceeded: string[] = [];
 
 				for (const file of binaryFiles) {

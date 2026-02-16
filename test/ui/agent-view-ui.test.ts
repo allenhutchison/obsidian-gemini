@@ -93,7 +93,7 @@ describe('AgentViewUI', () => {
 			isCurrentSession: jest.fn(),
 			addAttachment: jest.fn(),
 			removeAttachment: jest.fn(),
-			getAttachments: jest.fn(),
+			getAttachments: jest.fn().mockReturnValue([]),
 			handleDroppedFiles: jest.fn(),
 		};
 
