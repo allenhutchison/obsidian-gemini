@@ -16,7 +16,7 @@ import { AgentViewContext } from './agent-view-context';
 import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view-session';
 import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-tools';
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
-import { ImageAttachment } from './image-attachment';
+import { InlineAttachment } from './inline-attachment';
 
 // Import modals from agent-view directory
 import { FilePickerModal } from './file-picker-modal';
@@ -60,7 +60,7 @@ export class AgentView extends ItemView {
 	private cancellationRequested: boolean = false;
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private activeFileChangeHandler: () => void;
-	private pendingImageAttachments: ImageAttachment[] = [];
+	private pendingAttachments: InlineAttachment[] = [];
 	private imagePreviewContainer: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
@@ -123,9 +123,10 @@ export class AgentView extends ItemView {
 			updateSessionMetadata: () => this.updateSessionMetadata(),
 			loadSession: (session: ChatSession) => this.loadSession(session),
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
-			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
-			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
-			getImageAttachments: () => this.pendingImageAttachments,
+			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
+			removeAttachment: (id: string) => this.removeAttachment(id),
+			getAttachments: () => this.pendingAttachments,
+			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
 		};
 
 		// Create the main interface using AgentViewUI
@@ -206,35 +207,40 @@ export class AgentView extends ItemView {
 		}
 
 		const { text: message, files, formattedMessage } = this.fileChips.extractMessageContent();
-		// Allow sending with only images (no text)
-		if (!message && files.length === 0 && this.pendingImageAttachments.length === 0) return;
+		// Allow sending with only attachments (no text)
+		if (!message && files.length === 0 && this.pendingAttachments.length === 0) return;
 
-		// Capture pending images and clear them
-		const imageAttachments = [...this.pendingImageAttachments];
-		this.pendingImageAttachments = [];
-		this.ui.updateImagePreview(this.imagePreviewContainer, [], (id) => this.removeImageAttachment(id));
+		// Capture pending attachments and clear them
+		const attachments = [...this.pendingAttachments];
+		this.pendingAttachments = [];
+		this.ui.updateAttachmentPreview(this.imagePreviewContainer, [], (id) => this.removeAttachment(id));
 
-		// Save images to vault and get their paths
-		const savedImagePaths: string[] = [];
+		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
+		const savedAttachments: Array<{ attachment: InlineAttachment; path: string }> = [];
 		const failedSaves: number[] = [];
-		for (let i = 0; i < imageAttachments.length; i++) {
-			const attachment = imageAttachments[i];
+		for (let i = 0; i < attachments.length; i++) {
+			const attachment = attachments[i];
+			if (attachment.vaultPath) {
+				// Already in vault (from drag-drop), skip saving
+				savedAttachments.push({ attachment, path: attachment.vaultPath });
+				continue;
+			}
 			try {
-				const { saveImageToVault } = await import('./image-attachment');
-				const path = await saveImageToVault(this.app, attachment);
+				const { saveAttachmentToVault } = await import('./inline-attachment');
+				const path = await saveAttachmentToVault(this.app, attachment);
 				attachment.vaultPath = path;
-				savedImagePaths.push(path);
+				savedAttachments.push({ attachment, path });
 			} catch (err) {
-				this.plugin.logger.error('Failed to save image to vault:', err);
+				this.plugin.logger.error('Failed to save attachment to vault:', err);
 				failedSaves.push(i + 1);
 			}
 		}
 
-		// Notify user of any save failures (images will still be sent to AI)
+		// Notify user of any save failures (attachments will still be sent to AI)
 		if (failedSaves.length > 0) {
 			const failedList = failedSaves.join(', ');
 			new Notice(
-				`Failed to save ${failedSaves.length === 1 ? 'image' : 'images'} #${failedList} to vault. ` +
+				`Failed to save ${failedSaves.length === 1 ? 'attachment' : 'attachments'} #${failedList} to vault. ` +
 					`${failedSaves.length === 1 ? 'It' : 'They'} will still be sent to the AI but won't be stored locally.`,
 				5000
 			);
@@ -256,13 +262,41 @@ export class AgentView extends ItemView {
 		// Show progress bar
 		this.progress.show('Thinking...', 'thinking');
 
-		// Build message with image thumbnails for display (use wikilinks for saved images)
+		// Build message with attachment previews for display
 		let displayMessage = formattedMessage;
-		if (savedImagePaths.length > 0) {
-			const imageLinks = savedImagePaths.map((path) => `![[${path}]]`).join('\n');
-			// Explicitly show the path context to ensure AI reliability (User preference: reliability > hidden)
-			const contextNote = `\n> [!info] Image Source\n> ${savedImagePaths.map((p) => `\`${p}\``).join('\n> ')}`;
-			displayMessage = displayMessage + '\n\n' + imageLinks + contextNote;
+		if (savedAttachments.length > 0) {
+			const imagePaths: string[] = [];
+			const otherPaths: { path: string; label: string }[] = [];
+
+			for (const { attachment, path } of savedAttachments) {
+				const mimeType = attachment.mimeType || '';
+				if (mimeType.startsWith('image/')) {
+					imagePaths.push(path);
+				} else {
+					let label = 'Attachment';
+					if (mimeType.startsWith('audio/')) label = 'Audio';
+					else if (mimeType.startsWith('video/')) label = 'Video';
+					else if (mimeType === 'application/pdf') label = 'PDF';
+					otherPaths.push({ path, label });
+				}
+			}
+
+			const parts: string[] = [];
+
+			if (imagePaths.length > 0) {
+				const imageLinks = imagePaths.map((path) => `![[${path}]]`).join('\n');
+				const contextNote = `\n> [!info] Image Source\n> ${imagePaths.map((p) => `\`${p}\``).join('\n> ')}`;
+				parts.push(imageLinks + contextNote);
+			}
+
+			if (otherPaths.length > 0) {
+				const contextNote = `> [!info] Attachment Source\n> ${otherPaths.map((o) => `\`${o.path}\` (${o.label})`).join('\n> ')}`;
+				parts.push(contextNote);
+			}
+
+			if (parts.length > 0) {
+				displayMessage = displayMessage + '\n\n' + parts.join('\n\n');
+			}
 		}
 
 		// Display user message with formatted version (includes markdown links and images)
@@ -340,13 +374,13 @@ Example interpretations:
 The mentioned files are included in the context below for reference.`;
 			}
 
-			// Add image path information if images were attached
-			if (savedImagePaths.length > 0) {
-				const pathList = savedImagePaths.map((p) => `- ${p}`).join('\n');
-				additionalInstructions += `\n\nIMAGE ATTACHMENTS: The user has attached ${savedImagePaths.length} image(s) to this message. The images have been saved to the vault at these paths:
+			// Add attachment path information if attachments were saved
+			if (savedAttachments.length > 0) {
+				const pathList = savedAttachments.map(({ path }) => `- ${path}`).join('\n');
+				additionalInstructions += `\n\nATTACHMENTS: The user has attached ${savedAttachments.length} file(s) to this message. They have been saved to the vault at these paths:
 ${pathList}
-To embed any of these images in a note, use the wikilink format: ![[path/to/image.png]]
-To reference an image in your response, use the path shown above.`;
+To embed images in a note, use the wikilink format: ![[path/to/image.png]]
+To reference an attachment in your response, use the path shown above.`;
 			}
 
 			// Add context information if available
@@ -381,7 +415,7 @@ To reference an image in your response, use the path shown above.`;
 					customPrompt: customPrompt, // Custom prompt template (if configured)
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
-					imageAttachments: imageAttachments.map((a) => ({ base64: a.base64, mimeType: a.mimeType })),
+					inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),
 				};
 
 				// Create model API for this session
@@ -916,29 +950,39 @@ To reference an image in your response, use the path shown above.`;
 			updateSessionMetadata: () => this.updateSessionMetadata(),
 			loadSession: (session: ChatSession) => this.loadSession(session),
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
-			addImageAttachment: (attachment: ImageAttachment) => this.addImageAttachment(attachment),
-			removeImageAttachment: (id: string) => this.removeImageAttachment(id),
-			getImageAttachments: () => this.pendingImageAttachments,
+			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
+			removeAttachment: (id: string) => this.removeAttachment(id),
+			getAttachments: () => this.pendingAttachments,
+			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
 		};
 	}
 
 	/**
-	 * Add an image attachment to pending list
+	 * Handle dropped text files by inserting context chips
 	 */
-	private addImageAttachment(attachment: ImageAttachment): void {
-		this.pendingImageAttachments.push(attachment);
-		this.ui.updateImagePreview(this.imagePreviewContainer, this.pendingImageAttachments, (id) =>
-			this.removeImageAttachment(id)
+	private handleDroppedFiles(files: TFile[]) {
+		for (const file of files) {
+			this.insertFileChip(file);
+		}
+	}
+
+	/**
+	 * Add an attachment to pending list
+	 */
+	private addAttachment(attachment: InlineAttachment): void {
+		this.pendingAttachments.push(attachment);
+		this.ui.updateAttachmentPreview(this.imagePreviewContainer, this.pendingAttachments, (id) =>
+			this.removeAttachment(id)
 		);
 	}
 
 	/**
-	 * Remove an image attachment from pending list
+	 * Remove an attachment from pending list
 	 */
-	private removeImageAttachment(id: string): void {
-		this.pendingImageAttachments = this.pendingImageAttachments.filter((a) => a.id !== id);
-		this.ui.updateImagePreview(this.imagePreviewContainer, this.pendingImageAttachments, (id) =>
-			this.removeImageAttachment(id)
+	private removeAttachment(id: string): void {
+		this.pendingAttachments = this.pendingAttachments.filter((a) => a.id !== id);
+		this.ui.updateAttachmentPreview(this.imagePreviewContainer, this.pendingAttachments, (id) =>
+			this.removeAttachment(id)
 		);
 	}
 

@@ -8,6 +8,8 @@ export type {
 	ModelResponse,
 	BaseModelRequest,
 	ExtendedModelRequest,
+	InlineDataPart,
+	ImagePart,
 	ToolCall,
 	ToolDefinition,
 } from './interfaces/model-api';

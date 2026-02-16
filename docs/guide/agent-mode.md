@@ -60,29 +60,49 @@ Agent: I'll help you find and summarize your meeting notes. Let me:
 [Executes write_file tool to create summary]
 ```
 
-### Image Support
+### File Attachments & Drag-and-Drop
 
-You can include images in your chat for multimodal AI analysis:
+You can include images, audio, video, PDFs, and text files in your chat. Files are automatically classified and routed:
 
-**Adding Images:**
+**Adding Files:**
 
 - **Paste** images directly from your clipboard (Ctrl/Cmd+V)
-- **Drag and drop** image files into the input box
-- Multiple images can be attached to a single message
+- **Drag and drop** files from your vault's file explorer into the input box
+- **Drag and drop** files from your OS file manager (if they're inside the vault)
+- **Drag and drop** folders to include all contained files
+- Multiple files can be attached to a single message
 
-**Supported Formats:**
+**How Files Are Routed:**
 
-- PNG, JPEG, GIF, WebP
+When you drop a file, the plugin classifies it based on its extension:
+
+| Category                      | Extensions                                                                    | Action                                                             |
+| ----------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Text**                      | `.md`, `.txt`, `.ts`, `.js`, `.json`, `.html`, `.css`, `.py`, etc.            | Added as context chips (the AI reads the file content)             |
+| **Binary (Gemini-supported)** | `.png`, `.jpg`, `.gif`, `.webp`, `.pdf`, `.mp3`, `.wav`, `.mp4`, `.mov`, etc. | Sent as inline data (the AI processes the binary content directly) |
+| **Unsupported**               | `.zip`, `.exe`, `.dmg`, etc.                                                  | Skipped with a notification                                        |
+
+**Supported Binary Formats:**
+
+- **Images**: PNG, JPEG, GIF, WebP, HEIC, HEIF
+- **Audio**: WAV, MP3, AAC, FLAC
+- **Video**: MP4, MPEG, MOV, FLV, MPG, WebM, WMV, 3GP
+- **Documents**: PDF
 
 **How It Works:**
 
-1. When you paste or drop an image, a thumbnail preview appears above the input
-2. Click the × button on any thumbnail to remove it before sending
-3. When you send the message, images are saved to your vault's attachment folder
-4. The AI receives both the image content and its vault path for referencing
-5. Images appear in the chat with wikilink embeds (e.g., `![[attachments/pasted-image.png]]`)
+1. When you add a binary file, a preview appears above the input (thumbnail for images, icon + filename for other types)
+2. Click the × button on any preview to remove it before sending
+3. Pasted/external images are saved to your vault's attachment folder; vault files are referenced in place
+4. The AI receives both the file content and its vault path for referencing
+5. Images appear in the chat as wikilink embeds (e.g., `![[attachments/pasted-image.png]]`); non-image attachments (PDF, audio, video) are listed by vault path and type label
 
-> **Privacy Note**: Images are sent to the Gemini API for analysis. Avoid pasting images containing sensitive, confidential, or personal information.
+**Size Limits:**
+
+- Cumulative inline data is limited to **20 MB** per message
+- Files exceeding the limit are skipped with a notification
+
+> **Privacy Note**: Attached files are sent to the Gemini API for analysis. Avoid attaching files containing sensitive, confidential, or personal information.
 
 **Usage Examples:**
 
@@ -93,24 +113,31 @@ Agent: I can see a TypeScript error in your screenshot. The issue is...
 ```
 
 ```text
-User: [drops multiple images] Compare these two diagrams and summarize the differences
+User: [drops a PDF] Summarize the key points from this document
 
-Agent: Looking at both images, I can see the following differences...
+Agent: Based on the PDF, here are the main points...
+```
+
+```text
+User: [drops a folder with mixed files] Review these project files
+
+Agent: I can see the markdown notes in context and the attached images...
 ```
 
 **Combining with Context Files:**
 
-Images work alongside @ mentions and context files. You can:
+Attachments work alongside @ mentions and context files. You can:
 
-- Reference images in context files: "Look at the screenshot and update @ProjectNotes with the solution"
+- Reference attached files in context: "Look at the screenshot and update @ProjectNotes with the solution"
 - Ask the agent to embed images in notes it creates
-- Use image paths in wikilinks: `![[path/to/image.png]]`
+- Use file paths in wikilinks: `![[path/to/image.png]]`
 
 **Edge Cases:**
 
-- Large images are sent as-is (no automatic compression)
-- Unsupported formats (non-PNG/JPEG/GIF/WebP) are ignored with a notification
-- If image processing fails, you'll see a notification
+- Large files are sent as-is (no automatic compression)
+- Unsupported file types are skipped with a notification
+- If file processing fails, you'll see a notification
+- Dropping a folder recursively includes all child files
 
 ### Context Files
 

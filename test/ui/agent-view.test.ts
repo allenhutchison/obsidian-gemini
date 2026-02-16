@@ -12,6 +12,22 @@ jest.mock('../../src/tools/execution-engine');
 jest.mock('../../src/ui/agent-view/file-picker-modal');
 jest.mock('../../src/ui/agent-view/session-settings-modal');
 
+// Mock external ESM dependencies
+jest.mock('@allenhutchison/gemini-utils', () => ({
+	ResearchManager: class {},
+	ReportGenerator: class {},
+	Interaction: class {},
+	EXTENSION_TO_MIME: {
+		'.md': 'text/markdown',
+		'.txt': 'text/plain',
+		'.pdf': 'application/pdf',
+	},
+	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json', '.css']),
+}));
+jest.mock('@google/genai', () => ({
+	GoogleGenAI: class {},
+}));
+
 // Mock Obsidian
 jest.mock('obsidian', () => {
 	const mock = jest.requireActual('../../__mocks__/obsidian.js');
@@ -1048,12 +1064,12 @@ describe('AgentView UI Tests', () => {
 				update: jest.fn(),
 			};
 
-			// Mock image attachment support (added in image-paste feature)
-			(agentView as any).pendingImageAttachments = [];
+			// Mock attachment support
+			(agentView as any).pendingAttachments = [];
 			(agentView as any).imagePreviewContainer = document.createElement('div');
 			(agentView as any).ui = {
 				...((agentView as any).ui || {}),
-				updateImagePreview: jest.fn(),
+				updateAttachmentPreview: jest.fn(),
 			};
 
 			// Set cancellation flag (simulating previous stop)

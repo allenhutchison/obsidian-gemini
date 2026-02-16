@@ -327,16 +327,15 @@ export class GeminiClient implements ModelApi {
 			userParts.push({ text: extReq.userMessage });
 		}
 
-		// Add image attachments as inlineData parts
-		if (extReq.imageAttachments && extReq.imageAttachments.length > 0) {
-			for (const img of extReq.imageAttachments) {
-				userParts.push({
-					inlineData: {
-						mimeType: img.mimeType,
-						data: img.base64,
-					},
-				});
-			}
+		// Add inline data attachments (images, audio, video, PDF)
+		const allAttachments = [...(extReq.inlineAttachments || []), ...(extReq.imageAttachments || [])];
+		for (const attachment of allAttachments) {
+			userParts.push({
+				inlineData: {
+					mimeType: attachment.mimeType,
+					data: attachment.base64,
+				},
+			});
 		}
 
 		// Add current user message with all parts (only if there are parts)
