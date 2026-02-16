@@ -62,10 +62,11 @@ export interface FileClassification {
  * @param extension - File extension without leading dot (e.g. "md", "png", "zip")
  */
 export function classifyFile(extension: string): FileClassification {
-	const ext = extension.toLowerCase();
+	// Normalize: strip leading dot, lowercase
+	const ext = extension.replace(/^\./, '').toLowerCase();
 
 	// Check binary types first (more specific match)
-	if (ext in GEMINI_INLINE_BINARY_MIMES) {
+	if (Object.prototype.hasOwnProperty.call(GEMINI_INLINE_BINARY_MIMES, ext)) {
 		return {
 			category: FileCategory.GEMINI_BINARY,
 			mimeType: GEMINI_INLINE_BINARY_MIMES[ext],
@@ -74,7 +75,7 @@ export function classifyFile(extension: string): FileClassification {
 
 	// Check text types via gemini-utils EXTENSION_TO_MIME (uses dot-prefixed keys)
 	const dotExt = `.${ext}`;
-	if (dotExt in EXTENSION_TO_MIME) {
+	if (Object.prototype.hasOwnProperty.call(EXTENSION_TO_MIME, dotExt)) {
 		return {
 			category: FileCategory.TEXT,
 			mimeType: EXTENSION_TO_MIME[dotExt],
