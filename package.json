@@ -27,10 +27,10 @@
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
-		"@google/genai": "^1.41.0",
+		"@google/genai": "^1.42.0",
 		"@modelcontextprotocol/sdk": "^1.26.0",
 		"@types/jest": "^30.0.0",
-		"@types/node": "^25.2.3",
+		"@types/node": "^25.3.0",
 		"builtin-modules": "5.0.0",
 		"codemirror-companion-extension": "^0.0.11",
 		"esbuild": "0.27.3",
