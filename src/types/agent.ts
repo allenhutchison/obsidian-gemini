@@ -8,6 +8,7 @@ export enum ToolCategory {
 	VAULT_OPERATIONS = 'vault_ops', // Create, modify, delete notes
 	EXTERNAL_MCP = 'external_mcp', // MCP server integrations
 	SYSTEM = 'system', // System operations
+	SKILLS = 'skills', // Agent skill management
 }
 
 /**
@@ -166,7 +167,12 @@ export const DEFAULT_CONTEXTS = {
 
 	AGENT_SESSION: {
 		contextFiles: [],
-		enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS, ToolCategory.EXTERNAL_MCP],
+		enabledTools: [
+			ToolCategory.READ_ONLY,
+			ToolCategory.VAULT_OPERATIONS,
+			ToolCategory.EXTERNAL_MCP,
+			ToolCategory.SKILLS,
+		],
 		requireConfirmation: [
 			DestructiveAction.MODIFY_FILES,
 			DestructiveAction.CREATE_FILES,

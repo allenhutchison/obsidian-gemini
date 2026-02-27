@@ -252,6 +252,70 @@ Get the content from this documentation page
 Analyze this blog post and summarize key points
 ```
 
+### Skill Tools
+
+Gemini Scribe supports an extensible skills system based on the [agentskills.io](https://agentskills.io) specification. Skills are self-contained packages of instructions that give the agent specialized knowledge and workflows.
+
+#### How Skills Work
+
+Skills are stored in your plugin state folder at `gemini-scribe/skills/`. Each skill is a directory containing a `SKILL.md` file with instructions the agent can load on demand. The agent automatically knows which skills are available — their names and descriptions are included in every agent session.
+
+When the agent encounters a task that matches an available skill, it will activate the skill to load its full instructions before proceeding.
+
+#### activate_skill
+
+Load a skill's full instructions or resources:
+
+```
+Activate the code-review skill and review my latest note
+Use the meeting-notes skill to process my meeting notes
+```
+
+You can also ask the agent to load specific resources from a skill:
+
+```
+Load the reference docs from the code-review skill
+```
+
+#### create_skill
+
+Create new skills from your conversations:
+
+```
+Create a skill called "daily-review" that helps me review and organize my daily notes
+```
+
+The agent will create a properly formatted `SKILL.md` file with the name, description, and instructions you provide. Skills you create will be available in all future sessions.
+
+#### SKILL.md Format
+
+Each skill follows a simple format — YAML frontmatter with a name and description, followed by markdown instructions:
+
+```yaml
+---
+name: my-skill
+description: >-
+  Description of what this skill does and when to use it.
+---
+# My Skill
+
+Step-by-step instructions for the agent...
+```
+
+Skills can also include optional subdirectories:
+
+- `references/` — Detailed reference documents
+- `assets/` — Templates, data files
+- `scripts/` — Reference scripts (read-only in Obsidian)
+
+#### Discovering Available Skills
+
+The agent automatically knows which skills are installed. Simply ask:
+
+```
+What skills do you have available?
+```
+
 ## Session Configuration
 
 ### Session-Level Settings

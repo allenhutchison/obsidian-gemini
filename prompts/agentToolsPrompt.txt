@@ -99,3 +99,13 @@ When adding content to the "top" of a note:
 - ALWAYS read files BEFORE deleting them
 - ALWAYS read files BEFORE moving/renaming them
 - If you need to combine files and delete originals, read ALL files first, then write combined, then delete
+
+{{#if availableSkills}}
+## Available Skills
+
+You have access to the following skills. Use the `activate_skill` tool to load a skill's full instructions when you need its capabilities. Skills provide specialized knowledge, workflows, and reference materials.
+
+{{#each availableSkills}}
+- **{{this.name}}**: {{this.description}}
+{{/each}}
+{{/if}}

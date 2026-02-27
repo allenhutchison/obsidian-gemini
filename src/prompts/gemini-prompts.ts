@@ -119,7 +119,12 @@ export class GeminiPrompts {
 	 * @param agentsMemory - Optional AGENTS.md content to include
 	 * @returns Complete system prompt
 	 */
-	getSystemPromptWithCustom(availableTools?: any[], customPrompt?: CustomPrompt, agentsMemory?: string | null): string {
+	getSystemPromptWithCustom(
+		availableTools?: any[],
+		customPrompt?: CustomPrompt,
+		agentsMemory?: string | null,
+		availableSkills?: { name: string; description: string }[]
+	): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
 			this.plugin?.logger.warn('System prompt override enabled. Base functionality may be affected.');
@@ -142,7 +147,11 @@ export class GeminiPrompts {
 			const toolsList = this.formatToolsList(availableTools);
 			// Check if RAG indexing is enabled and ready
 			const ragEnabled = !!(this.plugin?.settings.ragIndexing.enabled && this.plugin?.ragIndexing?.isReady());
-			const toolsPrompt = this.agentToolsPromptTemplate({ toolsList, ragEnabled });
+			const toolsPrompt = this.agentToolsPromptTemplate({
+				toolsList,
+				ragEnabled,
+				availableSkills: availableSkills || [],
+			});
 			fullPrompt += '\n\n' + toolsPrompt;
 		}
 

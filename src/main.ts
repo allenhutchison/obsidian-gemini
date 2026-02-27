@@ -30,6 +30,7 @@ import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
+import { SkillManager } from './services/skill-manager';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -155,6 +156,7 @@ export default class ObsidianGemini extends Plugin {
 	public ragIndexing: RagIndexingService | null = null;
 	public selectionActionService: SelectionActionService;
 	public mcpManager: MCPManager | null = null;
+	public skillManager: SkillManager;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -485,6 +487,17 @@ export default class ObsidianGemini extends Plugin {
 			} catch (e) {
 				this.logger.debug('Failed to unregister image tools:', e);
 			}
+
+			// Unregister skill tools
+			try {
+				const { getSkillTools } = await import('./tools/skill-tools');
+				const skillTools = getSkillTools();
+				for (const tool of skillTools) {
+					this.toolRegistry.unregisterTool(tool.name);
+				}
+			} catch (e) {
+				this.logger.debug('Failed to unregister skill tools:', e);
+			}
 		}
 
 		// Disconnect MCP servers
@@ -587,6 +600,15 @@ export default class ObsidianGemini extends Plugin {
 		const { getImageTools } = await import('./tools/image-tools');
 		const imageTools = getImageTools();
 		for (const tool of imageTools) {
+			this.toolRegistry.registerTool(tool);
+		}
+
+		// Initialize skill manager and register skill tools
+		this.skillManager = new SkillManager(this);
+		await this.skillManager.ensureSkillsDirectory();
+		const { getSkillTools } = await import('./tools/skill-tools');
+		const skillTools = getSkillTools();
+		for (const tool of skillTools) {
 			this.toolRegistry.registerTool(tool);
 		}
 
