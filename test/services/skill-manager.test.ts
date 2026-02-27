@@ -50,6 +50,10 @@ const mockMetadataCache = {
 	getFileCache: jest.fn(),
 };
 
+const mockFileManager = {
+	processFrontMatter: jest.fn(),
+};
+
 const mockPlugin = {
 	settings: {
 		historyFolder: 'gemini-scribe',
@@ -57,6 +61,7 @@ const mockPlugin = {
 	app: {
 		vault: mockVault,
 		metadataCache: mockMetadataCache,
+		fileManager: mockFileManager,
 	},
 	logger: {
 		warn: jest.fn(),
@@ -204,6 +209,16 @@ describe('SkillManager', () => {
 
 			expect(content).toBe('No frontmatter content');
 		});
+
+		it('should return null for path traversal attempts', async () => {
+			const content = await manager.loadSkill('../../../secret');
+			expect(content).toBeNull();
+		});
+
+		it('should return null for invalid skill names', async () => {
+			const content = await manager.loadSkill('Invalid Name');
+			expect(content).toBeNull();
+		});
 	});
 
 	describe('readSkillResource', () => {
@@ -223,6 +238,21 @@ describe('SkillManager', () => {
 
 			const content = await manager.readSkillResource('my-skill', 'bad/path.md');
 
+			expect(content).toBeNull();
+		});
+
+		it('should return null for path traversal in skill name', async () => {
+			const content = await manager.readSkillResource('../../../etc', 'passwd');
+			expect(content).toBeNull();
+		});
+
+		it('should return null for path traversal in resource path', async () => {
+			const content = await manager.readSkillResource('my-skill', '../../secret.md');
+			expect(content).toBeNull();
+		});
+
+		it('should return null for absolute resource paths', async () => {
+			const content = await manager.readSkillResource('my-skill', '/etc/passwd');
 			expect(content).toBeNull();
 		});
 	});
@@ -261,22 +291,27 @@ describe('SkillManager', () => {
 	});
 
 	describe('createSkill', () => {
-		it('should create a skill directory and SKILL.md', async () => {
+		it('should create a skill directory and SKILL.md using processFrontMatter', async () => {
+			const createdFile = new TFile('gemini-scribe/skills/new-skill/SKILL.md');
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.createFolder.mockResolvedValue(undefined);
-			mockVault.create.mockResolvedValue(new TFile('gemini-scribe/skills/new-skill/SKILL.md'));
+			mockVault.create.mockResolvedValue(createdFile);
+			mockFileManager.processFrontMatter.mockImplementation(async (_file: any, callback: (fm: any) => void) => {
+				const fm: Record<string, any> = {};
+				callback(fm);
+				// Verify frontmatter was set correctly
+				expect(fm.name).toBe('new-skill');
+				expect(fm.description).toBe('A new skill');
+			});
 
 			const path = await manager.createSkill('new-skill', 'A new skill', '# Instructions\n\nDo stuff');
 
 			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/skills/new-skill');
 			expect(mockVault.create).toHaveBeenCalledWith(
 				'gemini-scribe/skills/new-skill/SKILL.md',
-				expect.stringContaining('name: new-skill')
-			);
-			expect(mockVault.create).toHaveBeenCalledWith(
-				'gemini-scribe/skills/new-skill/SKILL.md',
 				expect.stringContaining('# Instructions')
 			);
+			expect(mockFileManager.processFrontMatter).toHaveBeenCalledWith(createdFile, expect.any(Function));
 			expect(path).toBe('gemini-scribe/skills/new-skill/SKILL.md');
 		});
 

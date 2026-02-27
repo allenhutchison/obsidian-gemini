@@ -196,18 +196,18 @@ export class CreateSkillTool implements Tool {
 				};
 			}
 
-			const skillPath = await plugin.skillManager.createSkill(
-				params.name.trim(),
-				params.description.trim(),
-				params.content.trim()
-			);
+			const normalizedName = params.name.trim();
+			const normalizedDescription = params.description.trim();
+			const normalizedContent = params.content.trim();
+
+			const skillPath = await plugin.skillManager.createSkill(normalizedName, normalizedDescription, normalizedContent);
 
 			return {
 				success: true,
 				data: {
 					path: skillPath,
-					name: params.name,
-					message: `Skill "${params.name}" created successfully. It will be available via activate_skill in future sessions.`,
+					name: normalizedName,
+					message: `Skill "${normalizedName}" created successfully. It will be available via activate_skill in future sessions.`,
 				},
 			};
 		} catch (error) {

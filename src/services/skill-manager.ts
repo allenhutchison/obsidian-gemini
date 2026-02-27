@@ -120,14 +120,15 @@ export class SkillManager {
 		}
 
 		// Validate that frontmatter name matches directory name
+		// Always use dirName as the canonical name to ensure loadSkill() can resolve it
 		if (frontmatter.name !== dirName) {
 			this.plugin.logger.warn(
-				`Skill name "${frontmatter.name}" does not match directory name "${dirName}" at ${file.path}`
+				`Skill name "${frontmatter.name}" does not match directory name "${dirName}" at ${file.path}. Using directory name.`
 			);
 		}
 
 		return {
-			name: frontmatter.name,
+			name: dirName,
 			description: frontmatter.description,
 			license: frontmatter.license || undefined,
 			compatibility: frontmatter.compatibility || undefined,
@@ -140,6 +141,12 @@ export class SkillManager {
 	 * Load the full SKILL.md body content for a specific skill (progressive disclosure - level 2)
 	 */
 	async loadSkill(name: string): Promise<string | null> {
+		// Validate name to prevent path traversal
+		const nameValidation = this.validateSkillName(name);
+		if (!nameValidation.valid) {
+			return null;
+		}
+
 		const skillMdPath = normalizePath(`${this.getSkillsFolderPath()}/${name}/${SKILL_MD_FILENAME}`);
 		const file = this.plugin.app.vault.getAbstractFileByPath(skillMdPath);
 
@@ -165,7 +172,25 @@ export class SkillManager {
 	 * @param relativePath - Path relative to the skill directory (e.g., "references/REFERENCE.md")
 	 */
 	async readSkillResource(skillName: string, relativePath: string): Promise<string | null> {
+		// Validate skill name to prevent path traversal
+		const nameValidation = this.validateSkillName(skillName);
+		if (!nameValidation.valid) {
+			return null;
+		}
+
+		// Validate relativePath doesn't escape the skill directory
+		if (relativePath.includes('..') || relativePath.startsWith('/')) {
+			return null;
+		}
+
 		const resourcePath = normalizePath(`${this.getSkillsFolderPath()}/${skillName}/${relativePath}`);
+
+		// Verify resolved path stays within the skill directory
+		const skillDir = normalizePath(`${this.getSkillsFolderPath()}/${skillName}`);
+		if (!resourcePath.startsWith(skillDir + '/')) {
+			return null;
+		}
+
 		const file = this.plugin.app.vault.getAbstractFileByPath(resourcePath);
 
 		if (!(file instanceof TFile)) {
@@ -179,6 +204,12 @@ export class SkillManager {
 	 * List available resources within a skill directory
 	 */
 	async listSkillResources(skillName: string): Promise<string[]> {
+		// Validate skill name to prevent path traversal
+		const nameValidation = this.validateSkillName(skillName);
+		if (!nameValidation.valid) {
+			return [];
+		}
+
 		const skillDir = normalizePath(`${this.getSkillsFolderPath()}/${skillName}`);
 		const folder = this.plugin.app.vault.getAbstractFileByPath(skillDir);
 
@@ -243,12 +274,13 @@ export class SkillManager {
 		// Create skill directory
 		await this.plugin.app.vault.createFolder(skillDir);
 
-		// Build SKILL.md content with frontmatter
-		const skillMdContent = `---\nname: ${name}\ndescription: >-\n  ${description}\n---\n\n${content}`;
-
-		// Create SKILL.md
+		// Create SKILL.md with empty frontmatter block, then use processFrontMatter for safe YAML
 		const skillMdPath = normalizePath(`${skillDir}/${SKILL_MD_FILENAME}`);
-		await this.plugin.app.vault.create(skillMdPath, skillMdContent);
+		const file = await this.plugin.app.vault.create(skillMdPath, `---\n---\n\n${content}`);
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			frontmatter.name = name;
+			frontmatter.description = description;
+		});
 
 		return skillMdPath;
 	}
