@@ -12,8 +12,8 @@ describe('RagSearchTool', () => {
 		// Mock context with RAG indexing disabled by default
 		mockContext = {
 			plugin: {
+				apiKey: 'test-api-key',
 				settings: {
-					apiKey: 'test-api-key',
 					chatModelName: 'gemini-1.5-flash-002',
 					ragIndexing: {
 						enabled: false,

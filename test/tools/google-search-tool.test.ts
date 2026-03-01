@@ -32,8 +32,8 @@ describe('GoogleSearchTool', () => {
 		// Mock context
 		mockContext = {
 			plugin: {
+				apiKey: 'test-api-key',
 				settings: {
-					apiKey: 'test-api-key',
 					chatModelName: 'gemini-1.5-flash-002',
 					temperature: 0.7,
 				},
@@ -150,7 +150,7 @@ describe('GoogleSearchTool', () => {
 		});
 
 		it('should return error when API key is missing', async () => {
-			mockContext.plugin.settings.apiKey = '';
+			mockContext.plugin.apiKey = '';
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 

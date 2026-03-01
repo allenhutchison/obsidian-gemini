@@ -39,7 +39,7 @@ export class GoogleSearchTool implements Tool {
 
 		try {
 			// Check if API key is available
-			if (!plugin.settings.apiKey) {
+			if (!plugin.apiKey) {
 				return {
 					success: false,
 					error: 'Google API key not configured',
@@ -47,7 +47,7 @@ export class GoogleSearchTool implements Tool {
 			}
 
 			// Create a separate model instance with Google Search enabled
-			const genAI = new GoogleGenAI({ apiKey: plugin.settings.apiKey });
+			const genAI = new GoogleGenAI({ apiKey: plugin.apiKey });
 
 			// Use the models API similar to gemini-api-new.ts
 			const modelToUse = plugin.settings.chatModelName || getDefaultModelForRole('chat');

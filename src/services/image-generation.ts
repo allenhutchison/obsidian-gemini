@@ -13,7 +13,7 @@ export class ImageGeneration {
 		this.prompts = new GeminiPrompts(plugin);
 		this.client = new GeminiClient(
 			{
-				apiKey: plugin.settings.apiKey,
+				apiKey: plugin.apiKey,
 				temperature: plugin.settings.temperature,
 				topP: plugin.settings.topP,
 				streamingEnabled: false,

@@ -51,7 +51,6 @@ export interface RagIndexingSettings {
 }
 
 export interface ObsidianGeminiSettings {
-	apiKey: string;
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
@@ -87,7 +86,6 @@ export interface ObsidianGeminiSettings {
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
-	apiKey: '',
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
@@ -135,6 +133,9 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 
 export default class ObsidianGemini extends Plugin {
 	settings: ObsidianGeminiSettings;
+	public apiKey: string = '';
+
+	private static readonly SECRET_ID = 'gemini-api-key-for-gemini-scribe';
 
 	// Public members
 	// Note: geminiApi removed - API clients are now created on-demand by features
@@ -181,7 +182,7 @@ export default class ObsidianGemini extends Plugin {
 		try {
 			await this.setupGeminiScribe();
 			this.isGeminiInitialized = true;
-			this.previousApiKey = this.settings.apiKey;
+			this.previousApiKey = this.apiKey;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
 			// Show a helpful notice if it's an API key error
@@ -840,8 +841,29 @@ export default class ObsidianGemini extends Plugin {
 		}
 	}
 
+	loadApiKey(): string {
+		return this.app.secretStorage.getSecret(ObsidianGemini.SECRET_ID) ?? '';
+	}
+
+	saveApiKey(apiKey: string): void {
+		this.app.secretStorage.setSecret(ObsidianGemini.SECRET_ID, apiKey);
+	}
+
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const data = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+
+		// Load API key from secret storage
+		this.apiKey = this.loadApiKey();
+
+		// One-time migration: move API key from data.json to secret storage
+		if (!this.apiKey && data?.apiKey) {
+			this.apiKey = data.apiKey;
+			this.saveApiKey(this.apiKey);
+			delete (this.settings as any).apiKey;
+			await this.saveData(this.settings);
+			this.logger?.log('Migrated API key from settings to secure storage');
+		}
 
 		// Only run model version updates if dynamic discovery is disabled
 		// When dynamic discovery is enabled, user model selections should be preserved
@@ -866,15 +888,15 @@ export default class ObsidianGemini extends Plugin {
 		await this.saveData(this.settings);
 
 		// Check if we need to re-initialize
-		const apiKeyChanged = this.previousApiKey !== this.settings.apiKey;
-		const needsInit = !this.isGeminiInitialized && this.settings.apiKey;
+		const apiKeyChanged = this.previousApiKey !== this.apiKey;
+		const needsInit = !this.isGeminiInitialized && this.apiKey;
 
 		// Only re-initialize if API key changed or if not initialized but now have key
 		if (apiKeyChanged || needsInit) {
 			try {
 				await this.setupGeminiScribe();
 				this.isGeminiInitialized = true;
-				this.previousApiKey = this.settings.apiKey;
+				this.previousApiKey = this.apiKey;
 
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional

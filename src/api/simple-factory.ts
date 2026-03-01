@@ -68,7 +68,7 @@ export class GeminiClientFactory {
 
 		// Build config
 		const config: GeminiClientConfig = {
-			apiKey: settings.apiKey,
+			apiKey: plugin.apiKey,
 			model: modelName,
 			temperature: settings.temperature ?? 1.0,
 			topP: settings.topP ?? 0.95,

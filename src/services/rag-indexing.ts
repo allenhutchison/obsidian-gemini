@@ -165,7 +165,7 @@ export class RagIndexingService {
 			return;
 		}
 
-		if (!this.plugin.settings.apiKey) {
+		if (!this.plugin.apiKey) {
 			this.plugin.logger.warn('RAG Indexing: No API key configured');
 			this.status = 'error';
 			return;
@@ -173,7 +173,7 @@ export class RagIndexingService {
 
 		try {
 			// Initialize Google GenAI client
-			this.ai = new GoogleGenAI({ apiKey: this.plugin.settings.apiKey });
+			this.ai = new GoogleGenAI({ apiKey: this.plugin.apiKey });
 
 			// Create vault adapter for file operations
 			this.vaultAdapter = new ObsidianVaultAdapter({

@@ -186,6 +186,38 @@ class SuggestModal extends Modal {
 	onChooseSuggestion() {}
 }
 
+class SecretComponent {
+	constructor(app, containerEl) {
+		this.app = app;
+		this.containerEl = containerEl;
+		this._value = '';
+		this._onChange = null;
+	}
+	setValue(value) {
+		this._value = value;
+		return this;
+	}
+	onChange(cb) {
+		this._onChange = cb;
+		return this;
+	}
+}
+
+class SecretStorage {
+	constructor() {
+		this._secrets = {};
+	}
+	setSecret(id, secret) {
+		this._secrets[id] = secret;
+	}
+	getSecret(id) {
+		return this._secrets[id] ?? null;
+	}
+	listSecrets() {
+		return Object.keys(this._secrets);
+	}
+}
+
 class Plugin {
 	constructor(app, manifest) {
 		this.app = app;
@@ -228,4 +260,6 @@ module.exports = {
 	PluginSettingTab,
 	SuggestModal,
 	Plugin,
+	SecretComponent,
+	SecretStorage,
 };
