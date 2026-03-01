@@ -300,7 +300,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.apiKeySecretName)
 					.onChange(async (secretName) => {
 						this.plugin.settings.apiKeySecretName = secretName;
-						this.plugin.apiKey = this.app.secretStorage.getSecret(secretName) ?? '';
 						await this.plugin.saveSettings();
 					})
 			);
