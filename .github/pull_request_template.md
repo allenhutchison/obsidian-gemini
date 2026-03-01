@@ -25,6 +25,7 @@ Fixes #<!-- issue number -->
 - [ ] I have tested this change on Desktop
 - [ ] I have verified this change does not break Mobile (or includes appropriate platform guards)
 - [ ] Documentation has been updated (if applicable)
+- [ ] I understand that I must address all review comments from CodeRabbit and maintainers, or this PR may be closed
 
 ### AI-Generated Code
 

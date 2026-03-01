@@ -87,7 +87,15 @@ Documentation updates are **required** with code changes. In the same PR:
 - Update or create relevant guides in `docs/`.
 - Ensure no broken internal links or references to removed features.
 
-### 7. Tests
+### 7. Code Review
+
+This project uses [CodeRabbit](https://coderabbit.ai/) for automated code review in addition to maintainer review. Contributors are expected to:
+
+- **Address all review comments** from both CodeRabbit and maintainers.
+- Respond to feedback with code changes or an explanation of why the current approach is correct.
+- PRs with unaddressed review comments that go stale may be closed without further notice.
+
+### 8. Tests
 
 - Add or update tests for new functionality.
 - Tests live in the `test/` directory, mirroring the `src/` structure.
