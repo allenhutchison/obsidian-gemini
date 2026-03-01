@@ -107,6 +107,14 @@ const MarkdownRenderer = {
 const setIcon = jest.fn();
 const Notice = jest.fn();
 const normalizePath = jest.fn((path) => path);
+const prepareFuzzySearch = jest.fn((query) => {
+	return (text) => {
+		if (!query || text.toLowerCase().includes(query.toLowerCase())) {
+			return { score: 1, matches: [] };
+		}
+		return null;
+	};
+});
 
 class FuzzySuggestModal extends Modal {
 	constructor(app) {
@@ -228,4 +236,5 @@ module.exports = {
 	PluginSettingTab,
 	SuggestModal,
 	Plugin,
+	prepareFuzzySearch,
 };
