@@ -42,9 +42,7 @@
 		"lint-staged": "^16.3.0",
 		"obsidian": "latest",
 		"prettier": "^3.8.1",
-		"raw-loader": "^4.0.2",
 		"ts-jest": "^29.3.4",
-		"ts-loader": "^9.5.1",
 		"tslib": "2.8.1",
 		"typescript": "^5.9.3",
 		"vitepress": "^1.6.4"

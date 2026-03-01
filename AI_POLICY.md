@@ -19,6 +19,15 @@ This project welcomes contributions, including those authored with the assistanc
 
 5. **Human Review.** The submitter is responsible for reviewing and understanding the AI-generated code before submitting. "The AI wrote it" is not an acceptable explanation for bugs, regressions, or code that doesn't follow project conventions.
 
+## Agent Skills
+
+This repository includes agent skill definitions in `.agents/skills/` that AI coding tools can use for context when contributing:
+
+- **`code-review`** — Guidelines for reviewing code quality, correctness, and maintainability. Covers DRY, SOLID, error handling, performance, security, and TypeScript best practices.
+- **`obsidian-plugin-development`** — Reference for the Obsidian TypeScript API, plugin lifecycle, UI patterns, vault operations, and common conventions used in this project.
+
+AI agents should reference these skills when generating or reviewing code for this project.
+
 ## Enforcement
 
 Pull requests that do not comply with this policy may be closed without feedback.
