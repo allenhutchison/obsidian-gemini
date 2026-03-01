@@ -51,6 +51,7 @@ export interface RagIndexingSettings {
 }
 
 export interface ObsidianGeminiSettings {
+	apiKeySecretName: string;
 	chatModelName: string;
 	summaryModelName: string;
 	completionsModelName: string;
@@ -86,6 +87,7 @@ export interface ObsidianGeminiSettings {
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
+	apiKeySecretName: '',
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
@@ -134,8 +136,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 export default class ObsidianGemini extends Plugin {
 	settings: ObsidianGeminiSettings;
 	public apiKey: string = '';
-
-	private static readonly SECRET_ID = 'gemini-api-key-for-gemini-scribe';
 
 	// Public members
 	// Note: geminiApi removed - API clients are now created on-demand by features
@@ -842,28 +842,27 @@ export default class ObsidianGemini extends Plugin {
 	}
 
 	loadApiKey(): string {
-		return this.app.secretStorage.getSecret(ObsidianGemini.SECRET_ID) ?? '';
-	}
-
-	saveApiKey(apiKey: string): void {
-		this.app.secretStorage.setSecret(ObsidianGemini.SECRET_ID, apiKey);
+		const secretName = this.settings.apiKeySecretName;
+		if (!secretName) return '';
+		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
 	async loadSettings() {
 		const data = await this.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 
-		// Load API key from secret storage
-		this.apiKey = this.loadApiKey();
-
 		// One-time migration: move API key from data.json to secret storage
-		if (!this.apiKey && data?.apiKey) {
-			this.apiKey = data.apiKey;
-			this.saveApiKey(this.apiKey);
+		if (!this.settings.apiKeySecretName && data?.apiKey) {
+			const migrationSecretName = 'gemini-scribe-api-key';
+			this.app.secretStorage.setSecret(migrationSecretName, data.apiKey);
+			this.settings.apiKeySecretName = migrationSecretName;
 			delete (this.settings as any).apiKey;
 			await this.saveData(this.settings);
 			this.logger?.log('Migrated API key from settings to secure storage');
 		}
+
+		// Load API key from secret storage
+		this.apiKey = this.loadApiKey();
 
 		// Only run model version updates if dynamic discovery is disabled
 		// When dynamic discovery is enabled, user model selections should be preserved

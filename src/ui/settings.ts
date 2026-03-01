@@ -292,16 +292,18 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('API Key')
-			.setDesc('Your Google Gemini API key. Stored securely. Get one free at https://aistudio.google.com/apikey')
-			.then((setting) => {
-				const secret = new SecretComponent(this.app, setting.controlEl);
-				secret.setValue(this.plugin.apiKey);
-				secret.onChange(async (value) => {
-					this.plugin.apiKey = value;
-					this.plugin.saveApiKey(value);
-					await this.plugin.saveSettings();
-				});
-			});
+			.setDesc(
+				'Link your Google Gemini API key. Create a secret in Obsidian Settings → Secrets, then link it here. Get a key free at https://aistudio.google.com/apikey'
+			)
+			.addComponent((el) =>
+				new SecretComponent(this.app, el)
+					.setValue(this.plugin.settings.apiKeySecretName)
+					.onChange(async (secretName) => {
+						this.plugin.settings.apiKeySecretName = secretName;
+						this.plugin.apiKey = this.app.secretStorage.getSecret(secretName) ?? '';
+						await this.plugin.saveSettings();
+					})
+			);
 
 		// Add note about model version filtering
 		new Setting(containerEl)
