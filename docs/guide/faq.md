@@ -12,9 +12,15 @@ Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey). 
 
 Google requires billing to be enabled on your API key to use Pro models (like Gemini 2.5 Pro). Flash models work on free keys. To use Pro models, enable billing in [Google AI Studio](https://aistudio.google.com). ([#76](https://github.com/allenhutchison/obsidian-gemini/discussions/76))
 
-### Can I use my Gemini Pro/Advanced subscription instead of an API key?
+### Can I use my Gemini Pro/Advanced subscription or Gemini CLI login instead of an API key?
 
-No. A consumer Gemini subscription (gemini.google.com) is separate from the API. The plugin only supports API keys. Using OAuth or Code Assist licenses for third-party plugins violates Google's Terms of Service. For cost efficiency, Flash models are recommended — they are excellent for most use cases and significantly cheaper than Pro. ([#304](https://github.com/allenhutchison/obsidian-gemini/discussions/304))
+No. The plugin requires an API key from [Google AI Studio](https://aistudio.google.com/apikey) — it cannot use a consumer Gemini subscription (gemini.google.com) or the Gemini CLI's OAuth/Code Assist credentials. Even if you have a paid Gemini plan and the CLI works, these are separate systems:
+
+1. **Terms of Service**: Google's ToS prohibit third-party tools from reusing Code Assist OAuth credentials. Google has contacted other integrators who attempted this approach.
+2. **Missing features**: The Code Assist endpoint doesn't support server-side tools the plugin relies on, including image generation and the file search API used for semantic vault search.
+3. **Cost tip**: Flash models (e.g., Gemini 2.5 Flash) are excellent for nearly all plugin use cases and are significantly cheaper than Pro models. Flash Lite is a great option for summaries and predictive typing.
+
+([#390](https://github.com/allenhutchison/obsidian-gemini/issues/390), [#304](https://github.com/allenhutchison/obsidian-gemini/discussions/304))
 
 ### The plugin won't load and I can't access settings to enter my API key
 
