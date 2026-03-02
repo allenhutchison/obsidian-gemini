@@ -2,9 +2,8 @@ import { ModelDiscoveryService, GoogleModel, ModelDiscoveryResult } from '../../
 
 // Mock ObsidianGemini plugin
 const mockPlugin = {
-	settings: {
-		apiKey: 'test-api-key',
-	},
+	apiKey: 'test-api-key',
+	settings: {},
 	loadData: jest.fn(),
 	saveData: jest.fn(),
 } as any;
@@ -143,7 +142,7 @@ describe('ModelDiscoveryService', () => {
 		it('should throw error if API key is not configured', async () => {
 			const serviceWithoutKey = new ModelDiscoveryService({
 				...mockPlugin,
-				settings: { apiKey: '' },
+				apiKey: '',
 			});
 
 			const result = await serviceWithoutKey.discoverModels();

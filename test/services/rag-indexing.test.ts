@@ -77,8 +77,8 @@ function createMockPlugin(overrides: Partial<any> = {}) {
 				getFileCache: jest.fn().mockReturnValue(null),
 			},
 		},
+		apiKey: 'test-api-key',
 		settings: {
-			apiKey: 'test-api-key',
 			historyFolder: 'gemini-scribe',
 			ragIndexing: {
 				enabled: true,

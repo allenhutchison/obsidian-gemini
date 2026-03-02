@@ -68,7 +68,7 @@ export class ModelDiscoveryService {
 	 * Fetch models from Google API with pagination support and detailed parameter information
 	 */
 	private async fetchModelsFromAPI(): Promise<GoogleModel[]> {
-		const apiKey = this.plugin.settings.apiKey;
+		const apiKey = this.plugin.apiKey;
 		if (!apiKey) {
 			throw new Error('API key not configured');
 		}
