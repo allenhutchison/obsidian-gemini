@@ -34,8 +34,8 @@ describe('WebFetchTool', () => {
 
 		mockContext = {
 			plugin: {
+				apiKey: 'test-api-key',
 				settings: {
-					apiKey: 'test-api-key',
 					chatModelName: 'gemini-2.5-flash',
 					temperature: 0.7,
 				},
@@ -312,7 +312,7 @@ describe('WebFetchTool', () => {
 
 	describe('execute - primary path', () => {
 		it('should return error when API key is missing', async () => {
-			(mockContext.plugin as any).settings.apiKey = '';
+			(mockContext.plugin as any).apiKey = '';
 
 			const result = await tool.execute({ url: 'https://example.com', query: 'test' }, mockContext);
 

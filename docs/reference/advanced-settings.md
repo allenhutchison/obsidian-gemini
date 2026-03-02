@@ -240,6 +240,7 @@ In v4.0+, context is manually managed through session-based file selection:
 
 ### API Key Protection
 
+- **Secure storage** - Your API key is stored using Obsidian's SecretStorage API, not in plaintext `data.json`
 - **Never share** your API key
 - **Use environment variables** for development
 - **Rotate keys regularly** as a security practice

@@ -78,9 +78,8 @@ describe('DeepResearchService', () => {
 			app: {
 				vault: mockVault,
 			},
-			settings: {
-				apiKey: 'test-api-key',
-			},
+			apiKey: 'test-api-key',
+			settings: {},
 			logger: mockLogger,
 			ragIndexing: mockRagIndexing,
 		};
@@ -90,7 +89,7 @@ describe('DeepResearchService', () => {
 
 	describe('conductResearch', () => {
 		it('should throw error if API key is not configured', async () => {
-			mockPlugin.settings.apiKey = '';
+			mockPlugin.apiKey = '';
 
 			const params: DeepResearchParams = {
 				topic: 'Test Topic',

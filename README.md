@@ -84,7 +84,7 @@ This release fixes a critical issue for new users:
 2.  **Configure Plugin Settings:**
     - Open Obsidian Settings.
     - Go to "Gemini Scribe" under "Community plugins".
-    - **API Key:** Paste your Gemini API key here.
+    - **API Key:** Paste your Gemini API key here. Your key is stored securely using Obsidian's SecretStorage.
     - **Chat Model:** Select the preferred Gemini model for chat interactions (e.g., `gemini-1.5-pro`).
     - **Summary Model:** Select the preferred Gemini model for generating summaries (e.g., `gemini-1.5-flash`).
     - **Completion Model:** Select the preferred model for IDE-style completions (e.g., `gemini-1.5-flash-8b`).

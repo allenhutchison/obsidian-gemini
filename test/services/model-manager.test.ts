@@ -38,8 +38,8 @@ const mockPlugin = {
 			lastUpdate: Date.now(),
 			fallbackToStatic: true,
 		},
-		apiKey: 'test-api-key',
 	},
+	apiKey: 'test-api-key',
 	loadData: jest.fn(),
 	saveData: jest.fn(),
 	logger: {

@@ -51,7 +51,7 @@ export class WebFetchTool implements Tool {
 	async execute(params: { url: string; query: string }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
-		if (!plugin.settings.apiKey) {
+		if (!plugin.apiKey) {
 			return {
 				success: false,
 				error: 'API key not configured',
@@ -69,7 +69,7 @@ export class WebFetchTool implements Tool {
 			}
 
 			// Create a new instance of GoogleGenAI
-			const genAI = new GoogleGenAI({ apiKey: plugin.settings.apiKey });
+			const genAI = new GoogleGenAI({ apiKey: plugin.apiKey });
 
 			// Use the same model that's configured for chat
 			// This ensures consistency with the main conversation
@@ -244,7 +244,7 @@ export class WebFetchTool implements Tool {
 			}
 
 			// Now use Gemini to analyze the content
-			const genAI = new GoogleGenAI({ apiKey: plugin.settings.apiKey });
+			const genAI = new GoogleGenAI({ apiKey: plugin.apiKey });
 			const modelToUse = plugin.settings.chatModelName || 'gemini-2.5-flash';
 
 			// Create a prompt with the content

@@ -44,8 +44,8 @@ describe('Tool Integration Tests', () => {
 	beforeEach(() => {
 		// Mock plugin with realistic structure
 		plugin = {
+			apiKey: 'test-api-key',
 			settings: {
-				apiKey: 'test-api-key',
 				historyFolder: 'gemini-scribe',
 				searchGrounding: true,
 				searchGroundingThreshold: 0.7,

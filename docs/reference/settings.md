@@ -15,11 +15,12 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 
 ### API Key
 
-- **Setting**: `apiKey`
 - **Type**: String
 - **Required**: Yes
+- **Storage**: Stored securely using Obsidian's SecretStorage API (not saved in `data.json`)
 - **Description**: Your Google AI API key for accessing Gemini models
 - **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
+- **Migration**: If upgrading from a previous version, your API key is automatically migrated from `data.json` to secure storage on first load
 
 ### Your Name
 
@@ -327,7 +328,7 @@ When upgrading from v3.x to v4.0.0:
 
 ## Security Best Practices
 
-1. **API Key**: Never share your API key or commit it to version control
+1. **API Key**: Your API key is stored securely via Obsidian's SecretStorage and is not written to `data.json`. Never share your API key or commit it to version control
 2. **System Folders**: Plugin automatically protects `.obsidian` and plugin state folders from tool operations
 3. **Tool Permissions**: Review tool operations before approving (when confirmations are enabled)
 4. **System Prompt Override**: Use with caution; can break expected functionality

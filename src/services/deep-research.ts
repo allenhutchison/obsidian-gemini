@@ -53,13 +53,13 @@ export class DeepResearchService {
 	 * Initialize the ResearchManager with a GoogleGenAI client
 	 */
 	private ensureResearchManager(): ResearchManager {
-		if (!this.plugin.settings.apiKey) {
+		if (!this.plugin.apiKey) {
 			throw new Error('Google API key not configured');
 		}
 
 		if (!this.researchManager) {
 			const genAI = new GoogleGenAI({
-				apiKey: this.plugin.settings.apiKey,
+				apiKey: this.plugin.apiKey,
 			});
 
 			// WORKAROUND (as of @google/genai v0.14.x): The GoogleGenAI interactions getter creates

@@ -1,5 +1,5 @@
 import ObsidianGemini from '../main';
-import { App, PluginSettingTab, Setting, Notice, setIcon } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, setIcon, SecretComponent } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 
@@ -292,18 +292,17 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('API Key')
-			.setDesc('Your Google Gemini API key. Get one free at https://aistudio.google.com/apikey')
-			.addText((text) => {
-				text
-					.setPlaceholder('Enter your API Key')
-					.setValue(this.plugin.settings.apiKey)
-					.onChange(async (value) => {
-						this.plugin.settings.apiKey = value;
+			.setDesc(
+				'Link your Google Gemini API key. Create a secret in Obsidian Settings → Secrets, then link it here. Get a key free at https://aistudio.google.com/apikey'
+			)
+			.addComponent((el) =>
+				new SecretComponent(this.app, el)
+					.setValue(this.plugin.settings.apiKeySecretName)
+					.onChange(async (secretName) => {
+						this.plugin.settings.apiKeySecretName = secretName;
 						await this.plugin.saveSettings();
-					});
-				// Set input width to accommodate at least 40 characters
-				text.inputEl.style.width = '40ch';
-			});
+					})
+			);
 
 		// Add note about model version filtering
 		new Setting(containerEl)
