@@ -67,16 +67,13 @@ describe('Gemini API Tools Formatting', () => {
 			});
 		}
 
-		// Check the result
-		console.log('Tools array:', JSON.stringify(tools, null, 2));
-
 		expect(tools).toHaveLength(2);
 		expect(tools[0]).toEqual({ googleSearch: {} });
 		expect(tools[1]).toHaveProperty('function_declarations');
 		expect(tools[1].function_declarations).toHaveLength(2);
 
 		// Ensure no empty objects
-		tools.forEach((tool, index) => {
+		tools.forEach((tool) => {
 			expect(Object.keys(tool).length).toBeGreaterThan(0);
 		});
 	});
@@ -106,9 +103,6 @@ describe('Gemini API Tools Formatting', () => {
 				function_declarations: functionDeclarations,
 			});
 		}
-
-		// Check the result
-		console.log('Tools array with no custom tools:', JSON.stringify(tools, null, 2));
 
 		// Should only have Google Search
 		expect(tools).toHaveLength(1);
