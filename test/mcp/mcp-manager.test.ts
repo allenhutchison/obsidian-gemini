@@ -35,6 +35,10 @@ jest.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
 
 // Mock the OAuth callback server to prevent actual HTTP server creation
 jest.mock('../../src/mcp/mcp-oauth-callback', () => ({
+	startOAuthCallbackServer: jest.fn().mockResolvedValue({
+		waitForCode: new Promise(() => {}), // never resolves — tests don't exercise full OAuth
+		close: jest.fn(),
+	}),
 	waitForOAuthCallback: jest.fn(),
 }));
 

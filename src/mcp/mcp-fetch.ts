@@ -40,9 +40,10 @@ export async function obsidianFetch(url: string | URL, init?: RequestInit): Prom
 			}
 		} else if (init.body instanceof ArrayBuffer) {
 			body = init.body;
+		} else if (ArrayBuffer.isView(init.body)) {
+			body = init.body.buffer.slice(init.body.byteOffset, init.body.byteOffset + init.body.byteLength);
 		} else {
-			// FormData, ReadableStream, etc. — convert to string
-			body = String(init.body);
+			throw new TypeError(`Unsupported request body type: ${Object.prototype.toString.call(init.body)}`);
 		}
 	}
 

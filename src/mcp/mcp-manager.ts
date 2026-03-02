@@ -242,7 +242,10 @@ export class MCPManager {
 				}
 			} finally {
 				// Clean up the callback server if OAuth wasn't needed
-				callbackHandle?.close();
+				if (callbackHandle) {
+					callbackHandle.waitForCode.catch(() => undefined);
+					callbackHandle.close();
+				}
 			}
 			this.logger.debug(`MCP: client.connect() succeeded for "${config.name}"`);
 
@@ -475,7 +478,10 @@ export class MCPManager {
 					throw connectError;
 				}
 			} finally {
-				callbackHandle?.close();
+				if (callbackHandle) {
+					callbackHandle.waitForCode.catch(() => undefined);
+					callbackHandle.close();
+				}
 			}
 			this.logger.debug(`MCP: Test — connected, listing tools...`);
 			const { tools } = await client.listTools();
