@@ -919,8 +919,14 @@ export default class ObsidianGemini extends Plugin {
 		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
 			const ragStateChanged = this.previousRagEnabled !== this.settings.ragIndexing.enabled;
 			if (ragStateChanged) {
-				this.previousRagEnabled = this.settings.ragIndexing.enabled;
+				const nextRagEnabled = this.settings.ragIndexing.enabled;
 				await this.initializeRagIndexing();
+
+				// Advance tracker only if runtime state now matches requested state
+				const transitioned = nextRagEnabled ? this.ragIndexing !== null : this.ragIndexing === null;
+				if (transitioned) {
+					this.previousRagEnabled = nextRagEnabled;
+				}
 			}
 		}
 
