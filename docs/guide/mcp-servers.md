@@ -36,7 +36,7 @@ When you connect an MCP server to Gemini Scribe, its tools appear alongside the 
 2. Navigate to **Gemini Scribe** settings
 3. Scroll to the **MCP Servers** section
 4. Toggle **Enable MCP servers** on
-5. Click **Add MCP Server**
+5. Click **Add Server**
 6. Select the **Transport** type:
    - **Stdio (local process)**: Enter the command, arguments, and optional environment variables
    - **HTTP (remote server)**: Enter the server URL
@@ -65,7 +65,7 @@ The MCP project provides a reference filesystem server. To set it up:
    - **Name**: `filesystem`
    - **Command**: `npx`
    - **Arguments**:
-     ```
+     ```text
      -y
      @modelcontextprotocol/server-filesystem
      /path/to/your/folder

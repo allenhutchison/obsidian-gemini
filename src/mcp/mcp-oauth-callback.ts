@@ -1,6 +1,16 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
 
+/** Escape untrusted values for safe HTML embedding. */
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
 /** Default timeout for the callback server (2 minutes) */
 const CALLBACK_TIMEOUT_MS = 120_000;
 
@@ -71,7 +81,7 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 			resolveCode({ code });
 			setTimeout(() => server.close(), 500);
 		} else {
-			const errorDesc = parsedUrl.searchParams.get('error_description') || error || 'Unknown error';
+			const errorDesc = escapeHtml(parsedUrl.searchParams.get('error_description') || error || 'Unknown error');
 			res.writeHead(400, { 'Content-Type': 'text/html' });
 			res.end(`<!DOCTYPE html>
 <html><body style="font-family:system-ui;text-align:center;padding:40px">

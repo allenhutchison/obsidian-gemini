@@ -38,6 +38,12 @@ describe('sanitizeKeySegment', () => {
 	it('should handle already-valid names', () => {
 		expect(sanitizeKeySegment('my-server-1')).toBe('my-server-1');
 	});
+
+	it('should fall back to "unnamed" when all chars are stripped', () => {
+		expect(sanitizeKeySegment('!!!')).toBe('unnamed');
+		expect(sanitizeKeySegment('')).toBe('unnamed');
+		expect(sanitizeKeySegment('***')).toBe('unnamed');
+	});
 });
 
 describe('ObsidianOAuthClientProvider', () => {

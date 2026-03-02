@@ -21,11 +21,12 @@ const SECRET_KEY_CLIENT_PREFIX = 'mcp-oauth-client-';
  * Keys must be lowercase alphanumeric with optional dashes.
  */
 export function sanitizeKeySegment(name: string): string {
-	return name
+	const sanitized = name
 		.toLowerCase()
 		.replace(/[^a-z0-9-]/g, '-')
 		.replace(/-+/g, '-')
 		.replace(/^-|-$/g, '');
+	return sanitized || 'unnamed';
 }
 
 /**

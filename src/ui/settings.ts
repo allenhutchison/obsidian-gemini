@@ -683,7 +683,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			try {
 				await this.createMCPSettings(containerEl);
 			} catch (error) {
-				console.error('MCP settings rendering error:', error);
+				this.plugin.logger.error(
+					'MCP settings rendering error:',
+					error instanceof Error ? error.message : String(error)
+				);
 				new Setting(containerEl)
 					.setName('MCP Servers')
 					.setDesc(`Error loading MCP settings: ${error instanceof Error ? error.message : String(error)}`);

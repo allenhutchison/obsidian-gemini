@@ -15,6 +15,7 @@ export class MCPServerModal extends Modal {
 	private isEdit: boolean;
 	private discoveredTools: string[] = [];
 	private toolTrustContainer: HTMLElement | null = null;
+	private readonly originalServerName: string;
 
 	constructor(
 		app: App,
@@ -26,6 +27,7 @@ export class MCPServerModal extends Modal {
 		this.mcpManager = mcpManager;
 		this.onSave = onSave;
 		this.isEdit = config !== null;
+		this.originalServerName = config?.name ?? '';
 
 		// Clone or create default config
 		this.config = config
@@ -110,8 +112,8 @@ export class MCPServerModal extends Modal {
 						});
 				});
 
-			// Clear OAuth credentials (only shown if tokens exist)
-			const oauthProvider = new ObsidianOAuthClientProvider(this.app, this.config.name);
+			// Clear OAuth credentials (only shown if tokens exist for the original name)
+			const oauthProvider = new ObsidianOAuthClientProvider(this.app, this.originalServerName);
 			if (oauthProvider.hasTokens()) {
 				new Setting(contentEl)
 					.setName('OAuth credentials')
