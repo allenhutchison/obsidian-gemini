@@ -55,7 +55,10 @@ export default defineConfig({
 			'/contributing/': [
 				{
 					text: 'Contributing',
-					items: [{ text: 'Tool Development', link: '/contributing/tool-development' }],
+					items: [
+						{ text: 'Testing', link: '/contributing/testing' },
+						{ text: 'Tool Development', link: '/contributing/tool-development' },
+					],
 				},
 			],
 		},

@@ -101,6 +101,8 @@ This project uses [CodeRabbit](https://coderabbit.ai/) for automated code review
 - Tests live in the `test/` directory, mirroring the `src/` structure.
 - Run `npm test` and ensure all tests pass before pushing.
 
+For detailed instructions on testing your changes on desktop and mobile, including symlink setup, smoke test checklists, and CI checks, see the [Testing Guide](docs/contributing/testing.md).
+
 ## Coding Standards
 
 - **TypeScript** — all source code is TypeScript.
