@@ -122,6 +122,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
    - Web fetch tool using Google's URL Context API
    - Session-level permission system for bypassing confirmations
    - Tool loop detection to prevent infinite execution cycles
+   - MCP server integration with stdio and HTTP/SSE transports (`src/mcp/`)
    - Agent skills system for extensible AI capabilities (see below)
 7. **Attachment Pipeline** (`src/ui/agent-view/agent-view.ts`, `src/ui/agent-view/agent-view-ui.ts`, `src/ui/agent-view/inline-attachment.ts`, `src/utils/file-classification.ts`): Unified drag-and-drop and paste pipeline for file attachments
    - Files dropped or pasted into the agent view are classified by extension using `classifyFile()` from `file-classification.ts`

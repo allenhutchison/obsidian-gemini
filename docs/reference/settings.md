@@ -250,14 +250,14 @@ Prevents the AI agent from executing identical tools repeatedly, which can cause
 
 ### MCP Servers
 
-MCP (Model Context Protocol) server support allows the agent to use tools from external MCP servers. Desktop only.
+MCP (Model Context Protocol) server support allows the agent to use tools from external MCP servers. Supports both local (stdio) and remote (HTTP) servers.
 
 #### Enable MCP Servers
 
 - **Setting**: `mcpEnabled`
 - **Type**: Boolean
 - **Default**: `false`
-- **Description**: Enable connections to local MCP servers for external tool integration
+- **Description**: Enable connections to MCP servers for external tool integration
 
 #### Server List
 
@@ -268,14 +268,16 @@ MCP (Model Context Protocol) server support allows the agent to use tools from e
 
 Each server configuration includes:
 
-| Field          | Type     | Description                    |
-| -------------- | -------- | ------------------------------ |
-| `name`         | String   | Unique server name             |
-| `command`      | String   | Command to spawn the server    |
-| `args`         | String[] | Command arguments              |
-| `env`          | Object   | Optional environment variables |
-| `enabled`      | Boolean  | Connect on plugin load         |
-| `trustedTools` | String[] | Tools that skip confirmation   |
+| Field          | Type     | Description                                                                |
+| -------------- | -------- | -------------------------------------------------------------------------- |
+| `name`         | String   | Unique server name                                                         |
+| `transport`    | String   | Transport type: `"stdio"` (local) or `"http"` (remote). Default: `"stdio"` |
+| `command`      | String   | Command to spawn the server (stdio only)                                   |
+| `args`         | String[] | Command arguments (stdio only)                                             |
+| `url`          | String   | Server URL (http only, e.g., `http://localhost:3000/mcp`)                  |
+| `env`          | Object   | Optional environment variables                                             |
+| `enabled`      | Boolean  | Connect on plugin load                                                     |
+| `trustedTools` | String[] | Tools that skip confirmation                                               |
 
 See the [MCP Servers Guide](/guide/mcp-servers) for setup instructions.
 

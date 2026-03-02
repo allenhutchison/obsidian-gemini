@@ -1,14 +1,23 @@
 # MCP Servers
 
-Gemini Scribe supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for connecting to external tool servers. This allows the AI agent to use tools provided by local MCP servers alongside the built-in vault tools.
+Gemini Scribe supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for connecting to external tool servers. This allows the AI agent to use tools provided by MCP servers alongside the built-in vault tools.
 
-::: warning Desktop Only
-MCP server support requires spawning local processes and is only available on desktop (Windows, macOS, Linux). The MCP settings section is hidden on mobile.
+## Transport Types
+
+Gemini Scribe supports two transport types for connecting to MCP servers:
+
+| Transport | Description                                                        | Platform      |
+| --------- | ------------------------------------------------------------------ | ------------- |
+| **Stdio** | Spawns a local process and communicates via stdin/stdout           | Desktop only  |
+| **HTTP**  | Connects to a remote server via HTTP with Server-Sent Events (SSE) | All platforms |
+
+::: tip
+HTTP transport works on mobile devices (iOS and Android), making it possible to use MCP servers from anywhere. Stdio transport requires the ability to spawn processes and is limited to desktop (Windows, macOS, Linux).
 :::
 
 ## What is MCP?
 
-MCP (Model Context Protocol) is an open standard that lets AI applications connect to external tool providers. An MCP server is a local process that exposes tools the AI can call — for example, a filesystem server that provides file operations, a database server that provides query tools, or a custom server you build yourself.
+MCP (Model Context Protocol) is an open standard that lets AI applications connect to external tool providers. An MCP server provides tools the AI can call — for example, a filesystem server that provides file operations, a database server that provides query tools, or a custom server you build yourself.
 
 When you connect an MCP server to Gemini Scribe, its tools appear alongside the built-in vault tools. The agent can discover and call them during conversations, with the same confirmation flow and safety features as built-in tools.
 
@@ -16,64 +25,75 @@ When you connect an MCP server to Gemini Scribe, its tools appear alongside the 
 
 ### Prerequisites
 
-- Obsidian running on desktop (not mobile)
+- A Google AI API key configured in the plugin
 - An MCP server to connect to (see [Finding Servers](#finding-servers) below)
-- The server's command and arguments
+- For **stdio** servers: Desktop platform (Windows, macOS, Linux) with the server installed locally
+- For **HTTP** servers: A running MCP server accessible via URL
 
 ### Adding a Server
 
-1. Open **Settings > Gemini Scribe**
-2. Click **Show Advanced Settings**
+1. Open Obsidian Settings
+2. Navigate to **Gemini Scribe** settings
 3. Scroll to the **MCP Servers** section
 4. Toggle **Enable MCP servers** on
-5. Click **Add Server**
-
-In the server configuration modal:
-
-- **Server name**: A unique, friendly name (e.g., "filesystem", "GitHub")
-- **Command**: The executable to run (e.g., `npx`, `python`, `/usr/local/bin/my-server`)
-- **Arguments**: One argument per line
-- **Environment variables**: Optional `KEY=VALUE` pairs, one per line
-- **Enabled**: Whether to connect automatically on plugin load
-
-### Testing the Connection
-
-Click **Test Connection** to temporarily connect to the server and discover its tools. If successful, you'll see the list of available tools and can configure trust settings.
+5. Click **Add MCP Server**
+6. Select the **Transport** type:
+   - **Stdio (local process)**: Enter the command, arguments, and optional environment variables
+   - **HTTP (remote server)**: Enter the server URL
+7. Click **Test Connection** to verify and discover available tools
+8. Configure tool trust settings (see below)
+9. Click **Save**
 
 ### Tool Trust
 
 Each tool from an MCP server can be marked as **trusted** or **untrusted**:
 
-- **Trusted tools** execute without a confirmation dialog (like built-in read-only tools)
-- **Untrusted tools** require you to approve each execution in the chat (the default)
+- **Trusted tools** execute without confirmation — useful for read-only operations you use frequently
+- **Untrusted tools** require approval before each execution — recommended for tools that modify data
 
-New tools that appear when a server is updated default to untrusted. You can change trust settings at any time by editing the server configuration.
+You can configure trust per tool when adding/editing a server, after clicking **Test Connection** to discover available tools.
 
-## Example: Filesystem Server
+## Examples
+
+### Stdio: Filesystem Server
 
 The MCP project provides a reference filesystem server. To set it up:
 
-**Server name**: `filesystem`
+1. Install Node.js
+2. Add a new MCP server with:
+   - **Transport**: Stdio (local process)
+   - **Name**: `filesystem`
+   - **Command**: `npx`
+   - **Arguments**:
+     ```
+     -y
+     @modelcontextprotocol/server-filesystem
+     /path/to/your/folder
+     ```
+3. Test the connection and save
 
-**Command**: `npx`
+### HTTP: Remote MCP Server
 
-**Arguments** (one per line):
+To connect to an MCP server running on your network or the cloud:
 
-```text
--y
-@modelcontextprotocol/server-filesystem
-/path/to/allowed/directory
-```
+1. Ensure the server is running and accessible
+2. Add a new MCP server with:
+   - **Transport**: HTTP (remote server)
+   - **Name**: `my-remote-server`
+   - **URL**: `http://localhost:3000/mcp` (or your server's URL)
+3. Test the connection and save
 
-This gives the agent tools to read, write, and list files in the specified directory — separate from your Obsidian vault.
+::: tip
+HTTP servers can run anywhere — on your local machine, on another computer on your network, or in the cloud. This is especially useful for mobile access.
+:::
 
 ## Finding Servers
 
 Popular MCP servers include:
 
-- **[@modelcontextprotocol/server-filesystem](https://www.npmjs.com/package/@modelcontextprotocol/server-filesystem)** — File operations
-- **[@modelcontextprotocol/server-github](https://www.npmjs.com/package/@modelcontextprotocol/server-github)** — GitHub API integration
-- **[@modelcontextprotocol/server-brave-search](https://www.npmjs.com/package/@modelcontextprotocol/server-brave-search)** — Web search via Brave
+- **[@modelcontextprotocol/server-filesystem](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem)** — File operations
+- **[@modelcontextprotocol/server-brave-search](https://github.com/modelcontextprotocol/servers/tree/main/src/brave-search)** — Web search via Brave
+- **[@modelcontextprotocol/server-github](https://github.com/modelcontextprotocol/servers/tree/main/src/github)** — GitHub repository operations
 
 Browse the [MCP Server Registry](https://github.com/modelcontextprotocol/servers) for a full list of community servers.
 
@@ -81,36 +101,43 @@ Browse the [MCP Server Registry](https://github.com/modelcontextprotocol/servers
 
 When an MCP server is connected:
 
-1. Gemini Scribe spawns the server process using the configured command
+1. **Stdio**: The plugin spawns the server process with the configured command and arguments. **HTTP**: The plugin connects to the server URL via HTTP.
 2. It queries the server for its list of tools via the MCP protocol
 3. Each tool is registered in the plugin's tool system with a namespaced name (`mcp__<server>__<tool>`)
-4. The agent can discover and call these tools during conversations
-5. Tool calls go through the same confirmation and loop detection as built-in tools
-6. When the plugin unloads, all server processes are shut down
+4. When the agent calls a tool, the plugin forwards the request to the MCP server and returns the result
+5. The confirmation flow works the same as built-in tools — untrusted tools require approval
 
 ## Troubleshooting
 
-### Server fails to connect
+**Server won't connect (stdio)**
 
-- Verify the command exists and is in your PATH
-- Check that all required arguments are correct
-- Look for error messages in the server status indicator (red dot)
-- Enable **Debug Mode** in settings and check the developer console
+- Verify the command is installed and accessible from Obsidian's environment
+- Check that the arguments are correct
+- Ensure you're on a desktop platform (stdio requires process spawning)
+- Try running the command manually in a terminal to verify it works
+- Enable Debug Mode in settings for detailed MCP logs
 
-### Tools not appearing
+**Server won't connect (HTTP)**
 
-- Ensure the server is connected (green status dot)
+- Verify the server is running and the URL is correct
+- Check that there are no firewall or network issues blocking the connection
+- Ensure the URL includes the correct path (e.g., `/mcp`)
+- Enable Debug Mode in settings for detailed error messages
+
+**No tools show up**
+
+- Click **Test Connection** in the server settings to re-discover tools
 - Verify **Enable MCP servers** is toggled on
 - Check that the server's tools are compatible (MCP v1 tools)
 
-### Server crashes during use
+**Tools fail to execute**
 
-- The server status will change to disconnected
-- Edit the server configuration and try reconnecting
-- Check the server's own logs for error details
+- Check that the tool hasn't been removed from the server
+- Try disconnecting and reconnecting the server
+- Enable Debug Mode for detailed error logs
 
 ## Limitations
 
-- **Stdio transport only**: v1 supports local process spawning via stdio. HTTP/SSE transport may be added in a future version.
-- **Tools only**: MCP resources and prompts are not yet supported.
-- **Desktop only**: Not available on mobile due to process spawning requirements.
+- **Stdio transport**: Desktop only (Windows, macOS, Linux)
+- **Tools only**: MCP resources and prompts are not yet supported
+- **Restart required**: Changes to server configurations require toggling the server off and on, or restarting the plugin

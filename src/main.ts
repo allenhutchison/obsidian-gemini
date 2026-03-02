@@ -620,9 +620,11 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 
-		// Initialize MCP server connections (desktop only)
+		// Initialize MCP server connections
+		// Per-server mobile guards are handled in connectServer() —
+		// stdio servers are skipped on mobile, HTTP servers connect on all platforms.
 		this.mcpManager = new MCPManager(this);
-		if (this.settings.mcpEnabled && !(this.app as any).isMobile) {
+		if (this.settings.mcpEnabled) {
 			await this.mcpManager.connectAllEnabled();
 		}
 
