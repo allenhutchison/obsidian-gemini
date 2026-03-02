@@ -32,70 +32,7 @@ npm run format-check # Check formatting without changes
 
 ### Versioning & Releases
 
-#### Release Process
-
-Follow these steps to create a new release:
-
-1. **Update Release Notes** (`src/release-notes.json`)
-   - Add a new entry at the top of the JSON object for the new version
-   - Include a title, highlights (array of bullet points), and details
-   - Follow the emoji pattern used in existing releases
-   - This file is the single source of truth for both the in-app modal and the docs site changelog
-
-2. **Run Tests and Build**
-
-   ```bash
-   npm test        # Ensure all tests pass
-   npm run build   # Verify production build succeeds
-   ```
-
-3. **Commit Release Notes**
-
-   ```bash
-   git add src/release-notes.json
-   git commit -m "Add release notes for version X.Y.Z"
-   ```
-
-4. **Bump Version** (Choose appropriate semantic version)
-
-   ```bash
-   npm version patch  # Bug fixes (4.1.0 → 4.1.1)
-   npm version minor  # New features (4.1.0 → 4.2.0)
-   npm version major  # Breaking changes (4.1.0 → 5.0.0)
-   ```
-
-   The `npm version` command automatically:
-   - Updates `package.json` version
-   - Runs `version-bump.mjs` to update `manifest.json` and `versions.json`
-   - Creates a git commit with the version change
-   - Creates a git tag (e.g., `4.1.1`)
-   - Pushes the commit and tag to GitHub (via `postversion` script)
-
-5. **Create GitHub Release**
-   - Go to https://github.com/allenhutchison/obsidian-gemini/releases
-   - Click "Draft a new release"
-   - Select the tag that was just created
-   - Copy the release notes from `src/release-notes.json`
-   - Format as markdown (remove emoji if desired, keep bullet points)
-   - Publish the release
-
-6. **Verify Release**
-   - Check that the release appears on GitHub
-   - Verify the tag matches the version
-   - Test installation in a test vault (if needed)
-
-**IMPORTANT**:
-
-- Do NOT manually edit version numbers in `package.json`, `manifest.json`, or `versions.json`. Always use the npm version commands.
-- Always update release notes BEFORE running `npm version`
-- Ensure you're on the master branch and it's up to date before releasing
-
-### Build System
-
-- Uses esbuild for fast bundling with TypeScript
-- Custom text file loader for `.txt` and `.hbs` templates
-- Source maps inline in dev, tree shaking in production
-- Generated artifacts (`main.js`, `manifest.json`, `versions.json`) stay in the repo root for Obsidian
+For the full release process, use the **release-process** skill.
 
 ## Architecture
 
@@ -141,7 +78,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 
 ### Important Patterns
 
-1. **Obsidian API First**: Always use built-in Obsidian API functions when available instead of low-level operations:
+1. **Obsidian API First**: Always use built-in Obsidian API functions when available instead of low-level operations (for detailed Obsidian API guidance, use the **obsidian-plugin-development** skill):
    - Use `vault.getMarkdownFiles()` instead of `vault.adapter.list()`
    - Use `app.fileManager.processFrontMatter()` for frontmatter manipulation
    - Use `vault.getAbstractFileByPath()` for file operations
@@ -191,6 +128,8 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 - `scripts/` directories are treated as read-only reference material (no execution in Obsidian)
 
 ## Coding Style & Naming Conventions
+
+For in-depth code quality standards (DRY, SOLID, error handling, performance, security), use the **code-review** skill.
 
 - TypeScript-first codebase; group modules by domain and add barrel exports only when they simplify imports.
 - Format with Prettier (`npm run format`): 2-space indent, 120-column width, semicolons, single quotes, trailing commas.
@@ -268,7 +207,7 @@ if (this.plugin.settings.debugMode) {
 - Extend shared fixtures under `__mocks__/` when mocking new APIs
 - Run `npm test` before each PR and execute relevant `test-scripts/*.mjs` after touching agent or tool code
 
-For manual testing procedures (desktop symlink setup, mobile testing, smoke test checklists), see [docs/contributing/testing.md](docs/contributing/testing.md).
+For manual testing procedures (desktop symlink setup, mobile testing, smoke test checklists), see [docs/contributing/testing.md](docs/contributing/testing.md). For runtime debugging and plugin inspection, use the **obsidian-cli** skill.
 
 ### Testing Focus
 
@@ -341,6 +280,8 @@ This keeps technical planning centralized and accessible for all contributors.
 
 ## Commit & Pull Request Guidelines
 
+For creating pull requests, use the **create-pr** skill which enforces the PR template and runs all pre-flight checks.
+
 - Write concise, imperative commit subjects (`Fix agent session cleanup`, `Improve prompt builder`); reference issues/PRs with `#123`
 - Commit generated artifacts (`main.js`, `manifest.json`, `versions.json`) alongside source changes; use `npm run version` for releases
 - **MANDATORY**: Include documentation updates in the same PR/commit as code changes (see Documentation Maintenance section)
@@ -350,22 +291,7 @@ This keeps technical planning centralized and accessible for all contributors.
 
 ## UI/UX Best Practices
 
-1. **Modal Sizing**: Use `:has()` selector to target parent containers for proper width constraints
-2. **Text Overflow**: Always handle long text with `text-overflow: ellipsis` and proper flex constraints
-3. **Message Formatting**: Convert single newlines to double newlines for proper Markdown rendering
-4. **Collapsible UI**: Use compact views by default with expandable details for complex information
-5. **Animations**: Add subtle transitions and animations for professional feel
-6. **Icon Usage**: Use Obsidian's built-in Lucide icons via `setIcon()` for consistency
-7. **File Chips**: When implementing @ mentions or file references:
-   - Use contenteditable divs with proper event handling
-   - Convert chips to markdown links when saving to history
-   - Position cursor after chip insertion for natural typing flow
-8. **Session State**: Maintain clean session boundaries:
-   - Clear context files when creating new sessions
-   - Reset permissions and state when loading from history
-   - Track session-level settings separately from global settings
-9. **CSS Containment**: Ensure proper CSS containment to prevent overflow issues
-10. **Theme Compatibility**: Use Obsidian's theme CSS variables for consistent styling and test with different Obsidian themes (light/dark)
+For UI/UX guidelines, use the **ui-ux-guidelines** skill.
 
 ## Security & Configuration
 
