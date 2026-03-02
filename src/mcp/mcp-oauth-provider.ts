@@ -118,7 +118,8 @@ export class ObsidianOAuthClientProvider implements OAuthClientProvider {
 	 * Check whether this provider has stored tokens.
 	 */
 	hasTokens(): boolean {
-		return this.app.secretStorage.getSecret(this.tokensKey) !== null;
+		const raw = this.app.secretStorage.getSecret(this.tokensKey);
+		return !!raw;
 	}
 
 	/**

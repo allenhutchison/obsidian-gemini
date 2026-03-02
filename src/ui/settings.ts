@@ -2,6 +2,7 @@ import ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting, Notice, setIcon, SecretComponent } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
+import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: InstanceType<typeof ObsidianGemini>;
@@ -184,7 +185,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				if (server.transport === 'http' && server.url) {
 					descParts.push(`HTTP: ${server.url}`);
 					// Show OAuth status from SecretStorage
-					const oauthKey = `mcp-oauth-tokens-${server.name.toLowerCase().replace(/[^a-z0-9-]/g, '-')}`;
+					const oauthKey = `mcp-oauth-tokens-${sanitizeKeySegment(server.name)}`;
 					if (this.app.secretStorage.getSecret(oauthKey)) {
 						descParts.push('Authorized ✓');
 					}
