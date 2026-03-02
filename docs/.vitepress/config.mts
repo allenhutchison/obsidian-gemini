@@ -6,14 +6,19 @@ export default defineConfig({
 	base: '/obsidian-gemini/',
 	cleanUrls: true,
 	lastUpdated: true,
+	// CONTRIBUTING.md and AI_POLICY.md are symlinked from the repo root and
+	// contain relative links (./CONTRIBUTING, ./LICENSE) that are valid on
+	// GitHub but don't resolve within the docs directory.
+	ignoreDeadLinks: [/\.\/CONTRIBUTING/, /\.\/LICENSE/],
 
 	head: [['link', { rel: 'icon', type: 'image/png', href: '/obsidian-gemini/favicon.png' }]],
 
 	themeConfig: {
 		nav: [
 			{ text: 'Guide', link: '/guide/getting-started' },
+			{ text: 'FAQ', link: '/guide/faq' },
 			{ text: 'Reference', link: '/reference/settings' },
-			{ text: 'Contributing', link: '/contributing/tool-development' },
+			{ text: 'Contributing', link: '/contributing/contributing' },
 			{ text: 'Changelog', link: '/changelog' },
 		],
 
@@ -56,6 +61,8 @@ export default defineConfig({
 				{
 					text: 'Contributing',
 					items: [
+						{ text: 'Contributing Guide', link: '/contributing/contributing' },
+						{ text: 'AI Policy', link: '/contributing/ai-policy' },
 						{ text: 'Testing', link: '/contributing/testing' },
 						{ text: 'Tool Development', link: '/contributing/tool-development' },
 					],
