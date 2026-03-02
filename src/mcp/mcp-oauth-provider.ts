@@ -26,7 +26,12 @@ export function sanitizeKeySegment(name: string): string {
 		.replace(/[^a-z0-9-]/g, '-')
 		.replace(/-+/g, '-')
 		.replace(/^-|-$/g, '');
-	return sanitized || 'unnamed';
+	if (sanitized) return sanitized;
+
+	// Deterministic fallback for names that sanitize to empty
+	let hash = 0;
+	for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+	return `server-${hash.toString(36)}`;
 }
 
 /**

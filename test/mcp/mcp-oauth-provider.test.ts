@@ -39,10 +39,21 @@ describe('sanitizeKeySegment', () => {
 		expect(sanitizeKeySegment('my-server-1')).toBe('my-server-1');
 	});
 
-	it('should fall back to "unnamed" when all chars are stripped', () => {
-		expect(sanitizeKeySegment('!!!')).toBe('unnamed');
-		expect(sanitizeKeySegment('')).toBe('unnamed');
-		expect(sanitizeKeySegment('***')).toBe('unnamed');
+	it('should produce deterministic hash-based keys when all chars are stripped', () => {
+		const result1 = sanitizeKeySegment('!!!');
+		const result2 = sanitizeKeySegment('***');
+		const result3 = sanitizeKeySegment('');
+
+		// Each should start with 'server-' prefix
+		expect(result1).toMatch(/^server-[a-z0-9]+$/);
+		expect(result2).toMatch(/^server-[a-z0-9]+$/);
+		expect(result3).toMatch(/^server-[a-z0-9]+$/);
+
+		// Different inputs should produce different keys
+		expect(result1).not.toBe(result2);
+
+		// Same input should produce same key (deterministic)
+		expect(sanitizeKeySegment('!!!')).toBe(result1);
 	});
 });
 
