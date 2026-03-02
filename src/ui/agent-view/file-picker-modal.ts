@@ -85,7 +85,13 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 		if (item instanceof TFolder) {
 			const folderFiles = this.getFilesInFolder(item);
 			const allSelected = folderFiles.length > 0 && folderFiles.every((f) => this.selectedFiles.has(f));
-			folderFiles.forEach((f) => (allSelected ? this.selectedFiles.delete(f) : this.selectedFiles.add(f)));
+			folderFiles.forEach((f) => {
+				if (allSelected) {
+					this.selectedFiles.delete(f);
+				} else {
+					this.selectedFiles.add(f);
+				}
+			});
 		} else {
 			const file = item as TFile;
 			this.selectedFiles.has(file) ? this.selectedFiles.delete(file) : this.selectedFiles.add(file);
