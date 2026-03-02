@@ -84,7 +84,7 @@ setIcon(iconEl, 'file-text');
 When implementing @ mentions or file reference chips:
 
 - Use `contenteditable` divs with proper event handling
-- Convert chips to markdown links (`[[file]]`) when saving to history
+- Convert chips to Markdown links (`[[file]]`) when saving to history
 - Position cursor after chip insertion for natural typing flow
 - Handle backspace to delete chips as single units
 

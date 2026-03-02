@@ -67,7 +67,7 @@ The `npm version` command automatically:
 - Click "Draft a new release"
 - Select the tag that was just created
 - Copy the release notes from `src/release-notes.json`
-- Format as markdown (remove emoji if desired, keep bullet points)
+- Format as Markdown (remove emoji if desired, keep bullet points)
 - Publish the release
 
 ### 6. Verify Release
