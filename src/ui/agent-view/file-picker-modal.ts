@@ -7,6 +7,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	private selectedFiles: Set<TFile>;
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private allItems: TAbstractFile[] = [];
+	private folderFilesCache: Map<TFolder, TFile[]> = new Map();
 
 	constructor(
 		app: App,
@@ -43,6 +44,17 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 		this.allItems = [...files, ...nonEmptyFolders].sort((a, b) =>
 			a.path.localeCompare(b.path, undefined, { numeric: true, sensitivity: 'base' })
 		);
+
+		const allFiles = this.allItems.filter((item): item is TFile => item instanceof TFile);
+		for (const item of this.allItems) {
+			if (item instanceof TFolder) {
+				const prefix = item.path + '/';
+				this.folderFilesCache.set(
+					item,
+					allFiles.filter((f) => f.path.startsWith(prefix))
+				);
+			}
+		}
 	}
 
 	getSuggestions(query: string): TAbstractFile[] {
@@ -109,8 +121,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	onChooseSuggestion(_item: TAbstractFile, _evt: MouseEvent | KeyboardEvent): void {}
 
 	private getFilesInFolder(folder: TFolder): TFile[] {
-		const prefix = folder.path + '/';
-		return this.allItems.filter((item): item is TFile => item instanceof TFile && item.path.startsWith(prefix));
+		return this.folderFilesCache.get(folder) ?? [];
 	}
 
 	onClose(): void {
