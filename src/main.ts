@@ -174,6 +174,7 @@ export default class ObsidianGemini extends Plugin {
 	private ragListenersRegistered: boolean = false;
 	private isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
+	private previousRagEnabled: boolean = false;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -190,6 +191,7 @@ export default class ObsidianGemini extends Plugin {
 			await this.setupGeminiScribe();
 			this.isGeminiInitialized = true;
 			this.previousApiKey = this.apiKey;
+			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
 			// Show a helpful notice if it's an API key error
@@ -899,6 +901,7 @@ export default class ObsidianGemini extends Plugin {
 				await this.setupGeminiScribe();
 				this.isGeminiInitialized = true;
 				this.previousApiKey = this.apiKey;
+				this.previousRagEnabled = this.settings.ragIndexing.enabled;
 
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional
@@ -909,6 +912,15 @@ export default class ObsidianGemini extends Plugin {
 				this.logger.error('Failed to re-initialize after settings change:', error);
 				this.isGeminiInitialized = false;
 				// Don't show notice here as it may be annoying during normal settings changes
+			}
+		}
+
+		// Handle RAG indexing state changes independently of full re-initialization
+		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
+			const ragStateChanged = this.previousRagEnabled !== this.settings.ragIndexing.enabled;
+			if (ragStateChanged) {
+				this.previousRagEnabled = this.settings.ragIndexing.enabled;
+				await this.initializeRagIndexing();
 			}
 		}
 
