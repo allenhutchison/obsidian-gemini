@@ -46,10 +46,11 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	}
 
 	getSuggestions(query: string): TAbstractFile[] {
-		if (!query.trim()) {
+		const trimmed = query.trim();
+		if (!trimmed) {
 			return this.allItems;
 		}
-		const search = prepareFuzzySearch(query);
+		const search = prepareFuzzySearch(trimmed);
 		return this.allItems
 			.map((item) => ({ item, result: search(item.path) }))
 			.filter(({ result }) => result !== null)
