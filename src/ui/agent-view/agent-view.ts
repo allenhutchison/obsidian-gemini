@@ -747,8 +747,12 @@ To reference an attachment in your response, use the path shown above.`;
 			(newFiles: TFile[]) => {
 				const newSet = new Set(newFiles);
 				const oldSet = new Set(initialFiles);
-				initialFiles.filter((f) => !newSet.has(f)).forEach((f) => this.context.removeContextFile(f, session));
-				newFiles.filter((f) => !oldSet.has(f)).forEach((f) => this.context.addFileToContext(f, session));
+				initialFiles.filter((f) => !newSet.has(f)).forEach((f) => {
+					this.context.removeContextFile(f, session);
+				});
+				newFiles.filter((f) => !oldSet.has(f)).forEach((f) => {
+					this.context.addFileToContext(f, session);
+				});
 				this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 				this.updateSessionHeader();
 			},
