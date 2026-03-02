@@ -1,10 +1,12 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
-import { MCPServerConfig } from '../mcp/types';
+import { MCPServerConfig, MCP_TRANSPORT_STDIO, MCP_TRANSPORT_HTTP, MCPTransportType } from '../mcp/types';
 import { MCPManager } from '../mcp/mcp-manager';
+import { ObsidianOAuthClientProvider } from '../mcp/mcp-oauth-provider';
 
 /**
  * Modal for adding or editing an MCP server configuration.
  * Includes test connection and per-tool trust settings.
+ * Supports both stdio (local process) and HTTP (remote) transports.
  */
 export class MCPServerModal extends Modal {
 	private config: MCPServerConfig;
@@ -13,6 +15,7 @@ export class MCPServerModal extends Modal {
 	private isEdit: boolean;
 	private discoveredTools: string[] = [];
 	private toolTrustContainer: HTMLElement | null = null;
+	private readonly originalServerName: string;
 
 	constructor(
 		app: App,
@@ -24,19 +27,23 @@ export class MCPServerModal extends Modal {
 		this.mcpManager = mcpManager;
 		this.onSave = onSave;
 		this.isEdit = config !== null;
+		this.originalServerName = config?.name ?? '';
 
 		// Clone or create default config
 		this.config = config
 			? {
 					...config,
+					transport: config.transport ?? MCP_TRANSPORT_STDIO,
 					args: [...config.args],
 					trustedTools: [...config.trustedTools],
 					env: config.env ? { ...config.env } : undefined,
 				}
 			: {
 					name: '',
+					transport: MCP_TRANSPORT_STDIO,
 					command: '',
 					args: [],
+					url: undefined,
 					env: undefined,
 					enabled: true,
 					trustedTools: [],
@@ -71,65 +78,120 @@ export class MCPServerModal extends Modal {
 					})
 			);
 
-		// Command
+		// Transport type selector
 		new Setting(contentEl)
-			.setName('Command')
-			.setDesc('The command to spawn the MCP server process')
-			.addText((text) => {
-				text.inputEl.style.width = '30ch';
-				text
-					.setPlaceholder('e.g., npx, python, /usr/local/bin/mcp-server')
-					.setValue(this.config.command)
+			.setName('Transport')
+			.setDesc('How to connect to the server: local process (stdio) or remote URL (HTTP)')
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption(MCP_TRANSPORT_STDIO, 'Stdio (local process)')
+					.addOption(MCP_TRANSPORT_HTTP, 'HTTP (remote server)')
+					.setValue(this.config.transport ?? MCP_TRANSPORT_STDIO)
 					.onChange((value) => {
-						this.config.command = value.trim();
-					});
-			});
+						this.config.transport = value as MCPTransportType;
+						// Re-render to show/hide transport-specific fields
+						this.onOpen();
+					})
+			);
 
-		// Arguments
-		new Setting(contentEl)
-			.setName('Arguments')
-			.setDesc('Command arguments, one per line')
-			.addTextArea((text) => {
-				text.inputEl.rows = 3;
-				text.inputEl.cols = 40;
-				text
-					.setPlaceholder('e.g.,\n-y\n@modelcontextprotocol/server-filesystem\n/path/to/folder')
-					.setValue(this.config.args.join('\n'))
-					.onChange((value) => {
-						this.config.args = value
-							.split('\n')
-							.map((a) => a.trim())
-							.filter((a) => a.length > 0);
-					});
-			});
+		// Transport-specific fields container
+		const isHttp = this.config.transport === MCP_TRANSPORT_HTTP;
 
-		// Environment variables
-		new Setting(contentEl)
-			.setName('Environment variables')
-			.setDesc('Optional KEY=VALUE pairs, one per line')
-			.addTextArea((text) => {
-				text.inputEl.rows = 2;
-				text.inputEl.cols = 40;
-				const envStr = this.config.env
-					? Object.entries(this.config.env)
-							.map(([k, v]) => `${k}=${v}`)
-							.join('\n')
-					: '';
-				text
-					.setPlaceholder('e.g., API_KEY=abc123')
-					.setValue(envStr)
-					.onChange((value) => {
-						const entries = value
-							.split('\n')
-							.map((line) => line.trim())
-							.filter((line) => line.includes('='))
-							.map((line) => {
-								const eqIndex = line.indexOf('=');
-								return [line.substring(0, eqIndex).trim(), line.substring(eqIndex + 1).trim()] as [string, string];
-							});
-						this.config.env = entries.length > 0 ? Object.fromEntries(entries) : undefined;
-					});
-			});
+		if (isHttp) {
+			// HTTP transport: URL field
+			new Setting(contentEl)
+				.setName('Server URL')
+				.setDesc('The HTTP endpoint of the MCP server')
+				.addText((text) => {
+					text.inputEl.style.width = '30ch';
+					text
+						.setPlaceholder('e.g., http://localhost:3000/mcp')
+						.setValue(this.config.url || '')
+						.onChange((value) => {
+							this.config.url = value.trim() || undefined;
+						});
+				});
+
+			// Clear OAuth credentials (only shown if tokens exist for the original name)
+			const oauthProvider = new ObsidianOAuthClientProvider(this.app, this.originalServerName);
+			if (oauthProvider.hasTokens()) {
+				new Setting(contentEl)
+					.setName('OAuth credentials')
+					.setDesc('Server has stored OAuth tokens')
+					.addButton((btn) =>
+						btn
+							.setButtonText('Clear credentials')
+							.setWarning()
+							.onClick(() => {
+								oauthProvider.clearAll();
+								new Notice('OAuth credentials cleared. You will need to re-authorize.');
+								this.onOpen(); // Re-render to hide the button
+							})
+					);
+			}
+		} else {
+			// Stdio transport: Command, Arguments, Environment
+
+			// Command
+			new Setting(contentEl)
+				.setName('Command')
+				.setDesc('The command to spawn the MCP server process')
+				.addText((text) => {
+					text.inputEl.style.width = '30ch';
+					text
+						.setPlaceholder('e.g., npx, python, /usr/local/bin/mcp-server')
+						.setValue(this.config.command)
+						.onChange((value) => {
+							this.config.command = value.trim();
+						});
+				});
+
+			// Arguments
+			new Setting(contentEl)
+				.setName('Arguments')
+				.setDesc('Command arguments, one per line')
+				.addTextArea((text) => {
+					text.inputEl.rows = 3;
+					text.inputEl.cols = 40;
+					text
+						.setPlaceholder('e.g.,\n-y\n@modelcontextprotocol/server-filesystem\n/path/to/folder')
+						.setValue(this.config.args.join('\n'))
+						.onChange((value) => {
+							this.config.args = value
+								.split('\n')
+								.map((a) => a.trim())
+								.filter((a) => a.length > 0);
+						});
+				});
+
+			// Environment variables
+			new Setting(contentEl)
+				.setName('Environment variables')
+				.setDesc('Optional KEY=VALUE pairs, one per line')
+				.addTextArea((text) => {
+					text.inputEl.rows = 2;
+					text.inputEl.cols = 40;
+					const envStr = this.config.env
+						? Object.entries(this.config.env)
+								.map(([k, v]) => `${k}=${v}`)
+								.join('\n')
+						: '';
+					text
+						.setPlaceholder('e.g., API_KEY=abc123')
+						.setValue(envStr)
+						.onChange((value) => {
+							const entries = value
+								.split('\n')
+								.map((line) => line.trim())
+								.filter((line) => line.includes('='))
+								.map((line) => {
+									const eqIndex = line.indexOf('=');
+									return [line.substring(0, eqIndex).trim(), line.substring(eqIndex + 1).trim()] as [string, string];
+								});
+							this.config.env = entries.length > 0 ? Object.fromEntries(entries) : undefined;
+						});
+				});
+		}
 
 		// Enabled toggle
 		new Setting(contentEl)
@@ -148,9 +210,16 @@ export class MCPServerModal extends Modal {
 
 		testSetting.addButton((button) =>
 			button.setButtonText('Test Connection').onClick(async () => {
-				if (!this.config.command) {
-					new Notice('Please enter a command first');
-					return;
+				if (isHttp) {
+					if (!this.config.url) {
+						new Notice('Please enter a URL first');
+						return;
+					}
+				} else {
+					if (!this.config.command) {
+						new Notice('Please enter a command first');
+						return;
+					}
 				}
 
 				button.setButtonText('Connecting...');
@@ -194,9 +263,23 @@ export class MCPServerModal extends Modal {
 							new Notice('Server name is required');
 							return;
 						}
-						if (!this.config.command) {
-							new Notice('Command is required');
-							return;
+						if (isHttp) {
+							if (!this.config.url) {
+								new Notice('Server URL is required for HTTP transport');
+								return;
+							}
+							// Validate URL
+							try {
+								new URL(this.config.url);
+							} catch {
+								new Notice('Invalid URL format');
+								return;
+							}
+						} else {
+							if (!this.config.command) {
+								new Notice('Command is required for stdio transport');
+								return;
+							}
 						}
 						await this.onSave(this.config);
 						this.close();

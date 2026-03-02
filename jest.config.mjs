@@ -18,5 +18,8 @@ export default {
 	// Path aliases mapping (must match tsconfig.json paths)
 	moduleNameMapper: {
 		'^@/(.*)$': '<rootDir>/src/$1',
+		'@modelcontextprotocol/sdk/client/streamableHttp\\.js':
+			'<rootDir>/test/__mocks__/@modelcontextprotocol/sdk/client/streamableHttp.js',
+		'@modelcontextprotocol/sdk/client/auth\\.js': '<rootDir>/test/__mocks__/@modelcontextprotocol/sdk/client/auth.js',
 	},
 };

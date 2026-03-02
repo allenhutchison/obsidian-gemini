@@ -2,6 +2,7 @@ import ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting, Notice, setIcon, SecretComponent } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
+import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: InstanceType<typeof ObsidianGemini>;
@@ -138,7 +139,9 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Enable MCP servers')
-			.setDesc('Connect to local Model Context Protocol servers to extend the agent with external tools. Desktop only.')
+			.setDesc(
+				'Connect to Model Context Protocol servers to extend the agent with external tools. Supports local (stdio) and remote (HTTP) servers.'
+			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.mcpEnabled).onChange(async (value) => {
 					this.plugin.settings.mcpEnabled = value;
@@ -178,9 +181,20 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					iconName = 'circle';
 				}
 
-				const setting = new Setting(containerEl)
-					.setName(server.name)
-					.setDesc(`${server.command} ${server.args.join(' ')} — ${statusText}`);
+				const descParts: string[] = [];
+				if (server.transport === 'http' && server.url) {
+					descParts.push(`HTTP: ${server.url}`);
+					// Show OAuth status from SecretStorage
+					const oauthKey = `mcp-oauth-tokens-${sanitizeKeySegment(server.name)}`;
+					if (this.app.secretStorage.getSecret(oauthKey)) {
+						descParts.push('Authorized ✓');
+					}
+				} else {
+					descParts.push(`${server.command} ${server.args.join(' ')}`);
+				}
+				descParts.push(statusText);
+
+				const setting = new Setting(containerEl).setName(server.name).setDesc(descParts.join(' — '));
 				setting.settingEl.addClass('mcp-server-setting');
 				setting.descEl.addClass('mcp-server-desc');
 				setIcon(setting.nameEl, iconName);
@@ -666,9 +680,17 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					);
 			}
 
-			// MCP Server Settings (desktop only)
-			if (!(this.app as any).isMobile) {
+			// MCP Server Settings
+			try {
 				await this.createMCPSettings(containerEl);
+			} catch (error) {
+				this.plugin.logger.error(
+					'MCP settings rendering error:',
+					error instanceof Error ? error.message : String(error)
+				);
+				new Setting(containerEl)
+					.setName('MCP Servers')
+					.setDesc(`Error loading MCP settings: ${error instanceof Error ? error.message : String(error)}`);
 			}
 
 			// Vault Search Index (RAG) Settings
