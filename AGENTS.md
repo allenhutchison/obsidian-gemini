@@ -268,6 +268,8 @@ if (this.plugin.settings.debugMode) {
 - Extend shared fixtures under `__mocks__/` when mocking new APIs
 - Run `npm test` before each PR and execute relevant `test-scripts/*.mjs` after touching agent or tool code
 
+For manual testing procedures (desktop symlink setup, mobile testing, smoke test checklists), see [docs/contributing/testing.md](docs/contributing/testing.md).
+
 ### Testing Focus
 
 When adding features, ensure tests cover:
