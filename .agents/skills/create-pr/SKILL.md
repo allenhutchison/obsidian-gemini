@@ -25,7 +25,7 @@ Use this skill when:
 Before creating a branch or pushing any code, run all of the following checks and fix any failures:
 
 1. **Format**: `npm run format-check` — if it fails, run `npm run format` and stage the changes
-2. **Build & type check**: `npm run build` — this runs `tsc -noEmit` then esbuild; fix any type errors
+2. **Build & type check**: `npm run build` — this runs `tsc --noEmit` then esbuild; fix any type errors
 3. **Tests**: `npm test` — all tests must pass with no warnings or unexpected console output
 
 Do NOT skip these steps. Do NOT push code that fails any of these checks.
