@@ -184,6 +184,13 @@ class SuggestModal extends Modal {
 			addEventListener: jest.fn(),
 			removeEventListener: jest.fn(),
 			value: '',
+			dispatchEvent: jest.fn(),
+		};
+		this.resultContainerEl = { scrollTop: 0 };
+		this.chooser = {
+			selectedItem: 0,
+			setSelectedItem: jest.fn(),
+			suggestions: [],
 		};
 	}
 

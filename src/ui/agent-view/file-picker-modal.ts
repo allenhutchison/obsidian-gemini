@@ -2,12 +2,20 @@ import { App, prepareFuzzySearch, setIcon, SuggestModal, TAbstractFile, TFile, T
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import type ObsidianGemini from '../../main';
 
+/** Undocumented internal SuggestModal API for programmatic highlight control. */
+interface SuggestModalChooser {
+	selectedItem: number;
+	setSelectedItem(index: number, scrollIntoView: boolean): void;
+	suggestions: HTMLElement[];
+}
+
 export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	private onSelect: (files: TFile[]) => void;
 	private selectedFiles: Set<TFile>;
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private allItems: TAbstractFile[] = [];
 	private folderFilesCache: Map<TFolder, TFile[]> = new Map();
+	private lastSuggestions: TAbstractFile[] = [];
 
 	constructor(
 		app: App,
@@ -60,30 +68,23 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	getSuggestions(query: string): TAbstractFile[] {
 		const trimmed = query.trim();
 		if (!trimmed) {
-			return this.allItems;
+			this.lastSuggestions = this.allItems;
+			return this.lastSuggestions;
 		}
 		const search = prepareFuzzySearch(trimmed);
-		return this.allItems
+		this.lastSuggestions = this.allItems
 			.map((item) => ({ item, result: search(item.path) }))
 			.filter(({ result }) => result !== null)
 			.sort((a, b) => b.result!.score - a.result!.score)
 			.map(({ item }) => item);
+		return this.lastSuggestions;
 	}
 
 	renderSuggestion(item: TAbstractFile, el: HTMLElement): void {
 		const isFolder = item instanceof TFolder;
 		const container = el.createDiv({ cls: 'suggestion-content' });
 		const aux = container.createDiv({ cls: 'suggestion-aux' });
-
-		if (isFolder) {
-			const folderFiles = this.getFilesInFolder(item as TFolder);
-			const selectedCount = folderFiles.filter((f) => this.selectedFiles.has(f)).length;
-			const icon =
-				selectedCount === 0 ? 'square' : selectedCount === folderFiles.length ? 'check-square' : 'minus-square';
-			setIcon(aux, icon);
-		} else {
-			setIcon(aux, this.selectedFiles.has(item as TFile) ? 'check-square' : 'square');
-		}
+		setIcon(aux, this.getIconForItem(item));
 
 		const titleEl = container.createDiv({ cls: 'suggestion-title' });
 		// Always render the folder-icon span so paths align; hide it for plain files
@@ -109,12 +110,36 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 			const file = item as TFile;
 			this.selectedFiles.has(file) ? this.selectedFiles.delete(file) : this.selectedFiles.add(file);
 		}
-		// Re-render checkboxes in-place; preserve scroll position
-		const scrollTop = this.resultContainerEl.scrollTop;
-		this.inputEl.dispatchEvent(new Event('input'));
-		requestAnimationFrame(() => {
-			this.resultContainerEl.scrollTop = scrollTop;
-		});
+
+		// In-place checkbox update: touch only affected DOM elements
+		const chooser = (this as any).chooser as SuggestModalChooser | undefined;
+		const suggestions = chooser?.suggestions;
+
+		if (suggestions && suggestions.length === this.lastSuggestions.length && this.lastSuggestions.length > 0) {
+			const affectedFiles: Set<TFile> = new Set(
+				item instanceof TFolder ? this.getFilesInFolder(item) : [item as TFile]
+			);
+
+			for (let i = 0; i < this.lastSuggestions.length; i++) {
+				const suggestion = this.lastSuggestions[i];
+				if (suggestion instanceof TFolder) {
+					if (this.getFilesInFolder(suggestion).some((f) => affectedFiles.has(f))) {
+						this.updateCheckboxAt(suggestions, i);
+					}
+				} else if (affectedFiles.has(suggestion as TFile)) {
+					this.updateCheckboxAt(suggestions, i);
+				}
+			}
+		} else {
+			// Fallback: full re-render when chooser internals are unavailable or out of sync
+			const scrollTop = this.resultContainerEl.scrollTop;
+			const selectedIndex = chooser?.selectedItem ?? 0;
+			this.inputEl.dispatchEvent(new Event('input'));
+			requestAnimationFrame(() => {
+				this.resultContainerEl.scrollTop = scrollTop;
+				chooser?.setSelectedItem(selectedIndex, false);
+			});
+		}
 	}
 
 	// Required by abstract interface; selection is handled in selectSuggestion
@@ -122,6 +147,23 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 
 	private getFilesInFolder(folder: TFolder): TFile[] {
 		return this.folderFilesCache.get(folder) ?? [];
+	}
+
+	private getIconForItem(item: TAbstractFile): string {
+		if (item instanceof TFolder) {
+			const folderFiles = this.getFilesInFolder(item);
+			const selectedCount = folderFiles.filter((f) => this.selectedFiles.has(f)).length;
+			return selectedCount === 0 ? 'square' : selectedCount === folderFiles.length ? 'check-square' : 'minus-square';
+		}
+		return this.selectedFiles.has(item as TFile) ? 'check-square' : 'square';
+	}
+
+	private updateCheckboxAt(chooserSuggestions: HTMLElement[], index: number): void {
+		const el = chooserSuggestions[index];
+		if (!el) return;
+		const aux = el.querySelector('.suggestion-aux') as HTMLElement | null;
+		if (!aux) return;
+		setIcon(aux, this.getIconForItem(this.lastSuggestions[index]));
 	}
 
 	onClose(): void {
