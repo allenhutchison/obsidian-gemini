@@ -102,12 +102,31 @@ User: @Project Plan Can you help me...
 
 ### Method 2: File Selection Modal
 
-For adding multiple files at once:
+For adding, reviewing, or removing multiple files at once:
 
 1. Click the file icon in the session header
-2. Browse and select files
-3. Click "Add to Context"
-4. Files appear as chips in the session
+2. An Obsidian-style search modal opens — files already in context appear pre-checked
+3. Type to filter; the modal uses Obsidian's built-in fuzzy search to rank results
+4. Press **Enter** (or click) to toggle a file or folder on/off
+5. Press **Esc** to confirm and close — additions and removals are applied together
+
+**Folder support:**
+
+Folders appear alongside files in the list (identified by a folder icon and a trailing `/`). Selecting a folder toggles all the markdown files inside it at once. The check icon reflects the folder's state:
+
+- **☑ Filled** — all files in the folder are selected
+- **☐ Partial** (minus) — some files selected
+- **☐ Empty** — no files selected
+
+Unchecking a folder (or individual file) that was already in context **removes** it from context when you close the modal.
+
+**Search tips:**
+
+- **Fuzzy matching**: type a few characters and matching files bubble up — `proj` matches "Project-Overview.md", "proj-notes.md"
+- **Natural sort**: numbers in file names sort numerically — `file8`, `file9`, `file10`, `file11`
+- **Keyboard**:
+  - **Enter** — toggle the highlighted item's selection
+  - **Esc** — confirm all changes and close
 
 ### Method 3: Drag and Drop
 
@@ -136,7 +155,7 @@ Active context files are displayed:
 To remove a file from context:
 
 1. Click the X on the file chip, or
-2. Open session settings and remove from context list
+2. Open the file selection modal, uncheck the file (or folder), and press **Esc**
 
 ### Context Limits
 

@@ -143,9 +143,15 @@ Attachments work alongside @ mentions and context files. You can:
 
 Add persistent context files to your session:
 
-1. Type @ in the chat input
-2. Select files from the suggestion list
-3. These files remain available throughout the session
+1. Type `@` in the chat input for quick single-file selection
+2. Click the file icon in the session header to open the file selection modal:
+   - Already-added files appear pre-checked
+   - Type to fuzzy-search; **Enter** toggles a file or folder; **Esc** confirms and closes
+   - Selecting a folder adds all markdown files inside it
+   - Unchecking a file or folder removes it from context
+3. Files remain available throughout the session
+
+For detailed information about context files and advanced usage, see the [Context System Guide](/guide/context-system).
 
 ### Session Management
 

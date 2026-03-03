@@ -107,6 +107,14 @@ const MarkdownRenderer = {
 const setIcon = jest.fn();
 const Notice = jest.fn();
 const normalizePath = jest.fn((path) => path);
+const prepareFuzzySearch = jest.fn((query) => {
+	return (text) => {
+		if (!query || text.toLowerCase().includes(query.toLowerCase())) {
+			return { score: 1, matches: [] };
+		}
+		return null;
+	};
+});
 
 class FuzzySuggestModal extends Modal {
 	constructor(app) {
@@ -176,6 +184,13 @@ class SuggestModal extends Modal {
 			addEventListener: jest.fn(),
 			removeEventListener: jest.fn(),
 			value: '',
+			dispatchEvent: jest.fn(),
+		};
+		this.resultContainerEl = { scrollTop: 0 };
+		this.chooser = {
+			selectedItem: 0,
+			setSelectedItem: jest.fn(),
+			suggestions: [],
 		};
 	}
 
@@ -260,6 +275,7 @@ module.exports = {
 	PluginSettingTab,
 	SuggestModal,
 	Plugin,
+	prepareFuzzySearch,
 	SecretComponent,
 	SecretStorage,
 };
