@@ -1,4 +1,18 @@
 {
+	"4.5.0": {
+		"title": "✨ Gemini Scribe 4.5 - MCP Servers, Skills & Secure Storage",
+		"highlights": [
+			"🔌 [Experimental] MCP server support with HTTP transport and OAuth authentication",
+			"🧠 Agent skills system following the agentskills.io specification",
+			"📎 Unified drag-and-drop pipeline with file type classification",
+			"🔐 API key migrated to Obsidian SecretStorage for secure handling",
+			"🔍 Search box in Add Context Files modal for quick filtering",
+			"⚡ Default chat model changed to Flash for free API key compatibility",
+			"🔄 RAG indexing now starts when toggled without requiring plugin reload",
+			"📚 New documentation site with expanded FAQ and contributing guides"
+		],
+		"details": "This release adds experimental MCP (Model Context Protocol) server integration with HTTP transport and OAuth support, letting you connect external tools to your agent. The new agent skills system allows extensible AI capabilities following the agentskills.io spec. Your API key is now stored securely via Obsidian's SecretStorage (OS keychain). File attachments have been unified with smart classification for text, media, and binary files. The default chat model is now Flash for better compatibility with free API keys."
+	},
 	"4.4.0": {
 		"title": "✨ Gemini Scribe 4.4 - Deep Research & Quality of Life",
 		"highlights": [
