@@ -8,8 +8,8 @@ export interface GeminiModel {
 }
 
 export const DEFAULT_GEMINI_MODELS: GeminiModel[] = [
-	{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', defaultForRoles: ['chat'] },
-	{ value: 'gemini-flash-latest', label: 'Gemini Flash Latest', defaultForRoles: ['summary', 'rewrite'] },
+	{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+	{ value: 'gemini-flash-latest', label: 'Gemini Flash Latest', defaultForRoles: ['chat', 'summary', 'rewrite'] },
 	{ value: 'gemini-flash-lite-latest', label: 'Gemini Flash Lite Latest', defaultForRoles: ['completions'] },
 	{ value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
 	{

@@ -66,11 +66,11 @@ All models are selected from available Gemini models. The plugin supports dynami
 
 - **Setting**: `chatModelName`
 - **Type**: String
-- **Default**: `gemini-2.5-pro`
+- **Default**: `gemini-flash-latest`
 - **Description**: Model used for agent chat conversations
 - **Available Models**:
-  - `gemini-2.5-pro` - Gemini 2.5 Pro (most capable, default for chat)
-  - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient)
+  - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient, default for chat)
+  - `gemini-2.5-pro` - Gemini 2.5 Pro (most capable, requires billing)
   - `gemini-flash-lite-latest` - Gemini Flash Lite Latest (lightweight)
   - `gemini-3-pro-preview` - Gemini 3 Pro Preview (experimental)
 - **Note**: Model discovery automatically fetches the latest available models from Google's API
