@@ -35,4 +35,10 @@ features:
   - title: Context System
     details: Add specific notes as persistent context for agent sessions using @ mentions.
     link: /guide/context-system
+  - title: MCP Servers
+    details: Connect external tool servers via the Model Context Protocol. Supports stdio and HTTP transports with OAuth.
+    link: /guide/mcp-servers
+  - title: Agent Skills
+    details: Create extensible skill packages that give the agent specialized knowledge and workflows.
+    link: /guide/agent-skills
 ---

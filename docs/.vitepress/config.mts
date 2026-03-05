@@ -43,6 +43,7 @@ export default defineConfig({
 						{ text: 'Semantic Search', link: '/guide/semantic-search' },
 						{ text: 'Deep Research', link: '/guide/deep-research' },
 						{ text: 'MCP Servers', link: '/guide/mcp-servers' },
+						{ text: 'Agent Skills', link: '/guide/agent-skills' },
 					],
 				},
 			],

@@ -1,6 +1,6 @@
 # MCP Servers
 
-Gemini Scribe supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for connecting to external tool servers. This allows the AI agent to use tools provided by MCP servers alongside the built-in vault tools.
+Gemini Scribe has experimental support for the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for connecting to external tool servers. This allows the AI agent to use tools provided by MCP servers alongside the built-in vault tools.
 
 ## Transport Types
 
@@ -87,6 +87,44 @@ To connect to an MCP server running on your network or the cloud:
 HTTP servers can run anywhere — on your local machine, on another computer on your network, or in the cloud. This is especially useful for mobile access.
 :::
 
+### HTTP: Server with OAuth
+
+Some MCP servers require OAuth authentication. Gemini Scribe handles the full OAuth flow automatically:
+
+1. Add a new MCP server with:
+   - **Transport**: HTTP (remote server)
+   - **Name**: `my-oauth-server`
+   - **URL**: `https://example.com/mcp`
+2. Click **Test Connection**
+3. If the server requires OAuth, your browser will open to the authorization page
+4. Sign in and authorize the application
+5. You'll be redirected back to Obsidian automatically
+6. Tokens are stored securely in Obsidian's SecretStorage (OS keychain)
+
+::: tip
+OAuth tokens persist across Obsidian restarts. To clear stored credentials, click **Clear OAuth Credentials** in the server's edit dialog.
+:::
+
+::: warning
+The OAuth callback runs a temporary local server on port 8095. Ensure this port is available. The authorization flow times out after 2 minutes.
+:::
+
+### Environment Variables
+
+Stdio servers can be configured with environment variables. These are useful for passing API keys, paths, or other configuration to the server process.
+
+When adding or editing a stdio server, click **Add Environment Variable** to define key-value pairs:
+
+| Variable        | Example Use Case                               |
+| --------------- | ---------------------------------------------- |
+| `BRAVE_API_KEY` | API key for Brave Search MCP server            |
+| `GITHUB_TOKEN`  | Personal access token for GitHub MCP server    |
+| `HOME`          | Override home directory for the server process |
+
+::: warning
+Environment variables may contain sensitive values like API keys. These are stored in your Obsidian plugin settings (`data.json`), not in SecretStorage. Avoid committing your vault's `.obsidian` folder to public repositories.
+:::
+
 ## Finding Servers
 
 Popular MCP servers include:
@@ -141,3 +179,4 @@ When an MCP server is connected:
 - **Stdio transport**: Desktop only (Windows, macOS, Linux)
 - **Tools only**: MCP resources and prompts are not yet supported
 - **Restart required**: Changes to server configurations require toggling the server off and on, or restarting the plugin
+- **OAuth**: Requires a browser for the authorization flow; not available on mobile for OAuth-protected servers

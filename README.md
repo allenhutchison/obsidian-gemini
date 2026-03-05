@@ -4,28 +4,21 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 > **Note:** This plugin requires a Google Gemini API key. Free tier available at [Google AI Studio](https://aistudio.google.com/apikey).
 
-## What's New in v4.3.1
+## What's New in v4.5.0
 
-**🔧 Setup Experience Fix**
+**✨ MCP Servers, Skills & Secure Storage**
 
-This release fixes a critical issue for new users:
+- **🔌 [Experimental] MCP server support** - Connect external tool servers via stdio or HTTP transport with OAuth
+- **🧠 Agent skills system** - Extensible AI capabilities following the agentskills.io spec
+- **📎 Unified drag-and-drop** - Attach images, audio, video, PDFs, and text files with smart classification
+- **🔐 Secure API key storage** - API key migrated to Obsidian SecretStorage (OS keychain)
+- **🔍 Context file search** - Search box in the Add Context Files modal
+- **⚡ Flash default model** - Default chat model changed to Flash for free API key compatibility
 
-- **🔑 Fixed plugin setup** - New users can now access settings to configure their API key
-- **⚙️ Settings always accessible** - Plugin loads partially when unconfigured
-- **🔄 Auto-activation** - Plugin automatically activates when API key is added
+**Previous Updates (v4.4.0):**
 
-**Previous Updates (v4.3.0):**
-
-- **🖼️ Multimodal image support** - Attach images to your chats
-- **✨ Selection actions** - Explain or ask questions about selected text
-- **🔍 Folder/tag filtering** - Filter semantic search by folders and tags
-- **🔗 Fixed @ mentions** - Proper wikilink paths for file references
-
-**Previous Updates (v4.2.x):**
-
-- **🔬 Semantic Vault Search:** [Experimental] Search your vault by meaning using Google's File Search API
-- **📄 PDF and attachment indexing** - Index PDFs and other supported file types
-- **⏸️ Pause/resume commands** - Control syncing with `Gemini Scribe: Pause/Resume RAG sync`
+- **🔬 Deep research** - Migrated to gemini-utils ResearchManager
+- **🛡️ Trusted Mode** - Extended vault tools with optional confirmation bypass
 
 ## Features
 
@@ -42,7 +35,8 @@ This release fixes a critical issue for new users:
 - **Configurable Models:** Choose different Gemini models for chat, summarization, and completions, allowing you to tailor the AI's behavior to each task.
 - **Custom Prompt System:** Create reusable AI instruction templates for agent sessions, allowing you to customize the AI's behavior for different workflows (e.g., technical documentation, creative writing, research). Includes command palette commands for easy creation and management.
 - **Image Paste Support:** Paste images directly into the chat input to send them to Gemini for multimodal analysis. Images are automatically saved to your Obsidian attachment folder, displayed as thumbnails before sending, and the AI receives the image path for embedding in notes.
-- **MCP Server Support:** Connect to local [Model Context Protocol](https://modelcontextprotocol.io/) servers to extend the agent with external tools. Configure per-tool trust settings, and MCP tools integrate seamlessly with the existing confirmation flow and loop detection. Desktop only.
+- **MCP Server Support:** [Experimental] Connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers to extend the agent with external tools. Supports stdio (desktop) and HTTP transports (all platforms including mobile), with OAuth authentication for remote servers. Configure per-tool trust settings with seamless integration into the confirmation flow.
+- **Agent Skills:** Create and use extensible skill packages that give the agent specialized knowledge and workflows. Skills follow the [agentskills.io](https://agentskills.io) specification and are stored in your plugin state folder. The agent automatically discovers available skills and activates them on demand.
 - **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, agent prompts, summarization prompts, selection rewrite prompts, and completion prompts. These ensure consistent and effective AI interaction.
 - **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Agent session history is stored locally in your Obsidian vault as markdown files.
 - **Robust Session Management:**
@@ -85,9 +79,9 @@ This release fixes a critical issue for new users:
     - Open Obsidian Settings.
     - Go to "Gemini Scribe" under "Community plugins".
     - **API Key:** Paste your Gemini API key here. Your key is stored securely using Obsidian's SecretStorage.
-    - **Chat Model:** Select the preferred Gemini model for chat interactions (e.g., `gemini-1.5-pro`).
-    - **Summary Model:** Select the preferred Gemini model for generating summaries (e.g., `gemini-1.5-flash`).
-    - **Completion Model:** Select the preferred model for IDE-style completions (e.g., `gemini-1.5-flash-8b`).
+    - **Chat Model:** Select the preferred Gemini model for chat interactions (default: `gemini-flash-latest`).
+    - **Summary Model:** Select the preferred Gemini model for generating summaries (default: `gemini-flash-latest`).
+    - **Completion Model:** Select the preferred model for IDE-style completions (default: `gemini-flash-lite-latest`).
     - **Summary Frontmatter Key:** Specify the key to use when storing summaries in the frontmatter (default: `summary`).
     - **Your Name:** Enter your name, which the AI will use when addressing you.
     - **Chat History:**
@@ -132,6 +126,7 @@ Let the AI actively work with your vault through tool calling capabilities.
 - **Web Search:** Search Google for current information (if enabled)
 - **Fetch URLs:** Retrieve and analyze web content
 - **Deep Research:** Conduct comprehensive multi-source research with citations
+- **Agent Skills:** Activate specialized skill packages for domain-specific tasks
 
 **Key Features:**
 
@@ -179,6 +174,7 @@ For detailed guides on all features, visit the [Documentation Site](https://alle
 - [Summarization Guide](docs/guide/summarization.md)
 - [Context System Guide](docs/guide/context-system.md)
 - [MCP Servers Guide](docs/guide/mcp-servers.md) - Connect external tool servers
+- [Agent Skills Guide](docs/guide/agent-skills.md) - Create extensible AI skill packages
 
 **Configuration & Development:**
 

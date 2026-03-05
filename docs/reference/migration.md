@@ -26,6 +26,21 @@ This guide helps you upgrade to Gemini Scribe v4.0.0, which introduces a unified
    - Legacy history files backed up to `[Plugin State Folder]/History-Archive/`
    - Custom prompts remain in `[Plugin State Folder]/Prompts/`
 
+## API Key Migration (v4.5.0)
+
+In v4.5.0, your API key is automatically migrated from `data.json` to Obsidian's SecretStorage API (OS keychain). This happens transparently on first load:
+
+1. The plugin reads the API key from `data.json`
+2. Stores it securely in SecretStorage
+3. Verifies the stored key matches
+4. Removes the key from `data.json`
+
+**No action required** — this is fully automatic. If migration fails (verification mismatch), the key stays in `data.json` and will be retried on next load.
+
+::: tip
+SecretStorage uses your operating system's native credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service). Your API key is no longer stored in plain text.
+:::
+
 ## Automatic Migration Process
 
 When you first launch v4.0.0:

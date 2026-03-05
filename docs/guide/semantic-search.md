@@ -22,6 +22,10 @@ The agent has access to this as the `vault_semantic_search` tool. You don't need
 3. Toggle **Enable vault indexing** to ON
 4. The initial indexing starts automatically with a progress modal
 
+::: tip
+As of v4.5.0, enabling vault indexing starts immediately without requiring a plugin reload.
+:::
+
 Initial indexing time depends on vault size. A vault with 1,000 notes typically takes a few minutes.
 
 ### Configuration Options
