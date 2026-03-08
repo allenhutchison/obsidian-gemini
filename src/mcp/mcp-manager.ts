@@ -1,15 +1,18 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
 import { MCPServerConfig, MCPConnectionStatus, MCPServerState, MCP_TRANSPORT_HTTP } from './types';
 import { MCPToolWrapper } from './mcp-tool-wrapper';
 import { ObsidianOAuthClientProvider, OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
-import { startOAuthCallbackServer } from './mcp-oauth-callback';
 import { obsidianFetch } from './mcp-fetch';
 import type ObsidianGemini from '../main';
 import { Logger } from '../utils/logger';
 import { Notice } from 'obsidian';
+
+// Desktop-only modules loaded dynamically to avoid pulling in Node.js builtins
+// (http, child_process) that crash the plugin on iOS/mobile.
+type StdioClientTransportType = import('@modelcontextprotocol/sdk/client/stdio.js').StdioClientTransport;
+type OAuthCallbackHandle = Awaited<ReturnType<typeof import('./mcp-oauth-callback').startOAuthCallbackServer>>;
 
 /** Check whether a config uses HTTP transport */
 function isHttpTransport(config: MCPServerConfig): boolean {
@@ -17,7 +20,7 @@ function isHttpTransport(config: MCPServerConfig): boolean {
 }
 
 /** Union type for supported MCP transports */
-type MCPTransport = StdioClientTransport | StreamableHTTPClientTransport;
+type MCPTransport = StdioClientTransportType | StreamableHTTPClientTransport;
 
 /**
  * Patch the global setTimeout to return objects with .unref() in Electron's renderer.
@@ -91,8 +94,11 @@ interface ServerConnection {
 function buildEnv(extra?: Record<string, string>): Record<string, string> | undefined {
 	if (!extra) return undefined;
 	const base: Record<string, string> = {};
-	for (const [k, v] of Object.entries(process.env)) {
-		if (v !== undefined) base[k] = v;
+	// process.env is only available in Node.js (desktop Electron), not on mobile
+	if (typeof process !== 'undefined' && process.env) {
+		for (const [k, v] of Object.entries(process.env)) {
+			if (v !== undefined) base[k] = v;
+		}
 	}
 	return { ...base, ...extra };
 }
@@ -175,7 +181,7 @@ export class MCPManager {
 
 		let transport: MCPTransport | null = null;
 		let authProvider: ObsidianOAuthClientProvider | undefined;
-		let callbackHandle: Awaited<ReturnType<typeof startOAuthCallbackServer>> | null = null;
+		let callbackHandle: OAuthCallbackHandle | null = null;
 		try {
 			if (useHttp) {
 				if (!config.url) {
@@ -190,6 +196,7 @@ export class MCPManager {
 				// Desktop-only: mobile won't have http.createServer.
 				if (!(this.plugin.app as any).isMobile) {
 					try {
+						const { startOAuthCallbackServer } = await import('./mcp-oauth-callback');
 						callbackHandle = await startOAuthCallbackServer();
 						this.logger.debug(`MCP: OAuth callback server listening on port ${OAUTH_CALLBACK_PORT}`);
 					} catch (serverErr) {
@@ -199,6 +206,7 @@ export class MCPManager {
 				}
 			} else {
 				this.logger.debug(`MCP: Creating StdioClientTransport for "${config.name}"`);
+				const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
 				transport = new StdioClientTransport({
 					command: config.command,
 					args: config.args,
@@ -420,7 +428,7 @@ export class MCPManager {
 		}
 
 		let authProvider: ObsidianOAuthClientProvider | undefined;
-		let callbackHandle: Awaited<ReturnType<typeof startOAuthCallbackServer>> | null = null;
+		let callbackHandle: OAuthCallbackHandle | null = null;
 
 		try {
 			if (useHttp) {
@@ -433,12 +441,14 @@ export class MCPManager {
 				// Start callback server before connect for OAuth readiness
 				if (!(this.plugin.app as any).isMobile) {
 					try {
+						const { startOAuthCallbackServer } = await import('./mcp-oauth-callback');
 						callbackHandle = await startOAuthCallbackServer();
 					} catch {
 						// Non-fatal
 					}
 				}
 			} else {
+				const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
 				transport = new StdioClientTransport({
 					command: config.command,
 					args: config.args,
