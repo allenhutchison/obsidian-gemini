@@ -1,4 +1,9 @@
 {
+	"4.5.1": {
+		"title": "🔧 Gemini Scribe 4.5.1 - iOS Compatibility Fix",
+		"highlights": ["🍎 Fixed plugin failing to load on iOS due to Node.js module imports"],
+		"details": "This patch fixes the plugin failing to load on iOS devices. The issue was caused by Node.js module imports that are not available in the mobile environment."
+	},
 	"4.5.0": {
 		"title": "✨ Gemini Scribe 4.5 - MCP Servers, Skills & Secure Storage",
 		"highlights": [
