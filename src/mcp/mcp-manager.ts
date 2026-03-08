@@ -161,9 +161,6 @@ export class MCPManager {
 			return;
 		}
 
-		// Patch setTimeout for Electron compatibility before any MCP SDK calls
-		patchSetTimeoutForElectron();
-
 		// Disconnect if already connected
 		if (this.connections.has(config.name)) {
 			await this.disconnectServer(config.name);
@@ -180,81 +177,11 @@ export class MCPManager {
 		}
 
 		let transport: MCPTransport | null = null;
-		let authProvider: ObsidianOAuthClientProvider | undefined;
-		let callbackHandle: OAuthCallbackHandle | null = null;
 		try {
-			if (useHttp) {
-				if (!config.url) {
-					throw new Error('HTTP transport requires a URL');
-				}
-				this.logger.debug(`MCP: Creating StreamableHTTPClientTransport for "${config.name}"`);
-				authProvider = new ObsidianOAuthClientProvider(this.plugin.app, config.name);
-				transport = new StreamableHTTPClientTransport(new URL(config.url), { authProvider, fetch: obsidianFetch });
+			const result = await this.createTransportAndConnect(config);
+			transport = result.transport;
+			const client = result.client;
 
-				// Start the callback server BEFORE connect so it's already listening
-				// when the SDK opens the browser for OAuth authorization.
-				// Desktop-only: mobile won't have http.createServer.
-				if (!(this.plugin.app as any).isMobile) {
-					try {
-						const { startOAuthCallbackServer } = await import('./mcp-oauth-callback');
-						callbackHandle = await startOAuthCallbackServer();
-						this.logger.debug(`MCP: OAuth callback server listening on port ${OAUTH_CALLBACK_PORT}`);
-					} catch (serverErr) {
-						// Non-fatal: if the port is busy, OAuth just won't work
-						this.logger.warn(`MCP: Could not start OAuth callback server: ${serverErr}`);
-					}
-				}
-			} else {
-				this.logger.debug(`MCP: Creating StdioClientTransport for "${config.name}"`);
-				const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
-				transport = new StdioClientTransport({
-					command: config.command,
-					args: config.args,
-					env: buildEnv(config.env),
-				});
-			}
-
-			const client = new Client({
-				name: 'obsidian-gemini-scribe',
-				version: this.plugin.manifest.version,
-			});
-
-			this.logger.debug(`MCP: Calling client.connect() for "${config.name}"...`);
-			try {
-				await client.connect(transport);
-			} catch (connectError) {
-				if (
-					connectError instanceof UnauthorizedError &&
-					useHttp &&
-					transport instanceof StreamableHTTPClientTransport
-				) {
-					this.logger.log(`MCP: OAuth required for "${config.name}", waiting for authorization...`);
-					new Notice(`MCP: Authorizing "${config.name}" — check your browser`);
-
-					if (!callbackHandle) {
-						throw new Error('OAuth required but callback server is not available (mobile or port conflict)');
-					}
-
-					// Wait for OAuth callback — server is already listening
-					const { code } = await callbackHandle.waitForCode;
-					callbackHandle = null; // Server auto-closes after receiving the code
-					await transport.finishAuth(code);
-					this.logger.log(`MCP: OAuth token exchange complete for "${config.name}", reconnecting...`);
-
-					// Reconnect with the now-authenticated provider
-					await transport.close().catch(() => {});
-					transport = new StreamableHTTPClientTransport(new URL(config.url!), { authProvider, fetch: obsidianFetch });
-					await client.connect(transport);
-				} else {
-					throw connectError;
-				}
-			} finally {
-				// Clean up the callback server if OAuth wasn't needed
-				if (callbackHandle) {
-					callbackHandle.waitForCode.catch(() => undefined);
-					callbackHandle.close();
-				}
-			}
 			this.logger.debug(`MCP: client.connect() succeeded for "${config.name}"`);
 
 			// Discover tools
@@ -414,11 +341,6 @@ export class MCPManager {
 			throw new Error('Stdio MCP server connections are not supported on mobile');
 		}
 
-		// Patch setTimeout for Electron compatibility before any MCP SDK calls
-		patchSetTimeoutForElectron();
-
-		let transport: MCPTransport | null = null;
-
 		if (useHttp) {
 			this.logger.debug(`MCP: Test connection to "${config.name}" — url: ${config.url}`);
 		} else {
@@ -427,74 +349,13 @@ export class MCPManager {
 			);
 		}
 
-		let authProvider: ObsidianOAuthClientProvider | undefined;
-		let callbackHandle: OAuthCallbackHandle | null = null;
-
+		let transport: MCPTransport | null = null;
 		try {
-			if (useHttp) {
-				if (!config.url) {
-					throw new Error('HTTP transport requires a URL');
-				}
-				authProvider = new ObsidianOAuthClientProvider(this.plugin.app, config.name);
-				transport = new StreamableHTTPClientTransport(new URL(config.url), { authProvider, fetch: obsidianFetch });
+			const result = await this.createTransportAndConnect(config);
+			transport = result.transport;
 
-				// Start callback server before connect for OAuth readiness
-				if (!(this.plugin.app as any).isMobile) {
-					try {
-						const { startOAuthCallbackServer } = await import('./mcp-oauth-callback');
-						callbackHandle = await startOAuthCallbackServer();
-					} catch {
-						// Non-fatal
-					}
-				}
-			} else {
-				const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
-				transport = new StdioClientTransport({
-					command: config.command,
-					args: config.args,
-					env: buildEnv(config.env),
-				});
-			}
-
-			const client = new Client({
-				name: 'obsidian-gemini-scribe',
-				version: this.plugin.manifest.version,
-			});
-
-			this.logger.debug(`MCP: Test — calling client.connect()...`);
-			try {
-				await client.connect(transport);
-			} catch (connectError) {
-				if (
-					connectError instanceof UnauthorizedError &&
-					useHttp &&
-					transport instanceof StreamableHTTPClientTransport
-				) {
-					this.logger.log(`MCP: OAuth required for test of "${config.name}", starting authorization flow...`);
-					new Notice(`MCP: Authorizing "${config.name}" — check your browser`);
-
-					if (!callbackHandle) {
-						throw new Error('OAuth required but callback server is not available');
-					}
-
-					const { code } = await callbackHandle.waitForCode;
-					callbackHandle = null;
-					await transport.finishAuth(code);
-
-					await transport.close().catch(() => {});
-					transport = new StreamableHTTPClientTransport(new URL(config.url!), { authProvider, fetch: obsidianFetch });
-					await client.connect(transport);
-				} else {
-					throw connectError;
-				}
-			} finally {
-				if (callbackHandle) {
-					callbackHandle.waitForCode.catch(() => undefined);
-					callbackHandle.close();
-				}
-			}
 			this.logger.debug(`MCP: Test — connected, listing tools...`);
-			const { tools } = await client.listTools();
+			const { tools } = await result.client.listTools();
 			const toolNames = tools.map((t) => t.name);
 			this.logger.debug(`MCP: Test — found ${toolNames.length} tool(s): ${toolNames.join(', ')}`);
 
@@ -523,6 +384,94 @@ export class MCPManager {
 	 */
 	isConnected(serverName: string): boolean {
 		return this.connections.has(serverName);
+	}
+
+	/**
+	 * Create a transport for the given config, start an OAuth callback server
+	 * if needed, create a Client, connect (handling OAuth retry), and return
+	 * the connected client + transport. The caller owns closing the transport.
+	 */
+	private async createTransportAndConnect(
+		config: MCPServerConfig
+	): Promise<{ client: Client; transport: MCPTransport }> {
+		const useHttp = isHttpTransport(config);
+
+		// Patch setTimeout for Electron compatibility before any MCP SDK calls
+		patchSetTimeoutForElectron();
+
+		let transport: MCPTransport;
+		let authProvider: ObsidianOAuthClientProvider | undefined;
+		let callbackHandle: OAuthCallbackHandle | null = null;
+
+		if (useHttp) {
+			if (!config.url) {
+				throw new Error('HTTP transport requires a URL');
+			}
+			this.logger.debug(`MCP: Creating StreamableHTTPClientTransport for "${config.name}"`);
+			authProvider = new ObsidianOAuthClientProvider(this.plugin.app, config.name);
+			transport = new StreamableHTTPClientTransport(new URL(config.url), { authProvider, fetch: obsidianFetch });
+
+			// Start the callback server BEFORE connect so it's already listening
+			// when the SDK opens the browser for OAuth authorization.
+			// Desktop-only: mobile won't have http.createServer.
+			if (!(this.plugin.app as any).isMobile) {
+				try {
+					const { startOAuthCallbackServer } = await import('./mcp-oauth-callback');
+					callbackHandle = await startOAuthCallbackServer();
+					this.logger.debug(`MCP: OAuth callback server listening on port ${OAUTH_CALLBACK_PORT}`);
+				} catch (serverErr) {
+					// Non-fatal: if the port is busy, OAuth just won't work
+					this.logger.warn(`MCP: Could not start OAuth callback server: ${serverErr}`);
+				}
+			}
+		} else {
+			this.logger.debug(`MCP: Creating StdioClientTransport for "${config.name}"`);
+			const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
+			transport = new StdioClientTransport({
+				command: config.command,
+				args: config.args,
+				env: buildEnv(config.env),
+			});
+		}
+
+		const client = new Client({
+			name: 'obsidian-gemini-scribe',
+			version: this.plugin.manifest.version,
+		});
+
+		try {
+			await client.connect(transport);
+		} catch (connectError) {
+			if (connectError instanceof UnauthorizedError && useHttp && transport instanceof StreamableHTTPClientTransport) {
+				this.logger.log(`MCP: OAuth required for "${config.name}", waiting for authorization...`);
+				new Notice(`MCP: Authorizing "${config.name}" — check your browser`);
+
+				if (!callbackHandle) {
+					throw new Error('OAuth required but callback server is not available (mobile or port conflict)');
+				}
+
+				// Wait for OAuth callback — server is already listening
+				const { code } = await callbackHandle.waitForCode;
+				callbackHandle = null; // Server auto-closes after receiving the code
+				await transport.finishAuth(code);
+				this.logger.log(`MCP: OAuth token exchange complete for "${config.name}", reconnecting...`);
+
+				// Reconnect with the now-authenticated provider
+				await transport.close().catch(() => {});
+				transport = new StreamableHTTPClientTransport(new URL(config.url!), { authProvider, fetch: obsidianFetch });
+				await client.connect(transport);
+			} else {
+				throw connectError;
+			}
+		} finally {
+			// Clean up the callback server if OAuth wasn't needed
+			if (callbackHandle) {
+				callbackHandle.waitForCode.catch(() => undefined);
+				callbackHandle.close();
+			}
+		}
+
+		return { client, transport };
 	}
 
 	private updateState(serverName: string, state: MCPServerState): void {
