@@ -61,18 +61,19 @@ The `npm version` command automatically:
 - Creates a git tag (e.g., `4.1.1`)
 - Pushes the commit and tag to GitHub (via `postversion` script)
 
-### 5. Create GitHub Release
+### 5. Update GitHub Release
+
+A GitHub Actions runner automatically creates a draft release when a tag is pushed. After the tag is pushed:
 
 - Go to https://github.com/allenhutchison/obsidian-gemini/releases
-- Click "Draft a new release"
-- Select the tag that was just created
-- Copy the release notes from `src/release-notes.json`
-- Format as Markdown (remove emoji if desired, keep bullet points)
-- Publish the release
+- Find the auto-generated release for the new tag
+- Update the release notes body with content from `src/release-notes.json`, formatted as Markdown
+- Mark the release as **"Set as the latest release"**
+- Publish the release (if still in draft)
 
 ### 6. Verify Release
 
-- Check that the release appears on GitHub
+- Check that the release appears on GitHub and is marked as "Latest"
 - Verify the tag matches the version
 - Test installation in a test vault (if needed)
 
