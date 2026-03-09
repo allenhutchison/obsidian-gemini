@@ -56,10 +56,6 @@ export interface AgentUIElements {
 	sendButton: HTMLButtonElement;
 	imagePreviewContainer: HTMLElement;
 	progressContainer: HTMLElement;
-	progressBar: HTMLElement;
-	progressFill: HTMLElement;
-	progressStatus: HTMLElement;
-	progressTimer: HTMLElement;
 }
 
 /**
@@ -94,8 +90,8 @@ export class AgentViewUI {
 		const chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
 
 		// Progress bar container (fixed position above input)
+		// Note: Child elements are created by AgentViewProgress.createProgressBar()
 		const progressContainer = container.createDiv({ cls: 'gemini-agent-progress-container' });
-		const progressElements = this.createProgressBar(progressContainer);
 
 		// Input area
 		const inputArea = container.createDiv({ cls: 'gemini-agent-input-area' });
@@ -109,7 +105,6 @@ export class AgentViewUI {
 			sendButton,
 			imagePreviewContainer,
 			progressContainer,
-			...progressElements,
 		};
 	}
 
@@ -833,46 +828,6 @@ export class AgentViewUI {
 	/**
 	 * Creates the progress bar
 	 */
-	private createProgressBar(container: HTMLElement): {
-		progressBar: HTMLElement;
-		progressFill: HTMLElement;
-		progressStatus: HTMLElement;
-		progressTimer: HTMLElement;
-	} {
-		container.style.display = 'none'; // Hidden by default
-
-		// Progress bar wrapper
-		const barWrapper = container.createDiv({
-			cls: 'gemini-agent-progress-bar-wrapper',
-		});
-
-		const progressBar = barWrapper.createDiv({
-			cls: 'gemini-agent-progress-bar',
-		});
-
-		const progressFill = progressBar.createDiv({
-			cls: 'gemini-agent-progress-fill',
-		});
-
-		// Status text container
-		const statusContainer = container.createDiv({
-			cls: 'gemini-agent-progress-status-container',
-		});
-
-		const progressStatus = statusContainer.createSpan({
-			cls: 'gemini-agent-progress-status-text',
-		});
-
-		const progressTimer = statusContainer.createSpan({
-			cls: 'gemini-agent-progress-timer',
-			attr: {
-				'aria-live': 'polite',
-				'aria-label': 'Elapsed time',
-			},
-		});
-
-		return { progressBar, progressFill, progressStatus, progressTimer };
-	}
 
 	/**
 	 * Updates the context files list display
