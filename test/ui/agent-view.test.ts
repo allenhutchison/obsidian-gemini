@@ -574,6 +574,9 @@ describe('AgentView UI Tests', () => {
 				el.createSpan = function (opts?: any) {
 					return this.createEl('span', opts);
 				};
+				el.toggleClass = function (cls: string, force: boolean) {
+					this.classList.toggle(cls, force);
+				};
 			};
 
 			// Add helper methods to chat container
