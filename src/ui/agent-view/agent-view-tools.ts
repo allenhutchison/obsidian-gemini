@@ -113,6 +113,9 @@ export class AgentViewTools {
 
 		// Summary bar (always visible)
 		const summary = group.createDiv({ cls: 'gemini-tool-group-summary' });
+		summary.setAttribute('role', 'button');
+		summary.setAttribute('tabindex', '0');
+		summary.setAttribute('aria-expanded', 'false');
 
 		const summaryIcon = summary.createSpan({ cls: 'gemini-tool-group-icon' });
 		setIcon(summaryIcon, 'wrench');
@@ -146,8 +149,15 @@ export class AgentViewTools {
 			body.style.display = isExpanded ? 'block' : 'none';
 			setIcon(chevron, isExpanded ? 'chevron-down' : 'chevron-right');
 			group.toggleClass('gemini-tool-group-expanded', isExpanded);
+			summary.setAttribute('aria-expanded', String(isExpanded));
 		};
 		summary.addEventListener('click', toggleGroup);
+		summary.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				toggleGroup();
+			}
+		});
 
 		return group;
 	}
@@ -198,13 +208,15 @@ export class AgentViewTools {
 			}
 		}
 
-		// Auto-expand if there's a failure
-		if (allDone && failed > 0) {
+		// Auto-expand immediately if there's a failure (don't wait for all tools)
+		if (failed > 0) {
 			const body = group.querySelector('.gemini-tool-group-body') as HTMLElement;
 			const chevron = group.querySelector('.gemini-tool-group-chevron') as HTMLElement;
+			const summary = group.querySelector('.gemini-tool-group-summary') as HTMLElement;
 			if (body && body.style.display === 'none') {
 				body.style.display = 'block';
 				if (chevron) setIcon(chevron, 'chevron-down');
+				if (summary) summary.setAttribute('aria-expanded', 'true');
 				group.classList.add('gemini-tool-group-expanded');
 			}
 		}
@@ -553,6 +565,9 @@ export class AgentViewTools {
 
 		// Row header (always visible)
 		const rowHeader = toolRow.createDiv({ cls: 'gemini-tool-row-header' });
+		rowHeader.setAttribute('role', 'button');
+		rowHeader.setAttribute('tabindex', '0');
+		rowHeader.setAttribute('aria-expanded', 'false');
 
 		const icon = rowHeader.createSpan({ cls: 'gemini-tool-row-icon' });
 		setIcon(icon, TOOL_ICONS[toolName] || 'wrench');
@@ -620,8 +635,15 @@ export class AgentViewTools {
 			rowDetails.style.display = isRowExpanded ? 'block' : 'none';
 			setIcon(rowChevron, isRowExpanded ? 'chevron-down' : 'chevron-right');
 			toolRow.toggleClass('gemini-tool-row-expanded', isRowExpanded);
+			rowHeader.setAttribute('aria-expanded', String(isRowExpanded));
 		};
 		rowHeader.addEventListener('click', toggleRowDetails);
+		rowHeader.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				toggleRowDetails();
+			}
+		});
 
 		// Store references for result updates
 		toolRow.dataset.toolName = toolName;
@@ -896,9 +918,11 @@ export class AgentViewTools {
 		if (!result.success) {
 			const rowDetails = toolRow.querySelector('.gemini-tool-row-details') as HTMLElement;
 			const rowChevron = toolRow.querySelector('.gemini-tool-row-chevron') as HTMLElement;
+			const rowHeader = toolRow.querySelector('.gemini-tool-row-header') as HTMLElement;
 			if (rowDetails && rowDetails.style.display === 'none') {
 				rowDetails.style.display = 'block';
 				if (rowChevron) setIcon(rowChevron, 'chevron-down');
+				if (rowHeader) rowHeader.setAttribute('aria-expanded', 'true');
 				toolRow.classList.add('gemini-tool-row-expanded');
 			}
 		}
