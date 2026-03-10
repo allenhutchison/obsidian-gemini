@@ -144,14 +144,14 @@ export class AgentViewTools {
 		group.dataset.completedCount = '0';
 		group.dataset.failedCount = '0';
 
-		// Toggle expand/collapse
-		let isExpanded = false;
+		// Toggle expand/collapse — derive state from DOM to stay in sync with programmatic expansion
 		const toggleGroup = () => {
-			isExpanded = !isExpanded;
-			body.style.display = isExpanded ? 'block' : 'none';
-			setIcon(chevron, isExpanded ? 'chevron-down' : 'chevron-right');
-			group.toggleClass('gemini-tool-group-expanded', isExpanded);
-			summary.setAttribute('aria-expanded', String(isExpanded));
+			const wasExpanded = summary.getAttribute('aria-expanded') === 'true';
+			const nowExpanded = !wasExpanded;
+			body.style.display = nowExpanded ? 'block' : 'none';
+			setIcon(chevron, nowExpanded ? 'chevron-down' : 'chevron-right');
+			group.toggleClass('gemini-tool-group-expanded', nowExpanded);
+			summary.setAttribute('aria-expanded', String(nowExpanded));
 		};
 		summary.addEventListener('click', toggleGroup);
 		summary.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -632,14 +632,14 @@ export class AgentViewTools {
 			}
 		}
 
-		// Toggle row details
-		let isRowExpanded = false;
+		// Toggle row details — derive state from DOM to stay in sync with programmatic expansion
 		const toggleRowDetails = () => {
-			isRowExpanded = !isRowExpanded;
-			rowDetails.style.display = isRowExpanded ? 'block' : 'none';
-			setIcon(rowChevron, isRowExpanded ? 'chevron-down' : 'chevron-right');
-			toolRow.toggleClass('gemini-tool-row-expanded', isRowExpanded);
-			rowHeader.setAttribute('aria-expanded', String(isRowExpanded));
+			const wasExpanded = rowHeader.getAttribute('aria-expanded') === 'true';
+			const nowExpanded = !wasExpanded;
+			rowDetails.style.display = nowExpanded ? 'block' : 'none';
+			setIcon(rowChevron, nowExpanded ? 'chevron-down' : 'chevron-right');
+			toolRow.toggleClass('gemini-tool-row-expanded', nowExpanded);
+			rowHeader.setAttribute('aria-expanded', String(nowExpanded));
 		};
 		rowHeader.addEventListener('click', toggleRowDetails);
 		rowHeader.addEventListener('keydown', (e: KeyboardEvent) => {
