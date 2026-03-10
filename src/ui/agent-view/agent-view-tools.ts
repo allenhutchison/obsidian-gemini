@@ -263,6 +263,7 @@ export class AgentViewTools {
 			// Check if cancellation was requested
 			if (this.context.isCancellationRequested()) {
 				this.plugin.logger.debug('[AgentViewTools] Cancellation detected, stopping tool execution');
+				this.currentGroupContainer = null;
 				break;
 			}
 
@@ -418,6 +419,7 @@ export class AgentViewTools {
 				// Check if cancellation was requested before recursive call
 				if (this.context.isCancellationRequested()) {
 					this.plugin.logger.debug('[AgentViewTools] Cancellation detected, skipping recursive tool call');
+					this.currentGroupContainer = null;
 					return;
 				}
 

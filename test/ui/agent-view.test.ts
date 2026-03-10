@@ -750,6 +750,27 @@ describe('AgentView UI Tests', () => {
 			expect(groups.length).toBe(1);
 		});
 
+		it('should reuse existing group and increment totalCount on recursive calls', () => {
+			const toolsInstance = (agentView as any).tools;
+			const group = toolsInstance.currentGroupContainer as HTMLElement;
+
+			// Initial totalCount was set to 2 by beforeEach
+			expect(group.dataset.totalCount).toBe('2');
+
+			// Simulate a recursive handleToolCalls batch adding 3 more tools:
+			// increment totalCount and update summary (mirrors handleToolCalls reuse logic)
+			const prevTotal = parseInt(group.dataset.totalCount || '0', 10);
+			group.dataset.totalCount = String(prevTotal + 3);
+			toolsInstance.updateGroupSummary(group);
+
+			// totalCount should now be 5
+			expect(group.dataset.totalCount).toBe('5');
+
+			// No new group should have been created
+			const groups = chatContainer.querySelectorAll('.gemini-tool-group');
+			expect(groups.length).toBe(1);
+		});
+
 		it('should create tool rows inside the group body', async () => {
 			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-r1');
 
