@@ -23,6 +23,8 @@ const TOOL_ICONS: Record<string, string> = {
 	move_file: 'file-symlink',
 	search_files: 'search',
 	google_search: 'globe',
+	fetch_url: 'link',
+	generate_image: 'image',
 };
 
 /**
