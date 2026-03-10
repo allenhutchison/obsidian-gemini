@@ -303,6 +303,120 @@ describe('AgentViewProgress', () => {
 			expect(chevron.style.display).toBe('none');
 
 			expect(statusContainer.classList.contains('gemini-agent-progress-clickable')).toBe(false);
+			expect(statusContainer.getAttribute('tabindex')).toBeNull();
+			expect(statusContainer.getAttribute('role')).toBeNull();
+		});
+	});
+
+	describe('keyboard accessibility', () => {
+		it('should set tabindex and role when thinking content arrives', () => {
+			progress.show('Thinking...', 'thinking');
+			progress.updateThought('Some thought');
+
+			const statusContainer = container.querySelector('.gemini-agent-progress-status-container') as HTMLElement;
+			expect(statusContainer.getAttribute('tabindex')).toBe('0');
+			expect(statusContainer.getAttribute('role')).toBe('button');
+		});
+
+		it('should expand when Enter key is pressed', () => {
+			progress.show('Thinking...', 'thinking');
+			progress.updateThought('Some thought');
+
+			const statusContainer = container.querySelector('.gemini-agent-progress-status-container') as HTMLElement;
+			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
+			expect(section.style.display).toBe('block');
+		});
+
+		it('should expand when Space key is pressed', () => {
+			progress.show('Thinking...', 'thinking');
+			progress.updateThought('Some thought');
+
+			const statusContainer = container.querySelector('.gemini-agent-progress-status-container') as HTMLElement;
+			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
+			expect(section.style.display).toBe('block');
+		});
+
+		it('should not toggle on other keys', () => {
+			progress.show('Thinking...', 'thinking');
+			progress.updateThought('Some thought');
+
+			const statusContainer = container.querySelector('.gemini-agent-progress-status-container') as HTMLElement;
+			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+
+			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
+			expect(section.style.display).toBe('none');
+		});
+
+		it('should not toggle via keyboard without thinking content', () => {
+			progress.show('Thinking...', 'thinking');
+
+			const statusContainer = container.querySelector('.gemini-agent-progress-status-container') as HTMLElement;
+			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
+			expect(section.style.display).toBe('none');
+		});
+
+		it('should remove tabindex and role on hide', () => {
+			progress.show('Thinking...', 'thinking');
+			progress.updateThought('Some thought');
+			progress.hide();
+
+			const statusContainer = container.querySelector('.gemini-agent-progress-status-container') as HTMLElement;
+			expect(statusContainer.getAttribute('tabindex')).toBeNull();
+			expect(statusContainer.getAttribute('role')).toBeNull();
+		});
+	});
+
+	describe('async render versioning', () => {
+		it('should discard stale renders when newer thought arrives', async () => {
+			const { MarkdownRenderer } = require('obsidian');
+
+			// Make render resolve slowly for first call, instantly for second
+			let resolveFirst: () => void;
+			const firstRenderPromise = new Promise<void>((resolve) => {
+				resolveFirst = resolve;
+			});
+
+			MarkdownRenderer.render
+				.mockImplementationOnce((_app: any, _md: string, el: HTMLElement) => {
+					// First render - slow, will be stale
+					return firstRenderPromise.then(() => {
+						const p = document.createElement('p');
+						p.textContent = 'stale content';
+						el.appendChild(p);
+					});
+				})
+				.mockImplementationOnce((_app: any, markdown: string, el: HTMLElement) => {
+					// Second render - immediate
+					const p = document.createElement('p');
+					p.textContent = markdown;
+					el.appendChild(p);
+					return Promise.resolve();
+				});
+
+			progress.show('Thinking...', 'thinking');
+
+			// Fire first thought update (will be slow)
+			progress.updateThought('First thought');
+
+			// Fire second thought update immediately (will supersede first)
+			progress.updateThought('Second thought');
+
+			// Let the slow first render complete
+			resolveFirst!();
+			await firstRenderPromise;
+
+			// Wait for microtasks to settle
+			await new Promise((resolve) => setTimeout(resolve, 0));
+
+			// The second render should win — content should NOT contain stale content
+			const content = container.querySelector('.gemini-agent-thinking-content');
+			expect(content?.textContent).toContain('Second thought');
 		});
 	});
 

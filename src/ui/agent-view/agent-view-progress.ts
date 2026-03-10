@@ -23,6 +23,7 @@ export class AgentViewProgress {
 	private thinkingChevron: HTMLElement;
 	private isThinkingExpanded: boolean = false;
 	private hasThinkingContent: boolean = false;
+	private thinkingRenderVersion: number = 0;
 
 	// Obsidian rendering context
 	private app: App;
@@ -86,6 +87,14 @@ export class AgentViewProgress {
 			}
 		});
 
+		// Keyboard handler for accessibility (Enter/Space to toggle)
+		this.progressStatusContainer.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (this.hasThinkingContent && (e.key === 'Enter' || e.key === ' ')) {
+				e.preventDefault();
+				this.toggleThinkingSection();
+			}
+		});
+
 		// Expandable thinking section (below the status line)
 		this.thinkingSection = this.progressBarContainer.createDiv({
 			cls: 'gemini-agent-thinking-section',
@@ -140,28 +149,34 @@ export class AgentViewProgress {
 
 		this.hasThinkingContent = true;
 
-		// Show the chevron and make the row look clickable
+		// Show the chevron and make the row look clickable + keyboard-accessible
 		this.thinkingChevron.style.display = '';
 		this.progressStatusContainer.addClass('gemini-agent-progress-clickable');
+		this.progressStatusContainer.setAttribute('tabindex', '0');
+		this.progressStatusContainer.setAttribute('role', 'button');
 
 		// Update status line with truncated preview
 		const preview = this.truncateThought(accumulatedThought);
 		this.progressStatus.innerHTML = this.formatProgressText(preview);
 
-		// Update the full thinking content in the expandable section
-		this.renderThinkingContent(accumulatedThought);
+		// Update the full thinking content in the expandable section (fire-and-forget async)
+		void this.renderThinkingContent(accumulatedThought);
 	}
 
 	/**
 	 * Render the thinking content as markdown if possible, otherwise plain text
 	 */
-	private renderThinkingContent(text: string): void {
+	private async renderThinkingContent(text: string): Promise<void> {
+		const renderVersion = ++this.thinkingRenderVersion;
+
 		// Clear existing content
 		this.thinkingContent.empty();
 
 		if (this.app && this.renderComponent) {
 			// Use Obsidian's MarkdownRenderer for proper formatting
-			MarkdownRenderer.render(this.app, text, this.thinkingContent, '', this.renderComponent);
+			await MarkdownRenderer.render(this.app, text, this.thinkingContent, '', this.renderComponent);
+			// Bail if a newer render has started while we were awaiting
+			if (renderVersion !== this.thinkingRenderVersion) return;
 		} else {
 			// Fallback: render as plain text
 			this.thinkingContent.textContent = text;
@@ -171,6 +186,7 @@ export class AgentViewProgress {
 		if (this.isThinkingExpanded) {
 			// Use requestAnimationFrame to ensure DOM has updated after render
 			requestAnimationFrame(() => {
+				if (renderVersion !== this.thinkingRenderVersion) return;
 				this.thinkingContent.scrollTop = this.thinkingContent.scrollHeight;
 			});
 		}
@@ -191,6 +207,8 @@ export class AgentViewProgress {
 		this.thinkingChevron.style.display = 'none';
 		this.hasThinkingContent = false;
 		this.progressStatusContainer.removeClass('gemini-agent-progress-clickable');
+		this.progressStatusContainer.removeAttribute('tabindex');
+		this.progressStatusContainer.removeAttribute('role');
 	}
 
 	/**
