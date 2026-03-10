@@ -13,6 +13,20 @@ import { formatFileSize } from '../../utils/format-utils';
 const TOOL_EXECUTION_FAILED_DEFAULT_MSG = 'Tool execution failed (no error message provided)';
 const OPERATION_COMPLETED_SUCCESSFULLY_MSG = 'Operation completed successfully';
 
+// Shared tool icon mapping
+const TOOL_ICONS: Record<string, string> = {
+	read_file: 'file-text',
+	write_file: 'file-edit',
+	list_files: 'folder-open',
+	create_folder: 'folder-plus',
+	delete_file: 'trash-2',
+	move_file: 'file-symlink',
+	search_files: 'search',
+	google_search: 'globe',
+	fetch_url: 'link',
+	generate_image: 'image',
+};
+
 /**
  * Callbacks and state access that AgentViewTools needs from AgentView
  */
@@ -31,6 +45,7 @@ export interface AgentViewContext {
 export class AgentViewTools {
 	private currentExecutingTool: string | null = null;
 	private lastCompletedTool: string | null = null;
+	private currentGroupContainer: HTMLElement | null = null;
 
 	constructor(
 		private app: App,
@@ -66,6 +81,150 @@ export class AgentViewTools {
 	}
 
 	/**
+	 * Get a brief parameter summary for a tool row (e.g. file path or query)
+	 */
+	private getToolParamSummary(toolName: string, parameters: any): string {
+		if (!parameters) return '';
+		// Pick the most meaningful parameter for each tool type
+		if (parameters.path) return parameters.path;
+		if (parameters.query) return parameters.query;
+		if (parameters.url) return parameters.url;
+		if (parameters.name) return parameters.name;
+		// Fallback: show first key's value
+		const keys = Object.keys(parameters);
+		if (keys.length > 0) {
+			const val = parameters[keys[0]];
+			const str = typeof val === 'string' ? val : JSON.stringify(val);
+			return str.length > 40 ? str.substring(0, 40) + '…' : str;
+		}
+		return '';
+	}
+
+	/**
+	 * Create a grouped tool activity container for a batch of tool calls.
+	 * Returns the group container element.
+	 */
+	private createToolGroup(totalToolCount: number): HTMLElement {
+		// Remove empty state if it exists
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) {
+			emptyState.remove();
+		}
+
+		const group = this.chatContainer.createDiv({ cls: 'gemini-tool-group' });
+
+		// Summary bar (always visible)
+		const summary = group.createDiv({ cls: 'gemini-tool-group-summary' });
+		summary.setAttribute('role', 'button');
+		summary.setAttribute('tabindex', '0');
+		summary.setAttribute('aria-expanded', 'false');
+
+		const summaryIcon = summary.createSpan({ cls: 'gemini-tool-group-icon' });
+		setIcon(summaryIcon, 'wrench');
+
+		summary.createSpan({
+			text: `Running tools... (0 of ${totalToolCount})`,
+			cls: 'gemini-tool-group-text',
+		});
+
+		const statusBadge = summary.createSpan({
+			text: 'Running',
+			cls: 'gemini-tool-group-status gemini-tool-group-status-running',
+		});
+
+		const chevron = summary.createSpan({ cls: 'gemini-tool-group-chevron' });
+		setIcon(chevron, 'chevron-right');
+
+		// Body (hidden by default)
+		const body = group.createDiv({ cls: 'gemini-tool-group-body' });
+		body.style.display = 'none';
+
+		// Store counts in dataset
+		group.dataset.totalCount = String(totalToolCount);
+		group.dataset.completedCount = '0';
+		group.dataset.failedCount = '0';
+
+		// Toggle expand/collapse — derive state from DOM to stay in sync with programmatic expansion
+		const toggleGroup = () => {
+			const wasExpanded = summary.getAttribute('aria-expanded') === 'true';
+			const nowExpanded = !wasExpanded;
+			body.style.display = nowExpanded ? 'block' : 'none';
+			setIcon(chevron, nowExpanded ? 'chevron-down' : 'chevron-right');
+			group.toggleClass('gemini-tool-group-expanded', nowExpanded);
+			summary.setAttribute('aria-expanded', String(nowExpanded));
+		};
+		summary.addEventListener('click', toggleGroup);
+		summary.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				toggleGroup();
+			}
+		});
+
+		return group;
+	}
+
+	/**
+	 * Update the group summary bar with current counts and status.
+	 */
+	private updateGroupSummary(group: HTMLElement): void {
+		const total = parseInt(group.dataset.totalCount || '0', 10);
+		const completed = parseInt(group.dataset.completedCount || '0', 10);
+		const failed = parseInt(group.dataset.failedCount || '0', 10);
+		const allDone = completed + failed >= total;
+
+		// Update text
+		const textEl = group.querySelector('.gemini-tool-group-text') as HTMLElement;
+		if (textEl) {
+			if (allDone) {
+				const toolWord = total === 1 ? 'tool' : 'tools';
+				if (failed > 0) {
+					textEl.textContent = `${total} ${toolWord} completed — ${failed} failed`;
+				} else {
+					textEl.textContent = `${total} ${toolWord} completed`;
+				}
+			} else {
+				textEl.textContent = `Running tools... (${completed + failed} of ${total})`;
+			}
+		}
+
+		// Update status badge
+		const statusEl = group.querySelector('.gemini-tool-group-status') as HTMLElement;
+		if (statusEl) {
+			statusEl.classList.remove(
+				'gemini-tool-group-status-running',
+				'gemini-tool-group-status-success',
+				'gemini-tool-group-status-error'
+			);
+			if (allDone) {
+				if (failed > 0) {
+					statusEl.textContent = '⚠️';
+					statusEl.classList.add('gemini-tool-group-status-error');
+				} else {
+					statusEl.textContent = '✅';
+					statusEl.classList.add('gemini-tool-group-status-success');
+				}
+			} else {
+				statusEl.textContent = 'Running';
+				statusEl.classList.add('gemini-tool-group-status-running');
+			}
+		}
+
+		// Auto-expand immediately if there's a failure (don't wait for all tools)
+		if (failed > 0) {
+			const body = group.querySelector('.gemini-tool-group-body') as HTMLElement;
+			const chevron = group.querySelector('.gemini-tool-group-chevron') as HTMLElement;
+			const summary = group.querySelector('.gemini-tool-group-summary') as HTMLElement;
+			if (body && body.style.display === 'none') {
+				body.style.display = 'block';
+				if (chevron) setIcon(chevron, 'chevron-down');
+				if (summary) summary.setAttribute('aria-expanded', 'true');
+				group.classList.add('gemini-tool-group-expanded');
+			}
+		}
+	}
+
+	/**
 	 * Handle tool calls from the model response
 	 */
 	public async handleToolCalls(
@@ -88,16 +247,31 @@ export class AgentViewTools {
 		// Sort tool calls to prioritize reads before destructive operations
 		const sortedToolCalls = this.sortToolCallsByPriority(toolCalls);
 
+		// Reuse existing group container for recursive calls, or create a new one
+		let groupContainer: HTMLElement;
+		if (this.currentGroupContainer) {
+			// Recursive call — add to the existing group
+			groupContainer = this.currentGroupContainer;
+			const prevTotal = parseInt(groupContainer.dataset.totalCount || '0', 10);
+			groupContainer.dataset.totalCount = String(prevTotal + sortedToolCalls.length);
+			this.updateGroupSummary(groupContainer);
+		} else {
+			// First call in this turn — create a new group
+			groupContainer = this.createToolGroup(sortedToolCalls.length);
+			this.currentGroupContainer = groupContainer;
+		}
+
 		for (const toolCall of sortedToolCalls) {
 			// Check if cancellation was requested
 			if (this.context.isCancellationRequested()) {
 				this.plugin.logger.debug('[AgentViewTools] Cancellation detected, stopping tool execution');
+				this.currentGroupContainer = null;
 				break;
 			}
 
 			try {
 				// Generate unique ID for this tool execution
-				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+				const toolExecutionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
 				// Update progress for this tool with human-friendly description
 				const tool = this.plugin.toolRegistry.getTool(toolCall.name);
@@ -247,6 +421,7 @@ export class AgentViewTools {
 				// Check if cancellation was requested before recursive call
 				if (this.context.isCancellationRequested()) {
 					this.plugin.logger.debug('[AgentViewTools] Cancellation detected, skipping recursive tool call');
+					this.currentGroupContainer = null;
 					return;
 				}
 
@@ -265,6 +440,9 @@ export class AgentViewTools {
 					customPrompt // Pass custom prompt through recursive calls
 				);
 			} else {
+				// Tool chain complete — clear group so next turn starts fresh
+				this.currentGroupContainer = null;
+
 				// Display the final response only if it has content
 				if (followUpResponse.markdown && followUpResponse.markdown.trim()) {
 					const aiEntry: GeminiConversationEntry = {
@@ -359,69 +537,78 @@ export class AgentViewTools {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to process tool results:', error);
+			// Clear group container on error
+			this.currentGroupContainer = null;
 			// Hide progress bar on error
 			this.context.hideProgress();
 		}
 	}
 
 	/**
-	 * Show tool execution in the UI as a chat message
+	 * Show tool execution in the UI as a compact row inside a group container.
+	 * If no group container is active, creates a standalone fallback.
 	 */
 	public async showToolExecution(toolName: string, parameters: any, executionId?: string): Promise<void> {
-		// Remove empty state if it exists
-		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
-		if (emptyState) {
-			emptyState.remove();
+		// Determine where to add the tool row
+		const group = this.currentGroupContainer;
+		let targetContainer: HTMLElement;
+
+		if (group) {
+			// Add row inside the group body
+			const body = group.querySelector('.gemini-tool-group-body') as HTMLElement;
+			targetContainer = body || group;
+		} else {
+			// Fallback: standalone message (backward compatibility for external callers)
+			const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+			if (emptyState) emptyState.remove();
+			targetContainer = this.chatContainer;
 		}
 
-		// Create collapsible tool message
-		const toolMessage = this.chatContainer.createDiv({
-			cls: 'gemini-agent-message gemini-agent-message-tool',
-		});
+		// Create compact tool row
+		const toolRow = targetContainer.createDiv({ cls: 'gemini-tool-row' });
 
-		const toolContent = toolMessage.createDiv({ cls: 'gemini-agent-tool-message' });
+		// Row header (always visible)
+		const rowHeader = toolRow.createDiv({ cls: 'gemini-tool-row-header' });
+		rowHeader.setAttribute('role', 'button');
+		rowHeader.setAttribute('tabindex', '0');
+		rowHeader.setAttribute('aria-expanded', 'false');
 
-		// Header with toggle
-		const header = toolContent.createDiv({ cls: 'gemini-agent-tool-header' });
+		const icon = rowHeader.createSpan({ cls: 'gemini-tool-row-icon' });
+		setIcon(icon, TOOL_ICONS[toolName] || 'wrench');
 
-		const toggle = header.createEl('button', { cls: 'gemini-agent-tool-toggle' });
-		setIcon(toggle, 'chevron-right');
-
-		const icon = header.createSpan({ cls: 'gemini-agent-tool-icon' });
-		// Use tool-specific icons
-		const toolIcons: Record<string, string> = {
-			read_file: 'file-text',
-			write_file: 'file-edit',
-			list_files: 'folder-open',
-			create_folder: 'folder-plus',
-			delete_file: 'trash-2',
-			move_file: 'file-symlink',
-			search_files: 'search',
-			google_search: 'globe',
-		};
-		setIcon(icon, toolIcons[toolName] || 'wrench');
-
-		// Get display name for tool
+		// Get display name
 		const tool = this.plugin.toolRegistry.getTool(toolName);
 		const displayName = tool?.displayName || toolName;
 
-		header.createSpan({
-			text: `Executing: ${displayName}`,
-			cls: 'gemini-agent-tool-title',
+		rowHeader.createSpan({
+			text: displayName,
+			cls: 'gemini-tool-row-name',
 		});
 
-		const status = header.createSpan({
+		// Brief parameter summary (e.g. file path)
+		const paramSummary = this.getToolParamSummary(toolName, parameters);
+		if (paramSummary) {
+			rowHeader.createSpan({
+				text: paramSummary,
+				cls: 'gemini-tool-row-param',
+			});
+		}
+
+		const statusBadge = rowHeader.createSpan({
 			text: 'Running...',
-			cls: 'gemini-agent-tool-status gemini-agent-tool-status-running',
+			cls: 'gemini-tool-row-status gemini-tool-row-status-running',
 		});
 
-		// Details (hidden by default)
-		const details = toolContent.createDiv({ cls: 'gemini-agent-tool-details' });
-		details.style.display = 'none';
+		const rowChevron = rowHeader.createSpan({ cls: 'gemini-tool-row-chevron' });
+		setIcon(rowChevron, 'chevron-right');
 
-		// Parameters section
+		// Row details (hidden by default, contains parameters and later results)
+		const rowDetails = toolRow.createDiv({ cls: 'gemini-tool-row-details' });
+		rowDetails.style.display = 'none';
+
+		// Parameters section inside details
 		if (parameters && Object.keys(parameters).length > 0) {
-			const paramsSection = details.createDiv({ cls: 'gemini-agent-tool-section' });
+			const paramsSection = rowDetails.createDiv({ cls: 'gemini-agent-tool-section' });
 			paramsSection.createEl('h4', { text: 'Parameters' });
 
 			const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-tool-params-list' });
@@ -438,102 +625,89 @@ export class AgentViewTools {
 					cls: 'gemini-agent-tool-param-value',
 				});
 
-				// Truncate long values
 				if (valueStr.length > 100) {
 					valueEl.textContent = valueStr.substring(0, 100) + '...';
-					valueEl.title = valueStr; // Show full value on hover
+					valueEl.title = valueStr;
 				}
 			}
 		}
 
-		// Toggle functionality
-		let isExpanded = false;
-		const toggleDetails = () => {
-			isExpanded = !isExpanded;
-			details.style.display = isExpanded ? 'block' : 'none';
-			setIcon(toggle, isExpanded ? 'chevron-down' : 'chevron-right');
-			toolContent.toggleClass('gemini-agent-tool-expanded', isExpanded);
+		// Toggle row details — derive state from DOM to stay in sync with programmatic expansion
+		const toggleRowDetails = () => {
+			const wasExpanded = rowHeader.getAttribute('aria-expanded') === 'true';
+			const nowExpanded = !wasExpanded;
+			rowDetails.style.display = nowExpanded ? 'block' : 'none';
+			setIcon(rowChevron, nowExpanded ? 'chevron-down' : 'chevron-right');
+			toolRow.toggleClass('gemini-tool-row-expanded', nowExpanded);
+			rowHeader.setAttribute('aria-expanded', String(nowExpanded));
 		};
-
-		// Make both toggle button and header clickable
-		toggle.addEventListener('click', (e) => {
-			e.stopPropagation();
-			toggleDetails();
+		rowHeader.addEventListener('click', toggleRowDetails);
+		rowHeader.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				toggleRowDetails();
+			}
 		});
-		header.addEventListener('click', toggleDetails);
 
-		// Store reference to update with result
-		toolMessage.dataset.toolName = toolName;
+		// Store references for result updates
+		toolRow.dataset.toolName = toolName;
 		if (executionId) {
-			toolMessage.dataset.executionId = executionId;
+			toolRow.dataset.executionId = executionId;
 		}
 
-		// Auto-scroll to new message
+		// Auto-scroll
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
 	}
 
 	/**
-	 * Show tool execution result in the UI as a chat message
+	 * Show tool execution result in the UI, updating the tool row and group summary.
 	 */
 	public async showToolResult(toolName: string, result: ToolResult, executionId?: string): Promise<void> {
-		// Find the existing tool message
-		const toolMessages = this.chatContainer.querySelectorAll('.gemini-agent-message-tool');
-		let toolMessage: HTMLElement | null = null;
+		// Find the existing tool row (in group body or standalone)
+		const toolRows = this.chatContainer.querySelectorAll('.gemini-tool-row');
+		let toolRow: HTMLElement | null = null;
 
 		if (executionId) {
-			// Use execution ID for precise matching
-			for (const msg of Array.from(toolMessages)) {
-				if ((msg as HTMLElement).dataset.executionId === executionId) {
-					toolMessage = msg as HTMLElement;
+			for (const row of Array.from(toolRows)) {
+				if ((row as HTMLElement).dataset.executionId === executionId) {
+					toolRow = row as HTMLElement;
 					break;
 				}
 			}
 		} else {
-			// Fallback to tool name (for backward compatibility)
-			for (const msg of Array.from(toolMessages)) {
-				if ((msg as HTMLElement).dataset.toolName === toolName) {
-					toolMessage = msg as HTMLElement;
+			for (const row of Array.from(toolRows)) {
+				if ((row as HTMLElement).dataset.toolName === toolName) {
+					toolRow = row as HTMLElement;
 					break;
 				}
 			}
 		}
 
-		if (!toolMessage) {
-			this.plugin.logger.warn(`Tool message not found for ${toolName}`);
+		if (!toolRow) {
+			this.plugin.logger.warn(`Tool row not found for ${toolName}`);
 			return;
 		}
 
-		// Update status
-		const statusEl = toolMessage.querySelector('.gemini-agent-tool-status') as HTMLElement;
+		// Update row status badge
+		const statusEl = toolRow.querySelector('.gemini-tool-row-status') as HTMLElement;
 		if (statusEl) {
 			statusEl.textContent = result.success ? 'Completed' : 'Failed';
-			statusEl.classList.remove('gemini-agent-tool-status-running');
-			statusEl.classList.add(result.success ? 'gemini-agent-tool-status-success' : 'gemini-agent-tool-status-error');
-
-			// Add completion animation
-			toolMessage.classList.add('gemini-agent-tool-completed');
-			setTimeout(() => {
-				if (toolMessage) {
-					toolMessage.classList.remove('gemini-agent-tool-completed');
-				}
-			}, 500);
+			statusEl.classList.remove('gemini-tool-row-status-running');
+			statusEl.classList.add(result.success ? 'gemini-tool-row-status-success' : 'gemini-tool-row-status-error');
 		}
 
-		// Update icon
-		const iconEl = toolMessage.querySelector('.gemini-agent-tool-icon') as HTMLElement;
+		// Update row icon on completion
+		const iconEl = toolRow.querySelector('.gemini-tool-row-icon') as HTMLElement;
 		if (iconEl) {
 			setIcon(iconEl, result.success ? 'check-circle' : 'x-circle');
 		}
 
-		// Add result to details
-		const details = toolMessage.querySelector('.gemini-agent-tool-details');
+		// Add result to row details
+		const details = toolRow.querySelector('.gemini-tool-row-details');
 		if (details) {
-			// Add result section
 			const resultSection = details.createDiv({ cls: 'gemini-agent-tool-section' });
 			resultSection.createEl('h4', { text: 'Result' });
 
-			// Always show error first if the tool failed
-			// Defensive check: handle both false and undefined success values
 			if (result.success === false || result.success === undefined) {
 				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
 				const errorMessage = result.error || TOOL_EXECUTION_FAILED_DEFAULT_MSG;
@@ -544,16 +718,12 @@ export class AgentViewTools {
 			} else if (result.data) {
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
 
-				// Handle different types of results
 				if (typeof result.data === 'string') {
-					// For string results (like file content)
 					if (result.data.length > 500) {
-						// Large content - show in a code block with truncation
 						const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
 						const code = codeBlock.createEl('code');
 						code.textContent = result.data.substring(0, 500) + '\n\n... (truncated)';
 
-						// Add button to expand full content
 						const expandBtn = resultContent.createEl('button', {
 							text: 'Show full content',
 							cls: 'gemini-agent-tool-expand-content',
@@ -568,7 +738,6 @@ export class AgentViewTools {
 							.createEl('code', { text: result.data });
 					}
 				} else if (Array.isArray(result.data)) {
-					// For arrays (like file lists)
 					if (result.data.length === 0) {
 						resultContent.createEl('p', {
 							text: 'No results found',
@@ -587,51 +756,40 @@ export class AgentViewTools {
 						}
 					}
 				} else if (typeof result.data === 'object') {
-					// Debug logging
 					this.plugin.logger.log('Tool result is object for:', toolName);
 					this.plugin.logger.log('Result data keys:', Object.keys(result.data));
 
-					// Special handling for google_search results with citations
 					if (result.data.answer && result.data.citations && toolName === 'google_search') {
 						this.plugin.logger.log('Handling google_search result with citations');
-						// Display the answer
 						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
 						answerDiv.createEl('h5', { text: 'Answer:' });
 
-						// Render the answer with markdown links
 						const answerPara = answerDiv.createEl('p');
-						// Parse markdown links in the answer
 						const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 						let lastIndex = 0;
 						let match;
 
 						while ((match = linkRegex.exec(result.data.answer)) !== null) {
-							// Add text before the link
 							if (match.index > lastIndex) {
 								answerPara.appendText(result.data.answer.substring(lastIndex, match.index));
 							}
-
-							// Add the link
 							const link = answerPara.createEl('a', {
 								text: match[1],
 								href: match[2],
 							});
 							link.setAttribute('target', '_blank');
-
 							lastIndex = linkRegex.lastIndex;
 						}
-
-						// Add any remaining text
 						if (lastIndex < result.data.answer.length) {
 							answerPara.appendText(result.data.answer.substring(lastIndex));
 						}
 
-						// Display citations if available
 						if (result.data.citations.length > 0) {
 							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
 							citationsDiv.createEl('h5', { text: 'Sources:' });
-
-							const citationsList = citationsDiv.createEl('ul', { cls: 'gemini-agent-tool-citations-list' });
+							const citationsList = citationsDiv.createEl('ul', {
+								cls: 'gemini-agent-tool-citations-list',
+							});
 							for (const citation of result.data.citations) {
 								const citationItem = citationsList.createEl('li');
 								const link = citationItem.createEl('a', {
@@ -640,7 +798,6 @@ export class AgentViewTools {
 									cls: 'gemini-agent-tool-citation-link',
 								});
 								link.setAttribute('target', '_blank');
-
 								if (citation.snippet) {
 									citationItem.createEl('p', {
 										text: citation.snippet,
@@ -649,22 +806,15 @@ export class AgentViewTools {
 								}
 							}
 						}
-						// Special handling for generate_image results
 					} else if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
-						// Display the generated image
 						const imageDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-image-result' });
 						imageDiv.createEl('h5', { text: 'Generated Image:' });
 
-						// Get the image file from vault
 						const imageFile = this.plugin.app.vault.getAbstractFileByPath(result.data.path);
 						if (imageFile instanceof TFile) {
-							// Create image element
 							const imgContainer = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-container' });
-							const img = imgContainer.createEl('img', {
-								cls: 'gemini-agent-tool-image',
-							});
+							const img = imgContainer.createEl('img', { cls: 'gemini-agent-tool-image' });
 
-							// Add loading states and error handling
 							img.onloadstart = () => imgContainer.addClass('loading');
 							img.onload = () => imgContainer.removeClass('loading');
 							img.onerror = () => {
@@ -676,7 +826,6 @@ export class AgentViewTools {
 								});
 							};
 
-							// Get the image URL from Obsidian's resource path
 							try {
 								img.src = this.plugin.app.vault.getResourcePath(imageFile);
 								img.alt = result.data.prompt || 'Generated image';
@@ -685,20 +834,15 @@ export class AgentViewTools {
 								img.onerror?.(new Event('error'));
 							}
 
-							// Add image info
 							const imageInfo = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-info' });
 							imageInfo.createEl('strong', { text: 'Path: ' });
 							imageInfo.createSpan({ text: result.data.path });
-
-							// Add wikilink for easy copying
 							imageInfo.createEl('br');
 							imageInfo.createEl('strong', { text: 'Wikilink: ' });
-							const wikilinkCode = imageInfo.createEl('code', {
+							imageInfo.createEl('code', {
 								text: result.data.wikilink,
 								cls: 'gemini-agent-tool-wikilink',
 							});
-
-							// Add copy button for wikilink
 							const copyBtn = imageInfo.createEl('button', {
 								text: 'Copy',
 								cls: 'gemini-agent-tool-copy-wikilink',
@@ -717,9 +861,7 @@ export class AgentViewTools {
 								cls: 'gemini-agent-tool-image-path',
 							});
 						}
-						// Special handling for read_file results
 					} else if (result.data.content && result.data.path) {
-						// This is a file read result
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
 						fileInfo.createEl('strong', { text: 'File: ' });
 						fileInfo.createSpan({ text: result.data.path });
@@ -733,12 +875,11 @@ export class AgentViewTools {
 
 						const content = result.data.content;
 						if (content.length > 500) {
-							// Large content - show in a code block with truncation
-							const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
+							const codeBlock = resultContent.createEl('pre', {
+								cls: 'gemini-agent-tool-code-result',
+							});
 							const code = codeBlock.createEl('code');
 							code.textContent = content.substring(0, 500) + '\n\n... (truncated)';
-
-							// Add button to expand full content
 							const expandBtn = resultContent.createEl('button', {
 								text: 'Show full content',
 								cls: 'gemini-agent-tool-expand-content',
@@ -753,25 +894,13 @@ export class AgentViewTools {
 								.createEl('code', { text: content });
 						}
 					} else {
-						// For other objects, show key-value pairs
 						const resultList = resultContent.createDiv({ cls: 'gemini-agent-tool-result-object' });
 						for (const [key, value] of Object.entries(result.data)) {
-							// Skip undefined/null values
-							if (value === undefined || value === null) {
-								continue;
-							}
-
-							if (key === 'content' && typeof value === 'string' && value.length > 100) {
-								// Skip long content in generic display
-								continue;
-							}
+							if (value === undefined || value === null) continue;
+							if (key === 'content' && typeof value === 'string' && value.length > 100) continue;
 
 							const item = resultList.createDiv({ cls: 'gemini-agent-tool-result-item' });
-							item.createSpan({
-								text: key + ':',
-								cls: 'gemini-agent-tool-result-key',
-							});
-
+							item.createSpan({ text: key + ':', cls: 'gemini-agent-tool-result-key' });
 							const valueStr = typeof value === 'string' ? value : JSON.stringify(value) || String(value);
 							item.createSpan({
 								text: valueStr.length > 100 ? valueStr.substring(0, 100) + '...' : valueStr,
@@ -781,7 +910,6 @@ export class AgentViewTools {
 					}
 				}
 			} else {
-				// Success but no data - show a success message with tool name for context
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
 				resultContent.createEl('p', {
 					text: `${toolName}: ${OPERATION_COMPLETED_SUCCESSFULLY_MSG}`,
@@ -790,15 +918,30 @@ export class AgentViewTools {
 			}
 		}
 
-		// Auto-expand if there was an error
+		// Auto-expand row details if there was an error
 		if (!result.success) {
-			const toggle = toolMessage.querySelector('.gemini-agent-tool-toggle') as HTMLElement;
-			const toolContent = toolMessage.querySelector('.gemini-agent-tool-message');
-			if (toggle && details && toolContent) {
-				setIcon(toggle, 'chevron-down');
-				(details as HTMLElement).style.display = 'block';
-				toolContent.classList.add('gemini-agent-tool-expanded');
+			const rowDetails = toolRow.querySelector('.gemini-tool-row-details') as HTMLElement;
+			const rowChevron = toolRow.querySelector('.gemini-tool-row-chevron') as HTMLElement;
+			const rowHeader = toolRow.querySelector('.gemini-tool-row-header') as HTMLElement;
+			if (rowDetails && rowDetails.style.display === 'none') {
+				rowDetails.style.display = 'block';
+				if (rowChevron) setIcon(rowChevron, 'chevron-down');
+				if (rowHeader) rowHeader.setAttribute('aria-expanded', 'true');
+				toolRow.classList.add('gemini-tool-row-expanded');
 			}
+		}
+
+		// Update group summary if this row is inside a group
+		const parentGroup = toolRow.closest('.gemini-tool-group') as HTMLElement;
+		if (parentGroup) {
+			const currentCompleted = parseInt(parentGroup.dataset.completedCount || '0', 10);
+			const currentFailed = parseInt(parentGroup.dataset.failedCount || '0', 10);
+			if (result.success) {
+				parentGroup.dataset.completedCount = String(currentCompleted + 1);
+			} else {
+				parentGroup.dataset.failedCount = String(currentFailed + 1);
+			}
+			this.updateGroupSummary(parentGroup);
 		}
 	}
 

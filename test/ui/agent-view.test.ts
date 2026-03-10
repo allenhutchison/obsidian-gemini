@@ -574,6 +574,9 @@ describe('AgentView UI Tests', () => {
 				el.createSpan = function (opts?: any) {
 					return this.createEl('span', opts);
 				};
+				el.toggleClass = function (cls: string, force: boolean) {
+					this.classList.toggle(cls, force);
+				};
 			};
 
 			// Add helper methods to chat container
@@ -685,6 +688,203 @@ describe('AgentView UI Tests', () => {
 
 			const errorMessage = errorContent?.querySelector('.gemini-agent-tool-error-message');
 			expect(errorMessage?.textContent).toBe('Something went wrong');
+		});
+	});
+
+	describe('Grouped Tool Activity Bar', () => {
+		let chatContainer: HTMLElement;
+
+		beforeEach(async () => {
+			await agentView.onOpen();
+			const session = await plugin.sessionManager.createAgentSession();
+			await agentView['loadSession'](session.id);
+
+			// Create a mock chatContainer with proper DOM methods
+			chatContainer = document.createElement('div');
+			chatContainer.className = 'gemini-agent-chat-container';
+
+			const addDOMMethods = (el: any) => {
+				el.createDiv = function (options?: any) {
+					const div = document.createElement('div');
+					if (options?.cls) div.className = options.cls;
+					if (options?.text) div.textContent = options.text;
+					addDOMMethods(div);
+					this.appendChild(div);
+					return div;
+				};
+				el.createEl = function (tag: string, opts?: any) {
+					const elem = document.createElement(tag);
+					if (opts?.cls) elem.className = opts.cls;
+					if (opts?.text) elem.textContent = opts.text;
+					addDOMMethods(elem);
+					this.appendChild(elem);
+					return elem;
+				};
+				el.createSpan = function (opts?: any) {
+					return this.createEl('span', opts);
+				};
+				el.toggleClass = function (cls: string, force: boolean) {
+					this.classList.toggle(cls, force);
+				};
+			};
+
+			addDOMMethods(chatContainer);
+
+			(agentView as any).chatContainer = chatContainer;
+			agentView.containerEl.appendChild(chatContainer);
+
+			// Trigger lazy initialization of the tools component with our chatContainer
+			// (ensureToolsInitialized uses this.chatContainer which we just set)
+			(agentView as any).ensureToolsInitialized();
+			const toolsInstance = (agentView as any).tools;
+			const group = toolsInstance.createToolGroup(2);
+			toolsInstance.currentGroupContainer = group;
+		});
+
+		it('should create exactly one tool group per showToolExecution call sequence', async () => {
+			await agentView.showToolExecution('read_file', { path: 'a.md' }, 'exec-g1');
+			await agentView.showToolExecution('read_file', { path: 'b.md' }, 'exec-g2');
+
+			const groups = chatContainer.querySelectorAll('.gemini-tool-group');
+			// Both calls go into the same group because currentGroupContainer is reused
+			expect(groups.length).toBe(1);
+		});
+
+		it('should reuse existing group and increment totalCount on recursive calls', () => {
+			const toolsInstance = (agentView as any).tools;
+			const group = toolsInstance.currentGroupContainer as HTMLElement;
+
+			// Initial totalCount was set to 2 by beforeEach
+			expect(group.dataset.totalCount).toBe('2');
+
+			// Simulate a recursive handleToolCalls batch adding 3 more tools:
+			// increment totalCount and update summary (mirrors handleToolCalls reuse logic)
+			const prevTotal = parseInt(group.dataset.totalCount || '0', 10);
+			group.dataset.totalCount = String(prevTotal + 3);
+			toolsInstance.updateGroupSummary(group);
+
+			// totalCount should now be 5
+			expect(group.dataset.totalCount).toBe('5');
+
+			// No new group should have been created
+			const groups = chatContainer.querySelectorAll('.gemini-tool-group');
+			expect(groups.length).toBe(1);
+		});
+
+		it('should create tool rows inside the group body', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-r1');
+
+			const group = chatContainer.querySelector('.gemini-tool-group');
+			expect(group).toBeTruthy();
+
+			const rows = group!.querySelectorAll('.gemini-tool-row');
+			expect(rows.length).toBe(1);
+
+			// Row should be inside the body
+			const body = group!.querySelector('.gemini-tool-group-body');
+			expect(body).toBeTruthy();
+			expect(body!.contains(rows[0])).toBe(true);
+		});
+
+		it('should set accessibility attributes on group summary', async () => {
+			const summary = chatContainer.querySelector('.gemini-tool-group-summary') as HTMLElement;
+			expect(summary).toBeTruthy();
+			expect(summary.getAttribute('role')).toBe('button');
+			expect(summary.getAttribute('tabindex')).toBe('0');
+			expect(summary.getAttribute('aria-expanded')).toBe('false');
+		});
+
+		it('should set accessibility attributes on tool row header', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-a2');
+
+			const rowHeader = chatContainer.querySelector('.gemini-tool-row-header') as HTMLElement;
+			expect(rowHeader).toBeTruthy();
+			expect(rowHeader.getAttribute('role')).toBe('button');
+			expect(rowHeader.getAttribute('tabindex')).toBe('0');
+			expect(rowHeader.getAttribute('aria-expanded')).toBe('false');
+		});
+
+		it('should update group summary counts when tool results arrive', async () => {
+			await agentView.showToolExecution('read_file', { path: 'a.md' }, 'exec-c1');
+			await agentView.showToolExecution('read_file', { path: 'b.md' }, 'exec-c2');
+
+			// Before any results
+			const group = chatContainer.querySelector('.gemini-tool-group') as HTMLElement;
+			expect(group.dataset.completedCount).toBe('0');
+
+			// After first result
+			await agentView.showToolResult('read_file', { success: true, data: 'content' }, 'exec-c1');
+			expect(group.dataset.completedCount).toBe('1');
+
+			// After second result
+			await agentView.showToolResult('read_file', { success: true, data: 'content' }, 'exec-c2');
+			expect(group.dataset.completedCount).toBe('2');
+		});
+
+		it('should increment failed count on tool failure', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-f1');
+
+			await agentView.showToolResult('read_file', { success: false, error: 'Permission denied' }, 'exec-f1');
+
+			const group = chatContainer.querySelector('.gemini-tool-group') as HTMLElement;
+			expect(group.dataset.failedCount).toBe('1');
+		});
+
+		it('should auto-expand group when a tool fails', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-ae1');
+
+			// Group body should be hidden initially
+			const group = chatContainer.querySelector('.gemini-tool-group') as HTMLElement;
+			const body = group.querySelector('.gemini-tool-group-body') as HTMLElement;
+			expect(body.style.display).toBe('none');
+
+			// After failure, group should auto-expand
+			await agentView.showToolResult('read_file', { success: false, error: 'Error' }, 'exec-ae1');
+			expect(body.style.display).toBe('block');
+			expect(group.classList.contains('gemini-tool-group-expanded')).toBe(true);
+		});
+
+		it('should auto-expand failed tool row details', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-rd1');
+
+			// Row details should be hidden initially
+			const rowDetails = chatContainer.querySelector('.gemini-tool-row-details') as HTMLElement;
+			expect(rowDetails.style.display).toBe('none');
+
+			// After failure, row details should auto-expand
+			await agentView.showToolResult('read_file', { success: false, error: 'Error' }, 'exec-rd1');
+			expect(rowDetails.style.display).toBe('block');
+
+			// Row header aria-expanded should be updated
+			const rowHeader = chatContainer.querySelector('.gemini-tool-row-header') as HTMLElement;
+			expect(rowHeader.getAttribute('aria-expanded')).toBe('true');
+		});
+
+		it('should update row status badge on completion', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-s1');
+
+			// Status should be "Running..."
+			const statusBadge = chatContainer.querySelector('.gemini-tool-row-status') as HTMLElement;
+			expect(statusBadge.textContent).toBe('Running...');
+			expect(statusBadge.classList.contains('gemini-tool-row-status-running')).toBe(true);
+
+			// After success
+			await agentView.showToolResult('read_file', { success: true, data: 'content' }, 'exec-s1');
+			expect(statusBadge.textContent).toBe('Completed');
+			expect(statusBadge.classList.contains('gemini-tool-row-status-success')).toBe(true);
+			expect(statusBadge.classList.contains('gemini-tool-row-status-running')).toBe(false);
+		});
+
+		it('should not auto-expand on success', async () => {
+			await agentView.showToolExecution('read_file', { path: 'test.md' }, 'exec-ne1');
+
+			await agentView.showToolResult('read_file', { success: true, data: 'content' }, 'exec-ne1');
+
+			const body = chatContainer.querySelector('.gemini-tool-group-body') as HTMLElement;
+			expect(body.style.display).toBe('none');
+
+			const rowDetails = chatContainer.querySelector('.gemini-tool-row-details') as HTMLElement;
+			expect(rowDetails.style.display).toBe('none');
 		});
 	});
 
