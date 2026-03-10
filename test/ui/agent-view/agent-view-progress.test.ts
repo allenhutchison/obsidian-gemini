@@ -1,7 +1,7 @@
-import { AgentViewProgress, ProgressState } from '../../src/ui/agent-view/agent-view-progress';
+import { AgentViewProgress, ProgressState } from '../../../src/ui/agent-view/agent-view-progress';
 
 // Mock the ChatTimer
-jest.mock('../../src/utils/timer-utils', () => ({
+jest.mock('../../../src/utils/timer-utils', () => ({
 	ChatTimer: jest.fn().mockImplementation(() => ({
 		start: jest.fn(),
 		stop: jest.fn(),
@@ -11,7 +11,7 @@ jest.mock('../../src/utils/timer-utils', () => ({
 
 // Mock Obsidian MarkdownRenderer
 jest.mock('obsidian', () => {
-	const mock = jest.requireActual('../../__mocks__/obsidian.js');
+	const mock = jest.requireActual('../../../__mocks__/obsidian.js');
 	return {
 		...mock,
 		MarkdownRenderer: {
@@ -470,6 +470,22 @@ describe('AgentViewProgress', () => {
 
 			const content = plainContainer.querySelector('.gemini-agent-thinking-content');
 			expect(content?.textContent).toBe('Plain text fallback');
+		});
+
+		it('should fall back to plain text when MarkdownRenderer.render rejects', async () => {
+			const { MarkdownRenderer } = require('obsidian');
+			MarkdownRenderer.render.mockImplementationOnce(() => {
+				return Promise.reject(new Error('Render failed'));
+			});
+
+			progress.show('Thinking...', 'thinking');
+			progress.updateThought('Fallback on error');
+
+			// Wait for the async render to complete and catch
+			await new Promise((resolve) => setTimeout(resolve, 0));
+
+			const content = container.querySelector('.gemini-agent-thinking-content');
+			expect(content?.textContent).toBe('Fallback on error');
 		});
 	});
 });

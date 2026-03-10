@@ -177,15 +177,22 @@ export class AgentViewProgress {
 			// Render into a temporary container to avoid stale async renders
 			// mutating the live DOM node
 			const tempEl = document.createElement('div');
-			await MarkdownRenderer.render(this.app, text, tempEl, '', this.renderComponent);
+			try {
+				await MarkdownRenderer.render(this.app, text, tempEl, '', this.renderComponent);
 
-			// Bail if a newer render has started while we were awaiting
-			if (renderVersion !== this.thinkingRenderVersion) return;
+				// Bail if a newer render has started while we were awaiting
+				if (renderVersion !== this.thinkingRenderVersion) return;
 
-			// Swap rendered content into the live node
-			this.thinkingContent.empty();
-			while (tempEl.firstChild) {
-				this.thinkingContent.appendChild(tempEl.firstChild);
+				// Swap rendered content into the live node
+				this.thinkingContent.empty();
+				while (tempEl.firstChild) {
+					this.thinkingContent.appendChild(tempEl.firstChild);
+				}
+			} catch {
+				// If markdown rendering fails, fall back to plain text
+				if (renderVersion !== this.thinkingRenderVersion) return;
+				this.thinkingContent.empty();
+				this.thinkingContent.textContent = text;
 			}
 		} else {
 			// Fallback: render as plain text
