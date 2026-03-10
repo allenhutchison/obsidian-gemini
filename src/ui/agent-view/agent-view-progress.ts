@@ -154,6 +154,10 @@ export class AgentViewProgress {
 		this.progressStatusContainer.addClass('gemini-agent-progress-clickable');
 		this.progressStatusContainer.setAttribute('tabindex', '0');
 		this.progressStatusContainer.setAttribute('role', 'button');
+		// Set initial collapsed state for assistive tech (only if not already expanded)
+		if (!this.isThinkingExpanded) {
+			this.progressStatusContainer.setAttribute('aria-expanded', 'false');
+		}
 
 		// Update status line with truncated preview
 		const preview = this.truncateThought(accumulatedThought);
@@ -169,22 +173,28 @@ export class AgentViewProgress {
 	private async renderThinkingContent(text: string): Promise<void> {
 		const renderVersion = ++this.thinkingRenderVersion;
 
-		// Clear existing content
-		this.thinkingContent.empty();
-
 		if (this.app && this.renderComponent) {
-			// Use Obsidian's MarkdownRenderer for proper formatting
-			await MarkdownRenderer.render(this.app, text, this.thinkingContent, '', this.renderComponent);
+			// Render into a temporary container to avoid stale async renders
+			// mutating the live DOM node
+			const tempEl = document.createElement('div');
+			await MarkdownRenderer.render(this.app, text, tempEl, '', this.renderComponent);
+
 			// Bail if a newer render has started while we were awaiting
 			if (renderVersion !== this.thinkingRenderVersion) return;
+
+			// Swap rendered content into the live node
+			this.thinkingContent.empty();
+			while (tempEl.firstChild) {
+				this.thinkingContent.appendChild(tempEl.firstChild);
+			}
 		} else {
 			// Fallback: render as plain text
+			this.thinkingContent.empty();
 			this.thinkingContent.textContent = text;
 		}
 
 		// Auto-scroll to bottom of thinking section if expanded
 		if (this.isThinkingExpanded) {
-			// Use requestAnimationFrame to ensure DOM has updated after render
 			requestAnimationFrame(() => {
 				if (renderVersion !== this.thinkingRenderVersion) return;
 				this.thinkingContent.scrollTop = this.thinkingContent.scrollHeight;
@@ -206,9 +216,12 @@ export class AgentViewProgress {
 		this.thinkingContent.empty();
 		this.thinkingChevron.style.display = 'none';
 		this.hasThinkingContent = false;
+		// Invalidate any in-flight async renders
+		this.thinkingRenderVersion++;
 		this.progressStatusContainer.removeClass('gemini-agent-progress-clickable');
 		this.progressStatusContainer.removeAttribute('tabindex');
 		this.progressStatusContainer.removeAttribute('role');
+		this.progressStatusContainer.removeAttribute('aria-expanded');
 	}
 
 	/**

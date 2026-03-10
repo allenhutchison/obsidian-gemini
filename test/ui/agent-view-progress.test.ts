@@ -305,6 +305,7 @@ describe('AgentViewProgress', () => {
 			expect(statusContainer.classList.contains('gemini-agent-progress-clickable')).toBe(false);
 			expect(statusContainer.getAttribute('tabindex')).toBeNull();
 			expect(statusContainer.getAttribute('role')).toBeNull();
+			expect(statusContainer.getAttribute('aria-expanded')).toBeNull();
 		});
 	});
 
@@ -414,8 +415,9 @@ describe('AgentViewProgress', () => {
 			// Wait for microtasks to settle
 			await new Promise((resolve) => setTimeout(resolve, 0));
 
-			// The second render should win — content should NOT contain stale content
+			// The second render should win — verify no stale content leaked through
 			const content = container.querySelector('.gemini-agent-thinking-content');
+			expect(content?.textContent).not.toContain('stale content');
 			expect(content?.textContent).toContain('Second thought');
 		});
 	});
