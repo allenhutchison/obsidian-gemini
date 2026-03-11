@@ -26,10 +26,6 @@ import { SessionSettingsModal } from './session-settings-modal';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
-// Progress bar text truncation constants
-const PROGRESS_THOUGHT_MAX_LENGTH = 150;
-const PROGRESS_THOUGHT_DISPLAY_LENGTH = 147; // Leave room for "..."
-
 /**
  * AgentView is the main coordinator for the Agent Mode interface.
  * It delegates functionality to specialized components and manages their interactions.
@@ -68,7 +64,7 @@ export class AgentView extends ItemView {
 		this.plugin = plugin;
 
 		// Initialize components (actual UI setup happens in onOpen)
-		this.progress = new AgentViewProgress();
+		this.progress = new AgentViewProgress(this.app, this);
 		this.context = new AgentViewContext(this.app, this.plugin);
 		this.ui = new AgentViewUI(this.app, this.plugin);
 	}
@@ -436,18 +432,8 @@ To reference an attachment in your response, use the path shown above.`;
 							this.plugin.logger.debug(`[AgentView] Received thought chunk: ${chunkPreview}`);
 							accumulatedThoughts += chunk.thought;
 
-							// Store full thought as title for hover
-							this.progress.setStatusTitle(accumulatedThoughts);
-
-							// Truncate for display, showing the latest part
-							const displayThought =
-								accumulatedThoughts.length > PROGRESS_THOUGHT_MAX_LENGTH
-									? '...' + accumulatedThoughts.slice(-PROGRESS_THOUGHT_DISPLAY_LENGTH)
-									: accumulatedThoughts;
-							const displayPreview =
-								displayThought.length > 50 ? displayThought.substring(0, 50) + '...' : displayThought;
-							this.plugin.logger.debug(`[AgentView] Updating progress with thought: ${displayPreview}`);
-							this.progress.update(displayThought, 'thinking');
+							// Update the expandable thinking section
+							this.progress.updateThought(accumulatedThoughts);
 						}
 
 						// Handle text content
