@@ -430,6 +430,39 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				})
 			);
 
+		// Context Management Settings
+		new Setting(containerEl).setName('Context Management').setHeading();
+
+		const thresholdSetting = new Setting(containerEl)
+			.setName('Context compaction threshold')
+			.setDesc(
+				`Automatically summarize older conversation turns when token usage exceeds this percentage of the model context window. Current: ${this.plugin.settings.contextCompactionThreshold}%`
+			);
+
+		thresholdSetting.addSlider((slider) =>
+			slider
+				.setLimits(5, 50, 5)
+				.setValue(this.plugin.settings.contextCompactionThreshold)
+				.setDynamicTooltip()
+				.onChange(async (value) => {
+					this.plugin.settings.contextCompactionThreshold = value;
+					thresholdSetting.setDesc(
+						`Automatically summarize older conversation turns when token usage exceeds this percentage of the model context window. Current: ${value}%`
+					);
+					await this.plugin.saveSettings();
+				})
+		);
+
+		new Setting(containerEl)
+			.setName('Show token usage')
+			.setDesc('Display estimated token usage in the agent view (for debugging purposes).')
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.showTokenUsage).onChange(async (value) => {
+					this.plugin.settings.showTokenUsage = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
 		// Advanced Settings
 		new Setting(containerEl).setName('Advanced Settings').setHeading();
 

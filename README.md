@@ -45,6 +45,8 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
   - Context files that persist across the session
   - Full conversation history with tool execution logs
   - Easy backup and version control of sessions
+  - Automatic context compaction when conversations grow large
+  - Optional token usage display showing real-time context consumption
 
 ## Quick Start
 

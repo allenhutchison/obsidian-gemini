@@ -16,6 +16,11 @@ export interface ModelResponse {
 	rendered: string;
 	thoughts?: string;
 	toolCalls?: ToolCall[];
+	usageMetadata?: {
+		promptTokenCount?: number;
+		candidatesTokenCount?: number;
+		totalTokenCount?: number;
+	};
 }
 
 /**

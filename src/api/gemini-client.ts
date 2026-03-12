@@ -98,6 +98,7 @@ export class GeminiClient implements ModelApi {
 		let accumulatedRendered = '';
 		let accumulatedThoughts = '';
 		let toolCalls: ToolCall[] | undefined;
+		let lastUsageMetadata: any = undefined;
 
 		const complete = (async (): Promise<ModelResponse> => {
 			const params = await this.buildGenerateContentParams(request);
@@ -146,6 +147,11 @@ export class GeminiClient implements ModelApi {
 					if (rendered) {
 						accumulatedRendered += rendered;
 					}
+
+					// Capture usageMetadata from chunks (usually present in last chunk)
+					if (chunk.usageMetadata) {
+						lastUsageMetadata = chunk.usageMetadata;
+					}
 				}
 
 				return {
@@ -153,6 +159,7 @@ export class GeminiClient implements ModelApi {
 					rendered: accumulatedRendered,
 					...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
 					...(toolCalls && { toolCalls }),
+					...(lastUsageMetadata && { usageMetadata: lastUsageMetadata }),
 				};
 			} catch (error) {
 				if (cancelled) {
@@ -161,6 +168,7 @@ export class GeminiClient implements ModelApi {
 						rendered: accumulatedRendered,
 						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
 						...(toolCalls && { toolCalls }),
+						...(lastUsageMetadata && { usageMetadata: lastUsageMetadata }),
 					};
 				}
 				this.plugin?.logger.error('[GeminiClient] Streaming error:', error);
@@ -397,6 +405,13 @@ export class GeminiClient implements ModelApi {
 			rendered,
 			...(thoughts && { thoughts }),
 			...(toolCalls && { toolCalls }),
+			...(response.usageMetadata && {
+				usageMetadata: {
+					promptTokenCount: (response.usageMetadata as any).promptTokenCount,
+					candidatesTokenCount: (response.usageMetadata as any).candidatesTokenCount,
+					totalTokenCount: (response.usageMetadata as any).totalTokenCount,
+				},
+			}),
 		};
 	}
 

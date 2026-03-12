@@ -8,6 +8,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 - [Model Configuration](#model-configuration)
 - [Custom Prompts](#custom-prompts)
 - [UI Settings](#ui-settings)
+- [Context Management](#context-management)
 - [Developer Settings](#developer-settings)
 - [Session-Level Settings](#session-level-settings)
 
@@ -121,6 +122,31 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Default**: `true`
 - **Description**: Enable streaming responses in the chat interface for a more interactive experience
 - **Note**: When disabled, full responses are displayed at once
+
+## Context Management
+
+Context management automatically monitors and controls conversation size to prevent exceeding model token limits.
+
+### Context Compaction Threshold
+
+- **Setting**: `contextCompactionThreshold`
+- **Type**: Number (percentage, 5-50)
+- **Default**: `20`
+- **Description**: Percentage of the model's input context window at which automatic compaction occurs
+- **How it works**: When conversation tokens exceed this percentage, older turns are summarized and replaced with a compact summary while preserving recent messages
+- **Hard ceiling**: Aggressive compaction triggers at 80% of the input limit to prevent API errors
+
+### Show Token Usage
+
+- **Setting**: `showTokenUsage`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Display estimated token count in the agent input area
+- **Display format**: `Tokens: ~N / M (X%)` showing current usage, model limit, and percentage
+- **Visual indicators**:
+  - Normal (muted text) — well under threshold
+  - Yellow — approaching compaction threshold (≥80% of threshold)
+  - Orange/red — at or above compaction threshold
 
 ## Developer Settings
 
