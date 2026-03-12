@@ -58,6 +58,7 @@ export class AgentView extends ItemView {
 	private activeFileChangeHandler: () => void;
 	private pendingAttachments: InlineAttachment[] = [];
 	private imagePreviewContainer: HTMLElement;
+	private tokenUsageContainer: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -135,6 +136,7 @@ export class AgentView extends ItemView {
 		this.userInput = elements.userInput;
 		this.sendButton = elements.sendButton;
 		this.imagePreviewContainer = elements.imagePreviewContainer;
+		this.tokenUsageContainer = elements.tokenUsageContainer;
 
 		// Initialize progress bar with the created elements
 		this.progress.createProgressBar(elements.progressContainer);
@@ -400,11 +402,35 @@ To reference an attachment in your response, use the path shown above.`;
 			try {
 				// Get model config from session or use defaults
 				const modelConfig = this.currentSession?.modelConfig || {};
+				const modelName = modelConfig.model || this.plugin.settings.chatModelName;
+
+				// Prepare history through context manager (may compact if over threshold)
+				const compactionResult = await this.plugin.contextManager.prepareHistory(
+					conversationHistory,
+					modelName,
+					additionalInstructions,
+					availableTools
+				);
+
+				// If compaction occurred, show notification and save summary to transcript
+				if (compactionResult.wasCompacted && compactionResult.summaryText) {
+					const compactionEntry: GeminiConversationEntry = {
+						role: 'model',
+						message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${compactionResult.summaryText}`,
+						notePath: '',
+						created_at: new Date(),
+					};
+					await this.displayMessage(compactionEntry);
+					if (this.plugin.settings.chatHistory) {
+						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, compactionEntry);
+					}
+					this.plugin.logger.log(`[AgentView] Context compacted: ${compactionResult.estimatedTokens} tokens remaining`);
+				}
 
 				const request: ExtendedModelRequest = {
 					userMessage: message,
-					conversationHistory: conversationHistory,
-					model: modelConfig.model || this.plugin.settings.chatModelName,
+					conversationHistory: compactionResult.compactedHistory,
+					model: modelName,
 					temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 					topP: modelConfig.topP ?? this.plugin.settings.topP,
 					prompt: additionalInstructions, // Additional context and instructions
@@ -467,6 +493,11 @@ To reference an attachment in your response, use the path shown above.`;
 						const response = await streamResponse.complete;
 						this.currentStreamingResponse = null;
 
+						// Update context manager with usage metadata from response
+						if (response.usageMetadata) {
+							this.plugin.contextManager.updateUsageMetadata(response.usageMetadata);
+						}
+
 						// Check if the model requested tool calls
 						if (response.toolCalls && response.toolCalls.length > 0) {
 							// Save user message to history first
@@ -499,7 +530,7 @@ To reference an attachment in your response, use the path shown above.`;
 							await this.tools.handleToolCalls(
 								response.toolCalls,
 								message,
-								conversationHistory,
+								compactionResult.compactedHistory,
 								userEntry,
 								customPrompt
 							);
@@ -565,13 +596,24 @@ To reference an attachment in your response, use the path shown above.`;
 					this.plugin.logger.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
 
+					// Update context manager with usage metadata from response
+					if (response.usageMetadata) {
+						this.plugin.contextManager.updateUsageMetadata(response.usageMetadata);
+					}
+
 					// Update progress to show response received
 					this.progress.update('Processing response...', 'waiting');
 
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
 						// Execute tools and handle results
-						await this.tools.handleToolCalls(response.toolCalls, message, conversationHistory, userEntry, customPrompt);
+						await this.tools.handleToolCalls(
+							response.toolCalls,
+							message,
+							compactionResult.compactedHistory,
+							userEntry,
+							customPrompt
+						);
 					} else {
 						// Normal response without tool calls
 						// Only display if response has content
@@ -628,6 +670,9 @@ To reference an attachment in your response, use the path shown above.`;
 			if (this.isExecuting) {
 				this.resetExecutionUiState();
 			}
+
+			// Always update token usage display after any message completion
+			await this.updateTokenUsage();
 		}
 	}
 
@@ -849,6 +894,9 @@ To reference an attachment in your response, use the path shown above.`;
 	private async createNewSession() {
 		await this.session.createNewSession();
 		this.currentSession = this.session.getCurrentSession();
+		// Reset context manager for the new session and update display
+		this.plugin.contextManager?.reset();
+		await this.updateTokenUsage();
 	}
 
 	/**
@@ -857,6 +905,9 @@ To reference an attachment in your response, use the path shown above.`;
 	private async loadSession(session: ChatSession) {
 		await this.session.loadSession(session);
 		this.currentSession = this.session.getCurrentSession();
+		// Reset cache and refresh token usage for the loaded session
+		this.plugin.contextManager?.reset();
+		await this.refreshTokenUsageFromHistory();
 	}
 
 	/**
@@ -1031,6 +1082,80 @@ To reference an attachment in your response, use the path shown above.`;
 		};
 
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
+	}
+
+	/**
+	 * Updates the token usage display if the setting is enabled.
+	 * Uses cached usageMetadata from the latest API response for fast, reliable updates.
+	 */
+	private async updateTokenUsage(): Promise<void> {
+		if (!this.plugin.contextManager || !this.plugin.settings.showTokenUsage || !this.tokenUsageContainer) {
+			if (this.tokenUsageContainer) {
+				this.tokenUsageContainer.style.display = 'none';
+			}
+			return;
+		}
+
+		try {
+			const modelName = this.currentSession?.modelConfig?.model || this.plugin.settings.chatModelName;
+			const usage = await this.plugin.contextManager.getTokenUsage(modelName);
+
+			// If no cached data yet (e.g., new session, first load), hide the display
+			if (usage.estimatedTokens === 0) {
+				this.tokenUsageContainer.style.display = 'none';
+				return;
+			}
+
+			this.tokenUsageContainer.style.display = '';
+			this.tokenUsageContainer.empty();
+
+			const tokenText = this.tokenUsageContainer.createSpan({ cls: 'gemini-agent-token-text' });
+			tokenText.textContent = `Tokens: ~${usage.estimatedTokens.toLocaleString()} / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+
+			// Add warning class if approaching threshold
+			const threshold = this.plugin.settings.contextCompactionThreshold;
+			if (usage.percentUsed >= threshold) {
+				this.tokenUsageContainer.addClass('gemini-agent-token-usage-warning');
+				this.tokenUsageContainer.removeClass('gemini-agent-token-usage-caution');
+			} else if (usage.percentUsed >= threshold * 0.8) {
+				this.tokenUsageContainer.addClass('gemini-agent-token-usage-caution');
+				this.tokenUsageContainer.removeClass('gemini-agent-token-usage-warning');
+			} else {
+				this.tokenUsageContainer.removeClass('gemini-agent-token-usage-warning');
+				this.tokenUsageContainer.removeClass('gemini-agent-token-usage-caution');
+			}
+		} catch (error) {
+			this.plugin.logger.debug('[AgentView] Failed to update token usage:', error);
+		}
+	}
+
+	/**
+	 * Refreshes token usage by counting tokens from the stored session history.
+	 * Used when loading/switching sessions where we don't have cached API metadata.
+	 */
+	private async refreshTokenUsageFromHistory(): Promise<void> {
+		if (!this.plugin.contextManager || !this.plugin.settings.showTokenUsage || !this.currentSession) {
+			await this.updateTokenUsage();
+			return;
+		}
+
+		try {
+			const modelName = this.currentSession?.modelConfig?.model || this.plugin.settings.chatModelName;
+			const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
+			if (conversationHistory && conversationHistory.length > 0) {
+				const tokenCount = await this.plugin.contextManager.countTokens(modelName, conversationHistory);
+				if (tokenCount > 0) {
+					this.plugin.contextManager.updateUsageMetadata({
+						promptTokenCount: tokenCount,
+						totalTokenCount: tokenCount,
+					});
+				}
+			}
+		} catch (error) {
+			this.plugin.logger.debug('[AgentView] Failed to refresh token usage from history:', error);
+		}
+
+		await this.updateTokenUsage();
 	}
 
 	async onClose() {

@@ -1508,6 +1508,31 @@ If your plugin does not need CSS, delete this file.
 	border-radius: var(--radius-s);
 }
 
+/* Token Usage Indicator */
+.gemini-agent-token-usage {
+	display: flex;
+	align-items: center;
+	padding: 2px var(--size-4-2);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+}
+
+.gemini-agent-token-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-agent-token-usage-caution {
+	color: var(--color-yellow);
+}
+
+.gemini-agent-token-usage-warning {
+	color: var(--color-orange, var(--color-red));
+	font-weight: 500;
+}
+
 /* Input Area */
 .gemini-agent-input-area {
 	display: flex;

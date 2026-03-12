@@ -56,6 +56,7 @@ export interface AgentUIElements {
 	sendButton: HTMLButtonElement;
 	imagePreviewContainer: HTMLElement;
 	progressContainer: HTMLElement;
+	tokenUsageContainer: HTMLElement;
 }
 
 /**
@@ -95,6 +96,11 @@ export class AgentViewUI {
 
 		// Input area
 		const inputArea = container.createDiv({ cls: 'gemini-agent-input-area' });
+
+		// Token usage indicator (hidden by default, shown when setting enabled)
+		const tokenUsageContainer = inputArea.createDiv({ cls: 'gemini-agent-token-usage' });
+		tokenUsageContainer.style.display = 'none';
+
 		const { userInput, sendButton, imagePreviewContainer } = this.createInputArea(inputArea, callbacks);
 
 		return {
@@ -105,6 +111,7 @@ export class AgentViewUI {
 			sendButton,
 			imagePreviewContainer,
 			progressContainer,
+			tokenUsageContainer,
 		};
 	}
 

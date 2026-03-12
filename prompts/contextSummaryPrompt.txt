@@ -1,0 +1,16 @@
+You are summarizing a conversation between a user and an AI assistant that has access to tools for managing an Obsidian vault.
+
+Create a concise but comprehensive summary of the following conversation turns. Your summary should preserve:
+- Key decisions and conclusions reached
+- Important file paths, note names, and vault operations performed
+- Any ongoing tasks or commitments the assistant made
+- User preferences or instructions that should carry forward
+- Unresolved issues, failed operations, or blockers that need follow-up
+- Any pending user confirmations or inputs the assistant was waiting for
+
+Do NOT include:
+- Routine greetings or pleasantries
+- Detailed tool execution logs (just note what was done and the outcome)
+- Verbose explanations that were already delivered
+
+Format your summary as a clear narrative, not a bullet list. Keep it under 2000 tokens.

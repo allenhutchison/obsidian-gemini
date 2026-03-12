@@ -30,6 +30,7 @@ import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
+import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
 
 // @ts-ignore
@@ -84,6 +85,9 @@ export interface ObsidianGeminiSettings {
 	// MCP server settings
 	mcpEnabled: boolean;
 	mcpServers: MCPServerConfig[];
+	// Context management
+	contextCompactionThreshold: number;
+	showTokenUsage: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -131,6 +135,9 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	// MCP server settings
 	mcpEnabled: false,
 	mcpServers: [],
+	// Context management
+	contextCompactionThreshold: 20,
+	showTokenUsage: false,
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
@@ -165,6 +172,7 @@ export default class ObsidianGemini extends Plugin {
 	public selectionActionService: SelectionActionService;
 	public mcpManager: MCPManager | null = null;
 	public skillManager: SkillManager;
+	public contextManager: ContextManager;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -629,6 +637,9 @@ export default class ObsidianGemini extends Plugin {
 		if (this.settings.mcpEnabled) {
 			await this.mcpManager.connectAllEnabled();
 		}
+
+		// Initialize context manager for agent sessions
+		this.contextManager = new ContextManager(this, this.logger);
 
 		// Initialize completions
 		this.completions = new GeminiCompletions(this);
