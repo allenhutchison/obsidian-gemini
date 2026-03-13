@@ -495,6 +495,11 @@ export class AgentViewTools {
 					const modelApi2 = AgentFactory.createAgentModel(this.plugin, currentSession);
 					const retryResponse = await modelApi2.generateModelResponse(retryRequest);
 
+					// Update context manager with usage metadata from retry response
+					if (retryResponse.usageMetadata) {
+						this.context.onUsageMetadata?.(retryResponse.usageMetadata);
+					}
+
 					if (retryResponse.markdown && retryResponse.markdown.trim()) {
 						const aiEntry: GeminiConversationEntry = {
 							role: 'model',
