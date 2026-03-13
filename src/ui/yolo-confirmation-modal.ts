@@ -17,6 +17,7 @@ export class YoloConfirmationModal extends Modal {
 	}
 
 	onOpen() {
+		this.resolved = false;
 		const { contentEl } = this;
 		contentEl.empty();
 

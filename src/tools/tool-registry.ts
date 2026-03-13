@@ -57,7 +57,7 @@ export class ToolRegistry {
 	 * Falls back to DEFAULT_TOOL_POLICY if not yet configured.
 	 */
 	private getToolPolicy(): ToolPolicySettings {
-		return (this.plugin.settings as any).toolPolicy ?? DEFAULT_TOOL_POLICY;
+		return this.plugin.settings?.toolPolicy ?? DEFAULT_TOOL_POLICY;
 	}
 
 	/**

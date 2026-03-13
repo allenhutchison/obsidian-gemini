@@ -35,6 +35,7 @@ export class MCPServerModal extends Modal {
 					...config,
 					transport: config.transport ?? MCP_TRANSPORT_STDIO,
 					args: [...config.args],
+					// Legacy field — kept for migration compatibility, no longer used in UI
 					trustedTools: config.trustedTools ? [...config.trustedTools] : [],
 					env: config.env ? { ...config.env } : undefined,
 				}

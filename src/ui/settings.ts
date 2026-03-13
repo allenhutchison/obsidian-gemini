@@ -211,7 +211,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					const displayName = tool.displayName || tool.name;
 					setting.setName(displayName);
 
-					// Resolve effective permission
+					// toolRegistry is guaranteed non-null — allTools is sourced from it above
 					const effectivePermission = this.plugin.toolRegistry!.getEffectivePermission(tool.name);
 
 					setting.addDropdown((dropdown) => {

@@ -1,8 +1,7 @@
 import { ToolRegistry } from '../../src/tools/tool-registry';
 import { Tool, ToolResult, ToolExecutionContext } from '../../src/tools/types';
 import { ToolCategory } from '../../src/types/agent';
-import { ToolClassification } from '../../src/types/tool-policy';
-import { PolicyPreset } from '../../src/types/tool-policy';
+import { ToolClassification, PolicyPreset, ToolPermission } from '../../src/types/tool-policy';
 
 // Mock plugin
 const mockPlugin = {
@@ -220,7 +219,7 @@ describe('ToolRegistry', () => {
 
 			// Set destructive_tool to DENY via per-tool override
 			mockPlugin.settings.toolPolicy.toolPermissions = {
-				destructive_tool: 'deny',
+				destructive_tool: ToolPermission.DENY,
 			};
 
 			const context = {
