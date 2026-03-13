@@ -162,6 +162,7 @@ export class AgentView extends ItemView {
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
+			onUsageMetadata: (metadata) => this.plugin.contextManager?.updateUsageMetadata(metadata),
 		};
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
 
@@ -1079,6 +1080,7 @@ To reference an attachment in your response, use the path shown above.`;
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
+			onUsageMetadata: (metadata) => this.plugin.contextManager?.updateUsageMetadata(metadata),
 		};
 
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
