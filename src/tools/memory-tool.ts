@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 
 /**
@@ -10,6 +11,7 @@ export class UpdateMemoryTool implements Tool {
 	name = 'update_memory';
 	displayName = 'Update Memory';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.WRITE;
 	description =
 		'Update the AGENTS.md file to remember information about this vault. Use this when the user explicitly asks you to remember something, or when you discover important information about how the vault is organized or should be used. The content will be appended to the AGENTS.md file.';
 
@@ -83,6 +85,7 @@ export class ReadMemoryTool implements Tool {
 	name = 'read_memory';
 	displayName = 'Read Memory';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description =
 		'Read the current contents of the AGENTS.md file to see what information has been remembered about this vault. This file contains persistent context about the vault structure, organization, key topics, user preferences, and custom instructions.';
 

@@ -1,5 +1,6 @@
 import { Tool } from '../../src/tools/types';
 import { ToolCategory } from '../../src/types/agent';
+import { ToolClassification } from '../../src/types/tool-policy';
 
 describe('Gemini API Tools Formatting', () => {
 	test('should format tools correctly for Gemini API', () => {
@@ -8,6 +9,7 @@ describe('Gemini API Tools Formatting', () => {
 			{
 				name: 'read_file',
 				category: ToolCategory.READ_ONLY,
+				classification: ToolClassification.READ,
 				description: 'Read the contents of a file in the vault',
 				parameters: {
 					type: 'object',
@@ -24,6 +26,7 @@ describe('Gemini API Tools Formatting', () => {
 			{
 				name: 'list_files',
 				category: ToolCategory.VAULT_OPERATIONS,
+				classification: ToolClassification.READ,
 				description: 'List files and folders in a directory',
 				parameters: {
 					type: 'object',

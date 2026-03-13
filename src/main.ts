@@ -32,6 +32,7 @@ import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
 import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
+import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
@@ -74,8 +75,10 @@ export interface ObsidianGeminiSettings {
 	loopDetectionEnabled: boolean;
 	loopDetectionThreshold: number;
 	loopDetectionTimeWindowSeconds: number;
-	// Trusted Mode
+	// Trusted Mode (legacy — migrated to toolPolicy)
 	alwaysAllowReadWrite: boolean;
+	// Tool policy settings
+	toolPolicy: ToolPolicySettings;
 	// V4 upgrade tracking
 	hasSeenV4Welcome: boolean;
 	// Version tracking for update notifications
@@ -118,8 +121,10 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	loopDetectionEnabled: true,
 	loopDetectionThreshold: 3,
 	loopDetectionTimeWindowSeconds: 30,
-	// Trusted Mode
+	// Trusted Mode (legacy — migrated to toolPolicy)
 	alwaysAllowReadWrite: false,
+	// Tool policy settings
+	toolPolicy: { ...DEFAULT_TOOL_POLICY },
 	// V4 upgrade tracking
 	hasSeenV4Welcome: false,
 	// Version tracking for update notifications
@@ -886,6 +891,20 @@ export default class ObsidianGemini extends Plugin {
 		// When dynamic discovery is enabled, user model selections should be preserved
 		if (!this.settings.modelDiscovery?.enabled) {
 			await this.updateModelVersions();
+		}
+
+		// Migrate legacy alwaysAllowReadWrite → toolPolicy
+		if (data?.alwaysAllowReadWrite !== undefined && !data?.toolPolicy) {
+			this.settings.toolPolicy = {
+				activePreset: data.alwaysAllowReadWrite ? PolicyPreset.EDIT_MODE : PolicyPreset.CAUTIOUS,
+				toolPermissions: {},
+			};
+			// Clear the legacy setting
+			delete (this.settings as any).alwaysAllowReadWrite;
+			await this.saveData(this.settings);
+			this.logger?.log(
+				`Migrated alwaysAllowReadWrite=${data.alwaysAllowReadWrite} → toolPolicy.activePreset=${this.settings.toolPolicy.activePreset}`
+			);
 		}
 	}
 

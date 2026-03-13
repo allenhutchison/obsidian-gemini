@@ -2,6 +2,7 @@ import { ToolExecutionEngine } from '../../src/tools/execution-engine';
 import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault-tools';
 import { ToolCategory } from '../../src/types/agent';
+import { ToolClassification } from '../../src/types/tool-policy';
 import { Notice } from 'obsidian';
 
 // Mock Obsidian
@@ -257,6 +258,7 @@ describe('ToolExecutionEngine - Error Handling', () => {
 			name: 'error_tool',
 			description: 'A tool that always throws',
 			category: ToolCategory.READ_ONLY,
+			classification: ToolClassification.READ,
 			parameters: {
 				type: 'object' as const,
 				properties: {},

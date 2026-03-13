@@ -1,5 +1,6 @@
 import { Tool, ToolExecutionContext } from './types';
-import { ToolCategory, DestructiveAction } from '../types/agent';
+import { ToolCategory } from '../types/agent';
+import { ToolPermission, resolvePermission, ToolPolicySettings, DEFAULT_TOOL_POLICY } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 
 /**
@@ -38,7 +39,7 @@ export class ToolRegistry {
 	}
 
 	/**
-	 * Get all tools
+	 * Get all tools (regardless of policy)
 	 */
 	getAllTools(): Tool[] {
 		return Array.from(this.tools.values());
@@ -52,44 +53,58 @@ export class ToolRegistry {
 	}
 
 	/**
-	 * Get tools that are enabled for the current session
+	 * Get the current tool policy settings from the plugin.
+	 * Falls back to DEFAULT_TOOL_POLICY if not yet configured.
 	 */
-	getEnabledTools(context: ToolExecutionContext): Tool[] {
-		const enabledCategories = context.session.context.enabledTools;
-		return this.getAllTools().filter((tool) => enabledCategories.includes(tool.category as ToolCategory));
+	private getToolPolicy(): ToolPolicySettings {
+		return this.plugin.settings?.toolPolicy ?? DEFAULT_TOOL_POLICY;
 	}
 
 	/**
-	 * Check if a tool requires confirmation based on session settings.
+	 * Resolve the effective permission for a tool based on the current policy settings.
 	 *
-	 * For MCP tools, per-tool trust (requiresConfirmation = false) takes
-	 * precedence over the session-level category check so that trusted
-	 * tools can skip confirmation even though EXTERNAL_API_CALLS is in
-	 * the default session context.
+	 * Resolution order:
+	 * 1. Explicit per-tool override in `toolPolicy.toolPermissions`
+	 * 2. Preset-defined permission based on tool classification
 	 */
-	requiresConfirmation(toolName: string, context: ToolExecutionContext): boolean {
+	getEffectivePermission(toolName: string): ToolPermission {
 		const tool = this.getTool(toolName);
-		if (!tool) return false;
+		if (!tool) return ToolPermission.DENY;
 
-		// Check if tool explicitly requires confirmation
-		if (tool.requiresConfirmation) return true;
+		return resolvePermission(toolName, tool.classification, this.getToolPolicy());
+	}
 
-		// MCP tools have per-tool trust: if the tool explicitly opted out
-		// of confirmation, honour that instead of the category-level check.
-		if (tool.category === ToolCategory.EXTERNAL_MCP) {
-			return false;
-		}
+	/**
+	 * Get tools that are enabled for the current session.
+	 *
+	 * A tool is enabled if:
+	 * 1. Its category is in the session's `enabledTools` list (session-level filtering)
+	 * 2. Its effective permission is NOT `DENY` (global policy filtering)
+	 *
+	 * Session contexts never escalate beyond global policy — a DENY tool
+	 * cannot be enabled by a session.
+	 */
+	getEnabledTools(context: ToolExecutionContext): Tool[] {
+		const enabledCategories = context.session.context.enabledTools;
+		return this.getAllTools().filter((tool) => {
+			// Session-level category filter
+			if (!enabledCategories.includes(tool.category as ToolCategory)) {
+				return false;
+			}
+			// Global policy filter — exclude DENY tools
+			return this.getEffectivePermission(tool.name) !== ToolPermission.DENY;
+		});
+	}
 
-		// Check session-level confirmation requirements
-		const confirmActions = context.session.context.requireConfirmation;
-
-		// Map tool categories to destructive actions
-		const categoryActionMap: Record<string, DestructiveAction> = {
-			[ToolCategory.VAULT_OPERATIONS]: DestructiveAction.MODIFY_FILES,
-		};
-
-		const action = categoryActionMap[tool.category];
-		return action ? confirmActions.includes(action) : false;
+	/**
+	 * Check if a tool requires confirmation based on global policy.
+	 *
+	 * - APPROVE → no confirmation needed
+	 * - ASK_USER → confirmation required
+	 * - DENY → tool should not be present (but returns false as a safe default)
+	 */
+	requiresConfirmation(toolName: string): boolean {
+		return this.getEffectivePermission(toolName) === ToolPermission.ASK_USER;
 	}
 
 	/**

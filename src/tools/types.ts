@@ -1,5 +1,6 @@
 import { TFile } from 'obsidian';
 import { ChatSession } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 
 /**
  * Result from a tool execution
@@ -49,6 +50,9 @@ export interface Tool {
 
 	/** Category this tool belongs to */
 	category: string;
+
+	/** Risk classification for the permission policy system */
+	classification: ToolClassification;
 
 	/** Human-readable description */
 	description: string;

@@ -1,6 +1,7 @@
 import { ToolRegistry } from '../../src/tools/tool-registry';
 import { Tool, ToolResult, ToolExecutionContext } from '../../src/tools/types';
 import { ToolCategory } from '../../src/types/agent';
+import { ToolClassification, PolicyPreset, ToolPermission } from '../../src/types/tool-policy';
 
 // Mock plugin
 const mockPlugin = {
@@ -8,6 +9,12 @@ const mockPlugin = {
 		vault: {},
 		workspace: {},
 		metadataCache: {},
+	},
+	settings: {
+		toolPolicy: {
+			activePreset: PolicyPreset.CAUTIOUS,
+			toolPermissions: {},
+		},
 	},
 	logger: {
 		log: jest.fn(),
@@ -24,6 +31,7 @@ const mockPlugin = {
 class TestTool implements Tool {
 	name = 'test_tool';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description = 'A test tool';
 
 	parameters = {
@@ -48,6 +56,7 @@ class TestTool implements Tool {
 class DestructiveTestTool implements Tool {
 	name = 'destructive_tool';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.DESTRUCTIVE;
 	description = 'A destructive test tool';
 	requiresConfirmation = true;
 
@@ -70,11 +79,45 @@ class DestructiveTestTool implements Tool {
 	}
 }
 
+class WriteTestTool implements Tool {
+	name: string;
+	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.WRITE;
+	description = 'A write test tool';
+
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			content: {
+				type: 'string' as const,
+				description: 'Content to write',
+			},
+		},
+		required: ['content'],
+	};
+
+	constructor(name: string) {
+		this.name = name;
+	}
+
+	async execute(params: { content: string }, context: ToolExecutionContext): Promise<ToolResult> {
+		return {
+			success: true,
+			data: { written: params.content },
+		};
+	}
+}
+
 describe('ToolRegistry', () => {
 	let registry: ToolRegistry;
 
 	beforeEach(() => {
 		registry = new ToolRegistry(mockPlugin);
+		// Reset to Cautious preset for each test
+		mockPlugin.settings.toolPolicy = {
+			activePreset: PolicyPreset.CAUTIOUS,
+			toolPermissions: {},
+		};
 	});
 
 	describe('registerTool', () => {
@@ -195,6 +238,57 @@ describe('ToolRegistry', () => {
 			const enabledTools = registry.getEnabledTools(context);
 			expect(enabledTools).toHaveLength(0);
 		});
+
+		it('should filter out DENY tools from enabled list', () => {
+			const readOnlyTool = new TestTool();
+			const vaultTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(vaultTool);
+
+			// Set destructive_tool to DENY via per-tool override
+			mockPlugin.settings.toolPolicy.toolPermissions = {
+				destructive_tool: ToolPermission.DENY,
+			};
+
+			const context = {
+				session: {
+					context: {
+						enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
+					},
+				},
+			} as any;
+
+			const enabledTools = registry.getEnabledTools(context);
+			expect(enabledTools).toHaveLength(1);
+			expect(enabledTools[0]).toBe(readOnlyTool);
+		});
+
+		it('should preserve permissions for untouched tools when switching to CUSTOM', () => {
+			const writeToolA = new WriteTestTool('write_tool_a');
+			const writeToolB = new WriteTestTool('write_tool_b');
+
+			registry.registerTool(writeToolA);
+			registry.registerTool(writeToolB);
+
+			// Start in EDIT_MODE where WRITE tools get APPROVE
+			mockPlugin.settings.toolPolicy.activePreset = PolicyPreset.EDIT_MODE;
+			mockPlugin.settings.toolPolicy.toolPermissions = {};
+
+			expect(registry.getEffectivePermission('write_tool_a')).toBe(ToolPermission.APPROVE);
+			expect(registry.getEffectivePermission('write_tool_b')).toBe(ToolPermission.APPROVE);
+
+			// Switch to CUSTOM and override only write_tool_a
+			mockPlugin.settings.toolPolicy.activePreset = PolicyPreset.CUSTOM;
+			mockPlugin.settings.toolPolicy.toolPermissions = {
+				write_tool_a: ToolPermission.ASK_USER,
+				write_tool_b: ToolPermission.APPROVE, // materialized from EDIT_MODE
+			};
+
+			expect(registry.getEffectivePermission('write_tool_a')).toBe(ToolPermission.ASK_USER);
+			// write_tool_b should retain its EDIT_MODE permission, not fall back to CUSTOM defaults
+			expect(registry.getEffectivePermission('write_tool_b')).toBe(ToolPermission.APPROVE);
+		});
 	});
 
 	describe('requiresConfirmation', () => {
@@ -203,28 +297,12 @@ describe('ToolRegistry', () => {
 			registry.registerTool(new DestructiveTestTool());
 		});
 
-		it('should return false for non-destructive tool', () => {
-			const context = {
-				session: {
-					context: {
-						requireConfirmation: [],
-					},
-				},
-			} as any;
-
-			expect(registry.requiresConfirmation('test_tool', context)).toBe(false);
+		it('should return false for READ tool in Cautious mode', () => {
+			expect(registry.requiresConfirmation('test_tool')).toBe(false);
 		});
 
-		it('should return true for destructive tool', () => {
-			const context = {
-				session: {
-					context: {
-						requireConfirmation: [],
-					},
-				},
-			} as any;
-
-			expect(registry.requiresConfirmation('destructive_tool', context)).toBe(true);
+		it('should return true for DESTRUCTIVE tool in Cautious mode', () => {
+			expect(registry.requiresConfirmation('destructive_tool')).toBe(true);
 		});
 	});
 

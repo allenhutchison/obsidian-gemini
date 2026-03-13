@@ -5,7 +5,7 @@ import { ObsidianOAuthClientProvider } from '../mcp/mcp-oauth-provider';
 
 /**
  * Modal for adding or editing an MCP server configuration.
- * Includes test connection and per-tool trust settings.
+ * Includes test connection and discovered tool display.
  * Supports both stdio (local process) and HTTP (remote) transports.
  */
 export class MCPServerModal extends Modal {
@@ -14,7 +14,7 @@ export class MCPServerModal extends Modal {
 	private onSave: (config: MCPServerConfig) => Promise<void> | void;
 	private isEdit: boolean;
 	private discoveredTools: string[] = [];
-	private toolTrustContainer: HTMLElement | null = null;
+	private discoveredToolsContainer: HTMLElement | null = null;
 	private readonly originalServerName: string;
 
 	constructor(
@@ -35,7 +35,8 @@ export class MCPServerModal extends Modal {
 					...config,
 					transport: config.transport ?? MCP_TRANSPORT_STDIO,
 					args: [...config.args],
-					trustedTools: [...config.trustedTools],
+					// Legacy field — kept for migration compatibility, no longer used in UI
+					trustedTools: config.trustedTools ? [...config.trustedTools] : [],
 					env: config.env ? { ...config.env } : undefined,
 				}
 			: {
@@ -50,11 +51,9 @@ export class MCPServerModal extends Modal {
 				};
 
 		if (this.isEdit) {
-			// Pre-populate from the connected server's tool list if available,
-			// otherwise fall back to trustedTools (so at minimum trusted tools show).
+			// Pre-populate from the connected server's tool list if available.
 			const serverState = mcpManager.getServerStatus(this.config.name);
-			this.discoveredTools =
-				serverState.toolNames.length > 0 ? [...serverState.toolNames] : [...this.config.trustedTools];
+			this.discoveredTools = serverState?.toolNames ? [...serverState.toolNames] : [];
 		}
 	}
 
@@ -230,7 +229,7 @@ export class MCPServerModal extends Modal {
 					const tools = await this.mcpManager.queryToolsForConfig(this.config);
 					this.discoveredTools = tools;
 					testSetting.setDesc(`Connected successfully! Found ${tools.length} tool(s).`);
-					this.renderToolTrust();
+					this.renderDiscoveredTools();
 				} catch (error) {
 					const msg = error instanceof Error ? error.message : String(error);
 					testSetting.setDesc(`Connection failed: ${msg}`);
@@ -241,10 +240,10 @@ export class MCPServerModal extends Modal {
 			})
 		);
 
-		// Tool trust section placeholder
-		this.toolTrustContainer = contentEl.createDiv({ cls: 'mcp-tool-trust-container' });
+		// Discovered tools section
+		this.discoveredToolsContainer = contentEl.createDiv({ cls: 'mcp-discovered-tools-container' });
 		if (this.discoveredTools.length > 0) {
-			this.renderToolTrust();
+			this.renderDiscoveredTools();
 		}
 
 		// Action buttons
@@ -287,35 +286,22 @@ export class MCPServerModal extends Modal {
 			);
 	}
 
-	private renderToolTrust() {
-		if (!this.toolTrustContainer) return;
-		this.toolTrustContainer.empty();
+	private renderDiscoveredTools() {
+		if (!this.discoveredToolsContainer) return;
+		this.discoveredToolsContainer.empty();
 
 		if (this.discoveredTools.length === 0) return;
 
-		this.toolTrustContainer.createEl('h3', { text: 'Tool Trust Settings' });
-		const desc = this.toolTrustContainer.createEl('p', {
-			text: 'Trusted tools skip the confirmation dialog. Untrusted tools require approval before each execution.',
+		this.discoveredToolsContainer.createEl('h3', { text: 'Discovered Tools' });
+		const desc = this.discoveredToolsContainer.createEl('p', {
+			text: 'These tools were discovered on the server. Manage their permissions in the Tool Permissions settings.',
 			cls: 'setting-item-description',
 		});
 		desc.style.marginBottom = '0.5em';
 
+		const toolList = this.discoveredToolsContainer.createEl('ul');
 		for (const toolName of this.discoveredTools) {
-			const isTrusted = this.config.trustedTools.includes(toolName);
-
-			const toolSetting = new Setting(this.toolTrustContainer).setName(toolName).addToggle((toggle) =>
-				toggle.setValue(isTrusted).onChange((value) => {
-					if (value) {
-						if (!this.config.trustedTools.includes(toolName)) {
-							this.config.trustedTools.push(toolName);
-						}
-					} else {
-						this.config.trustedTools = this.config.trustedTools.filter((t) => t !== toolName);
-					}
-				})
-			);
-			toolSetting.settingEl.addClass('mcp-tool-setting');
-			toolSetting.nameEl.addClass('mcp-tool-name');
+			toolList.createEl('li', { text: toolName });
 		}
 	}
 

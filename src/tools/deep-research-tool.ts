@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 import { ResearchScope } from '../services/deep-research';
 
@@ -11,6 +12,7 @@ export class DeepResearchTool implements Tool {
 	name = 'deep_research';
 	displayName = 'Deep Research';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.EXTERNAL;
 	description =
 		"Conduct comprehensive research on a topic using Google's Deep Research model. " +
 		'Can search your vault notes (via RAG), the web, or both. ' +

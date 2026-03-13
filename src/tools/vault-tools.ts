@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ScribeFile } from '../files';
@@ -131,6 +132,7 @@ export class ReadFileTool implements Tool {
 	name = 'read_file';
 	displayName = 'Read File';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description =
 		'Read the full text contents of a markdown file from the vault, or list the contents of a folder. For files, returns the file content along with metadata including the canonical wikilink for the file, outgoing links (files this note links to), and backlinks (files that link to this note). For folders, returns a list of all files and subfolders within that folder. The "wikilink" field contains the preferred way to reference this file (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]"). All links are in [[WikiLink]] format and can be passed directly to any vault tool - they will automatically resolve to the correct file path, even if the file is in a subfolder. Use this to traverse note relationships, follow connections between notes, or explore related content. Path can be a full path (e.g., "folder/note.md"), a simple filename (e.g., "note"), or a wikilink text (e.g., "My Note" from [[My Note]]). The .md extension is optional.';
 
@@ -259,6 +261,7 @@ export class WriteFileTool implements Tool {
 	name = 'write_file';
 	displayName = 'Write File';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.WRITE;
 	description =
 		"Write text content to a file in the vault. Creates a new file if it doesn't exist, or completely overwrites an existing file with new content. Returns the file path and whether it was created or modified. Newly created files are automatically added to the current session context. Use this to save AI-generated content, create new notes, or update existing files.";
 	requiresConfirmation = true;
@@ -374,6 +377,7 @@ export class ListFilesTool implements Tool {
 	name = 'list_files';
 	displayName = 'List Files';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description =
 		'List all files and folders in a directory. Returns an array of objects with name, path, type (file/folder), size, and modification time for each item. Can list recursively through all subdirectories or just immediate children. Use empty string for path to list the vault root. Useful for exploring folder structure or finding all files in a specific location.';
 
@@ -466,6 +470,7 @@ export class CreateFolderTool implements Tool {
 	name = 'create_folder';
 	displayName = 'Create Folder';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.WRITE;
 	description =
 		"Create a new folder in the vault at the specified path. Parent folders will be created automatically if they don't exist. Returns the normalized folder path on success. Use this to organize notes into new directory structures or prepare locations for new files.";
 	requiresConfirmation = true;
@@ -540,6 +545,7 @@ export class DeleteFileTool implements Tool {
 	name = 'delete_file';
 	displayName = 'Delete File';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.DESTRUCTIVE;
 	description =
 		'Permanently delete a file or folder from the vault. WARNING: This action cannot be undone! When deleting a folder, all contents are removed recursively. Returns the path and type (file/folder) that was deleted. Path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Always confirm with the user before executing this destructive operation.';
 	requiresConfirmation = true;
@@ -616,6 +622,7 @@ export class MoveFileTool implements Tool {
 	name = 'move_file';
 	displayName = 'Move/Rename File';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.DESTRUCTIVE;
 	description =
 		'Move a file or folder to a different location or rename it. Provide both source and target paths (including filenames for files). Source path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Target directory will be created if it doesn\'t exist. When moving folders, all contents are moved recursively. Returns both paths and action status. Examples: rename "Note.md" to "New Name.md" in same folder, move "Folder A/Note.md" to "Folder B/Subfolder/Note.md", or move "Folder A" to "Folder B/Folder A". Preserves all file metadata and updates internal links automatically.';
 	requiresConfirmation = true;
@@ -729,6 +736,7 @@ export class SearchFilesTool implements Tool {
 	name = 'search_files';
 	displayName = 'Search Files';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description =
 		'Search for files in the vault by matching file names or paths against a pattern. Supports wildcards: * (matches any characters) and ? (matches single character). Searches are case-insensitive and match against both file names and full paths. Returns array of matching files with name, path, size, and modification time. Examples: "daily*" finds all files starting with "daily", "*meeting*" finds files containing "meeting" anywhere in name/path. Limited to 50 results by default. NOTE: This searches file NAMES/PATHS only, not file contents.';
 
@@ -833,6 +841,7 @@ export class SearchFileContentsTool implements Tool {
 	name = 'search_file_contents';
 	displayName = 'Search File Contents';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description =
 		'Search for text content within markdown files in the vault. Unlike search_files which only searches filenames, this tool searches inside file contents using grep-style text matching. Supports case-sensitive/insensitive search and regex patterns. Returns matching lines with context (lines before/after the match). Use this to find notes containing specific text, code snippets, or patterns. Examples: find all notes mentioning "meeting notes", search for TODO items, find files containing specific tags or phrases. Results include file path, line numbers, matching content, and surrounding context lines.';
 
@@ -1018,6 +1027,7 @@ export class GetActiveFileTool implements Tool {
 	name = 'get_active_file';
 	displayName = 'Get Active File';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description =
 		'Get the full content and metadata of the currently active file open in the editor. This is the file the user is currently viewing or editing. Returns the same information as read_file (content, wikilink, outgoing links, backlinks) for the active file. Use this when the user refers to "the current file", "this file", or "the active file". Returns an error if no file is currently active.';
 

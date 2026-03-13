@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
@@ -12,6 +13,7 @@ export class UpdateFrontmatterTool implements Tool {
 	name = 'update_frontmatter';
 	displayName = 'Update Frontmatter';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.WRITE;
 	requiresConfirmation = true;
 	description =
 		'Update a specific YAML frontmatter property in a file. ' +
@@ -122,6 +124,7 @@ export class AppendContentTool implements Tool {
 	name = 'append_content';
 	displayName = 'Append Content';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.WRITE;
 	requiresConfirmation = true;
 	description =
 		'Append text to the end of a file. ' +
