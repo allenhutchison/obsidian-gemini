@@ -162,6 +162,7 @@ export class AgentView extends ItemView {
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
+			onUsageMetadata: (metadata) => this.plugin.contextManager?.updateUsageMetadata(metadata),
 		};
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
 
@@ -405,12 +406,7 @@ To reference an attachment in your response, use the path shown above.`;
 				const modelName = modelConfig.model || this.plugin.settings.chatModelName;
 
 				// Prepare history through context manager (may compact if over threshold)
-				const compactionResult = await this.plugin.contextManager.prepareHistory(
-					conversationHistory,
-					modelName,
-					additionalInstructions,
-					availableTools
-				);
+				const compactionResult = await this.plugin.contextManager.prepareHistory(conversationHistory, modelName);
 
 				// If compaction occurred, show notification and save summary to transcript
 				if (compactionResult.wasCompacted && compactionResult.summaryText) {
@@ -1079,6 +1075,7 @@ To reference an attachment in your response, use the path shown above.`;
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
+			onUsageMetadata: (metadata) => this.plugin.contextManager?.updateUsageMetadata(metadata),
 		};
 
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);

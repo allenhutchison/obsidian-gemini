@@ -193,7 +193,21 @@ describe('ContextManager', () => {
 			expect(result.compactedHistory).toBe(history);
 		});
 
-		test('should skip compaction when well under threshold', async () => {
+		test('should skip compaction when no cached metadata exists', async () => {
+			// No updateUsageMetadata called — simulates first message in a session
+			const history = Array.from({ length: 20 }, (_, i) => ({
+				role: i % 2 === 0 ? 'user' : 'model',
+				parts: [{ text: `Message ${i}` }],
+			}));
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(false);
+			expect(result.compactedHistory).toEqual(history);
+			expect(result.estimatedTokens).toBe(0);
+		});
+
+		test('should skip compaction when under threshold', async () => {
 			contextManager.updateUsageMetadata({
 				promptTokenCount: 50_000,
 				totalTokenCount: 60_000,
@@ -208,19 +222,19 @@ describe('ContextManager', () => {
 
 			expect(result.wasCompacted).toBe(false);
 			expect(result.compactedHistory).toEqual(history);
-			// Should NOT have called countTokens (used cached estimate instead)
+			// Should NOT call countTokens — relies only on cached metadata
 			expect(mockCountTokens).not.toHaveBeenCalled();
 		});
 
 		test('should perform compaction when over threshold', async () => {
-			// Set up high usage metadata to trigger compaction
+			// 20% of 1M = 200K threshold
 			contextManager.updateUsageMetadata({
 				promptTokenCount: 250_000,
 				totalTokenCount: 300_000,
 			});
 
-			// countTokens returns values above threshold (20% of 1M = 200K)
-			mockCountTokens.mockResolvedValue({ totalTokens: 250_000 });
+			// countTokens is called AFTER compaction to measure the result
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
 
 			const history = Array.from({ length: 20 }, (_, i) => ({
 				role: i % 2 === 0 ? 'user' : 'model',
@@ -232,12 +246,10 @@ describe('ContextManager', () => {
 			expect(result.wasCompacted).toBe(true);
 			expect(result.summaryText).toBeTruthy();
 			expect(result.compactedHistory.length).toBeLessThan(history.length);
-
-			// First entry should be the summary
 			expect(result.compactedHistory[0].parts[0].text).toContain(CONTEXT_SUMMARY_MARKER);
-
-			// Second entry should be model acknowledgment
 			expect(result.compactedHistory[1].role).toBe('model');
+			// countTokens should be called once post-compaction to measure result size
+			expect(mockCountTokens).toHaveBeenCalledTimes(1);
 		});
 
 		test('should maintain valid turn structure after compaction', async () => {
@@ -245,7 +257,7 @@ describe('ContextManager', () => {
 				promptTokenCount: 250_000,
 				totalTokenCount: 300_000,
 			});
-			mockCountTokens.mockResolvedValue({ totalTokens: 250_000 });
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
 
 			const history = Array.from({ length: 20 }, (_, i) => ({
 				role: i % 2 === 0 ? 'user' : 'model',
@@ -254,21 +266,17 @@ describe('ContextManager', () => {
 
 			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
 
-			// Compacted history should start with user (summary) -> model (ack) pair
 			expect(result.compactedHistory[0].role).toBe('user');
 			expect(result.compactedHistory[1].role).toBe('model');
 		});
 
-		test('should use precise token count when approaching threshold', async () => {
-			// Set cached estimate near the threshold (80% of compaction threshold)
-			// 20% of 1M = 200K, 80% of 200K = 160K
+		test('should use aggressive compaction when over 80% of input limit', async () => {
+			// 80% of 1M = 800K
 			contextManager.updateUsageMetadata({
-				promptTokenCount: 180_000,
-				totalTokenCount: 200_000,
+				promptTokenCount: 850_000,
+				totalTokenCount: 900_000,
 			});
-
-			// But precise count shows we're still under
-			mockCountTokens.mockResolvedValue({ totalTokens: 150_000 });
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
 
 			const history = Array.from({ length: 20 }, (_, i) => ({
 				role: i % 2 === 0 ? 'user' : 'model',
@@ -277,9 +285,10 @@ describe('ContextManager', () => {
 
 			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
 
-			expect(result.wasCompacted).toBe(false);
-			// Should have called countTokens for precise count
-			expect(mockCountTokens).toHaveBeenCalled();
+			expect(result.wasCompacted).toBe(true);
+			// Aggressive keeps fewer turns (AGGRESSIVE_RECENT_TURNS = 5)
+			// So compacted history = summary + ack + ~5 recent = ~7
+			expect(result.compactedHistory.length).toBeLessThanOrEqual(8);
 		});
 	});
 
