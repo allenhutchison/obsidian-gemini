@@ -406,12 +406,7 @@ To reference an attachment in your response, use the path shown above.`;
 				const modelName = modelConfig.model || this.plugin.settings.chatModelName;
 
 				// Prepare history through context manager (may compact if over threshold)
-				const compactionResult = await this.plugin.contextManager.prepareHistory(
-					conversationHistory,
-					modelName,
-					additionalInstructions,
-					availableTools
-				);
+				const compactionResult = await this.plugin.contextManager.prepareHistory(conversationHistory, modelName);
 
 				// If compaction occurred, show notification and save summary to transcript
 				if (compactionResult.wasCompacted && compactionResult.summaryText) {

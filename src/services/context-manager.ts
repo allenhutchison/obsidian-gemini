@@ -11,7 +11,6 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { ToolDefinition } from '../api/interfaces/model-api';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
 
@@ -216,49 +215,37 @@ export class ContextManager {
 	 * Check if compaction is needed and perform it if so.
 	 *
 	 * This is the main entry point called before each API request.
-	 * It uses cached usageMetadata for fast estimates, and only calls
-	 * countTokens() for precise counts when approaching the threshold.
+	 * It uses cached usageMetadata from the last API response to decide
+	 * whether compaction is needed. countTokens() is only called after
+	 * compaction to measure the result size.
 	 */
-	async prepareHistory(
-		conversationHistory: any[],
-		modelName: string,
-		systemInstruction?: string,
-		tools?: ToolDefinition[]
-	): Promise<CompactionResult> {
+	async prepareHistory(conversationHistory: any[], modelName: string): Promise<CompactionResult> {
+		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
+
 		// Short-circuit for very short conversations
 		if (conversationHistory.length <= MIN_RECENT_TURNS_TO_KEEP) {
 			return {
 				compactedHistory: conversationHistory,
 				wasCompacted: false,
-				estimatedTokens: this.lastUsageMetadata?.promptTokenCount ?? 0,
+				estimatedTokens,
+			};
+		}
+
+		// No cached metadata — can't determine if we're over threshold (e.g., first message)
+		if (estimatedTokens === 0) {
+			this.logger.log('[ContextManager] No cached token usage, skipping compaction');
+			return {
+				compactedHistory: conversationHistory,
+				wasCompacted: false,
+				estimatedTokens: 0,
 			};
 		}
 
 		const compactionThreshold = await this.getCompactionThreshold(modelName);
-		const aggressiveThreshold = await this.getAggressiveThreshold(modelName);
-
-		// Phase 1: Use cached usageMetadata for a quick estimate
-		let estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
-
-		if (estimatedTokens > 0 && estimatedTokens < compactionThreshold * 0.8) {
-			// Well under threshold — no need to do anything
-			this.logger.log(
-				`[ContextManager] Under threshold (${estimatedTokens} < ${Math.floor(compactionThreshold * 0.8)}), skipping compaction`
-			);
-			return {
-				compactedHistory: conversationHistory,
-				wasCompacted: false,
-				estimatedTokens,
-			};
-		}
-
-		// Phase 2: Approaching threshold or no estimate — do a precise count
-		this.logger.log('[ContextManager] Approaching threshold, performing precise token count...');
-		estimatedTokens = await this.countTokens(modelName, conversationHistory);
 
 		if (estimatedTokens < compactionThreshold) {
 			this.logger.log(
-				`[ContextManager] Under threshold after precise count (${estimatedTokens} < ${compactionThreshold}), skipping`
+				`[ContextManager] Under threshold (${estimatedTokens} < ${compactionThreshold}), skipping compaction`
 			);
 			return {
 				compactedHistory: conversationHistory,
@@ -267,9 +254,10 @@ export class ContextManager {
 			};
 		}
 
-		// Phase 3: Over threshold — perform compaction
+		// Over threshold — perform compaction
 		this.logger.log(`[ContextManager] Over threshold (${estimatedTokens} >= ${compactionThreshold}), compacting...`);
 
+		const aggressiveThreshold = await this.getAggressiveThreshold(modelName);
 		const isAggressive = estimatedTokens >= aggressiveThreshold;
 		const result = await this.compactHistory(conversationHistory, modelName, isAggressive);
 
