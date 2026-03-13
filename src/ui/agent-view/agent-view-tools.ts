@@ -8,6 +8,7 @@ import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { generateToolDescription } from '../../utils/text-generation';
 import { formatFileSize } from '../../utils/format-utils';
+import type { UsageMetadata } from '../../services/context-manager';
 
 // Tool execution result messages
 const TOOL_EXECUTION_FAILED_DEFAULT_MSG = 'Tool execution failed (no error message provided)';
@@ -37,6 +38,7 @@ export interface AgentViewContext {
 	hideProgress(): void;
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
 	autoLabelSessionIfNeeded(): Promise<void>;
+	onUsageMetadata?: (metadata: UsageMetadata) => void;
 }
 
 /**
@@ -415,6 +417,11 @@ export class AgentViewTools {
 			this.context.updateProgress('Thinking...', 'thinking');
 
 			const followUpResponse = await modelApi.generateModelResponse(followUpRequest);
+
+			// Update context manager with usage metadata from follow-up response
+			if (followUpResponse.usageMetadata) {
+				this.context.onUsageMetadata?.(followUpResponse.usageMetadata);
+			}
 
 			// Check if the follow-up response also contains tool calls
 			if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
