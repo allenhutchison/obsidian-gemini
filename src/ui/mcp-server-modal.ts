@@ -53,7 +53,7 @@ export class MCPServerModal extends Modal {
 		if (this.isEdit) {
 			// Pre-populate from the connected server's tool list if available.
 			const serverState = mcpManager.getServerStatus(this.config.name);
-			this.discoveredTools = serverState.toolNames.length > 0 ? [...serverState.toolNames] : [];
+			this.discoveredTools = serverState?.toolNames ? [...serverState.toolNames] : [];
 		}
 	}
 

@@ -147,7 +147,12 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	 * Shows a preset dropdown and per-tool permission dropdowns grouped by classification.
 	 */
 	private async createToolPermissionsSettings(containerEl: HTMLElement): Promise<void> {
-		const policy = this.plugin.settings.toolPolicy ?? { ...DEFAULT_TOOL_POLICY };
+		// Normalize toolPolicy onto the real settings object so handlers can safely write to it
+		this.plugin.settings.toolPolicy = {
+			activePreset: this.plugin.settings.toolPolicy?.activePreset ?? DEFAULT_TOOL_POLICY.activePreset,
+			toolPermissions: { ...(this.plugin.settings.toolPolicy?.toolPermissions ?? {}) },
+		};
+		const policy = this.plugin.settings.toolPolicy;
 		const allTools = this.plugin.toolRegistry?.getAllTools() ?? [];
 
 		// If no tools are registered yet, show a message
@@ -180,8 +185,13 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					}
 
 					this.plugin.settings.toolPolicy.activePreset = preset;
-					// Clear per-tool overrides when switching to a named preset
-					if (preset !== PolicyPreset.CUSTOM) {
+					if (preset === PolicyPreset.CUSTOM) {
+						// Materialize current effective permissions so untouched tools keep their values
+						this.plugin.settings.toolPolicy.toolPermissions = Object.fromEntries(
+							allTools.map((t) => [t.name, this.plugin.toolRegistry!.getEffectivePermission(t.name)])
+						);
+					} else {
+						// Clear per-tool overrides when switching to a named preset
 						this.plugin.settings.toolPolicy.toolPermissions = {};
 					}
 					await this.plugin.saveSettings();
@@ -227,11 +237,15 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 								// Remove override — matches preset default
 								delete this.plugin.settings.toolPolicy.toolPermissions[tool.name];
 							} else {
-								// Set per-tool override and switch to Custom
-								this.plugin.settings.toolPolicy.toolPermissions[tool.name] = newPerm;
+								// Switching to Custom — materialize all current permissions first
 								if (policy.activePreset !== PolicyPreset.CUSTOM) {
+									this.plugin.settings.toolPolicy.toolPermissions = Object.fromEntries(
+										allTools.map((t) => [t.name, this.plugin.toolRegistry!.getEffectivePermission(t.name)])
+									);
 									this.plugin.settings.toolPolicy.activePreset = PolicyPreset.CUSTOM;
 								}
+								// Apply the user's change
+								this.plugin.settings.toolPolicy.toolPermissions[tool.name] = newPerm;
 							}
 
 							await this.plugin.saveSettings();
