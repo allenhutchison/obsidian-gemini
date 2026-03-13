@@ -1,8 +1,18 @@
 import ObsidianGemini from '../main';
-import { App, PluginSettingTab, Setting, Notice, setIcon, SecretComponent } from 'obsidian';
+import { App, PluginSettingTab, Setting, SettingGroup, Notice, setIcon, SecretComponent } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
+import {
+	ToolPermission,
+	ToolClassification,
+	PolicyPreset,
+	PRESET_LABELS,
+	PERMISSION_LABELS,
+	CLASSIFICATION_LABELS,
+	PRESET_PERMISSIONS,
+	DEFAULT_TOOL_POLICY,
+} from '../types/tool-policy';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: InstanceType<typeof ObsidianGemini>;
@@ -129,6 +139,122 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 						}, 300);
 					})
 			);
+	}
+
+	/**
+	 * Create the Tool Permissions settings section.
+	 *
+	 * Shows a preset dropdown and per-tool permission dropdowns grouped by classification.
+	 */
+	private async createToolPermissionsSettings(containerEl: HTMLElement): Promise<void> {
+		const policy = this.plugin.settings.toolPolicy ?? { ...DEFAULT_TOOL_POLICY };
+		const allTools = this.plugin.toolRegistry?.getAllTools() ?? [];
+
+		// If no tools are registered yet, show a message
+		if (allTools.length === 0) {
+			new Setting(containerEl)
+				.setName('No tools registered')
+				.setDesc('Tool permissions will appear here once tools are loaded.');
+			return;
+		}
+
+		// --- Preset dropdown ---
+		new Setting(containerEl)
+			.setName('Permission preset')
+			.setDesc('Choose a preset that determines default permissions for all tools.')
+			.addDropdown((dropdown) => {
+				for (const preset of Object.values(PolicyPreset)) {
+					dropdown.addOption(preset, PRESET_LABELS[preset]);
+				}
+				dropdown.setValue(policy.activePreset);
+				dropdown.onChange(async (value) => {
+					const preset = value as PolicyPreset;
+
+					// YOLO requires confirmation
+					if (preset === PolicyPreset.YOLO) {
+						const confirmed = await this.showYoloConfirmation();
+						if (!confirmed) {
+							dropdown.setValue(policy.activePreset);
+							return;
+						}
+					}
+
+					this.plugin.settings.toolPolicy.activePreset = preset;
+					// Clear per-tool overrides when switching to a named preset
+					if (preset !== PolicyPreset.CUSTOM) {
+						this.plugin.settings.toolPolicy.toolPermissions = {};
+					}
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
+
+		// --- Per-tool dropdowns grouped by classification ---
+		const classificationOrder: ToolClassification[] = [
+			ToolClassification.READ,
+			ToolClassification.WRITE,
+			ToolClassification.DESTRUCTIVE,
+			ToolClassification.EXTERNAL,
+		];
+
+		for (const classification of classificationOrder) {
+			const toolsInGroup = allTools
+				.filter((t) => t.classification === classification)
+				.sort((a, b) => a.name.localeCompare(b.name));
+
+			if (toolsInGroup.length === 0) continue;
+
+			const group = new SettingGroup(containerEl).setHeading(CLASSIFICATION_LABELS[classification]);
+
+			for (const tool of toolsInGroup) {
+				group.addSetting((setting) => {
+					const displayName = tool.displayName || tool.name;
+					setting.setName(displayName);
+
+					// Resolve effective permission
+					const effectivePermission = this.plugin.toolRegistry!.getEffectivePermission(tool.name);
+
+					setting.addDropdown((dropdown) => {
+						for (const perm of Object.values(ToolPermission)) {
+							dropdown.addOption(perm, PERMISSION_LABELS[perm]);
+						}
+						dropdown.setValue(effectivePermission);
+						dropdown.onChange(async (value) => {
+							const newPerm = value as ToolPermission;
+							const presetDefault = PRESET_PERMISSIONS[policy.activePreset][tool.classification];
+
+							if (newPerm === presetDefault) {
+								// Remove override — matches preset default
+								delete this.plugin.settings.toolPolicy.toolPermissions[tool.name];
+							} else {
+								// Set per-tool override and switch to Custom
+								this.plugin.settings.toolPolicy.toolPermissions[tool.name] = newPerm;
+								if (policy.activePreset !== PolicyPreset.CUSTOM) {
+									this.plugin.settings.toolPolicy.activePreset = PolicyPreset.CUSTOM;
+								}
+							}
+
+							await this.plugin.saveSettings();
+							this.display();
+						});
+					});
+				});
+			}
+		}
+	}
+
+	/**
+	 * Show YOLO mode confirmation modal.
+	 * Returns a Promise that resolves to true if the user confirmed.
+	 */
+	private showYoloConfirmation(): Promise<boolean> {
+		return new Promise((resolve) => {
+			const { YoloConfirmationModal } = require('./yolo-confirmation-modal');
+			const modal = new YoloConfirmationModal(this.app, (confirmed: boolean) => {
+				resolve(confirmed);
+			});
+			modal.open();
+		});
 	}
 
 	/**
@@ -639,35 +765,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 					})
 				);
 
-			// Trusted Mode Setting
-			const trustedModeSetting = new Setting(containerEl)
-				.setName('Trusted Mode')
-				.setDesc(
-					'Allow the agent to create and edit files without confirmation. Destructive operations (delete, move) always require confirmation.'
-				);
+			// Tool Permissions Settings
+			new Setting(containerEl).setName('Tool Permissions').setHeading();
 
-			trustedModeSetting.descEl.style.color = 'var(--text-warning)';
-
-			trustedModeSetting.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.alwaysAllowReadWrite ?? false).onChange(async (value) => {
-					if (value) {
-						// Revert toggle until user confirms
-						toggle.setValue(false);
-						const { TrustedModeConfirmationModal } = await import('./trusted-mode-modal');
-						const modal = new TrustedModeConfirmationModal(this.app, async (confirmed) => {
-							if (confirmed) {
-								toggle.setValue(true);
-								this.plugin.settings.alwaysAllowReadWrite = true;
-								await this.plugin.saveSettings();
-							}
-						});
-						modal.open();
-					} else {
-						this.plugin.settings.alwaysAllowReadWrite = value;
-						await this.plugin.saveSettings();
-					}
-				})
-			);
+			await this.createToolPermissionsSettings(containerEl);
 
 			// Tool Loop Detection Settings
 			new Setting(containerEl).setName('Tool Loop Detection').setHeading();

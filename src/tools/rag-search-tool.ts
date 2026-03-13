@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 
 /**
@@ -25,6 +26,7 @@ export class RagSearchTool implements Tool {
 	name = 'vault_semantic_search';
 	displayName = 'Semantic Vault Search';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description =
 		'Search across all indexed vault files using semantic search. Returns relevant passages from your notes based on meaning, not just keywords. Optionally filter by folder path or tags. Use this when you need to find information across the vault based on concepts or topics.';
 

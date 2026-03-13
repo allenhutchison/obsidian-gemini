@@ -192,11 +192,10 @@ export class MCPManager {
 			// Create tool wrappers and register them
 			const toolWrappers: MCPToolWrapper[] = [];
 			for (const toolDef of tools) {
-				const trusted = config.trustedTools.includes(toolDef.name);
-				const wrapper = new MCPToolWrapper(client, config.name, toolDef, trusted);
+				const wrapper = new MCPToolWrapper(client, config.name, toolDef);
 				toolWrappers.push(wrapper);
 				this.plugin.toolRegistry.registerTool(wrapper);
-				this.logger.debug(`MCP: Registered tool "${wrapper.name}" (trusted: ${trusted})`);
+				this.logger.debug(`MCP: Registered tool "${wrapper.name}"`);
 			}
 
 			this.connections.set(config.name, { client, transport, toolWrappers });
@@ -288,8 +287,7 @@ export class MCPManager {
 		const { tools } = await conn.client.listTools();
 		const newWrappers: MCPToolWrapper[] = [];
 		for (const toolDef of tools) {
-			const trusted = config.trustedTools.includes(toolDef.name);
-			const wrapper = new MCPToolWrapper(conn.client, config.name, toolDef, trusted);
+			const wrapper = new MCPToolWrapper(conn.client, config.name, toolDef);
 			newWrappers.push(wrapper);
 		}
 

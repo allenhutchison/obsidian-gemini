@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { Tool, ToolResult, ToolExecutionContext, ToolParameterSchema } from '../tools/types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 
 /**
  * MCP tool definition as returned by client.listTools()
@@ -23,21 +24,20 @@ export class MCPToolWrapper implements Tool {
 	readonly name: string;
 	readonly displayName: string;
 	readonly category: string = ToolCategory.EXTERNAL_MCP;
+	readonly classification: ToolClassification = ToolClassification.EXTERNAL;
 	readonly description: string;
 	readonly parameters: ToolParameterSchema;
-	requiresConfirmation: boolean;
 
 	private client: Client;
 	private originalToolName: string;
 
-	constructor(client: Client, serverName: string, toolDef: MCPToolDefinition, trusted: boolean) {
+	constructor(client: Client, serverName: string, toolDef: MCPToolDefinition) {
 		this.client = client;
 		this.originalToolName = toolDef.name;
 		this.name = `mcp__${sanitizeName(serverName)}__${sanitizeName(toolDef.name)}`;
 		this.displayName = `${serverName}: ${toolDef.name}`;
 		this.description = toolDef.description || `MCP tool "${toolDef.name}" from server "${serverName}"`;
 		this.parameters = convertInputSchema(toolDef.inputSchema);
-		this.requiresConfirmation = !trusted;
 	}
 
 	async execute(params: any, _context: ToolExecutionContext): Promise<ToolResult> {

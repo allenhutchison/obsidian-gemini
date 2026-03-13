@@ -18,7 +18,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 **Previous Updates (v4.4.0):**
 
 - **🔬 Deep research** - Migrated to gemini-utils ResearchManager
-- **🛡️ Trusted Mode** - Extended vault tools with optional confirmation bypass
+- **🛡️ Tool Permissions** - Granular per-tool permission system with presets (Read Only, Cautious, Edit Mode, YOLO)
 
 ## Features
 
@@ -137,7 +137,7 @@ Let the AI actively work with your vault through tool calling capabilities.
 - **Context Files:** Add specific notes as persistent context
 - **Session Configuration:** Override model, temperature, and prompt per session
 - **Safety Features:** System folders are protected from modifications
-- **Trusted Mode**: Optional setting to allow file create/edit operations without confirmation prompts. Destructive operations (delete, move) always require confirmation. (Use with caution!)
+- **Tool Permissions**: Granular per-tool permission system with presets (Read Only, Cautious, Edit Mode, YOLO) and per-tool overrides. Control which tools run automatically, which require confirmation, and which are disabled entirely.
 - **Additional Tools**:
   - `update_frontmatter`: Safely modify note properties (status, tags, dates) without rewriting content
   - `append_content`: Efficiently add text to the end of notes (great for logs and journals)

@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 
 /**
@@ -13,6 +14,7 @@ export class ActivateSkillTool implements Tool {
 	name = 'activate_skill';
 	displayName = 'Activate Skill';
 	category = ToolCategory.SKILLS;
+	classification = ToolClassification.READ;
 	description =
 		'Load a skill\'s full instructions or a specific resource file. Use this when you need the detailed instructions from an available skill. Call with just the skill name to get the full SKILL.md instructions, or include a resource_path to read a specific file from the skill directory (e.g., "references/REFERENCE.md" or "assets/template.hbs").';
 
@@ -125,6 +127,7 @@ export class CreateSkillTool implements Tool {
 	name = 'create_skill';
 	displayName = 'Create Skill';
 	category = ToolCategory.SKILLS;
+	classification = ToolClassification.WRITE;
 	description =
 		'Create a new agent skill with a SKILL.md file following the agentskills.io specification. The skill will be saved in the plugin skills directory and will be available for future use via activate_skill.';
 

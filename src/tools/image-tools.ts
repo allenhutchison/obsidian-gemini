@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 
 /**
@@ -9,6 +10,7 @@ export class GenerateImageTool implements Tool {
 	name = 'generate_image';
 	displayName = 'Generate Image';
 	category = ToolCategory.VAULT_OPERATIONS;
+	classification = ToolClassification.WRITE;
 	description =
 		'Generate an image from a text prompt and save it to the vault. Returns the wikilink that can be used to embed the image in a note. IMPORTANT: This tool only generates and saves the image file - it does NOT insert the image into any note. To add the generated image to a note, you must use write_file to insert the returned wikilink into the note content.';
 

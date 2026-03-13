@@ -1,5 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 import { GoogleGenAI } from '@google/genai';
 import { getDefaultModelForRole } from '../models';
@@ -11,6 +12,7 @@ export class GoogleSearchTool implements Tool {
 	name = 'google_search';
 	displayName = 'Google Search';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.EXTERNAL;
 	description =
 		"Search Google for current, up-to-date information from the web using Google's Search Grounding feature. Returns AI-generated answer with inline citations and source links. Use this to find recent news, facts, statistics, or any information that might have changed since the AI model's training cutoff. Results include structured citations with URLs, titles, and snippets from authoritative web sources.";
 
