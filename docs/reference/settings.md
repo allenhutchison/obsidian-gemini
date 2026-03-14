@@ -142,7 +142,8 @@ Context management automatically monitors and controls conversation size to prev
 - **Type**: Boolean
 - **Default**: `false`
 - **Description**: Display estimated token count in the agent input area
-- **Display format**: `Tokens: ~N / M (X%)` showing current usage, model limit, and percentage
+- **Display format**: `Tokens: ~N (Y new) / M (X%)` showing total prompt tokens, uncached (new) tokens, model limit, and percentage used
+- **How it works**: Token counts update live after each API response, including during tool call chains. Gemini's implicit caching means repeated content (system prompt, tool definitions) is served from cache — the "new" count shows tokens that aren't cached
 - **Visual indicators**:
   - Normal (muted text) — well under threshold
   - Yellow — approaching compaction threshold (≥80% of threshold)

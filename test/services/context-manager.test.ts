@@ -81,6 +81,53 @@ describe('ContextManager', () => {
 			contextManager.updateUsageMetadata(null as any);
 			// Should not throw
 		});
+
+		test('should use high-water mark and reject lower promptTokenCount within a turn', async () => {
+			contextManager.updateUsageMetadata({ promptTokenCount: 10000, totalTokenCount: 12000 });
+			contextManager.updateUsageMetadata({ promptTokenCount: 5000, totalTokenCount: 6000 });
+
+			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+			expect(usage.estimatedTokens).toBe(10000);
+			expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining('Skipped lower metadata'));
+		});
+
+		test('should accept equal promptTokenCount', async () => {
+			contextManager.updateUsageMetadata({ promptTokenCount: 10000, totalTokenCount: 12000 });
+			contextManager.updateUsageMetadata({ promptTokenCount: 10000, totalTokenCount: 13000 });
+
+			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+			expect(usage.estimatedTokens).toBe(10000);
+		});
+
+		test('should accept lower value after beginTurn', async () => {
+			contextManager.updateUsageMetadata({ promptTokenCount: 30000, totalTokenCount: 35000 });
+			contextManager.beginTurn();
+			contextManager.updateUsageMetadata({ promptTokenCount: 20000, totalTokenCount: 22000 });
+
+			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+			expect(usage.estimatedTokens).toBe(20000);
+		});
+
+		test('should re-enable high-water mark after first update in new turn', async () => {
+			contextManager.updateUsageMetadata({ promptTokenCount: 30000, totalTokenCount: 35000 });
+			contextManager.beginTurn();
+			contextManager.updateUsageMetadata({ promptTokenCount: 20000, totalTokenCount: 22000 });
+			// Now high-water mark should be back in effect
+			contextManager.updateUsageMetadata({ promptTokenCount: 15000, totalTokenCount: 16000 });
+
+			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+			expect(usage.estimatedTokens).toBe(20000);
+		});
+	});
+
+	describe('setUsageMetadata', () => {
+		test('should force-set metadata even if lower than cached', async () => {
+			contextManager.updateUsageMetadata({ promptTokenCount: 50000, totalTokenCount: 60000 });
+			contextManager.setUsageMetadata({ promptTokenCount: 5000, totalTokenCount: 6000 });
+
+			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+			expect(usage.estimatedTokens).toBe(5000);
+		});
 	});
 
 	describe('getTokenUsage', () => {
@@ -239,6 +286,26 @@ describe('ContextManager', () => {
 			const history = Array.from({ length: 20 }, (_, i) => ({
 				role: i % 2 === 0 ? 'user' : 'model',
 				parts: [{ text: `Message ${i}` }],
+			}));
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(true);
+			expect(result.summaryText).toBeTruthy();
+			expect(result.compactedHistory.length).toBeLessThan(history.length);
+		});
+
+		test('should compact history entries with message format (stored sessions)', async () => {
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 250_000,
+				totalTokenCount: 300_000,
+			});
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+
+			// Simulate stored session format: entries use 'message' field, not 'parts'
+			const history = Array.from({ length: 20 }, (_, i) => ({
+				role: i % 2 === 0 ? 'user' : 'model',
+				message: `Message ${i}`,
 			}));
 
 			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');

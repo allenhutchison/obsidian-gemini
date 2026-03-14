@@ -2198,6 +2198,7 @@ If your plugin does not need CSS, delete this file.
 	font-weight: 500;
 	white-space: nowrap;
 	flex-shrink: 0;
+	margin-left: auto;
 }
 
 .gemini-tool-row-status-running {

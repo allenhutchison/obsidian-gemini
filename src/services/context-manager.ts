@@ -53,12 +53,16 @@ export interface TokenUsageInfo {
 	inputTokenLimit: number;
 	/** Percentage of limit used */
 	percentUsed: number;
+	/** Tokens served from Gemini's implicit cache */
+	cachedTokens: number;
 }
 
 export interface UsageMetadata {
 	promptTokenCount?: number;
 	candidatesTokenCount?: number;
 	totalTokenCount?: number;
+	cachedContentTokenCount?: number;
+	thoughtsTokenCount?: number;
 }
 
 /**
@@ -67,6 +71,7 @@ export interface UsageMetadata {
  */
 export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
+	private acceptNextLowerUpdate = false;
 	private ai: GoogleGenAI;
 
 	constructor(
@@ -77,14 +82,48 @@ export class ContextManager {
 	}
 
 	/**
+	 * Signal the start of a new turn. The next updateUsageMetadata call
+	 * will accept a lower value (resetting the counter to the new turn's
+	 * actual prompt size). Subsequent updates within the turn still use
+	 * high-water mark so the counter only goes up during tool calls.
+	 */
+	beginTurn(): void {
+		this.acceptNextLowerUpdate = true;
+		this.logger.debug('[ContextManager] Begin turn — will accept next lower update');
+	}
+
+	/**
 	 * Update the cached usage metadata from an API response.
-	 * This is essentially free — metadata comes with every response.
+	 * Uses high-water mark within a turn: only accepts higher promptTokenCount
+	 * unless beginTurn() was called (which allows one lower update to reset the baseline).
+	 * Use setUsageMetadata() to unconditionally force a value (e.g. after compaction).
 	 */
 	updateUsageMetadata(metadata: UsageMetadata): void {
+		if (!metadata) return;
+
+		const newPrompt = metadata.promptTokenCount ?? 0;
+		const cachedPrompt = this.lastUsageMetadata?.promptTokenCount ?? 0;
+
+		if (newPrompt >= cachedPrompt || this.acceptNextLowerUpdate) {
+			this.lastUsageMetadata = { ...metadata };
+			this.acceptNextLowerUpdate = false;
+			this.logger.log(
+				`[ContextManager] Updated usage metadata: prompt=${metadata.promptTokenCount}, total=${metadata.totalTokenCount}`
+			);
+		} else {
+			this.logger.debug(`[ContextManager] Skipped lower metadata: prompt=${newPrompt} < cached=${cachedPrompt}`);
+		}
+	}
+
+	/**
+	 * Force-set usage metadata, bypassing the high-water mark check.
+	 * Used after compaction or when counting tokens from history.
+	 */
+	setUsageMetadata(metadata: UsageMetadata): void {
 		if (metadata) {
 			this.lastUsageMetadata = { ...metadata };
 			this.logger.log(
-				`[ContextManager] Updated usage metadata: prompt=${metadata.promptTokenCount}, total=${metadata.totalTokenCount}`
+				`[ContextManager] Force-set usage metadata: prompt=${metadata.promptTokenCount}, total=${metadata.totalTokenCount}`
 			);
 		}
 	}
@@ -134,10 +173,12 @@ export class ContextManager {
 	async getTokenUsage(modelName: string): Promise<TokenUsageInfo> {
 		const inputTokenLimit = await this.getInputTokenLimit(modelName);
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
+		const cachedTokens = this.lastUsageMetadata?.cachedContentTokenCount ?? 0;
 		return {
 			estimatedTokens,
 			inputTokenLimit,
 			percentUsed: inputTokenLimit > 0 ? Math.round((estimatedTokens / inputTokenLimit) * 100 * 10) / 10 : 0,
+			cachedTokens,
 		};
 	}
 
@@ -295,10 +336,10 @@ export class ContextManager {
 
 		// Ensure we don't split in the middle of a tool exchange (functionCall/functionResponse pair)
 		// Scan backward to find a safe boundary at the start of a user turn
+		// History entries may use parts[].text (API format) or message (stored format)
 		while (splitIndex > 0 && splitIndex < totalTurns) {
 			const entry = conversationHistory[splitIndex];
-			// Safe to split if this entry is a user message (starts a new turn)
-			if (entry.role === 'user' && entry.parts?.[0]?.text) {
+			if (entry.role === 'user' && (entry.parts?.[0]?.text || entry.message || entry.text)) {
 				break;
 			}
 			splitIndex--;
@@ -408,5 +449,6 @@ export class ContextManager {
 	 */
 	reset(): void {
 		this.lastUsageMetadata = null;
+		this.logger.debug('[ContextManager] Usage metadata reset');
 	}
 }
