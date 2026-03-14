@@ -151,7 +151,16 @@ export class GeminiClient implements ModelApi {
 					// Capture usageMetadata from chunks (usually present in last chunk)
 					if (chunk.usageMetadata) {
 						lastUsageMetadata = chunk.usageMetadata;
+						this.plugin?.logger.debug(
+							`[GeminiClient] Captured usageMetadata from streaming chunk: ` +
+								`prompt=${(chunk.usageMetadata as any).promptTokenCount}, ` +
+								`total=${(chunk.usageMetadata as any).totalTokenCount}`
+						);
 					}
+				}
+
+				if (!lastUsageMetadata) {
+					this.plugin?.logger.debug('[GeminiClient] No usageMetadata received from any streaming chunk');
 				}
 
 				return {

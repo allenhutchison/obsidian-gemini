@@ -162,7 +162,10 @@ export class AgentView extends ItemView {
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
-			onUsageMetadata: (metadata) => this.plugin.contextManager?.updateUsageMetadata(metadata),
+			onUsageMetadata: (metadata) => {
+				this.plugin.contextManager?.updateUsageMetadata(metadata);
+				this.updateTokenUsage();
+			},
 		};
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
 
@@ -405,11 +408,21 @@ To reference an attachment in your response, use the path shown above.`;
 				const modelConfig = this.currentSession?.modelConfig || {};
 				const modelName = modelConfig.model || this.plugin.settings.chatModelName;
 
+				// Signal new turn so the token counter accepts the fresh prompt size
+				this.plugin.contextManager.beginTurn();
+
 				// Prepare history through context manager (may compact if over threshold)
 				const compactionResult = await this.plugin.contextManager.prepareHistory(conversationHistory, modelName);
 
 				// If compaction occurred, show notification and save summary to transcript
 				if (compactionResult.wasCompacted && compactionResult.summaryText) {
+					// Force-set the lower post-compaction token count (bypasses high-water mark)
+					this.plugin.contextManager.setUsageMetadata({
+						promptTokenCount: compactionResult.estimatedTokens,
+						totalTokenCount: compactionResult.estimatedTokens,
+					});
+					await this.updateTokenUsage();
+
 					const compactionEntry: GeminiConversationEntry = {
 						role: 'model',
 						message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${compactionResult.summaryText}`,
@@ -489,9 +502,12 @@ To reference an attachment in your response, use the path shown above.`;
 						const response = await streamResponse.complete;
 						this.currentStreamingResponse = null;
 
-						// Update context manager with usage metadata from response
+						// Update context manager and display with usage metadata from response
 						if (response.usageMetadata) {
 							this.plugin.contextManager.updateUsageMetadata(response.usageMetadata);
+							await this.updateTokenUsage();
+						} else {
+							this.plugin.logger.debug('[AgentView] Streaming response had no usageMetadata');
 						}
 
 						// Check if the model requested tool calls
@@ -592,9 +608,12 @@ To reference an attachment in your response, use the path shown above.`;
 					this.plugin.logger.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
 
-					// Update context manager with usage metadata from response
+					// Update context manager and display with usage metadata from response
 					if (response.usageMetadata) {
 						this.plugin.contextManager.updateUsageMetadata(response.usageMetadata);
+						await this.updateTokenUsage();
+					} else {
+						this.plugin.logger.debug('[AgentView] Non-streaming response had no usageMetadata');
 					}
 
 					// Update progress to show response received
@@ -1075,7 +1094,10 @@ To reference an attachment in your response, use the path shown above.`;
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
-			onUsageMetadata: (metadata) => this.plugin.contextManager?.updateUsageMetadata(metadata),
+			onUsageMetadata: (metadata) => {
+				this.plugin.contextManager?.updateUsageMetadata(metadata);
+				this.updateTokenUsage();
+			},
 		};
 
 		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
@@ -1084,6 +1106,7 @@ To reference an attachment in your response, use the path shown above.`;
 	/**
 	 * Updates the token usage display if the setting is enabled.
 	 * Uses cached usageMetadata from the latest API response for fast, reliable updates.
+	 * Falls back to countTokens API if no cached metadata is available.
 	 */
 	private async updateTokenUsage(): Promise<void> {
 		if (!this.plugin.contextManager || !this.plugin.settings.showTokenUsage || !this.tokenUsageContainer) {
@@ -1095,9 +1118,25 @@ To reference an attachment in your response, use the path shown above.`;
 
 		try {
 			const modelName = this.currentSession?.modelConfig?.model || this.plugin.settings.chatModelName;
-			const usage = await this.plugin.contextManager.getTokenUsage(modelName);
+			let usage = await this.plugin.contextManager.getTokenUsage(modelName);
 
-			// If no cached data yet (e.g., new session, first load), hide the display
+			// If no cached data, try counting from conversation history as fallback
+			if (usage.estimatedTokens === 0 && this.currentSession) {
+				const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
+				if (conversationHistory && conversationHistory.length > 0) {
+					this.plugin.logger.debug('[AgentView] No cached token usage, falling back to countTokens API');
+					const tokenCount = await this.plugin.contextManager.countTokens(modelName, conversationHistory);
+					if (tokenCount > 0) {
+						this.plugin.contextManager.setUsageMetadata({
+							promptTokenCount: tokenCount,
+							totalTokenCount: tokenCount,
+						});
+						usage = await this.plugin.contextManager.getTokenUsage(modelName);
+					}
+				}
+			}
+
+			// Still no data (e.g., new session with no messages)
 			if (usage.estimatedTokens === 0) {
 				this.tokenUsageContainer.style.display = 'none';
 				return;
@@ -1107,7 +1146,12 @@ To reference an attachment in your response, use the path shown above.`;
 			this.tokenUsageContainer.empty();
 
 			const tokenText = this.tokenUsageContainer.createSpan({ cls: 'gemini-agent-token-text' });
-			tokenText.textContent = `Tokens: ~${usage.estimatedTokens.toLocaleString()} / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+			const uncached = usage.estimatedTokens - usage.cachedTokens;
+			if (usage.cachedTokens > 0) {
+				tokenText.textContent = `Tokens: ~${usage.estimatedTokens.toLocaleString()} (${uncached.toLocaleString()} new) / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+			} else {
+				tokenText.textContent = `Tokens: ~${usage.estimatedTokens.toLocaleString()} / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+			}
 
 			// Add warning class if approaching threshold
 			const threshold = this.plugin.settings.contextCompactionThreshold;
@@ -1142,7 +1186,7 @@ To reference an attachment in your response, use the path shown above.`;
 			if (conversationHistory && conversationHistory.length > 0) {
 				const tokenCount = await this.plugin.contextManager.countTokens(modelName, conversationHistory);
 				if (tokenCount > 0) {
-					this.plugin.contextManager.updateUsageMetadata({
+					this.plugin.contextManager.setUsageMetadata({
 						promptTokenCount: tokenCount,
 						totalTokenCount: tokenCount,
 					});
