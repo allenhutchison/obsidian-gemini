@@ -8,6 +8,7 @@
 
 import { TAbstractFile, TFolder, Vault, normalizePath, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
+import type { Logger } from './logger';
 
 /**
  * Check if a file or folder path should be excluded from selection or operations.
@@ -68,10 +69,16 @@ export function createFileFilter(excludeFolder?: string): (item: TAbstractFile) 
  * @param folderPath - The folder path to ensure exists (will be normalized)
  * @param context - A short description of what this folder is for, used in error messages
  *                  (e.g., "plugin state", "skills", "agent sessions")
+ * @param logger - Optional Logger instance for structured error reporting
  * @returns The TFolder instance for the folder
  * @throws Error if the folder cannot be created and does not exist
  */
-export async function ensureFolderExists(vault: Vault, folderPath: string, context?: string): Promise<TFolder> {
+export async function ensureFolderExists(
+	vault: Vault,
+	folderPath: string,
+	context?: string,
+	logger?: Logger
+): Promise<TFolder> {
 	const normalized = normalizePath(folderPath);
 
 	const existing = vault.getAbstractFileByPath(normalized);
@@ -90,6 +97,7 @@ export async function ensureFolderExists(vault: Vault, folderPath: string, conte
 
 		const label = context ? ` (${context})` : '';
 		const message = error instanceof Error ? error.message : String(error);
+		logger?.error(`Failed to create folder "${normalized}"${label}: ${message}`, error);
 		new Notice(`Gemini Scribe: Failed to create folder "${normalized}"${label}: ${message}`);
 		throw new Error(`Failed to create folder "${normalized}"${label}: ${message}`);
 	}
@@ -100,6 +108,7 @@ export async function ensureFolderExists(vault: Vault, folderPath: string, conte
 	}
 
 	const label = context ? ` (${context})` : '';
+	logger?.error(`Folder "${normalized}"${label} was created but could not be verified.`);
 	new Notice(`Gemini Scribe: Folder "${normalized}"${label} was created but could not be verified.`);
 	throw new Error(`Folder "${normalized}"${label} was created but could not be verified.`);
 }

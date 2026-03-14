@@ -374,7 +374,12 @@ export class SessionManager {
 	 * Ensure the agent sessions folder exists
 	 */
 	private async getOrCreateAgentSessionsFolder(): Promise<TFolder> {
-		return ensureFolderExists(this.plugin.app.vault, this.getAgentSessionsFolderPath(), 'agent sessions');
+		return ensureFolderExists(
+			this.plugin.app.vault,
+			this.getAgentSessionsFolderPath(),
+			'agent sessions',
+			this.plugin.logger
+		);
 	}
 
 	/**

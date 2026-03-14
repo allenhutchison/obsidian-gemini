@@ -16,8 +16,8 @@ export class PromptManager {
 
 	// Ensure prompts directory exists
 	async ensurePromptsDirectory(): Promise<void> {
-		await ensureFolderExists(this.vault, this.plugin.settings.historyFolder, 'plugin state');
-		await ensureFolderExists(this.vault, this.getPromptsDirectory(), 'prompts');
+		await ensureFolderExists(this.vault, this.plugin.settings.historyFolder, 'plugin state', this.plugin.logger);
+		await ensureFolderExists(this.vault, this.getPromptsDirectory(), 'prompts', this.plugin.logger);
 	}
 
 	// Load a prompt from file

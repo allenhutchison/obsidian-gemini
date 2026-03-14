@@ -356,7 +356,12 @@ export class SessionHistory {
 	 * Ensure the Agent-Sessions folder exists
 	 */
 	private async ensureAgentSessionsFolder(): Promise<void> {
-		await ensureFolderExists(this.plugin.app.vault, this.getAgentSessionsFolderPath(), 'agent sessions');
+		await ensureFolderExists(
+			this.plugin.app.vault,
+			this.getAgentSessionsFolderPath(),
+			'agent sessions',
+			this.plugin.logger
+		);
 	}
 
 	/**

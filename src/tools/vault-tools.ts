@@ -322,7 +322,7 @@ export class WriteFileTool implements Tool {
 					if (!parentExists) {
 						// Create parent directory (this will create all intermediate directories)
 						plugin.logger.debug(`Creating parent directory: ${parentDir}`);
-						await ensureFolderExists(plugin.app.vault, parentDir, 'parent directory');
+						await ensureFolderExists(plugin.app.vault, parentDir, 'parent directory', plugin.logger);
 					}
 				}
 
@@ -518,7 +518,7 @@ export class CreateFolderTool implements Tool {
 				};
 			}
 
-			await ensureFolderExists(plugin.app.vault, normalizedPath, 'vault folder');
+			await ensureFolderExists(plugin.app.vault, normalizedPath, 'vault folder', plugin.logger);
 
 			return {
 				success: true,
@@ -701,7 +701,7 @@ export class MoveFileTool implements Tool {
 			// Ensure target directory exists (for files and folders)
 			const targetDir = targetNormalizedPath.substring(0, targetNormalizedPath.lastIndexOf('/'));
 			if (targetDir) {
-				await ensureFolderExists(plugin.app.vault, targetDir, 'target directory');
+				await ensureFolderExists(plugin.app.vault, targetDir, 'target directory', plugin.logger);
 			}
 
 			// Perform the rename/move

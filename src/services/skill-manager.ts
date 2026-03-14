@@ -62,8 +62,13 @@ export class SkillManager {
 	 * Ensure the skills directory exists, creating it if needed
 	 */
 	async ensureSkillsDirectory(): Promise<void> {
-		await ensureFolderExists(this.plugin.app.vault, this.plugin.settings.historyFolder, 'plugin state');
-		await ensureFolderExists(this.plugin.app.vault, this.getSkillsFolderPath(), 'skills');
+		await ensureFolderExists(
+			this.plugin.app.vault,
+			this.plugin.settings.historyFolder,
+			'plugin state',
+			this.plugin.logger
+		);
+		await ensureFolderExists(this.plugin.app.vault, this.getSkillsFolderPath(), 'skills', this.plugin.logger);
 	}
 
 	/**
@@ -266,7 +271,7 @@ export class SkillManager {
 		}
 
 		// Create skill directory
-		await ensureFolderExists(this.plugin.app.vault, skillDir, `skill "${name}"`);
+		await ensureFolderExists(this.plugin.app.vault, skillDir, `skill "${name}"`, this.plugin.logger);
 
 		// Create SKILL.md with empty frontmatter block, then use processFrontMatter for safe YAML
 		const skillMdPath = normalizePath(`${skillDir}/${SKILL_MD_FILENAME}`);
