@@ -88,6 +88,15 @@ Add specific notes as persistent context for your agent sessions using @ mention
 
 ## Troubleshooting
 
+**API Key Issues**
+
+If you see a message about a missing or inaccessible API key:
+
+1. **Get a free Gemini API key** — Visit [Google AI Studio](https://aistudio.google.com/apikey) and click "Create API Key". A Google account is all you need.
+2. **Enter your key in settings** — Open Obsidian Settings, navigate to Gemini Scribe, and paste your key into the API Key field. The key is stored securely using Obsidian's secret storage.
+3. **Key not working after entry?** — If you see "Could not retrieve your API key from secure storage", try clearing the field and re-entering your key. This can happen if Obsidian's secure storage was reset (e.g., after a system update or vault migration).
+4. **Check the developer console** — Press `Ctrl+Shift+I` (Windows/Linux) or `Cmd+Opt+I` (macOS) to open the console and look for error messages prefixed with `[Gemini Scribe]`.
+
 **Agent Not Responding**
 
 - Check API key validity in Settings

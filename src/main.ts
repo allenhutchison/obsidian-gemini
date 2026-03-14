@@ -206,12 +206,7 @@ export default class ObsidianGemini extends Plugin {
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
-			// Show a helpful notice if it's an API key error
-			if (error instanceof Error && error.message.includes('API key')) {
-				new Notice('Gemini Scribe: Please configure your API key in settings to enable the plugin.');
-			} else {
-				new Notice('Gemini Scribe failed to initialize. Please check the console for details.');
-			}
+			new Notice(this.getInitErrorMessage(error));
 			this.isGeminiInitialized = false;
 		}
 
@@ -227,10 +222,39 @@ export default class ObsidianGemini extends Plugin {
 	 */
 	private checkInitialized(): boolean {
 		if (!this.isGeminiInitialized) {
-			new Notice('Please configure your API key in Gemini Scribe settings first.');
+			new Notice(this.getApiKeyErrorMessage());
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Get an appropriate error message based on the current API key state.
+	 * Distinguishes between "never configured" and "storage retrieval failure".
+	 */
+	private getApiKeyErrorMessage(): string {
+		if (!this.settings.apiKeySecretName) {
+			return (
+				'No Gemini API key configured. Open Settings \u2192 Gemini Scribe to add one. ' +
+				'Get a free key at aistudio.google.com/apikey'
+			);
+		}
+		return (
+			'Could not retrieve your API key from secure storage. ' +
+			'Try re-entering it in Settings \u2192 Gemini Scribe \u2192 API Key.'
+		);
+	}
+
+	/**
+	 * Get an appropriate error message for initialization failures.
+	 * Provides specific guidance depending on whether the error is API-key-related.
+	 */
+	private getInitErrorMessage(error: unknown): string {
+		if (error instanceof Error && error.message.includes('API key')) {
+			return this.getApiKeyErrorMessage();
+		}
+		const detail = error instanceof Error ? error.message : String(error);
+		return `Gemini Scribe failed to initialize: ${detail}. Check the console for details.`;
 	}
 
 	/**
