@@ -89,22 +89,43 @@ export async function ensureFolderExists(
 	try {
 		await vault.createFolder(normalized);
 	} catch (error) {
-		// Re-check after the error — another process may have created it concurrently
+		const message = error instanceof Error ? error.message : String(error);
+
+		// "Folder already exists" is success — the folder is on disk even if the
+		// metadata cache hasn't indexed it yet (common during early plugin init
+		// and with Obsidian Sync). Check via the metadata cache first, then fall
+		// back to the filesystem adapter.
+		if (message.includes('already exists') || message.includes('Folder already exists')) {
+			const rechecked = vault.getAbstractFileByPath(normalized);
+			if (rechecked instanceof TFolder) {
+				return rechecked;
+			}
+			// Metadata cache not ready — verify via filesystem adapter
+			if (await vault.adapter.exists(normalized)) {
+				logger?.debug(`Folder "${normalized}" exists on disk but not in metadata cache yet`);
+				return { path: normalized, name: normalized.split('/').pop() || normalized } as TFolder;
+			}
+		}
+
+		// Re-check after other errors — another process may have created it concurrently
 		const rechecked = vault.getAbstractFileByPath(normalized);
 		if (rechecked instanceof TFolder) {
 			return rechecked;
 		}
 
 		const label = context ? ` (${context})` : '';
-		const message = error instanceof Error ? error.message : String(error);
 		logger?.error(`Failed to create folder "${normalized}"${label}: ${message}`, error);
 		new Notice(`Gemini Scribe: Failed to create folder "${normalized}"${label}: ${message}`);
 		throw new Error(`Failed to create folder "${normalized}"${label}: ${message}`);
 	}
 
+	// Verify via metadata cache, then filesystem adapter
 	const created = vault.getAbstractFileByPath(normalized);
 	if (created instanceof TFolder) {
 		return created;
+	}
+	if (await vault.adapter.exists(normalized)) {
+		return { path: normalized, name: normalized.split('/').pop() || normalized } as TFolder;
 	}
 
 	const label = context ? ` (${context})` : '';
