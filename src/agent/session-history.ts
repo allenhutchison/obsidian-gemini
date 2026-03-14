@@ -1,4 +1,5 @@
 import { TFile, normalizePath } from 'obsidian';
+import { ensureFolderExists } from '../utils/file-utils';
 import { ChatSession, ChatMessage, ToolExecution } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
@@ -355,12 +356,12 @@ export class SessionHistory {
 	 * Ensure the Agent-Sessions folder exists
 	 */
 	private async ensureAgentSessionsFolder(): Promise<void> {
-		const folderPath = this.getAgentSessionsFolderPath();
-
-		const exists = await this.plugin.app.vault.adapter.exists(folderPath);
-		if (!exists) {
-			await this.plugin.app.vault.createFolder(folderPath);
-		}
+		await ensureFolderExists(
+			this.plugin.app.vault,
+			this.getAgentSessionsFolderPath(),
+			'agent sessions',
+			this.plugin.logger
+		);
 	}
 
 	/**

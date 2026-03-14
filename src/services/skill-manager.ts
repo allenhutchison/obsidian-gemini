@@ -1,5 +1,6 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { ensureFolderExists } from '../utils/file-utils';
 
 /**
  * Metadata parsed from a SKILL.md frontmatter
@@ -61,15 +62,13 @@ export class SkillManager {
 	 * Ensure the skills directory exists, creating it if needed
 	 */
 	async ensureSkillsDirectory(): Promise<void> {
-		// Ensure base state folder exists
-		await this.plugin.app.vault.createFolder(this.plugin.settings.historyFolder).catch(() => {});
-
-		const skillsDir = this.getSkillsFolderPath();
-		const folder = this.plugin.app.vault.getAbstractFileByPath(skillsDir);
-
-		if (!folder || !(folder instanceof TFolder)) {
-			await this.plugin.app.vault.createFolder(skillsDir);
-		}
+		await ensureFolderExists(
+			this.plugin.app.vault,
+			this.plugin.settings.historyFolder,
+			'plugin state',
+			this.plugin.logger
+		);
+		await ensureFolderExists(this.plugin.app.vault, this.getSkillsFolderPath(), 'skills', this.plugin.logger);
 	}
 
 	/**
@@ -272,7 +271,7 @@ export class SkillManager {
 		}
 
 		// Create skill directory
-		await this.plugin.app.vault.createFolder(skillDir);
+		await ensureFolderExists(this.plugin.app.vault, skillDir, `skill "${name}"`, this.plugin.logger);
 
 		// Create SKILL.md with empty frontmatter block, then use processFrontMatter for safe YAML
 		const skillMdPath = normalizePath(`${skillDir}/${SKILL_MD_FILENAME}`);

@@ -1,5 +1,10 @@
-import { shouldExcludePath, shouldExcludePathForPlugin, createFileFilter } from '../../src/utils/file-utils';
-import { TFile, TFolder } from 'obsidian';
+import {
+	shouldExcludePath,
+	shouldExcludePathForPlugin,
+	createFileFilter,
+	ensureFolderExists,
+} from '../../src/utils/file-utils';
+import { TFile, TFolder, Vault, Notice, normalizePath } from 'obsidian';
 
 describe('file-utils', () => {
 	describe('shouldExcludePath', () => {
@@ -116,6 +121,109 @@ describe('file-utils', () => {
 
 			expect(filter(stateFolder)).toBe(false);
 			expect(filter(normalFolder)).toBe(true);
+		});
+	});
+
+	describe('ensureFolderExists', () => {
+		let mockVault: {
+			getAbstractFileByPath: jest.Mock;
+			createFolder: jest.Mock;
+			adapter: { exists: jest.Mock };
+		};
+
+		beforeEach(() => {
+			mockVault = {
+				getAbstractFileByPath: jest.fn(),
+				createFolder: jest.fn(),
+				adapter: { exists: jest.fn().mockResolvedValue(false) },
+			};
+			(Notice as unknown as jest.Mock).mockClear();
+		});
+
+		it('should return existing folder without creating', async () => {
+			const existingFolder = Object.assign(new TFolder(), { path: 'my-folder' });
+			mockVault.getAbstractFileByPath.mockReturnValue(existingFolder);
+
+			const result = await ensureFolderExists(mockVault as unknown as Vault, 'my-folder');
+
+			expect(result).toBe(existingFolder);
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
+		});
+
+		it('should create folder when it does not exist', async () => {
+			const createdFolder = Object.assign(new TFolder(), { path: 'new-folder' });
+			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(createdFolder);
+			mockVault.createFolder.mockResolvedValue(undefined);
+
+			const result = await ensureFolderExists(mockVault as unknown as Vault, 'new-folder');
+
+			expect(mockVault.createFolder).toHaveBeenCalledWith('new-folder');
+			expect(result).toBe(createdFolder);
+		});
+
+		it('should handle race condition where folder is created concurrently', async () => {
+			const concurrentFolder = Object.assign(new TFolder(), { path: 'race-folder' });
+			// First check: not found; adapter check: not found; createFolder throws; adapter re-check: found
+			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(concurrentFolder);
+			mockVault.adapter.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+			mockVault.createFolder.mockRejectedValue(new Error('Folder already exists'));
+
+			const result = await ensureFolderExists(mockVault as unknown as Vault, 'race-folder');
+
+			expect(result).toBe(concurrentFolder);
+			expect(Notice).not.toHaveBeenCalled();
+		});
+
+		it('should handle folder existing on disk but not in metadata cache (early init)', async () => {
+			// Metadata cache returns null, but filesystem adapter confirms existence
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.adapter.exists.mockResolvedValue(true);
+
+			const result = await ensureFolderExists(mockVault as unknown as Vault, 'synced-folder');
+
+			expect(result.path).toBe('synced-folder');
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
+		});
+
+		it('should show Notice and throw when creation genuinely fails', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.createFolder.mockRejectedValue(new Error('Permission denied'));
+
+			await expect(ensureFolderExists(mockVault as unknown as Vault, 'bad-folder', 'skills')).rejects.toThrow(
+				'Failed to create folder "bad-folder" (skills): Permission denied'
+			);
+
+			expect(Notice).toHaveBeenCalledWith(
+				'Gemini Scribe: Failed to create folder "bad-folder" (skills): Permission denied'
+			);
+		});
+
+		it('should include context label in error messages when provided', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.createFolder.mockRejectedValue(new Error('Disk full'));
+
+			await expect(ensureFolderExists(mockVault as unknown as Vault, 'some-folder', 'agent sessions')).rejects.toThrow(
+				'(agent sessions)'
+			);
+		});
+
+		it('should work without context label', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.createFolder.mockRejectedValue(new Error('Disk full'));
+
+			await expect(ensureFolderExists(mockVault as unknown as Vault, 'some-folder')).rejects.toThrow(
+				'Failed to create folder "some-folder": Disk full'
+			);
+		});
+
+		it('should normalize the folder path', async () => {
+			const folder = Object.assign(new TFolder(), { path: 'normalized/path' });
+			mockVault.getAbstractFileByPath.mockReturnValue(folder);
+
+			await ensureFolderExists(mockVault as unknown as Vault, 'normalized/path');
+
+			// normalizePath mock just returns the input, but verifies it was called
+			expect(normalizePath).toHaveBeenCalledWith('normalized/path');
 		});
 	});
 });

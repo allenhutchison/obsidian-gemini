@@ -214,10 +214,20 @@ describe('VaultTools', () => {
 		});
 
 		it('should create parent directories when creating file in non-existent folder', async () => {
-			// First call returns null (file doesn't exist), second call returns newly created file
-			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(mockFile);
+			// ensureFolderExists calls getAbstractFileByPath twice per folder:
+			// once to check existence (null), once to verify after creation (TFolder)
+			const createdFolders: Record<string, any> = {};
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'folder/subfolder/new.md') return null; // file doesn't exist
+				return createdFolders[path] || null;
+			});
+			mockVault.createFolder.mockImplementation(async (path: string) => {
+				const folder = new TFolder();
+				folder.path = path;
+				folder.name = path.split('/').pop() || '';
+				createdFolders[path] = folder;
+			});
 			mockVault.adapter.exists.mockResolvedValue(false); // Parent directory doesn't exist
-			mockVault.createFolder.mockResolvedValue(undefined);
 			mockVault.create.mockResolvedValue(mockFile);
 
 			const result = await tool.execute({ path: 'folder/subfolder/new.md', content: 'new content' }, mockContext);
@@ -467,9 +477,19 @@ describe('VaultTools', () => {
 		});
 
 		it('should move file successfully', async () => {
-			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			// ensureFolderExists needs getAbstractFileByPath to return TFolder after createFolder
+			const createdFolders: Record<string, any> = {};
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'test.md') return mockFile;
+				return createdFolders[path] || null;
+			});
 			mockVault.adapter.exists.mockResolvedValue(false);
-			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.createFolder.mockImplementation(async (path: string) => {
+				const folder = new TFolder();
+				folder.path = path;
+				folder.name = path.split('/').pop() || '';
+				createdFolders[path] = folder;
+			});
 			mockVault.rename.mockResolvedValue(undefined);
 
 			const result = await tool.execute(
@@ -548,11 +568,21 @@ describe('VaultTools', () => {
 		});
 
 		it('should create target directory if needed', async () => {
-			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			// ensureFolderExists needs getAbstractFileByPath to return TFolder after createFolder
+			const createdFolders: Record<string, any> = {};
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'test.md') return mockFile;
+				return createdFolders[path] || null;
+			});
 			mockVault.adapter.exists
 				.mockResolvedValueOnce(false) // target file doesn't exist
 				.mockResolvedValueOnce(false); // target dir doesn't exist
-			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.createFolder.mockImplementation(async (path: string) => {
+				const folder = new TFolder();
+				folder.path = path;
+				folder.name = path.split('/').pop() || '';
+				createdFolders[path] = folder;
+			});
 			mockVault.rename.mockResolvedValue(undefined);
 
 			const result = await tool.execute(

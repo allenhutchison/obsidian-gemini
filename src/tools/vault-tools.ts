@@ -4,7 +4,7 @@ import { ToolClassification } from '../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ScribeFile } from '../files';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
+import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../utils/file-utils';
 
 /**
  * Helper function to resolve a path to a file with multiple fallback strategies
@@ -322,9 +322,7 @@ export class WriteFileTool implements Tool {
 					if (!parentExists) {
 						// Create parent directory (this will create all intermediate directories)
 						plugin.logger.debug(`Creating parent directory: ${parentDir}`);
-						await plugin.app.vault.createFolder(parentDir).catch(() => {
-							// Folder might already exist due to race condition
-						});
+						await ensureFolderExists(plugin.app.vault, parentDir, 'parent directory', plugin.logger);
 					}
 				}
 
@@ -520,7 +518,7 @@ export class CreateFolderTool implements Tool {
 				};
 			}
 
-			await plugin.app.vault.createFolder(normalizedPath);
+			await ensureFolderExists(plugin.app.vault, normalizedPath, 'vault folder', plugin.logger);
 
 			return {
 				success: true,
@@ -702,10 +700,8 @@ export class MoveFileTool implements Tool {
 
 			// Ensure target directory exists (for files and folders)
 			const targetDir = targetNormalizedPath.substring(0, targetNormalizedPath.lastIndexOf('/'));
-			if (targetDir && !(await plugin.app.vault.adapter.exists(targetDir))) {
-				await plugin.app.vault.createFolder(targetDir).catch(() => {
-					// Folder might already exist or parent folders need to be created
-				});
+			if (targetDir) {
+				await ensureFolderExists(plugin.app.vault, targetDir, 'target directory', plugin.logger);
 			}
 
 			// Perform the rename/move

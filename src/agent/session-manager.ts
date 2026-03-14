@@ -1,4 +1,5 @@
 import { TFile, TFolder } from 'obsidian';
+import { ensureFolderExists } from '../utils/file-utils';
 import {
 	ChatSession,
 	SessionType,
@@ -373,18 +374,12 @@ export class SessionManager {
 	 * Ensure the agent sessions folder exists
 	 */
 	private async getOrCreateAgentSessionsFolder(): Promise<TFolder> {
-		const folderPath = this.getAgentSessionsFolderPath();
-
-		let folder = this.plugin.app.vault.getAbstractFileByPath(folderPath);
-		if (!(folder instanceof TFolder)) {
-			await this.plugin.app.vault.createFolder(folderPath);
-			folder = this.plugin.app.vault.getAbstractFileByPath(folderPath);
-			if (!(folder instanceof TFolder)) {
-				throw new Error(`Failed to create or access folder: ${folderPath}`);
-			}
-		}
-
-		return folder;
+		return ensureFolderExists(
+			this.plugin.app.vault,
+			this.getAgentSessionsFolderPath(),
+			'agent sessions',
+			this.plugin.logger
+		);
 	}
 
 	/**

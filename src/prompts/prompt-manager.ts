@@ -1,6 +1,7 @@
 import { Vault, TFile, TFolder, normalizePath, Notice, SuggestModal, Modal, App } from 'obsidian';
 import ObsidianGemini from '../main';
 import { CustomPrompt, PromptInfo } from './types';
+import { ensureFolderExists } from '../utils/file-utils';
 
 export class PromptManager {
 	constructor(
@@ -15,16 +16,8 @@ export class PromptManager {
 
 	// Ensure prompts directory exists
 	async ensurePromptsDirectory(): Promise<void> {
-		// First ensure the base state folder exists
-		await this.vault.createFolder(this.plugin.settings.historyFolder).catch(() => {});
-
-		const promptsDir = this.getPromptsDirectory();
-		const folder = this.vault.getAbstractFileByPath(promptsDir);
-
-		// If it doesn't exist or isn't a folder, create it
-		if (!folder || !(folder instanceof TFolder)) {
-			await this.vault.createFolder(promptsDir);
-		}
+		await ensureFolderExists(this.vault, this.plugin.settings.historyFolder, 'plugin state', this.plugin.logger);
+		await ensureFolderExists(this.vault, this.getPromptsDirectory(), 'prompts', this.plugin.logger);
 	}
 
 	// Load a prompt from file

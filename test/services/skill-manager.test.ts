@@ -31,6 +31,7 @@ jest.mock('obsidian', () => {
 		TFile,
 		TFolder,
 		normalizePath: (path: string) => path.replace(/\\/g, '/').replace(/\/+/g, '/'),
+		Notice: jest.fn(),
 	};
 });
 
@@ -44,6 +45,7 @@ const mockVault = {
 	create: jest.fn(),
 	read: jest.fn(),
 	getMarkdownFiles: jest.fn(),
+	adapter: { exists: jest.fn().mockResolvedValue(false) },
 };
 
 const mockMetadataCache = {
@@ -87,7 +89,13 @@ describe('SkillManager', () => {
 
 	describe('ensureSkillsDirectory', () => {
 		it('should create skills directory if it does not exist', async () => {
-			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			// ensureFolderExists calls getAbstractFileByPath twice per folder:
+			// once to check existence, once to verify after creation
+			mockVault.getAbstractFileByPath
+				.mockReturnValueOnce(null) // gemini-scribe doesn't exist
+				.mockReturnValueOnce(new TFolder('gemini-scribe')) // verified after creation
+				.mockReturnValueOnce(null) // gemini-scribe/skills doesn't exist
+				.mockReturnValueOnce(new TFolder('gemini-scribe/skills')); // verified after creation
 			mockVault.createFolder.mockResolvedValue(undefined);
 
 			await manager.ensureSkillsDirectory();
@@ -97,7 +105,12 @@ describe('SkillManager', () => {
 
 		it('should not recreate skills directory if it exists', async () => {
 			const folder = new TFolder('gemini-scribe/skills');
-			mockVault.getAbstractFileByPath.mockReturnValue(folder);
+			// First ensureFolderExists (historyFolder): check -> null, verify after create -> TFolder
+			// Second ensureFolderExists (skills): check -> TFolder (exists, returns immediately)
+			mockVault.getAbstractFileByPath
+				.mockReturnValueOnce(null) // gemini-scribe doesn't exist
+				.mockReturnValueOnce(new TFolder('gemini-scribe')) // verified after creation
+				.mockReturnValueOnce(folder); // gemini-scribe/skills exists
 			mockVault.createFolder.mockResolvedValue(undefined);
 
 			await manager.ensureSkillsDirectory();
@@ -293,8 +306,17 @@ describe('SkillManager', () => {
 	describe('createSkill', () => {
 		it('should create a skill directory and SKILL.md using processFrontMatter', async () => {
 			const createdFile = new TFile('gemini-scribe/skills/new-skill/SKILL.md');
-			mockVault.getAbstractFileByPath.mockReturnValue(null);
-			mockVault.createFolder.mockResolvedValue(undefined);
+			// ensureFolderExists calls getAbstractFileByPath twice per folder (check + verify).
+			// createSkill flow: ensureSkillsDirectory (2 folders) + duplicate check + ensureFolderExists (skill dir)
+			const folderResponses: Record<string, InstanceType<typeof TFolder> | null> = {};
+			mockVault.createFolder.mockImplementation(async (path: string) => {
+				// After createFolder, mark the folder as existing
+				folderResponses[path] = new TFolder(path);
+			});
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				// Return TFolder if it was "created", null otherwise
+				return folderResponses[path] || null;
+			});
 			mockVault.create.mockResolvedValue(createdFile);
 			mockFileManager.processFrontMatter.mockImplementation(async (_file: any, callback: (fm: any) => void) => {
 				const fm: Record<string, any> = {};
@@ -317,12 +339,17 @@ describe('SkillManager', () => {
 
 		it('should throw error for duplicate skill', async () => {
 			const existingFolder = new TFolder('gemini-scribe/skills/existing');
-			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
-				if (path === 'gemini-scribe/skills/existing') return existingFolder;
-				if (path === 'gemini-scribe/skills') return null; // for ensureSkillsDirectory
-				return null;
+			// ensureSkillsDirectory calls ensureFolderExists twice (historyFolder + skills folder)
+			// Then createSkill checks if skill dir already exists
+			const folderResponses: Record<string, any> = {
+				'gemini-scribe/skills/existing': existingFolder,
+			};
+			mockVault.createFolder.mockImplementation(async (path: string) => {
+				folderResponses[path] = new TFolder(path);
 			});
-			mockVault.createFolder.mockResolvedValue(undefined);
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				return folderResponses[path] || null;
+			});
 
 			await expect(manager.createSkill('existing', 'desc', 'content')).rejects.toThrow('already exists');
 		});
