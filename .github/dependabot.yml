@@ -13,3 +13,10 @@ updates:
       # Group all dev dependencies together
       dev-dependencies:
         dependency-type: 'development'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    reviewers:
+      - 'allenhutchison'
