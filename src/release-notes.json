@@ -1,4 +1,16 @@
 {
+	"4.6.0": {
+		"title": "✨ Gemini Scribe 4.6 - Context Management & Tool Permissions",
+		"highlights": [
+			"🧠 Automatic context compaction — long conversations are summarized to stay within model limits",
+			"📊 Live token usage display with cached/uncached breakdown (opt-in in settings)",
+			"🛡️ Per-tool permission policies — configure allow, deny, or ask-every-time per tool",
+			"🔧 Collapsible tool activity bar — tool calls grouped into expandable sections",
+			"💭 Expandable thinking section replaces tooltip for model reasoning",
+			"📁 Fixed plugin init failure when folders already exist (Obsidian Sync)"
+		],
+		"details": "This release adds automatic context management that monitors token usage and summarizes older conversation turns when approaching model limits. A new token counter (enable in settings) shows live usage with a breakdown of cached vs new tokens. Tool permissions can now be configured per-tool with allow/deny/ask policies. Tool calls are grouped into collapsible activity bars for cleaner chat. The thinking model output now uses an expandable section instead of a tooltip. Also fixes a plugin initialization failure when using Obsidian Sync."
+	},
 	"4.5.1": {
 		"title": "🔧 Gemini Scribe 4.5.1 - iOS Compatibility Fix",
 		"highlights": ["🍎 Fixed plugin failing to load on iOS due to Node.js module imports"],
