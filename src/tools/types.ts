@@ -1,4 +1,3 @@
-import { TFile } from 'obsidian';
 import { ChatSession } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 

@@ -1,6 +1,5 @@
 import { ModelManager } from '../../src/services/model-manager';
 import { ModelDiscoveryService } from '../../src/services/model-discovery';
-import { GeminiModel } from '../../src/models';
 import ObsidianGemini from '../../src/main';
 
 // Mock the model discovery service
@@ -27,7 +26,7 @@ describe('ModelManager Version Filtering', () => {
 				debug: jest.fn(),
 				warn: jest.fn(),
 				error: jest.fn(),
-				child: jest.fn(function (this: any, prefix: string) {
+				child: jest.fn(function (this: any, _prefix: string) {
 					return this;
 				}),
 			},

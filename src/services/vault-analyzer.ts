@@ -166,7 +166,7 @@ export class VaultAnalyzer {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to initialize AGENTS.md:', error);
-			modal.setStepFailed(modal['currentStep'], error instanceof Error ? error.message : 'Unknown error');
+			modal.setStepFailed(modal.currentStep, error instanceof Error ? error.message : 'Unknown error');
 			new Notice('Failed to initialize AGENTS.md. Check console for details.');
 			setTimeout(() => modal.close(), 3000);
 		}

@@ -10,7 +10,7 @@ export class VaultAnalysisModal extends Modal {
 	private spinnerEl: HTMLElement;
 	private stepsEl: HTMLElement;
 	private steps: Map<string, HTMLElement> = new Map();
-	private currentStep: string = '';
+	public currentStep: string = '';
 
 	constructor(app: App) {
 		super(app);

@@ -79,8 +79,6 @@ export function redactLinkedFileSections(prompt: string): string {
 			sectionCount++;
 			if (sectionCount === 1) {
 				// Current file: keep following content
-				// Find the next section or end
-				const nextSectionIdx = parts[i + 2] !== undefined ? i + 2 : parts.length;
 				result += parts[i + 1] || '';
 				i++; // Skip content for current file
 			} else {

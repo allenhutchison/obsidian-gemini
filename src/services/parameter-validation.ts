@@ -1,5 +1,4 @@
 import { GoogleModel } from './model-discovery';
-import { GeminiModel } from '../models';
 
 export interface ParameterRanges {
 	temperature: {
@@ -118,7 +117,7 @@ export class ParameterValidationService {
 	 */
 	static validateTopP(
 		value: number,
-		modelName?: string,
+		_modelName?: string,
 		discoveredModels: GoogleModel[] = []
 	): {
 		isValid: boolean;

@@ -140,7 +140,6 @@ export class RagIndexingService {
 	private failedFiles: FailedFileEntry[] = [];
 
 	// Rate limit handling
-	private rateLimitDetected: boolean = false;
 	private consecutiveRateLimits: number = 0;
 	private rateLimitResumeTime?: number;
 	private rateLimitTimer?: ReturnType<typeof setInterval>;
@@ -661,8 +660,6 @@ export class RagIndexingService {
 	 */
 	private async handleRateLimit(): Promise<void> {
 		this.consecutiveRateLimits++;
-		this.rateLimitDetected = true;
-
 		// Calculate delay with exponential backoff, capped at max
 		const delay = Math.min(
 			RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, this.consecutiveRateLimits - 1),
@@ -695,8 +692,6 @@ export class RagIndexingService {
 			this.rateLimitTimer = undefined;
 		}
 		this.rateLimitResumeTime = undefined;
-		this.rateLimitDetected = false;
-
 		this.plugin.logger.log('RAG Indexing: Rate limit cooldown complete, resuming...');
 	}
 
@@ -705,7 +700,6 @@ export class RagIndexingService {
 	 */
 	private resetRateLimitTracking(): void {
 		this.consecutiveRateLimits = 0;
-		this.rateLimitDetected = false;
 		this.rateLimitResumeTime = undefined;
 		if (this.rateLimitTimer) {
 			clearInterval(this.rateLimitTimer);

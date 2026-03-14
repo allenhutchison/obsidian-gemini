@@ -95,7 +95,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	}
 
 	// Override to toggle selection without closing the modal
-	selectSuggestion(item: TAbstractFile, evt: MouseEvent | KeyboardEvent): void {
+	selectSuggestion(item: TAbstractFile, _evt: MouseEvent | KeyboardEvent): void {
 		if (item instanceof TFolder) {
 			const folderFiles = this.getFilesInFolder(item);
 			const allSelected = folderFiles.length > 0 && folderFiles.every((f) => this.selectedFiles.has(f));

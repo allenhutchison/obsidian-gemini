@@ -32,7 +32,7 @@ export class AgentFactory {
 	 */
 	static createAgent(
 		plugin: InstanceType<typeof ObsidianGemini>,
-		app: App
+		_app: App
 	): {
 		sessionManager: SessionManager;
 		toolRegistry: ToolRegistry;
@@ -66,8 +66,8 @@ export class AgentFactory {
 	static createAgentView(
 		leaf: any,
 		plugin: InstanceType<typeof ObsidianGemini>,
-		sessionManager: SessionManager,
-		executionEngine: ToolExecutionEngine
+		_sessionManager: SessionManager,
+		_executionEngine: ToolExecutionEngine
 	): AgentView {
 		return new AgentView(leaf, plugin);
 	}
@@ -95,7 +95,7 @@ export class AgentFactory {
 	static createAgentTaskModel(
 		plugin: InstanceType<typeof ObsidianGemini>,
 		config: AgentConfig,
-		taskType?: 'summarize' | 'research' | 'code'
+		_taskType?: 'summarize' | 'research' | 'code'
 	): ModelApi {
 		// For now, use the session's model config for all tasks
 		// In the future, we might want different models for different tasks

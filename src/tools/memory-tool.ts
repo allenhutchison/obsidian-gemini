@@ -33,7 +33,7 @@ export class UpdateMemoryTool implements Tool {
 		return `Add the following to AGENTS.md memory:\n\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
 	};
 
-	getProgressDescription(params: any): string {
+	getProgressDescription(_params: any): string {
 		return 'Updating vault memory';
 	}
 
@@ -95,11 +95,11 @@ export class ReadMemoryTool implements Tool {
 		required: [],
 	};
 
-	getProgressDescription(params: any): string {
+	getProgressDescription(_params: any): string {
 		return 'Reading vault memory';
 	}
 
-	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(_params: any, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {

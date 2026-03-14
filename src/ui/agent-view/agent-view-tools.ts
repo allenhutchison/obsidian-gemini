@@ -1,4 +1,4 @@
-import { App, setIcon, TFile, MarkdownRenderer } from 'obsidian';
+import { App, setIcon, TFile } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
@@ -50,7 +50,7 @@ export class AgentViewTools {
 	private currentGroupContainer: HTMLElement | null = null;
 
 	constructor(
-		private app: App,
+		_app: App,
 		private chatContainer: HTMLElement,
 		private plugin: ObsidianGemini,
 		private context: AgentViewContext
@@ -85,7 +85,7 @@ export class AgentViewTools {
 	/**
 	 * Get a brief parameter summary for a tool row (e.g. file path or query)
 	 */
-	private getToolParamSummary(toolName: string, parameters: any): string {
+	private getToolParamSummary(_toolName: string, parameters: any): string {
 		if (!parameters) return '';
 		// Pick the most meaningful parameter for each tool type
 		if (parameters.path) return parameters.path;
@@ -129,7 +129,7 @@ export class AgentViewTools {
 			cls: 'gemini-tool-group-text',
 		});
 
-		const statusBadge = summary.createSpan({
+		summary.createSpan({
 			text: 'Running',
 			cls: 'gemini-tool-group-status gemini-tool-group-status-running',
 		});
@@ -233,7 +233,7 @@ export class AgentViewTools {
 		toolCalls: any[],
 		userMessage: string,
 		conversationHistory: any[],
-		userEntry: GeminiConversationEntry,
+		_userEntry: GeminiConversationEntry,
 		customPrompt?: CustomPrompt
 	) {
 		const currentSession = this.context.getCurrentSession();
@@ -606,7 +606,7 @@ export class AgentViewTools {
 			});
 		}
 
-		const statusBadge = rowHeader.createSpan({
+		rowHeader.createSpan({
 			text: 'Running...',
 			cls: 'gemini-tool-row-status gemini-tool-row-status-running',
 		});

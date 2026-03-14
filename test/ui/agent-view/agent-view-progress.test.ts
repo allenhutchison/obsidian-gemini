@@ -1,4 +1,4 @@
-import { AgentViewProgress, ProgressState } from '../../../src/ui/agent-view/agent-view-progress';
+import { AgentViewProgress } from '../../../src/ui/agent-view/agent-view-progress';
 
 // Mock the ChatTimer
 jest.mock('../../../src/utils/timer-utils', () => ({

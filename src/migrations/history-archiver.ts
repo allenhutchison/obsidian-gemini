@@ -7,7 +7,7 @@
  * with agent sessions.
  */
 
-import { TFile, TFolder, normalizePath, Notice } from 'obsidian';
+import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
 

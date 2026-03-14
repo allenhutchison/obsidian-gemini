@@ -2,7 +2,6 @@ import { App, MarkdownRenderer, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
-import { formatFileSize } from '../../utils/format-utils';
 import { formatModelMessage } from '../../utils/markdown-formatting';
 import { Tool } from '../../tools/types';
 
@@ -249,7 +248,7 @@ export class AgentViewMessages {
 			cls: 'gemini-agent-message-time',
 		});
 
-		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+		messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 
 		return messageDiv;
 	}
@@ -652,7 +651,7 @@ export class AgentViewMessages {
 				cls: 'gemini-agent-checkbox-input',
 				attr: { id: checkboxId },
 			});
-			const checkboxLabel = checkboxContainer.createEl('label', {
+			checkboxContainer.createEl('label', {
 				text: "Don't ask again this session",
 				cls: 'gemini-agent-checkbox-label',
 				attr: { for: checkboxId },

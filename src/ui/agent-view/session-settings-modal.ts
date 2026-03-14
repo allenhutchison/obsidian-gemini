@@ -4,7 +4,6 @@ import type ObsidianGemini from '../../main';
 
 export class SessionSettingsModal extends Modal {
 	private plugin: InstanceType<typeof ObsidianGemini>;
-	private session: ChatSession;
 	private onSave: (config: SessionModelConfig) => Promise<void>;
 	private modelConfig: SessionModelConfig;
 	private tempSlider: SliderComponent | null = null;
@@ -18,7 +17,6 @@ export class SessionSettingsModal extends Modal {
 	) {
 		super(app);
 		this.plugin = plugin;
-		this.session = session;
 		this.onSave = onSave;
 		// Clone current config or create new
 		this.modelConfig = session.modelConfig ? { ...session.modelConfig } : {};

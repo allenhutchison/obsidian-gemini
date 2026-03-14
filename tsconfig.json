@@ -19,7 +19,9 @@
 		"lib": ["DOM", "ES5", "ES6", "ES7"],
 		"declaration": true,
 		"declarationMap": true,
-		"composite": true
+		"composite": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true
 	},
 	"include": ["**/*.ts"],
 	"exclude": ["docs/.vitepress/**"]

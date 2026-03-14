@@ -834,7 +834,7 @@ To reference an attachment in your response, use the path shown above.`;
 	 * Insert a file chip at cursor position
 	 */
 	private insertFileChip(file: TFile) {
-		const chip = this.fileChips.createFileChip(file, (removedFile: TFile) => {
+		const chip = this.fileChips.createFileChip(file, (_removedFile: TFile) => {
 			// Callback when chip is removed
 		});
 		this.fileChips.insertChipAtCursor(chip);
@@ -846,7 +846,7 @@ To reference an attachment in your response, use the path shown above.`;
 	 */
 	private insertFolderChip(folder: TFolder) {
 		const files = this.fileChips.getFilesFromFolder(folder);
-		const chip = this.fileChips.createFolderChip(folder, files.length, (removedFiles: TFile[]) => {
+		const chip = this.fileChips.createFolderChip(folder, files.length, (_removedFiles: TFile[]) => {
 			// Callback when chip is removed
 		});
 		this.fileChips.insertChipAtCursor(chip);

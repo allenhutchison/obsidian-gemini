@@ -3,12 +3,11 @@ import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiSummary } from './summary';
 import { ImageGeneration } from './services/image-generation';
-import { ModelApi } from './api/index';
 import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './models';
+import { getDefaultModelForRole, getUpdatedModelSettings } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -262,7 +261,7 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-rewrite-selection',
 			name: 'Rewrite text with AI',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
+			editorCallback: (editor: Editor, _view: MarkdownView) => {
 				if (!this.checkInitialized()) return;
 				const selection = editor.getSelection();
 				const hasSelection = selection.length > 0;

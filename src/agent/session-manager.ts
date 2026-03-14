@@ -1,13 +1,6 @@
 import { TFile, TFolder } from 'obsidian';
 import { ensureFolderExists } from '../utils/file-utils';
-import {
-	ChatSession,
-	SessionType,
-	AgentContext,
-	DEFAULT_CONTEXTS,
-	ChatMessage,
-	SessionModelConfig,
-} from '../types/agent';
+import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, SessionModelConfig } from '../types/agent';
 import type ObsidianGemini from '../main';
 
 /**
@@ -250,7 +243,6 @@ export class SessionManager {
 	 * Load session from a history file
 	 */
 	private async loadSessionFromFile(file: TFile): Promise<ChatSession> {
-		const content = await this.plugin.app.vault.read(file);
 		const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
 
 		// Determine session type based on folder location
