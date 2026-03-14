@@ -128,12 +128,14 @@ describe('file-utils', () => {
 		let mockVault: {
 			getAbstractFileByPath: jest.Mock;
 			createFolder: jest.Mock;
+			adapter: { exists: jest.Mock };
 		};
 
 		beforeEach(() => {
 			mockVault = {
 				getAbstractFileByPath: jest.fn(),
 				createFolder: jest.fn(),
+				adapter: { exists: jest.fn().mockResolvedValue(false) },
 			};
 			(Notice as unknown as jest.Mock).mockClear();
 		});
@@ -161,14 +163,26 @@ describe('file-utils', () => {
 
 		it('should handle race condition where folder is created concurrently', async () => {
 			const concurrentFolder = Object.assign(new TFolder(), { path: 'race-folder' });
-			// First check: not found; createFolder throws; re-check: found
+			// First check: not found; adapter check: not found; createFolder throws; adapter re-check: found
 			mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(concurrentFolder);
+			mockVault.adapter.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
 			mockVault.createFolder.mockRejectedValue(new Error('Folder already exists'));
 
 			const result = await ensureFolderExists(mockVault as unknown as Vault, 'race-folder');
 
 			expect(result).toBe(concurrentFolder);
 			expect(Notice).not.toHaveBeenCalled();
+		});
+
+		it('should handle folder existing on disk but not in metadata cache (early init)', async () => {
+			// Metadata cache returns null, but filesystem adapter confirms existence
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.adapter.exists.mockResolvedValue(true);
+
+			const result = await ensureFolderExists(mockVault as unknown as Vault, 'synced-folder');
+
+			expect(result.path).toBe('synced-folder');
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
 		});
 
 		it('should show Notice and throw when creation genuinely fails', async () => {

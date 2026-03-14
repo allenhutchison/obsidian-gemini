@@ -45,6 +45,7 @@ const mockVault = {
 	create: jest.fn(),
 	read: jest.fn(),
 	getMarkdownFiles: jest.fn(),
+	adapter: { exists: jest.fn().mockResolvedValue(false) },
 };
 
 const mockMetadataCache = {

@@ -60,17 +60,17 @@ export function createFileFilter(excludeFolder?: string): (item: TAbstractFile) 
 /**
  * Safely ensure a folder exists in the vault, creating it if needed.
  *
- * This utility prevents the common "Folder already exists" error that occurs
- * when calling vault.createFolder() on an existing path. It checks for
- * existence first and provides user-friendly error messages via Notice
- * when folder creation fails unexpectedly.
+ * Uses vault.adapter.exists() as the primary existence check since it reads
+ * the filesystem directly. This is critical during early plugin init and with
+ * Obsidian Sync, where the metadata cache (vault.getAbstractFileByPath) may
+ * not be populated yet.
  *
  * @param vault - The Obsidian Vault instance
  * @param folderPath - The folder path to ensure exists (will be normalized)
  * @param context - A short description of what this folder is for, used in error messages
  *                  (e.g., "plugin state", "skills", "agent sessions")
  * @param logger - Optional Logger instance for structured error reporting
- * @returns The TFolder instance for the folder
+ * @returns The TFolder instance for the folder (or a minimal stub if metadata cache is not ready)
  * @throws Error if the folder cannot be created and does not exist
  */
 export async function ensureFolderExists(
@@ -81,36 +81,30 @@ export async function ensureFolderExists(
 ): Promise<TFolder> {
 	const normalized = normalizePath(folderPath);
 
+	// Check metadata cache first (fast path when cache is ready)
 	const existing = vault.getAbstractFileByPath(normalized);
 	if (existing instanceof TFolder) {
 		return existing;
 	}
 
+	// Check filesystem directly — handles early init before metadata cache is populated
+	if (await vault.adapter.exists(normalized)) {
+		// Folder exists on disk. Return from cache if available, otherwise
+		// return a minimal TFolder-compatible object. Callers only use the
+		// path/name fields; full TFolder features become available once
+		// Obsidian's metadata cache catches up.
+		return (vault.getAbstractFileByPath(normalized) as TFolder) ?? ({ path: normalized } as TFolder);
+	}
+
+	// Folder doesn't exist — create it
 	try {
 		await vault.createFolder(normalized);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 
-		// "Folder already exists" is success — the folder is on disk even if the
-		// metadata cache hasn't indexed it yet (common during early plugin init
-		// and with Obsidian Sync). Check via the metadata cache first, then fall
-		// back to the filesystem adapter.
-		if (message.includes('already exists') || message.includes('Folder already exists')) {
-			const rechecked = vault.getAbstractFileByPath(normalized);
-			if (rechecked instanceof TFolder) {
-				return rechecked;
-			}
-			// Metadata cache not ready — verify via filesystem adapter
-			if (await vault.adapter.exists(normalized)) {
-				logger?.debug(`Folder "${normalized}" exists on disk but not in metadata cache yet`);
-				return { path: normalized, name: normalized.split('/').pop() || normalized } as TFolder;
-			}
-		}
-
-		// Re-check after other errors — another process may have created it concurrently
-		const rechecked = vault.getAbstractFileByPath(normalized);
-		if (rechecked instanceof TFolder) {
-			return rechecked;
+		// Race condition: another process created it between our check and createFolder
+		if (await vault.adapter.exists(normalized)) {
+			return (vault.getAbstractFileByPath(normalized) as TFolder) ?? ({ path: normalized } as TFolder);
 		}
 
 		const label = context ? ` (${context})` : '';
@@ -119,17 +113,5 @@ export async function ensureFolderExists(
 		throw new Error(`Failed to create folder "${normalized}"${label}: ${message}`);
 	}
 
-	// Verify via metadata cache, then filesystem adapter
-	const created = vault.getAbstractFileByPath(normalized);
-	if (created instanceof TFolder) {
-		return created;
-	}
-	if (await vault.adapter.exists(normalized)) {
-		return { path: normalized, name: normalized.split('/').pop() || normalized } as TFolder;
-	}
-
-	const label = context ? ` (${context})` : '';
-	logger?.error(`Folder "${normalized}"${label} was created but could not be verified.`);
-	new Notice(`Gemini Scribe: Folder "${normalized}"${label} was created but could not be verified.`);
-	throw new Error(`Folder "${normalized}"${label} was created but could not be verified.`);
+	return (vault.getAbstractFileByPath(normalized) as TFolder) ?? ({ path: normalized } as TFolder);
 }
