@@ -1,7 +1,7 @@
 {
 	"id": "gemini-scribe",
 	"name": "Gemini Scribe",
-	"version": "4.5.1",
+	"version": "4.6.0",
 	"minAppVersion": "1.11.4",
 	"description": "Interact with Gemini and use your notes as context.",
 	"author": "Allen Hutchison",
