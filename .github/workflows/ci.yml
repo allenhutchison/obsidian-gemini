@@ -80,7 +80,7 @@ jobs:
       contents: write # Allow GITHUB_TOKEN to write to gh-pages branch
     steps:
       - name: Download coverage report artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: coverage # Download to a directory named 'coverage'
