@@ -6,7 +6,7 @@
  * - Agent vault tools (read_file, write_file, list_files, etc.)
  */
 
-import { TAbstractFile } from 'obsidian';
+import { TAbstractFile, TFolder, Vault, normalizePath, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 
 /**
@@ -54,4 +54,52 @@ export function shouldExcludePathForPlugin(path: string, plugin: InstanceType<ty
  */
 export function createFileFilter(excludeFolder?: string): (item: TAbstractFile) => boolean {
 	return (item: TAbstractFile) => !shouldExcludePath(item.path, excludeFolder);
+}
+
+/**
+ * Safely ensure a folder exists in the vault, creating it if needed.
+ *
+ * This utility prevents the common "Folder already exists" error that occurs
+ * when calling vault.createFolder() on an existing path. It checks for
+ * existence first and provides user-friendly error messages via Notice
+ * when folder creation fails unexpectedly.
+ *
+ * @param vault - The Obsidian Vault instance
+ * @param folderPath - The folder path to ensure exists (will be normalized)
+ * @param context - A short description of what this folder is for, used in error messages
+ *                  (e.g., "plugin state", "skills", "agent sessions")
+ * @returns The TFolder instance for the folder
+ * @throws Error if the folder cannot be created and does not exist
+ */
+export async function ensureFolderExists(vault: Vault, folderPath: string, context?: string): Promise<TFolder> {
+	const normalized = normalizePath(folderPath);
+
+	const existing = vault.getAbstractFileByPath(normalized);
+	if (existing instanceof TFolder) {
+		return existing;
+	}
+
+	try {
+		await vault.createFolder(normalized);
+	} catch (error) {
+		// Re-check after the error — another process may have created it concurrently
+		const rechecked = vault.getAbstractFileByPath(normalized);
+		if (rechecked instanceof TFolder) {
+			return rechecked;
+		}
+
+		const label = context ? ` (${context})` : '';
+		const message = error instanceof Error ? error.message : String(error);
+		new Notice(`Gemini Scribe: Failed to create folder "${normalized}"${label}: ${message}`);
+		throw new Error(`Failed to create folder "${normalized}"${label}: ${message}`);
+	}
+
+	const created = vault.getAbstractFileByPath(normalized);
+	if (created instanceof TFolder) {
+		return created;
+	}
+
+	const label = context ? ` (${context})` : '';
+	new Notice(`Gemini Scribe: Folder "${normalized}"${label} was created but could not be verified.`);
+	throw new Error(`Folder "${normalized}"${label} was created but could not be verified.`);
 }

@@ -26,6 +26,9 @@ describe('SessionManager Integration Tests', () => {
 	let sessionManager: SessionManager;
 
 	beforeEach(() => {
+		// Track created folders so ensureFolderExists can verify them
+		const createdFolders: Record<string, any> = {};
+
 		// Mock plugin with full structure
 		plugin = {
 			settings: {
@@ -41,10 +44,18 @@ describe('SessionManager Integration Tests', () => {
 			},
 			app: {
 				vault: {
-					getAbstractFileByPath: jest.fn(),
+					getAbstractFileByPath: jest.fn().mockImplementation((path: string) => {
+						return createdFolders[path] || null;
+					}),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
 					create: jest.fn(),
-					createFolder: jest.fn(),
+					createFolder: jest.fn().mockImplementation(async (path: string) => {
+						const folder = new TFolder();
+						folder.path = path;
+						folder.name = path.split('/').pop() || '';
+						folder.children = [];
+						createdFolders[path] = folder;
+					}),
 					adapter: {
 						exists: jest.fn().mockResolvedValue(false),
 					},

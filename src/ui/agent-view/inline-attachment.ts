@@ -4,6 +4,7 @@
  */
 
 import { App } from 'obsidian';
+import { ensureFolderExists } from '../../utils/file-utils';
 
 /**
  * Represents a pending inline attachment (image, audio, video, PDF, etc.)
@@ -133,8 +134,8 @@ export async function saveAttachmentToVault(app: App, attachment: InlineAttachme
 	const folderPath = folder ?? getAttachmentFolder(app);
 
 	// Ensure folder exists (if not root)
-	if (folderPath && !app.vault.getAbstractFileByPath(folderPath)) {
-		await app.vault.createFolder(folderPath);
+	if (folderPath) {
+		await ensureFolderExists(app.vault, folderPath, 'attachments');
 	}
 
 	// Generate filename with random suffix to prevent collisions

@@ -9,6 +9,7 @@
 
 import { TFile, TFolder, normalizePath, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { ensureFolderExists } from '../utils/file-utils';
 
 export interface ArchiveReport {
 	historyFolderFound: boolean;
@@ -163,7 +164,7 @@ Visit the [Gemini Scribe documentation](https://github.com/allenhutchison/obsidi
 	 * Create a marker file when archive folder is empty
 	 */
 	private async createArchiveMarker(fileCount: number): Promise<void> {
-		await this.plugin.app.vault.createFolder(this.archiveFolder);
+		await ensureFolderExists(this.plugin.app.vault, this.archiveFolder, 'history archive');
 
 		const markerPath = normalizePath(this.archiveFolder + '/.archived');
 		const content = `Archived on ${new Date().toISOString()}\nFiles archived: ${fileCount}`;
