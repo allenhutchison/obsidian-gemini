@@ -298,7 +298,7 @@ export class WriteFileTool implements Tool {
 		return 'Writing file';
 	}
 
-	async execute(params: { path: string; content: string }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(params: { path: string; content: string; _userEdited?: boolean }, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {
@@ -363,7 +363,10 @@ export class WriteFileTool implements Tool {
 					path: normalizedPath,
 					action: isNewFile ? 'created' : 'modified',
 					size: params.content.length,
-					userEdited: false,
+					userEdited: params._userEdited ?? false,
+					...(params._userEdited && {
+						userChangeSummary: 'User modified the proposed content before writing',
+					}),
 				},
 			};
 		} catch (error) {

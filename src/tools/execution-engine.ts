@@ -1,6 +1,7 @@
-import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution, IConfirmationProvider } from './types';
+import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution, IConfirmationProvider, DiffContext, ConfirmationResult } from './types';
 import { ToolRegistry } from './tool-registry';
 import { ToolLoopDetector } from './loop-detector';
+import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 
 /**
@@ -102,6 +103,13 @@ export class ToolExecutionEngine {
 						error: 'User declined tool execution',
 					};
 				}
+
+				// If user edited the content in the diff view, use the edited content
+				if (result.finalContent !== undefined && tool.name === 'write_file') {
+					toolCall.arguments.content = result.finalContent;
+					toolCall.arguments._userEdited = result.userEdited;
+				}
+
 				// If user allowed this action without future confirmation
 				if (result.allowWithoutConfirmation && view) {
 					view.allowToolWithoutConfirmation(toolCall.name);
@@ -182,7 +190,7 @@ export class ToolExecutionEngine {
 		tool: Tool,
 		parameters: any,
 		agentView?: IConfirmationProvider
-	): Promise<{ confirmed: boolean; allowWithoutConfirmation?: boolean }> {
+	): Promise<ConfirmationResult> {
 		// Use provided agentView or get from plugin as fallback
 		const view = agentView || (this.plugin as any).agentView;
 
@@ -195,8 +203,28 @@ export class ToolExecutionEngine {
 		// Generate unique execution ID for tracking
 		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+		// Build diff context for write_file
+		let diffContext: DiffContext | undefined;
+		if (tool.name === 'write_file' && parameters.path && parameters.content) {
+			const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
+			const file = plugin.app.vault.getAbstractFileByPath(normalizePath(parameters.path));
+			const isNewFile = !file;
+			let originalContent = '';
+
+			if (file instanceof TFile) {
+				originalContent = await plugin.app.vault.read(file);
+			}
+
+			diffContext = {
+				filePath: parameters.path,
+				originalContent,
+				proposedContent: parameters.content,
+				isNewFile,
+			};
+		}
+
 		// Show confirmation in chat instead of modal
-		return view.showConfirmationInChat(tool, parameters, executionId);
+		return view.showConfirmationInChat(tool, parameters, executionId, diffContext);
 	}
 
 	/**

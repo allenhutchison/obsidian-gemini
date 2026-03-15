@@ -101,6 +101,26 @@ export interface ToolChoice {
 }
 
 /**
+ * Context for displaying a diff view when write_file is called
+ */
+export interface DiffContext {
+	filePath: string;
+	originalContent: string;
+	proposedContent: string;
+	isNewFile: boolean;
+}
+
+/**
+ * Result from a confirmation request, optionally including edited content from the diff view
+ */
+export interface ConfirmationResult {
+	confirmed: boolean;
+	allowWithoutConfirmation: boolean;
+	finalContent?: string;
+	userEdited?: boolean;
+}
+
+/**
  * Interface for components that can provide in-chat confirmation UI
  */
 export interface IConfirmationProvider {
@@ -108,8 +128,9 @@ export interface IConfirmationProvider {
 	showConfirmationInChat(
 		tool: Tool,
 		parameters: any,
-		executionId: string
-	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }>;
+		executionId: string,
+		diffContext?: DiffContext
+	): Promise<ConfirmationResult>;
 
 	/** Check if a tool is allowed without confirmation for this session */
 	isToolAllowedWithoutConfirmation(toolName: string): boolean;

@@ -3,7 +3,7 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatModelMessage } from '../../utils/markdown-formatting';
-import { Tool } from '../../tools/types';
+import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
@@ -552,8 +552,9 @@ export class AgentViewMessages {
 	public async displayConfirmationRequest(
 		tool: Tool,
 		parameters: any,
-		executionId: string
-	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }> {
+		executionId: string,
+		diffContext?: DiffContext
+	): Promise<ConfirmationResult> {
 		return new Promise((resolve) => {
 			let resolved = false; // Prevent double-resolution race condition
 
@@ -657,6 +658,20 @@ export class AgentViewMessages {
 				attr: { for: checkboxId },
 			});
 
+			// "View Changes" button for write_file
+			if (diffContext) {
+				const viewChangesBtn = buttonsContainer.createEl('button', {
+					cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-diff',
+				});
+				const diffIcon = viewChangesBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
+				setIcon(diffIcon, diffContext.isNewFile ? 'file-text' : 'file-diff');
+				viewChangesBtn.createSpan({ text: diffContext.isNewFile ? 'Preview File' : 'View Changes' });
+
+				viewChangesBtn.addEventListener('click', async () => {
+					await this.openDiffView(diffContext, handleResponse);
+				});
+			}
+
 			// Add 60 second timeout to prevent infinite wait
 			const timeoutId = setTimeout(() => {
 				if (resolved) return; // Already resolved by user
@@ -680,7 +695,7 @@ export class AgentViewMessages {
 			}, 60000); // 60 seconds
 
 			// Button handlers
-			const handleResponse = (confirmed: boolean) => {
+			const handleResponse = (confirmed: boolean, finalContent?: string, userEdited?: boolean) => {
 				if (resolved) return; // Already resolved by timeout
 				resolved = true;
 
@@ -702,6 +717,8 @@ export class AgentViewMessages {
 				resolve({
 					confirmed,
 					allowWithoutConfirmation: checkbox.checked,
+					finalContent,
+					userEdited: userEdited ?? false,
 				});
 
 				// Scroll to show result
@@ -715,9 +732,43 @@ export class AgentViewMessages {
 			allowBtn.addEventListener('click', allowHandler);
 			cancelBtn.addEventListener('click', cancelHandler);
 
+			// Auto-open diff view if setting enabled
+			if (diffContext && this.plugin.settings.alwaysShowDiffView) {
+				setTimeout(() => {
+					this.openDiffView(diffContext, handleResponse);
+				}, 100);
+			}
+
 			// Scroll to show confirmation
 			this.debouncedScrollToBottom();
 		});
+	}
+
+	/**
+	 * Open a diff view leaf for reviewing proposed file changes.
+	 */
+	private async openDiffView(
+		diffContext: DiffContext,
+		handleResponse: (confirmed: boolean, finalContent?: string, userEdited?: boolean) => void
+	): Promise<void> {
+		const { GeminiDiffView } = await import('./gemini-diff-view');
+		const { VIEW_TYPE_DIFF } = await import('../../main');
+
+		const leaf = this.plugin.app.workspace.getLeaf('tab');
+		await leaf.setViewState({ type: VIEW_TYPE_DIFF, active: true });
+
+		const view = leaf.view;
+		if (view instanceof GeminiDiffView) {
+			view.setDiffState({
+				filePath: diffContext.filePath,
+				originalContent: diffContext.originalContent,
+				proposedContent: diffContext.proposedContent,
+				isNewFile: diffContext.isNewFile,
+				onResolve: (result) => {
+					handleResponse(result.approved, result.finalContent, result.userEdited);
+				},
+			});
+		}
 	}
 
 	/**
