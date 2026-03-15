@@ -90,6 +90,8 @@ export interface ObsidianGeminiSettings {
 	// Context management
 	contextCompactionThreshold: number;
 	showTokenUsage: boolean;
+	// Diff review
+	alwaysShowDiffView: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -142,6 +144,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	// Context management
 	contextCompactionThreshold: 20,
 	showTokenUsage: false,
+	// Diff review
+	alwaysShowDiffView: false,
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
