@@ -1578,9 +1578,7 @@ If your plugin does not need CSS, delete this file.
 	overflow-y: auto;
 	padding: var(--size-4-2);
 	position: relative;
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
+	line-height: 1.6;
 }
 
 .gemini-agent-input-rich:focus {
