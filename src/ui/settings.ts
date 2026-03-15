@@ -570,6 +570,18 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				})
 			);
 
+		new Setting(containerEl)
+			.setName('Always show diff view for file writes')
+			.setDesc(
+				'Automatically open a diff view when the agent proposes file changes, instead of requiring a button click.'
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.alwaysShowDiffView).onChange(async (value) => {
+					this.plugin.settings.alwaysShowDiffView = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
 		// Context Management Settings
 		new Setting(containerEl).setName('Context Management').setHeading();
 
@@ -599,18 +611,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.showTokenUsage).onChange(async (value) => {
 					this.plugin.settings.showTokenUsage = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName('Always show diff view for file writes')
-			.setDesc(
-				'Automatically open a diff view when the agent proposes file changes, instead of requiring a button click.'
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.alwaysShowDiffView).onChange(async (value) => {
-					this.plugin.settings.alwaysShowDiffView = value;
 					await this.plugin.saveSettings();
 				})
 			);
