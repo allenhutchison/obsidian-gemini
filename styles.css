@@ -2711,6 +2711,7 @@ If your plugin does not need CSS, delete this file.
 .gemini-agent-confirmation-buttons {
 	display: flex;
 	align-items: center;
+	flex-wrap: wrap;
 	gap: var(--size-4-2);
 	margin-top: var(--size-4-3);
 }
