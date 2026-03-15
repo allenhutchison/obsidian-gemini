@@ -3,6 +3,7 @@ import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault-tools';
 import { ToolCategory } from '../../src/types/agent';
 import { ToolClassification } from '../../src/types/tool-policy';
+import { TFile } from 'obsidian';
 
 // Mock Obsidian
 jest.mock('obsidian', () => ({
@@ -142,6 +143,60 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 		expect(writeResult.success).toBe(false);
 		expect(writeResult.error).toBe('User declined tool execution');
 		expect(mockAgentView.showConfirmationInChat).toHaveBeenCalled();
+	});
+
+	it('should use edited content from confirmation when user edits in diff view', async () => {
+		const context = {
+			plugin,
+			session: {
+				id: 'test-session',
+				type: 'agent-session',
+				context: {
+					contextFiles: [],
+					contextDepth: 2,
+					enabledTools: [ToolCategory.VAULT_OPERATIONS],
+					requireConfirmation: ['modify_files'],
+				},
+			},
+		} as any;
+
+		// Mock agentView that approves with edited content
+		const mockAgentView = {
+			showConfirmationInChat: jest.fn().mockResolvedValue({
+				confirmed: true,
+				allowWithoutConfirmation: false,
+				finalContent: 'user edited content',
+				userEdited: true,
+			}),
+			isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
+			allowToolWithoutConfirmation: jest.fn(),
+			updateProgress: jest.fn(),
+		};
+
+		// Mock vault to allow the write to succeed - use TFile instance for instanceof check
+		const mockFile = new TFile();
+		(mockFile as any).path = 'test.md';
+		(mockFile as any).name = 'test.md';
+		(mockFile as any).stat = { size: 100, mtime: Date.now(), ctime: Date.now() };
+		plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+		plugin.app.vault.modify = jest.fn().mockResolvedValue(undefined);
+
+		const writeResult = await engine.executeTool(
+			{
+				name: 'write_file',
+				arguments: { path: 'test.md', content: 'original AI content' },
+			},
+			context,
+			mockAgentView
+		);
+
+		expect(writeResult.success).toBe(true);
+		// The write should use the user-edited content, not the original AI content
+		expect(plugin.app.vault.modify).toHaveBeenCalledWith(
+			expect.objectContaining({ path: 'test.md' }),
+			'user edited content'
+		);
+		expect(writeResult.data.userEdited).toBe(true);
 	});
 });
 

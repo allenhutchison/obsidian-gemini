@@ -768,7 +768,13 @@ export class AgentViewMessages {
 					handleResponse(true);
 				}
 			};
-			const cancelHandler = () => handleResponse(false);
+			const cancelHandler = () => {
+				// If a diff view is open, close it before cancelling
+				if (diffViewOpen && activeDiffView) {
+					activeDiffView.leaf.detach();
+				}
+				handleResponse(false);
+			};
 
 			allowBtn.addEventListener('click', allowHandler);
 			cancelBtn.addEventListener('click', cancelHandler);

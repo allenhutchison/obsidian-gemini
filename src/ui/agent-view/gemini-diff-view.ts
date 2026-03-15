@@ -147,15 +147,11 @@ export class GeminiDiffView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
-		// If not yet resolved, notify that the diff view was closed and treat as cancel
+		// If not yet resolved, notify the caller that the tab was closed so it can
+		// restart the confirmation timeout etc.  Do NOT auto-decline – the user may
+		// still approve or cancel via the chat buttons.
 		if (!this.resolved && this.state) {
-			this.resolved = true;
 			this.state.onClose?.();
-			this.state.onResolve({
-				approved: false,
-				finalContent: this.state.proposedContent,
-				userEdited: false,
-			});
 		}
 
 		// Clean up CodeMirror
