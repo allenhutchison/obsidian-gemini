@@ -1,4 +1,4 @@
-import { App, setIcon, TFile } from 'obsidian';
+import { setIcon, TFile } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
@@ -50,7 +50,6 @@ export class AgentViewTools {
 	private currentGroupContainer: HTMLElement | null = null;
 
 	constructor(
-		_app: App,
 		private chatContainer: HTMLElement,
 		private plugin: ObsidianGemini,
 		private context: AgentViewContext

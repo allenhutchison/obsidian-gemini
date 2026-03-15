@@ -167,7 +167,7 @@ export class AgentView extends ItemView {
 				this.updateTokenUsage();
 			},
 		};
-		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
+		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
 
 		// Initialize session component with callbacks and state
 		const sessionCallbacks: SessionUICallbacks = {
@@ -1100,7 +1100,7 @@ To reference an attachment in your response, use the path shown above.`;
 			},
 		};
 
-		this.tools = new AgentViewTools(this.app, this.chatContainer, this.plugin, toolsContext);
+		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
 	}
 
 	/**
