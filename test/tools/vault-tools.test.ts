@@ -194,6 +194,7 @@ describe('VaultTools', () => {
 				path: 'test.md',
 				action: 'modified',
 				size: 11,
+				userEdited: false,
 			});
 			expect(mockVault.modify).toHaveBeenCalledWith(mockFile, 'new content');
 		});
@@ -209,6 +210,7 @@ describe('VaultTools', () => {
 				path: 'new.md',
 				action: 'created',
 				size: 11,
+				userEdited: false,
 			});
 			expect(mockVault.create).toHaveBeenCalledWith('new.md', 'new content');
 		});
@@ -267,6 +269,33 @@ describe('VaultTools', () => {
 			const message = tool.confirmationMessage!({ path: 'test.md', content: 'content' });
 			expect(message).toContain('Write content to file: test.md');
 			expect(message).toContain('content');
+		});
+
+		it('should include userEdited: false in result when content is unmodified', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.modify.mockResolvedValue(undefined);
+
+			const result = await tool.execute({ path: 'test.md', content: 'hello world' }, mockContext);
+			expect(result.success).toBe(true);
+			expect(result.data.userEdited).toBe(false);
+		});
+
+		it('should use summary in confirmation message when provided', () => {
+			const msg = tool.confirmationMessage!({
+				path: 'test.md',
+				content: 'full content here',
+				summary: 'Added a new section about testing',
+			});
+			expect(msg).toContain('Added a new section about testing');
+			expect(msg).not.toContain('full content here');
+		});
+
+		it('should fall back to content preview when summary is not provided', () => {
+			const msg = tool.confirmationMessage!({
+				path: 'test.md',
+				content: 'full content here',
+			});
+			expect(msg).toContain('full content here');
 		});
 	});
 
