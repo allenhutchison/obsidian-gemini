@@ -298,7 +298,10 @@ export class WriteFileTool implements Tool {
 		return 'Writing file';
 	}
 
-	async execute(params: { path: string; content: string; _userEdited?: boolean }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(
+		params: { path: string; content: string; _userEdited?: boolean },
+		context: ToolExecutionContext
+	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {

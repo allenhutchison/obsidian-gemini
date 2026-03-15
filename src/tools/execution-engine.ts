@@ -1,4 +1,13 @@
-import { Tool, ToolResult, ToolExecutionContext, ToolCall, ToolExecution, IConfirmationProvider, DiffContext, ConfirmationResult } from './types';
+import {
+	Tool,
+	ToolResult,
+	ToolExecutionContext,
+	ToolCall,
+	ToolExecution,
+	IConfirmationProvider,
+	DiffContext,
+	ConfirmationResult,
+} from './types';
 import { ToolRegistry } from './tool-registry';
 import { ToolLoopDetector } from './loop-detector';
 import { TFile, normalizePath } from 'obsidian';
