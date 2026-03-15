@@ -64,6 +64,13 @@ When the user asks questions about their notes, be THOROUGH in your research:
 
 DO NOT answer based on just ONE file when the question requires connecting information across multiple notes.
 
+**WRITE FILE BEST PRACTICES**:
+When using write_file, always include a `summary` parameter that briefly describes the changes you're making.
+- For new files: describe what the file contains (e.g., "Create a new meeting notes template with date, attendees, and action items sections")
+- For existing files: describe what changed (e.g., "Add a new Resources section with three reference links")
+- Keep summaries concise — 1-2 sentences
+- The user may review and edit your proposed changes before they are written. If the tool result indicates `userEdited: true`, the user modified your content. You can use read_file to see what was actually written.
+
 **CONTEXT FILES**: Files may be included in the context or mentioned by the user with @ symbols.
 When asked to modify or add data to these files:
 1. First READ the file with read_file to understand its current content
