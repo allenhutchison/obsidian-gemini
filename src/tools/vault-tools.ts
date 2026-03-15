@@ -3,7 +3,6 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { ScribeFile } from '../files';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../utils/file-utils';
 
 /**
@@ -170,7 +169,7 @@ export class ReadFileTool implements Tool {
 			}
 
 			// Try to resolve as either file or folder (with suggestions for errors)
-			const { item, type, suggestions } = resolvePathToFileOrFolder(params.path, plugin, true);
+			const { item, type: _type, suggestions } = resolvePathToFileOrFolder(params.path, plugin, true);
 
 			if (!item) {
 				// Provide helpful error message with suggestions
@@ -1033,11 +1032,11 @@ export class GetActiveFileTool implements Tool {
 		required: [],
 	};
 
-	getProgressDescription(params: any): string {
+	getProgressDescription(_params: any): string {
 		return 'Getting active file';
 	}
 
-	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(_params: any, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {

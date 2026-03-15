@@ -3,12 +3,11 @@ import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiSummary } from './summary';
 import { ImageGeneration } from './services/image-generation';
-import { ModelApi } from './api/index';
 import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { GEMINI_MODELS, getDefaultModelForRole, getUpdatedModelSettings } from './models';
+import { getDefaultModelForRole, getUpdatedModelSettings } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -207,12 +206,7 @@ export default class ObsidianGemini extends Plugin {
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
-			// Show a helpful notice if it's an API key error
-			if (error instanceof Error && error.message.includes('API key')) {
-				new Notice('Gemini Scribe: Please configure your API key in settings to enable the plugin.');
-			} else {
-				new Notice('Gemini Scribe failed to initialize. Please check the console for details.');
-			}
+			new Notice(this.getInitErrorMessage(error));
 			this.isGeminiInitialized = false;
 		}
 
@@ -228,10 +222,39 @@ export default class ObsidianGemini extends Plugin {
 	 */
 	private checkInitialized(): boolean {
 		if (!this.isGeminiInitialized) {
-			new Notice('Please configure your API key in Gemini Scribe settings first.');
+			new Notice(this.getApiKeyErrorMessage());
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Get an appropriate error message based on the current API key state.
+	 * Distinguishes between "never configured" and "storage retrieval failure".
+	 */
+	private getApiKeyErrorMessage(): string {
+		if (!this.settings.apiKeySecretName) {
+			return (
+				'No Gemini API key configured. Open Settings \u2192 Gemini Scribe to add one. ' +
+				'Get a free key at aistudio.google.com/apikey'
+			);
+		}
+		return (
+			'Could not retrieve your API key from secure storage. ' +
+			'Try re-entering it in Settings \u2192 Gemini Scribe \u2192 API Key.'
+		);
+	}
+
+	/**
+	 * Get an appropriate error message for initialization failures.
+	 * Provides specific guidance depending on whether the error is API-key-related.
+	 */
+	private getInitErrorMessage(error: unknown): string {
+		if (error instanceof Error && error.message.includes('API key')) {
+			return this.getApiKeyErrorMessage();
+		}
+		const detail = error instanceof Error ? error.message : String(error);
+		return `Gemini Scribe failed to initialize: ${detail}. Check the console for details.`;
 	}
 
 	/**
@@ -262,7 +285,7 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-rewrite-selection',
 			name: 'Rewrite text with AI',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
+			editorCallback: (editor: Editor, _view: MarkdownView) => {
 				if (!this.checkInitialized()) return;
 				const selection = editor.getSelection();
 				const hasSelection = selection.length > 0;

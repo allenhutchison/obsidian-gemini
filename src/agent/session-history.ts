@@ -1,6 +1,6 @@
 import { TFile, normalizePath } from 'obsidian';
 import { ensureFolderExists } from '../utils/file-utils';
-import { ChatSession, ChatMessage, ToolExecution } from '../types/agent';
+import { ChatSession } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
 import * as Handlebars from 'handlebars';

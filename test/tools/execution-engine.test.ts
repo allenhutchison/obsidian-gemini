@@ -3,7 +3,6 @@ import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault-tools';
 import { ToolCategory } from '../../src/types/agent';
 import { ToolClassification } from '../../src/types/tool-policy';
-import { Notice } from 'obsidian';
 
 // Mock Obsidian
 jest.mock('obsidian', () => ({

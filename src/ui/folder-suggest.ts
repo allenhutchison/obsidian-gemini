@@ -19,7 +19,7 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
 		el.setText(folder.path);
 	}
 
-	selectSuggestion(folder: TFolder, evt: MouseEvent | KeyboardEvent): void {
+	selectSuggestion(folder: TFolder, _evt: MouseEvent | KeyboardEvent): void {
 		this.inputEl.value = folder.path;
 		this.inputEl.trigger('input');
 		this.close();

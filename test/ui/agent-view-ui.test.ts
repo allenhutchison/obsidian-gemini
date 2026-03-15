@@ -1,5 +1,5 @@
 import { AgentViewUI, UICallbacks } from '../../src/ui/agent-view/agent-view-ui';
-import { App, TFile, TFolder, WorkspaceLeaf, Notice } from 'obsidian';
+import { App, TFile, TFolder, Notice } from 'obsidian';
 import ObsidianGemini from '../../src/main';
 import { shouldExcludePathForPlugin } from '../../src/utils/file-utils';
 
@@ -33,7 +33,7 @@ jest.mock('@google/genai', () => ({
 }));
 
 // Mock shouldExcludePathForPlugin implementation
-(shouldExcludePathForPlugin as jest.Mock).mockImplementation((path: string, plugin: any) => {
+(shouldExcludePathForPlugin as jest.Mock).mockImplementation((path: string, _plugin: any) => {
 	// Simple mock implementation
 	return path.startsWith('.') || path === 'GEMINI_SCRIBE_HISTORY';
 });
@@ -193,7 +193,7 @@ describe('AgentViewUI', () => {
 				types: ['Files'],
 			};
 			Object.defineProperty(dataTransfer.files, 'length', { value: 1 });
-			(dataTransfer.files as any).item = (i: number) => droppedFile;
+			(dataTransfer.files as any).item = (_i: number) => droppedFile;
 			(dataTransfer.files as any)[Symbol.iterator] = function* () {
 				yield droppedFile;
 			};
@@ -328,7 +328,7 @@ describe('AgentViewUI', () => {
 				yield droppedFile;
 			};
 
-			const event = await triggerDrop(dataTransfer);
+			await triggerDrop(dataTransfer);
 
 			// Should NOT call handleDroppedFiles for non-vault files
 			expect(callbacks.handleDroppedFiles).not.toHaveBeenCalled();

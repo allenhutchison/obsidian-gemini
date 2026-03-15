@@ -21,7 +21,7 @@ const mockPlugin = {
 		debug: jest.fn(),
 		warn: jest.fn(),
 		error: jest.fn(),
-		child: jest.fn(function (this: any, prefix: string) {
+		child: jest.fn(function (this: any, _prefix: string) {
 			return this;
 		}),
 	},
@@ -45,7 +45,7 @@ class TestTool implements Tool {
 		required: ['message'],
 	};
 
-	async execute(params: { message: string }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(params: { message: string }, _context: ToolExecutionContext): Promise<ToolResult> {
 		return {
 			success: true,
 			data: { response: `Hello, ${params.message}!` },
@@ -71,7 +71,7 @@ class DestructiveTestTool implements Tool {
 		required: ['action'],
 	};
 
-	async execute(params: { action: string }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(params: { action: string }, _context: ToolExecutionContext): Promise<ToolResult> {
 		return {
 			success: true,
 			data: { performed: params.action },
@@ -100,7 +100,7 @@ class WriteTestTool implements Tool {
 		this.name = name;
 	}
 
-	async execute(params: { content: string }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(params: { content: string }, _context: ToolExecutionContext): Promise<ToolResult> {
 		return {
 			success: true,
 			data: { written: params.content },

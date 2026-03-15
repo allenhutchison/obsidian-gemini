@@ -50,7 +50,7 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 		return item.path;
 	}
 
-	onChooseItem(item: TAbstractFile, evt: MouseEvent | KeyboardEvent): void {
+	onChooseItem(item: TAbstractFile, _evt: MouseEvent | KeyboardEvent): void {
 		this.onSelect(item);
 	}
 }

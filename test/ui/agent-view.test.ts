@@ -2,8 +2,7 @@ import { AgentView } from '../../src/ui/agent-view/agent-view';
 import { SessionManager } from '../../src/agent/session-manager';
 import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
-import { SessionType } from '../../src/types/agent';
-import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
+import { WorkspaceLeaf, Notice } from 'obsidian';
 
 // Mock dependencies
 jest.mock('../../src/agent/session-history');
@@ -343,13 +342,6 @@ describe('AgentView UI Tests', () => {
 			await agentView.onOpen();
 			const session = await plugin.sessionManager.createAgentSession();
 			await agentView['loadSession'](session.id);
-
-			// Display tool call
-			const toolCall = {
-				name: 'read_file',
-				arguments: { path: 'test.md' },
-				result: { success: true, data: 'File content' },
-			};
 
 			// Skip this test as displayToolCall doesn't exist
 			// The actual tool display is handled by showToolExecution and showToolResult

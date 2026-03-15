@@ -1,5 +1,5 @@
 import { PromptManager } from '../../src/prompts/prompt-manager';
-import { Vault, TFile, TFolder } from 'obsidian';
+import { Vault, TFile } from 'obsidian';
 import ObsidianGemini from '../../src/main';
 
 // Mock obsidian module
@@ -9,14 +9,14 @@ jest.mock('obsidian', () => {
 
 	// Mock SuggestModal base class
 	class MockSuggestModal {
-		constructor(app: any) {}
-		setPlaceholder(placeholder: string) {}
+		constructor(_app: any) {}
+		setPlaceholder(_placeholder: string) {}
 		open() {}
 	}
 
 	// Mock Modal base class
 	class MockModal {
-		constructor(app: any) {}
+		constructor(_app: any) {}
 		open() {}
 		close() {}
 		onOpen() {}
@@ -82,7 +82,7 @@ describe('PromptManager', () => {
 				debug: jest.fn(),
 				warn: jest.fn(),
 				error: jest.fn(),
-				child: jest.fn(function (this: any, prefix: string) {
+				child: jest.fn(function (this: any, _prefix: string) {
 					return this;
 				}),
 			},

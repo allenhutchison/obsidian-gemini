@@ -14,7 +14,6 @@ import {
 	ToolCall,
 	StreamCallback,
 	StreamingModelResponse,
-	ToolDefinition,
 } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import type ObsidianGemini from '../main';
@@ -62,13 +61,6 @@ export class GeminiClient implements ModelApi {
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
 		this.ai = new GoogleGenAI({ apiKey: config.apiKey });
-	}
-
-	/**
-	 * Get language code from localStorage
-	 */
-	private getLanguageCode(): string {
-		return window.localStorage.getItem('language') || 'en';
 	}
 
 	/**
@@ -468,14 +460,14 @@ export class GeminiClient implements ModelApi {
 		}
 
 		const modelLower = model.toLowerCase();
-		const supports =
+		const isSupported =
 			modelLower.includes('gemini-2.5') || modelLower.includes('gemini-3') || modelLower.includes('thinking-exp');
 
-		if (supports) {
+		if (isSupported) {
 			this.plugin?.logger.debug(`[GeminiClient] Enabling thinking mode for model: ${model}`);
 		}
 
-		return supports;
+		return isSupported;
 	}
 
 	/**
@@ -524,7 +516,6 @@ export class GeminiClient implements ModelApi {
 
 		// Extract and format grounding sources
 		const chunks = metadata.groundingChunks || [];
-		const supports = metadata.groundingSupports || [];
 
 		if (chunks.length === 0) return '';
 

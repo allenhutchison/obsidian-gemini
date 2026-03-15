@@ -2,7 +2,6 @@ import ObsidianGemini from '../main';
 import { ModelApi } from '../api/interfaces/model-api';
 import { GeminiClientFactory } from '../api/simple-factory';
 import { SessionManager } from './session-manager';
-import { AgentView } from '../ui/agent-view/agent-view';
 import { ToolExecutionEngine } from '../tools/execution-engine';
 import { ToolRegistry } from '../tools/tool-registry';
 import { ChatSession, SessionModelConfig } from '../types/agent';
@@ -32,7 +31,7 @@ export class AgentFactory {
 	 */
 	static createAgent(
 		plugin: InstanceType<typeof ObsidianGemini>,
-		app: App
+		_app: App
 	): {
 		sessionManager: SessionManager;
 		toolRegistry: ToolRegistry;
@@ -52,24 +51,6 @@ export class AgentFactory {
 			toolRegistry,
 			executionEngine,
 		};
-	}
-
-	/**
-	 * Create an agent view
-	 *
-	 * @param leaf The workspace leaf
-	 * @param plugin The plugin instance
-	 * @param sessionManager The session manager
-	 * @param executionEngine The tool execution engine
-	 * @returns Configured AgentView instance
-	 */
-	static createAgentView(
-		leaf: any,
-		plugin: InstanceType<typeof ObsidianGemini>,
-		sessionManager: SessionManager,
-		executionEngine: ToolExecutionEngine
-	): AgentView {
-		return new AgentView(leaf, plugin);
 	}
 
 	/**
@@ -95,7 +76,7 @@ export class AgentFactory {
 	static createAgentTaskModel(
 		plugin: InstanceType<typeof ObsidianGemini>,
 		config: AgentConfig,
-		taskType?: 'summarize' | 'research' | 'code'
+		_taskType?: 'summarize' | 'research' | 'code'
 	): ModelApi {
 		// For now, use the session's model config for all tasks
 		// In the future, we might want different models for different tasks

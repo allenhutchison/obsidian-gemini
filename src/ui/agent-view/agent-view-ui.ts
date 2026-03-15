@@ -1,9 +1,5 @@
 import { App, TFile, TFolder, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../../main';
-import { FilePickerModal } from './file-picker-modal';
-import { SessionListModal } from './session-list-modal';
-import { FileMentionModal } from './file-mention-modal';
-import { SessionSettingsModal } from './session-settings-modal';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
@@ -73,7 +69,7 @@ export class AgentViewUI {
 	 */
 	createAgentInterface(
 		container: HTMLElement,
-		currentSession: ChatSession | null,
+		_currentSession: ChatSession | null,
 		callbacks: UICallbacks
 	): AgentUIElements {
 		// Add the main container class
@@ -210,7 +206,7 @@ export class AgentViewUI {
 		if (currentSession) {
 			const totalContextFiles = currentSession.context.contextFiles.length;
 
-			const contextBadge = leftSection.createEl('span', {
+			leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
 				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`,
 			});
@@ -307,7 +303,7 @@ export class AgentViewUI {
 	/**
 	 * Creates the collapsible context panel
 	 */
-	createContextPanel(contextPanel: HTMLElement, currentSession: ChatSession | null, callbacks: UICallbacks): void {
+	createContextPanel(contextPanel: HTMLElement, _currentSession: ChatSession | null, callbacks: UICallbacks): void {
 		contextPanel.empty();
 
 		// Compact context controls
@@ -382,7 +378,7 @@ export class AgentViewUI {
 			}
 		});
 
-		userInput.addEventListener('dragleave', (e) => {
+		userInput.addEventListener('dragleave', (_e) => {
 			userInput.removeClass('gemini-agent-input-dragover');
 		});
 
@@ -866,7 +862,7 @@ export class AgentViewUI {
 				const fileIcon = fileItem.createEl('span', { cls: 'gemini-agent-file-icon' });
 				setIcon(fileIcon, 'file-text');
 
-				const fileName = fileItem.createEl('span', {
+				fileItem.createEl('span', {
 					text: file.basename,
 					cls: 'gemini-agent-file-name',
 					title: file.path, // Show full path on hover
@@ -874,7 +870,7 @@ export class AgentViewUI {
 
 				// Add "Active" badge if this is the currently open file
 				if (isActiveFile) {
-					const badge = fileItem.createEl('span', {
+					fileItem.createEl('span', {
 						text: 'Active',
 						cls: 'gemini-agent-active-badge',
 						title: 'This is the currently open file',

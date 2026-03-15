@@ -65,7 +65,7 @@ export class AgentViewContext {
 				const fileIcon = fileItem.createEl('span', { cls: 'gemini-agent-file-icon' });
 				setIcon(fileIcon, 'file-text');
 
-				const fileName = fileItem.createEl('span', {
+				fileItem.createEl('span', {
 					text: file.basename,
 					cls: 'gemini-agent-file-name',
 					title: file.path, // Show full path on hover
@@ -73,7 +73,7 @@ export class AgentViewContext {
 
 				// Add "Active" badge if this is the currently open file
 				if (isActiveFile) {
-					const badge = fileItem.createEl('span', {
+					fileItem.createEl('span', {
 						text: 'Active',
 						cls: 'gemini-agent-active-badge',
 						title: 'This is the currently open file',

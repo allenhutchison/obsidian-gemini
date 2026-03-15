@@ -533,7 +533,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 				'Folder where plugin data is stored. Agent sessions are saved in Agent-Sessions/, custom prompts in Prompts/.'
 			)
 			.addText((text) => {
-				const folderSuggest = new FolderSuggest(this.app, text.inputEl, async (folder) => {
+				new FolderSuggest(this.app, text.inputEl, async (folder) => {
 					this.plugin.settings.historyFolder = folder;
 					await this.plugin.saveSettings();
 				});

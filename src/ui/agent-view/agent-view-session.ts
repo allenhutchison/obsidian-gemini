@@ -1,5 +1,5 @@
 import { App, TFile, Notice } from 'obsidian';
-import { ChatSession, SessionType } from '../../types/agent';
+import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { GeminiClientFactory } from '../../api/simple-factory';

@@ -11,7 +11,6 @@ jest.mock('@google/genai', () => ({
 describe('GoogleSearchTool', () => {
 	let tool: GoogleSearchTool;
 	let mockContext: ToolExecutionContext;
-	let mockModel: any;
 	let mockGenAI: any;
 
 	beforeEach(() => {

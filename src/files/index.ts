@@ -10,7 +10,7 @@ export class ScribeFile {
 		this.plugin = plugin;
 	}
 
-	async getCurrentFileContent(renderContent: boolean = false): Promise<string | null> {
+	async getCurrentFileContent(_renderContent: boolean = false): Promise<string | null> {
 		const activeFile = this.getActiveFile();
 		if (activeFile) {
 			// Just return the current file content (no link traversal)
@@ -21,7 +21,7 @@ export class ScribeFile {
 		}
 	}
 
-	async buildFileContext(files: TFile[], renderContent: boolean = false): Promise<string | null> {
+	async buildFileContext(files: TFile[], _renderContent: boolean = false): Promise<string | null> {
 		if (files.length === 0) {
 			return null;
 		}

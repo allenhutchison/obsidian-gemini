@@ -1,4 +1,4 @@
-import { ModelManager, ModelUpdateOptions } from '../../src/services/model-manager';
+import { ModelManager } from '../../src/services/model-manager';
 import { ModelDiscoveryService } from '../../src/services/model-discovery';
 import { GeminiModel } from '../../src/models';
 
@@ -47,7 +47,7 @@ const mockPlugin = {
 		debug: jest.fn(),
 		warn: jest.fn(),
 		error: jest.fn(),
-		child: jest.fn(function (this: any, prefix: string) {
+		child: jest.fn(function (this: any, _prefix: string) {
 			return this;
 		}),
 	},
@@ -194,7 +194,7 @@ describe('ModelManager', () => {
 			// Mock getCurrentGeminiModels to return different models
 			(modelManager as any).getCurrentGeminiModels = jest.fn().mockReturnValue(existingModels);
 
-			const result = await modelManager.updateModels();
+			await modelManager.updateModels();
 
 			expect(mockSetGeminiModels).toHaveBeenCalledWith(newModels);
 		});

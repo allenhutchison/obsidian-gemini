@@ -98,7 +98,7 @@ export class GoogleSearchTool implements Tool {
 				const chunks = searchMetadata.groundingChunks;
 				citations = chunks
 					.filter((chunk: any) => chunk.web?.uri)
-					.map((chunk: any, index: number) => ({
+					.map((chunk: any, _index: number) => ({
 						url: chunk.web.uri,
 						title: chunk.web.title || chunk.web.uri,
 						snippet: chunk.web.snippet || '',

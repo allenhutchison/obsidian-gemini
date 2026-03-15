@@ -1,5 +1,5 @@
 import { AgentsMemory, AgentsMemoryData } from '../../src/services/agents-memory';
-import { TFile, normalizePath } from 'obsidian';
+import { TFile } from 'obsidian';
 
 // Mock obsidian
 jest.mock('obsidian', () => ({
@@ -68,7 +68,7 @@ describe('AgentsMemory', () => {
 				debug: jest.fn(),
 				warn: jest.fn(),
 				error: jest.fn(),
-				child: jest.fn(function (this: any, prefix: string) {
+				child: jest.fn(function (this: any, _prefix: string) {
 					return this;
 				}),
 			},

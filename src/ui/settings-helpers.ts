@@ -46,7 +46,7 @@ export async function selectModelSetting(
 		availableModels.map((m) => m.value)
 	);
 
-	const dropdown = new Setting(containerEl)
+	new Setting(containerEl)
 		.setName(label)
 		.setDesc(description)
 		.addDropdown((dropdown) => {

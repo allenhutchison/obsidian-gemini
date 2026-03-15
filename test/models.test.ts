@@ -1,7 +1,6 @@
 import {
 	GEMINI_MODELS,
 	getDefaultModelForRole,
-	ModelRole,
 	GeminiModel,
 	getUpdatedModelSettings,
 	setGeminiModels,

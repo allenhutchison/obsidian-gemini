@@ -24,7 +24,7 @@ const mockPlugin = {
 		debug: jest.fn(),
 		warn: jest.fn(),
 		error: jest.fn(),
-		child: jest.fn(function (this: any, prefix: string) {
+		child: jest.fn(function (this: any, _prefix: string) {
 			return this;
 		}),
 	},
@@ -129,7 +129,7 @@ describe('SessionManager', () => {
 			// Mock that no file exists
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
 
-			const session = await sessionManager.getNoteChatSession(fileWithSpecialChars);
+			await sessionManager.getNoteChatSession(fileWithSpecialChars);
 
 			// Should have called getAbstractFileByPath with sanitized name
 			expect(mockPlugin.app.vault.getAbstractFileByPath).toHaveBeenCalledWith(

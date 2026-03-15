@@ -553,7 +553,7 @@ class PromptSelectionModal extends SuggestModal<PromptInfo> {
 		}
 	}
 
-	onChooseSuggestion(prompt: PromptInfo, evt: MouseEvent | KeyboardEvent): void {
+	onChooseSuggestion(prompt: PromptInfo, _evt: MouseEvent | KeyboardEvent): void {
 		// Use setTimeout to prevent blocking the modal close
 		setTimeout(async () => {
 			try {
