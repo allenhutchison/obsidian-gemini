@@ -1,6 +1,7 @@
 import { Plugin, WorkspaceLeaf, Editor, MarkdownView, TFile } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
+import { GeminiDiffView } from './ui/agent-view/gemini-diff-view';
 import { GeminiSummary } from './summary';
 import { ImageGeneration } from './services/image-generation';
 import { ScribeFile } from './files';
@@ -90,6 +91,8 @@ export interface ObsidianGeminiSettings {
 	// Context management
 	contextCompactionThreshold: number;
 	showTokenUsage: boolean;
+	// Diff review
+	alwaysShowDiffView: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -142,9 +145,13 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	// Context management
 	contextCompactionThreshold: 20,
 	showTokenUsage: false,
+	// Diff review
+	alwaysShowDiffView: false,
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
+
+export const VIEW_TYPE_DIFF = 'gemini-diff-view';
 
 export default class ObsidianGemini extends Plugin {
 	settings: ObsidianGeminiSettings;
@@ -268,8 +275,9 @@ export default class ObsidianGemini extends Plugin {
 			this.activateAgentView();
 		});
 
-		// Register view
+		// Register views
 		this.registerView(VIEW_TYPE_AGENT, (leaf) => (this.agentView = new AgentView(leaf, this)));
+		this.registerView(VIEW_TYPE_DIFF, (leaf) => new GeminiDiffView(leaf, this));
 
 		// Add command
 		this.addCommand({

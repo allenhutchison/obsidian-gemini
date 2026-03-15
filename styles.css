@@ -2711,6 +2711,7 @@ If your plugin does not need CSS, delete this file.
 .gemini-agent-confirmation-buttons {
 	display: flex;
 	align-items: center;
+	flex-wrap: wrap;
 	gap: var(--size-4-2);
 	margin-top: var(--size-4-3);
 }
@@ -4672,4 +4673,81 @@ If your plugin does not need CSS, delete this file.
 .modal.gemini-scribe-ask-question-modal .gemini-scribe-submit-button {
 	width: calc(100% - 40px);
 	margin: 16px 20px;
+}
+
+/* Diff View */
+.gemini-diff-view-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.gemini-diff-action-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+}
+
+.gemini-diff-file-info {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+
+.gemini-diff-file-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-muted);
+}
+
+.gemini-diff-file-path {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-diff-new-badge {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-style: italic;
+}
+
+.gemini-diff-actions {
+	display: flex;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.gemini-diff-btn {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 12px;
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+}
+
+.gemini-diff-btn-icon {
+	display: flex;
+	align-items: center;
+}
+
+.gemini-diff-btn-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+.gemini-diff-editor {
+	flex: 1;
+	overflow: auto;
+}
+
+.gemini-diff-editor .cm-editor {
+	height: 100%;
 }

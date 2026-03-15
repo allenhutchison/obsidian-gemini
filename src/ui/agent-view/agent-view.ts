@@ -976,10 +976,11 @@ To reference an attachment in your response, use the path shown above.`;
 	public async showConfirmationInChat(
 		tool: any,
 		parameters: any,
-		executionId: string
-	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }> {
+		executionId: string,
+		diffContext?: import('../../tools/types').DiffContext
+	): Promise<import('../../tools/types').ConfirmationResult> {
 		// Delegate to messages component
-		return this.messages.displayConfirmationRequest(tool, parameters, executionId);
+		return this.messages.displayConfirmationRequest(tool, parameters, executionId, diffContext);
 	}
 
 	/**

@@ -276,11 +276,18 @@ export class WriteFileTool implements Tool {
 				type: 'string' as const,
 				description: 'Content to write to the file',
 			},
+			summary: {
+				type: 'string' as const,
+				description: 'A brief human-readable summary of the changes being made',
+			},
 		},
 		required: ['path', 'content'],
 	};
 
-	confirmationMessage = (params: { path: string; content: string }) => {
+	confirmationMessage = (params: { path: string; content: string; summary?: string }) => {
+		if (params.summary) {
+			return `Write to file: ${params.path}\n\n${params.summary}`;
+		}
 		return `Write content to file: ${params.path}\n\nContent preview:\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
 	};
 
@@ -291,7 +298,10 @@ export class WriteFileTool implements Tool {
 		return 'Writing file';
 	}
 
-	async execute(params: { path: string; content: string }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(
+		params: { path: string; content: string; _userEdited?: boolean },
+		context: ToolExecutionContext
+	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {
@@ -354,8 +364,12 @@ export class WriteFileTool implements Tool {
 				success: true,
 				data: {
 					path: normalizedPath,
-					action: file ? 'modified' : 'created',
+					action: isNewFile ? 'created' : 'modified',
 					size: params.content.length,
+					userEdited: params._userEdited ?? false,
+					...(params._userEdited && {
+						userChangeSummary: 'User modified the proposed content before writing',
+					}),
 				},
 			};
 		} catch (error) {

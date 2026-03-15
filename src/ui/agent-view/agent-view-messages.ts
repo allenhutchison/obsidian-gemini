@@ -3,7 +3,7 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatModelMessage } from '../../utils/markdown-formatting';
-import { Tool } from '../../tools/types';
+import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
@@ -552,10 +552,13 @@ export class AgentViewMessages {
 	public async displayConfirmationRequest(
 		tool: Tool,
 		parameters: any,
-		executionId: string
-	): Promise<{ confirmed: boolean; allowWithoutConfirmation: boolean }> {
+		executionId: string,
+		diffContext?: DiffContext
+	): Promise<ConfirmationResult> {
 		return new Promise((resolve) => {
 			let resolved = false; // Prevent double-resolution race condition
+			let diffViewOpen = false; // Track whether the diff view is currently open
+			let activeDiffView: import('./gemini-diff-view').GeminiDiffView | null = null; // Reference to the open diff view
 
 			// Create system message container
 			const messageDiv = this.chatContainer.createDiv({
@@ -657,30 +660,71 @@ export class AgentViewMessages {
 				attr: { for: checkboxId },
 			});
 
+			// "View Changes" button for write_file
+			if (diffContext) {
+				const viewChangesBtn = buttonsContainer.createEl('button', {
+					cls: 'gemini-agent-confirmation-btn gemini-agent-confirmation-btn-diff',
+				});
+				const diffIcon = viewChangesBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
+				setIcon(diffIcon, diffContext.isNewFile ? 'file-text' : 'file-diff');
+				viewChangesBtn.createSpan({ text: diffContext.isNewFile ? 'Preview File' : 'View Changes' });
+
+				viewChangesBtn.addEventListener('click', async () => {
+					await this.openDiffView(
+						diffContext,
+						handleResponse,
+						(view) => {
+							diffViewOpen = true;
+							activeDiffView = view;
+							// Pause the confirmation timeout while the diff view is open
+							clearTimeout(timeoutId);
+						},
+						() => {
+							diffViewOpen = false;
+							activeDiffView = null;
+							// Restart the timeout if not yet resolved
+							if (!resolved) {
+								restartTimeout();
+							}
+						}
+					);
+				});
+			}
+
+			// Timeout management
+			let timeoutId: ReturnType<typeof setTimeout>;
+			const startTimeout = () => {
+				return setTimeout(() => {
+					if (resolved) return; // Already resolved by user
+					resolved = true;
+
+					// Clean up event listeners
+					allowBtn.removeEventListener('click', allowHandler);
+					cancelBtn.removeEventListener('click', cancelHandler);
+
+					// Update UI to show timeout
+					this.updateConfirmationTimeout(messageDiv, tool.displayName || tool.name);
+
+					// Show notice to user
+					new Notice('Confirmation request timed out. The agent has returned to ready state.');
+
+					// Log warning
+					this.plugin.logger?.warn(`Confirmation timeout for tool: ${tool.name}`);
+
+					// Resolve with declined
+					resolve({ confirmed: false, allowWithoutConfirmation: false });
+				}, 60000); // 60 seconds
+			};
+			const restartTimeout = () => {
+				clearTimeout(timeoutId);
+				timeoutId = startTimeout();
+			};
+
 			// Add 60 second timeout to prevent infinite wait
-			const timeoutId = setTimeout(() => {
-				if (resolved) return; // Already resolved by user
-				resolved = true;
-
-				// Clean up event listeners
-				allowBtn.removeEventListener('click', allowHandler);
-				cancelBtn.removeEventListener('click', cancelHandler);
-
-				// Update UI to show timeout
-				this.updateConfirmationTimeout(messageDiv, tool.displayName || tool.name);
-
-				// Show notice to user
-				new Notice('Confirmation request timed out. The agent has returned to ready state.');
-
-				// Log warning
-				this.plugin.logger?.warn(`Confirmation timeout for tool: ${tool.name}`);
-
-				// Resolve with declined
-				resolve({ confirmed: false, allowWithoutConfirmation: false });
-			}, 60000); // 60 seconds
+			timeoutId = startTimeout();
 
 			// Button handlers
-			const handleResponse = (confirmed: boolean) => {
+			const handleResponse = (confirmed: boolean, finalContent?: string, userEdited?: boolean) => {
 				if (resolved) return; // Already resolved by timeout
 				resolved = true;
 
@@ -702,6 +746,8 @@ export class AgentViewMessages {
 				resolve({
 					confirmed,
 					allowWithoutConfirmation: checkbox.checked,
+					finalContent,
+					userEdited: userEdited ?? false,
 				});
 
 				// Scroll to show result
@@ -709,15 +755,96 @@ export class AgentViewMessages {
 			};
 
 			// Create named handlers so we can remove them later
-			const allowHandler = () => handleResponse(true);
-			const cancelHandler = () => handleResponse(false);
+			const allowHandler = () => {
+				// If a diff view is open, get its current (possibly edited) content
+				if (diffViewOpen && activeDiffView) {
+					const currentContent = activeDiffView.getCurrentContent();
+					const originalProposed = diffContext?.proposedContent ?? '';
+					const userEdited = currentContent !== originalProposed;
+					handleResponse(true, currentContent, userEdited);
+					// Close the diff view since the user approved from chat
+					activeDiffView.leaf.detach();
+				} else {
+					handleResponse(true);
+				}
+			};
+			const cancelHandler = () => {
+				// If a diff view is open, close it before cancelling
+				if (diffViewOpen && activeDiffView) {
+					activeDiffView.leaf.detach();
+				}
+				handleResponse(false);
+			};
 
 			allowBtn.addEventListener('click', allowHandler);
 			cancelBtn.addEventListener('click', cancelHandler);
 
+			// Auto-open diff view if setting enabled
+			// Small delay allows the confirmation card DOM to render before opening the leaf
+			if (diffContext && this.plugin.settings.alwaysShowDiffView) {
+				setTimeout(() => {
+					this.openDiffView(
+						diffContext,
+						handleResponse,
+						(view) => {
+							diffViewOpen = true;
+							activeDiffView = view;
+							clearTimeout(timeoutId);
+						},
+						() => {
+							diffViewOpen = false;
+							activeDiffView = null;
+							if (!resolved) {
+								restartTimeout();
+							}
+						}
+					);
+				}, 100);
+			}
+
 			// Scroll to show confirmation
 			this.debouncedScrollToBottom();
 		});
+	}
+
+	/**
+	 * Open a diff view leaf for reviewing proposed file changes.
+	 */
+	private async openDiffView(
+		diffContext: DiffContext,
+		handleResponse: (confirmed: boolean, finalContent?: string, userEdited?: boolean) => void,
+		onDiffOpened?: (view: import('./gemini-diff-view').GeminiDiffView) => void,
+		onDiffClosed?: () => void
+	): Promise<void> {
+		const { GeminiDiffView } = await import('./gemini-diff-view');
+		const { VIEW_TYPE_DIFF } = await import('../../main');
+
+		const leaf = this.plugin.app.workspace.getLeaf('tab');
+		await leaf.setViewState({ type: VIEW_TYPE_DIFF, active: true });
+
+		const view = leaf.view;
+		if (view instanceof GeminiDiffView) {
+			view.setDiffState({
+				filePath: diffContext.filePath,
+				originalContent: diffContext.originalContent,
+				proposedContent: diffContext.proposedContent,
+				isNewFile: diffContext.isNewFile,
+				onResolve: (result) => {
+					onDiffClosed?.();
+					handleResponse(result.approved, result.finalContent, result.userEdited);
+				},
+				onClose: () => {
+					onDiffClosed?.();
+				},
+			});
+			onDiffOpened?.(view);
+		} else {
+			this.plugin.logger?.error(
+				`[AgentViewMessages] Failed to open diff view for ${diffContext.filePath}: unexpected view type`
+			);
+			leaf.detach();
+			onDiffClosed?.();
+		}
 	}
 
 	/**

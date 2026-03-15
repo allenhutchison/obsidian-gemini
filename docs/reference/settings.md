@@ -149,6 +149,16 @@ Context management automatically monitors and controls conversation size to prev
   - Yellow — approaching compaction threshold (≥80% of threshold)
   - Orange/red — at or above compaction threshold
 
+### Always Show Diff View for File Writes
+
+- **Setting**: `alwaysShowDiffView`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Automatically open a diff view when the agent proposes file changes, instead of requiring a button click
+- **When off**: The confirmation card shows a summary and a "View Changes" button. Click it to open the diff view
+- **When on**: The diff view opens automatically alongside the confirmation card
+- **Note**: The diff view lets you edit the proposed content before approving. If you modify content, the tool result reports `userEdited: true` so the agent knows
+
 ## Developer Settings
 
 Advanced settings for developers and power users. Access by clicking "Show Advanced Settings" in the plugin settings.
