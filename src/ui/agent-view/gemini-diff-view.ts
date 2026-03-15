@@ -11,6 +11,8 @@ export interface DiffViewState {
 	proposedContent: string;
 	isNewFile: boolean;
 	onResolve: (result: { approved: boolean; finalContent: string; userEdited: boolean }) => void;
+	/** Called when the diff view tab is closed without being resolved via approve/cancel */
+	onClose?: () => void;
 }
 
 export class GeminiDiffView extends ItemView {
@@ -121,6 +123,14 @@ export class GeminiDiffView extends ItemView {
 	}
 
 	/**
+	 * Get the current editor content. Used by the chat "Allow" button to
+	 * retrieve any edits the user made in the diff view.
+	 */
+	getCurrentContent(): string {
+		return this.editorView?.state.doc.toString() ?? this.state?.proposedContent ?? '';
+	}
+
+	/**
 	 * Resolve the diff view with approve or cancel.
 	 */
 	private resolve(approved: boolean): void {
@@ -137,9 +147,10 @@ export class GeminiDiffView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
-		// If not yet resolved, treat close as cancel
+		// If not yet resolved, notify that the diff view was closed and treat as cancel
 		if (!this.resolved && this.state) {
 			this.resolved = true;
+			this.state.onClose?.();
 			this.state.onResolve({
 				approved: false,
 				finalContent: this.state.proposedContent,

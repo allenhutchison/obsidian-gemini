@@ -297,6 +297,20 @@ describe('VaultTools', () => {
 			});
 			expect(msg).toContain('full content here');
 		});
+
+		it('should include userEdited: true and userChangeSummary when _userEdited is true', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockVault.modify.mockResolvedValue(undefined);
+
+			const result = await tool.execute(
+				{ path: 'test.md', content: 'user edited content', _userEdited: true },
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data.userEdited).toBe(true);
+			expect(result.data.userChangeSummary).toBe('User modified the proposed content before writing');
+		});
 	});
 
 	describe('ListFilesTool', () => {

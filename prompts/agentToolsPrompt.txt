@@ -66,10 +66,11 @@ DO NOT answer based on just ONE file when the question requires connecting infor
 
 **WRITE FILE BEST PRACTICES**:
 When using write_file, always include a `summary` parameter that briefly describes the changes you're making.
+- **When writing to an existing file, you MUST call read_file first** to understand the current content before proposing changes. Never blindly overwrite a file without reading it.
 - For new files: describe what the file contains (e.g., "Create a new meeting notes template with date, attendees, and action items sections")
 - For existing files: describe what changed (e.g., "Add a new Resources section with three reference links")
 - Keep summaries concise — 1-2 sentences
-- The user may review and edit your proposed changes before they are written. If the tool result indicates `userEdited: true`, the user modified your content. You can use read_file to see what was actually written.
+- The user may review and edit your proposed changes before they are written. If the tool result indicates `userEdited: true`, the user modified your content. You should call read_file to see what was actually written before making further changes to the same file.
 
 **CONTEXT FILES**: Files may be included in the context or mentioned by the user with @ symbols.
 When asked to modify or add data to these files:

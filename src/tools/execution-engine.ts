@@ -12,6 +12,7 @@ import { ToolRegistry } from './tool-registry';
 import { ToolLoopDetector } from './loop-detector';
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { shouldExcludePath } from '../utils/file-utils';
 
 /**
  * Handles execution of tools with permission checks and UI feedback
@@ -214,22 +215,32 @@ export class ToolExecutionEngine {
 
 		// Build diff context for write_file
 		let diffContext: DiffContext | undefined;
-		if (tool.name === 'write_file' && parameters.path && parameters.content) {
+		if (tool.name === 'write_file' && parameters.path && parameters.content !== undefined) {
 			const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
-			const file = plugin.app.vault.getAbstractFileByPath(normalizePath(parameters.path));
-			const isNewFile = !file;
-			let originalContent = '';
+			const normalizedPath = normalizePath(parameters.path);
 
-			if (file instanceof TFile) {
-				originalContent = await plugin.app.vault.read(file);
+			// Skip diff context for system folders (plugin state folder, .obsidian)
+			if (!shouldExcludePath(normalizedPath, plugin.settings.historyFolder)) {
+				const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+				const isNewFile = !file;
+				let originalContent = '';
+
+				if (file instanceof TFile) {
+					try {
+						originalContent = await plugin.app.vault.read(file);
+					} catch (error) {
+						plugin.logger?.warn(`Failed to read file for diff context: ${normalizedPath}`, error);
+						originalContent = '';
+					}
+				}
+
+				diffContext = {
+					filePath: parameters.path,
+					originalContent,
+					proposedContent: parameters.content,
+					isNewFile,
+				};
 			}
-
-			diffContext = {
-				filePath: parameters.path,
-				originalContent,
-				proposedContent: parameters.content,
-				isNewFile,
-			};
 		}
 
 		// Show confirmation in chat instead of modal
