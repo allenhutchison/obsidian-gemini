@@ -780,6 +780,7 @@ export class AgentViewMessages {
 			cancelBtn.addEventListener('click', cancelHandler);
 
 			// Auto-open diff view if setting enabled
+			// Small delay allows the confirmation card DOM to render before opening the leaf
 			if (diffContext && this.plugin.settings.alwaysShowDiffView) {
 				setTimeout(() => {
 					this.openDiffView(
@@ -837,6 +838,12 @@ export class AgentViewMessages {
 				},
 			});
 			onDiffOpened?.(view);
+		} else {
+			this.plugin.logger?.error(
+				`[AgentViewMessages] Failed to open diff view for ${diffContext.filePath}: unexpected view type`
+			);
+			leaf.detach();
+			onDiffClosed?.();
 		}
 	}
 
