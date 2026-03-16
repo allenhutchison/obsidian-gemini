@@ -37,6 +37,7 @@ export class AgentViewMessages {
 	private plugin: ObsidianGemini;
 	private userInput: HTMLDivElement;
 	private scrollTimeout: NodeJS.Timeout | null = null;
+	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
 	private viewContext: any; // For MarkdownRenderer context
 
 	constructor(
@@ -556,6 +557,7 @@ export class AgentViewMessages {
 		diffContext?: DiffContext
 	): Promise<ConfirmationResult> {
 		return new Promise((resolve) => {
+			this.pendingConfirmations.add(resolve);
 			let resolved = false; // Prevent double-resolution race condition
 			let diffViewOpen = false; // Track whether the diff view is currently open
 			let activeDiffView: import('./gemini-diff-view').GeminiDiffView | null = null; // Reference to the open diff view
@@ -689,6 +691,7 @@ export class AgentViewMessages {
 			const handleResponse = (confirmed: boolean, finalContent?: string, userEdited?: boolean) => {
 				if (resolved) return;
 				resolved = true;
+				this.pendingConfirmations.delete(resolve);
 
 				// Disable buttons to prevent double-click
 				allowBtn.disabled = true;
@@ -895,5 +898,11 @@ export class AgentViewMessages {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
 		}
+
+		// Settle any pending confirmation promises so tool executions don't hang
+		for (const resolve of this.pendingConfirmations) {
+			resolve({ confirmed: false, allowWithoutConfirmation: false, userEdited: false });
+		}
+		this.pendingConfirmations.clear();
 	}
 }
