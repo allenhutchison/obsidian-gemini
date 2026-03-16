@@ -99,9 +99,20 @@ export class UpdateFrontmatterTool implements Tool {
 				};
 			}
 
+			// Parse stringified JSON values so arrays, numbers, and booleans
+			// become native YAML types instead of quoted strings
+			let parsedValue = value;
+			if (typeof value === 'string') {
+				try {
+					parsedValue = JSON.parse(value);
+				} catch {
+					// Not valid JSON — keep as plain string
+				}
+			}
+
 			// Use Obsidian's native API for safe frontmatter updates
 			await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
-				frontmatter[key] = value;
+				frontmatter[key] = parsedValue;
 			});
 
 			plugin.logger.debug(`Updated frontmatter for ${file.path}: ${key} = ${value}`);
