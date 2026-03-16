@@ -115,14 +115,14 @@ export class UpdateFrontmatterTool implements Tool {
 				frontmatter[key] = parsedValue;
 			});
 
-			plugin.logger.debug(`Updated frontmatter for ${file.path}: ${key} = ${value}`);
+			plugin.logger.debug(`Updated frontmatter for ${file.path}: ${key} = ${JSON.stringify(parsedValue)}`);
 
 			return {
 				success: true,
 				data: {
 					path: file.path,
 					key,
-					value,
+					value: parsedValue,
 					action: 'updated',
 				},
 			};
