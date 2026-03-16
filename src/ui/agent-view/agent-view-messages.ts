@@ -37,6 +37,7 @@ export class AgentViewMessages {
 	private plugin: ObsidianGemini;
 	private userInput: HTMLDivElement;
 	private scrollTimeout: NodeJS.Timeout | null = null;
+	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
 	private viewContext: any; // For MarkdownRenderer context
 
 	constructor(
@@ -556,6 +557,7 @@ export class AgentViewMessages {
 		diffContext?: DiffContext
 	): Promise<ConfirmationResult> {
 		return new Promise((resolve) => {
+			this.pendingConfirmations.add(resolve);
 			let resolved = false; // Prevent double-resolution race condition
 			let diffViewOpen = false; // Track whether the diff view is currently open
 			let activeDiffView: import('./gemini-diff-view').GeminiDiffView | null = null; // Reference to the open diff view
@@ -676,60 +678,20 @@ export class AgentViewMessages {
 						(view) => {
 							diffViewOpen = true;
 							activeDiffView = view;
-							// Pause the confirmation timeout while the diff view is open
-							clearTimeout(timeoutId);
 						},
 						() => {
 							diffViewOpen = false;
 							activeDiffView = null;
-							// Restart the timeout if not yet resolved
-							if (!resolved) {
-								restartTimeout();
-							}
 						}
 					);
 				});
 			}
 
-			// Timeout management
-			let timeoutId: ReturnType<typeof setTimeout>;
-			const startTimeout = () => {
-				return setTimeout(() => {
-					if (resolved) return; // Already resolved by user
-					resolved = true;
-
-					// Clean up event listeners
-					allowBtn.removeEventListener('click', allowHandler);
-					cancelBtn.removeEventListener('click', cancelHandler);
-
-					// Update UI to show timeout
-					this.updateConfirmationTimeout(messageDiv, tool.displayName || tool.name);
-
-					// Show notice to user
-					new Notice('Confirmation request timed out. The agent has returned to ready state.');
-
-					// Log warning
-					this.plugin.logger?.warn(`Confirmation timeout for tool: ${tool.name}`);
-
-					// Resolve with declined
-					resolve({ confirmed: false, allowWithoutConfirmation: false });
-				}, 60000); // 60 seconds
-			};
-			const restartTimeout = () => {
-				clearTimeout(timeoutId);
-				timeoutId = startTimeout();
-			};
-
-			// Add 60 second timeout to prevent infinite wait
-			timeoutId = startTimeout();
-
 			// Button handlers
 			const handleResponse = (confirmed: boolean, finalContent?: string, userEdited?: boolean) => {
-				if (resolved) return; // Already resolved by timeout
+				if (resolved) return;
 				resolved = true;
-
-				// Clear timeout
-				clearTimeout(timeoutId);
+				this.pendingConfirmations.delete(resolve);
 
 				// Disable buttons to prevent double-click
 				allowBtn.disabled = true;
@@ -789,14 +751,10 @@ export class AgentViewMessages {
 						(view) => {
 							diffViewOpen = true;
 							activeDiffView = view;
-							clearTimeout(timeoutId);
 						},
 						() => {
 							diffViewOpen = false;
 							activeDiffView = null;
-							if (!resolved) {
-								restartTimeout();
-							}
 						}
 					);
 				}, 100);
@@ -862,25 +820,6 @@ export class AgentViewMessages {
 
 		result.createSpan({
 			text: confirmed ? `Permission granted: ${toolName} was allowed` : `Permission denied: ${toolName} was cancelled`,
-			cls: 'gemini-agent-result-text',
-		});
-	}
-
-	/**
-	 * Update confirmation message after timeout
-	 */
-	private updateConfirmationTimeout(messageDiv: HTMLElement, toolName: string) {
-		// Remove the card and buttons
-		messageDiv.empty();
-
-		// Add timeout message
-		const result = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-result gemini-agent-confirmation-timeout' });
-
-		const icon = result.createSpan({ cls: 'gemini-agent-result-icon' });
-		setIcon(icon, 'clock');
-
-		result.createSpan({
-			text: `Request timed out: ${toolName} confirmation expired`,
 			cls: 'gemini-agent-result-text',
 		});
 	}
@@ -952,12 +891,18 @@ export class AgentViewMessages {
 	}
 
 	/**
-	 * Cleanup method to clear any pending timeouts
+	 * Cleanup method to clear any pending scroll timers
 	 */
 	cleanup() {
 		if (this.scrollTimeout) {
 			clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
 		}
+
+		// Settle any pending confirmation promises so tool executions don't hang
+		for (const resolve of this.pendingConfirmations) {
+			resolve({ confirmed: false, allowWithoutConfirmation: false, userEdited: false });
+		}
+		this.pendingConfirmations.clear();
 	}
 }
