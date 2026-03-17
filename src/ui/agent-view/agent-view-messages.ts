@@ -777,6 +777,15 @@ export class AgentViewMessages {
 		const { GeminiDiffView } = await import('./gemini-diff-view');
 		const { VIEW_TYPE_DIFF } = await import('../../main');
 
+		// Remember the previously focused leaf so we can restore it when the diff closes
+		const previousLeaf = this.plugin.app.workspace.getMostRecentLeaf();
+
+		const restorePreviousLeaf = () => {
+			if (previousLeaf && previousLeaf !== leaf) {
+				this.plugin.app.workspace.setActiveLeaf(previousLeaf, { focus: true });
+			}
+		};
+
 		const leaf = this.plugin.app.workspace.getLeaf('tab');
 		await leaf.setViewState({ type: VIEW_TYPE_DIFF, active: true });
 
@@ -788,10 +797,12 @@ export class AgentViewMessages {
 				proposedContent: diffContext.proposedContent,
 				isNewFile: diffContext.isNewFile,
 				onResolve: (result) => {
+					restorePreviousLeaf();
 					onDiffClosed?.();
 					handleResponse(result.approved, result.finalContent, result.userEdited);
 				},
 				onClose: () => {
+					restorePreviousLeaf();
 					onDiffClosed?.();
 				},
 			});
@@ -801,6 +812,7 @@ export class AgentViewMessages {
 				`[AgentViewMessages] Failed to open diff view for ${diffContext.filePath}: unexpected view type`
 			);
 			leaf.detach();
+			restorePreviousLeaf();
 			onDiffClosed?.();
 		}
 	}
