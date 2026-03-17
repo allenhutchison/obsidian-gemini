@@ -19,7 +19,8 @@ export class UpdateFrontmatterTool implements Tool {
 		'Update a specific YAML frontmatter property in a file. ' +
 		'This tool is safe to use as it only modifies metadata and preserves the note content. ' +
 		'Use it to update status, tags, dates, or any other property. ' +
-		'Path can be a full path (e.g., "folder/note.md"), a simple filename, or a wikilink text. The .md extension is optional.';
+		'Path can be a full path (e.g., "folder/note.md"), a simple filename, or a wikilink text. The .md extension is optional. ' +
+		'ALWAYS prefer this tool over write_file for property changes.';
 
 	parameters = {
 		type: 'object' as const,
@@ -35,7 +36,16 @@ export class UpdateFrontmatterTool implements Tool {
 			},
 			value: {
 				type: 'string' as const,
-				description: 'The new value for the property (string, number, boolean, or array)',
+				description:
+					'The value for the property. Obsidian property types and formats: ' +
+					'Text: plain string. Internal links MUST be quoted: "[[Note Name]]". ' +
+					'Number: literal integer or decimal (e.g., 42, 3.14). ' +
+					'Checkbox: true or false. ' +
+					'Date: YYYY-MM-DD (e.g., 2024-08-21). ' +
+					'Date & time: YYYY-MM-DDTHH:mm:ss (e.g., 2024-08-21T10:30:00). ' +
+					'List: array of values (e.g., ["item1", "item2"]). Internal links in lists must be quoted: ["[[Link1]]", "[[Link2]]"]. ' +
+					'Tags: always use a list for the "tags" property (e.g., ["journal", "personal"]). ' +
+					'Use canonical property names: "tags" (not "tag"), "aliases" (not "alias"), "cssclasses" (not "cssclass").',
 			},
 		},
 		required: ['path', 'key', 'value'],
@@ -89,19 +99,30 @@ export class UpdateFrontmatterTool implements Tool {
 				};
 			}
 
+			// Parse stringified JSON values so arrays, numbers, and booleans
+			// become native YAML types instead of quoted strings
+			let parsedValue = value;
+			if (typeof value === 'string') {
+				try {
+					parsedValue = JSON.parse(value);
+				} catch {
+					// Not valid JSON — keep as plain string
+				}
+			}
+
 			// Use Obsidian's native API for safe frontmatter updates
 			await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
-				frontmatter[key] = value;
+				frontmatter[key] = parsedValue;
 			});
 
-			plugin.logger.debug(`Updated frontmatter for ${file.path}: ${key} = ${value}`);
+			plugin.logger.debug(`Updated frontmatter for ${file.path}: ${key} = ${JSON.stringify(parsedValue)}`);
 
 			return {
 				success: true,
 				data: {
 					path: file.path,
 					key,
-					value,
+					value: parsedValue,
 					action: 'updated',
 				},
 			};

@@ -78,7 +78,9 @@ When asked to modify or add data to these files:
 2. Then WRITE the updated content with write_file, preserving existing data
 3. DO NOT create new files unless explicitly asked - modify existing ones
 
-**YAML FRONTMATTER HANDLING**: Many markdown files contain YAML frontmatter at the very top:
+**YAML FRONTMATTER HANDLING**: Use the `update_frontmatter` tool for all property changes — it safely handles YAML formatting via Obsidian's API.
+
+Many markdown files contain YAML frontmatter at the very top:
 ```
 ---
 title: Note Title
