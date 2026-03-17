@@ -774,11 +774,9 @@ export class AgentViewMessages {
 		onDiffOpened?: (view: import('./gemini-diff-view').GeminiDiffView) => void,
 		onDiffClosed?: () => void
 	): Promise<void> {
-		const { GeminiDiffView } = await import('./gemini-diff-view');
-		const { VIEW_TYPE_DIFF } = await import('../../main');
-
 		// Remember the previously focused leaf so we can restore it when the diff closes
 		const previousLeaf = this.plugin.app.workspace.getMostRecentLeaf();
+		const leaf = this.plugin.app.workspace.getLeaf('tab');
 
 		const restorePreviousLeaf = () => {
 			if (previousLeaf && previousLeaf !== leaf) {
@@ -786,31 +784,39 @@ export class AgentViewMessages {
 			}
 		};
 
-		const leaf = this.plugin.app.workspace.getLeaf('tab');
-		await leaf.setViewState({ type: VIEW_TYPE_DIFF, active: true });
+		try {
+			const { GeminiDiffView } = await import('./gemini-diff-view');
+			const { VIEW_TYPE_DIFF } = await import('../../main');
+			await leaf.setViewState({ type: VIEW_TYPE_DIFF, active: true });
 
-		const view = leaf.view;
-		if (view instanceof GeminiDiffView) {
-			view.setDiffState({
-				filePath: diffContext.filePath,
-				originalContent: diffContext.originalContent,
-				proposedContent: diffContext.proposedContent,
-				isNewFile: diffContext.isNewFile,
-				onResolve: (result) => {
-					restorePreviousLeaf();
-					onDiffClosed?.();
-					handleResponse(result.approved, result.finalContent, result.userEdited);
-				},
-				onClose: () => {
-					restorePreviousLeaf();
-					onDiffClosed?.();
-				},
-			});
-			onDiffOpened?.(view);
-		} else {
-			this.plugin.logger?.error(
-				`[AgentViewMessages] Failed to open diff view for ${diffContext.filePath}: unexpected view type`
-			);
+			const view = leaf.view;
+			if (view instanceof GeminiDiffView) {
+				view.setDiffState({
+					filePath: diffContext.filePath,
+					originalContent: diffContext.originalContent,
+					proposedContent: diffContext.proposedContent,
+					isNewFile: diffContext.isNewFile,
+					onResolve: (result) => {
+						restorePreviousLeaf();
+						onDiffClosed?.();
+						handleResponse(result.approved, result.finalContent, result.userEdited);
+					},
+					onClose: () => {
+						restorePreviousLeaf();
+						onDiffClosed?.();
+					},
+				});
+				onDiffOpened?.(view);
+			} else {
+				this.plugin.logger?.error(
+					`[AgentViewMessages] Failed to open diff view for ${diffContext.filePath}: unexpected view type`
+				);
+				leaf.detach();
+				restorePreviousLeaf();
+				onDiffClosed?.();
+			}
+		} catch (error) {
+			this.plugin.logger?.error(`[AgentViewMessages] Failed to open diff view for ${diffContext.filePath}:`, error);
 			leaf.detach();
 			restorePreviousLeaf();
 			onDiffClosed?.();
