@@ -4,21 +4,21 @@ import { SkillSummary } from './skill-manager';
 import helpSkillMd from '../../prompts/bundled-skills/gemini-scribe-help/SKILL.md';
 import basesSkillMd from '../../prompts/bundled-skills/obsidian-bases/SKILL.md';
 
-// Import help skill references
-import refGettingStarted from '../../prompts/bundled-skills/gemini-scribe-help/references/getting-started.md';
-import refAgentMode from '../../prompts/bundled-skills/gemini-scribe-help/references/agent-mode.md';
-import refAgentSkills from '../../prompts/bundled-skills/gemini-scribe-help/references/agent-skills.md';
-import refContextSystem from '../../prompts/bundled-skills/gemini-scribe-help/references/context-system.md';
-import refCustomPrompts from '../../prompts/bundled-skills/gemini-scribe-help/references/custom-prompts.md';
-import refCompletions from '../../prompts/bundled-skills/gemini-scribe-help/references/completions.md';
-import refSummarization from '../../prompts/bundled-skills/gemini-scribe-help/references/summarization.md';
-import refAiWriting from '../../prompts/bundled-skills/gemini-scribe-help/references/ai-writing.md';
-import refDeepResearch from '../../prompts/bundled-skills/gemini-scribe-help/references/deep-research.md';
-import refMcpServers from '../../prompts/bundled-skills/gemini-scribe-help/references/mcp-servers.md';
-import refSemanticSearch from '../../prompts/bundled-skills/gemini-scribe-help/references/semantic-search.md';
-import refSettings from '../../prompts/bundled-skills/gemini-scribe-help/references/settings.md';
-import refAdvancedSettings from '../../prompts/bundled-skills/gemini-scribe-help/references/advanced-settings.md';
-import refFaq from '../../prompts/bundled-skills/gemini-scribe-help/references/faq.md';
+// Import help skill references directly from docs/ (single source of truth)
+import refGettingStarted from '../../docs/guide/getting-started.md';
+import refAgentMode from '../../docs/guide/agent-mode.md';
+import refAgentSkills from '../../docs/guide/agent-skills.md';
+import refContextSystem from '../../docs/guide/context-system.md';
+import refCustomPrompts from '../../docs/guide/custom-prompts.md';
+import refCompletions from '../../docs/guide/completions.md';
+import refSummarization from '../../docs/guide/summarization.md';
+import refAiWriting from '../../docs/guide/ai-writing.md';
+import refDeepResearch from '../../docs/guide/deep-research.md';
+import refMcpServers from '../../docs/guide/mcp-servers.md';
+import refSemanticSearch from '../../docs/guide/semantic-search.md';
+import refSettings from '../../docs/reference/settings.md';
+import refAdvancedSettings from '../../docs/reference/advanced-settings.md';
+import refFaq from '../../docs/guide/faq.md';
 
 interface BundledSkill {
 	name: string;
