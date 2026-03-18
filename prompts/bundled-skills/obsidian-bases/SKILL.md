@@ -28,6 +28,8 @@ views:
 
 **Embed an existing base:** `![[File.base]]` or `![[File.base#ViewName]]`.
 
+**Important:** Embedded base code blocks only render in Reading view or Live Preview mode. They appear as raw YAML in Source mode. After creating an embedded base, let the user know they may need to switch to Reading view to see it rendered.
+
 ## Bases Syntax (YAML)
 
 A base file has these top-level sections, all optional:
