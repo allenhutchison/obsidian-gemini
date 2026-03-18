@@ -109,12 +109,17 @@ views:
       - file.name
       - note.status
       - formula.total_cost
-    groupBy:
+    sort: # sort rows (list of property + direction)
+      - property: file.mtime
+        direction: DESC
+    groupBy: # group rows by a property
       property: note.status
       direction: ASC # or DESC
     summaries:
       formula.total_cost: Sum
 ```
+
+**Sorting:** Use `sort` (NOT `sorts`) — a list of objects with `property` and `direction` (ASC/DESC). Supports multiple sort criteria. `groupBy` is separate and controls row grouping.
 
 ### Summaries
 
