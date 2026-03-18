@@ -127,13 +127,17 @@ export class GeminiClient implements ModelApi {
 					// Accumulate tool calls across chunks, preserving thought signatures.
 					// The model may stream different tool calls in separate chunks, or
 					// repeat the same calls with/without signatures in later chunks.
+					// Match by id when available (supports parallel calls to the same tool),
+					// fall back to name matching for older API versions without ids.
 					const chunkToolCalls = this.extractToolCallsFromChunk(chunk);
 					if (chunkToolCalls?.length) {
 						if (!toolCalls) {
 							toolCalls = chunkToolCalls;
 						} else {
 							for (const newCall of chunkToolCalls) {
-								const existing = toolCalls.find((tc) => tc.name === newCall.name);
+								const existing = newCall.id
+									? toolCalls.find((tc) => tc.id === newCall.id)
+									: toolCalls.find((tc) => tc.name === newCall.name);
 								if (!existing) {
 									toolCalls.push(newCall);
 								} else if (!existing.thoughtSignature && newCall.thoughtSignature) {
@@ -500,6 +504,7 @@ export class GeminiClient implements ModelApi {
 				toolCalls.push({
 					name: part.functionCall.name,
 					arguments: part.functionCall.args || {},
+					id: part.functionCall.id,
 					thoughtSignature: signature,
 				});
 			}

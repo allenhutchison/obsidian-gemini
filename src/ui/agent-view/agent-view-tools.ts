@@ -348,6 +348,7 @@ export class AgentViewTools {
 					functionCall: {
 						name: tc.name,
 						args: tc.arguments || {},
+						...(tc.id && { id: tc.id }),
 					},
 					...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature }),
 				})),

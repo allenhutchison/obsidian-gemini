@@ -89,6 +89,7 @@ export interface ToolExecution {
 export interface ToolCall {
 	name: string;
 	arguments: Record<string, any>;
+	id?: string; // Unique call ID from Gemini API for correlating results
 	thoughtSignature?: string; // Gemini 3+ thought signature for function calls
 }
 
