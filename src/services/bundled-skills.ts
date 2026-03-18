@@ -3,6 +3,7 @@ import { SkillSummary } from './skill-manager';
 // Import bundled skill SKILL.md files
 import helpSkillMd from '../../prompts/bundled-skills/gemini-scribe-help/SKILL.md';
 import basesSkillMd from '../../prompts/bundled-skills/obsidian-bases/SKILL.md';
+import propertiesSkillMd from '../../prompts/bundled-skills/obsidian-properties/SKILL.md';
 
 // Import help skill references directly from docs/ (single source of truth)
 import refGettingStarted from '../../docs/guide/getting-started.md';
@@ -82,6 +83,14 @@ skills.set('obsidian-bases', {
 	name: 'obsidian-bases',
 	description: parseDescription(basesSkillMd),
 	content: stripFrontmatter(basesSkillMd),
+	resources: new Map(),
+});
+
+// Register obsidian-properties
+skills.set('obsidian-properties', {
+	name: 'obsidian-properties',
+	description: parseDescription(propertiesSkillMd),
+	content: stripFrontmatter(propertiesSkillMd),
 	resources: new Map(),
 });
 

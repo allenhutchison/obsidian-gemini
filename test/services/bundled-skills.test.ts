@@ -24,6 +24,13 @@ describe('BundledSkillRegistry', () => {
 			expect(bases).toBeDefined();
 			expect(bases!.description).toBeTruthy();
 		});
+
+		it('should include obsidian-properties skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const props = summaries.find((s) => s.name === 'obsidian-properties');
+			expect(props).toBeDefined();
+			expect(props!.description).toBeTruthy();
+		});
 	});
 
 	describe('loadSkill', () => {
@@ -37,6 +44,12 @@ describe('BundledSkillRegistry', () => {
 			const content = BundledSkillRegistry.loadSkill('obsidian-bases');
 			expect(content).not.toBeNull();
 			expect(content).toContain('Bases');
+		});
+
+		it('should return body content for obsidian-properties', () => {
+			const content = BundledSkillRegistry.loadSkill('obsidian-properties');
+			expect(content).not.toBeNull();
+			expect(content).toContain('Properties');
 		});
 
 		it('should return null for unknown skill', () => {
