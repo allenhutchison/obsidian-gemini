@@ -124,14 +124,23 @@ export class GeminiClient implements ModelApi {
 						});
 					}
 
-					// Extract tool calls from chunk (usually in last chunk)
-					// IMPORTANT: Keep the first tool calls we receive, as they contain the thought signature
-					// Later chunks may repeat the same tool calls without the signature
+					// Accumulate tool calls across chunks, preserving thought signatures.
+					// The model may stream different tool calls in separate chunks, or
+					// repeat the same calls with/without signatures in later chunks.
 					const chunkToolCalls = this.extractToolCallsFromChunk(chunk);
-					// Only set toolCalls once - preserve first chunk which has thought signatures
-					// The '!toolCalls' check prevents overwriting with subsequent chunks
-					if (chunkToolCalls?.length && !toolCalls) {
-						toolCalls = chunkToolCalls;
+					if (chunkToolCalls?.length) {
+						if (!toolCalls) {
+							toolCalls = chunkToolCalls;
+						} else {
+							for (const newCall of chunkToolCalls) {
+								const existing = toolCalls.find((tc) => tc.name === newCall.name);
+								if (!existing) {
+									toolCalls.push(newCall);
+								} else if (!existing.thoughtSignature && newCall.thoughtSignature) {
+									existing.thoughtSignature = newCall.thoughtSignature;
+								}
+							}
+						}
 					}
 
 					// Extract search grounding (rendered HTML)
