@@ -11,10 +11,11 @@ export default {
 		],
 		'\\.txt$': './text-transformer.mjs',
 		'\\.hbs$': './text-transformer.mjs',
+		'\\.md$': './text-transformer.mjs',
 	},
 	// This pattern will find .test.ts or .spec.ts (and .js) files in the test directory.
 	testMatch: ['<rootDir>/test/**/?(*.)+(spec|test).[tj]s'],
-	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node', 'txt', 'hbs'],
+	moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node', 'txt', 'hbs', 'md'],
 	// Path aliases mapping (must match tsconfig.json paths)
 	moduleNameMapper: {
 		'^@/(.*)$': '<rootDir>/src/$1',

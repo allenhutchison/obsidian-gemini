@@ -1,6 +1,7 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
+import { BundledSkillRegistry } from './bundled-skills';
 
 /**
  * Metadata parsed from a SKILL.md frontmatter
@@ -79,27 +80,37 @@ export class SkillManager {
 		const skillsDir = this.getSkillsFolderPath();
 		const folder = this.plugin.app.vault.getAbstractFileByPath(skillsDir);
 
-		if (!(folder instanceof TFolder)) {
-			return [];
-		}
-
 		const skills: SkillMetadata[] = [];
 
-		for (const child of folder.children) {
-			if (!(child instanceof TFolder)) continue;
+		if (folder instanceof TFolder) {
+			for (const child of folder.children) {
+				if (!(child instanceof TFolder)) continue;
 
-			const skillMdPath = normalizePath(`${child.path}/${SKILL_MD_FILENAME}`);
-			const skillFile = this.plugin.app.vault.getAbstractFileByPath(skillMdPath);
+				const skillMdPath = normalizePath(`${child.path}/${SKILL_MD_FILENAME}`);
+				const skillFile = this.plugin.app.vault.getAbstractFileByPath(skillMdPath);
 
-			if (!(skillFile instanceof TFile)) continue;
+				if (!(skillFile instanceof TFile)) continue;
 
-			try {
-				const metadata = await this.parseSkillMetadata(skillFile, child.name);
-				if (metadata) {
-					skills.push(metadata);
+				try {
+					const metadata = await this.parseSkillMetadata(skillFile, child.name);
+					if (metadata) {
+						skills.push(metadata);
+					}
+				} catch (error) {
+					this.plugin.logger.warn(`Failed to parse skill at ${child.path}:`, error);
 				}
-			} catch (error) {
-				this.plugin.logger.warn(`Failed to parse skill at ${child.path}:`, error);
+			}
+		}
+
+		// Merge bundled skills (vault takes priority)
+		const vaultNames = new Set(skills.map((s) => s.name));
+		for (const summary of BundledSkillRegistry.getSummaries()) {
+			if (!vaultNames.has(summary.name)) {
+				skills.push({
+					name: summary.name,
+					description: summary.description,
+					path: 'bundled',
+				});
 			}
 		}
 
@@ -150,7 +161,8 @@ export class SkillManager {
 		const file = this.plugin.app.vault.getAbstractFileByPath(skillMdPath);
 
 		if (!(file instanceof TFile)) {
-			return null;
+			// Fall back to bundled skills
+			return BundledSkillRegistry.loadSkill(name);
 		}
 
 		const fullContent = await this.plugin.app.vault.read(file);
@@ -193,7 +205,8 @@ export class SkillManager {
 		const file = this.plugin.app.vault.getAbstractFileByPath(resourcePath);
 
 		if (!(file instanceof TFile)) {
-			return null;
+			// Fall back to bundled skill resources
+			return BundledSkillRegistry.readResource(skillName, relativePath);
 		}
 
 		return await this.plugin.app.vault.read(file);
@@ -213,7 +226,8 @@ export class SkillManager {
 		const folder = this.plugin.app.vault.getAbstractFileByPath(skillDir);
 
 		if (!(folder instanceof TFolder)) {
-			return [];
+			// Fall back to bundled skill resources
+			return BundledSkillRegistry.listResources(skillName);
 		}
 
 		const resources: string[] = [];

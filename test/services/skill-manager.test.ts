@@ -1,5 +1,31 @@
 import { SkillManager } from '../../src/services/skill-manager';
 
+// Mock BundledSkillRegistry
+jest.mock('../../src/services/bundled-skills', () => ({
+	BundledSkillRegistry: {
+		getSummaries: jest.fn().mockReturnValue([
+			{ name: 'gemini-scribe-help', description: 'Help with plugin features' },
+			{ name: 'obsidian-bases', description: 'Create Obsidian Bases' },
+		]),
+		loadSkill: jest.fn().mockImplementation((name: string) => {
+			if (name === 'gemini-scribe-help') return '# Help\n\nInstructions';
+			if (name === 'obsidian-bases') return '# Bases\n\nSyntax guide';
+			return null;
+		}),
+		readResource: jest.fn().mockImplementation((name: string, path: string) => {
+			if (name === 'gemini-scribe-help' && path === 'references/agent-mode.md') return 'Agent mode docs';
+			return null;
+		}),
+		listResources: jest.fn().mockImplementation((name: string) => {
+			if (name === 'gemini-scribe-help') return ['references/agent-mode.md', 'references/settings.md'];
+			return [];
+		}),
+		has: jest.fn().mockImplementation((name: string) => {
+			return name === 'gemini-scribe-help' || name === 'obsidian-bases';
+		}),
+	},
+}));
+
 // Mock obsidian module using factory functions - jest.mock is hoisted so we
 // can't reference variables declared later. We use inline classes instead.
 jest.mock('obsidian', () => {
@@ -141,17 +167,20 @@ describe('SkillManager', () => {
 
 			const skills = await manager.discoverSkills();
 
-			expect(skills).toHaveLength(1);
-			expect(skills[0].name).toBe('code-review');
-			expect(skills[0].description).toBe('Reviews code for quality and correctness');
+			// Vault skill + 2 bundled skills
+			const vaultSkill = skills.find((s) => s.name === 'code-review');
+			expect(vaultSkill).toBeDefined();
+			expect(vaultSkill!.description).toBe('Reviews code for quality and correctness');
 		});
 
-		it('should return empty array when skills directory does not exist', async () => {
+		it('should return only bundled skills when skills directory does not exist', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 
 			const skills = await manager.discoverSkills();
 
-			expect(skills).toEqual([]);
+			// Only bundled skills, no vault skills
+			expect(skills.every((s) => s.path === 'bundled')).toBe(true);
+			expect(skills.length).toBeGreaterThan(0);
 		});
 
 		it('should skip directories without SKILL.md', async () => {
@@ -165,7 +194,8 @@ describe('SkillManager', () => {
 
 			const skills = await manager.discoverSkills();
 
-			expect(skills).toEqual([]);
+			// No vault skills found, only bundled skills
+			expect(skills.find((s) => s.name === 'empty-skill')).toBeUndefined();
 		});
 
 		it('should skip skills with missing frontmatter', async () => {
@@ -183,7 +213,8 @@ describe('SkillManager', () => {
 
 			const skills = await manager.discoverSkills();
 
-			expect(skills).toEqual([]);
+			// bad-skill should not be present, only bundled skills
+			expect(skills.find((s) => s.name === 'bad-skill')).toBeUndefined();
 			expect(mockPlugin.logger.warn).toHaveBeenCalled();
 		});
 	});
@@ -293,13 +324,15 @@ describe('SkillManager', () => {
 
 			const summaries = await manager.getSkillSummaries();
 
-			expect(summaries).toHaveLength(1);
-			expect(summaries[0]).toEqual({
+			// Vault skill + bundled skills
+			const testSkill = summaries.find((s) => s.name === 'test-skill');
+			expect(testSkill).toBeDefined();
+			expect(testSkill).toEqual({
 				name: 'test-skill',
 				description: 'A test skill',
 			});
 			// Should NOT include license or metadata
-			expect((summaries[0] as any).license).toBeUndefined();
+			expect((testSkill as any).license).toBeUndefined();
 		});
 	});
 
@@ -401,6 +434,93 @@ describe('SkillManager', () => {
 			expect(manager.validateSkillName('skill_name').valid).toBe(false);
 			expect(manager.validateSkillName('skill.name').valid).toBe(false);
 			expect(manager.validateSkillName('skill name').valid).toBe(false);
+		});
+	});
+
+	describe('bundled skill integration', () => {
+		describe('discoverSkills', () => {
+			it('should include bundled skills when no vault skills exist', async () => {
+				mockVault.getAbstractFileByPath.mockReturnValue(null);
+
+				const skills = await manager.discoverSkills();
+
+				expect(skills).toHaveLength(2);
+				expect(skills.map((s) => s.name)).toContain('gemini-scribe-help');
+				expect(skills.map((s) => s.name)).toContain('obsidian-bases');
+			});
+
+			it('should let vault skills override bundled skills with same name', async () => {
+				const skillFile = new TFile('gemini-scribe/skills/gemini-scribe-help/SKILL.md');
+				const skillFolder = new TFolder('gemini-scribe/skills/gemini-scribe-help', [skillFile]);
+				const skillsRoot = new TFolder('gemini-scribe/skills', [skillFolder]);
+
+				mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+					if (path === 'gemini-scribe/skills') return skillsRoot;
+					if (path === 'gemini-scribe/skills/gemini-scribe-help/SKILL.md') return skillFile;
+					return null;
+				});
+
+				mockMetadataCache.getFileCache.mockReturnValue({
+					frontmatter: {
+						name: 'gemini-scribe-help',
+						description: 'My custom help',
+					},
+				});
+
+				const skills = await manager.discoverSkills();
+
+				const helpSkill = skills.find((s) => s.name === 'gemini-scribe-help');
+				expect(helpSkill).toBeDefined();
+				expect(helpSkill!.description).toBe('My custom help');
+
+				// obsidian-bases should still come from bundled
+				expect(skills.map((s) => s.name)).toContain('obsidian-bases');
+			});
+		});
+
+		describe('loadSkill', () => {
+			it('should fall back to bundled skill when vault skill not found', async () => {
+				mockVault.getAbstractFileByPath.mockReturnValue(null);
+
+				const content = await manager.loadSkill('gemini-scribe-help');
+
+				expect(content).toBe('# Help\n\nInstructions');
+			});
+
+			it('should prefer vault skill over bundled skill', async () => {
+				const rawContent = '---\nname: gemini-scribe-help\n---\n\n# Custom Help';
+				const file = new TFile('gemini-scribe/skills/gemini-scribe-help/SKILL.md');
+				mockVault.getAbstractFileByPath.mockReturnValue(file);
+				mockVault.read.mockResolvedValue(rawContent);
+				mockMetadataCache.getFileCache.mockReturnValue({
+					frontmatterPosition: { end: { offset: rawContent.indexOf('---\n\n') + 4 } },
+				});
+
+				const content = await manager.loadSkill('gemini-scribe-help');
+
+				expect(content).toBe('# Custom Help');
+			});
+		});
+
+		describe('readSkillResource', () => {
+			it('should fall back to bundled resource when vault resource not found', async () => {
+				mockVault.getAbstractFileByPath.mockReturnValue(null);
+
+				const content = await manager.readSkillResource('gemini-scribe-help', 'references/agent-mode.md');
+
+				expect(content).toBe('Agent mode docs');
+			});
+		});
+
+		describe('listSkillResources', () => {
+			it('should fall back to bundled resources when vault skill not found', async () => {
+				mockVault.getAbstractFileByPath.mockReturnValue(null);
+
+				const resources = await manager.listSkillResources('gemini-scribe-help');
+
+				expect(resources).toContain('references/agent-mode.md');
+				expect(resources).toContain('references/settings.md');
+			});
 		});
 	});
 });

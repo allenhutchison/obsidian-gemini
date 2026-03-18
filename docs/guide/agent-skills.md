@@ -12,11 +12,20 @@ Skills use **progressive disclosure** — the agent always knows which skills ar
 2. **Activation** — When the agent encounters a matching task, it activates the skill to load full instructions
 3. **Execution** — The agent follows the skill's instructions to complete the task
 
+## Built-in Skills
+
+Gemini Scribe ships with built-in skills that are always available:
+
+- **gemini-scribe-help** — The agent can answer questions about the plugin itself by loading the relevant documentation on demand. Ask things like "How do I set up completions?" or "What settings are available?"
+- **obsidian-bases** — Guides the agent through creating and configuring Obsidian Bases, including filters, formulas, views, and common patterns like task trackers and project dashboards.
+
+Built-in skills work exactly like custom skills — the agent sees them in its available skills list and activates them when relevant. If you create a custom skill with the same name as a built-in one, your version takes priority.
+
 ## Getting Started
 
 ### Where Skills Live
 
-Skills are stored in your plugin state folder:
+Custom skills are stored in your plugin state folder:
 
 ```
 gemini-scribe/
