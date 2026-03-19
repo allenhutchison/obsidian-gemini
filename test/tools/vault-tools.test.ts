@@ -11,6 +11,17 @@ import {
 } from '../../src/tools/vault-tools';
 import { ToolExecutionContext } from '../../src/tools/types';
 
+// Mock gemini-utils (needed by file-classification, imported by vault-tools)
+jest.mock('@allenhutchison/gemini-utils', () => ({
+	EXTENSION_TO_MIME: {
+		'.md': 'text/markdown',
+		'.txt': 'text/plain',
+		'.html': 'text/html',
+		'.py': 'text/x-python',
+	},
+	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json', '.css', '.yaml']),
+}));
+
 // Mock ScribeFile
 jest.mock('../../src/files', () => ({
 	ScribeFile: jest.fn().mockImplementation(() => ({
@@ -44,6 +55,7 @@ import { TFile, TFolder } from 'obsidian';
 const mockFile = new TFile();
 (mockFile as any).path = 'test.md';
 (mockFile as any).name = 'test.md';
+(mockFile as any).extension = 'md';
 (mockFile as any).stat = {
 	size: 100,
 	mtime: Date.now(),
@@ -58,6 +70,7 @@ mockFolder.children = [mockFile];
 const mockVault = {
 	getAbstractFileByPath: jest.fn(),
 	read: jest.fn(),
+	readBinary: jest.fn(),
 	cachedRead: jest.fn(),
 	create: jest.fn(),
 	modify: jest.fn(),
@@ -174,6 +187,97 @@ describe('VaultTools', () => {
 				size: 100,
 				modified: mockFile.stat.mtime,
 			});
+		});
+
+		it('should read binary PNG file and return inlineData', async () => {
+			const pngFile = new TFile();
+			(pngFile as any).path = 'images/photo.png';
+			(pngFile as any).name = 'photo.png';
+			(pngFile as any).extension = 'png';
+			(pngFile as any).stat = { size: 1024, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(pngFile);
+			const fakeBuffer = new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer;
+			mockVault.readBinary.mockResolvedValue(fakeBuffer);
+
+			const result = await tool.execute({ path: 'images/photo.png' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.type).toBe('binary_file');
+			expect(result.data?.mimeType).toBe('image/png');
+			expect(result.data?.size).toBe(4);
+			expect(result.inlineData).toHaveLength(1);
+			expect(result.inlineData![0].mimeType).toBe('image/png');
+			expect(result.inlineData![0].base64).toBeTruthy();
+		});
+
+		it('should reject oversized binary files', async () => {
+			const bigFile = new TFile();
+			(bigFile as any).path = 'big.mp4';
+			(bigFile as any).name = 'big.mp4';
+			(bigFile as any).extension = 'mp4';
+			(bigFile as any).stat = { size: 30 * 1024 * 1024, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(bigFile);
+			const bigBuffer = new ArrayBuffer(21 * 1024 * 1024);
+			mockVault.readBinary.mockResolvedValue(bigBuffer);
+
+			const result = await tool.execute({ path: 'big.mp4' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('too large');
+		});
+
+		it('should detect webm audio vs video', async () => {
+			const webmFile = new TFile();
+			(webmFile as any).path = 'audio.webm';
+			(webmFile as any).name = 'audio.webm';
+			(webmFile as any).extension = 'webm';
+			(webmFile as any).stat = { size: 500, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(webmFile);
+			// Buffer without video codec signatures → audio/webm
+			const audioBuffer = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x00]).buffer;
+			mockVault.readBinary.mockResolvedValue(audioBuffer);
+
+			const result = await tool.execute({ path: 'audio.webm' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.mimeType).toBe('audio/webm');
+			expect(result.inlineData![0].mimeType).toBe('audio/webm');
+		});
+
+		it('should return error for unsupported file types', async () => {
+			const zipFile = new TFile();
+			(zipFile as any).path = 'archive.zip';
+			(zipFile as any).name = 'archive.zip';
+			(zipFile as any).extension = 'zip';
+			(zipFile as any).stat = { size: 500, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(zipFile);
+
+			const result = await tool.execute({ path: 'archive.zip' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Unsupported file type');
+		});
+
+		it('should read .base files as text', async () => {
+			const baseFile = new TFile();
+			(baseFile as any).path = 'views/tasks.base';
+			(baseFile as any).name = 'tasks.base';
+			(baseFile as any).extension = 'base';
+			(baseFile as any).stat = { size: 200, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(baseFile);
+			mockVault.read.mockResolvedValue('filters:\n  and:\n    - file.hasTag("task")');
+
+			const result = await tool.execute({ path: 'views/tasks.base' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.type).toBe('file');
+			expect(result.data?.content).toContain('filters:');
+			expect(result.inlineData).toBeUndefined();
 		});
 	});
 
@@ -913,10 +1017,12 @@ describe('VaultTools', () => {
 			expect(result.error).toBe('No file is currently active in the editor');
 		});
 
-		it('should return error when active file is not markdown', async () => {
+		it('should handle active binary file via read_file', async () => {
 			const mockActiveFile = new TFile();
 			(mockActiveFile as any).path = 'image.png';
+			(mockActiveFile as any).name = 'image.png';
 			(mockActiveFile as any).extension = 'png';
+			(mockActiveFile as any).stat = { size: 512, mtime: Date.now(), ctime: Date.now() };
 
 			const mockWorkspace = {
 				getActiveFile: jest.fn().mockReturnValue(mockActiveFile),
@@ -933,10 +1039,15 @@ describe('VaultTools', () => {
 				},
 			};
 
+			mockVault.getAbstractFileByPath.mockReturnValue(mockActiveFile);
+			const fakeBuffer = new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer;
+			mockVault.readBinary.mockResolvedValue(fakeBuffer);
+
 			const result = await tool.execute({}, contextWithWorkspace);
 
-			expect(result.success).toBe(false);
-			expect(result.error).toContain('not a markdown file');
+			expect(result.success).toBe(true);
+			expect(result.data?.type).toBe('binary_file');
+			expect(result.inlineData).toHaveLength(1);
 		});
 	});
 
