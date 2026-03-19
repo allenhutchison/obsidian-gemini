@@ -53,7 +53,7 @@ function resolvePathToFile(
 
 	// Strategy 5: If still not found, try case-insensitive search (only for TFiles)
 	if (!file) {
-		const allFiles = plugin.app.vault.getMarkdownFiles();
+		const allFiles = plugin.app.vault.getFiles();
 		if (allFiles && allFiles.length > 0) {
 			const lowerPath = normalizedPath.toLowerCase();
 			file =
@@ -73,7 +73,7 @@ function resolvePathToFile(
 	// Generate suggestions if requested and file not found
 	let suggestions: string[] | undefined;
 	if (!tfile && includeSuggestions) {
-		const allFiles = plugin.app.vault.getMarkdownFiles();
+		const allFiles = plugin.app.vault.getFiles();
 		suggestions =
 			allFiles && allFiles.length > 0
 				? allFiles
@@ -437,7 +437,7 @@ export class ListFilesTool implements Tool {
 			}
 
 			const files = params.recursive
-				? plugin.app.vault.getMarkdownFiles()
+				? plugin.app.vault.getFiles()
 				: (folder as TFolder)?.children || plugin.app.vault.getRoot().children;
 
 			const fileList = files
@@ -775,7 +775,7 @@ export class SearchFilesTool implements Tool {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {
-			const allFiles = plugin.app.vault.getMarkdownFiles();
+			const allFiles = plugin.app.vault.getFiles();
 			const limit = params.limit || 50;
 
 			// Check if pattern contains wildcards

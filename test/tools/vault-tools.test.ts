@@ -64,6 +64,7 @@ const mockVault = {
 	delete: jest.fn(),
 	createFolder: jest.fn(),
 	getMarkdownFiles: jest.fn(),
+	getFiles: jest.fn(),
 	getRoot: jest.fn(),
 	rename: jest.fn(),
 	adapter: {
@@ -146,7 +147,7 @@ describe('VaultTools', () => {
 
 		it('should return error for non-existent file', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
-			mockVault.getMarkdownFiles.mockReturnValue([]);
+			mockVault.getFiles.mockReturnValue([]);
 			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
 
 			const result = await tool.execute({ path: 'nonexistent.md' }, mockContext);
@@ -361,6 +362,29 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Folder not found: nonexistent');
 		});
+
+		it('should include non-markdown files in recursive listing', async () => {
+			const pngFile = new TFile();
+			(pngFile as any).path = 'images/photo.png';
+			(pngFile as any).name = 'photo.png';
+			(pngFile as any).stat = { size: 5000, mtime: Date.now(), ctime: Date.now() };
+
+			const mdFile = new TFile();
+			(mdFile as any).path = 'notes/note.md';
+			(mdFile as any).name = 'note.md';
+			(mdFile as any).stat = { size: 200, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(null); // no specific folder
+			mockVault.getFiles.mockReturnValue([pngFile, mdFile]);
+
+			const result = await tool.execute({ path: '', recursive: true }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.count).toBe(2);
+			const names = result.data?.files.map((f: any) => f.name);
+			expect(names).toContain('photo.png');
+			expect(names).toContain('note.md');
+		});
 	});
 
 	describe('SearchFilesTool', () => {
@@ -377,7 +401,7 @@ describe('VaultTools', () => {
 				{ name: 'document.md', path: 'folder/document.md', stat: { size: 300, mtime: Date.now() } },
 			] as TFile[];
 
-			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.getFiles.mockReturnValue(files);
 
 			const result = await tool.execute({ pattern: 'test' }, mockContext);
 
@@ -394,7 +418,7 @@ describe('VaultTools', () => {
 				{ name: 'README.md', path: 'README.md', stat: { size: 300, mtime: Date.now() } },
 			] as TFile[];
 
-			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.getFiles.mockReturnValue(files);
 
 			// Test * wildcard
 			const result1 = await tool.execute({ pattern: '*Test*' }, mockContext);
@@ -430,7 +454,7 @@ describe('VaultTools', () => {
 				{ name: 'Test.md', path: 'Test.md', stat: { size: 300, mtime: Date.now() } },
 			] as TFile[];
 
-			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.getFiles.mockReturnValue(files);
 
 			const result = await tool.execute({ pattern: 'test' }, mockContext);
 
@@ -447,13 +471,31 @@ describe('VaultTools', () => {
 					stat: { size: 100, mtime: Date.now() },
 				})) as TFile[];
 
-			mockVault.getMarkdownFiles.mockReturnValue(files);
+			mockVault.getFiles.mockReturnValue(files);
 
 			const result = await tool.execute({ pattern: 'test', limit: 10 }, mockContext);
 
 			expect(result.success).toBe(true);
 			expect(result.data?.matches).toHaveLength(10);
 			expect(result.data?.truncated).toBe(true);
+		});
+
+		it('should find non-markdown files', async () => {
+			const files = [
+				{ name: 'photo.png', path: 'images/photo.png', stat: { size: 5000, mtime: Date.now() } },
+				{ name: 'note.md', path: 'note.md', stat: { size: 200, mtime: Date.now() } },
+				{ name: 'recording.mp3', path: 'audio/recording.mp3', stat: { size: 10000, mtime: Date.now() } },
+			] as TFile[];
+
+			mockVault.getFiles.mockReturnValue(files);
+
+			const result = await tool.execute({ pattern: '*' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.matches).toHaveLength(3);
+			const names = result.data?.matches.map((f: any) => f.name);
+			expect(names).toContain('photo.png');
+			expect(names).toContain('recording.mp3');
 		});
 	});
 
@@ -496,7 +538,7 @@ describe('VaultTools', () => {
 
 		it('should return error for non-existent file or folder', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
-			mockVault.getMarkdownFiles.mockReturnValue([]);
+			mockVault.getFiles.mockReturnValue([]);
 			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
 
 			const result = await tool.execute({ path: 'nonexistent' }, mockContext);
@@ -555,7 +597,7 @@ describe('VaultTools', () => {
 
 		it('should return error for non-existent source file', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
-			mockVault.getMarkdownFiles.mockReturnValue([]);
+			mockVault.getFiles.mockReturnValue([]);
 			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
 
 			const result = await tool.execute(
