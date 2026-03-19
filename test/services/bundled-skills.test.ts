@@ -31,6 +31,13 @@ describe('BundledSkillRegistry', () => {
 			expect(props).toBeDefined();
 			expect(props!.description).toBeTruthy();
 		});
+
+		it('should include audio-transcription skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const audio = summaries.find((s) => s.name === 'audio-transcription');
+			expect(audio).toBeDefined();
+			expect(audio!.description).toBeTruthy();
+		});
 	});
 
 	describe('loadSkill', () => {
@@ -50,6 +57,12 @@ describe('BundledSkillRegistry', () => {
 			const content = BundledSkillRegistry.loadSkill('obsidian-properties');
 			expect(content).not.toBeNull();
 			expect(content).toContain('Properties');
+		});
+
+		it('should return body content for audio-transcription', () => {
+			const content = BundledSkillRegistry.loadSkill('audio-transcription');
+			expect(content).not.toBeNull();
+			expect(content).toContain('Transcri');
 		});
 
 		it('should return null for unknown skill', () => {
@@ -100,6 +113,7 @@ describe('BundledSkillRegistry', () => {
 		it('should return true for bundled skills', () => {
 			expect(BundledSkillRegistry.has('gemini-scribe-help')).toBe(true);
 			expect(BundledSkillRegistry.has('obsidian-bases')).toBe(true);
+			expect(BundledSkillRegistry.has('audio-transcription')).toBe(true);
 		});
 
 		it('should return false for unknown skills', () => {
