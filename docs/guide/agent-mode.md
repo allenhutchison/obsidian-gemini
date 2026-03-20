@@ -267,7 +267,7 @@ Analyze this blog post and summarize key points
 
 ### Skill Tools
 
-Gemini Scribe supports an extensible skills system based on the [agentskills.io](https://agentskills.io) specification. Skills are self-contained packages of instructions that give the agent specialized knowledge and workflows.
+Gemini Scribe supports an extensible skills system based on the [agentskills.io](https://agentskills.io) specification. Skills are self-contained packages of instructions that give the agent specialized knowledge and workflows. If you're wondering whether to use a skill or a [custom prompt](/guide/custom-prompts), see the [comparison in the Skills guide](/guide/agent-skills#skills-vs-custom-prompts).
 
 #### How Skills Work
 

@@ -15,12 +15,28 @@ The Custom Prompts feature in Gemini Scribe allows you to create reusable AI ins
 
 ## Overview
 
-Custom prompts are markdown files that contain special instructions for the AI. When you apply a custom prompt to a note, it changes how the AI interacts with that specific note, allowing you to:
+Custom prompts are markdown files that contain special instructions for the AI. When you apply a custom prompt to a session, it changes how the AI interacts with you — its tone, style, focus areas, and the knowledge it brings to the conversation.
+
+Use custom prompts to:
 
 - Customize AI behavior for different types of content
-- Create specialized assistants for specific tasks
+- Set a conversational style or persona (e.g., technical writer, creative coach)
+- Seed the agent with background knowledge before a conversation
 - Maintain consistent AI behavior across similar documents
 - Share prompt templates with other users
+
+### Custom Prompts vs Skills
+
+If you're unsure whether you need a custom prompt or a [skill](/guide/agent-skills), here's the key difference:
+
+|                | Custom Prompts                                 | Skills                                                      |
+| -------------- | ---------------------------------------------- | ----------------------------------------------------------- |
+| **Purpose**    | Change _how_ the agent talks to you            | Define _what_ the agent does step-by-step                   |
+| **Best for**   | Style, tone, persona, background context       | Repeatable workflows, multi-step procedures                 |
+| **Applied to** | A session (via session settings)               | Activated on demand per task                                |
+| **Example**    | "Respond as a technical editor using AP style" | "Read my meetings, create notes for each, add action items" |
+
+**Rule of thumb:** If you want to change the agent's personality or give it background knowledge, use a custom prompt. If you have a specific procedure with discrete steps you want the agent to follow, create a skill.
 
 ## Getting Started
 
