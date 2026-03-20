@@ -208,7 +208,7 @@ describe('VaultTools', () => {
 			expect(result.data?.size).toBe(4);
 			expect(result.inlineData).toHaveLength(1);
 			expect(result.inlineData![0].mimeType).toBe('image/png');
-			expect(result.inlineData![0].base64).toBeTruthy();
+			expect(result.inlineData![0].base64).toBe(Buffer.from(new Uint8Array(fakeBuffer)).toString('base64'));
 		});
 
 		it('should reject oversized binary files', async () => {
@@ -228,7 +228,7 @@ describe('VaultTools', () => {
 			expect(result.error).toContain('too large');
 		});
 
-		it('should detect webm audio vs video', async () => {
+		it('should detect webm as audio when no video codec present', async () => {
 			const webmFile = new TFile();
 			(webmFile as any).path = 'audio.webm';
 			(webmFile as any).name = 'audio.webm';
@@ -245,6 +245,25 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data?.mimeType).toBe('audio/webm');
 			expect(result.inlineData![0].mimeType).toBe('audio/webm');
+		});
+
+		it('should detect webm as video when VP8 codec present', async () => {
+			const webmFile = new TFile();
+			(webmFile as any).path = 'video.webm';
+			(webmFile as any).name = 'video.webm';
+			(webmFile as any).extension = 'webm';
+			(webmFile as any).stat = { size: 500, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(webmFile);
+			// Buffer with V_VP8 video codec signature → video/webm
+			const videoBuffer = new Uint8Array([0x1a, 0x45, 0x56, 0x5f, 0x56, 0x50, 0x38, 0x00]).buffer;
+			mockVault.readBinary.mockResolvedValue(videoBuffer);
+
+			const result = await tool.execute({ path: 'video.webm' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.mimeType).toBe('video/webm');
+			expect(result.inlineData![0].mimeType).toBe('video/webm');
 		});
 
 		it('should return error for unsupported file types', async () => {
@@ -277,6 +296,24 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data?.type).toBe('file');
 			expect(result.data?.content).toContain('filters:');
+			expect(result.inlineData).toBeUndefined();
+		});
+
+		it('should read .canvas files as text', async () => {
+			const canvasFile = new TFile();
+			(canvasFile as any).path = 'canvas/ideas.canvas';
+			(canvasFile as any).name = 'ideas.canvas';
+			(canvasFile as any).extension = 'canvas';
+			(canvasFile as any).stat = { size: 300, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(canvasFile);
+			mockVault.read.mockResolvedValue('{"nodes":[],"edges":[]}');
+
+			const result = await tool.execute({ path: 'canvas/ideas.canvas' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.type).toBe('file');
+			expect(result.data?.content).toContain('"nodes"');
 			expect(result.inlineData).toBeUndefined();
 		});
 	});
@@ -467,6 +504,32 @@ describe('VaultTools', () => {
 			expect(result.error).toBe('Folder not found: nonexistent');
 		});
 
+		it('should exclude system folders from recursive listing', async () => {
+			const obsidianFile = new TFile();
+			(obsidianFile as any).path = '.obsidian/plugins/config.json';
+			(obsidianFile as any).name = 'config.json';
+			(obsidianFile as any).stat = { size: 100, mtime: Date.now(), ctime: Date.now() };
+
+			const historyFile = new TFile();
+			(historyFile as any).path = 'test-history-folder/session.md';
+			(historyFile as any).name = 'session.md';
+			(historyFile as any).stat = { size: 200, mtime: Date.now(), ctime: Date.now() };
+
+			const userFile = new TFile();
+			(userFile as any).path = 'notes/note.md';
+			(userFile as any).name = 'note.md';
+			(userFile as any).stat = { size: 300, mtime: Date.now(), ctime: Date.now() };
+
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.getFiles.mockReturnValue([obsidianFile, historyFile, userFile]);
+
+			const result = await tool.execute({ path: '', recursive: true }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.count).toBe(1);
+			expect(result.data?.files[0].name).toBe('note.md');
+		});
+
 		it('should include non-markdown files in recursive listing', async () => {
 			const pngFile = new TFile();
 			(pngFile as any).path = 'images/photo.png';
@@ -600,6 +663,22 @@ describe('VaultTools', () => {
 			const names = result.data?.matches.map((f: any) => f.name);
 			expect(names).toContain('photo.png');
 			expect(names).toContain('recording.mp3');
+		});
+
+		it('should exclude system folders from search results', async () => {
+			const files = [
+				{ name: 'config.json', path: '.obsidian/plugins/config.json', stat: { size: 100, mtime: Date.now() } },
+				{ name: 'session.md', path: 'test-history-folder/session.md', stat: { size: 200, mtime: Date.now() } },
+				{ name: 'note.md', path: 'notes/note.md', stat: { size: 300, mtime: Date.now() } },
+			] as TFile[];
+
+			mockVault.getFiles.mockReturnValue(files);
+
+			const result = await tool.execute({ pattern: '*' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.matches).toHaveLength(1);
+			expect(result.data?.matches[0].name).toBe('note.md');
 		});
 	});
 
