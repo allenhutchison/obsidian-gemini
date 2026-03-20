@@ -5,6 +5,12 @@ import { ToolCategory } from '../../src/types/agent';
 import { ToolClassification } from '../../src/types/tool-policy';
 import { TFile } from 'obsidian';
 
+// Mock gemini-utils (needed by file-classification, imported by vault-tools)
+jest.mock('@allenhutchison/gemini-utils', () => ({
+	EXTENSION_TO_MIME: { '.md': 'text/markdown', '.txt': 'text/plain' },
+	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json']),
+}));
+
 // Mock Obsidian
 jest.mock('obsidian', () => ({
 	...jest.requireActual('../../__mocks__/obsidian.js'),
@@ -41,6 +47,7 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 					getAbstractFileByPath: jest.fn(),
 					read: jest.fn().mockResolvedValue('file content'),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
+					getFiles: jest.fn().mockReturnValue([]),
 					getRoot: jest.fn().mockReturnValue({ children: [] }),
 				},
 				metadataCache: {
@@ -217,6 +224,7 @@ describe('ToolExecutionEngine - Error Handling', () => {
 					getAbstractFileByPath: jest.fn(),
 					read: jest.fn().mockResolvedValue('file content'),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
+					getFiles: jest.fn().mockReturnValue([]),
 					getRoot: jest.fn().mockReturnValue({ children: [] }),
 				},
 				metadataCache: {
