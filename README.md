@@ -116,9 +116,9 @@ Let the AI actively work with your vault through tool calling capabilities.
 
 **Available Tools:**
 
-- **Search Files by Name:** Find notes by filename patterns (wildcards supported)
+- **Search Files by Name:** Find any file by filename patterns (wildcards supported)
 - **Search File Contents:** Grep-style text search within note contents (supports regex and case-sensitive search)
-- **Read Files:** Access and analyze note contents
+- **Read Files:** Access text files or analyze binary files (images, audio, video, PDF) directly through Gemini
 - **Create Notes:** Generate new notes with specified content
 - **Edit Notes:** Modify existing notes with precision
 - **Move/Rename Files:** Reorganize and rename notes in your vault

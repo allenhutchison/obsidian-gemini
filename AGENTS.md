@@ -63,13 +63,15 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
    - Agent skills system for extensible AI capabilities (see below)
 7. **Attachment Pipeline** (`src/ui/agent-view/agent-view.ts`, `src/ui/agent-view/agent-view-ui.ts`, `src/ui/agent-view/inline-attachment.ts`, `src/utils/file-classification.ts`): Unified drag-and-drop and paste pipeline for file attachments
    - Files dropped or pasted into the agent view are classified by extension using `classifyFile()` from `file-classification.ts`
-   - **Text files** (`.md`, `.ts`, `.json`, etc.) → context chips (AI reads content)
+   - **Text files** (`.md`, `.ts`, `.json`, `.base`, `.canvas`, etc.) → context chips (AI reads content)
    - **Gemini-supported binary files** (images, audio, video, PDF) → base64 inline attachments sent to the model via `inlineAttachments` on `ExtendedModelRequest`
    - **Unsupported files** (`.zip`, `.exe`, etc.) → user notification
    - Cumulative 20 MB size limit enforced across vault drops, external drops, and paste
    - Folder drops recursively expand and classify all contained files
    - `InlineAttachment` (renamed from `ImageAttachment`) holds base64 data, MIME type, and optional vault path
    - Image attachments show thumbnails; non-image attachments show Lucide icon + filename label
+   - **Binary file awareness in tools**: `ReadFileTool` uses `classifyFile()` to detect binary files and reads them via `vault.readBinary()`, returning `inlineData` on `ToolResult`. The tool execution pipeline (`agent-view-tools.ts`) injects these as `inlineData` parts alongside `functionResponse` in conversation history. This allows the agent to autonomously read images, audio, video, and PDFs encountered via tools without manual drag-and-drop.
+   - `OBSIDIAN_TEXT_EXTENSIONS` map in `file-classification.ts` classifies `.base` and `.canvas` as text
 
 ### Model Configuration
 
