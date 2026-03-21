@@ -66,9 +66,10 @@ function resolvePathToFile(
 			file =
 				allFiles.find(
 					(f) =>
-						f.path.toLowerCase() === lowerPath ||
-						f.path.toLowerCase() === lowerPath + '.md' ||
-						(lowerPath.endsWith('.md') && f.path.toLowerCase() === lowerPath.slice(0, -3))
+						!shouldExcludePath(f.path, plugin) &&
+						(f.path.toLowerCase() === lowerPath ||
+							f.path.toLowerCase() === lowerPath + '.md' ||
+							(lowerPath.endsWith('.md') && f.path.toLowerCase() === lowerPath.slice(0, -3)))
 				) || null;
 		}
 	}
@@ -84,7 +85,11 @@ function resolvePathToFile(
 		suggestions =
 			allFiles && allFiles.length > 0
 				? allFiles
-						.filter((f) => f.name.toLowerCase().includes(path.toLowerCase().replace('.md', '')))
+						.filter(
+							(f) =>
+								!shouldExcludePath(f.path, plugin) &&
+								f.name.toLowerCase().includes(path.toLowerCase().replace('.md', ''))
+						)
 						.slice(0, 5)
 						.map((f) => f.path)
 				: [];

@@ -169,6 +169,57 @@ describe('VaultTools', () => {
 			expect(result.error).toBe('File or folder not found: nonexistent.md');
 		});
 
+		it('should not resolve to system folder files via case-insensitive fallback', async () => {
+			// Strategies 1-4 all miss
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
+
+			// Strategy 5 getFiles() returns only system folder files
+			const obsidianFile = new TFile();
+			(obsidianFile as any).path = '.obsidian/workspace.json';
+			(obsidianFile as any).name = 'workspace.json';
+			(obsidianFile as any).extension = 'json';
+
+			const historyFile = new TFile();
+			(historyFile as any).path = 'test-history-folder/session.md';
+			(historyFile as any).name = 'session.md';
+			(historyFile as any).extension = 'md';
+
+			mockVault.getFiles.mockReturnValue([obsidianFile, historyFile]);
+
+			// Try to resolve a path that would case-insensitively match the system files
+			const result = await tool.execute({ path: 'workspace.json' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('not found');
+		});
+
+		it('should not suggest system folder files', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
+
+			const obsidianFile = new TFile();
+			(obsidianFile as any).path = '.obsidian/workspace.json';
+			(obsidianFile as any).name = 'workspace.json';
+			(obsidianFile as any).extension = 'json';
+
+			const userFile = new TFile();
+			(userFile as any).path = 'notes/workspace-notes.md';
+			(userFile as any).name = 'workspace-notes.md';
+			(userFile as any).extension = 'md';
+
+			mockVault.getFiles.mockReturnValue([obsidianFile, userFile]);
+
+			// "workspace" substring matches both filenames, but .obsidian should be excluded
+			const result = await tool.execute({ path: 'workspace' }, mockContext);
+
+			expect(result.success).toBe(false);
+			// Suggestions should include the user file but not the .obsidian file
+			const suggestions = result.error!;
+			expect(suggestions).toContain('workspace-notes.md');
+			expect(suggestions).not.toContain('.obsidian');
+		});
+
 		it('should list contents when given a folder path', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
 
