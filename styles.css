@@ -1009,12 +1009,15 @@ If your plugin does not need CSS, delete this file.
 	align-items: center;
 	gap: var(--size-4-2);
 	flex: 1;
+	min-width: 0;
+	overflow: hidden;
 }
 
 .gemini-agent-header-right {
 	display: flex;
 	align-items: center;
 	gap: var(--size-2-1);
+	flex-shrink: 0;
 }
 
 /* Toggle Button */
@@ -1044,7 +1047,7 @@ If your plugin does not need CSS, delete this file.
 .gemini-agent-title-container {
 	display: inline-flex;
 	align-items: center;
-	min-width: 200px;
+	min-width: 0;
 	max-width: 400px;
 }
 
