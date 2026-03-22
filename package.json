@@ -27,7 +27,7 @@
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
-		"@google/genai": "^1.45.0",
+		"@google/genai": "^1.46.0",
 		"@modelcontextprotocol/sdk": "^1.27.1",
 		"@types/jest": "^30.0.0",
 		"@types/node": "^25.5.0",
