@@ -44,6 +44,15 @@ export const GEMINI_INLINE_BINARY_MIMES: Record<string, string> = {
 	pdf: 'application/pdf',
 };
 
+/**
+ * Obsidian-specific file types that are text-based but not in the standard MIME maps.
+ * Maps file extension (without dot) to MIME type.
+ */
+export const OBSIDIAN_TEXT_EXTENSIONS: Record<string, string> = {
+	base: 'application/yaml',
+	canvas: 'application/json',
+};
+
 export enum FileCategory {
 	TEXT = 'text',
 	GEMINI_BINARY = 'gemini_binary',
@@ -87,6 +96,14 @@ export function classifyFile(extension: string): FileClassification {
 		return {
 			category: FileCategory.TEXT,
 			mimeType: 'text/plain',
+		};
+	}
+
+	// Check Obsidian-specific text extensions (e.g. .base, .canvas)
+	if (Object.prototype.hasOwnProperty.call(OBSIDIAN_TEXT_EXTENSIONS, ext)) {
+		return {
+			category: FileCategory.TEXT,
+			mimeType: OBSIDIAN_TEXT_EXTENSIONS[ext],
 		};
 	}
 

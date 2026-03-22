@@ -9,6 +9,8 @@ export interface ToolResult {
 	data?: any;
 	error?: string;
 	requiresConfirmation?: boolean;
+	/** Binary attachments to inject as inlineData parts alongside the functionResponse */
+	inlineData?: Array<{ base64: string; mimeType: string }>;
 }
 
 /**

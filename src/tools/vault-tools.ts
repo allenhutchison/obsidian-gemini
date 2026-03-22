@@ -4,6 +4,13 @@ import { ToolClassification } from '../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../utils/file-utils';
+import {
+	classifyFile,
+	FileCategory,
+	GEMINI_INLINE_DATA_LIMIT,
+	arrayBufferToBase64,
+	detectWebmMimeType,
+} from '../utils/file-classification';
 
 /**
  * Helper function to resolve a path to a file with multiple fallback strategies
@@ -53,15 +60,16 @@ function resolvePathToFile(
 
 	// Strategy 5: If still not found, try case-insensitive search (only for TFiles)
 	if (!file) {
-		const allFiles = plugin.app.vault.getMarkdownFiles();
+		const allFiles = plugin.app.vault.getFiles();
 		if (allFiles && allFiles.length > 0) {
 			const lowerPath = normalizedPath.toLowerCase();
 			file =
 				allFiles.find(
 					(f) =>
-						f.path.toLowerCase() === lowerPath ||
-						f.path.toLowerCase() === lowerPath + '.md' ||
-						(lowerPath.endsWith('.md') && f.path.toLowerCase() === lowerPath.slice(0, -3))
+						!shouldExcludePath(f.path, plugin) &&
+						(f.path.toLowerCase() === lowerPath ||
+							f.path.toLowerCase() === lowerPath + '.md' ||
+							(lowerPath.endsWith('.md') && f.path.toLowerCase() === lowerPath.slice(0, -3)))
 				) || null;
 		}
 	}
@@ -73,11 +81,15 @@ function resolvePathToFile(
 	// Generate suggestions if requested and file not found
 	let suggestions: string[] | undefined;
 	if (!tfile && includeSuggestions) {
-		const allFiles = plugin.app.vault.getMarkdownFiles();
+		const allFiles = plugin.app.vault.getFiles();
 		suggestions =
 			allFiles && allFiles.length > 0
 				? allFiles
-						.filter((f) => f.name.toLowerCase().includes(path.toLowerCase().replace('.md', '')))
+						.filter(
+							(f) =>
+								!shouldExcludePath(f.path, plugin) &&
+								f.name.toLowerCase().includes(path.toLowerCase().replace('.md', ''))
+						)
 						.slice(0, 5)
 						.map((f) => f.path)
 				: [];
@@ -133,7 +145,7 @@ export class ReadFileTool implements Tool {
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'Read the full text contents of a markdown file from the vault, or list the contents of a folder. For files, returns the file content along with metadata including the canonical wikilink for the file, outgoing links (files this note links to), and backlinks (files that link to this note). For folders, returns a list of all files and subfolders within that folder. The "wikilink" field contains the preferred way to reference this file (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]"). All links are in [[WikiLink]] format and can be passed directly to any vault tool - they will automatically resolve to the correct file path, even if the file is in a subfolder. Use this to traverse note relationships, follow connections between notes, or explore related content. Path can be a full path (e.g., "folder/note.md"), a simple filename (e.g., "note"), or a wikilink text (e.g., "My Note" from [[My Note]]). The .md extension is optional.';
+		'Read the contents of a file from the vault, or list the contents of a folder. Supports text files (markdown, code, .base, .canvas) and binary files that Gemini can process (images, audio, video, PDF). For text files, returns the file content along with metadata including the canonical wikilink, outgoing links, and backlinks. For binary files, the file data is sent directly to the model for analysis (e.g., image description, audio transcription, PDF reading). For folders, returns a list of all files and subfolders. The "wikilink" field contains the preferred way to reference this file (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]"). All links are in [[WikiLink]] format and can be passed directly to any vault tool. Path can be a full path (e.g., "folder/note.md"), a simple filename (e.g., "note"), or a wikilink text (e.g., "My Note" from [[My Note]]). The .md extension is optional.';
 
 	parameters = {
 		type: 'object' as const,
@@ -208,6 +220,32 @@ export class ReadFileTool implements Tool {
 
 			// Handle file - read its contents
 			const file = item as TFile;
+
+			// Classify the file to determine how to read it
+			const classification = classifyFile(file.extension);
+
+			if (classification.category === FileCategory.GEMINI_BINARY) {
+				const buffer = await plugin.app.vault.readBinary(file);
+				if (buffer.byteLength > GEMINI_INLINE_DATA_LIMIT) {
+					return { success: false, error: `File too large for inline processing (max 20 MB): ${file.name}` };
+				}
+				const base64 = arrayBufferToBase64(buffer);
+				let mimeType = classification.mimeType;
+				if (file.extension.toLowerCase() === 'webm') {
+					mimeType = detectWebmMimeType(buffer);
+				}
+				return {
+					success: true,
+					data: { path: file.path, type: 'binary_file', mimeType, size: buffer.byteLength },
+					inlineData: [{ base64, mimeType }],
+				};
+			}
+
+			if (classification.category === FileCategory.UNSUPPORTED) {
+				return { success: false, error: `Unsupported file type: .${file.extension}` };
+			}
+
+			// Text file — read normally
 			const content = await plugin.app.vault.read(file);
 
 			// Get link information using singleton instance
@@ -437,7 +475,7 @@ export class ListFilesTool implements Tool {
 			}
 
 			const files = params.recursive
-				? plugin.app.vault.getMarkdownFiles()
+				? plugin.app.vault.getFiles()
 				: (folder as TFolder)?.children || plugin.app.vault.getRoot().children;
 
 			const fileList = files
@@ -775,7 +813,7 @@ export class SearchFilesTool implements Tool {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {
-			const allFiles = plugin.app.vault.getMarkdownFiles();
+			const allFiles = plugin.app.vault.getFiles();
 			const limit = params.limit || 50;
 
 			// Check if pattern contains wildcards
@@ -1061,14 +1099,6 @@ export class GetActiveFileTool implements Tool {
 				return {
 					success: false,
 					error: 'No file is currently active in the editor',
-				};
-			}
-
-			// Only return markdown files
-			if (activeFile.extension !== 'md') {
-				return {
-					success: false,
-					error: `The active file is not a markdown file (extension: ${activeFile.extension})`,
 				};
 			}
 

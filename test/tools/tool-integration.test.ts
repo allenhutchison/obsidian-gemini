@@ -12,6 +12,12 @@ import { WebFetchTool } from '../../src/tools/web-fetch-tool';
 import { SessionType, ToolCategory } from '../../src/types/agent';
 import { TFile } from 'obsidian';
 
+// Mock gemini-utils (needed by file-classification, imported by vault-tools)
+jest.mock('@allenhutchison/gemini-utils', () => ({
+	EXTENSION_TO_MIME: { '.md': 'text/markdown', '.txt': 'text/plain' },
+	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json']),
+}));
+
 // Mock dependencies
 jest.mock('obsidian', () => ({
 	...jest.requireActual('../../__mocks__/obsidian.js'),
@@ -56,6 +62,7 @@ describe('Tool Integration Tests', () => {
 				vault: {
 					getAbstractFileByPath: jest.fn(),
 					getMarkdownFiles: jest.fn().mockReturnValue([]),
+					getFiles: jest.fn().mockReturnValue([]),
 					read: jest.fn(),
 					create: jest.fn(),
 					modify: jest.fn(),
@@ -110,7 +117,7 @@ describe('Tool Integration Tests', () => {
 
 			// Mock search results
 			const mockFiles = [createMockFile('project/todo.md', 'todo'), createMockFile('project/done.md', 'done')];
-			plugin.app.vault.getMarkdownFiles.mockReturnValue(mockFiles);
+			plugin.app.vault.getFiles.mockReturnValue(mockFiles);
 
 			// Mock file content
 			plugin.app.vault.read.mockResolvedValue('# TODO\n- [ ] Task 1\n- [x] Task 2');
@@ -411,5 +418,6 @@ function createMockFile(path: string, basename: string): TFile {
 	file.path = path;
 	file.name = `${basename}.md`;
 	file.basename = basename;
+	(file as any).extension = 'md';
 	return file;
 }

@@ -166,11 +166,12 @@ For detailed information about context files and advanced usage, see the [Contex
 
 #### search_files
 
-Search for files by name pattern (searches filenames/paths only):
+Search for files by name pattern (searches filenames/paths only). Searches all file types, not just markdown:
 
 ```
 Find all files containing "project"
 Search for "*.md" files in the Projects folder
+Find all PNG images in my vault with "*.png"
 ```
 
 #### search_file_contents
@@ -193,20 +194,26 @@ Supports:
 
 #### read_file
 
-Read the contents of a specific file:
+Read the contents of any file in your vault. Supports text files (markdown, code, `.base`, `.canvas`) and binary files that Gemini can process (images, audio, video, PDF):
 
 ```
 Read the contents of my daily note
 Show me what's in Projects/Todo.md
+Describe the image at images/diagram.png
+Transcribe the recording at audio/meeting.mp3
+Read the PDF at docs/report.pdf
 ```
+
+When you ask the agent to read a binary file, it sends the file data directly to Gemini for analysis — enabling image description, audio transcription, PDF reading, and video analysis without manual drag-and-drop.
 
 #### list_files
 
-List files in a folder:
+List files in a folder. Returns all file types (not just markdown):
 
 ```
 Show me all files in the Archive folder
 List the contents of my Templates directory
+What files are in the attachments folder?
 ```
 
 ### Vault Operations
@@ -260,7 +267,7 @@ Analyze this blog post and summarize key points
 
 ### Skill Tools
 
-Gemini Scribe supports an extensible skills system based on the [agentskills.io](https://agentskills.io) specification. Skills are self-contained packages of instructions that give the agent specialized knowledge and workflows.
+Gemini Scribe supports an extensible skills system based on the [agentskills.io](https://agentskills.io) specification. Skills are self-contained packages of instructions that give the agent specialized knowledge and workflows. If you're wondering whether to use a skill or a [custom prompt](/guide/custom-prompts), see the [comparison in the Skills guide](/guide/agent-skills#skills-vs-custom-prompts).
 
 #### How Skills Work
 

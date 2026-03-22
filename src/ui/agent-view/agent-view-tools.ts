@@ -352,15 +352,30 @@ export class AgentViewTools {
 					...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature }),
 				})),
 			},
-			// Tool results as functionResponse
+			// Tool results as functionResponse, with inlineData parts injected alongside
 			{
 				role: 'user',
-				parts: toolResults.map((tr) => ({
-					functionResponse: {
-						name: tr.toolName,
-						response: tr.result,
-					},
-				})),
+				parts: toolResults.flatMap((tr) => {
+					// Strip inlineData from the result before putting in functionResponse
+					const { inlineData, ...resultWithoutInlineData } = tr.result;
+					const parts: any[] = [
+						{
+							functionResponse: {
+								name: tr.toolName,
+								response: resultWithoutInlineData,
+							},
+						},
+					];
+					// Append inlineData as separate parts the model can see
+					if (inlineData && Array.isArray(inlineData)) {
+						for (const attachment of inlineData) {
+							parts.push({
+								inlineData: { mimeType: attachment.mimeType, data: attachment.base64 },
+							});
+						}
+					}
+					return parts;
+				}),
 			},
 		];
 

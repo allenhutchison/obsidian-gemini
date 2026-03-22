@@ -4,6 +4,19 @@ Agent Skills let you extend the AI agent with specialized knowledge and workflow
 
 > Skills follow the open [agentskills.io](https://agentskills.io) specification.
 
+## Skills vs Custom Prompts
+
+Skills and [custom prompts](/guide/custom-prompts) serve different purposes:
+
+|               | Skills                                                      | Custom Prompts                                 |
+| ------------- | ----------------------------------------------------------- | ---------------------------------------------- |
+| **Purpose**   | Define _what_ the agent does step-by-step                   | Change _how_ the agent talks to you            |
+| **Best for**  | Repeatable workflows, multi-step procedures                 | Style, tone, persona, background context       |
+| **Activated** | On demand per task (automatic or manual)                    | Applied to a session via session settings      |
+| **Example**   | "Read my meetings, create notes for each, add action items" | "Respond as a technical editor using AP style" |
+
+**Rule of thumb:** If you have a specific procedure with discrete steps you want the agent to follow on command, create a skill. If you want to change the agent's personality or give it background knowledge for the whole session, use a custom prompt.
+
 ## How Skills Work
 
 Skills use **progressive disclosure** — the agent always knows which skills are available (name and description), but only loads the full instructions when it activates a skill. This keeps conversations focused while making specialized knowledge available when needed.
@@ -18,6 +31,8 @@ Gemini Scribe ships with built-in skills that are always available:
 
 - **gemini-scribe-help** — The agent can answer questions about the plugin itself by loading the relevant documentation on demand. Ask things like "How do I set up completions?" or "What settings are available?"
 - **obsidian-bases** — Guides the agent through creating and configuring Obsidian Bases, including filters, formulas, views, and common patterns like task trackers and project dashboards.
+- **obsidian-properties** — Helps the agent work with Obsidian note properties (frontmatter), including creating, editing, and querying properties.
+- **audio-transcription** — Guides the agent through transcribing audio and video files into structured notes with timestamps, speaker labels, and summaries.
 
 Built-in skills work exactly like custom skills — the agent sees them in its available skills list and activates them when relevant. If you create a custom skill with the same name as a built-in one, your version takes priority.
 

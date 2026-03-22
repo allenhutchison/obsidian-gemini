@@ -4,6 +4,7 @@ import { SkillSummary } from './skill-manager';
 import helpSkillMd from '../../prompts/bundled-skills/gemini-scribe-help/SKILL.md';
 import basesSkillMd from '../../prompts/bundled-skills/obsidian-bases/SKILL.md';
 import propertiesSkillMd from '../../prompts/bundled-skills/obsidian-properties/SKILL.md';
+import audioTranscriptionSkillMd from '../../prompts/bundled-skills/audio-transcription/SKILL.md';
 
 // Import help skill references directly from docs/ (single source of truth)
 import refGettingStarted from '../../docs/guide/getting-started.md';
@@ -91,6 +92,14 @@ skills.set('obsidian-properties', {
 	name: 'obsidian-properties',
 	description: parseDescription(propertiesSkillMd),
 	content: stripFrontmatter(propertiesSkillMd),
+	resources: new Map(),
+});
+
+// Register audio-transcription
+skills.set('audio-transcription', {
+	name: 'audio-transcription',
+	description: parseDescription(audioTranscriptionSkillMd),
+	content: stripFrontmatter(audioTranscriptionSkillMd),
 	resources: new Map(),
 });
 

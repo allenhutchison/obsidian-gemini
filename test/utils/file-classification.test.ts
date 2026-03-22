@@ -5,6 +5,7 @@ import {
 	detectWebmMimeType,
 	GEMINI_INLINE_DATA_LIMIT,
 	GEMINI_INLINE_BINARY_MIMES,
+	OBSIDIAN_TEXT_EXTENSIONS,
 } from '../../src/utils/file-classification';
 
 // Mock the gemini-utils module
@@ -123,6 +124,18 @@ describe('file-classification', () => {
 			const result = classifyFile('pdf');
 			expect(result.category).toBe(FileCategory.GEMINI_BINARY);
 		});
+
+		it('should classify .base files as TEXT', () => {
+			const result = classifyFile('base');
+			expect(result.category).toBe(FileCategory.TEXT);
+			expect(result.mimeType).toBe('application/yaml');
+		});
+
+		it('should classify .canvas files as TEXT', () => {
+			const result = classifyFile('canvas');
+			expect(result.category).toBe(FileCategory.TEXT);
+			expect(result.mimeType).toBe('application/json');
+		});
 	});
 
 	describe('arrayBufferToBase64', () => {
@@ -200,6 +213,11 @@ describe('file-classification', () => {
 
 		it('should include PDF', () => {
 			expect(GEMINI_INLINE_BINARY_MIMES['pdf']).toBe('application/pdf');
+		});
+
+		it('should include Obsidian text extensions', () => {
+			expect(OBSIDIAN_TEXT_EXTENSIONS['base']).toBe('application/yaml');
+			expect(OBSIDIAN_TEXT_EXTENSIONS['canvas']).toBe('application/json');
 		});
 	});
 });
