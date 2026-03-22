@@ -562,10 +562,20 @@ export class CreateFolderTool implements Tool {
 
 			const existing = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 
+			if (existing instanceof TFolder) {
+				return {
+					success: true,
+					data: {
+						path: normalizedPath,
+						action: 'already_exists',
+					},
+				};
+			}
+
 			if (existing) {
 				return {
 					success: false,
-					error: `Path already exists: ${params.path}`,
+					error: `A file already exists at path: ${params.path}`,
 				};
 			}
 

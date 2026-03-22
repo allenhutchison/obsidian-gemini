@@ -1,6 +1,9 @@
 import { ChatSession } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 
+// Re-export ToolCall from its canonical definition in model-api
+export type { ToolCall } from '../api/interfaces/model-api';
+
 /**
  * Result from a tool execution
  */
@@ -83,15 +86,6 @@ export interface ToolExecution {
 	result: ToolResult;
 	timestamp: Date;
 	confirmed?: boolean;
-}
-
-/**
- * Tool call format from AI models
- */
-export interface ToolCall {
-	name: string;
-	arguments: Record<string, any>;
-	thoughtSignature?: string; // Gemini 3+ thought signature for function calls
 }
 
 /**
