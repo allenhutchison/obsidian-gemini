@@ -911,6 +911,9 @@ To reference an attachment in your response, use the path shown above.`;
 		this.currentSession = this.session.getCurrentSession();
 		// Reset context manager for the new session and update display
 		this.plugin.contextManager?.reset();
+		// Re-render header now that currentSession is updated — the header
+		// rendered inside createNewSession() used the stale reference.
+		this.updateSessionHeader();
 		await this.updateTokenUsage();
 	}
 
@@ -922,6 +925,7 @@ To reference an attachment in your response, use the path shown above.`;
 		this.currentSession = this.session.getCurrentSession();
 		// Reset cache and refresh token usage for the loaded session
 		this.plugin.contextManager?.reset();
+		this.updateSessionHeader();
 		await this.refreshTokenUsageFromHistory();
 	}
 
