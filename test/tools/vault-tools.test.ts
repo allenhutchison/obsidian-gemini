@@ -585,11 +585,13 @@ describe('VaultTools', () => {
 			const pngFile = new TFile();
 			(pngFile as any).path = 'images/photo.png';
 			(pngFile as any).name = 'photo.png';
+			(pngFile as any).extension = 'png';
 			(pngFile as any).stat = { size: 5000, mtime: Date.now(), ctime: Date.now() };
 
 			const mdFile = new TFile();
 			(mdFile as any).path = 'notes/note.md';
 			(mdFile as any).name = 'note.md';
+			(mdFile as any).extension = 'md';
 			(mdFile as any).stat = { size: 200, mtime: Date.now(), ctime: Date.now() };
 
 			mockVault.getAbstractFileByPath.mockReturnValue(null); // no specific folder
