@@ -158,8 +158,8 @@ Create reusable AI instruction templates to customize behavior for different typ
 **Quick Start:**
 
 1. Create a prompt file in `[Plugin State Folder]/Prompts/`
-2. Add to your note's frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
-3. The AI will use your custom instructions for that note
+2. Open the agent panel and click the gear icon in the session header
+3. Select your prompt from the "Prompt Template" dropdown
 
 **Learn More:** See the comprehensive [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed instructions, examples, and best practices.
 
@@ -268,14 +268,10 @@ Create reusable AI instruction templates that customize how the AI behaves for s
    - Enter a name and edit the generated template
    - Or manually create `.md` files in `[History Folder]/Prompts/`
 
-3. **Apply to Notes:**
-   - Use command palette: "Gemini Scribe: Apply Custom Prompt to Current Note"
-   - Search and select from available prompts
-   - Or manually add to frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
-
-4. **Remove from Notes:**
-   - Use command palette: "Gemini Scribe: Remove Custom Prompt from Current Note"
-   - Or manually delete the frontmatter field
+3. **Apply to Sessions:**
+   - Open the agent panel and click the gear icon in the session header
+   - Select your prompt from the "Prompt Template" dropdown
+   - The prompt applies to all messages in that session
 
 **Tip:** See the comprehensive [Custom Prompts Guide](docs/guide/custom-prompts.md) for examples and best practices.
 
@@ -293,8 +289,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
 - **Custom Prompts Not Working:**
   - Ensure "Enable Custom Prompts" is toggled on in settings
   - Verify the prompt file exists in the Prompts folder
-  - Check that the wikilink syntax is correct: `[[Prompt Name]]`
-  - Try using the command palette commands for easier management
+  - Check that the prompt is selected in session settings (gear icon)
   - See the [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed troubleshooting
 - **Parameter/Advanced Settings Issues:**
   - Check if your model supports the temperature range you're using

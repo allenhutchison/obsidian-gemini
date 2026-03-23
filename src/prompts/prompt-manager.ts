@@ -1,4 +1,4 @@
-import { Vault, TFile, TFolder, normalizePath, Notice, SuggestModal, Modal, App } from 'obsidian';
+import { Vault, TFile, TFolder, normalizePath, Notice, Modal, App } from 'obsidian';
 import ObsidianGemini from '../main';
 import { CustomPrompt, PromptInfo } from './types';
 import { ensureFolderExists } from '../utils/file-utils';
@@ -65,69 +65,6 @@ export class PromptManager {
 			this.plugin.logger.error('Error loading prompt file:', error);
 			return null;
 		}
-	}
-
-	// Get prompt from note's frontmatter
-	async getPromptFromNote(file: TFile): Promise<CustomPrompt | null> {
-		const cache = this.plugin.app.metadataCache.getFileCache(file);
-		const promptPath = cache?.frontmatter?.['gemini-scribe-prompt'];
-
-		if (!promptPath) return null;
-
-		// Extract path from wikilink
-		const linkpath = this.extractPathFromWikilink(promptPath);
-		if (!linkpath) return null;
-
-		// Use Obsidian's link resolution to find the file
-		// getFirstLinkpathDest resolves the link path relative to the source file
-		const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, file.path);
-		if (!linkedFile || !(linkedFile instanceof TFile)) return null;
-
-		return await this.loadPromptFromFile(linkedFile.path);
-	}
-
-	// Get custom prompt info formatted for history (with proper wikilink alias)
-	async getPromptHistoryInfo(file: TFile): Promise<string | null> {
-		const cache = this.plugin.app.metadataCache.getFileCache(file);
-		const promptPath = cache?.frontmatter?.['gemini-scribe-prompt'];
-
-		if (!promptPath) return null;
-
-		// Extract path from wikilink
-		const linkpath = this.extractPathFromWikilink(promptPath);
-		if (!linkpath) return null;
-
-		// Use Obsidian's link resolution to find the file
-		const linkedFile = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, file.path);
-		if (!linkedFile || !(linkedFile instanceof TFile)) return null;
-
-		// Get the prompt to access its display name
-		const customPrompt = await this.loadPromptFromFile(linkedFile.path);
-		if (!customPrompt) return null;
-
-		// Return wikilink with filename and display name as alias
-		// Escape the pipe separator for markdown table compatibility
-		return `[[${linkedFile.basename}\\|${customPrompt.name}]]`;
-	}
-
-	// Extract path from wikilink format
-	private extractPathFromWikilink(wikilink: string): string | null {
-		// Remove brackets if present
-		let cleaned = wikilink;
-		if (cleaned.startsWith('[[') && cleaned.endsWith(']]')) {
-			cleaned = cleaned.slice(2, -2);
-		}
-
-		// Remove alias (text after |)
-		const pathWithoutAlias = cleaned.split('|')[0];
-
-		// Remove heading (text after #)
-		const pathWithoutHeading = pathWithoutAlias.split('#')[0];
-
-		// Remove block reference (text after ^)
-		const pathWithoutBlock = pathWithoutHeading.split('^')[0];
-
-		return pathWithoutBlock.trim() || null;
 	}
 
 	// List all available prompts
@@ -314,126 +251,10 @@ Please provide a concise summary of the following text:
 	// Setup commands for prompt management
 	setupPromptCommands(): void {
 		this.plugin.addCommand({
-			id: 'gemini-scribe-apply-custom-prompt',
-			name: 'Apply Custom Prompt to Current Note',
-			callback: () => this.applyCustomPromptToCurrentNote(),
-		});
-
-		this.plugin.addCommand({
-			id: 'gemini-scribe-remove-custom-prompt',
-			name: 'Remove Custom Prompt from Current Note',
-			callback: () => this.removeCustomPromptFromCurrentNote(),
-		});
-
-		this.plugin.addCommand({
 			id: 'gemini-scribe-create-custom-prompt',
 			name: 'Create New Custom Prompt',
 			callback: () => this.createNewCustomPrompt(),
 		});
-	}
-
-	// Apply a custom prompt to the current note by inserting frontmatter
-	async applyCustomPromptToCurrentNote(): Promise<void> {
-		try {
-			const activeFile = this.plugin.gfile.getActiveFile();
-			if (!activeFile) {
-				new Notice('No active file to apply prompt to');
-				return;
-			}
-
-			if (!this.plugin.gfile.isMarkdownFile(activeFile)) {
-				new Notice('Custom prompts can only be applied to markdown files');
-				return;
-			}
-
-			// Get available prompts
-			const availablePrompts = await this.listAvailablePrompts();
-			if (availablePrompts.length === 0) {
-				new Notice('No custom prompts found. Create prompts in the Prompts folder first.');
-				return;
-			}
-
-			// Show prompt selection modal
-			this.showPromptSelectionModal(activeFile, availablePrompts);
-		} catch (error) {
-			this.plugin.logger.error('Error applying custom prompt:', error);
-			new Notice('Failed to apply custom prompt');
-		}
-	}
-
-	// Show modal for selecting a prompt
-	private showPromptSelectionModal(file: TFile, prompts: PromptInfo[]): void {
-		const modal = new PromptSelectionModal(this.plugin.app, this.plugin, this, file, prompts);
-		modal.open();
-	}
-
-	// Apply the selected prompt to the file using Obsidian's API
-	async applyPromptToFile(file: any, prompt: PromptInfo): Promise<void> {
-		try {
-			const promptName = this.extractPromptNameFromPath(prompt.path);
-			const frontmatterValue = `[[${promptName}]]`;
-
-			// Use Obsidian's processFrontMatter API to add/update the prompt
-			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
-				frontmatter['gemini-scribe-prompt'] = frontmatterValue;
-			});
-
-			new Notice(`Applied custom prompt: ${prompt.name}`);
-
-			// Force refresh the chat interface prompt indicator if view is open
-		} catch (error) {
-			this.plugin.logger.error('Error applying prompt to file:', error);
-			new Notice('Failed to apply custom prompt to note');
-		}
-	}
-
-	// Remove custom prompt from the current note
-	async removeCustomPromptFromCurrentNote(): Promise<void> {
-		try {
-			const activeFile = this.plugin.gfile.getActiveFile();
-			if (!activeFile) {
-				new Notice('No active file to remove prompt from');
-				return;
-			}
-
-			if (!this.plugin.gfile.isMarkdownFile(activeFile)) {
-				new Notice('Custom prompts can only be removed from markdown files');
-				return;
-			}
-
-			// Check if file has a custom prompt
-			const cache = this.plugin.app.metadataCache.getFileCache(activeFile);
-			const currentPrompt = cache?.frontmatter?.['gemini-scribe-prompt'];
-
-			if (!currentPrompt) {
-				new Notice('No custom prompt is applied to this note');
-				return;
-			}
-
-			// Remove the prompt from frontmatter
-			await this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter: any) => {
-				delete frontmatter['gemini-scribe-prompt'];
-			});
-
-			new Notice('Removed custom prompt from note');
-
-			// Force refresh the chat interface prompt indicator if view is open
-		} catch (error) {
-			this.plugin.logger.error('Error removing custom prompt:', error);
-			new Notice('Failed to remove custom prompt from note');
-		}
-	}
-
-	// Extract prompt name from file path for wikilink
-	private extractPromptNameFromPath(path: string): string {
-		const file = this.vault.getAbstractFileByPath(path);
-		if (file instanceof TFile) {
-			// Use basename to get filename without extension
-			return file.basename;
-		}
-		// Fallback
-		const fileName = path.split('/').pop() || '';
-		return fileName.replace('.md', '');
 	}
 
 	// Create a new custom prompt file
@@ -481,7 +302,7 @@ tags: ["category", "type"]
 
 # Instructions for the AI
 
-Your custom prompt content goes here. This will modify how the AI behaves when applied to notes.
+Your custom prompt content goes here. This will modify how the AI behaves when applied to a session.
 
 ## Tips:
 - Be specific about the desired behavior
@@ -489,7 +310,7 @@ Your custom prompt content goes here. This will modify how the AI behaves when a
 - Consider the context this will be used in
 
 ## Example Usage:
-This prompt will be applied to notes and will supplement the default system prompt unless override_system_prompt is set to true.`;
+This prompt will be applied to sessions and will supplement the default system prompt unless override_system_prompt is set to true.`;
 
 				try {
 					// Create the file
@@ -510,59 +331,6 @@ This prompt will be applied to notes and will supplement the default system prom
 			this.plugin.logger.error('Error creating new custom prompt:', error);
 			new Notice('Failed to create new custom prompt');
 		}
-	}
-}
-
-class PromptSelectionModal extends SuggestModal<PromptInfo> {
-	private plugin: ObsidianGemini;
-
-	constructor(
-		app: App,
-		plugin: ObsidianGemini,
-		private promptManager: PromptManager,
-		private targetFile: TFile,
-		private prompts: PromptInfo[]
-	) {
-		super(app);
-		this.plugin = plugin;
-		this.setPlaceholder('Select a custom prompt to apply...');
-	}
-
-	getSuggestions(query: string): PromptInfo[] {
-		const lowerQuery = query.toLowerCase();
-		if (!query) {
-			return this.prompts;
-		}
-		return this.prompts.filter(
-			(prompt) =>
-				prompt.name.toLowerCase().includes(lowerQuery) ||
-				prompt.description.toLowerCase().includes(lowerQuery) ||
-				prompt.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
-		);
-	}
-
-	renderSuggestion(prompt: PromptInfo, el: HTMLElement): void {
-		const container = el.createDiv({ cls: 'suggestion-content' });
-		container.createDiv({ text: prompt.name, cls: 'suggestion-title' });
-		if (prompt.description) {
-			container.createDiv({ text: prompt.description, cls: 'suggestion-note' });
-		}
-		if (prompt.tags.length > 0) {
-			const tagsEl = container.createDiv({ cls: 'suggestion-aux' });
-			tagsEl.setText(`Tags: ${prompt.tags.join(', ')}`);
-		}
-	}
-
-	onChooseSuggestion(prompt: PromptInfo, _evt: MouseEvent | KeyboardEvent): void {
-		// Use setTimeout to prevent blocking the modal close
-		setTimeout(async () => {
-			try {
-				await this.promptManager.applyPromptToFile(this.targetFile, prompt);
-			} catch (error) {
-				this.plugin.logger.error('Error applying prompt:', error);
-				new Notice('Failed to apply custom prompt');
-			}
-		}, 0);
 	}
 }
 
