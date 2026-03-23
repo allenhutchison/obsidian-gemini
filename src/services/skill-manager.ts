@@ -60,19 +60,6 @@ export class SkillManager {
 	}
 
 	/**
-	 * Ensure the skills directory exists, creating it if needed
-	 */
-	async ensureSkillsDirectory(): Promise<void> {
-		await ensureFolderExists(
-			this.plugin.app.vault,
-			this.plugin.settings.historyFolder,
-			'plugin state',
-			this.plugin.logger
-		);
-		await ensureFolderExists(this.plugin.app.vault, this.getSkillsFolderPath(), 'skills', this.plugin.logger);
-	}
-
-	/**
 	 * Discover all skills in the skills directory.
 	 * Scans for subdirectories containing SKILL.md and parses their frontmatter.
 	 */
@@ -273,9 +260,6 @@ export class SkillManager {
 		if (!nameValidation.valid) {
 			throw new Error(nameValidation.error!);
 		}
-
-		// Ensure skills directory exists
-		await this.ensureSkillsDirectory();
 
 		// Check for duplicates
 		const skillDir = normalizePath(`${this.getSkillsFolderPath()}/${name}`);

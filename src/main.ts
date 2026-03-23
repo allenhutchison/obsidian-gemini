@@ -32,6 +32,7 @@ import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
 import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
+import { FolderInitializer } from './services/folder-initializer';
 import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
 
 // @ts-ignore
@@ -184,6 +185,7 @@ export default class ObsidianGemini extends Plugin {
 	public mcpManager: MCPManager | null = null;
 	public skillManager: SkillManager;
 	public contextManager: ContextManager;
+	public folderInitializer: FolderInitializer;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -657,9 +659,9 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 
-		// Initialize skill manager and register skill tools
+		// Initialize folder initializer and skill manager
+		this.folderInitializer = new FolderInitializer(this);
 		this.skillManager = new SkillManager(this);
-		await this.skillManager.ensureSkillsDirectory();
 		const { getSkillTools } = await import('./tools/skill-tools');
 		const skillTools = getSkillTools();
 		for (const tool of skillTools) {
@@ -821,9 +823,13 @@ export default class ObsidianGemini extends Plugin {
 	}
 
 	async onLayoutReady() {
-		// Setup prompts directory and commands after layout is ready
+		// Create all plugin state folders in one pass now that metadata cache is ready
+		if (this.folderInitializer) {
+			await this.folderInitializer.initializeAll();
+		}
+
+		// Setup default prompts and commands after folders are ready
 		if (this.promptManager) {
-			await this.promptManager.ensurePromptsDirectory();
 			await this.promptManager.createDefaultPrompts();
 			// Setup prompt commands
 			this.promptManager.setupPromptCommands();

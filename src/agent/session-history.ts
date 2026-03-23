@@ -1,5 +1,4 @@
 import { TFile, normalizePath } from 'obsidian';
-import { ensureFolderExists } from '../utils/file-utils';
 import { ChatSession } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
@@ -271,7 +270,6 @@ export class SessionHistory {
 		const historyPath = session.historyPath;
 		const initialContent = `# ${session.title}\n\n`;
 
-		await this.ensureAgentSessionsFolder();
 		const file = await this.plugin.app.vault.create(historyPath, initialContent);
 
 		// Use Obsidian API to add frontmatter properly
@@ -350,18 +348,6 @@ export class SessionHistory {
 				delete frontmatter.metadata;
 			}
 		});
-	}
-
-	/**
-	 * Ensure the Agent-Sessions folder exists
-	 */
-	private async ensureAgentSessionsFolder(): Promise<void> {
-		await ensureFolderExists(
-			this.plugin.app.vault,
-			this.getAgentSessionsFolderPath(),
-			'agent sessions',
-			this.plugin.logger
-		);
 	}
 
 	/**

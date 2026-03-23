@@ -115,62 +115,6 @@ describe('PromptManager', () => {
 		});
 	});
 
-	describe('ensurePromptsDirectory', () => {
-		function makeTFolder(path: string) {
-			const MockTFolder = jest.requireMock('obsidian').TFolder;
-			const folder = Object.create(MockTFolder.prototype);
-			folder.path = path;
-			return folder;
-		}
-
-		it('should create directory if it does not exist', async () => {
-			// ensureFolderExists calls getAbstractFileByPath twice per folder:
-			// once to check existence, once to verify after creation
-			mockVault.getAbstractFileByPath
-				.mockReturnValueOnce(null) // gemini-scribe doesn't exist
-				.mockReturnValueOnce(makeTFolder('gemini-scribe')) // verified after creation
-				.mockReturnValueOnce(null) // gemini-scribe/Prompts doesn't exist
-				.mockReturnValueOnce(makeTFolder('gemini-scribe/Prompts')); // verified after creation
-
-			await promptManager.ensurePromptsDirectory();
-
-			// Should create both base folder and prompts folder
-			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe');
-			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/Prompts');
-		});
-
-		it('should not create prompts directory if it exists', async () => {
-			// First ensureFolderExists (historyFolder): check -> null, verify after create -> TFolder
-			// Second ensureFolderExists (Prompts): check -> TFolder (exists, returns immediately)
-			mockVault.getAbstractFileByPath
-				.mockReturnValueOnce(null) // gemini-scribe doesn't exist
-				.mockReturnValueOnce(makeTFolder('gemini-scribe')) // verified after creation
-				.mockReturnValueOnce(makeTFolder('gemini-scribe/Prompts')); // Prompts folder exists
-
-			await promptManager.ensurePromptsDirectory();
-
-			// Should create base folder but not prompts folder (since it exists)
-			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe');
-			expect(mockVault.createFolder).toHaveBeenCalledTimes(1);
-		});
-
-		it('should create both directories if neither exists', async () => {
-			// ensureFolderExists calls getAbstractFileByPath twice per folder
-			mockVault.getAbstractFileByPath
-				.mockReturnValueOnce(null) // gemini-scribe doesn't exist
-				.mockReturnValueOnce(makeTFolder('gemini-scribe')) // verified after creation
-				.mockReturnValueOnce(null) // gemini-scribe/Prompts doesn't exist
-				.mockReturnValueOnce(makeTFolder('gemini-scribe/Prompts')); // verified after creation
-
-			await promptManager.ensurePromptsDirectory();
-
-			// Should create both folders
-			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe');
-			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/Prompts');
-			expect(mockVault.createFolder).toHaveBeenCalledTimes(2);
-		});
-	});
-
 	describe('loadPromptFromFile', () => {
 		it('should load and parse valid prompt file', async () => {
 			const mockFile = new TFile();

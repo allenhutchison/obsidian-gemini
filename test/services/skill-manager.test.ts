@@ -113,39 +113,6 @@ describe('SkillManager', () => {
 		});
 	});
 
-	describe('ensureSkillsDirectory', () => {
-		it('should create skills directory if it does not exist', async () => {
-			// ensureFolderExists calls getAbstractFileByPath twice per folder:
-			// once to check existence, once to verify after creation
-			mockVault.getAbstractFileByPath
-				.mockReturnValueOnce(null) // gemini-scribe doesn't exist
-				.mockReturnValueOnce(new TFolder('gemini-scribe')) // verified after creation
-				.mockReturnValueOnce(null) // gemini-scribe/skills doesn't exist
-				.mockReturnValueOnce(new TFolder('gemini-scribe/skills')); // verified after creation
-			mockVault.createFolder.mockResolvedValue(undefined);
-
-			await manager.ensureSkillsDirectory();
-
-			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/skills');
-		});
-
-		it('should not recreate skills directory if it exists', async () => {
-			const folder = new TFolder('gemini-scribe/skills');
-			// First ensureFolderExists (historyFolder): check -> null, verify after create -> TFolder
-			// Second ensureFolderExists (skills): check -> TFolder (exists, returns immediately)
-			mockVault.getAbstractFileByPath
-				.mockReturnValueOnce(null) // gemini-scribe doesn't exist
-				.mockReturnValueOnce(new TFolder('gemini-scribe')) // verified after creation
-				.mockReturnValueOnce(folder); // gemini-scribe/skills exists
-			mockVault.createFolder.mockResolvedValue(undefined);
-
-			await manager.ensureSkillsDirectory();
-
-			// Should only have been called for the base historyFolder, not skills
-			expect(mockVault.createFolder).toHaveBeenCalledTimes(1);
-		});
-	});
-
 	describe('discoverSkills', () => {
 		it('should discover skills from subdirectories with SKILL.md', async () => {
 			const skillFile = new TFile('gemini-scribe/skills/code-review/SKILL.md');
@@ -339,8 +306,7 @@ describe('SkillManager', () => {
 	describe('createSkill', () => {
 		it('should create a skill directory and SKILL.md using processFrontMatter', async () => {
 			const createdFile = new TFile('gemini-scribe/skills/new-skill/SKILL.md');
-			// ensureFolderExists calls getAbstractFileByPath twice per folder (check + verify).
-			// createSkill flow: ensureSkillsDirectory (2 folders) + duplicate check + ensureFolderExists (skill dir)
+			// createSkill flow: duplicate check + ensureFolderExists (skill dir)
 			const folderResponses: Record<string, InstanceType<typeof TFolder> | null> = {};
 			mockVault.createFolder.mockImplementation(async (path: string) => {
 				// After createFolder, mark the folder as existing
@@ -372,8 +338,7 @@ describe('SkillManager', () => {
 
 		it('should throw error for duplicate skill', async () => {
 			const existingFolder = new TFolder('gemini-scribe/skills/existing');
-			// ensureSkillsDirectory calls ensureFolderExists twice (historyFolder + skills folder)
-			// Then createSkill checks if skill dir already exists
+			// createSkill checks if skill dir already exists
 			const folderResponses: Record<string, any> = {
 				'gemini-scribe/skills/existing': existingFolder,
 			};

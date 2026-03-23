@@ -272,8 +272,8 @@ describe('SessionManager', () => {
 				name: 'Agent-Sessions',
 			};
 
-			// Mock getOrCreateAgentSessionsFolder to return our mock folder
-			jest.spyOn(sessionManager as any, 'getOrCreateAgentSessionsFolder').mockResolvedValue(mockFolder);
+			// Mock getAgentSessionsFolder to return our mock folder
+			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(mockFolder);
 
 			// Mock loadSessionFromFile to return mock sessions
 			jest
