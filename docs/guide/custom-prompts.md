@@ -1,6 +1,6 @@
 # Custom Prompts Guide
 
-The Custom Prompts feature in Gemini Scribe allows you to create reusable AI instruction templates that modify how the AI assistant behaves when working with specific notes. This guide covers everything you need to know about creating and using custom prompts effectively.
+The Custom Prompts feature in Gemini Scribe allows you to create reusable AI instruction templates that modify how the AI assistant behaves within a session. This guide covers everything you need to know about creating and using custom prompts effectively.
 
 ## Table of Contents
 

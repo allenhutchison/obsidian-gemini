@@ -95,7 +95,7 @@ All models are selected from available Gemini models. The plugin supports dynami
 
 ## Custom Prompts
 
-Custom prompts allow you to create reusable AI instruction templates that modify how the AI behaves for specific notes or sessions.
+Custom prompts allow you to create reusable AI instruction templates that modify how the AI behaves for specific sessions.
 
 ### Allow System Prompt Override
 

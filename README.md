@@ -289,8 +289,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
 - **Custom Prompts Not Working:**
   - Ensure "Enable Custom Prompts" is toggled on in settings
   - Verify the prompt file exists in the Prompts folder
-  - Check that the wikilink syntax is correct: `[[Prompt Name]]`
-  - Try using the command palette commands for easier management
+  - Check that the prompt is selected in session settings (gear icon)
   - See the [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed troubleshooting
 - **Parameter/Advanced Settings Issues:**
   - Check if your model supports the temperature range you're using

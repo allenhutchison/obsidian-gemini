@@ -302,7 +302,7 @@ tags: ["category", "type"]
 
 # Instructions for the AI
 
-Your custom prompt content goes here. This will modify how the AI behaves when applied to notes.
+Your custom prompt content goes here. This will modify how the AI behaves when applied to a session.
 
 ## Tips:
 - Be specific about the desired behavior
@@ -310,7 +310,7 @@ Your custom prompt content goes here. This will modify how the AI behaves when a
 - Consider the context this will be used in
 
 ## Example Usage:
-This prompt will be applied to notes and will supplement the default system prompt unless override_system_prompt is set to true.`;
+This prompt will be applied to sessions and will supplement the default system prompt unless override_system_prompt is set to true.`;
 
 				try {
 					// Create the file
