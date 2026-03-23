@@ -142,9 +142,7 @@ Always aim for documentation that is both comprehensive and accessible to reader
 
 ### Command Palette Commands
 
-Gemini Scribe provides three convenient command palette commands for working with custom prompts:
-
-#### 1. Create New Custom Prompt
+#### Create New Custom Prompt
 
 - **Command**: "Gemini Scribe: Create New Custom Prompt"
 - **Purpose**: Creates a new custom prompt file with a proper template
@@ -154,57 +152,18 @@ Gemini Scribe provides three convenient command palette commands for working wit
   3. Fills in the frontmatter template with helpful structure
   4. Automatically opens the file for editing
 
-#### 2. Apply Custom Prompt to Current Note
+### Applying Prompts to Sessions
 
-- **Command**: "Gemini Scribe: Apply Custom Prompt to Current Note"
-- **Purpose**: Applies a custom prompt to the currently active note
-- **How it works**:
-  1. Shows a searchable list of all available custom prompts
-  2. Search by name, description, or tags
-  3. Automatically adds the prompt reference to the note's frontmatter
+Custom prompts are applied at the session level via the session settings (gear icon) in the agent panel:
 
-#### 3. Remove Custom Prompt from Current Note
-
-- **Command**: "Gemini Scribe: Remove Custom Prompt from Current Note"
-- **Purpose**: Removes the custom prompt from the currently active note
-- **How it works**:
-  1. Removes the `gemini-scribe-prompt` field from frontmatter
-  2. AI behavior returns to default for this note
-
-### Manual Application
-
-You can also manually add prompts to your note's frontmatter using a wikilink:
-
-```markdown
----
-gemini-scribe-prompt: '[[Technical Documentation]]'
-title: 'API Reference Guide'
----
-
-# My API Documentation
-
-...
-```
+1. Open the agent panel
+2. Click the gear icon in the session header
+3. Select a prompt from the "Prompt Template" dropdown
+4. The prompt applies to all messages in that session
 
 ### Visual Indicator
 
-When a custom prompt is active, you'll see an indicator in the chat interface:
-
-- Look for "Using prompt: [Prompt Name]" below the chat input
-- This confirms the AI is using your custom instructions
-
-### Switching Prompts
-
-To change the prompt for a note:
-
-1. Edit the note's frontmatter
-2. Update the `gemini-scribe-prompt` value
-3. The change takes effect immediately
-
-To remove a custom prompt:
-
-- Delete the `gemini-scribe-prompt` line from frontmatter
-- The AI will revert to default behavior
+When a custom prompt is active, you'll see a badge in the session header showing the prompt name.
 
 ## Advanced Features
 
@@ -362,17 +321,16 @@ Always maintain academic objectivity and cite sources appropriately.
 
 ### Prompt Not Working
 
-1. **Check the frontmatter syntax**
-   - Ensure proper YAML formatting
-   - Verify required fields are present
+1. **Check the prompt file syntax**
+   - Ensure proper YAML frontmatter formatting
+   - Verify required fields (`name`, `description`) are present
 
-2. **Verify the wikilink**
-   - Use exact prompt file name
-   - Include double brackets: `[[Prompt Name]]`
-
-3. **Confirm settings**
+2. **Confirm settings**
    - "Enable Custom Prompts" is ON
-   - Prompt file exists in correct folder
+   - Prompt file exists in the `[Plugin State Folder]/Prompts/` folder
+
+3. **Check session settings**
+   - Open the session settings (gear icon) and verify the prompt is selected
 
 ### AI Behaving Unexpectedly
 

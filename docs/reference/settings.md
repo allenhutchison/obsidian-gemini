@@ -109,8 +109,7 @@ Custom prompts allow you to create reusable AI instruction templates that modify
 
 1. Create a markdown file in `[Plugin State Folder]/Prompts/`
 2. Write your custom instructions in the file
-3. Reference it in note frontmatter: `gemini-scribe-prompt: "[[Prompt Name]]"`
-4. Or select it in session settings modal
+3. Select it in the session settings modal (gear icon in the agent panel)
 
 See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 
