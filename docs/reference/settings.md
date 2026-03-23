@@ -41,6 +41,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
   gemini-scribe/
   ├── History/        # Legacy chat history files (v3.x)
   ├── Prompts/        # Custom prompt templates
+  ├── skills/         # Custom agent skills (<skill-name>/SKILL.md)
   └── Agent-Sessions/ # Agent mode sessions with conversation history
   ```
 
