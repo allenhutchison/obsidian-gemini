@@ -92,9 +92,8 @@ Discussed timeline changes, budget concerns, and new feature requests...
 In Settings → Gemini Scribe:
 
 1. **Summary Model**: Choose the AI model for summarization
-   - Gemini 1.5 Flash (recommended for speed)
-   - Gemini 1.5 Flash-8B (fastest, good quality)
-   - Gemini 1.5 Pro (highest quality, slower)
+   - Flash models (recommended for speed)
+   - Pro models (highest quality, slower)
 
 2. **Summary Frontmatter Key**: Customize the metadata field
    - Default: `summary`
@@ -102,11 +101,10 @@ In Settings → Gemini Scribe:
 
 ### Model Selection Guide
 
-| Model    | Speed   | Quality | Best For                          |
-| -------- | ------- | ------- | --------------------------------- |
-| Flash-8B | Fastest | Good    | Daily notes, quick captures       |
-| Flash    | Fast    | Better  | Most use cases                    |
-| Pro      | Slower  | Best    | Important documents, publications |
+| Model | Speed  | Quality | Best For                          |
+| ----- | ------ | ------- | --------------------------------- |
+| Flash | Fast   | Good    | Most use cases                    |
+| Pro   | Slower | Best    | Important documents, publications |
 
 ## Use Cases
 
@@ -224,6 +222,8 @@ summary:
 tags: []
 ---
 ```
+
+> **Note**: The `{{date}}` syntax above is pseudocode. Replace with your template engine's actual date variable (e.g., Templater's `<% tp.date.now() %>`).
 
 ### 4. Index Pages
 
