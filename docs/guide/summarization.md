@@ -325,7 +325,7 @@ The AI can summarize in various languages:
 
 **Slow Generation**
 
-- Switch to faster model (Flash-8B)
+- Switch to a faster Flash model
 - Check internet connection
 - Reduce note length if extreme
 
