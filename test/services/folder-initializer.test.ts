@@ -46,17 +46,11 @@ describe('FolderInitializer', () => {
 	it('should create all plugin state folders in one pass', async () => {
 		await folderInitializer.initializeAll();
 
-		expect(mockEnsureFolderExists).toHaveBeenCalledTimes(5);
+		expect(mockEnsureFolderExists).toHaveBeenCalledTimes(4);
 		expect(mockEnsureFolderExists).toHaveBeenCalledWith(
 			mockPlugin.app.vault,
 			'gemini-scribe',
 			'plugin state',
-			mockPlugin.logger
-		);
-		expect(mockEnsureFolderExists).toHaveBeenCalledWith(
-			mockPlugin.app.vault,
-			'gemini-scribe/History',
-			'History',
 			mockPlugin.logger
 		);
 		expect(mockEnsureFolderExists).toHaveBeenCalledWith(
@@ -90,12 +84,7 @@ describe('FolderInitializer', () => {
 
 		expect(callOrder[0]).toBe('gemini-scribe');
 		expect(callOrder.slice(1)).toEqual(
-			expect.arrayContaining([
-				'gemini-scribe/History',
-				'gemini-scribe/Agent-Sessions',
-				'gemini-scribe/Prompts',
-				'gemini-scribe/skills',
-			])
+			expect.arrayContaining(['gemini-scribe/Agent-Sessions', 'gemini-scribe/Prompts', 'gemini-scribe/skills'])
 		);
 	});
 

@@ -9,7 +9,7 @@ import { ensureFolderExists } from '../utils/file-utils';
  */
 export class FolderInitializer {
 	// Subfolder names relative to the plugin state root
-	private static readonly SUBFOLDERS = ['History', 'Agent-Sessions', 'Prompts', 'skills'];
+	private static readonly SUBFOLDERS = ['Agent-Sessions', 'Prompts', 'skills'];
 
 	constructor(private plugin: ObsidianGemini) {}
 
