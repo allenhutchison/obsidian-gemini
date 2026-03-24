@@ -13,9 +13,7 @@ import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
 import { RewriteInstructionsModal } from './ui/rewrite-modal';
-import { V4WelcomeModal } from './ui/v4-welcome-modal';
 import { UpdateNotificationModal } from './ui/update-notification-modal';
-import { HistoryArchiver } from './migrations/history-archiver';
 import { SessionManager } from './agent/session-manager';
 import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
@@ -79,8 +77,6 @@ export interface ObsidianGeminiSettings {
 	alwaysAllowReadWrite: boolean;
 	// Tool policy settings
 	toolPolicy: ToolPolicySettings;
-	// V4 upgrade tracking
-	hasSeenV4Welcome: boolean;
 	// Version tracking for update notifications
 	lastSeenVersion: string;
 	// RAG Indexing settings
@@ -127,8 +123,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	alwaysAllowReadWrite: false,
 	// Tool policy settings
 	toolPolicy: { ...DEFAULT_TOOL_POLICY },
-	// V4 upgrade tracking
-	hasSeenV4Welcome: false,
 	// Version tracking for update notifications
 	lastSeenVersion: '0.0.0',
 	// RAG Indexing settings
@@ -837,40 +831,8 @@ export default class ObsidianGemini extends Plugin {
 			await this.initializeRagIndexing();
 		}
 
-		// Check if history migration is needed
-		await this.checkAndOfferMigration();
-
 		// Check for version updates and show notification
 		await this.checkForUpdates();
-	}
-
-	/**
-	 * Check if this is a v4.0 upgrade and show welcome modal
-	 */
-	private async checkAndOfferMigration(): Promise<void> {
-		try {
-			// Only show modal once
-			if (this.settings.hasSeenV4Welcome) {
-				return;
-			}
-
-			const archiver = new HistoryArchiver(this);
-			const needsArchiving = await archiver.needsArchiving();
-
-			// Show welcome modal on first run after upgrade to 4.0
-			if (needsArchiving) {
-				// Show v4 welcome modal with archiving option
-				const modal = new V4WelcomeModal(this.app, this);
-				modal.open();
-			}
-
-			// Mark as seen so we don't perform this check again
-			this.settings.hasSeenV4Welcome = true;
-			await this.saveData(this.settings);
-		} catch (error) {
-			this.logger.error('Error checking for archiving:', error);
-			// Don't show error to user - archiving is optional
-		}
 	}
 
 	/**
