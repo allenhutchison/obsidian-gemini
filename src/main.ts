@@ -17,7 +17,7 @@ import { UpdateNotificationModal } from './ui/update-notification-modal';
 import { SessionManager } from './agent/session-manager';
 import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
-import { getVaultTools } from './tools/vault-tools';
+import { ToolRegistrar } from './services/tool-registrar';
 import { SessionHistory } from './agent/session-history';
 import { AgentsMemory } from './services/agents-memory';
 import { ExamplePromptsManager } from './services/example-prompts';
@@ -186,6 +186,7 @@ export default class ObsidianGemini extends Plugin {
 	private ribbonIcon: HTMLElement;
 	private completions: GeminiCompletions;
 	private modelManager: ModelManager;
+	private toolRegistrar = new ToolRegistrar();
 	private ragListenersRegistered: boolean = false;
 	private isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
@@ -488,66 +489,7 @@ export default class ObsidianGemini extends Plugin {
 	private async teardownGeminiScribe() {
 		// Unregister all tools
 		if (this.toolRegistry) {
-			// Unregister vault tools
-			const vaultTools = getVaultTools();
-			for (const tool of vaultTools) {
-				this.toolRegistry.unregisterTool(tool.name);
-			}
-
-			// Unregister extended vault tools
-			try {
-				const { getExtendedVaultTools } = await import('./tools/vault-tools-extended');
-				const extendedTools = getExtendedVaultTools();
-				for (const tool of extendedTools) {
-					this.toolRegistry.unregisterTool(tool.name);
-				}
-			} catch (e) {
-				this.logger.debug('Failed to unregister extended vault tools:', e);
-			}
-
-			// Unregister web tools
-			try {
-				const { getWebTools } = await import('./tools/web-tools');
-				const webTools = getWebTools();
-				for (const tool of webTools) {
-					this.toolRegistry.unregisterTool(tool.name);
-				}
-			} catch (e) {
-				this.logger.debug('Failed to unregister web tools:', e);
-			}
-
-			// Unregister memory tools
-			try {
-				const { getMemoryTools } = await import('./tools/memory-tool');
-				const memoryTools = getMemoryTools();
-				for (const tool of memoryTools) {
-					this.toolRegistry.unregisterTool(tool.name);
-				}
-			} catch (e) {
-				this.logger.debug('Failed to unregister memory tools:', e);
-			}
-
-			// Unregister image tools
-			try {
-				const { getImageTools } = await import('./tools/image-tools');
-				const imageTools = getImageTools();
-				for (const tool of imageTools) {
-					this.toolRegistry.unregisterTool(tool.name);
-				}
-			} catch (e) {
-				this.logger.debug('Failed to unregister image tools:', e);
-			}
-
-			// Unregister skill tools
-			try {
-				const { getSkillTools } = await import('./tools/skill-tools');
-				const skillTools = getSkillTools();
-				for (const tool of skillTools) {
-					this.toolRegistry.unregisterTool(tool.name);
-				}
-			} catch (e) {
-				this.logger.debug('Failed to unregister skill tools:', e);
-			}
+			await this.toolRegistrar.unregisterAll(this.toolRegistry, this.logger);
 		}
 
 		// Disconnect MCP servers
@@ -619,39 +561,8 @@ export default class ObsidianGemini extends Plugin {
 		this.toolRegistry = new ToolRegistry(this);
 		this.toolExecutionEngine = new ToolExecutionEngine(this, this.toolRegistry);
 
-		// Register vault tools
-		const vaultTools = getVaultTools();
-		for (const tool of vaultTools) {
-			this.toolRegistry.registerTool(tool);
-		}
-
-		// Register extended vault tools (Frontmatter & Append)
-		const { getExtendedVaultTools } = await import('./tools/vault-tools-extended');
-		const extendedVaultTools = getExtendedVaultTools();
-		for (const tool of extendedVaultTools) {
-			this.toolRegistry.registerTool(tool);
-		}
-
-		// Register web tools (Google Search and Web Fetch)
-		const { getWebTools } = await import('./tools/web-tools');
-		const webTools = getWebTools();
-		for (const tool of webTools) {
-			this.toolRegistry.registerTool(tool);
-		}
-
-		// Register memory tools
-		const { getMemoryTools } = await import('./tools/memory-tool');
-		const memoryTools = getMemoryTools();
-		for (const tool of memoryTools) {
-			this.toolRegistry.registerTool(tool);
-		}
-
-		// Register image generation tools
-		const { getImageTools } = await import('./tools/image-tools');
-		const imageTools = getImageTools();
-		for (const tool of imageTools) {
-			this.toolRegistry.registerTool(tool);
-		}
+		// Register all core tool sources
+		await this.toolRegistrar.registerAll(this.toolRegistry, this.logger);
 
 		// Initialize folder initializer and skill manager
 		this.folderInitializer = new FolderInitializer(this);
@@ -661,11 +572,6 @@ export default class ObsidianGemini extends Plugin {
 			await this.initializePluginFolders();
 		}
 		this.skillManager = new SkillManager(this);
-		const { getSkillTools } = await import('./tools/skill-tools');
-		const skillTools = getSkillTools();
-		for (const tool of skillTools) {
-			this.toolRegistry.registerTool(tool);
-		}
 
 		// Initialize MCP server connections
 		// Per-server mobile guards are handled in connectServer() —
