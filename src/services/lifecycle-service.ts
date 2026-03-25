@@ -303,7 +303,7 @@ export class LifecycleService {
 		plugin.examplePrompts = new ExamplePromptsManager(plugin);
 
 		if (plugin.app.workspace.layoutReady) {
-			await plugin.history.onLayoutReady;
+			await plugin.history.onLayoutReady();
 		}
 
 		this.persistentServicesCreated = true;
