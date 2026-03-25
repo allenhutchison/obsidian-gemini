@@ -997,6 +997,11 @@ export default class ObsidianGemini extends Plugin {
 			}
 		}
 
+		// Re-create plugin state folders if historyFolder changed (idempotent)
+		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
+			await this.initializePluginFolders();
+		}
+
 		// Handle RAG indexing state changes independently of full re-initialization
 		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
 			const ragStateChanged = this.previousRagEnabled !== this.settings.ragIndexing.enabled;
