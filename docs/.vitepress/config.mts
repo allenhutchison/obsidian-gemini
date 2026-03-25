@@ -54,7 +54,6 @@ export default defineConfig({
 						{ text: 'Settings', link: '/reference/settings' },
 						{ text: 'Advanced Settings', link: '/reference/advanced-settings' },
 						{ text: 'Loop Detection', link: '/reference/loop-detection' },
-						{ text: 'Migration Guide', link: '/reference/migration' },
 					],
 				},
 			],

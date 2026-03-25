@@ -349,15 +349,6 @@ Available permission bypasses:
 
 **Note**: Permissions reset when you create a new session or load a different session.
 
-## Settings Migration
-
-When upgrading from v3.x to v4.0.0:
-
-1. History files are automatically migrated to Agent Sessions format
-2. Backups are created in `History-Archive` folder
-3. Obsolete settings (sendContext, maxContextDepth, searchGrounding) are removed
-4. New settings get sensible defaults
-
 ## Performance Considerations
 
 - **Model Selection**: Flash models (8B, standard) are faster but less capable than Pro models
