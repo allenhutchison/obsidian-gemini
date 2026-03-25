@@ -1,4 +1,4 @@
-import { TFile, TFolder } from 'obsidian';
+import { normalizePath, TFile, TFolder } from 'obsidian';
 import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, SessionModelConfig } from '../types/agent';
 import type ObsidianGemini from '../main';
 
@@ -352,14 +352,14 @@ export class SessionManager {
 	 * Get the history folder path within the plugin's state folder
 	 */
 	private getHistoryFolderPath(): string {
-		return `${this.plugin.settings.historyFolder}/${this.HISTORY_FOLDER}`;
+		return normalizePath(`${this.plugin.settings.historyFolder}/${this.HISTORY_FOLDER}`);
 	}
 
 	/**
 	 * Get the agent sessions folder path within the plugin's state folder
 	 */
 	private getAgentSessionsFolderPath(): string {
-		return `${this.plugin.settings.historyFolder}/${this.AGENT_SESSIONS_FOLDER}`;
+		return normalizePath(`${this.plugin.settings.historyFolder}/${this.AGENT_SESSIONS_FOLDER}`);
 	}
 
 	/**

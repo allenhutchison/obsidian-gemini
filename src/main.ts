@@ -661,6 +661,11 @@ export default class ObsidianGemini extends Plugin {
 
 		// Initialize folder initializer and skill manager
 		this.folderInitializer = new FolderInitializer(this);
+		// Re-create folders when settings change (e.g., historyFolder renamed).
+		// On first boot this is a no-op because onLayoutReady() runs later.
+		if (this.app.workspace.layoutReady) {
+			await this.initializePluginFolders();
+		}
 		this.skillManager = new SkillManager(this);
 		const { getSkillTools } = await import('./tools/skill-tools');
 		const skillTools = getSkillTools();
@@ -822,11 +827,19 @@ export default class ObsidianGemini extends Plugin {
 		}
 	}
 
-	async onLayoutReady() {
-		// Create all plugin state folders in one pass now that metadata cache is ready
+	/**
+	 * Ensure all plugin state folders exist. Called from onLayoutReady() and
+	 * after settings changes that may alter the state folder path.
+	 */
+	async initializePluginFolders(): Promise<void> {
 		if (this.folderInitializer) {
 			await this.folderInitializer.initializeAll();
 		}
+	}
+
+	async onLayoutReady() {
+		// Create all plugin state folders in one pass now that metadata cache is ready
+		await this.initializePluginFolders();
 
 		// Setup default prompts and commands after folders are ready
 		if (this.promptManager) {

@@ -281,6 +281,12 @@ describe('SessionManager', () => {
 				.mockImplementation(async (file: TFile) => createMockSession(file));
 		});
 
+		it('should return empty array when the agent sessions folder is missing', async () => {
+			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(null);
+
+			await expect(sessionManager.getRecentAgentSessions()).resolves.toEqual([]);
+		});
+
 		it('should return sessions sorted by most recent', async () => {
 			const sessions = await sessionManager.getRecentAgentSessions();
 
