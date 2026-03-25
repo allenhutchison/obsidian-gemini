@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, Editor, MarkdownView, TFile } from 'obsidian';
+import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiDiffView } from './ui/agent-view/gemini-diff-view';
@@ -17,7 +17,6 @@ import { UpdateNotificationModal } from './ui/update-notification-modal';
 import { SessionManager } from './agent/session-manager';
 import { ToolRegistry } from './tools/tool-registry';
 import { ToolExecutionEngine } from './tools/execution-engine';
-import { ToolRegistrar } from './services/tool-registrar';
 import { SessionHistory } from './agent/session-history';
 import { AgentsMemory } from './services/agents-memory';
 import { ExamplePromptsManager } from './services/example-prompts';
@@ -32,9 +31,7 @@ import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
 import { FolderInitializer } from './services/folder-initializer';
 import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
-
-// @ts-ignore
-import agentsMemoryTemplateContent from '../prompts/agentsMemoryTemplate.hbs';
+import { LifecycleService } from './services/lifecycle-service';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -157,8 +154,7 @@ export default class ObsidianGemini extends Plugin {
 		return this.app.secretStorage.getSecret(secretName) ?? '';
 	}
 
-	// Public members
-	// Note: geminiApi removed - API clients are now created on-demand by features
+	// Public service properties — assigned by LifecycleService
 	public gfile: ScribeFile;
 	public agentView: AgentView;
 	public history: GeminiHistory;
@@ -180,17 +176,16 @@ export default class ObsidianGemini extends Plugin {
 	public skillManager: SkillManager;
 	public contextManager: ContextManager;
 	public folderInitializer: FolderInitializer | null = null;
+	public modelManager: ModelManager;
+	public completions: GeminiCompletions | null = null;
+	public summarizer: GeminiSummary | null = null;
 
 	// Private members
-	private summarizer: GeminiSummary;
 	private ribbonIcon: HTMLElement;
-	private completions: GeminiCompletions;
-	private modelManager: ModelManager;
-	private toolRegistrar = new ToolRegistrar();
-	private ragListenersRegistered: boolean = false;
-	private isGeminiInitialized: boolean = false;
+	public isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
 	private previousRagEnabled: boolean = false;
+	private lifecycle: LifecycleService;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -202,9 +197,12 @@ export default class ObsidianGemini extends Plugin {
 		// Add settings tab early so users can configure API key even if plugin fails to fully initialize
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
 
+		// Initialize lifecycle service
+		this.lifecycle = new LifecycleService(this);
+
 		// Try to setup the plugin, but don't fail if API key is missing
 		try {
-			await this.setupGeminiScribe();
+			await this.lifecycle.setup();
 			this.isGeminiInitialized = true;
 			this.previousApiKey = this.apiKey;
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
@@ -217,7 +215,7 @@ export default class ObsidianGemini extends Plugin {
 		// Always register UI components and commands
 		this.registerUIAndCommands();
 
-		this.app.workspace.onLayoutReady(() => this.onLayoutReady());
+		this.app.workspace.onLayoutReady(() => this.lifecycle.onLayoutReady());
 	}
 
 	/**
@@ -483,226 +481,6 @@ export default class ObsidianGemini extends Plugin {
 		});
 	}
 
-	/**
-	 * Cleanup existing instances before re-initialization
-	 */
-	private async teardownGeminiScribe() {
-		// Unregister all tools
-		if (this.toolRegistry) {
-			await this.toolRegistrar.unregisterAll(this.toolRegistry, this.logger);
-		}
-
-		// Disconnect MCP servers
-		if (this.mcpManager) {
-			await this.mcpManager.disconnectAll();
-			this.mcpManager = null;
-		}
-
-		// Clean up completions
-		if (this.completions) {
-			// Note: GeminiCompletions doesn't have a cleanup method currently
-			// but we'll null it out to ensure garbage collection
-			this.completions = null as any;
-		}
-
-		// Clean up summarizer
-		if (this.summarizer) {
-			this.summarizer = null as any;
-		}
-
-		// Note: We don't clean up history, sessionManager, etc. as they
-		// maintain user data that should persist across re-initializations
-	}
-
-	async setupGeminiScribe() {
-		// Settings are already loaded in onload()
-
-		// If re-initializing, cleanup first
-		if (this.isGeminiInitialized) {
-			await this.teardownGeminiScribe();
-		}
-
-		// Initialize prompts
-		this.prompts = new GeminiPrompts(this);
-
-		// Initialize prompt manager
-		this.promptManager = new PromptManager(this, this.app.vault);
-
-		// Note: API clients are now created on-demand by features using GeminiClientFactory
-		this.gfile = new ScribeFile(this);
-
-		// Initialize model manager
-		this.modelManager = new ModelManager(this);
-		await this.modelManager.initialize();
-
-		// Update models if discovery is enabled
-		if (this.settings.modelDiscovery.enabled) {
-			this.updateModelsIfNeeded();
-		}
-
-		// Initialize history
-		// Getting the vault folder for the import and export of history has to wait for the layout
-		// to be ready, otherwise it throws an error when trying to access the vault.
-		this.history = new GeminiHistory(this);
-		await this.history.setupHistoryCommands();
-
-		// Initialize session manager and session history
-		this.sessionManager = new SessionManager(this);
-		this.sessionHistory = new SessionHistory(this);
-
-		// Initialize agents memory and example prompts
-		this.agentsMemory = new AgentsMemory(this, agentsMemoryTemplateContent);
-		this.examplePrompts = new ExamplePromptsManager(this);
-		if (this.app.workspace.layoutReady) {
-			await this.history.onLayoutReady;
-		}
-
-		// Initialize tool system
-		this.toolRegistry = new ToolRegistry(this);
-		this.toolExecutionEngine = new ToolExecutionEngine(this, this.toolRegistry);
-
-		// Register all core tool sources
-		await this.toolRegistrar.registerAll(this.toolRegistry, this.logger);
-
-		// Initialize folder initializer and skill manager
-		this.folderInitializer = new FolderInitializer(this);
-		// Re-create folders when settings change (e.g., historyFolder renamed).
-		// On first boot this is a no-op because onLayoutReady() runs later.
-		if (this.app.workspace.layoutReady) {
-			await this.initializePluginFolders();
-		}
-		this.skillManager = new SkillManager(this);
-
-		// Initialize MCP server connections
-		// Per-server mobile guards are handled in connectServer() —
-		// stdio servers are skipped on mobile, HTTP servers connect on all platforms.
-		this.mcpManager = new MCPManager(this);
-		if (this.settings.mcpEnabled) {
-			await this.mcpManager.connectAllEnabled();
-		}
-
-		// Initialize context manager for agent sessions
-		this.contextManager = new ContextManager(this, this.logger);
-
-		// Initialize completions
-		this.completions = new GeminiCompletions(this);
-		await this.completions.setupCompletions();
-		await this.completions.setupCompletionsCommands();
-
-		// Initialize summarization
-		this.summarizer = new GeminiSummary(this);
-		await this.summarizer.setupSummarizationCommand();
-
-		// Initialize vault analyzer for AGENTS.md
-		this.vaultAnalyzer = new VaultAnalyzer(this);
-		this.vaultAnalyzer.setupInitCommand();
-
-		// Initialize deep research service
-		this.deepResearch = new DeepResearchService(this);
-
-		// Initialize image generation
-		this.imageGeneration = new ImageGeneration(this);
-		await this.imageGeneration.setupImageGenerationCommand();
-
-		// Initialize selection action service
-		this.selectionActionService = new SelectionActionService(this);
-
-		// Initialize RAG indexing if enabled
-		// On startup, defer to onLayoutReady() to ensure metadata cache is ready
-		// On settings change (layout already ready), initialize immediately
-		if (this.app.workspace.layoutReady) {
-			await this.initializeRagIndexing();
-		}
-		// If layout not ready, onLayoutReady() will call initializeRagIndexing()
-	}
-
-	/**
-	 * Initialize or re-initialize RAG indexing service
-	 * Should only be called when workspace layout is ready
-	 */
-	async initializeRagIndexing(): Promise<void> {
-		if (this.settings.ragIndexing.enabled) {
-			// Clean up existing instance if re-initializing (e.g., from saveSettings)
-			if (this.ragIndexing) {
-				// Unregister existing tools
-				const { getRagTools } = await import('./tools/rag-search-tool');
-				const ragTools = getRagTools();
-				for (const tool of ragTools) {
-					this.toolRegistry?.unregisterTool(tool.name);
-				}
-
-				// Destroy existing service
-				await this.ragIndexing.destroy();
-				this.ragIndexing = null;
-			}
-
-			try {
-				this.ragIndexing = new RagIndexingService(this);
-				await this.ragIndexing.initialize();
-
-				// Register RAG search tools
-				const { getRagTools } = await import('./tools/rag-search-tool');
-				const ragTools = getRagTools();
-				for (const tool of ragTools) {
-					this.toolRegistry.registerTool(tool);
-				}
-
-				// Register file event listeners for auto-sync (only once per plugin lifetime)
-				// These use optional chaining so they're safe even if ragIndexing is null
-				if (!this.ragListenersRegistered) {
-					this.registerEvent(
-						this.app.vault.on('create', (file) => {
-							if (file instanceof TFile && this.ragIndexing) {
-								this.ragIndexing.onFileCreate(file);
-							}
-						})
-					);
-					this.registerEvent(
-						this.app.vault.on('modify', (file) => {
-							if (file instanceof TFile && this.ragIndexing) {
-								this.ragIndexing.onFileModify(file);
-							}
-						})
-					);
-					this.registerEvent(
-						this.app.vault.on('delete', (file) => {
-							if (file instanceof TFile && this.ragIndexing) {
-								this.ragIndexing.onFileDelete(file);
-							}
-						})
-					);
-					this.registerEvent(
-						this.app.vault.on('rename', (file, oldPath) => {
-							if (file instanceof TFile && this.ragIndexing) {
-								this.ragIndexing.onFileRename(file, oldPath);
-							}
-						})
-					);
-					this.ragListenersRegistered = true;
-				}
-			} catch (error) {
-				this.logger.error('Failed to initialize RAG indexing:', error);
-				new Notice('Failed to initialize vault search index. Check console for details.');
-
-				// Clean up partial initialization
-				if (this.ragIndexing) {
-					await this.ragIndexing.destroy().catch(() => {});
-					this.ragIndexing = null;
-				}
-			}
-		} else if (this.ragIndexing) {
-			// RAG was disabled - clean up
-			const { getRagTools } = await import('./tools/rag-search-tool');
-			const ragTools = getRagTools();
-			for (const tool of ragTools) {
-				this.toolRegistry?.unregisterTool(tool.name);
-			}
-
-			await this.ragIndexing.destroy();
-			this.ragIndexing = null;
-		}
-	}
-
 	async activateAgentView() {
 		const { workspace } = this.app;
 
@@ -724,65 +502,6 @@ export default class ObsidianGemini extends Plugin {
 			} else {
 				this.logger.error('Could not find a leaf to open the agent view');
 			}
-		}
-	}
-
-	/**
-	 * Ensure all plugin state folders exist. Called from onLayoutReady() and
-	 * after settings changes that may alter the state folder path.
-	 */
-	async initializePluginFolders(): Promise<void> {
-		if (this.folderInitializer) {
-			await this.folderInitializer.initializeAll();
-		}
-	}
-
-	async onLayoutReady() {
-		// Create all plugin state folders in one pass now that metadata cache is ready
-		await this.initializePluginFolders();
-
-		// Setup default prompts and commands after folders are ready
-		if (this.promptManager) {
-			await this.promptManager.createDefaultPrompts();
-			// Setup prompt commands
-			this.promptManager.setupPromptCommands();
-		}
-
-		await this.history.onLayoutReady();
-
-		// Initialize RAG indexing now that metadata cache is ready
-		// (deferred from setupGeminiScribe if layout wasn't ready)
-		if (!this.ragIndexing && this.settings.ragIndexing.enabled) {
-			await this.initializeRagIndexing();
-		}
-
-		// Check for version updates and show notification
-		await this.checkForUpdates();
-	}
-
-	/**
-	 * Check for version updates and show notification
-	 */
-	private async checkForUpdates(): Promise<void> {
-		try {
-			const currentVersion = this.manifest.version;
-			const lastSeenVersion = this.settings.lastSeenVersion;
-
-			// If this is a new version, show update notification
-			if (currentVersion !== lastSeenVersion) {
-				// Don't show notification for first-time installs (0.0.0)
-				if (lastSeenVersion !== '0.0.0') {
-					const modal = new UpdateNotificationModal(this.app, currentVersion);
-					modal.open();
-				}
-
-				// Update the last seen version
-				this.settings.lastSeenVersion = currentVersion;
-				await this.saveData(this.settings);
-			}
-		} catch (error) {
-			this.logger.error('Error checking for updates:', error);
-			// Don't show error to user - update notifications are optional
 		}
 	}
 
@@ -848,7 +567,7 @@ export default class ObsidianGemini extends Plugin {
 		// Only re-initialize if API key changed or if not initialized but now have key
 		if (apiKeyChanged || needsInit) {
 			try {
-				await this.setupGeminiScribe();
+				await this.lifecycle.setup();
 				this.isGeminiInitialized = true;
 				this.previousApiKey = this.apiKey;
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
@@ -861,13 +580,12 @@ export default class ObsidianGemini extends Plugin {
 			} catch (error) {
 				this.logger.error('Failed to re-initialize after settings change:', error);
 				this.isGeminiInitialized = false;
-				// Don't show notice here as it may be annoying during normal settings changes
 			}
 		}
 
 		// Re-create plugin state folders if historyFolder changed (idempotent)
 		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
-			await this.initializePluginFolders();
+			await this.lifecycle.initializePluginFolders();
 		}
 
 		// Handle RAG indexing state changes independently of full re-initialization
@@ -875,7 +593,7 @@ export default class ObsidianGemini extends Plugin {
 			const ragStateChanged = this.previousRagEnabled !== this.settings.ragIndexing.enabled;
 			if (ragStateChanged) {
 				const nextRagEnabled = this.settings.ragIndexing.enabled;
-				await this.initializeRagIndexing();
+				await this.lifecycle.initializeRagIndexing();
 
 				// Advance tracker only if runtime state now matches requested state
 				const transitioned = nextRagEnabled ? this.ragIndexing !== null : this.ragIndexing === null;
@@ -887,43 +605,7 @@ export default class ObsidianGemini extends Plugin {
 
 		// If model discovery settings changed, update models
 		if (this.settings.modelDiscovery.enabled && this.modelManager) {
-			this.updateModelsIfNeeded();
-		}
-	}
-
-	/**
-	 * Update models if auto-update interval has passed
-	 */
-	private async updateModelsIfNeeded(): Promise<void> {
-		if (!this.settings.modelDiscovery.enabled || !this.modelManager) {
-			return;
-		}
-
-		const now = Date.now();
-		const lastUpdate = this.settings.modelDiscovery.lastUpdate;
-		const intervalMs = this.settings.modelDiscovery.autoUpdateInterval * 60 * 60 * 1000; // hours to ms
-
-		if (now - lastUpdate > intervalMs) {
-			try {
-				const result = await this.modelManager.updateModels({ preserveUserCustomizations: true });
-
-				if (result.settingsChanged) {
-					// Update settings with new model assignments
-					this.settings = result.updatedSettings;
-					await this.saveData(this.settings);
-
-					// Notify user of changes
-					if (result.changedSettingsInfo.length > 0) {
-						this.logger.log('Model settings updated:', result.changedSettingsInfo.join(', '));
-					}
-				}
-
-				// Update last update time
-				this.settings.modelDiscovery.lastUpdate = now;
-				await this.saveData(this.settings);
-			} catch (error) {
-				this.logger.warn('Failed to update models during auto-update:', error);
-			}
+			this.lifecycle.updateModelsIfNeeded();
 		}
 	}
 
@@ -936,38 +618,7 @@ export default class ObsidianGemini extends Plugin {
 
 	// Clean up resources on unload
 	onunload() {
-		this.logger.debug('Unloading Gemini Scribe');
-		this.history?.onUnload();
 		this.ribbonIcon?.remove();
-
-		// Disconnect MCP servers
-		if (this.mcpManager) {
-			this.mcpManager.disconnectAll().catch((error) => {
-				this.logger.error('Error disconnecting MCP servers:', error);
-			});
-			this.mcpManager = null;
-		}
-
-		// Clean up RAG indexing service
-		if (this.ragIndexing) {
-			// Unregister all RAG tools from the tool registry
-			// Import dynamically to get tool names, then unregister
-			import('./tools/rag-search-tool')
-				.then(({ getRagTools }) => {
-					const ragTools = getRagTools();
-					for (const tool of ragTools) {
-						this.toolRegistry?.unregisterTool(tool.name);
-					}
-				})
-				.catch((error) => {
-					this.logger.error('Error unregistering RAG tools:', error);
-				});
-
-			// Destroy the service (async but we don't need to await in onunload)
-			this.ragIndexing.destroy().catch((error) => {
-				this.logger.error('Error destroying RAG indexing service:', error);
-			});
-			this.ragIndexing = null;
-		}
+		this.lifecycle.onUnload();
 	}
 }
