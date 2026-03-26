@@ -133,7 +133,7 @@ export class LifecycleService {
 			plugin.mcpManager = null;
 		}
 
-		// Clean up RAG indexing service
+		// Clean up RAG indexing service — unregister tools before destroying
 		if (plugin.ragIndexing) {
 			import('../tools/rag-search-tool')
 				.then(({ getRagTools }) => {
@@ -144,11 +144,12 @@ export class LifecycleService {
 				})
 				.catch((error) => {
 					plugin.logger.error('Error unregistering RAG tools:', error);
+				})
+				.finally(() => {
+					plugin.ragIndexing?.destroy().catch((error) => {
+						plugin.logger.error('Error destroying RAG indexing service:', error);
+					});
 				});
-
-			plugin.ragIndexing.destroy().catch((error) => {
-				plugin.logger.error('Error destroying RAG indexing service:', error);
-			});
 			plugin.ragIndexing = null;
 		}
 	}
@@ -180,7 +181,7 @@ export class LifecycleService {
 				const { getRagTools } = await import('../tools/rag-search-tool');
 				const ragTools = getRagTools();
 				for (const tool of ragTools) {
-					plugin.toolRegistry.registerTool(tool);
+					plugin.toolRegistry?.registerTool(tool);
 				}
 
 				// Register file event listeners (only once per plugin lifetime)
