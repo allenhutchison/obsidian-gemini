@@ -102,6 +102,9 @@ export interface ChatSession {
 		autoLabeled?: boolean;
 		[key: string]: any;
 	};
+
+	/** In-memory set of file paths accessed during this session (not serialized directly) */
+	accessedFiles?: Set<string>;
 }
 
 /**

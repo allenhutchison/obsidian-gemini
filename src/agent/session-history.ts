@@ -2,6 +2,7 @@ import { TFile, normalizePath } from 'obsidian';
 import { ChatSession } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
+import { pathToWikilink } from '../utils/accessed-files';
 import * as Handlebars from 'handlebars';
 // @ts-ignore
 import historyEntryTemplate from '../history/templates/historyEntry.hbs';
@@ -302,6 +303,13 @@ export class SessionHistory {
 				frontmatter.context_files = session.context.contextFiles.map((f) => `[[${f.basename}]]`);
 			} else {
 				delete frontmatter.context_files;
+			}
+
+			// Accessed files - all files the agent interacted with during the session
+			if (session.accessedFiles?.size) {
+				frontmatter.accessed_files = Array.from(session.accessedFiles).map(pathToWikilink);
+			} else {
+				delete frontmatter.accessed_files;
 			}
 
 			if (session.context?.enabledTools?.length) {

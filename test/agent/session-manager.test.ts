@@ -226,6 +226,106 @@ describe('SessionManager', () => {
 		});
 	});
 
+	describe('loadSessionFromFile - accessed_files', () => {
+		beforeEach(() => {
+			mockPlugin.app.metadataCache = {
+				getFirstLinkpathDest: jest.fn(),
+				getFileCache: jest.fn(),
+			};
+		});
+
+		it('should restore accessedFiles Set from frontmatter wikilinks', async () => {
+			const mockHistoryFile = {
+				path: 'gemini-scribe/Agent-Sessions/test.md',
+				basename: 'test',
+				stat: { ctime: Date.now(), mtime: Date.now() },
+			} as any;
+
+			const frontmatter = {
+				session_id: 'test-session',
+				type: 'agent-session',
+				title: 'Test Session',
+				accessed_files: ['[[Chapter 1]]', '[[Utils]]'],
+				created: new Date().toISOString(),
+				last_active: new Date().toISOString(),
+			};
+
+			mockPlugin.app.vault.read.mockResolvedValue('test content');
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter });
+
+			const mockFile1 = new TFile();
+			(mockFile1 as any).path = 'chapters/Chapter 1.md';
+			(mockFile1 as any).basename = 'Chapter 1';
+			const mockFile2 = new TFile();
+			(mockFile2 as any).path = 'src/Utils.md';
+			(mockFile2 as any).basename = 'Utils';
+
+			mockPlugin.app.metadataCache.getFirstLinkpathDest.mockReturnValueOnce(mockFile1).mockReturnValueOnce(mockFile2);
+
+			const session = await (sessionManager as any).loadSessionFromFile(mockHistoryFile);
+
+			expect(session.accessedFiles).toBeInstanceOf(Set);
+			expect(session.accessedFiles.size).toBe(2);
+			expect(session.accessedFiles.has('chapters/Chapter 1.md')).toBe(true);
+			expect(session.accessedFiles.has('src/Utils.md')).toBe(true);
+		});
+
+		it('should handle missing accessed_files gracefully', async () => {
+			const mockHistoryFile = {
+				path: 'gemini-scribe/Agent-Sessions/test.md',
+				basename: 'test',
+				stat: { ctime: Date.now(), mtime: Date.now() },
+			} as any;
+
+			const frontmatter = {
+				session_id: 'test-session',
+				type: 'agent-session',
+				title: 'Test Session',
+				created: new Date().toISOString(),
+				last_active: new Date().toISOString(),
+			};
+
+			mockPlugin.app.vault.read.mockResolvedValue('test content');
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter });
+
+			const session = await (sessionManager as any).loadSessionFromFile(mockHistoryFile);
+
+			expect(session.accessedFiles).toBeUndefined();
+		});
+
+		it('should skip unresolvable wikilinks in accessed_files', async () => {
+			const mockHistoryFile = {
+				path: 'gemini-scribe/Agent-Sessions/test.md',
+				basename: 'test',
+				stat: { ctime: Date.now(), mtime: Date.now() },
+			} as any;
+
+			const frontmatter = {
+				session_id: 'test-session',
+				type: 'agent-session',
+				title: 'Test Session',
+				accessed_files: ['[[Exists]]', '[[Deleted File]]'],
+				created: new Date().toISOString(),
+				last_active: new Date().toISOString(),
+			};
+
+			mockPlugin.app.vault.read.mockResolvedValue('test content');
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter });
+
+			const mockFile = new TFile();
+			(mockFile as any).path = 'Exists.md';
+			(mockFile as any).basename = 'Exists';
+
+			// First link resolves, second returns null (deleted file)
+			mockPlugin.app.metadataCache.getFirstLinkpathDest.mockReturnValueOnce(mockFile).mockReturnValueOnce(null);
+
+			const session = await (sessionManager as any).loadSessionFromFile(mockHistoryFile);
+
+			expect(session.accessedFiles.size).toBe(1);
+			expect(session.accessedFiles.has('Exists.md')).toBe(true);
+		});
+	});
+
 	describe('getRecentAgentSessions', () => {
 		let mockFolder: any;
 		let mockSessionFiles: TFile[];
