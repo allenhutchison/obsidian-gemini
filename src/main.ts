@@ -30,6 +30,7 @@ import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
 import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
+import { FolderInitializer } from './services/folder-initializer';
 import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
 
 // @ts-ignore
@@ -178,6 +179,7 @@ export default class ObsidianGemini extends Plugin {
 	public mcpManager: MCPManager | null = null;
 	public skillManager: SkillManager;
 	public contextManager: ContextManager;
+	public folderInitializer: FolderInitializer | null = null;
 
 	// Private members
 	private summarizer: GeminiSummary;
@@ -651,9 +653,14 @@ export default class ObsidianGemini extends Plugin {
 			this.toolRegistry.registerTool(tool);
 		}
 
-		// Initialize skill manager and register skill tools
+		// Initialize folder initializer and skill manager
+		this.folderInitializer = new FolderInitializer(this);
+		// Re-create folders when settings change (e.g., historyFolder renamed).
+		// On first boot this is a no-op because onLayoutReady() runs later.
+		if (this.app.workspace.layoutReady) {
+			await this.initializePluginFolders();
+		}
 		this.skillManager = new SkillManager(this);
-		await this.skillManager.ensureSkillsDirectory();
 		const { getSkillTools } = await import('./tools/skill-tools');
 		const skillTools = getSkillTools();
 		for (const tool of skillTools) {
@@ -814,10 +821,22 @@ export default class ObsidianGemini extends Plugin {
 		}
 	}
 
+	/**
+	 * Ensure all plugin state folders exist. Called from onLayoutReady() and
+	 * after settings changes that may alter the state folder path.
+	 */
+	async initializePluginFolders(): Promise<void> {
+		if (this.folderInitializer) {
+			await this.folderInitializer.initializeAll();
+		}
+	}
+
 	async onLayoutReady() {
-		// Setup prompts directory and commands after layout is ready
+		// Create all plugin state folders in one pass now that metadata cache is ready
+		await this.initializePluginFolders();
+
+		// Setup default prompts and commands after folders are ready
 		if (this.promptManager) {
-			await this.promptManager.ensurePromptsDirectory();
 			await this.promptManager.createDefaultPrompts();
 			// Setup prompt commands
 			this.promptManager.setupPromptCommands();
@@ -938,6 +957,11 @@ export default class ObsidianGemini extends Plugin {
 				this.isGeminiInitialized = false;
 				// Don't show notice here as it may be annoying during normal settings changes
 			}
+		}
+
+		// Re-create plugin state folders if historyFolder changed (idempotent)
+		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
+			await this.initializePluginFolders();
 		}
 
 		// Handle RAG indexing state changes independently of full re-initialization

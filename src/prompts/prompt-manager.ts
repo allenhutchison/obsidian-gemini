@@ -1,7 +1,6 @@
 import { Vault, TFile, TFolder, normalizePath, Notice, Modal, App } from 'obsidian';
 import ObsidianGemini from '../main';
 import { CustomPrompt, PromptInfo } from './types';
-import { ensureFolderExists } from '../utils/file-utils';
 
 export class PromptManager {
 	constructor(
@@ -12,12 +11,6 @@ export class PromptManager {
 	// Get the prompts directory path
 	getPromptsDirectory(): string {
 		return normalizePath(`${this.plugin.settings.historyFolder}/Prompts`);
-	}
-
-	// Ensure prompts directory exists
-	async ensurePromptsDirectory(): Promise<void> {
-		await ensureFolderExists(this.vault, this.plugin.settings.historyFolder, 'plugin state', this.plugin.logger);
-		await ensureFolderExists(this.vault, this.getPromptsDirectory(), 'prompts', this.plugin.logger);
 	}
 
 	// Load a prompt from file
@@ -145,7 +138,6 @@ Focus on being helpful while maintaining intellectual honesty.`;
 	// Create default selection action prompts on first use
 	async createDefaultSelectionPrompts(): Promise<void> {
 		const promptsDir = this.getPromptsDirectory();
-		await this.ensurePromptsDirectory();
 
 		const defaultPrompts = [
 			{
@@ -260,9 +252,6 @@ Please provide a concise summary of the following text:
 	// Create a new custom prompt file
 	async createNewCustomPrompt(): Promise<void> {
 		try {
-			// Ensure prompts directory exists
-			await this.ensurePromptsDirectory();
-
 			// Open input modal for prompt name
 			const modal = new PromptNameModal(this.plugin.app, async (promptName: string) => {
 				if (!promptName || promptName.trim() === '') {

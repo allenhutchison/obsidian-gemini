@@ -1,5 +1,4 @@
-import { TFile, TFolder } from 'obsidian';
-import { ensureFolderExists } from '../utils/file-utils';
+import { normalizePath, TFile, TFolder } from 'obsidian';
 import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, SessionModelConfig } from '../types/agent';
 import type ObsidianGemini from '../main';
 
@@ -111,7 +110,8 @@ export class SessionManager {
 	 * Get all recent agent sessions
 	 */
 	async getRecentAgentSessions(limit = 10): Promise<ChatSession[]> {
-		const agentSessionsFolder = await this.getOrCreateAgentSessionsFolder();
+		const agentSessionsFolder = this.getAgentSessionsFolder();
+		if (!agentSessionsFolder) return [];
 		const sessionFiles = agentSessionsFolder.children
 			.filter((file): file is TFile => file instanceof TFile && file.extension === 'md')
 			.sort((a, b) => b.stat.mtime - a.stat.mtime)
@@ -352,26 +352,22 @@ export class SessionManager {
 	 * Get the history folder path within the plugin's state folder
 	 */
 	private getHistoryFolderPath(): string {
-		return `${this.plugin.settings.historyFolder}/${this.HISTORY_FOLDER}`;
+		return normalizePath(`${this.plugin.settings.historyFolder}/${this.HISTORY_FOLDER}`);
 	}
 
 	/**
 	 * Get the agent sessions folder path within the plugin's state folder
 	 */
 	private getAgentSessionsFolderPath(): string {
-		return `${this.plugin.settings.historyFolder}/${this.AGENT_SESSIONS_FOLDER}`;
+		return normalizePath(`${this.plugin.settings.historyFolder}/${this.AGENT_SESSIONS_FOLDER}`);
 	}
 
 	/**
-	 * Ensure the agent sessions folder exists
+	 * Get the agent sessions folder. Assumes FolderInitializer has already run.
 	 */
-	private async getOrCreateAgentSessionsFolder(): Promise<TFolder> {
-		return ensureFolderExists(
-			this.plugin.app.vault,
-			this.getAgentSessionsFolderPath(),
-			'agent sessions',
-			this.plugin.logger
-		);
+	private getAgentSessionsFolder(): TFolder | null {
+		const folder = this.plugin.app.vault.getAbstractFileByPath(this.getAgentSessionsFolderPath());
+		return folder instanceof TFolder ? folder : null;
 	}
 
 	/**
