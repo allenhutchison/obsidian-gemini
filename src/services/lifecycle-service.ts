@@ -133,24 +133,27 @@ export class LifecycleService {
 			plugin.mcpManager = null;
 		}
 
-		// Clean up RAG indexing service — unregister tools before destroying
+		// Clean up RAG indexing service — unregister tools, then destroy
 		if (plugin.ragIndexing) {
-			import('../tools/rag-search-tool')
-				.then(({ getRagTools }) => {
+			const rag = plugin.ragIndexing;
+			plugin.ragIndexing = null;
+
+			(async () => {
+				try {
+					const { getRagTools } = await import('../tools/rag-search-tool');
 					const ragTools = getRagTools();
 					for (const tool of ragTools) {
 						plugin.toolRegistry?.unregisterTool(tool.name);
 					}
-				})
-				.catch((error) => {
+				} catch (error) {
 					plugin.logger.error('Error unregistering RAG tools:', error);
-				})
-				.finally(() => {
-					plugin.ragIndexing?.destroy().catch((error) => {
-						plugin.logger.error('Error destroying RAG indexing service:', error);
-					});
-				});
-			plugin.ragIndexing = null;
+				}
+				try {
+					await rag.destroy();
+				} catch (error) {
+					plugin.logger.error('Error destroying RAG indexing service:', error);
+				}
+			})();
 		}
 	}
 
@@ -257,7 +260,6 @@ export class LifecycleService {
 
 				if (result.settingsChanged) {
 					plugin.settings = result.updatedSettings;
-					await plugin.saveData(plugin.settings);
 
 					if (result.changedSettingsInfo.length > 0) {
 						plugin.logger.log('Model settings updated:', result.changedSettingsInfo.join(', '));
