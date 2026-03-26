@@ -185,7 +185,7 @@ export default class ObsidianGemini extends Plugin {
 	public mcpManager: MCPManager | null = null;
 	public skillManager: SkillManager;
 	public contextManager: ContextManager;
-	public folderInitializer: FolderInitializer;
+	public folderInitializer: FolderInitializer | null = null;
 
 	// Private members
 	private summarizer: GeminiSummary;
