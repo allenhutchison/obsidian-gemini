@@ -37,8 +37,7 @@ jest.mock('../../src/services/example-prompts', () => ({ ExamplePromptsManager: 
 jest.mock('../../src/tools/tool-registry', () => ({ ToolRegistry: jest.fn() }));
 jest.mock('../../src/tools/execution-engine', () => ({ ToolExecutionEngine: jest.fn() }));
 jest.mock('../../src/services/skill-manager', () => ({
-	SkillManager: jest.fn().mockImplementation(() => ({
-	})),
+	SkillManager: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('../../src/mcp/mcp-manager', () => ({
 	MCPManager: jest.fn().mockImplementation(() => ({
