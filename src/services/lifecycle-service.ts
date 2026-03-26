@@ -289,6 +289,14 @@ export class LifecycleService {
 		}
 	}
 
+	/**
+	 * Persistent services are created once and survive re-initialization.
+	 *
+	 * Limitation: Some services (e.g., AgentsMemory) capture settings like
+	 * historyFolder at construction time. If those settings change, the cached
+	 * paths become stale. This is a pre-existing limitation — a full fix would
+	 * require adding refresh() methods to these services.
+	 */
 	private async initializePersistentServices(): Promise<void> {
 		if (this.persistentServicesCreated) return;
 
