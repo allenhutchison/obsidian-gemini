@@ -75,6 +75,13 @@ jest.mock('../../src/services/folder-initializer', () => ({
 		initializeAll: jest.fn(),
 	})),
 }));
+jest.mock('../../src/agent/agent-event-bus', () => ({
+	AgentEventBus: jest.fn().mockImplementation(() => ({
+		on: jest.fn().mockReturnValue(() => {}),
+		emit: jest.fn().mockResolvedValue(undefined),
+		removeAll: jest.fn(),
+	})),
+}));
 jest.mock('../../src/services/project-manager', () => ({
 	ProjectManager: jest.fn().mockImplementation(() => ({
 		initialize: jest.fn(),

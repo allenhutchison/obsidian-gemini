@@ -40,6 +40,7 @@ export interface AgentViewContext {
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
 	autoLabelSessionIfNeeded(): Promise<void>;
 	onUsageMetadata?: (metadata: UsageMetadata) => void;
+	incrementToolCallCount?(count: number): void;
 }
 
 /**
@@ -297,7 +298,9 @@ export class AgentViewTools {
 
 				// Execute the tool
 				// Note: Don't pass 'this' (AgentViewTools) - let execution engine get AgentView from plugin
+				const toolStartTime = Date.now();
 				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, toolContext);
+				const toolDuration = Date.now() - toolStartTime;
 
 				// Track as last completed tool
 				this.lastCompletedTool = toolCall.name;
@@ -305,6 +308,15 @@ export class AgentViewTools {
 
 				// Show result in UI
 				await this.showToolResult(toolCall.name, result, toolExecutionId);
+
+				// Emit toolExecutionComplete hook
+				await this.plugin.agentEventBus?.emit('toolExecutionComplete', {
+					toolName: toolCall.name,
+					args: toolCall.arguments || {},
+					result,
+					durationMs: toolDuration,
+				});
+				this.context.incrementToolCallCount?.(1);
 
 				// Format result for the model - store original tool call with result
 				toolResults.push({
@@ -345,6 +357,19 @@ export class AgentViewTools {
 					this.plugin.logger.error('Failed to persist accessed_files:', error);
 				}
 			}
+		}
+
+		// Emit toolChainComplete hook
+		if (currentSession) {
+			await this.plugin.agentEventBus?.emit('toolChainComplete', {
+				session: currentSession,
+				toolResults: toolResults.map((tr) => ({
+					toolName: tr.toolName,
+					toolArguments: tr.toolArguments,
+					result: tr.result,
+				})),
+				toolCount: toolResults.length,
+			});
 		}
 
 		// Note: User message was already saved to history before calling handleToolCalls

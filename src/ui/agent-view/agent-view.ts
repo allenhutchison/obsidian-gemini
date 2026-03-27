@@ -53,6 +53,7 @@ export class AgentView extends ItemView {
 	private currentSession: ChatSession | null = null;
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private isExecuting: boolean = false;
+	private turnToolCallCount: number = 0;
 	private cancellationRequested: boolean = false;
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private activeFileChangeHandler: () => void;
@@ -166,6 +167,9 @@ export class AgentView extends ItemView {
 				this.plugin.contextManager?.updateUsageMetadata(metadata);
 				this.updateTokenUsage();
 			},
+			incrementToolCallCount: (count: number) => {
+				this.turnToolCallCount += count;
+			},
 		};
 		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
 
@@ -260,6 +264,15 @@ export class AgentView extends ItemView {
 		this.sendButton.addClass('gemini-agent-stop-btn');
 		this.sendButton.disabled = false; // Re-enable so user can click stop
 		this.sendButton.setAttribute('aria-label', 'Stop agent execution');
+		this.turnToolCallCount = 0;
+
+		// Emit turnStart hook
+		if (this.currentSession) {
+			await this.plugin.agentEventBus?.emit('turnStart', {
+				session: this.currentSession,
+				userMessage: formattedMessage,
+			});
+		}
 
 		// Show progress bar
 		this.progress.show('Thinking...', 'thinking');
@@ -679,7 +692,23 @@ To reference an attachment in your response, use the path shown above.`;
 			this.plugin.logger.error('Failed to send message:', error);
 			const errorMessage = getErrorMessage(error);
 			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
+
+			// Emit turnError hook
+			if (this.currentSession) {
+				await this.plugin.agentEventBus?.emit('turnError', {
+					session: this.currentSession,
+					error: error instanceof Error ? error : new Error(String(error)),
+				});
+			}
 		} finally {
+			// Emit turnEnd hook (only on non-error completion)
+			if (this.currentSession && this.isExecuting) {
+				await this.plugin.agentEventBus?.emit('turnEnd', {
+					session: this.currentSession,
+					toolCallCount: this.turnToolCallCount,
+				});
+			}
+
 			// Reset execution state and button (unless already reset by stopAgentLoop)
 			// The check prevents redundant resets if user clicked stop
 			if (this.isExecuting) {
