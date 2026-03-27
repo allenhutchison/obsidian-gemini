@@ -50,6 +50,7 @@ export class AgentEventBus {
 	/**
 	 * Emit an event, executing all handlers in priority order.
 	 * Errors in handlers are logged but do not propagate.
+	 * Note: Payload is shallow-frozen; handlers must not mutate nested objects.
 	 */
 	async emit<E extends AgentEventName>(event: E, payload: AgentEventMap[E]): Promise<void> {
 		const registrations = this.handlers.get(event);

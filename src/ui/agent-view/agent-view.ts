@@ -701,7 +701,7 @@ To reference an attachment in your response, use the path shown above.`;
 				});
 			}
 		} finally {
-			// Emit turnEnd hook (only on non-error completion)
+			// Emit turnEnd hook (skipped if cancelled via stopAgentLoop)
 			if (this.currentSession && this.isExecuting) {
 				await this.plugin.agentEventBus?.emit('turnEnd', {
 					session: this.currentSession,
