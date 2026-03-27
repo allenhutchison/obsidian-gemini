@@ -19,7 +19,8 @@ interface ToolResultEntry {
 
 /**
  * Extract accessed file paths from a batch of tool results.
- * Returns deduplicated paths for tools that represent targeted file access.
+ * Returns paths in encounter order (duplicates may remain); deduplication
+ * occurs in agent-view-tools.ts when paths are added to the session Set.
  * Search/list tools are excluded to avoid noise.
  */
 export function extractAccessedPaths(toolResults: ToolResultEntry[]): string[] {
