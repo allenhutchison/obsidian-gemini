@@ -261,6 +261,20 @@ export class SessionManager {
 			metadata: frontmatter?.metadata,
 		};
 
+		// Restore accessed_files Set from frontmatter wikilinks
+		if (frontmatter?.accessed_files && Array.isArray(frontmatter.accessed_files)) {
+			session.accessedFiles = new Set<string>();
+			for (const ref of frontmatter.accessed_files) {
+				if (typeof ref === 'string' && ref.startsWith('[[') && ref.endsWith(']]')) {
+					const linkpath = ref.slice(2, -2);
+					const resolved = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, '');
+					if (resolved instanceof TFile) {
+						session.accessedFiles.add(resolved.path);
+					}
+				}
+			}
+		}
+
 		this.activeSessions.set(session.id, session);
 		return session;
 	}

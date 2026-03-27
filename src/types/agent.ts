@@ -102,6 +102,9 @@ export interface ChatSession {
 		autoLabeled?: boolean;
 		[key: string]: any;
 	};
+
+	/** In-memory set of file paths accessed during this session. Converted to wikilinks and persisted to frontmatter as accessed_files. */
+	accessedFiles?: Set<string>;
 }
 
 /**

@@ -9,6 +9,7 @@ import { AgentFactory } from '../../agent/agent-factory';
 import { generateToolDescription } from '../../utils/text-generation';
 import { formatFileSize } from '../../utils/format-utils';
 import type { UsageMetadata } from '../../services/context-manager';
+import { extractAccessedPaths } from '../../utils/accessed-files';
 
 // Tool execution result messages
 const TOOL_EXECUTION_FAILED_DEFAULT_MSG = 'Tool execution failed (no error message provided)';
@@ -321,6 +322,28 @@ export class AgentViewTools {
 						error: error instanceof Error ? error.message : 'Unknown error',
 					},
 				});
+			}
+		}
+
+		// Track accessed files for this tool batch
+		const accessedPaths = extractAccessedPaths(toolResults);
+		if (accessedPaths.length > 0 && currentSession) {
+			if (!currentSession.accessedFiles) {
+				currentSession.accessedFiles = new Set<string>();
+			}
+			let hasNew = false;
+			for (const p of accessedPaths) {
+				if (!currentSession.accessedFiles.has(p)) {
+					currentSession.accessedFiles.add(p);
+					hasNew = true;
+				}
+			}
+			if (hasNew) {
+				try {
+					await this.plugin.sessionHistory.updateSessionMetadata(currentSession);
+				} catch (error) {
+					this.plugin.logger.error('Failed to persist accessed_files:', error);
+				}
 			}
 		}
 
