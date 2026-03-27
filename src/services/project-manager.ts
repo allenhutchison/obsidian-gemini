@@ -81,11 +81,16 @@ export class ProjectManager {
 		const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
 		if (!(file instanceof TFile)) return null;
 
-		const project = await this.parseProjectFile(file);
-		if (project) {
-			this.projectCache.set(filePath, project);
+		try {
+			const project = await this.parseProjectFile(file);
+			if (project) {
+				this.projectCache.set(filePath, project);
+			}
+			return project;
+		} catch (error) {
+			this.plugin.logger.warn(`ProjectManager: Failed to parse project at ${filePath}:`, error);
+			return null;
 		}
-		return project;
 	}
 
 	/**
@@ -103,6 +108,11 @@ export class ProjectManager {
 			if (isMatch && root.length > bestLength) {
 				bestMatch = project;
 				bestLength = root.length;
+			} else if (isMatch && root.length === bestLength && bestMatch) {
+				// Deterministic tiebreak: pick lexicographically smallest file path
+				if (project.file.path < bestMatch.file.path) {
+					bestMatch = project;
+				}
 			}
 		}
 
