@@ -139,8 +139,8 @@ export class ProjectManager {
 			}
 		});
 
-		// Refresh cache
-		await this.refreshProject(filePath);
+		// Cache refresh is handled by the vault 'modify' event listener
+		// which defers 500ms for the metadata cache to update.
 	}
 
 	/**
@@ -317,13 +317,6 @@ export class ProjectManager {
 		} else {
 			// Tag may have been removed — evict if cached
 			this.projectCache.delete(file.path);
-		}
-	}
-
-	private async refreshProject(filePath: string): Promise<void> {
-		const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
-		if (file instanceof TFile) {
-			await this.onFileCreateOrModify(file);
 		}
 	}
 }
