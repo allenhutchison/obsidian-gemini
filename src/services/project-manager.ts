@@ -15,6 +15,13 @@ const PERMISSION_MAP: Record<string, ToolPermission> = {
 	ask_user: ToolPermission.ASK_USER,
 };
 
+/** Reverse map: ToolPermission enum values back to preferred user-friendly strings */
+const PERMISSION_REVERSE_MAP: Record<ToolPermission, string> = {
+	[ToolPermission.APPROVE]: 'allow',
+	[ToolPermission.DENY]: 'deny',
+	[ToolPermission.ASK_USER]: 'ask',
+};
+
 /**
  * Discovers, parses, and caches project definitions from the vault.
  * A project is any Markdown file with the `gemini-scribe/project` tag.
@@ -115,7 +122,7 @@ export class ProjectManager {
 				// Convert ToolPermission enum values back to user-friendly strings
 				const permObj: Record<string, string> = {};
 				for (const [tool, perm] of Object.entries(updates.permissions)) {
-					permObj[tool] = perm;
+					permObj[tool] = PERMISSION_REVERSE_MAP[perm] ?? perm;
 				}
 				frontmatter.permissions = permObj;
 			}
