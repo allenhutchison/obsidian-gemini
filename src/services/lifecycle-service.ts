@@ -131,6 +131,7 @@ export class LifecycleService {
 
 		plugin.logger.debug('Unloading Gemini Scribe');
 		plugin.history?.onUnload();
+		plugin.projectManager?.destroy();
 
 		// Disconnect MCP servers
 		if (plugin.mcpManager) {

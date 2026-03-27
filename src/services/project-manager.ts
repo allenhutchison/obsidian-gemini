@@ -29,6 +29,7 @@ const PERMISSION_REVERSE_MAP: Record<ToolPermission, string> = {
 export class ProjectManager {
 	private plugin: InstanceType<typeof ObsidianGemini>;
 	private projectCache: Map<string, Project> = new Map();
+	private pendingTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
 	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
 		this.plugin = plugin;
@@ -139,8 +140,7 @@ export class ProjectManager {
 		this.plugin.registerEvent(
 			this.plugin.app.vault.on('create', (file) => {
 				if (file instanceof TFile && file.extension === 'md') {
-					// Defer slightly to let metadataCache index the new file
-					setTimeout(() => this.onFileCreateOrModify(file), 500);
+					this.scheduleRefresh(file);
 				}
 			})
 		);
@@ -148,8 +148,7 @@ export class ProjectManager {
 		this.plugin.registerEvent(
 			this.plugin.app.vault.on('modify', (file) => {
 				if (file instanceof TFile && file.extension === 'md') {
-					// Defer to let metadataCache update
-					setTimeout(() => this.onFileCreateOrModify(file), 500);
+					this.scheduleRefresh(file);
 				}
 			})
 		);
@@ -157,6 +156,7 @@ export class ProjectManager {
 		this.plugin.registerEvent(
 			this.plugin.app.vault.on('delete', (file) => {
 				if (file instanceof TFile) {
+					this.cancelPendingRefresh(file.path);
 					this.projectCache.delete(file.path);
 				}
 			})
@@ -165,13 +165,24 @@ export class ProjectManager {
 		this.plugin.registerEvent(
 			this.plugin.app.vault.on('rename', (file, oldPath) => {
 				if (file instanceof TFile) {
+					this.cancelPendingRefresh(oldPath);
 					this.projectCache.delete(oldPath);
 					if (file.extension === 'md') {
-						setTimeout(() => this.onFileCreateOrModify(file), 500);
+						this.scheduleRefresh(file);
 					}
 				}
 			})
 		);
+	}
+
+	/**
+	 * Cancel all pending refresh timers. Call from plugin unload.
+	 */
+	destroy(): void {
+		for (const timer of this.pendingTimers.values()) {
+			clearTimeout(timer);
+		}
+		this.pendingTimers.clear();
 	}
 
 	/**
@@ -208,6 +219,23 @@ export class ProjectManager {
 	}
 
 	// --- Private helpers ---
+
+	private scheduleRefresh(file: TFile): void {
+		this.cancelPendingRefresh(file.path);
+		const timer = setTimeout(() => {
+			this.pendingTimers.delete(file.path);
+			this.onFileCreateOrModify(file);
+		}, 500);
+		this.pendingTimers.set(file.path, timer);
+	}
+
+	private cancelPendingRefresh(path: string): void {
+		const existing = this.pendingTimers.get(path);
+		if (existing) {
+			clearTimeout(existing);
+			this.pendingTimers.delete(path);
+		}
+	}
 
 	private isProjectFile(file: TFile): boolean {
 		const cache = this.plugin.app.metadataCache.getFileCache(file);
