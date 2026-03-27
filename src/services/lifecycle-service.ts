@@ -13,6 +13,7 @@ import { ExamplePromptsManager } from './example-prompts';
 import { ToolRegistry } from '../tools/tool-registry';
 import { ToolExecutionEngine } from '../tools/execution-engine';
 import { SkillManager } from './skill-manager';
+import { ProjectManager } from './project-manager';
 import { MCPManager } from '../mcp/mcp-manager';
 import { ContextManager } from './context-manager';
 import { GeminiCompletions } from '../completions';
@@ -106,6 +107,12 @@ export class LifecycleService {
 
 		await plugin.history?.onLayoutReady();
 
+		// Discover project files now that metadata cache is ready
+		if (plugin.projectManager) {
+			await plugin.projectManager.initialize();
+			plugin.projectManager.registerVaultEvents();
+		}
+
 		// Initialize RAG indexing now that metadata cache is ready
 		// (deferred from setup if layout wasn't ready)
 		if (!plugin.ragIndexing && plugin.settings.ragIndexing.enabled) {
@@ -124,6 +131,7 @@ export class LifecycleService {
 
 		plugin.logger.debug('Unloading Gemini Scribe');
 		plugin.history?.onUnload();
+		plugin.projectManager?.destroy();
 
 		// Disconnect MCP servers
 		if (plugin.mcpManager) {
@@ -316,6 +324,8 @@ export class LifecycleService {
 		if (plugin.app.workspace.layoutReady) {
 			await plugin.history.onLayoutReady();
 		}
+
+		plugin.projectManager = new ProjectManager(plugin);
 
 		this.persistentServicesCreated = true;
 	}

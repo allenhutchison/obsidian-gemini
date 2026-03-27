@@ -75,6 +75,13 @@ jest.mock('../../src/services/folder-initializer', () => ({
 		initializeAll: jest.fn(),
 	})),
 }));
+jest.mock('../../src/services/project-manager', () => ({
+	ProjectManager: jest.fn().mockImplementation(() => ({
+		initialize: jest.fn(),
+		registerVaultEvents: jest.fn(),
+		discoverProjects: jest.fn().mockReturnValue([]),
+	})),
+}));
 jest.mock('../../src/ui/update-notification-modal', () => ({ UpdateNotificationModal: jest.fn() }));
 
 // Must be after all jest.mock calls

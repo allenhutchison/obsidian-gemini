@@ -31,6 +31,7 @@ import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
 import { FolderInitializer } from './services/folder-initializer';
 import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
+import { ProjectManager } from './services/project-manager';
 import { LifecycleService } from './services/lifecycle-service';
 
 export interface ModelDiscoverySettings {
@@ -179,6 +180,7 @@ export default class ObsidianGemini extends Plugin {
 	public modelManager: ModelManager;
 	public completions: GeminiCompletions | null = null;
 	public summarizer: GeminiSummary | null = null;
+	public projectManager: ProjectManager;
 
 	// Private members
 	private ribbonIcon: HTMLElement;
