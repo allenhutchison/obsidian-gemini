@@ -20,6 +20,8 @@ const KEY_PARAM_MAP: Record<string, string> = {
 	activate_skill: 'name',
 	list_files: 'path',
 	list_folders: 'path',
+	rag_search: 'query',
+	rag_search_by_file: 'query',
 };
 
 interface ToolLogEntry {
@@ -83,6 +85,8 @@ export class ToolExecutionLogger {
 	}
 
 	private async appendToHistory(session: ChatSession, block: string): Promise<void> {
+		if (!this.plugin.settings.chatHistory) return;
+
 		const file = this.plugin.app.vault.getAbstractFileByPath(session.historyPath);
 		if (!(file instanceof TFile)) return;
 

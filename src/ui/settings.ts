@@ -584,7 +584,9 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Log tool execution to session history')
-			.setDesc('Append a summary of each tool execution to the session history file for auditing.')
+			.setDesc(
+				'Append a summary of each tool execution to the session history file for auditing. Requires plugin reload to take effect.'
+			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.logToolExecution).onChange(async (value) => {
 					this.plugin.settings.logToolExecution = value;

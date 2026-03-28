@@ -110,6 +110,8 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 			modelDiscovery: { enabled: false, autoUpdateInterval: 24, lastUpdate: 0 },
 			mcpEnabled: false,
 			ragIndexing: { enabled: false },
+			logToolExecution: true,
+			chatHistory: true,
 			lastSeenVersion: '1.0.0',
 		},
 		logger: {
@@ -190,6 +192,20 @@ describe('LifecycleService', () => {
 			expect(mockDisconnectAll).toHaveBeenCalled();
 		});
 
+		it('should create ToolExecutionLogger when logToolExecution is enabled', async () => {
+			mockPlugin.settings.logToolExecution = true;
+			await lifecycle.setup();
+
+			expect(mockPlugin.toolExecutionLogger).toBeDefined();
+		});
+
+		it('should not create ToolExecutionLogger when logToolExecution is disabled', async () => {
+			mockPlugin.settings.logToolExecution = false;
+			await lifecycle.setup();
+
+			expect(mockPlugin.toolExecutionLogger).toBeFalsy();
+		});
+
 		it('should register tools via ToolRegistrar', async () => {
 			await lifecycle.setup();
 
@@ -241,6 +257,15 @@ describe('LifecycleService', () => {
 
 			expect(mockDisconnectAll).toHaveBeenCalled();
 			expect(mockPlugin.mcpManager).toBeNull();
+		});
+
+		it('should call destroy on ToolExecutionLogger', () => {
+			const mockDestroy = jest.fn();
+			mockPlugin.toolExecutionLogger = { destroy: mockDestroy };
+
+			lifecycle.onUnload();
+
+			expect(mockDestroy).toHaveBeenCalled();
 		});
 
 		it('should handle missing services gracefully', () => {
