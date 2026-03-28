@@ -91,6 +91,14 @@ This command requires: (1) a markdown file actively open in the editor, and (2) 
 
 The vault index uses Google's File Search API to enable semantic (meaning-based) search of your vault. Files are stored in an index private to your GCP project, tied to your API key. Your data is not shared or used for model training. The feature is experimental and located under Advanced Settings. ([#297](https://github.com/allenhutchison/obsidian-gemini/discussions/297))
 
+## Plugin Conflicts
+
+### RAG indexing creates runaway "Untitled" notes in the plugin state folder
+
+This is caused by a conflict with the **Folder Notes** plugin, not Gemini Scribe itself. Folder Notes automatically creates notes when it detects new folders or file activity, and the rapid file operations during RAG indexing can trigger it repeatedly.
+
+**To fix:** Disable the Folder Notes plugin, or configure it to ignore the Gemini Scribe state folder (default: `gemini-scribe/`). ([#463](https://github.com/allenhutchison/obsidian-gemini/discussions/463))
+
 ## Miscellaneous
 
 ### What happened to the "Context Depth" setting?
