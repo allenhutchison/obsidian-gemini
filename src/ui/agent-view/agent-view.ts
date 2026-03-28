@@ -53,6 +53,7 @@ export class AgentView extends ItemView {
 	private currentSession: ChatSession | null = null;
 	private currentStreamingResponse: { cancel: () => void } | null = null;
 	private isExecuting: boolean = false;
+	private turnToolCallCount: number = 0;
 	private cancellationRequested: boolean = false;
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private activeFileChangeHandler: () => void;
@@ -166,6 +167,9 @@ export class AgentView extends ItemView {
 				this.plugin.contextManager?.updateUsageMetadata(metadata);
 				this.updateTokenUsage();
 			},
+			incrementToolCallCount: (count: number) => {
+				this.turnToolCallCount += count;
+			},
 		};
 		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
 
@@ -207,6 +211,9 @@ export class AgentView extends ItemView {
 			new Notice('No active session');
 			return;
 		}
+		// Snapshot session so all hook emissions use the same reference
+		// even if currentSession changes during async operations
+		const turnSession = this.currentSession;
 
 		const { text: message, files, formattedMessage } = this.fileChips.extractMessageContent();
 		// Allow sending with only attachments (no text)
@@ -260,6 +267,13 @@ export class AgentView extends ItemView {
 		this.sendButton.addClass('gemini-agent-stop-btn');
 		this.sendButton.disabled = false; // Re-enable so user can click stop
 		this.sendButton.setAttribute('aria-label', 'Stop agent execution');
+		this.turnToolCallCount = 0;
+
+		// Emit turnStart hook
+		await this.plugin.agentEventBus?.emit('turnStart', {
+			session: turnSession,
+			userMessage: formattedMessage,
+		});
 
 		// Show progress bar
 		this.progress.show('Thinking...', 'thinking');
@@ -679,7 +693,19 @@ To reference an attachment in your response, use the path shown above.`;
 			this.plugin.logger.error('Failed to send message:', error);
 			const errorMessage = getErrorMessage(error);
 			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
+
+			// Emit turnError hook
+			await this.plugin.agentEventBus?.emit('turnError', {
+				session: turnSession,
+				error: error instanceof Error ? error : new Error(String(error)),
+			});
 		} finally {
+			// Always emit turnEnd so subscribers get a reliable cleanup signal
+			await this.plugin.agentEventBus?.emit('turnEnd', {
+				session: turnSession,
+				toolCallCount: this.turnToolCallCount,
+			});
+
 			// Reset execution state and button (unless already reset by stopAgentLoop)
 			// The check prevents redundant resets if user clicked stop
 			if (this.isExecuting) {
@@ -1102,6 +1128,9 @@ To reference an attachment in your response, use the path shown above.`;
 			onUsageMetadata: (metadata) => {
 				this.plugin.contextManager?.updateUsageMetadata(metadata);
 				this.updateTokenUsage();
+			},
+			incrementToolCallCount: (count: number) => {
+				this.turnToolCallCount += count;
 			},
 		};
 

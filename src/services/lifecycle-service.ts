@@ -1,6 +1,7 @@
 import { TFile } from 'obsidian';
 import { Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { AgentEventBus } from '../agent/agent-event-bus';
 import { ToolRegistrar } from './tool-registrar';
 import { GeminiPrompts, PromptManager } from '../prompts';
 import { ScribeFile } from '../files';
@@ -132,6 +133,7 @@ export class LifecycleService {
 		plugin.logger.debug('Unloading Gemini Scribe');
 		plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
+		plugin.agentEventBus?.removeAll();
 
 		// Disconnect MCP servers
 		if (plugin.mcpManager) {
@@ -286,6 +288,11 @@ export class LifecycleService {
 
 	private async initializeCoreServices(): Promise<void> {
 		const plugin = this.plugin;
+
+		// Event bus is created once and persists across re-initialization
+		if (!plugin.agentEventBus) {
+			plugin.agentEventBus = new AgentEventBus(plugin.logger);
+		}
 
 		plugin.prompts = new GeminiPrompts(plugin);
 		plugin.promptManager = new PromptManager(plugin, plugin.app.vault);
