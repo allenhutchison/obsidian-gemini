@@ -13,15 +13,17 @@ const KEY_PARAM_MAP: Record<string, string> = {
 	update_frontmatter: 'path',
 	append_content: 'path',
 	move_file: 'sourcePath',
+	list_files: 'path',
 	search_files: 'pattern',
 	search_file_contents: 'query',
+	get_active_file: 'path',
 	google_search: 'query',
 	fetch_url: 'url',
+	vault_semantic_search: 'query',
+	deep_research: 'topic',
+	generate_image: 'prompt',
 	activate_skill: 'name',
-	list_files: 'path',
-	list_folders: 'path',
-	rag_search: 'query',
-	rag_search_by_file: 'query',
+	create_skill: 'name',
 };
 
 interface ToolLogEntry {
@@ -141,5 +143,6 @@ function extractKeyParam(toolName: string, args: Record<string, unknown>): { key
 }
 
 function truncate(str: string, maxLen: number): string {
-	return str.length > maxLen ? str.slice(0, maxLen) + '...' : str;
+	const normalized = str.replace(/[\r\n]+/g, ' ');
+	return normalized.length > maxLen ? normalized.slice(0, maxLen) + '...' : normalized;
 }
