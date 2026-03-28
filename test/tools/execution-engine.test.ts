@@ -95,9 +95,9 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 			context
 		);
 
-		// Tool should execute without confirmation
-		expect(readResult.success).toBe(false); // Will fail because file doesn't exist, but that's ok
-		expect(readResult.error).toBe('File or folder not found: test.md');
+		// Tool should execute without confirmation — returns success with exists: false
+		expect(readResult.success).toBe(true);
+		expect(readResult.data.exists).toBe(false);
 
 		// Test list_files - should not require confirmation
 		const listResult = await engine.executeTool(
