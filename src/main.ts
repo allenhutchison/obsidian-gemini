@@ -33,6 +33,7 @@ import { FolderInitializer } from './services/folder-initializer';
 import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
 import { ProjectManager } from './services/project-manager';
 import { AgentEventBus } from './agent/agent-event-bus';
+import { ToolExecutionLogger } from './services/tool-execution-logger';
 import { LifecycleService } from './services/lifecycle-service';
 
 export interface ModelDiscoverySettings {
@@ -89,6 +90,8 @@ export interface ObsidianGeminiSettings {
 	showTokenUsage: boolean;
 	// Diff review
 	alwaysShowDiffView: boolean;
+	// Tool execution logging
+	logToolExecution: boolean;
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -141,6 +144,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	showTokenUsage: false,
 	// Diff review
 	alwaysShowDiffView: false,
+	// Tool execution logging
+	logToolExecution: true,
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
@@ -183,6 +188,7 @@ export default class ObsidianGemini extends Plugin {
 	public summarizer: GeminiSummary | null = null;
 	public projectManager: ProjectManager;
 	public agentEventBus: AgentEventBus;
+	public toolExecutionLogger: ToolExecutionLogger | null = null;
 
 	// Private members
 	private ribbonIcon: HTMLElement;

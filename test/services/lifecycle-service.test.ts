@@ -82,6 +82,11 @@ jest.mock('../../src/agent/agent-event-bus', () => ({
 		removeAll: jest.fn(),
 	})),
 }));
+jest.mock('../../src/services/tool-execution-logger', () => ({
+	ToolExecutionLogger: jest.fn().mockImplementation(() => ({
+		destroy: jest.fn(),
+	})),
+}));
 jest.mock('../../src/services/project-manager', () => ({
 	ProjectManager: jest.fn().mockImplementation(() => ({
 		initialize: jest.fn(),

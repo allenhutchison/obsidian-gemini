@@ -2,6 +2,7 @@ import { TFile } from 'obsidian';
 import { Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { AgentEventBus } from '../agent/agent-event-bus';
+import { ToolExecutionLogger } from './tool-execution-logger';
 import { ToolRegistrar } from './tool-registrar';
 import { GeminiPrompts, PromptManager } from '../prompts';
 import { ScribeFile } from '../files';
@@ -133,6 +134,7 @@ export class LifecycleService {
 		plugin.logger.debug('Unloading Gemini Scribe');
 		plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
+		plugin.toolExecutionLogger?.destroy();
 		plugin.agentEventBus?.removeAll();
 
 		// Disconnect MCP servers
@@ -333,6 +335,11 @@ export class LifecycleService {
 		}
 
 		plugin.projectManager = new ProjectManager(plugin);
+
+		// Tool execution logger subscribes to event bus hooks
+		if (plugin.settings.logToolExecution && plugin.agentEventBus) {
+			plugin.toolExecutionLogger = new ToolExecutionLogger(plugin);
+		}
 
 		this.persistentServicesCreated = true;
 	}
