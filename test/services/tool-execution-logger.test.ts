@@ -165,4 +165,34 @@ describe('mergeToolBlock', () => {
 		// Should create a new callout, not merge
 		expect(result).toContain('> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)\n');
 	});
+
+	it('should handle empty content', () => {
+		const block = '> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)';
+		const result = mergeToolBlock('', block);
+		expect(result).toBe('\n' + block + '\n');
+	});
+
+	it('should merge into existing callout with no tool lines yet', () => {
+		const content = '# Session\n\n> [!tools]- Tool Execution\n';
+		const block = '> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)';
+		const result = mergeToolBlock(content, block);
+		expect(result).toBe('# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n');
+	});
+
+	it('should merge into the last callout when multiple callouts exist', () => {
+		const content =
+			'# Session\n\n' +
+			'> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n\n' +
+			'AI response\n\n' +
+			'> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)\n';
+		const block = '> [!tools]- Tool Execution\n> 🔧 `move_file` sourcePath="a" → success (100ms)';
+		const result = mergeToolBlock(content, block);
+		// Should merge into the second callout, not the first
+		expect(result).toBe(
+			'# Session\n\n' +
+				'> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n\n' +
+				'AI response\n\n' +
+				'> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)\n> 🔧 `move_file` sourcePath="a" → success (100ms)\n'
+		);
+	});
 });
