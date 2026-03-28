@@ -8,7 +8,6 @@ import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { generateToolDescription } from '../../utils/text-generation';
 import { formatFileSize } from '../../utils/format-utils';
-import type { UsageMetadata } from '../../services/context-manager';
 import { extractAccessedPaths } from '../../utils/accessed-files';
 
 // Tool execution result messages
@@ -39,7 +38,6 @@ export interface AgentViewContext {
 	hideProgress(): void;
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
 	autoLabelSessionIfNeeded(): Promise<void>;
-	onUsageMetadata?: (metadata: UsageMetadata) => void;
 	incrementToolCallCount?(count: number): void;
 }
 
@@ -482,9 +480,11 @@ export class AgentViewTools {
 
 			const followUpResponse = await modelApi.generateModelResponse(followUpRequest);
 
-			// Update context manager with usage metadata from follow-up response
+			// Emit usage metadata via event bus (contextManager subscribes)
 			if (followUpResponse.usageMetadata) {
-				this.context.onUsageMetadata?.(followUpResponse.usageMetadata);
+				await this.plugin.agentEventBus?.emit('apiResponseReceived', {
+					usageMetadata: followUpResponse.usageMetadata,
+				});
 			}
 
 			// Check if the follow-up response also contains tool calls
@@ -559,9 +559,11 @@ export class AgentViewTools {
 					const modelApi2 = AgentFactory.createAgentModel(this.plugin, currentSession);
 					const retryResponse = await modelApi2.generateModelResponse(retryRequest);
 
-					// Update context manager with usage metadata from retry response
+					// Emit usage metadata via event bus (contextManager subscribes)
 					if (retryResponse.usageMetadata) {
-						this.context.onUsageMetadata?.(retryResponse.usageMetadata);
+						await this.plugin.agentEventBus?.emit('apiResponseReceived', {
+							usageMetadata: retryResponse.usageMetadata,
+						});
 					}
 
 					if (retryResponse.markdown && retryResponse.markdown.trim()) {
