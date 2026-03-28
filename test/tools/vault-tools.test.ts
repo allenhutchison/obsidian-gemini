@@ -158,15 +158,17 @@ describe('VaultTools', () => {
 			});
 		});
 
-		it('should return error for non-existent file', async () => {
+		it('should return success with exists:false for non-existent file', async () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(null);
 			mockVault.getFiles.mockReturnValue([]);
 			mockMetadataCache.getFirstLinkpathDest.mockReturnValue(null);
 
 			const result = await tool.execute({ path: 'nonexistent.md' }, mockContext);
 
-			expect(result.success).toBe(false);
-			expect(result.error).toBe('File or folder not found: nonexistent.md');
+			expect(result.success).toBe(true);
+			expect(result.data.exists).toBe(false);
+			expect(result.data.path).toBe('nonexistent.md');
+			expect(result.data.message).toContain('does not exist');
 		});
 
 		it('should not resolve to system folder files via case-insensitive fallback', async () => {
@@ -190,8 +192,8 @@ describe('VaultTools', () => {
 			// Try to resolve a path that would case-insensitively match the system files
 			const result = await tool.execute({ path: 'workspace.json' }, mockContext);
 
-			expect(result.success).toBe(false);
-			expect(result.error).toContain('not found');
+			expect(result.success).toBe(true);
+			expect(result.data.exists).toBe(false);
 		});
 
 		it('should not suggest system folder files', async () => {
@@ -213,11 +215,11 @@ describe('VaultTools', () => {
 			// "workspace" substring matches both filenames, but .obsidian should be excluded
 			const result = await tool.execute({ path: 'workspace' }, mockContext);
 
-			expect(result.success).toBe(false);
+			expect(result.success).toBe(true);
+			expect(result.data.exists).toBe(false);
 			// Suggestions should include the user file but not the .obsidian file
-			const suggestions = result.error!;
-			expect(suggestions).toContain('workspace-notes.md');
-			expect(suggestions).not.toContain('.obsidian');
+			expect(result.data.suggestions.join(' ')).toContain('workspace-notes.md');
+			expect(result.data.suggestions.join(' ')).not.toContain('.obsidian');
 		});
 
 		it('should list contents when given a folder path', async () => {

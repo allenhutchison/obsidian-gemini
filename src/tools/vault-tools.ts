@@ -184,13 +184,18 @@ export class ReadFileTool implements Tool {
 			const { item, type: _type, suggestions } = resolvePathToFileOrFolder(params.path, plugin, true);
 
 			if (!item) {
-				// Provide helpful error message with suggestions
-				const suggestion =
-					suggestions && suggestions.length > 0 ? `\n\nDid you mean one of these?\n${suggestions.join('\n')}` : '';
+				// File not existing is information, not an error — the agent asked
+				// "what's in this file?" and the answer is "it doesn't exist."
+				const suggestionList = suggestions && suggestions.length > 0 ? suggestions : [];
 
 				return {
-					success: false,
-					error: `File or folder not found: ${params.path}${suggestion}`,
+					success: true,
+					data: {
+						path: params.path,
+						exists: false,
+						message: `File or folder does not exist: ${params.path}`,
+						suggestions: suggestionList,
+					},
 				};
 			}
 
