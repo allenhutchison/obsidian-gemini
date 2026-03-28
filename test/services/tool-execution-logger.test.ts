@@ -1,4 +1,4 @@
-import { formatToolLine, formatToolBlock } from '../../src/services/tool-execution-logger';
+import { formatToolLine, formatToolBlock, mergeToolBlock } from '../../src/services/tool-execution-logger';
 
 describe('formatToolLine', () => {
 	it('should format a successful read_file', () => {
@@ -126,5 +126,73 @@ describe('formatToolBlock', () => {
 	it('should handle single line', () => {
 		const block = formatToolBlock(['🔧 `read_file` path="a.md" → success (10ms)']);
 		expect(block).toBe('> [!tools]- Tool Execution\n> 🔧 `read_file` path="a.md" → success (10ms)');
+	});
+});
+
+describe('mergeToolBlock', () => {
+	it('should append new block when no existing callout', () => {
+		const content = '# Session\n\nSome content';
+		const block = '> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)';
+		const result = mergeToolBlock(content, block);
+		expect(result).toBe(content + '\n' + block + '\n');
+	});
+
+	it('should merge into existing callout at end of content', () => {
+		const content = '# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n';
+		const block = '> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)';
+		const result = mergeToolBlock(content, block);
+		expect(result).toBe(
+			'# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)\n'
+		);
+	});
+
+	it('should merge multiple new lines into existing callout', () => {
+		const content = '# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n';
+		const block =
+			'> [!tools]- Tool Execution\n> 🔧 `move_file` sourcePath="a" → success (100ms)\n> 🔧 `move_file` sourcePath="b" → success (200ms)';
+		const result = mergeToolBlock(content, block);
+		expect(result).toBe(
+			'# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n> 🔧 `move_file` sourcePath="a" → success (100ms)\n> 🔧 `move_file` sourcePath="b" → success (200ms)\n'
+		);
+	});
+
+	it('should not merge when non-callout content follows existing callout', () => {
+		const content =
+			'# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n\nSome AI response here\n';
+		const block = '> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)';
+		const result = mergeToolBlock(content, block);
+		expect(result).toContain('Some AI response here');
+		// Should create a new callout, not merge
+		expect(result).toContain('> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)\n');
+	});
+
+	it('should handle empty content', () => {
+		const block = '> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)';
+		const result = mergeToolBlock('', block);
+		expect(result).toBe('\n' + block + '\n');
+	});
+
+	it('should merge into existing callout with no tool lines yet', () => {
+		const content = '# Session\n\n> [!tools]- Tool Execution\n';
+		const block = '> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)';
+		const result = mergeToolBlock(content, block);
+		expect(result).toBe('# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n');
+	});
+
+	it('should merge into the last callout when multiple callouts exist', () => {
+		const content =
+			'# Session\n\n' +
+			'> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n\n' +
+			'AI response\n\n' +
+			'> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)\n';
+		const block = '> [!tools]- Tool Execution\n> 🔧 `move_file` sourcePath="a" → success (100ms)';
+		const result = mergeToolBlock(content, block);
+		// Should merge into the second callout, not the first
+		expect(result).toBe(
+			'# Session\n\n' +
+				'> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n\n' +
+				'AI response\n\n' +
+				'> [!tools]- Tool Execution\n> 🔧 `create_folder` path="_Sandbox" → success (2922ms)\n> 🔧 `move_file` sourcePath="a" → success (100ms)\n'
+		);
 	});
 });

@@ -94,7 +94,7 @@ export class ToolExecutionLogger {
 
 		try {
 			await this.plugin.app.vault.process(file, (content) => {
-				return content + '\n' + block + '\n';
+				return mergeToolBlock(content, block);
 			});
 		} catch (error) {
 			this.plugin.logger.error('ToolExecutionLogger: Failed to append to history:', error);
@@ -140,6 +140,39 @@ function extractKeyParam(toolName: string, args: Record<string, unknown>): { key
 	}
 
 	return null;
+}
+
+/**
+ * Merge new tool lines into an existing callout block at the end of content,
+ * or append as a new block if no existing callout is found.
+ */
+export function mergeToolBlock(content: string, block: string): string {
+	const trimmed = content.trimEnd();
+	// Check if content ends with an existing tools callout block
+	const calloutPattern = /^> \[!tools\]- Tool Execution$/m;
+	// Find the last callout in the content
+	const lines = trimmed.split('\n');
+	let calloutStart = -1;
+	for (let i = lines.length - 1; i >= 0; i--) {
+		if (calloutPattern.test(lines[i])) {
+			calloutStart = i;
+			break;
+		}
+		// If we hit a non-blockquote, non-empty line, stop searching
+		if (lines[i].trim() !== '' && !lines[i].startsWith('>')) {
+			break;
+		}
+	}
+
+	if (calloutStart === -1) {
+		// No existing callout — append new block
+		return content + '\n' + block + '\n';
+	}
+
+	// Extract just the new tool lines (skip the callout header)
+	const newLines = block.split('\n').filter((line) => line !== '> [!tools]- Tool Execution');
+
+	return trimmed + '\n' + newLines.join('\n') + '\n';
 }
 
 function truncate(str: string, maxLen: number): string {
