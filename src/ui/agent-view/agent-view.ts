@@ -1129,6 +1129,9 @@ To reference an attachment in your response, use the path shown above.`;
 				this.plugin.contextManager?.updateUsageMetadata(metadata);
 				this.updateTokenUsage();
 			},
+			incrementToolCallCount: (count: number) => {
+				this.turnToolCallCount += count;
+			},
 		};
 
 		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
