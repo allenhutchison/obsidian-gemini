@@ -326,6 +326,7 @@ export class AgentViewTools {
 				});
 			} catch (error) {
 				this.plugin.logger.error(`Tool execution error for ${toolCall.name}:`, error);
+				this.context.incrementToolCallCount?.(1);
 				toolResults.push({
 					toolName: toolCall.name,
 					toolArguments: toolCall.arguments || {},

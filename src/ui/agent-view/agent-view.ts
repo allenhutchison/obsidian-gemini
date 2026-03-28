@@ -211,6 +211,9 @@ export class AgentView extends ItemView {
 			new Notice('No active session');
 			return;
 		}
+		// Snapshot session so all hook emissions use the same reference
+		// even if currentSession changes during async operations
+		const turnSession = this.currentSession;
 
 		const { text: message, files, formattedMessage } = this.fileChips.extractMessageContent();
 		// Allow sending with only attachments (no text)
@@ -267,12 +270,10 @@ export class AgentView extends ItemView {
 		this.turnToolCallCount = 0;
 
 		// Emit turnStart hook
-		if (this.currentSession) {
-			await this.plugin.agentEventBus?.emit('turnStart', {
-				session: this.currentSession,
-				userMessage: formattedMessage,
-			});
-		}
+		await this.plugin.agentEventBus?.emit('turnStart', {
+			session: turnSession,
+			userMessage: formattedMessage,
+		});
 
 		// Show progress bar
 		this.progress.show('Thinking...', 'thinking');
@@ -694,20 +695,16 @@ To reference an attachment in your response, use the path shown above.`;
 			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
 
 			// Emit turnError hook
-			if (this.currentSession) {
-				await this.plugin.agentEventBus?.emit('turnError', {
-					session: this.currentSession,
-					error: error instanceof Error ? error : new Error(String(error)),
-				});
-			}
+			await this.plugin.agentEventBus?.emit('turnError', {
+				session: turnSession,
+				error: error instanceof Error ? error : new Error(String(error)),
+			});
 		} finally {
-			// Emit turnEnd hook (skipped if cancelled via stopAgentLoop)
-			if (this.currentSession && this.isExecuting) {
-				await this.plugin.agentEventBus?.emit('turnEnd', {
-					session: this.currentSession,
-					toolCallCount: this.turnToolCallCount,
-				});
-			}
+			// Always emit turnEnd so subscribers get a reliable cleanup signal
+			await this.plugin.agentEventBus?.emit('turnEnd', {
+				session: turnSession,
+				toolCallCount: this.turnToolCallCount,
+			});
 
 			// Reset execution state and button (unless already reset by stopAgentLoop)
 			// The check prevents redundant resets if user clicked stop
