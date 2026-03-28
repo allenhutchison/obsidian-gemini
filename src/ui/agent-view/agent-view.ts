@@ -163,10 +163,6 @@ export class AgentView extends ItemView {
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
-			onUsageMetadata: (metadata) => {
-				this.plugin.contextManager?.updateUsageMetadata(metadata);
-				this.updateTokenUsage();
-			},
 			incrementToolCallCount: (count: number) => {
 				this.turnToolCallCount += count;
 			},
@@ -422,8 +418,7 @@ To reference an attachment in your response, use the path shown above.`;
 				const modelConfig = this.currentSession?.modelConfig || {};
 				const modelName = modelConfig.model || this.plugin.settings.chatModelName;
 
-				// Signal new turn so the token counter accepts the fresh prompt size
-				this.plugin.contextManager.beginTurn();
+				// beginTurn() is now handled by the turnStart event bus subscriber
 
 				// Prepare history through context manager (may compact if over threshold)
 				const compactionResult = await this.plugin.contextManager.prepareHistory(conversationHistory, modelName);
@@ -516,10 +511,11 @@ To reference an attachment in your response, use the path shown above.`;
 						const response = await streamResponse.complete;
 						this.currentStreamingResponse = null;
 
-						// Update context manager and display with usage metadata from response
+						// Emit usage metadata via event bus (contextManager subscribes)
 						if (response.usageMetadata) {
-							this.plugin.contextManager.updateUsageMetadata(response.usageMetadata);
-							await this.updateTokenUsage();
+							await this.plugin.agentEventBus?.emit('apiResponseReceived', {
+								usageMetadata: response.usageMetadata,
+							});
 						} else {
 							this.plugin.logger.debug('[AgentView] Streaming response had no usageMetadata');
 						}
@@ -622,10 +618,11 @@ To reference an attachment in your response, use the path shown above.`;
 					this.plugin.logger.log('Agent view using non-streaming API');
 					const response = await modelApi.generateModelResponse(request);
 
-					// Update context manager and display with usage metadata from response
+					// Emit usage metadata via event bus (contextManager subscribes)
 					if (response.usageMetadata) {
-						this.plugin.contextManager.updateUsageMetadata(response.usageMetadata);
-						await this.updateTokenUsage();
+						await this.plugin.agentEventBus?.emit('apiResponseReceived', {
+							usageMetadata: response.usageMetadata,
+						});
 					} else {
 						this.plugin.logger.debug('[AgentView] Non-streaming response had no usageMetadata');
 					}
@@ -1125,10 +1122,6 @@ To reference an attachment in your response, use the path shown above.`;
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
-			onUsageMetadata: (metadata) => {
-				this.plugin.contextManager?.updateUsageMetadata(metadata);
-				this.updateTokenUsage();
-			},
 			incrementToolCallCount: (count: number) => {
 				this.turnToolCallCount += count;
 			},

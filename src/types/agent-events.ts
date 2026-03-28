@@ -1,5 +1,6 @@
 import { ChatSession } from './agent';
 import { ToolResult } from '../tools/types';
+import type { UsageMetadata } from '../services/context-manager';
 
 /**
  * Handler priority levels. Lower numbers execute first.
@@ -49,6 +50,11 @@ export interface AgentEventMap {
 			result: ToolResult;
 		}>;
 		toolCount: number;
+	}>;
+
+	/** After any API response (initial, follow-up, or retry) with usage metadata */
+	apiResponseReceived: Readonly<{
+		usageMetadata?: UsageMetadata;
 	}>;
 }
 
