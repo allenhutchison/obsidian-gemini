@@ -2,6 +2,7 @@ import { TFile } from 'obsidian';
 import { Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { AgentEventBus } from '../agent/agent-event-bus';
+import { HandlerPriority } from '../types/agent-events';
 import { ToolExecutionLogger } from './tool-execution-logger';
 import { ToolRegistrar } from './tool-registrar';
 import { GeminiPrompts, PromptManager } from '../prompts';
@@ -294,6 +295,25 @@ export class LifecycleService {
 		// Event bus is created once and persists across re-initialization
 		if (!plugin.agentEventBus) {
 			plugin.agentEventBus = new AgentEventBus(plugin.logger);
+
+			// Register core token tracking subscribers
+			plugin.agentEventBus.on(
+				'turnStart',
+				async () => {
+					plugin.contextManager?.beginTurn();
+				},
+				HandlerPriority.INTERNAL
+			);
+
+			plugin.agentEventBus.on(
+				'apiResponseReceived',
+				async (payload) => {
+					if (payload.usageMetadata) {
+						plugin.contextManager?.updateUsageMetadata(payload.usageMetadata);
+					}
+				},
+				HandlerPriority.INTERNAL
+			);
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);
