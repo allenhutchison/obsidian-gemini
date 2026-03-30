@@ -340,6 +340,11 @@ export class AgentView extends ItemView {
 		};
 		await this.displayMessage(userEntry);
 
+		// Save user message to history once, before the API call.
+		// Tools use in-memory updatedHistory, not the file, so early save is safe.
+		// addEntryToSession checks settings.chatHistory internally.
+		await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
+
 		try {
 			// Start with session context files (active file is already included if present)
 			const allContextFiles = [...this.currentSession.context.contextFiles];
@@ -459,9 +464,7 @@ To reference an attachment in your response, use the path shown above.`;
 						created_at: new Date(),
 					};
 					await this.displayMessage(compactionEntry);
-					if (this.plugin.settings.chatHistory) {
-						await this.plugin.sessionHistory.addEntryToSession(this.currentSession, compactionEntry);
-					}
+					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, compactionEntry);
 					this.plugin.logger.log(`[AgentView] Context compacted: ${compactionResult.estimatedTokens} tokens remaining`);
 				}
 
@@ -542,10 +545,7 @@ To reference an attachment in your response, use the path shown above.`;
 
 						// Check if the model requested tool calls
 						if (response.toolCalls && response.toolCalls.length > 0) {
-							// Save user message to history first
-							if (this.plugin.settings.chatHistory) {
-								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-							}
+							// User message already saved early in sendMessage()
 
 							// If there was any streamed text before tool calls, finalize it
 							if (modelMessageContainer && accumulatedMarkdown.trim()) {
@@ -563,9 +563,7 @@ To reference an attachment in your response, use the path shown above.`;
 								);
 
 								// Save partial response to history before executing tools
-								if (this.plugin.settings.chatHistory) {
-									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-								}
+								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
 							}
 
 							// Execute tools and handle results
@@ -597,11 +595,8 @@ To reference an attachment in your response, use the path shown above.`;
 									);
 								}
 
-								// Save to history
-								if (this.plugin.settings.chatHistory) {
-									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-								}
+								// Save AI response to history (user message already saved early)
+								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
 
 								// Ensure we're scrolled to bottom after streaming completes
 								this.messages.scrollToBottom();
@@ -618,10 +613,7 @@ To reference an attachment in your response, use the path shown above.`;
 								// Hide progress bar
 								this.progress.hide();
 
-								// Still save the user message to history
-								if (this.plugin.settings.chatHistory) {
-									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-								}
+								// User message already saved early in sendMessage()
 							}
 						}
 					} catch (error) {
@@ -670,11 +662,8 @@ To reference an attachment in your response, use the path shown above.`;
 							};
 							await this.displayMessage(aiEntry);
 
-							// Save to history
-							if (this.plugin.settings.chatHistory) {
-								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-							}
+							// Save AI response to history (user message already saved early)
+							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
 
 							// Hide progress bar after successful response
 							this.progress.hide();
@@ -685,10 +674,7 @@ To reference an attachment in your response, use the path shown above.`;
 								'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.'
 							);
 
-							// Still save the user message to history
-							if (this.plugin.settings.chatHistory) {
-								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-							}
+							// User message already saved early in sendMessage()
 
 							// Hide progress bar
 							this.progress.hide();

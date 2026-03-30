@@ -349,7 +349,7 @@ export class AgentViewTools {
 			});
 		}
 
-		// Note: User message was already saved to history before calling handleToolCalls
+		// Note: User message is saved to history early in sendMessage(), before the API call
 		// Don't save it again here to avoid duplicates
 
 		// Build updated conversation history with proper Gemini API format:
@@ -503,9 +503,7 @@ export class AgentViewTools {
 					await this.context.displayMessage(aiEntry);
 
 					// Save final response to history
-					if (this.plugin.settings.chatHistory) {
-						await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-					}
+					await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
 
 					// Hide progress bar after successful response
 					this.context.hideProgress();
@@ -551,9 +549,7 @@ export class AgentViewTools {
 						await this.context.displayMessage(aiEntry);
 
 						// Save final response to history
-						if (this.plugin.settings.chatHistory) {
-							await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-						}
+						await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
 
 						// Hide progress bar after successful retry response
 						this.context.hideProgress();
