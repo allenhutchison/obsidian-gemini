@@ -4,6 +4,7 @@ import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { GeminiClientFactory } from '../../api/simple-factory';
 import { HandlerPriority } from '../../types/agent-events';
+import { sanitizeFileName } from '../../utils/file-utils';
 
 /**
  * Callbacks for UI operations that the session manager needs to trigger
@@ -57,6 +58,7 @@ export interface SessionState {
  */
 export class AgentViewSession {
 	private currentSession: ChatSession | null = null;
+	private unsubscribers: (() => void)[] = [];
 
 	constructor(
 		private app: App,
@@ -65,13 +67,24 @@ export class AgentViewSession {
 		private state: SessionState
 	) {
 		// Auto-label sessions after each turn completes
-		this.plugin.agentEventBus?.on(
+		const unsub = this.plugin.agentEventBus?.on(
 			'turnEnd',
 			async () => {
 				await this.autoLabelSessionIfNeeded();
 			},
 			HandlerPriority.INTERNAL
 		);
+		if (unsub) this.unsubscribers.push(unsub);
+	}
+
+	/**
+	 * Unsubscribe from event bus handlers.
+	 */
+	destroy(): void {
+		for (const unsub of this.unsubscribers) {
+			unsub();
+		}
+		this.unsubscribers = [];
 	}
 
 	/**
@@ -268,7 +281,7 @@ Assistant: ${modelSummary}`;
 
 				// Update history file name
 				const oldPath = this.currentSession.historyPath;
-				const newFileName = (this.plugin.sessionManager as any).sanitizeFileName(fullTitle);
+				const newFileName = sanitizeFileName(fullTitle);
 				const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + newFileName + '.md';
 
 				// Rename the history file

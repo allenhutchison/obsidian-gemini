@@ -1215,6 +1215,9 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	async onClose() {
+		// Cleanup session event bus subscriptions
+		this.session?.destroy();
+
 		// Cleanup components
 		if (this.messages) {
 			this.messages.cleanup();
