@@ -115,3 +115,15 @@ export async function ensureFolderExists(
 
 	return (vault.getAbstractFileByPath(normalized) as TFolder) ?? ({ path: normalized } as TFolder);
 }
+
+/**
+ * Sanitize a string for use as a file name by removing or replacing
+ * characters forbidden on most operating systems.
+ */
+export function sanitizeFileName(fileName: string): string {
+	return fileName
+		.replace(/[\\/:*?"<>|]/g, '-') // Replace forbidden chars with dash
+		.replace(/\s+/g, ' ') // Normalize whitespace
+		.trim() // Remove leading/trailing whitespace
+		.slice(0, 100); // Limit length to prevent issues
+}

@@ -1,6 +1,7 @@
 import { normalizePath, TFile, TFolder } from 'obsidian';
 import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, SessionModelConfig } from '../types/agent';
 import type ObsidianGemini from '../main';
+import { sanitizeFileName } from '../utils/file-utils';
 
 /**
  * Manages chat sessions for both note-centric and agent modes
@@ -29,7 +30,7 @@ export class SessionManager {
 			requireConfirmation: [...DEFAULT_CONTEXTS.NOTE_CHAT.requireConfirmation],
 		};
 
-		const sessionTitle = this.sanitizeFileName(`${sourceFile.basename} Chat`);
+		const sessionTitle = sanitizeFileName(`${sourceFile.basename} Chat`);
 
 		const session: ChatSession = {
 			id: this.generateSessionId(),
@@ -61,8 +62,8 @@ export class SessionManager {
 			],
 		};
 
-		const rawTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
-		const sessionTitle = this.sanitizeFileName(rawTitle);
+		const rawTitle = title || `Agent Session ${new Date().toISOString().slice(0, 10)}`;
+		const sessionTitle = sanitizeFileName(rawTitle);
 
 		const session: ChatSession = {
 			id: this.generateSessionId(),
@@ -93,7 +94,7 @@ export class SessionManager {
 		}
 
 		// Check if a history file exists for this note
-		const sanitizedTitle = this.sanitizeFileName(`${sourceFile.basename} Chat`);
+		const sanitizedTitle = sanitizeFileName(`${sourceFile.basename} Chat`);
 		const historyPath = `${this.getHistoryFolderPath()}/${sanitizedTitle}.md`;
 		const historyFile = this.plugin.app.vault.getAbstractFileByPath(historyPath);
 
@@ -382,18 +383,5 @@ export class SessionManager {
 	private getAgentSessionsFolder(): TFolder | null {
 		const folder = this.plugin.app.vault.getAbstractFileByPath(this.getAgentSessionsFolderPath());
 		return folder instanceof TFolder ? folder : null;
-	}
-
-	/**
-	 * Sanitize file name by removing or replacing forbidden characters
-	 */
-	private sanitizeFileName(fileName: string): string {
-		// Characters that are forbidden in file names on most operating systems
-		// Including: \ / : * ? " < > |
-		return fileName
-			.replace(/[\\/:*?"<>|]/g, '-') // Replace forbidden chars with dash
-			.replace(/\s+/g, ' ') // Normalize whitespace
-			.trim() // Remove leading/trailing whitespace
-			.slice(0, 100); // Limit length to prevent issues
 	}
 }
