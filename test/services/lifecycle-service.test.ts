@@ -82,8 +82,18 @@ jest.mock('../../src/agent/agent-event-bus', () => ({
 		removeAll: jest.fn(),
 	})),
 }));
-jest.mock('../../src/services/tool-execution-logger', () => ({
+jest.mock('../../src/subscribers/tool-execution-logger', () => ({
 	ToolExecutionLogger: jest.fn().mockImplementation(() => ({
+		destroy: jest.fn(),
+	})),
+}));
+jest.mock('../../src/subscribers/context-tracking-subscriber', () => ({
+	ContextTrackingSubscriber: jest.fn().mockImplementation(() => ({
+		destroy: jest.fn(),
+	})),
+}));
+jest.mock('../../src/subscribers/accessed-files-subscriber', () => ({
+	AccessedFilesSubscriber: jest.fn().mockImplementation(() => ({
 		destroy: jest.fn(),
 	})),
 }));
