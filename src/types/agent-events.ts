@@ -56,6 +56,16 @@ export interface AgentEventMap {
 	apiResponseReceived: Readonly<{
 		usageMetadata?: UsageMetadata;
 	}>;
+
+	/** After a new agent session is created */
+	sessionCreated: Readonly<{
+		session: ChatSession;
+	}>;
+
+	/** After an existing session is loaded from history */
+	sessionLoaded: Readonly<{
+		session: ChatSession;
+	}>;
 }
 
 /** Union of all valid event names */
