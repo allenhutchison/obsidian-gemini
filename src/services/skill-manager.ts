@@ -56,7 +56,7 @@ export class SkillManager {
 	 * Get the skills folder path within the plugin state folder
 	 */
 	getSkillsFolderPath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/skills`);
+		return normalizePath(`${this.plugin.settings.historyFolder}/Skills`);
 	}
 
 	/**

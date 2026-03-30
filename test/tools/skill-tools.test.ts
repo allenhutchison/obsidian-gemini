@@ -162,7 +162,7 @@ describe('Skill Tools', () => {
 		});
 
 		it('should create skill successfully', async () => {
-			mockSkillManager.createSkill.mockResolvedValue('gemini-scribe/skills/my-skill/SKILL.md');
+			mockSkillManager.createSkill.mockResolvedValue('gemini-scribe/Skills/my-skill/SKILL.md');
 
 			const result = await tool.execute(
 				{
