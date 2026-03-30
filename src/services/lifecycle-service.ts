@@ -314,6 +314,13 @@ export class LifecycleService {
 				},
 				HandlerPriority.INTERNAL
 			);
+
+			// Reset context manager on session changes
+			const resetContext = async () => {
+				plugin.contextManager?.reset();
+			};
+			plugin.agentEventBus.on('sessionCreated', resetContext, HandlerPriority.INTERNAL);
+			plugin.agentEventBus.on('sessionLoaded', resetContext, HandlerPriority.INTERNAL);
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);

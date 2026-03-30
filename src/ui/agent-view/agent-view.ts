@@ -7,6 +7,7 @@ import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { getErrorMessage } from '../../utils/error-utils';
+import { HandlerPriority } from '../../types/agent-events';
 
 // Import all component modules
 import { AgentViewProgress } from './agent-view-progress';
@@ -55,6 +56,7 @@ export class AgentView extends ItemView {
 	private isExecuting: boolean = false;
 	private turnToolCallCount: number = 0;
 	private cancellationRequested: boolean = false;
+	private eventBusUnsubscribers: (() => void)[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private activeFileChangeHandler: () => void;
 	private pendingAttachments: InlineAttachment[] = [];
@@ -189,6 +191,25 @@ export class AgentView extends ItemView {
 		};
 
 		this.session = new AgentViewSession(this.app, this.plugin, sessionCallbacks, sessionState);
+
+		// Register session lifecycle event bus subscribers for token display
+		const createdUnsub = this.plugin.agentEventBus?.on(
+			'sessionCreated',
+			async () => {
+				await this.updateTokenUsage();
+			},
+			HandlerPriority.NORMAL
+		);
+		if (createdUnsub) this.eventBusUnsubscribers.push(createdUnsub);
+
+		const loadedUnsub = this.plugin.agentEventBus?.on(
+			'sessionLoaded',
+			async () => {
+				await this.refreshTokenUsageFromHistory();
+			},
+			HandlerPriority.NORMAL
+		);
+		if (loadedUnsub) this.eventBusUnsubscribers.push(loadedUnsub);
 
 		// Create the header and context panel
 		this.ui.createCompactHeader(this.sessionHeader, this.contextPanel, this.currentSession, callbacks);
@@ -925,12 +946,13 @@ To reference an attachment in your response, use the path shown above.`;
 	private async createNewSession() {
 		await this.session.createNewSession();
 		this.currentSession = this.session.getCurrentSession();
-		// Reset context manager for the new session and update display
-		this.plugin.contextManager?.reset();
 		// Re-render header now that currentSession is updated — the header
 		// rendered inside createNewSession() used the stale reference.
 		this.updateSessionHeader();
-		await this.updateTokenUsage();
+		// Emit after this.currentSession is updated so subscribers see the correct session
+		if (this.currentSession) {
+			await this.plugin.agentEventBus?.emit('sessionCreated', { session: this.currentSession });
+		}
 	}
 
 	/**
@@ -939,10 +961,11 @@ To reference an attachment in your response, use the path shown above.`;
 	private async loadSession(session: ChatSession) {
 		await this.session.loadSession(session);
 		this.currentSession = this.session.getCurrentSession();
-		// Reset cache and refresh token usage for the loaded session
-		this.plugin.contextManager?.reset();
 		this.updateSessionHeader();
-		await this.refreshTokenUsageFromHistory();
+		// Emit after this.currentSession is updated so subscribers see the correct session
+		if (this.currentSession) {
+			await this.plugin.agentEventBus?.emit('sessionLoaded', { session: this.currentSession });
+		}
 	}
 
 	/**
@@ -1215,8 +1238,12 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	async onClose() {
-		// Cleanup session event bus subscriptions
+		// Cleanup event bus subscriptions
 		this.session?.destroy();
+		for (const unsub of this.eventBusUnsubscribers) {
+			unsub();
+		}
+		this.eventBusUnsubscribers = [];
 
 		// Cleanup components
 		if (this.messages) {
