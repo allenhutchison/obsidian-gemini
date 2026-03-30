@@ -61,7 +61,7 @@ export class SessionManager {
 			],
 		};
 
-		const rawTitle = title || `Agent Session ${new Date().toLocaleDateString()}`;
+		const rawTitle = title || `Agent Session ${new Date().toISOString().slice(0, 10)}`;
 		const sessionTitle = this.sanitizeFileName(rawTitle);
 
 		const session: ChatSession = {

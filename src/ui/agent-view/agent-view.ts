@@ -162,7 +162,6 @@ export class AgentView extends ItemView {
 				this.progress.update(statusText, state),
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
 			incrementToolCallCount: (count: number) => {
 				this.turnToolCallCount += count;
 			},
@@ -581,9 +580,6 @@ To reference an attachment in your response, use the path shown above.`;
 								if (this.plugin.settings.chatHistory) {
 									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
 									await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-
-									// Auto-label session after first exchange
-									await this.autoLabelSessionIfNeeded();
 								}
 
 								// Ensure we're scrolled to bottom after streaming completes
@@ -657,9 +653,6 @@ To reference an attachment in your response, use the path shown above.`;
 							if (this.plugin.settings.chatHistory) {
 								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
 								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-
-								// Auto-label session after first exchange
-								await this.autoLabelSessionIfNeeded();
 							}
 
 							// Hide progress bar after successful response
@@ -971,10 +964,6 @@ To reference an attachment in your response, use the path shown above.`;
 	/**
 	 * Auto-label session after first exchange
 	 */
-	private async autoLabelSessionIfNeeded() {
-		await this.session.autoLabelSessionIfNeeded();
-	}
-
 	/**
 	 * Get current session for tool execution
 	 */
@@ -1121,7 +1110,6 @@ To reference an attachment in your response, use the path shown above.`;
 				this.progress.update(statusText, state),
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			autoLabelSessionIfNeeded: () => this.autoLabelSessionIfNeeded(),
 			incrementToolCallCount: (count: number) => {
 				this.turnToolCallCount += count;
 			},

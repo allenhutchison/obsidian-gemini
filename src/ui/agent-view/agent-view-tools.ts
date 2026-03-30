@@ -37,7 +37,6 @@ export interface AgentViewContext {
 	updateProgress(statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming'): void;
 	hideProgress(): void;
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
-	autoLabelSessionIfNeeded(): Promise<void>;
 	incrementToolCallCount?(count: number): void;
 }
 
@@ -527,9 +526,6 @@ export class AgentViewTools {
 					// Save final response to history
 					if (this.plugin.settings.chatHistory) {
 						await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-
-						// Auto-label session after first exchange
-						await this.context.autoLabelSessionIfNeeded();
 					}
 
 					// Hide progress bar after successful response
@@ -578,9 +574,6 @@ export class AgentViewTools {
 						// Save final response to history
 						if (this.plugin.settings.chatHistory) {
 							await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-
-							// Auto-label session after first exchange
-							await this.context.autoLabelSessionIfNeeded();
 						}
 
 						// Hide progress bar after successful retry response

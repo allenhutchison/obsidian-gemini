@@ -3,6 +3,7 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { GeminiClientFactory } from '../../api/simple-factory';
+import { HandlerPriority } from '../../types/agent-events';
 
 /**
  * Callbacks for UI operations that the session manager needs to trigger
@@ -62,7 +63,16 @@ export class AgentViewSession {
 		private plugin: ObsidianGemini,
 		private uiCallbacks: SessionUICallbacks,
 		private state: SessionState
-	) {}
+	) {
+		// Auto-label sessions after each turn completes
+		this.plugin.agentEventBus?.on(
+			'turnEnd',
+			async () => {
+				await this.autoLabelSessionIfNeeded();
+			},
+			HandlerPriority.INTERNAL
+		);
+	}
 
 	/**
 	 * Get the current session
@@ -184,7 +194,8 @@ export class AgentViewSession {
 	}
 
 	/**
-	 * Auto-label session after first exchange if it still has default title
+	 * Auto-label session after first complete turn if it still has default title.
+	 * Triggered by the turnEnd event bus hook.
 	 */
 	async autoLabelSessionIfNeeded() {
 		if (!this.currentSession) return;
@@ -197,84 +208,87 @@ export class AgentViewSession {
 			return; // Already has a custom title
 		}
 
-		// Get the conversation history
-		const history = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
-
-		// Only auto-label after we have at least a user message and an AI response
-		// Check for at least one user message and one model message
-		const hasUserMessage = history.some((entry) => entry.role === 'user');
-		const hasModelMessage = history.some((entry) => entry.role === 'model');
-
-		if (!hasUserMessage || !hasModelMessage) return;
-
 		// Check if we've already attempted to label this session
-		// to avoid multiple labeling attempts
-		if (this.currentSession.metadata && this.currentSession.metadata.autoLabeled) {
+		if (this.currentSession.metadata?.autoLabeled) {
 			return;
 		}
 
+		// Get the conversation history
+		const history = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
+
+		// Need at least a user message and a model response
+		const hasUserMessage = history.some((entry) => entry.role === 'user');
+		const hasModelMessage = history.some((entry) => entry.role === 'model');
+		if (!hasUserMessage || !hasModelMessage) return;
+
 		try {
-			// Generate a title based on the conversation
-			const titlePrompt = `Based on this conversation, suggest a concise title (max 50 characters) that captures the main topic or purpose. Return only the title text, no quotes or explanation.
+			// Build context for title generation — include the full first exchange
+			const firstUserMsg = history.find((e) => e.role === 'user')?.message || '';
+			const firstModelMsg = history.find((e) => e.role === 'model')?.message || '';
+			// Truncate model response to avoid sending too much
+			const modelSummary = firstModelMsg.length > 500 ? firstModelMsg.slice(0, 500) + '...' : firstModelMsg;
 
-Context Files: ${this.currentSession.context.contextFiles.map((f) => f.basename).join(', ')}
+			const contextFiles = this.currentSession.context.contextFiles.map((f) => f.basename).join(', ');
 
-User: ${history[0].message}`;
+			const titlePrompt = `Based on this conversation, suggest a concise title (max 40 characters) that captures the main topic or purpose. Return only the title text, no quotes or explanation.
 
-			try {
-				// Generate title using the model (use default settings for labeling)
-				const modelApi = GeminiClientFactory.createChatModel(this.plugin);
-				const response = await modelApi.generateModelResponse({
-					userMessage: titlePrompt,
-					conversationHistory: [],
-					model: this.plugin.settings.chatModelName,
-					prompt: titlePrompt,
-					renderContent: false,
-				});
+${contextFiles ? `Context Files: ${contextFiles}\n` : ''}User: ${firstUserMsg}
+Assistant: ${modelSummary}`;
 
-				// Extract and sanitize the title
-				const generatedTitle = response.markdown
-					.trim()
-					.replace(/^["']+/, '') // Remove leading quotes
-					.replace(/["']+$/, '') // Remove trailing quotes
-					.substring(0, 50); // Ensure max length
+			// Generate title using the model
+			const modelApi = GeminiClientFactory.createChatModel(this.plugin);
+			const response = await modelApi.generateModelResponse({
+				userMessage: titlePrompt,
+				conversationHistory: [],
+				model: this.plugin.settings.chatModelName,
+				prompt: titlePrompt,
+				renderContent: false,
+			});
 
-				if (generatedTitle && generatedTitle.length > 0) {
-					// Update session title
-					this.currentSession.title = generatedTitle;
+			// Extract and sanitize the title
+			let generatedTitle = response.markdown
+				.trim()
+				.replace(/^["']+/, '') // Remove leading quotes
+				.replace(/["']+$/, '') // Remove trailing quotes
+				.substring(0, 40); // Ensure max length
 
-					// Mark session as auto-labeled to prevent multiple attempts
-					if (!this.currentSession.metadata) {
-						this.currentSession.metadata = {};
-					}
-					this.currentSession.metadata.autoLabeled = true;
+			if (generatedTitle && generatedTitle.length > 0) {
+				// Prepend date for chronological sorting
+				const datePrefix = new Date().toISOString().slice(0, 10);
+				const fullTitle = `${datePrefix} ${generatedTitle}`;
 
-					// Update history file name
-					const oldPath = this.currentSession.historyPath;
-					const newFileName = (this.plugin.sessionManager as any).sanitizeFileName(generatedTitle);
-					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + newFileName + '.md';
+				// Update session title
+				this.currentSession.title = fullTitle;
 
-					// Rename the history file
-					const oldFile = this.app.vault.getAbstractFileByPath(oldPath);
-					if (oldFile) {
-						await this.app.fileManager.renameFile(oldFile, newPath);
-						this.currentSession.historyPath = newPath;
-					}
-
-					// Update session metadata
-					await this.updateSessionMetadata();
-
-					// Update UI
-					this.updateSessionHeader();
-
-					this.plugin.logger.log(`Auto-labeled session: ${generatedTitle}`);
+				// Mark session as auto-labeled to prevent multiple attempts
+				if (!this.currentSession.metadata) {
+					this.currentSession.metadata = {};
 				}
-			} catch (error) {
-				this.plugin.logger.error('Failed to auto-label session:', error);
-				// Don't show error to user - auto-labeling is a nice-to-have feature
+				this.currentSession.metadata.autoLabeled = true;
+
+				// Update history file name
+				const oldPath = this.currentSession.historyPath;
+				const newFileName = (this.plugin.sessionManager as any).sanitizeFileName(fullTitle);
+				const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + newFileName + '.md';
+
+				// Rename the history file
+				const oldFile = this.app.vault.getAbstractFileByPath(oldPath);
+				if (oldFile) {
+					await this.app.fileManager.renameFile(oldFile, newPath);
+					this.currentSession.historyPath = newPath;
+				}
+
+				// Update session metadata
+				await this.updateSessionMetadata();
+
+				// Update UI
+				this.updateSessionHeader();
+
+				this.plugin.logger.log(`Auto-labeled session: ${fullTitle}`);
 			}
 		} catch (error) {
-			this.plugin.logger.error('Error in auto-labeling:', error);
+			this.plugin.logger.error('Failed to auto-label session:', error);
+			// Don't show error to user - auto-labeling is a nice-to-have feature
 		}
 	}
 }
