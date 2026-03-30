@@ -33,7 +33,7 @@ import { FolderInitializer } from './services/folder-initializer';
 import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
 import { ProjectManager } from './services/project-manager';
 import { AgentEventBus } from './agent/agent-event-bus';
-import { ToolExecutionLogger } from './services/tool-execution-logger';
+import { ToolExecutionLogger } from './subscribers/tool-execution-logger';
 import { LifecycleService } from './services/lifecycle-service';
 
 export interface ModelDiscoverySettings {

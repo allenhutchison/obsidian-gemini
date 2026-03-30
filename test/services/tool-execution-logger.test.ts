@@ -1,4 +1,4 @@
-import { formatToolLine, formatToolBlock, mergeToolBlock } from '../../src/services/tool-execution-logger';
+import { formatToolLine, formatToolBlock, mergeToolBlock } from '../../src/subscribers/tool-execution-logger';
 
 describe('formatToolLine', () => {
 	it('should format a successful read_file', () => {

@@ -2,10 +2,10 @@ import { TFile } from 'obsidian';
 import { Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { AgentEventBus } from '../agent/agent-event-bus';
-import { HandlerPriority } from '../types/agent-events';
-import { ToolExecutionLogger } from './tool-execution-logger';
+import { ContextTrackingSubscriber } from '../subscribers/context-tracking-subscriber';
+import { AccessedFilesSubscriber } from '../subscribers/accessed-files-subscriber';
+import { ToolExecutionLogger } from '../subscribers/tool-execution-logger';
 import { ToolRegistrar } from './tool-registrar';
-import { extractAccessedPaths } from '../utils/accessed-files';
 import { GeminiPrompts, PromptManager } from '../prompts';
 import { ScribeFile } from '../files';
 import { ModelManager } from './model-manager';
@@ -41,6 +41,8 @@ export class LifecycleService {
 	private plugin: ObsidianGemini;
 	private toolRegistrar = new ToolRegistrar();
 	private persistentServicesCreated = false;
+	private contextTrackingSubscriber: ContextTrackingSubscriber | null = null;
+	private accessedFilesSubscriber: AccessedFilesSubscriber | null = null;
 	private ragListenersRegistered = false;
 
 	constructor(plugin: ObsidianGemini) {
@@ -137,6 +139,8 @@ export class LifecycleService {
 		plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
 		plugin.toolExecutionLogger?.destroy();
+		this.contextTrackingSubscriber?.destroy();
+		this.accessedFilesSubscriber?.destroy();
 		plugin.agentEventBus?.removeAll();
 
 		// Disconnect MCP servers
@@ -293,70 +297,11 @@ export class LifecycleService {
 	private async initializeCoreServices(): Promise<void> {
 		const plugin = this.plugin;
 
-		// Event bus is created once and persists across re-initialization
+		// Event bus and subscribers are created once and persist across re-initialization
 		if (!plugin.agentEventBus) {
 			plugin.agentEventBus = new AgentEventBus(plugin.logger);
-
-			// Register core token tracking subscribers
-			plugin.agentEventBus.on(
-				'turnStart',
-				async () => {
-					plugin.contextManager?.beginTurn();
-				},
-				HandlerPriority.INTERNAL
-			);
-
-			plugin.agentEventBus.on(
-				'apiResponseReceived',
-				async (payload) => {
-					if (payload.usageMetadata) {
-						plugin.contextManager?.updateUsageMetadata(payload.usageMetadata);
-					}
-				},
-				HandlerPriority.INTERNAL
-			);
-
-			// Reset context manager on session changes
-			const resetContext = async () => {
-				plugin.contextManager?.reset();
-			};
-			plugin.agentEventBus.on('sessionCreated', resetContext, HandlerPriority.INTERNAL);
-			plugin.agentEventBus.on('sessionLoaded', resetContext, HandlerPriority.INTERNAL);
-
-			// Track accessed files after each tool chain
-			plugin.agentEventBus.on(
-				'toolChainComplete',
-				async (payload) => {
-					const session = payload.session;
-					const accessedPaths = extractAccessedPaths(
-						payload.toolResults as Array<{
-							toolName: string;
-							toolArguments: any;
-							result: import('../tools/types').ToolResult;
-						}>
-					);
-					if (accessedPaths.length === 0) return;
-
-					if (!session.accessedFiles) {
-						session.accessedFiles = new Set<string>();
-					}
-					let hasNew = false;
-					for (const p of accessedPaths) {
-						if (!session.accessedFiles.has(p)) {
-							session.accessedFiles.add(p);
-							hasNew = true;
-						}
-					}
-					if (hasNew) {
-						try {
-							await plugin.sessionHistory.updateSessionMetadata(session);
-						} catch (error) {
-							plugin.logger.error('Failed to persist accessed_files:', error);
-						}
-					}
-				},
-				HandlerPriority.INTERNAL
-			);
+			this.contextTrackingSubscriber = new ContextTrackingSubscriber(plugin);
+			this.accessedFilesSubscriber = new AccessedFilesSubscriber(plugin);
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);
