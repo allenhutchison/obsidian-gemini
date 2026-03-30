@@ -340,11 +340,6 @@ export class AgentView extends ItemView {
 		};
 		await this.displayMessage(userEntry);
 
-		// Save user message to history once, before the API call.
-		// Tools use in-memory updatedHistory, not the file, so early save is safe.
-		// addEntryToSession checks settings.chatHistory internally.
-		await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-
 		try {
 			// Start with session context files (active file is already included if present)
 			const allContextFiles = [...this.currentSession.context.contextFiles];
@@ -356,8 +351,12 @@ export class AgentView extends ItemView {
 				}
 			});
 
-			// Get conversation history
+			// Snapshot pre-turn history BEFORE saving user message to avoid duplication
 			const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
+
+			// Save user message to history once, before the API call.
+			// Tools use in-memory updatedHistory, not the file, so early save is safe.
+			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
 
 			// Build context for AI request including mentioned files
 			const contextInfo = await this.plugin.gfile.buildFileContext(
