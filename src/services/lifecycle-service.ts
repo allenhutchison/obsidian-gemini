@@ -5,6 +5,7 @@ import { AgentEventBus } from '../agent/agent-event-bus';
 import { HandlerPriority } from '../types/agent-events';
 import { ToolExecutionLogger } from './tool-execution-logger';
 import { ToolRegistrar } from './tool-registrar';
+import { extractAccessedPaths } from '../utils/accessed-files';
 import { GeminiPrompts, PromptManager } from '../prompts';
 import { ScribeFile } from '../files';
 import { ModelManager } from './model-manager';
@@ -321,6 +322,41 @@ export class LifecycleService {
 			};
 			plugin.agentEventBus.on('sessionCreated', resetContext, HandlerPriority.INTERNAL);
 			plugin.agentEventBus.on('sessionLoaded', resetContext, HandlerPriority.INTERNAL);
+
+			// Track accessed files after each tool chain
+			plugin.agentEventBus.on(
+				'toolChainComplete',
+				async (payload) => {
+					const session = payload.session;
+					const accessedPaths = extractAccessedPaths(
+						payload.toolResults as Array<{
+							toolName: string;
+							toolArguments: any;
+							result: import('../tools/types').ToolResult;
+						}>
+					);
+					if (accessedPaths.length === 0) return;
+
+					if (!session.accessedFiles) {
+						session.accessedFiles = new Set<string>();
+					}
+					let hasNew = false;
+					for (const p of accessedPaths) {
+						if (!session.accessedFiles.has(p)) {
+							session.accessedFiles.add(p);
+							hasNew = true;
+						}
+					}
+					if (hasNew) {
+						try {
+							await plugin.sessionHistory.updateSessionMetadata(session);
+						} catch (error) {
+							plugin.logger.error('Failed to persist accessed_files:', error);
+						}
+					}
+				},
+				HandlerPriority.INTERNAL
+			);
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);
