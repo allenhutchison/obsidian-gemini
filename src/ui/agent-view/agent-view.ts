@@ -949,8 +949,10 @@ To reference an attachment in your response, use the path shown above.`;
 		// Re-render header now that currentSession is updated — the header
 		// rendered inside createNewSession() used the stale reference.
 		this.updateSessionHeader();
-		// contextManager.reset() and updateTokenUsage() are handled by
-		// sessionCreated event bus subscribers
+		// Emit after this.currentSession is updated so subscribers see the correct session
+		if (this.currentSession) {
+			await this.plugin.agentEventBus?.emit('sessionCreated', { session: this.currentSession });
+		}
 	}
 
 	/**
@@ -960,8 +962,10 @@ To reference an attachment in your response, use the path shown above.`;
 		await this.session.loadSession(session);
 		this.currentSession = this.session.getCurrentSession();
 		this.updateSessionHeader();
-		// contextManager.reset() and refreshTokenUsageFromHistory() are handled by
-		// sessionLoaded event bus subscribers
+		// Emit after this.currentSession is updated so subscribers see the correct session
+		if (this.currentSession) {
+			await this.plugin.agentEventBus?.emit('sessionLoaded', { session: this.currentSession });
+		}
 	}
 
 	/**

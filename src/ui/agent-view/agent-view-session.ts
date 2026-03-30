@@ -131,13 +131,6 @@ export class AgentViewSession {
 
 			// Focus on input
 			this.uiCallbacks.focusInput();
-
-			// Notify subscribers that a new session was created
-			if (this.currentSession) {
-				await this.plugin.agentEventBus?.emit('sessionCreated', {
-					session: this.currentSession,
-				});
-			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to create agent session:', error);
 			new Notice('Failed to create agent session');
@@ -207,11 +200,6 @@ export class AgentViewSession {
 			// Update UI
 			this.uiCallbacks.updateSessionHeader();
 			this.uiCallbacks.updateContextPanel();
-
-			// Notify subscribers that a session was loaded
-			await this.plugin.agentEventBus?.emit('sessionLoaded', {
-				session: this.currentSession,
-			});
 		} catch (error) {
 			this.plugin.logger.error('Failed to load session:', error);
 			new Notice('Failed to load session');
