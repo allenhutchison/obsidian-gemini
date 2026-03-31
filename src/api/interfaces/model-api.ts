@@ -66,6 +66,7 @@ export type ImagePart = InlineDataPart;
  * @property userMessage - The message from the user.
  * @property renderContent - Whether to render the content in responses (default: true)
  * @property customPrompt - Optional custom prompt to modify system behavior
+ * @property projectInstructions - Optional project-scoped instructions injected into the system prompt
  * @property availableTools - Optional array of tool definitions for function calling
  * @property inlineAttachments - Optional array of inline data attachments for multimodal input
  * @property imageAttachments - Deprecated alias for inlineAttachments
