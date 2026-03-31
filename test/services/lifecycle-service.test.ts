@@ -231,10 +231,11 @@ describe('LifecycleService', () => {
 			expect(registrarInstance.registerAll).toHaveBeenCalledWith(mockPlugin.toolRegistry, mockPlugin.logger);
 		});
 
-		it('should create ProjectActivationSubscriber', async () => {
+		it('should create ProjectActivationSubscriber with plugin', async () => {
 			await lifecycle.setup();
 
 			expect(ProjectActivationSubscriber).toHaveBeenCalledTimes(1);
+			expect(ProjectActivationSubscriber).toHaveBeenCalledWith(mockPlugin);
 		});
 	});
 
