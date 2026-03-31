@@ -97,6 +97,11 @@ jest.mock('../../src/subscribers/accessed-files-subscriber', () => ({
 		destroy: jest.fn(),
 	})),
 }));
+jest.mock('../../src/subscribers/project-activation-subscriber', () => ({
+	ProjectActivationSubscriber: jest.fn().mockImplementation(() => ({
+		destroy: jest.fn(),
+	})),
+}));
 jest.mock('../../src/services/project-manager', () => ({
 	ProjectManager: jest.fn().mockImplementation(() => ({
 		initialize: jest.fn(),

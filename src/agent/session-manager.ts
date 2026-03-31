@@ -259,6 +259,7 @@ export class SessionManager {
 			lastActive: new Date(file.stat.mtime),
 			historyPath: file.path,
 			sourceNotePath: frontmatter?.source_note_path,
+			projectPath: this.parseProjectPath(frontmatter),
 			metadata: frontmatter?.metadata,
 		};
 
@@ -328,6 +329,23 @@ export class SessionManager {
 	/**
 	 * Parse model config from frontmatter
 	 */
+	private parseProjectPath(frontmatter: any): string | undefined {
+		if (!frontmatter?.project) return undefined;
+		const ref = frontmatter.project;
+		if (typeof ref === 'string' && ref.startsWith('[[') && ref.endsWith(']]')) {
+			const linkpath = ref.slice(2, -2);
+			const resolved = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, '');
+			if (resolved instanceof TFile) {
+				return resolved.path;
+			}
+		}
+		// Also accept raw path strings
+		if (typeof ref === 'string' && !ref.startsWith('[[')) {
+			return ref;
+		}
+		return undefined;
+	}
+
 	private parseModelConfigFromFrontmatter(frontmatter: any): SessionModelConfig | undefined {
 		if (!frontmatter) {
 			return undefined;
