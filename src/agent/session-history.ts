@@ -80,12 +80,16 @@ export class SessionHistory {
 		const role = entry.role.charAt(0).toUpperCase() + entry.role.slice(1);
 		const messageLines = entry.message.split('\n');
 
+		// Use configured user name for user entries, capitalized role for model
+		const userDisplayName = (this.plugin.settings.userName ?? '').trim();
+		const displayName = entry.role === 'user' ? userDisplayName || 'User' : role;
+
 		const entryContent = this.entryTemplate({
 			role: role,
+			displayName: displayName,
 			messageLines: messageLines,
 			timestamp: new Date().toISOString(),
 			pluginVersion: this.plugin.manifest.version,
-			fileVersion: 'unknown', // TODO: Get file version from context
 			model: entry.model,
 			temperature: entry.metadata?.temperature,
 			topP: entry.metadata?.topP,
@@ -184,12 +188,10 @@ export class SessionHistory {
 		for (const section of contentSections) {
 			if (!section.trim()) continue;
 
-			// Look for role header (## User or ## Assistant)
-			const roleMatch = section.match(/^## (User|Assistant|Model)\s*$/m);
+			// Look for role header — ## Assistant/Model for AI, or any other name for user
+			// The callout type (> [!user]+ or > [!assistant]+) determines the actual role
+			const roleMatch = section.match(/^## (.+?)\s*$/m);
 			if (!roleMatch) continue;
-
-			const roleName = roleMatch[1].toLowerCase();
-			const role = roleName === 'assistant' ? 'model' : roleName === 'model' ? 'model' : 'user';
 
 			// Extract message content from callout blocks
 			// Look for > [!user]+ or > [!assistant]+ blocks
@@ -197,6 +199,8 @@ export class SessionHistory {
 			const calloutMatch = section.match(calloutRegex);
 
 			if (calloutMatch) {
+				const role = calloutMatch[1] === 'user' ? 'user' : 'model';
+
 				// Extract lines after the callout marker
 				const lines = section.split('\n');
 				const calloutIndex = lines.findIndex((line) => calloutRegex.test(line));

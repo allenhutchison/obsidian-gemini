@@ -109,19 +109,19 @@ describe('SkillManager', () => {
 
 	describe('getSkillsFolderPath', () => {
 		it('should return the correct skills folder path', () => {
-			expect(manager.getSkillsFolderPath()).toBe('gemini-scribe/skills');
+			expect(manager.getSkillsFolderPath()).toBe('gemini-scribe/Skills');
 		});
 	});
 
 	describe('discoverSkills', () => {
 		it('should discover skills from subdirectories with SKILL.md', async () => {
-			const skillFile = new TFile('gemini-scribe/skills/code-review/SKILL.md');
-			const skillFolder = new TFolder('gemini-scribe/skills/code-review', [skillFile]);
-			const skillsRoot = new TFolder('gemini-scribe/skills', [skillFolder]);
+			const skillFile = new TFile('gemini-scribe/Skills/code-review/SKILL.md');
+			const skillFolder = new TFolder('gemini-scribe/Skills/code-review', [skillFile]);
+			const skillsRoot = new TFolder('gemini-scribe/Skills', [skillFolder]);
 
 			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
-				if (path === 'gemini-scribe/skills') return skillsRoot;
-				if (path === 'gemini-scribe/skills/code-review/SKILL.md') return skillFile;
+				if (path === 'gemini-scribe/Skills') return skillsRoot;
+				if (path === 'gemini-scribe/Skills/code-review/SKILL.md') return skillFile;
 				return null;
 			});
 
@@ -151,11 +151,11 @@ describe('SkillManager', () => {
 		});
 
 		it('should skip directories without SKILL.md', async () => {
-			const emptyFolder = new TFolder('gemini-scribe/skills/empty-skill', []);
-			const skillsRoot = new TFolder('gemini-scribe/skills', [emptyFolder]);
+			const emptyFolder = new TFolder('gemini-scribe/Skills/empty-skill', []);
+			const skillsRoot = new TFolder('gemini-scribe/Skills', [emptyFolder]);
 
 			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
-				if (path === 'gemini-scribe/skills') return skillsRoot;
+				if (path === 'gemini-scribe/Skills') return skillsRoot;
 				return null;
 			});
 
@@ -166,13 +166,13 @@ describe('SkillManager', () => {
 		});
 
 		it('should skip skills with missing frontmatter', async () => {
-			const skillFile = new TFile('gemini-scribe/skills/bad-skill/SKILL.md');
-			const skillFolder = new TFolder('gemini-scribe/skills/bad-skill', [skillFile]);
-			const skillsRoot = new TFolder('gemini-scribe/skills', [skillFolder]);
+			const skillFile = new TFile('gemini-scribe/Skills/bad-skill/SKILL.md');
+			const skillFolder = new TFolder('gemini-scribe/Skills/bad-skill', [skillFile]);
+			const skillsRoot = new TFolder('gemini-scribe/Skills', [skillFolder]);
 
 			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
-				if (path === 'gemini-scribe/skills') return skillsRoot;
-				if (path === 'gemini-scribe/skills/bad-skill/SKILL.md') return skillFile;
+				if (path === 'gemini-scribe/Skills') return skillsRoot;
+				if (path === 'gemini-scribe/Skills/bad-skill/SKILL.md') return skillFile;
 				return null;
 			});
 
@@ -188,7 +188,7 @@ describe('SkillManager', () => {
 
 	describe('loadSkill', () => {
 		it('should return skill body content without frontmatter', async () => {
-			const file = new TFile('gemini-scribe/skills/my-skill/SKILL.md');
+			const file = new TFile('gemini-scribe/Skills/my-skill/SKILL.md');
 			mockVault.getAbstractFileByPath.mockReturnValue(file);
 			mockVault.read.mockResolvedValue(
 				'---\nname: my-skill\ndescription: test\n---\n\n# My Skill\n\nInstructions here'
@@ -211,7 +211,7 @@ describe('SkillManager', () => {
 		});
 
 		it('should return full content if no frontmatter position', async () => {
-			const file = new TFile('gemini-scribe/skills/simple/SKILL.md');
+			const file = new TFile('gemini-scribe/Skills/simple/SKILL.md');
 			mockVault.getAbstractFileByPath.mockReturnValue(file);
 			mockVault.read.mockResolvedValue('No frontmatter content');
 			mockMetadataCache.getFileCache.mockReturnValue({});
@@ -234,14 +234,14 @@ describe('SkillManager', () => {
 
 	describe('readSkillResource', () => {
 		it('should read a resource file from skill directory', async () => {
-			const file = new TFile('gemini-scribe/skills/my-skill/references/ref.md');
+			const file = new TFile('gemini-scribe/Skills/my-skill/references/ref.md');
 			mockVault.getAbstractFileByPath.mockReturnValue(file);
 			mockVault.read.mockResolvedValue('Reference content');
 
 			const content = await manager.readSkillResource('my-skill', 'references/ref.md');
 
 			expect(content).toBe('Reference content');
-			expect(mockVault.getAbstractFileByPath).toHaveBeenCalledWith('gemini-scribe/skills/my-skill/references/ref.md');
+			expect(mockVault.getAbstractFileByPath).toHaveBeenCalledWith('gemini-scribe/Skills/my-skill/references/ref.md');
 		});
 
 		it('should return null for non-existent resource', async () => {
@@ -270,13 +270,13 @@ describe('SkillManager', () => {
 
 	describe('getSkillSummaries', () => {
 		it('should return name and description only', async () => {
-			const skillFile = new TFile('gemini-scribe/skills/test-skill/SKILL.md');
-			const skillFolder = new TFolder('gemini-scribe/skills/test-skill', [skillFile]);
-			const skillsRoot = new TFolder('gemini-scribe/skills', [skillFolder]);
+			const skillFile = new TFile('gemini-scribe/Skills/test-skill/SKILL.md');
+			const skillFolder = new TFolder('gemini-scribe/Skills/test-skill', [skillFile]);
+			const skillsRoot = new TFolder('gemini-scribe/Skills', [skillFolder]);
 
 			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
-				if (path === 'gemini-scribe/skills') return skillsRoot;
-				if (path === 'gemini-scribe/skills/test-skill/SKILL.md') return skillFile;
+				if (path === 'gemini-scribe/Skills') return skillsRoot;
+				if (path === 'gemini-scribe/Skills/test-skill/SKILL.md') return skillFile;
 				return null;
 			});
 
@@ -305,7 +305,7 @@ describe('SkillManager', () => {
 
 	describe('createSkill', () => {
 		it('should create a skill directory and SKILL.md using processFrontMatter', async () => {
-			const createdFile = new TFile('gemini-scribe/skills/new-skill/SKILL.md');
+			const createdFile = new TFile('gemini-scribe/Skills/new-skill/SKILL.md');
 			// createSkill flow: duplicate check + ensureFolderExists (skill dir)
 			const folderResponses: Record<string, InstanceType<typeof TFolder> | null> = {};
 			mockVault.createFolder.mockImplementation(async (path: string) => {
@@ -327,20 +327,20 @@ describe('SkillManager', () => {
 
 			const path = await manager.createSkill('new-skill', 'A new skill', '# Instructions\n\nDo stuff');
 
-			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/skills/new-skill');
+			expect(mockVault.createFolder).toHaveBeenCalledWith('gemini-scribe/Skills/new-skill');
 			expect(mockVault.create).toHaveBeenCalledWith(
-				'gemini-scribe/skills/new-skill/SKILL.md',
+				'gemini-scribe/Skills/new-skill/SKILL.md',
 				expect.stringContaining('# Instructions')
 			);
 			expect(mockFileManager.processFrontMatter).toHaveBeenCalledWith(createdFile, expect.any(Function));
-			expect(path).toBe('gemini-scribe/skills/new-skill/SKILL.md');
+			expect(path).toBe('gemini-scribe/Skills/new-skill/SKILL.md');
 		});
 
 		it('should throw error for duplicate skill', async () => {
-			const existingFolder = new TFolder('gemini-scribe/skills/existing');
+			const existingFolder = new TFolder('gemini-scribe/Skills/existing');
 			// createSkill checks if skill dir already exists
 			const folderResponses: Record<string, any> = {
-				'gemini-scribe/skills/existing': existingFolder,
+				'gemini-scribe/Skills/existing': existingFolder,
 			};
 			mockVault.createFolder.mockImplementation(async (path: string) => {
 				folderResponses[path] = new TFolder(path);
@@ -415,13 +415,13 @@ describe('SkillManager', () => {
 			});
 
 			it('should let vault skills override bundled skills with same name', async () => {
-				const skillFile = new TFile('gemini-scribe/skills/gemini-scribe-help/SKILL.md');
-				const skillFolder = new TFolder('gemini-scribe/skills/gemini-scribe-help', [skillFile]);
-				const skillsRoot = new TFolder('gemini-scribe/skills', [skillFolder]);
+				const skillFile = new TFile('gemini-scribe/Skills/gemini-scribe-help/SKILL.md');
+				const skillFolder = new TFolder('gemini-scribe/Skills/gemini-scribe-help', [skillFile]);
+				const skillsRoot = new TFolder('gemini-scribe/Skills', [skillFolder]);
 
 				mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
-					if (path === 'gemini-scribe/skills') return skillsRoot;
-					if (path === 'gemini-scribe/skills/gemini-scribe-help/SKILL.md') return skillFile;
+					if (path === 'gemini-scribe/Skills') return skillsRoot;
+					if (path === 'gemini-scribe/Skills/gemini-scribe-help/SKILL.md') return skillFile;
 					return null;
 				});
 
@@ -454,7 +454,7 @@ describe('SkillManager', () => {
 
 			it('should prefer vault skill over bundled skill', async () => {
 				const rawContent = '---\nname: gemini-scribe-help\n---\n\n# Custom Help';
-				const file = new TFile('gemini-scribe/skills/gemini-scribe-help/SKILL.md');
+				const file = new TFile('gemini-scribe/Skills/gemini-scribe-help/SKILL.md');
 				mockVault.getAbstractFileByPath.mockReturnValue(file);
 				mockVault.read.mockResolvedValue(rawContent);
 				mockMetadataCache.getFileCache.mockReturnValue({

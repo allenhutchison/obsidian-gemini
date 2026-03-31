@@ -28,7 +28,12 @@ describe('FolderInitializer', () => {
 		jest.clearAllMocks();
 		mockPlugin = {
 			app: {
-				vault: {},
+				vault: {
+					getAbstractFileByPath: jest.fn().mockReturnValue(null),
+				},
+				fileManager: {
+					renameFile: jest.fn(),
+				},
 			},
 			settings: {
 				historyFolder: 'gemini-scribe',
@@ -67,8 +72,8 @@ describe('FolderInitializer', () => {
 		);
 		expect(mockEnsureFolderExists).toHaveBeenCalledWith(
 			mockPlugin.app.vault,
-			'gemini-scribe/skills',
-			'skills',
+			'gemini-scribe/Skills',
+			'Skills',
 			mockPlugin.logger
 		);
 	});
@@ -84,7 +89,7 @@ describe('FolderInitializer', () => {
 
 		expect(callOrder[0]).toBe('gemini-scribe');
 		expect(callOrder.slice(1)).toEqual(
-			expect.arrayContaining(['gemini-scribe/Agent-Sessions', 'gemini-scribe/Prompts', 'gemini-scribe/skills'])
+			expect.arrayContaining(['gemini-scribe/Agent-Sessions', 'gemini-scribe/Prompts', 'gemini-scribe/Skills'])
 		);
 	});
 
