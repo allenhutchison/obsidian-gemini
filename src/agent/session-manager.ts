@@ -333,8 +333,9 @@ export class SessionManager {
 		if (!frontmatter?.project) return undefined;
 		const ref = frontmatter.project;
 		if (typeof ref === 'string' && ref.startsWith('[[') && ref.endsWith(']]')) {
-			const linkpath = ref.slice(2, -2);
-			const resolved = this.plugin.app.metadataCache.getFirstLinkpathDest(linkpath, '');
+			// Strip [[ ]], then remove alias (|...) and anchor (#...)
+			const inner = ref.slice(2, -2).split('|')[0].split('#')[0].trim();
+			const resolved = this.plugin.app.metadataCache.getFirstLinkpathDest(inner, '');
 			if (resolved instanceof TFile) {
 				return resolved.path;
 			}

@@ -52,6 +52,11 @@ export class ProjectActivationSubscriber {
 					if (!project) {
 						plugin.logger.warn(`Project file no longer exists for session: ${session.projectPath}. Unlinking.`);
 						session.projectPath = undefined;
+						try {
+							await plugin.sessionHistory.updateSessionMetadata(session);
+						} catch (error) {
+							plugin.logger.error('Failed to persist project unlink:', error);
+						}
 					}
 				},
 				HandlerPriority.INTERNAL
