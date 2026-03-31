@@ -138,15 +138,11 @@ export class GeminiPrompts {
 			language: this.getLanguageCode(),
 			date: new Date().toLocaleDateString(),
 			time: new Date().toLocaleTimeString(),
-			agentsMemory: agentsMemory || '', // Pass as template variable
+			agentsMemory: agentsMemory || '',
+			projectInstructions: projectInstructions || '',
 		});
 
 		let fullPrompt = baseSystemPrompt;
-
-		// Add project instructions if active (between base and tools)
-		if (projectInstructions) {
-			fullPrompt += '\n\n## Project Instructions\n\n' + projectInstructions;
-		}
 
 		// Add tool instructions if tools are provided
 		if (availableTools && availableTools.length > 0) {
