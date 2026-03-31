@@ -385,6 +385,19 @@ export class AgentView extends ItemView {
 				}
 			}
 
+			// Load project instructions if session is linked to a project
+			let projectInstructions: string | undefined;
+			if (this.currentSession?.projectPath && this.plugin.projectManager) {
+				try {
+					const project = await this.plugin.projectManager.getProject(this.currentSession.projectPath);
+					if (project?.instructions) {
+						projectInstructions = project.instructions;
+					}
+				} catch (error) {
+					this.plugin.logger.error('Error loading project instructions:', error);
+				}
+			}
+
 			// Build additional prompt instructions (not part of system prompt)
 			let additionalInstructions = '';
 
@@ -475,6 +488,7 @@ To reference an attachment in your response, use the path shown above.`;
 					topP: modelConfig.topP ?? this.plugin.settings.topP,
 					prompt: additionalInstructions, // Additional context and instructions
 					customPrompt: customPrompt, // Custom prompt template (if configured)
+					projectInstructions: projectInstructions, // Project-scoped instructions (if active)
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
 					inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),

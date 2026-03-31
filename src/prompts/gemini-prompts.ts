@@ -123,7 +123,8 @@ export class GeminiPrompts {
 		availableTools?: any[],
 		customPrompt?: CustomPrompt,
 		agentsMemory?: string | null,
-		availableSkills?: { name: string; description: string }[]
+		availableSkills?: { name: string; description: string }[],
+		projectInstructions?: string
 	): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
@@ -137,7 +138,8 @@ export class GeminiPrompts {
 			language: this.getLanguageCode(),
 			date: new Date().toLocaleDateString(),
 			time: new Date().toLocaleTimeString(),
-			agentsMemory: agentsMemory || '', // Pass as template variable
+			agentsMemory: agentsMemory || '',
+			projectInstructions: projectInstructions || '',
 		});
 
 		let fullPrompt = baseSystemPrompt;

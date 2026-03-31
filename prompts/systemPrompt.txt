@@ -25,3 +25,9 @@ external information as needed.
 
 {{{agentsMemory}}}
 {{/if}}
+
+{{#if projectInstructions}}
+## Project Instructions
+
+{{{projectInstructions}}}
+{{/if}}

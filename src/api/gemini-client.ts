@@ -238,7 +238,8 @@ export class GeminiClient implements ModelApi {
 				extReq.availableTools,
 				extReq.customPrompt,
 				agentsMemory,
-				availableSkills
+				availableSkills,
+				extReq.projectInstructions
 			);
 
 			// Append additional instructions from prompt field (e.g., generalPrompt, contextPrompt)
