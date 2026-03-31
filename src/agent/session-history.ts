@@ -302,6 +302,13 @@ export class SessionHistory {
 				delete frontmatter.source_note_path;
 			}
 
+			// Project linkage
+			if (session.projectPath) {
+				frontmatter.project = `[[${session.projectPath}]]`;
+			} else {
+				delete frontmatter.project;
+			}
+
 			// Context fields
 			if (session.context?.contextFiles?.length) {
 				frontmatter.context_files = session.context.contextFiles.map((f) => `[[${f.basename}]]`);

@@ -5,6 +5,7 @@ import { AgentEventBus } from '../agent/agent-event-bus';
 import { ContextTrackingSubscriber } from '../subscribers/context-tracking-subscriber';
 import { AccessedFilesSubscriber } from '../subscribers/accessed-files-subscriber';
 import { ToolExecutionLogger } from '../subscribers/tool-execution-logger';
+import { ProjectActivationSubscriber } from '../subscribers/project-activation-subscriber';
 import { ToolRegistrar } from './tool-registrar';
 import { GeminiPrompts, PromptManager } from '../prompts';
 import { ScribeFile } from '../files';
@@ -43,6 +44,7 @@ export class LifecycleService {
 	private persistentServicesCreated = false;
 	private contextTrackingSubscriber: ContextTrackingSubscriber | null = null;
 	private accessedFilesSubscriber: AccessedFilesSubscriber | null = null;
+	private projectActivationSubscriber: ProjectActivationSubscriber | null = null;
 	private ragListenersRegistered = false;
 
 	constructor(plugin: ObsidianGemini) {
@@ -141,6 +143,7 @@ export class LifecycleService {
 		plugin.toolExecutionLogger?.destroy();
 		this.contextTrackingSubscriber?.destroy();
 		this.accessedFilesSubscriber?.destroy();
+		this.projectActivationSubscriber?.destroy();
 		plugin.agentEventBus?.removeAll();
 
 		// Disconnect MCP servers
@@ -302,6 +305,7 @@ export class LifecycleService {
 			plugin.agentEventBus = new AgentEventBus(plugin.logger);
 			this.contextTrackingSubscriber = new ContextTrackingSubscriber(plugin);
 			this.accessedFilesSubscriber = new AccessedFilesSubscriber(plugin);
+			this.projectActivationSubscriber = new ProjectActivationSubscriber(plugin);
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);

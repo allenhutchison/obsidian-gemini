@@ -97,6 +97,9 @@ export interface ChatSession {
 	/** For note-chat sessions, the source note path */
 	sourceNotePath?: string;
 
+	/** Path to the project definition file, if this session is linked to a project */
+	projectPath?: string;
+
 	/** Additional metadata for the session */
 	metadata?: {
 		autoLabeled?: boolean;

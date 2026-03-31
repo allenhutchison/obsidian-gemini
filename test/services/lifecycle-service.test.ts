@@ -97,11 +97,17 @@ jest.mock('../../src/subscribers/accessed-files-subscriber', () => ({
 		destroy: jest.fn(),
 	})),
 }));
+jest.mock('../../src/subscribers/project-activation-subscriber', () => ({
+	ProjectActivationSubscriber: jest.fn().mockImplementation(() => ({
+		destroy: jest.fn(),
+	})),
+}));
 jest.mock('../../src/services/project-manager', () => ({
 	ProjectManager: jest.fn().mockImplementation(() => ({
 		initialize: jest.fn(),
 		registerVaultEvents: jest.fn(),
 		discoverProjects: jest.fn().mockReturnValue([]),
+		destroy: jest.fn(),
 	})),
 }));
 jest.mock('../../src/ui/update-notification-modal', () => ({ UpdateNotificationModal: jest.fn() }));
@@ -109,6 +115,7 @@ jest.mock('../../src/ui/update-notification-modal', () => ({ UpdateNotificationM
 // Must be after all jest.mock calls
 import { LifecycleService } from '../../src/services/lifecycle-service';
 import { ToolRegistrar } from '../../src/services/tool-registrar';
+import { ProjectActivationSubscriber } from '../../src/subscribers/project-activation-subscriber';
 
 function createMockPlugin(overrides: Record<string, any> = {}): any {
 	return {
@@ -223,6 +230,13 @@ describe('LifecycleService', () => {
 			const registrarInstance = (ToolRegistrar as unknown as jest.Mock).mock.results[0].value;
 			expect(registrarInstance.registerAll).toHaveBeenCalledWith(mockPlugin.toolRegistry, mockPlugin.logger);
 		});
+
+		it('should create ProjectActivationSubscriber with plugin', async () => {
+			await lifecycle.setup();
+
+			expect(ProjectActivationSubscriber).toHaveBeenCalledTimes(1);
+			expect(ProjectActivationSubscriber).toHaveBeenCalledWith(mockPlugin);
+		});
 	});
 
 	describe('teardown', () => {
@@ -276,6 +290,19 @@ describe('LifecycleService', () => {
 			lifecycle.onUnload();
 
 			expect(mockDestroy).toHaveBeenCalled();
+		});
+
+		it('should call destroy on ProjectActivationSubscriber', async () => {
+			await lifecycle.setup();
+			const instance = (ProjectActivationSubscriber as unknown as jest.Mock).mock.results[0].value;
+
+			// Clear services that would interfere with onUnload
+			mockPlugin.mcpManager = null;
+			mockPlugin.ragIndexing = null;
+
+			lifecycle.onUnload();
+
+			expect(instance.destroy).toHaveBeenCalled();
 		});
 
 		it('should handle missing services gracefully', () => {
