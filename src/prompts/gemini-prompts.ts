@@ -123,7 +123,8 @@ export class GeminiPrompts {
 		availableTools?: any[],
 		customPrompt?: CustomPrompt,
 		agentsMemory?: string | null,
-		availableSkills?: { name: string; description: string }[]
+		availableSkills?: { name: string; description: string }[],
+		projectInstructions?: string
 	): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
@@ -141,6 +142,11 @@ export class GeminiPrompts {
 		});
 
 		let fullPrompt = baseSystemPrompt;
+
+		// Add project instructions if active (between base and tools)
+		if (projectInstructions) {
+			fullPrompt += '\n\n## Project Instructions\n\n' + projectInstructions;
+		}
 
 		// Add tool instructions if tools are provided
 		if (availableTools && availableTools.length > 0) {

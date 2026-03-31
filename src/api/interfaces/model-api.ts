@@ -75,6 +75,7 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 	userMessage: string;
 	renderContent?: boolean;
 	customPrompt?: CustomPrompt;
+	projectInstructions?: string;
 	availableTools?: ToolDefinition[];
 	inlineAttachments?: InlineDataPart[];
 	/** @deprecated Use inlineAttachments instead */
