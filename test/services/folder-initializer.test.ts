@@ -28,7 +28,12 @@ describe('FolderInitializer', () => {
 		jest.clearAllMocks();
 		mockPlugin = {
 			app: {
-				vault: {},
+				vault: {
+					getAbstractFileByPath: jest.fn().mockReturnValue(null),
+				},
+				fileManager: {
+					renameFile: jest.fn(),
+				},
 			},
 			settings: {
 				historyFolder: 'gemini-scribe',

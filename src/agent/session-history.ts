@@ -81,7 +81,8 @@ export class SessionHistory {
 		const messageLines = entry.message.split('\n');
 
 		// Use configured user name for user entries, capitalized role for model
-		const displayName = entry.role === 'user' ? this.plugin.settings.userName || 'User' : role;
+		const userDisplayName = (this.plugin.settings.userName ?? '').trim();
+		const displayName = entry.role === 'user' ? userDisplayName || 'User' : role;
 
 		const entryContent = this.entryTemplate({
 			role: role,
