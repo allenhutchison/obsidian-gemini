@@ -340,11 +340,6 @@ export class AgentView extends ItemView {
 		};
 		await this.displayMessage(userEntry);
 
-		// Save user message to history once, before the API call.
-		// Tools use in-memory updatedHistory, not the file, so early save is safe.
-		// addEntryToSession checks settings.chatHistory internally.
-		await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-
 		try {
 			// Start with session context files (active file is already included if present)
 			const allContextFiles = [...this.currentSession.context.contextFiles];
