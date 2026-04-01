@@ -294,6 +294,18 @@ export default class ObsidianGemini extends Plugin {
 			},
 		});
 
+		// Switch project for the current agent session
+		this.addCommand({
+			id: 'gemini-scribe-switch-project',
+			name: 'Switch Project',
+			callback: () => {
+				if (!this.checkInitialized()) return;
+				this.activateAgentView();
+				// The agent view's switchProject is triggered via the project badge in the header
+				// or users can click the project indicator once the view is open
+			},
+		});
+
 		// Add rewrite command (works with selection or full file)
 		this.addCommand({
 			id: 'gemini-scribe-rewrite-selection',

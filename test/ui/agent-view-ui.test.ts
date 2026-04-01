@@ -95,6 +95,7 @@ describe('AgentViewUI', () => {
 			removeAttachment: jest.fn(),
 			getAttachments: jest.fn().mockReturnValue([]),
 			handleDroppedFiles: jest.fn(),
+			switchProject: jest.fn(),
 		};
 
 		// Instantiate AgentViewUI

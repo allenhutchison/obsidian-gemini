@@ -1,4 +1,4 @@
-import { App, TFile, TFolder, Notice, setIcon } from 'obsidian';
+import { App, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
@@ -39,6 +39,7 @@ export interface UICallbacks {
 	removeAttachment: (id: string) => void;
 	getAttachments: () => InlineAttachment[];
 	handleDroppedFiles: (files: TFile[]) => void;
+	switchProject: () => void;
 }
 
 /**
@@ -209,6 +210,25 @@ export class AgentViewUI {
 			leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
 				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`,
+			});
+		}
+
+		// Project badge (always shown when session active — click to switch/link)
+		if (currentSession && this.plugin.projectManager) {
+			const project = currentSession.projectPath
+				? this.plugin.projectManager.getProjectForPath(currentSession.projectPath)
+				: null;
+			const projectName = project?.config.name || 'No Project';
+			const badge = leftSection.createEl('span', {
+				cls: 'gemini-agent-project-badge',
+			});
+			setTooltip(badge, project ? `Project: ${projectName}\n${currentSession.projectPath}` : 'Click to link a project');
+			const iconSpan = badge.createSpan();
+			setIcon(iconSpan, 'folder-open');
+			badge.createSpan({ text: ' ' + projectName });
+			badge.addEventListener('click', (e) => {
+				e.stopPropagation();
+				callbacks.switchProject();
 			});
 		}
 

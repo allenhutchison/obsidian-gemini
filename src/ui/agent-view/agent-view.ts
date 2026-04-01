@@ -18,6 +18,7 @@ import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view
 import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-tools';
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
+import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
 import { FilePickerModal } from './file-picker-modal';
@@ -127,6 +128,7 @@ export class AgentView extends ItemView {
 			removeAttachment: (id: string) => this.removeAttachment(id),
 			getAttachments: () => this.pendingAttachments,
 			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
+			switchProject: () => this.switchProject(),
 		};
 
 		// Create the main interface using AgentViewUI
@@ -976,6 +978,39 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
+	 * Open the project picker and switch the current session's project
+	 */
+	private switchProject() {
+		if (!this.currentSession) return;
+
+		const modal = new ProjectPickerModal(
+			this.app,
+			this.plugin,
+			{
+				onSelect: async (project) => {
+					if (!this.currentSession) return;
+
+					const previousProjectPath = this.currentSession.projectPath;
+					this.currentSession.projectPath = project?.filePath ?? undefined;
+
+					try {
+						await this.plugin.sessionHistory.updateSessionMetadata(this.currentSession);
+						this.updateSessionHeader();
+						this.plugin.logger.log(`Switched project to: ${project?.name ?? 'none'}`);
+					} catch (error) {
+						// Rollback on persistence failure
+						this.currentSession.projectPath = previousProjectPath;
+						this.updateSessionHeader();
+						this.plugin.logger.error('Failed to persist project change:', error);
+					}
+				},
+			},
+			this.currentSession.projectPath ?? null
+		);
+		modal.open();
+	}
+
+	/**
 	 * Check if a session is the current session
 	 * Compares both session ID and history path for robustness
 	 */
@@ -1067,6 +1102,7 @@ To reference an attachment in your response, use the path shown above.`;
 			removeAttachment: (id: string) => this.removeAttachment(id),
 			getAttachments: () => this.pendingAttachments,
 			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
+			switchProject: () => this.switchProject(),
 		};
 	}
 
