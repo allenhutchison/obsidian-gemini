@@ -438,9 +438,15 @@ To reference an attachment in your response, use the path shown above.`;
 			}
 
 			// Get available tools for this session
+			// Set project root path for scoped tool discovery
+			const activeProject = this.currentSession?.projectPath
+				? await this.plugin.projectManager?.getProject(this.currentSession.projectPath)
+				: null;
+
 			const toolContext: ToolExecutionContext = {
 				plugin: this.plugin,
 				session: this.currentSession,
+				projectRootPath: activeProject?.rootPath,
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 			this.plugin.logger.log('Available tools from registry:', availableTools);
