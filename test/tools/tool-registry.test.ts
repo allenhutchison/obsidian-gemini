@@ -304,6 +304,32 @@ describe('ToolRegistry', () => {
 		it('should return true for DESTRUCTIVE tool in Cautious mode', () => {
 			expect(registry.requiresConfirmation('destructive_tool')).toBe(true);
 		});
+
+		it('should return false when project overrides ASK_USER to APPROVE', () => {
+			// destructive_tool is ASK_USER in Cautious mode
+			expect(
+				registry.requiresConfirmation('destructive_tool', {
+					destructive_tool: ToolPermission.APPROVE,
+				})
+			).toBe(false);
+		});
+
+		it('should return false when project overrides to DENY (tool blocked, not asked)', () => {
+			expect(
+				registry.requiresConfirmation('destructive_tool', {
+					destructive_tool: ToolPermission.DENY,
+				})
+			).toBe(false);
+		});
+
+		it('should return true when project overrides APPROVE to ASK_USER', () => {
+			// test_tool is READ → APPROVE in Cautious mode
+			expect(
+				registry.requiresConfirmation('test_tool', {
+					test_tool: ToolPermission.ASK_USER,
+				})
+			).toBe(true);
+		});
 	});
 
 	describe('getAllTools', () => {

@@ -434,6 +434,8 @@ export class AgentViewTools {
 			const availableToolsContext: ToolExecutionContext = {
 				plugin: this.plugin,
 				session: currentSession,
+				projectRootPath: activeProject?.rootPath,
+				projectPermissions: activeProject?.config.permissions,
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(availableToolsContext);
 
