@@ -144,6 +144,62 @@ export class ProjectManager {
 	}
 
 	/**
+	 * Create a new project file with template frontmatter and instructions.
+	 */
+	async createProject(folderPath: string, name: string): Promise<TFile> {
+		const { normalizePath } = await import('obsidian');
+		const filePath = normalizePath(`${folderPath}/${name}.md`);
+
+		const content = `---
+tags:
+  - ${PROJECT_TAG}
+name: "${name}"
+skills: []
+permissions: {}
+---
+
+Add your project instructions here. This text will be injected into the agent's system prompt when a session is linked to this project.
+`;
+
+		const file = await this.plugin.app.vault.create(filePath, content);
+		this.plugin.logger.log(`Created project: ${filePath}`);
+		return file;
+	}
+
+	/**
+	 * Add the project tag to an existing note, converting it into a project.
+	 */
+	async convertNoteToProject(file: TFile): Promise<void> {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
+			if (!tags.includes(PROJECT_TAG)) {
+				tags.push(PROJECT_TAG);
+			}
+			frontmatter.tags = tags;
+			if (!frontmatter.name) {
+				frontmatter.name = file.basename;
+			}
+		});
+		this.plugin.logger.log(`Converted note to project: ${file.path}`);
+	}
+
+	/**
+	 * Remove the project tag from a file, stripping its project status.
+	 */
+	async removeProject(file: TFile): Promise<void> {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			if (Array.isArray(frontmatter.tags)) {
+				frontmatter.tags = frontmatter.tags.filter((t: string) => t !== PROJECT_TAG);
+				if (frontmatter.tags.length === 0) {
+					delete frontmatter.tags;
+				}
+			}
+		});
+		this.projectCache.delete(file.path);
+		this.plugin.logger.log(`Removed project status: ${file.path}`);
+	}
+
+	/**
 	 * Register vault event listeners to keep the cache current.
 	 */
 	registerVaultEvents(): void {
