@@ -232,6 +232,11 @@ export class GeminiClient implements ModelApi {
 				}
 			}
 
+			// Filter skills to project scope if active
+			if (extReq.projectSkills && extReq.projectSkills.length > 0) {
+				availableSkills = availableSkills.filter((s) => extReq.projectSkills!.includes(s.name));
+			}
+
 			// Build unified system prompt with tools, custom prompt, agents memory, and available skills
 			// This includes: base system prompt + vault context (AGENTS.md) + tool instructions (if tools) + custom prompt (if provided)
 			systemInstruction = this.prompts.getSystemPromptWithCustom(

@@ -67,9 +67,14 @@ export class ToolRegistry {
 	 * 1. Explicit per-tool override in `toolPolicy.toolPermissions`
 	 * 2. Preset-defined permission based on tool classification
 	 */
-	getEffectivePermission(toolName: string): ToolPermission {
+	getEffectivePermission(toolName: string, projectPermissions?: Record<string, ToolPermission>): ToolPermission {
 		const tool = this.getTool(toolName);
 		if (!tool) return ToolPermission.DENY;
+
+		// Project-level override takes priority
+		if (projectPermissions?.[toolName] !== undefined) {
+			return projectPermissions[toolName];
+		}
 
 		return resolvePermission(toolName, tool.classification, this.getToolPolicy());
 	}
@@ -91,8 +96,8 @@ export class ToolRegistry {
 			if (!enabledCategories.includes(tool.category as ToolCategory)) {
 				return false;
 			}
-			// Global policy filter — exclude DENY tools
-			return this.getEffectivePermission(tool.name) !== ToolPermission.DENY;
+			// Policy filter — exclude DENY tools (project overrides → global policy)
+			return this.getEffectivePermission(tool.name, context.projectPermissions) !== ToolPermission.DENY;
 		});
 	}
 
@@ -103,8 +108,8 @@ export class ToolRegistry {
 	 * - ASK_USER → confirmation required
 	 * - DENY → tool should not be present (but returns false as a safe default)
 	 */
-	requiresConfirmation(toolName: string): boolean {
-		return this.getEffectivePermission(toolName) === ToolPermission.ASK_USER;
+	requiresConfirmation(toolName: string, projectPermissions?: Record<string, ToolPermission>): boolean {
+		return this.getEffectivePermission(toolName, projectPermissions) === ToolPermission.ASK_USER;
 	}
 
 	/**
