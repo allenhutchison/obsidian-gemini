@@ -77,6 +77,8 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 	renderContent?: boolean;
 	customPrompt?: CustomPrompt;
 	projectInstructions?: string;
+	/** Optional list of skill names to include (filters available skills when a project is active) */
+	projectSkills?: string[];
 	availableTools?: ToolDefinition[];
 	inlineAttachments?: InlineDataPart[];
 	/** @deprecated Use inlineAttachments instead */

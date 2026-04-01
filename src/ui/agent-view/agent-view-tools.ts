@@ -247,6 +247,7 @@ export class AgentViewTools {
 			plugin: this.plugin,
 			session: currentSession,
 			projectRootPath: activeProject?.rootPath,
+			projectPermissions: activeProject?.config.permissions,
 		};
 
 		// Sort tool calls to prioritize reads before destructive operations
@@ -433,6 +434,8 @@ export class AgentViewTools {
 			const availableToolsContext: ToolExecutionContext = {
 				plugin: this.plugin,
 				session: currentSession,
+				projectRootPath: activeProject?.rootPath,
+				projectPermissions: activeProject?.config.permissions,
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(availableToolsContext);
 

@@ -88,8 +88,8 @@ export class ToolExecutionEngine {
 			};
 		}
 
-		// Check if confirmation is required based on global policy
-		const requiresConfirmation = this.registry.requiresConfirmation(toolCall.name);
+		// Check if confirmation is required (project overrides → global policy)
+		const requiresConfirmation = this.registry.requiresConfirmation(toolCall.name, context.projectPermissions);
 
 		if (requiresConfirmation) {
 			// Check if this tool is allowed without confirmation for this session

@@ -447,6 +447,7 @@ To reference an attachment in your response, use the path shown above.`;
 				plugin: this.plugin,
 				session: this.currentSession,
 				projectRootPath: activeProject?.rootPath,
+				projectPermissions: activeProject?.config.permissions,
 			};
 			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 			this.plugin.logger.log('Available tools from registry:', availableTools);
@@ -495,6 +496,7 @@ To reference an attachment in your response, use the path shown above.`;
 					prompt: additionalInstructions, // Additional context and instructions
 					customPrompt: customPrompt, // Custom prompt template (if configured)
 					projectInstructions: projectInstructions, // Project-scoped instructions (if active)
+					projectSkills: activeProject?.config.skills, // Filter skills to project scope
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
 					inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),
