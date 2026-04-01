@@ -967,7 +967,7 @@ To reference an attachment in your response, use the path shown above.`;
 	/**
 	 * Load an existing session (delegates to session component)
 	 */
-	private async loadSession(session: ChatSession) {
+	async loadSession(session: ChatSession) {
 		await this.session.loadSession(session);
 		this.currentSession = this.session.getCurrentSession();
 		this.updateSessionHeader();

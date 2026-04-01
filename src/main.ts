@@ -393,7 +393,7 @@ export default class ObsidianGemini extends Plugin {
 							await this.activateAgentView();
 							// The agent view will load the session
 							if (this.agentView) {
-								(this.agentView as any).loadSession(projectSession);
+								await this.agentView.loadSession(projectSession);
 							}
 						} else {
 							new Notice(`No sessions found for project: ${project.name}`);

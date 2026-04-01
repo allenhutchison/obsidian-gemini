@@ -100,12 +100,12 @@ When you create a new agent session, the plugin checks if your active file is in
 | **Tool discovery**    | `list_files`, `search_files`, and `search_file_contents` scope to the project root          |
 | **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them |
 | **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)              |
-| **Permissions**       | Project permissions override global presets (per-tool global overrides still take priority) |
+| **Permissions**       | Project permissions take priority over global presets and per-tool overrides                |
 
 ### Permission Resolution Order
 
-1. Per-tool global override (`Settings → Tool Policy → Custom`)
-2. Project-level permission (`permissions` in project frontmatter)
+1. Project-level permission (`permissions` in project frontmatter)
+2. Per-tool global override (`Settings → Tool Policy → Custom`)
 3. Global preset default (Cautious, Edit Mode, etc.)
 
 ## Managing Projects

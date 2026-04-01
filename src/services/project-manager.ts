@@ -171,7 +171,13 @@ Add your project instructions here. This text will be injected into the agent's 
 	 */
 	async convertNoteToProject(file: TFile): Promise<void> {
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
-			const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
+			// Normalize tags to array (handle string, array, or missing)
+			let tags: string[] = [];
+			if (Array.isArray(frontmatter.tags)) {
+				tags = frontmatter.tags;
+			} else if (typeof frontmatter.tags === 'string') {
+				tags = [frontmatter.tags];
+			}
 			if (!tags.includes(PROJECT_TAG)) {
 				tags.push(PROJECT_TAG);
 			}
@@ -188,14 +194,23 @@ Add your project instructions here. This text will be injected into the agent's 
 	 */
 	async removeProject(file: TFile): Promise<void> {
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			// Normalize tags to array (handle string or array)
+			let tags: string[] = [];
 			if (Array.isArray(frontmatter.tags)) {
-				frontmatter.tags = frontmatter.tags.filter((t: string) => t !== PROJECT_TAG);
-				if (frontmatter.tags.length === 0) {
-					delete frontmatter.tags;
-				}
+				tags = frontmatter.tags;
+			} else if (typeof frontmatter.tags === 'string') {
+				tags = [frontmatter.tags];
+			}
+			tags = tags.filter((t: string) => t !== PROJECT_TAG);
+			frontmatter.tags = tags.length > 0 ? tags : undefined;
+			if (frontmatter.tags === undefined) {
+				delete frontmatter.tags;
 			}
 		});
 		this.projectCache.delete(file.path);
+		// Note: Active sessions linked to this project will be unlinked
+		// automatically on next load by the ProjectActivationSubscriber
+		// (sessionLoaded handler verifies project existence).
 		this.plugin.logger.log(`Removed project status: ${file.path}`);
 	}
 
