@@ -990,18 +990,19 @@ To reference an attachment in your response, use the path shown above.`;
 				onSelect: async (project) => {
 					if (!this.currentSession) return;
 
+					const previousProjectPath = this.currentSession.projectPath;
 					this.currentSession.projectPath = project?.filePath ?? undefined;
 
 					try {
 						await this.plugin.sessionHistory.updateSessionMetadata(this.currentSession);
+						this.updateSessionHeader();
+						this.plugin.logger.log(`Switched project to: ${project?.name ?? 'none'}`);
 					} catch (error) {
+						// Rollback on persistence failure
+						this.currentSession.projectPath = previousProjectPath;
+						this.updateSessionHeader();
 						this.plugin.logger.error('Failed to persist project change:', error);
 					}
-
-					this.updateSessionHeader();
-
-					const projectName = project?.name ?? 'none';
-					this.plugin.logger.log(`Switched project to: ${projectName}`);
 				},
 			},
 			this.currentSession.projectPath ?? null

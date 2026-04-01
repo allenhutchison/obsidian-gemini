@@ -213,13 +213,17 @@ export class AgentViewUI {
 			});
 		}
 
-		// Project badge (if session is linked to a project)
-		if (currentSession?.projectPath && this.plugin.projectManager) {
-			const project = this.plugin.projectManager.getProjectForPath(currentSession.projectPath);
-			const projectName = project?.config.name || 'Project';
+		// Project badge (always shown when session active — click to switch/link)
+		if (currentSession && this.plugin.projectManager) {
+			const project = currentSession.projectPath
+				? this.plugin.projectManager.getProjectForPath(currentSession.projectPath)
+				: null;
+			const projectName = project?.config.name || 'No Project';
 			const badge = leftSection.createEl('span', {
 				cls: 'gemini-agent-project-badge',
-				attr: { 'aria-label': `Project: ${projectName}\n${currentSession.projectPath}` },
+				attr: {
+					'aria-label': project ? `Project: ${projectName}\n${currentSession.projectPath}` : 'Click to link a project',
+				},
 			});
 			const iconSpan = badge.createSpan();
 			setIcon(iconSpan, 'folder-open');
