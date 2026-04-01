@@ -1,4 +1,4 @@
-import { App, TFile, TFolder, Notice, setIcon } from 'obsidian';
+import { App, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
@@ -221,10 +221,8 @@ export class AgentViewUI {
 			const projectName = project?.config.name || 'No Project';
 			const badge = leftSection.createEl('span', {
 				cls: 'gemini-agent-project-badge',
-				attr: {
-					'aria-label': project ? `Project: ${projectName}\n${currentSession.projectPath}` : 'Click to link a project',
-				},
 			});
+			setTooltip(badge, project ? `Project: ${projectName}\n${currentSession.projectPath}` : 'Click to link a project');
 			const iconSpan = badge.createSpan();
 			setIcon(iconSpan, 'folder-open');
 			badge.createSpan({ text: ' ' + projectName });
