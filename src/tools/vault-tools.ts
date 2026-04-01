@@ -486,8 +486,8 @@ export class ListFilesTool implements Tool {
 
 			const fileList = files
 				.filter((f) => {
-					// Apply folder filter for recursive listing
-					if (params.recursive && folderPath && !f.path.startsWith(folderPath)) {
+					// Apply folder filter for recursive listing (boundary-aware)
+					if (params.recursive && folderPath && !f.path.startsWith(folderPath + '/')) {
 						return false;
 					}
 					// Exclude system folders
@@ -863,26 +863,18 @@ export class SearchFilesTool implements Tool {
 			}
 
 			const projectRoot = context.projectRootPath;
-			const matchingFiles = allFiles
-				.filter((file) => {
-					// Exclude system folders
-					if (shouldExcludePath(file.path, plugin)) {
-						return false;
-					}
-					// Scope to project root when active
-					if (projectRoot && !file.path.startsWith(projectRoot + '/')) {
-						return false;
-					}
-					// Test against both file name and full path
-					return regex.test(file.name) || regex.test(file.path);
-				})
-				.slice(0, limit)
-				.map((file) => ({
-					name: file.name,
-					path: file.path,
-					size: file.stat.size,
-					modified: file.stat.mtime,
-				}));
+			const scopedMatches = allFiles.filter((file) => {
+				if (shouldExcludePath(file.path, plugin)) return false;
+				if (projectRoot && !file.path.startsWith(projectRoot + '/')) return false;
+				return regex.test(file.name) || regex.test(file.path);
+			});
+
+			const matchingFiles = scopedMatches.slice(0, limit).map((file) => ({
+				name: file.name,
+				path: file.path,
+				size: file.stat.size,
+				modified: file.stat.mtime,
+			}));
 
 			return {
 				success: true,
@@ -890,7 +882,7 @@ export class SearchFilesTool implements Tool {
 					pattern: params.pattern,
 					matches: matchingFiles,
 					count: matchingFiles.length,
-					truncated: allFiles.filter((f) => regex.test(f.name) || regex.test(f.path)).length > limit,
+					truncated: scopedMatches.length > limit,
 				},
 			};
 		} catch (error) {
