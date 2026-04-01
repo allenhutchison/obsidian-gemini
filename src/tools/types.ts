@@ -22,6 +22,8 @@ export interface ToolResult {
 export interface ToolExecutionContext {
 	session: ChatSession;
 	plugin: any; // Will be typed to ObsidianGemini
+	/** When set, discovery tools default their search scope to this directory */
+	projectRootPath?: string;
 }
 
 /**

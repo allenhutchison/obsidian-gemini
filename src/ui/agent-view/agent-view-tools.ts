@@ -238,9 +238,15 @@ export class AgentViewTools {
 
 		// Execute each tool
 		const toolResults: any[] = [];
+		// Resolve project root for scoped tool discovery
+		const activeProject = currentSession.projectPath
+			? await this.plugin.projectManager?.getProject(currentSession.projectPath)
+			: null;
+
 		const toolContext: ToolExecutionContext = {
 			plugin: this.plugin,
 			session: currentSession,
+			projectRootPath: activeProject?.rootPath,
 		};
 
 		// Sort tool calls to prioritize reads before destructive operations

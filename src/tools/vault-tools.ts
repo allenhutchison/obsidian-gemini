@@ -462,7 +462,8 @@ export class ListFilesTool implements Tool {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {
-			const folderPath = params.path || '';
+			// Default to project root when no path specified and project is active
+			const folderPath = params.path || context.projectRootPath || '';
 			const folder = plugin.app.vault.getAbstractFileByPath(folderPath);
 
 			if (folderPath && !folder) {
@@ -861,10 +862,15 @@ export class SearchFilesTool implements Tool {
 				regex = new RegExp(escapedPattern, 'i');
 			}
 
+			const projectRoot = context.projectRootPath;
 			const matchingFiles = allFiles
 				.filter((file) => {
 					// Exclude system folders
 					if (shouldExcludePath(file.path, plugin)) {
+						return false;
+					}
+					// Scope to project root when active
+					if (projectRoot && !file.path.startsWith(projectRoot + '/')) {
 						return false;
 					}
 					// Test against both file name and full path
@@ -993,10 +999,16 @@ export class SearchFileContentsTool implements Tool {
 
 			let totalMatches = 0;
 
+			const projectRoot = context.projectRootPath;
+
 			// Search through each file
 			for (const file of allFiles) {
 				// Skip system folders
 				if (shouldExcludePath(file.path, plugin)) {
+					continue;
+				}
+				// Scope to project root when active
+				if (projectRoot && !file.path.startsWith(projectRoot + '/')) {
 					continue;
 				}
 
