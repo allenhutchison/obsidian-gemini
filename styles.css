@@ -1071,6 +1071,29 @@ If your plugin does not need CSS, delete this file.
 	white-space: nowrap;
 }
 
+.gemini-agent-project-badge {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-accent);
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	padding: 2px var(--size-2-2);
+	border-radius: var(--radius-s);
+	white-space: nowrap;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.gemini-agent-project-badge:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.gemini-agent-project-badge .svg-icon {
+	width: 12px;
+	height: 12px;
+}
+
 /* Icon Buttons */
 .gemini-agent-btn-icon {
 	padding: var(--size-2-1);

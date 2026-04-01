@@ -39,6 +39,7 @@ export interface UICallbacks {
 	removeAttachment: (id: string) => void;
 	getAttachments: () => InlineAttachment[];
 	handleDroppedFiles: (files: TFile[]) => void;
+	switchProject: () => void;
 }
 
 /**
@@ -209,6 +210,23 @@ export class AgentViewUI {
 			leftSection.createEl('span', {
 				cls: 'gemini-agent-context-badge',
 				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`,
+			});
+		}
+
+		// Project badge (if session is linked to a project)
+		if (currentSession?.projectPath && this.plugin.projectManager) {
+			const project = this.plugin.projectManager.getProjectForPath(currentSession.projectPath);
+			const projectName = project?.config.name || 'Project';
+			const badge = leftSection.createEl('span', {
+				cls: 'gemini-agent-project-badge',
+				attr: { 'aria-label': `Project: ${projectName}\n${currentSession.projectPath}` },
+			});
+			const iconSpan = badge.createSpan();
+			setIcon(iconSpan, 'folder-open');
+			badge.createSpan({ text: ' ' + projectName });
+			badge.addEventListener('click', (e) => {
+				e.stopPropagation();
+				callbacks.switchProject();
 			});
 		}
 
