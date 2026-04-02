@@ -884,7 +884,7 @@ To reference an attachment in your response, use the path shown above.`;
 	 * Remove a trailing @ character from the input, used when the file picker
 	 * replaces the @ trigger with a file chip.
 	 */
-	private removeTrailingAtSymbol() {
+	private removeTrailingAtSymbol(): void {
 		const input = this.userInput;
 		if (!input) return;
 
@@ -892,6 +892,10 @@ To reference an attachment in your response, use the path shown above.`;
 		if (!selection || selection.rangeCount === 0) return;
 
 		const range = selection.getRangeAt(0);
+
+		// Only proceed with a collapsed cursor (no text selected)
+		if (!range.collapsed) return;
+
 		const node = range.startContainer;
 
 		// Only mutate text nodes within the input element

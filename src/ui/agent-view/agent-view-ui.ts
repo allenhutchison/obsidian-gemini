@@ -383,9 +383,10 @@ export class AgentViewUI {
 				callbacks.sendMessage();
 			} else if (e.key === '@') {
 				// Trigger file mention — don't preventDefault so @ is typed.
+				// Defer to next microtask so the browser commits the @ character first.
 				// If user selects a file, the @ will be removed before inserting the chip.
 				// If user dismisses the picker, the @ stays as a literal character.
-				callbacks.showFileMention();
+				setTimeout(() => callbacks.showFileMention(), 0);
 			}
 		});
 
