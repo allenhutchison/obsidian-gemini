@@ -18,6 +18,7 @@ import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view
 import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-tools';
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
+import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
@@ -865,6 +866,9 @@ To reference an attachment in your response, use the path shown above.`;
 		const modal = new FileMentionModal(
 			this.app,
 			(fileOrFolder: TFile | TFolder) => {
+				// Remove the @ character that triggered the picker
+				this.removeTrailingAtSymbol();
+
 				if (fileOrFolder instanceof TFile) {
 					this.insertFileChip(fileOrFolder);
 				} else if (fileOrFolder instanceof TFolder) {
@@ -874,6 +878,43 @@ To reference an attachment in your response, use the path shown above.`;
 			this.plugin
 		);
 		modal.open();
+	}
+
+	/**
+	 * Remove a trailing @ character from the input, used when the file picker
+	 * replaces the @ trigger with a file chip.
+	 */
+	private removeTrailingAtSymbol(): void {
+		const input = this.userInput;
+		if (!input) return;
+
+		const selection = getContextSelection(input);
+		if (!selection || selection.rangeCount === 0) return;
+
+		const range = selection.getRangeAt(0);
+
+		// Only proceed with a collapsed cursor (no text selected)
+		if (!range.collapsed) return;
+
+		const node = range.startContainer;
+
+		// Only mutate text nodes within the input element
+		if (!input.contains(node)) return;
+
+		// Check if the character before cursor is @
+		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
+			const text = node.textContent || '';
+			const offset = range.startOffset;
+			if (text[offset - 1] === '@') {
+				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
+				// Restore cursor position
+				const newRange = createContextRange(input);
+				newRange.setStart(node, offset - 1);
+				newRange.collapse(true);
+				selection.removeAllRanges();
+				selection.addRange(newRange);
+			}
+		}
 	}
 
 	/**
