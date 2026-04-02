@@ -865,6 +865,9 @@ To reference an attachment in your response, use the path shown above.`;
 		const modal = new FileMentionModal(
 			this.app,
 			(fileOrFolder: TFile | TFolder) => {
+				// Remove the @ character that triggered the picker
+				this.removeTrailingAtSymbol();
+
 				if (fileOrFolder instanceof TFile) {
 					this.insertFileChip(fileOrFolder);
 				} else if (fileOrFolder instanceof TFolder) {
@@ -874,6 +877,36 @@ To reference an attachment in your response, use the path shown above.`;
 			this.plugin
 		);
 		modal.open();
+	}
+
+	/**
+	 * Remove a trailing @ character from the input, used when the file picker
+	 * replaces the @ trigger with a file chip.
+	 */
+	private removeTrailingAtSymbol() {
+		const input = this.userInput;
+		if (!input) return;
+
+		const selection = window.getSelection();
+		if (!selection || selection.rangeCount === 0) return;
+
+		const range = selection.getRangeAt(0);
+		const node = range.startContainer;
+
+		// Check if the character before cursor is @
+		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
+			const text = node.textContent || '';
+			const offset = range.startOffset;
+			if (text[offset - 1] === '@') {
+				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
+				// Restore cursor position
+				const newRange = document.createRange();
+				newRange.setStart(node, offset - 1);
+				newRange.collapse(true);
+				selection.removeAllRanges();
+				selection.addRange(newRange);
+			}
+		}
 	}
 
 	/**

@@ -382,8 +382,9 @@ export class AgentViewUI {
 				e.preventDefault();
 				callbacks.sendMessage();
 			} else if (e.key === '@') {
-				// Trigger file mention
-				e.preventDefault();
+				// Trigger file mention — don't preventDefault so @ is typed.
+				// If user selects a file, the @ will be removed before inserting the chip.
+				// If user dismisses the picker, the @ stays as a literal character.
 				callbacks.showFileMention();
 			}
 		});
