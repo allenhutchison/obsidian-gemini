@@ -66,7 +66,7 @@ The agent will create the skill directory and `SKILL.md` file with appropriate i
 
 **Manually:**
 
-1. Create a folder in `gemini-scribe/skills/` (e.g., `meeting-notes/`)
+1. Create a folder in `gemini-scribe/Skills/` (e.g., `meeting-notes/`)
 2. Add a `SKILL.md` file with frontmatter and instructions
 
 ### SKILL.md Format
@@ -195,7 +195,7 @@ description: >-
 
 ### Skill Not Discovered
 
-- Ensure the skill folder is inside `gemini-scribe/skills/`
+- Ensure the skill folder is inside `gemini-scribe/Skills/`
 - Check that `SKILL.md` exists (exact filename, case-sensitive)
 - Verify the frontmatter has both `name` and `description` fields
 - Restart the plugin if you just created the skill

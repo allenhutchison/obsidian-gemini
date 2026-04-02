@@ -98,7 +98,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
    - `[state-folder]/History/` - Chat history files
    - `[state-folder]/Prompts/` - Custom prompt templates
    - `[state-folder]/Agent-Sessions/` - Agent mode session files
-   - `[state-folder]/skills/` - Agent skill packages (agentskills.io format)
+   - `[state-folder]/Skills/` - Agent skill packages (agentskills.io format)
    - Automatic migration for existing users from flat structure
 8. **System Folder Protection**: Always exclude system folders from file operations:
    - The plugin state folder (`settings.historyFolder`)
@@ -122,7 +122,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 
 12. **Agent Skills** (`src/services/skill-manager.ts`, `src/tools/skill-tools.ts`): Extensible skill system following the [agentskills.io](https://agentskills.io) specification
 
-- Skills are self-contained packages stored in `[state-folder]/skills/<skill-name>/SKILL.md`
+- Skills are self-contained packages stored in `[state-folder]/Skills/<skill-name>/SKILL.md`
 - `SkillManager` handles discovery, metadata parsing, content loading, resource reading, creation, and name validation
 - Uses progressive disclosure: skill summaries (name + description) are injected into the agent system prompt; full instructions are loaded on-demand via `activate_skill`
 - Two tools: `activate_skill` (read-only, loads instructions or resources) and `create_skill` (creates new skill directories with valid SKILL.md)
