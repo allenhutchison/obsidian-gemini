@@ -159,6 +159,9 @@ For detailed information about context files and advanced usage, see the [Contex
 - Sessions persist across Obsidian restarts
 - Access previous sessions from the dropdown
 - Configure session-specific settings
+- Sessions are automatically titled with a YYYY-MM-DD date prefix and AI-generated description after the first exchange
+- All files the agent reads or writes during a session are tracked in `accessed_files` frontmatter for auditing and session recall
+- Tool execution summaries are logged to session history as collapsible callout blocks (controlled by the `logToolExecution` setting)
 
 ## Available Tools
 
@@ -205,6 +208,8 @@ Read the PDF at docs/report.pdf
 ```
 
 When you ask the agent to read a binary file, it sends the file data directly to Gemini for analysis — enabling image description, audio transcription, PDF reading, and video analysis without manual drag-and-drop.
+
+If a file doesn't exist, the agent receives a non-error response with `exists: false` and helpful suggestions for similar file names. This allows automation skills to probe for files without triggering error states.
 
 #### list_files
 
@@ -265,13 +270,27 @@ Get the content from this documentation page
 Analyze this blog post and summarize key points
 ```
 
+### Session Memory
+
+#### recall_sessions
+
+Search past agent sessions by file, project, or topic:
+
+```
+What did we discuss about the magic system last time?
+Find sessions where we worked on the API integration
+Show me past sessions for the Novel project
+```
+
+Returns session summaries with title, date, files accessed, and project linkage. The agent can then read the full conversation from a past session using `read_file` on the returned history path.
+
 ### Skill Tools
 
 Gemini Scribe supports an extensible skills system based on the [agentskills.io](https://agentskills.io) specification. Skills are self-contained packages of instructions that give the agent specialized knowledge and workflows. If you're wondering whether to use a skill or a [custom prompt](/guide/custom-prompts), see the [comparison in the Skills guide](/guide/agent-skills#skills-vs-custom-prompts).
 
 #### How Skills Work
 
-Skills are stored in your plugin state folder at `gemini-scribe/skills/`. Each skill is a directory containing a `SKILL.md` file with instructions the agent can load on demand. The agent automatically knows which skills are available — their names and descriptions are included in every agent session.
+Skills are stored in your plugin state folder at `gemini-scribe/Skills/`. Each skill is a directory containing a `SKILL.md` file with instructions the agent can load on demand. The agent automatically knows which skills are available — their names and descriptions are included in every agent session.
 
 When the agent encounters a task that matches an available skill, it will activate the skill to load its full instructions before proceeding.
 

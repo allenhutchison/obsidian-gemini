@@ -41,7 +41,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
   gemini-scribe/
   ├── History/        # Legacy chat history files (v3.x)
   ├── Prompts/        # Custom prompt templates
-  ├── skills/         # Custom agent skills (<skill-name>/SKILL.md)
+  ├── Skills/         # Custom agent skills (<skill-name>/SKILL.md)
   └── Agent-Sessions/ # Agent mode sessions with conversation history
   ```
 
@@ -148,6 +148,15 @@ Context management automatically monitors and controls conversation size to prev
   - Normal (muted text) — well under threshold
   - Yellow — approaching compaction threshold (≥80% of threshold)
   - Orange/red — at or above compaction threshold
+
+### Log Tool Execution to Session History
+
+- **Setting**: `logToolExecution`
+- **Type**: Boolean
+- **Default**: `true`
+- **Description**: Append a summary of each tool execution to the session history file for auditing
+- **Format**: Collapsible callout blocks showing tool name, key parameters, status, and duration
+- **Note**: Requires plugin reload to take effect when toggled
 
 ### Always Show Diff View for File Writes
 
