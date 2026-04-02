@@ -1,4 +1,4 @@
-import { TFile } from 'obsidian';
+import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { Project, ProjectConfig, ProjectSummary, PROJECT_TAG } from '../types/project';
 import { ToolPermission } from '../types/tool-policy';
@@ -147,7 +147,6 @@ export class ProjectManager {
 	 * Create a new project file with template frontmatter and instructions.
 	 */
 	async createProject(folderPath: string, name: string): Promise<TFile> {
-		const { normalizePath } = await import('obsidian');
 		const filePath = normalizePath(`${folderPath}/${name}.md`);
 
 		const content = `---
