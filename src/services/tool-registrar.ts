@@ -27,6 +27,10 @@ export class ToolRegistrar {
 		{ name: 'memory', getTools: () => import('../tools/memory-tool').then((m) => m.getMemoryTools()) },
 		{ name: 'image', getTools: () => import('../tools/image-tools').then((m) => m.getImageTools()) },
 		{ name: 'skill', getTools: () => import('../tools/skill-tools').then((m) => m.getSkillTools()) },
+		{
+			name: 'session-recall',
+			getTools: () => import('../tools/session-recall-tool').then((m) => m.getSessionRecallTools()),
+		},
 	];
 
 	async registerAll(registry: ToolRegistry, logger: Logger): Promise<void> {

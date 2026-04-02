@@ -25,6 +25,10 @@ jest.mock('../../src/tools/skill-tools', () => ({
 	getSkillTools: () => [{ name: 'activate_skill' }],
 }));
 
+jest.mock('../../src/tools/session-recall-tool', () => ({
+	getSessionRecallTools: () => [{ name: 'recall_sessions' }],
+}));
+
 describe('ToolRegistrar', () => {
 	let registrar: ToolRegistrar;
 	let mockRegistry: any;
@@ -61,8 +65,8 @@ describe('ToolRegistrar', () => {
 		it('should register the correct total number of tools', async () => {
 			await registrar.registerAll(mockRegistry, mockLogger);
 
-			// 2 vault + 1 extended + 1 web + 1 memory + 1 image + 1 skill = 7
-			expect(mockRegistry.registerTool).toHaveBeenCalledTimes(7);
+			// 2 vault + 1 extended + 1 web + 1 memory + 1 image + 1 skill + 1 session-recall = 8
+			expect(mockRegistry.registerTool).toHaveBeenCalledTimes(8);
 		});
 
 		it('should continue registering other sources if one fails', async () => {
