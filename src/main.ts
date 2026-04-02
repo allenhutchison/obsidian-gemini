@@ -306,6 +306,121 @@ export default class ObsidianGemini extends Plugin {
 			},
 		});
 
+		// Create a new project
+		this.addCommand({
+			id: 'gemini-scribe-create-project',
+			name: 'Create Project',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				const folder = this.app.workspace.getActiveFile()?.parent?.path || '';
+				const name = 'New Project';
+				try {
+					const file = await this.projectManager.createProject(folder, name);
+					await this.app.workspace.openLinkText(file.path, '', true);
+					new Notice(`Created project: ${file.path}`);
+				} catch (error) {
+					this.logger.error('Failed to create project:', error);
+					new Notice('Failed to create project');
+				}
+			},
+		});
+
+		// Convert current note to a project
+		this.addCommand({
+			id: 'gemini-scribe-convert-to-project',
+			name: 'Convert Note to Project',
+			editorCallback: async (_editor: Editor, view: MarkdownView) => {
+				if (!this.checkInitialized()) return;
+				if (!view.file) return;
+				try {
+					await this.projectManager.convertNoteToProject(view.file);
+					new Notice(`Converted to project: ${view.file.basename}`);
+				} catch (error) {
+					this.logger.error('Failed to convert note to project:', error);
+					new Notice('Failed to convert note to project');
+				}
+			},
+		});
+
+		// Open project settings (the project file itself)
+		this.addCommand({
+			id: 'gemini-scribe-open-project-settings',
+			name: 'Open Project Settings',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				const projects = this.projectManager?.discoverProjects() ?? [];
+				if (projects.length === 0) {
+					new Notice('No projects found');
+					return;
+				}
+				// If only one project, open it directly
+				if (projects.length === 1) {
+					await this.app.workspace.openLinkText(projects[0].filePath, '', true);
+					return;
+				}
+				// Show picker for multiple projects
+				const { ProjectPickerModal } = await import('./ui/agent-view/project-picker-modal');
+				const modal = new ProjectPickerModal(this.app, this, {
+					onSelect: async (project) => {
+						if (project) {
+							await this.app.workspace.openLinkText(project.filePath, '', true);
+						}
+					},
+				});
+				modal.open();
+			},
+		});
+
+		// Resume the most recent session for a project
+		this.addCommand({
+			id: 'gemini-scribe-resume-project-session',
+			name: 'Resume Project Session',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				const projects = this.projectManager?.discoverProjects() ?? [];
+				if (projects.length === 0) {
+					new Notice('No projects found');
+					return;
+				}
+				const { ProjectPickerModal } = await import('./ui/agent-view/project-picker-modal');
+				const modal = new ProjectPickerModal(this.app, this, {
+					onSelect: async (project) => {
+						if (!project) return;
+						// Find most recent session linked to this project
+						const sessions = await this.sessionManager.getRecentAgentSessions(50);
+						const projectSession = sessions.find((s) => s.projectPath === project.filePath);
+						if (projectSession) {
+							await this.activateAgentView();
+							// The agent view will load the session
+							if (this.agentView) {
+								await this.agentView.loadSession(projectSession);
+							}
+						} else {
+							new Notice(`No sessions found for project: ${project.name}`);
+						}
+					},
+				});
+				modal.open();
+			},
+		});
+
+		// Remove project status from a file
+		this.addCommand({
+			id: 'gemini-scribe-remove-project',
+			name: 'Remove Project',
+			editorCallback: async (_editor: Editor, view: MarkdownView) => {
+				if (!this.checkInitialized()) return;
+				if (!view.file) return;
+				try {
+					await this.projectManager.removeProject(view.file);
+					new Notice(`Removed project status from: ${view.file.basename}`);
+				} catch (error) {
+					this.logger.error('Failed to remove project:', error);
+					new Notice('Failed to remove project status');
+				}
+			},
+		});
+
 		// Add rewrite command (works with selection or full file)
 		this.addCommand({
 			id: 'gemini-scribe-rewrite-selection',

@@ -44,6 +44,7 @@ export default defineConfig({
 						{ text: 'Deep Research', link: '/guide/deep-research' },
 						{ text: 'MCP Servers', link: '/guide/mcp-servers' },
 						{ text: 'Agent Skills', link: '/guide/agent-skills' },
+						{ text: 'Projects', link: '/guide/projects' },
 					],
 				},
 			],

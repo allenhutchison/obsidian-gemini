@@ -144,6 +144,77 @@ export class ProjectManager {
 	}
 
 	/**
+	 * Create a new project file with template frontmatter and instructions.
+	 */
+	async createProject(folderPath: string, name: string): Promise<TFile> {
+		const { normalizePath } = await import('obsidian');
+		const filePath = normalizePath(`${folderPath}/${name}.md`);
+
+		const content = `---
+tags:
+  - ${PROJECT_TAG}
+name: "${name}"
+skills: []
+permissions: {}
+---
+
+Add your project instructions here. This text will be injected into the agent's system prompt when a session is linked to this project.
+`;
+
+		const file = await this.plugin.app.vault.create(filePath, content);
+		this.plugin.logger.log(`Created project: ${filePath}`);
+		return file;
+	}
+
+	/**
+	 * Add the project tag to an existing note, converting it into a project.
+	 */
+	async convertNoteToProject(file: TFile): Promise<void> {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			// Normalize tags to array (handle string, array, or missing)
+			let tags: string[] = [];
+			if (Array.isArray(frontmatter.tags)) {
+				tags = frontmatter.tags;
+			} else if (typeof frontmatter.tags === 'string') {
+				tags = [frontmatter.tags];
+			}
+			if (!tags.includes(PROJECT_TAG)) {
+				tags.push(PROJECT_TAG);
+			}
+			frontmatter.tags = tags;
+			if (!frontmatter.name) {
+				frontmatter.name = file.basename;
+			}
+		});
+		this.plugin.logger.log(`Converted note to project: ${file.path}`);
+	}
+
+	/**
+	 * Remove the project tag from a file, stripping its project status.
+	 */
+	async removeProject(file: TFile): Promise<void> {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+			// Normalize tags to array (handle string or array)
+			let tags: string[] = [];
+			if (Array.isArray(frontmatter.tags)) {
+				tags = frontmatter.tags;
+			} else if (typeof frontmatter.tags === 'string') {
+				tags = [frontmatter.tags];
+			}
+			tags = tags.filter((t: string) => t !== PROJECT_TAG);
+			frontmatter.tags = tags.length > 0 ? tags : undefined;
+			if (frontmatter.tags === undefined) {
+				delete frontmatter.tags;
+			}
+		});
+		this.projectCache.delete(file.path);
+		// Note: Active sessions linked to this project will be unlinked
+		// automatically on next load by the ProjectActivationSubscriber
+		// (sessionLoaded handler verifies project existence).
+		this.plugin.logger.log(`Removed project status: ${file.path}`);
+	}
+
+	/**
 	 * Register vault event listeners to keep the cache current.
 	 */
 	registerVaultEvents(): void {
