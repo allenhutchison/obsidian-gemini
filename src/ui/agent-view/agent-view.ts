@@ -18,6 +18,7 @@ import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view
 import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-tools';
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
+import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
@@ -887,11 +888,14 @@ To reference an attachment in your response, use the path shown above.`;
 		const input = this.userInput;
 		if (!input) return;
 
-		const selection = window.getSelection();
+		const selection = getContextSelection(input);
 		if (!selection || selection.rangeCount === 0) return;
 
 		const range = selection.getRangeAt(0);
 		const node = range.startContainer;
+
+		// Only mutate text nodes within the input element
+		if (!input.contains(node)) return;
 
 		// Check if the character before cursor is @
 		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
@@ -900,7 +904,7 @@ To reference an attachment in your response, use the path shown above.`;
 			if (text[offset - 1] === '@') {
 				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
 				// Restore cursor position
-				const newRange = document.createRange();
+				const newRange = createContextRange(input);
 				newRange.setStart(node, offset - 1);
 				newRange.collapse(true);
 				selection.removeAllRanges();
