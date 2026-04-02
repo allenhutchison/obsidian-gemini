@@ -60,6 +60,7 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'save_memory' }));
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'activate_skill' }));
+			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'recall_sessions' }));
 		});
 
 		it('should register the correct total number of tools', async () => {
@@ -99,6 +100,7 @@ describe('ToolRegistrar', () => {
 			expect(mockRegistry.unregisterTool).toHaveBeenCalledWith('save_memory');
 			expect(mockRegistry.unregisterTool).toHaveBeenCalledWith('generate_image');
 			expect(mockRegistry.unregisterTool).toHaveBeenCalledWith('activate_skill');
+			expect(mockRegistry.unregisterTool).toHaveBeenCalledWith('recall_sessions');
 		});
 
 		it('should continue unregistering other sources if one fails', async () => {

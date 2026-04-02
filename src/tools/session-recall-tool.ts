@@ -54,7 +54,7 @@ class RecallSessionsTool implements Tool {
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
-		const limit = params.limit || 10;
+		const limit = Math.max(1, Math.min(50, Math.floor(params.limit || 10)));
 
 		try {
 			// Load recent sessions (fetch more than limit to allow filtering)
@@ -69,9 +69,11 @@ class RecallSessionsTool implements Tool {
 			if (params.filePath) {
 				const searchPath = params.filePath.toLowerCase();
 				filtered = filtered.filter((s) => {
-					if (!s.accessedFiles) return false;
-					for (const path of s.accessedFiles) {
-						if (path.toLowerCase().includes(searchPath)) return true;
+					// Check accessed files if present
+					if (s.accessedFiles) {
+						for (const path of s.accessedFiles) {
+							if (path.toLowerCase().includes(searchPath)) return true;
+						}
 					}
 					// Also check context files
 					for (const file of s.context?.contextFiles ?? []) {
