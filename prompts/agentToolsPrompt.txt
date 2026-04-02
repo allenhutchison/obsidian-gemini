@@ -119,3 +119,7 @@ You have access to the following skills. Use the `activate_skill` tool to load a
 - **{{this.name}}**: {{this.description}}
 {{/each}}
 {{/if}}
+
+## Session Memory
+
+When the user asks about prior conversations, past decisions, or previous work on specific files, use the `recall_sessions` tool to find relevant past sessions. It searches by file path, project, or title. Use `read_file` on the returned historyPath to see full conversation details from a past session.
