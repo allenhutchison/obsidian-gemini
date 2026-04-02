@@ -218,7 +218,8 @@ export class AgentViewFileChips {
 		});
 
 		// Get the formatted message with markdown links
-		const formattedMessage = clone.textContent?.trim() || '';
+		// Use innerText to preserve newlines from Shift+Enter (contenteditable creates <br>/<div>)
+		const formattedMessage = clone.innerText?.trim() || '';
 
 		// Now replace chips with file/folder names to get plain text
 		const plainClone = this.userInput.cloneNode(true) as HTMLElement;
@@ -247,7 +248,8 @@ export class AgentViewFileChips {
 				}
 			}
 		});
-		const text = plainClone.textContent?.trim() || '';
+		// Use innerText to preserve newlines from Shift+Enter
+		const text = plainClone.innerText?.trim() || '';
 
 		return {
 			text,
