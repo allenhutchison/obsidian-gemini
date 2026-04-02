@@ -109,6 +109,21 @@ The depth traversal setting was removed in v4.0 when Agent Mode became the defau
 
 If the agent is ignoring your custom prompt, check that your model's rate limits haven't been exceeded — rate limit errors can appear as generic "failed" messages. Also verify: (1) the prompt file exists in `[Plugin State Folder]/Prompts/`, and (2) the frontmatter reference uses correct wikilink syntax `[[Prompt Name]]`. ([#330](https://github.com/allenhutchison/obsidian-gemini/discussions/330))
 
+### How do I reuse prompts in Agent mode?
+
+Custom prompts are applied per-session, not executed as commands. To reuse a prompt:
+
+1. Open the agent panel and start or load a session
+2. Click the **gear icon** (session settings) in the session header
+3. Select your prompt from the **Prompt Template** dropdown
+4. The prompt is now active for that session — all messages will use it
+
+To apply the same prompt to different files, add the files as context (drag them in or use `@` to mention them) while the prompt is active.
+
+If you need a repeatable multi-step procedure rather than a behavioral style, consider creating a [skill](/guide/agent-skills) instead. Skills define step-by-step workflows the agent follows on demand.
+
+Custom prompts and skills both work on mobile (Android and iOS). ([#449](https://github.com/allenhutchison/obsidian-gemini/issues/449))
+
 ---
 
 Still have questions? Check the [GitHub Discussions](https://github.com/allenhutchison/obsidian-gemini/discussions) or [open an issue](https://github.com/allenhutchison/obsidian-gemini/issues).
