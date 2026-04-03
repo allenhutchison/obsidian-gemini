@@ -391,6 +391,26 @@ describe('Skill Tools', () => {
 		it('should generate progress description', () => {
 			expect(tool.getProgressDescription({ name: 'code-review' })).toContain('code-review');
 		});
+
+		it('should treat whitespace-only description as empty in confirmation', () => {
+			const message = tool.confirmationMessage!({ name: 'test', description: '   ', content: 'real content' });
+			expect(message).not.toContain('description');
+			expect(message).toContain('content');
+		});
+
+		it('should treat whitespace-only content as empty in confirmation', () => {
+			const message = tool.confirmationMessage!({ name: 'test', description: 'real desc', content: '   ' });
+			expect(message).toContain('description');
+			expect(message).not.toContain('content');
+		});
+
+		it('should reject whitespace-only description and content in execute', async () => {
+			const result = await tool.execute({ name: 'my-skill', description: '   ', content: '   ' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('At least one of description or content must be provided');
+			expect(mockSkillManager.updateSkill).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('getSkillTools', () => {

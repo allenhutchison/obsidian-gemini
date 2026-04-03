@@ -292,6 +292,11 @@ export class SkillManager {
 			throw new Error(nameValidation.error!);
 		}
 
+		// Reject no-op updates at the service boundary
+		if (description === undefined && content === undefined) {
+			throw new Error('At least one of description or content must be provided');
+		}
+
 		const skillMdPath = normalizePath(`${this.getSkillsFolderPath()}/${name}/${SKILL_MD_FILENAME}`);
 		const file = this.plugin.app.vault.getAbstractFileByPath(skillMdPath);
 
@@ -304,15 +309,17 @@ export class SkillManager {
 			const fullContent = await this.plugin.app.vault.read(file);
 			const cache = this.plugin.app.metadataCache.getFileCache(file);
 
-			let newFullContent: string;
-			if (cache?.frontmatterPosition) {
-				// Preserve frontmatter, replace body
-				const frontmatter = fullContent.slice(0, cache.frontmatterPosition.end.offset);
-				newFullContent = frontmatter + '\n\n' + content.trim();
-			} else {
-				// No frontmatter exists, just set content
-				newFullContent = content.trim();
-			}
+			// Use metadata cache position when available, fall back to regex parsing
+			// to handle stale cache scenarios (e.g., after recent file creation)
+			const cachedFrontmatterEnd = cache?.frontmatterPosition?.end.offset;
+			const parsedFrontmatter = fullContent.match(/^---\r?\n[\s\S]*?\r?\n---/);
+			const frontmatterEnd = cachedFrontmatterEnd ?? (parsedFrontmatter ? parsedFrontmatter[0].length : undefined);
+
+			const trimmedContent = content.trim();
+			const newFullContent =
+				frontmatterEnd !== undefined
+					? `${fullContent.slice(0, frontmatterEnd).trimEnd()}\n\n${trimmedContent}`
+					: trimmedContent;
 
 			await this.plugin.app.vault.modify(file, newFullContent);
 		}
@@ -320,6 +327,7 @@ export class SkillManager {
 		// Update description in frontmatter if provided
 		if (description !== undefined) {
 			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+				frontmatter.name ??= name;
 				frontmatter.description = description;
 			});
 		}

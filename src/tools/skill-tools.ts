@@ -259,9 +259,9 @@ export class EditSkillTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: { name: string; description?: string; content?: string }) => {
-		const parts = [];
-		if (params.description) parts.push('description');
-		if (params.content) parts.push('content');
+		const parts: string[] = [];
+		if (params.description?.trim()) parts.push('description');
+		if (params.content?.trim()) parts.push('content');
 		return `Edit skill "${params.name}": updating ${parts.join(' and ') || 'skill'}`;
 	};
 
