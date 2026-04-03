@@ -223,8 +223,107 @@ export class CreateSkillTool implements Tool {
 }
 
 /**
+ * Tool for editing an existing skill's content and/or description
+ *
+ * Provides write access to skill files within the plugin state folder,
+ * which is otherwise excluded from the standard read_file/write_file tools.
+ */
+export class EditSkillTool implements Tool {
+	name = 'edit_skill';
+	displayName = 'Edit Skill';
+	category = ToolCategory.SKILLS;
+	classification = ToolClassification.WRITE;
+	description =
+		"Edit an existing skill's SKILL.md content and/or description. Use activate_skill first to read the current content, then use this tool to update it. You can update the body content, the description, or both.";
+
+	parameters = {
+		type: 'object' as const,
+		properties: {
+			name: {
+				type: 'string' as const,
+				description: 'The name of the skill to edit (e.g., "code-review", "data-analysis")',
+			},
+			description: {
+				type: 'string' as const,
+				description: 'New description for the skill. If omitted, the existing description is preserved.',
+			},
+			content: {
+				type: 'string' as const,
+				description:
+					'New full markdown body content for the SKILL.md file. If omitted, the existing content is preserved.',
+			},
+		},
+		required: ['name'],
+	};
+
+	requiresConfirmation = true;
+
+	confirmationMessage = (params: { name: string; description?: string; content?: string }) => {
+		const parts = [];
+		if (params.description) parts.push('description');
+		if (params.content) parts.push('content');
+		return `Edit skill "${params.name}": updating ${parts.join(' and ') || 'skill'}`;
+	};
+
+	getProgressDescription(params: { name: string }): string {
+		return `Editing skill: ${params.name}`;
+	}
+
+	async execute(
+		params: { name: string; description?: string; content?: string },
+		context: ToolExecutionContext
+	): Promise<ToolResult> {
+		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+
+		try {
+			if (!plugin.skillManager) {
+				return {
+					success: false,
+					error: 'Skill manager service not available',
+				};
+			}
+
+			if (!params.name || typeof params.name !== 'string' || params.name.trim().length === 0) {
+				return {
+					success: false,
+					error: 'Skill name is required and must be a non-empty string',
+				};
+			}
+
+			const normalizedName = params.name.trim();
+			const normalizedDescription = params.description?.trim() || undefined;
+			const normalizedContent = params.content?.trim() || undefined;
+
+			if (!normalizedDescription && !normalizedContent) {
+				return {
+					success: false,
+					error: 'At least one of description or content must be provided',
+				};
+			}
+
+			const skillPath = await plugin.skillManager.updateSkill(normalizedName, normalizedDescription, normalizedContent);
+
+			return {
+				success: true,
+				data: {
+					path: skillPath,
+					name: normalizedName,
+					updatedFields: [...(normalizedDescription ? ['description'] : []), ...(normalizedContent ? ['content'] : [])],
+					message: `Skill "${normalizedName}" updated successfully.`,
+				},
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: `Failed to edit skill: ${error instanceof Error ? error.message : String(error)}`,
+			};
+		}
+	}
+}
+
+/**
  * Get all skill-related tools
  */
 export function getSkillTools(): Tool[] {
-	return [new ActivateSkillTool(), new CreateSkillTool()];
+	return [new ActivateSkillTool(), new CreateSkillTool(), new EditSkillTool()];
 }

@@ -283,6 +283,51 @@ export class SkillManager {
 	}
 
 	/**
+	 * Update an existing skill's SKILL.md content and/or description
+	 */
+	async updateSkill(name: string, description?: string, content?: string): Promise<string> {
+		// Validate name
+		const nameValidation = this.validateSkillName(name);
+		if (!nameValidation.valid) {
+			throw new Error(nameValidation.error!);
+		}
+
+		const skillMdPath = normalizePath(`${this.getSkillsFolderPath()}/${name}/${SKILL_MD_FILENAME}`);
+		const file = this.plugin.app.vault.getAbstractFileByPath(skillMdPath);
+
+		if (!(file instanceof TFile)) {
+			throw new Error(`Skill "${name}" not found`);
+		}
+
+		// Update body content if provided
+		if (content !== undefined) {
+			const fullContent = await this.plugin.app.vault.read(file);
+			const cache = this.plugin.app.metadataCache.getFileCache(file);
+
+			let newFullContent: string;
+			if (cache?.frontmatterPosition) {
+				// Preserve frontmatter, replace body
+				const frontmatter = fullContent.slice(0, cache.frontmatterPosition.end.offset);
+				newFullContent = frontmatter + '\n\n' + content.trim();
+			} else {
+				// No frontmatter exists, just set content
+				newFullContent = content.trim();
+			}
+
+			await this.plugin.app.vault.modify(file, newFullContent);
+		}
+
+		// Update description in frontmatter if provided
+		if (description !== undefined) {
+			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+				frontmatter.description = description;
+			});
+		}
+
+		return skillMdPath;
+	}
+
+	/**
 	 * Validate a skill name per the agentskills.io specification:
 	 * - 1-64 characters
 	 * - Lowercase alphanumeric and hyphens only

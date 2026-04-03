@@ -1,4 +1,4 @@
-import { ActivateSkillTool, CreateSkillTool, getSkillTools } from '../../src/tools/skill-tools';
+import { ActivateSkillTool, CreateSkillTool, EditSkillTool, getSkillTools } from '../../src/tools/skill-tools';
 import { ToolExecutionContext } from '../../src/tools/types';
 import { ToolCategory } from '../../src/types/agent';
 
@@ -9,6 +9,7 @@ const mockSkillManager = {
 	listSkillResources: jest.fn(),
 	getSkillSummaries: jest.fn(),
 	createSkill: jest.fn(),
+	updateSkill: jest.fn(),
 	validateSkillName: jest.fn(),
 };
 
@@ -250,13 +251,156 @@ describe('Skill Tools', () => {
 		});
 	});
 
+	describe('EditSkillTool', () => {
+		let tool: EditSkillTool;
+
+		beforeEach(() => {
+			tool = new EditSkillTool();
+		});
+
+		it('should have correct properties', () => {
+			expect(tool.name).toBe('edit_skill');
+			expect(tool.displayName).toBe('Edit Skill');
+			expect(tool.category).toBe(ToolCategory.SKILLS);
+			expect(tool.requiresConfirmation).toBe(true);
+		});
+
+		it('should have correct parameter schema', () => {
+			expect(tool.parameters.type).toBe('object');
+			expect(tool.parameters.properties).toHaveProperty('name');
+			expect(tool.parameters.properties).toHaveProperty('description');
+			expect(tool.parameters.properties).toHaveProperty('content');
+			expect(tool.parameters.required).toEqual(['name']);
+		});
+
+		it('should update skill content successfully', async () => {
+			mockSkillManager.updateSkill.mockResolvedValue('gemini-scribe/Skills/my-skill/SKILL.md');
+
+			const result = await tool.execute(
+				{
+					name: 'my-skill',
+					content: '# Updated Instructions\n\nNew content here...',
+				},
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data.name).toBe('my-skill');
+			expect(result.data.path).toContain('SKILL.md');
+			expect(result.data.updatedFields).toEqual(['content']);
+			expect(mockSkillManager.updateSkill).toHaveBeenCalledWith(
+				'my-skill',
+				undefined,
+				'# Updated Instructions\n\nNew content here...'
+			);
+		});
+
+		it('should update skill description successfully', async () => {
+			mockSkillManager.updateSkill.mockResolvedValue('gemini-scribe/Skills/my-skill/SKILL.md');
+
+			const result = await tool.execute(
+				{
+					name: 'my-skill',
+					description: 'Updated description',
+				},
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data.updatedFields).toEqual(['description']);
+			expect(mockSkillManager.updateSkill).toHaveBeenCalledWith('my-skill', 'Updated description', undefined);
+		});
+
+		it('should update both description and content', async () => {
+			mockSkillManager.updateSkill.mockResolvedValue('gemini-scribe/Skills/my-skill/SKILL.md');
+
+			const result = await tool.execute(
+				{
+					name: 'my-skill',
+					description: 'New desc',
+					content: 'New content',
+				},
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data.updatedFields).toEqual(['description', 'content']);
+			expect(mockSkillManager.updateSkill).toHaveBeenCalledWith('my-skill', 'New desc', 'New content');
+		});
+
+		it('should return error for empty name', async () => {
+			const result = await tool.execute({ name: '', content: 'content' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Skill name is required');
+			expect(mockSkillManager.updateSkill).not.toHaveBeenCalled();
+		});
+
+		it('should return error when neither description nor content provided', async () => {
+			const result = await tool.execute({ name: 'my-skill' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('At least one of description or content must be provided');
+			expect(mockSkillManager.updateSkill).not.toHaveBeenCalled();
+		});
+
+		it('should return error when skill manager is not available', async () => {
+			const contextWithoutSkills = {
+				plugin: { skillManager: null } as any,
+				session: mockContext.session,
+			};
+
+			const result = await tool.execute({ name: 'test', content: 'content' }, contextWithoutSkills);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Skill manager service not available');
+		});
+
+		it('should handle update errors', async () => {
+			mockSkillManager.updateSkill.mockRejectedValue(new Error('Skill "nonexistent" not found'));
+
+			const result = await tool.execute({ name: 'nonexistent', content: 'content' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('not found');
+		});
+
+		it('should have confirmation message function', () => {
+			const message = tool.confirmationMessage!({ name: 'code-review', content: 'new content' });
+			expect(message).toContain('code-review');
+			expect(message).toContain('content');
+		});
+
+		it('should show both fields in confirmation when updating both', () => {
+			const message = tool.confirmationMessage!({
+				name: 'code-review',
+				description: 'new desc',
+				content: 'new content',
+			});
+			expect(message).toContain('description and content');
+		});
+
+		it('should trim input values', async () => {
+			mockSkillManager.updateSkill.mockResolvedValue('path/SKILL.md');
+
+			await tool.execute({ name: '  my-skill  ', description: '  desc  ', content: '  content  ' }, mockContext);
+
+			expect(mockSkillManager.updateSkill).toHaveBeenCalledWith('my-skill', 'desc', 'content');
+		});
+
+		it('should generate progress description', () => {
+			expect(tool.getProgressDescription({ name: 'code-review' })).toContain('code-review');
+		});
+	});
+
 	describe('getSkillTools', () => {
-		it('should return both skill tools', () => {
+		it('should return all skill tools', () => {
 			const tools = getSkillTools();
 
-			expect(tools).toHaveLength(2);
+			expect(tools).toHaveLength(3);
 			expect(tools[0]).toBeInstanceOf(ActivateSkillTool);
 			expect(tools[1]).toBeInstanceOf(CreateSkillTool);
+			expect(tools[2]).toBeInstanceOf(EditSkillTool);
 		});
 
 		it('should return tools with correct names', () => {
@@ -265,6 +409,7 @@ describe('Skill Tools', () => {
 			const toolNames = tools.map((t) => t.name);
 			expect(toolNames).toContain('activate_skill');
 			expect(toolNames).toContain('create_skill');
+			expect(toolNames).toContain('edit_skill');
 		});
 	});
 });
