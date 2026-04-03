@@ -259,10 +259,14 @@ export class EditSkillTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: { name: string; description?: string; content?: string }) => {
+		const normalizedName = params.name.trim();
 		const parts: string[] = [];
 		if (params.description?.trim()) parts.push('description');
 		if (params.content?.trim()) parts.push('content');
-		return `Edit skill "${params.name}": updating ${parts.join(' and ') || 'skill'}`;
+		if (parts.length === 0) {
+			return `Edit skill "${normalizedName}": no valid fields provided`;
+		}
+		return `Edit skill "${normalizedName}": updating ${parts.join(' and ')}`;
 	};
 
 	getProgressDescription(params: { name: string }): string {

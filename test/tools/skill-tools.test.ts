@@ -404,6 +404,11 @@ describe('Skill Tools', () => {
 			expect(message).not.toContain('content');
 		});
 
+		it('should show no valid fields message in confirmation when both are whitespace', () => {
+			const message = tool.confirmationMessage!({ name: 'test', description: '   ', content: '   ' });
+			expect(message).toContain('no valid fields provided');
+		});
+
 		it('should reject whitespace-only description and content in execute', async () => {
 			const result = await tool.execute({ name: 'my-skill', description: '   ', content: '   ' }, mockContext);
 
