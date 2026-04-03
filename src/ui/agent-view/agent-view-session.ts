@@ -26,7 +26,7 @@ export interface SessionUICallbacks {
 	showEmptyState: () => Promise<void>;
 
 	/** Add active file to context if available */
-	addActiveFileToContext: () => Promise<void>;
+	addActiveFileToContext: (session?: ChatSession) => Promise<void>;
 
 	/** Focus the input field */
 	focusInput: () => void;
@@ -121,8 +121,9 @@ export class AgentViewSession {
 			// Create new session with default context (no initial files)
 			this.currentSession = await this.plugin.sessionManager.createAgentSession();
 
-			// Add active file to context if there is one
-			await this.uiCallbacks.addActiveFileToContext();
+			// Add active file to context — pass session directly since
+			// the AgentView's currentSession reference isn't updated yet
+			await this.uiCallbacks.addActiveFileToContext(this.currentSession);
 
 			// Update UI (no history to load for new session)
 			this.uiCallbacks.updateSessionHeader();
