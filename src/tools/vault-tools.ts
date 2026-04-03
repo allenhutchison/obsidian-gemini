@@ -1165,14 +1165,18 @@ export class GetWorkspaceStateTool implements Tool {
 				}
 			});
 
-			const openFiles = Array.from(fileMap.values());
+			const openFiles = Array.from(fileMap.values()).sort((a, b) => a.path.localeCompare(b.path));
 
-			// Include project info if session is linked to one
+			// Include project info if session is linked to one (best-effort)
 			let project: { name: string; rootPath: string } | null = null;
 			if (context.session?.projectPath && plugin.projectManager) {
-				const proj = await plugin.projectManager.getProject(context.session.projectPath);
-				if (proj) {
-					project = { name: proj.config.name, rootPath: proj.rootPath };
+				try {
+					const proj = await plugin.projectManager.getProject(context.session.projectPath);
+					if (proj) {
+						project = { name: proj.config.name, rootPath: proj.rootPath };
+					}
+				} catch {
+					// Project lookup failed — return openFiles without project info
 				}
 			}
 

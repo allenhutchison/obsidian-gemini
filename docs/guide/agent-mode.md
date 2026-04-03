@@ -223,9 +223,9 @@ What files are in the attachments folder?
 
 #### get_workspace_state
 
-Get metadata about all files currently open in the editor. Returns each file's path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one:
+Get metadata about all Markdown files currently open in the editor. Returns each file's path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Note: this tool only reports open Markdown editor views — PDFs, images, canvases, and other non-Markdown files are not included. Use `read_file` for those.
 
-```
+```text
 What files do I have open?
 Look at what I'm working on and help me with the current file
 What do I have selected?

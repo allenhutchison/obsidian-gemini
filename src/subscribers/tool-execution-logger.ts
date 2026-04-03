@@ -4,8 +4,8 @@ import { HandlerPriority } from '../types/agent-events';
 import { ToolResult } from '../tools/types';
 import { ChatSession } from '../types/agent';
 
-/** Map tool names to the key parameter to display in summaries */
-const KEY_PARAM_MAP: Record<string, string> = {
+/** Map tool names to the key parameter to display in summaries. undefined = no args to display. */
+const KEY_PARAM_MAP: Record<string, string | undefined> = {
 	read_file: 'path',
 	write_file: 'path',
 	delete_file: 'path',
@@ -16,7 +16,7 @@ const KEY_PARAM_MAP: Record<string, string> = {
 	list_files: 'path',
 	search_files: 'pattern',
 	search_file_contents: 'query',
-	get_workspace_state: '',
+	get_workspace_state: undefined,
 	google_search: 'query',
 	fetch_url: 'url',
 	vault_semantic_search: 'query',
@@ -127,12 +127,16 @@ export function formatToolBlock(lines: string[]): string {
  * Extract the key parameter for a tool's summary line.
  */
 function extractKeyParam(toolName: string, args: Record<string, unknown>): { key: string; value: string } | null {
-	const paramName = KEY_PARAM_MAP[toolName];
-	if (paramName && typeof args[paramName] === 'string') {
-		return { key: paramName, value: args[paramName] as string };
+	// If tool is in the map, use its configured param (or skip if explicitly undefined)
+	if (toolName in KEY_PARAM_MAP) {
+		const paramName = KEY_PARAM_MAP[toolName];
+		if (paramName && typeof args[paramName] === 'string') {
+			return { key: paramName, value: args[paramName] as string };
+		}
+		return null;
 	}
 
-	// Fallback: use first string arg
+	// Fallback for unmapped tools: use first string arg
 	for (const [key, value] of Object.entries(args)) {
 		if (typeof value === 'string') {
 			return { key, value };
