@@ -447,7 +447,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('API Key')
 			.setDesc(
-				'Link your Google Gemini API key. Create a secret in Obsidian Settings → Secrets, then link it here. Get a key free at https://aistudio.google.com/apikey'
+				'Link your Google Gemini API key. Click "Link..." and Obsidian will ask for a Secret Name (this is just a label — use any name like "gemini-api") and a Secret Value (paste your API key here). Get a key free at https://aistudio.google.com/apikey'
 			)
 			.addComponent((el) =>
 				new SecretComponent(this.app, el)
