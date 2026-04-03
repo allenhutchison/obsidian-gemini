@@ -283,6 +283,59 @@ export class SkillManager {
 	}
 
 	/**
+	 * Update an existing skill's SKILL.md content and/or description
+	 */
+	async updateSkill(name: string, description?: string, content?: string): Promise<string> {
+		// Validate name
+		const nameValidation = this.validateSkillName(name);
+		if (!nameValidation.valid) {
+			throw new Error(nameValidation.error!);
+		}
+
+		// Reject no-op updates at the service boundary
+		if (description === undefined && content === undefined) {
+			throw new Error('At least one of description or content must be provided');
+		}
+
+		const skillMdPath = normalizePath(`${this.getSkillsFolderPath()}/${name}/${SKILL_MD_FILENAME}`);
+		const file = this.plugin.app.vault.getAbstractFileByPath(skillMdPath);
+
+		if (!(file instanceof TFile)) {
+			throw new Error(`Skill "${name}" not found`);
+		}
+
+		// Update body content if provided
+		if (content !== undefined) {
+			const fullContent = await this.plugin.app.vault.read(file);
+			const cache = this.plugin.app.metadataCache.getFileCache(file);
+
+			// Use metadata cache position when available, fall back to regex parsing
+			// to handle stale cache scenarios (e.g., after recent file creation)
+			const cachedFrontmatterEnd = cache?.frontmatterPosition?.end.offset;
+			const parsedFrontmatter = fullContent.match(/^---\r?\n[\s\S]*?\r?\n---/);
+			const frontmatterEnd = cachedFrontmatterEnd ?? (parsedFrontmatter ? parsedFrontmatter[0].length : undefined);
+
+			const trimmedContent = content.trim();
+			const newFullContent =
+				frontmatterEnd !== undefined
+					? `${fullContent.slice(0, frontmatterEnd).trimEnd()}\n\n${trimmedContent}`
+					: trimmedContent;
+
+			await this.plugin.app.vault.modify(file, newFullContent);
+		}
+
+		// Update description in frontmatter if provided
+		if (description !== undefined) {
+			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+				frontmatter.name ??= name;
+				frontmatter.description = description;
+			});
+		}
+
+		return skillMdPath;
+	}
+
+	/**
 	 * Validate a skill name per the agentskills.io specification:
 	 * - 1-64 characters
 	 * - Lowercase alphanumeric and hyphens only
