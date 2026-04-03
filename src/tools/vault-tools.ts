@@ -1,7 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import { TFile, TFolder, normalizePath } from 'obsidian';
+import { TFile, TFolder, normalizePath, MarkdownView } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../utils/file-utils';
 import {
@@ -1085,17 +1085,20 @@ export class SearchFileContentsTool implements Tool {
 	}
 }
 
+/** Maximum characters of selected text to include in workspace state */
+const MAX_SELECTION_LENGTH = 1000;
+
 /**
- * Get the currently active file in the editor
- * This is a wrapper around ReadFileTool that automatically gets the active file
+ * Get the current workspace state: all open files, visibility, selections, and project info.
+ * Replaces get_active_file with a richer view of the user's workspace.
  */
-export class GetActiveFileTool implements Tool {
-	name = 'get_active_file';
-	displayName = 'Get Active File';
+export class GetWorkspaceStateTool implements Tool {
+	name = 'get_workspace_state';
+	displayName = 'Get Workspace State';
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'Get the full content and metadata of the currently active file open in the editor. This is the file the user is currently viewing or editing. Returns the same information as read_file (content, wikilink, outgoing links, backlinks) for the active file. Use this when the user refers to "the current file", "this file", or "the active file". Returns an error if no file is currently active.';
+		'Get metadata about all files currently open in the user\'s workspace. Returns each file\'s path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Use this when the user refers to "this file", "the current file", "what I\'m looking at", or when you need to understand what the user is working on. Use read_file to get the actual content of specific files.';
 
 	parameters = {
 		type: 'object' as const,
@@ -1104,39 +1107,83 @@ export class GetActiveFileTool implements Tool {
 	};
 
 	getProgressDescription(_params: any): string {
-		return 'Getting active file';
+		return 'Getting workspace state';
 	}
 
 	async execute(_params: any, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 
 		try {
-			// Get the currently active file from the workspace
 			const activeFile = plugin.app.workspace.getActiveFile();
 
-			if (!activeFile) {
-				return {
-					success: false,
-					error: 'No file is currently active in the editor',
-				};
+			// Collect all open markdown leaves, de-duplicating by path
+			const fileMap = new Map<
+				string,
+				{ path: string; wikilink: string; visible: boolean; active: boolean; selection: string | null }
+			>();
+
+			plugin.app.workspace.iterateAllLeaves((leaf) => {
+				const view = leaf.view;
+				if (!(view instanceof MarkdownView) || !view.file) return;
+
+				const file = view.file;
+				const path = file.path;
+
+				// Skip system/excluded files
+				if (shouldExcludePath(path, plugin)) return;
+
+				const isVisible = (leaf as any).containerEl?.isShown?.() ?? false;
+				const isActive = activeFile !== null && file.path === activeFile.path;
+
+				let selection: string | null = null;
+				try {
+					const sel = view.editor.getSelection();
+					if (sel) {
+						selection = sel.length > MAX_SELECTION_LENGTH ? sel.slice(0, MAX_SELECTION_LENGTH) + '...' : sel;
+					}
+				} catch {
+					// Editor may not be available
+				}
+
+				const existing = fileMap.get(path);
+				if (existing) {
+					// Merge: visible/active if ANY leaf qualifies, keep first non-empty selection
+					existing.visible = existing.visible || isVisible;
+					existing.active = existing.active || isActive;
+					if (!existing.selection && selection) {
+						existing.selection = selection;
+					}
+				} else {
+					const linkText = plugin.app.metadataCache.fileToLinktext(file, '');
+					fileMap.set(path, {
+						path,
+						wikilink: `[[${linkText}]]`,
+						visible: isVisible,
+						active: isActive,
+						selection,
+					});
+				}
+			});
+
+			const openFiles = Array.from(fileMap.values());
+
+			// Include project info if session is linked to one
+			let project: { name: string; rootPath: string } | null = null;
+			if (context.session?.projectPath && plugin.projectManager) {
+				const proj = await plugin.projectManager.getProject(context.session.projectPath);
+				if (proj) {
+					project = { name: proj.config.name, rootPath: proj.rootPath };
+				}
 			}
 
-			// Check if path is excluded (shouldn't be, but safety check)
-			if (shouldExcludePath(activeFile.path, plugin)) {
-				return {
-					success: false,
-					error: 'The active file is in a system folder',
-				};
-			}
-
-			// Delegate to ReadFileTool to get full file information
-			// This ensures we return the same rich data (content, links, backlinks, etc.)
-			const readFileTool = new ReadFileTool();
-			return await readFileTool.execute({ path: activeFile.path }, context);
+			return {
+				success: true,
+				data: { openFiles, project },
+			};
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error getting active file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error getting workspace state: ${error instanceof Error ? error.message : 'Unknown error'}`,
 			};
 		}
 	}
@@ -1155,6 +1202,6 @@ export function getVaultTools(): Tool[] {
 		new MoveFileTool(),
 		new SearchFilesTool(),
 		new SearchFileContentsTool(),
-		new GetActiveFileTool(),
+		new GetWorkspaceStateTool(),
 	];
 }

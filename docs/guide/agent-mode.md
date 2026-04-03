@@ -221,6 +221,18 @@ List the contents of my Templates directory
 What files are in the attachments folder?
 ```
 
+#### get_workspace_state
+
+Get metadata about all files currently open in the editor. Returns each file's path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one:
+
+```
+What files do I have open?
+Look at what I'm working on and help me with the current file
+What do I have selected?
+```
+
+The agent uses this to understand your workspace context without needing files to be manually added to the session. Use `read_file` to get the actual content of specific files the agent identifies.
+
 ### Vault Operations
 
 #### write_file

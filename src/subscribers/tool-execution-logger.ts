@@ -16,7 +16,7 @@ const KEY_PARAM_MAP: Record<string, string> = {
 	list_files: 'path',
 	search_files: 'pattern',
 	search_file_contents: 'query',
-	get_active_file: 'path',
+	get_workspace_state: '',
 	google_search: 'query',
 	fetch_url: 'url',
 	vault_semantic_search: 'query',

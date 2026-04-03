@@ -103,7 +103,7 @@ describe('extractAccessedPaths', () => {
 				result: { success: true, data: { results: [] } },
 			},
 			{ toolName: 'list_folders', toolArguments: { path: '/' }, result: { success: true, data: { folders: [] } } },
-			{ toolName: 'get_active_file', toolArguments: {}, result: { success: true, data: { path: 'active.md' } } },
+			{ toolName: 'get_workspace_state', toolArguments: {}, result: { success: true, data: { openFiles: [] } } },
 			{ toolName: 'read_memory', toolArguments: {}, result: { success: true, data: { path: 'AGENTS.md' } } },
 			{
 				toolName: 'update_memory',

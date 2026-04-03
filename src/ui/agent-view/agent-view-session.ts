@@ -25,9 +25,6 @@ export interface SessionUICallbacks {
 	/** Show the empty state UI */
 	showEmptyState: () => Promise<void>;
 
-	/** Add active file to context if available */
-	addActiveFileToContext: (session?: ChatSession) => Promise<void>;
-
 	/** Focus the input field */
 	focusInput: () => void;
 }
@@ -41,12 +38,6 @@ export interface SessionState {
 
 	/** Reference to allowed tools set */
 	allowedWithoutConfirmation: Set<string>;
-
-	/** Get the current auto-added active file */
-	getAutoAddedActiveFile: () => TFile | null;
-
-	/** Clear the auto-added active file tracking */
-	clearAutoAddedActiveFile: () => void;
 
 	/** User input element */
 	userInput: HTMLDivElement;
@@ -111,8 +102,6 @@ export class AgentViewSession {
 			this.uiCallbacks.clearChat();
 			this.state.mentionedFiles.length = 0; // Clear any mentioned files from previous session
 			this.state.allowedWithoutConfirmation.clear(); // Clear session-level permissions
-			this.state.clearAutoAddedActiveFile(); // Clear auto-added file tracking
-
 			// Clear input if it has content
 			if (this.state.userInput) {
 				this.state.userInput.innerHTML = '';
@@ -120,10 +109,6 @@ export class AgentViewSession {
 
 			// Create new session with default context (no initial files)
 			this.currentSession = await this.plugin.sessionManager.createAgentSession();
-
-			// Add active file to context — pass session directly since
-			// the AgentView's currentSession reference isn't updated yet
-			await this.uiCallbacks.addActiveFileToContext(this.currentSession);
 
 			// Update UI (no history to load for new session)
 			this.uiCallbacks.updateSessionHeader();
@@ -192,7 +177,6 @@ export class AgentViewSession {
 		try {
 			this.currentSession = session;
 			this.state.allowedWithoutConfirmation.clear(); // Clear session-level permissions when loading from history
-			this.state.clearAutoAddedActiveFile(); // Clear auto-added file tracking when loading a session
 
 			// Clear chat and reload history
 			this.uiCallbacks.clearChat();
