@@ -180,7 +180,8 @@ export class AgentView extends ItemView {
 			updateSessionHeader: () => this.updateSessionHeader(),
 			updateContextPanel: () => this.updateContextPanel(),
 			showEmptyState: () => this.showEmptyState(),
-			addActiveFileToContext: () => this.context.addActiveFileToContext(this.currentSession),
+			addActiveFileToContext: (session?: ChatSession) =>
+				this.context.addActiveFileToContext(session ?? this.currentSession),
 			focusInput: () => this.userInput.focus(),
 		};
 
