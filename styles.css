@@ -4223,6 +4223,13 @@ If your plugin does not need CSS, delete this file.
 	background-color: var(--text-error);
 }
 
+/* Touch devices: always show remove button since there's no hover */
+@media (hover: none), (pointer: coarse) {
+	.gemini-shelf-remove {
+		opacity: 1;
+	}
+}
+
 /* Selection Response Modal Styles */
 
 .modal-container:has(.gemini-scribe-selection-response-modal) {

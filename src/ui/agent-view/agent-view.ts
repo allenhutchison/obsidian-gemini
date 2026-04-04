@@ -11,7 +11,7 @@ import { HandlerPriority } from '../../types/agent-events';
 
 // Import all component modules
 import { AgentViewProgress } from './agent-view-progress';
-import { getMarkdownFilesFromFolder } from './agent-view-shelf';
+import { getTextFilesFromFolder } from './agent-view-shelf';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewContext } from './agent-view-context';
 import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view-session';
@@ -60,7 +60,6 @@ export class AgentView extends ItemView {
 	private cancellationRequested: boolean = false;
 	private eventBusUnsubscribers: (() => void)[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
-	private pendingAttachments: InlineAttachment[] = [];
 	private shelf: AgentViewShelf;
 	private tokenUsageContainer: HTMLElement;
 
@@ -118,7 +117,7 @@ export class AgentView extends ItemView {
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
 			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
 			removeAttachment: (id: string) => this.removeAttachment(id),
-			getAttachments: () => this.pendingAttachments,
+			getAttachments: () => this.shelf?.getPendingAttachments() || [],
 			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
 		};
@@ -153,8 +152,8 @@ export class AgentView extends ItemView {
 					this.updateSessionHeader();
 					this.updateSessionMetadata();
 				},
-				onRemoveAttachment: (id: string) => {
-					this.pendingAttachments = this.pendingAttachments.filter((a) => a.id !== id);
+				onRemoveAttachment: () => {
+					// Shelf handles its own state; nothing else to sync
 				},
 			},
 			inputRow
@@ -251,11 +250,10 @@ export class AgentView extends ItemView {
 		const formattedMessage = message;
 		// Allow sending with only attachments (no text)
 		const shelfTextFiles = this.shelf.getTextFiles();
-		if (!message && shelfTextFiles.length === 0 && this.pendingAttachments.length === 0) return;
+		const attachments = this.shelf.getPendingAttachments();
+		if (!message && shelfTextFiles.length === 0 && attachments.length === 0) return;
 
-		// Capture pending attachments and clear them
-		const attachments = [...this.pendingAttachments];
-		this.pendingAttachments = [];
+		// Mark binary shelf items as sent
 		this.shelf.markBinarySent();
 
 		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
@@ -882,7 +880,7 @@ To reference an attachment in your response, use the path shown above.`;
 					this.updateSessionHeader();
 					this.updateSessionMetadata();
 				} else if (fileOrFolder instanceof TFolder) {
-					const files = getMarkdownFilesFromFolder(fileOrFolder);
+					const files = getTextFilesFromFolder(fileOrFolder);
 					this.shelf.addFolder(fileOrFolder, files);
 					for (const file of files) {
 						this.context.addFileToContext(file, this.currentSession);
@@ -1132,7 +1130,7 @@ To reference an attachment in your response, use the path shown above.`;
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
 			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
 			removeAttachment: (id: string) => this.removeAttachment(id),
-			getAttachments: () => this.pendingAttachments,
+			getAttachments: () => this.shelf?.getPendingAttachments() || [],
 			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
 		};
@@ -1151,18 +1149,16 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
-	 * Add an attachment to pending list and shelf
+	 * Add an attachment to the shelf
 	 */
 	private addAttachment(attachment: InlineAttachment): void {
-		this.pendingAttachments.push(attachment);
 		this.shelf.addBinaryAttachment(attachment);
 	}
 
 	/**
-	 * Remove an attachment from pending list and shelf
+	 * Remove an attachment from the shelf
 	 */
 	private removeAttachment(id: string): void {
-		this.pendingAttachments = this.pendingAttachments.filter((a) => a.id !== id);
 		this.shelf.removeItem(id);
 	}
 

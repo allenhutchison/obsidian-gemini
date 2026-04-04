@@ -3,15 +3,21 @@ import { InlineAttachment } from './inline-attachment';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
 
 /**
- * Recursively collects all markdown files from a folder
+ * Recursively collects all supported text files from a folder,
+ * skipping system folders (.obsidian, plugin state).
  */
-export function getMarkdownFilesFromFolder(folder: TFolder): TFile[] {
+export function getTextFilesFromFolder(folder: TFolder): TFile[] {
 	const files: TFile[] = [];
 	const collect = (f: TFolder) => {
 		for (const child of f.children) {
-			if (child instanceof TFile && child.extension === 'md') {
-				files.push(child);
+			if (child instanceof TFile) {
+				const result = classifyFile(child.extension);
+				if (result.category === FileCategory.TEXT) {
+					files.push(child);
+				}
 			} else if (child instanceof TFolder) {
+				// Skip system folders
+				if (child.path === '.obsidian' || child.path.startsWith('.obsidian/')) continue;
 				collect(child);
 			}
 		}
@@ -165,15 +171,17 @@ export class AgentViewShelf {
 	 * Get all persistent text files (for context building)
 	 */
 	getTextFiles(): TFile[] {
-		const files: TFile[] = [];
+		const seen = new Map<string, TFile>();
 		for (const item of this.items) {
 			if (item.type === 'text' && item.file) {
-				files.push(item.file);
+				seen.set(item.file.path, item.file);
 			} else if (item.type === 'folder' && item.expandedFiles) {
-				files.push(...item.expandedFiles);
+				for (const file of item.expandedFiles) {
+					seen.set(file.path, file);
+				}
 			}
 		}
-		return files;
+		return [...seen.values()];
 	}
 
 	/**
