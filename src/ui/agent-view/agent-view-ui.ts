@@ -215,17 +215,25 @@ export class AgentViewUI {
 
 		// Project badge (always shown when session active — click to switch/link)
 		if (currentSession && this.plugin.projectManager) {
-			const project = currentSession.projectPath
-				? this.plugin.projectManager.getProjectForPath(currentSession.projectPath)
-				: null;
-			const projectName = project?.config.name || 'No Project';
 			const badge = leftSection.createEl('span', {
 				cls: 'gemini-agent-project-badge',
 			});
-			setTooltip(badge, project ? `Project: ${projectName}\n${currentSession.projectPath}` : 'Click to link a project');
 			const iconSpan = badge.createSpan();
 			setIcon(iconSpan, 'folder-open');
-			badge.createSpan({ text: ' ' + projectName });
+			const nameSpan = badge.createSpan({ text: ' No Project' });
+			setTooltip(badge, currentSession.projectPath ? 'Loading project...' : 'Click to link a project');
+
+			if (currentSession.projectPath) {
+				this.plugin.projectManager.getProject(currentSession.projectPath).then((project) => {
+					const projectName = project?.config.name || 'No Project';
+					nameSpan.textContent = ' ' + projectName;
+					setTooltip(
+						badge,
+						project ? `Project: ${projectName}\n${currentSession.projectPath}` : 'Click to link a project'
+					);
+				});
+			}
+
 			badge.addEventListener('click', (e) => {
 				e.stopPropagation();
 				callbacks.switchProject();
