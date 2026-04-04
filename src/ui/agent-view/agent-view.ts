@@ -870,16 +870,11 @@ To reference an attachment in your response, use the path shown above.`;
 	private async showFileMention() {
 		const modal = new FileMentionModal(
 			this.app,
-			(fileOrFolder: TFile | TFolder) => {
+			async (fileOrFolder: TFile | TFolder) => {
 				// Remove the @ character that triggered the picker
 				this.removeTrailingAtSymbol();
 
-				if (fileOrFolder instanceof TFile) {
-					this.shelf.addTextFile(fileOrFolder);
-					this.context.addFileToContext(fileOrFolder, this.currentSession);
-					this.updateSessionHeader();
-					this.updateSessionMetadata();
-				} else if (fileOrFolder instanceof TFolder) {
+				if (fileOrFolder instanceof TFolder) {
 					const files = getTextFilesFromFolder(fileOrFolder, (path) => shouldExcludePathForPlugin(path, this.plugin));
 					this.shelf.addFolder(fileOrFolder, files);
 					for (const file of files) {
@@ -887,6 +882,49 @@ To reference an attachment in your response, use the path shown above.`;
 					}
 					this.updateSessionHeader();
 					this.updateSessionMetadata();
+					return;
+				}
+
+				// Classify the file to determine text vs binary handling
+				const { classifyFile, FileCategory, arrayBufferToBase64, detectWebmMimeType, GEMINI_INLINE_DATA_LIMIT } =
+					await import('../../utils/file-classification');
+				const classification = classifyFile(fileOrFolder.extension);
+
+				if (classification.category === FileCategory.TEXT) {
+					this.shelf.addTextFile(fileOrFolder);
+					this.context.addFileToContext(fileOrFolder, this.currentSession);
+					this.updateSessionHeader();
+					this.updateSessionMetadata();
+				} else if (classification.category === FileCategory.GEMINI_BINARY) {
+					// Handle binary file — create inline attachment (same as drag-drop)
+					try {
+						const buffer = await this.app.vault.readBinary(fileOrFolder);
+						const existing = this.shelf.getPendingAttachments();
+						const cumulativeSize =
+							existing.reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0) + buffer.byteLength;
+
+						if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
+							new Notice(`File too large: ${fileOrFolder.name} exceeds 20MB cumulative attachment limit`, 5000);
+							return;
+						}
+
+						const base64 = arrayBufferToBase64(buffer);
+						const mimeType =
+							fileOrFolder.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
+						const { generateAttachmentId } = await import('./inline-attachment');
+						const attachment: InlineAttachment = {
+							base64,
+							mimeType,
+							id: generateAttachmentId(),
+							vaultPath: fileOrFolder.path,
+							fileName: fileOrFolder.name,
+						};
+						this.addAttachment(attachment);
+						new Notice(`Attached ${fileOrFolder.name}`, 2000);
+					} catch (err) {
+						this.plugin.logger.error(`Failed to attach ${fileOrFolder.path}:`, err);
+						new Notice(`Failed to attach ${fileOrFolder.name}`);
+					}
 				}
 			},
 			this.plugin

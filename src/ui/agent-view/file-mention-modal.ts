@@ -1,5 +1,6 @@
 import { FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { classifyFile, FileCategory } from '../../utils/file-classification';
 import type ObsidianGemini from '../../main';
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
@@ -16,18 +17,20 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	getItems(): TAbstractFile[] {
 		const items: TAbstractFile[] = [];
 
-		// Add all markdown files except those in excluded folders
-		const allFiles = this.app.vault.getMarkdownFiles();
-		const filteredFiles = allFiles.filter((file: TFile) => !shouldExcludePathForPlugin(file.path, this.plugin));
+		// Add all supported files (text + Gemini-supported binary), excluding unsupported types
+		const allFiles = this.app.vault.getFiles();
+		const filteredFiles = allFiles.filter((file: TFile) => {
+			if (shouldExcludePathForPlugin(file.path, this.plugin)) return false;
+			const result = classifyFile(file.extension);
+			return result.category !== FileCategory.UNSUPPORTED;
+		});
 		items.push(...filteredFiles);
 
 		// Add all folders except system and plugin folders
 		const addFolders = (folder: TFolder) => {
-			// Skip excluded folders
 			if (shouldExcludePathForPlugin(folder.path, this.plugin)) return;
 
 			if (folder.path) {
-				// Don't add root folder
 				items.push(folder);
 			}
 
@@ -47,10 +50,25 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 		if (item instanceof TFolder) {
 			return `📁 ${item.path}/`;
 		}
+		if (item instanceof TFile) {
+			const result = classifyFile(item.extension);
+			if (result.category === FileCategory.GEMINI_BINARY) {
+				const icon = this.getIconForMime(result.mimeType);
+				return `${icon} ${item.path}`;
+			}
+		}
 		return item.path;
 	}
 
 	onChooseItem(item: TAbstractFile, _evt: MouseEvent | KeyboardEvent): void {
 		this.onSelect(item);
+	}
+
+	private getIconForMime(mimeType: string): string {
+		if (mimeType.startsWith('image/')) return '🖼';
+		if (mimeType === 'application/pdf') return '📄';
+		if (mimeType.startsWith('audio/')) return '🎵';
+		if (mimeType.startsWith('video/')) return '🎬';
+		return '📎';
 	}
 }
