@@ -391,13 +391,9 @@ export class WriteFileTool implements Tool {
 					if (session && !session.context.contextFiles.includes(file)) {
 						session.context.contextFiles.push(file);
 						// Update UI if agent view is active
-						if ('updateContextFilesList' in agentView && 'updateSessionHeader' in agentView) {
-							const contextPanel = (agentView as any).contextPanel;
-							if (contextPanel) {
-								(agentView as any).updateContextFilesList(contextPanel.querySelector('.gemini-agent-files-list'));
-								(agentView as any).updateSessionHeader();
-								(agentView as any).updateSessionMetadata();
-							}
+						if ('updateSessionHeader' in agentView) {
+							(agentView as any).updateSessionHeader();
+							(agentView as any).updateSessionMetadata();
 						}
 					}
 				}

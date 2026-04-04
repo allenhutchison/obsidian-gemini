@@ -1,4 +1,4 @@
-import { App, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian';
+import { App, Menu, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
@@ -30,7 +30,7 @@ export interface UICallbacks {
 	sendMessage: () => Promise<void>;
 	stopAgentLoop: () => void;
 	removeContextFile: (file: TFile) => void;
-	updateContextFilesList: (container: HTMLElement) => void;
+
 	updateSessionHeader: () => void;
 	updateSessionMetadata: () => Promise<void>;
 	loadSession: (session: ChatSession) => Promise<void>;
@@ -47,7 +47,6 @@ export interface UICallbacks {
  */
 export interface AgentUIElements {
 	sessionHeader: HTMLElement;
-	contextPanel: HTMLElement;
 	chatContainer: HTMLElement;
 	userInput: HTMLDivElement;
 	sendButton: HTMLButtonElement;
@@ -79,11 +78,6 @@ export class AgentViewUI {
 		// Compact header bar with title and primary controls
 		const sessionHeader = container.createDiv({ cls: 'gemini-agent-header gemini-agent-header-compact' });
 
-		// Collapsible context panel
-		const contextPanel = container.createDiv({
-			cls: 'gemini-agent-context-panel gemini-agent-context-panel-collapsed',
-		});
-
 		// Chat container (will expand to fill available space)
 		const chatContainer = container.createDiv({ cls: 'gemini-agent-chat' });
 
@@ -102,7 +96,6 @@ export class AgentViewUI {
 
 		return {
 			sessionHeader,
-			contextPanel,
 			chatContainer,
 			userInput,
 			sendButton,
@@ -115,34 +108,11 @@ export class AgentViewUI {
 	/**
 	 * Creates the compact header with session controls
 	 */
-	createCompactHeader(
-		sessionHeader: HTMLElement,
-		contextPanel: HTMLElement,
-		currentSession: ChatSession | null,
-		callbacks: UICallbacks
-	): void {
+	createCompactHeader(sessionHeader: HTMLElement, currentSession: ChatSession | null, callbacks: UICallbacks): void {
 		sessionHeader.empty();
 
-		// Left section: Title and context toggle
+		// Left section: Title and badges
 		const leftSection = sessionHeader.createDiv({ cls: 'gemini-agent-header-left' });
-
-		// Toggle button for context panel
-		const toggleBtn = leftSection.createEl('button', {
-			cls: 'gemini-agent-toggle-btn',
-			title: 'Toggle context panel',
-		});
-		setIcon(toggleBtn, 'chevron-down');
-
-		toggleBtn.addEventListener('click', () => {
-			const isCollapsed = contextPanel.hasClass('gemini-agent-context-panel-collapsed');
-			if (isCollapsed) {
-				contextPanel.removeClass('gemini-agent-context-panel-collapsed');
-				setIcon(toggleBtn, 'chevron-up');
-			} else {
-				contextPanel.addClass('gemini-agent-context-panel-collapsed');
-				setIcon(toggleBtn, 'chevron-down');
-			}
-		});
 
 		// Title container to maintain consistent layout
 		const titleContainer = leftSection.createDiv({ cls: 'gemini-agent-title-container' });
@@ -203,36 +173,23 @@ export class AgentViewUI {
 			});
 		});
 
-		// Context info badge - always in the same position
-		if (currentSession) {
-			const totalContextFiles = currentSession.context.contextFiles.length;
-
-			leftSection.createEl('span', {
-				cls: 'gemini-agent-context-badge',
-				text: `${totalContextFiles} ${totalContextFiles === 1 ? 'file' : 'files'}`,
-			});
-		}
-
-		// Project badge (always shown when session active — click to switch/link)
-		if (currentSession && this.plugin.projectManager) {
+		// Project badge (only shown when a project is linked)
+		if (currentSession?.projectPath && this.plugin.projectManager) {
 			const badge = leftSection.createEl('span', {
 				cls: 'gemini-agent-project-badge',
 			});
 			const iconSpan = badge.createSpan();
 			setIcon(iconSpan, 'folder-open');
-			const nameSpan = badge.createSpan({ text: ' No Project' });
-			setTooltip(badge, currentSession.projectPath ? 'Loading project...' : 'Click to link a project');
+			const nameSpan = badge.createSpan({ text: ' Loading...' });
+			setTooltip(badge, 'Loading project...');
 
-			if (currentSession.projectPath) {
-				const capturedPath = currentSession.projectPath;
-				this.plugin.projectManager.getProject(capturedPath).then((project) => {
-					// Skip update if badge was detached (session changed)
-					if (!badge.isConnected) return;
-					const projectName = project?.config.name || 'No Project';
-					nameSpan.textContent = ' ' + projectName;
-					setTooltip(badge, project ? `Project: ${projectName}\n${capturedPath}` : 'Click to link a project');
-				});
-			}
+			const capturedPath = currentSession.projectPath;
+			this.plugin.projectManager.getProject(capturedPath).then((project) => {
+				if (!badge.isConnected) return;
+				const projectName = project?.config.name || capturedPath;
+				nameSpan.textContent = ' ' + projectName;
+				setTooltip(badge, `Project: ${projectName}\n${capturedPath}`);
+			});
 
 			badge.addEventListener('click', (e) => {
 				e.stopPropagation();
@@ -289,66 +246,56 @@ export class AgentViewUI {
 			}
 		}
 
-		// Right section: Action buttons
+		// Right section: Hamburger menu
 		const rightSection = sessionHeader.createDiv({ cls: 'gemini-agent-header-right' });
 
-		// Settings button
-		const settingsBtn = rightSection.createEl('button', {
+		const menuBtn = rightSection.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-icon',
-			title: 'Session Settings',
+			attr: { 'aria-label': 'Session menu' },
 		});
-		setIcon(settingsBtn, 'settings');
-		settingsBtn.addEventListener('click', () => callbacks.showSessionSettings());
+		setIcon(menuBtn, 'menu');
 
-		const newSessionBtn = rightSection.createEl('button', {
-			cls: 'gemini-agent-btn gemini-agent-btn-icon',
-			title: 'New Session',
-		});
-		setIcon(newSessionBtn, 'plus');
-		newSessionBtn.addEventListener('click', () => callbacks.createNewSession());
+		menuBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			const menu = new Menu();
 
-		const listSessionsBtn = rightSection.createEl('button', {
-			cls: 'gemini-agent-btn gemini-agent-btn-icon',
-			title: 'Browse Sessions',
+			menu.addItem((item) => {
+				item
+					.setTitle('New Session')
+					.setIcon('plus')
+					.onClick(() => callbacks.createNewSession());
+			});
+			menu.addItem((item) => {
+				item
+					.setTitle('Browse Sessions')
+					.setIcon('list')
+					.onClick(() => callbacks.showSessionList());
+			});
+			menu.addSeparator();
+			if (this.plugin.projectManager) {
+				menu.addItem((item) => {
+					item
+						.setTitle(currentSession?.projectPath ? 'Switch Project' : 'Link Project')
+						.setIcon('folder-open')
+						.onClick(() => callbacks.switchProject());
+				});
+			}
+			menu.addItem((item) => {
+				item
+					.setTitle('Session Settings')
+					.setIcon('settings')
+					.onClick(() => callbacks.showSessionSettings());
+			});
+
+			menu.showAtMouseEvent(e);
 		});
-		setIcon(listSessionsBtn, 'list');
-		listSessionsBtn.addEventListener('click', () => callbacks.showSessionList());
 	}
 
 	/**
 	 * Creates the session header (delegates to compact header)
 	 */
-	createSessionHeader(
-		sessionHeader: HTMLElement,
-		contextPanel: HTMLElement,
-		currentSession: ChatSession | null,
-		callbacks: UICallbacks
-	): void {
-		// Just call the compact header method
-		this.createCompactHeader(sessionHeader, contextPanel, currentSession, callbacks);
-	}
-
-	/**
-	 * Creates the collapsible context panel
-	 */
-	createContextPanel(contextPanel: HTMLElement, _currentSession: ChatSession | null, callbacks: UICallbacks): void {
-		contextPanel.empty();
-
-		// Compact context controls
-		const controlsRow = contextPanel.createDiv({ cls: 'gemini-agent-context-controls' });
-
-		// Add files button
-		const addButton = controlsRow.createEl('button', {
-			cls: 'gemini-agent-btn gemini-agent-btn-sm',
-			title: 'Add context files',
-		});
-		setIcon(addButton, 'plus');
-		addButton.createSpan({ text: ' Add Files' });
-		addButton.addEventListener('click', () => callbacks.showFilePicker());
-
-		// Context files list (compact)
-		const filesList = contextPanel.createDiv({ cls: 'gemini-agent-files-list gemini-agent-files-list-compact' });
-		callbacks.updateContextFilesList(filesList);
+	createSessionHeader(sessionHeader: HTMLElement, currentSession: ChatSession | null, callbacks: UICallbacks): void {
+		this.createCompactHeader(sessionHeader, currentSession, callbacks);
 	}
 
 	/**
@@ -861,64 +808,6 @@ export class AgentViewUI {
 	/**
 	 * Creates the progress bar
 	 */
-
-	/**
-	 * Updates the context files list display
-	 */
-	updateContextFilesList(container: HTMLElement, currentSession: ChatSession | null, callbacks: UICallbacks): void {
-		container.empty();
-
-		const hasContextFiles = currentSession && currentSession.context.contextFiles.length > 0;
-
-		if (!hasContextFiles) {
-			container.createEl('p', {
-				text: 'No context files',
-				cls: 'gemini-agent-empty-state',
-			});
-			return;
-		}
-
-		// Get the currently active file to mark it with a badge
-		const activeFile = this.app.workspace.getActiveFile();
-
-		// Show all context files with remove buttons
-		if (currentSession) {
-			currentSession.context.contextFiles.forEach((file) => {
-				const isActiveFile = file === activeFile;
-
-				const fileItem = container.createDiv({ cls: 'gemini-agent-file-item' });
-
-				// Add file icon
-				const fileIcon = fileItem.createEl('span', { cls: 'gemini-agent-file-icon' });
-				setIcon(fileIcon, 'file-text');
-
-				fileItem.createEl('span', {
-					text: file.basename,
-					cls: 'gemini-agent-file-name',
-					title: file.path, // Show full path on hover
-				});
-
-				// Add "Active" badge if this is the currently open file
-				if (isActiveFile) {
-					fileItem.createEl('span', {
-						text: 'Active',
-						cls: 'gemini-agent-active-badge',
-						title: 'This is the currently open file',
-					});
-				}
-
-				const removeBtn = fileItem.createEl('button', {
-					text: '×',
-					cls: 'gemini-agent-remove-btn',
-					title: 'Remove file',
-				});
-
-				removeBtn.addEventListener('click', () => {
-					callbacks.removeContextFile(file);
-				});
-			});
-		}
-	}
 
 	/**
 	 * Compute the cumulative base64 byte size of all existing attachments.

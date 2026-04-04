@@ -50,7 +50,6 @@ export class AgentView extends ItemView {
 	private chatContainer: HTMLElement;
 	private userInput: HTMLDivElement;
 	private sendButton: HTMLButtonElement;
-	private contextPanel: HTMLElement;
 	private sessionHeader: HTMLElement;
 
 	// State
@@ -111,7 +110,6 @@ export class AgentView extends ItemView {
 			sendMessage: () => this.sendMessage(),
 			stopAgentLoop: () => this.stopAgentLoop(),
 			removeContextFile: (file: TFile) => this.removeContextFile(file),
-			updateContextFilesList: (container: HTMLElement) => this.updateContextFilesList(container),
 			updateSessionHeader: () => this.updateSessionHeader(),
 			updateSessionMetadata: () => this.updateSessionMetadata(),
 			loadSession: (session: ChatSession) => this.loadSession(session),
@@ -128,7 +126,6 @@ export class AgentView extends ItemView {
 
 		// Store element references
 		this.sessionHeader = elements.sessionHeader;
-		this.contextPanel = elements.contextPanel;
 		this.chatContainer = elements.chatContainer;
 		this.userInput = elements.userInput;
 		this.sendButton = elements.sendButton;
@@ -139,6 +136,7 @@ export class AgentView extends ItemView {
 		const inputRow = elements.userInput.parentElement!; // .gemini-agent-input-row
 		elements.imagePreviewContainer.remove(); // Remove the old preview container
 		this.shelf = new AgentViewShelf(
+			this.app,
 			shelfParent,
 			{
 				onRemoveTextFile: (file: TFile) => {
@@ -226,8 +224,7 @@ export class AgentView extends ItemView {
 		if (loadedUnsub) this.eventBusUnsubscribers.push(loadedUnsub);
 
 		// Create the header and context panel
-		this.ui.createCompactHeader(this.sessionHeader, this.contextPanel, this.currentSession, callbacks);
-		this.ui.createContextPanel(this.contextPanel, this.currentSession, callbacks);
+		this.ui.createCompactHeader(this.sessionHeader, this.currentSession, callbacks);
 
 		// Show empty state initially
 		await this.showEmptyState();
@@ -794,7 +791,6 @@ To reference an attachment in your response, use the path shown above.`;
 	 * Update context panel UI and sync shelf with session context
 	 */
 	private updateContextPanel() {
-		this.ui.createContextPanel(this.contextPanel, this.currentSession, this.getUICallbacks());
 		// Sync shelf with current session's context files
 		if (this.currentSession) {
 			this.shelf.loadFromSession(this.currentSession.context.contextFiles);
@@ -807,22 +803,17 @@ To reference an attachment in your response, use the path shown above.`;
 	 * Update session header UI
 	 */
 	private updateSessionHeader() {
-		this.ui.createCompactHeader(this.sessionHeader, this.contextPanel, this.currentSession, this.getUICallbacks());
+		this.ui.createCompactHeader(this.sessionHeader, this.currentSession, this.getUICallbacks());
 	}
 
 	/**
 	 * Update context files list display
 	 */
-	private updateContextFilesList(container: HTMLElement) {
-		this.context.updateContextFilesList(container, this.currentSession, (file: TFile) => this.removeContextFile(file));
-	}
-
 	/**
 	 * Remove a file from context
 	 */
 	private removeContextFile(file: TFile) {
 		this.context.removeContextFile(file, this.currentSession);
-		this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 		this.updateSessionHeader();
 	}
 
@@ -855,7 +846,6 @@ To reference an attachment in your response, use the path shown above.`;
 						this.context.addFileToContext(f, session);
 						this.shelf.addTextFile(f);
 					});
-				this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 				this.updateSessionHeader();
 			},
 			this.plugin,
@@ -1161,7 +1151,6 @@ To reference an attachment in your response, use the path shown above.`;
 			sendMessage: () => this.sendMessage(),
 			stopAgentLoop: () => this.stopAgentLoop(),
 			removeContextFile: (file: TFile) => this.removeContextFile(file),
-			updateContextFilesList: (container: HTMLElement) => this.updateContextFilesList(container),
 			updateSessionHeader: () => this.updateSessionHeader(),
 			updateSessionMetadata: () => this.updateSessionMetadata(),
 			loadSession: (session: ChatSession) => this.loadSession(session),

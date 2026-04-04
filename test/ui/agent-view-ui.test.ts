@@ -86,7 +86,6 @@ describe('AgentViewUI', () => {
 			sendMessage: jest.fn().mockResolvedValue(undefined),
 			stopAgentLoop: jest.fn(),
 			removeContextFile: jest.fn(),
-			updateContextFilesList: jest.fn(),
 			updateSessionHeader: jest.fn(),
 			updateSessionMetadata: jest.fn().mockResolvedValue(undefined),
 			loadSession: jest.fn().mockResolvedValue(undefined),
