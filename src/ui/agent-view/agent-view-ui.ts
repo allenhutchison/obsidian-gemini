@@ -224,13 +224,13 @@ export class AgentViewUI {
 			setTooltip(badge, currentSession.projectPath ? 'Loading project...' : 'Click to link a project');
 
 			if (currentSession.projectPath) {
-				this.plugin.projectManager.getProject(currentSession.projectPath).then((project) => {
+				const capturedPath = currentSession.projectPath;
+				this.plugin.projectManager.getProject(capturedPath).then((project) => {
+					// Skip update if badge was detached (session changed)
+					if (!badge.isConnected) return;
 					const projectName = project?.config.name || 'No Project';
 					nameSpan.textContent = ' ' + projectName;
-					setTooltip(
-						badge,
-						project ? `Project: ${projectName}\n${currentSession.projectPath}` : 'Click to link a project'
-					);
+					setTooltip(badge, project ? `Project: ${projectName}\n${capturedPath}` : 'Click to link a project');
 				});
 			}
 
