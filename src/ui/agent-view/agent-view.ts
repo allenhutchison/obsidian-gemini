@@ -60,7 +60,6 @@ export class AgentView extends ItemView {
 	private cancellationRequested: boolean = false;
 	private eventBusUnsubscribers: (() => void)[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
-	private activeFileChangeHandler: () => void;
 	private pendingAttachments: InlineAttachment[] = [];
 	private imagePreviewContainer: HTMLElement;
 	private tokenUsageContainer: HTMLElement;
@@ -71,7 +70,7 @@ export class AgentView extends ItemView {
 
 		// Initialize components (actual UI setup happens in onOpen)
 		this.progress = new AgentViewProgress(this.app, this);
-		this.context = new AgentViewContext(this.app, this.plugin);
+		this.context = new AgentViewContext();
 		this.ui = new AgentViewUI(this.app, this.plugin);
 	}
 
@@ -96,14 +95,6 @@ export class AgentView extends ItemView {
 
 		// Register link click handler for internal links
 		this.registerLinkClickHandler();
-
-		// Register active file change listener to update context panel and header
-		this.activeFileChangeHandler = async () => {
-			await this.context.addActiveFileToContext(this.currentSession);
-			this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
-			this.updateSessionHeader();
-		};
-		this.registerEvent(this.app.workspace.on('active-leaf-change', this.activeFileChangeHandler));
 
 		// Create default agent session
 		await this.createNewSession();
@@ -180,8 +171,6 @@ export class AgentView extends ItemView {
 			updateSessionHeader: () => this.updateSessionHeader(),
 			updateContextPanel: () => this.updateContextPanel(),
 			showEmptyState: () => this.showEmptyState(),
-			addActiveFileToContext: (session?: ChatSession) =>
-				this.context.addActiveFileToContext(session ?? this.currentSession),
 			focusInput: () => this.userInput.focus(),
 		};
 
@@ -189,8 +178,6 @@ export class AgentView extends ItemView {
 		const sessionState: SessionState = {
 			mentionedFiles: this.fileChips.getMentionedFiles(),
 			allowedWithoutConfirmation: this.allowedWithoutConfirmation,
-			getAutoAddedActiveFile: () => this.context.getAutoAddedActiveFile(),
-			clearAutoAddedActiveFile: () => this.context.clearAutoAddedActiveFile(),
 			userInput: this.userInput,
 		};
 
@@ -1337,8 +1324,5 @@ To reference an attachment in your response, use the path shown above.`;
 		if (this.progress) {
 			this.progress.hide();
 		}
-
-		// Unregister event handlers
-		this.app.workspace.off('active-leaf-change', this.activeFileChangeHandler);
 	}
 }

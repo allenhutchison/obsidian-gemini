@@ -83,12 +83,12 @@ describe('formatToolLine', () => {
 
 	it('should handle empty args', () => {
 		const line = formatToolLine({
-			toolName: 'get_active_file',
+			toolName: 'get_workspace_state',
 			args: {},
-			result: { success: true, data: { path: 'test.md' } },
+			result: { success: true, data: { openFiles: [] } },
 			durationMs: 5,
 		});
-		expect(line).toBe('🔧 `get_active_file` → success (5ms)');
+		expect(line).toBe('🔧 `get_workspace_state` → success (5ms)');
 	});
 
 	it('should format fetch_url with url param', () => {
