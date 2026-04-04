@@ -1098,7 +1098,7 @@ export class GetWorkspaceStateTool implements Tool {
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'Get metadata for files open in Markdown views in the user\'s workspace. Non-Markdown views (PDFs, canvases, images) are not included — use read_file for those. Returns each file\'s path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Use this when the user refers to "this file", "the current file", "what I\'m looking at", or when you need to understand what the user is working on.';
+		'IMPORTANT: Call this tool FIRST at the start of every conversation, and again whenever the user refers to "this file", "the current file", or "what I\'m looking at". You do NOT automatically know what file the user has open — you must call this tool to find out. Returns metadata for files open in Markdown views: each file\'s path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Non-Markdown views (PDFs, canvases, images) are not included — use read_file for those.';
 
 	parameters = {
 		type: 'object' as const,
