@@ -921,69 +921,6 @@ export class AgentViewUI {
 	}
 
 	/**
-	 * Updates the attachment preview container with thumbnails or file icons
-	 */
-	updateAttachmentPreview(
-		container: HTMLElement,
-		attachments: InlineAttachment[],
-		onRemove: (id: string) => void
-	): void {
-		container.empty();
-
-		if (attachments.length === 0) {
-			container.style.display = 'none';
-			return;
-		}
-
-		container.style.display = 'flex';
-
-		for (const attachment of attachments) {
-			const thumbWrapper = container.createDiv({ cls: 'gemini-agent-image-thumb' });
-
-			if (attachment.mimeType.startsWith('image/')) {
-				// Image: show thumbnail
-				thumbWrapper.createEl('img', {
-					attr: {
-						src: `data:${attachment.mimeType};base64,${attachment.base64}`,
-						alt: attachment.fileName || 'Attached image',
-					},
-				});
-			} else {
-				// Non-image binary: show icon + filename
-				thumbWrapper.addClass('gemini-agent-attachment-file');
-
-				const iconEl = thumbWrapper.createDiv({ cls: 'gemini-agent-attachment-icon' });
-				const iconName = this.getIconForMimeType(attachment.mimeType);
-				setIcon(iconEl, iconName);
-
-				if (attachment.fileName) {
-					thumbWrapper.createDiv({
-						cls: 'gemini-agent-attachment-label',
-						text: attachment.fileName,
-						attr: { title: attachment.fileName },
-					});
-				}
-			}
-
-			// Create remove button
-			const removeBtn = thumbWrapper.createEl('button', {
-				text: '×',
-				cls: 'gemini-agent-image-remove',
-				attr: { title: 'Remove attachment', 'aria-label': 'Remove attachment' },
-			});
-
-			removeBtn.addEventListener('click', () => {
-				onRemove(attachment.id);
-			});
-		}
-	}
-
-	/** Backward-compatible alias */
-	updateImagePreview(container: HTMLElement, attachments: InlineAttachment[], onRemove: (id: string) => void): void {
-		this.updateAttachmentPreview(container, attachments, onRemove);
-	}
-
-	/**
 	 * Compute the cumulative base64 byte size of all existing attachments.
 	 */
 	private getCurrentAttachmentSize(callbacks: UICallbacks): number {
@@ -1003,15 +940,5 @@ export class AgentViewUI {
 			}
 		}
 		return files;
-	}
-
-	/**
-	 * Get a Lucide icon name for a MIME type
-	 */
-	private getIconForMimeType(mimeType: string): string {
-		if (mimeType === 'application/pdf') return 'file-text';
-		if (mimeType.startsWith('audio/')) return 'music';
-		if (mimeType.startsWith('video/')) return 'video';
-		return 'file';
 	}
 }
