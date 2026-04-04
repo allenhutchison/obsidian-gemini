@@ -86,15 +86,18 @@ class RecallSessionsTool implements Tool {
 			// Filter by project
 			if (params.project) {
 				const searchProject = params.project.toLowerCase();
-				filtered = filtered.filter((s) => {
-					if (!s.projectPath) return false;
-					// Match against project path or project name
-					if (s.projectPath.toLowerCase().includes(searchProject)) return true;
-					// Try to resolve project name
-					const project = plugin.projectManager?.getProjectForPath(s.projectPath);
-					if (project?.config.name.toLowerCase().includes(searchProject)) return true;
-					return false;
-				});
+				const projectMatches = await Promise.all(
+					filtered.map(async (s) => {
+						if (!s.projectPath) return false;
+						// Match against project path or project name
+						if (s.projectPath.toLowerCase().includes(searchProject)) return true;
+						// Try to resolve project name
+						const project = await plugin.projectManager?.getProject(s.projectPath);
+						if (project?.config.name.toLowerCase().includes(searchProject)) return true;
+						return false;
+					})
+				);
+				filtered = filtered.filter((_, i) => projectMatches[i]);
 			}
 
 			// Filter by title query
