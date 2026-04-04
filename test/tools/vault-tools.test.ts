@@ -1098,6 +1098,7 @@ describe('VaultTools', () => {
 			// Full behavior is verified via integration testing in Obsidian.
 			const mockWorkspace = {
 				getActiveFile: jest.fn().mockReturnValue(null),
+				getActiveViewOfType: jest.fn().mockReturnValue(null),
 				iterateAllLeaves: jest.fn(),
 			};
 
@@ -1122,6 +1123,7 @@ describe('VaultTools', () => {
 		it('should return empty openFiles when no leaves are open', async () => {
 			const mockWorkspace = {
 				getActiveFile: jest.fn().mockReturnValue(null),
+				getActiveViewOfType: jest.fn().mockReturnValue(null),
 				iterateAllLeaves: jest.fn(),
 			};
 

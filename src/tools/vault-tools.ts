@@ -1098,7 +1098,7 @@ export class GetWorkspaceStateTool implements Tool {
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'Get metadata about all files currently open in the user\'s workspace. Returns each file\'s path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Use this when the user refers to "this file", "the current file", "what I\'m looking at", or when you need to understand what the user is working on. Use read_file to get the actual content of specific files.';
+		'Get metadata for files open in Markdown views in the user\'s workspace. Non-Markdown views (PDFs, canvases, images) are not included — use read_file for those. Returns each file\'s path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Use this when the user refers to "this file", "the current file", "what I\'m looking at", or when you need to understand what the user is working on.';
 
 	parameters = {
 		type: 'object' as const,
@@ -1115,6 +1115,7 @@ export class GetWorkspaceStateTool implements Tool {
 
 		try {
 			const activeFile = plugin.app.workspace.getActiveFile();
+			const activeView = plugin.app.workspace.getActiveViewOfType(MarkdownView);
 
 			// Collect all open markdown leaves, de-duplicating by path
 			const fileMap = new Map<
@@ -1134,6 +1135,7 @@ export class GetWorkspaceStateTool implements Tool {
 
 				const isVisible = (leaf as any).containerEl?.isShown?.() ?? false;
 				const isActive = activeFile !== null && file.path === activeFile.path;
+				const isActiveLeaf = view === activeView;
 
 				let selection: string | null = null;
 				try {
@@ -1147,10 +1149,13 @@ export class GetWorkspaceStateTool implements Tool {
 
 				const existing = fileMap.get(path);
 				if (existing) {
-					// Merge: visible/active if ANY leaf qualifies, keep first non-empty selection
+					// Merge: visible/active if ANY leaf qualifies
 					existing.visible = existing.visible || isVisible;
 					existing.active = existing.active || isActive;
-					if (!existing.selection && selection) {
+					// Prefer selection from the focused leaf over background panes
+					if (isActiveLeaf && selection) {
+						existing.selection = selection;
+					} else if (!existing.selection && selection) {
 						existing.selection = selection;
 					}
 				} else {
