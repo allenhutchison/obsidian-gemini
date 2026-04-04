@@ -225,21 +225,13 @@ export class AgentViewUI {
 
 			if (currentSession.projectPath) {
 				const capturedPath = currentSession.projectPath;
-				void (async () => {
-					try {
-						const project = await this.plugin.projectManager.getProject(capturedPath);
-						// Skip update if badge was detached (session changed)
-						if (!badge.isConnected) return;
-						const projectName = project?.config.name || 'No Project';
-						nameSpan.textContent = ' ' + projectName;
-						setTooltip(badge, project ? `Project: ${projectName}\n${capturedPath}` : 'Click to link a project');
-					} catch (error) {
-						if (!badge.isConnected) return;
-						nameSpan.textContent = ' No Project';
-						setTooltip(badge, 'Click to link a project');
-						this.plugin.logger.warn('[AgentViewUI] Failed to resolve project badge metadata', error);
-					}
-				})();
+				this.plugin.projectManager.getProject(capturedPath).then((project) => {
+					// Skip update if badge was detached (session changed)
+					if (!badge.isConnected) return;
+					const projectName = project?.config.name || 'No Project';
+					nameSpan.textContent = ' ' + projectName;
+					setTooltip(badge, project ? `Project: ${projectName}\n${capturedPath}` : 'Click to link a project');
+				});
 			}
 
 			badge.addEventListener('click', (e) => {
