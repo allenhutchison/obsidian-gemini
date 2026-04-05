@@ -1,4 +1,4 @@
-import { TFile, TFolder, setIcon } from 'obsidian';
+import { App, TFile, TFolder, setIcon, setTooltip } from 'obsidian';
 import { InlineAttachment } from './inline-attachment';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
 
@@ -62,11 +62,13 @@ export interface ShelfCallbacks {
  * (text, binary, folders) in a single horizontal row above the input area.
  */
 export class AgentViewShelf {
+	private app: App;
 	private container: HTMLElement;
 	private items: ShelfItem[] = [];
 	private callbacks: ShelfCallbacks;
 
-	constructor(parent: HTMLElement, callbacks: ShelfCallbacks, insertBefore?: HTMLElement) {
+	constructor(app: App, parent: HTMLElement, callbacks: ShelfCallbacks, insertBefore?: HTMLElement) {
+		this.app = app;
 		this.container = parent.createDiv({ cls: 'gemini-agent-shelf' });
 		if (insertBefore) {
 			parent.insertBefore(this.container, insertBefore);
@@ -241,6 +243,29 @@ export class AgentViewShelf {
 			}
 
 			this.renderItemContent(el, item);
+
+			// Tooltip with full path
+			const tooltipText = item.path || item.attachment?.vaultPath || item.attachment?.fileName || item.name;
+			setTooltip(el, tooltipText);
+
+			// Click or keyboard-activate to open file in Obsidian
+			const openPath = item.path || item.attachment?.vaultPath;
+			if (openPath) {
+				el.style.cursor = 'pointer';
+				el.tabIndex = 0;
+				el.setAttribute('role', 'button');
+				el.addEventListener('click', (e) => {
+					if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
+					this.app.workspace.openLinkText(openPath, '', false);
+				});
+				el.addEventListener('keydown', (e) => {
+					if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						this.app.workspace.openLinkText(openPath, '', false);
+					}
+				});
+			}
 
 			// Persistent badge for text files and folders
 			if (item.type === 'text' || item.type === 'folder') {
