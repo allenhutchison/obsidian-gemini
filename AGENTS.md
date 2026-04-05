@@ -116,7 +116,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 
 11. **YAML Frontmatter**: Agent instructions include guidance for respecting YAML frontmatter when modifying files
 
-- The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentToolsPrompt.txt`)
+- The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentToolsPrompt.hbs`)
 - YAML frontmatter must start with `---` on line 1 and end with `---`
 - Content is only placed before frontmatter when explicitly instructed to modify frontmatter
 
