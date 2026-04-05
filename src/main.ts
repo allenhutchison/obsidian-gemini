@@ -769,7 +769,7 @@ export default class ObsidianGemini extends Plugin {
 	// Obsidian cleans them up automatically.
 	onunload() {
 		this.ribbonIcon?.remove();
-		this.lifecycle.onUnload().catch((err) => {
+		this.lifecycle?.onUnload().catch((err) => {
 			this.logger.error('Error during plugin unload cleanup:', err);
 		});
 	}
