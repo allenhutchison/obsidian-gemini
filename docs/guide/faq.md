@@ -67,6 +67,40 @@ Google regularly retires preview model versions. Enable **Model Discovery** unde
 
 These are available under **Advanced Settings** in the plugin settings. Click "Show Advanced Settings" to reveal them. Temperature ranges are automatically adjusted based on the selected model's capabilities. ([#105](https://github.com/allenhutchison/obsidian-gemini/issues/105))
 
+## Cost & Billing
+
+### How much does this plugin cost to use?
+
+Gemini Scribe itself is free and open source. The cost comes from the Gemini API calls it makes on your behalf. Google offers a generous free tier for most models, and Flash/Flash Lite models are very inexpensive even on paid tiers — for typical plugin usage (chat, summaries, completions) most users spend pennies per day or stay on the free tier entirely.
+
+### How can I track my spending?
+
+Google provides authoritative dashboards in AI Studio:
+
+- **[Usage dashboard](https://aistudio.google.com/usage)** — token counts, request counts, and model breakdown
+- **[Billing page](https://aistudio.google.com/billing)** — invoices, payment methods, account tier
+- **[Spend page](https://aistudio.google.com/spend)** — current and historical spending
+
+The plugin also shows live token usage for the current agent session in the chat UI, so you can see how much context the current conversation is consuming at a glance.
+
+### Can I set a spending cap?
+
+Yes. Google provides two types of spending controls:
+
+1. **Project-level monthly cap (experimental)** — Set a monthly limit for your specific Google Cloud project via [aistudio.google.com/spend](https://aistudio.google.com/spend) → **Monthly spend cap** → **Edit spend cap**. Billing is evaluated with up to a ~10-minute delay, so small overages are possible.
+
+2. **Account tier caps** — Each billing account tier has a built-in monthly ceiling (Tier 1: $250, Tier 2: $2,000, Tier 3: $20,000+). Tier caps became enforced on **April 1, 2026**.
+
+The free tier has no cap but is subject to rate limits. Full details: [Gemini API billing docs](https://ai.google.dev/gemini-api/docs/billing).
+
+### How do I keep costs low?
+
+- **Use Flash models** for chat and agent interactions (Gemini 2.5 Flash is excellent and significantly cheaper than Pro)
+- **Use Flash Lite** for summaries and inline completions
+- **Set a project-level spend cap** in AI Studio for peace of mind
+- **Watch the session token counter** in the agent UI to spot runaway conversations
+- **Reset long sessions** periodically — agent sessions accumulate context, and longer sessions cost more per turn
+
 ## Agent Mode
 
 ### What happened to the separate "Classic Chat" and "Agent Mode"?
