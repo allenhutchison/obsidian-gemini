@@ -1095,6 +1095,13 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
+	 * Add a context file to the shelf (called by tools that auto-add files, e.g. write_file).
+	 */
+	addContextFileToShelf(file: TFile): void {
+		this.shelf.addTextFile(file);
+	}
+
+	/**
 	 * Check if a tool is allowed without confirmation (permission system)
 	 */
 	isToolAllowedWithoutConfirmation(toolName: string): boolean {

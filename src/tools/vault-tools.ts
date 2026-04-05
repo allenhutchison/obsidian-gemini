@@ -390,6 +390,10 @@ export class WriteFileTool implements Tool {
 					const session = (agentView as any).getCurrentSessionForToolExecution();
 					if (session && !session.context.contextFiles.includes(file)) {
 						session.context.contextFiles.push(file);
+						// Sync the shelf (which is the source of truth for context files)
+						if ('addContextFileToShelf' in agentView) {
+							(agentView as any).addContextFileToShelf(file);
+						}
 						// Update UI if agent view is active
 						if ('updateSessionHeader' in agentView) {
 							(agentView as any).updateSessionHeader();
