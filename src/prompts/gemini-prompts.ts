@@ -162,7 +162,6 @@ export class GeminiPrompts {
 
 		return this.systemPrompt({
 			userName: this.plugin?.settings.userName || 'User',
-			language: this.getLanguageCode(),
 			date: now.toLocaleDateString(),
 			time: now.toLocaleTimeString(),
 			agentsMemory: agentsMemory || '',
