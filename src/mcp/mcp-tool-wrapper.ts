@@ -34,7 +34,7 @@ export class MCPToolWrapper implements Tool {
 	constructor(client: Client, serverName: string, toolDef: MCPToolDefinition) {
 		this.client = client;
 		this.originalToolName = toolDef.name;
-		this.name = `mcp__${sanitizeName(serverName)}__${sanitizeName(toolDef.name)}`;
+		this.name = enforceMaxLength(`mcp__${sanitizeName(serverName)}__${sanitizeName(toolDef.name)}`);
 		this.displayName = `${serverName}: ${toolDef.name}`;
 		this.description = toolDef.description || `MCP tool "${toolDef.name}" from server "${serverName}"`;
 		this.parameters = convertInputSchema(toolDef.inputSchema);
@@ -93,11 +93,62 @@ export class MCPToolWrapper implements Tool {
 }
 
 /**
- * Sanitize a name for use in tool identifiers.
- * Replaces non-alphanumeric characters with underscores.
+ * Maximum length of a Gemini FunctionDeclaration name.
+ * @see https://ai.google.dev/api/caching#FunctionDeclaration
+ */
+const MAX_TOOL_NAME_LENGTH = 128;
+
+/**
+ * Sanitize a name for use in a Gemini tool identifier.
+ *
+ * Per the Gemini API spec, FunctionDeclaration.name must be composed of
+ * `a-z`, `A-Z`, `0-9`, `_`, `:`, `.`, or `-`, with a maximum length of 128.
+ * This preserves MCP tool names that use dot notation (e.g. when an MCP
+ * server is run with --use-dot-names), so what users see in settings
+ * matches what the model sees at function call time.
+ *
+ * @see https://ai.google.dev/api/caching#FunctionDeclaration
  */
 function sanitizeName(name: string): string {
-	return name.replace(/[^a-zA-Z0-9_-]/g, '_');
+	return name.replace(/[^a-zA-Z0-9_:.-]/g, '_');
+}
+
+/**
+ * Truncate a fully qualified tool name (mcp__server__tool) to fit within the
+ * Gemini FunctionDeclaration.name length limit.
+ *
+ * Strategy: preserve both the leading `mcp__server__` prefix (so tools remain
+ * recognizable as MCP-sourced and scoped to their server) and the trailing
+ * portion of the tool name (which is where uniqueness comes from when multiple
+ * tools share the same prefix). A short content hash in the middle guarantees
+ * deterministic uniqueness even if two long-named tools collide on both ends.
+ *
+ * This function runs on initialization only; for typical MCP tool names it's
+ * a no-op since names rarely exceed 128 chars.
+ */
+function enforceMaxLength(name: string): string {
+	if (name.length <= MAX_TOOL_NAME_LENGTH) return name;
+
+	// 8-char hex content hash for disambiguation; _h_ is a stable marker
+	// using only characters allowed by the Gemini FunctionDeclaration.name spec.
+	const hash = simpleContentHash(name);
+	const marker = `_h_${hash}_`;
+	const remaining = MAX_TOOL_NAME_LENGTH - marker.length;
+	const headLen = Math.ceil(remaining / 2);
+	const tailLen = Math.floor(remaining / 2);
+	return name.slice(0, headLen) + marker + name.slice(-tailLen);
+}
+
+/**
+ * Simple, deterministic 8-character hex hash of a string.
+ * Not cryptographic — only used to disambiguate truncated tool names.
+ */
+function simpleContentHash(input: string): string {
+	let h = 0;
+	for (let i = 0; i < input.length; i++) {
+		h = (h * 31 + input.charCodeAt(i)) | 0;
+	}
+	return (h >>> 0).toString(16).padStart(8, '0');
 }
 
 /**
