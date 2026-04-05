@@ -4000,6 +4000,32 @@ If your plugin does not need CSS, delete this file.
 	height: 10px;
 }
 
+/* Slide-in animation when items are added */
+@keyframes shelf-slide-in {
+	from {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.gemini-shelf-item {
+	animation: shelf-slide-in 0.15s ease-out;
+}
+
+/* Keyboard focus styling */
+.gemini-shelf-item:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 1px;
+}
+
+.gemini-shelf-item:focus-visible .gemini-shelf-remove {
+	opacity: 1;
+}
+
 /* Sent state for binary items */
 .gemini-shelf-item-sent {
 	opacity: 0.5;

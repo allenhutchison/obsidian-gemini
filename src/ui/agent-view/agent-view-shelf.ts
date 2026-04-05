@@ -69,7 +69,7 @@ export class AgentViewShelf {
 
 	constructor(app: App, parent: HTMLElement, callbacks: ShelfCallbacks, insertBefore?: HTMLElement) {
 		this.app = app;
-		this.container = parent.createDiv({ cls: 'gemini-agent-shelf' });
+		this.container = parent.createDiv({ cls: 'gemini-agent-shelf', attr: { role: 'list' } });
 		if (insertBefore) {
 			parent.insertBefore(this.container, insertBefore);
 		}
@@ -248,24 +248,41 @@ export class AgentViewShelf {
 			const tooltipText = item.path || item.attachment?.vaultPath || item.attachment?.fileName || item.name;
 			setTooltip(el, tooltipText);
 
-			// Click or keyboard-activate to open file in Obsidian
+			// All shelf items are focusable and participate in keyboard navigation
+			el.tabIndex = 0;
+			el.setAttribute('role', 'listitem');
+
+			// Click to open file in Obsidian (when the item has an openable path)
 			const openPath = item.path || item.attachment?.vaultPath;
 			if (openPath) {
 				el.style.cursor = 'pointer';
-				el.tabIndex = 0;
-				el.setAttribute('role', 'button');
 				el.addEventListener('click', (e) => {
 					if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
 					this.app.workspace.openLinkText(openPath, '', false);
 				});
-				el.addEventListener('keydown', (e) => {
-					if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
-					if (e.key === 'Enter' || e.key === ' ') {
-						e.preventDefault();
-						this.app.workspace.openLinkText(openPath, '', false);
-					}
-				});
 			}
+
+			// Keyboard navigation: Enter/Space to open, Delete/Backspace to remove,
+			// Arrow Left/Right to move focus between items
+			el.addEventListener('keydown', (e) => {
+				if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
+				if ((e.key === 'Enter' || e.key === ' ') && openPath) {
+					e.preventDefault();
+					this.app.workspace.openLinkText(openPath, '', false);
+				} else if (e.key === 'Delete' || e.key === 'Backspace') {
+					e.preventDefault();
+					const next = el.nextElementSibling as HTMLElement | null;
+					const prev = el.previousElementSibling as HTMLElement | null;
+					this.handleRemove(item);
+					(next || prev)?.focus();
+				} else if (e.key === 'ArrowRight') {
+					e.preventDefault();
+					(el.nextElementSibling as HTMLElement | null)?.focus();
+				} else if (e.key === 'ArrowLeft') {
+					e.preventDefault();
+					(el.previousElementSibling as HTMLElement | null)?.focus();
+				}
+			});
 
 			// Persistent badge for text files and folders
 			if (item.type === 'text' || item.type === 'folder') {
@@ -274,11 +291,11 @@ export class AgentViewShelf {
 				badge.setAttribute('aria-label', 'Included in every message');
 			}
 
-			// Remove button
+			// Remove button (tabindex=-1 so keyboard nav stays on shelf items; use Delete key instead)
 			const removeBtn = el.createEl('button', {
 				text: '×',
 				cls: 'gemini-shelf-remove',
-				attr: { title: 'Remove', 'aria-label': 'Remove' },
+				attr: { title: 'Remove', 'aria-label': 'Remove', tabindex: '-1' },
 			});
 			removeBtn.addEventListener('click', () => this.handleRemove(item));
 		}
