@@ -4,20 +4,22 @@ import { classifyFile, FileCategory } from '../../utils/file-classification';
 
 /**
  * Recursively collects all supported text files from a folder,
- * skipping system folders (.obsidian, plugin state).
+ * skipping paths that the caller marks as excluded (system/plugin state folders).
+ * @param folder The folder to collect from
+ * @param isExcluded Predicate that returns true for paths to skip
  */
-export function getTextFilesFromFolder(folder: TFolder): TFile[] {
+export function getTextFilesFromFolder(folder: TFolder, isExcluded?: (path: string) => boolean): TFile[] {
 	const files: TFile[] = [];
 	const collect = (f: TFolder) => {
 		for (const child of f.children) {
 			if (child instanceof TFile) {
+				if (isExcluded?.(child.path)) continue;
 				const result = classifyFile(child.extension);
 				if (result.category === FileCategory.TEXT) {
 					files.push(child);
 				}
 			} else if (child instanceof TFolder) {
-				// Skip system folders
-				if (child.path === '.obsidian' || child.path.startsWith('.obsidian/')) continue;
+				if (isExcluded?.(child.path)) continue;
 				collect(child);
 			}
 		}

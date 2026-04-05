@@ -12,6 +12,7 @@ import { HandlerPriority } from '../../types/agent-events';
 // Import all component modules
 import { AgentViewProgress } from './agent-view-progress';
 import { getTextFilesFromFolder } from './agent-view-shelf';
+import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewContext } from './agent-view-context';
 import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view-session';
@@ -199,7 +200,6 @@ export class AgentView extends ItemView {
 
 		// Create session state with direct callback references to context
 		const sessionState: SessionState = {
-			mentionedFiles: [],
 			allowedWithoutConfirmation: this.allowedWithoutConfirmation,
 			userInput: this.userInput,
 		};
@@ -880,7 +880,7 @@ To reference an attachment in your response, use the path shown above.`;
 					this.updateSessionHeader();
 					this.updateSessionMetadata();
 				} else if (fileOrFolder instanceof TFolder) {
-					const files = getTextFilesFromFolder(fileOrFolder);
+					const files = getTextFilesFromFolder(fileOrFolder, (path) => shouldExcludePathForPlugin(path, this.plugin));
 					this.shelf.addFolder(fileOrFolder, files);
 					for (const file of files) {
 						this.context.addFileToContext(file, this.currentSession);
