@@ -11,13 +11,15 @@ import { HandlerPriority } from '../../types/agent-events';
 
 // Import all component modules
 import { AgentViewProgress } from './agent-view-progress';
-import { AgentViewFileChips } from './agent-view-file-chips';
+import { getTextFilesFromFolder } from './agent-view-shelf';
+import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewContext } from './agent-view-context';
 import { AgentViewSession, SessionUICallbacks, SessionState } from './agent-view-session';
 import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-tools';
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
+import { AgentViewShelf } from './agent-view-shelf';
 import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { ProjectPickerModal } from './project-picker-modal';
 
@@ -38,7 +40,6 @@ export class AgentView extends ItemView {
 
 	// UI components
 	private progress: AgentViewProgress;
-	private fileChips: AgentViewFileChips;
 	private messages: AgentViewMessages;
 	private context: AgentViewContext;
 	private session: AgentViewSession;
@@ -60,8 +61,7 @@ export class AgentView extends ItemView {
 	private cancellationRequested: boolean = false;
 	private eventBusUnsubscribers: (() => void)[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
-	private pendingAttachments: InlineAttachment[] = [];
-	private imagePreviewContainer: HTMLElement;
+	private shelf: AgentViewShelf;
 	private tokenUsageContainer: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
@@ -118,7 +118,7 @@ export class AgentView extends ItemView {
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
 			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
 			removeAttachment: (id: string) => this.removeAttachment(id),
-			getAttachments: () => this.pendingAttachments,
+			getAttachments: () => this.shelf?.getPendingAttachments() || [],
 			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
 		};
@@ -132,14 +132,38 @@ export class AgentView extends ItemView {
 		this.chatContainer = elements.chatContainer;
 		this.userInput = elements.userInput;
 		this.sendButton = elements.sendButton;
-		this.imagePreviewContainer = elements.imagePreviewContainer;
 		this.tokenUsageContainer = elements.tokenUsageContainer;
+
+		// Initialize the unified file shelf above the input row
+		const shelfParent = elements.imagePreviewContainer.parentElement!;
+		const inputRow = elements.userInput.parentElement!; // .gemini-agent-input-row
+		elements.imagePreviewContainer.remove(); // Remove the old preview container
+		this.shelf = new AgentViewShelf(
+			shelfParent,
+			{
+				onRemoveTextFile: (file: TFile) => {
+					this.context.removeContextFile(file, this.currentSession);
+					this.updateSessionHeader();
+					this.updateSessionMetadata();
+				},
+				onRemoveFolder: (files: TFile[]) => {
+					for (const file of files) {
+						this.context.removeContextFile(file, this.currentSession);
+					}
+					this.updateSessionHeader();
+					this.updateSessionMetadata();
+				},
+				onRemoveAttachment: () => {
+					// Shelf handles its own state; nothing else to sync
+				},
+			},
+			inputRow
+		);
 
 		// Initialize progress bar with the created elements
 		this.progress.createProgressBar(elements.progressContainer);
 
 		// Initialize file chips component
-		this.fileChips = new AgentViewFileChips(this.app, this.userInput);
 
 		// Initialize messages component
 		this.messages = new AgentViewMessages(
@@ -176,7 +200,6 @@ export class AgentView extends ItemView {
 
 		// Create session state with direct callback references to context
 		const sessionState: SessionState = {
-			mentionedFiles: this.fileChips.getMentionedFiles(),
 			allowedWithoutConfirmation: this.allowedWithoutConfirmation,
 			userInput: this.userInput,
 		};
@@ -222,14 +245,16 @@ export class AgentView extends ItemView {
 		// even if currentSession changes during async operations
 		const turnSession = this.currentSession;
 
-		const { text: message, files, formattedMessage } = this.fileChips.extractMessageContent();
+		// Get message text directly from input (no chips to process)
+		const message = this.userInput.innerText?.trim() || '';
+		const formattedMessage = message;
 		// Allow sending with only attachments (no text)
-		if (!message && files.length === 0 && this.pendingAttachments.length === 0) return;
+		const shelfTextFiles = this.shelf.getTextFiles();
+		const attachments = this.shelf.getPendingAttachments();
+		if (!message && shelfTextFiles.length === 0 && attachments.length === 0) return;
 
-		// Capture pending attachments and clear them
-		const attachments = [...this.pendingAttachments];
-		this.pendingAttachments = [];
-		this.ui.updateAttachmentPreview(this.imagePreviewContainer, [], (id) => this.removeAttachment(id));
+		// Mark binary shelf items as sent
+		this.shelf.markBinarySent();
 
 		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
 		const savedAttachments: Array<{ attachment: InlineAttachment; path: string }> = [];
@@ -262,9 +287,8 @@ export class AgentView extends ItemView {
 			);
 		}
 
-		// Clear input and mentioned files
+		// Clear input
 		this.userInput.innerHTML = '';
-		this.fileChips.clearMentionedFiles();
 
 		// Set execution state and change button to "Stop"
 		this.isExecuting = true;
@@ -332,15 +356,8 @@ export class AgentView extends ItemView {
 		await this.displayMessage(userEntry);
 
 		try {
-			// Start with session context files (active file is already included if present)
-			const allContextFiles = [...this.currentSession.context.contextFiles];
-
-			// Add mentioned files to context temporarily
-			files.forEach((file) => {
-				if (!allContextFiles.includes(file)) {
-					allContextFiles.push(file);
-				}
-			});
+			// Get all context files from the shelf (persistent text files + folder contents)
+			const allContextFiles = this.shelf.getTextFiles();
 
 			// Snapshot pre-turn history BEFORE saving user message to avoid duplication
 			const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
@@ -392,26 +409,14 @@ export class AgentView extends ItemView {
 			// Build additional prompt instructions (not part of system prompt)
 			let additionalInstructions = '';
 
-			// Add mention note if files were mentioned
-			if (files.length > 0) {
-				additionalInstructions += `\n\nIMPORTANT: The user has referenced files using Obsidian wikilink syntax in their message.
+			// Add context file note if shelf has text files
+			if (shelfTextFiles.length > 0) {
+				const fileList = shelfTextFiles.map((f) => `- [[${f.path}|${f.basename}]]`).join('\n');
+				additionalInstructions += `\n\nCONTEXT FILES: The following files have been added to this conversation as context:
+${fileList}
 
-UNDERSTANDING WIKILINKS:
-When you see a wikilink like [[Food/Mint.md|Mint]], this means:
-- FULL PATH to use for all operations: "Food/Mint.md" (the part BEFORE the | symbol)
-- Display name shown to user: "Mint" (the part AFTER the | symbol)
-
-CRITICAL RULES for handling mentioned files:
-1. ALWAYS use the FULL PATH from the wikilink (before |) when calling any file tools
-2. NEVER use just the display name (after |) as the file path
-3. When the user says "save to" or "write to" a mentioned file, use write_file with the FULL PATH
-
-Example interpretations:
-- "Save the answer to [[Food/Mint.md|Mint]]" → Use write_file with path: "Food/Mint.md"
-- "Update [[Projects/Todo.md|Todo]] with..." → Use write_file with path: "Projects/Todo.md"
-- "Add to [[Daily Notes/2024-01-20.md|today's note]]" → Use path: "Daily Notes/2024-01-20.md"
-
-The mentioned files are included in the context below for reference.`;
+When referring to these files in tool calls, use the FULL PATH (the part before | in the wikilinks above).
+The content of these files is included in the context below.`;
 			}
 
 			// Add attachment path information if attachments were saved
@@ -786,10 +791,16 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
-	 * Update context panel UI
+	 * Update context panel UI and sync shelf with session context
 	 */
 	private updateContextPanel() {
 		this.ui.createContextPanel(this.contextPanel, this.currentSession, this.getUICallbacks());
+		// Sync shelf with current session's context files
+		if (this.currentSession) {
+			this.shelf.loadFromSession(this.currentSession.context.contextFiles);
+		} else {
+			this.shelf.clear();
+		}
 	}
 
 	/**
@@ -828,15 +839,21 @@ To reference an attachment in your response, use the path shown above.`;
 			(newFiles: TFile[]) => {
 				const newSet = new Set(newFiles);
 				const oldSet = new Set(initialFiles);
+				// Remove files no longer selected
 				initialFiles
 					.filter((f) => !newSet.has(f))
 					.forEach((f) => {
 						this.context.removeContextFile(f, session);
+						const shelfItems = this.shelf.getItems();
+						const match = shelfItems.find((item) => item.type === 'text' && item.path === f.path);
+						if (match) this.shelf.removeItem(match.id);
 					});
+				// Add newly selected files
 				newFiles
 					.filter((f) => !oldSet.has(f))
 					.forEach((f) => {
 						this.context.addFileToContext(f, session);
+						this.shelf.addTextFile(f);
 					});
 				this.updateContextFilesList(this.contextPanel.querySelector('.gemini-agent-files-list') as HTMLElement);
 				this.updateSessionHeader();
@@ -858,9 +875,18 @@ To reference an attachment in your response, use the path shown above.`;
 				this.removeTrailingAtSymbol();
 
 				if (fileOrFolder instanceof TFile) {
-					this.insertFileChip(fileOrFolder);
+					this.shelf.addTextFile(fileOrFolder);
+					this.context.addFileToContext(fileOrFolder, this.currentSession);
+					this.updateSessionHeader();
+					this.updateSessionMetadata();
 				} else if (fileOrFolder instanceof TFolder) {
-					this.insertFolderChip(fileOrFolder);
+					const files = getTextFilesFromFolder(fileOrFolder, (path) => shouldExcludePathForPlugin(path, this.plugin));
+					this.shelf.addFolder(fileOrFolder, files);
+					for (const file of files) {
+						this.context.addFileToContext(file, this.currentSession);
+					}
+					this.updateSessionHeader();
+					this.updateSessionMetadata();
 				}
 			},
 			this.plugin
@@ -870,7 +896,7 @@ To reference an attachment in your response, use the path shown above.`;
 
 	/**
 	 * Remove a trailing @ character from the input, used when the file picker
-	 * replaces the @ trigger with a file chip.
+	 * replaces the @ trigger with a shelf entry.
 	 */
 	private removeTrailingAtSymbol(): void {
 		const input = this.userInput;
@@ -903,31 +929,6 @@ To reference an attachment in your response, use the path shown above.`;
 				selection.addRange(newRange);
 			}
 		}
-	}
-
-	/**
-	 * Insert a file chip at cursor position
-	 */
-	private insertFileChip(file: TFile) {
-		const chip = this.fileChips.createFileChip(file, (_removedFile: TFile) => {
-			// Callback when chip is removed
-		});
-		this.fileChips.insertChipAtCursor(chip);
-		this.fileChips.addMentionedFile(file);
-	}
-
-	/**
-	 * Insert a folder chip at cursor position
-	 */
-	private insertFolderChip(folder: TFolder) {
-		const files = this.fileChips.getFilesFromFolder(folder);
-		const chip = this.fileChips.createFolderChip(folder, files.length, (_removedFiles: TFile[]) => {
-			// Callback when chip is removed
-		});
-		this.fileChips.insertChipAtCursor(chip);
-
-		// Add all files from folder to mentioned files
-		files.forEach((file) => this.fileChips.addMentionedFile(file));
 	}
 
 	/**
@@ -1129,39 +1130,36 @@ To reference an attachment in your response, use the path shown above.`;
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
 			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
 			removeAttachment: (id: string) => this.removeAttachment(id),
-			getAttachments: () => this.pendingAttachments,
+			getAttachments: () => this.shelf?.getPendingAttachments() || [],
 			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
 		};
 	}
 
 	/**
-	 * Handle dropped text files by inserting context chips
+	 * Handle dropped text files by adding to shelf
 	 */
 	private handleDroppedFiles(files: TFile[]) {
 		for (const file of files) {
-			this.insertFileChip(file);
+			this.shelf.addTextFile(file);
+			this.context.addFileToContext(file, this.currentSession);
 		}
+		this.updateSessionHeader();
+		this.updateSessionMetadata();
 	}
 
 	/**
-	 * Add an attachment to pending list
+	 * Add an attachment to the shelf
 	 */
 	private addAttachment(attachment: InlineAttachment): void {
-		this.pendingAttachments.push(attachment);
-		this.ui.updateAttachmentPreview(this.imagePreviewContainer, this.pendingAttachments, (id) =>
-			this.removeAttachment(id)
-		);
+		this.shelf.addBinaryAttachment(attachment);
 	}
 
 	/**
-	 * Remove an attachment from pending list
+	 * Remove an attachment from the shelf
 	 */
 	private removeAttachment(id: string): void {
-		this.pendingAttachments = this.pendingAttachments.filter((a) => a.id !== id);
-		this.ui.updateAttachmentPreview(this.imagePreviewContainer, this.pendingAttachments, (id) =>
-			this.removeAttachment(id)
-		);
+		this.shelf.removeItem(id);
 	}
 
 	/**

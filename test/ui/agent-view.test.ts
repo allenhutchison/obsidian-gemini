@@ -1240,14 +1240,8 @@ describe('AgentView UI Tests', () => {
 				context: { contextFiles: [] },
 			};
 
-			// Set up mock fileChips that returns a message (to pass early return check)
-			(agentView as any).fileChips = {
-				extractMessageContent: () => ({ text: 'test message', files: [], formattedMessage: 'test message' }),
-				clearMentionedFiles: jest.fn(),
-			};
-
-			// Mock userInput
-			(agentView as any).userInput = { innerHTML: '' };
+			// Mock userInput with innerText to pass early return check
+			(agentView as any).userInput = { innerHTML: '', innerText: 'test message' };
 
 			// Mock progress bar
 			(agentView as any).progress = {
@@ -1258,10 +1252,11 @@ describe('AgentView UI Tests', () => {
 
 			// Mock attachment support
 			(agentView as any).pendingAttachments = [];
-			(agentView as any).imagePreviewContainer = document.createElement('div');
-			(agentView as any).ui = {
-				...((agentView as any).ui || {}),
-				updateAttachmentPreview: jest.fn(),
+			(agentView as any).shelf = {
+				markBinarySent: jest.fn(),
+				getItems: jest.fn().mockReturnValue([]),
+				getTextFiles: jest.fn().mockReturnValue([]),
+				getPendingAttachments: jest.fn().mockReturnValue([]),
 			};
 
 			// Set cancellation flag (simulating previous stop)

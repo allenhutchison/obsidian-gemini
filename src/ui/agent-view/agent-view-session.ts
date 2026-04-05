@@ -1,4 +1,4 @@
-import { App, TFile, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -33,9 +33,6 @@ export interface SessionUICallbacks {
  * Mutable state references that the session manager needs access to
  */
 export interface SessionState {
-	/** Reference to mentioned files array */
-	mentionedFiles: TFile[];
-
 	/** Reference to allowed tools set */
 	allowedWithoutConfirmation: Set<string>;
 
@@ -100,7 +97,6 @@ export class AgentViewSession {
 			// Clear current session and UI state
 			this.currentSession = null;
 			this.uiCallbacks.clearChat();
-			this.state.mentionedFiles.length = 0; // Clear any mentioned files from previous session
 			this.state.allowedWithoutConfirmation.clear(); // Clear session-level permissions
 			// Clear input if it has content
 			if (this.state.userInput) {

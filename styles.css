@@ -1601,107 +1601,6 @@ If your plugin does not need CSS, delete this file.
 	position: absolute;
 }
 
-/* File Chips */
-.gemini-agent-file-chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	padding: 2px 6px 2px 4px;
-	border-radius: var(--radius-s);
-	font-size: var(--font-ui-smaller);
-	margin: 0 2px;
-	vertical-align: middle;
-	user-select: none;
-	cursor: default;
-}
-
-.gemini-agent-file-chip-icon {
-	display: flex;
-	align-items: center;
-	color: var(--text-on-accent);
-}
-
-.gemini-agent-file-chip-icon svg {
-	width: 12px;
-	height: 12px;
-}
-
-.gemini-agent-file-chip-name {
-	max-width: 150px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.gemini-agent-file-chip-remove {
-	margin-left: 4px;
-	padding: 0 2px;
-	cursor: pointer;
-	opacity: 0.7;
-	font-weight: bold;
-	line-height: 1;
-}
-
-.gemini-agent-file-chip-remove:hover {
-	opacity: 1;
-}
-
-/* Folder Chips */
-.gemini-agent-folder-chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 4px 8px;
-	background-color: var(--background-secondary-alt);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 16px;
-	margin: 0 2px;
-	font-size: 13px;
-	vertical-align: middle;
-	user-select: none;
-	max-width: 250px;
-	animation: chipSlideIn 0.2s ease-out;
-}
-
-.gemini-agent-folder-chip-icon {
-	width: 14px;
-	height: 14px;
-	color: var(--text-accent);
-	flex-shrink: 0;
-}
-
-.gemini-agent-folder-chip-icon svg {
-	width: 100%;
-	height: 100%;
-}
-
-.gemini-agent-folder-chip-name {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	color: var(--text-normal);
-	font-weight: 500;
-}
-
-.gemini-agent-folder-chip-remove {
-	margin-left: 4px;
-	cursor: pointer;
-	color: var(--text-muted);
-	font-size: 16px;
-	line-height: 1;
-	padding: 0 2px;
-	border-radius: 50%;
-	transition: all 0.15s ease;
-	opacity: 0.7;
-}
-
-.gemini-agent-folder-chip-remove:hover {
-	opacity: 1;
-	color: var(--text-error);
-}
-
 .gemini-agent-input::placeholder {
 	color: var(--text-faint);
 }
@@ -4198,59 +4097,6 @@ If your plugin does not need CSS, delete this file.
 	font-size: var(--font-ui-small);
 }
 
-/* Image Attachment Preview */
-.gemini-agent-image-preview {
-	display: none;
-	flex-wrap: wrap;
-	gap: 8px;
-	padding: 8px 0;
-}
-
-.gemini-agent-image-thumb {
-	position: relative;
-	width: 60px;
-	height: 60px;
-	border-radius: 6px;
-	overflow: hidden;
-	border: 1px solid var(--background-modifier-border);
-}
-
-.gemini-agent-image-thumb img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-}
-
-.gemini-agent-image-remove {
-	position: absolute;
-	top: 2px;
-	right: 2px;
-	width: 18px;
-	height: 18px;
-	padding: 0;
-	background-color: rgba(0, 0, 0, 0.6);
-	color: white;
-	border: none;
-	border-radius: 50%;
-	font-size: 12px;
-	line-height: 1;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	opacity: 0;
-	transition: opacity 0.15s ease;
-}
-
-.gemini-agent-image-thumb:hover .gemini-agent-image-remove,
-.gemini-agent-image-remove:focus-visible {
-	opacity: 1;
-}
-
-.gemini-agent-image-remove:hover {
-	background-color: var(--text-error);
-}
-
 .gemini-agent-input-dragover {
 	background-color: var(--background-modifier-hover) !important;
 	border-color: var(--interactive-accent) !important;
@@ -4263,6 +4109,125 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-agent-clickable-image:hover {
 	opacity: 0.9;
+}
+
+/* Unified File Shelf */
+.gemini-agent-shelf {
+	display: none;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 8px 0;
+}
+
+.gemini-shelf-item {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+	overflow: hidden;
+	cursor: default;
+}
+
+.gemini-shelf-item:hover {
+	border-color: var(--interactive-accent);
+}
+
+/* Image thumbnails */
+.gemini-shelf-item-image {
+	width: 60px;
+	height: 60px;
+}
+
+.gemini-shelf-item-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/* Non-image file items */
+.gemini-shelf-item-file {
+	padding: 4px 8px;
+	max-width: 180px;
+}
+
+.gemini-shelf-icon {
+	flex-shrink: 0;
+	width: 14px;
+	height: 14px;
+	color: var(--text-muted);
+}
+
+.gemini-shelf-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+.gemini-shelf-name {
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Persistent badge (pin icon) */
+.gemini-shelf-badge {
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
+	color: var(--text-faint);
+	display: inline-flex;
+	align-items: center;
+}
+
+.gemini-shelf-badge svg {
+	width: 10px;
+	height: 10px;
+}
+
+/* Sent state for binary items */
+.gemini-shelf-item-sent {
+	opacity: 0.5;
+}
+
+/* Remove button */
+.gemini-shelf-remove {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	background-color: rgba(0, 0, 0, 0.6);
+	color: white;
+	border: none;
+	border-radius: 50%;
+	font-size: 11px;
+	line-height: 1;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.gemini-shelf-item:hover .gemini-shelf-remove,
+.gemini-shelf-remove:focus-visible {
+	opacity: 1;
+}
+
+.gemini-shelf-remove:hover {
+	background-color: var(--text-error);
+}
+
+/* Touch devices: always show remove button since there's no hover */
+@media (hover: none), (pointer: coarse) {
+	.gemini-shelf-remove {
+		opacity: 1;
+	}
 }
 
 /* Selection Response Modal Styles */
