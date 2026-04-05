@@ -1,5 +1,6 @@
 import * as Handlebars from 'handlebars';
 import { CustomPrompt } from './types';
+import { ToolDefinition } from '../api/interfaces/model-api';
 import ObsidianGemini from '../main';
 
 import systemPromptContent from '../../prompts/systemPrompt.hbs';
@@ -93,21 +94,25 @@ export class GeminiPrompts {
 	 * expects. This is data pre-processing only — all string formatting happens
 	 * inside the Handlebars template via {{#each}} loops.
 	 */
-	private shapeToolsForTemplate(tools: any[]): Array<{
+	private shapeToolsForTemplate(tools: ToolDefinition[]): Array<{
 		name: string;
 		description: string;
 		parameters: Array<{ name: string; type: string; description: string; required: boolean }>;
 	}> {
-		return tools.map((tool) => ({
-			name: tool.name,
-			description: tool.description,
-			parameters: Object.entries((tool.parameters?.properties as Record<string, any>) || {}).map(([name, schema]) => ({
-				name,
-				type: schema.type,
-				description: schema.description || '',
-				required: tool.parameters?.required?.includes(name) ?? false,
-			})),
-		}));
+		return tools.map((tool) => {
+			const properties = (tool.parameters?.properties ?? {}) as Record<string, { type: string; description?: string }>;
+			const requiredParams = tool.parameters?.required ?? [];
+			return {
+				name: tool.name,
+				description: tool.description,
+				parameters: Object.entries(properties).map(([name, schema]) => ({
+					name,
+					type: schema.type,
+					description: schema.description || '',
+					required: requiredParams.includes(name),
+				})),
+			};
+		});
 	}
 
 	/**
@@ -123,7 +128,7 @@ export class GeminiPrompts {
 	 * @returns Complete system prompt
 	 */
 	getSystemPromptWithCustom(
-		availableTools?: any[],
+		availableTools?: ToolDefinition[],
 		customPrompt?: CustomPrompt,
 		agentsMemory?: string | null,
 		availableSkills?: { name: string; description: string }[],
@@ -150,11 +155,16 @@ export class GeminiPrompts {
 		// template variable — the systemPrompt.hbs template handles the heading.
 		const additionalInstructions = customPrompt && !customPrompt.overrideSystemPrompt ? customPrompt.content : '';
 
+		// Capture a single timestamp so the date and time fields in the system
+		// prompt are always derived from the same instant (avoids split around
+		// midnight boundaries).
+		const now = new Date();
+
 		return this.systemPrompt({
 			userName: this.plugin?.settings.userName || 'User',
 			language: this.getLanguageCode(),
-			date: new Date().toLocaleDateString(),
-			time: new Date().toLocaleTimeString(),
+			date: now.toLocaleDateString(),
+			time: now.toLocaleTimeString(),
 			agentsMemory: agentsMemory || '',
 			projectInstructions: projectInstructions || '',
 			agentToolsSection,
