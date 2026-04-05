@@ -155,7 +155,8 @@ export class AgentView extends ItemView {
 					// Shelf handles its own state; nothing else to sync
 				},
 			},
-			inputRow
+			inputRow,
+			(path) => shouldExcludePathForPlugin(path, this.plugin)
 		);
 
 		// Initialize progress bar with the created elements
@@ -865,8 +866,10 @@ To reference an attachment in your response, use the path shown above.`;
 				this.removeTrailingAtSymbol();
 
 				if (fileOrFolder instanceof TFolder) {
+					this.shelf.addFolder(fileOrFolder);
+					// Seed session context with current folder contents. Subsequent turns
+					// re-expand the folder via the shelf so new files are picked up (#127).
 					const files = getTextFilesFromFolder(fileOrFolder, (path) => shouldExcludePathForPlugin(path, this.plugin));
-					this.shelf.addFolder(fileOrFolder, files);
 					for (const file of files) {
 						this.context.addFileToContext(file, this.currentSession);
 					}

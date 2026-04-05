@@ -43,8 +43,6 @@ export interface ShelfItem {
 	file?: TFile;
 	/** TFolder reference (for folders) */
 	folder?: TFolder;
-	/** Expanded files (for folders) */
-	expandedFiles?: TFile[];
 	/** Inline attachment data (for binary files) */
 	attachment?: InlineAttachment;
 	/** Whether this item has been sent in a message */
@@ -66,14 +64,30 @@ export class AgentViewShelf {
 	private container: HTMLElement;
 	private items: ShelfItem[] = [];
 	private callbacks: ShelfCallbacks;
+	private folderExcluder?: (path: string) => boolean;
 
-	constructor(app: App, parent: HTMLElement, callbacks: ShelfCallbacks, insertBefore?: HTMLElement) {
+	constructor(
+		app: App,
+		parent: HTMLElement,
+		callbacks: ShelfCallbacks,
+		insertBefore?: HTMLElement,
+		folderExcluder?: (path: string) => boolean
+	) {
 		this.app = app;
 		this.container = parent.createDiv({ cls: 'gemini-agent-shelf', attr: { role: 'list' } });
 		if (insertBefore) {
 			parent.insertBefore(this.container, insertBefore);
 		}
 		this.callbacks = callbacks;
+		this.folderExcluder = folderExcluder;
+	}
+
+	/**
+	 * Re-expand a folder shelf item to pick up any files added since the folder
+	 * was first added to the shelf. See #127.
+	 */
+	private expandFolder(folder: TFolder): TFile[] {
+		return getTextFilesFromFolder(folder, this.folderExcluder);
 	}
 
 	/**
@@ -96,9 +110,11 @@ export class AgentViewShelf {
 	}
 
 	/**
-	 * Add a folder to the shelf
+	 * Add a folder to the shelf. Files contained in the folder are re-expanded
+	 * lazily (see #127), so new files added after the shelf entry is created
+	 * will be picked up on subsequent message sends.
 	 */
-	addFolder(folder: TFolder, expandedFiles: TFile[]): ShelfItem | null {
+	addFolder(folder: TFolder): ShelfItem | null {
 		if (this.items.some((item) => item.type === 'folder' && item.path === folder.path)) {
 			return null;
 		}
@@ -108,7 +124,6 @@ export class AgentViewShelf {
 			name: `${folder.name}/`,
 			path: folder.path,
 			folder,
-			expandedFiles,
 		};
 		this.items.push(item);
 		this.render();
@@ -179,8 +194,9 @@ export class AgentViewShelf {
 		for (const item of this.items) {
 			if (item.type === 'text' && item.file) {
 				seen.set(item.file.path, item.file);
-			} else if (item.type === 'folder' && item.expandedFiles) {
-				for (const file of item.expandedFiles) {
+			} else if (item.type === 'folder' && item.folder) {
+				// Re-expand the folder each time so newly added files are picked up (#127)
+				for (const file of this.expandFolder(item.folder)) {
 					seen.set(file.path, file);
 				}
 			}
@@ -324,7 +340,8 @@ export class AgentViewShelf {
 				el.addClass('gemini-shelf-item-file');
 				const iconEl = el.createDiv({ cls: 'gemini-shelf-icon' });
 				setIcon(iconEl, 'folder');
-				const fileCount = item.expandedFiles?.length ?? 0;
+				// Compute file count dynamically so it reflects newly added files (#127)
+				const fileCount = item.folder ? this.expandFolder(item.folder).length : 0;
 				el.createSpan({
 					text: `${item.name} (${fileCount})`,
 					cls: 'gemini-shelf-name',
@@ -367,7 +384,7 @@ export class AgentViewShelf {
 				if (item.file) this.callbacks.onRemoveTextFile(item.file);
 				break;
 			case 'folder':
-				if (item.expandedFiles) this.callbacks.onRemoveFolder(item.expandedFiles);
+				if (item.folder) this.callbacks.onRemoveFolder(this.expandFolder(item.folder));
 				break;
 			case 'binary':
 				if (item.attachment) this.callbacks.onRemoveAttachment(item.attachment.id);
