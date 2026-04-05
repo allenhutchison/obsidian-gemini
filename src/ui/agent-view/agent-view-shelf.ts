@@ -69,7 +69,7 @@ export class AgentViewShelf {
 
 	constructor(app: App, parent: HTMLElement, callbacks: ShelfCallbacks, insertBefore?: HTMLElement) {
 		this.app = app;
-		this.container = parent.createDiv({ cls: 'gemini-agent-shelf' });
+		this.container = parent.createDiv({ cls: 'gemini-agent-shelf', attr: { role: 'list' } });
 		if (insertBefore) {
 			parent.insertBefore(this.container, insertBefore);
 		}
@@ -248,12 +248,14 @@ export class AgentViewShelf {
 			const tooltipText = item.path || item.attachment?.vaultPath || item.attachment?.fileName || item.name;
 			setTooltip(el, tooltipText);
 
-			// Click or keyboard-activate to open file in Obsidian
+			// All shelf items are focusable and participate in keyboard navigation
+			el.tabIndex = 0;
+			el.setAttribute('role', 'listitem');
+
+			// Click to open file in Obsidian (when the item has an openable path)
 			const openPath = item.path || item.attachment?.vaultPath;
 			if (openPath) {
 				el.style.cursor = 'pointer';
-				el.tabIndex = 0;
-				el.setAttribute('role', 'button');
 				el.addEventListener('click', (e) => {
 					if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
 					this.app.workspace.openLinkText(openPath, '', false);
@@ -262,7 +264,6 @@ export class AgentViewShelf {
 
 			// Keyboard navigation: Enter/Space to open, Delete/Backspace to remove,
 			// Arrow Left/Right to move focus between items
-			el.tabIndex = 0;
 			el.addEventListener('keydown', (e) => {
 				if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
 				if ((e.key === 'Enter' || e.key === ' ') && openPath) {

@@ -4001,7 +4001,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Slide-in animation when items are added */
-@keyframes shelfSlideIn {
+@keyframes shelf-slide-in {
 	from {
 		opacity: 0;
 		transform: scale(0.9);
@@ -4013,7 +4013,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-shelf-item {
-	animation: shelfSlideIn 0.15s ease-out;
+	animation: shelf-slide-in 0.15s ease-out;
 }
 
 /* Keyboard focus styling */
