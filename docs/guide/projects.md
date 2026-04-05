@@ -88,9 +88,19 @@ Use third-person limited POV from the protagonist's perspective.
 
 ## How Projects Work
 
+### Project is a Property of the Session
+
+Once a session is linked to a project, that linkage is **stable for the lifetime of the session**. Moving between files in your workspace, opening notes outside the project folder, or navigating to unrelated files does **not** change which project the session is using. The project only changes when you explicitly switch it via the "Switch Project" action in the agent view header menu or the command palette.
+
+This means:
+
+- Project instructions are applied consistently to every message in the session, regardless of which file is currently focused in the editor
+- You can reference files from anywhere in your vault while keeping the project's instructions and scope active
+- If you want a different project, create a new session or explicitly switch projects — the plugin won't silently change contexts on you
+
 ### Auto-Detection
 
-When you create a new agent session, the plugin checks if your active file is inside a project folder. If so, the session is automatically linked to that project.
+When you create a **new** agent session, the plugin checks if your active file is inside a project folder. If so, the session is automatically linked to that project. This detection happens once, at session creation time. After that, the linkage is fixed until you explicitly change it.
 
 ### What Changes When a Project is Active
 
