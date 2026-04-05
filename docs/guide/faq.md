@@ -87,9 +87,9 @@ The plugin also shows live token usage for the current agent session in the chat
 
 Yes. Google provides two types of spending controls:
 
-1. **Project-level monthly cap (experimental)** — Set a monthly limit for your specific Google Cloud project via [aistudio.google.com/spend](https://aistudio.google.com/spend) → **Monthly spend cap** → **Edit spend cap**. Billing is evaluated with up to ~10 minute delay, so small overages are possible.
+1. **Project-level monthly cap (experimental)** — Set a monthly limit for your specific Google Cloud project via [aistudio.google.com/spend](https://aistudio.google.com/spend) → **Monthly spend cap** → **Edit spend cap**. Billing is evaluated with up to a ~10-minute delay, so small overages are possible.
 
-2. **Account tier caps** — Each billing account tier has a built-in monthly ceiling (Tier 1: $250, Tier 2: $2,000, Tier 3: $20,000+). Tier caps become enforced on **April 1, 2026**.
+2. **Account tier caps** — Each billing account tier has a built-in monthly ceiling (Tier 1: $250, Tier 2: $2,000, Tier 3: $20,000+). Tier caps became enforced on **April 1, 2026**.
 
 The free tier has no cap but is subject to rate limits. Full details: [Gemini API billing docs](https://ai.google.dev/gemini-api/docs/billing).
 
