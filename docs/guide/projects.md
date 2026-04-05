@@ -90,17 +90,19 @@ Use third-person limited POV from the protagonist's perspective.
 
 ### Project is a Property of the Session
 
-Once a session is linked to a project, that linkage is **stable for the lifetime of the session**. Moving between files in your workspace, opening notes outside the project folder, or navigating to unrelated files does **not** change which project the session is using. The project only changes when you explicitly switch it via the "Switch Project" action in the agent view header menu or the command palette.
+Once a session is linked to a project, that linkage is **stable for the lifetime of the session**. Moving between files in your workspace, opening notes outside the project folder, or navigating to unrelated files does **not** change which project the session is using. In normal use, the project only changes when you explicitly switch it via the "Switch Project" action in the agent view header menu or the command palette.
 
 This means:
 
 - Project instructions are applied consistently to every message in the session, regardless of which file is currently focused in the editor
 - You can reference files from anywhere in your vault while keeping the project's instructions and scope active
-- If you want a different project, create a new session or explicitly switch projects — the plugin won't silently change contexts on you
+- If you want a different project, create a new session or explicitly switch projects — the plugin won't silently change contexts on you as you navigate
+
+**Exception: deleted project files.** When a session is loaded, the plugin verifies that its linked project file still exists. If the project file has been deleted or moved since the session was last used, the session is automatically unlinked so it falls back to vault-wide scope. You can re-link it via "Switch Project" once you recreate or locate the project file.
 
 ### Auto-Detection
 
-When you create a **new** agent session, the plugin checks if your active file is inside a project folder. If so, the session is automatically linked to that project. This detection happens once, at session creation time. After that, the linkage is fixed until you explicitly change it.
+When you create a **new** agent session, the plugin inspects the session's initial context files — the files added automatically at session creation. If any of those files live inside a project folder, the session is linked to that project. This detection happens once, at session creation time, and runs in the `sessionCreated` event handler ([`project-activation-subscriber.ts`](https://github.com/allenhutchison/obsidian-gemini/blob/master/src/subscribers/project-activation-subscriber.ts)). After that, the linkage is fixed until you explicitly change it (or the project file is removed — see the exception above).
 
 ### What Changes When a Project is Active
 
