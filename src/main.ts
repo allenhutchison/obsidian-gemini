@@ -757,10 +757,20 @@ export default class ObsidianGemini extends Plugin {
 		return this.modelManager;
 	}
 
-	// Clean up resources on unload. Obsidian awaits async onunload,
-	// so returning the promise ensures RAG/MCP shutdown completes cleanly.
-	async onunload() {
+	// Clean up resources on unload.
+	//
+	// NOTE: Obsidian's Plugin.onunload is typed as `() => void` and is NOT
+	// awaited by the host — returning a Promise here would not delay teardown.
+	// lifecycle.onUnload() is still async internally so tests and internal
+	// callers can await it, but from the plugin entry point we invoke it as
+	// fire-and-forget with an error handler. Disposables that truly need
+	// deterministic cleanup should be registered via plugin.register*
+	// helpers (registerEvent, registerDomEvent, addCommand, etc.) so that
+	// Obsidian cleans them up automatically.
+	onunload() {
 		this.ribbonIcon?.remove();
-		await this.lifecycle.onUnload();
+		this.lifecycle.onUnload().catch((err) => {
+			this.logger.error('Error during plugin unload cleanup:', err);
+		});
 	}
 }

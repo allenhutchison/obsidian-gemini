@@ -75,7 +75,7 @@ export class ToolExecutionLogger {
 					const snapshot = this.pendingLogs.slice();
 					const lines = snapshot.map((entry) => formatToolLine(entry));
 					const block = formatToolBlock(lines);
-					const appended = await this.appendToHistory(payload.session, block);
+					const appended = await this.appendToHistory(payload.session, block, snapshot.length);
 					if (appended) {
 						// Remove only the entries we just wrote (more entries may have
 						// been pushed concurrently by other handlers, though that's rare).
@@ -98,7 +98,7 @@ export class ToolExecutionLogger {
 		this.pendingLogs = [];
 	}
 
-	private async appendToHistory(session: ChatSession, block: string): Promise<boolean> {
+	private async appendToHistory(session: ChatSession, block: string, entryCount: number): Promise<boolean> {
 		// If chat history is disabled there's nothing to write to — treat as "success"
 		// so the pending queue is drained (otherwise it would grow unbounded).
 		if (!this.plugin.settings.chatHistory) return true;
@@ -107,8 +107,10 @@ export class ToolExecutionLogger {
 		if (!(file instanceof TFile)) {
 			// History file doesn't exist yet; drop these entries to avoid unbounded
 			// growth. This matches the prior behavior but is now explicit.
+			// Use the caller-supplied snapshot size, not this.pendingLogs.length —
+			// the latter may contain entries added after the snapshot was taken.
 			this.plugin.logger.warn(
-				`ToolExecutionLogger: history file not found at ${session.historyPath}; dropping ${this.pendingLogs.length} tool log entries.`
+				`ToolExecutionLogger: history file not found at ${session.historyPath}; dropping ${entryCount} tool log entries.`
 			);
 			return true;
 		}

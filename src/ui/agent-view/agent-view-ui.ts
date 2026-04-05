@@ -146,37 +146,58 @@ export class AgentViewUI {
 				if (finished) return;
 				finished = true;
 
-				// Bail if the active session has been switched out from under us,
-				// or the header has been re-rendered (input detached from DOM).
-				if (!input.isConnected || !callbacks.isCurrentSession(editingSession)) {
-					if (input.isConnected) {
-						title.style.display = '';
-						input.remove();
-					}
-					return;
-				}
+				// Helper: is the session we started editing still the view's active
+				// session AND is our input still in the DOM? We re-check this both
+				// before starting async work and after every await, because
+				// `callbacks.updateSessionMetadata` is a zero-arg callback bound to
+				// the view's live currentSession — calling it after the session has
+				// switched would corrupt the wrong session's metadata.
+				const stillEditing = (): boolean => input.isConnected && callbacks.isCurrentSession(editingSession);
 
-				const newTitle = input.value.trim();
-				if (newTitle && newTitle !== editingSession.title) {
-					// Update session title
+				try {
+					if (!stillEditing()) return;
+
+					const newTitle = input.value.trim();
+					if (!newTitle || newTitle === editingSession.title) return;
+
+					// Rename file if it exists
 					const oldPath = editingSession.historyPath;
 					const sanitizedTitle = (this.plugin.sessionManager as any).sanitizeFileName(newTitle);
 					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + sanitizedTitle + '.md';
-
-					// Rename file if it exists
 					const oldFile = this.plugin.app.vault.getAbstractFileByPath(oldPath);
 					if (oldFile) {
 						await this.plugin.app.fileManager.renameFile(oldFile, newPath);
+						// The rename itself acts on `oldFile` by reference so it always
+						// targets the correct file even if the session switched during
+						// the await — but we must re-validate before continuing to
+						// mutate session state and call the zero-arg metadata callback.
 						editingSession.historyPath = newPath;
 					}
 
 					editingSession.title = newTitle;
-					await callbacks.updateSessionMetadata();
-				}
 
-				title.textContent = editingSession.title;
-				title.style.display = '';
-				input.remove();
+					// Re-check after the rename await: if the active session switched,
+					// the metadata callback would write to the wrong session. Skip it;
+					// the rename is still valid for editingSession.
+					if (!stillEditing()) {
+						this.plugin.logger.warn(
+							'Session switched during title edit; skipping metadata update for the renamed session.'
+						);
+						return;
+					}
+
+					await callbacks.updateSessionMetadata();
+				} catch (err) {
+					this.plugin.logger.error('Failed to save session title:', err);
+				} finally {
+					// Always restore the UI regardless of success/failure so the user
+					// is never left with an orphaned input element.
+					if (input.isConnected) {
+						title.textContent = editingSession.title;
+						title.style.display = '';
+						input.remove();
+					}
+				}
 			};
 
 			input.addEventListener('blur', saveTitle);

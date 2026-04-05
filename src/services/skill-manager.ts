@@ -35,9 +35,10 @@ const SKILL_NAME_MAX_LENGTH = 64;
 const SKILL_MD_FILENAME = 'SKILL.md';
 
 /**
- * Find the byte offset of the closing `---` of a YAML frontmatter block in a file's content.
- * Returns the offset AFTER the closing delimiter (inclusive of its trailing newline if present),
- * or undefined if the content does not begin with a valid frontmatter block.
+ * Find the character offset of the closing YAML frontmatter delimiter in a file's content.
+ * Returns the offset immediately AFTER the closing delimiter token (`---` or `...`)
+ * and BEFORE any trailing line break characters, or undefined if the content does not
+ * begin with a valid frontmatter block.
  *
  * Unlike a naive `---[\s\S]*?---` regex, this walks the content line-by-line so that
  * `---` sequences appearing inside multi-line YAML string values (or body content) do
