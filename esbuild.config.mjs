@@ -49,18 +49,6 @@ const context = await esbuild.context({
 		alias({
 			'@': path.resolve(__dirname, 'src'),
 		}),
-		{
-			name: 'text-files',
-			setup(build) {
-				build.onLoad({ filter: /\.txt$/ }, async (args) => {
-					const text = await import('fs').then((fs) => fs.readFileSync(args.path, 'utf8'));
-					return {
-						contents: text,
-						loader: 'text',
-					};
-				});
-			},
-		},
 	],
 	loader: {
 		'.hbs': 'text',

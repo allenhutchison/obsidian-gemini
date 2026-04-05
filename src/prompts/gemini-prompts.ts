@@ -2,17 +2,17 @@ import * as Handlebars from 'handlebars';
 import { CustomPrompt } from './types';
 import ObsidianGemini from '../main';
 
-import systemPromptContent from '../../prompts/systemPrompt.txt';
-import completionPromptContent from '../../prompts/completionPrompt.txt';
-import generalPromptContent from '../../prompts/generalPrompt.txt';
-import summaryPromptContent from '../../prompts/summaryPrompt.txt';
-import contextPromptContent from '../../prompts/contextPrompt.txt';
-import selectionRewritePromptContent from '../../prompts/selectionRewritePrompt.txt';
-import agentToolsPromptContent from '../../prompts/agentToolsPrompt.txt';
-import vaultAnalysisPromptContent from '../../prompts/vaultAnalysisPrompt.txt';
-import examplePromptsPromptContent from '../../prompts/examplePromptsPrompt.txt';
-import imagePromptGeneratorContent from '../../prompts/imagePromptGenerator.txt';
-import languageInstructionContent from '../../prompts/languageInstruction.txt';
+import systemPromptContent from '../../prompts/systemPrompt.hbs';
+import completionPromptContent from '../../prompts/completionPrompt.hbs';
+import generalPromptContent from '../../prompts/generalPrompt.hbs';
+import summaryPromptContent from '../../prompts/summaryPrompt.hbs';
+import contextPromptContent from '../../prompts/contextPrompt.hbs';
+import selectionRewritePromptContent from '../../prompts/selectionRewritePrompt.hbs';
+import agentToolsPromptContent from '../../prompts/agentToolsPrompt.hbs';
+import vaultAnalysisPromptContent from '../../prompts/vaultAnalysisPrompt.hbs';
+import examplePromptsPromptContent from '../../prompts/examplePromptsPrompt.hbs';
+import imagePromptGeneratorContent from '../../prompts/imagePromptGenerator.hbs';
+import languageInstructionContent from '../../prompts/languageInstruction.hbs';
 
 export class GeminiPrompts {
 	private completionsPromptTemplate: Handlebars.TemplateDelegate;

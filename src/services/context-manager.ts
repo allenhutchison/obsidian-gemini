@@ -15,7 +15,7 @@ import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
 
 // @ts-ignore
-import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.txt';
+import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
 
 /** Aggressive compaction triggers at this % of total model context window */
 const AGGRESSIVE_COMPACTION_THRESHOLD_PERCENT = 80;
