@@ -262,10 +262,16 @@ export class ToolExecutionEngine {
 			if (shouldExcludePath(normalizedPath, plugin.settings.historyFolder)) return undefined;
 
 			// Resolve the file the same way AppendContentTool does so the diff
-			// matches what will actually be written.
+			// matches what will actually be written: direct path, then .md suffix,
+			// then wikilink resolution via the metadata cache.
 			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			if (!file && !normalizedPath.endsWith('.md')) {
 				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+			}
+			if (!file) {
+				const linkPath = parameters.path.replace(/^\[\[/, '').replace(/\]\]$/, '').replace(/\.md$/, '');
+				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+				if (resolved) file = resolved;
 			}
 			if (!(file instanceof TFile)) return undefined; // Tool will return its own error
 
@@ -285,9 +291,11 @@ export class ToolExecutionEngine {
 
 		if (tool.name === 'create_skill' && parameters.name && parameters.content !== undefined) {
 			// Show the proposed skill body as-is. The diff uses an empty original so
-			// users see the full content they're about to create.
+			// users see the full content they're about to create. The file path is
+			// built from the same SkillManager logic the tool uses at execution time
+			// so users see where the skill will actually be written.
 			return {
-				filePath: `Skills/${parameters.name}/SKILL.md`,
+				filePath: this.getSkillFilePath(parameters.name),
 				originalContent: '',
 				proposedContent: parameters.content,
 				isNewFile: true,
@@ -300,7 +308,7 @@ export class ToolExecutionEngine {
 			// surface its own not-found error at execution time.
 			const originalBody = plugin.skillManager ? ((await plugin.skillManager.loadSkill(parameters.name)) ?? '') : '';
 			return {
-				filePath: `Skills/${parameters.name}/SKILL.md`,
+				filePath: this.getSkillFilePath(parameters.name),
 				originalContent: originalBody,
 				proposedContent: parameters.content,
 				isNewFile: false,
@@ -308,6 +316,19 @@ export class ToolExecutionEngine {
 		}
 
 		return undefined;
+	}
+
+	/**
+	 * Build the SKILL.md file path for a given skill name, matching the path
+	 * layout that SkillManager uses (`{historyFolder}/Skills/{name}/SKILL.md`).
+	 * Used for diff context display only.
+	 */
+	private getSkillFilePath(skillName: string): string {
+		const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
+		if (plugin.skillManager) {
+			return normalizePath(`${plugin.skillManager.getSkillsFolderPath()}/${skillName}/SKILL.md`);
+		}
+		return normalizePath(`${plugin.settings.historyFolder}/Skills/${skillName}/SKILL.md`);
 	}
 
 	/**
