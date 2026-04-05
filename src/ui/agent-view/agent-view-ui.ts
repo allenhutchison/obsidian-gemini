@@ -183,13 +183,7 @@ export class AgentViewUI {
 			const nameSpan = badge.createSpan({ text: ' Loading...' });
 			setTooltip(badge, 'Loading project...');
 
-			const capturedPath = currentSession.projectPath;
-			this.plugin.projectManager.getProject(capturedPath).then((project) => {
-				if (!badge.isConnected) return;
-				const projectName = project?.config.name || capturedPath;
-				nameSpan.textContent = ' ' + projectName;
-				setTooltip(badge, `Project: ${projectName}\n${capturedPath}`);
-			});
+			void this.updateProjectBadge(badge, nameSpan, currentSession.projectPath);
 
 			badge.addEventListener('click', (e) => {
 				e.stopPropagation();
@@ -814,6 +808,22 @@ export class AgentViewUI {
 	 */
 	private getCurrentAttachmentSize(callbacks: UICallbacks): number {
 		return callbacks.getAttachments().reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0);
+	}
+
+	/**
+	 * Asynchronously loads project info and updates the project badge.
+	 * Skips the update if the badge has been detached (e.g. session changed).
+	 */
+	private async updateProjectBadge(badge: HTMLElement, nameSpan: HTMLSpanElement, projectPath: string): Promise<void> {
+		try {
+			const project = await this.plugin.projectManager?.getProject(projectPath);
+			if (!badge.isConnected) return;
+			const projectName = project?.config.name || projectPath;
+			nameSpan.textContent = ` ${projectName}`;
+			setTooltip(badge, `Project: ${projectName}\n${projectPath}`);
+		} catch (error) {
+			this.plugin.logger.error('Failed to load project for badge:', error);
+		}
 	}
 
 	/**
