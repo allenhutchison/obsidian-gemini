@@ -293,7 +293,13 @@ Add your project instructions here. This text will be injected into the agent's 
 		const contextFiles = this.resolveLinks(cache?.links, file.path);
 		const embedFiles = this.resolveLinks(cache?.embeds, file.path);
 
-		const rootPath = file.parent?.path ?? '';
+		// Normalize the project root so downstream path-prefix checks
+		// (e.g. `file.path.startsWith(rootPath + '/')`) behave consistently.
+		// Vault-root projects are represented as '' so the `projectRoot && ...`
+		// truthy guard in the scoping tools disables scoping rather than
+		// erroneously filtering every file against a bare '/'.
+		const rawParent = file.parent?.path ?? '';
+		const rootPath = rawParent === '' || rawParent === '/' ? '' : normalizePath(rawParent);
 
 		return { file, config, rootPath, instructions, contextFiles, embedFiles };
 	}

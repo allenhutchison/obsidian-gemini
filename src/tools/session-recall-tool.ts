@@ -86,7 +86,9 @@ class RecallSessionsTool implements Tool {
 			// Filter by project
 			if (params.project) {
 				const searchProject = params.project.toLowerCase();
-				const projectMatches = await Promise.all(
+				// Use allSettled so that a single malformed/unreadable project file
+				// doesn't nuke the entire recall result set.
+				const projectMatches = await Promise.allSettled(
 					filtered.map(async (s) => {
 						if (!s.projectPath) return false;
 						// Match against project path or project name
@@ -97,7 +99,14 @@ class RecallSessionsTool implements Tool {
 						return false;
 					})
 				);
-				filtered = filtered.filter((_, i) => projectMatches[i]);
+				filtered = filtered.filter((_, i) => {
+					const outcome = projectMatches[i];
+					if (outcome.status === 'rejected') {
+						plugin.logger.warn('recall_sessions: project lookup failed, treating as no match:', outcome.reason);
+						return false;
+					}
+					return outcome.value;
+				});
 			}
 
 			// Filter by title query
@@ -105,6 +114,11 @@ class RecallSessionsTool implements Tool {
 				const searchQuery = params.query.toLowerCase();
 				filtered = filtered.filter((s) => s.title.toLowerCase().includes(searchQuery));
 			}
+
+			// Explicitly sort by lastActive descending so the agent always sees the
+			// most recent matches first, regardless of how getRecentAgentSessions
+			// happened to order things.
+			filtered.sort((a, b) => b.lastActive.getTime() - a.lastActive.getTime());
 
 			// Apply limit
 			const results = filtered.slice(0, limit);

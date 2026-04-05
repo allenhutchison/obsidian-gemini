@@ -133,14 +133,17 @@ export class LifecycleService {
 
 	/**
 	 * Final cleanup when the plugin is unloaded.
+	 * Obsidian awaits async `onunload` implementations, so we await async cleanup
+	 * here to ensure RAG / MCP shutdown completes before the plugin host tears down.
 	 */
-	onUnload(): void {
+	async onUnload(): Promise<void> {
 		const plugin = this.plugin;
 
 		plugin.logger.debug('Unloading Gemini Scribe');
 		plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
 		plugin.toolExecutionLogger?.destroy();
+		plugin.toolExecutionLogger = null;
 		this.contextTrackingSubscriber?.destroy();
 		this.accessedFilesSubscriber?.destroy();
 		this.projectActivationSubscriber?.destroy();
@@ -148,9 +151,11 @@ export class LifecycleService {
 
 		// Disconnect MCP servers
 		if (plugin.mcpManager) {
-			plugin.mcpManager.disconnectAll().catch((error) => {
+			try {
+				await plugin.mcpManager.disconnectAll();
+			} catch (error) {
 				plugin.logger.error('Error disconnecting MCP servers:', error);
-			});
+			}
 			plugin.mcpManager = null;
 		}
 
@@ -159,22 +164,20 @@ export class LifecycleService {
 			const rag = plugin.ragIndexing;
 			plugin.ragIndexing = null;
 
-			(async () => {
-				try {
-					const { getRagTools } = await import('../tools/rag-search-tool');
-					const ragTools = getRagTools();
-					for (const tool of ragTools) {
-						plugin.toolRegistry?.unregisterTool(tool.name);
-					}
-				} catch (error) {
-					plugin.logger.error('Error unregistering RAG tools:', error);
+			try {
+				const { getRagTools } = await import('../tools/rag-search-tool');
+				const ragTools = getRagTools();
+				for (const tool of ragTools) {
+					plugin.toolRegistry?.unregisterTool(tool.name);
 				}
-				try {
-					await rag.destroy();
-				} catch (error) {
-					plugin.logger.error('Error destroying RAG indexing service:', error);
-				}
-			})();
+			} catch (error) {
+				plugin.logger.error('Error unregistering RAG tools:', error);
+			}
+			try {
+				await rag.destroy();
+			} catch (error) {
+				plugin.logger.error('Error destroying RAG indexing service:', error);
+			}
 		}
 	}
 
@@ -208,8 +211,12 @@ export class LifecycleService {
 					plugin.toolRegistry?.registerTool(tool);
 				}
 
-				// Register file event listeners (only once per plugin lifetime)
+				// Register file event listeners (only once per plugin lifetime).
+				// Set the flag eagerly so that a throw mid-registration cannot cause
+				// a second attempt on the next init to double-register handlers.
+				// (Obsidian auto-unregisters on unload via plugin.registerEvent.)
 				if (!this.ragListenersRegistered) {
+					this.ragListenersRegistered = true;
 					plugin.registerEvent(
 						plugin.app.vault.on('create', (file) => {
 							if (file instanceof TFile && plugin.ragIndexing) {
@@ -238,7 +245,6 @@ export class LifecycleService {
 							}
 						})
 					);
-					this.ragListenersRegistered = true;
 				}
 			} catch (error) {
 				plugin.logger.error('Failed to initialize RAG indexing:', error);
@@ -412,6 +418,23 @@ export class LifecycleService {
 	async initializePluginFolders(): Promise<void> {
 		if (this.plugin.folderInitializer) {
 			await this.plugin.folderInitializer.initializeAll();
+		}
+	}
+
+	/**
+	 * Create or destroy the ToolExecutionLogger to match the current
+	 * `logToolExecution` setting. Called from saveSettings so the logger
+	 * starts/stops in real time when the user toggles the preference.
+	 */
+	syncToolExecutionLogger(): void {
+		const plugin = this.plugin;
+		const shouldRun = !!plugin.settings.logToolExecution && !!plugin.agentEventBus;
+
+		if (shouldRun && !plugin.toolExecutionLogger) {
+			plugin.toolExecutionLogger = new ToolExecutionLogger(plugin);
+		} else if (!shouldRun && plugin.toolExecutionLogger) {
+			plugin.toolExecutionLogger.destroy();
+			plugin.toolExecutionLogger = null;
 		}
 	}
 

@@ -125,11 +125,15 @@ export class AgentViewUI {
 
 		// Make title editable on double-click
 		title.addEventListener('dblclick', () => {
-			if (!currentSession) return;
+			// Snapshot the session at edit time. If the active session changes
+			// before blur/Enter fires (or the header is re-rendered out from
+			// under us), we must NOT write to the wrong session's file.
+			const editingSession = currentSession;
+			if (!editingSession) return;
 
 			const input = titleContainer.createEl('input', {
 				type: 'text',
-				value: currentSession.title,
+				value: editingSession.title,
 				cls: 'gemini-agent-title-input-compact',
 			});
 
@@ -137,28 +141,63 @@ export class AgentViewUI {
 			input.focus();
 			input.select();
 
+			let finished = false;
 			const saveTitle = async () => {
-				const newTitle = input.value.trim();
-				if (newTitle && newTitle !== currentSession!.title) {
-					// Update session title
-					const oldPath = currentSession!.historyPath;
-					const sanitizedTitle = (this.plugin.sessionManager as any).sanitizeFileName(newTitle);
-					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + sanitizedTitle + '.md';
+				if (finished) return;
+				finished = true;
+
+				// Helper: is the session we started editing still the view's active
+				// session AND is our input still in the DOM? We re-check this both
+				// before starting async work and after every await, because
+				// `callbacks.updateSessionMetadata` is a zero-arg callback bound to
+				// the view's live currentSession — calling it after the session has
+				// switched would corrupt the wrong session's metadata.
+				const stillEditing = (): boolean => input.isConnected && callbacks.isCurrentSession(editingSession);
+
+				try {
+					if (!stillEditing()) return;
+
+					const newTitle = input.value.trim();
+					if (!newTitle || newTitle === editingSession.title) return;
 
 					// Rename file if it exists
+					const oldPath = editingSession.historyPath;
+					const sanitizedTitle = (this.plugin.sessionManager as any).sanitizeFileName(newTitle);
+					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + sanitizedTitle + '.md';
 					const oldFile = this.plugin.app.vault.getAbstractFileByPath(oldPath);
 					if (oldFile) {
 						await this.plugin.app.fileManager.renameFile(oldFile, newPath);
-						currentSession!.historyPath = newPath;
+						// The rename itself acts on `oldFile` by reference so it always
+						// targets the correct file even if the session switched during
+						// the await — but we must re-validate before continuing to
+						// mutate session state and call the zero-arg metadata callback.
+						editingSession.historyPath = newPath;
 					}
 
-					currentSession!.title = newTitle;
-					await callbacks.updateSessionMetadata();
-				}
+					editingSession.title = newTitle;
 
-				title.textContent = currentSession!.title;
-				title.style.display = '';
-				input.remove();
+					// Re-check after the rename await: if the active session switched,
+					// the metadata callback would write to the wrong session. Skip it;
+					// the rename is still valid for editingSession.
+					if (!stillEditing()) {
+						this.plugin.logger.warn(
+							'Session switched during title edit; skipping metadata update for the renamed session.'
+						);
+						return;
+					}
+
+					await callbacks.updateSessionMetadata();
+				} catch (err) {
+					this.plugin.logger.error('Failed to save session title:', err);
+				} finally {
+					// Always restore the UI regardless of success/failure so the user
+					// is never left with an orphaned input element.
+					if (input.isConnected) {
+						title.textContent = editingSession.title;
+						title.style.display = '';
+						input.remove();
+					}
+				}
 			};
 
 			input.addEventListener('blur', saveTitle);
@@ -167,6 +206,7 @@ export class AgentViewUI {
 					e.preventDefault();
 					saveTitle();
 				} else if (e.key === 'Escape') {
+					finished = true; // prevent the upcoming blur from saving
 					title.style.display = '';
 					input.remove();
 				}
@@ -822,7 +862,11 @@ export class AgentViewUI {
 			nameSpan.textContent = ` ${projectName}`;
 			setTooltip(badge, `Project: ${projectName}\n${projectPath}`);
 		} catch (error) {
-			this.plugin.logger.error('Failed to load project for badge:', error);
+			// Never leave the badge stuck on "Loading..." if resolution fails.
+			this.plugin.logger.warn('Failed to load project for badge:', error);
+			if (!badge.isConnected) return;
+			nameSpan.textContent = ' No Project';
+			setTooltip(badge, 'Click to link a project');
 		}
 	}
 

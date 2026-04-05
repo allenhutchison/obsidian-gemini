@@ -744,6 +744,10 @@ export default class ObsidianGemini extends Plugin {
 		if (this.settings.modelDiscovery.enabled && this.modelManager) {
 			this.lifecycle.updateModelsIfNeeded();
 		}
+
+		// Reconcile ToolExecutionLogger with the current logToolExecution setting.
+		// The logger is a persistent service, but this flag can be toggled at runtime.
+		this.lifecycle.syncToolExecutionLogger();
 	}
 
 	/**
@@ -753,9 +757,20 @@ export default class ObsidianGemini extends Plugin {
 		return this.modelManager;
 	}
 
-	// Clean up resources on unload
+	// Clean up resources on unload.
+	//
+	// NOTE: Obsidian's Plugin.onunload is typed as `() => void` and is NOT
+	// awaited by the host — returning a Promise here would not delay teardown.
+	// lifecycle.onUnload() is still async internally so tests and internal
+	// callers can await it, but from the plugin entry point we invoke it as
+	// fire-and-forget with an error handler. Disposables that truly need
+	// deterministic cleanup should be registered via plugin.register*
+	// helpers (registerEvent, registerDomEvent, addCommand, etc.) so that
+	// Obsidian cleans them up automatically.
 	onunload() {
 		this.ribbonIcon?.remove();
-		this.lifecycle.onUnload();
+		this.lifecycle?.onUnload().catch((err) => {
+			this.logger.error('Error during plugin unload cleanup:', err);
+		});
 	}
 }

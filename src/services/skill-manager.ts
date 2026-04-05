@@ -35,6 +35,45 @@ const SKILL_NAME_MAX_LENGTH = 64;
 const SKILL_MD_FILENAME = 'SKILL.md';
 
 /**
+ * Find the character offset of the closing YAML frontmatter delimiter in a file's content.
+ * Returns the offset immediately AFTER the closing delimiter token (`---` or `...`)
+ * and BEFORE any trailing line break characters, or undefined if the content does not
+ * begin with a valid frontmatter block.
+ *
+ * Unlike a naive `---[\s\S]*?---` regex, this walks the content line-by-line so that
+ * `---` sequences appearing inside multi-line YAML string values (or body content) do
+ * not prematurely terminate the frontmatter match.
+ */
+export function findFrontmatterEndOffset(content: string): number | undefined {
+	// Frontmatter must begin on line 1 with a `---` marker.
+	if (!/^---(\r?\n|$)/.test(content)) return undefined;
+
+	// Walk character by character tracking line starts. We look for a line that
+	// is exactly `---` (or `...`) as a closing marker per the YAML spec.
+	let i = 0;
+	const len = content.length;
+	// Skip the opening `---` and its line terminator.
+	i = content.indexOf('\n', 0);
+	if (i === -1) return undefined;
+	i += 1;
+
+	while (i < len) {
+		// Find end of current line.
+		let lineEnd = content.indexOf('\n', i);
+		if (lineEnd === -1) lineEnd = len;
+		let line = content.slice(i, lineEnd);
+		// Strip trailing CR for CRLF files.
+		if (line.endsWith('\r')) line = line.slice(0, -1);
+		if (line === '---' || line === '...') {
+			// Closing marker — return offset just after it (before the newline).
+			return i + line.length;
+		}
+		i = lineEnd + 1;
+	}
+	return undefined;
+}
+
+/**
  * Manages agent skills following the agentskills.io specification.
  *
  * Skills are stored in [state-folder]/skills/ and follow the directory structure:
@@ -309,11 +348,14 @@ export class SkillManager {
 			const fullContent = await this.plugin.app.vault.read(file);
 			const cache = this.plugin.app.metadataCache.getFileCache(file);
 
-			// Use metadata cache position when available, fall back to regex parsing
-			// to handle stale cache scenarios (e.g., after recent file creation)
+			// Prefer the metadata cache position — it's authoritative. Fall back to
+			// a line-based scan only when the cache is unavailable (e.g. file was
+			// just written). A naive non-greedy regex like /---[\s\S]*?---/ can
+			// incorrectly match `---` delimiters that appear inside multi-line YAML
+			// string values, so we do a proper line walk: line 1 must be `---` and
+			// the next `---` on its own line closes the frontmatter block.
 			const cachedFrontmatterEnd = cache?.frontmatterPosition?.end.offset;
-			const parsedFrontmatter = fullContent.match(/^---\r?\n[\s\S]*?\r?\n---/);
-			const frontmatterEnd = cachedFrontmatterEnd ?? (parsedFrontmatter ? parsedFrontmatter[0].length : undefined);
+			const frontmatterEnd = cachedFrontmatterEnd ?? findFrontmatterEndOffset(fullContent);
 
 			const trimmedContent = content.trim();
 			const newFullContent =
