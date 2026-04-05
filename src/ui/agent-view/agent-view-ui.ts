@@ -125,11 +125,15 @@ export class AgentViewUI {
 
 		// Make title editable on double-click
 		title.addEventListener('dblclick', () => {
-			if (!currentSession) return;
+			// Snapshot the session at edit time. If the active session changes
+			// before blur/Enter fires (or the header is re-rendered out from
+			// under us), we must NOT write to the wrong session's file.
+			const editingSession = currentSession;
+			if (!editingSession) return;
 
 			const input = titleContainer.createEl('input', {
 				type: 'text',
-				value: currentSession.title,
+				value: editingSession.title,
 				cls: 'gemini-agent-title-input-compact',
 			});
 
@@ -137,11 +141,25 @@ export class AgentViewUI {
 			input.focus();
 			input.select();
 
+			let finished = false;
 			const saveTitle = async () => {
+				if (finished) return;
+				finished = true;
+
+				// Bail if the active session has been switched out from under us,
+				// or the header has been re-rendered (input detached from DOM).
+				if (!input.isConnected || !callbacks.isCurrentSession(editingSession)) {
+					if (input.isConnected) {
+						title.style.display = '';
+						input.remove();
+					}
+					return;
+				}
+
 				const newTitle = input.value.trim();
-				if (newTitle && newTitle !== currentSession!.title) {
+				if (newTitle && newTitle !== editingSession.title) {
 					// Update session title
-					const oldPath = currentSession!.historyPath;
+					const oldPath = editingSession.historyPath;
 					const sanitizedTitle = (this.plugin.sessionManager as any).sanitizeFileName(newTitle);
 					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + sanitizedTitle + '.md';
 
@@ -149,14 +167,14 @@ export class AgentViewUI {
 					const oldFile = this.plugin.app.vault.getAbstractFileByPath(oldPath);
 					if (oldFile) {
 						await this.plugin.app.fileManager.renameFile(oldFile, newPath);
-						currentSession!.historyPath = newPath;
+						editingSession.historyPath = newPath;
 					}
 
-					currentSession!.title = newTitle;
+					editingSession.title = newTitle;
 					await callbacks.updateSessionMetadata();
 				}
 
-				title.textContent = currentSession!.title;
+				title.textContent = editingSession.title;
 				title.style.display = '';
 				input.remove();
 			};
@@ -167,6 +185,7 @@ export class AgentViewUI {
 					e.preventDefault();
 					saveTitle();
 				} else if (e.key === 'Escape') {
+					finished = true; // prevent the upcoming blur from saving
 					title.style.display = '';
 					input.remove();
 				}
@@ -822,7 +841,11 @@ export class AgentViewUI {
 			nameSpan.textContent = ` ${projectName}`;
 			setTooltip(badge, `Project: ${projectName}\n${projectPath}`);
 		} catch (error) {
-			this.plugin.logger.error('Failed to load project for badge:', error);
+			// Never leave the badge stuck on "Loading..." if resolution fails.
+			this.plugin.logger.warn('Failed to load project for badge:', error);
+			if (!badge.isConnected) return;
+			nameSpan.textContent = ' No Project';
+			setTooltip(badge, 'Click to link a project');
 		}
 	}
 

@@ -49,6 +49,10 @@ export class ToolExecutionLogger {
 			plugin.agentEventBus.on(
 				'toolExecutionComplete',
 				async (payload) => {
+					// Only track logs when the setting is currently enabled — this lets
+					// us cheaply no-op if the user toggles logging off mid-session without
+					// needing to tear down the subscriber.
+					if (!this.plugin.settings.logToolExecution) return;
 					this.pendingLogs.push({
 						toolName: payload.toolName,
 						args: payload.args as Record<string, unknown>,
@@ -65,10 +69,18 @@ export class ToolExecutionLogger {
 				'toolChainComplete',
 				async (payload) => {
 					if (this.pendingLogs.length === 0) return;
-					const lines = this.pendingLogs.map((entry) => formatToolLine(entry));
-					this.pendingLogs = [];
+					// Snapshot and clear only after the append succeeds, so that a
+					// transient failure (missing history file, locked vault) does not
+					// silently drop tool execution entries.
+					const snapshot = this.pendingLogs.slice();
+					const lines = snapshot.map((entry) => formatToolLine(entry));
 					const block = formatToolBlock(lines);
-					await this.appendToHistory(payload.session, block);
+					const appended = await this.appendToHistory(payload.session, block);
+					if (appended) {
+						// Remove only the entries we just wrote (more entries may have
+						// been pushed concurrently by other handlers, though that's rare).
+						this.pendingLogs.splice(0, snapshot.length);
+					}
 				},
 				HandlerPriority.INTERNAL
 			)
@@ -86,18 +98,29 @@ export class ToolExecutionLogger {
 		this.pendingLogs = [];
 	}
 
-	private async appendToHistory(session: ChatSession, block: string): Promise<void> {
-		if (!this.plugin.settings.chatHistory) return;
+	private async appendToHistory(session: ChatSession, block: string): Promise<boolean> {
+		// If chat history is disabled there's nothing to write to — treat as "success"
+		// so the pending queue is drained (otherwise it would grow unbounded).
+		if (!this.plugin.settings.chatHistory) return true;
 
 		const file = this.plugin.app.vault.getAbstractFileByPath(session.historyPath);
-		if (!(file instanceof TFile)) return;
+		if (!(file instanceof TFile)) {
+			// History file doesn't exist yet; drop these entries to avoid unbounded
+			// growth. This matches the prior behavior but is now explicit.
+			this.plugin.logger.warn(
+				`ToolExecutionLogger: history file not found at ${session.historyPath}; dropping ${this.pendingLogs.length} tool log entries.`
+			);
+			return true;
+		}
 
 		try {
 			await this.plugin.app.vault.process(file, (content) => {
 				return mergeToolBlock(content, block);
 			});
+			return true;
 		} catch (error) {
 			this.plugin.logger.error('ToolExecutionLogger: Failed to append to history:', error);
+			return false;
 		}
 	}
 }

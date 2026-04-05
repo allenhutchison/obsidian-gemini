@@ -199,7 +199,9 @@ export class CreateSkillTool implements Tool {
 				};
 			}
 
-			const normalizedName = params.name.trim();
+			// Auto-lowercase the name so the validator's lowercase-only rule doesn't
+			// reject casings the model is otherwise likely to emit.
+			const normalizedName = params.name.trim().toLowerCase();
 			const normalizedDescription = params.description.trim();
 			const normalizedContent = params.content.trim();
 
@@ -294,7 +296,9 @@ export class EditSkillTool implements Tool {
 				};
 			}
 
-			const normalizedName = params.name.trim();
+			// Auto-lowercase the name so the validator's lowercase-only rule doesn't
+			// reject casings the model is otherwise likely to emit.
+			const normalizedName = params.name.trim().toLowerCase();
 			const normalizedDescription = params.description?.trim() || undefined;
 			const normalizedContent = params.content?.trim() || undefined;
 

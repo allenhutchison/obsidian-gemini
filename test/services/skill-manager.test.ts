@@ -1,4 +1,4 @@
-import { SkillManager } from '../../src/services/skill-manager';
+import { SkillManager, findFrontmatterEndOffset } from '../../src/services/skill-manager';
 
 // Mock BundledSkillRegistry
 jest.mock('../../src/services/bundled-skills', () => ({
@@ -487,5 +487,48 @@ describe('SkillManager', () => {
 				expect(resources).toContain('references/settings.md');
 			});
 		});
+	});
+});
+
+describe('findFrontmatterEndOffset', () => {
+	it('returns the closing --- offset for a standard LF frontmatter block', () => {
+		const content = '---\nname: foo\ndescription: bar\n---\nBody text\n';
+		const end = findFrontmatterEndOffset(content);
+		expect(end).toBeDefined();
+		// Slicing up to `end` should give the full frontmatter including the closing ---
+		expect(content.slice(0, end!)).toBe('---\nname: foo\ndescription: bar\n---');
+	});
+
+	it('handles CRLF line endings', () => {
+		const content = '---\r\nname: foo\r\ndescription: bar\r\n---\r\nBody\r\n';
+		const end = findFrontmatterEndOffset(content);
+		expect(end).toBeDefined();
+		expect(content.slice(0, end!)).toBe('---\r\nname: foo\r\ndescription: bar\r\n---');
+	});
+
+	it('does not terminate on --- that appears inside a multi-line YAML string value', () => {
+		// The non-greedy regex `---[\s\S]*?---` would erroneously terminate at the
+		// `---` embedded in the description block, truncating real frontmatter.
+		const content = '---\nname: foo\ndescription: |\n  line one\n  ---\n  still in description\n---\nActual body\n';
+		const end = findFrontmatterEndOffset(content);
+		expect(end).toBeDefined();
+		// The only valid closing marker is the `---` at column 0 on its own line before "Actual body".
+		expect(content.slice(end!).replace(/^\n/, '')).toBe('Actual body\n');
+	});
+
+	it('returns undefined when the content does not start with ---', () => {
+		expect(findFrontmatterEndOffset('no frontmatter here\n')).toBeUndefined();
+		expect(findFrontmatterEndOffset('# Just a heading\n---\nbody\n')).toBeUndefined();
+	});
+
+	it('returns undefined when the frontmatter is never closed', () => {
+		expect(findFrontmatterEndOffset('---\nname: foo\ndescription: bar\nbody without close\n')).toBeUndefined();
+	});
+
+	it('accepts the alternative `...` YAML closing marker', () => {
+		const content = '---\nname: foo\n...\nBody\n';
+		const end = findFrontmatterEndOffset(content);
+		expect(end).toBeDefined();
+		expect(content.slice(0, end!)).toBe('---\nname: foo\n...');
 	});
 });

@@ -744,6 +744,10 @@ export default class ObsidianGemini extends Plugin {
 		if (this.settings.modelDiscovery.enabled && this.modelManager) {
 			this.lifecycle.updateModelsIfNeeded();
 		}
+
+		// Reconcile ToolExecutionLogger with the current logToolExecution setting.
+		// The logger is a persistent service, but this flag can be toggled at runtime.
+		this.lifecycle.syncToolExecutionLogger();
 	}
 
 	/**
@@ -753,9 +757,10 @@ export default class ObsidianGemini extends Plugin {
 		return this.modelManager;
 	}
 
-	// Clean up resources on unload
-	onunload() {
+	// Clean up resources on unload. Obsidian awaits async onunload,
+	// so returning the promise ensures RAG/MCP shutdown completes cleanly.
+	async onunload() {
 		this.ribbonIcon?.remove();
-		this.lifecycle.onUnload();
+		await this.lifecycle.onUnload();
 	}
 }

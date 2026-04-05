@@ -277,19 +277,20 @@ describe('LifecycleService', () => {
 			const mockDisconnectAll = jest.fn().mockResolvedValue(undefined);
 			mockPlugin.mcpManager = { disconnectAll: mockDisconnectAll };
 
-			lifecycle.onUnload();
+			await lifecycle.onUnload();
 
 			expect(mockDisconnectAll).toHaveBeenCalled();
 			expect(mockPlugin.mcpManager).toBeNull();
 		});
 
-		it('should call destroy on ToolExecutionLogger', () => {
+		it('should call destroy on ToolExecutionLogger', async () => {
 			const mockDestroy = jest.fn();
 			mockPlugin.toolExecutionLogger = { destroy: mockDestroy };
 
-			lifecycle.onUnload();
+			await lifecycle.onUnload();
 
 			expect(mockDestroy).toHaveBeenCalled();
+			expect(mockPlugin.toolExecutionLogger).toBeNull();
 		});
 
 		it('should call destroy on ProjectActivationSubscriber', async () => {
@@ -300,17 +301,17 @@ describe('LifecycleService', () => {
 			mockPlugin.mcpManager = null;
 			mockPlugin.ragIndexing = null;
 
-			lifecycle.onUnload();
+			await lifecycle.onUnload();
 
 			expect(instance.destroy).toHaveBeenCalled();
 		});
 
-		it('should handle missing services gracefully', () => {
+		it('should handle missing services gracefully', async () => {
 			mockPlugin.history = null;
 			mockPlugin.mcpManager = null;
 			mockPlugin.ragIndexing = null;
 
-			expect(() => lifecycle.onUnload()).not.toThrow();
+			await expect(lifecycle.onUnload()).resolves.not.toThrow();
 		});
 	});
 });
