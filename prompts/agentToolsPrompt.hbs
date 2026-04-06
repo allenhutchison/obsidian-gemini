@@ -2,8 +2,17 @@
 
 You have access to the following tools that you can use to help answer questions:
 
-{{{toolsList}}}
+{{#each availableTools}}
+### {{name}}
+{{description}}
+{{#if parameters.length}}
+Parameters:
+{{#each parameters}}
+- {{name}}: {{type}}{{#if required}} (required){{/if}} - {{description}}
+{{/each}}
+{{/if}}
 
+{{/each}}
 To use a tool, you MUST make a function call. The system will execute the tool and provide the results.
 
 **IMPORTANT**: When the user asks you to:

@@ -1,5 +1,6 @@
 import * as Handlebars from 'handlebars';
 import { CustomPrompt } from './types';
+import { ToolDefinition } from '../api/interfaces/model-api';
 import ObsidianGemini from '../main';
 
 import systemPromptContent from '../../prompts/systemPrompt.hbs';
@@ -89,30 +90,37 @@ export class GeminiPrompts {
 	}
 
 	/**
-	 * Format tools list for template
+	 * Shape raw tool definitions into the structure the agentToolsPrompt template
+	 * expects. This is data pre-processing only — all string formatting happens
+	 * inside the Handlebars template via {{#each}} loops.
 	 */
-	private formatToolsList(tools: any[]): string {
-		let toolsList = '';
-
-		for (const tool of tools) {
-			toolsList += `### ${tool.name}\n`;
-			toolsList += `${tool.description}\n`;
-
-			if (tool.parameters && tool.parameters.properties) {
-				toolsList += 'Parameters:\n';
-				for (const [param, schema] of Object.entries(tool.parameters.properties as Record<string, any>)) {
-					const required = tool.parameters.required?.includes(param) ? ' (required)' : '';
-					toolsList += `- ${param}: ${schema.type}${required} - ${schema.description || ''}\n`;
-				}
-			}
-			toolsList += '\n';
-		}
-
-		return toolsList;
+	private shapeToolsForTemplate(tools: ToolDefinition[]): Array<{
+		name: string;
+		description: string;
+		parameters: Array<{ name: string; type: string; description: string; required: boolean }>;
+	}> {
+		return tools.map((tool) => {
+			const properties = (tool.parameters?.properties ?? {}) as Record<string, { type: string; description?: string }>;
+			const requiredParams = tool.parameters?.required ?? [];
+			return {
+				name: tool.name,
+				description: tool.description,
+				parameters: Object.entries(properties).map(([name, schema]) => ({
+					name,
+					type: schema.type,
+					description: schema.description || '',
+					required: requiredParams.includes(name),
+				})),
+			};
+		});
 	}
 
 	/**
-	 * Unified method to build complete system prompt with tools and optional custom prompt
+	 * Unified method to build complete system prompt with tools and optional custom prompt.
+	 *
+	 * All sections (base prompt, vault context, project instructions, tools, custom
+	 * instructions) are composed via Handlebars template variables rather than TS
+	 * string concatenation.
 	 *
 	 * @param availableTools - Optional array of tool definitions
 	 * @param customPrompt - Optional custom prompt to append or override
@@ -120,7 +128,7 @@ export class GeminiPrompts {
 	 * @returns Complete system prompt
 	 */
 	getSystemPromptWithCustom(
-		availableTools?: any[],
+		availableTools?: ToolDefinition[],
 		customPrompt?: CustomPrompt,
 		agentsMemory?: string | null,
 		availableSkills?: { name: string; description: string }[],
@@ -132,36 +140,34 @@ export class GeminiPrompts {
 			return customPrompt.content;
 		}
 
-		// Build base system prompt with agentsMemory as a template variable
-		const baseSystemPrompt = this.systemPrompt({
-			userName: this.plugin?.settings.userName || 'User',
-			language: this.getLanguageCode(),
-			date: new Date().toLocaleDateString(),
-			time: new Date().toLocaleTimeString(),
-			agentsMemory: agentsMemory || '',
-			projectInstructions: projectInstructions || '',
-		});
-
-		let fullPrompt = baseSystemPrompt;
-
-		// Add tool instructions if tools are provided
+		// Render the agent tools section (if tools are provided) via its template
+		let agentToolsSection = '';
 		if (availableTools && availableTools.length > 0) {
-			const toolsList = this.formatToolsList(availableTools);
-			// Check if RAG indexing is enabled and ready
 			const ragEnabled = !!(this.plugin?.settings.ragIndexing.enabled && this.plugin?.ragIndexing?.isReady());
-			const toolsPrompt = this.agentToolsPromptTemplate({
-				toolsList,
+			agentToolsSection = this.agentToolsPromptTemplate({
+				availableTools: this.shapeToolsForTemplate(availableTools),
 				ragEnabled,
 				availableSkills: availableSkills || [],
 			});
-			fullPrompt += '\n\n' + toolsPrompt;
 		}
 
-		// Add custom prompt if provided (and not overriding)
-		if (customPrompt && !customPrompt.overrideSystemPrompt) {
-			fullPrompt += '\n\n## Additional Instructions\n\n' + customPrompt.content;
-		}
+		// Custom prompt content (if provided and not overriding) is passed as a
+		// template variable — the systemPrompt.hbs template handles the heading.
+		const additionalInstructions = customPrompt && !customPrompt.overrideSystemPrompt ? customPrompt.content : '';
 
-		return fullPrompt;
+		// Capture a single timestamp so the date and time fields in the system
+		// prompt are always derived from the same instant (avoids split around
+		// midnight boundaries).
+		const now = new Date();
+
+		return this.systemPrompt({
+			userName: this.plugin?.settings.userName || 'User',
+			date: now.toLocaleDateString(),
+			time: now.toLocaleTimeString(),
+			agentsMemory: agentsMemory || '',
+			projectInstructions: projectInstructions || '',
+			agentToolsSection,
+			additionalInstructions,
+		});
 	}
 }
