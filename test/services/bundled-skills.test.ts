@@ -47,6 +47,16 @@ describe('BundledSkillRegistry', () => {
 			expect(content).toContain('Gemini Scribe');
 		});
 
+		it('should inject auto-generated references table into help skill', () => {
+			const content = BundledSkillRegistry.loadSkill('gemini-scribe-help');
+			expect(content).not.toBeNull();
+			// Table should be injected (placeholder replaced)
+			expect(content).not.toContain('<!-- REFERENCES_TABLE -->');
+			// Should contain actual table rows
+			expect(content).toContain('references/agent-mode.md');
+			expect(content).toContain('references/settings.md');
+		});
+
 		it('should return body content for obsidian-bases', () => {
 			const content = BundledSkillRegistry.loadSkill('obsidian-bases');
 			expect(content).not.toBeNull();

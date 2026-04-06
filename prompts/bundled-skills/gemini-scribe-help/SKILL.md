@@ -16,24 +16,7 @@ You are the built-in help system for the Gemini Scribe Obsidian plugin. When use
 
 ## Available References
 
-| Reference                         | Topic                                         |
-| --------------------------------- | --------------------------------------------- |
-| `references/getting-started.md`   | Installation, API key setup, first steps      |
-| `references/agent-mode.md`        | Agent mode capabilities, tool usage, sessions |
-| `references/agent-skills.md`      | Creating and using agent skills               |
-| `references/projects.md`          | Project scoping, permissions, auto-detection  |
-| `references/context-system.md`    | File context, @-mentions, file shelf          |
-| `references/custom-prompts.md`    | Custom prompt templates                       |
-| `references/completions.md`       | Inline AI completions while typing            |
-| `references/summarization.md`     | Note summarization feature                    |
-| `references/ai-writing.md`        | Text rewriting and selection actions          |
-| `references/deep-research.md`     | Deep research mode                            |
-| `references/mcp-servers.md`       | MCP server integration                        |
-| `references/semantic-search.md`   | RAG and semantic search                       |
-| `references/settings.md`          | Settings reference                            |
-| `references/advanced-settings.md` | Advanced configuration options                |
-| `references/loop-detection.md`    | Tool loop detection settings                  |
-| `references/faq.md`               | Frequently asked questions                    |
+<!-- REFERENCES_TABLE -->
 
 ## Example
 
