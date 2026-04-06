@@ -125,9 +125,15 @@ export class ToolExecutionEngine {
 						toolCall.arguments.content = result.finalContent;
 						toolCall.arguments._userEdited = result.userEdited;
 					} else if (tool.name === 'append_content') {
-						toolCall.arguments.content = result.finalContent;
-						toolCall.arguments._userEdited = result.userEdited;
-						toolCall.arguments._replaceFullContent = true;
+						if (result.userEdited) {
+							// User edited the full-file diff, so we switch from append
+							// to full overwrite with the edited content.
+							toolCall.arguments.content = result.finalContent;
+							toolCall.arguments._userEdited = true;
+							toolCall.arguments._replaceFullContent = true;
+						}
+						// If user approved without editing, leave arguments unchanged
+						// so the tool appends the original suffix normally.
 					}
 				}
 
@@ -290,27 +296,37 @@ export class ToolExecutionEngine {
 		}
 
 		if (tool.name === 'create_skill' && parameters.name && parameters.content !== undefined) {
-			// Show the proposed skill body as-is. The diff uses an empty original so
-			// users see the full content they're about to create. The file path is
-			// built from the same SkillManager logic the tool uses at execution time
-			// so users see where the skill will actually be written.
+			// Normalize name the same way CreateSkillTool.execute() does
+			const normalizedName = parameters.name.trim().toLowerCase();
+			const proposedBody = parameters.content.trim();
 			return {
-				filePath: this.getSkillFilePath(parameters.name),
+				filePath: this.getSkillFilePath(normalizedName),
 				originalContent: '',
-				proposedContent: parameters.content,
+				proposedContent: proposedBody,
 				isNewFile: true,
 			};
 		}
 
-		if (tool.name === 'edit_skill' && parameters.name && parameters.content !== undefined) {
+		if (tool.name === 'edit_skill' && parameters.name) {
+			// Normalize name the same way EditSkillTool.execute() does
+			const normalizedName = parameters.name.trim().toLowerCase();
+			const proposedContent = parameters.content?.trim();
+			const proposedDescription = parameters.description?.trim();
+
+			// Skip diff if neither content nor description is provided
+			if (!proposedContent && !proposedDescription) return undefined;
+
 			// Read the current skill body (excluding frontmatter) for the original side
 			// of the diff. If the file can't be found, skip diff context — the tool will
 			// surface its own not-found error at execution time.
-			const originalBody = plugin.skillManager ? ((await plugin.skillManager.loadSkill(parameters.name)) ?? '') : '';
+			const originalBody = plugin.skillManager ? ((await plugin.skillManager.loadSkill(normalizedName)) ?? '') : '';
+
+			// For content edits, show the body diff. For description-only edits,
+			// show the body unchanged (diff will be empty, but confirmation still triggers).
 			return {
-				filePath: this.getSkillFilePath(parameters.name),
+				filePath: this.getSkillFilePath(normalizedName),
 				originalContent: originalBody,
-				proposedContent: parameters.content,
+				proposedContent: proposedContent ?? originalBody,
 				isNewFile: false,
 			};
 		}
