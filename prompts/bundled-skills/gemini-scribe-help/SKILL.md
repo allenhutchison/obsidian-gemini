@@ -21,7 +21,8 @@ You are the built-in help system for the Gemini Scribe Obsidian plugin. When use
 | `references/getting-started.md`   | Installation, API key setup, first steps      |
 | `references/agent-mode.md`        | Agent mode capabilities, tool usage, sessions |
 | `references/agent-skills.md`      | Creating and using agent skills               |
-| `references/context-system.md`    | File context, @-mentions, linked notes        |
+| `references/projects.md`          | Project scoping, permissions, auto-detection  |
+| `references/context-system.md`    | File context, @-mentions, file shelf          |
 | `references/custom-prompts.md`    | Custom prompt templates                       |
 | `references/completions.md`       | Inline AI completions while typing            |
 | `references/summarization.md`     | Note summarization feature                    |

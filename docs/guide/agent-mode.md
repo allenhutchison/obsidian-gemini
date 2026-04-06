@@ -4,7 +4,7 @@ Gemini Scribe v4.0 is **agent-first** - every conversation is powered by an AI a
 
 ## What is the Agent?
 
-In v4.0, the agent is always available and can:
+In v4.0+, the agent is always available and can:
 
 - Read and search files in your vault
 - Create, modify, and organize notes
@@ -139,17 +139,28 @@ Attachments work alongside @ mentions and context files. You can:
 - If file processing fails, you'll see a notification
 - Dropping a folder recursively includes all child files
 
-### Context Files
+### Context Files & the File Shelf
 
-Add persistent context files to your session:
+Context files are displayed in a **unified file shelf** — a horizontal strip above the input area that shows all attached files (text files, folders, and binary attachments) in one place.
 
-1. Type `@` in the chat input for quick single-file selection
-2. Click the file icon in the session header to open the file selection modal:
+**Adding files:**
+
+1. Type `@` in the chat input to open the file picker (supports text files **and** Gemini-compatible binary files like images, PDFs, audio, and video)
+2. Click the file icon in the session header to open the multi-select modal:
    - Already-added files appear pre-checked
    - Type to fuzzy-search; **Enter** toggles a file or folder; **Esc** confirms and closes
-   - Selecting a folder adds all markdown files inside it
+   - Selecting a folder adds all markdown files inside it (folders are re-expanded each turn, so newly added files are automatically included)
    - Unchecking a file or folder removes it from context
-3. Files remain available throughout the session
+3. Drag and drop files or folders from the file explorer or your OS
+4. Paste images from your clipboard
+
+**Interacting with the shelf:**
+
+- Click a shelf item to open the file in Obsidian
+- Click the **×** button to remove an item
+- **Keyboard navigation**: Arrow Left/Right to move between items, Enter/Space to open, Delete/Backspace to remove
+- Text files and folders show a pin badge indicating they're sent with every message
+- Binary attachments are marked as "sent" after a message and cleaned up automatically
 
 For detailed information about context files and advanced usage, see the [Context System Guide](/guide/context-system).
 
@@ -253,6 +264,24 @@ Delete the old draft file
 Remove temporary notes from yesterday
 ```
 
+#### append_content
+
+Add text to the end of a file without rewriting the entire content. Ideal for logs, journals, and incremental updates:
+
+```
+Add today's entry to my daily log
+Append the meeting action items to the project tracker
+```
+
+#### update_frontmatter
+
+Safely modify note properties (frontmatter) without touching the body content:
+
+```
+Set the status property to "complete" on my project note
+Add the "reviewed" tag to all meeting notes
+```
+
 #### move_file
 
 Move or rename files:
@@ -330,6 +359,17 @@ Create a skill called "daily-review" that helps me review and organize my daily 
 ```
 
 The agent will create a properly formatted `SKILL.md` file with the name, description, and instructions you provide. Skills you create will be available in all future sessions.
+
+#### edit_skill
+
+Update an existing skill's description, instructions, or both:
+
+```
+Update the meeting-notes skill to also extract key decisions
+Change the description of my code-review skill
+```
+
+The agent reads the current skill content (via `activate_skill`), then uses `edit_skill` to write the updated description or body. You can update either field independently — omitting one preserves the existing value. Requires user confirmation before writing.
 
 #### SKILL.md Format
 
@@ -439,6 +479,16 @@ or
 ✗ Permission denied: Write File was cancelled
 ```
 
+### Diff View for File Changes
+
+When the agent proposes file changes (via `write_file`, `append_content`, `create_skill`, or `edit_skill`), the confirmation card includes a **View Changes** button that opens a side-by-side diff view. This lets you:
+
+- See exactly what will change before approving
+- **Edit the proposed content** directly in the diff view before clicking Allow
+- If you modify the content, the tool result reports `userEdited: true` so the agent knows
+
+Enable **"Always Show Diff View for File Writes"** in settings to automatically open the diff view with every confirmation instead of requiring a button click.
+
 ### What Operations Require Confirmation
 
 By default, these operations require confirmation:
@@ -446,6 +496,9 @@ By default, these operations require confirmation:
 - **write_file**: Creating or modifying files
 - **delete_file**: Removing files
 - **move_file**: Moving or renaming files
+- **append_content**: Adding text to the end of files
+- **create_skill**: Creating new skill packages
+- **edit_skill**: Updating existing skill instructions
 
 You can configure which operations require confirmation in **Settings → Gemini Scribe → Agent Permissions**.
 

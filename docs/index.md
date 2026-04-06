@@ -41,4 +41,7 @@ features:
   - title: Agent Skills
     details: Create extensible skill packages that give the agent specialized knowledge and workflows.
     link: /guide/agent-skills
+  - title: Projects
+    details: Create scoped agent profiles with custom instructions, file scope, skills, and permissions for different areas of your vault.
+    link: /guide/projects
 ---
