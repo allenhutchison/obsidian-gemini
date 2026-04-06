@@ -30,8 +30,10 @@ You are the built-in help system for the Gemini Scribe Obsidian plugin. When use
 | `references/deep-research.md`     | Deep research mode                            |
 | `references/mcp-servers.md`       | MCP server integration                        |
 | `references/semantic-search.md`   | RAG and semantic search                       |
+| `references/projects.md`          | Projects — scoped agent profiles              |
 | `references/settings.md`          | Settings reference                            |
 | `references/advanced-settings.md` | Advanced configuration options                |
+| `references/loop-detection.md`    | Tool loop detection settings                  |
 | `references/faq.md`               | Frequently asked questions                    |
 
 ## Example
