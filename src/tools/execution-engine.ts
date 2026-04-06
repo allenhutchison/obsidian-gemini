@@ -114,10 +114,27 @@ export class ToolExecutionEngine {
 					};
 				}
 
-				// If user edited the content in the diff view, use the edited content
-				if (result.finalContent !== undefined && tool.name === 'write_file') {
-					toolCall.arguments.content = result.finalContent;
-					toolCall.arguments._userEdited = result.userEdited;
+				// If user edited the content in the diff view, use the edited content.
+				// write_file, create_skill, and edit_skill all use `arguments.content` as the
+				// full editable body, so a direct replacement works. append_content uses
+				// `arguments.content` for the suffix to append; when the user edits the
+				// diff we flip it into replace-mode so the tool overwrites the full file
+				// with the edited content instead of appending on top of it.
+				if (result.finalContent !== undefined) {
+					if (tool.name === 'write_file' || tool.name === 'create_skill' || tool.name === 'edit_skill') {
+						toolCall.arguments.content = result.finalContent;
+						toolCall.arguments._userEdited = result.userEdited;
+					} else if (tool.name === 'append_content') {
+						if (result.userEdited) {
+							// User edited the full-file diff, so we switch from append
+							// to full overwrite with the edited content.
+							toolCall.arguments.content = result.finalContent;
+							toolCall.arguments._userEdited = true;
+							toolCall.arguments._replaceFullContent = true;
+						}
+						// If user approved without editing, leave arguments unchanged
+						// so the tool appends the original suffix normally.
+					}
 				}
 
 				// If user allowed this action without future confirmation
@@ -213,38 +230,134 @@ export class ToolExecutionEngine {
 		// Generate unique execution ID for tracking
 		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-		// Build diff context for write_file
-		let diffContext: DiffContext | undefined;
-		if (tool.name === 'write_file' && parameters.path && parameters.content !== undefined) {
-			const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
-			const normalizedPath = normalizePath(parameters.path);
-
-			// Skip diff context for system folders (plugin state folder, .obsidian)
-			if (!shouldExcludePath(normalizedPath, plugin.settings.historyFolder)) {
-				const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-				const isNewFile = !file;
-				let originalContent = '';
-
-				if (file instanceof TFile) {
-					try {
-						originalContent = await plugin.app.vault.read(file);
-					} catch (error) {
-						plugin.logger?.warn(`Failed to read file for diff context: ${normalizedPath}`, error);
-						originalContent = '';
-					}
-				}
-
-				diffContext = {
-					filePath: parameters.path,
-					originalContent,
-					proposedContent: parameters.content,
-					isNewFile,
-				};
-			}
-		}
+		// Build diff context based on the tool's shape
+		const diffContext = await this.buildDiffContext(tool, parameters);
 
 		// Show confirmation in chat instead of modal
 		return view.showConfirmationInChat(tool, parameters, executionId, diffContext);
+	}
+
+	/**
+	 * Build a diff context for the confirmation UI when the tool modifies file content.
+	 *
+	 * Supported tools:
+	 * - write_file: originalContent = current file (or empty for new), proposedContent = parameters.content
+	 * - append_content: originalContent = current file, proposedContent = current + parameters.content
+	 * - create_skill: originalContent = empty (new SKILL.md body), proposedContent = parameters.content
+	 * - edit_skill: originalContent = current SKILL.md body, proposedContent = parameters.content
+	 */
+	private async buildDiffContext(tool: Tool, parameters: any): Promise<DiffContext | undefined> {
+		const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
+
+		if (tool.name === 'write_file' && parameters.path && parameters.content !== undefined) {
+			const normalizedPath = normalizePath(parameters.path);
+			if (shouldExcludePath(normalizedPath, plugin.settings.historyFolder)) return undefined;
+
+			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			const originalContent = file instanceof TFile ? await this.safeReadFile(file) : '';
+			return {
+				filePath: parameters.path,
+				originalContent,
+				proposedContent: parameters.content,
+				isNewFile: !file,
+			};
+		}
+
+		if (tool.name === 'append_content' && parameters.path && parameters.content !== undefined) {
+			const normalizedPath = normalizePath(parameters.path);
+			if (shouldExcludePath(normalizedPath, plugin.settings.historyFolder)) return undefined;
+
+			// Resolve the file the same way AppendContentTool does so the diff
+			// matches what will actually be written: direct path, then .md suffix,
+			// then wikilink resolution via the metadata cache.
+			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+			if (!file && !normalizedPath.endsWith('.md')) {
+				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+			}
+			if (!file) {
+				const linkPath = parameters.path.replace(/^\[\[/, '').replace(/\]\]$/, '').replace(/\.md$/, '');
+				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
+				if (resolved) file = resolved;
+			}
+			if (!(file instanceof TFile)) return undefined; // Tool will return its own error
+
+			const originalContent = await this.safeReadFile(file);
+			// Mirror the newline-insertion logic from AppendContentTool.execute()
+			let contentToAppend = parameters.content;
+			if (originalContent.length > 0 && !originalContent.endsWith('\n') && !contentToAppend.startsWith('\n')) {
+				contentToAppend = '\n' + contentToAppend;
+			}
+			return {
+				filePath: file.path,
+				originalContent,
+				proposedContent: originalContent + contentToAppend,
+				isNewFile: false,
+			};
+		}
+
+		if (tool.name === 'create_skill' && parameters.name && parameters.content !== undefined) {
+			// Normalize name the same way CreateSkillTool.execute() does
+			const normalizedName = parameters.name.trim().toLowerCase();
+			const proposedBody = parameters.content.trim();
+			return {
+				filePath: this.getSkillFilePath(normalizedName),
+				originalContent: '',
+				proposedContent: proposedBody,
+				isNewFile: true,
+			};
+		}
+
+		if (tool.name === 'edit_skill' && parameters.name) {
+			// Normalize name the same way EditSkillTool.execute() does
+			const normalizedName = parameters.name.trim().toLowerCase();
+			const proposedContent = parameters.content?.trim();
+			const proposedDescription = parameters.description?.trim();
+
+			// Skip diff if neither content nor description is provided
+			if (!proposedContent && !proposedDescription) return undefined;
+
+			// Read the current skill body (excluding frontmatter) for the original side
+			// of the diff. If the file can't be found, skip diff context — the tool will
+			// surface its own not-found error at execution time.
+			const originalBody = plugin.skillManager ? ((await plugin.skillManager.loadSkill(normalizedName)) ?? '') : '';
+
+			// For content edits, show the body diff. For description-only edits,
+			// show the body unchanged (diff will be empty, but confirmation still triggers).
+			return {
+				filePath: this.getSkillFilePath(normalizedName),
+				originalContent: originalBody,
+				proposedContent: proposedContent ?? originalBody,
+				isNewFile: false,
+			};
+		}
+
+		return undefined;
+	}
+
+	/**
+	 * Build the SKILL.md file path for a given skill name, matching the path
+	 * layout that SkillManager uses (`{historyFolder}/Skills/{name}/SKILL.md`).
+	 * Used for diff context display only.
+	 */
+	private getSkillFilePath(skillName: string): string {
+		const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
+		if (plugin.skillManager) {
+			return normalizePath(`${plugin.skillManager.getSkillsFolderPath()}/${skillName}/SKILL.md`);
+		}
+		return normalizePath(`${plugin.settings.historyFolder}/Skills/${skillName}/SKILL.md`);
+	}
+
+	/**
+	 * Read a file's content, swallowing errors and returning empty string.
+	 * Used when building diff context where a read failure shouldn't block execution.
+	 */
+	private async safeReadFile(file: TFile): Promise<string> {
+		try {
+			return await (this.plugin as InstanceType<typeof ObsidianGemini>).app.vault.read(file);
+		} catch (error) {
+			(this.plugin as any).logger?.warn(`Failed to read file for diff context: ${file.path}`, error);
+			return '';
+		}
 	}
 
 	/**

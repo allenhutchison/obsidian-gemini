@@ -180,7 +180,10 @@ export class AppendContentTool implements Tool {
 		return 'Appending content';
 	}
 
-	async execute(params: { path: string; content: string }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(
+		params: { path: string; content: string; _replaceFullContent?: boolean; _userEdited?: boolean },
+		context: ToolExecutionContext
+	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
 		const { path, content } = params;
 
@@ -214,6 +217,23 @@ export class AppendContentTool implements Tool {
 				return {
 					success: false,
 					error: `File not found: ${path}`,
+				};
+			}
+
+			// When the user edits the append in the diff view, `content` contains the
+			// full edited file rather than a suffix to append. The execution engine
+			// sets _replaceFullContent in that case so we overwrite instead of append.
+			if (params._replaceFullContent) {
+				await plugin.app.vault.modify(file, content);
+				plugin.logger.debug(`Replaced ${content.length} chars in ${file.path} (user-edited append)`);
+				return {
+					success: true,
+					data: {
+						path: file.path,
+						action: 'replaced',
+						size: content.length,
+						userEdited: params._userEdited ?? false,
+					},
 				};
 			}
 

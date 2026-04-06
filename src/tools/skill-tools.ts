@@ -164,7 +164,7 @@ export class CreateSkillTool implements Tool {
 	}
 
 	async execute(
-		params: { name: string; description: string; content: string },
+		params: { name: string; description: string; content: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
@@ -212,6 +212,7 @@ export class CreateSkillTool implements Tool {
 				data: {
 					path: skillPath,
 					name: normalizedName,
+					userEdited: params._userEdited ?? false,
 					message: `Skill "${normalizedName}" created successfully. It will be available via activate_skill in future sessions.`,
 				},
 			};
@@ -276,7 +277,7 @@ export class EditSkillTool implements Tool {
 	}
 
 	async execute(
-		params: { name: string; description?: string; content?: string },
+		params: { name: string; description?: string; content?: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
 		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
@@ -317,6 +318,7 @@ export class EditSkillTool implements Tool {
 					path: skillPath,
 					name: normalizedName,
 					updatedFields: [...(normalizedDescription ? ['description'] : []), ...(normalizedContent ? ['content'] : [])],
+					userEdited: params._userEdited ?? false,
 					message: `Skill "${normalizedName}" updated successfully.`,
 				},
 			};
