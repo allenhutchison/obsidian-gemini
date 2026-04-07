@@ -93,7 +93,7 @@ for (const relPath of docFiles) {
 	const heading = extractHeading(content) || basename.replace('.md', '');
 
 	imports.push(`import ${varName} from '${importPath}';`);
-	mapEntries.push(`  ['${refPath}', ${varName}],`);
+	mapEntries.push(`\t['${refPath}', ${varName}],`);
 	tableRows.push(`| \`${refPath}\` | ${heading} |`);
 }
 
