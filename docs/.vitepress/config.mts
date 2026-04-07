@@ -6,6 +6,11 @@ export default defineConfig({
 	base: '/obsidian-gemini/',
 	cleanUrls: true,
 	lastUpdated: true,
+	vite: {
+		build: {
+			target: 'es2022',
+		},
+	},
 	// CONTRIBUTING.md and AI_POLICY.md are symlinked from the repo root and
 	// contain relative links (./CONTRIBUTING, ./LICENSE) that are valid on
 	// GitHub but don't resolve within the docs directory.
