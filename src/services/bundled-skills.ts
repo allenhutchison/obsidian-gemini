@@ -10,7 +10,6 @@ import audioTranscriptionSkillMd from '../../prompts/bundled-skills/audio-transc
 import refGettingStarted from '../../docs/guide/getting-started.md';
 import refAgentMode from '../../docs/guide/agent-mode.md';
 import refAgentSkills from '../../docs/guide/agent-skills.md';
-import refProjects from '../../docs/guide/projects.md';
 import refContextSystem from '../../docs/guide/context-system.md';
 import refCustomPrompts from '../../docs/guide/custom-prompts.md';
 import refCompletions from '../../docs/guide/completions.md';
@@ -19,8 +18,10 @@ import refAiWriting from '../../docs/guide/ai-writing.md';
 import refDeepResearch from '../../docs/guide/deep-research.md';
 import refMcpServers from '../../docs/guide/mcp-servers.md';
 import refSemanticSearch from '../../docs/guide/semantic-search.md';
+import refProjects from '../../docs/guide/projects.md';
 import refSettings from '../../docs/reference/settings.md';
 import refAdvancedSettings from '../../docs/reference/advanced-settings.md';
+import refLoopDetection from '../../docs/reference/loop-detection.md';
 import refFaq from '../../docs/guide/faq.md';
 
 interface BundledSkill {
@@ -60,7 +61,6 @@ const helpResources = new Map<string, string>([
 	['references/getting-started.md', refGettingStarted],
 	['references/agent-mode.md', refAgentMode],
 	['references/agent-skills.md', refAgentSkills],
-	['references/projects.md', refProjects],
 	['references/context-system.md', refContextSystem],
 	['references/custom-prompts.md', refCustomPrompts],
 	['references/completions.md', refCompletions],
@@ -69,8 +69,10 @@ const helpResources = new Map<string, string>([
 	['references/deep-research.md', refDeepResearch],
 	['references/mcp-servers.md', refMcpServers],
 	['references/semantic-search.md', refSemanticSearch],
+	['references/projects.md', refProjects],
 	['references/settings.md', refSettings],
 	['references/advanced-settings.md', refAdvancedSettings],
+	['references/loop-detection.md', refLoopDetection],
 	['references/faq.md', refFaq],
 ]);
 

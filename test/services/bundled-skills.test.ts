@@ -97,6 +97,8 @@ describe('BundledSkillRegistry', () => {
 			expect(resources.length).toBeGreaterThan(0);
 			expect(resources).toContain('references/agent-mode.md');
 			expect(resources).toContain('references/settings.md');
+			expect(resources).toContain('references/projects.md');
+			expect(resources).toContain('references/loop-detection.md');
 		});
 
 		it('should return empty array for skill with no resources', () => {

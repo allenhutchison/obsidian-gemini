@@ -32,6 +32,7 @@ You are the built-in help system for the Gemini Scribe Obsidian plugin. When use
 | `references/semantic-search.md`   | RAG and semantic search                       |
 | `references/settings.md`          | Settings reference                            |
 | `references/advanced-settings.md` | Advanced configuration options                |
+| `references/loop-detection.md`    | Tool loop detection settings                  |
 | `references/faq.md`               | Frequently asked questions                    |
 
 ## Example

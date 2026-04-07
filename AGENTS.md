@@ -260,8 +260,19 @@ Documentation updates are **REQUIRED**, not optional. Every code change MUST inc
 - [ ] Settings documentation matches actual defaults
 - [ ] No references to removed features
 - [ ] Internal doc links not broken
+- [ ] If a new doc was added in `docs/`, it is wired into the `gemini-scribe-help` bundled skill (see below)
 
 **Remember**: Outdated documentation is worse than no documentation. If you change code, you MUST update docs.
+
+**Bundled Help Skill References:**
+
+The agent's built-in help system (`gemini-scribe-help` skill) serves documentation to users at runtime via `activate_skill`. References are imported from `docs/` at build time in `src/services/bundled-skills.ts` — there are no separate reference files to maintain. When adding or removing a doc file in `docs/guide/` or `docs/reference/`:
+
+1. Add/remove the import in `src/services/bundled-skills.ts`
+2. Add/remove the entry in the `helpResources` Map in the same file
+3. Add/remove the row in the references table in `prompts/bundled-skills/gemini-scribe-help/SKILL.md`
+
+If a doc is missing from the bundled skill, the agent will hallucinate answers instead of serving real content — which is worse than saying "I don't know".
 
 ### Implementation Planning
 
