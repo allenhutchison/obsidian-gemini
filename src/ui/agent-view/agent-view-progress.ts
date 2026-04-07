@@ -26,8 +26,8 @@ export class AgentViewProgress {
 	private thinkingRenderVersion: number = 0;
 
 	// Obsidian rendering context
-	private app!: App;
-	private renderComponent!: Component;
+	private app?: App;
+	private renderComponent?: Component;
 
 	constructor(app?: App, renderComponent?: Component) {
 		this.chatTimer = new ChatTimer();
