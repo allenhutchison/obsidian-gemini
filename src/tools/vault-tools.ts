@@ -933,6 +933,11 @@ export class SearchFileContentsTool implements Tool {
 		required: ['query'],
 	};
 
+	getProgressDescription(params: { query: string }): string {
+		const query = params.query.length > 50 ? params.query.substring(0, 47) + '...' : params.query;
+		return `Searching file contents for "${query}"`;
+	}
+
 	async execute(
 		params: {
 			query: string;
