@@ -43,6 +43,13 @@ function extractHeading(content) {
 	return match ? match[1].trim() : '';
 }
 
+/**
+ * Escape a string for safe inclusion in a markdown table cell.
+ */
+function escapeMarkdownTableCell(value) {
+	return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
+}
+
 // Collect all eligible doc files
 const docFiles = [];
 
@@ -80,6 +87,7 @@ for (const relPath of docFiles) {
 const imports = [];
 const mapEntries = [];
 const tableRows = [];
+const seenVarNames = new Map();
 
 for (const relPath of docFiles) {
 	const basename = path.basename(relPath);
@@ -87,9 +95,18 @@ for (const relPath of docFiles) {
 	const refPath = `references/${basename}`;
 	const importPath = `../../${relPath}`;
 
+	if (seenVarNames.has(varName)) {
+		console.error(
+			`ERROR: Import variable collision "${varName}" between "${seenVarNames.get(varName)}" and "${relPath}". ` +
+				`Rename one of the files to avoid generated identifier conflicts.`
+		);
+		process.exit(1);
+	}
+	seenVarNames.set(varName, relPath);
+
 	// Read file to extract heading for the table description
 	const content = fs.readFileSync(path.resolve(root, relPath), 'utf-8');
-	const heading = extractHeading(content) || basename.replace('.md', '');
+	const heading = escapeMarkdownTableCell(extractHeading(content) || basename.replace('.md', ''));
 
 	imports.push(`import ${varName} from '${importPath}';`);
 	mapEntries.push(`\t['${refPath}', ${varName}],`);
