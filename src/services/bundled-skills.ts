@@ -10,7 +10,6 @@ import audioTranscriptionSkillMd from '../../prompts/bundled-skills/audio-transc
 import refGettingStarted from '../../docs/guide/getting-started.md';
 import refAgentMode from '../../docs/guide/agent-mode.md';
 import refAgentSkills from '../../docs/guide/agent-skills.md';
-import refProjects from '../../docs/guide/projects.md';
 import refContextSystem from '../../docs/guide/context-system.md';
 import refCustomPrompts from '../../docs/guide/custom-prompts.md';
 import refCompletions from '../../docs/guide/completions.md';
@@ -62,7 +61,6 @@ const helpResources = new Map<string, string>([
 	['references/getting-started.md', refGettingStarted],
 	['references/agent-mode.md', refAgentMode],
 	['references/agent-skills.md', refAgentSkills],
-	['references/projects.md', refProjects],
 	['references/context-system.md', refContextSystem],
 	['references/custom-prompts.md', refCustomPrompts],
 	['references/completions.md', refCompletions],
