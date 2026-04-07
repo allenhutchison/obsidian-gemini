@@ -102,7 +102,7 @@ export class GeminiDiffView extends ItemView {
 		const editorContainer = container.createDiv({ cls: 'gemini-diff-editor' });
 
 		// Build CodeMirror extensions
-		const extensions = [basicSetup];
+		const extensions = [basicSetup, EditorView.lineWrapping];
 
 		if (!this.state.isNewFile) {
 			extensions.push(
