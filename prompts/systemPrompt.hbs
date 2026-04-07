@@ -41,13 +41,23 @@ or a web search.
 
 {{{projectInstructions}}}
 {{/if}}
-{{#if agentToolsSection}}
+{{#if agentRulesSection}}
 
-{{{agentToolsSection}}}
+{{{agentRulesSection}}}
+{{/if}}
+{{#if toolCatalogSection}}
+
+{{{toolCatalogSection}}}
 {{/if}}
 {{#if additionalInstructions}}
 
-## Additional Instructions
+## Custom Instructions
 
 {{{additionalInstructions}}}
+{{/if}}
+{{#if perTurnContext}}
+
+## Turn Context
+
+{{{perTurnContext}}}
 {{/if}}

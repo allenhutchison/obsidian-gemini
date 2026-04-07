@@ -5,11 +5,11 @@ import ObsidianGemini from '../main';
 
 import systemPromptContent from '../../prompts/systemPrompt.hbs';
 import completionPromptContent from '../../prompts/completionPrompt.hbs';
-import generalPromptContent from '../../prompts/generalPrompt.hbs';
 import summaryPromptContent from '../../prompts/summaryPrompt.hbs';
 import contextPromptContent from '../../prompts/contextPrompt.hbs';
 import selectionRewritePromptContent from '../../prompts/selectionRewritePrompt.hbs';
-import agentToolsPromptContent from '../../prompts/agentToolsPrompt.hbs';
+import agentRulesPromptContent from '../../prompts/agentRulesPrompt.hbs';
+import toolCatalogPromptContent from '../../prompts/toolCatalogPrompt.hbs';
 import vaultAnalysisPromptContent from '../../prompts/vaultAnalysisPrompt.hbs';
 import examplePromptsPromptContent from '../../prompts/examplePromptsPrompt.hbs';
 import imagePromptGeneratorContent from '../../prompts/imagePromptGenerator.hbs';
@@ -18,11 +18,11 @@ import languageInstructionContent from '../../prompts/languageInstruction.hbs';
 export class GeminiPrompts {
 	private completionsPromptTemplate: Handlebars.TemplateDelegate;
 	private systemPromptTemplate: Handlebars.TemplateDelegate;
-	private generalPromptTemplate: Handlebars.TemplateDelegate;
 	private summaryPromptTemplate: Handlebars.TemplateDelegate;
 	private contextPromptTemplate: Handlebars.TemplateDelegate;
 	private selectionRewritePromptTemplate: Handlebars.TemplateDelegate;
-	private agentToolsPromptTemplate: Handlebars.TemplateDelegate;
+	private agentRulesPromptTemplate: Handlebars.TemplateDelegate;
+	private toolCatalogPromptTemplate: Handlebars.TemplateDelegate;
 	private vaultAnalysisPromptTemplate: Handlebars.TemplateDelegate;
 	private examplePromptsPromptTemplate: Handlebars.TemplateDelegate;
 	private imagePromptGeneratorTemplate: Handlebars.TemplateDelegate;
@@ -30,11 +30,11 @@ export class GeminiPrompts {
 	constructor(private plugin?: InstanceType<typeof ObsidianGemini>) {
 		this.completionsPromptTemplate = Handlebars.compile(completionPromptContent);
 		this.systemPromptTemplate = Handlebars.compile(systemPromptContent);
-		this.generalPromptTemplate = Handlebars.compile(generalPromptContent);
 		this.summaryPromptTemplate = Handlebars.compile(summaryPromptContent);
 		this.contextPromptTemplate = Handlebars.compile(contextPromptContent);
 		this.selectionRewritePromptTemplate = Handlebars.compile(selectionRewritePromptContent);
-		this.agentToolsPromptTemplate = Handlebars.compile(agentToolsPromptContent);
+		this.agentRulesPromptTemplate = Handlebars.compile(agentRulesPromptContent);
+		this.toolCatalogPromptTemplate = Handlebars.compile(toolCatalogPromptContent);
 		this.vaultAnalysisPromptTemplate = Handlebars.compile(vaultAnalysisPromptContent);
 		this.examplePromptsPromptTemplate = Handlebars.compile(examplePromptsPromptContent);
 		this.imagePromptGeneratorTemplate = Handlebars.compile(imagePromptGeneratorContent);
@@ -47,10 +47,6 @@ export class GeminiPrompts {
 
 	systemPrompt(variables: { [key: string]: string }): string {
 		return this.systemPromptTemplate({ ...variables, language: this.getLanguageCode() });
-	}
-
-	generalPrompt(variables: { [key: string]: string }): string {
-		return this.generalPromptTemplate({ ...variables, language: this.getLanguageCode() });
 	}
 
 	summaryPrompt(variables: { [key: string]: string }): string {
@@ -90,7 +86,7 @@ export class GeminiPrompts {
 	}
 
 	/**
-	 * Shape raw tool definitions into the structure the agentToolsPrompt template
+	 * Shape raw tool definitions into the structure the tool catalog template
 	 * expects. This is data pre-processing only — all string formatting happens
 	 * inside the Handlebars template via {{#each}} loops.
 	 */
@@ -116,23 +112,26 @@ export class GeminiPrompts {
 	}
 
 	/**
-	 * Unified method to build complete system prompt with tools and optional custom prompt.
+	 * Build the complete system prompt from layered sections.
 	 *
-	 * All sections (base prompt, vault context, project instructions, tools, custom
-	 * instructions) are composed via Handlebars template variables rather than TS
-	 * string concatenation.
+	 * Layers (in order):
+	 * 1. Identity — who you are, tone, date, language
+	 * 2. Vault Context — AGENTS.md content
+	 * 3. Project Instructions — project-scoped rules
+	 * 4. Agent Rules — behavioral guidance (research, errors, YAML, etc.)
+	 * 5. Tool Catalog — available tools and their parameters
+	 * 6. Custom Instructions — user's custom prompt content
+	 * 7. Turn Context — per-message context files and attachments
 	 *
-	 * @param availableTools - Optional array of tool definitions
-	 * @param customPrompt - Optional custom prompt to append or override
-	 * @param agentsMemory - Optional AGENTS.md content to include
-	 * @returns Complete system prompt
+	 * All sections are composed via Handlebars template variables.
 	 */
 	getSystemPromptWithCustom(
 		availableTools?: ToolDefinition[],
 		customPrompt?: CustomPrompt,
 		agentsMemory?: string | null,
 		availableSkills?: { name: string; description: string }[],
-		projectInstructions?: string
+		projectInstructions?: string,
+		perTurnContext?: string
 	): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
@@ -140,11 +139,18 @@ export class GeminiPrompts {
 			return customPrompt.content;
 		}
 
-		// Render the agent tools section (if tools are provided) via its template
-		let agentToolsSection = '';
+		const ragEnabled = !!(this.plugin?.settings.ragIndexing.enabled && this.plugin?.ragIndexing?.isReady());
+
+		// Render agent rules (static behavioral guidance) — only when tools are available
+		let agentRulesSection = '';
 		if (availableTools && availableTools.length > 0) {
-			const ragEnabled = !!(this.plugin?.settings.ragIndexing.enabled && this.plugin?.ragIndexing?.isReady());
-			agentToolsSection = this.agentToolsPromptTemplate({
+			agentRulesSection = this.agentRulesPromptTemplate({ ragEnabled });
+		}
+
+		// Render tool catalog (dynamic per-session tool list)
+		let toolCatalogSection = '';
+		if (availableTools && availableTools.length > 0) {
+			toolCatalogSection = this.toolCatalogPromptTemplate({
 				availableTools: this.shapeToolsForTemplate(availableTools),
 				ragEnabled,
 				availableSkills: availableSkills || [],
@@ -166,8 +172,10 @@ export class GeminiPrompts {
 			time: now.toLocaleTimeString(),
 			agentsMemory: agentsMemory || '',
 			projectInstructions: projectInstructions || '',
-			agentToolsSection,
+			agentRulesSection,
+			toolCatalogSection,
 			additionalInstructions,
+			perTurnContext: perTurnContext || '',
 		});
 	}
 }
