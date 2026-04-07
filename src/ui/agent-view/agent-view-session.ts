@@ -5,6 +5,7 @@ import type ObsidianGemini from '../../main';
 import { GeminiClientFactory } from '../../api/simple-factory';
 import { HandlerPriority } from '../../types/agent-events';
 import { sanitizeFileName } from '../../utils/file-utils';
+import { formatLocalDate } from '../../utils/format-utils';
 
 /**
  * Callbacks for UI operations that the session manager needs to trigger
@@ -248,7 +249,7 @@ Assistant: ${modelSummary}`;
 
 			if (generatedTitle && generatedTitle.length > 0) {
 				// Prepend date for chronological sorting
-				const datePrefix = new Date().toISOString().slice(0, 10);
+				const datePrefix = formatLocalDate();
 				const fullTitle = `${datePrefix} ${generatedTitle}`;
 
 				// Update session title

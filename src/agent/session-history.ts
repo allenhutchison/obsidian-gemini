@@ -3,6 +3,7 @@ import { ChatSession } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
 import { pathToWikilink } from '../utils/accessed-files';
+import { formatLocalTimestamp } from '../utils/format-utils';
 import * as Handlebars from 'handlebars';
 // @ts-ignore
 import historyEntryTemplate from '../history/templates/historyEntry.hbs';
@@ -88,7 +89,7 @@ export class SessionHistory {
 			role: role,
 			displayName: displayName,
 			messageLines: messageLines,
-			timestamp: new Date().toISOString(),
+			timestamp: formatLocalTimestamp(),
 			pluginVersion: this.plugin.manifest.version,
 			model: entry.model,
 			temperature: entry.metadata?.temperature,
@@ -292,8 +293,8 @@ export class SessionHistory {
 			frontmatter.session_id = session.id;
 			frontmatter.type = session.type;
 			frontmatter.title = session.title;
-			frontmatter.created = session.created.toISOString();
-			frontmatter.last_active = session.lastActive.toISOString();
+			frontmatter.created = formatLocalTimestamp(session.created);
+			frontmatter.last_active = formatLocalTimestamp(session.lastActive);
 
 			// Optional fields - set when present, delete when absent to remove stale values
 			if (session.sourceNotePath) {
