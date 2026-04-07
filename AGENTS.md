@@ -262,7 +262,7 @@ Documentation updates are **REQUIRED**, not optional. Every code change MUST inc
 - [ ] Settings documentation matches actual defaults
 - [ ] No references to removed features
 - [ ] Internal doc links not broken
-**Remember**: Outdated documentation is worse than no documentation. If you change code, you MUST update docs.
+      **Remember**: Outdated documentation is worse than no documentation. If you change code, you MUST update docs.
 
 ### Implementation Planning
 
