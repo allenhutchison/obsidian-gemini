@@ -172,8 +172,13 @@ export class ReadFileTool implements Tool {
 		try {
 			const normalizedPath = normalizePath(params.path);
 
-			// Check if path is excluded
-			if (shouldExcludePath(normalizedPath, plugin)) {
+			// Allow reading agent session history files (needed by recall_sessions tool)
+			const agentSessionsFolder = normalizePath(`${plugin.settings.historyFolder}/Agent-Sessions`);
+			const isAgentSessionPath =
+				normalizedPath === agentSessionsFolder || normalizedPath.startsWith(agentSessionsFolder + '/');
+
+			// Check if path is excluded (but allow agent session files)
+			if (!isAgentSessionPath && shouldExcludePath(normalizedPath, plugin)) {
 				return {
 					success: false,
 					error: `Cannot read from system folder: ${params.path}`,
