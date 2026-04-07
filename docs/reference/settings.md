@@ -1,6 +1,6 @@
 # Settings Reference
 
-This document provides a comprehensive reference for all Obsidian Gemini Scribe settings in v4.0.0.
+This document provides a comprehensive reference for all Obsidian Gemini Scribe settings.
 
 ## Table of Contents
 

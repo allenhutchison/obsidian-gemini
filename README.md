@@ -4,21 +4,24 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 > **Note:** This plugin requires a Google Gemini API key. Free tier available at [Google AI Studio](https://aistudio.google.com/apikey).
 
-## What's New in v4.5.0
+## What's New in v4.6.0
 
-**✨ MCP Servers, Skills & Secure Storage**
+**✨ Unified Shelf, Diff View & Skill Editing**
+
+- **📂 Unified file context shelf** - All context files, folders, and binary attachments displayed in a single horizontal strip with keyboard navigation and animations
+- **📝 Diff view for file changes** - Side-by-side diff view for write_file, append_content, create_skill, and edit_skill with inline editing before approval
+- **✏️ edit_skill tool** - Update existing skill instructions and descriptions directly through the agent
+- **🔧 get_workspace_state** - Replaced get_active_file with a comprehensive workspace snapshot showing all open files, visibility, selections, and project info
+- **📎 Binary files in @ mentions** - The file picker now supports images, PDFs, audio, and video files alongside text
+- **🗂️ Folder re-expansion** - Folders in context automatically include newly created files on each turn
+- **⌨️ Keyboard accessibility** - Full Arrow/Enter/Delete keyboard navigation for the file shelf
+
+**Previous Updates (v4.5.0):**
 
 - **🔌 [Experimental] MCP server support** - Connect external tool servers via stdio or HTTP transport with OAuth
 - **🧠 Agent skills system** - Extensible AI capabilities following the agentskills.io spec
 - **📎 Unified drag-and-drop** - Attach images, audio, video, PDFs, and text files with smart classification
 - **🔐 Secure API key storage** - API key migrated to Obsidian SecretStorage (OS keychain)
-- **🔍 Context file search** - Search box in the Add Context Files modal
-- **⚡ Flash default model** - Default chat model changed to Flash for free API key compatibility
-
-**Previous Updates (v4.4.0):**
-
-- **🔬 Deep research** - Migrated to gemini-utils ResearchManager
-- **🛡️ Tool Permissions** - Granular per-tool permission system with presets (Read Only, Cautious, Edit Mode, YOLO)
 
 ## Features
 
@@ -37,7 +40,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 - **Image Paste Support:** Paste images directly into the chat input to send them to Gemini for multimodal analysis. Images are automatically saved to your Obsidian attachment folder, displayed as thumbnails before sending, and the AI receives the image path for embedding in notes.
 - **MCP Server Support:** [Experimental] Connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers to extend the agent with external tools. Supports stdio (desktop) and HTTP transports (all platforms including mobile), with OAuth authentication for remote servers. Configure per-tool trust settings with seamless integration into the confirmation flow.
 - **Projects:** Create scoped agent profiles for different areas of your vault. A project bundles custom instructions, file scope, skill selection, and permission overrides into a single configuration. The agent auto-detects projects from your folder structure and applies project-specific behavior — including scoped file discovery, filtered skills, and per-tool permission overrides. See the [Projects guide](https://allenhutchison.github.io/obsidian-gemini/guide/projects) for details.
-- **Agent Skills:** Create and use extensible skill packages that give the agent specialized knowledge and workflows. Skills follow the [agentskills.io](https://agentskills.io) specification and are stored in your plugin state folder. The agent automatically discovers available skills and activates them on demand.
+- **Agent Skills:** Create, edit, and use extensible skill packages that give the agent specialized knowledge and workflows. Skills follow the [agentskills.io](https://agentskills.io) specification and are stored in your plugin state folder. The agent automatically discovers available skills and activates them on demand. Update existing skills via the `edit_skill` tool with diff review.
 - **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, agent prompts, summarization prompts, selection rewrite prompts, and completion prompts. These ensure consistent and effective AI interaction.
 - **Data Privacy:** All interactions with the Gemini API are done directly from your machine. No data is sent to any third-party servers other than Google's. Agent session history is stored locally in your Obsidian vault as markdown files.
 - **Robust Session Management:**
@@ -193,9 +196,9 @@ For detailed guides on all features, visit the [Documentation Site](https://alle
 
 2.  **Chat with Context:**
     - Type your message in the input box
-    - Press Enter to send (Shift+Enter for new line)
+    - Press **Enter** to send, **Shift+Enter** for new lines (newlines are preserved in the message)
     - The AI automatically includes your current note as context
-    - You can add persistent context files with @ mentions
+    - Use **@** to mention files (text, binary, or folders) as persistent context
     - Sessions are automatically saved and can be resumed
 
 3.  **AI Responses:**

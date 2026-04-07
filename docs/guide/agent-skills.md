@@ -140,6 +140,16 @@ Agent: I have the following skills available:
 - daily-planner: Create and manage daily plans from tasks and calendar
 ```
 
+### Editing Skills
+
+You can ask the agent to update an existing skill's instructions or description:
+
+```
+User: Update the meeting-notes skill to also capture key decisions and deadlines
+```
+
+The agent uses the `edit_skill` tool to modify the skill's `SKILL.md` file. You can update the description, the instruction body, or both. A confirmation dialog with diff view appears before changes are written, letting you review and edit the proposed changes.
+
 ### Accessing Skill Resources
 
 Skills can include reference documents, templates, and other files. The agent can access these via the `activate_skill` tool:

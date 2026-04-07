@@ -22,7 +22,8 @@ Context in Gemini Scribe refers to files from your vault that the AI agent can a
 
 - **Session-Based**: Context files persist for the entire session
 - **Manual Control**: You choose exactly which files to include
-- **@ Mentions**: Quick file selection via @ symbol
+- **@ Mentions**: Quick file selection via @ symbol (supports text and binary files)
+- **Unified File Shelf**: All context files, folders, and attachments displayed in a single horizontal strip
 - **Tool Integration**: Agent can read additional files on demand
 - **AGENTS.md**: Vault-wide context initialization
 
@@ -41,7 +42,8 @@ The new context system provides:
 
 **Context Files** (Always Available):
 
-- Added via @ mentions or file chips
+- Added via @ mentions, drag-and-drop, or the file selection modal
+- Displayed in the unified file shelf above the input area
 - Automatically included with every message
 - Persist throughout the session
 - Ideal for reference material you'll use repeatedly
@@ -86,17 +88,19 @@ AGENTS.md is a special file that provides the agent with an overview of your ent
 The fastest way to add context files:
 
 1. Type `@` in the chat input
-2. A file picker appears
+2. A file picker appears showing text files, Gemini-supported binary files (images, PDFs, audio, video), and folders
 3. Start typing the file name
 4. Select from the filtered list
-5. File chip appears in input
-6. Send message - file is now persistent context
+5. File appears in the shelf above the input
+6. The file is now persistent context for the session
+
+To type a literal `@` symbol without triggering the picker, press `@` twice or continue typing without selecting from the list.
 
 **Example:**
 
-```
+```text
 User: @Project Plan Can you help me...
-[File chip appears for "Project Plan.md"]
+[File appears in the shelf as "Project Plan.md"]
 [File becomes persistent context for session]
 ```
 
@@ -137,25 +141,28 @@ Drag files from the file explorer directly into the chat.
 1. **File is Read**: Content is loaded from your vault
 2. **Added to Session**: File persists as context
 3. **Included in Messages**: Content sent with every message
-4. **Visible Indicator**: File chip shows it's in context
+4. **Visible in Shelf**: File appears in the unified shelf above the input area with a pin badge
 5. **Stays Active**: Remains until you remove it or end session
+6. **Folder Re-expansion**: Folders are re-expanded each turn, so newly created files inside a folder are automatically included
 
 ## Managing Context
 
 ### Viewing Current Context
 
-Active context files are displayed:
+Active context files are displayed in the **unified file shelf** — a horizontal strip above the input area:
 
-- As chips in the chat input area
-- In the session sidebar (if visible)
-- Indicated by visual markers
+- Text files and folders show a pin badge
+- Binary attachments (images, PDFs, audio, video) show appropriate icons
+- Click any item to open the file in Obsidian
+- Use **Arrow Left/Right** to navigate between items with the keyboard
 
 ### Removing Context Files
 
 To remove a file from context:
 
-1. Click the X on the file chip, or
-2. Open the file selection modal, uncheck the file (or folder), and press **Esc**
+1. Click the **×** button on the shelf item, or
+2. Press **Delete** or **Backspace** when the item is focused on the shelf, or
+3. Open the file selection modal, uncheck the file (or folder), and press **Esc**
 
 ### Context Limits
 

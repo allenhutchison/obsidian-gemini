@@ -113,7 +113,7 @@ In v4.0, the plugin was unified into a single agent-first interface. There is no
 
 ### The agent is hallucinating file contents instead of reading actual files
 
-Make sure you're on v4.0 or later — earlier versions had a bug where context files were not properly read from the vault. If you still see issues, verify the file is properly tagged with @ and appears as a chip in the chat input. ([#159](https://github.com/allenhutchison/obsidian-gemini/discussions/159), [#180](https://github.com/allenhutchison/obsidian-gemini/issues/180))
+Make sure you're on v4.0 or later — earlier versions had a bug where context files were not properly read from the vault. If you still see issues, verify the file is added with @ and appears in the file shelf above the input area. ([#159](https://github.com/allenhutchison/obsidian-gemini/discussions/159), [#180](https://github.com/allenhutchison/obsidian-gemini/issues/180))
 
 ### "Summarize Active File" isn't working
 
