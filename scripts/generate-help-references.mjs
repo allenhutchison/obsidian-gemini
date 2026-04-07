@@ -100,8 +100,8 @@ for (const relPath of docFiles) {
 const tableHeader = '| Reference | Topic |\n| --------- | ----- |';
 const tableMarkdown = [tableHeader, ...tableRows].join('\n');
 
-// Escape backticks for embedding in a template literal
-const escapedTable = tableMarkdown.replace(/`/g, '\\`');
+// Escape for embedding in a JS template literal: backslashes first, then backticks and ${
+const escapedTable = tableMarkdown.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 
 const output = `/**
  * AUTO-GENERATED FILE — DO NOT EDIT
