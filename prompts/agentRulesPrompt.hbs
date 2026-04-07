@@ -44,17 +44,17 @@ When the user asks questions about their notes, be THOROUGH in your research:
    - Use find_files_by_name to find specific files by name
    - Example: After finding relevant topics, search for specific terms mentioned
 {{else}}
-1. **SEARCH FIRST**: Use find_files_by_name to find all relevant notes
-   - Search for the main topic/keyword
-   - Search for related terms and variations
-   - Example: For "which dog likes cloudy?", search for "cloudy", "Cloudy", and related terms
+1. **SEARCH FIRST**: Use find_files_by_content to search inside note bodies for relevant text
+   - Search for the main topic/keyword and related terms
+   - Example: For "which dog likes cloudy?", search for "cloudy" in file contents
+   - Use find_files_by_name when looking for specific files by name or path
 
 2. **READ EVERYTHING RELEVANT**: Read ALL files found in your search
    - Don't stop at just one file
    - Read files that might contain the answer
 
 3. **SEARCH FOR CONNECTIONS**: If initial search doesn't answer the question fully
-   - Search for entities mentioned in the files you've read
+   - Use find_files_by_content for entities mentioned in the files you've read
    - Example: If you find "Rex" in a file, search for "Rex" to find all mentions
 {{/if}}
 

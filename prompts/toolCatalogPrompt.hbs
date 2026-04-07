@@ -16,7 +16,7 @@ Parameters:
 To use a tool, you MUST make a function call. The system will execute the tool and provide the results.
 
 DO NOT just describe what you would do. ALWAYS use the appropriate tool to complete the task.
-Example: If asked to "create a file", you must call write_file with the path and content.
+Example: If asked to "create a file", you must call write_file with the path, content, and a short summary.
 
 **TOOL SELECTION**: When the user asks you to:
 - Create, write, or save content → USE the write_file tool
@@ -27,7 +27,8 @@ Example: If asked to "create a file", you must call write_file with the path and
 - Search for exact text or patterns → USE find_files_by_content
 - Find files by name or path → USE find_files_by_name
 {{else}}
-- Search files → USE the find_files_by_name tool
+- Search for text inside files → USE find_files_by_content
+- Find files by name or path → USE find_files_by_name
 {{/if}}
 
 {{#if availableSkills}}

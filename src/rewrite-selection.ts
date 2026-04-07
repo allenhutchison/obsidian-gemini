@@ -106,7 +106,8 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 		});
 
 		const request: ExtendedModelRequest = {
-			prompt,
+			prompt: '', // Unused in ExtendedModelRequest path
+			perTurnContext: prompt, // Full-file rewrite template as per-turn context
 			conversationHistory: [],
 			userMessage: instructions,
 		};

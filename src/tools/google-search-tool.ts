@@ -14,7 +14,7 @@ export class GoogleSearchTool implements Tool {
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.EXTERNAL;
 	description =
-		'Search Google for current, up-to-date information from the web. Returns an answer with inline citations and source links. Use this for quick factual lookups, recent news, statistics, or information that may have changed since training. The query you provide will be used directly as a search prompt — keep queries focused and specific for best results.';
+		'Search Google for current, up-to-date information from the web. Returns an answer with inline citations and source links. Use this for quick factual lookups, recent news, statistics, or information that may have changed since training. The query you provide is used as the core search input — keep queries focused and specific for best results.';
 
 	parameters = {
 		type: 'object' as const,

@@ -904,6 +904,7 @@ export class AgentViewMessages {
 			read_file: 'file-text',
 			list_files: 'folder-open',
 			find_files_by_name: 'search',
+			find_files_by_content: 'search',
 		};
 		setIcon(container, iconMap[toolName] || 'tool');
 	}
