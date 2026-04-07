@@ -28,10 +28,13 @@ describe('formatLocalDate', () => {
 	});
 
 	it('should default to current date when no argument provided', () => {
-		const result = formatLocalDate();
-		const now = new Date();
-		const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-		expect(result).toBe(expected);
+		const fixedNow = new Date(2026, 3, 7, 23, 59, 59, 900);
+		jest.useFakeTimers().setSystemTime(fixedNow);
+		try {
+			expect(formatLocalDate()).toBe('2026-04-07');
+		} finally {
+			jest.useRealTimers();
+		}
 	});
 });
 
