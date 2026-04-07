@@ -315,15 +315,16 @@ Analyze this blog post and summarize key points
 
 #### recall_sessions
 
-Search past agent sessions by file, project, or topic:
+Search past agent sessions by file, project, or topic. The agent uses this tool **proactively** to maintain continuity across sessions — you don't need to explicitly ask it to remember. It will automatically check for relevant past sessions when you're working on files or topics that have prior history.
 
 ```
 What did we discuss about the magic system last time?
 Find sessions where we worked on the API integration
 Show me past sessions for the Novel project
+Continue where we left off on the character outline
 ```
 
-Returns session summaries with title, date, files accessed, and project linkage. The agent can then read the full conversation from a past session using `read_file` on the returned history path.
+Returns session summaries with title, date, files accessed, and project linkage. The agent can then read the full conversation from a past session using `read_file` on the returned history path. This enables continuity-aware conversations where the agent remembers prior decisions, approaches, and context.
 
 ### Skill Tools
 
