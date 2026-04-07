@@ -176,9 +176,10 @@ export class ReadFileTool implements Tool {
 			const agentSessionsFolder = normalizePath(`${plugin.settings.historyFolder}/Agent-Sessions`);
 			const isAgentSessionPath =
 				normalizedPath === agentSessionsFolder || normalizedPath.startsWith(agentSessionsFolder + '/');
+			const isObsidianPath = normalizedPath === '.obsidian' || normalizedPath.startsWith('.obsidian/');
 
-			// Check if path is excluded (but allow agent session files)
-			if (!isAgentSessionPath && shouldExcludePath(normalizedPath, plugin)) {
+			// Check if path is excluded (allow agent session files, but never .obsidian)
+			if ((isObsidianPath || !isAgentSessionPath) && shouldExcludePath(normalizedPath, plugin)) {
 				return {
 					success: false,
 					error: `Cannot read from system folder: ${params.path}`,
