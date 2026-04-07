@@ -108,6 +108,8 @@ export class GeminiDiffView extends ItemView {
 			extensions.push(
 				unifiedMergeView({
 					original: this.state.originalContent,
+					collapseUnchanged: { margin: 3, minSize: 4 },
+					allowInlineDiffs: true,
 				})
 			);
 		}
