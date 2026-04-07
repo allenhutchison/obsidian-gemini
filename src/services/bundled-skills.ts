@@ -6,23 +6,8 @@ import basesSkillMd from '../../prompts/bundled-skills/obsidian-bases/SKILL.md';
 import propertiesSkillMd from '../../prompts/bundled-skills/obsidian-properties/SKILL.md';
 import audioTranscriptionSkillMd from '../../prompts/bundled-skills/audio-transcription/SKILL.md';
 
-// Import help skill references directly from docs/ (single source of truth)
-import refGettingStarted from '../../docs/guide/getting-started.md';
-import refAgentMode from '../../docs/guide/agent-mode.md';
-import refAgentSkills from '../../docs/guide/agent-skills.md';
-import refContextSystem from '../../docs/guide/context-system.md';
-import refCustomPrompts from '../../docs/guide/custom-prompts.md';
-import refCompletions from '../../docs/guide/completions.md';
-import refSummarization from '../../docs/guide/summarization.md';
-import refAiWriting from '../../docs/guide/ai-writing.md';
-import refDeepResearch from '../../docs/guide/deep-research.md';
-import refMcpServers from '../../docs/guide/mcp-servers.md';
-import refSemanticSearch from '../../docs/guide/semantic-search.md';
-import refProjects from '../../docs/guide/projects.md';
-import refSettings from '../../docs/reference/settings.md';
-import refAdvancedSettings from '../../docs/reference/advanced-settings.md';
-import refLoopDetection from '../../docs/reference/loop-detection.md';
-import refFaq from '../../docs/guide/faq.md';
+// Auto-generated help references from docs/ — see scripts/generate-help-references.mjs
+import { helpResources, helpReferencesTable } from './generated-help-references';
 
 interface BundledSkill {
 	name: string;
@@ -56,30 +41,13 @@ function parseDescription(md: string): string {
 
 const skills: Map<string, BundledSkill> = new Map();
 
-// Register gemini-scribe-help
-const helpResources = new Map<string, string>([
-	['references/getting-started.md', refGettingStarted],
-	['references/agent-mode.md', refAgentMode],
-	['references/agent-skills.md', refAgentSkills],
-	['references/context-system.md', refContextSystem],
-	['references/custom-prompts.md', refCustomPrompts],
-	['references/completions.md', refCompletions],
-	['references/summarization.md', refSummarization],
-	['references/ai-writing.md', refAiWriting],
-	['references/deep-research.md', refDeepResearch],
-	['references/mcp-servers.md', refMcpServers],
-	['references/semantic-search.md', refSemanticSearch],
-	['references/projects.md', refProjects],
-	['references/settings.md', refSettings],
-	['references/advanced-settings.md', refAdvancedSettings],
-	['references/loop-detection.md', refLoopDetection],
-	['references/faq.md', refFaq],
-]);
+// Register gemini-scribe-help with auto-generated references table
+const helpContent = stripFrontmatter(helpSkillMd).replace('<!-- REFERENCES_TABLE -->', () => helpReferencesTable);
 
 skills.set('gemini-scribe-help', {
 	name: 'gemini-scribe-help',
 	description: parseDescription(helpSkillMd),
-	content: stripFrontmatter(helpSkillMd),
+	content: helpContent,
 	resources: helpResources,
 });
 

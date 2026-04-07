@@ -17,7 +17,8 @@ Obsidian Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI 
 ```bash
 npm install          # Install dependencies
 npm run dev          # Development build with watch mode
-npm run build        # Production build (runs TypeScript check first)
+npm run build        # Production build (generates refs, runs TypeScript check, then bundles)
+npm run generate-refs # Regenerate help references from docs/ (runs automatically in build/dev)
 npm test             # Run Jest tests
 npm run format       # Format code with Prettier
 npm run format-check # Check formatting without changes
@@ -129,6 +130,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 - Skill names must be lowercase alphanumeric with hyphens, 1-64 chars, no consecutive/leading/trailing hyphens
 - Frontmatter parsing uses Obsidian's native `metadataCache` API
 - `scripts/` directories are treated as read-only reference material (no execution in Obsidian)
+- **Bundled help references are auto-generated**: `scripts/generate-help-references.mjs` scans `docs/guide/` and `docs/reference/` to produce `src/services/generated-help-references.ts` at build time. Adding or removing a markdown file in those directories automatically updates the help skill — no manual edits to `bundled-skills.ts` or `SKILL.md` are needed.
 
 ## Coding Style & Naming Conventions
 
@@ -260,19 +262,7 @@ Documentation updates are **REQUIRED**, not optional. Every code change MUST inc
 - [ ] Settings documentation matches actual defaults
 - [ ] No references to removed features
 - [ ] Internal doc links not broken
-- [ ] If a new doc was added in `docs/`, it is wired into the `gemini-scribe-help` bundled skill (see below)
-
-**Remember**: Outdated documentation is worse than no documentation. If you change code, you MUST update docs.
-
-**Bundled Help Skill References:**
-
-The agent's built-in help system (`gemini-scribe-help` skill) serves documentation to users at runtime via `activate_skill`. References are imported from `docs/` at build time in `src/services/bundled-skills.ts` — there are no separate reference files to maintain. When adding or removing a doc file in `docs/guide/` or `docs/reference/`:
-
-1. Add/remove the import in `src/services/bundled-skills.ts`
-2. Add/remove the entry in the `helpResources` Map in the same file
-3. Add/remove the row in the references table in `prompts/bundled-skills/gemini-scribe-help/SKILL.md`
-
-If a doc is missing from the bundled skill, the agent will hallucinate answers instead of serving real content — which is worse than saying "I don't know".
+      **Remember**: Outdated documentation is worse than no documentation. If you change code, you MUST update docs.
 
 ### Implementation Planning
 

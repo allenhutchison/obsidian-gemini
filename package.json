@@ -11,13 +11,14 @@
 		}
 	},
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"generate-refs": "node scripts/generate-help-references.mjs",
+		"dev": "npm run generate-refs && node esbuild.config.mjs",
+		"build": "npm run generate-refs && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"postversion": "git push && git push --follow-tags",
 		"format": "prettier --write .",
 		"format-check": "prettier --check .",
-		"test": "jest",
+		"test": "npm run generate-refs && jest",
 		"prepare": "husky",
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
