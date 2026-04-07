@@ -35,7 +35,7 @@ describe('SessionManager Integration Tests', () => {
 				historyFolder: 'gemini-scribe',
 				chatModelName: 'gemini-1.5-flash',
 				agentModelName: 'gemini-1.5-pro',
-				enabledTools: ['read_files', 'search_files'],
+				enabledTools: ['read_files', 'find_files_by_name'],
 				requireConfirmation: {
 					modify_files: true,
 					delete_files: true,

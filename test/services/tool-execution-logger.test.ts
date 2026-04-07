@@ -101,14 +101,14 @@ describe('formatToolLine', () => {
 		expect(line).toBe('🔧 `fetch_url` url="https://example.com" → success (800ms)');
 	});
 
-	it('should format search_file_contents with query param', () => {
+	it('should format find_files_by_content with query param', () => {
 		const line = formatToolLine({
-			toolName: 'search_file_contents',
+			toolName: 'find_files_by_content',
 			args: { query: 'TODO' },
 			result: { success: true, data: { results: [] } },
 			durationMs: 200,
 		});
-		expect(line).toBe('🔧 `search_file_contents` query="TODO" → success (200ms)');
+		expect(line).toBe('🔧 `find_files_by_content` query="TODO" → success (200ms)');
 	});
 });
 

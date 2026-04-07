@@ -55,7 +55,7 @@ Agent: I'll help you find and summarize your meeting notes. Let me:
 2. Read their contents
 3. Create a summary document
 
-[Executes search_files tool]
+[Executes find_files_by_name tool]
 [Executes read_file tool for each result]
 [Executes write_file tool to create summary]
 ```
@@ -178,7 +178,7 @@ For detailed information about context files and advanced usage, see the [Contex
 
 ### Read-Only Tools
 
-#### search_files
+#### find_files_by_name
 
 Search for files by name pattern (searches filenames/paths only). Searches all file types, not just markdown:
 
@@ -188,7 +188,7 @@ Search for "*.md" files in the Projects folder
 Find all PNG images in my vault with "*.png"
 ```
 
-#### search_file_contents
+#### find_files_by_content
 
 Search for text within file contents (grep-style search):
 

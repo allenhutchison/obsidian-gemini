@@ -14,12 +14,13 @@ export class DeepResearchTool implements Tool {
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.EXTERNAL;
 	description =
-		"Conduct comprehensive research on a topic using Google's Deep Research model. " +
+		'Conduct comprehensive research on a topic and generate a well-structured markdown report with citations. ' +
 		'Can search your vault notes (via RAG), the web, or both. ' +
-		'Generates a well-structured markdown report with citations. ' +
 		'Use scope="vault_only" to synthesize existing notes, ' +
 		'scope="web_only" for internet research, or scope="both" (default) for comprehensive research. ' +
-		'WARNING: This tool may take several minutes to complete as it performs deep analysis.';
+		'Use this for broad research questions requiring synthesis across multiple sources. ' +
+		'For quick factual lookups, prefer google_search instead. ' +
+		'WARNING: This tool may take several minutes to complete.';
 	requiresConfirmation = true;
 
 	parameters = {

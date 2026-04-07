@@ -21,7 +21,7 @@ const TOOL_ICONS: Record<string, string> = {
 	create_folder: 'folder-plus',
 	delete_file: 'trash-2',
 	move_file: 'file-symlink',
-	search_files: 'search',
+	find_files_by_name: 'search',
 	google_search: 'globe',
 	fetch_url: 'link',
 	generate_image: 'image',
@@ -62,7 +62,7 @@ export class AgentViewTools {
 		const toolPriority: Record<string, number> = {
 			read_file: 1,
 			list_files: 2,
-			search_files: 3,
+			find_files_by_name: 3,
 			google_search: 4,
 			fetch_url: 5,
 			write_file: 6,

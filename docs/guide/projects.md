@@ -109,7 +109,7 @@ When you create a **new** agent session, the plugin inspects the session's initi
 | Feature               | Behavior                                                                                    |
 | --------------------- | ------------------------------------------------------------------------------------------- |
 | **System prompt**     | Project instructions are injected between the base prompt and tool instructions             |
-| **Tool discovery**    | `list_files`, `search_files`, and `search_file_contents` scope to the project root          |
+| **Tool discovery**    | `list_files`, `find_files_by_name`, and `find_files_by_content` scope to the project root   |
 | **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them |
 | **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)              |
 | **Permissions**       | Project permissions take priority over global presets and per-tool overrides                |

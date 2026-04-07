@@ -1157,8 +1157,8 @@ describe('VaultTools', () => {
 			expect(tools.map((t) => t.name)).toContain('create_folder');
 			expect(tools.map((t) => t.name)).toContain('delete_file');
 			expect(tools.map((t) => t.name)).toContain('move_file');
-			expect(tools.map((t) => t.name)).toContain('search_files');
-			expect(tools.map((t) => t.name)).toContain('search_file_contents');
+			expect(tools.map((t) => t.name)).toContain('find_files_by_name');
+			expect(tools.map((t) => t.name)).toContain('find_files_by_content');
 			expect(tools.map((t) => t.name)).toContain('get_workspace_state');
 		});
 	});
