@@ -2,6 +2,7 @@ import { normalizePath, TFile, TFolder } from 'obsidian';
 import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, SessionModelConfig } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { sanitizeFileName } from '../utils/file-utils';
+import { formatLocalDate } from '../utils/format-utils';
 
 /**
  * Manages chat sessions for both note-centric and agent modes
@@ -62,7 +63,7 @@ export class SessionManager {
 			],
 		};
 
-		const rawTitle = title || `Agent Session ${new Date().toISOString().slice(0, 10)}`;
+		const rawTitle = title || `Agent Session ${formatLocalDate()}`;
 		const sessionTitle = sanitizeFileName(rawTitle);
 
 		const session: ChatSession = {
