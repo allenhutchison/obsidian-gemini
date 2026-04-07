@@ -84,9 +84,9 @@ export class SelectionResponseModal extends Modal {
 	private editor: Editor;
 	private selectedText: string;
 	private selectionEndPos: { line: number; ch: number };
-	private responseContainer: HTMLElement;
-	private loadingEl: HTMLElement;
-	private actionsContainer: HTMLElement;
+	private responseContainer!: HTMLElement;
+	private loadingEl!: HTMLElement;
+	private actionsContainer!: HTMLElement;
 	private response: string = '';
 
 	constructor(
@@ -238,7 +238,7 @@ export class SelectionResponseModal extends Modal {
  * Modal for asking a question about a selection
  */
 export class AskQuestionModal extends Modal {
-	private questionInput: HTMLTextAreaElement;
+	private questionInput!: HTMLTextAreaElement;
 	private onSubmit: (question: string) => void;
 	private selectedText: string;
 

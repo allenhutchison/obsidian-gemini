@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, Editor, MarkdownView } from 'obsidian';
+import { Plugin, WorkspaceLeaf, Editor, MarkdownView, MarkdownFileInfo } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiDiffView } from './ui/agent-view/gemini-diff-view';
@@ -153,7 +153,7 @@ const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
 export const VIEW_TYPE_DIFF = 'gemini-diff-view';
 
 export default class ObsidianGemini extends Plugin {
-	settings: ObsidianGeminiSettings;
+	settings!: ObsidianGeminiSettings;
 
 	get apiKey(): string {
 		const secretName = this.settings?.apiKeySecretName;
@@ -162,40 +162,40 @@ export default class ObsidianGemini extends Plugin {
 	}
 
 	// Public service properties — assigned by LifecycleService
-	public gfile: ScribeFile;
-	public agentView: AgentView;
-	public history: GeminiHistory;
-	public sessionHistory: SessionHistory;
-	public promptManager: PromptManager;
-	public prompts: GeminiPrompts;
-	public sessionManager: SessionManager;
-	public toolRegistry: ToolRegistry;
-	public toolExecutionEngine: ToolExecutionEngine;
-	public agentsMemory: AgentsMemory;
-	public examplePrompts: ExamplePromptsManager;
-	public vaultAnalyzer: VaultAnalyzer;
-	public deepResearch: DeepResearchService;
-	public imageGeneration: ImageGeneration;
-	public logger: Logger;
+	public gfile!: ScribeFile;
+	public agentView!: AgentView;
+	public history!: GeminiHistory;
+	public sessionHistory!: SessionHistory;
+	public promptManager!: PromptManager;
+	public prompts!: GeminiPrompts;
+	public sessionManager!: SessionManager;
+	public toolRegistry!: ToolRegistry;
+	public toolExecutionEngine!: ToolExecutionEngine;
+	public agentsMemory!: AgentsMemory;
+	public examplePrompts!: ExamplePromptsManager;
+	public vaultAnalyzer!: VaultAnalyzer;
+	public deepResearch!: DeepResearchService;
+	public imageGeneration!: ImageGeneration;
+	public logger!: Logger;
 	public ragIndexing: RagIndexingService | null = null;
-	public selectionActionService: SelectionActionService;
+	public selectionActionService!: SelectionActionService;
 	public mcpManager: MCPManager | null = null;
-	public skillManager: SkillManager;
-	public contextManager: ContextManager;
+	public skillManager!: SkillManager;
+	public contextManager!: ContextManager;
 	public folderInitializer: FolderInitializer | null = null;
-	public modelManager: ModelManager;
+	public modelManager!: ModelManager;
 	public completions: GeminiCompletions | null = null;
 	public summarizer: GeminiSummary | null = null;
-	public projectManager: ProjectManager;
-	public agentEventBus: AgentEventBus;
+	public projectManager!: ProjectManager;
+	public agentEventBus!: AgentEventBus;
 	public toolExecutionLogger: ToolExecutionLogger | null = null;
 
 	// Private members
-	private ribbonIcon: HTMLElement;
+	private ribbonIcon!: HTMLElement;
 	public isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
 	private previousRagEnabled: boolean = false;
-	private lifecycle: LifecycleService;
+	private lifecycle!: LifecycleService;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -329,7 +329,7 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-convert-to-project',
 			name: 'Convert Note to Project',
-			editorCallback: async (_editor: Editor, view: MarkdownView) => {
+			editorCallback: async (_editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				if (!view.file) return;
 				try {
@@ -408,7 +408,7 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-remove-project',
 			name: 'Remove Project',
-			editorCallback: async (_editor: Editor, view: MarkdownView) => {
+			editorCallback: async (_editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				if (!view.file) return;
 				try {
@@ -425,7 +425,7 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-rewrite-selection',
 			name: 'Rewrite text with AI',
-			editorCallback: (editor: Editor, _view: MarkdownView) => {
+			editorCallback: (editor: Editor, _view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				const selection = editor.getSelection();
 				const hasSelection = selection.length > 0;
@@ -456,7 +456,7 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-explain-selection',
 			name: 'Explain selection with AI',
-			editorCallback: async (editor: Editor, view: MarkdownView) => {
+			editorCallback: async (editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				await this.selectionActionService.handleExplainSelection(editor, view.file);
 			},
@@ -466,7 +466,7 @@ export default class ObsidianGemini extends Plugin {
 		this.addCommand({
 			id: 'gemini-scribe-ask-selection',
 			name: 'Ask about selection',
-			editorCallback: async (editor: Editor, view: MarkdownView) => {
+			editorCallback: async (editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				await this.selectionActionService.handleAskAboutSelection(editor, view.file);
 			},

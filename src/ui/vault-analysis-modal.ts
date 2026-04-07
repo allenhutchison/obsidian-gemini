@@ -6,9 +6,9 @@
 import { App, Modal } from 'obsidian';
 
 export class VaultAnalysisModal extends Modal {
-	private statusEl: HTMLElement;
-	private spinnerEl: HTMLElement;
-	private stepsEl: HTMLElement;
+	private statusEl!: HTMLElement;
+	private spinnerEl!: HTMLElement;
+	private stepsEl!: HTMLElement;
 	private steps: Map<string, HTMLElement> = new Map();
 	public currentStep: string = '';
 

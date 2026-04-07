@@ -1,7 +1,7 @@
 import { Modal, App } from 'obsidian';
 
 export class RewriteInstructionsModal extends Modal {
-	private instructionsEl: HTMLTextAreaElement;
+	private instructionsEl!: HTMLTextAreaElement;
 	private onSubmit: (instructions: string) => void;
 	private selectedText: string;
 	private isFullFile: boolean;

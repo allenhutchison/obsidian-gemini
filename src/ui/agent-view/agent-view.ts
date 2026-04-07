@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, TFile, Notice, TFolder, setIcon } from 'obsidian';
+import { ItemView, WorkspaceLeaf, TFile, TAbstractFile, Notice, TFolder, setIcon } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -40,17 +40,17 @@ export class AgentView extends ItemView {
 
 	// UI components
 	private progress: AgentViewProgress;
-	private messages: AgentViewMessages;
+	private messages!: AgentViewMessages;
 	private context: AgentViewContext;
-	private session: AgentViewSession;
-	private tools: AgentViewTools;
+	private session!: AgentViewSession;
+	private tools!: AgentViewTools;
 	private ui: AgentViewUI;
 
 	// UI element references
-	private chatContainer: HTMLElement;
-	private userInput: HTMLDivElement;
-	private sendButton: HTMLButtonElement;
-	private sessionHeader: HTMLElement;
+	private chatContainer!: HTMLElement;
+	private userInput!: HTMLDivElement;
+	private sendButton!: HTMLButtonElement;
+	private sessionHeader!: HTMLElement;
 
 	// State
 	private currentSession: ChatSession | null = null;
@@ -60,8 +60,8 @@ export class AgentView extends ItemView {
 	private cancellationRequested: boolean = false;
 	private eventBusUnsubscribers: (() => void)[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
-	private shelf: AgentViewShelf;
-	private tokenUsageContainer: HTMLElement;
+	private shelf!: AgentViewShelf;
+	private tokenUsageContainer!: HTMLElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
 		super(leaf);
@@ -861,7 +861,7 @@ To reference an attachment in your response, use the path shown above.`;
 	private async showFileMention() {
 		const modal = new FileMentionModal(
 			this.app,
-			async (fileOrFolder: TFile | TFolder) => {
+			async (fileOrFolder: TAbstractFile) => {
 				// Remove the @ character that triggered the picker
 				this.removeTrailingAtSymbol();
 
@@ -877,6 +877,8 @@ To reference an attachment in your response, use the path shown above.`;
 					this.updateSessionMetadata();
 					return;
 				}
+
+				if (!(fileOrFolder instanceof TFile)) return;
 
 				// Classify the file to determine text vs binary handling
 				const { classifyFile, FileCategory, arrayBufferToBase64, detectWebmMimeType, GEMINI_INLINE_DATA_LIMIT } =

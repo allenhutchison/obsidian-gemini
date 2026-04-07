@@ -7,6 +7,7 @@ export default {
 			'ts-jest',
 			{
 				useESM: true,
+				tsconfig: 'tsconfig.test.json',
 			},
 		],
 		'\\.txt$': './text-transformer.mjs',

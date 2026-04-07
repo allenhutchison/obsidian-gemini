@@ -225,7 +225,7 @@ Please provide a concise summary of the following text:
 			// Wait for the cache to be updated
 			const onCacheChange = (changedFile: TFile) => {
 				if (changedFile.path === file.path) {
-					this.plugin.app.metadataCache.off('changed', onCacheChange);
+					this.plugin.app.metadataCache.off('changed', onCacheChange as (...data: unknown[]) => unknown);
 					resolve();
 				}
 			};
@@ -234,7 +234,7 @@ Please provide a concise summary of the following text:
 
 			// Timeout after 2 seconds to prevent hanging
 			setTimeout(() => {
-				this.plugin.app.metadataCache.off('changed', onCacheChange);
+				this.plugin.app.metadataCache.off('changed', onCacheChange as (...data: unknown[]) => unknown);
 				resolve();
 			}, 2000);
 		});
@@ -324,7 +324,7 @@ This prompt will be applied to sessions and will supplement the default system p
 }
 
 class PromptNameModal extends Modal {
-	private inputEl: HTMLInputElement;
+	private inputEl!: HTMLInputElement;
 	private onSubmit: (promptName: string) => void;
 
 	constructor(app: App, onSubmit: (promptName: string) => void) {
