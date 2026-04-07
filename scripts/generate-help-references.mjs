@@ -47,7 +47,7 @@ function extractHeading(content) {
  * Escape a string for safe inclusion in a markdown table cell.
  */
 function escapeMarkdownTableCell(value) {
-	return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
+	return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
 }
 
 // Collect all eligible doc files
