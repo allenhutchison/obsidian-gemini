@@ -397,7 +397,6 @@ export class LifecycleService {
 
 		// Vault analyzer
 		plugin.vaultAnalyzer = new VaultAnalyzer(plugin);
-		plugin.vaultAnalyzer.setupInitCommand();
 
 		// Deep research
 		plugin.deepResearch = new DeepResearchService(plugin);
