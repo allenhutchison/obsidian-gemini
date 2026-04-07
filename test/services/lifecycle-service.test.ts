@@ -58,9 +58,7 @@ jest.mock('../../src/summary', () => ({
 	})),
 }));
 jest.mock('../../src/services/vault-analyzer', () => ({
-	VaultAnalyzer: jest.fn().mockImplementation(() => ({
-		setupInitCommand: jest.fn(),
-	})),
+	VaultAnalyzer: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('../../src/services/deep-research', () => ({ DeepResearchService: jest.fn() }));
 jest.mock('../../src/services/image-generation', () => ({

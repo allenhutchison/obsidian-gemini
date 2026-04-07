@@ -411,15 +411,4 @@ export class VaultAnalyzer {
 			return null;
 		}
 	}
-
-	/**
-	 * Setup the command palette command
-	 */
-	setupInitCommand(): void {
-		this.plugin.addCommand({
-			id: 'gemini-scribe-init-agents-memory',
-			name: 'Initialize/Update Vault Context (AGENTS.md)',
-			callback: () => this.initializeAgentsMemory(),
-		});
-	}
 }
