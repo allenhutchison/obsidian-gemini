@@ -268,7 +268,7 @@ Remove temporary notes from yesterday
 
 Add text to the end of a file without rewriting the entire content. Ideal for logs, journals, and incremental updates:
 
-```
+```text
 Add today's entry to my daily log
 Append the meeting action items to the project tracker
 ```
@@ -277,7 +277,7 @@ Append the meeting action items to the project tracker
 
 Safely modify note properties (frontmatter) without touching the body content:
 
-```
+```text
 Set the status property to "complete" on my project note
 Add the "reviewed" tag to all meeting notes
 ```
@@ -364,7 +364,7 @@ The agent will create a properly formatted `SKILL.md` file with the name, descri
 
 Update an existing skill's description, instructions, or both:
 
-```
+```text
 Update the meeting-notes skill to also extract key decisions
 Change the description of my code-review skill
 ```
@@ -487,7 +487,7 @@ When the agent proposes file changes (via `write_file`, `append_content`, `creat
 - **Edit the proposed content** directly in the diff view before clicking Allow
 - If you modify the content, the tool result reports `userEdited: true` so the agent knows
 
-Enable **"Always Show Diff View for File Writes"** in settings to automatically open the diff view with every confirmation instead of requiring a button click.
+Enable **"Always show diff view for file writes"** in settings to automatically open the diff view with every confirmation instead of requiring a button click.
 
 ### What Operations Require Confirmation
 

@@ -98,7 +98,7 @@ To type a literal `@` symbol without triggering the picker, press `@` twice or c
 
 **Example:**
 
-```
+```text
 User: @Project Plan Can you help me...
 [File appears in the shelf as "Project Plan.md"]
 [File becomes persistent context for session]
@@ -161,7 +161,7 @@ Active context files are displayed in the **unified file shelf** — a horizonta
 To remove a file from context:
 
 1. Click the **×** button on the shelf item, or
-2. Press **Delete** or **Backspace** when the item is focused in the shelf, or
+2. Press **Delete** or **Backspace** when the item is focused on the shelf, or
 3. Open the file selection modal, uncheck the file (or folder), and press **Esc**
 
 ### Context Limits
