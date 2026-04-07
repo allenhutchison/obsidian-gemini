@@ -18,7 +18,7 @@
 		"postversion": "git push && git push --follow-tags",
 		"format": "prettier --write .",
 		"format-check": "prettier --check .",
-		"test": "jest",
+		"test": "npm run generate-refs && jest",
 		"prepare": "husky",
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
