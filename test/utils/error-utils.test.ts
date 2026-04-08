@@ -355,6 +355,20 @@ describe('error-utils', () => {
 			};
 			expect(isQuotaExhausted(error)).toBe(true);
 		});
+
+		test('detects QuotaFailure embedded as JSON in error message', () => {
+			const error = new Error(
+				'RESOURCE_EXHAUSTED: {"error":{"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"tokens","limit":0}]}]}}'
+			);
+			expect(isQuotaExhausted(error)).toBe(true);
+		});
+
+		test('returns false for embedded JSON with non-zero limit', () => {
+			const error = new Error(
+				'RESOURCE_EXHAUSTED: {"details":[{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"limit":500}]}]}'
+			);
+			expect(isQuotaExhausted(error)).toBe(false);
+		});
 	});
 
 	describe('isRateLimitError', () => {

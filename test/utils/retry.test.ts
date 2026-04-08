@@ -90,6 +90,20 @@ describe('retry utilities', () => {
 			};
 			expect(parseRetryDelay(error)).toBe(1);
 		});
+
+		test('parses RetryInfo embedded as JSON in error message', () => {
+			const error = new Error(
+				'RESOURCE_EXHAUSTED: {"error":{"details":[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"1.7s"}]}}'
+			);
+			expect(parseRetryDelay(error)).toBe(Math.ceil(1.7 * 1000));
+		});
+
+		test('parses RetryInfo from flat details in error message', () => {
+			const error = new Error(
+				'Rate limited: {"details":[{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"10s"}]}'
+			);
+			expect(parseRetryDelay(error)).toBe(10000);
+		});
 	});
 
 	describe('isRetryableApiError', () => {

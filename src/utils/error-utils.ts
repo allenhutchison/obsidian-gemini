@@ -5,9 +5,9 @@
 /**
  * Extract the `details` array from various Google API error shapes.
  * Google errors may carry details at `error.details`, `error.error.details`,
- * or `error.response.data.error.details`.
+ * `error.response.data.error.details`, or embedded as JSON in `error.message`.
  */
-function extractErrorDetails(error: unknown): any[] {
+export function extractErrorDetails(error: unknown): any[] {
 	if (!error || typeof error !== 'object') return [];
 	const err = error as any;
 
@@ -21,10 +21,12 @@ function extractErrorDetails(error: unknown): any[] {
 	// Try to parse details from the error message (Google SDK sometimes embeds JSON)
 	if (err.message && typeof err.message === 'string') {
 		try {
-			const match = err.message.match(/\{[\s\S]*"details"\s*:\s*\[[\s\S]*\]/);
-			if (match) {
-				const parsed = JSON.parse(match[0]);
-				if (Array.isArray(parsed.details)) return parsed.details;
+			const start = err.message.indexOf('{');
+			const end = err.message.lastIndexOf('}');
+			if (start !== -1 && end > start) {
+				const parsed = JSON.parse(err.message.slice(start, end + 1));
+				const details = parsed.details ?? parsed.error?.details;
+				if (Array.isArray(details)) return details;
 			}
 		} catch {
 			// Not parseable, that's fine

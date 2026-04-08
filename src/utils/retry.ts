@@ -4,7 +4,7 @@
  */
 
 import { Logger } from './logger';
-import { extractStatusCode, isQuotaExhausted } from './error-utils';
+import { extractErrorDetails, extractStatusCode, isQuotaExhausted } from './error-utils';
 
 /**
  * Configuration for retry behavior
@@ -170,22 +170,17 @@ export function isTransientNetworkError(error: unknown): boolean {
 export function parseRetryDelay(error: unknown): number | null {
 	if (!error || typeof error !== 'object') return null;
 
-	const err = error as any;
+	// Use centralized detail extraction (handles object properties and message-embedded JSON)
+	const details = extractErrorDetails(error);
 
-	// Search through details arrays at various nesting levels
-	const detailSources = [err.details, err.error?.details, err.response?.data?.error?.details];
-
-	for (const details of detailSources) {
-		if (!Array.isArray(details)) continue;
-		for (const detail of details) {
-			if (detail['@type']?.includes('RetryInfo') || detail['@type']?.includes('retryInfo')) {
-				const delay = detail.retryDelay;
-				if (typeof delay === 'string') {
-					// Parse duration strings like "17s", "1.5s"
-					const match = delay.match(/^(\d+(?:\.\d+)?)s$/);
-					if (match) {
-						return Math.ceil(parseFloat(match[1]) * 1000);
-					}
+	for (const detail of details) {
+		if (detail['@type']?.includes('RetryInfo') || detail['@type']?.includes('retryInfo')) {
+			const delay = detail.retryDelay;
+			if (typeof delay === 'string') {
+				// Parse duration strings like "17s", "1.5s"
+				const match = delay.match(/^(\d+(?:\.\d+)?)s$/);
+				if (match) {
+					return Math.ceil(parseFloat(match[1]) * 1000);
 				}
 			}
 		}
