@@ -179,7 +179,9 @@ export class RagSearchTool implements Tool {
 			const maxResults = Math.min(Math.max(params.maxResults || 5, 1), 20);
 
 			// Build metadata filter if folder or tags are specified
-			const metadataFilter = this.buildMetadataFilter(params.folder, params.tags);
+			// Default to project root path when no explicit folder is provided
+			const folder = params.folder || context.projectRootPath;
+			const metadataFilter = this.buildMetadataFilter(folder, params.tags);
 
 			// Reuse API client from RAG indexing service
 			const ai = plugin.ragIndexing.getClient();

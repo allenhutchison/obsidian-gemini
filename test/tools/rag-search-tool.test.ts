@@ -384,6 +384,83 @@ describe('RagSearchTool', () => {
 			});
 		});
 
+		describe('project root scoping', () => {
+			it('should scope to project root when no explicit folder is provided', async () => {
+				mockAi.models.generateContent.mockResolvedValue({
+					text: 'Search results',
+					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+				});
+				(mockContext as any).projectRootPath = 'projects/my-app';
+
+				await tool.execute({ query: 'test' }, mockContext);
+
+				expect(mockAi.models.generateContent).toHaveBeenCalledWith({
+					model: 'gemini-1.5-flash-002',
+					contents: expect.stringContaining('test'),
+					config: {
+						tools: [
+							{
+								fileSearch: {
+									fileSearchStoreNames: ['test-store'],
+									metadataFilter: 'folder="projects/my-app"',
+								},
+							},
+						],
+					},
+				});
+			});
+
+			it('should use explicit folder over project root', async () => {
+				mockAi.models.generateContent.mockResolvedValue({
+					text: 'Search results',
+					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+				});
+				(mockContext as any).projectRootPath = 'projects/my-app';
+
+				await tool.execute({ query: 'test', folder: 'other/folder' }, mockContext);
+
+				expect(mockAi.models.generateContent).toHaveBeenCalledWith({
+					model: 'gemini-1.5-flash-002',
+					contents: expect.stringContaining('test'),
+					config: {
+						tools: [
+							{
+								fileSearch: {
+									fileSearchStoreNames: ['test-store'],
+									metadataFilter: 'folder="other/folder"',
+								},
+							},
+						],
+					},
+				});
+			});
+
+			it('should combine project root with tags filter', async () => {
+				mockAi.models.generateContent.mockResolvedValue({
+					text: 'Search results',
+					candidates: [{ groundingMetadata: { groundingChunks: [] } }],
+				});
+				(mockContext as any).projectRootPath = 'projects/my-app';
+
+				await tool.execute({ query: 'test', tags: ['architecture'] }, mockContext);
+
+				expect(mockAi.models.generateContent).toHaveBeenCalledWith({
+					model: 'gemini-1.5-flash-002',
+					contents: expect.stringContaining('test'),
+					config: {
+						tools: [
+							{
+								fileSearch: {
+									fileSearchStoreNames: ['test-store'],
+									metadataFilter: 'folder="projects/my-app" AND tags="architecture"',
+								},
+							},
+						],
+					},
+				});
+			});
+		});
+
 		it('should handle API errors gracefully', async () => {
 			mockAi.models.generateContent.mockRejectedValue(new Error('API error'));
 
