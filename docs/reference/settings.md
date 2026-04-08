@@ -42,7 +42,9 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
   ├── History/        # Legacy chat history files (v3.x)
   ├── Prompts/        # Custom prompt templates
   ├── Skills/         # Custom agent skills (<skill-name>/SKILL.md)
-  └── Agent-Sessions/ # Agent mode sessions with conversation history
+  ├── Agent-Sessions/ # Agent mode sessions with conversation history
+  ├── debug.log       # Current log file (when file logging is enabled)
+  └── debug.log.old   # Previous rotated log file
   ```
 
 ### Enable Chat History
@@ -179,6 +181,20 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 - **Default**: `false`
 - **Description**: Enable detailed console logging for troubleshooting
 - **Use case**: Debugging API issues, tool execution problems, or unexpected behavior
+
+### Log to File
+
+- **Setting**: `fileLogging`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Write log entries to a file (`debug.log`) in the plugin state folder
+- **Behavior**:
+  - Errors and warnings are always written to the log file when enabled
+  - Debug-level entries (`log()`, `debug()`) are only written when Debug Mode is also enabled
+  - Log files are automatically rotated at 1 MB (previous log kept as `debug.log.old`)
+  - Writes are batched and debounced to minimize I/O impact
+- **Use case**: Sharing diagnostic information in bug reports, or enabling the agent to read logs for self-diagnosis via vault tools
+- **Note**: Log files are stored in the plugin state folder and are automatically excluded from RAG indexing
 
 ### API Configuration
 
@@ -383,10 +399,10 @@ Available permission bypasses:
 
 ### Tool execution issues
 
-1. Enable Debug Mode
+1. Enable Debug Mode and Log to File
 2. Check Loop Detection settings
 3. Review Stop on Tool Error setting
-4. Examine console logs for specific errors
+4. Examine console logs or `debug.log` in the plugin state folder for specific errors
 
 ### Chat history not saving
 
