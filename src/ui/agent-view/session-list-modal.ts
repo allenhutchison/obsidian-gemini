@@ -255,12 +255,38 @@ export class SessionListModal extends Modal {
 				await this.app.vault.delete(file);
 				new Notice(`Session "${session.title}" deleted`);
 
-				// Reload the list
+				// Reload the list and refresh filter state
 				const { contentEl } = this;
 				const listContainer = contentEl.querySelector('.gemini-session-list');
 				if (listContainer) {
 					listContainer.empty();
 					await this.loadSessions();
+					this.buildProjectMap();
+
+					// Reset filter if selected project no longer has sessions
+					if (this.selectedFilter !== FILTER_ALL && this.selectedFilter !== FILTER_NONE) {
+						const hasSelectedProject = this.sessions.some((s) => s.projectPath === this.selectedFilter);
+						if (!hasSelectedProject) {
+							this.selectedFilter = FILTER_ALL;
+						}
+					}
+
+					// Re-render filter bar to reflect current state
+					const filterBar = contentEl.querySelector('.gemini-session-filter-bar');
+					const hasProjectSessions = this.sessions.some((s) => s.projectPath);
+					if (filterBar && !hasProjectSessions) {
+						filterBar.remove();
+					} else if (filterBar) {
+						filterBar.remove();
+						const insertBefore = contentEl.querySelector('.gemini-session-list');
+						if (insertBefore) {
+							const wrapper = contentEl.createDiv();
+							this.renderFilterBar(wrapper);
+							insertBefore.before(wrapper.firstChild!);
+							wrapper.remove();
+						}
+					}
+
 					this.renderSessionList(listContainer as HTMLElement);
 				}
 
