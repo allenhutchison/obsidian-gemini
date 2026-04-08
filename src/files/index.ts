@@ -172,7 +172,7 @@ export class ScribeFile {
 				if (cache.frontmatter.links) {
 					if (Array.isArray(cache.frontmatter.links)) {
 						cache.frontmatter.links.forEach((link) => {
-							const normalizedPath = this.normalizePath.call(this, link);
+							const normalizedPath = this.normalizePath(link, file);
 							if (normalizedPath) {
 								normalizedFrontmatterLinks.push(normalizedPath);
 							} else {
@@ -184,7 +184,7 @@ export class ScribeFile {
 							}
 						});
 					} else if (typeof cache.frontmatter.links === 'string') {
-						const normalizedPath = this.normalizePath.call(this, cache.frontmatter.links);
+						const normalizedPath = this.normalizePath(cache.frontmatter.links, file);
 						if (normalizedPath) {
 							normalizedFrontmatterLinks.push(normalizedPath);
 						} else {

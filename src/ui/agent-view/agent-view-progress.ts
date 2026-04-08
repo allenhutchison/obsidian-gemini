@@ -9,25 +9,25 @@ export type ProgressState = 'thinking' | 'tool' | 'waiting' | 'streaming';
  * and an expandable section for viewing full thinking text
  */
 export class AgentViewProgress {
-	private progressBarContainer: HTMLElement;
-	private progressBar: HTMLElement;
-	private progressFill: HTMLElement;
-	private progressStatusContainer: HTMLElement;
-	private progressStatus: HTMLElement;
-	private progressTimer: HTMLElement;
+	private progressBarContainer!: HTMLElement;
+	private progressBar!: HTMLElement;
+	private progressFill!: HTMLElement;
+	private progressStatusContainer!: HTMLElement;
+	private progressStatus!: HTMLElement;
+	private progressTimer!: HTMLElement;
 	private chatTimer: ChatTimer;
 
 	// Expandable thinking section
-	private thinkingSection: HTMLElement;
-	private thinkingContent: HTMLElement;
-	private thinkingChevron: HTMLElement;
+	private thinkingSection!: HTMLElement;
+	private thinkingContent!: HTMLElement;
+	private thinkingChevron!: HTMLElement;
 	private isThinkingExpanded: boolean = false;
 	private hasThinkingContent: boolean = false;
 	private thinkingRenderVersion: number = 0;
 
 	// Obsidian rendering context
-	private app: App;
-	private renderComponent: Component;
+	private app?: App;
+	private renderComponent?: Component;
 
 	constructor(app?: App, renderComponent?: Component) {
 		this.chatTimer = new ChatTimer();
