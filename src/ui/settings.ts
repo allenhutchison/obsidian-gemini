@@ -642,20 +642,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Log to file')
-			.setDesc(
-				'Write log entries to a file in the plugin state folder. ' +
-					'Errors and warnings are always logged; debug entries require Debug Mode. ' +
-					'Log files are automatically rotated at 1 MB.'
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.fileLogging).onChange(async (value) => {
-					this.plugin.settings.fileLogging = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
 			.setName('Show Advanced Settings')
 			.setDesc('Reveal advanced settings for power users.')
 			.addButton((button) =>
@@ -670,6 +656,19 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		// Advanced settings only visible when explicitly enabled
 		if (this.showDeveloperSettings) {
+			new Setting(containerEl)
+				.setName('Log to file')
+				.setDesc(
+					'Write log entries to a file in the plugin state folder. ' +
+						'Errors and warnings are always logged; debug entries require Debug Mode. ' +
+						'Log files are automatically rotated at 1 MB.'
+				)
+				.addToggle((toggle) =>
+					toggle.setValue(this.plugin.settings.fileLogging).onChange(async (value) => {
+						this.plugin.settings.fileLogging = value;
+						await this.plugin.saveSettings();
+					})
+				);
 			// Custom Prompts Advanced Settings
 			new Setting(containerEl).setName('Custom Prompts').setHeading();
 

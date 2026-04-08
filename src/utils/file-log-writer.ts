@@ -15,6 +15,7 @@ export class FileLogWriter {
 	private buffer: string[] = [];
 	private flushTimer: ReturnType<typeof setTimeout> | null = null;
 	private isFlushing = false;
+	private currentFlushPromise: Promise<void> | null = null;
 
 	private static readonly FLUSH_INTERVAL_MS = 1000;
 	private static readonly MAX_FILE_SIZE = 1_048_576; // 1MB
@@ -67,31 +68,36 @@ export class FileLogWriter {
 		const entries = this.buffer.splice(0);
 		const newContent = entries.join('\n') + '\n';
 
-		try {
-			const path = this.logPath;
-			let existing = '';
-			let currentSize = 0;
+		this.currentFlushPromise = (async () => {
+			try {
+				const path = this.logPath;
+				let existing = '';
+				let currentSize = 0;
 
-			if (await adapter.exists(path)) {
-				const stat = await adapter.stat(path);
-				currentSize = stat?.size ?? 0;
+				if (await adapter.exists(path)) {
+					const stat = await adapter.stat(path);
+					currentSize = stat?.size ?? 0;
 
-				if (currentSize + newContent.length > FileLogWriter.MAX_FILE_SIZE) {
-					await this.rotate();
-					// After rotation the file is gone, start fresh
-					existing = '';
-				} else {
-					existing = await adapter.read(path);
+					if (currentSize + newContent.length > FileLogWriter.MAX_FILE_SIZE) {
+						await this.rotate();
+						// After rotation the file is gone, start fresh
+						existing = '';
+					} else {
+						existing = await adapter.read(path);
+					}
 				}
-			}
 
-			await adapter.write(path, existing + newContent);
-		} catch (error) {
-			// Drop entries on failure to prevent unbounded buffer growth
-			console.error('[Gemini Scribe] FileLogWriter write error:', error);
-		} finally {
-			this.isFlushing = false;
-		}
+				await adapter.write(path, existing + newContent);
+			} catch (error) {
+				// Drop entries on failure to prevent unbounded buffer growth
+				console.error('[Gemini Scribe] FileLogWriter write error:', error);
+			} finally {
+				this.isFlushing = false;
+				this.currentFlushPromise = null;
+			}
+		})();
+
+		await this.currentFlushPromise;
 	}
 
 	private async rotate(): Promise<void> {
@@ -126,7 +132,16 @@ export class FileLogWriter {
 			clearTimeout(this.flushTimer);
 			this.flushTimer = null;
 		}
-		await this.flush();
+
+		// Wait for any in-flight flush to complete
+		if (this.currentFlushPromise) {
+			await this.currentFlushPromise;
+		}
+
+		// Drain any remaining buffer entries
+		if (this.buffer.length > 0) {
+			await this.flush();
+		}
 	}
 
 	private formatArgs(args: any[]): string {

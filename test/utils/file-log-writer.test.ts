@@ -47,6 +47,7 @@ describe('FileLogWriter', () => {
 	});
 
 	afterEach(async () => {
+		await writer.destroy();
 		jest.useRealTimers();
 	});
 
@@ -127,12 +128,13 @@ describe('FileLogWriter', () => {
 		it('should handle adapter not available gracefully', async () => {
 			mockPlugin.app.vault.adapter = null;
 
-			writer.write('ERROR', '[Gemini Scribe]', ['test']);
+			expect(() => writer.write('ERROR', '[Gemini Scribe]', ['test'])).not.toThrow();
 
 			jest.advanceTimersByTime(1100);
 			await jest.runAllTimersAsync();
 
-			// Should not throw
+			// Adapter was null, so no write should have occurred
+			expect(mockPlugin.app.vault.adapter).toBeNull();
 		});
 	});
 
@@ -269,9 +271,9 @@ describe('FileLogWriter', () => {
 
 	describe('destroy()', () => {
 		it('should flush remaining entries on destroy', async () => {
-			jest.useRealTimers();
 			writer.write('LOG', '[Gemini Scribe]', ['final message']);
 
+			// destroy() should flush without waiting for the debounce timer
 			await writer.destroy();
 
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalledWith(
@@ -283,9 +285,12 @@ describe('FileLogWriter', () => {
 		it('should clear pending flush timer', async () => {
 			writer.write('LOG', '[Gemini Scribe]', ['message']);
 
-			// Timer is scheduled but not yet fired
-			jest.useRealTimers();
+			// Timer is scheduled but not yet fired — destroy should clear it and flush
 			await writer.destroy();
+
+			// Advance timers to verify the original timer doesn't fire again
+			jest.advanceTimersByTime(2000);
+			await jest.runAllTimersAsync();
 
 			// Only one write from destroy's flush, not a double write
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalledTimes(1);
