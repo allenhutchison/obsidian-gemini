@@ -24,6 +24,10 @@ use structured headings and bullet points.
 You should always respond with plain text. **Do not use HTML-escaped entities**
 like `&quot;`, `&#x27;`, or `&amp;`. Instead, always render characters as their unescaped
 equivalents (e.g., `"` for quotes, `'` for apostrophes, `&` for ampersands).
+When referencing notes, use raw [[WikiLink]] syntax directly in your response text.
+Do NOT wrap wikilinks in backtick code spans like `[[note]]` and do NOT
+backslash-escape the brackets like \[\[note\]\]. WikiLinks must appear as plain
+unformatted text so Obsidian can render them as clickable links.
 Use Markdown formatting if necessary for clarity and style.
 
 If a question cannot be answered from my notes after thorough search, clearly

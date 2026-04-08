@@ -5,6 +5,10 @@
  * markdown renderer requires double newlines for paragraph breaks. This module
  * converts single newlines to double newlines while preserving table formatting,
  * which relies on single newlines between rows.
+ *
+ * Also handles unescaping of WikiLinks that Gemini sometimes wraps in backtick
+ * code spans or backslash-escapes, which prevents Obsidian from rendering them
+ * as clickable internal links.
  */
 
 /** Matches a markdown table divider line (e.g. | --- | :---: |). */
@@ -76,5 +80,41 @@ export function formatModelMessage(text: string): string {
 		previousLineWasEmpty = trimmedLine === '';
 	}
 
-	return formattedLines.join('\n');
+	return unescapeWikiLinks(formattedLines.join('\n'));
+}
+
+/**
+ * Remove backtick wrapping and backslash escaping from WikiLinks.
+ *
+ * Gemini sometimes wraps [[WikiLinks]] in backtick code spans or
+ * backslash-escapes the brackets, which prevents Obsidian's renderer
+ * from making them clickable. This function fixes those patterns
+ * while leaving fenced code blocks and multi-backtick code spans intact.
+ */
+export function unescapeWikiLinks(text: string): string {
+	if (!text) return text;
+
+	// Split on fenced code blocks (``` … ```), preserving delimiters.
+	// Odd-indexed segments are inside code fences.
+	const parts = text.split(/(```[\s\S]*?```)/);
+
+	for (let i = 0; i < parts.length; i++) {
+		if (i % 2 !== 0) continue; // Skip fenced code blocks
+
+		let segment = parts[i];
+
+		// Strip single-backtick wrapping: `[[note]]` → [[note]]
+		// Negative lookbehind/lookahead prevent matching multi-backtick spans
+		segment = segment.replace(/(?<!`)`(\[\[[^\]]+\]\])`(?!`)/g, '$1');
+
+		// Fix fully backslash-escaped brackets: \[\[note\]\] → [[note]]
+		segment = segment.replace(/\\\[\\\[([^\]]+)\\\]\\\]/g, '[[$1]]');
+
+		// Fix partially backslash-escaped brackets: \[[note\]] → [[note]]
+		segment = segment.replace(/\\\[\[([^\]]+)\\\]\]/g, '[[$1]]');
+
+		parts[i] = segment;
+	}
+
+	return parts.join('');
 }
