@@ -1,4 +1,18 @@
 {
+	"4.7.0": {
+		"title": "✨ Gemini Scribe 4.7 - Projects, Session Memory & File Shelf",
+		"highlights": [
+			"📂 Projects — scope agent sessions to a folder with custom instructions and tool/skill overrides",
+			"🧠 Session recall — the agent can search past conversations for relevant context",
+			"📎 File context shelf — unified drag-and-drop bar replaces the old context panel",
+			"📝 Diff review view — write and edit operations show a side-by-side diff before applying",
+			"📦 Bundled skills — built-in help and Obsidian knowledge skills, auto-generated from docs",
+			"📄 Binary file awareness — agent tools can read images, audio, video, and PDFs directly",
+			"🏗️ Layered prompt architecture — system prompts refactored into composable Handlebars sections",
+			"⚡ Strict TypeScript checks — property initialization and unused variable enforcement"
+		],
+		"details": "This release introduces Projects, letting you scope agent sessions to a folder with custom instructions, permission overrides, and skill filters. Session recall gives the agent memory across conversations — it can search past sessions for relevant context. The new file context shelf replaces the old context panel with a compact drag-and-drop bar that auto-expands folder contents. Write and edit tool calls now show a diff review view so you can inspect changes before they're applied. Bundled skills ship built-in help and Obsidian knowledge that are auto-generated from the docs site at build time. Agent tools can now read binary files (images, audio, PDFs) encountered during tool execution. The prompt system has been refactored into layered Handlebars templates for better maintainability. Under the hood, a new event bus architecture decouples lifecycle hooks, and strict TypeScript checks improve code reliability."
+	},
 	"4.6.0": {
 		"title": "✨ Gemini Scribe 4.6 - Context Management & Tool Permissions",
 		"highlights": [
