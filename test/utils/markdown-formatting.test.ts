@@ -1,4 +1,4 @@
-import { formatModelMessage } from '../../src/utils/markdown-formatting';
+import { formatModelMessage, unescapeWikiLinks } from '../../src/utils/markdown-formatting';
 
 describe('formatModelMessage', () => {
 	// --- Paragraph spacing ---
@@ -78,5 +78,82 @@ describe('formatModelMessage', () => {
 		formatModelMessage(' '.repeat(50000) + 'x');
 		const elapsed = Date.now() - start;
 		expect(elapsed).toBeLessThan(1000);
+	});
+
+	// --- WikiLink unescaping integration ---
+	it('unescapes backtick-wrapped wikilinks through formatModelMessage', () => {
+		const input = 'See `[[My Note]]` for details\nMore text';
+		const result = formatModelMessage(input);
+		expect(result).toContain('See [[My Note]] for details');
+		expect(result).not.toContain('`[[My Note]]`');
+	});
+});
+
+describe('unescapeWikiLinks', () => {
+	// --- Backtick wrapping ---
+	it('strips single backtick wrapping from wikilinks', () => {
+		expect(unescapeWikiLinks('See `[[My Note]]` for details')).toBe('See [[My Note]] for details');
+	});
+
+	it('strips backtick wrapping from multiple wikilinks', () => {
+		expect(unescapeWikiLinks('See `[[Note A]]` and `[[Note B]]`')).toBe('See [[Note A]] and [[Note B]]');
+	});
+
+	it('preserves multi-backtick code spans containing wikilinks', () => {
+		expect(unescapeWikiLinks('Use ``[[not a link]]`` in code')).toBe('Use ``[[not a link]]`` in code');
+	});
+
+	it('preserves wikilinks inside fenced code blocks', () => {
+		const input = '```\n`[[code link]]`\n```';
+		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	it('preserves wikilinks inside tilde-fenced code blocks', () => {
+		const input = '~~~\n`[[code link]]`\n~~~';
+		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	// --- Backslash escaping ---
+	it('fixes fully backslash-escaped wikilinks', () => {
+		expect(unescapeWikiLinks('See \\[\\[My Note\\]\\] for details')).toBe('See [[My Note]] for details');
+	});
+
+	it('fixes partially backslash-escaped wikilinks', () => {
+		expect(unescapeWikiLinks('See \\[[My Note\\]] for details')).toBe('See [[My Note]] for details');
+	});
+
+	it('preserves backslash-escaped brackets inside fenced code blocks', () => {
+		const input = '```\n\\[\\[code\\]\\]\n```';
+		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
+	// --- Wikilinks with display text ---
+	it('handles wikilinks with pipe display text', () => {
+		expect(unescapeWikiLinks('`[[path/to/note|Display Name]]`')).toBe('[[path/to/note|Display Name]]');
+	});
+
+	// --- No-op cases ---
+	it('leaves plain wikilinks unchanged', () => {
+		expect(unescapeWikiLinks('See [[My Note]] for details')).toBe('See [[My Note]] for details');
+	});
+
+	it('preserves backtick code spans that are not wikilinks', () => {
+		expect(unescapeWikiLinks('Use `array[0]` for access')).toBe('Use `array[0]` for access');
+	});
+
+	// --- Mixed content ---
+	it('handles mixed backtick-wrapped and plain wikilinks', () => {
+		expect(unescapeWikiLinks('`[[Note A]]` and [[Note B]]')).toBe('[[Note A]] and [[Note B]]');
+	});
+
+	// --- Edge cases ---
+	it('returns empty string unchanged', () => {
+		expect(unescapeWikiLinks('')).toBe('');
+	});
+
+	it('handles wikilinks with long note names', () => {
+		expect(
+			unescapeWikiLinks('`[[2024-11-23 - Introducing Gemini Scribe Your AI Writing Assistant for Obsidian]]`')
+		).toBe('[[2024-11-23 - Introducing Gemini Scribe Your AI Writing Assistant for Obsidian]]');
 	});
 });
