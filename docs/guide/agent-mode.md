@@ -146,13 +146,14 @@ Context files are displayed in a **unified file shelf** — a horizontal strip a
 **Adding files:**
 
 1. Type `@` in the chat input to open the file picker (supports text files **and** Gemini-compatible binary files like images, PDFs, audio, and video)
-2. Click the file icon in the session header to open the multi-select modal:
+2. Type `/` in an empty chat input to open the skill picker — select a skill to insert an activation prompt you can edit before sending (see [Agent Skills](agent-skills.md) for details)
+3. Click the file icon in the session header to open the multi-select modal:
    - Already-added files appear pre-checked
    - Type to fuzzy-search; **Enter** toggles a file or folder; **Esc** confirms and closes
    - Selecting a folder adds all markdown files inside it (folders are re-expanded each turn, so newly added files are automatically included)
    - Unchecking a file or folder removes it from context
-3. Drag and drop files or folders from the file explorer or your OS
-4. Paste images from your clipboard
+4. Drag and drop files or folders from the file explorer or your OS
+5. Paste images from your clipboard
 
 **Interacting with the shelf:**
 

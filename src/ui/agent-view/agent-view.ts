@@ -20,13 +20,14 @@ import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-t
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
 import { AgentViewShelf } from './agent-view-shelf';
-import { getContextSelection, createContextRange } from '../../utils/dom-context';
+import { getContextSelection, createContextRange, moveCursorToEnd } from '../../utils/dom-context';
 import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
+import { SkillMentionModal } from './skill-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
@@ -104,6 +105,7 @@ export class AgentView extends ItemView {
 		const callbacks: UICallbacks = {
 			showFilePicker: () => this.showFilePicker(),
 			showFileMention: () => this.showFileMention(),
+			showSkillPicker: () => this.showSkillPicker(),
 			showSessionList: () => this.showSessionList(),
 			showSessionSettings: () => this.showSessionSettings(),
 			createNewSession: () => this.createNewSession(),
@@ -864,7 +866,7 @@ To reference an attachment in your response, use the path shown above.`;
 			this.app,
 			async (fileOrFolder: TAbstractFile) => {
 				// Remove the @ character that triggered the picker
-				this.removeTrailingAtSymbol();
+				this.removeTrailingTriggerChar('@');
 
 				if (fileOrFolder instanceof TFolder) {
 					this.shelf.addFolder(fileOrFolder);
@@ -929,10 +931,10 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
-	 * Remove a trailing @ character from the input, used when the file picker
-	 * replaces the @ trigger with a shelf entry.
+	 * Remove a trailing trigger character from the input, used when a picker
+	 * (file mention or skill picker) replaces the trigger with content.
 	 */
-	private removeTrailingAtSymbol(): void {
+	private removeTrailingTriggerChar(char: string): void {
 		const input = this.userInput;
 		if (!input) return;
 
@@ -949,11 +951,10 @@ To reference an attachment in your response, use the path shown above.`;
 		// Only mutate text nodes within the input element
 		if (!input.contains(node)) return;
 
-		// Check if the character before cursor is @
 		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
 			const text = node.textContent || '';
 			const offset = range.startOffset;
-			if (text[offset - 1] === '@') {
+			if (text[offset - 1] === char) {
 				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
 				// Restore cursor position
 				const newRange = createContextRange(input);
@@ -963,6 +964,29 @@ To reference an attachment in your response, use the path shown above.`;
 				selection.addRange(newRange);
 			}
 		}
+	}
+
+	/**
+	 * Show skill picker modal for / slash commands
+	 */
+	private async showSkillPicker() {
+		const summaries = await this.plugin.skillManager.getSkillSummaries();
+		if (summaries.length === 0) {
+			new Notice('No skills available');
+			return;
+		}
+		const modal = new SkillMentionModal(
+			this.app,
+			(skill) => {
+				this.removeTrailingTriggerChar('/');
+				if (this.userInput) {
+					this.userInput.innerText = `Use the "${skill.name}" skill to help me with: `;
+					moveCursorToEnd(this.userInput);
+				}
+			},
+			summaries
+		);
+		modal.open();
 	}
 
 	/**
@@ -1158,6 +1182,7 @@ To reference an attachment in your response, use the path shown above.`;
 		return {
 			showFilePicker: () => this.showFilePicker(),
 			showFileMention: () => this.showFileMention(),
+			showSkillPicker: () => this.showSkillPicker(),
 			showSessionList: () => this.showSessionList(),
 			showSessionSettings: () => this.showSessionSettings(),
 			createNewSession: () => this.createNewSession(),

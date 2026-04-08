@@ -22,7 +22,7 @@ Skills and [custom prompts](/guide/custom-prompts) serve different purposes:
 Skills use **progressive disclosure** — the agent always knows which skills are available (name and description), but only loads the full instructions when it activates a skill. This keeps conversations focused while making specialized knowledge available when needed.
 
 1. **Discovery** — Skill summaries are included in every agent session
-2. **Activation** — When the agent encounters a matching task, it activates the skill to load full instructions
+2. **Activation** — When the agent encounters a matching task, it activates the skill to load full instructions. You can also type `/` in an empty chat input to browse and select skills directly via the slash command picker.
 3. **Execution** — The agent follows the skill's instructions to complete the task
 
 ## Built-in Skills

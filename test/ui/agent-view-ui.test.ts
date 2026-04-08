@@ -80,6 +80,7 @@ describe('AgentViewUI', () => {
 		callbacks = {
 			showFilePicker: jest.fn().mockResolvedValue(undefined),
 			showFileMention: jest.fn().mockResolvedValue(undefined),
+			showSkillPicker: jest.fn().mockResolvedValue(undefined),
 			showSessionList: jest.fn().mockResolvedValue(undefined),
 			showSessionSettings: jest.fn().mockResolvedValue(undefined),
 			createNewSession: jest.fn().mockResolvedValue(undefined),
@@ -152,6 +153,28 @@ describe('AgentViewUI', () => {
 
 	afterEach(() => {
 		document.body.removeChild(container);
+	});
+
+	describe('Slash Command Handling', () => {
+		it('should trigger showSkillPicker when / is typed in empty input', () => {
+			jest.useFakeTimers();
+			userInput.innerText = '';
+			const event = new KeyboardEvent('keydown', { key: '/', bubbles: true });
+			userInput.dispatchEvent(event);
+			jest.runAllTimers();
+			expect(callbacks.showSkillPicker).toHaveBeenCalled();
+			jest.useRealTimers();
+		});
+
+		it('should not trigger showSkillPicker when / is typed mid-sentence', () => {
+			jest.useFakeTimers();
+			userInput.innerText = 'some text';
+			const event = new KeyboardEvent('keydown', { key: '/', bubbles: true });
+			userInput.dispatchEvent(event);
+			jest.runAllTimers();
+			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
+			jest.useRealTimers();
+		});
 	});
 
 	describe('Drop Handling', () => {
