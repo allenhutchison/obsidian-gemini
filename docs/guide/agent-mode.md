@@ -775,3 +775,4 @@ Remember: The agent is a powerful tool, but you remain in control. Use it to aug
 
 - [What I Did On My Summer Vacation](https://allen.hutchison.org/2025/09/24/what-i-did-on-my-summer-vacation/) — The story behind Agent Mode's development
 - [Everything Becomes an Agent](https://allen.hutchison.org/2026/01/15/everything-becomes-an-agent/) — How every AI project evolves into an agent, and the patterns behind tools, memory, and autonomy
+- [Gemini Scribe: From Agent to Platform](https://allen.hutchison.org/2026/04/01/gemini-scribe-from-agent-to-platform/) — The evolution from chat plugin to AI platform, covering projects, skills, MCP, and the philosophy of seamless AI integration
