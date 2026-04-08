@@ -866,7 +866,7 @@ To reference an attachment in your response, use the path shown above.`;
 			this.app,
 			async (fileOrFolder: TAbstractFile) => {
 				// Remove the @ character that triggered the picker
-				this.removeTrailingAtSymbol();
+				this.removeTrailingTriggerChar('@');
 
 				if (fileOrFolder instanceof TFolder) {
 					this.shelf.addFolder(fileOrFolder);
@@ -931,10 +931,10 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
-	 * Remove a trailing @ character from the input, used when the file picker
-	 * replaces the @ trigger with a shelf entry.
+	 * Remove a trailing trigger character from the input, used when a picker
+	 * (file mention or skill picker) replaces the trigger with content.
 	 */
-	private removeTrailingAtSymbol(): void {
+	private removeTrailingTriggerChar(char: string): void {
 		const input = this.userInput;
 		if (!input) return;
 
@@ -951,11 +951,10 @@ To reference an attachment in your response, use the path shown above.`;
 		// Only mutate text nodes within the input element
 		if (!input.contains(node)) return;
 
-		// Check if the character before cursor is @
 		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
 			const text = node.textContent || '';
 			const offset = range.startOffset;
-			if (text[offset - 1] === '@') {
+			if (text[offset - 1] === char) {
 				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
 				// Restore cursor position
 				const newRange = createContextRange(input);
@@ -979,7 +978,7 @@ To reference an attachment in your response, use the path shown above.`;
 		const modal = new SkillMentionModal(
 			this.app,
 			(skill) => {
-				this.removeTrailingSlash();
+				this.removeTrailingTriggerChar('/');
 				if (this.userInput) {
 					this.userInput.innerText = `Use the "${skill.name}" skill to help me with: `;
 					moveCursorToEnd(this.userInput);
@@ -988,39 +987,6 @@ To reference an attachment in your response, use the path shown above.`;
 			summaries
 		);
 		modal.open();
-	}
-
-	/**
-	 * Remove a trailing / character from the input, used when the skill picker
-	 * replaces the / trigger with an instruction prompt.
-	 */
-	private removeTrailingSlash(): void {
-		const input = this.userInput;
-		if (!input) return;
-
-		const selection = getContextSelection(input);
-		if (!selection || selection.rangeCount === 0) return;
-
-		const range = selection.getRangeAt(0);
-
-		if (!range.collapsed) return;
-
-		const node = range.startContainer;
-
-		if (!input.contains(node)) return;
-
-		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
-			const text = node.textContent || '';
-			const offset = range.startOffset;
-			if (text[offset - 1] === '/') {
-				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
-				const newRange = createContextRange(input);
-				newRange.setStart(node, offset - 1);
-				newRange.collapse(true);
-				selection.removeAllRanges();
-				selection.addRange(newRange);
-			}
-		}
 	}
 
 	/**
