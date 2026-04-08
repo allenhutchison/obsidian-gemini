@@ -13,6 +13,7 @@ import {
 	PRESET_PERMISSIONS,
 	DEFAULT_TOOL_POLICY,
 } from '../types/tool-policy';
+import { getErrorMessage } from '../utils/error-utils';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: InstanceType<typeof ObsidianGemini>;
@@ -418,7 +419,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 							try {
 								await this.plugin.mcpManager.connectServer(config);
 							} catch (error) {
-								new Notice(`Server saved but failed to connect: ${error instanceof Error ? error.message : error}`);
+								new Notice(`Server saved but failed to connect: ${getErrorMessage(error)}`);
 							}
 						}
 
@@ -935,7 +936,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 								new Notice(`Indexed ${result.indexed} files (${result.skipped} skipped, ${result.failed} failed)`);
 								this.display();
 							} catch (error) {
-								new Notice(`Indexing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+								new Notice(`Indexing failed: ${getErrorMessage(error)}`);
 							} finally {
 								button.setButtonText('Reindex Vault');
 								button.setDisabled(false);
@@ -964,7 +965,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 											new Notice('Index deleted. Use "Reindex Vault" to rebuild.');
 											this.display();
 										} catch (error) {
-											new Notice(`Failed to delete index: ${error instanceof Error ? error.message : 'Unknown error'}`);
+											new Notice(`Failed to delete index: ${getErrorMessage(error)}`);
 										} finally {
 											button.setButtonText('Delete Index');
 											button.setDisabled(false);

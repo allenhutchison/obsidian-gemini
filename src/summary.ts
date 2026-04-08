@@ -3,6 +3,7 @@ import { GeminiPrompts } from './prompts';
 import { BaseModelRequest } from './api/index';
 import { GeminiClientFactory } from './api/simple-factory';
 import { Notice } from 'obsidian';
+import { getErrorMessage } from './utils/error-utils';
 
 export class GeminiSummary {
 	private plugin: InstanceType<typeof ObsidianGemini>;
@@ -56,8 +57,7 @@ export class GeminiSummary {
 			// Show success message
 			new Notice('Summary added to frontmatter successfully!');
 		} catch (error) {
-			const errorMsg = `Failed to generate summary: ${error instanceof Error ? error.message : String(error)}`;
-			this.showError(errorMsg, error);
+			this.showError(`Failed to generate summary: ${getErrorMessage(error)}`, error);
 		}
 	}
 

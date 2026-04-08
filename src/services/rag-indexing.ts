@@ -3,6 +3,8 @@ import { GoogleGenAI } from '@google/genai';
 import { FileUploader } from '@allenhutchison/gemini-utils';
 import type ObsidianGemini from '../main';
 import { ObsidianVaultAdapter } from './obsidian-file-adapter';
+import { getErrorMessage, isQuotaExhausted, isRateLimitError as isRateLimitErrorUtil } from '../utils/error-utils';
+import { parseRetryDelay } from '../utils/retry';
 
 /**
  * Represents a file that has been indexed in the File Search Store
@@ -227,7 +229,7 @@ export class RagIndexingService {
 				// Run indexing in background (don't await - modal handles display)
 				this.indexVault().catch((error) => {
 					this.plugin.logger.error('RAG Indexing: Initial indexing failed', error);
-					new Notice(`RAG Indexing failed: ${error.message}`);
+					new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
 				});
 			}
 		} catch (error) {
@@ -631,47 +633,32 @@ export class RagIndexingService {
 
 	/**
 	 * Check if an error is a rate limit (429) error from the API.
-	 * Google's API returns errors with status codes or specific messages.
+	 * Delegates to the centralized utility in error-utils.
 	 */
 	private isRateLimitError(error: unknown): boolean {
-		if (!error) return false;
-
-		const errorStr = String(error).toLowerCase();
-		const message = error instanceof Error ? error.message.toLowerCase() : '';
-
-		// Check for common rate limit indicators
-		return (
-			errorStr.includes('429') ||
-			errorStr.includes('resource_exhausted') ||
-			errorStr.includes('rate limit') ||
-			errorStr.includes('quota exceeded') ||
-			errorStr.includes('too many requests') ||
-			message.includes('429') ||
-			message.includes('resource_exhausted') ||
-			message.includes('rate limit') ||
-			message.includes('quota exceeded') ||
-			message.includes('too many requests')
-		);
+		return isRateLimitErrorUtil(error);
 	}
 
 	/**
-	 * Handle a rate limit by pausing operations with exponential backoff.
-	 * Returns a promise that resolves when the cooldown is complete.
+	 * Handle a rate limit by pausing operations with backoff.
+	 * Respects API-provided retry delays when available,
+	 * falling back to exponential backoff.
 	 */
-	private async handleRateLimit(): Promise<void> {
+	private async handleRateLimit(error?: unknown): Promise<void> {
 		this.consecutiveRateLimits++;
-		// Calculate delay with exponential backoff, capped at max
-		const delay = Math.min(
-			RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, this.consecutiveRateLimits - 1),
-			RATE_LIMIT_MAX_DELAY_MS
-		);
+
+		// Use API-provided retry delay if available, otherwise exponential backoff
+		const apiDelay = error ? parseRetryDelay(error) : null;
+		const delay = apiDelay
+			? Math.min(apiDelay, RATE_LIMIT_MAX_DELAY_MS)
+			: Math.min(RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, this.consecutiveRateLimits - 1), RATE_LIMIT_MAX_DELAY_MS);
 
 		this.rateLimitResumeTime = Date.now() + delay;
 		this.status = 'rate_limited';
 
 		this.plugin.logger.warn(
 			`RAG Indexing: Rate limited. Waiting ${Math.round(delay / 1000)}s before retry ` +
-				`(attempt ${this.consecutiveRateLimits})`
+				`(attempt ${this.consecutiveRateLimits})${apiDelay ? ' (API-provided delay)' : ''}`
 		);
 
 		// Update status bar with countdown
@@ -855,7 +842,7 @@ export class RagIndexingService {
 
 						// Trigger reindex (don't await - modal handles progress)
 						this.indexVault().catch((error) => {
-							new Notice(`RAG Indexing failed: ${error.message}`);
+							new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
 						});
 					},
 					async () => {
@@ -1020,7 +1007,7 @@ export class RagIndexingService {
 		// Run indexing in background (don't await - modal handles display)
 		this.indexVault().catch((error) => {
 			this.plugin.logger.error('RAG Indexing: Resume indexing failed', error);
-			new Notice(`RAG Indexing failed: ${error.message}`);
+			new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
 		});
 	}
 
@@ -1270,6 +1257,26 @@ export class RagIndexingService {
 		} catch (error) {
 			// Handle rate limit with auto-retry
 			if (this.isRateLimitError(error)) {
+				// Fail fast on permanent quota exhaustion — retrying won't help
+				if (isQuotaExhausted(error)) {
+					this.plugin.logger.error('RAG Indexing: Permanent quota exhaustion detected, stopping');
+					this.resetRateLimitTracking();
+					this.status = 'error';
+					this.currentFile = undefined;
+					this.indexingStartTime = undefined;
+					if (this.cache) {
+						this.cache.indexingInProgress = false;
+						this.cache.indexingStartedAt = undefined;
+						this.cache.lastIndexedFile = undefined;
+						await this.saveCache();
+					}
+					this.updateStatusBar();
+					this.notifyProgressListeners();
+					new Notice(getErrorMessage(error), 8000);
+					result.duration = Date.now() - startTime;
+					return result;
+				}
+
 				// Check if we've exceeded max retries
 				if (this.consecutiveRateLimits >= RATE_LIMIT_MAX_RETRIES) {
 					this.plugin.logger.error(`RAG Indexing: Max rate limit retries (${RATE_LIMIT_MAX_RETRIES}) exceeded`);
@@ -1296,8 +1303,8 @@ export class RagIndexingService {
 					await this.saveCache();
 				}
 
-				// Wait for cooldown
-				await this.handleRateLimit();
+				// Wait for cooldown (pass error so API-provided delay can be used)
+				await this.handleRateLimit(error);
 
 				// Auto-retry - smart sync will skip already-indexed files
 				this.status = 'indexing';
@@ -1543,22 +1550,31 @@ export class RagIndexingService {
 		} catch (error) {
 			// Check for rate limit error
 			if (this.isRateLimitError(error)) {
-				// Save progress before waiting
-				if (this.cache) {
-					this.cache.lastSync = Date.now();
-					await this.saveCache();
+				// Fail fast on permanent quota exhaustion — retrying won't help
+				if (isQuotaExhausted(error)) {
+					this.plugin.logger.error('RAG Indexing: Permanent quota exhaustion detected, stopping sync');
+					this.resetRateLimitTracking();
+					this.status = 'error';
+					this.updateStatusBar();
+					new Notice(getErrorMessage(error), 8000);
+				} else {
+					// Save progress before waiting
+					if (this.cache) {
+						this.cache.lastSync = Date.now();
+						await this.saveCache();
+					}
+
+					// Re-queue unprocessed changes for retry after cooldown
+					for (let i = currentChangeIndex; i < changes.length; i++) {
+						this.pendingChanges.set(changes[i].path, changes[i]);
+					}
+
+					// Wait for cooldown (pass error so API-provided delay can be used)
+					await this.handleRateLimit(error);
+
+					this.status = 'idle';
+					this.updateStatusBar();
 				}
-
-				// Re-queue unprocessed changes for retry after cooldown
-				for (let i = currentChangeIndex; i < changes.length; i++) {
-					this.pendingChanges.set(changes[i].path, changes[i]);
-				}
-
-				// Wait for cooldown
-				await this.handleRateLimit();
-
-				this.status = 'idle';
-				this.updateStatusBar();
 			} else {
 				this.plugin.logger.error('RAG Indexing: Failed to process changes', error);
 				this.status = 'error';
