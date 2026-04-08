@@ -47,9 +47,10 @@ export class SessionListModal extends Modal {
 		this.buildProjectMap();
 
 		// Project filter bar (only when there are projects linked to sessions)
+		const filterContainer = contentEl.createDiv({ cls: 'gemini-session-filter-container' });
 		const hasProjectSessions = this.sessions.some((s) => s.projectPath);
 		if (hasProjectSessions) {
-			this.renderFilterBar(contentEl);
+			this.renderFilterBar(filterContainer);
 		}
 
 		// Create session list
@@ -272,18 +273,12 @@ export class SessionListModal extends Modal {
 					}
 
 					// Re-render filter bar to reflect current state
-					const filterBar = contentEl.querySelector('.gemini-session-filter-bar');
-					const hasProjectSessions = this.sessions.some((s) => s.projectPath);
-					if (filterBar && !hasProjectSessions) {
-						filterBar.remove();
-					} else if (filterBar) {
-						filterBar.remove();
-						const insertBefore = contentEl.querySelector('.gemini-session-list');
-						if (insertBefore) {
-							const wrapper = contentEl.createDiv();
-							this.renderFilterBar(wrapper);
-							insertBefore.before(wrapper.firstChild!);
-							wrapper.remove();
+					const filterContainer = contentEl.querySelector('.gemini-session-filter-container') as HTMLElement;
+					if (filterContainer) {
+						filterContainer.empty();
+						const hasProjectSessions = this.sessions.some((s) => s.projectPath);
+						if (hasProjectSessions) {
+							this.renderFilterBar(filterContainer);
 						}
 					}
 
