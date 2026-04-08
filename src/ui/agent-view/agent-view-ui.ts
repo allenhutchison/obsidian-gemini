@@ -24,6 +24,7 @@ import {
 export interface UICallbacks {
 	showFilePicker: () => Promise<void>;
 	showFileMention: () => Promise<void>;
+	showSkillPicker: () => Promise<void>;
 	showSessionList: () => Promise<void>;
 	showSessionSettings: () => Promise<void>;
 	createNewSession: () => Promise<void>;
@@ -350,7 +351,7 @@ export class AgentViewUI {
 			cls: 'gemini-agent-input gemini-agent-input-rich',
 			attr: {
 				contenteditable: 'true',
-				'data-placeholder': 'Message the agent... (@ to mention files)',
+				'data-placeholder': 'Message the agent... (@ files, / skills)',
 			},
 		}) as HTMLDivElement;
 
@@ -376,6 +377,12 @@ export class AgentViewUI {
 				// If user selects a file, the @ will be removed before inserting the chip.
 				// If user dismisses the picker, the @ stays as a literal character.
 				setTimeout(() => callbacks.showFileMention(), 0);
+			} else if (e.key === '/') {
+				// Trigger skill picker only when input is empty (slash command, not mid-sentence slash)
+				const text = userInput.innerText || '';
+				if (text.trim().length === 0) {
+					setTimeout(() => callbacks.showSkillPicker(), 0);
+				}
 			}
 		});
 

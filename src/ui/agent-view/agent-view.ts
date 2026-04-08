@@ -20,13 +20,14 @@ import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-t
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
 import { AgentViewShelf } from './agent-view-shelf';
-import { getContextSelection, createContextRange } from '../../utils/dom-context';
+import { getContextSelection, createContextRange, moveCursorToEnd } from '../../utils/dom-context';
 import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
 import { FileMentionModal } from './file-mention-modal';
+import { SkillMentionModal } from './skill-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
@@ -104,6 +105,7 @@ export class AgentView extends ItemView {
 		const callbacks: UICallbacks = {
 			showFilePicker: () => this.showFilePicker(),
 			showFileMention: () => this.showFileMention(),
+			showSkillPicker: () => this.showSkillPicker(),
 			showSessionList: () => this.showSessionList(),
 			showSessionSettings: () => this.showSessionSettings(),
 			createNewSession: () => this.createNewSession(),
@@ -966,6 +968,62 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
+	 * Show skill picker modal for / slash commands
+	 */
+	private async showSkillPicker() {
+		const summaries = await this.plugin.skillManager.getSkillSummaries();
+		if (summaries.length === 0) {
+			new Notice('No skills available');
+			return;
+		}
+		const modal = new SkillMentionModal(
+			this.app,
+			(skill) => {
+				this.removeTrailingSlash();
+				if (this.userInput) {
+					this.userInput.innerText = `Use the "${skill.name}" skill to help me with: `;
+					moveCursorToEnd(this.userInput);
+				}
+			},
+			summaries
+		);
+		modal.open();
+	}
+
+	/**
+	 * Remove a trailing / character from the input, used when the skill picker
+	 * replaces the / trigger with an instruction prompt.
+	 */
+	private removeTrailingSlash(): void {
+		const input = this.userInput;
+		if (!input) return;
+
+		const selection = getContextSelection(input);
+		if (!selection || selection.rangeCount === 0) return;
+
+		const range = selection.getRangeAt(0);
+
+		if (!range.collapsed) return;
+
+		const node = range.startContainer;
+
+		if (!input.contains(node)) return;
+
+		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
+			const text = node.textContent || '';
+			const offset = range.startOffset;
+			if (text[offset - 1] === '/') {
+				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
+				const newRange = createContextRange(input);
+				newRange.setStart(node, offset - 1);
+				newRange.collapse(true);
+				selection.removeAllRanges();
+				selection.addRange(newRange);
+			}
+		}
+	}
+
+	/**
 	 * Show session list modal
 	 */
 	private async showSessionList() {
@@ -1158,6 +1216,7 @@ To reference an attachment in your response, use the path shown above.`;
 		return {
 			showFilePicker: () => this.showFilePicker(),
 			showFileMention: () => this.showFileMention(),
+			showSkillPicker: () => this.showSkillPicker(),
 			showSessionList: () => this.showSessionList(),
 			showSessionSettings: () => this.showSessionSettings(),
 			createNewSession: () => this.createNewSession(),
