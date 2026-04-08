@@ -1,4 +1,4 @@
-import { getErrorMessage, getShortErrorMessage } from '../../src/utils/error-utils';
+import { getErrorMessage, getShortErrorMessage, isQuotaExhausted, isRateLimitError } from '../../src/utils/error-utils';
 
 describe('error-utils', () => {
 	describe('getErrorMessage', () => {
@@ -31,10 +31,26 @@ describe('error-utils', () => {
 				);
 			});
 
-			test('429 Rate Limit', () => {
+			test('429 Rate Limit (transient)', () => {
 				const error = { status: 429, message: 'Too many requests' };
 				expect(getErrorMessage(error)).toBe(
 					'Rate limit exceeded: Too many requests. Please wait a moment and try again.'
+				);
+			});
+
+			test('429 Quota Exhausted (free-tier)', () => {
+				const error = {
+					status: 429,
+					message: 'RESOURCE_EXHAUSTED',
+					details: [
+						{
+							'@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+							violations: [{ quotaMetric: 'GenerateContentInputTokensPerModelPerDay-FreeTier', limit: 0 }],
+						},
+					],
+				};
+				expect(getErrorMessage(error)).toBe(
+					'Free-tier quota exhausted for this model. Try switching to a different model (e.g., Gemini Flash) or enable billing in Google AI Studio.'
 				);
 			});
 
@@ -269,6 +285,102 @@ describe('error-utils', () => {
 				const error = { status: 404, message: 'Model gemini-xyz not found' };
 				expect(getErrorMessage(error)).toContain('Model not found');
 			});
+		});
+	});
+
+	describe('isQuotaExhausted', () => {
+		test('detects QuotaFailure with limit: 0 in details', () => {
+			const error = {
+				status: 429,
+				details: [
+					{
+						'@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+						violations: [{ quotaMetric: 'GenerateContentInputTokensPerModelPerDay-FreeTier', limit: 0 }],
+					},
+				],
+			};
+			expect(isQuotaExhausted(error)).toBe(true);
+		});
+
+		test('returns false for QuotaFailure with non-zero limit', () => {
+			const error = {
+				status: 429,
+				details: [
+					{
+						'@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+						violations: [{ quotaMetric: 'GenerateContentRequests', limit: 500 }],
+					},
+				],
+			};
+			expect(isQuotaExhausted(error)).toBe(false);
+		});
+
+		test('detects nested details under .error', () => {
+			const error = {
+				error: {
+					details: [
+						{
+							'@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+							violations: [{ limit: 0 }],
+						},
+					],
+				},
+			};
+			expect(isQuotaExhausted(error)).toBe(true);
+		});
+
+		test('detects FreeTier + RESOURCE_EXHAUSTED in error message', () => {
+			const error = new Error('RESOURCE_EXHAUSTED: quotaMetric: GenerateContentInputTokensPerModelPerDay-FreeTier');
+			expect(isQuotaExhausted(error)).toBe(true);
+		});
+
+		test('returns false for regular 429 without quota details', () => {
+			const error = { status: 429, message: 'Too many requests' };
+			expect(isQuotaExhausted(error)).toBe(false);
+		});
+
+		test('returns false for null/undefined', () => {
+			expect(isQuotaExhausted(null)).toBe(false);
+			expect(isQuotaExhausted(undefined)).toBe(false);
+		});
+
+		test('detects limit: "0" as string', () => {
+			const error = {
+				details: [
+					{
+						'@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+						violations: [{ limit: '0' }],
+					},
+				],
+			};
+			expect(isQuotaExhausted(error)).toBe(true);
+		});
+	});
+
+	describe('isRateLimitError', () => {
+		test('detects 429 status code', () => {
+			expect(isRateLimitError({ status: 429 })).toBe(true);
+		});
+
+		test('detects RESOURCE_EXHAUSTED in message', () => {
+			expect(isRateLimitError(new Error('RESOURCE_EXHAUSTED: Too many requests'))).toBe(true);
+		});
+
+		test('detects rate limit in message', () => {
+			expect(isRateLimitError(new Error('Rate limit exceeded'))).toBe(true);
+		});
+
+		test('detects quota exceeded in message', () => {
+			expect(isRateLimitError(new Error('Quota exceeded for this project'))).toBe(true);
+		});
+
+		test('returns false for non-rate-limit errors', () => {
+			expect(isRateLimitError(new Error('Something went wrong'))).toBe(false);
+		});
+
+		test('returns false for null/undefined', () => {
+			expect(isRateLimitError(null)).toBe(false);
+			expect(isRateLimitError(undefined)).toBe(false);
 		});
 	});
 

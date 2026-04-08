@@ -35,6 +35,7 @@ import { ProjectManager } from './services/project-manager';
 import { AgentEventBus } from './agent/agent-event-bus';
 import { ToolExecutionLogger } from './subscribers/tool-execution-logger';
 import { LifecycleService } from './services/lifecycle-service';
+import { getErrorMessage } from './utils/error-utils';
 
 export interface ModelDiscoverySettings {
 	enabled: boolean;
@@ -600,8 +601,8 @@ export default class ObsidianGemini extends Plugin {
 							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
 						});
 						progressModal.open();
-						this.ragIndexing!.indexVault().catch((error) => {
-							new Notice(`RAG Indexing failed: ${error.message}`);
+						this.ragIndexing!.indexVault().catch((error: unknown) => {
+							new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
 						});
 					},
 					async () => {

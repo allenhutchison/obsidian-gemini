@@ -4,6 +4,7 @@
  */
 
 import { Logger } from './logger';
+import { extractStatusCode, isQuotaExhausted } from './error-utils';
 
 /**
  * Configuration for retry behavior
@@ -156,4 +157,93 @@ export function isTransientNetworkError(error: unknown): boolean {
 		);
 	}
 	return false;
+}
+
+/**
+ * Parse the `retryDelay` value from Google API error responses.
+ *
+ * Google includes a `RetryInfo` detail with a `retryDelay` field
+ * formatted as a duration string (e.g., "17s", "1.5s").
+ *
+ * @returns Delay in milliseconds, or null if not found/parseable
+ */
+export function parseRetryDelay(error: unknown): number | null {
+	if (!error || typeof error !== 'object') return null;
+
+	const err = error as any;
+
+	// Search through details arrays at various nesting levels
+	const detailSources = [err.details, err.error?.details, err.response?.data?.error?.details];
+
+	for (const details of detailSources) {
+		if (!Array.isArray(details)) continue;
+		for (const detail of details) {
+			if (detail['@type']?.includes('RetryInfo') || detail['@type']?.includes('retryInfo')) {
+				const delay = detail.retryDelay;
+				if (typeof delay === 'string') {
+					// Parse duration strings like "17s", "1.5s"
+					const match = delay.match(/^(\d+(?:\.\d+)?)s$/);
+					if (match) {
+						return Math.ceil(parseFloat(match[1]) * 1000);
+					}
+				}
+			}
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Determine if an API error is retryable.
+ *
+ * Non-retryable errors (immediate failure):
+ *   - 400, 401, 403, 404 (client errors that won't resolve with retry)
+ *   - 429 with quota exhausted (permanent, no free-tier quota)
+ *
+ * Retryable errors (worth retrying with backoff):
+ *   - 429 transient rate limits
+ *   - 5xx server errors
+ *   - Transient network errors (timeout, connection reset, etc.)
+ *   - Unknown errors (default to retryable for safety)
+ */
+export function isRetryableApiError(error: unknown): boolean {
+	const statusCode = extractStatusCode(error);
+
+	if (statusCode !== null) {
+		// Non-retryable 4xx errors (excluding 429)
+		if (statusCode >= 400 && statusCode < 500 && statusCode !== 429) {
+			return false;
+		}
+		// 429: retryable only if not permanent quota exhaustion
+		if (statusCode === 429) {
+			return !isQuotaExhausted(error);
+		}
+		// 5xx: always retryable
+		if (statusCode >= 500) {
+			return true;
+		}
+	}
+
+	// Check for transient network errors
+	if (isTransientNetworkError(error)) {
+		return true;
+	}
+
+	// For errors with rate-limit/quota messages but no status code,
+	// check if it's a permanent quota issue
+	if (error && typeof error === 'object') {
+		const message = (error as any).message || '';
+		const messageLower = typeof message === 'string' ? message.toLowerCase() : '';
+		if (
+			messageLower.includes('resource_exhausted') ||
+			messageLower.includes('quota') ||
+			messageLower.includes('rate limit')
+		) {
+			return !isQuotaExhausted(error);
+		}
+	}
+
+	// Default: allow retry for unknown error types
+	return true;
 }

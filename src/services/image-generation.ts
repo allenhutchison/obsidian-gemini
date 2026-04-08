@@ -2,6 +2,7 @@ import ObsidianGemini from '../main';
 import { Notice, App, Modal, Setting, TextAreaComponent } from 'obsidian';
 import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
+import { getErrorMessage } from '../utils/error-utils';
 
 export class ImageGeneration {
 	private plugin: InstanceType<typeof ObsidianGemini>;
@@ -48,7 +49,7 @@ export class ImageGeneration {
 
 			new Notice('Image generated and inserted successfully!');
 		} catch (error) {
-			const errorMsg = `Failed to generate image: ${error instanceof Error ? error.message : String(error)}`;
+			const errorMsg = `Failed to generate image: ${getErrorMessage(error)}`;
 			this.plugin.logger.error(errorMsg, error);
 			new Notice(errorMsg);
 		}
@@ -274,7 +275,7 @@ class ImagePromptModal extends Modal {
 
 			new Notice('Prompt generated! Feel free to edit it before generating the image.');
 		} catch (error) {
-			const errorMsg = `Failed to generate prompt: ${error instanceof Error ? error.message : String(error)}`;
+			const errorMsg = `Failed to generate prompt: ${getErrorMessage(error)}`;
 			this.plugin.logger.error(errorMsg, error);
 			new Notice(errorMsg);
 		} finally {

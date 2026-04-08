@@ -3,6 +3,100 @@
  */
 
 /**
+ * Extract the `details` array from various Google API error shapes.
+ * Google errors may carry details at `error.details`, `error.error.details`,
+ * or `error.response.data.error.details`.
+ */
+function extractErrorDetails(error: unknown): any[] {
+	if (!error || typeof error !== 'object') return [];
+	const err = error as any;
+
+	// Direct details array
+	if (Array.isArray(err.details)) return err.details;
+	// Nested under .error
+	if (Array.isArray(err.error?.details)) return err.error.details;
+	// Nested under .response.data.error
+	if (Array.isArray(err.response?.data?.error?.details)) return err.response.data.error.details;
+
+	// Try to parse details from the error message (Google SDK sometimes embeds JSON)
+	if (err.message && typeof err.message === 'string') {
+		try {
+			const match = err.message.match(/\{[\s\S]*"details"\s*:\s*\[[\s\S]*\]/);
+			if (match) {
+				const parsed = JSON.parse(match[0]);
+				if (Array.isArray(parsed.details)) return parsed.details;
+			}
+		} catch {
+			// Not parseable, that's fine
+		}
+	}
+
+	return [];
+}
+
+/**
+ * Check if a rate-limit error represents permanent quota exhaustion
+ * (as opposed to a transient rate limit that will resolve with backoff).
+ *
+ * Google returns QuotaFailure details with `limit: 0` when the model
+ * has no free-tier quota at all — retrying is futile in this case.
+ */
+export function isQuotaExhausted(error: unknown): boolean {
+	// Check structured details for QuotaFailure with limit: 0
+	const details = extractErrorDetails(error);
+	for (const detail of details) {
+		if (detail['@type']?.includes('QuotaFailure') || detail['@type']?.includes('quotaFailure')) {
+			const violations = detail.violations || [];
+			for (const v of violations) {
+				if (v.limit === 0 || v.limit === '0') return true;
+			}
+		}
+	}
+
+	// Fall back to message-based detection for SDK errors that flatten details
+	if (error && typeof error === 'object') {
+		const message = (error as any).message || String(error);
+		const messageLower = typeof message === 'string' ? message.toLowerCase() : '';
+		if (
+			messageLower.includes('resource_exhausted') &&
+			(messageLower.includes('freetier') ||
+				messageLower.includes('free-tier') ||
+				messageLower.includes('free tier') ||
+				messageLower.includes('limit: 0'))
+		) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Check if an error is a rate-limit or quota error (429 / RESOURCE_EXHAUSTED).
+ * This includes both transient rate limits and permanent quota exhaustion.
+ */
+export function isRateLimitError(error: unknown): boolean {
+	if (!error) return false;
+
+	const statusCode = extractStatusCode(error);
+	if (statusCode === 429) return true;
+
+	if (typeof error === 'object') {
+		const message = (error as any).message || '';
+		const messageLower = typeof message === 'string' ? message.toLowerCase() : String(error).toLowerCase();
+		return (
+			messageLower.includes('429') ||
+			messageLower.includes('resource_exhausted') ||
+			messageLower.includes('rate limit') ||
+			messageLower.includes('quota exceeded') ||
+			messageLower.includes('too many requests')
+		);
+	}
+
+	return false;
+}
+
+/**
  * Extract a user-friendly error message from various error types
  *
  * Handles errors from Google Gemini API, network errors, and generic errors.
@@ -52,12 +146,15 @@ export function getErrorMessage(error: unknown): string {
 			return 'Authentication failed. Please verify your API key has access to the Gemini API.';
 		}
 
-		// Rate limiting
+		// Rate limiting — distinguish transient from permanent quota exhaustion
 		if (
 			messageLower.includes('rate limit') ||
 			messageLower.includes('quota') ||
 			messageLower.includes('resource_exhausted')
 		) {
+			if (isQuotaExhausted(error)) {
+				return 'Free-tier quota exhausted for this model. Try switching to a different model (e.g., Gemini Flash) or enable billing in Google AI Studio.';
+			}
 			return 'API rate limit exceeded. Please wait a moment and try again.';
 		}
 
@@ -159,7 +256,7 @@ export function getErrorMessage(error: unknown): string {
 /**
  * Extract HTTP status code from error object
  */
-function extractStatusCode(error: any): number | null {
+export function extractStatusCode(error: any): number | null {
 	// Check common status code properties
 	if (typeof error.status === 'number') {
 		return error.status;
@@ -213,6 +310,9 @@ function getHttpErrorMessage(statusCode: number, error: any): string {
 		case 404:
 			return 'Model not found: The selected model is not available. Please check your model settings.';
 		case 429:
+			if (isQuotaExhausted(error)) {
+				return 'Free-tier quota exhausted for this model. Try switching to a different model (e.g., Gemini Flash) or enable billing in Google AI Studio.';
+			}
 			return 'Rate limit exceeded: Too many requests. Please wait a moment and try again.';
 		case 500:
 			return 'Server error: Google Gemini API encountered an internal error. Please try again later.';
