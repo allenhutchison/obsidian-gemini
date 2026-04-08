@@ -38,6 +38,34 @@ describe('BundledSkillRegistry', () => {
 			expect(audio).toBeDefined();
 			expect(audio!.description).toBeTruthy();
 		});
+
+		it('should include deep-research skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const skill = summaries.find((s) => s.name === 'deep-research');
+			expect(skill).toBeDefined();
+			expect(skill!.description).toBeTruthy();
+		});
+
+		it('should include image-generation skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const skill = summaries.find((s) => s.name === 'image-generation');
+			expect(skill).toBeDefined();
+			expect(skill!.description).toBeTruthy();
+		});
+
+		it('should include vault-semantic-search skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const skill = summaries.find((s) => s.name === 'vault-semantic-search');
+			expect(skill).toBeDefined();
+			expect(skill!.description).toBeTruthy();
+		});
+
+		it('should include recall-sessions skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const skill = summaries.find((s) => s.name === 'recall-sessions');
+			expect(skill).toBeDefined();
+			expect(skill!.description).toBeTruthy();
+		});
 	});
 
 	describe('loadSkill', () => {
@@ -73,6 +101,30 @@ describe('BundledSkillRegistry', () => {
 			const content = BundledSkillRegistry.loadSkill('audio-transcription');
 			expect(content).not.toBeNull();
 			expect(content).toContain('Transcri');
+		});
+
+		it('should return body content for deep-research', () => {
+			const content = BundledSkillRegistry.loadSkill('deep-research');
+			expect(content).not.toBeNull();
+			expect(content).toContain('deep_research');
+		});
+
+		it('should return body content for image-generation', () => {
+			const content = BundledSkillRegistry.loadSkill('image-generation');
+			expect(content).not.toBeNull();
+			expect(content).toContain('generate_image');
+		});
+
+		it('should return body content for vault-semantic-search', () => {
+			const content = BundledSkillRegistry.loadSkill('vault-semantic-search');
+			expect(content).not.toBeNull();
+			expect(content).toContain('vault_semantic_search');
+		});
+
+		it('should return body content for recall-sessions', () => {
+			const content = BundledSkillRegistry.loadSkill('recall-sessions');
+			expect(content).not.toBeNull();
+			expect(content).toContain('recall_sessions');
 		});
 
 		it('should return null for unknown skill', () => {
@@ -126,6 +178,10 @@ describe('BundledSkillRegistry', () => {
 			expect(BundledSkillRegistry.has('gemini-scribe-help')).toBe(true);
 			expect(BundledSkillRegistry.has('obsidian-bases')).toBe(true);
 			expect(BundledSkillRegistry.has('audio-transcription')).toBe(true);
+			expect(BundledSkillRegistry.has('deep-research')).toBe(true);
+			expect(BundledSkillRegistry.has('image-generation')).toBe(true);
+			expect(BundledSkillRegistry.has('vault-semantic-search')).toBe(true);
+			expect(BundledSkillRegistry.has('recall-sessions')).toBe(true);
 		});
 
 		it('should return false for unknown skills', () => {

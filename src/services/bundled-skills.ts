@@ -5,6 +5,10 @@ import helpSkillMd from '../../prompts/bundled-skills/gemini-scribe-help/SKILL.m
 import basesSkillMd from '../../prompts/bundled-skills/obsidian-bases/SKILL.md';
 import propertiesSkillMd from '../../prompts/bundled-skills/obsidian-properties/SKILL.md';
 import audioTranscriptionSkillMd from '../../prompts/bundled-skills/audio-transcription/SKILL.md';
+import deepResearchSkillMd from '../../prompts/bundled-skills/deep-research/SKILL.md';
+import imageGenerationSkillMd from '../../prompts/bundled-skills/image-generation/SKILL.md';
+import vaultSemanticSearchSkillMd from '../../prompts/bundled-skills/vault-semantic-search/SKILL.md';
+import recallSessionsSkillMd from '../../prompts/bundled-skills/recall-sessions/SKILL.md';
 
 // Auto-generated help references from docs/ — see scripts/generate-help-references.mjs
 import { helpResources, helpReferencesTable } from './generated-help-references';
@@ -72,6 +76,38 @@ skills.set('audio-transcription', {
 	name: 'audio-transcription',
 	description: parseDescription(audioTranscriptionSkillMd),
 	content: stripFrontmatter(audioTranscriptionSkillMd),
+	resources: new Map(),
+});
+
+// Register deep-research
+skills.set('deep-research', {
+	name: 'deep-research',
+	description: parseDescription(deepResearchSkillMd),
+	content: stripFrontmatter(deepResearchSkillMd),
+	resources: new Map(),
+});
+
+// Register image-generation
+skills.set('image-generation', {
+	name: 'image-generation',
+	description: parseDescription(imageGenerationSkillMd),
+	content: stripFrontmatter(imageGenerationSkillMd),
+	resources: new Map(),
+});
+
+// Register vault-semantic-search
+skills.set('vault-semantic-search', {
+	name: 'vault-semantic-search',
+	description: parseDescription(vaultSemanticSearchSkillMd),
+	content: stripFrontmatter(vaultSemanticSearchSkillMd),
+	resources: new Map(),
+});
+
+// Register recall-sessions
+skills.set('recall-sessions', {
+	name: 'recall-sessions',
+	description: parseDescription(recallSessionsSkillMd),
+	content: stripFrontmatter(recallSessionsSkillMd),
 	resources: new Map(),
 });
 
