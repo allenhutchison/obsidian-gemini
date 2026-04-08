@@ -33,6 +33,10 @@ Gemini Scribe ships with built-in skills that are always available:
 - **obsidian-bases** — Guides the agent through creating and configuring Obsidian Bases, including filters, formulas, views, and common patterns like task trackers and project dashboards.
 - **obsidian-properties** — Helps the agent work with Obsidian note properties (frontmatter), including creating, editing, and querying properties.
 - **audio-transcription** — Guides the agent through transcribing audio and video files into structured notes with timestamps, speaker labels, and summaries.
+- **deep-research** — Guides the agent to use deep research for comprehensive, multi-source investigation and report generation, with clear guidance on when to use it vs a quick Google search.
+- **image-generation** — Guides the agent through generating images from text descriptions, including prompt engineering tips and the two-step workflow for embedding images in notes.
+- **vault-semantic-search** — Encourages the agent to use semantic search (RAG) first for concept-based vault queries, with strategies for combining semantic and keyword search.
+- **recall-sessions** — Helps the agent find and retrieve past conversations when users ask about prior discussions, decisions, or work on specific files or projects.
 
 Built-in skills work exactly like custom skills — the agent sees them in its available skills list and activates them when relevant. If you create a custom skill with the same name as a built-in one, your version takes priority.
 
