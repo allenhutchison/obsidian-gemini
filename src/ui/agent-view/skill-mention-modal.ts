@@ -1,11 +1,11 @@
-import { FuzzySuggestModal } from 'obsidian';
+import { App, FuzzySuggestModal } from 'obsidian';
 import type { SkillSummary } from '../../services/skill-manager';
 
 export class SkillMentionModal extends FuzzySuggestModal<SkillSummary> {
 	private onSelect: (skill: SkillSummary) => void;
 	private skills: SkillSummary[];
 
-	constructor(app: any, onSelect: (skill: SkillSummary) => void, skills: SkillSummary[]) {
+	constructor(app: App, onSelect: (skill: SkillSummary) => void, skills: SkillSummary[]) {
 		super(app);
 		this.onSelect = onSelect;
 		this.skills = skills;
