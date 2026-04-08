@@ -65,15 +65,21 @@ class RecallSessionsTool implements Tool {
 
 			let filtered = allSessions.filter((s) => s.id !== currentSessionId);
 
-			// Filter by file path (matches against raw ref strings)
+			// Filter by file path (matches against raw ref strings).
+			// Refs are basenames stripped of [[]], not full vault paths, so we use
+			// bidirectional substring matching: a full-path query like
+			// "notes/meeting.md" still matches a basename ref like "meeting"
+			// because the path contains the basename.
 			if (params.filePath) {
 				const searchPath = params.filePath.toLowerCase();
 				filtered = filtered.filter((s) => {
 					for (const ref of s.accessedFileRefs) {
-						if (ref.toLowerCase().includes(searchPath)) return true;
+						const lRef = ref.toLowerCase();
+						if (lRef.includes(searchPath) || searchPath.includes(lRef)) return true;
 					}
 					for (const ref of s.contextFileRefs) {
-						if (ref.toLowerCase().includes(searchPath)) return true;
+						const lRef = ref.toLowerCase();
+						if (lRef.includes(searchPath) || searchPath.includes(lRef)) return true;
 					}
 					return false;
 				});

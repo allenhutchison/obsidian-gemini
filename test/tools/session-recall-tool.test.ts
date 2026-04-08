@@ -130,6 +130,28 @@ describe('RecallSessionsTool', () => {
 		expect(titles).toEqual(['Has context']);
 	});
 
+	it('matches filePath with full vault path against basename refs (bidirectional)', async () => {
+		const matching = makeSession({
+			id: 'a',
+			title: 'Has file',
+			accessedFileRefs: ['MeetingNotes'],
+		});
+		const nonMatching = makeSession({
+			id: 'b',
+			title: 'No file',
+			accessedFileRefs: ['other'],
+		});
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([matching, nonMatching]) },
+		});
+
+		// Full path query should still match a basename-only ref
+		const result = await getTool().execute({ filePath: 'Notes/MeetingNotes.md' }, ctx);
+		expect(result.success).toBe(true);
+		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		expect(titles).toEqual(['Has file']);
+	});
+
 	it('filters by title query (case-insensitive substring)', async () => {
 		const a = makeSession({ id: 'a', title: 'Planning Q1 goals' });
 		const b = makeSession({ id: 'b', title: 'Bug triage' });
