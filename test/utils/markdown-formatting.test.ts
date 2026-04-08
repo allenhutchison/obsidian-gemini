@@ -108,6 +108,11 @@ describe('unescapeWikiLinks', () => {
 		expect(unescapeWikiLinks(input)).toBe(input);
 	});
 
+	it('preserves wikilinks inside tilde-fenced code blocks', () => {
+		const input = '~~~\n`[[code link]]`\n~~~';
+		expect(unescapeWikiLinks(input)).toBe(input);
+	});
+
 	// --- Backslash escaping ---
 	it('fixes fully backslash-escaped wikilinks', () => {
 		expect(unescapeWikiLinks('See \\[\\[My Note\\]\\] for details')).toBe('See [[My Note]] for details');

@@ -94,9 +94,9 @@ export function formatModelMessage(text: string): string {
 export function unescapeWikiLinks(text: string): string {
 	if (!text) return text;
 
-	// Split on fenced code blocks (``` … ```), preserving delimiters.
+	// Split on fenced code blocks (``` … ``` or ~~~ … ~~~), preserving delimiters.
 	// Odd-indexed segments are inside code fences.
-	const parts = text.split(/(```[\s\S]*?```)/);
+	const parts = text.split(/((?:`{3,}|~{3,})[\s\S]*?(?:`{3,}|~{3,}))/);
 
 	for (let i = 0; i < parts.length; i++) {
 		if (i % 2 !== 0) continue; // Skip fenced code blocks
