@@ -57,27 +57,23 @@ class RecallSessionsTool implements Tool {
 		const limit = Math.max(1, Math.min(50, Math.floor(params.limit || 10)));
 
 		try {
-			// Load recent sessions (fetch more than limit to allow filtering)
-			const allSessions = await plugin.sessionManager.getRecentAgentSessions(50);
+			// Use lightweight metadata query to avoid full session hydration (#505)
+			const allSessions = await plugin.sessionManager.getSessionMetadata(50);
 
 			// Exclude the current session from results
 			const currentSessionId = context.session?.id;
 
 			let filtered = allSessions.filter((s) => s.id !== currentSessionId);
 
-			// Filter by file path
+			// Filter by file path (matches against raw ref strings)
 			if (params.filePath) {
 				const searchPath = params.filePath.toLowerCase();
 				filtered = filtered.filter((s) => {
-					// Check accessed files if present
-					if (s.accessedFiles) {
-						for (const path of s.accessedFiles) {
-							if (path.toLowerCase().includes(searchPath)) return true;
-						}
+					for (const ref of s.accessedFileRefs) {
+						if (ref.toLowerCase().includes(searchPath)) return true;
 					}
-					// Also check context files
-					for (const file of s.context?.contextFiles ?? []) {
-						if (file.path.toLowerCase().includes(searchPath)) return true;
+					for (const ref of s.contextFileRefs) {
+						if (ref.toLowerCase().includes(searchPath)) return true;
 					}
 					return false;
 				});
@@ -90,11 +86,11 @@ class RecallSessionsTool implements Tool {
 				// doesn't nuke the entire recall result set.
 				const projectMatches = await Promise.allSettled(
 					filtered.map(async (s) => {
-						if (!s.projectPath) return false;
-						// Match against project path or project name
-						if (s.projectPath.toLowerCase().includes(searchProject)) return true;
+						if (!s.projectRef) return false;
+						// Match against raw project reference
+						if (s.projectRef.toLowerCase().includes(searchProject)) return true;
 						// Try to resolve project name
-						const project = await plugin.projectManager?.getProject(s.projectPath);
+						const project = await plugin.projectManager?.getProject(s.projectRef);
 						if (project?.config.name.toLowerCase().includes(searchProject)) return true;
 						return false;
 					})
@@ -116,7 +112,7 @@ class RecallSessionsTool implements Tool {
 			}
 
 			// Explicitly sort by lastActive descending so the agent always sees the
-			// most recent matches first, regardless of how getRecentAgentSessions
+			// most recent matches first, regardless of how getSessionMetadata
 			// happened to order things.
 			filtered.sort((a, b) => b.lastActive.getTime() - a.lastActive.getTime());
 
@@ -128,9 +124,9 @@ class RecallSessionsTool implements Tool {
 				title: s.title,
 				date: s.lastActive.toISOString(),
 				historyPath: s.historyPath,
-				project: s.projectPath || null,
-				filesAccessed: s.accessedFiles ? Array.from(s.accessedFiles).slice(0, 20) : [],
-				contextFiles: (s.context?.contextFiles ?? []).map((f) => f.path),
+				project: s.projectRef || null,
+				filesAccessed: s.accessedFileRefs.slice(0, 20),
+				contextFiles: s.contextFileRefs,
 			}));
 
 			return {

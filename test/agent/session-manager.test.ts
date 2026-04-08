@@ -455,4 +455,174 @@ describe('SessionManager', () => {
 			expect(sessions).toEqual([]);
 		});
 	});
+
+	describe('getSessionMetadata', () => {
+		let mockFolder: any;
+		let mockSessionFiles: TFile[];
+
+		beforeEach(() => {
+			const now = Date.now();
+
+			mockSessionFiles = [
+				Object.assign(new TFile(), {
+					path: 'gemini-scribe/Agent-Sessions/session1.md',
+					basename: 'session1',
+					extension: 'md',
+					stat: { ctime: now - 3000, mtime: now - 3000 },
+				}),
+				Object.assign(new TFile(), {
+					path: 'gemini-scribe/Agent-Sessions/session2.md',
+					basename: 'session2',
+					extension: 'md',
+					stat: { ctime: now - 1000, mtime: now - 1000 },
+				}),
+				Object.assign(new TFile(), {
+					path: 'gemini-scribe/Agent-Sessions/session3.md',
+					basename: 'session3',
+					extension: 'md',
+					stat: { ctime: now - 2000, mtime: now - 2000 },
+				}),
+			];
+
+			mockFolder = {
+				children: mockSessionFiles,
+				path: 'gemini-scribe/Agent-Sessions',
+				name: 'Agent-Sessions',
+			};
+
+			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(mockFolder);
+
+			mockPlugin.app.metadataCache = {
+				getFileCache: jest.fn(),
+				getFirstLinkpathDest: jest.fn(),
+			};
+		});
+
+		it('should return metadata sorted by mtime descending', async () => {
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { session_id: 'id', title: 'Title' },
+			});
+
+			const metadata = await sessionManager.getSessionMetadata();
+
+			expect(metadata).toHaveLength(3);
+			expect(metadata[0].historyPath).toContain('session2'); // Most recent
+			expect(metadata[1].historyPath).toContain('session3');
+			expect(metadata[2].historyPath).toContain('session1'); // Oldest
+		});
+
+		it('should strip [[]] from wikilink refs', async () => {
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: {
+					session_id: 'test-id',
+					title: 'Test',
+					accessed_files: ['[[Chapter 1]]', '[[Utils]]'],
+					context_files: ['[[Notes]]'],
+					project: '[[My Project]]',
+				},
+			});
+
+			const metadata = await sessionManager.getSessionMetadata(1);
+
+			expect(metadata[0].accessedFileRefs).toEqual(['Chapter 1', 'Utils']);
+			expect(metadata[0].contextFileRefs).toEqual(['Notes']);
+			expect(metadata[0].projectRef).toBe('My Project');
+		});
+
+		it('should handle raw path strings for backward compatibility', async () => {
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: {
+					session_id: 'test-id',
+					title: 'Test',
+					context_files: ['path/to/file.md'],
+					project: 'Projects/my-project.md',
+				},
+			});
+
+			const metadata = await sessionManager.getSessionMetadata(1);
+
+			expect(metadata[0].contextFileRefs).toEqual(['path/to/file.md']);
+			expect(metadata[0].projectRef).toBe('Projects/my-project.md');
+		});
+
+		it('should strip aliases and anchors from wikilink project refs', async () => {
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: {
+					session_id: 'test-id',
+					title: 'Test',
+					project: '[[My Project|alias]]',
+				},
+			});
+
+			const metadata = await sessionManager.getSessionMetadata(1);
+
+			expect(metadata[0].projectRef).toBe('My Project');
+		});
+
+		it('should handle missing frontmatter gracefully', async () => {
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
+
+			const metadata = await sessionManager.getSessionMetadata();
+
+			expect(metadata).toHaveLength(3);
+			expect(metadata[0].id).toBe('session2'); // Falls back to basename
+			expect(metadata[0].title).toBe('session2');
+			expect(metadata[0].accessedFileRefs).toEqual([]);
+			expect(metadata[0].contextFileRefs).toEqual([]);
+			expect(metadata[0].projectRef).toBeUndefined();
+		});
+
+		it('should respect the limit parameter', async () => {
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { session_id: 'id', title: 'Title' },
+			});
+
+			const metadata = await sessionManager.getSessionMetadata(2);
+
+			expect(metadata).toHaveLength(2);
+		});
+
+		it('should return empty array when folder is missing', async () => {
+			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(null);
+
+			const metadata = await sessionManager.getSessionMetadata();
+
+			expect(metadata).toEqual([]);
+		});
+
+		it('should continue past individual file failures', async () => {
+			let callCount = 0;
+			mockPlugin.app.metadataCache.getFileCache.mockImplementation(() => {
+				callCount++;
+				if (callCount === 1) throw new Error('corrupt file');
+				return { frontmatter: { session_id: 'ok', title: 'OK' } };
+			});
+
+			const metadata = await sessionManager.getSessionMetadata();
+
+			// Should skip the failed file and return the other 2
+			expect(metadata).toHaveLength(2);
+			expect(mockPlugin.logger.warn).toHaveBeenCalledWith(
+				expect.stringContaining('Failed to read session metadata'),
+				expect.any(Error)
+			);
+		});
+
+		it('should not call getFirstLinkpathDest (no TFile resolution)', async () => {
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: {
+					session_id: 'test-id',
+					title: 'Test',
+					accessed_files: ['[[Chapter 1]]'],
+					context_files: ['[[Notes]]'],
+					project: '[[My Project]]',
+				},
+			});
+
+			await sessionManager.getSessionMetadata();
+
+			// The key assertion: no wikilink resolution should happen
+			expect(mockPlugin.app.metadataCache.getFirstLinkpathDest).not.toHaveBeenCalled();
+		});
+	});
 });
