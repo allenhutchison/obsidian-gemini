@@ -21,7 +21,7 @@ const TOOL_ICONS: Record<string, string> = {
 	create_folder: 'folder-plus',
 	delete_file: 'trash-2',
 	move_file: 'file-symlink',
-	search_files: 'search',
+	find_files_by_name: 'search',
 	google_search: 'globe',
 	fetch_url: 'link',
 	generate_image: 'image',
@@ -62,7 +62,7 @@ export class AgentViewTools {
 		const toolPriority: Record<string, number> = {
 			read_file: 1,
 			list_files: 2,
-			search_files: 3,
+			find_files_by_name: 3,
 			google_search: 4,
 			fetch_url: 5,
 			write_file: 6,
@@ -448,9 +448,7 @@ export class AgentViewTools {
 				model: modelConfig.model || this.plugin.settings.chatModelName,
 				temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 				topP: modelConfig.topP ?? this.plugin.settings.topP,
-				prompt: this.plugin.prompts.generalPrompt({
-					userMessage: 'Respond to the user based on the tool execution results',
-				}),
+				prompt: '', // Unused in agent pipeline
 				customPrompt: customPrompt, // Pass custom prompt through to follow-up requests
 				renderContent: false,
 				availableTools: availableTools, // Include tools so model can chain calls
@@ -533,7 +531,7 @@ export class AgentViewTools {
 						model: modelConfig.model || this.plugin.settings.chatModelName,
 						temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 						topP: modelConfig.topP ?? this.plugin.settings.topP,
-						prompt: 'Please summarize what you just did with the tools.',
+						prompt: '', // Unused in agent pipeline
 						renderContent: false,
 					};
 

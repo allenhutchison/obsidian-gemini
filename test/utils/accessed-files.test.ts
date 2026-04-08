@@ -92,13 +92,13 @@ describe('extractAccessedPaths', () => {
 	it('should skip non-tracked tools', () => {
 		const results = [
 			{
-				toolName: 'search_files',
+				toolName: 'find_files_by_name',
 				toolArguments: { pattern: '*.md' },
 				result: { success: true, data: { matches: [] } },
 			},
 			{ toolName: 'list_files', toolArguments: { path: '/' }, result: { success: true, data: { files: [] } } },
 			{
-				toolName: 'search_file_contents',
+				toolName: 'find_files_by_content',
 				toolArguments: { query: 'test' },
 				result: { success: true, data: { results: [] } },
 			},
@@ -131,7 +131,7 @@ describe('extractAccessedPaths', () => {
 		const results = [
 			{ toolName: 'read_file', toolArguments: { path: 'a.md' }, result: { success: true, data: { path: 'a.md' } } },
 			{
-				toolName: 'search_files',
+				toolName: 'find_files_by_name',
 				toolArguments: { pattern: '*.md' },
 				result: { success: true, data: { matches: [] } },
 			},

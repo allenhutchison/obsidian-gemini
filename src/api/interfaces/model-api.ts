@@ -80,6 +80,8 @@ export interface ExtendedModelRequest extends BaseModelRequest {
 	/** Optional list of skill names to include (filters available skills when a project is active) */
 	projectSkills?: string[];
 	availableTools?: ToolDefinition[];
+	/** Per-turn context injected into the system instruction: context file list, attachment paths, rendered file contents. */
+	perTurnContext?: string;
 	inlineAttachments?: InlineDataPart[];
 	/** @deprecated Use inlineAttachments instead */
 	imageAttachments?: InlineDataPart[];

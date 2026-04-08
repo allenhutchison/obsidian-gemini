@@ -336,7 +336,7 @@ User: Using our project architecture (in context),
 
 Agent:
 1. References ARCHITECTURE.md (context)
-2. Uses search_files to find endpoints
+2. Uses find_files_by_name to find endpoints
 3. Uses read_file to examine each endpoint
 4. Creates test plan following architecture
 ```

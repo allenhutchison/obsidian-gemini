@@ -125,7 +125,7 @@ describe('Tool Integration Tests', () => {
 			// 1. Search for files
 			const searchResult = await engine.executeTool(
 				{
-					name: 'search_files',
+					name: 'find_files_by_name',
 					arguments: { pattern: 'todo' },
 				},
 				context
@@ -386,7 +386,7 @@ describe('Tool Integration Tests', () => {
 
 			// Execute multiple tools with one failure
 			const toolCalls = [
-				{ name: 'search_files', arguments: { pattern: 'test' } },
+				{ name: 'find_files_by_name', arguments: { pattern: 'test' } },
 				{ name: 'read_file', arguments: { path: 'nonexistent.md' } }, // Will fail
 				{ name: 'list_files', arguments: { path: '' } },
 			];

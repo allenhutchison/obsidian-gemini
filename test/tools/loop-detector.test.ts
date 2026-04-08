@@ -37,7 +37,7 @@ describe('ToolLoopDetector', () => {
 
 	it('should detect loop when identical calls exceed threshold', () => {
 		const sessionId = 'test-session';
-		const toolCall: ToolCall = { name: 'search_files', arguments: { pattern: 'test' } };
+		const toolCall: ToolCall = { name: 'find_files_by_name', arguments: { pattern: 'test' } };
 
 		// Record two identical calls
 		detector.recordExecution(sessionId, toolCall);
@@ -55,7 +55,7 @@ describe('ToolLoopDetector', () => {
 
 	it('should reset loop detection after time window expires', () => {
 		const sessionId = 'test-session';
-		const toolCall: ToolCall = { name: 'search_files', arguments: { pattern: 'test' } };
+		const toolCall: ToolCall = { name: 'find_files_by_name', arguments: { pattern: 'test' } };
 
 		// Make two calls
 		detector.recordExecution(sessionId, toolCall);
@@ -128,8 +128,8 @@ describe('ToolLoopDetector', () => {
 		const sessionId = 'test-session';
 
 		// Similar but different patterns
-		const call1: ToolCall = { name: 'search_files', arguments: { pattern: 'test' } };
-		const call2: ToolCall = { name: 'search_files', arguments: { pattern: 'test*' } };
+		const call1: ToolCall = { name: 'find_files_by_name', arguments: { pattern: 'test' } };
+		const call2: ToolCall = { name: 'find_files_by_name', arguments: { pattern: 'test*' } };
 
 		// Record alternating calls
 		detector.recordExecution(sessionId, call1);

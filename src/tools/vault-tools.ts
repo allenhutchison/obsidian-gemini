@@ -145,7 +145,7 @@ export class ReadFileTool implements Tool {
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'Read the contents of a file from the vault, or list the contents of a folder. Supports text files (markdown, code, .base, .canvas) and binary files that Gemini can process (images, audio, video, PDF). For text files, returns the file content along with metadata including the canonical wikilink, outgoing links, and backlinks. For binary files, the file data is sent directly to the model for analysis (e.g., image description, audio transcription, PDF reading). For folders, returns a list of all files and subfolders. The "wikilink" field contains the preferred way to reference this file (e.g., "[[Foo Foo]]" instead of "[[Dogs/Foo Foo]]"). All links are in [[WikiLink]] format and can be passed directly to any vault tool. Path can be a full path (e.g., "folder/note.md"), a simple filename (e.g., "note"), or a wikilink text (e.g., "My Note" from [[My Note]]). The .md extension is optional.';
+		"Read a file or list a folder's contents. Supports text files (markdown, code, .base, .canvas) and binary files (images, audio, video, PDF). Returns file content with metadata (wikilink, outgoing links, backlinks). For folders, returns a list of children. Path can be a full path, filename, or wikilink text. The .md extension is optional.";
 
 	parameters = {
 		type: 'object' as const,
@@ -802,12 +802,12 @@ export class MoveFileTool implements Tool {
  * Search for files by name pattern
  */
 export class SearchFilesTool implements Tool {
-	name = 'search_files';
-	displayName = 'Search Files';
+	name = 'find_files_by_name';
+	displayName = 'Find Files by Name';
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'Search for files in the vault by matching file names or paths against a pattern. Supports wildcards: * (matches any characters) and ? (matches single character). Searches are case-insensitive and match against both file names and full paths. Returns array of matching files with name, path, size, and modification time. Examples: "daily*" finds all files starting with "daily", "*meeting*" finds files containing "meeting" anywhere in name/path. Limited to 50 results by default. NOTE: This searches file NAMES/PATHS only, not file contents.';
+		'Search for files by matching file names or paths against a pattern. Supports wildcards: * (any characters) and ? (single character). Case-insensitive. Returns matching files with name, path, size, and modification time. Examples: "daily*" finds files starting with "daily", "*meeting*" finds files containing "meeting". Limited to 50 results. Searches names/paths only — use find_files_by_content to search inside files.';
 
 	parameters = {
 		type: 'object' as const,
@@ -904,12 +904,12 @@ export class SearchFilesTool implements Tool {
  * Search for text content within files
  */
 export class SearchFileContentsTool implements Tool {
-	name = 'search_file_contents';
-	displayName = 'Search File Contents';
+	name = 'find_files_by_content';
+	displayName = 'Find Files by Content';
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'Search for text content within markdown files in the vault. Unlike search_files which only searches filenames, this tool searches inside file contents using grep-style text matching. Supports case-sensitive/insensitive search and regex patterns. Returns matching lines with context (lines before/after the match). Use this to find notes containing specific text, code snippets, or patterns. Examples: find all notes mentioning "meeting notes", search for TODO items, find files containing specific tags or phrases. Results include file path, line numbers, matching content, and surrounding context lines.';
+		'Search inside markdown file contents for text or regex patterns. Returns matching lines with surrounding context. Supports case-sensitive/insensitive search and regex. Use this to find notes containing specific text, code snippets, TODO items, tags, or phrases. Results include file path, line numbers, and matching content with context lines.';
 
 	parameters = {
 		type: 'object' as const,
@@ -1109,7 +1109,7 @@ export class GetWorkspaceStateTool implements Tool {
 	category = ToolCategory.READ_ONLY;
 	classification = ToolClassification.READ;
 	description =
-		'IMPORTANT: Call this tool FIRST at the start of every conversation, and again whenever the user refers to "this file", "the current file", or "what I\'m looking at". You do NOT automatically know what file the user has open — you must call this tool to find out. Returns metadata for files open in Markdown views: each file\'s path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Non-Markdown views (PDFs, canvases, images) are not included — use read_file for those.';
+		"Returns metadata for files currently open in Obsidian: each file's path, wikilink, whether it is visible in a pane, whether it is the active (focused) file, and any text the user has selected. Also includes the current project if the session is linked to one. Non-Markdown views (PDFs, canvases, images) are not included — use read_file for those.";
 
 	parameters = {
 		type: 'object' as const,

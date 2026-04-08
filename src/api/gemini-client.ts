@@ -237,21 +237,16 @@ export class GeminiClient implements ModelApi {
 				availableSkills = availableSkills.filter((s) => extReq.projectSkills!.includes(s.name));
 			}
 
-			// Build unified system prompt with tools, custom prompt, agents memory, and available skills
-			// This includes: base system prompt + vault context (AGENTS.md) + tool instructions (if tools) + custom prompt (if provided)
+			// Build layered system prompt: identity → vault context → project →
+			// agent rules → tool catalog → custom instructions → per-turn context
 			systemInstruction = this.prompts.getSystemPromptWithCustom(
 				extReq.availableTools,
 				extReq.customPrompt,
 				agentsMemory,
 				availableSkills,
-				extReq.projectInstructions
+				extReq.projectInstructions,
+				extReq.perTurnContext ?? extReq.prompt
 			);
-
-			// Append additional instructions from prompt field (e.g., generalPrompt, contextPrompt)
-			// Only append if custom prompt didn't override everything
-			if (extReq.prompt && !extReq.customPrompt?.overrideSystemPrompt) {
-				systemInstruction += '\n\n' + extReq.prompt;
-			}
 		} else {
 			// For BaseModelRequest, prompt is the full input
 			systemInstruction = request.prompt || '';

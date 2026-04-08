@@ -53,7 +53,7 @@ describe('DeepResearchTool', () => {
 			expect(tool.category).toBe(ToolCategory.READ_ONLY);
 			expect(tool.requiresConfirmation).toBe(true);
 			expect(tool.description).toContain('comprehensive');
-			expect(tool.description).toContain('Deep Research model');
+			expect(tool.description).toContain('comprehensive research');
 		});
 
 		it('should have confirmation message function', () => {

@@ -903,7 +903,8 @@ export class AgentViewMessages {
 			create_folder: 'folder-plus',
 			read_file: 'file-text',
 			list_files: 'folder-open',
-			search_files: 'search',
+			find_files_by_name: 'search',
+			find_files_by_content: 'search',
 		};
 		setIcon(container, iconMap[toolName] || 'tool');
 	}

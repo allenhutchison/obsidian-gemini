@@ -487,7 +487,8 @@ To reference an attachment in your response, use the path shown above.`;
 					model: modelName,
 					temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
 					topP: modelConfig.topP ?? this.plugin.settings.topP,
-					prompt: additionalInstructions, // Additional context and instructions
+					prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+					perTurnContext: additionalInstructions, // Context files, attachments, rendered content
 					customPrompt: customPrompt, // Custom prompt template (if configured)
 					projectInstructions: projectInstructions, // Project-scoped instructions (if active)
 					projectSkills: activeProject?.config.skills, // Filter skills to project scope
