@@ -152,18 +152,7 @@ export class AgentView extends ItemView {
 		);
 
 		// Initialize tools component with context
-		const toolsContext: ToolsContext = {
-			getCurrentSession: () => this.currentSession,
-			isCancellationRequested: () => this.send?.isCancellationRequested() ?? false,
-			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
-				this.progress.update(statusText, state),
-			hideProgress: () => this.progress.hide(),
-			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			incrementToolCallCount: (count: number) => {
-				this.send?.incrementToolCallCount(count);
-			},
-		};
-		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
+		this.tools = new AgentViewTools(this.chatContainer, this.plugin, this.createToolsContext());
 
 		// Initialize session component with callbacks and state
 		const sessionCallbacks: SessionUICallbacks = {
@@ -557,6 +546,24 @@ export class AgentView extends ItemView {
 	}
 
 	/**
+	 * Build the context object required by AgentViewTools.
+	 * Shared between createAgentInterface() and ensureToolsInitialized().
+	 */
+	private createToolsContext(): ToolsContext {
+		return {
+			getCurrentSession: () => this.currentSession,
+			isCancellationRequested: () => this.send?.isCancellationRequested() ?? false,
+			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
+				this.progress.update(statusText, state),
+			hideProgress: () => this.progress.hide(),
+			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
+			incrementToolCallCount: (count: number) => {
+				this.send?.incrementToolCallCount(count);
+			},
+		};
+	}
+
+	/**
 	 * Public method to show tool execution (delegates to tools component)
 	 * Used by tests and external components
 	 */
@@ -590,19 +597,7 @@ export class AgentView extends ItemView {
 			throw new Error('Cannot initialize tools component: chatContainer is not set');
 		}
 
-		const toolsContext: ToolsContext = {
-			getCurrentSession: () => this.currentSession,
-			isCancellationRequested: () => this.send?.isCancellationRequested() ?? false,
-			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
-				this.progress.update(statusText, state),
-			hideProgress: () => this.progress.hide(),
-			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			incrementToolCallCount: (count: number) => {
-				this.send?.incrementToolCallCount(count);
-			},
-		};
-
-		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
+		this.tools = new AgentViewTools(this.chatContainer, this.plugin, this.createToolsContext());
 	}
 
 	/**
