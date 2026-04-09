@@ -10,7 +10,7 @@ import {
 	PRESET_PERMISSIONS,
 	DEFAULT_TOOL_POLICY,
 } from '../types/tool-policy';
-import { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings';
 
 export async function renderToolSettings(
 	containerEl: HTMLElement,
@@ -119,7 +119,12 @@ async function createToolPermissionsSettings(
 
 				// YOLO requires confirmation
 				if (preset === PolicyPreset.YOLO) {
-					const confirmed = await showYoloConfirmation(app);
+					let confirmed = false;
+					try {
+						confirmed = await showYoloConfirmation(app);
+					} catch (error) {
+						plugin.logger.error('Failed to load YOLO confirmation modal', error);
+					}
 					if (!confirmed) {
 						dropdown.setValue(policy.activePreset);
 						return;

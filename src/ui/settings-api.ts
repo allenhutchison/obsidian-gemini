@@ -1,6 +1,6 @@
 import ObsidianGemini from '../main';
 import { Setting, Notice } from 'obsidian';
-import { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings';
 
 let temperatureDebounceTimer: NodeJS.Timeout | null = null;
 let topPDebounceTimer: NodeJS.Timeout | null = null;

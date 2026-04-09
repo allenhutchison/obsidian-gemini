@@ -2,7 +2,7 @@ import ObsidianGemini from '../main';
 import { App, Setting, Notice, setIcon } from 'obsidian';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 import { getErrorMessage } from '../utils/error-utils';
-import { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings';
 
 export async function renderMCPSettings(
 	containerEl: HTMLElement,

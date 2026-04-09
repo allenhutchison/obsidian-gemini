@@ -1,7 +1,7 @@
 import ObsidianGemini from '../main';
 import { App, Setting, Notice } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
-import { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings';
 
 export async function renderRAGSettings(
 	containerEl: HTMLElement,
