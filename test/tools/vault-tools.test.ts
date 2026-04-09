@@ -934,6 +934,26 @@ describe('VaultTools', () => {
 			expect(message).toContain('Move file or folder from: old.md');
 			expect(message).toContain('To: new.md');
 		});
+
+		it('should reject moving a folder into its own descendant', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
+			mockVault.adapter.exists.mockResolvedValue(false);
+			mockVault.createFolder.mockClear();
+			mockFileManager.renameFile.mockClear();
+
+			const result = await tool.execute(
+				{
+					sourcePath: 'folder',
+					targetPath: 'folder/subfolder',
+				},
+				mockContext
+			);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Cannot move a folder into its own descendant');
+			expect(mockVault.createFolder).not.toHaveBeenCalled();
+			expect(mockFileManager.renameFile).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('SearchFileContentsTool', () => {

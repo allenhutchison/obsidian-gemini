@@ -20,16 +20,25 @@ export function resolvePathToFile(
 
 	// Strategy 1: Try direct path lookup
 	let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+	if (file && shouldExcludePath(file.path, plugin)) {
+		file = null;
+	}
 
 	// Strategy 2: If not found and doesn't end with .md, try adding it
 	if (!file && !normalizedPath.endsWith('.md')) {
-		file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+		const candidate = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
+		if (candidate && !shouldExcludePath(candidate.path, plugin)) {
+			file = candidate;
+		}
 	}
 
 	// Strategy 3: If still not found and ends with .md, try without it
 	if (!file && normalizedPath.endsWith('.md')) {
 		const pathWithoutExt = normalizedPath.slice(0, -3);
-		file = plugin.app.vault.getAbstractFileByPath(pathWithoutExt);
+		const candidate = plugin.app.vault.getAbstractFileByPath(pathWithoutExt);
+		if (candidate && !shouldExcludePath(candidate.path, plugin)) {
+			file = candidate;
+		}
 	}
 
 	// Strategy 4: If still not found, try resolving as a wikilink
@@ -106,6 +115,9 @@ export function resolvePathToFileOrFolder(
 
 	// Strategy 1: Try direct path lookup
 	let item = plugin.app.vault.getAbstractFileByPath(normalizedPath);
+	if (item && shouldExcludePath(item.path, plugin)) {
+		item = null;
+	}
 
 	// If it's a folder, return it directly
 	if (item instanceof TFolder) {
