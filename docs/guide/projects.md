@@ -2,6 +2,8 @@
 
 Projects let you create scoped agent profiles for different areas of your vault. A project bundles custom instructions, file scope, skill selection, and permission overrides into a single configuration that automatically applies when the agent works within that project.
 
+> **Blog Post:** [Scoping AI Context with Projects in Gemini Scribe](https://allen.hutchison.org/2026/04/09/scoping-ai-context-with-projects-in-gemini-scribe/) — a walkthrough of why projects exist and how to use them effectively.
+
 ## What is a Project?
 
 A project is any Markdown file in your vault with the `gemini-scribe/project` tag in its frontmatter. The file's **parent directory becomes the project root** — the agent's discovery scope when the project is active.
