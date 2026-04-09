@@ -59,9 +59,10 @@ export class RagRateLimiter {
 
 		// Use API-provided retry delay if available, otherwise exponential backoff
 		const apiDelay = error ? parseRetryDelay(error) : null;
-		const delay = apiDelay
-			? Math.min(apiDelay, RATE_LIMIT_MAX_DELAY_MS)
-			: Math.min(RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, this.consecutiveRateLimits - 1), RATE_LIMIT_MAX_DELAY_MS);
+		const delay =
+			apiDelay !== null
+				? Math.min(apiDelay, RATE_LIMIT_MAX_DELAY_MS)
+				: Math.min(RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, this.consecutiveRateLimits - 1), RATE_LIMIT_MAX_DELAY_MS);
 
 		this.rateLimitResumeTime = Date.now() + delay;
 		this.callbacks.onStatusChange('rate_limited');
