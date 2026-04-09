@@ -43,7 +43,7 @@ export function resolvePathToFile(
 		// Use Obsidian's link resolution API
 		// Pass empty string as source path since we don't have context
 		const resolvedFile = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
-		if (resolvedFile) {
+		if (resolvedFile && !shouldExcludePath(resolvedFile.path, plugin)) {
 			file = resolvedFile;
 		}
 	}

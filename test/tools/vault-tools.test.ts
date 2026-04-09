@@ -89,10 +89,15 @@ const mockMetadataCache = {
 	getFirstLinkpathDest: jest.fn(),
 };
 
+const mockFileManager = {
+	renameFile: jest.fn().mockResolvedValue(undefined),
+};
+
 const mockPlugin = {
 	app: {
 		vault: mockVault,
 		metadataCache: mockMetadataCache,
+		fileManager: mockFileManager,
 		workspace: {
 			getLeavesOfType: jest.fn().mockReturnValue([]),
 		},
@@ -813,7 +818,7 @@ describe('VaultTools', () => {
 				folder.name = path.split('/').pop() || '';
 				createdFolders[path] = folder;
 			});
-			mockVault.rename.mockResolvedValue(undefined);
+			mockFileManager.renameFile.mockResolvedValue(undefined);
 
 			const result = await tool.execute(
 				{
@@ -830,7 +835,7 @@ describe('VaultTools', () => {
 				type: 'file',
 				action: 'moved',
 			});
-			expect(mockVault.rename).toHaveBeenCalledWith(mockFile, 'folder/renamed.md');
+			expect(mockFileManager.renameFile).toHaveBeenCalledWith(mockFile, 'folder/renamed.md');
 		});
 
 		it('should return error for non-existent source file', async () => {
@@ -854,7 +859,7 @@ describe('VaultTools', () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
 			mockVault.adapter.exists.mockResolvedValue(false);
 			mockVault.createFolder.mockResolvedValue(undefined);
-			mockVault.rename.mockResolvedValue(undefined);
+			mockFileManager.renameFile.mockResolvedValue(undefined);
 
 			const result = await tool.execute(
 				{
@@ -871,7 +876,7 @@ describe('VaultTools', () => {
 				type: 'folder',
 				action: 'moved',
 			});
-			expect(mockVault.rename).toHaveBeenCalledWith(mockFolder, 'new-folder');
+			expect(mockFileManager.renameFile).toHaveBeenCalledWith(mockFolder, 'new-folder');
 		});
 
 		it('should return error if target already exists', async () => {
@@ -906,7 +911,7 @@ describe('VaultTools', () => {
 				folder.name = path.split('/').pop() || '';
 				createdFolders[path] = folder;
 			});
-			mockVault.rename.mockResolvedValue(undefined);
+			mockFileManager.renameFile.mockResolvedValue(undefined);
 
 			const result = await tool.execute(
 				{
@@ -918,7 +923,7 @@ describe('VaultTools', () => {
 
 			expect(result.success).toBe(true);
 			expect(mockVault.createFolder).toHaveBeenCalledWith('new-folder');
-			expect(mockVault.rename).toHaveBeenCalledWith(mockFile, 'new-folder/moved.md');
+			expect(mockFileManager.renameFile).toHaveBeenCalledWith(mockFile, 'new-folder/moved.md');
 		});
 
 		it('should have confirmation message', () => {

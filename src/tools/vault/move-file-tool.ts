@@ -91,14 +91,21 @@ export class MoveFileTool implements Tool {
 				};
 			}
 
+			if (type === 'folder' && targetNormalizedPath.startsWith(`${sourceItem.path}/`)) {
+				return {
+					success: false,
+					error: `Cannot move a folder into its own descendant: ${params.targetPath}`,
+				};
+			}
+
 			// Ensure target directory exists (for files and folders)
 			const targetDir = targetNormalizedPath.substring(0, targetNormalizedPath.lastIndexOf('/'));
 			if (targetDir) {
 				await ensureFolderExists(plugin.app.vault, targetDir, 'target directory', plugin.logger);
 			}
 
-			// Perform the rename/move
-			await plugin.app.vault.rename(sourceItem, targetNormalizedPath);
+			// Perform the rename/move (use fileManager to update internal links)
+			await plugin.app.fileManager.renameFile(sourceItem, targetNormalizedPath);
 
 			return {
 				success: true,
