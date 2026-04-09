@@ -111,6 +111,26 @@ function createMockPlugin(overrides: Partial<any> = {}) {
 	} as any;
 }
 
+// Helper to access internal sync queue from the service
+function getSyncQueue(service: any) {
+	return service.syncQueue;
+}
+
+// Helper to access internal cache module from the service
+function getRagCache(service: any) {
+	return service.ragCache;
+}
+
+// Helper to access internal rate limiter from the service
+function getRateLimiter(service: any) {
+	return service.rateLimiter;
+}
+
+// Helper to access internal vault scanner from the service
+function getVaultScanner(service: any) {
+	return service.vaultScanner;
+}
+
 describe('RagIndexingService', () => {
 	let service: RagIndexingService;
 	let mockPlugin: ReturnType<typeof createMockPlugin>;
@@ -192,9 +212,9 @@ describe('RagIndexingService', () => {
 
 		it('should clear debounce timer when pausing', () => {
 			(service as any).status = 'idle';
-			(service as any).debounceTimer = setTimeout(() => {}, 1000);
+			getSyncQueue(service).debounceTimer = setTimeout(() => {}, 1000);
 			service.pause();
-			expect((service as any).debounceTimer).toBeNull();
+			expect(getSyncQueue(service).debounceTimer).toBeNull();
 		});
 	});
 
@@ -213,10 +233,10 @@ describe('RagIndexingService', () => {
 
 		it('should process pending changes on resume', () => {
 			(service as any).status = 'paused';
-			(service as any).pendingChanges = new Map([
+			getSyncQueue(service).pendingChanges = new Map([
 				['test.md', { type: 'create', path: 'test.md', timestamp: Date.now() }],
 			]);
-			const flushSpy = jest.spyOn(service as any, 'flushPendingChanges').mockResolvedValue(undefined);
+			const flushSpy = jest.spyOn(getSyncQueue(service), 'flushPendingChanges').mockResolvedValue(undefined);
 
 			service.resume();
 
@@ -230,7 +250,7 @@ describe('RagIndexingService', () => {
 		});
 
 		it('should return count of pending changes', () => {
-			(service as any).pendingChanges = new Map([
+			getSyncQueue(service).pendingChanges = new Map([
 				['file1.md', { type: 'create', path: 'file1.md', timestamp: Date.now() }],
 				['file2.md', { type: 'modify', path: 'file2.md', timestamp: Date.now() }],
 			]);
@@ -250,114 +270,114 @@ describe('RagIndexingService', () => {
 		});
 
 		it('should queue a single change', () => {
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'create',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
 
-			expect((service as any).pendingChanges.size).toBe(1);
-			expect((service as any).pendingChanges.get('test.md').type).toBe('create');
+			expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+			expect(getSyncQueue(service).pendingChanges.get('test.md').type).toBe('create');
 		});
 
 		it('should collapse create + delete to no-op', () => {
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'create',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'delete',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
 
-			expect((service as any).pendingChanges.size).toBe(0);
+			expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 		});
 
 		it('should collapse create + modify to create', () => {
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'create',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'modify',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
 
-			expect((service as any).pendingChanges.size).toBe(1);
-			expect((service as any).pendingChanges.get('test.md').type).toBe('create');
+			expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+			expect(getSyncQueue(service).pendingChanges.get('test.md').type).toBe('create');
 		});
 
 		it('should use latest change for modify + delete', () => {
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'modify',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'delete',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
 
-			expect((service as any).pendingChanges.size).toBe(1);
-			expect((service as any).pendingChanges.get('test.md').type).toBe('delete');
+			expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+			expect(getSyncQueue(service).pendingChanges.get('test.md').type).toBe('delete');
 		});
 
 		it('should use latest change for modify + modify', () => {
 			const timestamp1 = Date.now();
 			const timestamp2 = timestamp1 + 1000;
 
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'modify',
 				path: 'test.md',
 				timestamp: timestamp1,
 			});
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'modify',
 				path: 'test.md',
 				timestamp: timestamp2,
 			});
 
-			expect((service as any).pendingChanges.size).toBe(1);
-			expect((service as any).pendingChanges.get('test.md').timestamp).toBe(timestamp2);
+			expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+			expect(getSyncQueue(service).pendingChanges.get('test.md').timestamp).toBe(timestamp2);
 		});
 
 		it('should not start debounce timer when paused', () => {
 			(service as any).status = 'paused';
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'create',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
 
-			expect((service as any).debounceTimer).toBeNull();
-			expect((service as any).pendingChanges.size).toBe(1);
+			expect(getSyncQueue(service).debounceTimer).toBeNull();
+			expect(getSyncQueue(service).pendingChanges.size).toBe(1);
 		});
 
 		it('should start debounce timer when not paused', () => {
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'create',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
 
-			expect((service as any).debounceTimer).not.toBeNull();
+			expect(getSyncQueue(service).debounceTimer).not.toBeNull();
 		});
 
 		it('should call flushPendingChanges after debounce timer fires', async () => {
-			const flushSpy = jest.spyOn(service as any, 'flushPendingChanges').mockResolvedValue(undefined);
+			const flushSpy = jest.spyOn(getSyncQueue(service), 'flushPendingChanges').mockResolvedValue(undefined);
 
-			(service as any).queueChange({
+			getSyncQueue(service).queueChange({
 				type: 'create',
 				path: 'test.md',
 				timestamp: Date.now(),
 			});
 
-			expect((service as any).debounceTimer).not.toBeNull();
+			expect(getSyncQueue(service).debounceTimer).not.toBeNull();
 
 			// Advance timer past debounce period (2000ms)
 			jest.advanceTimersByTime(2500);
@@ -382,8 +402,8 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/test.md');
 				service.onFileCreate(file);
 
-				expect((service as any).pendingChanges.size).toBe(1);
-				expect((service as any).pendingChanges.get('notes/test.md').type).toBe('create');
+				expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+				expect(getSyncQueue(service).pendingChanges.get('notes/test.md').type).toBe('create');
 			});
 
 			it('should not queue when service is not ready', () => {
@@ -391,7 +411,7 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/test.md');
 				service.onFileCreate(file);
 
-				expect((service as any).pendingChanges.size).toBe(0);
+				expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 			});
 
 			it('should not queue when autoSync is disabled', () => {
@@ -399,7 +419,7 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/test.md');
 				service.onFileCreate(file);
 
-				expect((service as any).pendingChanges.size).toBe(0);
+				expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 			});
 
 			it('should not queue when file should not be indexed', () => {
@@ -407,7 +427,7 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('.obsidian/config.json');
 				service.onFileCreate(file);
 
-				expect((service as any).pendingChanges.size).toBe(0);
+				expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 			});
 		});
 
@@ -416,8 +436,8 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/test.md');
 				service.onFileModify(file);
 
-				expect((service as any).pendingChanges.size).toBe(1);
-				expect((service as any).pendingChanges.get('notes/test.md').type).toBe('modify');
+				expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+				expect(getSyncQueue(service).pendingChanges.get('notes/test.md').type).toBe('modify');
 			});
 
 			it('should not queue when service is not ready', () => {
@@ -425,7 +445,7 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/test.md');
 				service.onFileModify(file);
 
-				expect((service as any).pendingChanges.size).toBe(0);
+				expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 			});
 		});
 
@@ -434,8 +454,8 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/test.md');
 				service.onFileDelete(file);
 
-				expect((service as any).pendingChanges.size).toBe(1);
-				expect((service as any).pendingChanges.get('notes/test.md').type).toBe('delete');
+				expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+				expect(getSyncQueue(service).pendingChanges.get('notes/test.md').type).toBe('delete');
 			});
 
 			it('should not queue when service is not ready', () => {
@@ -443,7 +463,7 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/test.md');
 				service.onFileDelete(file);
 
-				expect((service as any).pendingChanges.size).toBe(0);
+				expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 			});
 		});
 
@@ -452,9 +472,9 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/new-name.md');
 				service.onFileRename(file, 'notes/old-name.md');
 
-				expect((service as any).pendingChanges.size).toBe(2);
-				expect((service as any).pendingChanges.get('notes/old-name.md').type).toBe('delete');
-				expect((service as any).pendingChanges.get('notes/new-name.md').type).toBe('create');
+				expect(getSyncQueue(service).pendingChanges.size).toBe(2);
+				expect(getSyncQueue(service).pendingChanges.get('notes/old-name.md').type).toBe('delete');
+				expect(getSyncQueue(service).pendingChanges.get('notes/new-name.md').type).toBe('create');
 			});
 
 			it('should only queue delete if new file should not be indexed', () => {
@@ -462,8 +482,8 @@ describe('RagIndexingService', () => {
 				const file = createMockTFile('notes/new-name.txt');
 				service.onFileRename(file, 'notes/old-name.md');
 
-				expect((service as any).pendingChanges.size).toBe(1);
-				expect((service as any).pendingChanges.get('notes/old-name.md').type).toBe('delete');
+				expect(getSyncQueue(service).pendingChanges.size).toBe(1);
+				expect(getSyncQueue(service).pendingChanges.get('notes/old-name.md').type).toBe('delete');
 			});
 		});
 	});
@@ -471,12 +491,12 @@ describe('RagIndexingService', () => {
 	describe('getDetailedStatus', () => {
 		it('should return comprehensive status info', () => {
 			(service as any).status = 'idle';
-			(service as any).indexedCount = 10;
-			(service as any).failedFiles = [{ path: 'failed.md', error: 'Test error', timestamp: Date.now() }];
-			(service as any).pendingChanges = new Map([
+			getRagCache(service).indexedCount = 10;
+			getVaultScanner(service).failedFiles = [{ path: 'failed.md', error: 'Test error', timestamp: Date.now() }];
+			getSyncQueue(service).pendingChanges = new Map([
 				['pending.md', { type: 'create', path: 'pending.md', timestamp: Date.now() }],
 			]);
-			(service as any).cache = {
+			getRagCache(service).cache = {
 				version: '1.0',
 				storeName: 'test-store',
 				lastSync: 1234567890,
@@ -499,9 +519,9 @@ describe('RagIndexingService', () => {
 	describe('getStatusInfo', () => {
 		it('should return basic status info', () => {
 			(service as any).status = 'idle';
-			(service as any).indexedCount = 5;
+			getRagCache(service).indexedCount = 5;
 			mockPlugin.settings.ragIndexing.fileSearchStoreName = 'my-store';
-			(service as any).cache = { lastSync: 1234567890 };
+			getRagCache(service).cache = { lastSync: 1234567890 };
 
 			const info = service.getStatusInfo();
 
@@ -513,7 +533,7 @@ describe('RagIndexingService', () => {
 
 		it('should include progress when indexing', () => {
 			(service as any).status = 'indexing';
-			(service as any).indexingProgress = { current: 5, total: 10 };
+			getVaultScanner(service).indexingProgress = { current: 5, total: 10 };
 
 			const info = service.getStatusInfo();
 
@@ -564,13 +584,13 @@ describe('RagIndexingService', () => {
 		it('should set cancel flag when indexing', () => {
 			(service as any).status = 'indexing';
 			service.cancelIndexing();
-			expect((service as any).cancelRequested).toBe(true);
+			expect(getVaultScanner(service).cancelRequested).toBe(true);
 		});
 
 		it('should not set cancel flag when not indexing', () => {
 			(service as any).status = 'idle';
 			service.cancelIndexing();
-			expect((service as any).cancelRequested).toBe(false);
+			expect(getVaultScanner(service).cancelRequested).toBe(false);
 		});
 	});
 
@@ -601,7 +621,7 @@ describe('RagIndexingService', () => {
 	describe('syncPendingChanges', () => {
 		beforeEach(() => {
 			(service as any).status = 'idle';
-			(service as any).isProcessing = false;
+			getSyncQueue(service).isProcessing = false;
 		});
 
 		it('should return false when no pending changes', async () => {
@@ -610,8 +630,8 @@ describe('RagIndexingService', () => {
 		});
 
 		it('should return false when already processing', async () => {
-			(service as any).isProcessing = true;
-			(service as any).pendingChanges = new Map([
+			getSyncQueue(service).isProcessing = true;
+			getSyncQueue(service).pendingChanges = new Map([
 				['test.md', { type: 'create', path: 'test.md', timestamp: Date.now() }],
 			]);
 
@@ -621,7 +641,7 @@ describe('RagIndexingService', () => {
 
 		it('should return false when indexing', async () => {
 			(service as any).status = 'indexing';
-			(service as any).pendingChanges = new Map([
+			getSyncQueue(service).pendingChanges = new Map([
 				['test.md', { type: 'create', path: 'test.md', timestamp: Date.now() }],
 			]);
 
@@ -641,7 +661,7 @@ describe('RagIndexingService', () => {
 			];
 
 			for (const error of errors) {
-				expect((service as any).isRateLimitError(error)).toBe(true);
+				expect(getRateLimiter(service).isRateLimitError(error)).toBe(true);
 			}
 		});
 
@@ -655,30 +675,30 @@ describe('RagIndexingService', () => {
 			];
 
 			for (const error of errors) {
-				expect((service as any).isRateLimitError(error)).toBe(false);
+				expect(getRateLimiter(service).isRateLimitError(error)).toBe(false);
 			}
 		});
 
 		it('should return remaining seconds for rate limit', () => {
-			(service as any).rateLimitResumeTime = Date.now() + 30000;
+			getRateLimiter(service).rateLimitResumeTime = Date.now() + 30000;
 			const remaining = service.getRateLimitRemainingSeconds();
 			expect(remaining).toBeGreaterThanOrEqual(29);
 			expect(remaining).toBeLessThanOrEqual(30);
 		});
 
 		it('should return 0 when no rate limit active', () => {
-			(service as any).rateLimitResumeTime = undefined;
+			getRateLimiter(service).rateLimitResumeTime = undefined;
 			expect(service.getRateLimitRemainingSeconds()).toBe(0);
 		});
 
 		it('should set and clear rate limit timer during handleRateLimit', async () => {
-			(service as any).consecutiveRateLimits = 0;
+			getRateLimiter(service).consecutiveRateLimits = 0;
 			(service as any).status = 'idle';
 
-			const handlePromise = (service as any).handleRateLimit();
+			const handlePromise = getRateLimiter(service).handleRateLimit();
 
 			// Verify timer is set during cooldown
-			expect((service as any).rateLimitTimer).not.toBeUndefined();
+			expect(getRateLimiter(service).rateLimitTimer).not.toBeUndefined();
 			expect((service as any).status).toBe('rate_limited');
 
 			// Advance through the base delay (30000ms)
@@ -686,7 +706,7 @@ describe('RagIndexingService', () => {
 			await handlePromise;
 
 			// Verify timer is cleared after cooldown
-			expect((service as any).rateLimitTimer).toBeUndefined();
+			expect(getRateLimiter(service).rateLimitTimer).toBeUndefined();
 		});
 	});
 
@@ -695,9 +715,9 @@ describe('RagIndexingService', () => {
 			it('should initialize empty cache when file does not exist', async () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
 
-				await (service as any).loadCache();
+				await getRagCache(service).loadCache();
 
-				expect((service as any).cache).toEqual({
+				expect(getRagCache(service).cache).toEqual({
 					version: '1.0',
 					storeName: '',
 					lastSync: 0,
@@ -718,10 +738,10 @@ describe('RagIndexingService', () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
 				mockPlugin.app.vault.read.mockResolvedValue(JSON.stringify(cacheData));
 
-				await (service as any).loadCache();
+				await getRagCache(service).loadCache();
 
-				expect((service as any).cache).toEqual(cacheData);
-				expect((service as any).indexedCount).toBe(1);
+				expect(getRagCache(service).cache).toEqual(cacheData);
+				expect(getRagCache(service).indexedCount).toBe(1);
 			});
 
 			it('should reset cache on version mismatch', async () => {
@@ -735,20 +755,20 @@ describe('RagIndexingService', () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
 				mockPlugin.app.vault.read.mockResolvedValue(JSON.stringify(oldCache));
 
-				await (service as any).loadCache();
+				await getRagCache(service).loadCache();
 
-				expect((service as any).cache.version).toBe('1.0');
-				expect((service as any).cache.storeName).toBe('old-store');
-				expect((service as any).cache.files).toEqual({});
+				expect(getRagCache(service).cache.version).toBe('1.0');
+				expect(getRagCache(service).cache.storeName).toBe('old-store');
+				expect(getRagCache(service).cache.files).toEqual({});
 			});
 
 			it('should handle corrupt JSON gracefully', async () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
 				mockPlugin.app.vault.read.mockResolvedValue('not valid json');
 
-				await (service as any).loadCache();
+				await getRagCache(service).loadCache();
 
-				expect((service as any).cache).toEqual({
+				expect(getRagCache(service).cache).toEqual({
 					version: '1.0',
 					storeName: '',
 					lastSync: 0,
@@ -759,7 +779,7 @@ describe('RagIndexingService', () => {
 
 		describe('saveCache', () => {
 			beforeEach(() => {
-				(service as any).cache = {
+				getRagCache(service).cache = {
 					version: '1.0',
 					storeName: 'test-store',
 					lastSync: Date.now(),
@@ -768,8 +788,8 @@ describe('RagIndexingService', () => {
 			});
 
 			it('should not save when cache is null', async () => {
-				(service as any).cache = null;
-				await (service as any).saveCache();
+				getRagCache(service).cache = null;
+				await getRagCache(service).saveCache();
 				expect(mockPlugin.app.vault.modify).not.toHaveBeenCalled();
 				expect(mockPlugin.app.vault.create).not.toHaveBeenCalled();
 			});
@@ -777,7 +797,7 @@ describe('RagIndexingService', () => {
 			it('should modify existing file', async () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
 
-				await (service as any).saveCache();
+				await getRagCache(service).saveCache();
 
 				expect(mockPlugin.app.vault.modify).toHaveBeenCalled();
 			});
@@ -785,7 +805,7 @@ describe('RagIndexingService', () => {
 			it('should create new file when it does not exist', async () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
 
-				await (service as any).saveCache();
+				await getRagCache(service).saveCache();
 
 				expect(mockPlugin.app.vault.create).toHaveBeenCalled();
 			});
@@ -794,7 +814,7 @@ describe('RagIndexingService', () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
 				mockPlugin.app.vault.create.mockRejectedValue(new Error('File already exists'));
 
-				await (service as any).saveCache();
+				await getRagCache(service).saveCache();
 
 				expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalled();
 			});
@@ -803,7 +823,7 @@ describe('RagIndexingService', () => {
 				mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
 				mockPlugin.app.vault.create.mockRejectedValue(new Error('Disk full'));
 
-				await (service as any).saveCache();
+				await getRagCache(service).saveCache();
 
 				expect(mockPlugin.logger.error).toHaveBeenCalled();
 			});
@@ -816,7 +836,7 @@ describe('RagIndexingService', () => {
 			(service as any).ai = {};
 
 			const existingPromise = Promise.resolve({ indexed: 5, skipped: 0, failed: 0, duration: 100 });
-			(service as any)._indexingPromise = existingPromise;
+			getVaultScanner(service)._indexingPromise = existingPromise;
 
 			const result = await service.indexVault();
 
@@ -839,8 +859,8 @@ describe('RagIndexingService', () => {
 				resolveIndexing = resolve;
 			});
 
-			// Mock _doIndexVault to return our controlled promise
-			const doIndexSpy = jest.spyOn(service as any, '_doIndexVault').mockReturnValue(slowPromise);
+			// Mock _doIndexVault on the vault scanner to return our controlled promise
+			const doIndexSpy = jest.spyOn(getVaultScanner(service) as any, '_doIndexVault').mockReturnValue(slowPromise);
 
 			// Start two concurrent index operations
 			const promise1 = service.indexVault();
@@ -860,21 +880,21 @@ describe('RagIndexingService', () => {
 
 	describe('destroy', () => {
 		it('should clear all state on destroy', async () => {
-			(service as any).debounceTimer = setTimeout(() => {}, 1000);
-			(service as any).pendingChanges = new Map([['test.md', {}]]);
-			(service as any).rateLimitTimer = setInterval(() => {}, 1000);
-			(service as any).statusBarItem = { remove: jest.fn() };
+			getSyncQueue(service).debounceTimer = setTimeout(() => {}, 1000);
+			getSyncQueue(service).pendingChanges = new Map([['test.md', {}]]);
+			getRateLimiter(service).rateLimitTimer = setInterval(() => {}, 1000);
+			(service as any).statusBar.statusBarItem = { remove: jest.fn() };
 			(service as any).ai = {};
-			(service as any).cache = {};
-			(service as any).failedFiles = [{}];
+			getRagCache(service).cache = {};
+			getVaultScanner(service).failedFiles = [{}];
 
 			await service.destroy();
 
-			expect((service as any).debounceTimer).toBeNull();
-			expect((service as any).pendingChanges.size).toBe(0);
+			expect(getSyncQueue(service).debounceTimer).toBeNull();
+			expect(getSyncQueue(service).pendingChanges.size).toBe(0);
 			expect((service as any).ai).toBeNull();
-			expect((service as any).cache).toBeNull();
-			expect((service as any).failedFiles).toEqual([]);
+			expect(getRagCache(service).cache).toBeNull();
+			expect(getVaultScanner(service).failedFiles).toEqual([]);
 			expect((service as any).status).toBe('disabled');
 		});
 	});
