@@ -702,6 +702,9 @@ export class AgentView extends ItemView {
 	}
 
 	async onClose() {
+		// Cancel any in-flight execution before tearing down the view
+		this.send?.stopAgentLoop();
+
 		// Cleanup event bus subscriptions
 		this.session?.destroy();
 		for (const unsub of this.eventBusUnsubscribers) {
