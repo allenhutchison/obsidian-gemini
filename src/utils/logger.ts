@@ -25,6 +25,7 @@ export class Logger {
 	log(...args: any[]): void {
 		if (this.plugin.settings?.debugMode) {
 			console.log(this.prefix, ...args);
+			this.plugin.fileLogWriter?.write('LOG', this.prefix, args);
 		}
 	}
 
@@ -34,6 +35,7 @@ export class Logger {
 	debug(...args: any[]): void {
 		if (this.plugin.settings?.debugMode) {
 			console.debug(this.prefix, ...args);
+			this.plugin.fileLogWriter?.write('DEBUG', this.prefix, args);
 		}
 	}
 
@@ -42,6 +44,7 @@ export class Logger {
 	 */
 	error(...args: any[]): void {
 		console.error(this.prefix, ...args);
+		this.plugin.fileLogWriter?.write('ERROR', this.prefix, args);
 	}
 
 	/**
@@ -49,6 +52,7 @@ export class Logger {
 	 */
 	warn(...args: any[]): void {
 		console.warn(this.prefix, ...args);
+		this.plugin.fileLogWriter?.write('WARN', this.prefix, args);
 	}
 
 	/**

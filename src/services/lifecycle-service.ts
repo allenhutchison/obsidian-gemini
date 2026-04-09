@@ -179,6 +179,12 @@ export class LifecycleService {
 				plugin.logger.error('Error destroying RAG indexing service:', error);
 			}
 		}
+
+		// Flush and destroy file log writer last so it captures logs from all other cleanup
+		if (plugin.fileLogWriter) {
+			await plugin.fileLogWriter.destroy();
+			plugin.fileLogWriter = null;
+		}
 	}
 
 	/**

@@ -23,6 +23,7 @@ import { ExamplePromptsManager } from './services/example-prompts';
 import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
+import { FileLogWriter } from './utils/file-log-writer';
 import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
@@ -63,6 +64,7 @@ export interface ObsidianGeminiSettings {
 	chatHistory: boolean;
 	historyFolder: string;
 	debugMode: boolean;
+	fileLogging: boolean;
 	maxRetries: number;
 	initialBackoffDelay: number;
 	streamingEnabled: boolean;
@@ -106,6 +108,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	chatHistory: false,
 	historyFolder: 'gemini-scribe',
 	debugMode: false,
+	fileLogging: false,
 	maxRetries: 3,
 	initialBackoffDelay: 1000,
 	streamingEnabled: true,
@@ -178,6 +181,7 @@ export default class ObsidianGemini extends Plugin {
 	public deepResearch!: DeepResearchService;
 	public imageGeneration!: ImageGeneration;
 	public logger!: Logger;
+	public fileLogWriter: FileLogWriter | null = null;
 	public ragIndexing: RagIndexingService | null = null;
 	public selectionActionService!: SelectionActionService;
 	public mcpManager: MCPManager | null = null;
@@ -204,6 +208,11 @@ export default class ObsidianGemini extends Plugin {
 
 		// Load settings early
 		await this.loadSettings();
+
+		// Initialize file log writer if enabled
+		if (this.settings.fileLogging) {
+			this.fileLogWriter = new FileLogWriter(this);
+		}
 
 		// Add settings tab early so users can configure API key even if plugin fails to fully initialize
 		this.addSettingTab(new ObsidianGeminiSettingTab(this.app, this));
@@ -749,6 +758,14 @@ export default class ObsidianGemini extends Plugin {
 		// Reconcile ToolExecutionLogger with the current logToolExecution setting.
 		// The logger is a persistent service, but this flag can be toggled at runtime.
 		this.lifecycle.syncToolExecutionLogger();
+
+		// Sync file log writer with current fileLogging setting
+		if (this.settings.fileLogging && !this.fileLogWriter) {
+			this.fileLogWriter = new FileLogWriter(this);
+		} else if (!this.settings.fileLogging && this.fileLogWriter) {
+			await this.fileLogWriter.destroy();
+			this.fileLogWriter = null;
+		}
 	}
 
 	/**

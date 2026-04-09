@@ -104,7 +104,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
       - **API Configuration:** Configure retry behavior and backoff delays.
       - **Tool Execution:** Control whether to stop agent execution on tool errors.
       - **Tool Loop Detection:** Prevent infinite tool execution loops.
-      - **Developer Options:** Debug mode and advanced configuration tools.
+      - **Developer Options:** Debug mode, file logging, and advanced configuration tools.
 
 ## Usage
 
@@ -305,7 +305,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - If tools fail, check file permissions and paths
   - System folders (plugin state folder, .obsidian) are protected from modifications
   - For session issues, try creating a new session from the chat interface
-  - Check the console (Ctrl/Cmd + Shift + I) for detailed error messages
+  - Check the console (Ctrl/Cmd + Shift + I) or enable "Log to file" in settings and review `debug.log` in the plugin state folder for detailed error messages
   - Tool loop detection may stop repeated operations - adjust settings if needed
 
 ## License
