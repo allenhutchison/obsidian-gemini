@@ -1,15 +1,17 @@
 import { getSessionRecallTools } from '../../src/tools/session-recall-tool';
 import { Tool, ToolExecutionContext } from '../../src/tools/types';
+import { SessionMetadata } from '../../src/types/agent';
 
-function makeSession(overrides: Partial<any> = {}): any {
+function makeSession(overrides: Partial<SessionMetadata> = {}): SessionMetadata {
 	return {
 		id: 'session-' + Math.random().toString(36).slice(2),
 		title: 'Untitled session',
 		historyPath: 'History/untitled.md',
+		created: new Date('2025-01-01T00:00:00Z'),
 		lastActive: new Date('2025-01-01T00:00:00Z'),
-		accessedFiles: undefined,
-		context: { contextFiles: [] },
-		projectPath: undefined,
+		accessedFileRefs: [],
+		contextFileRefs: [],
+		projectRef: undefined,
 		...overrides,
 	};
 }
@@ -17,7 +19,7 @@ function makeSession(overrides: Partial<any> = {}): any {
 function makeContext(pluginOverrides: any = {}, session: any = null): ToolExecutionContext {
 	const basePlugin: any = {
 		sessionManager: {
-			getRecentAgentSessions: jest.fn().mockResolvedValue([]),
+			getSessionMetadata: jest.fn().mockResolvedValue([]),
 		},
 		projectManager: undefined,
 		logger: {
@@ -48,7 +50,7 @@ describe('RecallSessionsTool', () => {
 
 		// Intentionally out-of-order input — tool must sort.
 		const ctx = makeContext({
-			sessionManager: { getRecentAgentSessions: jest.fn().mockResolvedValue([older, newest, middle]) },
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([older, newest, middle]) },
 		});
 
 		const result = await getTool().execute({}, ctx);
@@ -61,7 +63,7 @@ describe('RecallSessionsTool', () => {
 		const current = makeSession({ id: 'current', title: 'Current' });
 		const other = makeSession({ id: 'other', title: 'Other' });
 		const ctx = makeContext(
-			{ sessionManager: { getRecentAgentSessions: jest.fn().mockResolvedValue([current, other]) } },
+			{ sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([current, other]) } },
 			current
 		);
 
@@ -76,7 +78,7 @@ describe('RecallSessionsTool', () => {
 			makeSession({ id: `s${i}`, title: `Session ${i}`, lastActive: new Date(2025, 0, i + 1) })
 		);
 		const ctx = makeContext({
-			sessionManager: { getRecentAgentSessions: jest.fn().mockResolvedValue(many) },
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue(many) },
 		});
 
 		const overLimit = await getTool().execute({ limit: 9999 }, ctx);
@@ -86,22 +88,65 @@ describe('RecallSessionsTool', () => {
 		expect((underLimit.data as any).sessions.length).toBeGreaterThanOrEqual(1);
 	});
 
-	it('filters by filePath via accessedFiles (case-insensitive substring)', async () => {
+	it('filters by filePath via accessedFileRefs (case-insensitive substring)', async () => {
 		const matching = makeSession({
 			id: 'a',
 			title: 'Has file',
-			accessedFiles: new Set<string>(['Notes/MeetingNotes.md']),
+			accessedFileRefs: ['MeetingNotes'],
 		});
 		const nonMatching = makeSession({
 			id: 'b',
 			title: 'No file',
-			accessedFiles: new Set<string>(['other.md']),
+			accessedFileRefs: ['other'],
 		});
 		const ctx = makeContext({
-			sessionManager: { getRecentAgentSessions: jest.fn().mockResolvedValue([matching, nonMatching]) },
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([matching, nonMatching]) },
 		});
 
 		const result = await getTool().execute({ filePath: 'meetingnotes' }, ctx);
+		expect(result.success).toBe(true);
+		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		expect(titles).toEqual(['Has file']);
+	});
+
+	it('filters by filePath via contextFileRefs', async () => {
+		const matching = makeSession({
+			id: 'a',
+			title: 'Has context',
+			contextFileRefs: ['Design Doc'],
+		});
+		const nonMatching = makeSession({
+			id: 'b',
+			title: 'No context',
+			contextFileRefs: ['other'],
+		});
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([matching, nonMatching]) },
+		});
+
+		const result = await getTool().execute({ filePath: 'design' }, ctx);
+		expect(result.success).toBe(true);
+		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		expect(titles).toEqual(['Has context']);
+	});
+
+	it('matches filePath with full vault path against basename refs (bidirectional)', async () => {
+		const matching = makeSession({
+			id: 'a',
+			title: 'Has file',
+			accessedFileRefs: ['MeetingNotes'],
+		});
+		const nonMatching = makeSession({
+			id: 'b',
+			title: 'No file',
+			accessedFileRefs: ['other'],
+		});
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([matching, nonMatching]) },
+		});
+
+		// Full path query should still match a basename-only ref
+		const result = await getTool().execute({ filePath: 'Notes/MeetingNotes.md' }, ctx);
 		expect(result.success).toBe(true);
 		const titles = (result.data as any).sessions.map((s: any) => s.title);
 		expect(titles).toEqual(['Has file']);
@@ -111,7 +156,7 @@ describe('RecallSessionsTool', () => {
 		const a = makeSession({ id: 'a', title: 'Planning Q1 goals' });
 		const b = makeSession({ id: 'b', title: 'Bug triage' });
 		const ctx = makeContext({
-			sessionManager: { getRecentAgentSessions: jest.fn().mockResolvedValue([a, b]) },
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([a, b]) },
 		});
 
 		const result = await getTool().execute({ query: 'planning' }, ctx);
@@ -121,12 +166,12 @@ describe('RecallSessionsTool', () => {
 	});
 
 	it('continues filtering by project even if one project lookup throws (allSettled)', async () => {
-		const bad = makeSession({ id: 'bad', title: 'Broken', projectPath: 'Projects/broken.md' });
-		const good = makeSession({ id: 'good', title: 'Good', projectPath: 'Projects/good.md' });
+		const bad = makeSession({ id: 'bad', title: 'Broken', projectRef: 'Projects/broken.md' });
+		const good = makeSession({ id: 'good', title: 'Good', projectRef: 'Projects/good.md' });
 		const otherMatch = makeSession({
 			id: 'other',
 			title: 'Path match',
-			projectPath: 'Projects/widget.md', // matches substring "widget" even without lookup
+			projectRef: 'Projects/widget.md', // matches substring "widget" even without lookup
 		});
 
 		const getProject = jest.fn(async (path: string) => {
@@ -137,7 +182,7 @@ describe('RecallSessionsTool', () => {
 		});
 
 		const ctx = makeContext({
-			sessionManager: { getRecentAgentSessions: jest.fn().mockResolvedValue([bad, good, otherMatch]) },
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([bad, good, otherMatch]) },
 			projectManager: { getProject },
 		});
 
@@ -145,7 +190,7 @@ describe('RecallSessionsTool', () => {
 		expect(result.success).toBe(true);
 		const titles = (result.data as any).sessions.map((s: any) => s.title).sort();
 		// `bad` must be excluded (lookup threw), `good` matches via project name,
-		// `otherMatch` matches via substring on projectPath.
+		// `otherMatch` matches via substring on projectRef.
 		expect(titles).toEqual(['Good', 'Path match']);
 	});
 

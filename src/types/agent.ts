@@ -111,6 +111,36 @@ export interface ChatSession {
 }
 
 /**
+ * Lightweight session metadata for fast scanning without full hydration.
+ * Avoids wikilink resolution and TFile construction.
+ */
+export interface SessionMetadata {
+	/** Unique identifier for this session */
+	id: string;
+
+	/** Display title for the session */
+	title: string;
+
+	/** When this session was created */
+	created: Date;
+
+	/** Last time this session was active */
+	lastActive: Date;
+
+	/** File path where this session's history is stored */
+	historyPath: string;
+
+	/** Raw project reference (wikilink basename or path string, not resolved to TFile) */
+	projectRef?: string;
+
+	/** Raw accessed file references (wikilink basenames stripped of [[]], not resolved to TFile) */
+	accessedFileRefs: string[];
+
+	/** Raw context file references (wikilink basenames or paths, not resolved to TFile) */
+	contextFileRefs: string[];
+}
+
+/**
  * Message within a chat session
  */
 export interface ChatMessage {

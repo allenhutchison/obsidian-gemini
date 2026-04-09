@@ -1,5 +1,12 @@
 import { normalizePath, TFile, TFolder } from 'obsidian';
-import { ChatSession, SessionType, AgentContext, DEFAULT_CONTEXTS, SessionModelConfig } from '../types/agent';
+import {
+	ChatSession,
+	SessionMetadata,
+	SessionType,
+	AgentContext,
+	DEFAULT_CONTEXTS,
+	SessionModelConfig,
+} from '../types/agent';
 import type ObsidianGemini from '../main';
 import { sanitizeFileName } from '../utils/file-utils';
 import { formatLocalDate } from '../utils/format-utils';
@@ -130,6 +137,59 @@ export class SessionManager {
 		}
 
 		return sessions;
+	}
+
+	/**
+	 * Get lightweight session metadata without full hydration.
+	 * Reads raw frontmatter only — no wikilink resolution or TFile construction.
+	 */
+	async getSessionMetadata(limit = 10): Promise<SessionMetadata[]> {
+		const agentSessionsFolder = this.getAgentSessionsFolder();
+		if (!agentSessionsFolder) return [];
+		const sessionFiles = agentSessionsFolder.children
+			.filter((file): file is TFile => file instanceof TFile && file.extension === 'md')
+			.sort((a, b) => b.stat.mtime - a.stat.mtime)
+			.slice(0, limit);
+
+		const results: SessionMetadata[] = [];
+		for (const file of sessionFiles) {
+			try {
+				const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+				results.push({
+					id: frontmatter?.session_id || file.basename,
+					title: frontmatter?.title || file.basename,
+					created: frontmatter?.created ? new Date(frontmatter.created) : new Date(file.stat.ctime),
+					lastActive: new Date(file.stat.mtime),
+					historyPath: file.path,
+					projectRef: this.extractRawRef(frontmatter?.project),
+					accessedFileRefs: this.extractRawRefs(frontmatter?.accessed_files),
+					contextFileRefs: this.extractRawRefs(frontmatter?.context_files),
+				});
+			} catch (error) {
+				this.plugin.logger.warn(`Failed to read session metadata from ${file.path}:`, error);
+			}
+		}
+		return results;
+	}
+
+	/** Strip [[]] from a single wikilink ref, or return raw string as-is */
+	private extractRawRef(ref: unknown): string | undefined {
+		if (typeof ref !== 'string') return undefined;
+		if (ref.startsWith('[[') && ref.endsWith(']]')) {
+			return ref.slice(2, -2).split('|')[0].split('#')[0].trim();
+		}
+		return ref;
+	}
+
+	/** Strip [[]] from an array of wikilink refs */
+	private extractRawRefs(refs: unknown): string[] {
+		if (!Array.isArray(refs)) return [];
+		const result: string[] = [];
+		for (const ref of refs) {
+			const extracted = this.extractRawRef(ref);
+			if (extracted) result.push(extracted);
+		}
+		return result;
 	}
 
 	/**
