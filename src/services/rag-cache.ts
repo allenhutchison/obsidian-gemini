@@ -94,6 +94,7 @@ export class RagCache {
 					lastSync: 0,
 					files: {},
 				};
+				this._indexedCount = 0;
 			}
 		} catch (error) {
 			this.plugin.logger.error('RAG Indexing: Failed to load cache', error);
@@ -103,6 +104,7 @@ export class RagCache {
 				lastSync: 0,
 				files: {},
 			};
+			this._indexedCount = 0;
 		}
 	}
 

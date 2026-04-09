@@ -284,8 +284,18 @@ export class RagVaultScanner {
 					});
 					this.plugin.logger.log(`RAG Indexing: Deleted store ${storeName}`);
 				} catch (deleteError) {
-					// Store may not exist, that's OK
-					this.plugin.logger.debug('RAG Indexing: Store deletion failed (may not exist)', deleteError);
+					const errorMessage = deleteError instanceof Error ? deleteError.message : String(deleteError);
+					const isNotFound =
+						errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('NOT_FOUND');
+
+					if (isNotFound) {
+						this.plugin.logger.debug(
+							'RAG Indexing: Store no longer exists, proceeding with fresh creation',
+							deleteError
+						);
+					} else {
+						throw deleteError;
+					}
 				}
 			}
 

@@ -147,6 +147,29 @@ describe('RagCache', () => {
 			});
 			expect(mockPlugin.logger.error).toHaveBeenCalled();
 		});
+
+		it('should reset indexedCount when reloading with empty/corrupt data', async () => {
+			// First load with valid data
+			const cacheData = {
+				version: '1.0',
+				storeName: 'test-store',
+				lastSync: 1234567890,
+				files: {
+					'test.md': { resourceName: 'res1', contentHash: 'hash1', lastIndexed: 1234567890 },
+				},
+			};
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(createMockTFile('cache.json'));
+			mockPlugin.app.vault.read.mockResolvedValue(JSON.stringify(cacheData));
+
+			await cache.loadCache();
+			expect(cache.indexedCount).toBe(1);
+
+			// Second load with corrupt data
+			mockPlugin.app.vault.read.mockResolvedValue('not json');
+
+			await cache.loadCache();
+			expect(cache.indexedCount).toBe(0);
+		});
 	});
 
 	describe('saveCache', () => {

@@ -318,7 +318,8 @@ export class RagSyncQueue {
 			this.isProcessing = false;
 
 			// If new changes arrived while processing, immediately process them
-			if (this.pendingChanges.size > 0) {
+			// Skip re-entry if we're in a terminal error state to avoid overwriting it
+			if (this.pendingChanges.size > 0 && this.callbacks.getStatus() !== 'error') {
 				// Use void to indicate intentional fire-and-forget
 				// Errors are already logged in the catch block above
 				void this.flushPendingChanges();

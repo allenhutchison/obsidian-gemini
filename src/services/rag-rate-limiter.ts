@@ -75,7 +75,10 @@ export class RagRateLimiter {
 		this.callbacks.onUpdateStatusBar();
 		this.callbacks.onNotifyListeners();
 
-		// Start countdown timer for status bar updates
+		// Start countdown timer for status bar updates (clear any existing one first)
+		if (this.rateLimitTimer) {
+			clearInterval(this.rateLimitTimer);
+		}
 		this.rateLimitTimer = setInterval(() => {
 			this.callbacks.onUpdateStatusBar();
 		}, 1000);

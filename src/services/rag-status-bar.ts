@@ -51,48 +51,53 @@ export class RagStatusBar {
 		this.statusBarItem.createSpan({ cls: 'rag-status-text' });
 
 		this.statusBarItem.addEventListener('click', async () => {
-			// Show progress modal if indexing, otherwise show status modal
-			if (this.provider.getStatus() === 'indexing') {
-				const { RagProgressModal } = await import('../ui/rag-progress-modal');
-				const modal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
-					new Notice(`RAG Indexing: ${result.indexed} indexed, ${result.skipped} unchanged`);
-				});
-				modal.open();
-			} else {
-				const { RagStatusModal } = await import('../ui/rag-status-modal');
-				const modal = new RagStatusModal(
-					this.plugin.app,
-					this.provider.getDetailedStatus(),
-					() => {
-						// Open settings to RAG section
-						// @ts-expect-error - Obsidian's setting API
-						this.plugin.app.setting.open();
-						// @ts-expect-error - Obsidian's setting API
-						this.plugin.app.setting.openTabById('gemini-scribe');
-					},
-					async () => {
-						// Open progress modal and start reindexing
-						const { RagProgressModal } = await import('../ui/rag-progress-modal');
-						const progressModal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
-							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
-						});
-						progressModal.open();
+			try {
+				// Show progress modal if indexing, otherwise show status modal
+				if (this.provider.getStatus() === 'indexing') {
+					const { RagProgressModal } = await import('../ui/rag-progress-modal');
+					const modal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
+						new Notice(`RAG Indexing: ${result.indexed} indexed, ${result.skipped} unchanged`);
+					});
+					modal.open();
+				} else {
+					const { RagStatusModal } = await import('../ui/rag-status-modal');
+					const modal = new RagStatusModal(
+						this.plugin.app,
+						this.provider.getDetailedStatus(),
+						() => {
+							// Open settings to RAG section
+							// @ts-expect-error - Obsidian's setting API
+							this.plugin.app.setting.open();
+							// @ts-expect-error - Obsidian's setting API
+							this.plugin.app.setting.openTabById('gemini-scribe');
+						},
+						async () => {
+							// Open progress modal and start reindexing
+							const { RagProgressModal } = await import('../ui/rag-progress-modal');
+							const progressModal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
+								new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+							});
+							progressModal.open();
 
-						// Trigger reindex (don't await - modal handles progress)
-						this.provider.indexVault().catch((error) => {
-							new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
-						});
-					},
-					async () => {
-						// Sync pending changes immediately
-						const synced = await this.provider.syncPendingChanges();
-						if (synced) {
-							new Notice('RAG Index: Syncing pending changes...');
+							// Trigger reindex (don't await - modal handles progress)
+							this.provider.indexVault().catch((error) => {
+								new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
+							});
+						},
+						async () => {
+							// Sync pending changes immediately
+							const synced = await this.provider.syncPendingChanges();
+							if (synced) {
+								new Notice('RAG Index: Syncing pending changes...');
+							}
+							return synced;
 						}
-						return synced;
-					}
-				);
-				modal.open();
+					);
+					modal.open();
+				}
+			} catch (error) {
+				this.plugin.logger.error('RAG Indexing: Failed to open status UI', error);
+				new Notice(`RAG Indexing UI error: ${getErrorMessage(error)}`);
 			}
 		});
 	}
