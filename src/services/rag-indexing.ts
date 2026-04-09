@@ -1,160 +1,104 @@
-import { TFile, normalizePath, Notice, setIcon, setTooltip } from 'obsidian';
+import { TFile, Notice } from 'obsidian';
 import { GoogleGenAI } from '@google/genai';
 import { FileUploader } from '@allenhutchison/gemini-utils';
 import type ObsidianGemini from '../main';
 import { ObsidianVaultAdapter } from './obsidian-file-adapter';
-import { getErrorMessage, isQuotaExhausted, isRateLimitError as isRateLimitErrorUtil } from '../utils/error-utils';
-import { parseRetryDelay } from '../utils/retry';
+import { getErrorMessage } from '../utils/error-utils';
+import { RagCache } from './rag-cache';
+import { RagRateLimiter } from './rag-rate-limiter';
+import { RagStatusBar } from './rag-status-bar';
+import { RagSyncQueue } from './rag-sync-queue';
+import { RagVaultScanner } from './rag-vault-scanner';
+import type {
+	IndexProgress,
+	IndexResult,
+	FailedFileEntry,
+	RagIndexStatus,
+	RagProgressInfo,
+	ProgressListener,
+} from './rag-types';
+
+// Re-export all types for backwards compatibility
+export type {
+	IndexedFileEntry,
+	RagIndexCache,
+	IndexProgress,
+	IndexResult,
+	FailedFileEntry,
+	RagIndexStatus,
+	RagProgressInfo,
+	ProgressListener,
+} from './rag-types';
 
 /**
- * Represents a file that has been indexed in the File Search Store
- */
-export interface IndexedFileEntry {
-	resourceName: string; // Gemini file resource name
-	contentHash: string; // SHA-256 hash for reliable change detection
-	lastIndexed: number; // Timestamp
-}
-
-/**
- * Cache structure for tracking indexed files
- */
-export interface RagIndexCache {
-	version: string;
-	storeName: string;
-	lastSync: number;
-	files: Record<string, IndexedFileEntry>;
-	// Resume capability fields
-	indexingInProgress?: boolean; // True while indexing is active
-	indexingStartedAt?: number; // Timestamp when current indexing started
-	lastIndexedFile?: string; // Last successfully indexed file path
-}
-
-/**
- * Progress information for indexing operations
- */
-export interface IndexProgress {
-	current: number;
-	total: number;
-	currentFile?: string;
-	phase: 'scanning' | 'indexing' | 'complete' | 'error';
-	message?: string;
-}
-
-/**
- * Result of an indexing operation
- */
-export interface IndexResult {
-	indexed: number;
-	skipped: number;
-	failed: number;
-	duration: number;
-}
-
-/**
- * Represents a file that failed to index with error details
- */
-export interface FailedFileEntry {
-	path: string;
-	error: string;
-	timestamp: number;
-}
-
-/**
- * Pending file change for debouncing
- */
-interface PendingChange {
-	type: 'create' | 'modify' | 'delete' | 'rename';
-	path: string;
-	oldPath?: string;
-	timestamp: number;
-}
-
-/**
- * Status of the RAG indexing service
- */
-export type RagIndexStatus = 'disabled' | 'idle' | 'indexing' | 'error' | 'paused' | 'rate_limited';
-
-/**
- * Extended progress information for live UI updates
- */
-export interface RagProgressInfo {
-	status: RagIndexStatus;
-	indexedCount: number;
-	skippedCount: number;
-	failedCount: number;
-	totalCount: number;
-	currentFile?: string;
-	startTime?: number;
-	storeName: string | null;
-	lastSync: number | null;
-}
-
-/**
- * Callback for progress updates
- */
-export type ProgressListener = (progress: RagProgressInfo) => void;
-
-const CACHE_VERSION = '1.0';
-const DEBOUNCE_MS = 2000;
-
-/**
- * Number of files/changes to process before saving the cache incrementally.
- * Balances durability (lower = more frequent saves) vs performance (higher = fewer I/O ops).
- * Set to 10 to limit potential data loss to ~10 files if Obsidian crashes during indexing.
- */
-const CACHE_SAVE_INTERVAL = 10;
-
-/**
- * Rate limit handling configuration
- */
-const RATE_LIMIT_BASE_DELAY_MS = 30000; // 30 seconds base delay
-const RATE_LIMIT_MAX_DELAY_MS = 300000; // 5 minutes max delay
-const RATE_LIMIT_MAX_RETRIES = 5; // Maximum retry attempts before failing
-
-/**
- * Service for managing RAG indexing of vault files to Google's File Search API
+ * Service for managing RAG indexing of vault files to Google's File Search API.
+ *
+ * Orchestrates the following concerns via composition:
+ * - RagCache: Local cache persistence
+ * - RagRateLimiter: API rate limit handling
+ * - RagStatusBar: Status bar UI
+ * - RagSyncQueue: File change queue and debouncing
+ * - RagVaultScanner: Vault-wide indexing and file search store management
  */
 export class RagIndexingService {
 	private plugin: ObsidianGemini;
 	private ai: GoogleGenAI | null = null;
 	private fileUploader: FileUploader | null = null;
 	private vaultAdapter: ObsidianVaultAdapter | null = null;
-	private statusBarItem: HTMLElement | null = null;
-	private cache: RagIndexCache | null = null;
-	private pendingChanges: Map<string, PendingChange> = new Map();
-	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 	private status: RagIndexStatus = 'disabled';
-	private indexedCount: number = 0;
-	private isProcessing: boolean = false;
-	private indexingProgress: { current: number; total: number } = { current: 0, total: 0 };
-	private _indexingPromise: Promise<IndexResult> | null = null;
-
-	// Extended progress tracking
 	private progressListeners: Set<ProgressListener> = new Set();
-	private currentFile?: string;
-	private indexingStartTime?: number;
-	private runningIndexed: number = 0;
-	private runningSkipped: number = 0;
-	private runningFailed: number = 0;
-	private cancelRequested: boolean = false;
 
-	// Failure tracking for detailed status
-	private failedFiles: FailedFileEntry[] = [];
-
-	// Rate limit handling
-	private consecutiveRateLimits: number = 0;
-	private rateLimitResumeTime?: number;
-	private rateLimitTimer?: ReturnType<typeof setInterval>;
+	// Composed modules
+	private ragCache: RagCache;
+	private rateLimiter: RagRateLimiter;
+	private statusBar: RagStatusBar;
+	private syncQueue: RagSyncQueue;
+	private vaultScanner: RagVaultScanner;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
-	}
 
-	/**
-	 * Get the path to the index cache file
-	 */
-	private get cachePath(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/rag-index-cache.json`);
+		// Create all composed modules eagerly so they exist from construction time.
+		// API client, file uploader, and vault adapter are set during initialize()
+		// and accessed through callback getters.
+		this.ragCache = new RagCache(plugin);
+
+		this.rateLimiter = new RagRateLimiter(this.plugin.logger, {
+			onStatusChange: (s) => {
+				this.status = s;
+			},
+			onUpdateStatusBar: () => this.updateStatusBar(),
+			onNotifyListeners: () => this.notifyProgressListeners(),
+		});
+
+		this.syncQueue = new RagSyncQueue(this.plugin, this.ragCache, this.rateLimiter, {
+			getStatus: () => this.status,
+			setStatus: (s) => {
+				this.status = s;
+			},
+			isReady: () => this.isReady(),
+			getVaultAdapter: () => this.vaultAdapter,
+			getFileUploader: () => this.fileUploader,
+			getStoreName: () => this.getStoreName(),
+			onUpdateStatusBar: () => this.updateStatusBar(),
+		});
+
+		this.vaultScanner = new RagVaultScanner(this.plugin, this.ragCache, this.rateLimiter, {
+			getStatus: () => this.status,
+			setStatus: (s) => {
+				this.status = s;
+			},
+			isReady: () => this.isReady(),
+			getAi: () => this.ai,
+			getVaultAdapter: () => this.vaultAdapter,
+			getFileUploader: () => this.fileUploader,
+			getStoreName: () => this.getStoreName(),
+			onUpdateStatusBar: () => this.updateStatusBar(),
+			onNotifyListeners: () => this.notifyProgressListeners(),
+		});
+
+		this.statusBar = new RagStatusBar(this.plugin, this.createStatusProvider());
 	}
 
 	/**
@@ -193,13 +137,13 @@ export class RagIndexingService {
 			});
 
 			// Load cache from disk
-			await this.loadCache();
+			await this.ragCache.loadCache();
 
 			// Create or verify File Search Store
-			await this.ensureFileSearchStore();
+			await this.vaultScanner.ensureFileSearchStore();
 
 			// Setup status bar
-			this.setupStatusBar();
+			this.statusBar.setup();
 
 			// Update status
 			this.status = 'idle';
@@ -208,14 +152,14 @@ export class RagIndexingService {
 			this.plugin.logger.log('RAG Indexing: Initialized successfully');
 
 			// Check for interrupted indexing
-			if (this.cache?.indexingInProgress) {
+			if (this.ragCache.cache?.indexingInProgress) {
 				this.plugin.logger.log('RAG Indexing: Detected interrupted indexing, prompting user');
-				await this.handleInterruptedIndexing();
+				await this.vaultScanner.handleInterruptedIndexing(this);
 				return; // handleInterruptedIndexing will trigger indexing if needed
 			}
 
 			// If this is first time (no indexed files), start initial indexing
-			if (this.indexedCount === 0) {
+			if (this.ragCache.indexedCount === 0) {
 				new Notice('RAG Indexing: Starting initial vault indexing...');
 
 				// Open progress modal for initial indexing
@@ -244,84 +188,56 @@ export class RagIndexingService {
 	 */
 	async destroy(): Promise<void> {
 		// Wait for any in-flight indexing to complete
-		if (this._indexingPromise) {
+		if (this.vaultScanner?.hasActivePromise()) {
 			try {
-				await this._indexingPromise;
+				await this.indexVault();
 			} catch (error) {
 				this.plugin.logger.error('RAG Indexing: Error while waiting for indexing during destroy', error);
 			}
 		}
 
 		// Wait for any in-flight change processing
-		while (this.isProcessing) {
-			await new Promise((resolve) => setTimeout(resolve, 100));
+		if (this.syncQueue) {
+			while (this.syncQueue.getIsProcessing()) {
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			}
 		}
 
-		// Clear pending changes
-		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
-			this.debounceTimer = null;
-		}
-		this.pendingChanges.clear();
-
-		// Clear rate limit timer
-		if (this.rateLimitTimer) {
-			clearInterval(this.rateLimitTimer);
-			this.rateLimitTimer = undefined;
-		}
-
-		// Remove status bar
-		if (this.statusBarItem) {
-			this.statusBarItem.remove();
-			this.statusBarItem = null;
-		}
+		// Cleanup composed modules
+		this.syncQueue?.destroy();
+		this.rateLimiter?.destroy();
+		this.statusBar?.destroy();
+		this.vaultScanner?.destroy();
+		this.ragCache.destroy();
 
 		this.ai = null;
 		this.fileUploader = null;
 		this.vaultAdapter = null;
-		this.cache = null;
-		this.failedFiles = [];
 		this.status = 'disabled';
 	}
 
-	/**
-	 * Get current status
-	 */
+	// ==================== Status & Information ====================
+
 	getStatus(): RagIndexStatus {
 		return this.status;
 	}
 
-	/**
-	 * Get the File Search Store name
-	 */
 	getStoreName(): string | null {
 		return this.plugin.settings.ragIndexing.fileSearchStoreName;
 	}
 
-	/**
-	 * Get the GoogleGenAI client for reuse by other components
-	 */
 	getClient(): GoogleGenAI | null {
 		return this.ai;
 	}
 
-	/**
-	 * Check if the service is enabled and ready
-	 */
 	isReady(): boolean {
 		return this.status !== 'disabled' && this.status !== 'error' && this.ai !== null;
 	}
 
-	/**
-	 * Get the number of indexed files
-	 */
 	getIndexedFileCount(): number {
-		return this.indexedCount;
+		return this.ragCache.indexedCount;
 	}
 
-	/**
-	 * Get full status info for display in modal
-	 */
 	getStatusInfo(): {
 		status: RagIndexStatus;
 		indexedCount: number;
@@ -331,40 +247,31 @@ export class RagIndexingService {
 	} {
 		return {
 			status: this.status,
-			indexedCount: this.indexedCount,
+			indexedCount: this.ragCache.indexedCount,
 			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
-			lastSync: this.cache?.lastSync || null,
-			progress: this.status === 'indexing' ? this.indexingProgress : undefined,
+			lastSync: this.ragCache.cache?.lastSync || null,
+			progress: this.status === 'indexing' ? this.vaultScanner?.getIndexingProgress() : undefined,
 		};
 	}
 
-	/**
-	 * Get extended progress info for live UI updates
-	 */
 	getProgressInfo(): RagProgressInfo {
 		return {
 			status: this.status,
-			indexedCount: this.runningIndexed,
-			skippedCount: this.runningSkipped,
-			failedCount: this.runningFailed,
-			totalCount: this.indexingProgress.total,
-			currentFile: this.currentFile,
-			startTime: this.indexingStartTime,
+			indexedCount: this.vaultScanner?.getRunningIndexed() ?? 0,
+			skippedCount: this.vaultScanner?.getRunningSkipped() ?? 0,
+			failedCount: this.vaultScanner?.getRunningFailed() ?? 0,
+			totalCount: this.vaultScanner?.getIndexingProgress().total ?? 0,
+			currentFile: this.vaultScanner?.getCurrentFile(),
+			startTime: this.vaultScanner?.getIndexingStartTime(),
 			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
-			lastSync: this.cache?.lastSync || null,
+			lastSync: this.ragCache.cache?.lastSync || null,
 		};
 	}
 
-	/**
-	 * Get the number of pending file changes awaiting sync
-	 */
 	getPendingCount(): number {
-		return this.pendingChanges.size;
+		return this.syncQueue?.getPendingCount() ?? 0;
 	}
 
-	/**
-	 * Get detailed status information for the status modal
-	 */
 	getDetailedStatus(): {
 		status: RagIndexStatus;
 		indexedCount: number;
@@ -376,63 +283,38 @@ export class RagIndexingService {
 		failedFiles: FailedFileEntry[];
 	} {
 		// Build indexed files list from cache, sorted by lastIndexed (newest first)
-		const indexedFiles = this.cache
-			? Object.entries(this.cache.files)
+		const indexedFiles = this.ragCache.cache
+			? Object.entries(this.ragCache.cache.files)
 					.map(([path, entry]) => ({ path, lastIndexed: entry.lastIndexed }))
 					.sort((a, b) => b.lastIndexed - a.lastIndexed)
 			: [];
 
 		return {
 			status: this.status,
-			indexedCount: this.indexedCount,
-			failedCount: this.failedFiles.length,
-			pendingCount: this.pendingChanges.size,
+			indexedCount: this.ragCache.indexedCount,
+			failedCount: this.vaultScanner?.getFailedFiles().length ?? 0,
+			pendingCount: this.syncQueue?.getPendingCount() ?? 0,
 			storeName: this.plugin.settings.ragIndexing.fileSearchStoreName,
-			lastSync: this.cache?.lastSync || null,
+			lastSync: this.ragCache.cache?.lastSync || null,
 			indexedFiles,
-			failedFiles: [...this.failedFiles],
+			failedFiles: [...(this.vaultScanner?.getFailedFiles() ?? [])],
 		};
 	}
 
-	/**
-	 * Immediately process pending changes (bypass debounce)
-	 * Returns true if sync was started, false if nothing to sync or already processing
-	 */
-	async syncPendingChanges(): Promise<boolean> {
-		if (this.pendingChanges.size === 0) {
-			return false;
-		}
-		if (this.isProcessing || this.status === 'indexing') {
-			return false;
-		}
-
-		// Clear debounce timer and process immediately
-		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
-			this.debounceTimer = null;
-		}
-
-		await this.flushPendingChanges();
-		return true;
+	getIndexingProgress(): { current: number; total: number } {
+		return this.vaultScanner?.getIndexingProgress() ?? { current: 0, total: 0 };
 	}
 
-	/**
-	 * Register a listener for progress updates
-	 */
+	// ==================== Progress Listeners ====================
+
 	addProgressListener(listener: ProgressListener): void {
 		this.progressListeners.add(listener);
 	}
 
-	/**
-	 * Remove a progress listener
-	 */
 	removeProgressListener(listener: ProgressListener): void {
 		this.progressListeners.delete(listener);
 	}
 
-	/**
-	 * Notify all progress listeners
-	 */
 	private notifyProgressListeners(): void {
 		const progress = this.getProgressInfo();
 		for (const listener of this.progressListeners) {
@@ -444,55 +326,32 @@ export class RagIndexingService {
 		}
 	}
 
-	/**
-	 * Request cancellation of the current indexing operation
-	 */
+	// ==================== Control ====================
+
 	cancelIndexing(): void {
-		if (this.status !== 'indexing') return;
-		this.cancelRequested = true;
-		this.plugin.logger.log('RAG Indexing: Cancellation requested');
+		this.vaultScanner?.cancelIndexing();
 	}
 
-	/**
-	 * Check if indexing is in progress
-	 */
 	isIndexing(): boolean {
 		return this.status === 'indexing';
 	}
 
-	/**
-	 * Check if sync is paused
-	 */
 	isPaused(): boolean {
 		return this.status === 'paused';
 	}
 
-	/**
-	 * Pause automatic syncing. Does not interrupt current indexing operation.
-	 * While paused, file changes are still queued but not processed.
-	 */
 	pause(): void {
-		// Can only pause from idle state
 		if (this.status !== 'idle') {
 			this.plugin.logger.log(`RAG Indexing: Cannot pause from ${this.status} state`);
 			return;
 		}
 
-		// Cancel any pending debounce timer to prevent flush after pause
-		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
-			this.debounceTimer = null;
-		}
-
+		this.syncQueue?.clearTimer();
 		this.status = 'paused';
 		this.updateStatusBar();
 		this.plugin.logger.log('RAG Indexing: Paused');
 	}
 
-	/**
-	 * Resume automatic syncing after being paused.
-	 * Triggers sync of any pending changes that accumulated while paused.
-	 */
 	resume(): void {
 		if (this.status !== 'paused') {
 			this.plugin.logger.log(`RAG Indexing: Cannot resume from ${this.status} state`);
@@ -504,1091 +363,71 @@ export class RagIndexingService {
 		this.plugin.logger.log('RAG Indexing: Resumed');
 
 		// Process any pending changes that accumulated while paused
-		if (this.pendingChanges.size > 0) {
-			this.plugin.logger.log(`RAG Indexing: Processing ${this.pendingChanges.size} pending changes`);
-			this.flushPendingChanges();
+		if (this.syncQueue && this.syncQueue.getPendingCount() > 0) {
+			this.plugin.logger.log(`RAG Indexing: Processing ${this.syncQueue.getPendingCount()} pending changes`);
+			this.syncQueue.flushPendingChanges();
 		}
 	}
 
-	// ==================== Cache Management ====================
+	// ==================== Delegated Operations ====================
 
-	/**
-	 * Load the index cache from disk
-	 */
-	private async loadCache(): Promise<void> {
-		try {
-			let content: string | null = null;
-
-			// Try to get file from metadata cache first
-			const file = this.plugin.app.vault.getAbstractFileByPath(this.cachePath);
-			if (file instanceof TFile) {
-				content = await this.plugin.app.vault.read(file);
-			} else {
-				// File not in metadata cache - try reading directly from disk
-				// This handles startup race conditions where file exists but isn't indexed yet
-				const exists = await this.plugin.app.vault.adapter.exists(this.cachePath);
-				if (exists) {
-					this.plugin.logger.debug(
-						'RAG Indexing: Cache file exists on disk but not in metadata cache, using adapter.read'
-					);
-					content = await this.plugin.app.vault.adapter.read(this.cachePath);
-				}
-			}
-
-			if (content) {
-				const parsed = JSON.parse(content);
-
-				// Validate cache version - reset if mismatched
-				if (parsed?.version !== CACHE_VERSION) {
-					this.plugin.logger.warn(
-						`RAG Indexing: Cache version mismatch (got ${parsed?.version}, expected ${CACHE_VERSION}), resetting cache`
-					);
-					this.cache = {
-						version: CACHE_VERSION,
-						storeName: parsed?.storeName || '',
-						lastSync: 0,
-						files: {},
-					};
-				} else {
-					this.cache = parsed;
-				}
-
-				// Count indexed files
-				if (this.cache?.files) {
-					this.indexedCount = Object.keys(this.cache.files).length;
-				}
-
-				this.plugin.logger.log(`RAG Indexing: Loaded cache with ${this.indexedCount} files`);
-			} else {
-				// Initialize empty cache - no file exists
-				this.cache = {
-					version: CACHE_VERSION,
-					storeName: '',
-					lastSync: 0,
-					files: {},
-				};
-			}
-		} catch (error) {
-			this.plugin.logger.error('RAG Indexing: Failed to load cache', error);
-			this.cache = {
-				version: CACHE_VERSION,
-				storeName: '',
-				lastSync: 0,
-				files: {},
-			};
-		}
+	async syncPendingChanges(): Promise<boolean> {
+		return this.syncQueue?.syncPendingChanges() ?? false;
 	}
 
-	/**
-	 * Save the index cache to disk
-	 */
-	private async saveCache(): Promise<void> {
-		if (!this.cache) return;
-
-		try {
-			const content = JSON.stringify(this.cache, null, 2);
-			const file = this.plugin.app.vault.getAbstractFileByPath(this.cachePath);
-
-			if (file instanceof TFile) {
-				await this.plugin.app.vault.modify(file, content);
-			} else {
-				try {
-					await this.plugin.app.vault.create(this.cachePath, content);
-				} catch (createError) {
-					// Handle race condition where file exists on disk but not in metadata cache
-					// This can happen on Linux or during startup
-					const errorMessage = createError instanceof Error ? createError.message : String(createError);
-					if (errorMessage.includes('File already exists')) {
-						// Fall back to direct adapter write
-						this.plugin.logger.debug(`RAG Indexing: Cache file exists but not in metadata cache, using adapter.write`, {
-							path: this.cachePath,
-							error: errorMessage,
-						});
-						await this.plugin.app.vault.adapter.write(this.cachePath, content);
-					} else {
-						throw createError;
-					}
-				}
-			}
-		} catch (error) {
-			this.plugin.logger.error('RAG Indexing: Failed to save cache', error);
-		}
-	}
-
-	/**
-	 * Increment counter and save cache if threshold reached.
-	 * Returns the new counter value (reset to 0 after save, otherwise incremented).
-	 */
-	private async incrementAndMaybeSaveCache(counter: number): Promise<number> {
-		counter++;
-		if (this.cache && counter >= CACHE_SAVE_INTERVAL) {
-			this.cache.lastSync = Date.now();
-			await this.saveCache();
-			return 0;
-		}
-		return counter;
-	}
-
-	// ==================== Rate Limit Handling ====================
-
-	/**
-	 * Check if an error is a rate limit (429) error from the API.
-	 * Delegates to the centralized utility in error-utils.
-	 */
-	private isRateLimitError(error: unknown): boolean {
-		return isRateLimitErrorUtil(error);
-	}
-
-	/**
-	 * Handle a rate limit by pausing operations with backoff.
-	 * Respects API-provided retry delays when available,
-	 * falling back to exponential backoff.
-	 */
-	private async handleRateLimit(error?: unknown): Promise<void> {
-		this.consecutiveRateLimits++;
-
-		// Use API-provided retry delay if available, otherwise exponential backoff
-		const apiDelay = error ? parseRetryDelay(error) : null;
-		const delay = apiDelay
-			? Math.min(apiDelay, RATE_LIMIT_MAX_DELAY_MS)
-			: Math.min(RATE_LIMIT_BASE_DELAY_MS * Math.pow(2, this.consecutiveRateLimits - 1), RATE_LIMIT_MAX_DELAY_MS);
-
-		this.rateLimitResumeTime = Date.now() + delay;
-		this.status = 'rate_limited';
-
-		this.plugin.logger.warn(
-			`RAG Indexing: Rate limited. Waiting ${Math.round(delay / 1000)}s before retry ` +
-				`(attempt ${this.consecutiveRateLimits})${apiDelay ? ' (API-provided delay)' : ''}`
-		);
-
-		// Update status bar with countdown
-		this.updateStatusBar();
-		this.notifyProgressListeners();
-
-		// Start countdown timer for status bar updates
-		this.rateLimitTimer = setInterval(() => {
-			this.updateStatusBar();
-		}, 1000);
-
-		// Wait for cooldown
-		await new Promise((resolve) => setTimeout(resolve, delay));
-
-		// Clear timer and reset state
-		if (this.rateLimitTimer) {
-			clearInterval(this.rateLimitTimer);
-			this.rateLimitTimer = undefined;
-		}
-		this.rateLimitResumeTime = undefined;
-		this.plugin.logger.log('RAG Indexing: Rate limit cooldown complete, resuming...');
-	}
-
-	/**
-	 * Reset rate limit tracking after successful operations.
-	 */
-	private resetRateLimitTracking(): void {
-		this.consecutiveRateLimits = 0;
-		this.rateLimitResumeTime = undefined;
-		if (this.rateLimitTimer) {
-			clearInterval(this.rateLimitTimer);
-			this.rateLimitTimer = undefined;
-		}
-	}
-
-	/**
-	 * Get remaining seconds until rate limit cooldown ends.
-	 */
-	getRateLimitRemainingSeconds(): number {
-		if (!this.rateLimitResumeTime) return 0;
-		return Math.max(0, Math.ceil((this.rateLimitResumeTime - Date.now()) / 1000));
-	}
-
-	// ==================== File Search Store Management ====================
-
-	/**
-	 * Ensure the File Search Store exists, creating if necessary
-	 */
-	private async ensureFileSearchStore(): Promise<void> {
-		if (!this.ai) return;
-
-		const existingStoreName = this.plugin.settings.ragIndexing.fileSearchStoreName;
-
-		if (existingStoreName) {
-			// Verify the store still exists
-			try {
-				await this.ai.fileSearchStores.get({ name: existingStoreName });
-				this.plugin.logger.log(`RAG Indexing: Using existing store ${existingStoreName}`);
-				return;
-			} catch (error) {
-				// Check if it's a 404/not found error vs other errors
-				const errorMessage = error instanceof Error ? error.message : String(error);
-				const isNotFound =
-					errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('NOT_FOUND');
-
-				if (isNotFound) {
-					this.plugin.logger.warn('RAG Indexing: Store no longer exists, creating new store');
-				} else {
-					// For other errors (network, auth, etc.), log and re-throw
-					this.plugin.logger.error('RAG Indexing: Failed to verify store', error);
-					throw error;
-				}
-			}
-		}
-
-		// Create new store
-		try {
-			const vaultName = this.plugin.app.vault.getName();
-			const displayName = `obsidian-${vaultName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-
-			const store = await this.ai.fileSearchStores.create({
-				config: { displayName },
-			});
-
-			// Save the store name to settings
-			this.plugin.settings.ragIndexing.fileSearchStoreName = store.name ?? null;
-			await this.plugin.saveData(this.plugin.settings);
-
-			// Update cache
-			if (this.cache) {
-				this.cache.storeName = store.name ?? '';
-			}
-
-			this.plugin.logger.log(`RAG Indexing: Created new store ${store.name}`);
-		} catch (error) {
-			this.plugin.logger.error('RAG Indexing: Failed to create store', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Delete the File Search Store
-	 */
-	async deleteFileSearchStore(): Promise<void> {
-		if (!this.ai) return;
-
-		const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
-		if (!storeName) return;
-
-		try {
-			await this.ai.fileSearchStores.delete({
-				name: storeName,
-				config: { force: true },
-			});
-
-			// Clear settings and cache
-			this.plugin.settings.ragIndexing.fileSearchStoreName = null;
-			await this.plugin.saveData(this.plugin.settings);
-
-			// Delete cache file
-			const file = this.plugin.app.vault.getAbstractFileByPath(this.cachePath);
-			if (file instanceof TFile) {
-				await this.plugin.app.vault.delete(file);
-			}
-
-			this.cache = null;
-			this.indexedCount = 0;
-
-			this.plugin.logger.log('RAG Indexing: Deleted store and cache');
-		} catch (error) {
-			this.plugin.logger.error('RAG Indexing: Failed to delete store', error);
-			throw error;
-		}
-	}
-
-	// ==================== Status Bar ====================
-
-	/**
-	 * Setup the status bar indicator
-	 */
-	private setupStatusBar(): void {
-		if (this.statusBarItem) return;
-
-		this.statusBarItem = this.plugin.addStatusBarItem();
-		this.statusBarItem.addClass('rag-status-bar');
-
-		// Create icon container
-		const iconEl = this.statusBarItem.createSpan({ cls: 'rag-status-icon' });
-		setIcon(iconEl, 'database');
-
-		// Create text element for file count
-		this.statusBarItem.createSpan({ cls: 'rag-status-text' });
-
-		this.statusBarItem.addEventListener('click', async () => {
-			// Show progress modal if indexing, otherwise show status modal
-			if (this.status === 'indexing') {
-				const { RagProgressModal } = await import('../ui/rag-progress-modal');
-				const modal = new RagProgressModal(this.plugin.app, this, (result) => {
-					new Notice(`RAG Indexing: ${result.indexed} indexed, ${result.skipped} unchanged`);
-				});
-				modal.open();
-			} else {
-				const { RagStatusModal } = await import('../ui/rag-status-modal');
-				const modal = new RagStatusModal(
-					this.plugin.app,
-					this.getDetailedStatus(),
-					() => {
-						// Open settings to RAG section
-						// @ts-expect-error - Obsidian's setting API
-						this.plugin.app.setting.open();
-						// @ts-expect-error - Obsidian's setting API
-						this.plugin.app.setting.openTabById('gemini-scribe');
-					},
-					async () => {
-						// Open progress modal and start reindexing
-						const { RagProgressModal } = await import('../ui/rag-progress-modal');
-						const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
-							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
-						});
-						progressModal.open();
-
-						// Trigger reindex (don't await - modal handles progress)
-						this.indexVault().catch((error) => {
-							new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
-						});
-					},
-					async () => {
-						// Sync pending changes immediately
-						const synced = await this.syncPendingChanges();
-						if (synced) {
-							new Notice('RAG Index: Syncing pending changes...');
-						}
-						return synced;
-					}
-				);
-				modal.open();
-			}
-		});
-	}
-
-	/**
-	 * Update the status bar display
-	 */
-	private updateStatusBar(): void {
-		if (!this.statusBarItem) return;
-
-		const iconEl = this.statusBarItem.querySelector('.rag-status-icon') as HTMLElement;
-		const textEl = this.statusBarItem.querySelector('.rag-status-text') as HTMLElement;
-
-		if (!iconEl || !textEl) return;
-
-		// Remove animation class by default
-		this.statusBarItem.removeClass('rag-indexing');
-
-		let tooltip = '';
-
-		switch (this.status) {
-			case 'disabled':
-				this.statusBarItem.style.display = 'none';
-				break;
-			case 'idle':
-				this.statusBarItem.style.display = '';
-				setIcon(iconEl, 'database');
-				textEl.setText(`${this.indexedCount}`);
-				tooltip = `RAG Index: ${this.indexedCount} files indexed`;
-				break;
-			case 'indexing':
-				this.statusBarItem.style.display = '';
-				this.statusBarItem.addClass('rag-indexing');
-				setIcon(iconEl, 'upload-cloud');
-				if (this.indexingProgress.total > 0) {
-					const pct = Math.round((this.indexingProgress.current / this.indexingProgress.total) * 100);
-					textEl.setText(`${pct}%`);
-					tooltip = `RAG Index: Uploading ${this.indexingProgress.current}/${this.indexingProgress.total}...`;
-				} else {
-					textEl.setText('...');
-					tooltip = 'RAG Index: Indexing...';
-				}
-				break;
-			case 'error':
-				this.statusBarItem.style.display = '';
-				setIcon(iconEl, 'alert-triangle');
-				textEl.setText('');
-				tooltip = 'RAG Index: Error - click for details';
-				break;
-			case 'paused':
-				this.statusBarItem.style.display = '';
-				setIcon(iconEl, 'pause-circle');
-				textEl.setText('');
-				tooltip = 'RAG Index: Paused';
-				break;
-			case 'rate_limited': {
-				this.statusBarItem.style.display = '';
-				setIcon(iconEl, 'clock');
-				const remaining = this.getRateLimitRemainingSeconds();
-				textEl.setText(`${remaining}s`);
-				tooltip = `RAG Index: Rate limited - waiting ${remaining}s`;
-				break;
-			}
-		}
-
-		if (tooltip) {
-			setTooltip(this.statusBarItem, tooltip, { placement: 'top' });
-		}
-	}
-
-	// ==================== File Indexing ====================
-
-	/**
-	 * Delete a file from the index
-	 *
-	 * LIMITATION: This only removes the file from the local cache. The document
-	 * remains in Google's File Search Store as an orphaned file. This is a known
-	 * limitation - the File Search API doesn't provide a direct way to delete
-	 * individual documents from a store. The only way to fully clean up is to
-	 * delete and recreate the entire store.
-	 *
-	 * Impact: Deleted vault files will remain searchable until the store is recreated.
-	 * Workaround: Users can delete the store via settings when disabling RAG indexing.
-	 *
-	 * TODO: Investigate if Google adds document deletion API in the future.
-	 * See: https://github.com/allenhutchison/obsidian-gemini/issues/247
-	 *
-	 * @returns true if the cache was saved, false if file wasn't in cache or save failed
-	 */
-	private async deleteFile(path: string): Promise<boolean> {
-		if (!this.ai || !this.cache?.files[path]) {
-			return false;
-		}
-
-		try {
-			// Remove from local cache only - document remains orphaned in cloud
-			delete this.cache.files[path];
-			this.indexedCount = Object.keys(this.cache.files).length;
-			await this.saveCache();
-			return true;
-		} catch (error) {
-			this.plugin.logger.error(`RAG Indexing: Failed to delete ${path}`, error);
-			return false;
-		}
-	}
-
-	/**
-	 * Handle interrupted indexing by prompting user to resume or start fresh
-	 */
-	private async handleInterruptedIndexing(): Promise<void> {
-		if (!this.cache) return;
-
-		const resumeInfo = {
-			filesIndexed: Object.keys(this.cache.files).length,
-			interruptedAt: this.cache.indexingStartedAt || this.cache.lastSync,
-			lastFile: this.cache.lastIndexedFile,
-		};
-
-		// Show modal and wait for user choice
-		const { RagResumeModal } = await import('../ui/rag-resume-modal');
-
-		return new Promise<void>((resolve) => {
-			const modal = new RagResumeModal(this.plugin.app, resumeInfo, async (resume: boolean) => {
-				if (resume) {
-					// Resume: just start indexing - smart sync will skip already-indexed files
-					new Notice('RAG Indexing: Resuming interrupted indexing...');
-					this.startResumeIndexing();
-				} else {
-					// Start fresh: clear cache and store, then reindex
-					new Notice('RAG Indexing: Starting fresh...');
-					await this.startFresh();
-				}
-				resolve();
-			});
-			modal.open();
-		});
-	}
-
-	/**
-	 * Start resume indexing with progress modal
-	 */
-	private startResumeIndexing(): void {
-		import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
-			const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
-				new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
-			});
-			progressModal.open();
-		});
-
-		// Run indexing in background (don't await - modal handles display)
-		this.indexVault().catch((error) => {
-			this.plugin.logger.error('RAG Indexing: Resume indexing failed', error);
-			new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
-		});
-	}
-
-	/**
-	 * Clear cache and store, then start fresh indexing
-	 */
-	private async startFresh(): Promise<void> {
-		try {
-			// Clear local cache
-			this.cache = {
-				version: CACHE_VERSION,
-				storeName: '',
-				lastSync: 0,
-				files: {},
-			};
-			await this.saveCache();
-			this.indexedCount = 0;
-
-			// Delete and recreate the store
-			const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
-			if (storeName && this.ai) {
-				try {
-					await this.ai.fileSearchStores.delete({
-						name: storeName,
-						config: { force: true },
-					});
-					this.plugin.logger.log(`RAG Indexing: Deleted store ${storeName}`);
-				} catch (deleteError) {
-					// Store may not exist, that's OK
-					this.plugin.logger.debug('RAG Indexing: Store deletion failed (may not exist)', deleteError);
-				}
-			}
-
-			// Clear the store name in settings to force recreation
-			this.plugin.settings.ragIndexing.fileSearchStoreName = null;
-			await this.plugin.saveData(this.plugin.settings);
-
-			// Recreate the store
-			await this.ensureFileSearchStore();
-
-			// Start fresh indexing
-			this.startResumeIndexing(); // Reuses same logic for starting indexing with modal
-		} catch (error) {
-			this.plugin.logger.error('RAG Indexing: Failed to start fresh', error);
-			new Notice(`RAG Indexing: Failed to start fresh: ${(error as Error).message}`);
-		}
-	}
-
-	/**
-	 * Index the entire vault
-	 * If indexing is already in progress, returns the existing promise
-	 */
 	async indexVault(progressCallback?: (progress: IndexProgress) => void): Promise<IndexResult> {
-		// If indexing is already in progress, return the existing promise
-		// This prevents race conditions from concurrent calls
-		if (this._indexingPromise) {
-			this.plugin.logger.debug('RAG Indexing: indexVault already in progress, returning existing promise');
-			return this._indexingPromise;
-		}
-
-		if (!this.isReady()) {
-			throw new Error('RAG Indexing service is not ready');
-		}
-
-		// Create and store the indexing promise
-		this._indexingPromise = this._doIndexVault(progressCallback);
-
-		try {
-			return await this._indexingPromise;
-		} finally {
-			this._indexingPromise = null;
-		}
+		return this.vaultScanner.indexVault(progressCallback);
 	}
 
-	/**
-	 * Internal implementation of vault indexing
-	 */
-	private async _doIndexVault(progressCallback?: (progress: IndexProgress) => void): Promise<IndexResult> {
-		const startTime = Date.now();
-		const result: IndexResult = { indexed: 0, skipped: 0, failed: 0, duration: 0 };
+	async deleteFileSearchStore(): Promise<void> {
+		return this.vaultScanner.deleteFileSearchStore();
+	}
 
-		if (!this.fileUploader || !this.vaultAdapter) {
-			throw new Error('RAG Indexing service not properly initialized');
-		}
-
-		const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
-		if (!storeName) {
-			throw new Error('No File Search Store configured');
-		}
-
-		try {
-			// Reset progress tracking
-			this.status = 'indexing';
-			this.indexingProgress = { current: 0, total: 0 };
-			this.indexingStartTime = startTime;
-			this.runningIndexed = 0;
-			this.runningSkipped = 0;
-			this.runningFailed = 0;
-			this.failedFiles = [];
-			this.currentFile = undefined;
-			this.cancelRequested = false;
-			this.updateStatusBar();
-			this.notifyProgressListeners();
-
-			// Mark indexing as in progress for resume capability
-			if (this.cache) {
-				this.cache.indexingInProgress = true;
-				this.cache.indexingStartedAt = startTime;
-				this.cache.lastIndexedFile = undefined;
-				await this.saveCache();
-			}
-
-			// Track files since last cache save for incremental durability
-			let filesSinceLastSave = 0;
-
-			// Use FileUploader with adapter - handles smart sync and parallel uploads
-			await this.fileUploader.uploadWithAdapter(
-				this.vaultAdapter,
-				'', // basePath - adapter handles this
-				storeName,
-				{
-					smartSync: true,
-					parallel: { maxConcurrent: 5 },
-					logger: {
-						debug: (msg, ...args) => this.plugin.logger.debug(msg, ...args),
-						error: (msg, ...args) => this.plugin.logger.error(msg, ...args),
-					},
-					onProgress: async (event) => {
-						// Check for cancellation
-						if (this.cancelRequested) {
-							throw new Error('Indexing cancelled by user');
-						}
-
-						// Map gemini-utils progress events to our format
-						if (event.type === 'start') {
-							this.indexingProgress = { current: 0, total: event.totalFiles || 0 };
-							this.notifyProgressListeners();
-							progressCallback?.({
-								current: 0,
-								total: event.totalFiles || 0,
-								phase: 'scanning',
-								message: `Found ${event.totalFiles} files to index`,
-							});
-						} else if (event.type === 'file_start') {
-							this.currentFile = event.currentFile;
-							this.notifyProgressListeners();
-						} else if (event.type === 'file_complete') {
-							result.indexed++;
-							this.runningIndexed++;
-							this.currentFile = event.currentFile;
-							// Update cache for newly indexed file
-							if (this.cache && event.currentFile && this.vaultAdapter) {
-								const contentHash = await this.vaultAdapter.computeHash(event.currentFile);
-								this.cache.files[event.currentFile] = {
-									resourceName: storeName, // Store name as reference (individual doc names not available)
-									contentHash,
-									lastIndexed: Date.now(),
-								};
-								// Track last indexed file for resume capability
-								this.cache.lastIndexedFile = event.currentFile;
-							}
-							// Incremental cache save for durability
-							filesSinceLastSave = await this.incrementAndMaybeSaveCache(filesSinceLastSave);
-							this.indexingProgress = {
-								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
-								total: event.totalFiles || 0,
-							};
-							this.notifyProgressListeners();
-							progressCallback?.({
-								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
-								total: event.totalFiles || 0,
-								currentFile: event.currentFile,
-								phase: 'indexing',
-							});
-							this.updateStatusBar();
-						} else if (event.type === 'file_skipped') {
-							result.skipped++;
-							this.runningSkipped++;
-							this.currentFile = event.currentFile;
-							// Skipped files are already in cache (unchanged), ensure they're tracked
-							if (this.cache && event.currentFile && !this.cache.files[event.currentFile] && this.vaultAdapter) {
-								const contentHash = await this.vaultAdapter.computeHash(event.currentFile);
-								this.cache.files[event.currentFile] = {
-									resourceName: storeName,
-									contentHash,
-									lastIndexed: Date.now(),
-								};
-							}
-							// Incremental cache save for durability (count skipped files too)
-							filesSinceLastSave = await this.incrementAndMaybeSaveCache(filesSinceLastSave);
-							this.indexingProgress = {
-								current: (event.completedFiles || 0) + (event.skippedFiles || 0),
-								total: event.totalFiles || 0,
-							};
-							this.notifyProgressListeners();
-							this.updateStatusBar();
-						} else if (event.type === 'file_error') {
-							result.failed++;
-							this.runningFailed++;
-
-							// Track failed file with error details
-							if (event.currentFile) {
-								const errorMessage =
-									event.error instanceof Error ? event.error.message : String(event.error || 'Unknown error');
-								this.failedFiles.push({
-									path: event.currentFile,
-									error: errorMessage,
-									timestamp: Date.now(),
-								});
-							}
-
-							this.notifyProgressListeners();
-
-							// Re-throw rate limit errors to trigger cooldown
-							if (event.error && this.isRateLimitError(event.error)) {
-								throw event.error;
-							}
-						} else if (event.type === 'complete') {
-							this.currentFile = undefined;
-							this.notifyProgressListeners();
-							progressCallback?.({
-								current: event.totalFiles || 0,
-								total: event.totalFiles || 0,
-								phase: 'complete',
-								message: `Indexed ${result.indexed}, skipped ${result.skipped}, failed ${result.failed}`,
-							});
-						}
-					},
-				}
-			);
-
-			// Save cache and update local state - clear resume flags on success
-			if (this.cache) {
-				this.cache.lastSync = Date.now();
-				this.cache.indexingInProgress = false;
-				this.cache.indexingStartedAt = undefined;
-				this.cache.lastIndexedFile = undefined;
-				await this.saveCache();
-			}
-			this.indexedCount = Object.keys(this.cache?.files || {}).length;
-			this.status = 'idle';
-			this.currentFile = undefined;
-			this.indexingStartTime = undefined;
-			this.resetRateLimitTracking(); // Success - reset rate limit counter
-			this.updateStatusBar();
-			this.notifyProgressListeners();
-		} catch (error) {
-			// Handle rate limit with auto-retry
-			if (this.isRateLimitError(error)) {
-				// Fail fast on permanent quota exhaustion — retrying won't help
-				if (isQuotaExhausted(error)) {
-					this.plugin.logger.error('RAG Indexing: Permanent quota exhaustion detected, stopping');
-					this.resetRateLimitTracking();
-					this.status = 'error';
-					this.currentFile = undefined;
-					this.indexingStartTime = undefined;
-					if (this.cache) {
-						this.cache.indexingInProgress = false;
-						this.cache.indexingStartedAt = undefined;
-						this.cache.lastIndexedFile = undefined;
-						await this.saveCache();
-					}
-					this.updateStatusBar();
-					this.notifyProgressListeners();
-					new Notice(getErrorMessage(error), 8000);
-					result.duration = Date.now() - startTime;
-					return result;
-				}
-
-				// Check if we've exceeded max retries
-				if (this.consecutiveRateLimits >= RATE_LIMIT_MAX_RETRIES) {
-					this.plugin.logger.error(`RAG Indexing: Max rate limit retries (${RATE_LIMIT_MAX_RETRIES}) exceeded`);
-					this.resetRateLimitTracking();
-					this.status = 'error';
-					this.currentFile = undefined;
-					this.indexingStartTime = undefined;
-					// Clear resume flags on explicit failure
-					if (this.cache) {
-						this.cache.indexingInProgress = false;
-						this.cache.indexingStartedAt = undefined;
-						this.cache.lastIndexedFile = undefined;
-						await this.saveCache();
-					}
-					this.updateStatusBar();
-					this.notifyProgressListeners();
-					result.duration = Date.now() - startTime;
-					return result;
-				}
-
-				// Save progress before waiting
-				if (this.cache) {
-					this.cache.lastSync = Date.now();
-					await this.saveCache();
-				}
-
-				// Wait for cooldown (pass error so API-provided delay can be used)
-				await this.handleRateLimit(error);
-
-				// Auto-retry - smart sync will skip already-indexed files
-				this.status = 'indexing';
-				this.updateStatusBar();
-				this.notifyProgressListeners();
-
-				// Recursive retry - return combined results
-				const retryResult = await this._doIndexVault(progressCallback);
-				result.indexed += retryResult.indexed;
-				result.skipped += retryResult.skipped;
-				result.failed += retryResult.failed;
-				result.duration = Date.now() - startTime;
-				return result;
-			}
-
-			this.status = this.cancelRequested ? 'idle' : 'error';
-			this.currentFile = undefined;
-			this.indexingStartTime = undefined;
-			this.cancelRequested = false;
-
-			// Clear resume flags on cancellation or error.
-			// Design decision: We clear flags even for unexpected errors (not just cancellation)
-			// to avoid stale resume prompts. While this means users can't auto-resume after
-			// unexpected errors, it prevents confusing UX from corrupted states. Users can
-			// still manually trigger reindexing. Rate limits are handled separately with retry.
-			if (this.cache) {
-				this.cache.indexingInProgress = false;
-				this.cache.indexingStartedAt = undefined;
-				this.cache.lastIndexedFile = undefined;
-				await this.saveCache();
-			}
-
-			this.updateStatusBar();
-			this.notifyProgressListeners();
-
-			// Don't re-throw if cancelled, just return partial results
-			if (error instanceof Error && error.message === 'Indexing cancelled by user') {
-				this.plugin.logger.log('RAG Indexing: Cancelled by user');
-				result.duration = Date.now() - startTime;
-				return result;
-			}
-			throw error;
-		}
-
-		result.duration = Date.now() - startTime;
-		return result;
+	getRateLimitRemainingSeconds(): number {
+		return this.rateLimiter?.getRemainingSeconds() ?? 0;
 	}
 
 	// ==================== File Event Handlers ====================
 
-	/**
-	 * Handle file creation
-	 */
 	onFileCreate(file: TFile): void {
-		if (!this.isReady() || !this.plugin.settings.ragIndexing.autoSync) return;
-		if (!this.vaultAdapter?.shouldIndex(file.path)) return;
-
-		this.queueChange({
-			type: 'create',
-			path: file.path,
-			timestamp: Date.now(),
-		});
+		this.syncQueue?.onFileCreate(file);
 	}
 
-	/**
-	 * Handle file modification
-	 */
 	onFileModify(file: TFile): void {
-		if (!this.isReady() || !this.plugin.settings.ragIndexing.autoSync) return;
-		if (!this.vaultAdapter?.shouldIndex(file.path)) return;
-
-		this.queueChange({
-			type: 'modify',
-			path: file.path,
-			timestamp: Date.now(),
-		});
+		this.syncQueue?.onFileModify(file);
 	}
 
-	/**
-	 * Handle file deletion
-	 */
 	onFileDelete(file: TFile): void {
-		if (!this.isReady() || !this.plugin.settings.ragIndexing.autoSync) return;
-
-		this.queueChange({
-			type: 'delete',
-			path: file.path,
-			timestamp: Date.now(),
-		});
+		this.syncQueue?.onFileDelete(file);
 	}
 
-	/**
-	 * Handle file rename
-	 */
 	onFileRename(file: TFile, oldPath: string): void {
-		if (!this.isReady() || !this.plugin.settings.ragIndexing.autoSync) return;
-
-		// Handle as delete old + create new
-		this.queueChange({
-			type: 'delete',
-			path: oldPath,
-			timestamp: Date.now(),
-		});
-
-		if (this.vaultAdapter?.shouldIndex(file.path)) {
-			this.queueChange({
-				type: 'create',
-				path: file.path,
-				timestamp: Date.now(),
-			});
-		}
+		this.syncQueue?.onFileRename(file, oldPath);
 	}
 
-	// ==================== Debouncing ====================
+	// ==================== Private Helpers ====================
 
-	/**
-	 * Queue a file change for debounced processing
-	 */
-	private queueChange(change: PendingChange): void {
-		// Collapse changes for the same path
-		const existing = this.pendingChanges.get(change.path);
-
-		if (existing) {
-			// Collapse rules
-			if (existing.type === 'create' && change.type === 'delete') {
-				// Create + delete = no-op
-				this.pendingChanges.delete(change.path);
-			} else if (existing.type === 'create' && change.type === 'modify') {
-				// Create + modify = create
-				// Keep existing
-			} else {
-				// Use latest change
-				this.pendingChanges.set(change.path, change);
-			}
-		} else {
-			this.pendingChanges.set(change.path, change);
-		}
-
-		// Don't start debounce timer when paused - changes will be processed on resume
-		if (this.status === 'paused') {
-			return;
-		}
-
-		// Reset debounce timer
-		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
-		}
-
-		this.debounceTimer = setTimeout(() => {
-			this.flushPendingChanges().catch((error) => {
-				this.plugin.logger.error('RAG Indexing: Error in debounced flush', error);
-			});
-		}, DEBOUNCE_MS);
+	private updateStatusBar(): void {
+		this.statusBar?.update();
 	}
 
 	/**
-	 * Process all pending changes
+	 * Create the status provider interface for the status bar
 	 */
-	private async flushPendingChanges(): Promise<void> {
-		if (this.isProcessing || this.pendingChanges.size === 0) return;
-		if (!this.fileUploader || !this.vaultAdapter) return;
-
-		const storeName = this.plugin.settings.ragIndexing.fileSearchStoreName;
-		if (!storeName) return;
-
-		this.isProcessing = true;
-		const changes = Array.from(this.pendingChanges.values());
-		this.pendingChanges.clear();
-
-		// Update status to show syncing activity
-		this.status = 'indexing';
-		this.updateStatusBar();
-
-		// Track changes since last cache save for incremental durability
-		let changesSinceLastSave = 0;
-		let currentChangeIndex = 0;
-
-		try {
-			for (let i = 0; i < changes.length; i++) {
-				currentChangeIndex = i;
-				const change = changes[i];
-				switch (change.type) {
-					case 'create': {
-						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
-						if (file instanceof TFile && this.vaultAdapter.shouldIndex(file.path)) {
-							const content = await this.vaultAdapter.readFileForUpload(file.path, file.path);
-							if (content) {
-								await this.fileUploader.uploadContent(content, storeName);
-								// Update cache for new file
-								if (this.cache) {
-									this.cache.files[file.path] = {
-										resourceName: storeName,
-										contentHash: content.hash,
-										lastIndexed: Date.now(),
-									};
-								}
-								// Incremental cache save for durability
-								changesSinceLastSave = await this.incrementAndMaybeSaveCache(changesSinceLastSave);
-							}
-						}
-						break;
-					}
-					case 'modify': {
-						// Update existing file - don't increment indexedCount since file is already indexed
-						const file = this.plugin.app.vault.getAbstractFileByPath(change.path);
-						if (file instanceof TFile && this.vaultAdapter.shouldIndex(file.path)) {
-							const content = await this.vaultAdapter.readFileForUpload(file.path, file.path);
-							if (content) {
-								await this.fileUploader.uploadContent(content, storeName);
-								// Update cache with new hash
-								if (this.cache) {
-									this.cache.files[file.path] = {
-										resourceName: storeName,
-										contentHash: content.hash,
-										lastIndexed: Date.now(),
-									};
-								}
-								// Incremental cache save for durability
-								changesSinceLastSave = await this.incrementAndMaybeSaveCache(changesSinceLastSave);
-							}
-						}
-						break;
-					}
-					case 'delete': {
-						const cacheSaved = await this.deleteFile(change.path);
-						if (cacheSaved) {
-							changesSinceLastSave = 0;
-						}
-						break;
-					}
-				}
-			}
-
-			// Save cache and update count
-			if (this.cache) {
-				this.cache.lastSync = Date.now();
-				await this.saveCache();
-			}
-			this.indexedCount = Object.keys(this.cache?.files || {}).length;
-			this.status = 'idle';
-			this.resetRateLimitTracking(); // Success - reset rate limit counter
-			this.updateStatusBar();
-		} catch (error) {
-			// Check for rate limit error
-			if (this.isRateLimitError(error)) {
-				// Fail fast on permanent quota exhaustion — retrying won't help
-				if (isQuotaExhausted(error)) {
-					this.plugin.logger.error('RAG Indexing: Permanent quota exhaustion detected, stopping sync');
-					this.resetRateLimitTracking();
-					this.status = 'error';
-					this.updateStatusBar();
-					new Notice(getErrorMessage(error), 8000);
-				} else {
-					// Save progress before waiting
-					if (this.cache) {
-						this.cache.lastSync = Date.now();
-						await this.saveCache();
-					}
-
-					// Re-queue unprocessed changes for retry after cooldown
-					for (let i = currentChangeIndex; i < changes.length; i++) {
-						this.pendingChanges.set(changes[i].path, changes[i]);
-					}
-
-					// Wait for cooldown (pass error so API-provided delay can be used)
-					await this.handleRateLimit(error);
-
-					this.status = 'idle';
-					this.updateStatusBar();
-				}
-			} else {
-				this.plugin.logger.error('RAG Indexing: Failed to process changes', error);
-				this.status = 'error';
-				this.updateStatusBar();
-			}
-		} finally {
-			this.isProcessing = false;
-
-			// If new changes arrived while processing, immediately process them
-			if (this.pendingChanges.size > 0) {
-				// Use void to indicate intentional fire-and-forget
-				// Errors are already logged in the catch block above
-				void this.flushPendingChanges();
-			}
-		}
+	private createStatusProvider() {
+		return {
+			getStatus: () => this.status,
+			getIndexedFileCount: () => this.ragCache.indexedCount,
+			getIndexingProgress: () => this.vaultScanner?.getIndexingProgress() ?? { current: 0, total: 0 },
+			getProgressInfo: () => this.getProgressInfo(),
+			isPaused: () => this.isPaused(),
+			getRateLimitRemainingSeconds: () => this.getRateLimitRemainingSeconds(),
+			getDetailedStatus: () => this.getDetailedStatus(),
+			indexVault: () => this.indexVault(),
+			syncPendingChanges: () => this.syncPendingChanges(),
+			addProgressListener: (listener: ProgressListener) => this.addProgressListener(listener),
+			removeProgressListener: (listener: ProgressListener) => this.removeProgressListener(listener),
+			cancelIndexing: () => this.cancelIndexing(),
+		};
 	}
 }
