@@ -8,7 +8,7 @@ import {
 	DeleteFileTool,
 	GetWorkspaceStateTool,
 	getVaultTools,
-} from '../../src/tools/vault-tools';
+} from '../../src/tools/vault';
 import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)

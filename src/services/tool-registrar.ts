@@ -1,7 +1,7 @@
 import { ToolRegistry } from '../tools/tool-registry';
 import { Tool } from '../tools/types';
 import { Logger } from '../utils/logger';
-import { getVaultTools } from '../tools/vault-tools';
+import { getVaultTools } from '../tools/vault';
 
 interface ToolSource {
 	name: string;

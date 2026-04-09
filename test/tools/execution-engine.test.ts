@@ -1,6 +1,6 @@
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
 import { ToolRegistry } from '../../src/tools/tool-registry';
-import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault-tools';
+import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault';
 import { ToolCategory } from '../../src/types/agent';
 import { ToolClassification } from '../../src/types/tool-policy';
 import { TFile } from 'obsidian';

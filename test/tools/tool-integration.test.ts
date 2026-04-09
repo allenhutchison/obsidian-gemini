@@ -1,12 +1,6 @@
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
 import { ToolRegistry } from '../../src/tools/tool-registry';
-import {
-	ReadFileTool,
-	WriteFileTool,
-	SearchFilesTool,
-	DeleteFileTool,
-	ListFilesTool,
-} from '../../src/tools/vault-tools';
+import { ReadFileTool, WriteFileTool, SearchFilesTool, DeleteFileTool, ListFilesTool } from '../../src/tools/vault';
 import { GoogleSearchTool } from '../../src/tools/google-search-tool';
 import { WebFetchTool } from '../../src/tools/web-fetch-tool';
 import { SessionType, ToolCategory } from '../../src/types/agent';

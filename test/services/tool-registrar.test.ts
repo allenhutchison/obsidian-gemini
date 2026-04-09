@@ -1,7 +1,7 @@
 import { ToolRegistrar } from '../../src/services/tool-registrar';
 
 // Mock all tool source modules
-jest.mock('../../src/tools/vault-tools', () => ({
+jest.mock('../../src/tools/vault', () => ({
 	getVaultTools: () => [{ name: 'read_file' }, { name: 'write_file' }],
 }));
 

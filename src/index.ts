@@ -98,7 +98,7 @@ export {
 	MoveFileTool,
 	SearchFilesTool,
 	getVaultTools,
-} from './tools/vault-tools';
+} from './tools/vault';
 
 // Web Tools
 export { GoogleSearchTool } from './tools/google-search-tool';

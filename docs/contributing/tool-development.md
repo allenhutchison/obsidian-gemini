@@ -148,7 +148,7 @@ try {
 Check for protected paths:
 
 ```typescript
-import { shouldExcludePath } from '../tools/vault-tools';
+import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
 
 if (shouldExcludePath(params.path, plugin)) {
 	return {
