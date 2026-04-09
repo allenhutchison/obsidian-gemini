@@ -51,8 +51,11 @@ export async function renderApiSettings(
 				.setPlaceholder('e.g., 3')
 				.setValue(plugin.settings.maxRetries.toString())
 				.onChange(async (value) => {
-					plugin.settings.maxRetries = parseInt(value);
-					await plugin.saveSettings();
+					const parsed = parseInt(value, 10);
+					if (!isNaN(parsed) && parsed >= 0) {
+						plugin.settings.maxRetries = parsed;
+						await plugin.saveSettings();
+					}
 				})
 		);
 
@@ -64,8 +67,11 @@ export async function renderApiSettings(
 				.setPlaceholder('e.g., 1000')
 				.setValue(plugin.settings.initialBackoffDelay.toString())
 				.onChange(async (value) => {
-					plugin.settings.initialBackoffDelay = parseInt(value);
-					await plugin.saveSettings();
+					const parsed = parseInt(value, 10);
+					if (!isNaN(parsed) && parsed >= 0) {
+						plugin.settings.initialBackoffDelay = parsed;
+						await plugin.saveSettings();
+					}
 				})
 		);
 

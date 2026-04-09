@@ -199,9 +199,9 @@ async function createToolPermissionsSettings(
 	}
 }
 
-function showYoloConfirmation(app: App): Promise<boolean> {
-	return new Promise((resolve) => {
-		const { YoloConfirmationModal } = require('./yolo-confirmation-modal');
+async function showYoloConfirmation(app: App): Promise<boolean> {
+	return new Promise(async (resolve) => {
+		const { YoloConfirmationModal } = await import('./yolo-confirmation-modal');
 		const modal = new YoloConfirmationModal(app, (confirmed: boolean) => {
 			resolve(confirmed);
 		});
