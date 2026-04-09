@@ -126,13 +126,15 @@ async function createToolPermissionsSettings(
 					}
 				}
 
-				plugin.settings.toolPolicy.activePreset = preset;
 				if (preset === PolicyPreset.CUSTOM) {
-					// Materialize current effective permissions so untouched tools keep their values
-					plugin.settings.toolPolicy.toolPermissions = Object.fromEntries(
+					// Materialize current effective permissions before changing preset
+					const materializedPermissions = Object.fromEntries(
 						allTools.map((t) => [t.name, plugin.toolRegistry!.getEffectivePermission(t.name)])
 					);
+					plugin.settings.toolPolicy.toolPermissions = materializedPermissions;
+					plugin.settings.toolPolicy.activePreset = PolicyPreset.CUSTOM;
 				} else {
+					plugin.settings.toolPolicy.activePreset = preset;
 					// Clear per-tool overrides when switching to a named preset
 					plugin.settings.toolPolicy.toolPermissions = {};
 				}
@@ -200,8 +202,8 @@ async function createToolPermissionsSettings(
 }
 
 async function showYoloConfirmation(app: App): Promise<boolean> {
-	return new Promise(async (resolve) => {
-		const { YoloConfirmationModal } = await import('./yolo-confirmation-modal');
+	const { YoloConfirmationModal } = await import('./yolo-confirmation-modal');
+	return new Promise((resolve) => {
 		const modal = new YoloConfirmationModal(app, (confirmed: boolean) => {
 			resolve(confirmed);
 		});
