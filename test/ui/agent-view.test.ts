@@ -729,7 +729,7 @@ describe('AgentView UI Tests', () => {
 			// (ensureToolsInitialized uses this.chatContainer which we just set)
 			(agentView as any).ensureToolsInitialized();
 			const toolsInstance = (agentView as any).tools;
-			const group = toolsInstance.createToolGroup(2);
+			const group = toolsInstance.display.createToolGroup(2);
 			toolsInstance.currentGroupContainer = group;
 		});
 
@@ -753,7 +753,7 @@ describe('AgentView UI Tests', () => {
 			// increment totalCount and update summary (mirrors handleToolCalls reuse logic)
 			const prevTotal = parseInt(group.dataset.totalCount || '0', 10);
 			group.dataset.totalCount = String(prevTotal + 3);
-			toolsInstance.updateGroupSummary(group);
+			toolsInstance.display.updateGroupSummary(group);
 
 			// totalCount should now be 5
 			expect(group.dataset.totalCount).toBe('5');
