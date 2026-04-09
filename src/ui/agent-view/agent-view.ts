@@ -94,27 +94,10 @@ export class AgentView extends ItemView {
 	}
 
 	private async createAgentInterface(container: HTMLElement) {
-		// Create UI callbacks for components
-		const callbacks: UICallbacks = {
-			showFilePicker: () => this.showFilePicker(),
-			showFileMention: () => this.attachments.showFileMention(),
-			showSkillPicker: () => this.showSkillPicker(),
-			showSessionList: () => this.showSessionList(),
-			showSessionSettings: () => this.showSessionSettings(),
-			createNewSession: () => this.createNewSession(),
-			sendMessage: () => this.send.sendMessage(),
-			stopAgentLoop: () => this.send.stopAgentLoop(),
-			removeContextFile: (file: TFile) => this.removeContextFile(file),
-			updateSessionHeader: () => this.updateSessionHeader(),
-			updateSessionMetadata: () => this.updateSessionMetadata(),
-			loadSession: (session: ChatSession) => this.loadSession(session),
-			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
-			addAttachment: (attachment: InlineAttachment) => this.attachments.addAttachment(attachment),
-			removeAttachment: (id: string) => this.attachments.removeAttachment(id),
-			getAttachments: () => this.shelf?.getPendingAttachments() || [],
-			handleDroppedFiles: (files: TFile[]) => this.attachments.handleDroppedFiles(files),
-			switchProject: () => this.switchProject(),
-		};
+		// Reuse getUICallbacks() to avoid maintaining a duplicate literal.
+		// The arrow-function closures capture `this`, so this.send / this.attachments
+		// resolve correctly when the callbacks are eventually invoked (after init below).
+		const callbacks = this.getUICallbacks();
 
 		// Create the main interface using AgentViewUI
 		const elements = this.ui.createAgentInterface(container, this.currentSession, callbacks);
