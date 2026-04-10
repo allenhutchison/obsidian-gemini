@@ -1,0 +1,30 @@
+{
+	"version": 1,
+	"lastUpdated": "2026-04-10T00:00:00Z",
+	"models": [
+		{
+			"value": "gemini-pro-latest",
+			"label": "Gemini Pro Latest",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-flash-latest",
+			"label": "Gemini Flash Latest",
+			"defaultForRoles": ["chat", "summary", "rewrite"],
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-flash-lite-latest",
+			"label": "Gemini Flash Lite Latest",
+			"defaultForRoles": ["completions"],
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-2.5-flash-image",
+			"label": "Gemini 2.5 Flash Image",
+			"defaultForRoles": ["image"],
+			"supportsImageGeneration": true,
+			"maxTemperature": 2
+		}
+	]
+}
