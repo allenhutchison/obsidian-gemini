@@ -309,11 +309,8 @@ describe('ModelManager.updateModels — model role preservation', () => {
 
 		// Both gemini-2.5-flash (text) and gemini-2.5-flash-image should exist
 		const modelValues = GEMINI_MODELS.map((m) => m.value);
-		const hasFlashText = modelValues.includes('gemini-2.5-flash') || modelValues.includes('gemini-flash-latest');
-		const hasFlashImage = modelValues.includes('gemini-2.5-flash-image');
-
-		expect(hasFlashText).toBe(true);
-		expect(hasFlashImage).toBe(true);
+		expect(modelValues).toContain('gemini-2.5-flash');
+		expect(modelValues).toContain('gemini-2.5-flash-image');
 	});
 
 	it('should handle discovery returning only text models (no image models)', async () => {
