@@ -21,7 +21,19 @@ const MODELS_PATH = join(__dirname, '..', 'src', 'data', 'models.json');
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
 // Model name substrings to exclude
-const EXCLUDE_PATTERNS = ['embedding', 'aqa', 'learnlm', 'gemma', 'imagen', 'veo', 'tts', 'vision', 'computer'];
+const EXCLUDE_PATTERNS = [
+	'embedding',
+	'aqa',
+	'learnlm',
+	'gemma',
+	'imagen',
+	'veo',
+	'tts',
+	'vision',
+	'computer',
+	'robotics',
+	'gemini-2.0',
+];
 
 async function fetchAllModels(apiKey) {
 	let allModels = [];
