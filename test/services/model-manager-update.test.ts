@@ -135,6 +135,15 @@ describe('ModelManager.updateModels — model role preservation', () => {
 			outputTokenLimit: 0,
 			supportedGenerationMethods: ['generateImage'],
 		},
+		{
+			name: 'models/veo-2.0-generate-001',
+			displayName: 'Veo 2.0',
+			description: '',
+			version: '001',
+			inputTokenLimit: 0,
+			outputTokenLimit: 0,
+			supportedGenerationMethods: ['generateVideo'],
+		},
 	];
 
 	beforeEach(() => {
@@ -188,10 +197,8 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
 		// The image model should NOT have been changed
-		if (result.settingsChanged) {
-			const imageChanged = result.changedSettingsInfo.some((info) => info.includes('Image model'));
-			expect(imageChanged).toBe(false);
-		}
+		expect(result.updatedSettings.imageModelName).toBe('gemini-2.5-flash-image');
+		expect(result.changedSettingsInfo.some((info) => info.includes('Image model'))).toBe(false);
 
 		// Verify GEMINI_MODELS contains image models
 		const imageModels = GEMINI_MODELS.filter((m) => m.supportsImageGeneration || m.value.includes('image'));
@@ -201,30 +208,24 @@ describe('ModelManager.updateModels — model role preservation', () => {
 	it('should preserve chat model setting when discovery returns new models', async () => {
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
-		if (result.settingsChanged) {
-			const chatChanged = result.changedSettingsInfo.some((info) => info.includes('Chat model'));
-			expect(chatChanged).toBe(false);
-		}
+		expect(result.updatedSettings.chatModelName).toBe('gemini-2.5-pro');
+		expect(result.changedSettingsInfo.some((info) => info.includes('Chat model'))).toBe(false);
 	});
 
 	it('should preserve summary model setting when discovery returns new models', async () => {
 		// gemini-flash-latest is in static defaults and passes the "latest" filter
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
-		if (result.settingsChanged) {
-			const summaryChanged = result.changedSettingsInfo.some((info) => info.includes('Summary model'));
-			expect(summaryChanged).toBe(false);
-		}
+		expect(result.updatedSettings.summaryModelName).toBe('gemini-flash-latest');
+		expect(result.changedSettingsInfo.some((info) => info.includes('Summary model'))).toBe(false);
 	});
 
 	it('should preserve completions model setting when discovery returns new models', async () => {
 		// gemini-flash-lite-latest is in static defaults and passes the "latest" filter
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
-		if (result.settingsChanged) {
-			const completionsChanged = result.changedSettingsInfo.some((info) => info.includes('Completions model'));
-			expect(completionsChanged).toBe(false);
-		}
+		expect(result.updatedSettings.completionsModelName).toBe('gemini-flash-lite-latest');
+		expect(result.changedSettingsInfo.some((info) => info.includes('Completions model'))).toBe(false);
 	});
 
 	it('should include both text and image models in global GEMINI_MODELS after update', async () => {
@@ -243,6 +244,7 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		const modelValues = GEMINI_MODELS.map((m) => m.value);
 		expect(modelValues).not.toContain('gemini-2.0-flash');
 		expect(modelValues).not.toContain('imagen-3.0-generate-001');
+		expect(modelValues).not.toContain('veo-2.0-generate-001');
 	});
 
 	it('should correctly update image model if it is genuinely unavailable', async () => {
@@ -267,8 +269,13 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
 		expect(result.settingsChanged).toBe(true);
-		const chatChanged = result.changedSettingsInfo.some((info) => info.includes('Chat model'));
-		expect(chatChanged).toBe(true);
+		expect(result.changedSettingsInfo.some((info) => info.includes('Chat model'))).toBe(true);
+
+		// Should be updated to a valid text model in GEMINI_MODELS, not an image model
+		const newChatModel = GEMINI_MODELS.find((m) => m.value === result.updatedSettings.chatModelName);
+		expect(newChatModel).toBeDefined();
+		expect(newChatModel?.supportsImageGeneration).not.toBe(true);
+		expect(newChatModel?.value.includes('image')).toBe(false);
 	});
 
 	it('should correctly update summary model if it is genuinely unavailable', async () => {
@@ -277,8 +284,12 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
 		expect(result.settingsChanged).toBe(true);
-		const summaryChanged = result.changedSettingsInfo.some((info) => info.includes('Summary model'));
-		expect(summaryChanged).toBe(true);
+		expect(result.changedSettingsInfo.some((info) => info.includes('Summary model'))).toBe(true);
+
+		const newSummaryModel = GEMINI_MODELS.find((m) => m.value === result.updatedSettings.summaryModelName);
+		expect(newSummaryModel).toBeDefined();
+		expect(newSummaryModel?.supportsImageGeneration).not.toBe(true);
+		expect(newSummaryModel?.value.includes('image')).toBe(false);
 	});
 
 	it('should correctly update completions model if it is genuinely unavailable', async () => {
@@ -287,8 +298,12 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
 		expect(result.settingsChanged).toBe(true);
-		const completionsChanged = result.changedSettingsInfo.some((info) => info.includes('Completions model'));
-		expect(completionsChanged).toBe(true);
+		expect(result.changedSettingsInfo.some((info) => info.includes('Completions model'))).toBe(true);
+
+		const newCompletionsModel = GEMINI_MODELS.find((m) => m.value === result.updatedSettings.completionsModelName);
+		expect(newCompletionsModel).toBeDefined();
+		expect(newCompletionsModel?.supportsImageGeneration).not.toBe(true);
+		expect(newCompletionsModel?.value.includes('image')).toBe(false);
 	});
 
 	it('should preserve all model settings when discovery fails', async () => {
@@ -297,11 +312,9 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		const result = await modelManager.updateModels({ preserveUserCustomizations: true });
 
 		// When discovery fails, getAvailableModels falls back to static models.
-		// The global list should still include image models from static defaults.
-		if (result.settingsChanged) {
-			const imageChanged = result.changedSettingsInfo.some((info) => info.includes('Image model'));
-			expect(imageChanged).toBe(false);
-		}
+		// Configured models are in the static defaults, so none should change.
+		expect(result.updatedSettings.imageModelName).toBe('gemini-2.5-flash-image');
+		expect(result.changedSettingsInfo.some((info) => info.includes('Image model'))).toBe(false);
 	});
 
 	it('should not deduplicate image models with text models of similar names', async () => {
