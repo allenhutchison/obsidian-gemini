@@ -41,13 +41,15 @@ async function fetchAllModels(apiKey) {
 
 	do {
 		const url = new URL(`${API_BASE}/models`);
-		url.searchParams.set('key', apiKey);
 		url.searchParams.set('pageSize', '50');
 		if (pageToken) {
 			url.searchParams.set('pageToken', pageToken);
 		}
 
-		const response = await fetch(url.toString());
+		const response = await fetch(url.toString(), {
+			headers: { 'x-goog-api-key': apiKey },
+			signal: AbortSignal.timeout(30000), // 30 second timeout
+		});
 		if (!response.ok) {
 			throw new Error(`API request failed: ${response.status} ${response.statusText}`);
 		}

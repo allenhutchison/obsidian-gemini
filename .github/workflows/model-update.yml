@@ -44,3 +44,4 @@ jobs:
             - Check `supportsImageGeneration` flags
           branch: auto/model-update
           labels: models,automated
+          delete-branch: true
