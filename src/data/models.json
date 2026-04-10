@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"lastUpdated": "2026-04-10T00:00:00Z",
+	"lastUpdated": "2026-04-10T17:22:50.707Z",
 	"models": [
 		{
 			"value": "gemini-pro-latest",
@@ -25,6 +25,58 @@
 			"defaultForRoles": ["image"],
 			"supportsImageGeneration": true,
 			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-2.5-flash",
+			"label": "Gemini 2.5 Flash",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-2.5-pro",
+			"label": "Gemini 2.5 Pro",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-2.5-flash-lite",
+			"label": "Gemini 2.5 Flash-Lite",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-3-pro-preview",
+			"label": "Gemini 3 Pro Preview",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-3-flash-preview",
+			"label": "Gemini 3 Flash Preview",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-3.1-pro-preview",
+			"label": "Gemini 3.1 Pro Preview",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-3.1-pro-preview-customtools",
+			"label": "Gemini 3.1 Pro Preview Custom Tools",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-3.1-flash-lite-preview",
+			"label": "Gemini 3.1 Flash Lite Preview",
+			"maxTemperature": 2
+		},
+		{
+			"value": "gemini-3-pro-image-preview",
+			"label": "Nano Banana Pro",
+			"supportsImageGeneration": true,
+			"maxTemperature": 1
+		},
+		{
+			"value": "gemini-3.1-flash-image-preview",
+			"label": "Nano Banana 2",
+			"supportsImageGeneration": true,
+			"maxTemperature": 1
 		}
 	]
 }
