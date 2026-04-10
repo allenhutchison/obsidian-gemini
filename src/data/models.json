@@ -3,8 +3,8 @@
 	"lastUpdated": "2026-04-10T00:00:00Z",
 	"models": [
 		{
-			"value": "gemini-2.5-pro",
-			"label": "Gemini 2.5 Pro",
+			"value": "gemini-pro-latest",
+			"label": "Gemini Pro Latest",
 			"maxTemperature": 2
 		},
 		{
@@ -20,20 +20,9 @@
 			"maxTemperature": 2
 		},
 		{
-			"value": "gemini-3-pro-preview",
-			"label": "Gemini 3 Pro Preview",
-			"maxTemperature": 2
-		},
-		{
 			"value": "gemini-2.5-flash-image",
 			"label": "Gemini 2.5 Flash Image",
 			"defaultForRoles": ["image"],
-			"supportsImageGeneration": true,
-			"maxTemperature": 2
-		},
-		{
-			"value": "gemini-3-pro-image-preview",
-			"label": "Gemini 3 Pro Image Preview",
 			"supportsImageGeneration": true,
 			"maxTemperature": 2
 		}
