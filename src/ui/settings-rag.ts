@@ -164,6 +164,21 @@ export async function renderRAGSettings(
 		} else {
 			// No store yet - allow editing
 			storeNameSetting.addText((text) => {
+				// Bundle save + confirmation notice in a single debouncer so notices
+				// fire once per typing burst (not on every keystroke). The notice text
+				// depends on whether the store name is set or cleared at fire time.
+				const debouncedSaveAndNotify = debounce(
+					() => {
+						plugin.saveSettings();
+						if (plugin.settings.ragIndexing.fileSearchStoreName) {
+							new Notice('Store name set. Will be used when indexing starts.');
+						} else {
+							new Notice('Store name cleared.');
+						}
+					},
+					300,
+					true
+				);
 				text.inputEl.style.width = '30ch';
 				text
 					.setPlaceholder('Auto-generated if empty')
@@ -172,12 +187,7 @@ export async function renderRAGSettings(
 						const trimmedValue = value.trim();
 						const normalizedStoreName = trimmedValue.length > 0 ? trimmedValue : null;
 						plugin.settings.ragIndexing.fileSearchStoreName = normalizedStoreName;
-						debouncedSave();
-						if (normalizedStoreName) {
-							new Notice('Store name set. Will be used when indexing starts.');
-						} else {
-							new Notice('Store name cleared.');
-						}
+						debouncedSaveAndNotify();
 					});
 			});
 		}
