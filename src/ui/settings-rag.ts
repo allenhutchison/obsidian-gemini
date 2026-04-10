@@ -154,9 +154,10 @@ export async function renderRAGSettings(
 					.setValue('')
 					.onChange(async (value) => {
 						const trimmedValue = value.trim();
-						plugin.settings.ragIndexing.fileSearchStoreName = trimmedValue;
+						const normalizedStoreName = trimmedValue.length > 0 ? trimmedValue : null;
+						plugin.settings.ragIndexing.fileSearchStoreName = normalizedStoreName;
 						await plugin.saveSettings();
-						if (trimmedValue) {
+						if (normalizedStoreName) {
 							new Notice('Store name set. Will be used when indexing starts.');
 						} else {
 							new Notice('Store name cleared.');
