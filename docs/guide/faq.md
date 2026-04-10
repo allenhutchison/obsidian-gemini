@@ -67,6 +67,26 @@ Google regularly retires preview model versions. Enable **Model Discovery** unde
 
 These are available under **Advanced Settings** in the plugin settings. Click "Show Advanced Settings" to reveal them. Temperature ranges are automatically adjusted based on the selected model's capabilities. ([#105](https://github.com/allenhutchison/obsidian-gemini/issues/105))
 
+## Other Models & Providers
+
+### Will you add support for Gemma models?
+
+If the Gemma model you want is served through the Gemini API (ai.google.dev) it can be added to the curated model list — open an issue naming the specific model ID. If you're asking about Gemma running locally via Ollama or similar, see the local LLM question below. ([#587](https://github.com/allenhutchison/obsidian-gemini/issues/587))
+
+### Can I use non-Gemini providers like OpenAI, Anthropic, or Mistral?
+
+No. Gemini Scribe is intentionally a Gemini-only integration — it's built tightly around the `@google/genai` SDK, Gemini's tool-calling surface, URL Context, inline attachments, Google Search grounding, and the File Search API used for semantic vault search. Abstracting these to a generic provider interface would effectively be a rewrite, and there are other Obsidian plugins focused on multi-provider chat if that's what you need. ([#588](https://github.com/allenhutchison/obsidian-gemini/issues/588))
+
+### Can I point the plugin at Vertex AI for privacy or compliance reasons?
+
+No. While the `@google/genai` SDK itself supports Vertex AI, two features this plugin depends on are Gemini Developer API features that are not available on Vertex: the **Deep Research** tool and the **semantic vault search** (File Search) pipeline. Shipping a Vertex code path would mean silently breaking those features, plus maintaining a second auth story (service account / OAuth / ADC) that is a poor fit for an Obsidian settings pane, plus a test matrix that would never actually get exercised.
+
+If privacy is the concern, the paid AI Studio tier's no-training terms are the intended answer. For stricter compliance needs (HIPAA, SOC2, strict data residency), a different tool is likely the right call. ([#588](https://github.com/allenhutchison/obsidian-gemini/issues/588))
+
+### Can I use a local LLM via Ollama or llama.cpp?
+
+No. Gemini Scribe is built around the Gemini API and its SDK — swapping in a local inference server would be a full rewrite, not a configuration change, and many of the plugin's features (Deep Research, semantic vault search, Google Search grounding, URL Context) have no local equivalent. If local-first inference is your priority, another plugin will serve you better. ([#576](https://github.com/allenhutchison/obsidian-gemini/discussions/576))
+
 ## Cost & Billing
 
 ### How much does this plugin cost to use?
