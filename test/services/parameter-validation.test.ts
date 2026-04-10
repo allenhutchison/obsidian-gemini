@@ -74,6 +74,22 @@ describe('ParameterValidationService', () => {
 			expect(result.adjustedValue).toBe(1.0);
 			expect(result.warning).toContain('exceeds gemini-limited limit of 1');
 		});
+
+		it('should reject NaN', () => {
+			const result = ParameterValidationService.validateTemperature(NaN);
+
+			expect(result.isValid).toBe(false);
+			expect(result.adjustedValue).toBe(0);
+			expect(result.warning).toContain('not a valid number');
+		});
+
+		it('should reject Infinity', () => {
+			const result = ParameterValidationService.validateTemperature(Infinity);
+
+			expect(result.isValid).toBe(false);
+			expect(result.adjustedValue).toBe(0);
+			expect(result.warning).toContain('not a valid number');
+		});
 	});
 
 	describe('validateTopP', () => {
@@ -99,6 +115,16 @@ describe('ParameterValidationService', () => {
 
 			expect(tempResult.isValid).toBe(true);
 			expect(topPResult.isValid).toBe(true);
+		});
+
+		it('should reject non-finite topP values', () => {
+			const nanResult = ParameterValidationService.validateTopP(NaN);
+			const infResult = ParameterValidationService.validateTopP(Infinity);
+
+			expect(nanResult.isValid).toBe(false);
+			expect(nanResult.warning).toContain('not a valid number');
+			expect(infResult.isValid).toBe(false);
+			expect(infResult.warning).toContain('not a valid number');
 		});
 	});
 

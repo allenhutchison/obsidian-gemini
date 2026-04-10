@@ -70,6 +70,14 @@ export class ParameterValidationService {
 		adjustedValue?: number;
 		warning?: string;
 	} {
+		if (!Number.isFinite(value)) {
+			return {
+				isValid: false,
+				adjustedValue: this.DEFAULT_RANGES.temperature.min,
+				warning: `Temperature ${value} is not a valid number. Adjusted to ${this.DEFAULT_RANGES.temperature.min}.`,
+			};
+		}
+
 		if (modelName) {
 			const modelInfo = models.find((m) => m.value === modelName);
 			if (modelInfo?.maxTemperature !== undefined && value > modelInfo.maxTemperature) {
@@ -107,6 +115,14 @@ export class ParameterValidationService {
 		adjustedValue?: number;
 		warning?: string;
 	} {
+		if (!Number.isFinite(value)) {
+			return {
+				isValid: false,
+				adjustedValue: this.DEFAULT_RANGES.topP.min,
+				warning: `Top P ${value} is not a valid number. Adjusted to ${this.DEFAULT_RANGES.topP.min}.`,
+			};
+		}
+
 		const ranges = this.getParameterRanges(models);
 
 		if (value < ranges.topP.min || value > ranges.topP.max) {
@@ -130,7 +146,7 @@ export class ParameterValidationService {
 		hasModelData: boolean;
 	} {
 		const ranges = this.getParameterRanges(models);
-		const hasModelData = models && models.length > 0;
+		const hasModelData = models.length > 0;
 
 		return {
 			temperature: `Range: ${ranges.temperature.min} to ${ranges.temperature.max}`,
