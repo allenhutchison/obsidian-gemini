@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { App, Setting, Notice } from 'obsidian';
+import { App, Setting, Notice, debounce } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
@@ -9,6 +9,10 @@ export async function renderRAGSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
+	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
+	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
+	const debouncedSave = debounce(() => plugin.saveSettings(), 300, true);
+
 	new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
 
 	// Privacy warning
@@ -164,11 +168,11 @@ export async function renderRAGSettings(
 				text
 					.setPlaceholder('Auto-generated if empty')
 					.setValue('')
-					.onChange(async (value) => {
+					.onChange((value) => {
 						const trimmedValue = value.trim();
 						const normalizedStoreName = trimmedValue.length > 0 ? trimmedValue : null;
 						plugin.settings.ragIndexing.fileSearchStoreName = normalizedStoreName;
-						await plugin.saveSettings();
+						debouncedSave();
 						if (normalizedStoreName) {
 							new Notice('Store name set. Will be used when indexing starts.');
 						} else {
@@ -212,13 +216,13 @@ export async function renderRAGSettings(
 				text
 					.setPlaceholder('Additional folders to exclude...')
 					.setValue(userFolders.join('\n'))
-					.onChange(async (value) => {
+					.onChange((value) => {
 						// Filter out system folders to prevent confusion
 						plugin.settings.ragIndexing.excludeFolders = value
 							.split('\n')
 							.map((f) => f.trim())
 							.filter((f) => f.length > 0 && !systemFolders.includes(f));
-						await plugin.saveSettings();
+						debouncedSave();
 					});
 			});
 	}

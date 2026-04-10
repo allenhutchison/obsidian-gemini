@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { Setting, Notice } from 'obsidian';
+import { Setting, Notice, debounce } from 'obsidian';
 import type { SettingsSectionContext } from './settings';
 
 let temperatureDebounceTimer: NodeJS.Timeout | null = null;
@@ -12,6 +12,10 @@ export async function renderApiSettings(
 	plugin: ObsidianGemini,
 	context: SettingsSectionContext
 ): Promise<void> {
+	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
+	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
+	const debouncedSave = debounce(() => plugin.saveSettings(), 300, true);
+
 	// File Logging
 	new Setting(containerEl)
 		.setName('Log to file')
@@ -52,11 +56,11 @@ export async function renderApiSettings(
 			text
 				.setPlaceholder('e.g., 3')
 				.setValue(plugin.settings.maxRetries.toString())
-				.onChange(async (value) => {
+				.onChange((value) => {
 					const parsed = parseInt(value, 10);
 					if (!isNaN(parsed) && parsed >= 0) {
 						plugin.settings.maxRetries = parsed;
-						await plugin.saveSettings();
+						debouncedSave();
 					}
 				})
 		);
@@ -68,11 +72,11 @@ export async function renderApiSettings(
 			text
 				.setPlaceholder('e.g., 1000')
 				.setValue(plugin.settings.initialBackoffDelay.toString())
-				.onChange(async (value) => {
+				.onChange((value) => {
 					const parsed = parseInt(value, 10);
 					if (!isNaN(parsed) && parsed >= 0) {
 						plugin.settings.initialBackoffDelay = parsed;
-						await plugin.saveSettings();
+						debouncedSave();
 					}
 				})
 		);

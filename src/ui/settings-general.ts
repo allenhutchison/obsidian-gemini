@@ -1,9 +1,13 @@
 import type ObsidianGemini from '../main';
-import { App, Setting, SecretComponent } from 'obsidian';
+import { App, Setting, SecretComponent, debounce } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 
 export async function renderGeneralSettings(containerEl: HTMLElement, plugin: ObsidianGemini, app: App): Promise<void> {
+	// Debounce saveSettings() to avoid re-running the plugin lifecycle on every keystroke
+	// in text inputs. In-memory settings are mutated immediately so the UI stays responsive.
+	const debouncedSave = debounce(() => plugin.saveSettings(), 300, true);
+
 	// Documentation button at the top
 	new Setting(containerEl)
 		.setName('Documentation')
@@ -75,9 +79,9 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 			text
 				.setPlaceholder('summary')
 				.setValue(plugin.settings.summaryFrontmatterKey)
-				.onChange(async (value) => {
+				.onChange((value) => {
 					plugin.settings.summaryFrontmatterKey = value;
-					await plugin.saveSettings();
+					debouncedSave();
 				})
 		);
 
@@ -88,9 +92,9 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 			text
 				.setPlaceholder('Enter your name')
 				.setValue(plugin.settings.userName)
-				.onChange(async (value) => {
+				.onChange((value) => {
 					plugin.settings.userName = value;
-					await plugin.saveSettings();
+					debouncedSave();
 				})
 		);
 
@@ -101,9 +105,9 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 			'Folder where plugin data is stored. Agent sessions are saved in Agent-Sessions/, custom prompts in Prompts/.'
 		)
 		.addText((text) => {
-			new FolderSuggest(app, text.inputEl, async (folder) => {
+			new FolderSuggest(app, text.inputEl, (folder) => {
 				plugin.settings.historyFolder = folder;
-				await plugin.saveSettings();
+				debouncedSave();
 			});
 			text.setValue(plugin.settings.historyFolder);
 		});
