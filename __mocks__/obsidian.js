@@ -107,6 +107,18 @@ const MarkdownRenderer = {
 const setIcon = jest.fn();
 const Notice = jest.fn();
 const normalizePath = jest.fn((path) => path);
+// Minimal Obsidian `debounce` mock. Returns a callable Debouncer that invokes
+// the callback synchronously on each call and exposes cancel/run no-ops, so
+// settings modules importing `debounce` from 'obsidian' don't crash in tests.
+const debounce = (cb, _timeout, _resetTimer) => {
+	const debounced = (...args) => {
+		cb(...args);
+		return debounced;
+	};
+	debounced.cancel = () => debounced;
+	debounced.run = () => cb();
+	return debounced;
+};
 const prepareFuzzySearch = jest.fn((query) => {
 	return (text) => {
 		if (!query || text.toLowerCase().includes(query.toLowerCase())) {
@@ -278,4 +290,5 @@ module.exports = {
 	prepareFuzzySearch,
 	SecretComponent,
 	SecretStorage,
+	debounce,
 };

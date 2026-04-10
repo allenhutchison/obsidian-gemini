@@ -75,9 +75,20 @@ jest.mock('obsidian', () => {
 		}
 	}
 
+	function debounce(cb: any, _timeout?: number, _resetTimer?: boolean) {
+		const debounced: any = (...args: any[]) => {
+			cb(...args);
+			return debounced;
+		};
+		debounced.cancel = () => debounced;
+		debounced.run = () => cb();
+		return debounced;
+	}
+
 	return {
 		Setting,
 		Notice: mockNotice,
+		debounce,
 	};
 });
 
