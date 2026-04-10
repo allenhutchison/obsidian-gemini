@@ -107,6 +107,30 @@ const MarkdownRenderer = {
 const setIcon = jest.fn();
 const Notice = jest.fn();
 const normalizePath = jest.fn((path) => path);
+// Minimal Obsidian `debounce` mock. Queues the latest args on each call without
+// firing; `run()` drains the queue and invokes the callback; `cancel()` clears
+// it. This matches Obsidian's real debounce semantics (deferred firing) so
+// tests can assert coalescing behavior by driving `.run()` explicitly.
+const debounce = (cb, _timeout, _resetTimer) => {
+	let pendingArgs = null;
+	const debounced = (...args) => {
+		pendingArgs = args;
+		return debounced;
+	};
+	debounced.cancel = () => {
+		pendingArgs = null;
+		return debounced;
+	};
+	debounced.run = () => {
+		if (pendingArgs) {
+			const args = pendingArgs;
+			pendingArgs = null;
+			cb(...args);
+		}
+		return debounced;
+	};
+	return debounced;
+};
 const prepareFuzzySearch = jest.fn((query) => {
 	return (text) => {
 		if (!query || text.toLowerCase().includes(query.toLowerCase())) {
@@ -278,4 +302,5 @@ module.exports = {
 	prepareFuzzySearch,
 	SecretComponent,
 	SecretStorage,
+	debounce,
 };

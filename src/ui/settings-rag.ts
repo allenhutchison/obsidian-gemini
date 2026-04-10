@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { App, Setting, Notice } from 'obsidian';
+import { App, Setting, Notice, debounce } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
@@ -9,6 +9,30 @@ export async function renderRAGSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
+	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
+	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
+	// The store-name field uses `pendingStoreNameMessage` to queue a confirmation
+	// notice that fires only after the save actually succeeds, so a failed save
+	// doesn't surface a misleading success toast.
+	let pendingStoreNameMessage: string | null = null;
+	const debouncedSave = debounce(
+		async () => {
+			const messageToShow = pendingStoreNameMessage;
+			pendingStoreNameMessage = null;
+			try {
+				await plugin.saveSettings();
+				if (messageToShow) {
+					new Notice(messageToShow);
+				}
+			} catch (error) {
+				plugin.logger.error('Failed to save RAG settings:', error);
+				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+			}
+		},
+		300,
+		true
+	);
+
 	new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
 
 	// Privacy warning
@@ -164,16 +188,17 @@ export async function renderRAGSettings(
 				text
 					.setPlaceholder('Auto-generated if empty')
 					.setValue('')
-					.onChange(async (value) => {
+					.onChange((value) => {
 						const trimmedValue = value.trim();
 						const normalizedStoreName = trimmedValue.length > 0 ? trimmedValue : null;
 						plugin.settings.ragIndexing.fileSearchStoreName = normalizedStoreName;
-						await plugin.saveSettings();
-						if (normalizedStoreName) {
-							new Notice('Store name set. Will be used when indexing starts.');
-						} else {
-							new Notice('Store name cleared.');
-						}
+						// Queue the confirmation notice for the next save completion. Reusing
+						// the section-level debouncedSave keeps all RAG saves on a single 300 ms
+						// queue so rapid edits across fields collapse into one saveSettings call.
+						pendingStoreNameMessage = normalizedStoreName
+							? 'Store name set. Will be used when indexing starts.'
+							: 'Store name cleared.';
+						debouncedSave();
 					});
 			});
 		}
@@ -212,13 +237,13 @@ export async function renderRAGSettings(
 				text
 					.setPlaceholder('Additional folders to exclude...')
 					.setValue(userFolders.join('\n'))
-					.onChange(async (value) => {
+					.onChange((value) => {
 						// Filter out system folders to prevent confusion
 						plugin.settings.ragIndexing.excludeFolders = value
 							.split('\n')
 							.map((f) => f.trim())
 							.filter((f) => f.length > 0 && !systemFolders.includes(f));
-						await plugin.saveSettings();
+						debouncedSave();
 					});
 			});
 	}
