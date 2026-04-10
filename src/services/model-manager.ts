@@ -63,7 +63,7 @@ export class ModelManager {
 	/**
 	 * Get image generation models
 	 */
-	async getImageGenerationModels(): Promise<GeminiModel[]> {
+	async getImageGenerationModels(options: Pick<ModelUpdateOptions, 'forceRefresh'> = {}): Promise<GeminiModel[]> {
 		// Always start with static models as baseline
 		const staticImageModels = this.filterModelsForVersion(ModelManager.staticModels, true);
 
@@ -77,7 +77,7 @@ export class ModelManager {
 		}
 
 		try {
-			const discovery = await this.discoveryService.discoverModels(false);
+			const discovery = await this.discoveryService.discoverModels(options.forceRefresh);
 
 			if (discovery.success && discovery.models.length > 0) {
 				let dynamicModels = ModelMapper.mapToGeminiModels(discovery.models);
@@ -127,14 +127,18 @@ export class ModelManager {
 	 */
 	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult> {
 		const currentModels = await this.getAvailableModels(options);
+		const imageModels = await this.getImageGenerationModels({ forceRefresh: options.forceRefresh });
 		const previousModels = this.getCurrentGeminiModels();
 
+		// Combine text and image models for the global list
+		const allModels = [...currentModels, ...imageModels.filter((m) => !currentModels.some((c) => c.value === m.value))];
+
 		// Check for changes
-		const hasChanges = this.detectModelChanges(currentModels, previousModels);
+		const hasChanges = this.detectModelChanges(allModels, previousModels);
 
 		if (hasChanges) {
-			// Update the global GEMINI_MODELS array
-			this.updateGlobalModelsList(currentModels);
+			// Update the global GEMINI_MODELS array with both text and image models
+			this.updateGlobalModelsList(allModels);
 
 			// Update settings to use new default models if current ones are no longer available
 			return getUpdatedModelSettings(this.plugin.settings);
