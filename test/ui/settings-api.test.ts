@@ -233,6 +233,48 @@ describe('settings-api slider debounce (issue #601)', () => {
 			expect(mockNotice).toHaveBeenCalledWith(expect.stringContaining('Failed to save temperature setting'));
 		});
 
+		it('suppresses errors from stale validation runs that reject after a newer change', async () => {
+			let rejectFirst!: (e: any) => void;
+			const firstPending = new Promise((_res, rej) => {
+				rejectFirst = rej;
+			});
+
+			const validateParameters = jest
+				.fn()
+				.mockImplementationOnce(() => firstPending)
+				.mockImplementationOnce(() =>
+					Promise.resolve({
+						temperature: { isValid: true },
+						topP: { isValid: true },
+					})
+				);
+
+			const { plugin } = await setup(validateParameters);
+			const slider = mockSliderRegistry['Temperature'];
+
+			// First change: fire timer so the async body starts and awaits validation.
+			slider._handler(0.5);
+			await jest.advanceTimersByTimeAsync(300);
+			expect(validateParameters).toHaveBeenCalledTimes(1);
+
+			// Second change supersedes the in-flight run.
+			slider._handler(0.9);
+
+			// The stale run's validation now rejects.
+			rejectFirst(new Error('stale validation error'));
+			await flushMicrotasks();
+
+			// Stale rejection must NOT surface to the user: no logger.error, no Notice.
+			expect(plugin.logger.error).not.toHaveBeenCalled();
+			expect(mockNotice).not.toHaveBeenCalledWith(expect.stringContaining('Failed to save temperature setting'));
+
+			// The current run still completes cleanly.
+			await jest.advanceTimersByTimeAsync(300);
+			await flushMicrotasks();
+			expect(plugin.settings.temperature).toBe(0.9);
+			expect(plugin.saveSettings).toHaveBeenCalled();
+		});
+
 		it('saves settings after a clean validation without re-adjusting the slider', async () => {
 			const { plugin } = await setup();
 			const slider = mockSliderRegistry['Temperature'];
@@ -309,6 +351,43 @@ describe('settings-api slider debounce (issue #601)', () => {
 
 			expect(plugin.logger.error).toHaveBeenCalledWith('Failed to validate/save topP setting:', err);
 			expect(mockNotice).toHaveBeenCalledWith(expect.stringContaining('Failed to save Top P setting'));
+		});
+
+		it('suppresses errors from stale validation runs that reject after a newer change', async () => {
+			let rejectFirst!: (e: any) => void;
+			const firstPending = new Promise((_res, rej) => {
+				rejectFirst = rej;
+			});
+
+			const validateParameters = jest
+				.fn()
+				.mockImplementationOnce(() => firstPending)
+				.mockImplementationOnce(() =>
+					Promise.resolve({
+						temperature: { isValid: true },
+						topP: { isValid: true },
+					})
+				);
+
+			const { plugin } = await setup(validateParameters);
+			const slider = mockSliderRegistry['Top P'];
+
+			slider._handler(0.5);
+			await jest.advanceTimersByTimeAsync(300);
+			expect(validateParameters).toHaveBeenCalledTimes(1);
+
+			slider._handler(0.9);
+
+			rejectFirst(new Error('stale validation error'));
+			await flushMicrotasks();
+
+			expect(plugin.logger.error).not.toHaveBeenCalled();
+			expect(mockNotice).not.toHaveBeenCalledWith(expect.stringContaining('Failed to save Top P setting'));
+
+			await jest.advanceTimersByTimeAsync(300);
+			await flushMicrotasks();
+			expect(plugin.settings.topP).toBe(0.9);
+			expect(plugin.saveSettings).toHaveBeenCalled();
 		});
 	});
 });

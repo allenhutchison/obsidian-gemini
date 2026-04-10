@@ -244,6 +244,11 @@ async function createTemperatureSetting(
 
 							await plugin.saveSettings();
 						} catch (error) {
+							// If a newer run has superseded us, drop this stale failure silently —
+							// surfacing it would contradict whatever the current run is doing.
+							if (runId !== temperatureRunId) {
+								return;
+							}
 							plugin.logger.error('Failed to validate/save temperature setting:', error);
 							new Notice('Failed to save temperature setting. See console for details.');
 						}
@@ -308,6 +313,11 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: InstanceType<
 
 							await plugin.saveSettings();
 						} catch (error) {
+							// If a newer run has superseded us, drop this stale failure silently —
+							// surfacing it would contradict whatever the current run is doing.
+							if (runId !== topPRunId) {
+								return;
+							}
 							plugin.logger.error('Failed to validate/save topP setting:', error);
 							new Notice('Failed to save Top P setting. See console for details.');
 						}
