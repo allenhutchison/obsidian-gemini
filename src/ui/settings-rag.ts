@@ -32,16 +32,23 @@ export async function renderRAGSettings(
 					toggle.setValue(true);
 
 					// Show cleanup modal when disabling
-					const { RagCleanupModal } = await import('./rag-cleanup-modal');
-					const modal = new RagCleanupModal(app, async (deleteData) => {
-						if (deleteData && plugin.ragIndexing) {
-							await plugin.ragIndexing.deleteFileSearchStore();
-						}
-						plugin.settings.ragIndexing.enabled = false;
-						await plugin.saveSettings();
-						context.redisplay();
-					});
-					modal.open();
+					try {
+						const { RagCleanupModal } = await import('./rag-cleanup-modal');
+						const modal = new RagCleanupModal(app, async (deleteData) => {
+							if (deleteData && plugin.ragIndexing) {
+								await plugin.ragIndexing.deleteFileSearchStore();
+							}
+							plugin.settings.ragIndexing.enabled = false;
+							await plugin.saveSettings();
+							context.redisplay();
+						});
+						modal.open();
+					} catch (error) {
+						plugin.logger.error('Failed to load RAG cleanup modal:', error);
+						new Notice(`Failed to open cleanup dialog: ${getErrorMessage(error)}`);
+						// Toggle was already reverted to `true` above and settings.enabled
+						// was never changed, so UI and settings remain consistent.
+					}
 				} else {
 					plugin.settings.ragIndexing.enabled = value;
 					await plugin.saveSettings();
@@ -96,25 +103,30 @@ export async function renderRAGSettings(
 						}
 
 						// Show confirmation modal
-						const { RagCleanupModal } = await import('./rag-cleanup-modal');
-						const modal = new RagCleanupModal(app, async (deleteData) => {
-							if (deleteData && plugin.ragIndexing) {
-								button.setButtonText('Deleting...');
-								button.setDisabled(true);
+						try {
+							const { RagCleanupModal } = await import('./rag-cleanup-modal');
+							const modal = new RagCleanupModal(app, async (deleteData) => {
+								if (deleteData && plugin.ragIndexing) {
+									button.setButtonText('Deleting...');
+									button.setDisabled(true);
 
-								try {
-									await plugin.ragIndexing.deleteFileSearchStore();
-									new Notice('Index deleted. Use "Reindex Vault" to rebuild.');
-									context.redisplay();
-								} catch (error) {
-									new Notice(`Failed to delete index: ${getErrorMessage(error)}`);
-								} finally {
-									button.setButtonText('Delete Index');
-									button.setDisabled(false);
+									try {
+										await plugin.ragIndexing.deleteFileSearchStore();
+										new Notice('Index deleted. Use "Reindex Vault" to rebuild.');
+										context.redisplay();
+									} catch (error) {
+										new Notice(`Failed to delete index: ${getErrorMessage(error)}`);
+									} finally {
+										button.setButtonText('Delete Index');
+										button.setDisabled(false);
+									}
 								}
-							}
-						});
-						modal.open();
+							});
+							modal.open();
+						} catch (error) {
+							plugin.logger.error('Failed to load RAG cleanup modal:', error);
+							new Notice(`Failed to open delete confirmation: ${getErrorMessage(error)}`);
+						}
 					})
 			);
 

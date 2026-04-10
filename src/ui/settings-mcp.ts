@@ -94,40 +94,45 @@ async function createMCPSettings(
 				.addButton((btn) =>
 					btn.setButtonText('Edit').onClick(async () => {
 						if (!mcpManager) return;
-						const { MCPServerModal } = await import('./mcp-server-modal');
-						const oldName = server.name;
-						const modal = new MCPServerModal(app, mcpManager, server, async (updated) => {
-							plugin.settings.mcpServers = plugin.settings.mcpServers || [];
+						try {
+							const { MCPServerModal } = await import('./mcp-server-modal');
+							const oldName = server.name;
+							const modal = new MCPServerModal(app, mcpManager, server, async (updated) => {
+								plugin.settings.mcpServers = plugin.settings.mcpServers || [];
 
-							// Reject duplicate names (allow keeping the same name)
-							if (updated.name !== oldName && plugin.settings.mcpServers.some((s) => s.name === updated.name)) {
-								new Notice(`A server named "${updated.name}" already exists`);
-								return;
-							}
+								// Reject duplicate names (allow keeping the same name)
+								if (updated.name !== oldName && plugin.settings.mcpServers.some((s) => s.name === updated.name)) {
+									new Notice(`A server named "${updated.name}" already exists`);
+									return;
+								}
 
-							const idx = plugin.settings.mcpServers.findIndex((s) => s.name === oldName);
-							if (idx >= 0) {
-								plugin.settings.mcpServers[idx] = updated;
-							}
-							await plugin.saveSettings();
+								const idx = plugin.settings.mcpServers.findIndex((s) => s.name === oldName);
+								if (idx >= 0) {
+									plugin.settings.mcpServers[idx] = updated;
+								}
+								await plugin.saveSettings();
 
-							// Disconnect old name first if it was connected (handles renames)
-							if (mcpManager?.isConnected(oldName)) {
-								await mcpManager.disconnectServer(oldName);
-								if (updated.enabled) {
-									try {
-										await mcpManager.connectServer(updated);
-									} catch (error) {
-										new Notice(
-											`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
-										);
+								// Disconnect old name first if it was connected (handles renames)
+								if (mcpManager?.isConnected(oldName)) {
+									await mcpManager.disconnectServer(oldName);
+									if (updated.enabled) {
+										try {
+											await mcpManager.connectServer(updated);
+										} catch (error) {
+											new Notice(
+												`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
+											);
+										}
 									}
 								}
-							}
 
-							context.redisplay();
-						});
-						modal.open();
+								context.redisplay();
+							});
+							modal.open();
+						} catch (error) {
+							plugin.logger.error('Failed to load MCP server modal:', error);
+							new Notice(`Failed to open server editor: ${getErrorMessage(error)}`);
+						}
 					})
 				)
 				.addButton((btn) =>
@@ -153,29 +158,34 @@ async function createMCPSettings(
 			.setCta()
 			.onClick(async () => {
 				if (!plugin.mcpManager) return;
-				const { MCPServerModal } = await import('./mcp-server-modal');
-				const modal = new MCPServerModal(app, plugin.mcpManager, null, async (config) => {
-					plugin.settings.mcpServers = plugin.settings.mcpServers || [];
-					// Check for duplicate name
-					if (plugin.settings.mcpServers.some((s) => s.name === config.name)) {
-						new Notice(`A server named "${config.name}" already exists`);
-						return;
-					}
-					plugin.settings.mcpServers.push(config);
-					await plugin.saveSettings();
-
-					// Connect if enabled
-					if (config.enabled && plugin.mcpManager) {
-						try {
-							await plugin.mcpManager.connectServer(config);
-						} catch (error) {
-							new Notice(`Server saved but failed to connect: ${getErrorMessage(error)}`);
+				try {
+					const { MCPServerModal } = await import('./mcp-server-modal');
+					const modal = new MCPServerModal(app, plugin.mcpManager, null, async (config) => {
+						plugin.settings.mcpServers = plugin.settings.mcpServers || [];
+						// Check for duplicate name
+						if (plugin.settings.mcpServers.some((s) => s.name === config.name)) {
+							new Notice(`A server named "${config.name}" already exists`);
+							return;
 						}
-					}
+						plugin.settings.mcpServers.push(config);
+						await plugin.saveSettings();
 
-					context.redisplay();
-				});
-				modal.open();
+						// Connect if enabled
+						if (config.enabled && plugin.mcpManager) {
+							try {
+								await plugin.mcpManager.connectServer(config);
+							} catch (error) {
+								new Notice(`Server saved but failed to connect: ${getErrorMessage(error)}`);
+							}
+						}
+
+						context.redisplay();
+					});
+					modal.open();
+				} catch (error) {
+					plugin.logger.error('Failed to load MCP server modal:', error);
+					new Notice(`Failed to open Add Server dialog: ${getErrorMessage(error)}`);
+				}
 			})
 	);
 }
