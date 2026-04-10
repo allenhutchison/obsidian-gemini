@@ -1,0 +1,46 @@
+name: Check for new Gemini models
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Weekly on Monday at 8 AM UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-models:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '18.x'
+
+      - name: Check for new models
+        id: update
+        continue-on-error: true
+        run: node scripts/update-models.mjs
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+      - name: Create PR if models changed
+        if: steps.update.outcome == 'success'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore: update models.json with new Gemini models'
+          title: 'chore: Update available Gemini models'
+          body: |
+            Automated model list update. New models detected from Google's API.
+
+            **Please review and curate before merging:**
+            - Verify model labels are correct
+            - Assign `defaultForRoles` if a new model should be a default
+            - Remove models that shouldn't be offered to users
+            - Check `supportsImageGeneration` flags
+          branch: auto/model-update
+          labels: models,automated
