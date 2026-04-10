@@ -151,6 +151,18 @@ export class AgentViewTools {
 				const result = await this.plugin.toolExecutionEngine.executeTool(toolCall, toolContext);
 				const toolDuration = Date.now() - toolStartTime;
 
+				// Log failed tool results so root causes aren't silent. The execution
+				// engine's early-return paths (invalid parameters, tool not enabled,
+				// folder not found, etc.) return {success: false} without logging.
+				if (!result.success) {
+					this.plugin.logger.warn(
+						`[AgentViewTools] Tool ${toolCall.name} failed:`,
+						result.error,
+						'args:',
+						toolCall.arguments
+					);
+				}
+
 				// Track as last completed tool
 				this.lastCompletedTool = toolCall.name;
 				this.currentExecutingTool = null;
