@@ -1,12 +1,26 @@
 import type ObsidianGemini from '../main';
-import { App, Setting, SecretComponent, debounce } from 'obsidian';
+import { App, Notice, Setting, SecretComponent, debounce } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
+import { getErrorMessage } from '../utils/error-utils';
 
 export async function renderGeneralSettings(containerEl: HTMLElement, plugin: ObsidianGemini, app: App): Promise<void> {
 	// Debounce saveSettings() to avoid re-running the plugin lifecycle on every keystroke
 	// in text inputs. In-memory settings are mutated immediately so the UI stays responsive.
-	const debouncedSave = debounce(() => plugin.saveSettings(), 300, true);
+	// The callback is async + wrapped in try/catch so rejections from saveSettings() don't
+	// become unhandled promise rejections.
+	const debouncedSave = debounce(
+		async () => {
+			try {
+				await plugin.saveSettings();
+			} catch (error) {
+				plugin.logger.error('Failed to save settings:', error);
+				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+			}
+		},
+		300,
+		true
+	);
 
 	// Documentation button at the top
 	new Setting(containerEl)

@@ -11,7 +11,27 @@ export async function renderRAGSettings(
 ): Promise<void> {
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
-	const debouncedSave = debounce(() => plugin.saveSettings(), 300, true);
+	// The store-name field uses `pendingStoreNameMessage` to queue a confirmation
+	// notice that fires only after the save actually succeeds, so a failed save
+	// doesn't surface a misleading success toast.
+	let pendingStoreNameMessage: string | null = null;
+	const debouncedSave = debounce(
+		async () => {
+			const messageToShow = pendingStoreNameMessage;
+			pendingStoreNameMessage = null;
+			try {
+				await plugin.saveSettings();
+				if (messageToShow) {
+					new Notice(messageToShow);
+				}
+			} catch (error) {
+				plugin.logger.error('Failed to save RAG settings:', error);
+				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+			}
+		},
+		300,
+		true
+	);
 
 	new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
 
@@ -164,21 +184,6 @@ export async function renderRAGSettings(
 		} else {
 			// No store yet - allow editing
 			storeNameSetting.addText((text) => {
-				// Bundle save + confirmation notice in a single debouncer so notices
-				// fire once per typing burst (not on every keystroke). The notice text
-				// depends on whether the store name is set or cleared at fire time.
-				const debouncedSaveAndNotify = debounce(
-					() => {
-						plugin.saveSettings();
-						if (plugin.settings.ragIndexing.fileSearchStoreName) {
-							new Notice('Store name set. Will be used when indexing starts.');
-						} else {
-							new Notice('Store name cleared.');
-						}
-					},
-					300,
-					true
-				);
 				text.inputEl.style.width = '30ch';
 				text
 					.setPlaceholder('Auto-generated if empty')
@@ -187,7 +192,13 @@ export async function renderRAGSettings(
 						const trimmedValue = value.trim();
 						const normalizedStoreName = trimmedValue.length > 0 ? trimmedValue : null;
 						plugin.settings.ragIndexing.fileSearchStoreName = normalizedStoreName;
-						debouncedSaveAndNotify();
+						// Queue the confirmation notice for the next save completion. Reusing
+						// the section-level debouncedSave keeps all RAG saves on a single 300 ms
+						// queue so rapid edits across fields collapse into one saveSettings call.
+						pendingStoreNameMessage = normalizedStoreName
+							? 'Store name set. Will be used when indexing starts.'
+							: 'Store name cleared.';
+						debouncedSave();
 					});
 			});
 		}

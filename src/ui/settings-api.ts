@@ -1,5 +1,6 @@
 import type ObsidianGemini from '../main';
 import { Setting, Notice, debounce } from 'obsidian';
+import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
 let temperatureDebounceTimer: NodeJS.Timeout | null = null;
@@ -14,7 +15,20 @@ export async function renderApiSettings(
 ): Promise<void> {
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
-	const debouncedSave = debounce(() => plugin.saveSettings(), 300, true);
+	// The callback is async + wrapped in try/catch so rejections from saveSettings() don't
+	// become unhandled promise rejections.
+	const debouncedSave = debounce(
+		async () => {
+			try {
+				await plugin.saveSettings();
+			} catch (error) {
+				plugin.logger.error('Failed to save settings:', error);
+				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+			}
+		},
+		300,
+		true
+	);
 
 	// File Logging
 	new Setting(containerEl)
