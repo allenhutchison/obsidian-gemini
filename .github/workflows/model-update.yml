@@ -28,6 +28,14 @@ jobs:
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
+      - name: Install dependencies
+        if: steps.update.outcome == 'success'
+        run: npm ci
+
+      - name: Format models.json
+        if: steps.update.outcome == 'success'
+        run: npm run format
+
       - name: Create PR if models changed
         if: steps.update.outcome == 'success'
         uses: peter-evans/create-pull-request@v7

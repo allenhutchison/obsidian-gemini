@@ -147,7 +147,20 @@ function main() {
 		modelsFile.models.push(...newModels);
 		modelsFile.lastUpdated = new Date().toISOString();
 
-		writeFileSync(MODELS_PATH, JSON.stringify(modelsFile, null, 2) + '\n', 'utf-8');
+		// Validate the resulting structure before writing
+		if (modelsFile.version !== 1 || !Array.isArray(modelsFile.models) || modelsFile.models.length === 0) {
+			console.error('Validation failed: invalid models.json schema after update');
+			process.exit(1);
+		}
+		for (const m of modelsFile.models) {
+			if (typeof m.value !== 'string' || typeof m.label !== 'string') {
+				console.error(`Validation failed: model entry missing required fields: ${JSON.stringify(m)}`);
+				process.exit(1);
+			}
+		}
+
+		// Write with tab indentation to match Prettier's output for this repo
+		writeFileSync(MODELS_PATH, JSON.stringify(modelsFile, null, '\t') + '\n', 'utf-8');
 		console.log(`Updated ${MODELS_PATH}`);
 		process.exit(0);
 	});
