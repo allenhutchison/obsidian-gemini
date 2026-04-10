@@ -258,6 +258,7 @@ describe('ModelManager.updateModels — model role preservation', () => {
 		// Should be updated to an actual image model, not a text model
 		const newImageModel = GEMINI_MODELS.find((m) => m.value === result.updatedSettings.imageModelName);
 		expect(newImageModel).toBeDefined();
+		expect(newImageModel?.supportsImageGeneration || newImageModel?.value.includes('image')).toBe(true);
 	});
 
 	it('should correctly update chat model if it is genuinely unavailable', async () => {
