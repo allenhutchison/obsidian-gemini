@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { App, Setting, SettingGroup } from 'obsidian';
+import { App, Setting, SettingGroup, Notice } from 'obsidian';
 import {
 	ToolPermission,
 	ToolClassification,
@@ -10,6 +10,7 @@ import {
 	PRESET_PERMISSIONS,
 	DEFAULT_TOOL_POLICY,
 } from '../types/tool-policy';
+import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderToolSettings(
@@ -123,7 +124,8 @@ async function createToolPermissionsSettings(
 					try {
 						confirmed = await showYoloConfirmation(app);
 					} catch (error) {
-						plugin.logger.error('Failed to load YOLO confirmation modal', error);
+						plugin.logger.error('Failed to load YOLO confirmation modal:', error);
+						new Notice(`Failed to open YOLO confirmation: ${getErrorMessage(error)}`);
 					}
 					if (!confirmed) {
 						dropdown.setValue(policy.activePreset);
