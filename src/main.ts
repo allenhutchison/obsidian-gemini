@@ -8,7 +8,7 @@ import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { getDefaultModelForRole, getUpdatedModelSettings } from './models';
+import { getDefaultModelForRole, GeminiModel } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -38,13 +38,6 @@ import { ToolExecutionLogger } from './subscribers/tool-execution-logger';
 import { LifecycleService } from './services/lifecycle-service';
 import { getErrorMessage } from './utils/error-utils';
 
-export interface ModelDiscoverySettings {
-	enabled: boolean;
-	autoUpdateInterval: number; // hours
-	lastUpdate: number;
-	fallbackToStatic: boolean;
-}
-
 export interface RagIndexingSettings {
 	enabled: boolean;
 	fileSearchStoreName: string | null;
@@ -68,7 +61,6 @@ export interface ObsidianGeminiSettings {
 	maxRetries: number;
 	initialBackoffDelay: number;
 	streamingEnabled: boolean;
-	modelDiscovery: ModelDiscoverySettings;
 	allowSystemPromptOverride: boolean;
 	temperature: number;
 	topP: number;
@@ -95,6 +87,8 @@ export interface ObsidianGeminiSettings {
 	alwaysShowDiffView: boolean;
 	// Tool execution logging
 	logToolExecution: boolean;
+	// Cached remote model list (managed by ModelListProvider)
+	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
@@ -112,12 +106,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	maxRetries: 3,
 	initialBackoffDelay: 1000,
 	streamingEnabled: true,
-	modelDiscovery: {
-		enabled: true, // Automatically discover latest Gemini models
-		autoUpdateInterval: 24, // Check daily
-		lastUpdate: 0,
-		fallbackToStatic: true,
-	},
 	allowSystemPromptOverride: false,
 	temperature: 0.7,
 	topP: 1,
@@ -671,11 +659,17 @@ export default class ObsidianGemini extends Plugin {
 			}
 		}
 
-		// Only run model version updates if dynamic discovery is disabled
-		// When dynamic discovery is enabled, user model selections should be preserved
-		if (!this.settings.modelDiscovery?.enabled) {
-			await this.updateModelVersions();
+		// Migrate: remove deprecated modelDiscovery and modelDiscoveryCache
+		if (data?.modelDiscovery !== undefined || data?.modelDiscoveryCache !== undefined) {
+			delete (this.settings as any).modelDiscovery;
+			delete (this.settings as any).modelDiscoveryCache;
+			await this.saveData(this.settings);
+			this.logger?.log('Removed deprecated model discovery settings');
 		}
+
+		// Note: Stale model reconciliation happens later in LifecycleService.syncModels(),
+		// after ModelListProvider has loaded the cached remote model list. Running it here
+		// against DEFAULT_GEMINI_MODELS would use a stale list.
 
 		// Migrate legacy alwaysAllowReadWrite → toolPolicy
 		if (data?.alwaysAllowReadWrite !== undefined && !data?.toolPolicy) {
@@ -689,18 +683,6 @@ export default class ObsidianGemini extends Plugin {
 			this.logger?.log(
 				`Migrated alwaysAllowReadWrite=${data.alwaysAllowReadWrite} → toolPolicy.activePreset=${this.settings.toolPolicy.activePreset}`
 			);
-		}
-	}
-
-	async updateModelVersions() {
-		const { updatedSettings, settingsChanged, changedSettingsInfo } = getUpdatedModelSettings(this.settings);
-
-		if (settingsChanged) {
-			this.settings = updatedSettings as ObsidianGeminiSettings; // Cast back to specific type
-			this.logger.log('ObsidianGemini: Updating model versions in settings...');
-			changedSettingsInfo.forEach((info) => this.logger.log(`- ${info}`));
-			await this.saveData(this.settings);
-			new Notice('Gemini model settings updated to current defaults.');
 		}
 	}
 
@@ -748,11 +730,6 @@ export default class ObsidianGemini extends Plugin {
 					this.previousRagEnabled = nextRagEnabled;
 				}
 			}
-		}
-
-		// If model discovery settings changed, update models
-		if (this.settings.modelDiscovery.enabled && this.modelManager) {
-			this.lifecycle.updateModelsIfNeeded();
 		}
 
 		// Reconcile ToolExecutionLogger with the current logToolExecution setting.

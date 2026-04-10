@@ -38,9 +38,7 @@ describe('ContextManager', () => {
 				contextCompactionThreshold: 20,
 				chatModelName: 'gemini-2.5-flash',
 			},
-			getModelManager: jest.fn().mockReturnValue({
-				getDiscoveredModels: jest.fn().mockResolvedValue([]),
-			}),
+			getModelManager: jest.fn().mockReturnValue({}),
 		};
 
 		contextManager = new ContextManager(mockPlugin, mockLogger);
@@ -151,17 +149,7 @@ describe('ContextManager', () => {
 			expect(usage.percentUsed).toBe(20);
 		});
 
-		test('should use model token limit from discovery when available', async () => {
-			mockPlugin.getModelManager.mockReturnValue({
-				getDiscoveredModels: jest.fn().mockResolvedValue([
-					{
-						name: 'models/gemini-2.5-flash',
-						displayName: 'Gemini 2.5 Flash',
-						inputTokenLimit: 500_000,
-					},
-				]),
-			});
-
+		test('should use default token limit', async () => {
 			contextManager.updateUsageMetadata({
 				promptTokenCount: 100_000,
 				totalTokenCount: 120_000,
@@ -169,8 +157,8 @@ describe('ContextManager', () => {
 
 			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
 
-			expect(usage.inputTokenLimit).toBe(500_000);
-			expect(usage.percentUsed).toBe(20);
+			expect(usage.inputTokenLimit).toBe(1_000_000); // DEFAULT_INPUT_TOKEN_LIMIT
+			expect(usage.percentUsed).toBe(10);
 		});
 	});
 

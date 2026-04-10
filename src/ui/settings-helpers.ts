@@ -6,8 +6,7 @@ import { GEMINI_MODELS } from '../models';
 export async function selectModelSetting(
 	containerEl: HTMLElement,
 	plugin: ObsidianGemini,
-	settingName: keyof Pick<
-		ObsidianGeminiSettings,
+	settingName: NonNullable<
 		{
 			[K in keyof ObsidianGeminiSettings]: ObsidianGeminiSettings[K] extends string ? K : never;
 		}[keyof ObsidianGeminiSettings]
@@ -16,29 +15,21 @@ export async function selectModelSetting(
 	description: string,
 	role: 'text' | 'image' = 'text'
 ) {
-	// Get available models (dynamic if enabled, static otherwise)
 	let availableModels: import('../models').GeminiModel[];
 
-	if (plugin.settings.modelDiscovery?.enabled && plugin.getModelManager) {
+	const manager = plugin.getModelManager?.();
+	if (manager) {
 		if (role === 'image') {
-			availableModels = await plugin.getModelManager().getImageGenerationModels();
+			availableModels = await manager.getImageGenerationModels();
 		} else {
-			availableModels = await plugin.getModelManager().getAvailableModels();
+			availableModels = await manager.getAvailableModels();
 		}
 	} else {
-		// Fallback to static models, but we should still filter them by role if possible
-		// However, GEMINI_MODELS contains everything.
-		// Ideally we should use ModelManager to filter static models too.
-		if (plugin.getModelManager) {
-			if (role === 'image') {
-				availableModels = await plugin.getModelManager().getImageGenerationModels();
-			} else {
-				availableModels = await plugin.getModelManager().getAvailableModels();
-			}
-		} else {
-			// Fallback if ModelManager not available (unlikely)
-			availableModels = GEMINI_MODELS;
-		}
+		// Fallback: role-aware filter on the bundled GEMINI_MODELS
+		availableModels =
+			role === 'image'
+				? GEMINI_MODELS.filter((m) => m.supportsImageGeneration)
+				: GEMINI_MODELS.filter((m) => !m.supportsImageGeneration);
 	}
 
 	plugin.logger.debug(
