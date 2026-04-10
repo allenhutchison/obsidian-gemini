@@ -53,7 +53,7 @@ class RecallSessionsTool implements Tool {
 		params: { query?: string; filePath?: string; project?: string; limit?: number },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 		const limit = Math.max(1, Math.min(50, Math.floor(params.limit || 10)));
 
 		try {

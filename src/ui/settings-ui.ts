@@ -1,7 +1,7 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { Setting } from 'obsidian';
 
-export function renderUISettings(containerEl: HTMLElement, plugin: InstanceType<typeof ObsidianGemini>): void {
+export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemini): void {
 	new Setting(containerEl).setName('UI Settings').setHeading();
 
 	new Setting(containerEl)

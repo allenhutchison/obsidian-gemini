@@ -1,4 +1,4 @@
-import ObsidianGemini from './main';
+import type ObsidianGemini from './main';
 import { GeminiPrompts } from './prompts';
 import { BaseModelRequest } from './api/index';
 import { GeminiClientFactory } from './api/simple-factory';
@@ -6,10 +6,10 @@ import { Notice } from 'obsidian';
 import { getErrorMessage } from './utils/error-utils';
 
 export class GeminiSummary {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private prompts: GeminiPrompts;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
 	}

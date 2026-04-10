@@ -3,7 +3,7 @@ import { ChatSession, SessionModelConfig } from '../../types/agent';
 import type ObsidianGemini from '../../main';
 
 export class SessionSettingsModal extends Modal {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private onSave: (config: SessionModelConfig) => Promise<void>;
 	private modelConfig: SessionModelConfig;
 	private tempSlider: SliderComponent | null = null;
@@ -11,7 +11,7 @@ export class SessionSettingsModal extends Modal {
 
 	constructor(
 		app: any,
-		plugin: InstanceType<typeof ObsidianGemini>,
+		plugin: ObsidianGemini,
 		session: ChatSession,
 		onSave: (config: SessionModelConfig) => Promise<void>
 	) {

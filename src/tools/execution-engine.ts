@@ -18,12 +18,12 @@ import { shouldExcludePath } from '../utils/file-utils';
  * Handles execution of tools with permission checks and UI feedback
  */
 export class ToolExecutionEngine {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private registry: ToolRegistry;
 	private executionHistory: Map<string, ToolExecution[]> = new Map();
 	private loopDetector: ToolLoopDetector;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>, registry: ToolRegistry) {
+	constructor(plugin: ObsidianGemini, registry: ToolRegistry) {
 		this.plugin = plugin;
 		this.registry = registry;
 		this.loopDetector = new ToolLoopDetector(
@@ -247,7 +247,7 @@ export class ToolExecutionEngine {
 	 * - edit_skill: originalContent = current SKILL.md body, proposedContent = parameters.content
 	 */
 	private async buildDiffContext(tool: Tool, parameters: any): Promise<DiffContext | undefined> {
-		const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = this.plugin as ObsidianGemini;
 
 		if (tool.name === 'write_file' && parameters.path && parameters.content !== undefined) {
 			const normalizedPath = normalizePath(parameters.path);
@@ -340,7 +340,7 @@ export class ToolExecutionEngine {
 	 * Used for diff context display only.
 	 */
 	private getSkillFilePath(skillName: string): string {
-		const plugin = this.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = this.plugin as ObsidianGemini;
 		if (plugin.skillManager) {
 			return normalizePath(`${plugin.skillManager.getSkillsFolderPath()}/${skillName}/SKILL.md`);
 		}
@@ -353,7 +353,7 @@ export class ToolExecutionEngine {
 	 */
 	private async safeReadFile(file: TFile): Promise<string> {
 		try {
-			return await (this.plugin as InstanceType<typeof ObsidianGemini>).app.vault.read(file);
+			return await (this.plugin as ObsidianGemini).app.vault.read(file);
 		} catch (error) {
 			(this.plugin as any).logger?.warn(`Failed to read file for diff context: ${file.path}`, error);
 			return '';

@@ -37,7 +37,7 @@ export class GoogleSearchTool implements Tool {
 	}
 
 	async execute(params: { query: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			// Check if API key is available

@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { App, Setting, SettingGroup } from 'obsidian';
 import {
 	ToolPermission,
@@ -14,7 +14,7 @@ import type { SettingsSectionContext } from './settings';
 
 export async function renderToolSettings(
 	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
@@ -85,7 +85,7 @@ export async function renderToolSettings(
 
 async function createToolPermissionsSettings(
 	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {

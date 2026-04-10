@@ -51,7 +51,7 @@ export class WebFetchTool implements Tool {
 	}
 
 	async execute(params: { url: string; query: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		if (!plugin.apiKey) {
 			return {
@@ -201,10 +201,7 @@ export class WebFetchTool implements Tool {
 	/**
 	 * Fallback method using direct HTTP fetch
 	 */
-	private async fallbackFetch(
-		params: { url: string; query: string },
-		plugin: InstanceType<typeof ObsidianGemini>
-	): Promise<ToolResult> {
+	private async fallbackFetch(params: { url: string; query: string }, plugin: ObsidianGemini): Promise<ToolResult> {
 		try {
 			// Fetch the URL content directly with retry logic for transient errors
 			const response = await requestUrlWithRetry({

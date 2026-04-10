@@ -1,11 +1,11 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { App, Setting, Notice } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderRAGSettings(
 	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {

@@ -44,7 +44,7 @@ export class DeepResearchService {
 	private currentInteractionId: string | null = null;
 	private retryConfig: RetryConfig;
 
-	constructor(private plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(private plugin: ObsidianGemini) {
 		this.reportGenerator = new ReportGenerator();
 		this.retryConfig = DEFAULT_RETRY_CONFIG;
 	}

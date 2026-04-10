@@ -38,7 +38,7 @@ export class SearchFilesTool implements Tool {
 	}
 
 	async execute(params: { pattern: string; limit?: number }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			const allFiles = plugin.app.vault.getFiles();

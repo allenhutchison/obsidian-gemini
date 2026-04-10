@@ -63,7 +63,7 @@ export class UpdateFrontmatterTool implements Tool {
 	}
 
 	async execute(params: { path: string; key: string; value: any }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 		const { path, key, value } = params;
 
 		try {
@@ -184,7 +184,7 @@ export class AppendContentTool implements Tool {
 		params: { path: string; content: string; _replaceFullContent?: boolean; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 		const { path, content } = params;
 
 		try {

@@ -21,7 +21,7 @@ export class VaultAnalyzer {
 	private vaultInfoCache: VaultInfoCache | null = null;
 	private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-	constructor(private plugin: InstanceType<typeof ObsidianGemini>) {}
+	constructor(private plugin: ObsidianGemini) {}
 
 	/**
 	 * Helper to ensure minimum display time for each step

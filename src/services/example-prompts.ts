@@ -16,9 +16,9 @@ export interface ExamplePrompt {
  * This file stores UI-specific example prompts and is NOT sent to the AI agent
  */
 export class ExamplePromptsManager {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 	}
 

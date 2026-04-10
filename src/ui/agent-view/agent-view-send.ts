@@ -20,7 +20,7 @@ import type { ConfirmationResult, DiffContext } from '../../tools/types';
  * Provides access to shared state and components owned by the orchestrator.
  */
 export interface SendContext {
-	plugin: InstanceType<typeof ObsidianGemini>;
+	plugin: ObsidianGemini;
 	app: App;
 	getCurrentSession: () => ChatSession | null;
 	getShelf: () => AgentViewShelf;

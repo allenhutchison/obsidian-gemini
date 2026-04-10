@@ -1,5 +1,5 @@
 import { Vault, TFile, TFolder, normalizePath, Notice, Modal, App } from 'obsidian';
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { CustomPrompt, PromptInfo } from './types';
 
 export class PromptManager {

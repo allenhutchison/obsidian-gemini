@@ -11,13 +11,13 @@ interface ProjectPickerCallbacks {
  * Selecting null unlinks the session from any project.
  */
 export class ProjectPickerModal extends Modal {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private callbacks: ProjectPickerCallbacks;
 	private currentProjectPath: string | null;
 
 	constructor(
 		app: App,
-		plugin: InstanceType<typeof ObsidianGemini>,
+		plugin: ObsidianGemini,
 		callbacks: ProjectPickerCallbacks,
 		currentProjectPath: string | null = null
 	) {

@@ -85,9 +85,9 @@ export function findFrontmatterEndOffset(content: string): number | undefined {
  *       scripts/       # Optional - read-only reference (no execution in Obsidian)
  */
 export class SkillManager {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 	}
 

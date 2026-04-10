@@ -1,15 +1,15 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { Notice, App, Modal, Setting, TextAreaComponent } from 'obsidian';
 import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
 
 export class ImageGeneration {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private client: GeminiClient;
 	private prompts: GeminiPrompts;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
 		this.client = new GeminiClient(
@@ -183,18 +183,13 @@ export class ImageGeneration {
  * Modal for prompting user to enter image description
  */
 class ImagePromptModal extends Modal {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private imageGeneration: ImageGeneration;
 	private onSubmit: (prompt: string) => void;
 	private prompt = '';
 	private textArea: TextAreaComponent | null = null;
 
-	constructor(
-		app: App,
-		plugin: InstanceType<typeof ObsidianGemini>,
-		imageGeneration: ImageGeneration,
-		onSubmit: (prompt: string) => void
-	) {
+	constructor(app: App, plugin: ObsidianGemini, imageGeneration: ImageGeneration, onSubmit: (prompt: string) => void) {
 		super(app);
 		this.plugin = plugin;
 		this.imageGeneration = imageGeneration;

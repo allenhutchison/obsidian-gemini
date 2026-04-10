@@ -45,7 +45,7 @@ export class GenerateImageTool implements Tool {
 	}
 
 	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			// Get the image generation service

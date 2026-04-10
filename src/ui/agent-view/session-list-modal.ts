@@ -13,7 +13,7 @@ interface SessionListCallbacks {
 }
 
 export class SessionListModal extends Modal {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private callbacks: SessionListCallbacks;
 	private sessions: ChatSession[] = [];
 	private currentSessionId: string | null;
@@ -24,7 +24,7 @@ export class SessionListModal extends Modal {
 
 	constructor(
 		app: App,
-		plugin: InstanceType<typeof ObsidianGemini>,
+		plugin: ObsidianGemini,
 		callbacks: SessionListCallbacks,
 		currentSessionId: string | null = null
 	) {

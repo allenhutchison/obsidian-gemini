@@ -16,12 +16,12 @@ export interface DiffViewState {
 }
 
 export class GeminiDiffView extends ItemView {
-	plugin: InstanceType<typeof ObsidianGemini>;
+	plugin: ObsidianGemini;
 	private editorView: EditorView | null = null;
 	private state: DiffViewState | null = null;
 	private resolved = false;
 
-	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
 		this.plugin = plugin;
 	}

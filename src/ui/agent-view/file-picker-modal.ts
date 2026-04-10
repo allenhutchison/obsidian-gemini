@@ -12,17 +12,12 @@ interface SuggestModalChooser {
 export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	private onSelect: (files: TFile[]) => void;
 	private selectedFiles: Set<TFile>;
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private allItems: TAbstractFile[] = [];
 	private folderFilesCache: Map<TFolder, TFile[]> = new Map();
 	private lastSuggestions: TAbstractFile[] = [];
 
-	constructor(
-		app: App,
-		onSelect: (files: TFile[]) => void,
-		plugin: InstanceType<typeof ObsidianGemini>,
-		initialSelection: TFile[] = []
-	) {
+	constructor(app: App, onSelect: (files: TFile[]) => void, plugin: ObsidianGemini, initialSelection: TFile[] = []) {
 		super(app);
 		this.modalEl.addClass('gemini-context-file-picker');
 		this.onSelect = onSelect;

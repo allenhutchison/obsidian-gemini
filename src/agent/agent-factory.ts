@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { ModelApi } from '../api/interfaces/model-api';
 import { GeminiClientFactory } from '../api/simple-factory';
 import { SessionManager } from './session-manager';
@@ -30,7 +30,7 @@ export class AgentFactory {
 	 * @returns Agent components
 	 */
 	static createAgent(
-		plugin: InstanceType<typeof ObsidianGemini>,
+		plugin: ObsidianGemini,
 		_app: App
 	): {
 		sessionManager: SessionManager;
@@ -60,7 +60,7 @@ export class AgentFactory {
 	 * @param session The current chat session
 	 * @returns Configured ModelApi instance
 	 */
-	static createAgentModel(plugin: InstanceType<typeof ObsidianGemini>, session: ChatSession): ModelApi {
+	static createAgentModel(plugin: ObsidianGemini, session: ChatSession): ModelApi {
 		// Use session's model configuration if available
 		return GeminiClientFactory.createChatModel(plugin, session.modelConfig);
 	}
@@ -74,7 +74,7 @@ export class AgentFactory {
 	 * @returns Configured ModelApi instance
 	 */
 	static createAgentTaskModel(
-		plugin: InstanceType<typeof ObsidianGemini>,
+		plugin: ObsidianGemini,
 		config: AgentConfig,
 		_taskType?: 'summarize' | 'research' | 'code'
 	): ModelApi {
@@ -88,7 +88,7 @@ export class AgentFactory {
 	 *
 	 * @param plugin The plugin instance
 	 */
-	static async initializeAgent(plugin: InstanceType<typeof ObsidianGemini>): Promise<void> {
+	static async initializeAgent(plugin: ObsidianGemini): Promise<void> {
 		// This would be called during plugin load to set up agent infrastructure
 		const { sessionManager, toolRegistry, executionEngine } = this.createAgent(plugin, plugin.app);
 

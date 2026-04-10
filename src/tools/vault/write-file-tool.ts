@@ -54,7 +54,7 @@ export class WriteFileTool implements Tool {
 		params: { path: string; content: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			const normalizedPath = normalizePath(params.path);

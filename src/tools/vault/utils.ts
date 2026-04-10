@@ -13,7 +13,7 @@ import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/fil
  */
 export function resolvePathToFile(
 	path: string,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	includeSuggestions: boolean = false
 ): { file: TFile | null; suggestions?: string[] } {
 	const normalizedPath = normalizePath(path);
@@ -108,7 +108,7 @@ export function resolvePathToFile(
  */
 export function resolvePathToFileOrFolder(
 	path: string,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	includeSuggestions: boolean = false
 ): { item: TFile | TFolder | null; type: 'file' | 'folder' | null; suggestions?: string[] } {
 	const normalizedPath = normalizePath(path);

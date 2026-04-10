@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { App, Setting, Notice, setIcon } from 'obsidian';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 import { getErrorMessage } from '../utils/error-utils';
@@ -6,7 +6,7 @@ import type { SettingsSectionContext } from './settings';
 
 export async function renderMCPSettings(
 	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
@@ -22,7 +22,7 @@ export async function renderMCPSettings(
 
 async function createMCPSettings(
 	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {

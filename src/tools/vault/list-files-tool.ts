@@ -40,7 +40,7 @@ export class ListFilesTool implements Tool {
 	}
 
 	async execute(params: { path: string; recursive?: boolean }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			// Default to project root when no path specified and project is active

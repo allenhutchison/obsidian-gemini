@@ -66,7 +66,7 @@ export class DeepResearchTool implements Tool {
 		params: { topic: string; scope?: ResearchScope; outputFile?: string },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			// Validate parameters

@@ -1,7 +1,7 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { Setting } from 'obsidian';
 
-export function renderContextSettings(containerEl: HTMLElement, plugin: InstanceType<typeof ObsidianGemini>): void {
+export function renderContextSettings(containerEl: HTMLElement, plugin: ObsidianGemini): void {
 	new Setting(containerEl).setName('Context Management').setHeading();
 
 	const thresholdSetting = new Setting(containerEl)

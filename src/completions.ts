@@ -1,4 +1,4 @@
-import ObsidianGemini from './main';
+import type ObsidianGemini from './main';
 import { MarkdownView, Notice } from 'obsidian';
 import { forceableInlineSuggestion, Suggestion } from 'codemirror-companion-extension';
 import { BaseModelRequest } from './api/index';
@@ -6,12 +6,12 @@ import { GeminiPrompts } from './prompts';
 import { GeminiClientFactory } from './api/simple-factory';
 
 export class GeminiCompletions {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private prompts: GeminiPrompts;
 	private force_fetch: () => void = () => {};
 	private completionsOn: boolean = false;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
 	}

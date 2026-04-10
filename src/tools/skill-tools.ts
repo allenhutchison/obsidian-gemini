@@ -42,7 +42,7 @@ export class ActivateSkillTool implements Tool {
 	}
 
 	async execute(params: { name: string; resource_path?: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			if (!plugin.skillManager) {
@@ -167,7 +167,7 @@ export class CreateSkillTool implements Tool {
 		params: { name: string; description: string; content: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			if (!plugin.skillManager) {
@@ -280,7 +280,7 @@ export class EditSkillTool implements Tool {
 		params: { name: string; description?: string; content?: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			if (!plugin.skillManager) {

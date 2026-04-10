@@ -1,13 +1,9 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { App, Setting, SecretComponent } from 'obsidian';
 import { selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 
-export async function renderGeneralSettings(
-	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
-	app: App
-): Promise<void> {
+export async function renderGeneralSettings(containerEl: HTMLElement, plugin: ObsidianGemini, app: App): Promise<void> {
 	// Documentation button at the top
 	new Setting(containerEl)
 		.setName('Documentation')

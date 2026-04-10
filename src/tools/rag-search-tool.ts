@@ -139,7 +139,7 @@ export class RagSearchTool implements Tool {
 		params: { query: string; maxResults?: number; folder?: string; tags?: string[] },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			// Validate query

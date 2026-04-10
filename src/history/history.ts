@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { TFile } from 'obsidian';
 import { GeminiConversationEntry } from '../types/conversation';
 import { SessionHistory } from '../agent/session-history';
@@ -11,10 +11,10 @@ import { ChatSession } from '../types/agent';
  * Note-based chat history has been removed in v4.0.
  */
 export class GeminiHistory {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private sessionHistory: SessionHistory;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.sessionHistory = new SessionHistory(plugin);
 	}

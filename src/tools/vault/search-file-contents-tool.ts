@@ -58,7 +58,7 @@ export class SearchFileContentsTool implements Tool {
 		},
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			const caseSensitive = params.caseSensitive ?? false;

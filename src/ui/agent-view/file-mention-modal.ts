@@ -5,9 +5,9 @@ import type ObsidianGemini from '../../main';
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	private onSelect: (file: TAbstractFile) => void;
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 
-	constructor(app: any, onSelect: (file: TAbstractFile) => void, plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(app: any, onSelect: (file: TAbstractFile) => void, plugin: ObsidianGemini) {
 		super(app);
 		this.onSelect = onSelect;
 		this.plugin = plugin;

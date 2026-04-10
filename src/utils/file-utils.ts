@@ -42,7 +42,7 @@ export function shouldExcludePath(path: string, excludeFolder?: string): boolean
  * @param plugin - The plugin instance
  * @returns true if the path should be excluded, false otherwise
  */
-export function shouldExcludePathForPlugin(path: string, plugin: InstanceType<typeof ObsidianGemini>): boolean {
+export function shouldExcludePathForPlugin(path: string, plugin: ObsidianGemini): boolean {
 	return shouldExcludePath(path, plugin.settings.historyFolder);
 }
 
