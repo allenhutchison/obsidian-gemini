@@ -1,4 +1,5 @@
 import { AgentView } from '../../src/ui/agent-view/agent-view';
+import { AgentViewSend } from '../../src/ui/agent-view/agent-view-send';
 import { SessionManager } from '../../src/agent/session-manager';
 import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ToolExecutionEngine } from '../../src/tools/execution-engine';
@@ -186,6 +187,36 @@ describe('AgentView UI Tests', () => {
 		agentView.onOpen = jest.fn(async () => {
 			// Just mark as opened, don't try to create DOM
 			(agentView as any).opened = true;
+
+			// Initialize send component with mock context
+			const mockSendCtx = {
+				plugin,
+				app: plugin.app,
+				getCurrentSession: () => (agentView as any).currentSession,
+				getShelf: () => (agentView as any).shelf,
+				getUserInput: () => (agentView as any).userInput,
+				getSendButton: () => (agentView as any).sendButton,
+				getChatContainer: () => (agentView as any).chatContainer,
+				progress: (agentView as any).progress || { show: jest.fn(), hide: jest.fn(), update: jest.fn() },
+				messages: (agentView as any).messages || { displayMessage: jest.fn() },
+				tools: (agentView as any).tools || { handleToolCalls: jest.fn() },
+				session: (agentView as any).session || { autoLabelSessionIfNeeded: jest.fn() },
+				displayMessage: (agentView as any).displayMessage || jest.fn(),
+				updateTokenUsage: jest.fn(),
+				isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
+				allowToolWithoutConfirmation: jest.fn(),
+				showConfirmationInChat: jest.fn(),
+			};
+			(agentView as any).send = new AgentViewSend(mockSendCtx as any);
+
+			// Initialize attachments component mock
+			(agentView as any).attachments = {
+				showFileMention: jest.fn(),
+				removeTrailingTriggerChar: jest.fn(),
+				handleDroppedFiles: jest.fn(),
+				addAttachment: jest.fn(),
+				removeAttachment: jest.fn(),
+			};
 		});
 
 		// Mock onClose
@@ -1079,8 +1110,8 @@ describe('AgentView UI Tests', () => {
 			};
 			(sendButton as any).empty = jest.fn();
 			(agentView as any).sendButton = sendButton;
-			(agentView as any).isExecuting = true;
-			(agentView as any).cancellationRequested = false;
+			(agentView as any).send['isExecuting'] = true;
+			(agentView as any).send['cancellationRequested'] = false;
 
 			// Mock chatContainer
 			const mockChatContainer = document.createElement('div');
@@ -1099,22 +1130,22 @@ describe('AgentView UI Tests', () => {
 			};
 			(agentView as any).chatContainer = mockChatContainer;
 
-			// Mock streaming response
+			// Mock streaming response on the send component
 			const mockStreamingResponse = {
 				cancel: jest.fn(),
 			};
-			(agentView as any).currentStreamingResponse = mockStreamingResponse;
+			(agentView as any).send['currentStreamingResponse'] = mockStreamingResponse;
 
-			// Call stopAgentLoop
-			await (agentView as any).stopAgentLoop();
+			// Call stopAgentLoop via the send component
+			await (agentView as any).send.stopAgentLoop();
 
 			// Verify streaming response was cancelled
 			expect(mockStreamingResponse.cancel).toHaveBeenCalled();
 
 			// Verify UI state reset (icon-based, so check class and aria-label)
-			expect((agentView as any).isExecuting).toBe(false);
+			expect((agentView as any).send.getIsExecuting()).toBe(false);
 			// cancellationRequested stays true so tool loops can see it - only reset on new sendMessage()
-			expect((agentView as any).cancellationRequested).toBe(true);
+			expect((agentView as any).send.isCancellationRequested()).toBe(true);
 			expect(sendButton.classList.contains('gemini-agent-stop-btn')).toBe(false);
 			expect(sendButton.getAttribute('aria-label')).toBe('Send message to agent');
 			expect((sendButton as any).empty).toHaveBeenCalled();
@@ -1123,11 +1154,11 @@ describe('AgentView UI Tests', () => {
 		it('should prevent further tool execution after cancellation', async () => {
 			await agentView.onOpen();
 
-			// Set cancellation flag
-			(agentView as any).cancellationRequested = true;
+			// Set cancellation flag on the send component
+			(agentView as any).send['cancellationRequested'] = true;
 
 			// Verify flag is set
-			expect((agentView as any).cancellationRequested).toBe(true);
+			expect((agentView as any).send.isCancellationRequested()).toBe(true);
 
 			// In actual code, tool execution loops check this flag and break
 			// This test verifies the flag is properly set
@@ -1144,17 +1175,17 @@ describe('AgentView UI Tests', () => {
 			};
 			(sendButton as any).empty = jest.fn();
 			(agentView as any).sendButton = sendButton;
-			(agentView as any).isExecuting = true;
-			(agentView as any).cancellationRequested = true;
+			(agentView as any).send['isExecuting'] = true;
+			(agentView as any).send['cancellationRequested'] = true;
 
-			// Call resetExecutionUiState
-			await (agentView as any).resetExecutionUiState();
+			// Call resetExecutionUiState via send component
+			await (agentView as any).send['resetExecutionUiState']();
 
 			// Verify UI state is reset
-			expect((agentView as any).isExecuting).toBe(false);
+			expect((agentView as any).send.getIsExecuting()).toBe(false);
 			// cancellationRequested is NOT reset by resetExecutionUiState - it stays true
 			// so tool loops can check it. It's only reset in sendMessage() when starting new execution.
-			expect((agentView as any).cancellationRequested).toBe(true);
+			expect((agentView as any).send.isCancellationRequested()).toBe(true);
 			expect(sendButton.disabled).toBe(false);
 			expect(sendButton.classList.contains('gemini-agent-stop-btn')).toBe(false);
 			expect(sendButton.getAttribute('aria-label')).toBe('Send message to agent');
@@ -1168,14 +1199,14 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).sendButton = sendButton;
 
 			// Simulate already reset state (isExecuting = false)
-			(agentView as any).isExecuting = false;
+			(agentView as any).send['isExecuting'] = false;
 
-			// Track if resetExecutionUiState was called
-			const resetSpy = jest.spyOn(agentView as any, 'resetExecutionUiState');
+			// Track if resetExecutionUiState was called on the send component
+			const resetSpy = jest.spyOn((agentView as any).send as any, 'resetExecutionUiState');
 
 			// Simulate finally block behavior
-			if ((agentView as any).isExecuting) {
-				await (agentView as any).resetExecutionUiState();
+			if ((agentView as any).send.getIsExecuting()) {
+				await (agentView as any).send['resetExecutionUiState']();
 			}
 
 			// Should not have been called because isExecuting was false
@@ -1191,25 +1222,26 @@ describe('AgentView UI Tests', () => {
 			let sendMessageCalled = false;
 			let stopAgentLoopCalled = false;
 
-			// Mock the methods
-			(agentView as any).sendMessage = jest.fn(() => {
+			// Mock the methods on the send component
+			const send = (agentView as any).send;
+			send.sendMessage = jest.fn(() => {
 				sendMessageCalled = true;
 			});
-			(agentView as any).stopAgentLoop = jest.fn(() => {
+			send.stopAgentLoop = jest.fn(() => {
 				stopAgentLoopCalled = true;
 			});
 
 			// Simulate button click handler
 			const handleClick = () => {
-				if ((agentView as any).isExecuting) {
-					(agentView as any).stopAgentLoop();
+				if (send.getIsExecuting()) {
+					send.stopAgentLoop();
 				} else {
-					(agentView as any).sendMessage();
+					send.sendMessage();
 				}
 			};
 
 			// Test when not executing - should send
-			(agentView as any).isExecuting = false;
+			send['isExecuting'] = false;
 			handleClick();
 			expect(sendMessageCalled).toBe(true);
 			expect(stopAgentLoopCalled).toBe(false);
@@ -1219,7 +1251,7 @@ describe('AgentView UI Tests', () => {
 			stopAgentLoopCalled = false;
 
 			// Test when executing - should stop
-			(agentView as any).isExecuting = true;
+			send['isExecuting'] = true;
 			handleClick();
 			expect(sendMessageCalled).toBe(false);
 			expect(stopAgentLoopCalled).toBe(true);
@@ -1259,21 +1291,22 @@ describe('AgentView UI Tests', () => {
 				getPendingAttachments: jest.fn().mockReturnValue([]),
 			};
 
-			// Set cancellation flag (simulating previous stop)
-			(agentView as any).cancellationRequested = true;
+			// Set cancellation flag (simulating previous stop) on the send component
+			const send = (agentView as any).send;
+			send['cancellationRequested'] = true;
 
-			// Mock displayMessage to throw early and stop execution after flag reset
-			(agentView as any).displayMessage = jest.fn().mockRejectedValue(new Error('Stop execution here'));
+			// Mock displayMessage on the send context to throw early and stop execution after flag reset
+			send['ctx'].displayMessage = jest.fn().mockRejectedValue(new Error('Stop execution here'));
 
-			// Call sendMessage - it will fail at displayMessage but the flag should be reset by then
+			// Call sendMessage via send component - it will fail at displayMessage but the flag should be reset by then
 			try {
-				await (agentView as any).sendMessage();
+				await send.sendMessage();
 			} catch {
 				// Expected to fail
 			}
 
 			// Verify cancellationRequested was reset to false at start of sendMessage
-			expect((agentView as any).cancellationRequested).toBe(false);
+			expect(send.isCancellationRequested()).toBe(false);
 		});
 	});
 });

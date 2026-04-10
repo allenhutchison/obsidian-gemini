@@ -1,17 +1,11 @@
-import { ItemView, WorkspaceLeaf, TFile, TAbstractFile, Notice, TFolder, setIcon } from 'obsidian';
+import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
-import { ToolExecutionContext } from '../../tools/types';
-import { ExtendedModelRequest } from '../../api/interfaces/model-api';
-import { CustomPrompt } from '../../prompts/types';
-import { AgentFactory } from '../../agent/agent-factory';
-import { getErrorMessage } from '../../utils/error-utils';
 import { HandlerPriority } from '../../types/agent-events';
 
 // Import all component modules
 import { AgentViewProgress } from './agent-view-progress';
-import { getTextFilesFromFolder } from './agent-view-shelf';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewContext } from './agent-view-context';
@@ -20,15 +14,16 @@ import { AgentViewTools, AgentViewContext as ToolsContext } from './agent-view-t
 import { AgentViewUI, UICallbacks } from './agent-view-ui';
 import { InlineAttachment } from './inline-attachment';
 import { AgentViewShelf } from './agent-view-shelf';
-import { getContextSelection, createContextRange, moveCursorToEnd } from '../../utils/dom-context';
+import { AgentViewSend } from './agent-view-send';
+import { AgentViewAttachments } from './agent-view-attachments';
 import { ProjectPickerModal } from './project-picker-modal';
 
 // Import modals from agent-view directory
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
-import { FileMentionModal } from './file-mention-modal';
 import { SkillMentionModal } from './skill-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
+import { moveCursorToEnd } from '../../utils/dom-context';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -46,6 +41,8 @@ export class AgentView extends ItemView {
 	private session!: AgentViewSession;
 	private tools!: AgentViewTools;
 	private ui: AgentViewUI;
+	private send!: AgentViewSend;
+	private attachments!: AgentViewAttachments;
 
 	// UI element references
 	private chatContainer!: HTMLElement;
@@ -55,10 +52,6 @@ export class AgentView extends ItemView {
 
 	// State
 	private currentSession: ChatSession | null = null;
-	private currentStreamingResponse: { cancel: () => void } | null = null;
-	private isExecuting: boolean = false;
-	private turnToolCallCount: number = 0;
-	private cancellationRequested: boolean = false;
 	private eventBusUnsubscribers: (() => void)[] = [];
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private shelf!: AgentViewShelf;
@@ -101,27 +94,10 @@ export class AgentView extends ItemView {
 	}
 
 	private async createAgentInterface(container: HTMLElement) {
-		// Create UI callbacks for components
-		const callbacks: UICallbacks = {
-			showFilePicker: () => this.showFilePicker(),
-			showFileMention: () => this.showFileMention(),
-			showSkillPicker: () => this.showSkillPicker(),
-			showSessionList: () => this.showSessionList(),
-			showSessionSettings: () => this.showSessionSettings(),
-			createNewSession: () => this.createNewSession(),
-			sendMessage: () => this.sendMessage(),
-			stopAgentLoop: () => this.stopAgentLoop(),
-			removeContextFile: (file: TFile) => this.removeContextFile(file),
-			updateSessionHeader: () => this.updateSessionHeader(),
-			updateSessionMetadata: () => this.updateSessionMetadata(),
-			loadSession: (session: ChatSession) => this.loadSession(session),
-			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
-			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
-			removeAttachment: (id: string) => this.removeAttachment(id),
-			getAttachments: () => this.shelf?.getPendingAttachments() || [],
-			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
-			switchProject: () => this.switchProject(),
-		};
+		// Reuse getUICallbacks() to avoid maintaining a duplicate literal.
+		// The arrow-function closures capture `this`, so this.send / this.attachments
+		// resolve correctly when the callbacks are eventually invoked (after init below).
+		const callbacks = this.getUICallbacks();
 
 		// Create the main interface using AgentViewUI
 		const elements = this.ui.createAgentInterface(container, this.currentSession, callbacks);
@@ -176,18 +152,7 @@ export class AgentView extends ItemView {
 		);
 
 		// Initialize tools component with context
-		const toolsContext: ToolsContext = {
-			getCurrentSession: () => this.currentSession,
-			isCancellationRequested: () => this.cancellationRequested,
-			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
-				this.progress.update(statusText, state),
-			hideProgress: () => this.progress.hide(),
-			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			incrementToolCallCount: (count: number) => {
-				this.turnToolCallCount += count;
-			},
-		};
-		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
+		this.tools = new AgentViewTools(this.chatContainer, this.plugin, this.createToolsContext());
 
 		// Initialize session component with callbacks and state
 		const sessionCallbacks: SessionUICallbacks = {
@@ -206,6 +171,39 @@ export class AgentView extends ItemView {
 		};
 
 		this.session = new AgentViewSession(this.app, this.plugin, sessionCallbacks, sessionState);
+
+		// Initialize attachments component
+		this.attachments = new AgentViewAttachments({
+			plugin: this.plugin,
+			app: this.app,
+			getCurrentSession: () => this.currentSession,
+			getShelf: () => this.shelf,
+			getUserInput: () => this.userInput,
+			context: this.context,
+			updateSessionHeader: () => this.updateSessionHeader(),
+			updateSessionMetadata: () => this.updateSessionMetadata(),
+		});
+
+		// Initialize send component
+		this.send = new AgentViewSend({
+			plugin: this.plugin,
+			app: this.app,
+			getCurrentSession: () => this.currentSession,
+			getShelf: () => this.shelf,
+			getUserInput: () => this.userInput,
+			getSendButton: () => this.sendButton,
+			getChatContainer: () => this.chatContainer,
+			progress: this.progress,
+			messages: this.messages,
+			tools: this.tools,
+			session: this.session,
+			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
+			updateTokenUsage: () => this.updateTokenUsage(),
+			isToolAllowedWithoutConfirmation: (toolName: string) => this.isToolAllowedWithoutConfirmation(toolName),
+			allowToolWithoutConfirmation: (toolName: string) => this.allowToolWithoutConfirmation(toolName),
+			showConfirmationInChat: (tool, parameters, executionId, diffContext) =>
+				this.showConfirmationInChat(tool, parameters, executionId, diffContext),
+		});
 
 		// Register session lifecycle event bus subscribers for token display
 		const createdUnsub = this.plugin.agentEventBus?.on(
@@ -234,546 +232,6 @@ export class AgentView extends ItemView {
 	}
 
 	/**
-	 * Main orchestration method for sending messages and handling tool calls
-	 */
-	private async sendMessage() {
-		if (!this.currentSession) {
-			new Notice('No active session');
-			return;
-		}
-		// Snapshot session so all hook emissions use the same reference
-		// even if currentSession changes during async operations
-		const turnSession = this.currentSession;
-
-		// Get message text directly from input (no chips to process)
-		const message = this.userInput.innerText?.trim() || '';
-		const formattedMessage = message;
-		// Allow sending with only attachments (no text)
-		const shelfTextFiles = this.shelf.getTextFiles();
-		const attachments = this.shelf.getPendingAttachments();
-		if (!message && shelfTextFiles.length === 0 && attachments.length === 0) return;
-
-		// Mark binary shelf items as sent
-		this.shelf.markBinarySent();
-
-		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
-		const savedAttachments: Array<{ attachment: InlineAttachment; path: string }> = [];
-		const failedSaves: number[] = [];
-		for (let i = 0; i < attachments.length; i++) {
-			const attachment = attachments[i];
-			if (attachment.vaultPath) {
-				// Already in vault (from drag-drop), skip saving
-				savedAttachments.push({ attachment, path: attachment.vaultPath });
-				continue;
-			}
-			try {
-				const { saveAttachmentToVault } = await import('./inline-attachment');
-				const path = await saveAttachmentToVault(this.app, attachment);
-				attachment.vaultPath = path;
-				savedAttachments.push({ attachment, path });
-			} catch (err) {
-				this.plugin.logger.error('Failed to save attachment to vault:', err);
-				failedSaves.push(i + 1);
-			}
-		}
-
-		// Notify user of any save failures (attachments will still be sent to AI)
-		if (failedSaves.length > 0) {
-			const failedList = failedSaves.join(', ');
-			new Notice(
-				`Failed to save ${failedSaves.length === 1 ? 'attachment' : 'attachments'} #${failedList} to vault. ` +
-					`${failedSaves.length === 1 ? 'It' : 'They'} will still be sent to the AI but won't be stored locally.`,
-				5000
-			);
-		}
-
-		// Clear input
-		this.userInput.innerHTML = '';
-
-		// Set execution state and change button to "Stop"
-		this.isExecuting = true;
-		this.cancellationRequested = false;
-		this.sendButton.empty();
-		setIcon(this.sendButton, 'square');
-		this.sendButton.addClass('gemini-agent-stop-btn');
-		this.sendButton.disabled = false; // Re-enable so user can click stop
-		this.sendButton.setAttribute('aria-label', 'Stop agent execution');
-		this.turnToolCallCount = 0;
-
-		// Emit turnStart hook
-		await this.plugin.agentEventBus?.emit('turnStart', {
-			session: turnSession,
-			userMessage: formattedMessage,
-		});
-
-		// Show progress bar
-		this.progress.show('Thinking...', 'thinking');
-
-		// Build message with attachment previews for display
-		let displayMessage = formattedMessage;
-		if (savedAttachments.length > 0) {
-			const imagePaths: string[] = [];
-			const otherPaths: { path: string; label: string }[] = [];
-
-			for (const { attachment, path } of savedAttachments) {
-				const mimeType = attachment.mimeType || '';
-				if (mimeType.startsWith('image/')) {
-					imagePaths.push(path);
-				} else {
-					let label = 'Attachment';
-					if (mimeType.startsWith('audio/')) label = 'Audio';
-					else if (mimeType.startsWith('video/')) label = 'Video';
-					else if (mimeType === 'application/pdf') label = 'PDF';
-					otherPaths.push({ path, label });
-				}
-			}
-
-			const parts: string[] = [];
-
-			if (imagePaths.length > 0) {
-				const imageLinks = imagePaths.map((path) => `![[${path}]]`).join('\n');
-				const contextNote = `\n> [!info] Image Source\n> ${imagePaths.map((p) => `\`${p}\``).join('\n> ')}`;
-				parts.push(imageLinks + contextNote);
-			}
-
-			if (otherPaths.length > 0) {
-				const contextNote = `> [!info] Attachment Source\n> ${otherPaths.map((o) => `\`${o.path}\` (${o.label})`).join('\n> ')}`;
-				parts.push(contextNote);
-			}
-
-			if (parts.length > 0) {
-				displayMessage = displayMessage + '\n\n' + parts.join('\n\n');
-			}
-		}
-
-		// Display user message with formatted version (includes markdown links and images)
-		const userEntry: GeminiConversationEntry = {
-			role: 'user',
-			message: displayMessage, // Use formatted message with images for display
-			notePath: '',
-			created_at: new Date(),
-		};
-		await this.displayMessage(userEntry);
-
-		try {
-			// Get all context files from the shelf (persistent text files + folder contents)
-			const allContextFiles = this.shelf.getTextFiles();
-
-			// Snapshot pre-turn history BEFORE saving user message to avoid duplication
-			const conversationHistory = await this.plugin.sessionHistory.getHistoryForSession(this.currentSession);
-
-			// Save user message to history once, before the API call.
-			// Tools use in-memory updatedHistory, not the file, so early save is safe.
-			await this.plugin.sessionHistory.addEntryToSession(this.currentSession, userEntry);
-
-			// Build context for AI request including mentioned files
-			const contextInfo = await this.plugin.gfile.buildFileContext(
-				allContextFiles,
-				true // renderContent
-			);
-
-			// Load custom prompt if session has one configured
-			let customPrompt: CustomPrompt | undefined;
-			if (this.currentSession?.modelConfig?.promptTemplate) {
-				try {
-					// Use the promptManager to robustly load the custom prompt
-					const loadedPrompt = await this.plugin.promptManager.loadPromptFromFile(
-						this.currentSession.modelConfig.promptTemplate
-					);
-					if (loadedPrompt) {
-						customPrompt = loadedPrompt;
-					} else {
-						this.plugin.logger.warn(
-							'Custom prompt file not found or failed to load:',
-							this.currentSession.modelConfig.promptTemplate
-						);
-					}
-				} catch (error) {
-					this.plugin.logger.error('Error loading custom prompt:', error);
-				}
-			}
-
-			// Load project instructions if session is linked to a project
-			let projectInstructions: string | undefined;
-			if (this.currentSession?.projectPath && this.plugin.projectManager) {
-				try {
-					const project = await this.plugin.projectManager.getProject(this.currentSession.projectPath);
-					if (project?.instructions) {
-						projectInstructions = project.instructions;
-					}
-				} catch (error) {
-					this.plugin.logger.error('Error loading project instructions:', error);
-				}
-			}
-
-			// Build additional prompt instructions (not part of system prompt)
-			let additionalInstructions = '';
-
-			// Add context file note if shelf has text files
-			if (shelfTextFiles.length > 0) {
-				const fileList = shelfTextFiles.map((f) => `- [[${f.path}|${f.basename}]]`).join('\n');
-				additionalInstructions += `\n\nCONTEXT FILES: The following files have been added to this conversation as context:
-${fileList}
-
-When referring to these files in tool calls, use the FULL PATH (the part before | in the wikilinks above).
-The content of these files is included in the context below.`;
-			}
-
-			// Add attachment path information if attachments were saved
-			if (savedAttachments.length > 0) {
-				const pathList = savedAttachments.map(({ path }) => `- ${path}`).join('\n');
-				additionalInstructions += `\n\nATTACHMENTS: The user has attached ${savedAttachments.length} file(s) to this message. They have been saved to the vault at these paths:
-${pathList}
-To embed images in a note, use the wikilink format: ![[path/to/image.png]]
-To reference an attachment in your response, use the path shown above.`;
-			}
-
-			// Add context information if available
-			if (contextInfo) {
-				additionalInstructions += `\n\n${contextInfo}`;
-			}
-
-			// Get available tools for this session
-			// Set project root path for scoped tool discovery
-			const activeProject = this.currentSession?.projectPath
-				? await this.plugin.projectManager?.getProject(this.currentSession.projectPath)
-				: null;
-
-			const toolContext: ToolExecutionContext = {
-				plugin: this.plugin,
-				session: this.currentSession,
-				projectRootPath: activeProject?.rootPath,
-				projectPermissions: activeProject?.config.permissions,
-			};
-			const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
-			this.plugin.logger.log('Available tools from registry:', availableTools);
-			this.plugin.logger.log('Number of tools:', availableTools.length);
-			this.plugin.logger.log(
-				'Tool names:',
-				availableTools.map((t) => t.name)
-			);
-
-			try {
-				// Get model config from session or use defaults
-				const modelConfig = this.currentSession?.modelConfig || {};
-				const modelName = modelConfig.model || this.plugin.settings.chatModelName;
-
-				// beginTurn() is now handled by the turnStart event bus subscriber
-
-				// Prepare history through context manager (may compact if over threshold)
-				const compactionResult = await this.plugin.contextManager.prepareHistory(conversationHistory, modelName);
-
-				// If compaction occurred, show notification and save summary to transcript
-				if (compactionResult.wasCompacted && compactionResult.summaryText) {
-					// Force-set the lower post-compaction token count (bypasses high-water mark)
-					this.plugin.contextManager.setUsageMetadata({
-						promptTokenCount: compactionResult.estimatedTokens,
-						totalTokenCount: compactionResult.estimatedTokens,
-					});
-					await this.updateTokenUsage();
-
-					const compactionEntry: GeminiConversationEntry = {
-						role: 'model',
-						message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${compactionResult.summaryText}`,
-						notePath: '',
-						created_at: new Date(),
-					};
-					await this.displayMessage(compactionEntry);
-					await this.plugin.sessionHistory.addEntryToSession(this.currentSession, compactionEntry);
-					this.plugin.logger.log(`[AgentView] Context compacted: ${compactionResult.estimatedTokens} tokens remaining`);
-				}
-
-				const request: ExtendedModelRequest = {
-					userMessage: message,
-					conversationHistory: compactionResult.compactedHistory,
-					model: modelName,
-					temperature: modelConfig.temperature ?? this.plugin.settings.temperature,
-					topP: modelConfig.topP ?? this.plugin.settings.topP,
-					prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
-					perTurnContext: additionalInstructions, // Context files, attachments, rendered content
-					customPrompt: customPrompt, // Custom prompt template (if configured)
-					projectInstructions: projectInstructions, // Project-scoped instructions (if active)
-					projectSkills: activeProject?.config.skills, // Filter skills to project scope
-					renderContent: false, // We already rendered content above
-					availableTools: availableTools,
-					inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),
-				};
-
-				// Create model API for this session
-				const modelApi = AgentFactory.createAgentModel(this.plugin, this.currentSession!);
-
-				// Check if streaming is supported and enabled
-				if (modelApi.generateStreamingResponse && this.plugin.settings.streamingEnabled !== false) {
-					// Use streaming API with tool support
-					let modelMessageContainer: HTMLElement | null = null;
-					let accumulatedMarkdown = '';
-					let accumulatedThoughts = '';
-					let progressUpdated = false;
-
-					const streamResponse = modelApi.generateStreamingResponse(request, (chunk) => {
-						// Handle thought content - show in progress bar
-						if (chunk.thought) {
-							const chunkPreview = chunk.thought.length > 100 ? chunk.thought.substring(0, 100) + '...' : chunk.thought;
-							this.plugin.logger.debug(`[AgentView] Received thought chunk: ${chunkPreview}`);
-							accumulatedThoughts += chunk.thought;
-
-							// Update the expandable thinking section
-							this.progress.updateThought(accumulatedThoughts);
-						}
-
-						// Handle text content
-						if (chunk.text) {
-							accumulatedMarkdown += chunk.text;
-
-							// Update progress to streaming state when first text chunk arrives
-							if (!progressUpdated) {
-								this.progress.update('Generating response...', 'streaming');
-								progressUpdated = true;
-							}
-
-							// Create or update the model message container
-							if (!modelMessageContainer) {
-								// First chunk - create the container
-								modelMessageContainer = this.messages.createStreamingMessageContainer('model');
-								this.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
-							} else {
-								// Update existing container with new chunk
-								this.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
-								// Use debounced scroll to avoid stuttering
-								this.messages.debouncedScrollToBottom();
-							}
-						}
-					});
-
-					// Store the streaming response for potential cancellation
-					this.currentStreamingResponse = streamResponse;
-
-					try {
-						const response = await streamResponse.complete;
-						this.currentStreamingResponse = null;
-
-						// Emit usage metadata via event bus (contextManager subscribes)
-						if (response.usageMetadata) {
-							await this.plugin.agentEventBus?.emit('apiResponseReceived', {
-								usageMetadata: response.usageMetadata,
-							});
-						} else {
-							this.plugin.logger.debug('[AgentView] Streaming response had no usageMetadata');
-						}
-
-						// Check if the model requested tool calls
-						if (response.toolCalls && response.toolCalls.length > 0) {
-							// User message already saved early in sendMessage()
-
-							// If there was any streamed text before tool calls, finalize it
-							if (modelMessageContainer && accumulatedMarkdown.trim()) {
-								const aiEntry: GeminiConversationEntry = {
-									role: 'model',
-									message: accumulatedMarkdown,
-									notePath: '',
-									created_at: new Date(),
-								};
-								await this.messages.finalizeStreamingMessage(
-									modelMessageContainer,
-									accumulatedMarkdown,
-									aiEntry,
-									this.currentSession
-								);
-
-								// Save partial response to history before executing tools
-								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-							}
-
-							// Execute tools and handle results
-							await this.tools.handleToolCalls(
-								response.toolCalls,
-								message,
-								compactionResult.compactedHistory,
-								userEntry,
-								customPrompt
-							);
-						} else {
-							// Normal response without tool calls
-							// Only finalize and save if response has content
-							if (response.markdown && response.markdown.trim()) {
-								const aiEntry: GeminiConversationEntry = {
-									role: 'model',
-									message: response.markdown,
-									notePath: '',
-									created_at: new Date(),
-								};
-
-								// Finalize the streaming message with proper rendering
-								if (modelMessageContainer) {
-									await this.messages.finalizeStreamingMessage(
-										modelMessageContainer,
-										response.markdown,
-										aiEntry,
-										this.currentSession
-									);
-								}
-
-								// Save AI response to history (user message already saved early)
-								await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-
-								// Ensure we're scrolled to bottom after streaming completes
-								this.messages.scrollToBottom();
-
-								// Hide progress bar after successful response
-								this.progress.hide();
-							} else {
-								// Empty response - might be thinking tokens
-								this.plugin.logger.warn('Model returned empty response');
-								new Notice(
-									'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.'
-								);
-
-								// Hide progress bar
-								this.progress.hide();
-
-								// User message already saved early in sendMessage()
-							}
-						}
-					} catch (error) {
-						this.currentStreamingResponse = null;
-						// Hide progress bar on error
-						this.progress.hide();
-						throw error;
-					}
-				} else {
-					// Fall back to non-streaming API
-					this.plugin.logger.log('Agent view using non-streaming API');
-					const response = await modelApi.generateModelResponse(request);
-
-					// Emit usage metadata via event bus (contextManager subscribes)
-					if (response.usageMetadata) {
-						await this.plugin.agentEventBus?.emit('apiResponseReceived', {
-							usageMetadata: response.usageMetadata,
-						});
-					} else {
-						this.plugin.logger.debug('[AgentView] Non-streaming response had no usageMetadata');
-					}
-
-					// Update progress to show response received
-					this.progress.update('Processing response...', 'waiting');
-
-					// Check if the model requested tool calls
-					if (response.toolCalls && response.toolCalls.length > 0) {
-						// Execute tools and handle results
-						await this.tools.handleToolCalls(
-							response.toolCalls,
-							message,
-							compactionResult.compactedHistory,
-							userEntry,
-							customPrompt
-						);
-					} else {
-						// Normal response without tool calls
-						// Only display if response has content
-						if (response.markdown && response.markdown.trim()) {
-							// Display AI response
-							const aiEntry: GeminiConversationEntry = {
-								role: 'model',
-								message: response.markdown,
-								notePath: '',
-								created_at: new Date(),
-							};
-							await this.displayMessage(aiEntry);
-
-							// Save AI response to history (user message already saved early)
-							await this.plugin.sessionHistory.addEntryToSession(this.currentSession, aiEntry);
-
-							// Hide progress bar after successful response
-							this.progress.hide();
-						} else {
-							// Empty response - might be thinking tokens
-							this.plugin.logger.warn('Model returned empty response');
-							new Notice(
-								'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.'
-							);
-
-							// User message already saved early in sendMessage()
-
-							// Hide progress bar
-							this.progress.hide();
-						}
-					}
-				}
-			} catch (error) {
-				// Hide progress bar on error
-				this.progress.hide();
-				throw error;
-			}
-		} catch (error) {
-			this.plugin.logger.error('Failed to send message:', error);
-			const errorMessage = getErrorMessage(error);
-			new Notice(errorMessage, 8000); // Show for 8 seconds to give user time to read
-
-			// Emit turnError hook
-			await this.plugin.agentEventBus?.emit('turnError', {
-				session: turnSession,
-				error: error instanceof Error ? error : new Error(String(error)),
-			});
-		} finally {
-			// Always emit turnEnd so subscribers get a reliable cleanup signal
-			await this.plugin.agentEventBus?.emit('turnEnd', {
-				session: turnSession,
-				toolCallCount: this.turnToolCallCount,
-			});
-
-			// Reset execution state and button (unless already reset by stopAgentLoop)
-			// The check prevents redundant resets if user clicked stop
-			if (this.isExecuting) {
-				this.resetExecutionUiState();
-			}
-
-			// Always update token usage display after any message completion
-			await this.updateTokenUsage();
-		}
-	}
-
-	/**
-	 * Stops the current agent execution loop
-	 */
-	private stopAgentLoop() {
-		this.plugin.logger.debug('[AgentView] stopAgentLoop called');
-
-		// Set cancellation flag
-		this.cancellationRequested = true;
-
-		// Cancel streaming response if active
-		if (this.currentStreamingResponse) {
-			this.plugin.logger.debug('[AgentView] Cancelling streaming response');
-			this.currentStreamingResponse.cancel();
-			this.currentStreamingResponse = null;
-		}
-
-		// Update UI immediately
-		this.resetExecutionUiState();
-
-		// Hide progress bar
-		this.progress.hide();
-
-		// Show cancellation notice
-		new Notice('Agent execution cancelled');
-	}
-
-	/**
-	 * Resets execution UI state after completion or cancellation
-	 */
-	private resetExecutionUiState() {
-		this.isExecuting = false;
-		// Note: Don't reset cancellationRequested here - it needs to stay true
-		// so that tool loops can see it. It's reset in sendMessage() when starting
-		// a new execution.
-		this.sendButton.disabled = false;
-		this.sendButton.empty();
-		setIcon(this.sendButton, 'play');
-		this.sendButton.removeClass('gemini-agent-stop-btn');
-		this.sendButton.setAttribute('aria-label', 'Send message to agent');
-	}
-
-	/**
 	 * Display a message in the chat (delegates to messages component)
 	 */
 	private async displayMessage(entry: GeminiConversationEntry) {
@@ -787,7 +245,7 @@ To reference an attachment in your response, use the path shown above.`;
 		await this.messages.showEmptyState(
 			this.currentSession,
 			(session) => this.loadSession(session),
-			() => this.sendMessage()
+			() => this.send.sendMessage()
 		);
 	}
 
@@ -810,9 +268,6 @@ To reference an attachment in your response, use the path shown above.`;
 		this.ui.createCompactHeader(this.sessionHeader, this.currentSession, this.getUICallbacks());
 	}
 
-	/**
-	 * Update context files list display
-	 */
 	/**
 	 * Remove a file from context
 	 */
@@ -859,114 +314,6 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
-	 * Show file mention modal for @ mentions
-	 */
-	private async showFileMention() {
-		const modal = new FileMentionModal(
-			this.app,
-			async (fileOrFolder: TAbstractFile) => {
-				// Remove the @ character that triggered the picker
-				this.removeTrailingTriggerChar('@');
-
-				if (fileOrFolder instanceof TFolder) {
-					this.shelf.addFolder(fileOrFolder);
-					// Seed session context with current folder contents. Subsequent turns
-					// re-expand the folder via the shelf so new files are picked up (#127).
-					const files = getTextFilesFromFolder(fileOrFolder, (path) => shouldExcludePathForPlugin(path, this.plugin));
-					for (const file of files) {
-						this.context.addFileToContext(file, this.currentSession);
-					}
-					this.updateSessionHeader();
-					this.updateSessionMetadata();
-					return;
-				}
-
-				if (!(fileOrFolder instanceof TFile)) return;
-
-				// Classify the file to determine text vs binary handling
-				const { classifyFile, FileCategory, arrayBufferToBase64, detectWebmMimeType, GEMINI_INLINE_DATA_LIMIT } =
-					await import('../../utils/file-classification');
-				const classification = classifyFile(fileOrFolder.extension);
-
-				if (classification.category === FileCategory.TEXT) {
-					this.shelf.addTextFile(fileOrFolder);
-					this.context.addFileToContext(fileOrFolder, this.currentSession);
-					this.updateSessionHeader();
-					this.updateSessionMetadata();
-				} else if (classification.category === FileCategory.GEMINI_BINARY) {
-					// Handle binary file — create inline attachment (same as drag-drop)
-					try {
-						const buffer = await this.app.vault.readBinary(fileOrFolder);
-						const existing = this.shelf.getPendingAttachments();
-						const cumulativeSize =
-							existing.reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0) + buffer.byteLength;
-
-						if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
-							new Notice(`File too large: ${fileOrFolder.name} exceeds 20MB cumulative attachment limit`, 5000);
-							return;
-						}
-
-						const base64 = arrayBufferToBase64(buffer);
-						const mimeType =
-							fileOrFolder.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
-						const { generateAttachmentId } = await import('./inline-attachment');
-						const attachment: InlineAttachment = {
-							base64,
-							mimeType,
-							id: generateAttachmentId(),
-							vaultPath: fileOrFolder.path,
-							fileName: fileOrFolder.name,
-						};
-						this.addAttachment(attachment);
-						new Notice(`Attached ${fileOrFolder.name}`, 2000);
-					} catch (err) {
-						this.plugin.logger.error(`Failed to attach ${fileOrFolder.path}:`, err);
-						new Notice(`Failed to attach ${fileOrFolder.name}`);
-					}
-				}
-			},
-			this.plugin
-		);
-		modal.open();
-	}
-
-	/**
-	 * Remove a trailing trigger character from the input, used when a picker
-	 * (file mention or skill picker) replaces the trigger with content.
-	 */
-	private removeTrailingTriggerChar(char: string): void {
-		const input = this.userInput;
-		if (!input) return;
-
-		const selection = getContextSelection(input);
-		if (!selection || selection.rangeCount === 0) return;
-
-		const range = selection.getRangeAt(0);
-
-		// Only proceed with a collapsed cursor (no text selected)
-		if (!range.collapsed) return;
-
-		const node = range.startContainer;
-
-		// Only mutate text nodes within the input element
-		if (!input.contains(node)) return;
-
-		if (node.nodeType === Node.TEXT_NODE && range.startOffset > 0) {
-			const text = node.textContent || '';
-			const offset = range.startOffset;
-			if (text[offset - 1] === char) {
-				node.textContent = text.slice(0, offset - 1) + text.slice(offset);
-				// Restore cursor position
-				const newRange = createContextRange(input);
-				newRange.setStart(node, offset - 1);
-				newRange.collapse(true);
-				selection.removeAllRanges();
-				selection.addRange(newRange);
-			}
-		}
-	}
-
-	/**
 	 * Show skill picker modal for / slash commands
 	 */
 	private async showSkillPicker() {
@@ -978,7 +325,7 @@ To reference an attachment in your response, use the path shown above.`;
 		const modal = new SkillMentionModal(
 			this.app,
 			(skill) => {
-				this.removeTrailingTriggerChar('/');
+				this.attachments.removeTrailingTriggerChar('/');
 				if (this.userInput) {
 					this.userInput.innerText = `Use the "${skill.name}" skill to help me with: `;
 					moveCursorToEnd(this.userInput);
@@ -1115,9 +462,6 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	/**
-	 * Auto-label session after first exchange
-	 */
-	/**
 	 * Get current session for tool execution
 	 */
 	getCurrentSessionForToolExecution(): ChatSession | null {
@@ -1181,50 +525,42 @@ To reference an attachment in your response, use the path shown above.`;
 	private getUICallbacks(): UICallbacks {
 		return {
 			showFilePicker: () => this.showFilePicker(),
-			showFileMention: () => this.showFileMention(),
+			showFileMention: () => this.attachments.showFileMention(),
 			showSkillPicker: () => this.showSkillPicker(),
 			showSessionList: () => this.showSessionList(),
 			showSessionSettings: () => this.showSessionSettings(),
 			createNewSession: () => this.createNewSession(),
-			sendMessage: () => this.sendMessage(),
-			stopAgentLoop: () => this.stopAgentLoop(),
+			sendMessage: () => this.send.sendMessage(),
+			stopAgentLoop: () => this.send.stopAgentLoop(),
 			removeContextFile: (file: TFile) => this.removeContextFile(file),
 			updateSessionHeader: () => this.updateSessionHeader(),
 			updateSessionMetadata: () => this.updateSessionMetadata(),
 			loadSession: (session: ChatSession) => this.loadSession(session),
 			isCurrentSession: (session: ChatSession) => this.isCurrentSession(session),
-			addAttachment: (attachment: InlineAttachment) => this.addAttachment(attachment),
-			removeAttachment: (id: string) => this.removeAttachment(id),
+			addAttachment: (attachment: InlineAttachment) => this.attachments.addAttachment(attachment),
+			removeAttachment: (id: string) => this.attachments.removeAttachment(id),
 			getAttachments: () => this.shelf?.getPendingAttachments() || [],
-			handleDroppedFiles: (files: TFile[]) => this.handleDroppedFiles(files),
+			handleDroppedFiles: (files: TFile[]) => this.attachments.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
 		};
 	}
 
 	/**
-	 * Handle dropped text files by adding to shelf
+	 * Build the context object required by AgentViewTools.
+	 * Shared between createAgentInterface() and ensureToolsInitialized().
 	 */
-	private handleDroppedFiles(files: TFile[]) {
-		for (const file of files) {
-			this.shelf.addTextFile(file);
-			this.context.addFileToContext(file, this.currentSession);
-		}
-		this.updateSessionHeader();
-		this.updateSessionMetadata();
-	}
-
-	/**
-	 * Add an attachment to the shelf
-	 */
-	private addAttachment(attachment: InlineAttachment): void {
-		this.shelf.addBinaryAttachment(attachment);
-	}
-
-	/**
-	 * Remove an attachment from the shelf
-	 */
-	private removeAttachment(id: string): void {
-		this.shelf.removeItem(id);
+	private createToolsContext(): ToolsContext {
+		return {
+			getCurrentSession: () => this.currentSession,
+			isCancellationRequested: () => this.send?.isCancellationRequested() ?? false,
+			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
+				this.progress.update(statusText, state),
+			hideProgress: () => this.progress.hide(),
+			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
+			incrementToolCallCount: (count: number) => {
+				this.send?.incrementToolCallCount(count);
+			},
+		};
 	}
 
 	/**
@@ -1261,19 +597,7 @@ To reference an attachment in your response, use the path shown above.`;
 			throw new Error('Cannot initialize tools component: chatContainer is not set');
 		}
 
-		const toolsContext: ToolsContext = {
-			getCurrentSession: () => this.currentSession,
-			isCancellationRequested: () => this.cancellationRequested,
-			updateProgress: (statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming') =>
-				this.progress.update(statusText, state),
-			hideProgress: () => this.progress.hide(),
-			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
-			incrementToolCallCount: (count: number) => {
-				this.turnToolCallCount += count;
-			},
-		};
-
-		this.tools = new AgentViewTools(this.chatContainer, this.plugin, toolsContext);
+		this.tools = new AgentViewTools(this.chatContainer, this.plugin, this.createToolsContext());
 	}
 
 	/**
@@ -1373,6 +697,9 @@ To reference an attachment in your response, use the path shown above.`;
 	}
 
 	async onClose() {
+		// Cancel any in-flight execution before tearing down the view
+		this.send?.stopAgentLoop();
+
 		// Cleanup event bus subscriptions
 		this.session?.destroy();
 		for (const unsub of this.eventBusUnsubscribers) {
