@@ -154,10 +154,12 @@ export async function renderRAGSettings(
 					.setValue('')
 					.onChange(async (value) => {
 						const trimmedValue = value.trim();
+						plugin.settings.ragIndexing.fileSearchStoreName = trimmedValue;
+						await plugin.saveSettings();
 						if (trimmedValue) {
-							plugin.settings.ragIndexing.fileSearchStoreName = trimmedValue;
-							await plugin.saveSettings();
 							new Notice('Store name set. Will be used when indexing starts.');
+						} else {
+							new Notice('Store name cleared.');
 						}
 					});
 			});
