@@ -51,10 +51,7 @@ export { GEMINI_MODELS } from './models';
 export type { ModelRole, GeminiModel, ModelUpdateResult } from './models';
 
 // Settings Types
-export type { ObsidianGeminiSettings, ModelDiscoverySettings } from './main';
-
-// Service Types
-export type { GoogleModel, ModelDiscoveryResult } from './services/model-discovery';
+export type { ObsidianGeminiSettings } from './main';
 
 export type { ModelUpdateOptions } from './services/model-manager';
 
@@ -85,8 +82,6 @@ export { SessionHistory } from './agent/session-history';
 export { PromptManager } from './prompts/prompt-manager';
 
 export { ModelManager } from './services/model-manager';
-
-export { ModelDiscoveryService } from './services/model-discovery';
 
 // Vault Tools - Useful for creating custom tools
 export {

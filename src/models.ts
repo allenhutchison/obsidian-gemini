@@ -1,3 +1,6 @@
+// @ts-ignore — esbuild JSON loader
+import modelData from './data/models.json';
+
 export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite' | 'image';
 
 export interface GeminiModel {
@@ -5,21 +8,10 @@ export interface GeminiModel {
 	label: string;
 	defaultForRoles?: ModelRole[];
 	supportsImageGeneration?: boolean;
+	maxTemperature?: number;
 }
 
-export const DEFAULT_GEMINI_MODELS: GeminiModel[] = [
-	{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-	{ value: 'gemini-flash-latest', label: 'Gemini Flash Latest', defaultForRoles: ['chat', 'summary', 'rewrite'] },
-	{ value: 'gemini-flash-lite-latest', label: 'Gemini Flash Lite Latest', defaultForRoles: ['completions'] },
-	{ value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
-	{
-		value: 'gemini-2.5-flash-image',
-		label: 'Gemini 2.5 Flash Image',
-		defaultForRoles: ['image'],
-		supportsImageGeneration: true,
-	},
-	{ value: 'gemini-3-pro-image-preview', label: 'Gemini 3 Pro Image Preview', supportsImageGeneration: true },
-];
+export const DEFAULT_GEMINI_MODELS: GeminiModel[] = modelData.models as GeminiModel[];
 
 export let GEMINI_MODELS: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 

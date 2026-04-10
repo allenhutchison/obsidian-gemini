@@ -274,36 +274,28 @@ export class LifecycleService {
 	}
 
 	/**
-	 * Update models if auto-update interval has passed.
+	 * Sync model list from provider and update settings if any configured models are stale.
 	 */
-	async updateModelsIfNeeded(): Promise<void> {
+	async syncModels(): Promise<void> {
 		const plugin = this.plugin;
 
-		if (!plugin.settings.modelDiscovery.enabled || !plugin.modelManager) {
+		if (!plugin.modelManager) {
 			return;
 		}
 
-		const now = Date.now();
-		const lastUpdate = plugin.settings.modelDiscovery.lastUpdate;
-		const intervalMs = plugin.settings.modelDiscovery.autoUpdateInterval * 60 * 60 * 1000;
+		try {
+			const result = await plugin.modelManager.updateModels();
 
-		if (now - lastUpdate > intervalMs) {
-			try {
-				const result = await plugin.modelManager.updateModels({ preserveUserCustomizations: true });
-
-				if (result.settingsChanged) {
-					plugin.settings = result.updatedSettings;
-
-					if (result.changedSettingsInfo.length > 0) {
-						plugin.logger.log('Model settings updated:', result.changedSettingsInfo.join(', '));
-					}
-				}
-
-				plugin.settings.modelDiscovery.lastUpdate = now;
+			if (result.settingsChanged) {
+				plugin.settings = result.updatedSettings;
 				await plugin.saveData(plugin.settings);
-			} catch (error) {
-				plugin.logger.warn('Failed to update models during auto-update:', error);
+
+				if (result.changedSettingsInfo.length > 0) {
+					plugin.logger.log('Model settings updated:', result.changedSettingsInfo.join(', '));
+				}
 			}
+		} catch (error) {
+			plugin.logger.warn('Failed to sync models:', error);
 		}
 	}
 
@@ -327,9 +319,8 @@ export class LifecycleService {
 		plugin.modelManager = new ModelManager(plugin);
 		await plugin.modelManager.initialize();
 
-		if (plugin.settings.modelDiscovery.enabled) {
-			this.updateModelsIfNeeded();
-		}
+		// Sync global model list and fix any stale settings before later startup steps read them
+		await this.syncModels();
 	}
 
 	/**

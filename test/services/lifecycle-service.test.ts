@@ -122,7 +122,6 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 			workspace: { layoutReady: false },
 		},
 		settings: {
-			modelDiscovery: { enabled: false, autoUpdateInterval: 24, lastUpdate: 0 },
 			mcpEnabled: false,
 			ragIndexing: { enabled: false },
 			logToolExecution: true,

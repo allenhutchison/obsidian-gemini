@@ -130,23 +130,8 @@ export class ContextManager {
 
 	/**
 	 * Get the input token limit for a given model.
-	 * Uses ModelDiscoveryService cache if available, otherwise falls back to default.
 	 */
-	private async getInputTokenLimit(modelName: string): Promise<number> {
-		try {
-			const modelManager = this.plugin.getModelManager();
-			const discoveredModels = await modelManager.getDiscoveredModels();
-			if (discoveredModels.length > 0) {
-				const model = discoveredModels.find(
-					(m) => m.name === `models/${modelName}` || m.name === modelName || m.displayName === modelName
-				);
-				if (model?.inputTokenLimit) {
-					return model.inputTokenLimit;
-				}
-			}
-		} catch (error) {
-			this.logger.warn('[ContextManager] Failed to get model token limit from discovery:', error);
-		}
+	private async getInputTokenLimit(_modelName: string): Promise<number> {
 		return DEFAULT_INPUT_TOKEN_LIMIT;
 	}
 
