@@ -3,7 +3,9 @@ import { Setting, Notice } from 'obsidian';
 import type { SettingsSectionContext } from './settings';
 
 let temperatureDebounceTimer: NodeJS.Timeout | null = null;
+let temperatureRunId = 0;
 let topPDebounceTimer: NodeJS.Timeout | null = null;
+let topPRunId = 0;
 
 export async function renderApiSettings(
 	containerEl: HTMLElement,
@@ -212,20 +214,39 @@ async function createTemperatureSetting(
 					// Set immediate value for responsive UI
 					plugin.settings.temperature = value;
 
+					// Capture the run ID upfront so we can discard stale async results.
+					const runId = ++temperatureRunId;
+
 					// Debounce validation and saving
 					temperatureDebounceTimer = setTimeout(async () => {
-						// Validate the value against model capabilities
-						const validation = await modelManager.validateParameters(value, plugin.settings.topP);
+						try {
+							// Validate the current value against model capabilities. Read from
+							// settings rather than the captured `value` so the validation always
+							// matches the most recent user input.
+							const validation = await modelManager.validateParameters(
+								plugin.settings.temperature,
+								plugin.settings.topP
+							);
 
-						if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
-							slider.setValue(validation.temperature.adjustedValue);
-							plugin.settings.temperature = validation.temperature.adjustedValue;
-							if (validation.temperature.warning) {
-								new Notice(validation.temperature.warning);
+							// A newer slider change has superseded this run — discard the
+							// stale result instead of clobbering the current slider/value.
+							if (runId !== temperatureRunId) {
+								return;
 							}
-						}
 
-						await plugin.saveSettings();
+							if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
+								slider.setValue(validation.temperature.adjustedValue);
+								plugin.settings.temperature = validation.temperature.adjustedValue;
+								if (validation.temperature.warning) {
+									new Notice(validation.temperature.warning);
+								}
+							}
+
+							await plugin.saveSettings();
+						} catch (error) {
+							plugin.logger.error('Failed to validate/save temperature setting:', error);
+							new Notice('Failed to save temperature setting. See console for details.');
+						}
 					}, 300);
 				})
 		);
@@ -257,20 +278,39 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: InstanceType<
 					// Set immediate value for responsive UI
 					plugin.settings.topP = value;
 
+					// Capture the run ID upfront so we can discard stale async results.
+					const runId = ++topPRunId;
+
 					// Debounce validation and saving
 					topPDebounceTimer = setTimeout(async () => {
-						// Validate the value against model capabilities
-						const validation = await modelManager.validateParameters(plugin.settings.temperature, value);
+						try {
+							// Validate the current value against model capabilities. Read from
+							// settings rather than the captured `value` so the validation always
+							// matches the most recent user input.
+							const validation = await modelManager.validateParameters(
+								plugin.settings.temperature,
+								plugin.settings.topP
+							);
 
-						if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
-							slider.setValue(validation.topP.adjustedValue);
-							plugin.settings.topP = validation.topP.adjustedValue;
-							if (validation.topP.warning) {
-								new Notice(validation.topP.warning);
+							// A newer slider change has superseded this run — discard the
+							// stale result instead of clobbering the current slider/value.
+							if (runId !== topPRunId) {
+								return;
 							}
-						}
 
-						await plugin.saveSettings();
+							if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
+								slider.setValue(validation.topP.adjustedValue);
+								plugin.settings.topP = validation.topP.adjustedValue;
+								if (validation.topP.warning) {
+									new Notice(validation.topP.warning);
+								}
+							}
+
+							await plugin.saveSettings();
+						} catch (error) {
+							plugin.logger.error('Failed to validate/save topP setting:', error);
+							new Notice('Failed to save Top P setting. See console for details.');
+						}
 					}, 300);
 				})
 		);
