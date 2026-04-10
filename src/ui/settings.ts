@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import { renderGeneralSettings } from './settings-general';
 import { renderUISettings } from './settings-ui';
@@ -16,10 +16,10 @@ export interface SettingsSectionContext {
 }
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
-	plugin: InstanceType<typeof ObsidianGemini>;
+	plugin: ObsidianGemini;
 	private showDeveloperSettings = false;
 
-	constructor(app: App, plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(app: App, plugin: ObsidianGemini) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

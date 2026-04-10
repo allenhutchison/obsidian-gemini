@@ -51,7 +51,7 @@ export class MoveFileTool implements Tool {
 		params: { sourcePath: string; targetPath: string },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			const sourceNormalizedPath = normalizePath(params.sourcePath);

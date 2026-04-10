@@ -25,11 +25,11 @@ export interface AgentsMemoryData {
  * - Custom instructions specific to this vault
  */
 export class AgentsMemory {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private memoryFilePath: string;
 	private template: HandlebarsTemplateDelegate;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>, templateContent: string) {
+	constructor(plugin: ObsidianGemini, templateContent: string) {
 		this.plugin = plugin;
 		this.memoryFilePath = normalizePath(`${plugin.settings.historyFolder}/AGENTS.md`);
 		this.template = Handlebars.compile(templateContent);

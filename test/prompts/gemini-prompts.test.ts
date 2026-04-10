@@ -1,5 +1,5 @@
 import { GeminiPrompts } from '../../src/prompts/gemini-prompts';
-import ObsidianGemini from '../../src/main';
+import type ObsidianGemini from '../../src/main';
 
 // Mock window.localStorage
 const mockLocalStorage = {

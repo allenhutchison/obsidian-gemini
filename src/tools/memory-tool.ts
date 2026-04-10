@@ -38,7 +38,7 @@ export class UpdateMemoryTool implements Tool {
 	}
 
 	async execute(params: { content: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			// Validate content
@@ -100,7 +100,7 @@ export class ReadMemoryTool implements Tool {
 	}
 
 	async execute(_params: any, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			// Get the agents memory service

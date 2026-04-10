@@ -110,12 +110,12 @@ function buildEnv(extra?: Record<string, string>): Record<string, string> | unde
  * tools are registered/unregistered in the plugin's ToolRegistry.
  */
 export class MCPManager {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private logger: Logger;
 	private connections = new Map<string, ServerConnection>();
 	private serverStates = new Map<string, MCPServerState>();
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.logger = plugin.logger;
 	}

@@ -12,10 +12,10 @@ import historyEntryTemplate from '../history/templates/historyEntry.hbs';
  * Handles history for agent sessions stored in Agent-Sessions/ folder
  */
 export class SessionHistory {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private entryTemplate: Handlebars.TemplateDelegate;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 
 		// Register Handlebars helpers (same as in markdownHistory)

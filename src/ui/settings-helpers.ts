@@ -1,11 +1,11 @@
 import { Setting } from 'obsidian';
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { ObsidianGeminiSettings } from '../main';
 import { GEMINI_MODELS } from '../models';
 
 export async function selectModelSetting(
 	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	settingName: keyof Pick<
 		ObsidianGeminiSettings,
 		{

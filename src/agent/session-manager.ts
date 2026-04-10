@@ -15,14 +15,14 @@ import { formatLocalDate } from '../utils/format-utils';
  * Manages chat sessions for both note-centric and agent modes
  */
 export class SessionManager {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private activeSessions = new Map<string, ChatSession>();
 
 	// Folder paths for different session types
 	private readonly HISTORY_FOLDER = 'History';
 	private readonly AGENT_SESSIONS_FOLDER = 'Agent-Sessions';
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 	}
 

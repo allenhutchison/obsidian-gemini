@@ -41,7 +41,7 @@ export class DeleteFileTool implements Tool {
 	}
 
 	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as InstanceType<typeof ObsidianGemini>;
+		const plugin = context.plugin as ObsidianGemini;
 
 		try {
 			const normalizedPath = normalizePath(params.path);

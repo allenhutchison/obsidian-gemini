@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings, DEFAULT_GEMINI_MODELS } from '../models';
 import { ModelDiscoveryService, GoogleModel } from './model-discovery';
 import { ModelMapper } from './model-mapper';

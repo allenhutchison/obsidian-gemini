@@ -8,9 +8,9 @@ import type ObsidianGemini from '../main';
  */
 export class ToolRegistry {
 	private tools = new Map<string, Tool>();
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 	}
 

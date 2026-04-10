@@ -13,7 +13,7 @@ import type ObsidianGemini from '../../main';
  * Provides access to shared state owned by the orchestrator.
  */
 export interface AttachmentsContext {
-	plugin: InstanceType<typeof ObsidianGemini>;
+	plugin: ObsidianGemini;
 	app: App;
 	getCurrentSession: () => ChatSession | null;
 	getShelf: () => AgentViewShelf;

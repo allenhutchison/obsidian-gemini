@@ -1,4 +1,4 @@
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 import { Setting, Notice } from 'obsidian';
 import type { SettingsSectionContext } from './settings';
 
@@ -7,7 +7,7 @@ let topPDebounceTimer: NodeJS.Timeout | null = null;
 
 export async function renderApiSettings(
 	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>,
+	plugin: ObsidianGemini,
 	context: SettingsSectionContext
 ): Promise<void> {
 	// File Logging
@@ -163,7 +163,7 @@ export async function renderApiSettings(
 	}
 }
 
-async function updateDiscoveryStatus(setting: Setting, plugin: InstanceType<typeof ObsidianGemini>): Promise<void> {
+async function updateDiscoveryStatus(setting: Setting, plugin: ObsidianGemini): Promise<void> {
 	try {
 		const status = await plugin.getModelManager().getDiscoveryStatus();
 
@@ -183,10 +183,7 @@ async function updateDiscoveryStatus(setting: Setting, plugin: InstanceType<type
 	}
 }
 
-async function createTemperatureSetting(
-	containerEl: HTMLElement,
-	plugin: InstanceType<typeof ObsidianGemini>
-): Promise<void> {
+async function createTemperatureSetting(containerEl: HTMLElement, plugin: ObsidianGemini): Promise<void> {
 	const modelManager = plugin.getModelManager();
 	const ranges = await modelManager.getParameterRanges();
 	const displayInfo = await modelManager.getParameterDisplayInfo();
@@ -231,7 +228,7 @@ async function createTemperatureSetting(
 		);
 }
 
-async function createTopPSetting(containerEl: HTMLElement, plugin: InstanceType<typeof ObsidianGemini>): Promise<void> {
+async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemini): Promise<void> {
 	const modelManager = plugin.getModelManager();
 	const ranges = await modelManager.getParameterRanges();
 	const displayInfo = await modelManager.getParameterDisplayInfo();

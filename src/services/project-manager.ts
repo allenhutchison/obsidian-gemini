@@ -27,11 +27,11 @@ const PERMISSION_REVERSE_MAP: Record<ToolPermission, string> = {
  * A project is any Markdown file with the `gemini-scribe/project` tag.
  */
 export class ProjectManager {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private projectCache: Map<string, Project> = new Map();
 	private pendingTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 	}
 

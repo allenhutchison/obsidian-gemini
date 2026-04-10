@@ -1,7 +1,7 @@
 import * as Handlebars from 'handlebars';
 import { CustomPrompt } from './types';
 import { ToolDefinition } from '../api/interfaces/model-api';
-import ObsidianGemini from '../main';
+import type ObsidianGemini from '../main';
 
 import systemPromptContent from '../../prompts/systemPrompt.hbs';
 import completionPromptContent from '../../prompts/completionPrompt.hbs';
@@ -27,7 +27,7 @@ export class GeminiPrompts {
 	private examplePromptsPromptTemplate: Handlebars.TemplateDelegate;
 	private imagePromptGeneratorTemplate: Handlebars.TemplateDelegate;
 
-	constructor(private plugin?: InstanceType<typeof ObsidianGemini>) {
+	constructor(private plugin?: ObsidianGemini) {
 		this.completionsPromptTemplate = Handlebars.compile(completionPromptContent);
 		this.systemPromptTemplate = Handlebars.compile(systemPromptContent);
 		this.summaryPromptTemplate = Handlebars.compile(summaryPromptContent);

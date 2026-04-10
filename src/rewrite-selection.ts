@@ -1,4 +1,4 @@
-import ObsidianGemini from './main';
+import type ObsidianGemini from './main';
 import { Editor, Notice } from 'obsidian';
 import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
@@ -6,10 +6,10 @@ import { GeminiClientFactory } from './api/simple-factory';
 import { getErrorMessage } from './utils/error-utils';
 
 export class SelectionRewriter {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 	private prompts: GeminiPrompts;
 
-	constructor(plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.prompts = new GeminiPrompts(plugin);
 	}

@@ -32,7 +32,7 @@ export const VIEW_TYPE_AGENT = 'gemini-agent-view';
  * It delegates functionality to specialized components and manages their interactions.
  */
 export class AgentView extends ItemView {
-	private plugin: InstanceType<typeof ObsidianGemini>;
+	private plugin: ObsidianGemini;
 
 	// UI components
 	private progress: AgentViewProgress;
@@ -57,7 +57,7 @@ export class AgentView extends ItemView {
 	private shelf!: AgentViewShelf;
 	private tokenUsageContainer!: HTMLElement;
 
-	constructor(leaf: WorkspaceLeaf, plugin: InstanceType<typeof ObsidianGemini>) {
+	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
 		this.plugin = plugin;
 

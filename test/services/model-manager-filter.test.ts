@@ -1,6 +1,6 @@
 import { ModelManager } from '../../src/services/model-manager';
 import { ModelDiscoveryService } from '../../src/services/model-discovery';
-import ObsidianGemini from '../../src/main';
+import type ObsidianGemini from '../../src/main';
 
 // Mock the model discovery service
 jest.mock('../../src/services/model-discovery');
