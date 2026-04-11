@@ -30,3 +30,6 @@ jobs:
 
       - name: TypeScript type check
         run: npx tsc --noEmit --skipLibCheck
+
+      - name: TypeScript type check (tests)
+        run: npm run typecheck:test

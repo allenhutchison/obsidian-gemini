@@ -550,7 +550,8 @@ describe('AgentView UI Tests', () => {
 				try {
 					await plugin.geminiApi.generateModelResponse();
 				} catch (error) {
-					new Notice(`Error: ${error.message}`);
+					const message = error instanceof Error ? error.message : String(error);
+					new Notice(`Error: ${message}`);
 				}
 			};
 			agentView.containerEl.appendChild(sendButton);

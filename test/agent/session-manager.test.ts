@@ -378,7 +378,7 @@ describe('SessionManager', () => {
 			// Mock loadSessionFromFile to return mock sessions
 			jest
 				.spyOn(sessionManager as any, 'loadSessionFromFile')
-				.mockImplementation(async (file: TFile) => createMockSession(file));
+				.mockImplementation(async (...args: unknown[]) => createMockSession(args[0] as TFile));
 		});
 
 		it('should return empty array when the agent sessions folder is missing', async () => {
@@ -425,7 +425,8 @@ describe('SessionManager', () => {
 
 		it('should handle errors loading individual sessions gracefully', async () => {
 			// Override mock to throw for one file, reuse createMockSession for others
-			jest.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation(async (file: TFile) => {
+			jest.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation(async (...args: unknown[]) => {
+				const file = args[0] as TFile;
 				if (file.basename === 'session2') {
 					throw new Error('Failed to load session');
 				}
