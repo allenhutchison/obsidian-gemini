@@ -27,6 +27,8 @@ Skills use **progressive disclosure** — the agent always knows which skills ar
 
 ## Built-in Skills
 
+For the design rationale behind bundled skills — why they exist, how progressive disclosure addresses the "lost in the middle" attention problem, and a walk-through of several of the built-ins — see the blog post [Bundled Skills in Gemini Scribe](https://allen.hutchison.org/2026/04/11/bundled-skills-in-gemini-scribe/).
+
 Gemini Scribe ships with built-in skills that are always available:
 
 - **gemini-scribe-help** — The agent can answer questions about the plugin itself by loading the relevant documentation on demand. Ask things like "How do I set up completions?" or "What settings are available?"
@@ -228,5 +230,6 @@ description: >-
 
 ## Further Reading
 
+- [Bundled Skills in Gemini Scribe](https://allen.hutchison.org/2026/04/11/bundled-skills-in-gemini-scribe/) — Blog post on why bundled skills exist, the progressive disclosure pattern, and a tour of several built-in skills
 - [agentskills.io Specification](https://agentskills.io) — The open standard for agent skills
 - [Agent Mode Guide](/guide/agent-mode) — Full agent documentation including skill tools
