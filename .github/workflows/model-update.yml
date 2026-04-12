@@ -38,7 +38,7 @@ jobs:
 
       - name: Create PR if models changed
         if: steps.update.outcome == 'success'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: 'chore: update models.json with new Gemini models'
           title: 'chore: Update available Gemini models'
