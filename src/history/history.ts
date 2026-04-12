@@ -42,10 +42,16 @@ export class GeminiHistory {
 	}
 
 	/**
-	 * Add entry to agent session history
+	 * Add entry to agent session history.
+	 *
+	 * See `SessionHistory.addEntryToSession` for the role of `explicitTimestamp`.
 	 */
-	async addEntryToSession(session: ChatSession, entry: GeminiConversationEntry): Promise<void> {
-		await this.sessionHistory.addEntryToSession(session, entry);
+	async addEntryToSession(
+		session: ChatSession,
+		entry: GeminiConversationEntry,
+		explicitTimestamp?: Date
+	): Promise<void> {
+		await this.sessionHistory.addEntryToSession(session, entry, explicitTimestamp);
 	}
 
 	/**

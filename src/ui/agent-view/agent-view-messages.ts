@@ -3,6 +3,7 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
 import { formatModelMessage } from '../../utils/markdown-formatting';
+import { stripTurnPreamble } from '../../utils/turn-preamble';
 import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
 
 // Documentation and help content
@@ -98,19 +99,22 @@ export class AgentViewMessages {
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 
+		// User turns carry a time preamble for the model; strip it for UI/copy.
+		const renderMessage = entry.role === 'user' ? stripTurnPreamble(entry.message) : entry.message;
+
 		// Check if this is a tool execution message from history
-		const isToolExecution = entry.metadata?.toolName || entry.message.includes('Tool Execution Results:');
+		const isToolExecution = entry.metadata?.toolName || renderMessage.includes('Tool Execution Results:');
 
 		// Convert single newlines to double newlines for proper markdown rendering
 		// while preserving table formatting
-		let formattedMessage = entry.message;
+		let formattedMessage = renderMessage;
 		if (entry.role === 'model') {
-			formattedMessage = formatModelMessage(entry.message);
+			formattedMessage = formatModelMessage(renderMessage);
 
 			// Debug logging for table formatting
 			if (formattedMessage.includes('|')) {
 				this.plugin.logger.log('Table formatting debug:');
-				this.plugin.logger.log('Original message:', entry.message);
+				this.plugin.logger.log('Original message:', renderMessage);
 				this.plugin.logger.log('Formatted message:', formattedMessage);
 			}
 		}
@@ -119,7 +123,7 @@ export class AgentViewMessages {
 		const sourcePath = currentSession?.historyPath || '';
 
 		// Special handling for tool execution messages
-		if (isToolExecution && entry.message.includes('Tool Execution Results:')) {
+		if (isToolExecution && renderMessage.includes('Tool Execution Results:')) {
 			// Extract tool execution sections and make them collapsible
 			const toolSections = formattedMessage.split(/### ([^\n]+)/);
 
@@ -208,9 +212,9 @@ export class AgentViewMessages {
 			setIcon(copyButton, 'copy');
 
 			copyButton.addEventListener('click', () => {
-				// Use the original message text to preserve formatting
+				// Copy the user-visible text (preamble stripped for user turns)
 				navigator.clipboard
-					.writeText(entry.message)
+					.writeText(renderMessage)
 					.then(() => {
 						new Notice('Message copied to clipboard.');
 					})

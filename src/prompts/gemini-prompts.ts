@@ -131,7 +131,8 @@ export class GeminiPrompts {
 		agentsMemory?: string | null,
 		availableSkills?: { name: string; description: string }[],
 		projectInstructions?: string,
-		perTurnContext?: string
+		perTurnContext?: string,
+		sessionStartedAt?: string
 	): string {
 		// If custom prompt with override is provided, return only that
 		if (customPrompt?.overrideSystemPrompt) {
@@ -161,15 +162,13 @@ export class GeminiPrompts {
 		// template variable — the systemPrompt.hbs template handles the heading.
 		const additionalInstructions = customPrompt && !customPrompt.overrideSystemPrompt ? customPrompt.content : '';
 
-		// Capture a single timestamp so the date and time fields in the system
-		// prompt are always derived from the same instant (avoids split around
-		// midnight boundaries).
-		const now = new Date();
-
+		// sessionStartedAt must be a canonical, byte-stable string the caller
+		// persisted once. Do NOT re-format via Date/toLocaleString here — doing so
+		// would break Gemini's implicit prefix cache across resumes and across
+		// tool-loop iterations.
 		return this.systemPrompt({
 			userName: this.plugin?.settings.userName || 'User',
-			date: now.toLocaleDateString(),
-			time: now.toLocaleTimeString(),
+			sessionStartedAt: sessionStartedAt || '',
 			agentsMemory: agentsMemory || '',
 			projectInstructions: projectInstructions || '',
 			agentRulesSection,

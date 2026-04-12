@@ -51,9 +51,20 @@ export class SessionHistory {
 	}
 
 	/**
-	 * Add an entry to agent session history
+	 * Add an entry to agent session history.
+	 *
+	 * When `explicitTimestamp` is provided, it is used for both the persisted
+	 * `| Time |` metadata row and `entry.created_at`. This lets callers (e.g.
+	 * the agent send path) write the exact turn timestamp the model saw into
+	 * the per-turn preamble, so rehydrated history is bit-identical to what
+	 * was originally sent — a prerequisite for Gemini implicit-cache alignment
+	 * across resumes.
 	 */
-	async addEntryToSession(session: ChatSession, entry: GeminiConversationEntry): Promise<void> {
+	async addEntryToSession(
+		session: ChatSession,
+		entry: GeminiConversationEntry,
+		explicitTimestamp?: Date
+	): Promise<void> {
 		if (!this.plugin.settings.chatHistory) return;
 
 		const historyPath = session.historyPath;
@@ -85,11 +96,14 @@ export class SessionHistory {
 		const userDisplayName = (this.plugin.settings.userName ?? '').trim();
 		const displayName = entry.role === 'user' ? userDisplayName || 'User' : role;
 
+		const entryTimestamp = explicitTimestamp ?? new Date();
+		entry.created_at = entryTimestamp;
+
 		const entryContent = this.entryTemplate({
 			role: role,
 			displayName: displayName,
 			messageLines: messageLines,
-			timestamp: formatLocalTimestamp(),
+			timestamp: formatLocalTimestamp(entryTimestamp),
 			pluginVersion: this.plugin.manifest.version,
 			model: entry.model,
 			temperature: entry.metadata?.temperature,

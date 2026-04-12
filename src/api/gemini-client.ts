@@ -245,7 +245,8 @@ export class GeminiClient implements ModelApi {
 				agentsMemory,
 				availableSkills,
 				extReq.projectInstructions,
-				extReq.perTurnContext ?? extReq.prompt
+				extReq.perTurnContext ?? extReq.prompt,
+				extReq.sessionStartedAt
 			);
 		} else {
 			// For BaseModelRequest, prompt is the full input
