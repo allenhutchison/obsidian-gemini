@@ -116,6 +116,36 @@ describe('ContextManager', () => {
 			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
 			expect(usage.estimatedTokens).toBe(20000);
 		});
+
+		test('should preserve cachedContentTokenCount on updates', async () => {
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 10000,
+				totalTokenCount: 11000,
+				cachedContentTokenCount: 8000,
+			});
+
+			const usage = await contextManager.getTokenUsage('gemini-2.5-flash');
+			expect(usage.cachedTokens).toBe(8000);
+		});
+
+		test('should log cached ratio alongside prompt/total', () => {
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 10000,
+				totalTokenCount: 11000,
+				cachedContentTokenCount: 8000,
+			});
+
+			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('cached=8000 (80%)'));
+		});
+
+		test('should report zero cached tokens when field is absent', () => {
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 5000,
+				totalTokenCount: 6000,
+			});
+
+			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('cached=0 (0%)'));
+		});
 	});
 
 	describe('setUsageMetadata', () => {

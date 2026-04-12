@@ -20,6 +20,13 @@ export interface ModelResponse {
 		promptTokenCount?: number;
 		candidatesTokenCount?: number;
 		totalTokenCount?: number;
+		/**
+		 * Portion of `promptTokenCount` served from Gemini's implicit or explicit
+		 * content cache. Present on responses where the request matched a cached
+		 * prefix; omitted otherwise. Used to surface caching effectiveness in the
+		 * token readout UI and debug logs.
+		 */
+		cachedContentTokenCount?: number;
 	};
 }
 

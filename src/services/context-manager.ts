@@ -107,9 +107,7 @@ export class ContextManager {
 		if (newPrompt >= cachedPrompt || this.acceptNextLowerUpdate) {
 			this.lastUsageMetadata = { ...metadata };
 			this.acceptNextLowerUpdate = false;
-			this.logger.log(
-				`[ContextManager] Updated usage metadata: prompt=${metadata.promptTokenCount}, total=${metadata.totalTokenCount}`
-			);
+			this.logger.log(`[ContextManager] Updated usage metadata: ${this.formatUsageForLog(metadata)}`);
 		} else {
 			this.logger.debug(`[ContextManager] Skipped lower metadata: prompt=${newPrompt} < cached=${cachedPrompt}`);
 		}
@@ -122,10 +120,20 @@ export class ContextManager {
 	setUsageMetadata(metadata: UsageMetadata): void {
 		if (metadata) {
 			this.lastUsageMetadata = { ...metadata };
-			this.logger.log(
-				`[ContextManager] Force-set usage metadata: prompt=${metadata.promptTokenCount}, total=${metadata.totalTokenCount}`
-			);
+			this.logger.log(`[ContextManager] Force-set usage metadata: ${this.formatUsageForLog(metadata)}`);
 		}
+	}
+
+	/**
+	 * Format usage metadata for a one-line debug log, including cached-prefix
+	 * share so cache effectiveness is observable per request.
+	 */
+	private formatUsageForLog(metadata: UsageMetadata): string {
+		const prompt = metadata.promptTokenCount ?? 0;
+		const total = metadata.totalTokenCount ?? 0;
+		const cached = metadata.cachedContentTokenCount ?? 0;
+		const ratio = prompt > 0 ? Math.round((cached / prompt) * 100) : 0;
+		return `prompt=${prompt}, total=${total}, cached=${cached} (${ratio}%)`;
 	}
 
 	/**

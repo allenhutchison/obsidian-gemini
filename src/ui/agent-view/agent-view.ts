@@ -643,11 +643,15 @@ export class AgentView extends ItemView {
 			this.tokenUsageContainer.empty();
 
 			const tokenText = this.tokenUsageContainer.createSpan({ cls: 'gemini-agent-token-text' });
-			const uncached = usage.estimatedTokens - usage.cachedTokens;
-			if (usage.cachedTokens > 0) {
-				tokenText.textContent = `Tokens: ~${usage.estimatedTokens.toLocaleString()} (${uncached.toLocaleString()} new) / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+			const base = `Tokens: ~${usage.estimatedTokens.toLocaleString()} / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+			if (usage.cachedTokens > 0 && usage.estimatedTokens > 0) {
+				// Cached ratio reflects how much of the current prompt was served
+				// from Gemini's implicit/explicit cache — a positive signal that
+				// rewards stable prefixes (system prompt, pinned history).
+				const cachedPercent = Math.round((usage.cachedTokens / usage.estimatedTokens) * 100);
+				tokenText.textContent = `${base} · ${cachedPercent}% cached`;
 			} else {
-				tokenText.textContent = `Tokens: ~${usage.estimatedTokens.toLocaleString()} / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+				tokenText.textContent = base;
 			}
 
 			// Add warning class if approaching threshold
