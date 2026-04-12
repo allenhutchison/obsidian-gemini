@@ -14,6 +14,7 @@
 		"generate-refs": "node scripts/generate-help-references.mjs",
 		"dev": "npm run generate-refs && node esbuild.config.mjs",
 		"build": "npm run generate-refs && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"typecheck:test": "tsc --noEmit --skipLibCheck --project tsconfig.test.json",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"postversion": "git push && git push --follow-tags",
 		"format": "prettier --write .",
