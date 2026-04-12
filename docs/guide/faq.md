@@ -87,6 +87,38 @@ If privacy is the concern, the paid AI Studio tier's no-training terms are the i
 
 No. Gemini Scribe is built around the Gemini API and its SDK — swapping in a local inference server would be a full rewrite, not a configuration change, and many of the plugin's features (Deep Research, semantic vault search, Google Search grounding, URL Context) have no local equivalent. If local-first inference is your priority, another plugin will serve you better. ([#576](https://github.com/allenhutchison/obsidian-gemini/discussions/576))
 
+## Language & Localization
+
+### How does the plugin decide what language to respond in?
+
+Gemini Scribe does not have its own language setting. Instead, it reads **Obsidian's own UI language preference** and tells the model to reply in that language.
+
+Technically, the plugin reads `window.localStorage.getItem('language')` on startup — this is the key Obsidian itself uses to persist the interface language you picked in Obsidian's **Settings → About → Language** dropdown. If no value is set, the plugin falls back to `"en"`. The detected code is then injected into every prompt (chat, summaries, completions, rewrites, vault analysis, etc.) via [`prompts/languageInstruction.hbs`](https://github.com/allenhutchison/obsidian-gemini/blob/master/prompts/languageInstruction.hbs), which tells the model:
+
+> "My user interface is set to the language code: `{code}`. Respond in that language unless I write to you in a different one. Keep file paths, tool parameters, and `[[WikiLinks]]` in their original language regardless of response language."
+
+So the plugin does not call `navigator.language`, `process.env.LANG`, or any system locale API — it only reads Obsidian's own stored preference from localStorage.
+
+### I want responses in a language different from my Obsidian UI — how?
+
+The answer depends on which feature you're trying to influence. Each feature has a different set of hooks:
+
+**For agent chat**, any of these work:
+
+1. **Just write to the agent in the target language.** The language instruction explicitly tells the model to switch if you write in a different language, so asking a question in Korean will get a Korean answer even if your Obsidian UI is set to English.
+2. **Add a language rule to `AGENTS.md`.** The `[state-folder]/AGENTS.md` memory file is prepended to the system prompt for agent chat. Adding a line like `"Always respond in Korean."` there persists the preference across sessions.
+3. **Configure a [custom prompt](/guide/custom-prompts) on the session.** Custom prompts are applied per chat session via the session settings gear icon.
+
+**For selection rewrite and full-file rewrite**, only AGENTS.md works — these features build their own plugin-controlled prompt but still inject AGENTS.md via the shared system prompt path.
+
+**For file summarization, inline completions, and image generation**, none of the above apply. These features construct fixed plugin-controlled prompts and do not read AGENTS.md, session custom prompts, or per-invocation overrides. The only currently supported way to change their output language is to **change Obsidian's interface language** (Settings → About → Language), which updates the auto-detected `{{language}}` variable that gets injected into every prompt template. A dedicated override for these paths is being tracked in [#613](https://github.com/allenhutchison/obsidian-gemini/issues/613).
+
+([#611](https://github.com/allenhutchison/obsidian-gemini/discussions/611))
+
+### Is there a dedicated language setting in the plugin?
+
+Not today. The auto-detection above covers most users well, and the "respond in whatever language you're written to" fallback handles the mixed-language chat case. A dedicated override may be added in the future if there's demand from users who need non-chat features (summaries, rewrites, completions) in a language that differs from their Obsidian UI.
+
 ## Cost & Billing
 
 ### How much does this plugin cost to use?
