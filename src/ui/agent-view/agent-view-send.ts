@@ -6,6 +6,8 @@ import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { getErrorMessage } from '../../utils/error-utils';
+import { formatLocalTimestamp } from '../../utils/format-utils';
+import { buildTurnPreamble } from '../../utils/turn-preamble';
 import { InlineAttachment } from './inline-attachment';
 import { AgentViewProgress } from './agent-view-progress';
 import { AgentViewMessages } from './agent-view-messages';
@@ -74,12 +76,22 @@ export class AgentViewSend {
 		const sendButton = this.ctx.getSendButton();
 
 		// Get message text directly from input (no chips to process)
-		const message = userInput.innerText?.trim() || '';
-		const formattedMessage = message;
+		const rawMessage = userInput.innerText?.trim() || '';
 		// Allow sending with only attachments (no text)
 		const shelfTextFiles = shelf.getTextFiles();
 		const attachments = shelf.getPendingAttachments();
-		if (!message && shelfTextFiles.length === 0 && attachments.length === 0) return;
+		if (!rawMessage && shelfTextFiles.length === 0 && attachments.length === 0) return;
+
+		// Prepend a per-turn time preamble. This is written into both the
+		// outgoing model message and the persisted history entry so replay is
+		// bit-identical. The UI render path strips it before display. Freezing
+		// the timestamp here (rather than at write time) lets Gemini's implicit
+		// prefix cache align across tool-loop iterations within the turn and
+		// across session resumes.
+		const turnTimestamp = new Date();
+		const turnPreamble = buildTurnPreamble(formatLocalTimestamp(turnTimestamp));
+		const message = turnPreamble + rawMessage;
+		const formattedMessage = message;
 
 		// Mark binary shelf items as sent
 		shelf.markBinarySent();
@@ -192,7 +204,9 @@ export class AgentViewSend {
 
 			// Save user message to history once, before the API call.
 			// Tools use in-memory updatedHistory, not the file, so early save is safe.
-			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, userEntry);
+			// Pass the frozen turn timestamp so the persisted `| Time |` row matches
+			// the preamble the model saw — required for cache alignment on resume.
+			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, userEntry, turnTimestamp);
 
 			// Build context for AI request including mentioned files
 			const contextInfo = await this.ctx.plugin.gfile.buildFileContext(
@@ -326,6 +340,10 @@ To reference an attachment in your response, use the path shown above.`;
 					projectSkills: activeProject?.config.skills, // Filter skills to project scope
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
+					// Session-start anchor for the system prompt. Derived from the
+					// session's immutable `created` date so it's stable across every
+					// tool-loop iteration within this turn.
+					sessionStartedAt: formatLocalTimestamp(currentSession.created),
 					inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),
 				};
 
