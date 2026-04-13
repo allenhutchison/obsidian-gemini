@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"lastUpdated": "2026-04-10T17:22:50.707Z",
+	"lastUpdated": "2026-04-13T09:25:30.126Z",
 	"models": [
 		{
 			"value": "gemini-pro-latest",
@@ -72,6 +72,11 @@
 			"label": "Nano Banana 2",
 			"supportsImageGeneration": true,
 			"maxTemperature": 1
+		},
+		{
+			"value": "gemini-3-pro-preview",
+			"label": "Gemini 3 Pro Preview",
+			"maxTemperature": 2
 		}
 	]
 }
