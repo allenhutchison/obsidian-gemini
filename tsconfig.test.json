@@ -8,7 +8,7 @@
 		"composite": false,
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
-		"moduleResolution": "bundler"
+		"moduleResolution": "nodenext"
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts"],
 	"exclude": []
