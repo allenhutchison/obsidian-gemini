@@ -1,6 +1,7 @@
 import { Vault, TFile, TFolder, normalizePath, Notice, Modal, App } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { CustomPrompt, PromptInfo } from './types';
+import { BundledPromptRegistry } from './bundled-prompts';
 
 export class PromptManager {
 	constructor(
@@ -96,6 +97,66 @@ export class PromptManager {
 		return allPrompts.filter((prompt) =>
 			prompt.tags.some((t) => typeof t === 'string' && t.toLowerCase() === normalizedTag)
 		);
+	}
+
+	// List all selection prompts (vault + bundled)
+	async listSelectionPrompts(): Promise<PromptInfo[]> {
+		const tag = 'gemini-scribe/selection-prompt';
+		const vaultPrompts = await this.listPromptsByTag(tag);
+
+		const bundledPrompts = BundledPromptRegistry.getPrompts()
+			.filter((p) => p.tags.includes(tag))
+			.map((p) => ({
+				path: `bundled:${p.name}`,
+				name: p.name,
+				description: p.description,
+				tags: p.tags,
+			}));
+
+		// Merge, vault takes priority if names match
+		const result: PromptInfo[] = [...vaultPrompts];
+		const vaultNames = new Set(vaultPrompts.map((p) => p.name));
+
+		for (const bp of bundledPrompts) {
+			if (!vaultNames.has(bp.name)) {
+				result.push(bp);
+			}
+		}
+
+		return result;
+	}
+
+	// Load prompt by path (vault or bundled)
+	async loadPrompt(path: string): Promise<CustomPrompt | null> {
+		if (path.startsWith('bundled:')) {
+			const name = path.slice(8);
+			const allBundled = BundledPromptRegistry.getPrompts();
+			const bundled = allBundled.find((p) => p.name === name);
+			if (!bundled) return null;
+
+			return {
+				name: bundled.name,
+				description: bundled.description,
+				version: 1,
+				overrideSystemPrompt: false,
+				tags: bundled.tags,
+				content: bundled.content,
+			};
+		}
+
+		return this.loadPromptFromFile(path);
+	}
+
+	private selectionPromptsCache: PromptInfo[] = [];
+
+	// Initialize cache of selection prompts
+	async initializeSelectionPromptsCache(): Promise<void> {
+		this.selectionPromptsCache = await this.listSelectionPrompts();
+	}
+
+	// Get cached selection prompts synchronously
+	getSelectionPromptsSync(): PromptInfo[] {
+		return this.selectionPromptsCache;
 	}
 
 	// Create default example prompts on first run

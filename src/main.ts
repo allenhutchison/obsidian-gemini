@@ -426,11 +426,14 @@ export default class ObsidianGemini extends Plugin {
 			editorCallback: (editor: Editor, _view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				const selection = editor.getSelection();
-				const hasSelection = selection.length > 0;
 
-				// Use selection if available, otherwise use entire file
-				const textToRewrite = hasSelection ? selection : editor.getValue();
-				const isFullFile = !hasSelection;
+				if (!selection || selection.trim().length === 0) {
+					new Notice('Please select some text first');
+					return;
+				}
+
+				const textToRewrite = selection;
+				const isFullFile = false;
 
 				// Show modal for instructions
 				const modal = new RewriteInstructionsModal(
@@ -478,10 +481,16 @@ export default class ObsidianGemini extends Plugin {
 					// Rewrite with Gemini
 					menu.addItem((item) => {
 						item
-							.setTitle('Rewrite with Gemini')
+							.setTitle('Gemini Scribe: Rewrite Text...')
 							.setIcon('bot-message-square')
 							.onClick(() => {
 								if (!this.checkInitialized()) return;
+
+								if (!selection || selection.trim().length === 0) {
+									new Notice('Please select some text first');
+									return;
+								}
+
 								const modal = new RewriteInstructionsModal(
 									this.app,
 									selection,
@@ -495,27 +504,27 @@ export default class ObsidianGemini extends Plugin {
 							});
 					});
 
-					// Explain Selection
+					// Ask Question
 					menu.addItem((item) => {
 						item
-							.setTitle('Explain Selection')
-							.setIcon('help-circle')
-							.onClick(async () => {
-								if (!this.checkInitialized()) return;
-								const sourceFile = view.file;
-								await this.selectionActionService.handleExplainSelection(editor, sourceFile);
-							});
-					});
-
-					// Ask about Selection
-					menu.addItem((item) => {
-						item
-							.setTitle('Ask about Selection')
+							.setTitle('Gemini Scribe: Ask Question...')
 							.setIcon('message-circle')
 							.onClick(async () => {
 								if (!this.checkInitialized()) return;
 								const sourceFile = view.file;
 								await this.selectionActionService.handleAskAboutSelection(editor, sourceFile);
+							});
+					});
+
+					// Apply Prompt
+					menu.addItem((item) => {
+						item
+							.setTitle('Gemini Scribe: Apply Prompt...')
+							.setIcon('help-circle')
+							.onClick(async () => {
+								if (!this.checkInitialized()) return;
+								const sourceFile = view.file;
+								await this.selectionActionService.handleExplainSelection(editor, sourceFile);
 							});
 					});
 				}

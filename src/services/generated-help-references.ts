@@ -18,6 +18,7 @@ import refFaq from '../../docs/guide/faq.md';
 import refGettingStarted from '../../docs/guide/getting-started.md';
 import refMcpServers from '../../docs/guide/mcp-servers.md';
 import refProjects from '../../docs/guide/projects.md';
+import refSelectionPrompts from '../../docs/guide/selection-prompts.md';
 import refSemanticSearch from '../../docs/guide/semantic-search.md';
 import refSummarization from '../../docs/guide/summarization.md';
 import refAdvancedSettings from '../../docs/reference/advanced-settings.md';
@@ -36,6 +37,7 @@ export const helpResources = new Map<string, string>([
 	['references/getting-started.md', refGettingStarted],
 	['references/mcp-servers.md', refMcpServers],
 	['references/projects.md', refProjects],
+	['references/selection-prompts.md', refSelectionPrompts],
 	['references/semantic-search.md', refSemanticSearch],
 	['references/summarization.md', refSummarization],
 	['references/advanced-settings.md', refAdvancedSettings],
@@ -56,6 +58,7 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/getting-started.md\` | Getting Started |
 | \`references/mcp-servers.md\` | MCP Servers |
 | \`references/projects.md\` | Projects |
+| \`references/selection-prompts.md\` | Selection Prompts |
 | \`references/semantic-search.md\` | Semantic Vault Search |
 | \`references/summarization.md\` | Document Summarization Guide |
 | \`references/advanced-settings.md\` | Advanced Settings Guide |

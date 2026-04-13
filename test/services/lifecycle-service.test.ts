@@ -14,6 +14,7 @@ jest.mock('../../src/prompts', () => ({
 	PromptManager: jest.fn().mockImplementation(() => ({
 		createDefaultPrompts: jest.fn(),
 		setupPromptCommands: jest.fn(),
+		initializeSelectionPromptsCache: jest.fn().mockResolvedValue(undefined),
 	})),
 }));
 jest.mock('../../src/files', () => ({ ScribeFile: jest.fn() }));

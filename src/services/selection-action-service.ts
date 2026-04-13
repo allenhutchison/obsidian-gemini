@@ -29,14 +29,11 @@ export class SelectionActionService {
 		// Capture selection end position now (before modal opens and potentially clears selection)
 		const selectionEnd = editor.getCursor('to');
 
-		// Ensure default selection prompts exist
-		await this.plugin.promptManager.createDefaultSelectionPrompts();
-
-		// Get prompts tagged with 'selection-action'
-		const prompts = await this.plugin.promptManager.listPromptsByTag('selection-action');
+		// Get prompts for selection actions
+		const prompts = await this.plugin.promptManager.listSelectionPrompts();
 
 		if (prompts.length === 0) {
-			new Notice('No selection action prompts found. Create prompts with the "selection-action" tag.');
+			new Notice('No selection action prompts found. Create prompts with the "gemini-scribe/selection-prompt" tag.');
 			return;
 		}
 
@@ -51,6 +48,19 @@ export class SelectionActionService {
 			}
 		);
 		modal.open();
+	}
+
+	/**
+	 * Handle a specific selection prompt
+	 */
+	async handleSelectionPrompt(editor: Editor, sourceFile: TFile | null, prompt: CustomPrompt): Promise<void> {
+		const selection = editor.getSelection();
+		if (!selection || selection.trim().length === 0) {
+			new Notice('Please select some text first');
+			return;
+		}
+		const selectionEnd = editor.getCursor('to');
+		await this.generateAndShowResponseWithPosition(editor, selection, prompt.content, sourceFile, selectionEnd);
 	}
 
 	/**
@@ -105,7 +115,12 @@ export class SelectionActionService {
 
 		try {
 			// Build the user message with the selection
-			const userMessage = `${promptContent}\n\n---\n\n${selection}`;
+			let userMessage: string;
+			if (promptContent.includes('{{selection}}')) {
+				userMessage = promptContent.replace('{{selection}}', selection);
+			} else {
+				userMessage = `${promptContent}\n\n---\n\n${selection}`;
+			}
 
 			// Add source file context if available
 			let contextInfo = '';

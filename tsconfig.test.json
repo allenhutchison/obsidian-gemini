@@ -7,8 +7,7 @@
 		"declarationMap": false,
 		"composite": false,
 		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		"ignoreDeprecations": "6.0"
+		"noUnusedParameters": false
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts"],
 	"exclude": []
