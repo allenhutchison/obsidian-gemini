@@ -7,8 +7,7 @@
 		"declarationMap": false,
 		"composite": false,
 		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		"moduleResolution": "nodenext"
+		"noUnusedParameters": false
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts"],
 	"exclude": []
