@@ -51,7 +51,7 @@ describe('ImageTools', () => {
 				prompt: 'a loaf of bread',
 				wikilink: `![[${imagePath}]]`,
 			});
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a loaf of bread', undefined);
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a loaf of bread', undefined, undefined);
 		});
 
 		it('should pass target_note parameter when provided', async () => {
@@ -67,7 +67,49 @@ describe('ImageTools', () => {
 			);
 
 			expect(result.success).toBe(true);
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a sunset', 'my-note.md');
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a sunset', 'my-note.md', undefined);
+		});
+
+		it('should pass output_path parameter when provided', async () => {
+			const imagePath = 'attachments/my-custom-image.png';
+			mockImageGeneration.generateImage.mockResolvedValue(imagePath);
+
+			const result = await tool.execute(
+				{
+					prompt: 'a mountain',
+					output_path: 'attachments/my-custom-image.png',
+				},
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data).toEqual({
+				path: imagePath,
+				prompt: 'a mountain',
+				wikilink: `![[${imagePath}]]`,
+			});
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith(
+				'a mountain',
+				undefined,
+				'attachments/my-custom-image.png'
+			);
+		});
+
+		it('should prefer output_path over target_note when both are provided', async () => {
+			const imagePath = 'custom/path/image.png';
+			mockImageGeneration.generateImage.mockResolvedValue(imagePath);
+
+			await tool.execute(
+				{
+					prompt: 'test',
+					target_note: 'some-note.md',
+					output_path: 'custom/path/image.png',
+				},
+				mockContext
+			);
+
+			// output_path and target_note are both forwarded; resolution priority is in the service
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('test', 'some-note.md', 'custom/path/image.png');
 		});
 
 		it('should return error when image generation service is not available', async () => {

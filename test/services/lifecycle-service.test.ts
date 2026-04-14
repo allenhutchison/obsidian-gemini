@@ -138,6 +138,15 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 		manifest: { version: '1.0.0' },
 		saveData: jest.fn(),
 		registerEvent: jest.fn(),
+		addStatusBarItem: jest.fn().mockReturnValue({
+			addClass: jest.fn(),
+			removeClass: jest.fn(),
+			createSpan: jest.fn().mockReturnValue({ setText: jest.fn() }),
+			addEventListener: jest.fn(),
+			remove: jest.fn(),
+			style: {},
+			querySelector: jest.fn().mockReturnValue(null),
+		}),
 		...overrides,
 	};
 }

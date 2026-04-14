@@ -30,6 +30,8 @@ import { SelectionActionService } from './selection-action-service';
 import { RagIndexingService } from './rag-indexing';
 import { FolderInitializer } from './folder-initializer';
 import { UpdateNotificationModal } from '../ui/update-notification-modal';
+import { BackgroundTaskManager } from './background-task-manager';
+import { BackgroundStatusBar } from './background-status-bar';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../../prompts/agentsMemoryTemplate.hbs';
@@ -140,6 +142,10 @@ export class LifecycleService {
 		const plugin = this.plugin;
 
 		plugin.logger.debug('Unloading Gemini Scribe');
+		plugin.backgroundTaskManager?.destroy();
+		plugin.backgroundTaskManager = null;
+		plugin.backgroundStatusBar?.destroy();
+		plugin.backgroundStatusBar = null;
 		plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
 		plugin.toolExecutionLogger?.destroy();
@@ -310,6 +316,14 @@ export class LifecycleService {
 			this.contextTrackingSubscriber = new ContextTrackingSubscriber(plugin);
 			this.accessedFilesSubscriber = new AccessedFilesSubscriber(plugin);
 			this.projectActivationSubscriber = new ProjectActivationSubscriber(plugin);
+		}
+
+		// Background task manager + status bar are created once and persist.
+		// The status bar is the single coordinated surface for both RAG and background tasks.
+		if (!plugin.backgroundTaskManager) {
+			plugin.backgroundTaskManager = new BackgroundTaskManager(plugin, plugin.agentEventBus);
+			plugin.backgroundStatusBar = new BackgroundStatusBar(plugin, plugin.backgroundTaskManager);
+			plugin.backgroundStatusBar.setup();
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);

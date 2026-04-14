@@ -66,6 +66,29 @@ export interface AgentEventMap {
 	sessionLoaded: Readonly<{
 		session: ChatSession;
 	}>;
+
+	/** A background task has started running */
+	backgroundTaskStarted: Readonly<{
+		taskId: string;
+		type: string;
+		label: string;
+	}>;
+
+	/** A background task completed successfully */
+	backgroundTaskComplete: Readonly<{
+		taskId: string;
+		type: string;
+		label: string;
+		outputPath: string | undefined;
+	}>;
+
+	/** A background task failed or was cancelled */
+	backgroundTaskFailed: Readonly<{
+		taskId: string;
+		type: string;
+		label: string;
+		error: string;
+	}>;
 }
 
 /** Union of all valid event names */

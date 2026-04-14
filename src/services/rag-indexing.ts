@@ -142,8 +142,9 @@ export class RagIndexingService {
 			// Create or verify File Search Store
 			await this.vaultScanner.ensureFileSearchStore();
 
-			// Setup status bar
-			this.statusBar.setup();
+			// Register RAG state with the shared background status bar (single coordinated surface).
+			// We do not call this.statusBar.setup() — that would create a second item.
+			this.plugin.backgroundStatusBar?.setRagProvider(this.createStatusProvider());
 
 			// Update status
 			this.status = 'idle';
@@ -408,7 +409,9 @@ export class RagIndexingService {
 	// ==================== Private Helpers ====================
 
 	private updateStatusBar(): void {
+		// Update both the legacy RagStatusBar (if it was set up) and the shared background bar.
 		this.statusBar?.update();
+		this.plugin.backgroundStatusBar?.update();
 	}
 
 	/**
