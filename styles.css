@@ -4398,6 +4398,18 @@ If your plugin does not need CSS, delete this file.
 	font-size: var(--font-ui-small);
 }
 
+.gemini-bg-tasks-scroll {
+	max-height: min(320px, 50vh);
+	overflow-y: auto;
+}
+
+.gemini-bg-tasks-overflow {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin: 4px 0 0;
+	padding-left: 4px;
+}
+
 .gemini-bg-tasks-list {
 	list-style: none;
 	margin: 0;

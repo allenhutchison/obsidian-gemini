@@ -39,16 +39,26 @@ export class BackgroundTasksModal extends Modal {
 		}
 
 		if (active.length > 0) {
-			contentEl.createEl('h3', { text: 'Running' });
-			const list = contentEl.createEl('ul', { cls: 'gemini-bg-tasks-list' });
-			for (const task of active) {
+			const label = active.length > 10 ? `Running (${active.length})` : 'Running';
+			contentEl.createEl('h3', { text: label });
+			const scrollWrap = contentEl.createDiv({ cls: 'gemini-bg-tasks-scroll' });
+			const list = scrollWrap.createEl('ul', { cls: 'gemini-bg-tasks-list' });
+			// Show at most 10 running tasks — the rest are still tracked, just not rendered
+			for (const task of active.slice(0, 10)) {
 				this.renderTaskItem(list, task, true);
+			}
+			if (active.length > 10) {
+				scrollWrap.createEl('p', {
+					text: `+ ${active.length - 10} more running tasks`,
+					cls: 'gemini-bg-tasks-overflow',
+				});
 			}
 		}
 
 		if (recent.length > 0) {
 			contentEl.createEl('h3', { text: 'Recent' });
-			const list = contentEl.createEl('ul', { cls: 'gemini-bg-tasks-list' });
+			const scrollWrap = contentEl.createDiv({ cls: 'gemini-bg-tasks-scroll' });
+			const list = scrollWrap.createEl('ul', { cls: 'gemini-bg-tasks-list' });
 			for (const task of recent) {
 				this.renderTaskItem(list, task, false);
 			}
