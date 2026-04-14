@@ -78,10 +78,8 @@ export class BackgroundTasksModal extends Modal {
 
 		// Label + meta
 		const info = li.createDiv({ cls: 'gemini-bg-task-info' });
-		info.createSpan({ text: task.label, cls: 'gemini-bg-task-label' });
-
-		const meta = info.createSpan({ cls: 'gemini-bg-task-meta' });
-		meta.setText(this.formatMeta(task));
+		info.createDiv({ text: task.label, cls: 'gemini-bg-task-label' });
+		info.createDiv({ text: this.formatMeta(task), cls: 'gemini-bg-task-meta' });
 
 		// Output link
 		if (task.outputPath && task.status === 'complete') {
@@ -100,7 +98,7 @@ export class BackgroundTasksModal extends Modal {
 
 		// Cancel button
 		if (canCancel) {
-			const btn = li.createEl('button', { text: 'Cancel', cls: 'gemini-bg-task-cancel' });
+			const btn = li.createEl('button', { text: 'Cancel', cls: 'gemini-bg-task-cancel mod-warning' });
 			btn.addEventListener('click', () => {
 				this.plugin.backgroundTaskManager?.cancel(task.id);
 				this.onOpen(); // re-render
