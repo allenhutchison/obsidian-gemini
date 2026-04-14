@@ -42,7 +42,7 @@ export class ExplainPromptSelectionModal extends SuggestModal<PromptInfo> {
 
 	async onChooseSuggestion(promptInfo: PromptInfo): Promise<void> {
 		// Load the full prompt content
-		const prompt = await this.plugin.promptManager.loadPromptFromFile(promptInfo.path);
+		const prompt = await this.plugin.promptManager.loadPrompt(promptInfo.path);
 		if (prompt) {
 			this.onSelect(prompt);
 		} else {

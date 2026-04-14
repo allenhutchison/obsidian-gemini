@@ -1,6 +1,7 @@
 import { Vault, TFile, TFolder, normalizePath, Notice, Modal, App } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { CustomPrompt, PromptInfo } from './types';
+import { BundledPromptRegistry } from './bundled-prompts';
 
 export class PromptManager {
 	constructor(
@@ -98,6 +99,54 @@ export class PromptManager {
 		);
 	}
 
+	// List all selection prompts (vault + bundled)
+	async listSelectionPrompts(): Promise<PromptInfo[]> {
+		const tag = 'gemini-scribe/selection-prompt';
+		const vaultPrompts = await this.listPromptsByTag(tag);
+
+		const bundledPrompts = BundledPromptRegistry.getPrompts()
+			.filter((p) => p.tags.includes(tag))
+			.map((p) => ({
+				path: `bundled:${p.name}`,
+				name: p.name,
+				description: p.description,
+				tags: p.tags,
+			}));
+
+		// Merge, vault takes priority if names match
+		const result: PromptInfo[] = [...vaultPrompts];
+		const vaultNames = new Set(vaultPrompts.map((p) => p.name));
+
+		for (const bp of bundledPrompts) {
+			if (!vaultNames.has(bp.name)) {
+				result.push(bp);
+			}
+		}
+
+		return result;
+	}
+
+	// Load prompt by path (vault or bundled)
+	async loadPrompt(path: string): Promise<CustomPrompt | null> {
+		if (path.startsWith('bundled:')) {
+			const name = path.slice(8);
+			const allBundled = BundledPromptRegistry.getPrompts();
+			const bundled = allBundled.find((p) => p.name === name);
+			if (!bundled) return null;
+
+			return {
+				name: bundled.name,
+				description: bundled.description,
+				version: 1,
+				overrideSystemPrompt: false,
+				tags: bundled.tags,
+				content: bundled.content,
+			};
+		}
+
+		return this.loadPromptFromFile(path);
+	}
+
 	// Create default example prompts on first run
 	async createDefaultPrompts(): Promise<void> {
 		const promptsDir = this.getPromptsDirectory();
@@ -133,111 +182,6 @@ Focus on being helpful while maintaining intellectual honesty.`;
 				throw error;
 			}
 		}
-	}
-
-	// Create default selection action prompts on first use
-	async createDefaultSelectionPrompts(): Promise<void> {
-		const promptsDir = this.getPromptsDirectory();
-
-		const defaultPrompts = [
-			{
-				filename: 'explain-selection.md',
-				content: `---
-name: "Explain Selection"
-description: "Get a clear explanation of the selected text"
-version: 1
-override_system_prompt: false
-tags: ["selection-action", "explain"]
----
-
-Please explain the following text in a clear and accessible way:
-
-- Break down any complex concepts
-- Define technical terms if present
-- Provide relevant context if helpful
-- Use examples to illustrate key points`,
-			},
-			{
-				filename: 'explain-code.md',
-				content: `---
-name: "Explain Code"
-description: "Get a detailed walkthrough of selected code"
-version: 1
-override_system_prompt: false
-tags: ["selection-action", "code", "explain"]
----
-
-Please provide a detailed explanation of this code:
-
-- Explain what the code does step by step
-- Describe the purpose of key variables and functions
-- Note any patterns or techniques being used
-- Mention potential edge cases or considerations
-- Suggest improvements if appropriate`,
-			},
-			{
-				filename: 'summarize-selection.md',
-				content: `---
-name: "Summarize Selection"
-description: "Get a concise summary of the selected text"
-version: 1
-override_system_prompt: false
-tags: ["selection-action", "summarize"]
----
-
-Please provide a concise summary of the following text:
-
-- Capture the main points and key takeaways
-- Keep it brief but comprehensive
-- Preserve the essential meaning
-- Use bullet points if appropriate`,
-			},
-		];
-
-		for (const prompt of defaultPrompts) {
-			const promptPath = normalizePath(`${promptsDir}/${prompt.filename}`);
-			const existingFile = this.vault.getAbstractFileByPath(promptPath);
-			if (!existingFile) {
-				try {
-					const createdFile = await this.vault.create(promptPath, prompt.content);
-					// Wait for metadata cache to index the new file
-					await this.waitForMetadataCache(createdFile);
-				} catch (error) {
-					// Ignore if file was created concurrently (race condition); rethrow otherwise
-					if (!(error instanceof Error) || !/exist/i.test(error.message)) {
-						throw error;
-					}
-				}
-			}
-		}
-	}
-
-	// Wait for metadata cache to index a file
-	private waitForMetadataCache(file: TFile): Promise<void> {
-		return new Promise((resolve) => {
-			// Check if already cached
-			const cache = this.plugin.app.metadataCache.getFileCache(file);
-			if (cache?.frontmatter) {
-				resolve();
-				return;
-			}
-
-			// Wait for the cache to be updated
-			const onCacheChange = (changedFile: TFile) => {
-				if (changedFile.path === file.path) {
-					this.plugin.app.metadataCache.off('changed', onCacheChange as (...data: unknown[]) => unknown);
-					resolve();
-				}
-			};
-
-			this.plugin.app.metadataCache.on('changed', onCacheChange);
-
-			// Timeout after 2 seconds to prevent hanging
-			setTimeout(() => {
-				this.plugin.app.metadataCache.off('changed', onCacheChange as (...data: unknown[]) => unknown);
-				resolve();
-			}, 2000);
-		});
 	}
 
 	// Setup commands for prompt management
