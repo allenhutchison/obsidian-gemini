@@ -34,8 +34,13 @@ The plugin comes with several bundled selection prompts:
 - **Explain Selection**: Gets a clear explanation of the selected text.
 - **Summarize Selection**: Gets a concise summary.
 - **Explain Code**: Detailed walkthrough of selected code.
-- **Translate Selection**: Translates text.
 - **Fix Grammar**: Fixes grammar and improves style.
 - **Convert to Bullet Points**: Converts text to a list.
 
 Vault prompts take precedence over bundled prompts if they share the same name, allowing you to customize the behavior of bundled prompts.
+
+## Migrating from the `selection-action` tag
+
+Earlier versions referred to this feature with the tag `selection-action`. The tag has been standardized to `gemini-scribe/selection-prompt` as part of a broader move to namespace plugin-owned tags under `gemini-scribe/*`.
+
+If you have existing prompts tagged `selection-action`, rename the tag in their frontmatter to `gemini-scribe/selection-prompt` and they'll appear in the selection menu again. If you'd like the AI agent to help with the migration, ask it to "update all prompts tagged `selection-action` to use `gemini-scribe/selection-prompt` instead."

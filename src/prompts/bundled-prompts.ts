@@ -6,8 +6,6 @@ import explainCodeMd from '../../prompts/bundled-prompts/explain-code.md';
 // @ts-ignore
 import summarizeSelectionMd from '../../prompts/bundled-prompts/summarize-selection.md';
 // @ts-ignore
-import translateSelectionMd from '../../prompts/bundled-prompts/translate-selection.md';
-// @ts-ignore
 import fixGrammarMd from '../../prompts/bundled-prompts/fix-grammar.md';
 // @ts-ignore
 import convertToBulletsMd from '../../prompts/bundled-prompts/convert-to-bullets.md';
@@ -83,7 +81,6 @@ function registerPrompt(id: string, content: string) {
 registerPrompt('explain-selection', explainSelectionMd);
 registerPrompt('explain-code', explainCodeMd);
 registerPrompt('summarize-selection', summarizeSelectionMd);
-registerPrompt('translate-selection', translateSelectionMd);
 registerPrompt('fix-grammar', fixGrammarMd);
 registerPrompt('convert-to-bullets', convertToBulletsMd);
 

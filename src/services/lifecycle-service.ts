@@ -111,7 +111,6 @@ export class LifecycleService {
 		if (plugin.promptManager) {
 			await plugin.promptManager.createDefaultPrompts();
 			plugin.promptManager.setupPromptCommands();
-			await plugin.promptManager.initializeSelectionPromptsCache();
 		}
 
 		await plugin.history?.onLayoutReady();

@@ -117,7 +117,7 @@ export class SelectionActionService {
 			// Build the user message with the selection
 			let userMessage: string;
 			if (promptContent.includes('{{selection}}')) {
-				userMessage = promptContent.replace('{{selection}}', selection);
+				userMessage = promptContent.split('{{selection}}').join(selection);
 			} else {
 				userMessage = `${promptContent}\n\n---\n\n${selection}`;
 			}
