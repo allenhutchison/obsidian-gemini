@@ -8,7 +8,6 @@ export default {
 			{
 				useESM: true,
 				tsconfig: 'tsconfig.test.json',
-				compilerOptions: process.env.CI ? { ignoreDeprecations: '6.0' } : {},
 			},
 		],
 		'\\.txt$': './text-transformer.mjs',
