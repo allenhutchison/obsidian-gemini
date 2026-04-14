@@ -22,8 +22,9 @@ export class BackgroundStatusBar {
 		this.taskManager = taskManager;
 	}
 
-	/** Called after RAG is initialized so it can contribute to the shared indicator. */
-	setRagProvider(provider: RagStatusProvider): void {
+	/** Called after RAG is initialized so it can contribute to the shared indicator.
+	 *  Pass null to unregister (e.g. when RagIndexingService is torn down). */
+	setRagProvider(provider: RagStatusProvider | null): void {
 		this.ragProvider = provider;
 		this.update();
 	}

@@ -109,9 +109,25 @@ jest.mock('../../src/services/project-manager', () => ({
 	})),
 }));
 jest.mock('../../src/ui/update-notification-modal', () => ({ UpdateNotificationModal: jest.fn() }));
+jest.mock('../../src/services/background-task-manager', () => ({
+	BackgroundTaskManager: jest.fn().mockImplementation(() => ({
+		destroy: jest.fn(),
+		runningCount: 0,
+	})),
+}));
+jest.mock('../../src/services/background-status-bar', () => ({
+	BackgroundStatusBar: jest.fn().mockImplementation(() => ({
+		setup: jest.fn(),
+		update: jest.fn(),
+		destroy: jest.fn(),
+		setRagProvider: jest.fn(),
+	})),
+}));
 
 // Must be after all jest.mock calls
 import { LifecycleService } from '../../src/services/lifecycle-service';
+import { BackgroundTaskManager } from '../../src/services/background-task-manager';
+import { BackgroundStatusBar } from '../../src/services/background-status-bar';
 import { ToolRegistrar } from '../../src/services/tool-registrar';
 import { ProjectActivationSubscriber } from '../../src/subscribers/project-activation-subscriber';
 
@@ -243,6 +259,31 @@ describe('LifecycleService', () => {
 			expect(ProjectActivationSubscriber).toHaveBeenCalledTimes(1);
 			expect(ProjectActivationSubscriber).toHaveBeenCalledWith(mockPlugin);
 		});
+
+		it('should create backgroundTaskManager and backgroundStatusBar on first setup', async () => {
+			await lifecycle.setup();
+
+			expect(mockPlugin.backgroundTaskManager).toBeDefined();
+			expect(mockPlugin.backgroundStatusBar).toBeDefined();
+			expect(BackgroundTaskManager).toHaveBeenCalledTimes(1);
+			expect(BackgroundStatusBar).toHaveBeenCalledTimes(1);
+			expect(mockPlugin.backgroundStatusBar.setup).toHaveBeenCalledTimes(1);
+		});
+
+		it('should not recreate backgroundTaskManager or backgroundStatusBar on re-setup', async () => {
+			await lifecycle.setup();
+
+			const firstManager = mockPlugin.backgroundTaskManager;
+			const firstStatusBar = mockPlugin.backgroundStatusBar;
+
+			mockPlugin.isGeminiInitialized = true;
+			await lifecycle.setup();
+
+			expect(mockPlugin.backgroundTaskManager).toBe(firstManager);
+			expect(mockPlugin.backgroundStatusBar).toBe(firstStatusBar);
+			expect(BackgroundTaskManager).toHaveBeenCalledTimes(1);
+			expect(BackgroundStatusBar).toHaveBeenCalledTimes(1);
+		});
 	});
 
 	describe('teardown', () => {
@@ -318,6 +359,23 @@ describe('LifecycleService', () => {
 			mockPlugin.ragIndexing = null;
 
 			await expect(lifecycle.onUnload()).resolves.not.toThrow();
+		});
+
+		it('should destroy backgroundTaskManager and backgroundStatusBar on unload', async () => {
+			await lifecycle.setup();
+
+			const manager = mockPlugin.backgroundTaskManager;
+			const statusBar = mockPlugin.backgroundStatusBar;
+
+			mockPlugin.mcpManager = null;
+			mockPlugin.ragIndexing = null;
+
+			await lifecycle.onUnload();
+
+			expect(manager.destroy).toHaveBeenCalledTimes(1);
+			expect(statusBar.destroy).toHaveBeenCalledTimes(1);
+			expect(mockPlugin.backgroundTaskManager).toBeNull();
+			expect(mockPlugin.backgroundStatusBar).toBeNull();
 		});
 	});
 });

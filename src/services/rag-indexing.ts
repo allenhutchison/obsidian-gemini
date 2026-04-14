@@ -211,6 +211,9 @@ export class RagIndexingService {
 		this.vaultScanner?.destroy();
 		this.ragCache.destroy();
 
+		// Unregister from the shared status bar so it no longer shows stale RAG state.
+		this.plugin.backgroundStatusBar?.setRagProvider(null);
+
 		this.ai = null;
 		this.fileUploader = null;
 		this.vaultAdapter = null;

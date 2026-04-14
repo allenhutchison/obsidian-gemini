@@ -38,7 +38,13 @@ export class GenerateImageTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: any) => {
-		return `Generate an image with prompt: "${params.prompt}"?\n\nThis will create a new image file in your vault.`;
+		let message = `Generate an image with prompt: "${params.prompt}"?\n\nThis will create a new image file in your vault.`;
+		if (params.output_path) {
+			message += `\n\nDestination: ${params.output_path}`;
+		} else if (params.target_note) {
+			message += `\n\nAttachment folder resolved from: ${params.target_note}`;
+		}
+		return message;
 	};
 
 	getProgressDescription(params: { prompt: string }): string {

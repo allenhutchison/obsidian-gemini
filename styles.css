@@ -4434,6 +4434,7 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 }
 
+.gemini-bg-task--pending .gemini-bg-task-icon,
 .gemini-bg-task--running .gemini-bg-task-icon {
 	color: var(--color-accent);
 }
