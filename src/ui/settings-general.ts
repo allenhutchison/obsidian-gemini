@@ -28,7 +28,7 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 		.setDesc('View the complete plugin documentation and guides')
 		.addButton((button) =>
 			button.setButtonText('View Documentation').onClick(() => {
-				window.open('https://github.com/allenhutchison/obsidian-gemini/tree/master/docs', '_blank');
+				window.open('https://allenhutchison.github.io/obsidian-gemini/', '_blank');
 			})
 		);
 
