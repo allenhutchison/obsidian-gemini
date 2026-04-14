@@ -8,7 +8,7 @@ import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://github.com/allenhutchison/obsidian-gemini/blob/master/docs';
-const AGENT_MODE_GUIDE_URL = `${DOCS_BASE_URL}/agent-mode-guide.md`;
+const AGENT_MODE_GUIDE_URL = `${DOCS_BASE_URL}/guide/agent-mode.md`;
 
 const AGENT_CAPABILITIES = [
 	{ icon: 'search', text: 'Search and read files in your vault' },
