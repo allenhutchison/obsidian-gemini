@@ -104,7 +104,12 @@ export class BackgroundTaskManager {
 	getRecentTasks(limit = BackgroundTaskManager.MAX_RECENT): BackgroundTask[] {
 		return [...this.tasks.values()]
 			.filter((t) => t.status === 'complete' || t.status === 'failed' || t.status === 'cancelled')
-			.sort((a, b) => (b.completedAt?.getTime() ?? 0) - (a.completedAt?.getTime() ?? 0))
+			.sort((a, b) => {
+				const byCompleted = (b.completedAt?.getTime() ?? 0) - (a.completedAt?.getTime() ?? 0);
+				if (byCompleted !== 0) return byCompleted;
+				// Tiebreak by startedAt so tasks that began later sort first when they finish in the same millisecond.
+				return b.startedAt.getTime() - a.startedAt.getTime();
+			})
 			.slice(0, limit);
 	}
 
