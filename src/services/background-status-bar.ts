@@ -77,7 +77,8 @@ export class BackgroundStatusBar {
 			tooltipParts.push(`${runningCount} background task${runningCount > 1 ? 's' : ''} running — click to view`);
 		} else {
 			// No tasks running — let RAG drive the icon
-			setIcon(iconEl, ragStatus === 'indexing' ? 'upload-cloud' : 'database');
+			const ragIcon = ragStatus === 'indexing' ? 'upload-cloud' : ragStatus === 'paused' ? 'pause-circle' : 'database';
+			setIcon(iconEl, ragIcon);
 			textEl.setText(
 				ragStatus === 'indexing'
 					? (() => {
@@ -91,11 +92,13 @@ export class BackgroundStatusBar {
 			);
 		}
 
-		// Append RAG state to tooltip when both are active
+		// Append RAG state to tooltip
 		if (ragStatus === 'indexing') {
 			const p = this.ragProvider!.getIndexingProgress();
 			const pctLabel = p.total > 0 ? ` (${p.current}/${p.total})` : '';
 			tooltipParts.push(`RAG: indexing${pctLabel}`);
+		} else if (ragStatus === 'paused') {
+			tooltipParts.push(`RAG: paused (${this.ragProvider!.getIndexedFileCount()} files indexed)`);
 		} else if (ragStatus === 'error') {
 			tooltipParts.push('RAG: error — check settings');
 		} else if (ragStatus === 'rate_limited') {
