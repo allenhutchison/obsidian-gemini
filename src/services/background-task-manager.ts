@@ -107,8 +107,9 @@ export class BackgroundTaskManager {
 			.sort((a, b) => {
 				const byCompleted = (b.completedAt?.getTime() ?? 0) - (a.completedAt?.getTime() ?? 0);
 				if (byCompleted !== 0) return byCompleted;
-				// Tiebreak by startedAt so tasks that began later sort first when they finish in the same millisecond.
-				return b.startedAt.getTime() - a.startedAt.getTime();
+				// Tiebreak by numeric task ID (monotonically increasing) so the task
+				// submitted later always sorts first regardless of timer resolution.
+				return Number(b.id) - Number(a.id);
 			})
 			.slice(0, limit);
 	}
