@@ -11,7 +11,7 @@ interface ModelListJson {
 	models: GeminiModel[];
 }
 
-const REMOTE_URL = 'https://raw.githubusercontent.com/allenhutchison/obsidian-gemini/main/src/data/models.json';
+const REMOTE_URL = 'https://raw.githubusercontent.com/allenhutchison/obsidian-gemini/master/src/data/models.json';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 export class ModelListProvider {
