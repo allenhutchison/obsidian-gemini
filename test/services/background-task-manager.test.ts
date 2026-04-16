@@ -245,9 +245,10 @@ describe('BackgroundTaskManager', () => {
 				return undefined;
 			});
 
-			// After one tick, the task should be running
+			// run() sets task.status = 'running' synchronously before its first await,
+			// so after submit() returns the task is already counted.
 			await Promise.resolve();
-			expect(manager.runningCount).toBeGreaterThanOrEqual(0); // may be 0 or 1 depending on micro-task timing
+			expect(manager.runningCount).toBe(1);
 
 			resolveFn();
 			await flushAsync();

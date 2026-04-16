@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { Notice, App, Modal, Setting, TextAreaComponent } from 'obsidian';
+import { Notice, App, Modal, Setting, TextAreaComponent, normalizePath } from 'obsidian';
 import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
@@ -99,6 +99,37 @@ export class ImageGeneration {
 	}
 
 	/**
+	 * Validate and normalize an explicit output path supplied by the caller.
+	 * Rejects paths that escape the vault, target protected system folders, or
+	 * land inside the plugin state folder — important because GenerateImageTool
+	 * can be invoked autonomously by the agent (#634).
+	 */
+	private validateOutputPath(outputPath: string): string {
+		const normalized = normalizePath(outputPath);
+
+		// Reject vault-escaping paths (normalizePath does not resolve ..)
+		if (normalized.startsWith('..') || normalized.split('/').includes('..')) {
+			throw new Error(`Output path escapes the vault: "${outputPath}"`);
+		}
+
+		// Reject paths inside .obsidian/
+		if (normalized.split('/').includes('.obsidian')) {
+			throw new Error(`Output path cannot be inside the Obsidian configuration folder: "${outputPath}"`);
+		}
+
+		// Reject paths inside the plugin state folder
+		const historyFolder = this.plugin.settings.historyFolder;
+		if (historyFolder) {
+			const normalizedHistoryFolder = normalizePath(historyFolder);
+			if (normalized === normalizedHistoryFolder || normalized.startsWith(normalizedHistoryFolder + '/')) {
+				throw new Error(`Output path cannot be inside the plugin state folder: "${outputPath}"`);
+			}
+		}
+
+		return normalized;
+	}
+
+	/**
 	 * Save base64 image data to the vault.
 	 *
 	 * @param base64Data     - Base64 encoded image data
@@ -129,8 +160,9 @@ export class ImageGeneration {
 		let resolvedPath: string;
 
 		if (outputPath) {
-			// Caller specified an explicit path — use it directly (no attachment-folder resolution)
-			resolvedPath = outputPath;
+			// Caller specified an explicit path — validate and normalize before use.
+			// Rejects vault-escaping and protected-folder paths (see validateOutputPath).
+			resolvedPath = this.validateOutputPath(outputPath);
 		} else {
 			// Create a safe filename from the prompt (truncate and sanitize)
 			const sanitizedPrompt = prompt

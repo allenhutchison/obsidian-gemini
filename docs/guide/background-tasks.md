@@ -11,7 +11,7 @@ The status bar shows a single indicator for all background work. It reflects bot
 | Hidden                         | No background work running, RAG idle or disabled |
 | Spinning loader icon + count   | One or more background tasks running             |
 | Upload-cloud icon + percentage | RAG indexing in progress                         |
-| Database icon + number         | RAG idle, N files indexed                        |
+| Pause-circle icon              | RAG indexing paused                              |
 
 Click the indicator at any time to open the **Background Tasks** panel.
 

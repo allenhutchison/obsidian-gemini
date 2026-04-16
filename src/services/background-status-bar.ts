@@ -104,8 +104,6 @@ export class BackgroundStatusBar {
 		} else if (ragStatus === 'rate_limited') {
 			const secs = this.ragProvider!.getRateLimitRemainingSeconds();
 			tooltipParts.push(`RAG: rate limited (${secs}s)`);
-		} else if (ragStatus === 'idle' && runningCount === 0) {
-			tooltipParts.push(`RAG: ${this.ragProvider!.getIndexedFileCount()} files indexed`);
 		}
 
 		setTooltip(this.statusBarItem, tooltipParts.join(' · '), { placement: 'top' });

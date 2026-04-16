@@ -165,10 +165,13 @@ export class BackgroundTaskManager {
 		} catch (error) {
 			// Don't overwrite cancelled status if cancel() raced with a throw.
 			// Use the cancellation flag rather than task.status to avoid a TypeScript narrowing issue.
-			if (!isCancelled()) {
+			// Always report 'Cancelled' for the cancelled path so subscribers see a consistent shape.
+			if (isCancelled()) {
+				task.error = 'Cancelled';
+			} else {
 				task.status = 'failed';
+				task.error = getErrorMessage(error);
 			}
-			task.error = getErrorMessage(error);
 			task.completedAt = new Date();
 
 			this.plugin.logger.error(`[BackgroundTaskManager] Task ${id} (${task.label}) failed:`, error);
@@ -224,11 +227,13 @@ export class BackgroundTaskManager {
 	}
 
 	destroy(): void {
-		// Cancel all running tasks so work functions can bail out
+		// Signal all running tasks to stop. The flags must outlive tasks.clear() so
+		// any in-flight run() that resumes after destroy can still see isCancelled() === true
+		// and skip emitting backgroundTaskComplete / showing a completion Notice.
+		// The existing finally { cancellationFlags.delete(id) } in run() handles cleanup.
 		for (const task of this.getActiveTasks()) {
 			this.cancellationFlags.set(task.id, true);
 		}
 		this.tasks.clear();
-		this.cancellationFlags.clear();
 	}
 }
