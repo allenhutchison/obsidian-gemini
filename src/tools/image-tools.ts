@@ -26,6 +26,11 @@ export class GenerateImageTool implements Tool {
 				description:
 					'Optional: The path of the note to use for determining the attachment folder location where the image file will be saved. This does NOT insert the image into the note - it only affects where the image file is stored. If not provided, uses the currently active note to determine the attachment folder.',
 			},
+			output_path: {
+				type: 'string' as const,
+				description:
+					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). When provided, the image is saved at exactly this path regardless of target_note. Useful when the caller needs a predictable location to retrieve the result later.',
+			},
 		},
 		required: ['prompt'],
 	};
@@ -33,7 +38,13 @@ export class GenerateImageTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: any) => {
-		return `Generate an image with prompt: "${params.prompt}"?\n\nThis will create a new image file in your vault.`;
+		let message = `Generate an image with prompt: "${params.prompt}"?\n\nThis will create a new image file in your vault.`;
+		if (params.output_path) {
+			message += `\n\nDestination: ${params.output_path}`;
+		} else if (params.target_note) {
+			message += `\n\nAttachment folder resolved from: ${params.target_note}`;
+		}
+		return message;
 	};
 
 	getProgressDescription(params: { prompt: string }): string {
@@ -64,8 +75,12 @@ export class GenerateImageTool implements Tool {
 				};
 			}
 
-			// Generate the image
-			const imagePath = await plugin.imageGeneration.generateImage(params.prompt, params.target_note);
+			// Generate the image — explicit output_path takes priority over target_note folder hint
+			const imagePath = await plugin.imageGeneration.generateImage(
+				params.prompt,
+				params.target_note,
+				params.output_path
+			);
 
 			return {
 				success: true,

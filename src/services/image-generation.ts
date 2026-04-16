@@ -1,8 +1,9 @@
 import type ObsidianGemini from '../main';
-import { Notice, App, Modal, Setting, TextAreaComponent } from 'obsidian';
+import { Notice, App, Modal, Setting, TextAreaComponent, normalizePath } from 'obsidian';
 import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
+import { ensureFolderExists } from '../utils/file-utils';
 
 export class ImageGeneration {
 	private plugin: ObsidianGemini;
@@ -56,18 +57,21 @@ export class ImageGeneration {
 	}
 
 	/**
-	 * Generate an image and return the file path
-	 * Used by the agent tool
-	 * @param prompt - Text description of the image to generate
-	 * @param targetNotePath - Optional path to a note to use as reference for attachment folder
+	 * Generate an image and return the file path.
+	 * Used by the agent tool.
+	 *
+	 * @param prompt         - Text description of the image to generate
+	 * @param targetNotePath - Optional: note path used to resolve the attachment folder
+	 * @param outputPath     - Optional: explicit vault path for the output file.
+	 *                         When provided it takes priority over targetNotePath-based resolution.
 	 */
-	async generateImage(prompt: string, targetNotePath?: string): Promise<string> {
+	async generateImage(prompt: string, targetNotePath?: string, outputPath?: string): Promise<string> {
 		try {
 			// Generate the image
 			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
 
 			// Save the image to vault
-			return await this.saveImageToVault(base64Data, prompt, targetNotePath);
+			return await this.saveImageToVault(base64Data, prompt, targetNotePath, outputPath);
 		} catch (error) {
 			this.plugin.logger.error('Failed to generate image:', error);
 			throw error;
@@ -96,22 +100,61 @@ export class ImageGeneration {
 	}
 
 	/**
-	 * Save base64 image data to the vault
-	 * @param base64Data - Base64 encoded image data
-	 * @param prompt - The prompt used to generate the image
-	 * @param targetNotePath - Optional path to a note to use as reference for attachment folder
+	 * Validate and normalize an explicit output path supplied by the caller.
+	 * Rejects paths that escape the vault, target protected system folders, or
+	 * land inside the plugin state folder — important because GenerateImageTool
+	 * can be invoked autonomously by the agent (#634).
+	 * Always returns a path ending with ".png" since the code always writes PNG bytes.
 	 */
-	private async saveImageToVault(base64Data: string, prompt: string, targetNotePath?: string): Promise<string> {
-		// Create a safe filename from the prompt (truncate and sanitize)
-		const sanitizedPrompt = prompt
-			.substring(0, 50)
-			.replace(/[^a-zA-Z0-9\-_]/g, '-') // More restrictive: only alphanumeric, hyphens, and underscores
-			.replace(/-+/g, '-') // Collapse multiple dashes
-			.replace(/^-|-$/g, ''); // Trim leading/trailing dashes
+	private validateOutputPath(outputPath: string): string {
+		const normalized = normalizePath(outputPath);
 
-		const timestamp = Date.now();
-		const filename = `generated-${sanitizedPrompt}-${timestamp}.png`;
+		// Reject directory-only paths (empty or trailing slash)
+		if (!normalized || normalized.endsWith('/')) {
+			throw new Error(`Output path must include a filename: "${outputPath}"`);
+		}
 
+		// Reject vault-escaping paths (normalizePath does not resolve ..)
+		if (normalized.startsWith('..') || normalized.split('/').includes('..')) {
+			throw new Error(`Output path escapes the vault: "${outputPath}"`);
+		}
+
+		// Reject paths inside .obsidian/
+		if (normalized.split('/').includes('.obsidian')) {
+			throw new Error(`Output path cannot be inside the Obsidian configuration folder: "${outputPath}"`);
+		}
+
+		// Reject paths inside the plugin state folder
+		const historyFolder = this.plugin.settings.historyFolder;
+		if (historyFolder) {
+			const normalizedHistoryFolder = normalizePath(historyFolder);
+			if (normalized === normalizedHistoryFolder || normalized.startsWith(normalizedHistoryFolder + '/')) {
+				throw new Error(`Output path cannot be inside the plugin state folder: "${outputPath}"`);
+			}
+		}
+
+		// Always ensure the file ends with .png — the code always writes PNG bytes.
+		// Replace any existing extension (or append if none) so the vault file is readable.
+		const dotIndex = normalized.lastIndexOf('.');
+		const slashIndex = normalized.lastIndexOf('/');
+		const hasExtension = dotIndex > slashIndex + 1;
+		return hasExtension ? normalized.slice(0, dotIndex) + '.png' : normalized + '.png';
+	}
+
+	/**
+	 * Save base64 image data to the vault.
+	 *
+	 * @param base64Data     - Base64 encoded image data
+	 * @param prompt         - The prompt used to generate the image (used for filename generation)
+	 * @param targetNotePath - Optional note path used to resolve the Obsidian attachment folder
+	 * @param outputPath     - Optional explicit vault path for the file; skips attachment-folder resolution
+	 */
+	private async saveImageToVault(
+		base64Data: string,
+		prompt: string,
+		targetNotePath?: string,
+		outputPath?: string
+	): Promise<string> {
 		// Convert base64 to binary with validation
 		let binaryData: string;
 		try {
@@ -126,27 +169,49 @@ export class ImageGeneration {
 		// Convert binary string to Uint8Array
 		const bytes = Uint8Array.from(binaryData, (c) => c.charCodeAt(0));
 
-		// Determine reference note path for attachment folder
-		let referenceNotePath: string;
-		if (targetNotePath) {
-			// Use provided target note path
-			referenceNotePath = targetNotePath;
-		} else {
-			// Fall back to active file
-			const activeFile = this.plugin.app.workspace.getActiveFile();
-			if (!activeFile) {
-				throw new Error('No active file and no target note path provided');
+		let resolvedPath: string;
+
+		if (outputPath) {
+			// Caller specified an explicit path — validate and normalize before use.
+			// Rejects vault-escaping and protected-folder paths (see validateOutputPath).
+			resolvedPath = this.validateOutputPath(outputPath);
+
+			// Ensure the parent folder exists before writing — createBinary will fail
+			// if any intermediate directory in the path is missing.
+			const parentPath = resolvedPath.includes('/') ? resolvedPath.slice(0, resolvedPath.lastIndexOf('/')) : null;
+			if (parentPath) {
+				await ensureFolderExists(this.plugin.app.vault, parentPath, 'image output folder', this.plugin.logger);
 			}
-			referenceNotePath = activeFile.path;
+		} else {
+			// Create a safe filename from the prompt (truncate and sanitize)
+			const sanitizedPrompt = prompt
+				.substring(0, 50)
+				.replace(/[^a-zA-Z0-9\-_]/g, '-')
+				.replace(/-+/g, '-')
+				.replace(/^-|-$/g, '');
+
+			const timestamp = Date.now();
+			const filename = `generated-${sanitizedPrompt}-${timestamp}.png`;
+
+			// Determine reference note path for attachment folder resolution
+			let referenceNotePath: string;
+			if (targetNotePath) {
+				referenceNotePath = targetNotePath;
+			} else {
+				const activeFile = this.plugin.app.workspace.getActiveFile();
+				if (!activeFile) {
+					throw new Error('No active file and no target note path provided');
+				}
+				referenceNotePath = activeFile.path;
+			}
+
+			resolvedPath = await this.plugin.app.fileManager.getAvailablePathForAttachment(filename, referenceNotePath);
 		}
 
-		// Use Obsidian's built-in method to get the correct path for attachments
-		const path = await this.plugin.app.fileManager.getAvailablePathForAttachment(filename, referenceNotePath);
-
 		// Save to vault
-		await this.plugin.app.vault.createBinary(path, bytes.buffer);
+		await this.plugin.app.vault.createBinary(resolvedPath, bytes.buffer);
 
-		return path;
+		return resolvedPath;
 	}
 
 	/**

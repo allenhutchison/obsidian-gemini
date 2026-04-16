@@ -36,6 +36,8 @@ import { ProjectManager } from './services/project-manager';
 import { AgentEventBus } from './agent/agent-event-bus';
 import { ToolExecutionLogger } from './subscribers/tool-execution-logger';
 import { LifecycleService } from './services/lifecycle-service';
+import { BackgroundTaskManager } from './services/background-task-manager';
+import { BackgroundStatusBar } from './services/background-status-bar';
 import { getErrorMessage } from './utils/error-utils';
 
 export interface RagIndexingSettings {
@@ -182,6 +184,8 @@ export default class ObsidianGemini extends Plugin {
 	public projectManager!: ProjectManager;
 	public agentEventBus!: AgentEventBus;
 	public toolExecutionLogger: ToolExecutionLogger | null = null;
+	public backgroundTaskManager: BackgroundTaskManager | null = null;
+	public backgroundStatusBar: BackgroundStatusBar | null = null;
 
 	// Private members
 	private ribbonIcon!: HTMLElement;
@@ -289,6 +293,16 @@ export default class ObsidianGemini extends Plugin {
 			callback: () => {
 				if (!this.checkInitialized()) return;
 				this.activateAgentView();
+			},
+		});
+
+		// View background tasks
+		this.addCommand({
+			id: 'gemini-scribe-view-background-tasks',
+			name: 'View Background Tasks',
+			callback: async () => {
+				const { BackgroundTasksModal } = await import('./ui/background-tasks-modal');
+				new BackgroundTasksModal(this.app, this).open();
 			},
 		});
 

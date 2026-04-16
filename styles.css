@@ -4382,3 +4382,142 @@ If your plugin does not need CSS, delete this file.
 .gemini-diff-editor .cm-editor {
 	height: 100%;
 }
+
+/* ── Background Tasks Modal ────────────────────────────────────────────────── */
+
+.gemini-bg-tasks-modal h3 {
+	margin: 12px 0 6px;
+	font-size: var(--font-ui-small);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--text-muted);
+}
+
+.gemini-bg-tasks-empty {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.gemini-bg-tasks-scroll {
+	max-height: min(320px, 50vh);
+	overflow-y: auto;
+}
+
+.gemini-bg-tasks-overflow {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin: 4px 0 0;
+	padding-left: 4px;
+}
+
+.gemini-bg-tasks-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.gemini-bg-task {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 8px 10px;
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+}
+
+.gemini-bg-task-icon {
+	flex-shrink: 0;
+	margin-top: 2px;
+	color: var(--text-muted);
+}
+
+.gemini-bg-task--pending .gemini-bg-task-icon,
+.gemini-bg-task--running .gemini-bg-task-icon {
+	color: var(--color-accent);
+}
+.gemini-bg-task--complete .gemini-bg-task-icon {
+	color: var(--color-green);
+}
+.gemini-bg-task--failed .gemini-bg-task-icon {
+	color: var(--color-red);
+}
+.gemini-bg-task--cancelled .gemini-bg-task-icon {
+	color: var(--text-faint);
+}
+
+.gemini-bg-task-info {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.gemini-bg-task-label {
+	font-size: var(--font-ui-small);
+	font-weight: 500;
+	color: var(--text-normal);
+}
+
+.gemini-bg-task-meta {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.gemini-bg-task-error {
+	font-size: var(--font-ui-smaller);
+	color: var(--color-red);
+}
+
+.gemini-bg-task-link {
+	font-size: var(--font-ui-smaller);
+	color: var(--color-accent);
+	text-decoration: none;
+}
+
+.gemini-bg-task-cancel {
+	flex-shrink: 0;
+	align-self: center;
+	font-size: var(--font-ui-smaller);
+	padding: 3px 10px;
+	cursor: pointer;
+}
+
+/* ── Background Status Bar ─────────────────────────────────────────────────── */
+
+.gemini-bg-status-bar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+}
+
+.gemini-bg-status-icon {
+	display: flex;
+	align-items: center;
+}
+
+.gemini-bg-status-icon svg {
+	width: 12px;
+	height: 12px;
+}
+
+.gemini-bg-status-text {
+	font-size: var(--font-ui-smaller);
+}
+
+@keyframes gemini-spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.gemini-bg-active .gemini-bg-status-icon svg {
+	animation: gemini-spin 1s linear infinite;
+}
