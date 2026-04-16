@@ -3,6 +3,7 @@ import { Notice, App, Modal, Setting, TextAreaComponent, normalizePath } from 'o
 import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
+import { ensureFolderExists } from '../utils/file-utils';
 
 export class ImageGeneration {
 	private plugin: ObsidianGemini;
@@ -103,9 +104,15 @@ export class ImageGeneration {
 	 * Rejects paths that escape the vault, target protected system folders, or
 	 * land inside the plugin state folder — important because GenerateImageTool
 	 * can be invoked autonomously by the agent (#634).
+	 * Always returns a path ending with ".png" since the code always writes PNG bytes.
 	 */
 	private validateOutputPath(outputPath: string): string {
 		const normalized = normalizePath(outputPath);
+
+		// Reject directory-only paths (empty or trailing slash)
+		if (!normalized || normalized.endsWith('/')) {
+			throw new Error(`Output path must include a filename: "${outputPath}"`);
+		}
 
 		// Reject vault-escaping paths (normalizePath does not resolve ..)
 		if (normalized.startsWith('..') || normalized.split('/').includes('..')) {
@@ -126,7 +133,12 @@ export class ImageGeneration {
 			}
 		}
 
-		return normalized;
+		// Always ensure the file ends with .png — the code always writes PNG bytes.
+		// Replace any existing extension (or append if none) so the vault file is readable.
+		const dotIndex = normalized.lastIndexOf('.');
+		const slashIndex = normalized.lastIndexOf('/');
+		const hasExtension = dotIndex > slashIndex + 1;
+		return hasExtension ? normalized.slice(0, dotIndex) + '.png' : normalized + '.png';
 	}
 
 	/**
@@ -163,6 +175,13 @@ export class ImageGeneration {
 			// Caller specified an explicit path — validate and normalize before use.
 			// Rejects vault-escaping and protected-folder paths (see validateOutputPath).
 			resolvedPath = this.validateOutputPath(outputPath);
+
+			// Ensure the parent folder exists before writing — createBinary will fail
+			// if any intermediate directory in the path is missing.
+			const parentPath = resolvedPath.includes('/') ? resolvedPath.slice(0, resolvedPath.lastIndexOf('/')) : null;
+			if (parentPath) {
+				await ensureFolderExists(this.plugin.app.vault, parentPath, 'image output folder', this.plugin.logger);
+			}
 		} else {
 			// Create a safe filename from the prompt (truncate and sanitize)
 			const sanitizedPrompt = prompt
