@@ -12,7 +12,8 @@ export class GenerateImageTool implements Tool {
 	category = ToolCategory.VAULT_OPERATIONS;
 	classification = ToolClassification.WRITE;
 	description =
-		'Generate an image from a text prompt and save it to the vault. Returns the wikilink that can be used to embed the image in a note. IMPORTANT: This tool only generates and saves the image file - it does NOT insert the image into any note. To add the generated image to a note, you must use write_file to insert the returned wikilink into the note content.';
+		'Generate an image from a text prompt and save it to the vault. Returns the wikilink that can be used to embed the image in a note. IMPORTANT: This tool only generates and saves the image file - it does NOT insert the image into any note. To add the generated image to a note, you must use write_file to insert the returned wikilink into the note content. ' +
+		'Set background=true to submit as a background task and return immediately with { taskId, output_path } — provide output_path so you know the exact location to retrieve the result with read_file.';
 
 	parameters = {
 		type: 'object' as const,
@@ -30,6 +31,12 @@ export class GenerateImageTool implements Tool {
 				type: 'string' as const,
 				description:
 					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). When provided, the image is saved at exactly this path regardless of target_note. Useful when the caller needs a predictable location to retrieve the result later.',
+			},
+			background: {
+				type: 'boolean' as const,
+				description:
+					'When true, submit as a background task and return immediately with { taskId, output_path }. ' +
+					'Provide output_path alongside background=true so you know the exact path to read the result with read_file once the task completes.',
 			},
 		},
 		required: ['prompt'],
@@ -75,7 +82,25 @@ export class GenerateImageTool implements Tool {
 				};
 			}
 
-			// Generate the image — explicit output_path takes priority over target_note folder hint
+			// ── Background mode ──────────────────────────────────────────────────
+			if (params.background) {
+				if (!plugin.backgroundTaskManager) {
+					return { success: false, error: 'Background task manager not available' };
+				}
+
+				const label = params.prompt.length > 40 ? params.prompt.slice(0, 37) + '…' : params.prompt;
+				const taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {
+					if (isCancelled()) return undefined;
+					return plugin.imageGeneration!.generateImage(params.prompt, params.target_note, params.output_path);
+				});
+
+				return {
+					success: true,
+					data: { taskId, output_path: params.output_path ?? null },
+				};
+			}
+
+			// ── Foreground mode (default) ────────────────────────────────────────
 			const imagePath = await plugin.imageGeneration.generateImage(
 				params.prompt,
 				params.target_note,

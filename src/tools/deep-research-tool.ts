@@ -20,7 +20,9 @@ export class DeepResearchTool implements Tool {
 		'scope="web_only" for internet research, or scope="both" (default) for comprehensive research. ' +
 		'Use this for broad research questions requiring synthesis across multiple sources. ' +
 		'For quick factual lookups, prefer google_search instead. ' +
-		'WARNING: This tool may take several minutes to complete.';
+		'WARNING: This tool may take several minutes to complete. ' +
+		'Set background=true to submit the research as a background task and return immediately — ' +
+		'the report is written to output_file when complete and you can read it later with read_file.';
 	requiresConfirmation = true;
 
 	parameters = {
@@ -37,7 +39,15 @@ export class DeepResearchTool implements Tool {
 			},
 			outputFile: {
 				type: 'string' as const,
-				description: 'Path for the output report file (optional)',
+				description:
+					'Path for the output report file (optional). When background=true, the report is written here when complete — provide this so you know where to read the result.',
+			},
+			background: {
+				type: 'boolean' as const,
+				description:
+					'When true, submit as a background task and return immediately with { taskId, output_file }. ' +
+					'Use this when research is one step in a larger plan and you want to continue other work in parallel. ' +
+					'Read the result later with read_file once the task completes.',
 			},
 		},
 		required: ['topic'],
@@ -63,7 +73,7 @@ export class DeepResearchTool implements Tool {
 	}
 
 	async execute(
-		params: { topic: string; scope?: ResearchScope; outputFile?: string },
+		params: { topic: string; scope?: ResearchScope; outputFile?: string; background?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
 		const plugin = context.plugin as ObsidianGemini;
@@ -91,7 +101,39 @@ export class DeepResearchTool implements Tool {
 				outputFile += '.md';
 			}
 
-			// Conduct the research using the service
+			// ── Background mode ──────────────────────────────────────────────────
+			if (params.background) {
+				if (!plugin.backgroundTaskManager) {
+					return { success: false, error: 'Background task manager not available' };
+				}
+
+				// Resolve the output path upfront so the agent knows where to read results.
+				// If the caller didn't specify one, generate a timestamped path inside the
+				// plugin state folder's background-tasks directory.
+				const resolvedOutputFile =
+					outputFile ?? `${plugin.settings.historyFolder}/background-tasks/research-${Date.now()}.md`;
+
+				const label = params.topic.length > 40 ? params.topic.slice(0, 37) + '…' : params.topic;
+				const taskId = plugin.backgroundTaskManager.submit('deep-research', label, async (isCancelled) => {
+					if (isCancelled()) return undefined;
+					const result = await plugin.deepResearch!.conductResearch({
+						topic: params.topic,
+						scope: params.scope,
+						outputFile: resolvedOutputFile,
+					});
+					if (context.session && result.outputFile) {
+						context.session.context.contextFiles.push(result.outputFile);
+					}
+					return result.outputFile?.path;
+				});
+
+				return {
+					success: true,
+					data: { taskId, output_file: resolvedOutputFile },
+				};
+			}
+
+			// ── Foreground mode (default) ────────────────────────────────────────
 			const result = await plugin.deepResearch.conductResearch({
 				topic: params.topic,
 				scope: params.scope,

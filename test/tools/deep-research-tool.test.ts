@@ -17,8 +17,14 @@ const mockDeepResearch = {
 	conductResearch: jest.fn(),
 };
 
+const mockBackgroundTaskManager = {
+	submit: jest.fn().mockReturnValue('bg-task-1'),
+};
+
 const mockPlugin = {
 	deepResearch: mockDeepResearch,
+	backgroundTaskManager: mockBackgroundTaskManager,
+	settings: { historyFolder: 'gemini-scribe' },
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -333,6 +339,80 @@ describe('DeepResearchTool', () => {
 
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('Vault-only research requires RAG indexing');
+		});
+	});
+
+	describe('background mode', () => {
+		let tool: DeepResearchTool;
+
+		beforeEach(() => {
+			tool = new DeepResearchTool();
+			jest.clearAllMocks();
+		});
+
+		it('returns taskId and output_file immediately without awaiting research', async () => {
+			const result = await tool.execute(
+				{ topic: 'AI Ethics', background: true, outputFile: 'reports/ai-ethics.md' },
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data.taskId).toBe('bg-task-1');
+			expect(result.data.output_file).toBe('reports/ai-ethics.md');
+			// conductResearch is NOT called synchronously — it runs inside the submitted callback
+			expect(mockDeepResearch.conductResearch).not.toHaveBeenCalled();
+		});
+
+		it('submits to BackgroundTaskManager with correct type and label', async () => {
+			await tool.execute({ topic: 'Climate Change', background: true }, mockContext);
+
+			expect(mockBackgroundTaskManager.submit).toHaveBeenCalledWith(
+				'deep-research',
+				'Climate Change',
+				expect.any(Function)
+			);
+		});
+
+		it('auto-generates output_file under historyFolder when none provided', async () => {
+			const result = await tool.execute({ topic: 'Test', background: true }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data.output_file).toMatch(/^gemini-scribe\/background-tasks\/research-\d+\.md$/);
+		});
+
+		it('truncates long topic in the BackgroundTaskManager label', async () => {
+			const longTopic = 'A'.repeat(50);
+			await tool.execute({ topic: longTopic, background: true }, mockContext);
+
+			const label = mockBackgroundTaskManager.submit.mock.calls[0][1] as string;
+			expect(label.length).toBeLessThanOrEqual(40);
+			expect(label.endsWith('…')).toBe(true);
+		});
+
+		it('returns error when BackgroundTaskManager is unavailable', async () => {
+			const contextNoManager = {
+				...mockContext,
+				plugin: { ...mockPlugin, backgroundTaskManager: null },
+			} as any;
+
+			const result = await tool.execute({ topic: 'Test', background: true }, contextNoManager);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Background task manager not available');
+		});
+
+		it('background parameter has no effect when false — behaves as foreground', async () => {
+			mockDeepResearch.conductResearch.mockResolvedValue({
+				topic: 'Test',
+				report: 'Report',
+				sourceCount: 3,
+			});
+
+			const result = await tool.execute({ topic: 'Test', background: false }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data).toHaveProperty('report');
+			expect(mockBackgroundTaskManager.submit).not.toHaveBeenCalled();
 		});
 	});
 
