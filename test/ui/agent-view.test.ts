@@ -1359,8 +1359,12 @@ describe('AgentView UI Tests', () => {
 
 		it('should clear shelf entries when loading a different session', async () => {
 			const oldFile = { path: 'old.md', basename: 'old' } as any;
-			const oldSession = { id: 'old', context: { contextFiles: [oldFile] } };
-			const loadedSession = { id: 'loaded', context: { contextFiles: [] } };
+			const oldSession = await plugin.sessionManager.createAgentSession('old', {
+				contextFiles: [oldFile],
+			});
+			const loadedSession = await plugin.sessionManager.createAgentSession('loaded', {
+				contextFiles: [],
+			});
 
 			const shelf = installStubs(oldSession);
 
