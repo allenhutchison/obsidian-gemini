@@ -1,3 +1,4 @@
+import { normalizePath } from 'obsidian';
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
@@ -111,7 +112,7 @@ export class DeepResearchTool implements Tool {
 				// If the caller didn't specify one, generate a timestamped path inside the
 				// plugin state folder's background-tasks directory.
 				const resolvedOutputFile =
-					outputFile ?? `${plugin.settings.historyFolder}/background-tasks/research-${Date.now()}.md`;
+					outputFile ?? normalizePath(`${plugin.settings.historyFolder}/background-tasks/research-${Date.now()}.md`);
 
 				const deepResearch = plugin.deepResearch;
 				const label = params.topic.length > 40 ? params.topic.slice(0, 37) + '…' : params.topic;
@@ -122,9 +123,6 @@ export class DeepResearchTool implements Tool {
 						scope: params.scope,
 						outputFile: resolvedOutputFile,
 					});
-					if (context.session && result.outputFile) {
-						context.session.context.contextFiles.push(result.outputFile);
-					}
 					return result.outputFile?.path;
 				});
 

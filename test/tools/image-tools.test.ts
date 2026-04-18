@@ -212,11 +212,11 @@ describe('ImageTools', () => {
 			expect(label.endsWith('…')).toBe(true);
 		});
 
-		it('returns null output_path when none provided', async () => {
+		it('auto-generates output_path under historyFolder when none provided', async () => {
 			const result = await tool.execute({ prompt: 'a dog', background: true }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_path).toBeNull();
+			expect(result.data.output_path).toMatch(/^test-history-folder\/background-tasks\/image-\d+\.png$/);
 		});
 
 		it('returns error when BackgroundTaskManager is unavailable', async () => {

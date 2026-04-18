@@ -1,3 +1,4 @@
+import { normalizePath } from 'obsidian';
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
@@ -88,16 +89,20 @@ export class GenerateImageTool implements Tool {
 					return { success: false, error: 'Background task manager not available' };
 				}
 
+				const resolvedOutputPath =
+					params.output_path ??
+					normalizePath(`${plugin.settings.historyFolder}/background-tasks/image-${Date.now()}.png`);
+
 				const imageGeneration = plugin.imageGeneration;
 				const label = params.prompt.length > 40 ? params.prompt.slice(0, 37) + '…' : params.prompt;
 				const taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {
 					if (isCancelled()) return undefined;
-					return imageGeneration.generateImage(params.prompt, params.target_note, params.output_path);
+					return imageGeneration.generateImage(params.prompt, params.target_note, resolvedOutputPath);
 				});
 
 				return {
 					success: true,
-					data: { taskId, output_path: params.output_path ?? null },
+					data: { taskId, output_path: resolvedOutputPath },
 				};
 			}
 
