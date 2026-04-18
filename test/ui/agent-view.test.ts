@@ -1310,4 +1310,78 @@ describe('AgentView UI Tests', () => {
 			expect(send.isCancellationRequested()).toBe(false);
 		});
 	});
+
+	describe('Session Reset Shelf (#648)', () => {
+		// Regression: when starting a new session or loading a different one, the
+		// shelf must reflect the destination session's context files and drop the
+		// previous session's entries.
+		function installStubs(oldSession: any) {
+			const shelf = {
+				loadFromSession: jest.fn(),
+				clear: jest.fn(),
+			};
+			(agentView as any).shelf = shelf;
+			(agentView as any).currentSession = oldSession;
+			// Stub updateSessionHeader to avoid DOM rendering in test harness.
+			(agentView as any).updateSessionHeader = jest.fn();
+			return shelf;
+		}
+
+		it('should clear shelf entries from previous session when creating a new session', async () => {
+			const oldFile = { path: 'old.md', basename: 'old' } as any;
+			const oldSession = { id: 'old', context: { contextFiles: [oldFile] } };
+			const newSession = { id: 'new', context: { contextFiles: [] } };
+
+			const shelf = installStubs(oldSession);
+
+			// Stub the session module: simulate the callback ordering of the real
+			// AgentViewSession, where updateContextPanel fires *before* agent-view
+			// mirrors the new currentSession reference.
+			(agentView as any).session = {
+				createNewSession: jest.fn(async () => {
+					(agentView as any).session.getCurrentSession = () => newSession;
+					// The real module invokes uiCallbacks.updateContextPanel here,
+					// while agent-view.currentSession still points at oldSession.
+					(agentView as any).updateContextPanel();
+				}),
+				getCurrentSession: () => oldSession,
+			};
+
+			const createNewSession = AgentView.prototype['createNewSession'];
+			await createNewSession.call(agentView);
+
+			// Last call must use the new session's context files (empty), not the
+			// stale old session's files.
+			const calls = shelf.loadFromSession.mock.calls;
+			expect(calls.length).toBeGreaterThanOrEqual(1);
+			expect(calls[calls.length - 1][0]).toEqual([]);
+		});
+
+		it('should clear shelf entries when loading a different session', async () => {
+			const oldFile = { path: 'old.md', basename: 'old' } as any;
+			const oldSession = await plugin.sessionManager.createAgentSession('old', {
+				contextFiles: [oldFile],
+			});
+			const loadedSession = await plugin.sessionManager.createAgentSession('loaded', {
+				contextFiles: [],
+			});
+
+			const shelf = installStubs(oldSession);
+
+			(agentView as any).session = {
+				loadSession: jest.fn(async () => {
+					(agentView as any).session.getCurrentSession = () => loadedSession;
+					(agentView as any).updateContextPanel();
+				}),
+				getCurrentSession: () => oldSession,
+			};
+
+			const realLoadSession = AgentView.prototype.loadSession;
+			await realLoadSession.call(agentView, loadedSession);
+
+			const calls = shelf.loadFromSession.mock.calls;
+			expect(calls.length).toBeGreaterThanOrEqual(1);
+			expect(calls[calls.length - 1][0]).toEqual([]);
+		});
+	});
 });
