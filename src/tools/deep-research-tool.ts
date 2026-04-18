@@ -113,10 +113,11 @@ export class DeepResearchTool implements Tool {
 				const resolvedOutputFile =
 					outputFile ?? `${plugin.settings.historyFolder}/background-tasks/research-${Date.now()}.md`;
 
+				const deepResearch = plugin.deepResearch;
 				const label = params.topic.length > 40 ? params.topic.slice(0, 37) + '…' : params.topic;
 				const taskId = plugin.backgroundTaskManager.submit('deep-research', label, async (isCancelled) => {
 					if (isCancelled()) return undefined;
-					const result = await plugin.deepResearch!.conductResearch({
+					const result = await deepResearch.conductResearch({
 						topic: params.topic,
 						scope: params.scope,
 						outputFile: resolvedOutputFile,

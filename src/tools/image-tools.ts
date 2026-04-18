@@ -88,10 +88,11 @@ export class GenerateImageTool implements Tool {
 					return { success: false, error: 'Background task manager not available' };
 				}
 
+				const imageGeneration = plugin.imageGeneration;
 				const label = params.prompt.length > 40 ? params.prompt.slice(0, 37) + '…' : params.prompt;
 				const taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {
 					if (isCancelled()) return undefined;
-					return plugin.imageGeneration!.generateImage(params.prompt, params.target_note, params.output_path);
+					return imageGeneration.generateImage(params.prompt, params.target_note, params.output_path);
 				});
 
 				return {
