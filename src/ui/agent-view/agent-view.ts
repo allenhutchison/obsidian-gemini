@@ -390,10 +390,11 @@ export class AgentView extends ItemView {
 	private async createNewSession() {
 		await this.session.createNewSession();
 		this.currentSession = this.session.getCurrentSession();
-		// Re-render header now that currentSession is updated — the header
-		// rendered inside createNewSession() used the stale reference.
+		// Re-render header and shelf now that currentSession is updated — the
+		// callbacks fired inside createNewSession() used the stale reference,
+		// so the shelf would otherwise still show the previous session's files.
 		this.updateSessionHeader();
-		// Emit after this.currentSession is updated so subscribers see the correct session
+		this.updateContextPanel();
 		if (this.currentSession) {
 			await this.plugin.agentEventBus?.emit('sessionCreated', { session: this.currentSession });
 		}
@@ -406,7 +407,7 @@ export class AgentView extends ItemView {
 		await this.session.loadSession(session);
 		this.currentSession = this.session.getCurrentSession();
 		this.updateSessionHeader();
-		// Emit after this.currentSession is updated so subscribers see the correct session
+		this.updateContextPanel();
 		if (this.currentSession) {
 			await this.plugin.agentEventBus?.emit('sessionLoaded', { session: this.currentSession });
 		}

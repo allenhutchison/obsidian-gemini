@@ -10,6 +10,7 @@
 import refAgentMode from '../../docs/guide/agent-mode.md';
 import refAgentSkills from '../../docs/guide/agent-skills.md';
 import refAiWriting from '../../docs/guide/ai-writing.md';
+import refBackgroundTasks from '../../docs/guide/background-tasks.md';
 import refCompletions from '../../docs/guide/completions.md';
 import refContextSystem from '../../docs/guide/context-system.md';
 import refCustomPrompts from '../../docs/guide/custom-prompts.md';
@@ -29,6 +30,7 @@ export const helpResources = new Map<string, string>([
 	['references/agent-mode.md', refAgentMode],
 	['references/agent-skills.md', refAgentSkills],
 	['references/ai-writing.md', refAiWriting],
+	['references/background-tasks.md', refBackgroundTasks],
 	['references/completions.md', refCompletions],
 	['references/context-system.md', refContextSystem],
 	['references/custom-prompts.md', refCustomPrompts],
@@ -50,6 +52,7 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/agent-mode.md\` | Agent Mode Guide |
 | \`references/agent-skills.md\` | Agent Skills |
 | \`references/ai-writing.md\` | Selection-Based AI Features Guide |
+| \`references/background-tasks.md\` | Background Tasks |
 | \`references/completions.md\` | IDE-Style Completions Guide |
 | \`references/context-system.md\` | Context System Guide |
 | \`references/custom-prompts.md\` | Custom Prompts Guide |
