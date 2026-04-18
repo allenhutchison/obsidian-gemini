@@ -586,6 +586,8 @@ To reference an attachment in your response, use the path shown above.`;
 	stopAgentLoop(): void {
 		this.ctx.plugin.logger.debug('[AgentView] stopAgentLoop called');
 
+		if (!this.isExecuting) return;
+
 		// Set cancellation flag
 		this.cancellationRequested = true;
 
