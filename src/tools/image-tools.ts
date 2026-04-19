@@ -13,7 +13,7 @@ export class GenerateImageTool implements Tool {
 	classification = ToolClassification.WRITE;
 	description =
 		'Generate an image from a text prompt and save it to the vault. Returns the wikilink that can be used to embed the image in a note. IMPORTANT: This tool only generates and saves the image file - it does NOT insert the image into any note. To add the generated image to a note, you must use write_file to insert the returned wikilink into the note content. ' +
-		'Set background=true to submit as a background task and return immediately with { taskId, output_path } — provide output_path so you know the exact location to retrieve the result with read_file.';
+		'Set background=true to submit as a background task and return immediately with { taskId, output_path }. The returned output_path is the exact vault location where the image will land — read it later with read_file.';
 
 	parameters = {
 		type: 'object' as const,
@@ -36,7 +36,7 @@ export class GenerateImageTool implements Tool {
 				type: 'boolean' as const,
 				description:
 					'When true, submit as a background task and return immediately with { taskId, output_path }. ' +
-					'Provide output_path alongside background=true so you know the exact path to read the result with read_file once the task completes.',
+					'The output_path in the response is the exact vault location where the image will be saved — pass it to read_file once the task completes.',
 			},
 		},
 		required: ['prompt'],
@@ -90,24 +90,36 @@ export class GenerateImageTool implements Tool {
 
 				// Capture the active file now — it may change while the task is in flight.
 				// Used as the attachment-folder reference when no explicit output_path is given.
-				const activeFilePath = plugin.app.workspace.getActiveFile()?.path ?? null;
+				const activeFilePath = plugin.app.workspace.getActiveFile()?.path ?? undefined;
+				const referenceNotePath = params.target_note ?? activeFilePath;
+
+				// Pre-resolve the output path at submit time so the agent has a concrete
+				// vault path to read_file later. Without this we'd return null and the
+				// agent would have to guess the timestamped attachment-folder path.
+				let resolvedOutputPath: string;
+				try {
+					resolvedOutputPath = params.output_path
+						? params.output_path
+						: await plugin.imageGeneration.resolveDefaultOutputPath(params.prompt, referenceNotePath);
+				} catch (error) {
+					return {
+						success: false,
+						error: `Failed to resolve image output path: ${error instanceof Error ? error.message : String(error)}`,
+					};
+				}
 
 				const imageGeneration = plugin.imageGeneration;
 				const label = params.prompt.length > 40 ? params.prompt.slice(0, 37) + '…' : params.prompt;
 				const taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {
 					if (isCancelled()) return undefined;
-					return imageGeneration.generateImage(
-						params.prompt,
-						params.target_note ?? activeFilePath ?? undefined,
-						params.output_path
-					);
+					// Always pass the pre-resolved path as the explicit outputPath so the
+					// task writes exactly where we told the agent it would land.
+					return imageGeneration.generateImage(params.prompt, referenceNotePath, resolvedOutputPath);
 				});
 
 				return {
 					success: true,
-					// output_path is null when not provided — the image lands in the vault's
-					// configured attachment folder; the agent should use find_files_by_name to locate it.
-					data: { taskId, output_path: params.output_path ?? null },
+					data: { taskId, output_path: resolvedOutputPath },
 				};
 			}
 

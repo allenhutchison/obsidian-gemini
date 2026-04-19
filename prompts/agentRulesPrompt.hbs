@@ -26,8 +26,8 @@ Both tools accept an optional `background: true` parameter. Use it when:
 - You have other tool calls to make that don't depend on the result
 
 When using `background: true`:
-- Always provide `output_file` (deep_research) or `output_path` (generate_image) so you know exactly where to find the result
-- The tool returns `{ taskId, output_file }` or `{ taskId, output_path }` immediately
+- The tool returns `{ taskId, output_file }` or `{ taskId, output_path }` immediately — the path is always populated, you don't have to provide one
+- You may optionally pass `output_file` / `output_path` to override the default location (research defaults to `Background Research/<date> <topic>.md`; images default to the vault's configured attachment folder)
 - Retrieve the result later using `read_file` on the returned path — no new tool call to the original tool is needed
 - Do NOT use `background: true` if subsequent steps immediately depend on the output — use foreground mode instead so the result is available inline
 
