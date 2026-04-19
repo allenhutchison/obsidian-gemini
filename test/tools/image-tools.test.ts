@@ -16,6 +16,11 @@ const mockPlugin = {
 	settings: {
 		historyFolder: 'test-history-folder',
 	},
+	app: {
+		workspace: {
+			getActiveFile: jest.fn().mockReturnValue({ path: 'active-note.md' }),
+		},
+	},
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -212,11 +217,11 @@ describe('ImageTools', () => {
 			expect(label.endsWith('…')).toBe(true);
 		});
 
-		it('auto-generates output_path under historyFolder when none provided', async () => {
+		it('returns null output_path when none provided (image lands in attachment folder)', async () => {
 			const result = await tool.execute({ prompt: 'a dog', background: true }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_path).toMatch(/^test-history-folder\/background-tasks\/image-\d+\.png$/);
+			expect(result.data.output_path).toBeNull();
 		});
 
 		it('returns error when BackgroundTaskManager is unavailable', async () => {
@@ -229,6 +234,39 @@ describe('ImageTools', () => {
 
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('Background task manager not available');
+		});
+
+		it('callback invokes generateImage with prompt, active file as target_note, and no output_path', async () => {
+			mockImageGeneration.generateImage.mockResolvedValue('attachments/result.png');
+
+			await tool.execute({ prompt: 'a sunset', background: true }, mockContext);
+
+			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
+			const outputPath = await callback(() => false);
+
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a sunset', 'active-note.md', undefined);
+			expect(outputPath).toBe('attachments/result.png');
+		});
+
+		it('callback uses explicit target_note over captured active file', async () => {
+			mockImageGeneration.generateImage.mockResolvedValue('attachments/result.png');
+
+			await tool.execute({ prompt: 'a fox', background: true, target_note: 'my-note.md' }, mockContext);
+
+			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
+			await callback(() => false);
+
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a fox', 'my-note.md', undefined);
+		});
+
+		it('callback returns undefined when cancelled', async () => {
+			await tool.execute({ prompt: 'test', background: true }, mockContext);
+
+			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
+			const result = await callback(() => true);
+
+			expect(result).toBeUndefined();
+			expect(mockImageGeneration.generateImage).not.toHaveBeenCalled();
 		});
 
 		it('background: false behaves as foreground', async () => {

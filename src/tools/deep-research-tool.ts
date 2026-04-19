@@ -4,6 +4,8 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 import { ResearchScope } from '../services/deep-research';
+import { formatLocalDate } from '../utils/format-utils';
+import { sanitizeFileName, ensureFolderExists } from '../utils/file-utils';
 
 /**
  * Deep Research Tool that conducts comprehensive research using Google's Deep Research API
@@ -109,21 +111,40 @@ export class DeepResearchTool implements Tool {
 				}
 
 				// Resolve the output path upfront so the agent knows where to read results.
-				// If the caller didn't specify one, generate a timestamped path inside the
-				// plugin state folder's background-tasks directory.
+				// Falls back to "Background Research/YYYY-MM-DD <topic>.md" at the vault root
+				// (outside the plugin state folder, which validators reject).
 				const resolvedOutputFile =
-					outputFile ?? normalizePath(`${plugin.settings.historyFolder}/background-tasks/research-${Date.now()}.md`);
+					outputFile ?? normalizePath(`Background Research/${formatLocalDate()} ${sanitizeFileName(params.topic)}.md`);
 
 				const deepResearch = plugin.deepResearch;
 				const label = params.topic.length > 40 ? params.topic.slice(0, 37) + '…' : params.topic;
 				const taskId = plugin.backgroundTaskManager.submit('deep-research', label, async (isCancelled) => {
 					if (isCancelled()) return undefined;
-					const result = await deepResearch.conductResearch({
-						topic: params.topic,
-						scope: params.scope,
-						outputFile: resolvedOutputFile,
-					});
-					return result.outputFile?.path;
+
+					// Ensure the parent folder exists before conductResearch tries to save there.
+					const folder = resolvedOutputFile.includes('/') ? resolvedOutputFile.split('/').slice(0, -1).join('/') : null;
+					if (folder) {
+						await ensureFolderExists(plugin.app.vault, folder, folder, plugin.logger);
+					}
+
+					// Poll for cancellation every 2 s and signal the API if the task is cancelled.
+					const cancelPoller = setInterval(() => {
+						if (isCancelled()) {
+							clearInterval(cancelPoller);
+							deepResearch.cancelResearch().catch(() => {});
+						}
+					}, 2000);
+
+					try {
+						const result = await deepResearch.conductResearch({
+							topic: params.topic,
+							scope: params.scope,
+							outputFile: resolvedOutputFile,
+						});
+						return result.outputFile?.path;
+					} finally {
+						clearInterval(cancelPoller);
+					}
 				});
 
 				return {

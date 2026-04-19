@@ -58,8 +58,9 @@ export class BackgroundStatusBar {
 		const runningCount = this.taskManager.runningCount;
 		const ragStatus = this.ragProvider?.getStatus() ?? 'disabled';
 
-		// Nothing to show — hide entirely
-		if (runningCount === 0 && (ragStatus === 'disabled' || ragStatus === 'idle')) {
+		// Nothing to show — hide only when RAG is fully disabled and no tasks are running.
+		// When RAG is idle, show the database icon + indexed-file count.
+		if (runningCount === 0 && ragStatus === 'disabled') {
 			this.statusBarItem.style.display = 'none';
 			return;
 		}
