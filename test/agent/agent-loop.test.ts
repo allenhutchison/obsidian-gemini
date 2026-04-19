@@ -577,6 +577,98 @@ describe('AgentLoop', () => {
 		});
 	});
 
+	describe('hook robustness', () => {
+		test('a throwing onToolBatchStart hook is logged and the loop continues', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('done despite hook throw')]);
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onToolBatchStart: () => {
+							throw new Error('UI broke');
+						},
+					},
+				},
+			});
+
+			expect(result.markdown).toBe('done despite hook throw');
+			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(1);
+			expect(plugin.logger.error).toHaveBeenCalledWith(
+				expect.stringContaining('Hook onToolBatchStart threw'),
+				expect.any(Error)
+			);
+		});
+
+		test('a throwing onToolCallComplete does NOT corrupt the tool result', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('done')]);
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onToolCallComplete: () => {
+							throw new Error('UI render failed');
+						},
+					},
+				},
+			});
+
+			// The follow-up request should carry the SUCCESSFUL tool result through —
+			// the onToolCallComplete throw must not roll the result back to a failure.
+			const followUpRequest = (api.generateModelResponse as jest.Mock).mock.calls[0][0];
+			const fnResponseTurn = followUpRequest.conversationHistory.find(
+				(t: any) => t.role === 'user' && t.parts.some((p: any) => p.functionResponse)
+			);
+			const fnResponsePart = fnResponseTurn.parts.find((p: any) => p.functionResponse);
+			expect(fnResponsePart.functionResponse.response.success).toBe(true);
+		});
+
+		test('a throwing event bus subscriber does not abort the loop', async () => {
+			const plugin = buildPlugin();
+			plugin.agentEventBus.emit = jest.fn().mockImplementation((event: string) => {
+				if (event === 'toolChainComplete') {
+					return Promise.reject(new Error('subscriber broke'));
+				}
+				return Promise.resolve();
+			});
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('done despite subscriber throw')]);
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(result.markdown).toBe('done despite subscriber throw');
+			expect(plugin.logger.error).toHaveBeenCalledWith(
+				expect.stringContaining('Event bus emit "toolChainComplete" threw'),
+				expect.any(Error)
+			);
+		});
+	});
+
 	describe('thoughtSignature propagation', () => {
 		test('preserves thoughtSignature in the conversation history sent to follow-up', async () => {
 			const plugin = buildPlugin();

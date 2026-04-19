@@ -103,6 +103,10 @@ export interface AgentLoopResult {
  *  - Saving the final text response to session history (so headless callers
  *    can write to a file instead)
  *  - All UI side effects (tool rendering, progress labels) via hooks
+ *
+ * Hook contract: hooks are observability and side-effect points. A throw from
+ * a hook is logged and swallowed — it never aborts the loop or alters tool
+ * results. Callers don't need to wrap their hook bodies in try/catch.
  */
 export class AgentLoop {
 	async run(args: {
@@ -159,12 +163,12 @@ export class AgentLoop {
 
 			// Sort and execute this batch
 			const sortedToolCalls = sortToolCallsByPriority(currentToolCalls);
-			await hooks?.onToolBatchStart?.(sortedToolCalls, iterations);
+			await this.safeHook('onToolBatchStart', plugin, () => hooks?.onToolBatchStart?.(sortedToolCalls, iterations));
 			iterations++;
 			const toolResults = await this.executeToolBatch(sortedToolCalls, toolContext, options);
 
 			// Emit toolChainComplete so subscribers (accessed-files tracker, etc.) see this batch.
-			await plugin.agentEventBus?.emit('toolChainComplete', {
+			await this.safeEmit(plugin, 'toolChainComplete', {
 				session,
 				toolResults: toolResults.map((tr) => ({
 					toolName: tr.toolName,
@@ -191,7 +195,7 @@ export class AgentLoop {
 			}
 
 			// Follow-up: ask the model what to do next given the tool results
-			await hooks?.onFollowUpRequestStart?.();
+			await this.safeHook('onFollowUpRequestStart', plugin, () => hooks?.onFollowUpRequestStart?.());
 
 			const followUpRequest = buildFollowUpRequest({
 				plugin,
@@ -206,7 +210,7 @@ export class AgentLoop {
 			const followUpResponse = await modelApi.generateModelResponse(followUpRequest);
 
 			if (followUpResponse.usageMetadata) {
-				await plugin.agentEventBus?.emit('apiResponseReceived', {
+				await this.safeEmit(plugin, 'apiResponseReceived', {
 					usageMetadata: followUpResponse.usageMetadata,
 				});
 			}
@@ -242,7 +246,7 @@ export class AgentLoop {
 				return this.cancelledResult(updatedHistory, iterations);
 			}
 
-			await hooks?.onEmptyResponseRetry?.();
+			await this.safeHook('onEmptyResponseRetry', plugin, () => hooks?.onEmptyResponseRetry?.());
 
 			const retryRequest = buildRetryRequest({
 				plugin,
@@ -254,7 +258,7 @@ export class AgentLoop {
 			const retryResponse = await retryModelApi.generateModelResponse(retryRequest);
 
 			if (retryResponse.usageMetadata) {
-				await plugin.agentEventBus?.emit('apiResponseReceived', {
+				await this.safeEmit(plugin, 'apiResponseReceived', {
 					usageMetadata: retryResponse.usageMetadata,
 				});
 			}
@@ -297,6 +301,37 @@ export class AgentLoop {
 		};
 	}
 
+	/**
+	 * Run a hook callback and swallow any throw with a logger entry. Hooks are
+	 * fire-and-forget side effects — they must never abort the loop or alter
+	 * tool results. A throwing UI hook (e.g. DOM write fails because the view
+	 * was closed mid-turn) gets logged and the loop continues unaffected.
+	 */
+	private async safeHook(
+		hookName: string,
+		plugin: ObsidianGemini,
+		fn: () => void | Promise<void> | undefined
+	): Promise<void> {
+		try {
+			await fn();
+		} catch (error) {
+			plugin.logger.error(`[AgentLoop] Hook ${hookName} threw — continuing:`, error);
+		}
+	}
+
+	/**
+	 * Emit on the agent event bus with the same swallow-and-log policy as
+	 * hooks. A subscriber's failure is observability noise, not a reason to
+	 * abort an in-flight agent turn.
+	 */
+	private async safeEmit(plugin: ObsidianGemini, event: string, payload: any): Promise<void> {
+		try {
+			await plugin.agentEventBus?.emit(event as any, payload);
+		} catch (error) {
+			plugin.logger.error(`[AgentLoop] Event bus emit "${event}" threw — continuing:`, error);
+		}
+	}
+
 	private cancelledResult(history: any[], iterations: number): AgentLoopResult {
 		return {
 			markdown: '',
@@ -332,7 +367,9 @@ export class AgentLoop {
 					? tool.getProgressDescription(toolCall.arguments)
 					: generateToolDescription(plugin, toolCall.name, toolCall.arguments, displayName);
 
-				await hooks?.onToolCallStart?.(toolCall, executionId, description);
+				await this.safeHook('onToolCallStart', plugin, () =>
+					hooks?.onToolCallStart?.(toolCall, executionId, description)
+				);
 
 				const startedAt = Date.now();
 				const result = await plugin.toolExecutionEngine.executeTool(toolCall, toolContext);
@@ -344,16 +381,18 @@ export class AgentLoop {
 					plugin.logger.warn(`[AgentLoop] Tool ${toolCall.name} failed:`, result.error, 'args:', toolCall.arguments);
 				}
 
-				await hooks?.onToolCallComplete?.(toolCall, result, executionId);
+				await this.safeHook('onToolCallComplete', plugin, () =>
+					hooks?.onToolCallComplete?.(toolCall, result, executionId)
+				);
 
-				await plugin.agentEventBus?.emit('toolExecutionComplete', {
+				await this.safeEmit(plugin, 'toolExecutionComplete', {
 					toolName: toolCall.name,
 					args: toolCall.arguments || {},
 					result,
 					durationMs,
 				});
 
-				hooks?.onToolCounted?.();
+				await this.safeHook('onToolCounted', plugin, () => hooks?.onToolCounted?.());
 
 				results.push({
 					toolName: toolCall.name,
@@ -362,7 +401,7 @@ export class AgentLoop {
 				});
 			} catch (error) {
 				plugin.logger.error(`[AgentLoop] Tool execution error for ${toolCall.name}:`, error);
-				hooks?.onToolCounted?.();
+				await this.safeHook('onToolCounted', plugin, () => hooks?.onToolCounted?.());
 				results.push({
 					toolName: toolCall.name,
 					toolArguments: toolCall.arguments || {},
