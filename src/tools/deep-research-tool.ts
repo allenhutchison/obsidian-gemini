@@ -124,7 +124,7 @@ export class DeepResearchTool implements Tool {
 					// Ensure the parent folder exists before conductResearch tries to save there.
 					const folder = resolvedOutputFile.includes('/') ? resolvedOutputFile.split('/').slice(0, -1).join('/') : null;
 					if (folder) {
-						await ensureFolderExists(plugin.app.vault, folder, folder, plugin.logger);
+						await ensureFolderExists(plugin.app.vault, folder, 'output directory', plugin.logger);
 					}
 
 					// Poll for cancellation every 2 s and signal the API if the task is cancelled.
