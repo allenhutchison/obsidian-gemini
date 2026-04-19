@@ -591,7 +591,7 @@ describe('AgentLoop', () => {
 				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
 			});
 
-			const followUpRequest = api.generateModelResponse.mock.calls[0][0];
+			const followUpRequest = (api.generateModelResponse as jest.Mock).mock.calls[0][0];
 			const modelTurn = followUpRequest.conversationHistory.find((t: any) => t.role === 'model');
 			expect(modelTurn.parts[0]).toHaveProperty('thoughtSignature', 'sig_xyz');
 		});
