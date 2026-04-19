@@ -1,8 +1,11 @@
+import { normalizePath } from 'obsidian';
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 import { ResearchScope } from '../services/deep-research';
+import { formatLocalDate } from '../utils/format-utils';
+import { sanitizeFileName, ensureFolderExists } from '../utils/file-utils';
 
 /**
  * Deep Research Tool that conducts comprehensive research using Google's Deep Research API
@@ -20,7 +23,9 @@ export class DeepResearchTool implements Tool {
 		'scope="web_only" for internet research, or scope="both" (default) for comprehensive research. ' +
 		'Use this for broad research questions requiring synthesis across multiple sources. ' +
 		'For quick factual lookups, prefer google_search instead. ' +
-		'WARNING: This tool may take several minutes to complete.';
+		'WARNING: This tool may take several minutes to complete. ' +
+		'Set background=true to submit the research as a background task and return immediately — ' +
+		'the report is written to output_file when complete and you can read it later with read_file.';
 	requiresConfirmation = true;
 
 	parameters = {
@@ -37,7 +42,15 @@ export class DeepResearchTool implements Tool {
 			},
 			outputFile: {
 				type: 'string' as const,
-				description: 'Path for the output report file (optional)',
+				description:
+					'Path for the output report file (optional). When background=true, the report is written here when complete — provide this so you know where to read the result.',
+			},
+			background: {
+				type: 'boolean' as const,
+				description:
+					'When true, submit as a background task and return immediately with { taskId, output_file }. ' +
+					'Use this when research is one step in a larger plan and you want to continue other work in parallel. ' +
+					'Read the result later with read_file once the task completes.',
 			},
 		},
 		required: ['topic'],
@@ -63,7 +76,7 @@ export class DeepResearchTool implements Tool {
 	}
 
 	async execute(
-		params: { topic: string; scope?: ResearchScope; outputFile?: string },
+		params: { topic: string; scope?: ResearchScope; outputFile?: string; background?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
 		const plugin = context.plugin as ObsidianGemini;
@@ -91,7 +104,56 @@ export class DeepResearchTool implements Tool {
 				outputFile += '.md';
 			}
 
-			// Conduct the research using the service
+			// ── Background mode ──────────────────────────────────────────────────
+			if (params.background) {
+				if (!plugin.backgroundTaskManager) {
+					return { success: false, error: 'Background task manager not available' };
+				}
+
+				// Resolve the output path upfront so the agent knows where to read results.
+				// Falls back to "Background Research/YYYY-MM-DD <topic>.md" at the vault root
+				// (outside the plugin state folder, which validators reject).
+				const resolvedOutputFile =
+					outputFile ?? normalizePath(`Background Research/${formatLocalDate()} ${sanitizeFileName(params.topic)}.md`);
+
+				const deepResearch = plugin.deepResearch;
+				const label = params.topic.length > 40 ? params.topic.slice(0, 37) + '…' : params.topic;
+				const taskId = plugin.backgroundTaskManager.submit('deep-research', label, async (isCancelled) => {
+					if (isCancelled()) return undefined;
+
+					// Ensure the parent folder exists before conductResearch tries to save there.
+					const folder = resolvedOutputFile.includes('/') ? resolvedOutputFile.split('/').slice(0, -1).join('/') : null;
+					if (folder) {
+						await ensureFolderExists(plugin.app.vault, folder, 'output directory', plugin.logger);
+					}
+
+					// Poll for cancellation every 2 s and signal the API if the task is cancelled.
+					const cancelPoller = setInterval(() => {
+						if (isCancelled()) {
+							clearInterval(cancelPoller);
+							deepResearch.cancelResearch().catch(() => {});
+						}
+					}, 2000);
+
+					try {
+						const result = await deepResearch.conductResearch({
+							topic: params.topic,
+							scope: params.scope,
+							outputFile: resolvedOutputFile,
+						});
+						return result.outputFile?.path;
+					} finally {
+						clearInterval(cancelPoller);
+					}
+				});
+
+				return {
+					success: true,
+					data: { taskId, output_file: resolvedOutputFile },
+				};
+			}
+
+			// ── Foreground mode (default) ────────────────────────────────────────
 			const result = await plugin.deepResearch.conductResearch({
 				topic: params.topic,
 				scope: params.scope,

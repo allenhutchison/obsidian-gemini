@@ -5,9 +5,11 @@ import type { BackgroundTask } from '../services/background-task-manager';
 /**
  * Modal that lists all running and recently completed background tasks.
  * Opened by clicking the status bar indicator or via the command palette.
+ * Subscribes to AgentEventBus so it live-updates while open.
  */
 export class BackgroundTasksModal extends Modal {
 	private plugin: ObsidianGemini;
+	private unsubscribers: Array<() => void> = [];
 
 	constructor(app: App, plugin: ObsidianGemini) {
 		super(app);
@@ -15,6 +17,19 @@ export class BackgroundTasksModal extends Modal {
 	}
 
 	onOpen(): void {
+		this.render();
+
+		// Subscribe to task lifecycle events so the modal stays current while open.
+		const bus = this.plugin.agentEventBus;
+		const refresh = async () => this.render();
+		this.unsubscribers.push(
+			bus.on('backgroundTaskStarted', refresh),
+			bus.on('backgroundTaskComplete', refresh),
+			bus.on('backgroundTaskFailed', refresh)
+		);
+	}
+
+	private render(): void {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass('gemini-bg-tasks-modal');
@@ -111,7 +126,7 @@ export class BackgroundTasksModal extends Modal {
 			const btn = li.createEl('button', { text: 'Cancel', cls: 'gemini-bg-task-cancel mod-warning' });
 			btn.addEventListener('click', () => {
 				this.plugin.backgroundTaskManager?.cancel(task.id);
-				this.onOpen(); // re-render
+				this.render();
 			});
 		}
 	}
@@ -128,6 +143,8 @@ export class BackgroundTasksModal extends Modal {
 	}
 
 	onClose(): void {
+		this.unsubscribers.forEach((unsub) => unsub());
+		this.unsubscribers = [];
 		this.contentEl.empty();
 	}
 }

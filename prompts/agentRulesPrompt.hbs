@@ -19,6 +19,18 @@ For complex tasks involving multiple tool calls, plan before executing.
 - For tasks involving 4+ tool calls, briefly explain your plan to the user first
 - Read files BEFORE modifying or deleting them
 
+**BACKGROUND TASKS** (`deep_research` and `generate_image`):
+Both tools accept an optional `background: true` parameter. Use it when:
+- The operation is one step in a larger plan and you want to continue other work without waiting
+- The user explicitly asks to "run in the background" or "don't wait for it"
+- You have other tool calls to make that don't depend on the result
+
+When using `background: true`:
+- Always provide `output_file` (deep_research) or `output_path` (generate_image) so you know exactly where to find the result
+- The tool returns `{ taskId, output_file }` or `{ taskId, output_path }` immediately
+- Retrieve the result later using `read_file` on the returned path — no new tool call to the original tool is needed
+- Do NOT use `background: true` if subsequent steps immediately depend on the output — use foreground mode instead so the result is available inline
+
 **RESEARCH AND INVESTIGATION**:
 When the user asks questions about their notes, be THOROUGH in your research:
 

@@ -17,8 +17,27 @@ const mockDeepResearch = {
 	conductResearch: jest.fn(),
 };
 
+const mockBackgroundTaskManager = {
+	submit: jest.fn().mockReturnValue('bg-task-1'),
+};
+
+const mockEnsureFolderExists = jest.fn().mockResolvedValue(undefined);
+jest.mock('../../src/utils/file-utils', () => ({
+	...jest.requireActual('../../src/utils/file-utils'),
+	ensureFolderExists: (...args: any[]) => mockEnsureFolderExists(...args),
+	sanitizeFileName: (name: string) =>
+		name
+			.replace(/[\\/:*?"<>|]/g, '-')
+			.trim()
+			.slice(0, 100),
+}));
+
 const mockPlugin = {
 	deepResearch: mockDeepResearch,
+	backgroundTaskManager: mockBackgroundTaskManager,
+	settings: { historyFolder: 'gemini-scribe' },
+	app: { vault: {} },
+	logger: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -333,6 +352,110 @@ describe('DeepResearchTool', () => {
 
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('Vault-only research requires RAG indexing');
+		});
+	});
+
+	describe('background mode', () => {
+		let tool: DeepResearchTool;
+
+		beforeEach(() => {
+			tool = new DeepResearchTool();
+			jest.clearAllMocks();
+		});
+
+		it('returns taskId and output_file immediately without awaiting research', async () => {
+			const result = await tool.execute(
+				{ topic: 'AI Ethics', background: true, outputFile: 'reports/ai-ethics.md' },
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data.taskId).toBe('bg-task-1');
+			expect(result.data.output_file).toBe('reports/ai-ethics.md');
+			// conductResearch is NOT called synchronously — it runs inside the submitted callback
+			expect(mockDeepResearch.conductResearch).not.toHaveBeenCalled();
+		});
+
+		it('submits to BackgroundTaskManager with correct type and label', async () => {
+			await tool.execute({ topic: 'Climate Change', background: true }, mockContext);
+
+			expect(mockBackgroundTaskManager.submit).toHaveBeenCalledWith(
+				'deep-research',
+				'Climate Change',
+				expect.any(Function)
+			);
+		});
+
+		it('auto-generates output_file under Background Research/ when none provided', async () => {
+			const result = await tool.execute({ topic: 'Test Topic', background: true }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data.output_file).toMatch(/^Background Research\/\d{4}-\d{2}-\d{2} Test Topic\.md$/);
+		});
+
+		it('truncates long topic in the BackgroundTaskManager label', async () => {
+			const longTopic = 'A'.repeat(50);
+			await tool.execute({ topic: longTopic, background: true }, mockContext);
+
+			const label = mockBackgroundTaskManager.submit.mock.calls[0][1] as string;
+			expect(label.length).toBeLessThanOrEqual(40);
+			expect(label.endsWith('…')).toBe(true);
+		});
+
+		it('returns error when BackgroundTaskManager is unavailable', async () => {
+			const contextNoManager = {
+				...mockContext,
+				plugin: { ...mockPlugin, backgroundTaskManager: null },
+			} as any;
+
+			const result = await tool.execute({ topic: 'Test', background: true }, contextNoManager);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Background task manager not available');
+		});
+
+		it('callback invokes conductResearch with correct args', async () => {
+			mockDeepResearch.conductResearch.mockResolvedValue({
+				topic: 'AI Ethics',
+				report: 'Report',
+				sourceCount: 5,
+				outputFile: { path: 'Background Research/2026-01-01 AI Ethics.md' },
+			});
+
+			await tool.execute({ topic: 'AI Ethics', background: true, outputFile: 'research/ai.md' }, mockContext);
+
+			// Pull and invoke the submitted callback
+			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
+			const outputPath = await callback(() => false);
+
+			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith(
+				expect.objectContaining({ topic: 'AI Ethics', outputFile: 'research/ai.md' })
+			);
+			expect(outputPath).toBe('Background Research/2026-01-01 AI Ethics.md');
+		});
+
+		it('callback returns undefined when cancelled before research starts', async () => {
+			await tool.execute({ topic: 'Test', background: true }, mockContext);
+
+			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
+			const result = await callback(() => true); // isCancelled = true immediately
+
+			expect(result).toBeUndefined();
+			expect(mockDeepResearch.conductResearch).not.toHaveBeenCalled();
+		});
+
+		it('background parameter has no effect when false — behaves as foreground', async () => {
+			mockDeepResearch.conductResearch.mockResolvedValue({
+				topic: 'Test',
+				report: 'Report',
+				sourceCount: 3,
+			});
+
+			const result = await tool.execute({ topic: 'Test', background: false }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data).toHaveProperty('report');
+			expect(mockBackgroundTaskManager.submit).not.toHaveBeenCalled();
 		});
 	});
 
