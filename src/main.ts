@@ -187,6 +187,12 @@ export default class ObsidianGemini extends Plugin {
 	public backgroundTaskManager: BackgroundTaskManager | null = null;
 	public backgroundStatusBar: BackgroundStatusBar | null = null;
 
+	// Snapshot of the last non-empty editor selection at the moment the user
+	// engaged the agent input. Used as a fallback in GetWorkspaceStateTool,
+	// whose live read of view.editor.getSelection() returns empty once focus
+	// has moved to the agent chat input.
+	public lastEditorSelection: { path: string; text: string } | null = null;
+
 	// Private members
 	private ribbonIcon!: HTMLElement;
 	public isGeminiInitialized: boolean = false;

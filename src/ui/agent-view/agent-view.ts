@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
+import { ItemView, MarkdownView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -108,6 +108,13 @@ export class AgentView extends ItemView {
 		this.userInput = elements.userInput;
 		this.sendButton = elements.sendButton;
 		this.tokenUsageContainer = elements.tokenUsageContainer;
+
+		// Snapshot the editor selection before/after focus transfers to the agent
+		// input. Clicking into the input blurs the editor and leaves
+		// view.editor.getSelection() returning empty by the time tools run.
+		// pointerdown fires pre-transfer (mouse); focus catches keyboard tab.
+		this.registerDomEvent(this.userInput, 'pointerdown', this.captureEditorSelection);
+		this.registerDomEvent(this.userInput, 'focus', this.captureEditorSelection);
 
 		// Initialize the unified file shelf above the input row
 		const shelfParent = elements.imagePreviewContainer.parentElement!;
@@ -267,6 +274,48 @@ export class AgentView extends ItemView {
 	private updateSessionHeader() {
 		this.ui.createCompactHeader(this.sessionHeader, this.currentSession, this.getUICallbacks());
 	}
+
+	/**
+	 * Capture the user's current editor selection and stash it on the plugin.
+	 * GetWorkspaceStateTool falls back to this when its live read returns empty
+	 * (which happens once focus has moved to the agent input).
+	 *
+	 * Iterates leaves rather than only checking the active view because at
+	 * focus-time the agent view is the active view — the markdown editor with
+	 * the selection is no longer returned by getActiveViewOfType.
+	 *
+	 * Always writes (including null) so a focus with no selection clears stale
+	 * cache from an earlier turn.
+	 */
+	private captureEditorSelection = (): void => {
+		let captured: { path: string; text: string } | null = null;
+
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (activeView?.file) {
+			try {
+				const sel = activeView.editor.getSelection();
+				if (sel) captured = { path: activeView.file.path, text: sel };
+			} catch {
+				// Editor may not be ready
+			}
+		}
+
+		if (!captured) {
+			this.app.workspace.iterateAllLeaves((leaf) => {
+				if (captured) return;
+				const v = leaf.view;
+				if (!(v instanceof MarkdownView) || !v.file) return;
+				try {
+					const sel = v.editor.getSelection();
+					if (sel) captured = { path: v.file.path, text: sel };
+				} catch {
+					// Editor may not be ready
+				}
+			});
+		}
+
+		this.plugin.lastEditorSelection = captured;
+	};
 
 	/**
 	 * Remove a file from context
