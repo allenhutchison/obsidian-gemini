@@ -5,6 +5,11 @@ import { ToolExecutionContext, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { generateToolDescription } from '../../utils/text-generation';
+import {
+	sortToolCallsByPriority,
+	buildToolHistoryTurns,
+	type ToolCallResultPair,
+} from '../../agent/agent-loop-helpers';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
 import { buildFollowUpRequest, buildRetryRequest, buildEmptyResponseMessage } from './agent-view-tool-followup';
 
@@ -39,32 +44,6 @@ export class AgentViewTools {
 	}
 
 	/**
-	 * Sort tool calls to ensure safe execution order
-	 * Prioritizes reads before writes/deletes to prevent race conditions
-	 */
-	private sortToolCallsByPriority(toolCalls: any[]): any[] {
-		// Define priority order (lower number = higher priority)
-		const toolPriority: Record<string, number> = {
-			read_file: 1,
-			list_files: 2,
-			find_files_by_name: 3,
-			google_search: 4,
-			fetch_url: 5,
-			write_file: 6,
-			create_folder: 7,
-			move_file: 8,
-			delete_file: 9, // Destructive operations last
-		};
-
-		// Sort by priority, maintaining original order for same priority
-		return [...toolCalls].sort((a, b) => {
-			const priorityA = toolPriority[a.name] || 10;
-			const priorityB = toolPriority[b.name] || 10;
-			return priorityA - priorityB;
-		});
-	}
-
-	/**
 	 * Handle tool calls from the model response
 	 */
 	public async handleToolCalls(
@@ -78,7 +57,7 @@ export class AgentViewTools {
 		if (!currentSession) return;
 
 		// Execute each tool
-		const toolResults: any[] = [];
+		const toolResults: ToolCallResultPair[] = [];
 		// Resolve project root for scoped tool discovery
 		const activeProject = currentSession.projectPath
 			? await this.plugin.projectManager?.getProject(currentSession.projectPath)
@@ -92,7 +71,7 @@ export class AgentViewTools {
 		};
 
 		// Sort tool calls to prioritize reads before destructive operations
-		const sortedToolCalls = this.sortToolCallsByPriority(toolCalls);
+		const sortedToolCalls = sortToolCallsByPriority(toolCalls);
 
 		// Reuse existing group container for recursive calls, or create a new one
 		let groupContainer: HTMLElement;
@@ -214,71 +193,20 @@ export class AgentViewTools {
 			});
 		}
 
-		// Note: User message is saved to history early in sendMessage(), before the API call
-		// Don't save it again here to avoid duplicates
+		// User message is saved to history early in sendMessage(), before the API call —
+		// don't save it again here to avoid duplicates.
 
-		// Build updated conversation history with proper Gemini API format:
-		// 1. Previous conversation history
-		// 2. User message (only if non-empty)
-		// 3. Model response with tool calls (as functionCall parts)
-		// 4. Tool results (as functionResponse parts)
-
-		// Debug logging for thought signature handling
 		this.plugin.logger.debug(
 			`[AgentViewTools] Building tool call parts: ${toolCalls.length} calls, ` +
 				`${toolCalls.filter((tc) => tc.thoughtSignature).length} with signatures`
 		);
 
-		const updatedHistory = [
-			...conversationHistory,
-			// Model's tool calls
-			{
-				role: 'model',
-				parts: toolCalls.map((tc) => ({
-					functionCall: {
-						name: tc.name,
-						args: tc.arguments || {},
-						...(tc.id && { id: tc.id }),
-					},
-					...(tc.thoughtSignature && { thoughtSignature: tc.thoughtSignature }),
-				})),
-			},
-			// Tool results as functionResponse, with inlineData parts injected alongside
-			{
-				role: 'user',
-				parts: toolResults.flatMap((tr) => {
-					// Strip inlineData from the result before putting in functionResponse
-					const { inlineData, ...resultWithoutInlineData } = tr.result;
-					const parts: any[] = [
-						{
-							functionResponse: {
-								name: tr.toolName,
-								response: resultWithoutInlineData,
-							},
-						},
-					];
-					// Append inlineData as separate parts the model can see
-					if (inlineData && Array.isArray(inlineData)) {
-						for (const attachment of inlineData) {
-							parts.push({
-								inlineData: { mimeType: attachment.mimeType, data: attachment.base64 },
-							});
-						}
-					}
-					return parts;
-				}),
-			},
-		];
-
-		// Only add user message if it's non-empty
-		// On recursive calls, userMessage will be empty since the message is already in conversationHistory
-		if (userMessage && userMessage.trim()) {
-			// Insert user message before the model's tool calls
-			updatedHistory.splice(conversationHistory.length, 0, {
-				role: 'user',
-				parts: [{ text: userMessage }],
-			});
-		}
+		const updatedHistory = buildToolHistoryTurns({
+			conversationHistory,
+			userMessage,
+			toolCalls,
+			toolResults,
+		});
 
 		// Check if cancellation was requested before sending follow-up request
 		if (this.context.isCancellationRequested()) {
