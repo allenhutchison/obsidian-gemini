@@ -21,21 +21,55 @@ export interface ToolCallResultPair {
 }
 
 /**
- * Tool execution priority. Reads run before writes/deletes so a model that
- * emits "delete A" and "read A" in the same response can't lose data to the
- * race. Lower number = earlier execution. Tools not listed default to 10.
+ * Tool execution priority. Reads run before writes, writes before deletes —
+ * so a model that emits "delete A" and "read A" in the same response can't
+ * lose data to the race. Lower number = earlier execution.
+ *
+ * Grouped by classification (band gaps make it obvious where a new tool slots
+ * in by category): READS 1–19, EXTERNAL 20–29, WRITES 30–39, DESTRUCTIVE 40+.
+ * Unknown tools fall to the END of the EXTERNAL band (29) — safer than after
+ * deletes, since most unknown tools added later will be reads or writes, and
+ * if it really is destructive the explicit entry should be added.
+ *
+ * When adding a new tool, add it here too. Any READ-classified tool MUST sort
+ * before write_file (30) to satisfy the reads-before-writes invariant.
  */
 const TOOL_PRIORITY: Record<string, number> = {
+	// ── READS (1–19) ────────────────────────────────────────────────────────
 	read_file: 1,
 	list_files: 2,
 	find_files_by_name: 3,
-	google_search: 4,
-	fetch_url: 5,
-	write_file: 6,
-	create_folder: 7,
-	move_file: 8,
-	delete_file: 9,
+	find_files_by_content: 4,
+	get_workspace_state: 5,
+	read_memory: 6,
+	recall_sessions: 7,
+	vault_semantic_search: 8,
+	activate_skill: 9,
+	// ── EXTERNAL (20–29) ────────────────────────────────────────────────────
+	google_search: 20,
+	fetch_url: 21,
+	deep_research: 22,
+	// ── WRITES (30–39) ──────────────────────────────────────────────────────
+	write_file: 30,
+	create_folder: 31,
+	update_frontmatter: 32,
+	append_content: 33,
+	update_memory: 34,
+	create_skill: 35,
+	edit_skill: 36,
+	generate_image: 37,
+	// ── DESTRUCTIVE (40+) ───────────────────────────────────────────────────
+	move_file: 40,
+	delete_file: 41,
 };
+
+/**
+ * Default priority for tools not in TOOL_PRIORITY — bottom of the EXTERNAL
+ * band so unknowns run after all known reads but before any known writes or
+ * destructive operations. Conservative choice: if a future tool is added but
+ * its priority entry is forgotten, it still won't race destructive ops.
+ */
+const UNKNOWN_TOOL_PRIORITY = 29;
 
 /**
  * Sort tool calls so reads execute before writes/deletes.
@@ -43,8 +77,8 @@ const TOOL_PRIORITY: Record<string, number> = {
  */
 export function sortToolCallsByPriority<T extends { name: string }>(toolCalls: T[]): T[] {
 	return [...toolCalls].sort((a, b) => {
-		const pa = TOOL_PRIORITY[a.name] ?? 10;
-		const pb = TOOL_PRIORITY[b.name] ?? 10;
+		const pa = TOOL_PRIORITY[a.name] ?? UNKNOWN_TOOL_PRIORITY;
+		const pb = TOOL_PRIORITY[b.name] ?? UNKNOWN_TOOL_PRIORITY;
 		return pa - pb;
 	});
 }

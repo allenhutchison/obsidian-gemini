@@ -16,15 +16,57 @@ describe('sortToolCallsByPriority', () => {
 		expect(sorted.map((c) => c.name)).toEqual(['read_file', 'list_files', 'write_file', 'delete_file']);
 	});
 
-	test('unknown tools sort last', () => {
-		const calls = [{ name: 'mystery_tool' }, { name: 'read_file' }, { name: 'another_unknown' }];
+	test('unknown tools sort after all known reads but before any known write/destructive', () => {
+		const calls = [
+			{ name: 'delete_file' },
+			{ name: 'write_file' },
+			{ name: 'mystery_tool' },
+			{ name: 'read_file' },
+			{ name: 'another_unknown' },
+		];
 
 		const sorted = sortToolCallsByPriority(calls);
 
-		expect(sorted[0].name).toBe('read_file');
-		// The two unknowns retain their original relative order (stable sort)
-		expect(sorted[1].name).toBe('mystery_tool');
-		expect(sorted[2].name).toBe('another_unknown');
+		// Reads first, then unknowns (stable order between them), then writes, then destructive
+		expect(sorted.map((c) => c.name)).toEqual([
+			'read_file',
+			'mystery_tool',
+			'another_unknown',
+			'write_file',
+			'delete_file',
+		]);
+	});
+
+	test('all known READ-classified tools sort before any write/destructive (regression for missing custom reads)', () => {
+		const reads = [
+			'read_file',
+			'list_files',
+			'find_files_by_name',
+			'find_files_by_content',
+			'get_workspace_state',
+			'read_memory',
+			'recall_sessions',
+			'vault_semantic_search',
+			'activate_skill',
+		];
+		const writes = ['write_file', 'create_folder', 'update_frontmatter', 'append_content', 'update_memory'];
+		const destructive = ['move_file', 'delete_file'];
+
+		// Interleave: every read alternated with a delete — sort must still pull all reads first
+		const interleaved = reads.flatMap((r) => [{ name: 'delete_file' }, { name: r }]);
+		const sorted = sortToolCallsByPriority(interleaved);
+
+		// First N positions must all be the reads (any order); after that, no read may appear.
+		const firstN = sorted.slice(0, reads.length).map((c) => c.name);
+		const restNames = sorted.slice(reads.length).map((c) => c.name);
+		for (const r of reads) {
+			expect(firstN).toContain(r);
+		}
+		for (const w of [...writes, ...destructive]) {
+			expect(firstN).not.toContain(w);
+		}
+		// And no read sneaks into the trailing block
+		expect(restNames.some((n) => reads.includes(n))).toBe(false);
 	});
 
 	test('preserves relative order for equal-priority calls', () => {

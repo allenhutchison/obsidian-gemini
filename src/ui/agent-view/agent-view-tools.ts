@@ -97,9 +97,6 @@ export class AgentViewTools {
 							this.context.incrementToolCallCount?.(1);
 						},
 						onFollowUpRequestStart: () => {
-							// Mirrors the original two-phase progress flip: first signal
-							// that we're consuming results, then that we're waiting for the model.
-							this.context.updateProgress('Processing results...', 'waiting');
 							this.context.updateProgress('Thinking...', 'thinking');
 						},
 					},
