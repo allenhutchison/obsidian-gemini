@@ -1184,7 +1184,9 @@ describe('VaultTools', () => {
 				(file as any).path = filePath;
 				(file as any).name = 'test.md';
 
-				const view = new MarkdownView();
+				// Cast through unknown: the runtime MarkdownView mock is a
+				// zero-arg class, but the d.ts signature requires a leaf.
+				const view = new (MarkdownView as unknown as new () => MarkdownView)();
 				(view as any).file = file;
 				(view as any).editor.getSelection.mockReturnValue(opts.liveSelection);
 
