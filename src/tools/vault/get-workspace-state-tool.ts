@@ -67,6 +67,14 @@ export class GetWorkspaceStateTool implements Tool {
 					// Editor may not be available
 				}
 
+				// Fallback: when focus has moved to the agent input the live
+				// selection reads empty. AgentView snapshots the selection on
+				// input focus; use it when this leaf matches the cached path.
+				if (!selection && plugin.lastEditorSelection?.path === path) {
+					const cached = plugin.lastEditorSelection.text;
+					selection = cached.length > MAX_SELECTION_LENGTH ? cached.slice(0, MAX_SELECTION_LENGTH) + '...' : cached;
+				}
+
 				const existing = fileMap.get(path);
 				if (existing) {
 					// Merge: visible/active if ANY leaf qualifies

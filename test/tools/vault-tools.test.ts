@@ -49,7 +49,7 @@ jest.mock('obsidian', () => ({
 }));
 
 // Import the mocked classes
-import { TFile, TFolder } from 'obsidian';
+import { TFile, TFolder, MarkdownView } from 'obsidian';
 
 // Mock Obsidian objects
 const mockFile = new TFile();
@@ -1168,6 +1168,114 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data.openFiles).toEqual([]);
 			expect(result.data.project).toBeNull();
+		});
+
+		describe('cached selection fallback', () => {
+			// Builds the minimum plumbing to exercise the fallback: a single
+			// markdown leaf whose editor.getSelection() returns `liveSelection`,
+			// with the plugin's cached selection set to `cached`.
+			function buildContext(opts: {
+				liveSelection: string;
+				cached: { path: string; text: string } | null;
+				filePath?: string;
+			}) {
+				const filePath = opts.filePath ?? 'notes/test.md';
+				const file = new TFile();
+				(file as any).path = filePath;
+				(file as any).name = 'test.md';
+
+				// Cast through unknown: the runtime MarkdownView mock is a
+				// zero-arg class, but the d.ts signature requires a leaf.
+				const view = new (MarkdownView as unknown as new () => MarkdownView)();
+				(view as any).file = file;
+				(view as any).editor.getSelection.mockReturnValue(opts.liveSelection);
+
+				const leaf = { view, containerEl: { isShown: () => true } };
+
+				const mockWorkspace = {
+					getActiveFile: jest.fn().mockReturnValue(file),
+					getActiveViewOfType: jest.fn().mockReturnValue(view),
+					iterateAllLeaves: jest.fn((cb: (l: any) => void) => cb(leaf)),
+				};
+
+				const metadataCache = {
+					...mockMetadataCache,
+					fileToLinktext: jest.fn((f: any) => f.path.replace(/\.md$/, '')),
+				};
+
+				return {
+					...mockContext,
+					plugin: {
+						...mockPlugin,
+						app: {
+							...mockPlugin.app,
+							workspace: mockWorkspace,
+							metadataCache,
+						},
+						lastEditorSelection: opts.cached,
+					},
+				};
+			}
+
+			it('uses cached selection when live read is empty and path matches', async () => {
+				const context = buildContext({
+					liveSelection: '',
+					cached: { path: 'notes/test.md', text: 'remembered foo' },
+				});
+
+				const result = await tool.execute({}, context);
+
+				expect(result.success).toBe(true);
+				expect(result.data.openFiles).toHaveLength(1);
+				expect(result.data.openFiles[0].selection).toBe('remembered foo');
+			});
+
+			it('ignores cached selection when path does not match', async () => {
+				const context = buildContext({
+					liveSelection: '',
+					cached: { path: 'other/file.md', text: 'unrelated' },
+				});
+
+				const result = await tool.execute({}, context);
+
+				expect(result.data.openFiles[0].selection).toBeNull();
+			});
+
+			it('prefers live selection over cached', async () => {
+				const context = buildContext({
+					liveSelection: 'live text',
+					cached: { path: 'notes/test.md', text: 'stale cache' },
+				});
+
+				const result = await tool.execute({}, context);
+
+				expect(result.data.openFiles[0].selection).toBe('live text');
+			});
+
+			it('truncates long cached selections', async () => {
+				const longText = 'x'.repeat(1500);
+				const context = buildContext({
+					liveSelection: '',
+					cached: { path: 'notes/test.md', text: longText },
+				});
+
+				const result = await tool.execute({}, context);
+
+				const selection: string = result.data.openFiles[0].selection;
+				expect(selection.endsWith('...')).toBe(true);
+				expect(selection.length).toBe(1003); // 1000 chars + '...'
+			});
+
+			it('returns null selection when no cache and live is empty', async () => {
+				const context = buildContext({
+					liveSelection: '',
+					cached: null,
+				});
+
+				const result = await tool.execute({}, context);
+
+				expect(result.data.openFiles[0].selection).toBeNull();
+			});
 		});
 	});
 

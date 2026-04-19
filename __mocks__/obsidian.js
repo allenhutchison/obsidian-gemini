@@ -36,6 +36,15 @@ class Modal {
 
 class WorkspaceLeaf {}
 
+class MarkdownView {
+	constructor() {
+		this.file = null;
+		this.editor = {
+			getSelection: jest.fn().mockReturnValue(''),
+		};
+	}
+}
+
 class TFile {
 	constructor(path = 'test.md') {
 		this.path = path;
@@ -283,6 +292,7 @@ class Plugin {
 
 module.exports = {
 	ItemView,
+	MarkdownView,
 	Modal,
 	WorkspaceLeaf,
 	TFile,
