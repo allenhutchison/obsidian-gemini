@@ -56,6 +56,7 @@ export class AgentView extends ItemView {
 	private allowedWithoutConfirmation: Set<string> = new Set(); // Session-level allowed tools
 	private shelf!: AgentViewShelf;
 	private tokenUsageContainer!: HTMLElement;
+	private skipNextFocusSelectionCapture = false;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -113,8 +114,19 @@ export class AgentView extends ItemView {
 		// input. Clicking into the input blurs the editor and leaves
 		// view.editor.getSelection() returning empty by the time tools run.
 		// pointerdown fires pre-transfer (mouse); focus catches keyboard tab.
-		this.registerDomEvent(this.userInput, 'pointerdown', this.captureEditorSelection);
-		this.registerDomEvent(this.userInput, 'focus', this.captureEditorSelection);
+		// On mouse, pointerdown is authoritative — skip the focus that follows
+		// so it can't clobber the snapshot with null if CM6 clears state on blur.
+		this.registerDomEvent(this.userInput, 'pointerdown', () => {
+			this.captureEditorSelection();
+			this.skipNextFocusSelectionCapture = true;
+		});
+		this.registerDomEvent(this.userInput, 'focus', () => {
+			if (this.skipNextFocusSelectionCapture) {
+				this.skipNextFocusSelectionCapture = false;
+				return;
+			}
+			this.captureEditorSelection();
+		});
 
 		// Initialize the unified file shelf above the input row
 		const shelfParent = elements.imagePreviewContainer.parentElement!;
