@@ -76,7 +76,7 @@ export class BackgroundTasksModal extends Modal {
 			const clearBtn = recentHeader.createEl('button', { text: 'Clear', cls: 'gemini-bg-tasks-clear' });
 			clearBtn.addEventListener('click', () => {
 				this.plugin.backgroundTaskManager?.clearFinished();
-				this.onOpen();
+				this.render();
 			});
 
 			const scrollWrap = contentEl.createDiv({ cls: 'gemini-bg-tasks-scroll' });

@@ -1,5 +1,4 @@
 import { ScheduledTaskRunner } from '../../src/services/scheduled-task-runner';
-import { TFile } from 'obsidian';
 import type { ScheduledTask } from '../../src/services/scheduled-task-manager';
 import type { AgentLoopResult } from '../../src/agent/agent-loop';
 
@@ -250,21 +249,22 @@ describe('ScheduledTaskRunner', () => {
 		expect(request.model).not.toBe(plugin.settings.chatModelName);
 	});
 
-	it('modifies existing file instead of creating a new one', async () => {
-		// Must be a real TFile instance so `instanceof TFile` passes in writeOutput
-		const existingFile = Object.assign(new TFile(), {
-			path: 'gemini-scribe/Scheduled-Tasks/Runs/test-task/2026-04-18.md',
-		});
+	it('generates a unique path when the resolved output file already exists', async () => {
 		const plugin = createMockPlugin();
-		plugin.app.vault.getAbstractFileByPath = jest.fn().mockReturnValue(existingFile);
+		// First call (base path) returns an existing file; second call (-1 suffix) returns null
+		plugin.app.vault.getAbstractFileByPath = jest
+			.fn()
+			.mockReturnValueOnce({}) // base path exists
+			.mockReturnValueOnce(null); // -1 path is free
 
 		const runner = new ScheduledTaskRunner(plugin, makeTask());
 		await runner.run(() => false);
 
-		expect(plugin.app.vault.modify).toHaveBeenCalledWith(
-			existingFile,
+		// Should create at the -1 suffix path, never at the base path
+		expect(plugin.app.vault.create).toHaveBeenCalledWith(
+			'gemini-scribe/Scheduled-Tasks/Runs/test-task/2026-04-18-1.md',
 			expect.stringContaining('Task completed successfully.')
 		);
-		expect(plugin.app.vault.create).not.toHaveBeenCalled();
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
 	});
 });

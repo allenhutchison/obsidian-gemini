@@ -1,4 +1,4 @@
-import { TFile, normalizePath } from 'obsidian';
+import { normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask } from './scheduled-task-manager';
 import { ToolCategory, DestructiveAction } from '../types/agent';
@@ -127,19 +127,41 @@ export class ScheduledTaskRunner {
 	}
 
 	private async writeOutput(outputPath: string, content: string): Promise<void> {
-		const parentPath = outputPath.includes('/') ? outputPath.slice(0, outputPath.lastIndexOf('/')) : null;
+		// Resolve a unique path — {date} is day-granular so interval tasks or
+		// multiple manual runs on the same day would otherwise overwrite each other.
+		const uniquePath = this.resolveUniquePath(outputPath);
+
+		const parentPath = uniquePath.includes('/') ? uniquePath.slice(0, uniquePath.lastIndexOf('/')) : null;
 		if (parentPath) {
 			await ensureFolderExists(this.plugin.app.vault, parentPath, 'scheduled task output folder', this.plugin.logger);
 		}
 
-		const header = `---\nscheduled_task: "${this.task.slug}"\nran_at: "${new Date().toISOString()}"\n---\n\n`;
+		const ranAt = new Date().toISOString();
+		// Use JSON.stringify for YAML quoted scalars — guards against quotes or
+		// backslashes in the slug or ISO timestamp breaking the frontmatter.
+		const header = `---\nscheduled_task: ${JSON.stringify(this.task.slug)}\nran_at: ${JSON.stringify(ranAt)}\n---\n\n`;
 		const fullContent = header + content;
 
-		const existing = this.plugin.app.vault.getAbstractFileByPath(outputPath);
-		if (existing instanceof TFile) {
-			await this.plugin.app.vault.modify(existing, fullContent);
-		} else {
-			await this.plugin.app.vault.create(outputPath, fullContent);
+		await this.plugin.app.vault.create(uniquePath, fullContent);
+	}
+
+	/**
+	 * Return a path that does not already exist in the vault.
+	 * If `base` is taken, appends -1, -2, … before the extension until a free
+	 * slot is found (e.g. `2026-04-20.md` → `2026-04-20-1.md`).
+	 */
+	private resolveUniquePath(base: string): string {
+		if (!this.plugin.app.vault.getAbstractFileByPath(base)) return base;
+
+		const dotIdx = base.lastIndexOf('.');
+		const stem = dotIdx >= 0 ? base.slice(0, dotIdx) : base;
+		const ext = dotIdx >= 0 ? base.slice(dotIdx) : '';
+
+		for (let i = 1; i <= 99; i++) {
+			const candidate = `${stem}-${i}${ext}`;
+			if (!this.plugin.app.vault.getAbstractFileByPath(candidate)) return candidate;
 		}
+		// Fallback: timestamp suffix guarantees uniqueness
+		return `${stem}-${Date.now()}${ext}`;
 	}
 }

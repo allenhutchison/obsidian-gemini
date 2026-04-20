@@ -303,6 +303,50 @@ describe('ScheduledTaskManager', () => {
 		});
 	});
 
+	// ── vault.on('create', ...) hot discovery ───────────────────────────────
+
+	describe('new file discovery via vault create event', () => {
+		it('picks up a new task file without a plugin reload', async () => {
+			const plugin = createMockPlugin();
+			// Start with no task files
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([]);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+			expect(manager.getTasks()).toHaveLength(0);
+
+			// Capture the vault.on('create', ...) handler registered during initialize()
+			const vaultOnCalls = (plugin.app.vault.on as jest.Mock).mock.calls;
+			const createEntry = vaultOnCalls.find(([event]: [string]) => event === 'create');
+			expect(createEntry).toBeDefined();
+			const createHandler = createEntry[1] as (...args: unknown[]) => unknown;
+
+			// Simulate a new task file appearing in the vault
+			const { TFile: MockTFile } = jest.requireMock('obsidian');
+			const newFile = Object.assign(new MockTFile(), {
+				path: 'gemini-scribe/Scheduled-Tasks/hot-task.md',
+				basename: 'hot-task',
+				extension: 'md',
+			});
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily' },
+			});
+			plugin.app.vault.read = jest.fn().mockResolvedValue('Hot-loaded prompt.');
+
+			// Fire the create handler and wait for the 500 ms defer
+			jest.useFakeTimers();
+			createHandler(newFile);
+			jest.advanceTimersByTime(600);
+			jest.useRealTimers();
+			// Allow the deferred async parseTaskFile promise to settle
+			await Promise.resolve();
+			await Promise.resolve();
+
+			const tasks = manager.getTasks();
+			expect(tasks.some((t) => t.slug === 'hot-task')).toBe(true);
+			expect(manager.getState()['hot-task']).toBeDefined();
+		});
+	});
+
 	// ── Tick behaviour ──────────────────────────────────────────────────────
 
 	describe('tick', () => {

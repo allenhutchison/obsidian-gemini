@@ -182,6 +182,7 @@ For detailed guides on all features, visit the [Documentation Site](https://alle
 - [Context System Guide](docs/guide/context-system.md)
 - [MCP Servers Guide](docs/guide/mcp-servers.md) - Connect external tool servers
 - [Agent Skills Guide](docs/guide/agent-skills.md) - Create extensible AI skill packages
+- [Scheduled Tasks Guide](docs/guide/scheduled-tasks.md) - Automate recurring AI prompts
 
 **Configuration & Development:**
 
