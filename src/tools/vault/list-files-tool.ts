@@ -52,17 +52,21 @@ export class ListFilesTool implements Tool {
 			const folderPath = normalized === '/' ? '' : normalized;
 			const folder = folderPath ? plugin.app.vault.getAbstractFileByPath(folderPath) : null;
 
+			// Show the resolved path in errors — `params.path` may be empty when
+			// falling back to `context.projectRootPath`, which would render blank.
+			const displayPath = folderPath || params.path || '(vault root)';
+
 			if (folderPath && !folder) {
 				return {
 					success: false,
-					error: `Folder not found: ${params.path}`,
+					error: `Folder not found: ${displayPath}`,
 				};
 			}
 
 			if (folderPath && !(folder instanceof TFolder)) {
 				return {
 					success: false,
-					error: `Path is not a folder: ${params.path}`,
+					error: `Path is not a folder: ${displayPath}`,
 				};
 			}
 

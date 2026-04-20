@@ -34,11 +34,6 @@ jest.mock('../../src/files', () => ({
 // Use the existing mock by extending it
 jest.mock('obsidian', () => ({
 	...jest.requireActual('../../__mocks__/obsidian.js'),
-	normalizePath: jest.fn((path: string) => {
-		if (path == null || /^\s*$/.test(path)) return '/';
-		const collapsed = path.replace(/[\\/]+/g, '/').replace(/(^\/+|\/+$)/g, '');
-		return collapsed || '/';
-	}),
 	TFolder: class TFolder {
 		path: string;
 		name: string;
