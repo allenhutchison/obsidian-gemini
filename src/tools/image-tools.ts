@@ -94,13 +94,17 @@ export class GenerateImageTool implements Tool {
 				const referenceNotePath = params.target_note ?? activeFilePath;
 
 				// Pre-resolve the output path at submit time so the agent has a concrete
-				// vault path to read_file later. Without this we'd return null and the
-				// agent would have to guess the timestamped attachment-folder path.
+				// vault path to read_file later. resolveOutputPath handles both the
+				// explicit-path case (validation + .png extension rewrite) and the
+				// default attachment-folder case — so the path we return here always
+				// matches where the task will actually write.
 				let resolvedOutputPath: string;
 				try {
-					resolvedOutputPath = params.output_path
-						? params.output_path
-						: await plugin.imageGeneration.resolveDefaultOutputPath(params.prompt, referenceNotePath);
+					resolvedOutputPath = await plugin.imageGeneration.resolveOutputPath(
+						params.prompt,
+						referenceNotePath,
+						params.output_path
+					);
 				} catch (error) {
 					return {
 						success: false,

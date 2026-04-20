@@ -100,17 +100,41 @@ export class ImageGeneration {
 	}
 
 	/**
+	 * Resolve the exact vault path an image will be saved at, for either an
+	 * explicit caller-supplied path or the default attachment-folder flow.
+	 *
+	 * When `outputPath` is provided, validates it and rewrites the extension
+	 * to `.png` (saveImageToVault writes PNG bytes unconditionally). When it
+	 * isn't, falls back to the default attachment-folder resolution.
+	 *
+	 * Used by background mode of GenerateImageTool to pre-compute the path at
+	 * submit time and return it synchronously — the agent relies on this path
+	 * being the exact location it can later `read_file`. Must stay in sync
+	 * with saveImageToVault so the promise-at-submit matches the
+	 * actual-write.
+	 *
+	 * Throws synchronously on an invalid explicit path (vault escape,
+	 * protected folder, etc.) or when the default branch has no active file
+	 * and no `targetNotePath` to anchor the attachment folder.
+	 */
+	async resolveOutputPath(prompt: string, targetNotePath?: string, outputPath?: string): Promise<string> {
+		if (outputPath) {
+			// Runs the same validation/normalisation saveImageToVault uses,
+			// including rewriting any non-.png extension to .png.
+			return this.validateOutputPath(outputPath);
+		}
+		return this.resolveDefaultOutputPath(prompt, targetNotePath);
+	}
+
+	/**
 	 * Resolve the path the image WOULD be saved at when no explicit `outputPath`
 	 * is given. Mirrors the no-`outputPath` branch of saveImageToVault.
 	 *
-	 * Used by background mode of GenerateImageTool to pre-compute the path at
-	 * submit time and surface it to the agent — without this, background
-	 * callers see `output_path: null` and have no programmatic way to find the
-	 * file once the task completes.
+	 * Prefer `resolveOutputPath` for callers that may or may not have an
+	 * explicit path — it handles both branches consistently. This method is
+	 * kept public for callers that specifically want the default flow.
 	 *
-	 * Throws if no active file exists and no `targetNotePath` is provided
-	 * (callers in background contexts must provide one or check for active
-	 * file existence themselves).
+	 * Throws if no active file exists and no `targetNotePath` is provided.
 	 */
 	async resolveDefaultOutputPath(prompt: string, targetNotePath?: string): Promise<string> {
 		const filename = this.buildDefaultFilename(prompt);
