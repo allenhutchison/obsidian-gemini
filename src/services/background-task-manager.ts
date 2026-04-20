@@ -119,6 +119,16 @@ export class BackgroundTaskManager {
 		return this.getActiveTasks().length;
 	}
 
+	/** Remove all completed, failed, and cancelled tasks from memory. */
+	clearFinished(): void {
+		for (const [id, task] of this.tasks) {
+			if (task.status === 'complete' || task.status === 'failed' || task.status === 'cancelled') {
+				this.tasks.delete(id);
+			}
+		}
+		this.notifyStatusChange();
+	}
+
 	// --- Private ---
 
 	private async run(id: string, work: (isCancelled: () => boolean) => Promise<string | undefined>): Promise<void> {

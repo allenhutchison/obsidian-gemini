@@ -19,6 +19,7 @@ import refFaq from '../../docs/guide/faq.md';
 import refGettingStarted from '../../docs/guide/getting-started.md';
 import refMcpServers from '../../docs/guide/mcp-servers.md';
 import refProjects from '../../docs/guide/projects.md';
+import refScheduledTasks from '../../docs/guide/scheduled-tasks.md';
 import refSelectionPrompts from '../../docs/guide/selection-prompts.md';
 import refSemanticSearch from '../../docs/guide/semantic-search.md';
 import refSummarization from '../../docs/guide/summarization.md';
@@ -39,6 +40,7 @@ export const helpResources = new Map<string, string>([
 	['references/getting-started.md', refGettingStarted],
 	['references/mcp-servers.md', refMcpServers],
 	['references/projects.md', refProjects],
+	['references/scheduled-tasks.md', refScheduledTasks],
 	['references/selection-prompts.md', refSelectionPrompts],
 	['references/semantic-search.md', refSemanticSearch],
 	['references/summarization.md', refSummarization],
@@ -61,6 +63,7 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/getting-started.md\` | Getting Started |
 | \`references/mcp-servers.md\` | MCP Servers |
 | \`references/projects.md\` | Projects |
+| \`references/scheduled-tasks.md\` | Scheduled Tasks |
 | \`references/selection-prompts.md\` | Selection Prompts |
 | \`references/semantic-search.md\` | Semantic Vault Search |
 | \`references/summarization.md\` | Document Summarization Guide |
