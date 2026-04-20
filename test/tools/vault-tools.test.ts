@@ -34,7 +34,6 @@ jest.mock('../../src/files', () => ({
 // Use the existing mock by extending it
 jest.mock('obsidian', () => ({
 	...jest.requireActual('../../__mocks__/obsidian.js'),
-	normalizePath: jest.fn((path: string) => path),
 	TFolder: class TFolder {
 		path: string;
 		name: string;
@@ -586,6 +585,31 @@ describe('VaultTools', () => {
 			expect(result.success).toBe(true);
 			expect(result.data?.count).toBe(1);
 			expect(result.data?.files[0].name).toBe('note.md');
+		});
+
+		it('should strip a trailing slash before folder lookup', async () => {
+			// Obsidian stores folder paths without trailing slashes, so
+			// getAbstractFileByPath('Areas/People/') would return null.
+			// The tool must normalize the path before lookup.
+			mockVault.getAbstractFileByPath.mockImplementation((p: string) => (p === 'Areas/People' ? mockFolder : null));
+
+			const result = await tool.execute({ path: 'Areas/People/' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(mockVault.getAbstractFileByPath).toHaveBeenCalledWith('Areas/People');
+			expect(result.data?.path).toBe('Areas/People');
+		});
+
+		it('should treat "/" as the vault root', async () => {
+			const rootFolder = new TFolder();
+			rootFolder.children = [mockFile];
+			mockVault.getRoot.mockReturnValue(rootFolder);
+
+			const result = await tool.execute({ path: '/' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data?.path).toBe('');
+			expect(result.data?.count).toBe(1);
 		});
 
 		it('should include non-markdown files in recursive listing', async () => {
