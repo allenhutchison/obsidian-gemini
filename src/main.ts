@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, Editor, MarkdownView, MarkdownFileInfo } from 'obsidian';
+import { Plugin, WorkspaceLeaf, Editor, MarkdownView, MarkdownFileInfo, Platform } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiDiffView } from './ui/agent-view/gemini-diff-view';
@@ -651,13 +651,34 @@ export default class ObsidianGemini extends Plugin {
 		let leaf: WorkspaceLeaf | null = null;
 		const leaves = workspace.getLeavesOfType(VIEW_TYPE_AGENT);
 
+		// On mobile, prefer a main-area tab so the agent view gets the full screen
+		// instead of a cramped slide-out drawer. If an existing leaf lives in a
+		// sidebar (leftover from a prior install), detach it so we can create a
+		// fresh main-area leaf.
+		if (Platform.isMobile) {
+			const rootSplit = workspace.rootSplit;
+			const mainLeaf = leaves.find((l) => l.getRoot() === rootSplit) ?? null;
+			if (mainLeaf) {
+				leaf = mainLeaf;
+				await workspace.revealLeaf(leaf);
+			} else {
+				for (const sidebarLeaf of leaves) sidebarLeaf.detach();
+				leaf = workspace.getLeaf('tab');
+				if (leaf) {
+					await leaf.setViewState({ type: VIEW_TYPE_AGENT, active: true });
+					await workspace.revealLeaf(leaf);
+				} else {
+					this.logger.error('Could not find a leaf to open the agent view');
+				}
+			}
+			return;
+		}
+
 		if (leaves.length > 0) {
 			// A leaf with our view already exists, use that
 			leaf = leaves[0];
 			await workspace.revealLeaf(leaf);
 		} else {
-			// Our view could not be found in the workspace, create a new leaf
-			// in the right sidebar for it
 			leaf = workspace.getRightLeaf(false);
 			if (leaf) {
 				await leaf.setViewState({ type: VIEW_TYPE_AGENT, active: true });

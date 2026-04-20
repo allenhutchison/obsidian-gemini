@@ -1,4 +1,4 @@
-import { ItemView, MarkdownView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
+import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -90,8 +90,90 @@ export class AgentView extends ItemView {
 		// Register link click handler for internal links
 		this.registerLinkClickHandler();
 
+		if (Platform.isMobile) {
+			this.applyMobileLayoutFix(container as HTMLElement);
+		}
+
 		// Create default agent session
 		await this.createNewSession();
+	}
+
+	// Obsidian mobile's bottom nav/toolbar floats over view-content on iOS.
+	// Locating it lets us dock the input above it rather than behind it.
+	private findMobileNavbar(): HTMLElement | null {
+		const selectors = [
+			'.app-container .mobile-navbar',
+			'.app-container .mobile-toolbar',
+			'.mobile-navbar',
+			'.mobile-toolbar',
+			'.mod-mobile-toolbar',
+		];
+		for (const sel of selectors) {
+			const el = document.querySelector<HTMLElement>(sel);
+			if (el && el.offsetHeight > 0) return el;
+		}
+		return null;
+	}
+
+	/**
+	 * iOS WebKit inside Obsidian mobile has two bugs that break the agent
+	 * view layout:
+	 *   1. Flex-grow fails to expand the chat area when the container
+	 *      resizes for the keyboard, so the chat collapses to ~24px.
+	 *   2. Focusing the input scrolls an ancestor to "reveal" it, which
+	 *      pushes our children off-screen.
+	 * We compute chat's height directly (targeting the smaller of container
+	 * bottom or mobile-navbar top) and lock overflow on the container and
+	 * its parent so nothing can scroll behind our back. setProperty with
+	 * 'important' is defensive — themes or other plugins sometimes add
+	 * `!important` to flex rules that would otherwise beat inline styles.
+	 */
+	private applyMobileLayoutFix(container: HTMLElement) {
+		const apply = () => {
+			const chat = container.querySelector<HTMLElement>('.gemini-agent-chat');
+			const iarea = container.querySelector<HTMLElement>('.gemini-agent-input-area');
+			if (!chat || !iarea) return;
+			const ctrBottom = container.getBoundingClientRect().bottom;
+			const navbarTop = this.findMobileNavbar()?.getBoundingClientRect().top ?? Infinity;
+			const targetBottom = Math.min(ctrBottom, navbarTop);
+			chat.style.setProperty('flex-grow', '0', 'important');
+			chat.style.setProperty('flex-shrink', '0', 'important');
+			chat.style.setProperty('flex-basis', 'auto', 'important');
+			for (let i = 0; i < 3; i++) {
+				const delta = targetBottom - iarea.getBoundingClientRect().bottom;
+				if (Math.abs(delta) < 1) break;
+				const newH = Math.max(0, chat.offsetHeight + delta);
+				chat.style.setProperty('height', `${newH}px`, 'important');
+				void chat.offsetHeight;
+			}
+		};
+		apply();
+
+		const ro = new ResizeObserver(() => apply());
+		ro.observe(container);
+		const iarea = container.querySelector<HTMLElement>('.gemini-agent-input-area');
+		if (iarea) ro.observe(iarea);
+
+		const vv = window.visualViewport;
+		vv?.addEventListener('resize', apply);
+
+		container.style.setProperty('overflow', 'hidden', 'important');
+		const parent = container.parentElement;
+		parent?.style.setProperty('overflow', 'hidden', 'important');
+		const onScroll = () => {
+			if (container.scrollTop !== 0) container.scrollTop = 0;
+			if (parent && parent.scrollTop !== 0) parent.scrollTop = 0;
+			apply();
+		};
+		container.addEventListener('scroll', onScroll, { passive: true });
+		parent?.addEventListener('scroll', onScroll, { passive: true });
+
+		this.register(() => {
+			ro.disconnect();
+			vv?.removeEventListener('resize', apply);
+			container.removeEventListener('scroll', onScroll);
+			parent?.removeEventListener('scroll', onScroll);
+		});
 	}
 
 	private async createAgentInterface(container: HTMLElement) {
