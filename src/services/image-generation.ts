@@ -100,6 +100,86 @@ export class ImageGeneration {
 	}
 
 	/**
+	 * Resolve the exact vault path an image will be saved at, for either an
+	 * explicit caller-supplied path or the default attachment-folder flow.
+	 *
+	 * When `outputPath` is provided, validates it and rewrites the extension
+	 * to `.png` (saveImageToVault writes PNG bytes unconditionally). When it
+	 * isn't, falls back to the default attachment-folder resolution.
+	 *
+	 * Used by background mode of GenerateImageTool to pre-compute the path at
+	 * submit time and return it synchronously — the agent relies on this path
+	 * being the exact location it can later `read_file`. Must stay in sync
+	 * with saveImageToVault so the promise-at-submit matches the
+	 * actual-write.
+	 *
+	 * Throws synchronously on an invalid explicit path (vault escape,
+	 * protected folder, etc.) or when the default branch has no active file
+	 * and no `targetNotePath` to anchor the attachment folder.
+	 */
+	async resolveOutputPath(prompt: string, targetNotePath?: string, outputPath?: string): Promise<string> {
+		if (outputPath) {
+			// Runs the same validation/normalisation saveImageToVault uses,
+			// including rewriting any non-.png extension to .png.
+			return this.validateOutputPath(outputPath);
+		}
+		return this.resolveDefaultOutputPath(prompt, targetNotePath);
+	}
+
+	/**
+	 * Resolve the path the image WOULD be saved at when no explicit `outputPath`
+	 * is given. Mirrors the no-`outputPath` branch of saveImageToVault.
+	 *
+	 * Prefer `resolveOutputPath` for callers that may or may not have an
+	 * explicit path — it handles both branches consistently. This method is
+	 * kept public for callers that specifically want the default flow.
+	 *
+	 * Throws if no active file exists and no `targetNotePath` is provided.
+	 */
+	async resolveDefaultOutputPath(prompt: string, targetNotePath?: string): Promise<string> {
+		const filename = this.buildDefaultFilename(prompt);
+		const referenceNotePath = this.resolveReferenceNotePath(targetNotePath);
+		return this.plugin.app.fileManager.getAvailablePathForAttachment(filename, referenceNotePath);
+	}
+
+	/**
+	 * Build the default filename used when no explicit outputPath is given.
+	 * Centralised so resolveDefaultOutputPath and saveImageToVault can't drift.
+	 *
+	 * Includes a timestamp AND a short random suffix so two concurrent
+	 * background tasks can't propose the same path. `getAvailablePathForAttachment`
+	 * is a non-atomic availability check — if it returned the same "free" path
+	 * to two callers, the second write would throw when `vault.createBinary`
+	 * encountered the file the first task wrote. The random suffix drops
+	 * collision probability to ~1-in-2-billion per same-millisecond submission
+	 * with the same prompt slice, from the ~100% it would be otherwise in
+	 * that (rare) case.
+	 */
+	private buildDefaultFilename(prompt: string): string {
+		const sanitizedPrompt = prompt
+			.substring(0, 50)
+			.replace(/[^a-zA-Z0-9\-_]/g, '-')
+			.replace(/-+/g, '-')
+			.replace(/^-|-$/g, '');
+		const randomSuffix = Math.random().toString(36).substring(2, 8);
+		return `generated-${sanitizedPrompt}-${Date.now()}-${randomSuffix}.png`;
+	}
+
+	/**
+	 * Resolve the note path used as the attachment-folder reference. Falls back
+	 * to the active file when no explicit target is given. Throws when neither
+	 * is available — Obsidian's getAvailablePathForAttachment requires a context.
+	 */
+	private resolveReferenceNotePath(targetNotePath?: string): string {
+		if (targetNotePath) return targetNotePath;
+		const activeFile = this.plugin.app.workspace.getActiveFile();
+		if (!activeFile) {
+			throw new Error('No active file and no target note path provided');
+		}
+		return activeFile.path;
+	}
+
+	/**
 	 * Validate and normalize an explicit output path supplied by the caller.
 	 * Rejects paths that escape the vault, target protected system folders, or
 	 * land inside the plugin state folder — important because GenerateImageTool
@@ -183,29 +263,7 @@ export class ImageGeneration {
 				await ensureFolderExists(this.plugin.app.vault, parentPath, 'image output folder', this.plugin.logger);
 			}
 		} else {
-			// Create a safe filename from the prompt (truncate and sanitize)
-			const sanitizedPrompt = prompt
-				.substring(0, 50)
-				.replace(/[^a-zA-Z0-9\-_]/g, '-')
-				.replace(/-+/g, '-')
-				.replace(/^-|-$/g, '');
-
-			const timestamp = Date.now();
-			const filename = `generated-${sanitizedPrompt}-${timestamp}.png`;
-
-			// Determine reference note path for attachment folder resolution
-			let referenceNotePath: string;
-			if (targetNotePath) {
-				referenceNotePath = targetNotePath;
-			} else {
-				const activeFile = this.plugin.app.workspace.getActiveFile();
-				if (!activeFile) {
-					throw new Error('No active file and no target note path provided');
-				}
-				referenceNotePath = activeFile.path;
-			}
-
-			resolvedPath = await this.plugin.app.fileManager.getAvailablePathForAttachment(filename, referenceNotePath);
+			resolvedPath = await this.resolveDefaultOutputPath(prompt, targetNotePath);
 		}
 
 		// Save to vault

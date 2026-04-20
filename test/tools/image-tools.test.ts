@@ -4,6 +4,7 @@ import { ToolExecutionContext } from '../../src/tools/types';
 // Mock the image generation service
 const mockImageGeneration = {
 	generateImage: jest.fn(),
+	resolveOutputPath: jest.fn(),
 };
 
 const mockBackgroundTaskManager = {
@@ -184,6 +185,11 @@ describe('ImageTools', () => {
 		beforeEach(() => {
 			tool = new GenerateImageTool();
 			jest.clearAllMocks();
+			// Default: the resolver echoes back the explicit output_path (or a generic
+			// default if not provided). Individual tests override as needed.
+			mockImageGeneration.resolveOutputPath.mockImplementation(
+				async (_prompt: string, _target: string | undefined, explicit?: string) => explicit ?? 'attachments/default.png'
+			);
 		});
 
 		it('returns taskId and output_path immediately without calling generateImage', async () => {
@@ -217,11 +223,46 @@ describe('ImageTools', () => {
 			expect(label.endsWith('…')).toBe(true);
 		});
 
-		it('returns null output_path when none provided (image lands in attachment folder)', async () => {
+		it('pre-resolves output_path via attachment folder when none provided', async () => {
+			mockImageGeneration.resolveOutputPath.mockResolvedValue('attachments/generated-a-dog-12345.png');
+
 			const result = await tool.execute({ prompt: 'a dog', background: true }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_path).toBeNull();
+			expect(result.data.output_path).toBe('attachments/generated-a-dog-12345.png');
+			// Resolver is called with the prompt, active file as reference, and no explicit path
+			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', 'active-note.md', undefined);
+		});
+
+		it('routes explicit output_path through the service resolver so validation applies', async () => {
+			// The service normalises .jpg → .png when validating — caller and resolver see
+			// the same final path so the agent isn't lied to.
+			mockImageGeneration.resolveOutputPath.mockResolvedValue('pictures/dog.png');
+
+			const result = await tool.execute(
+				{ prompt: 'a dog', background: true, output_path: 'pictures/dog.jpg' },
+				mockContext
+			);
+
+			expect(result.success).toBe(true);
+			expect(result.data.output_path).toBe('pictures/dog.png');
+			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', 'active-note.md', 'pictures/dog.jpg');
+		});
+
+		it('returns a tool error synchronously when the resolver throws (invalid path or no reference)', async () => {
+			mockImageGeneration.resolveOutputPath.mockRejectedValue(
+				new Error('Output path cannot be inside the plugin state folder')
+			);
+
+			const result = await tool.execute(
+				{ prompt: 'a cat', background: true, output_path: 'gemini-scribe/bad.png' },
+				mockContext
+			);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Failed to resolve image output path');
+			expect(result.error).toContain('plugin state folder');
+			expect(mockBackgroundTaskManager.submit).not.toHaveBeenCalled();
 		});
 
 		it('returns error when BackgroundTaskManager is unavailable', async () => {
@@ -236,27 +277,36 @@ describe('ImageTools', () => {
 			expect(result.error).toContain('Background task manager not available');
 		});
 
-		it('callback invokes generateImage with prompt, active file as target_note, and no output_path', async () => {
+		it('callback invokes generateImage with the pre-resolved output_path', async () => {
+			mockImageGeneration.resolveOutputPath.mockResolvedValue('attachments/result.png');
 			mockImageGeneration.generateImage.mockResolvedValue('attachments/result.png');
 
 			await tool.execute({ prompt: 'a sunset', background: true }, mockContext);
 
 			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
-			const outputPath = await callback(() => false);
+			const returnedPath = await callback(() => false);
 
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a sunset', 'active-note.md', undefined);
-			expect(outputPath).toBe('attachments/result.png');
+			// The resolved path is passed through as the explicit outputPath so the
+			// task writes exactly where we told the agent it would land.
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith(
+				'a sunset',
+				'active-note.md',
+				'attachments/result.png'
+			);
+			expect(returnedPath).toBe('attachments/result.png');
 		});
 
 		it('callback uses explicit target_note over captured active file', async () => {
-			mockImageGeneration.generateImage.mockResolvedValue('attachments/result.png');
+			mockImageGeneration.resolveOutputPath.mockResolvedValue('my-folder/result.png');
+			mockImageGeneration.generateImage.mockResolvedValue('my-folder/result.png');
 
 			await tool.execute({ prompt: 'a fox', background: true, target_note: 'my-note.md' }, mockContext);
 
 			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
 			await callback(() => false);
 
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a fox', 'my-note.md', undefined);
+			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a fox', 'my-note.md', undefined);
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a fox', 'my-note.md', 'my-folder/result.png');
 		});
 
 		it('callback returns undefined when cancelled', async () => {
