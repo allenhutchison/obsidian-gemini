@@ -143,8 +143,17 @@ export class ImageGeneration {
 	}
 
 	/**
-	 * Build the timestamped filename used when no explicit outputPath is given.
+	 * Build the default filename used when no explicit outputPath is given.
 	 * Centralised so resolveDefaultOutputPath and saveImageToVault can't drift.
+	 *
+	 * Includes a timestamp AND a short random suffix so two concurrent
+	 * background tasks can't propose the same path. `getAvailablePathForAttachment`
+	 * is a non-atomic availability check — if it returned the same "free" path
+	 * to two callers, the second write would throw when `vault.createBinary`
+	 * encountered the file the first task wrote. The random suffix drops
+	 * collision probability to ~1-in-2-billion per same-millisecond submission
+	 * with the same prompt slice, from the ~100% it would be otherwise in
+	 * that (rare) case.
 	 */
 	private buildDefaultFilename(prompt: string): string {
 		const sanitizedPrompt = prompt
@@ -152,7 +161,8 @@ export class ImageGeneration {
 			.replace(/[^a-zA-Z0-9\-_]/g, '-')
 			.replace(/-+/g, '-')
 			.replace(/^-|-$/g, '');
-		return `generated-${sanitizedPrompt}-${Date.now()}.png`;
+		const randomSuffix = Math.random().toString(36).substring(2, 8);
+		return `generated-${sanitizedPrompt}-${Date.now()}-${randomSuffix}.png`;
 	}
 
 	/**
