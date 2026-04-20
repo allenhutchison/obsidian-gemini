@@ -1,7 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
-import { TFile, TFolder } from 'obsidian';
+import { TFile, TFolder, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 
@@ -43,9 +43,14 @@ export class ListFilesTool implements Tool {
 		const plugin = context.plugin as ObsidianGemini;
 
 		try {
-			// Default to project root when no path specified and project is active
-			const folderPath = params.path || context.projectRootPath || '';
-			const folder = plugin.app.vault.getAbstractFileByPath(folderPath);
+			// Default to project root when no path specified and project is active.
+			// Normalize to strip trailing slashes and collapse duplicates; empty string stays
+			// empty to preserve "list vault root" semantics. Obsidian's normalizePath("") === "/",
+			// and "/" is also treated as the root shorthand.
+			const rawPath = params.path || context.projectRootPath || '';
+			const normalized = rawPath ? normalizePath(rawPath) : '';
+			const folderPath = normalized === '/' ? '' : normalized;
+			const folder = folderPath ? plugin.app.vault.getAbstractFileByPath(folderPath) : null;
 
 			if (folderPath && !folder) {
 				return {

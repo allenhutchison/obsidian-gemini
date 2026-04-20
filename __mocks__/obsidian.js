@@ -115,7 +115,13 @@ const MarkdownRenderer = {
 
 const setIcon = jest.fn();
 const Notice = jest.fn();
-const normalizePath = jest.fn((path) => path);
+// Mirrors Obsidian's normalizePath: collapses duplicate slashes, converts
+// backslashes, strips leading/trailing slashes, and returns '/' for empty input.
+const normalizePath = jest.fn((path) => {
+	if (path == null || /^\s*$/.test(path)) return '/';
+	const collapsed = path.replace(/[\\/]+/g, '/').replace(/(^\/+|\/+$)/g, '');
+	return collapsed || '/';
+});
 // Minimal Obsidian `debounce` mock. Queues the latest args on each call without
 // firing; `run()` drains the queue and invokes the callback; `cancel()` clears
 // it. This matches Obsidian's real debounce semantics (deferred firing) so
