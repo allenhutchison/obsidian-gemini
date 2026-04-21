@@ -132,8 +132,8 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 				// Read text content
 				const content = await this.vault.read(file);
 
-				// Skip empty or very small text files
-				if (!content || content.trim().length < 10) {
+				// Skip truly empty files — very short content is still worth indexing
+				if (!content) {
 					return null;
 				}
 
@@ -182,10 +182,11 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 			const hashArray = Array.from(new Uint8Array(hashBuffer));
 			return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 		} catch (error) {
-			// Throw error for existing files that fail to hash - prevents storing
-			// empty hashes that would break change detection in smartSync
-			const message = error instanceof Error ? error.message : String(error);
-			throw new Error(`Failed to compute hash for ${filePath}: ${message}`);
+			// Fall back to a metadata-based proxy hash so smart sync still tracks the
+			// file without throwing. mtime+size changes whenever the file changes, so
+			// change detection remains reliable even without a content hash.
+			this.logError?.(`Cannot read file content for hashing, using metadata fallback: ${filePath}`, error);
+			return `mtime:${file.stat.mtime}-size:${file.stat.size}`;
 		}
 	}
 

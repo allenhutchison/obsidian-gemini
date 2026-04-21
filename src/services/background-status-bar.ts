@@ -41,7 +41,8 @@ export class BackgroundStatusBar {
 
 		this.statusBarItem.addEventListener('click', async () => {
 			const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
-			new BackgroundTasksModal(this.plugin.app, this.plugin).open();
+			const defaultTab = this.taskManager.runningCount > 0 ? 'tasks' : 'rag';
+			new BackgroundTasksModal(this.plugin.app, this.plugin, defaultTab).open();
 		});
 
 		this.update();
