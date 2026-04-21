@@ -157,8 +157,21 @@ export class AgentView extends ItemView {
 		const vv = window.visualViewport;
 		vv?.addEventListener('resize', apply);
 
-		container.style.setProperty('overflow', 'hidden', 'important');
+		// Capture overflow before overriding so we can restore it on teardown.
+		// Obsidian reuses host elements across views; leaving `overflow: hidden`
+		// behind would make subsequent views non-scrollable.
 		const parent = container.parentElement;
+		const prevContainerOverflow = {
+			value: container.style.getPropertyValue('overflow'),
+			priority: container.style.getPropertyPriority('overflow'),
+		};
+		const prevParentOverflow = parent
+			? {
+					value: parent.style.getPropertyValue('overflow'),
+					priority: parent.style.getPropertyPriority('overflow'),
+				}
+			: null;
+		container.style.setProperty('overflow', 'hidden', 'important');
 		parent?.style.setProperty('overflow', 'hidden', 'important');
 		const onScroll = () => {
 			if (container.scrollTop !== 0) container.scrollTop = 0;
@@ -173,6 +186,18 @@ export class AgentView extends ItemView {
 			vv?.removeEventListener('resize', apply);
 			container.removeEventListener('scroll', onScroll);
 			parent?.removeEventListener('scroll', onScroll);
+			if (prevContainerOverflow.value) {
+				container.style.setProperty('overflow', prevContainerOverflow.value, prevContainerOverflow.priority);
+			} else {
+				container.style.removeProperty('overflow');
+			}
+			if (parent && prevParentOverflow) {
+				if (prevParentOverflow.value) {
+					parent.style.setProperty('overflow', prevParentOverflow.value, prevParentOverflow.priority);
+				} else {
+					parent.style.removeProperty('overflow');
+				}
+			}
 		});
 	}
 
