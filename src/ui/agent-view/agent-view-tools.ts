@@ -130,9 +130,10 @@ export class AgentViewTools {
 
 			await this.context.displayMessage(aiEntry);
 
-			// The empty-response fallback message is a UI-only courtesy — don't
-			// pollute session history with synthetic content the model didn't say.
-			if (!result.fellBack) {
+			// `fellBack` (empty-response courtesy) and `loopAborted` (loop-detector
+			// escalation) both produce UI-only notices — don't pollute session
+			// history with synthetic content the model didn't actually say.
+			if (!result.fellBack && !result.loopAborted) {
 				await this.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
 			}
 

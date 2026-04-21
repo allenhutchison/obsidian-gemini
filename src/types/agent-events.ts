@@ -52,6 +52,18 @@ export interface AgentEventMap {
 		toolCount: number;
 	}>;
 
+	/**
+	 * Tool loop detector fired and blocked a call. Emitted per fire so UI
+	 * subscribers can surface it (chat notice, badge, etc.) beyond the
+	 * logger.warn already emitted by the engine.
+	 */
+	toolLoopDetected: Readonly<{
+		toolName: string;
+		args: Record<string, unknown>;
+		identicalCallCount: number;
+		timeWindowMs: number;
+	}>;
+
 	/** After any API response (initial, follow-up, or retry) with usage metadata */
 	apiResponseReceived: Readonly<{
 		usageMetadata?: UsageMetadata;
