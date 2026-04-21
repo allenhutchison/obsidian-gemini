@@ -130,11 +130,15 @@ describe('RecallSessionsTool', () => {
 		expect(titles).toEqual(['Has context']);
 	});
 
-	// Regression for #506: recall uses raw refs from frontmatter (no metadata-cache
-	// resolution), so a ref to a since-deleted file survives in accessedFileRefs and
-	// still matches. If someone reintroduces hydration here, this test will fail
-	// because the deleted file's ref would be dropped at the session-manager layer.
-	it('still matches sessions whose accessed_files ref a since-deleted file', async () => {
+	// Recall-layer half of the #506 regression. SessionManager.getSessionMetadata
+	// is stubbed here, so this test only proves: given a ref string whose
+	// underlying file no longer exists in the vault, the recall filter still
+	// matches it (because matching is pure string-substring on the raw ref and
+	// never consults the metadata cache). The partner invariant — that
+	// getSessionMetadata itself preserves such refs by not resolving wikilinks —
+	// is covered in test/agent/session-manager.test.ts by the
+	// "should not call getFirstLinkpathDest (no TFile resolution)" test.
+	it('filter still matches a ref string even when its underlying file no longer exists', async () => {
 		const withDeleted = makeSession({
 			id: 'a',
 			title: 'Touched a note that was later deleted',
