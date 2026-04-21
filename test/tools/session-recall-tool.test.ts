@@ -130,6 +130,31 @@ describe('RecallSessionsTool', () => {
 		expect(titles).toEqual(['Has context']);
 	});
 
+	// Regression for #506: recall uses raw refs from frontmatter (no metadata-cache
+	// resolution), so a ref to a since-deleted file survives in accessedFileRefs and
+	// still matches. If someone reintroduces hydration here, this test will fail
+	// because the deleted file's ref would be dropped at the session-manager layer.
+	it('still matches sessions whose accessed_files ref a since-deleted file', async () => {
+		const withDeleted = makeSession({
+			id: 'a',
+			title: 'Touched a note that was later deleted',
+			accessedFileRefs: ['Deleted Note'],
+		});
+		const unrelated = makeSession({
+			id: 'b',
+			title: 'Unrelated',
+			accessedFileRefs: ['Other'],
+		});
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([withDeleted, unrelated]) },
+		});
+
+		const result = await getTool().execute({ filePath: 'Deleted Note' }, ctx);
+		expect(result.success).toBe(true);
+		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		expect(titles).toEqual(['Touched a note that was later deleted']);
+	});
+
 	it('matches filePath with full vault path against basename refs (bidirectional)', async () => {
 		const matching = makeSession({
 			id: 'a',
