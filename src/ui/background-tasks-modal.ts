@@ -66,7 +66,13 @@ export class BackgroundTasksModal extends Modal {
 		// --- RAG live-updates ---
 		if (this.plugin.ragIndexing) {
 			this.ragProgressListener = () => {
-				if (this.activeTab === 'rag') this.renderTabContent();
+				if (this.activeTab !== 'rag') return;
+				// Don't wipe the Files tab while the search box has focus — the
+				// debounce timer may still hold a reference to the old list container.
+				const active = document.activeElement;
+				if (this.ragInnerTab === 'files' && active instanceof HTMLElement && active.hasClass('rag-status-search'))
+					return;
+				this.renderTabContent();
 			};
 			this.plugin.ragIndexing.addProgressListener(this.ragProgressListener);
 		}
@@ -118,12 +124,13 @@ export class BackgroundTasksModal extends Modal {
 		for (const { id, label, icon } of tabs) {
 			const tab = tabBar.createDiv({
 				cls: `gemini-activity-tab${this.activeTab === id ? ' gemini-activity-tab--active' : ''}`,
+				attr: { role: 'tab', tabindex: '0', 'aria-selected': String(this.activeTab === id) },
 			});
 			const iconEl = tab.createSpan({ cls: 'gemini-activity-tab-icon' });
 			setIcon(iconEl, icon);
 			tab.createSpan({ cls: 'gemini-activity-tab-label', text: label });
 
-			tab.addEventListener('click', () => {
+			const activate = () => {
 				if (this.activeTab === id) return;
 				this.activeTab = id;
 				// Reset RAG inner state when switching to the RAG tab
@@ -135,9 +142,19 @@ export class BackgroundTasksModal extends Modal {
 				// Update tab bar active styles without full shell re-render
 				tabBar.querySelectorAll('.gemini-activity-tab').forEach((el) => {
 					el.removeClass('gemini-activity-tab--active');
+					el.setAttribute('aria-selected', 'false');
 				});
 				tab.addClass('gemini-activity-tab--active');
+				tab.setAttribute('aria-selected', 'true');
 				this.renderTabContent();
+			};
+
+			tab.addEventListener('click', activate);
+			tab.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					activate();
+				}
 			});
 		}
 	}
@@ -310,13 +327,21 @@ export class BackgroundTasksModal extends Modal {
 			const tab = tabBar.createDiv({
 				cls: `rag-status-tab${this.ragInnerTab === id ? ' rag-status-tab-active' : ''}`,
 				text: label,
+				attr: { role: 'tab', tabindex: '0', 'aria-selected': String(this.ragInnerTab === id) },
 			});
-			tab.addEventListener('click', () => {
+			const activate = () => {
 				if (this.ragInnerTab === id) return;
 				this.ragInnerTab = id;
 				this.ragShowAllFiles = false;
 				this.ragSearchQuery = '';
 				this.renderTabContent();
+			};
+			tab.addEventListener('click', activate);
+			tab.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					activate();
+				}
 			});
 		};
 
@@ -483,14 +508,24 @@ export class BackgroundTasksModal extends Modal {
 		const display = this.ragShowAllFiles ? filtered : filtered.slice(0, this.RAG_MAX_FILES_INITIAL);
 
 		for (const file of display) {
-			const item = container.createDiv({ cls: 'rag-status-file-item rag-status-file-item--clickable' });
+			const item = container.createDiv({
+				cls: 'rag-status-file-item rag-status-file-item--clickable',
+				attr: { role: 'button', tabindex: '0', 'aria-label': `Open ${file.path}` },
+			});
 			const pathEl = item.createSpan({ cls: 'rag-status-file-path' });
 			pathEl.setText(file.path);
 			pathEl.setAttribute('title', file.path);
 			item.createSpan({ cls: 'rag-status-file-time', text: this.formatRagDate(file.lastIndexed) });
-			item.addEventListener('click', () => {
-				this.plugin.app.workspace.openLinkText(file.path, '', false);
+			const open = () => {
 				this.close();
+				this.plugin.app.workspace.openLinkText(file.path, '', false);
+			};
+			item.addEventListener('click', open);
+			item.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					open();
+				}
 			});
 		}
 
