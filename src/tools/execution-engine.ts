@@ -73,8 +73,23 @@ export class ToolExecutionEngine {
 			const loopInfo = this.loopDetector.getLoopInfo(context.session.id, toolCall);
 			if (loopInfo.isLoop) {
 				this.plugin.logger.warn(`Loop detected for tool ${toolCall.name}:`, loopInfo);
+
+				// Surface the fire on the event bus so UI (and headless) subscribers can react.
+				// Emit is fire-and-forget; a throwing subscriber must not block the block.
+				try {
+					void this.plugin.agentEventBus?.emit('toolLoopDetected', {
+						toolName: toolCall.name,
+						args: toolCall.arguments || {},
+						identicalCallCount: loopInfo.identicalCallCount,
+						timeWindowMs: loopInfo.timeWindowMs,
+					});
+				} catch (error) {
+					this.plugin.logger.error('Failed to emit toolLoopDetected event:', error);
+				}
+
 				return {
 					success: false,
+					loopDetected: true,
 					error: `Execution loop detected: ${toolCall.name} has been called ${loopInfo.identicalCallCount} times with the same parameters in the last ${loopInfo.timeWindowMs / 1000} seconds. Please try a different approach.`,
 				};
 			}

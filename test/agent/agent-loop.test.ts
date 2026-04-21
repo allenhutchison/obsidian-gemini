@@ -733,4 +733,59 @@ describe('AgentLoop', () => {
 			expect(plugin.toolExecutionEngine.executeTool).not.toHaveBeenCalled();
 		});
 	});
+
+	describe('loop-detector escalation', () => {
+		test('aborts the turn once loopDetected fires accumulate past threshold', async () => {
+			const plugin = buildPlugin();
+			// Every tool call comes back already blocked by the engine — mimics the
+			// model stubbornly re-attempting the same call after being told to stop.
+			plugin.toolExecutionEngine.executeTool = jest
+				.fn()
+				.mockResolvedValue({ success: false, loopDetected: true, error: 'Execution loop detected' });
+
+			const session = buildSession();
+			// Model keeps replying with more tool calls — would loop forever without the abort.
+			const api = {
+				generateModelResponse: jest.fn().mockResolvedValue(toolResponse([tc('read_file', { path: 'a' })])),
+			} as any;
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(result.loopAborted).toBe(true);
+			expect(result.cancelled).toBe(false);
+			expect(result.exhausted).toBe(false);
+			expect(result.markdown).toMatch(/loop detector fired/i);
+			// Threshold is 3 — one blocked call per batch, so three batches run before abort.
+			expect(result.iterations).toBe(3);
+			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(3);
+		});
+
+		test('does not abort when only non-loop failures occur', async () => {
+			const plugin = buildPlugin();
+			// Regular failures without the loopDetected flag must not escalate.
+			plugin.toolExecutionEngine.executeTool = jest
+				.fn()
+				.mockResolvedValue({ success: false, error: 'generic failure' });
+
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('recovered')]);
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file'), tc('read_file'), tc('read_file'), tc('read_file')]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(result.loopAborted).toBe(false);
+			expect(result.markdown).toBe('recovered');
+		});
+	});
 });

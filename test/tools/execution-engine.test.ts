@@ -422,3 +422,110 @@ describe('ToolExecutionEngine - Error Handling', () => {
 		expect(results[1].error).toBe('Tool non_existent not found');
 	});
 });
+
+describe('ToolExecutionEngine - Loop Detection', () => {
+	let plugin: any;
+	let registry: ToolRegistry;
+	let engine: ToolExecutionEngine;
+
+	// A minimal always-succeeds READ tool — avoids hauling in the real
+	// vault-tool dependency surface just to exercise the loop detector.
+	const noopTool = {
+		name: 'noop',
+		description: 'noop',
+		category: ToolCategory.READ_ONLY,
+		classification: ToolClassification.READ,
+		parameters: { type: 'object' as const, properties: {}, required: [] },
+		execute: jest.fn().mockResolvedValue({ success: true, data: {} }),
+	};
+
+	beforeEach(() => {
+		plugin = {
+			settings: {
+				loopDetectionEnabled: true,
+				loopDetectionThreshold: 3,
+				loopDetectionTimeWindowSeconds: 60,
+			},
+			logger: { log: jest.fn(), debug: jest.fn(), warn: jest.fn(), error: jest.fn() },
+			agentEventBus: { emit: jest.fn().mockResolvedValue(undefined) },
+		};
+
+		registry = new ToolRegistry(plugin);
+		engine = new ToolExecutionEngine(plugin, registry);
+		registry.registerTool(noopTool as any);
+	});
+
+	afterEach(() => {
+		jest.clearAllMocks();
+	});
+
+	it('blocks further identical calls with loopDetected: true and emits toolLoopDetected', async () => {
+		const context = {
+			plugin,
+			session: {
+				id: 'loop-session',
+				type: 'agent-session',
+				context: {
+					contextFiles: [],
+					contextDepth: 2,
+					enabledTools: [ToolCategory.READ_ONLY],
+					requireConfirmation: [],
+				},
+			},
+		} as any;
+
+		const call = { name: 'noop', arguments: {} };
+
+		// Threshold is 3 — getLoopInfo is consulted *before* recordExecution, so
+		// the first 3 attempts pass (record counts: 0, 1, 2) and the 4th trips
+		// because 3 >= threshold.
+		const results = [];
+		for (let i = 0; i < 4; i++) {
+			results.push(await engine.executeTool(call, context, denyProvider));
+		}
+
+		expect(results.slice(0, 3).every((r) => r.success)).toBe(true);
+		expect(results.slice(0, 3).some((r) => r.loopDetected)).toBe(false);
+
+		const blocked = results[3];
+		expect(blocked.success).toBe(false);
+		expect(blocked.loopDetected).toBe(true);
+		expect(blocked.error).toMatch(/loop detected/i);
+
+		expect(plugin.agentEventBus.emit).toHaveBeenCalledTimes(1);
+		expect(plugin.agentEventBus.emit).toHaveBeenCalledWith(
+			'toolLoopDetected',
+			expect.objectContaining({
+				toolName: 'noop',
+				args: {},
+				identicalCallCount: 3,
+			})
+		);
+	});
+
+	it('does not set loopDetected when detection is disabled', async () => {
+		plugin.settings.loopDetectionEnabled = false;
+
+		const context = {
+			plugin,
+			session: {
+				id: 'no-detection-session',
+				type: 'agent-session',
+				context: {
+					contextFiles: [],
+					contextDepth: 2,
+					enabledTools: [ToolCategory.READ_ONLY],
+					requireConfirmation: [],
+				},
+			},
+		} as any;
+
+		const call = { name: 'noop', arguments: {} };
+		for (let i = 0; i < 5; i++) {
+			const result = await engine.executeTool(call, context, denyProvider);
+			expect(result.success).toBe(true);
+			expect(result.loopDetected).toBeUndefined();
+		}
+		expect(plugin.agentEventBus.emit).not.toHaveBeenCalled();
+	});
+});

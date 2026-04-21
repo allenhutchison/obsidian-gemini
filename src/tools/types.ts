@@ -14,6 +14,12 @@ export interface ToolResult {
 	requiresConfirmation?: boolean;
 	/** Binary attachments to inject as inlineData parts alongside the functionResponse */
 	inlineData?: Array<{ base64: string; mimeType: string }>;
+	/**
+	 * Set when the engine blocked this call because the loop detector fired.
+	 * AgentLoop reads this to track how many times the detector has tripped in
+	 * the current turn; after enough fires, the loop aborts the turn entirely.
+	 */
+	loopDetected?: boolean;
 }
 
 /**

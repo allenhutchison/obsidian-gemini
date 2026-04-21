@@ -95,9 +95,25 @@ export interface AgentLoopResult {
 	fellBack: boolean;
 	/** True if `maxIterations` was reached without a terminal text response. */
 	exhausted: boolean;
+	/**
+	 * True if the turn was aborted because the tool loop detector fired more
+	 * times than `AGENT_LOOP_ABORT_THRESHOLD` in a single turn. `markdown` is
+	 * a user-visible notice the caller may render but should not persist as a
+	 * model response.
+	 */
+	loopAborted: boolean;
 	/** Number of tool-execution batches that ran. */
 	iterations: number;
 }
+
+/**
+ * Number of tool-loop-detector fires (per turn) before the loop aborts the
+ * turn entirely. Individual identical-call blocking still happens on every
+ * fire via `ToolExecutionEngine`; this threshold exists so a model that
+ * keeps re-attempting the same call after being told "loop detected" still
+ * gets stopped cleanly instead of burning iterations and tokens.
+ */
+export const AGENT_LOOP_ABORT_THRESHOLD = 3;
 
 /**
  * Drives the tool-execution loop after the initial model response. Iterates
@@ -139,6 +155,12 @@ export class AgentLoop {
 		let conversationHistory = initialHistory;
 		let userMessage = initialUserMessage;
 		let iterations = 0;
+		// Turn-scoped count of tool-loop-detector fires. Incremented per blocked
+		// call (each `ToolResult` with `loopDetected: true`). Once it reaches
+		// AGENT_LOOP_ABORT_THRESHOLD the turn aborts cleanly so a model that
+		// refuses to adapt after being told "loop detected" doesn't burn the
+		// rest of the iteration budget.
+		let loopFireCount = 0;
 
 		// Lazily resolve the model API factory once — same instance is reused
 		// for every follow-up and retry request in this loop.
@@ -163,6 +185,7 @@ export class AgentLoop {
 					retried: false,
 					fellBack: false,
 					exhausted: true,
+					loopAborted: false,
 					iterations,
 				};
 			}
@@ -172,6 +195,27 @@ export class AgentLoop {
 			await this.safeHook('onToolBatchStart', plugin, () => hooks?.onToolBatchStart?.(sortedToolCalls, iterations));
 			iterations++;
 			const toolResults = await this.executeToolBatch(sortedToolCalls, toolContext, options);
+
+			// Count any loop-detector fires in this batch against the turn budget.
+			// If the model has triggered the detector too many times in this turn,
+			// stop iterating — the "please try a different approach" hint isn't
+			// working and continuing just burns tokens/time.
+			for (const tr of toolResults) {
+				if (tr.result.loopDetected) loopFireCount++;
+			}
+			if (loopFireCount >= AGENT_LOOP_ABORT_THRESHOLD) {
+				plugin.logger.warn(
+					`[AgentLoop] Aborting turn: tool loop detector fired ${loopFireCount} times ` +
+						`(threshold ${AGENT_LOOP_ABORT_THRESHOLD})`
+				);
+				const updatedHistory = buildToolHistoryTurns({
+					conversationHistory,
+					userMessage,
+					toolCalls: currentToolCalls,
+					toolResults,
+				});
+				return this.loopAbortedResult(updatedHistory, iterations, loopFireCount);
+			}
 
 			// Emit toolChainComplete so subscribers (accessed-files tracker, etc.) see this batch.
 			await this.safeEmit(plugin, 'toolChainComplete', {
@@ -241,6 +285,7 @@ export class AgentLoop {
 					retried: false,
 					fellBack: false,
 					exhausted: false,
+					loopAborted: false,
 					iterations,
 				};
 			}
@@ -277,6 +322,7 @@ export class AgentLoop {
 					retried: true,
 					fellBack: false,
 					exhausted: false,
+					loopAborted: false,
 					iterations,
 				};
 			}
@@ -290,6 +336,7 @@ export class AgentLoop {
 				retried: true,
 				fellBack: true,
 				exhausted: false,
+				loopAborted: false,
 				iterations,
 			};
 		}
@@ -303,6 +350,7 @@ export class AgentLoop {
 			retried: false,
 			fellBack: false,
 			exhausted: false,
+			loopAborted: false,
 			iterations: 0,
 		};
 	}
@@ -346,6 +394,22 @@ export class AgentLoop {
 			retried: false,
 			fellBack: false,
 			exhausted: false,
+			loopAborted: false,
+			iterations,
+		};
+	}
+
+	private loopAbortedResult(history: any[], iterations: number, fireCount: number): AgentLoopResult {
+		return {
+			markdown:
+				`The agent kept retrying the same tool call (loop detector fired ${fireCount} times). ` +
+				'Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session.',
+			history,
+			cancelled: false,
+			retried: false,
+			fellBack: false,
+			exhausted: false,
+			loopAborted: true,
 			iterations,
 		};
 	}
