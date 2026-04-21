@@ -130,6 +130,35 @@ describe('RecallSessionsTool', () => {
 		expect(titles).toEqual(['Has context']);
 	});
 
+	// Recall-layer half of the #506 regression. SessionManager.getSessionMetadata
+	// is stubbed here, so this test only proves: given a ref string whose
+	// underlying file no longer exists in the vault, the recall filter still
+	// matches it (because matching is pure string-substring on the raw ref and
+	// never consults the metadata cache). The partner invariant — that
+	// getSessionMetadata itself preserves such refs by not resolving wikilinks —
+	// is covered in test/agent/session-manager.test.ts by the
+	// "should not call getFirstLinkpathDest (no TFile resolution)" test.
+	it('filter still matches a ref string even when its underlying file no longer exists', async () => {
+		const withDeleted = makeSession({
+			id: 'a',
+			title: 'Touched a note that was later deleted',
+			accessedFileRefs: ['Deleted Note'],
+		});
+		const unrelated = makeSession({
+			id: 'b',
+			title: 'Unrelated',
+			accessedFileRefs: ['Other'],
+		});
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([withDeleted, unrelated]) },
+		});
+
+		const result = await getTool().execute({ filePath: 'Deleted Note' }, ctx);
+		expect(result.success).toBe(true);
+		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		expect(titles).toEqual(['Touched a note that was later deleted']);
+	});
+
 	it('matches filePath with full vault path against basename refs (bidirectional)', async () => {
 		const matching = makeSession({
 			id: 'a',
