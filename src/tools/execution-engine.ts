@@ -33,16 +33,17 @@ export class ToolExecutionEngine {
 	}
 
 	/**
-	 * Execute a tool call with appropriate checks and UI feedback
+	 * Execute a tool call with appropriate checks and UI feedback.
+	 *
+	 * `confirmationProvider` is required — the engine never reaches out to the
+	 * plugin to find a UI. Callers decide who approves: UI callers pass the
+	 * agent view; headless callers pass an auto-approve (or deny) provider.
 	 */
 	async executeTool(
 		toolCall: ToolCall,
 		context: ToolExecutionContext,
-		agentView?: IConfirmationProvider
+		confirmationProvider: IConfirmationProvider
 	): Promise<ToolResult> {
-		// Get agent view - use provided one or get from plugin
-		const view = agentView || (this.plugin as any).agentView;
-
 		const tool = this.registry.getTool(toolCall.name);
 
 		if (!tool) {
@@ -94,18 +95,18 @@ export class ToolExecutionEngine {
 		if (requiresConfirmation) {
 			// Check if this tool is allowed without confirmation for this session
 			// (session-level override via the in-chat "Allow" button)
-			const isAllowedWithoutConfirmation = view?.isToolAllowedWithoutConfirmation?.(toolCall.name) || false;
+			const isAllowedWithoutConfirmation = confirmationProvider.isToolAllowedWithoutConfirmation(toolCall.name);
 
 			if (!isAllowedWithoutConfirmation) {
 				// Update progress to show waiting for confirmation
 				const toolDisplay = tool.displayName || tool.name;
 				const confirmationMessage = `Waiting for confirmation: ${toolDisplay}`;
-				view?.updateProgress?.(confirmationMessage, 'waiting');
+				confirmationProvider.updateProgress?.(confirmationMessage, 'waiting');
 
-				const result = await this.requestUserConfirmation(tool, toolCall.arguments, view);
+				const result = await this.requestUserConfirmation(tool, toolCall.arguments, confirmationProvider);
 
 				// Update progress back to tool execution
-				view?.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
+				confirmationProvider.updateProgress?.(`Executing: ${toolDisplay}`, 'tool');
 
 				if (!result.confirmed) {
 					return {
@@ -138,8 +139,8 @@ export class ToolExecutionEngine {
 				}
 
 				// If user allowed this action without future confirmation
-				if (result.allowWithoutConfirmation && view) {
-					view.allowToolWithoutConfirmation(toolCall.name);
+				if (result.allowWithoutConfirmation) {
+					confirmationProvider.allowToolWithoutConfirmation(toolCall.name);
 				}
 			}
 		}
@@ -193,12 +194,12 @@ export class ToolExecutionEngine {
 	async executeToolCalls(
 		toolCalls: ToolCall[],
 		context: ToolExecutionContext,
-		agentView?: IConfirmationProvider
+		confirmationProvider: IConfirmationProvider
 	): Promise<ToolResult[]> {
 		const results: ToolResult[] = [];
 
 		for (const toolCall of toolCalls) {
-			const result = await this.executeTool(toolCall, context, agentView);
+			const result = await this.executeTool(toolCall, context, confirmationProvider);
 			results.push(result);
 
 			// Stop execution chain if a tool fails (unless configured otherwise)
@@ -216,17 +217,8 @@ export class ToolExecutionEngine {
 	private async requestUserConfirmation(
 		tool: Tool,
 		parameters: any,
-		agentView?: IConfirmationProvider
+		confirmationProvider: IConfirmationProvider
 	): Promise<ConfirmationResult> {
-		// Use provided agentView or get from plugin as fallback
-		const view = agentView || (this.plugin as any).agentView;
-
-		if (!view) {
-			// Fallback: if no agent view available, deny by default
-			this.plugin.logger?.warn('No agent view available for confirmation');
-			return { confirmed: false, allowWithoutConfirmation: false };
-		}
-
 		// Generate unique execution ID for tracking
 		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -234,7 +226,7 @@ export class ToolExecutionEngine {
 		const diffContext = await this.buildDiffContext(tool, parameters);
 
 		// Show confirmation in chat instead of modal
-		return view.showConfirmationInChat(tool, parameters, executionId, diffContext);
+		return confirmationProvider.showConfirmationInChat(tool, parameters, executionId, diffContext);
 	}
 
 	/**

@@ -1,6 +1,15 @@
 import { AgentLoop } from '../../src/agent/agent-loop';
 import type { ToolCall, ModelResponse, ModelApi } from '../../src/api/interfaces/model-api';
-import type { ToolResult } from '../../src/tools/types';
+import type { IConfirmationProvider, ToolResult } from '../../src/tools/types';
+
+// None of these tests exercise the confirmation UI branch (enabledTools/requireConfirmation
+// are empty, so no tool requires confirmation) — the loop only needs *some* provider to
+// hand through to the engine. A noop stub is fine.
+const confirmationProvider: IConfirmationProvider = {
+	showConfirmationInChat: jest.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
+	isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
+	allowToolWithoutConfirmation: jest.fn(),
+};
 
 // Build a minimal plugin stub with just enough surface for AgentLoop and the
 // followup helpers to walk through. Each test customises only what it cares about.
@@ -96,6 +105,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 				},
@@ -123,7 +133,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
 				initialUserMessage: 'first message',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			expect(result.markdown).toBe('done after two batches');
@@ -150,7 +160,7 @@ describe('AgentLoop', () => {
 				]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			const executedNames = plugin.toolExecutionEngine.executeTool.mock.calls.map((c: any[]) => c[0].name);
@@ -169,7 +179,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => true, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => true, createModelApi: () => api },
 			});
 
 			expect(result.cancelled).toBe(true);
@@ -198,7 +208,7 @@ describe('AgentLoop', () => {
 				]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => cancelled, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => cancelled, createModelApi: () => api },
 			});
 
 			// First tool ran (and flipped the flag); the loop's per-tool cancel check
@@ -226,7 +236,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file')]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled, createModelApi: () => api },
 			});
 
 			expect(result.cancelled).toBe(true);
@@ -245,7 +255,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			expect(result.markdown).toBe('summary text');
@@ -264,7 +274,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			expect(result.fellBack).toBe(true);
@@ -288,6 +298,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: { onEmptyResponseRetry },
@@ -312,7 +323,14 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file')]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, maxIterations: 3, createModelApi: () => api },
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					maxIterations: 3,
+					createModelApi: () => api,
+				},
 			});
 
 			expect(result.exhausted).toBe(true);
@@ -338,7 +356,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file')]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			expect(result.markdown).toBe('finally done');
@@ -362,6 +380,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: {
@@ -402,6 +421,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: { onToolCallStart },
@@ -432,6 +452,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: { onToolBatchStart },
@@ -465,6 +486,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: { onFollowUpRequestStart },
@@ -493,6 +515,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: { onToolCounted },
@@ -520,7 +543,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a' }), tc('read_file', { path: 'b' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			const calls = plugin.agentEventBus.emit.mock.calls;
@@ -542,7 +565,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file')]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			const eventNames = plugin.agentEventBus.emit.mock.calls.map((c: any[]) => c[0]);
@@ -565,7 +588,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a' }), tc('read_file', { path: 'b' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			expect(result.markdown).toBe('done despite error');
@@ -591,6 +614,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: {
@@ -622,6 +646,7 @@ describe('AgentLoop', () => {
 				options: {
 					plugin,
 					session,
+					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
 					hooks: {
@@ -658,7 +683,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			expect(result.markdown).toBe('done despite subscriber throw');
@@ -680,7 +705,7 @@ describe('AgentLoop', () => {
 				initialResponse: toolResponse([tc('read_file', { path: 'a' }, { thoughtSignature: 'sig_xyz' })]),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			const followUpRequest = (api.generateModelResponse as jest.Mock).mock.calls[0][0];
@@ -700,7 +725,7 @@ describe('AgentLoop', () => {
 				initialResponse: textResponse('caller already has the answer'),
 				initialUserMessage: 'q',
 				initialHistory: [],
-				options: { plugin, session, isCancelled: () => false, createModelApi: () => api },
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
 			expect(result.iterations).toBe(0);
