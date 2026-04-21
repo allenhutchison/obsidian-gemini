@@ -1146,6 +1146,7 @@ If your plugin does not need CSS, delete this file.
 /* Chat Container */
 .gemini-agent-chat {
 	flex: 1;
+	min-height: 0;
 	overflow-y: auto;
 	padding: var(--size-4-3);
 	background-color: var(--background-primary);
@@ -1362,6 +1363,16 @@ If your plugin does not need CSS, delete this file.
 	background-color: var(--background-secondary);
 	border-top: 1px solid var(--background-modifier-border);
 	flex-shrink: 0;
+}
+
+/* On mobile, Obsidian draws a navbar/toolbar at the bottom of the view. A
+   small bottom padding ensures the input row clears the home-indicator area.
+   Avoid env(safe-area-inset-bottom) here: on iOS Obsidian's WKWebView it
+   reports the virtual keyboard height while the keyboard is open, which
+   inflates this element by hundreds of pixels and shoves the input off
+   screen when typing. A fixed pad is safer than a misreported env(). */
+.is-mobile .gemini-agent-input-area {
+	padding-bottom: var(--size-4-3);
 }
 
 /* Wrapper for input + send button */
