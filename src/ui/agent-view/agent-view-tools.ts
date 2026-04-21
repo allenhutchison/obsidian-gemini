@@ -1,7 +1,7 @@
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
-import { ToolResult } from '../../tools/types';
+import { IConfirmationProvider, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentLoop } from '../../agent/agent-loop';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
@@ -16,6 +16,8 @@ export interface AgentViewContext {
 	hideProgress(): void;
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
 	incrementToolCallCount?(count: number): void;
+	/** Who approves tool calls that require confirmation — AgentView implements this. */
+	confirmationProvider: IConfirmationProvider;
 }
 
 /**
@@ -71,6 +73,7 @@ export class AgentViewTools {
 					plugin: this.plugin,
 					session: currentSession,
 					isCancelled: () => this.context.isCancellationRequested(),
+					confirmationProvider: this.context.confirmationProvider,
 					customPrompt,
 					projectRootPath: activeProject?.rootPath,
 					projectPermissions: activeProject?.config.permissions,

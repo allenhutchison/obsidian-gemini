@@ -3,7 +3,7 @@ import type { ChatSession } from '../types/agent';
 import type { ToolPermission } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi } from '../api/interfaces/model-api';
 import type { CustomPrompt } from '../prompts/types';
-import type { ToolExecutionContext, ToolResult } from '../tools/types';
+import type { IConfirmationProvider, ToolExecutionContext, ToolResult } from '../tools/types';
 import { generateToolDescription } from '../utils/text-generation';
 import { sortToolCallsByPriority, buildToolHistoryTurns, type ToolCallResultPair } from './agent-loop-helpers';
 import {
@@ -55,6 +55,12 @@ export interface AgentLoopOptions {
 	 * cancellation-safe boundary (between tools, before follow-up requests).
 	 */
 	isCancelled: () => boolean;
+	/**
+	 * Who approves tool calls that require confirmation. UI callers pass the
+	 * agent view; headless callers pass an auto-approve provider. Required —
+	 * the engine no longer reaches out to the plugin to find one.
+	 */
+	confirmationProvider: IConfirmationProvider;
 	/** Optional cap on the number of tool-execution batches. Undefined = no cap. */
 	maxIterations?: number;
 	customPrompt?: CustomPrompt;
@@ -349,7 +355,7 @@ export class AgentLoop {
 		toolContext: ToolExecutionContext,
 		options: AgentLoopOptions
 	): Promise<ToolCallResultPair[]> {
-		const { plugin, isCancelled, hooks } = options;
+		const { plugin, isCancelled, hooks, confirmationProvider } = options;
 		const results: ToolCallResultPair[] = [];
 
 		for (const toolCall of sortedToolCalls) {
@@ -372,7 +378,7 @@ export class AgentLoop {
 				);
 
 				const startedAt = Date.now();
-				const result = await plugin.toolExecutionEngine.executeTool(toolCall, toolContext);
+				const result = await plugin.toolExecutionEngine.executeTool(toolCall, toolContext, confirmationProvider);
 				const durationMs = Date.now() - startedAt;
 
 				// Log failed tool results so root causes aren't silent — the engine's

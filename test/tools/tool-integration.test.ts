@@ -4,7 +4,17 @@ import { ReadFileTool, WriteFileTool, SearchFilesTool, DeleteFileTool, ListFiles
 import { GoogleSearchTool } from '../../src/tools/google-search-tool';
 import { WebFetchTool } from '../../src/tools/web-fetch-tool';
 import { SessionType, ToolCategory } from '../../src/types/agent';
+import { IConfirmationProvider } from '../../src/tools/types';
 import { TFile } from 'obsidian';
+
+// Sessions in these tests bypass confirmation via `bypassConfirmationFor` /
+// `requireConfirmation: []`, so the provider is never consulted — a deny stub
+// is fine. Tests that need to test the confirmation branch build their own.
+const denyProvider: IConfirmationProvider = {
+	showConfirmationInChat: jest.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
+	isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
+	allowToolWithoutConfirmation: jest.fn(),
+};
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
 jest.mock('@allenhutchison/gemini-utils', () => ({
@@ -122,7 +132,8 @@ describe('Tool Integration Tests', () => {
 					name: 'find_files_by_name',
 					arguments: { pattern: 'todo' },
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(searchResult.success).toBe(true);
@@ -135,7 +146,8 @@ describe('Tool Integration Tests', () => {
 					name: 'read_file',
 					arguments: { path: 'project/todo.md' },
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(readResult.success).toBe(true);
@@ -151,7 +163,8 @@ describe('Tool Integration Tests', () => {
 						content: '# TODO\n- [ ] Task 1\n- [x] Task 2\n- [ ] Task 3',
 					},
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(writeResult.success).toBe(true);
@@ -193,7 +206,8 @@ describe('Tool Integration Tests', () => {
 					name: 'list_files',
 					arguments: { path: '' },
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(listResult.success).toBe(true);
@@ -205,7 +219,8 @@ describe('Tool Integration Tests', () => {
 					name: 'list_files',
 					arguments: { path: 'notes' },
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(subfolderResult.success).toBe(true);
@@ -248,7 +263,8 @@ describe('Tool Integration Tests', () => {
 					name: 'google_search',
 					arguments: { query: 'obsidian plugins' },
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(searchResult.success).toBe(true);
@@ -270,7 +286,8 @@ describe('Tool Integration Tests', () => {
 						prompt: 'Extract the main heading',
 					},
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(fetchResult.success).toBe(true);
@@ -299,7 +316,8 @@ describe('Tool Integration Tests', () => {
 					name: 'write_file',
 					arguments: { path: 'test.md', content: 'content' },
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(writeResult.success).toBe(false);
@@ -314,7 +332,8 @@ describe('Tool Integration Tests', () => {
 					name: 'read_file',
 					arguments: { path: 'test.md' },
 				},
-				context
+				context,
+				denyProvider
 			);
 
 			expect(readResult.success).toBe(true);
@@ -344,7 +363,8 @@ describe('Tool Integration Tests', () => {
 					name: 'write_file',
 					arguments: { path: systemPath, content: 'hacked' },
 				},
-				context
+				context,
+				denyProvider
 			);
 			expect(writeResult.success).toBe(false);
 			expect(writeResult.error).toContain('protected');
@@ -355,7 +375,8 @@ describe('Tool Integration Tests', () => {
 					name: 'delete_file',
 					arguments: { path: systemPath },
 				},
-				context
+				context,
+				denyProvider
 			);
 			expect(deleteResult.success).toBe(false);
 			expect(deleteResult.error).toContain('protected');
@@ -394,7 +415,7 @@ describe('Tool Integration Tests', () => {
 			// Execute tools sequentially
 			const results = [];
 			for (const call of toolCalls) {
-				const result = await engine.executeTool(call, context);
+				const result = await engine.executeTool(call, context, denyProvider);
 				results.push(result);
 			}
 

@@ -729,6 +729,8 @@ export class AgentView extends ItemView {
 			incrementToolCallCount: (count: number) => {
 				this.send?.incrementToolCallCount(count);
 			},
+			// AgentView implements IConfirmationProvider directly (see methods below).
+			confirmationProvider: this,
 		};
 	}
 

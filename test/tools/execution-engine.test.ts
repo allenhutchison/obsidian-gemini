@@ -3,7 +3,16 @@ import { ToolRegistry } from '../../src/tools/tool-registry';
 import { ReadFileTool, ListFilesTool, WriteFileTool } from '../../src/tools/vault';
 import { ToolCategory } from '../../src/types/agent';
 import { ToolClassification } from '../../src/types/tool-policy';
+import { IConfirmationProvider } from '../../src/tools/types';
 import { TFile } from 'obsidian';
+
+// Deny-by-default provider used when a test never reaches the confirmation branch.
+// Tests that do reach confirmation build their own stub inline.
+const denyProvider: IConfirmationProvider = {
+	showConfirmationInChat: jest.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
+	isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
+	allowToolWithoutConfirmation: jest.fn(),
+};
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
 jest.mock('@allenhutchison/gemini-utils', () => ({
@@ -92,7 +101,8 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 				name: 'read_file',
 				arguments: { path: 'test.md' },
 			},
-			context
+			context,
+			denyProvider
 		);
 
 		// Tool should execute without confirmation — returns success with exists: false
@@ -105,7 +115,8 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 				name: 'list_files',
 				arguments: { path: '' },
 			},
-			context
+			context,
+			denyProvider
 		);
 
 		expect(listResult.success).toBe(true);
@@ -263,7 +274,8 @@ describe('ToolExecutionEngine - Error Handling', () => {
 				name: 'non_existent_tool',
 				arguments: {},
 			},
-			context
+			context,
+			denyProvider
 		);
 
 		expect(result.success).toBe(false);
@@ -293,7 +305,8 @@ describe('ToolExecutionEngine - Error Handling', () => {
 				name: 'write_file',
 				arguments: { path: 'test.md', content: 'content' },
 			},
-			context
+			context,
+			denyProvider
 		);
 
 		expect(result.success).toBe(false);
@@ -335,7 +348,8 @@ describe('ToolExecutionEngine - Error Handling', () => {
 				name: 'error_tool',
 				arguments: {},
 			},
-			context
+			context,
+			denyProvider
 		);
 
 		expect(result.success).toBe(false);
@@ -365,7 +379,8 @@ describe('ToolExecutionEngine - Error Handling', () => {
 				name: 'read_file',
 				arguments: {},
 			},
-			context
+			context,
+			denyProvider
 		);
 
 		expect(result.success).toBe(false);
@@ -396,7 +411,8 @@ describe('ToolExecutionEngine - Error Handling', () => {
 				{ name: 'non_existent', arguments: {} }, // Should fail
 				{ name: 'list_files', arguments: { path: 'folder' } }, // Should succeed
 			],
-			context
+			context,
+			denyProvider
 		);
 
 		// Should only have 2 results because execution stops on error by default
