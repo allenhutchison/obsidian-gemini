@@ -64,7 +64,9 @@ export function scoreTask(task, events, modelResponse, modelName, durationMs) {
 		if (m.type === 'contains') return responseText.includes(m.value);
 		if (m.type === 'regex') {
 			try {
-				return new RegExp(m.value).test(responseText);
+				// `flags` is optional. JS regex syntax doesn't support inline (?i)
+				// etc. — pass flags explicitly via the matcher object instead.
+				return new RegExp(m.value, m.flags ?? '').test(responseText);
 			} catch {
 				return false;
 			}

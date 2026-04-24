@@ -1,0 +1,11 @@
+{
+	"id": "multi-hop-retrieval",
+	"description": "Two-hop retrieval: find Mission Director, then their PhD thesis topic",
+	"userMessage": "Look in the eval-scratch folder. Project Lyra has a Mission Director — what was the topic of their doctoral thesis? Answer in one sentence with the specific thesis topic.",
+	"fixture": "multi-hop-retrieval",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [{ "type": "regex", "value": "(magnetic confinement|spherical tokamak)", "flags": "i" }],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

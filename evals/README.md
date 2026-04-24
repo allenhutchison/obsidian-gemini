@@ -96,6 +96,15 @@ npm run eval:compare evals/results/run-a.json evals/results/run-b.json
 
 3. Run `npm run eval -- --task=my-task` to test it
 
+### Task categories currently in the suite
+
+- **Read-only retrieval** (`smoke-list-files`, `read-and-answer`, `find-tagged-notes`, `multi-file-summary`) — single-hop or set-membership reads, scored on output content.
+- **Multi-hop retrieval** (`multi-hop-retrieval`) — chains reads across interlinked notes via `[[wikilinks]]`. Exercises ~3 tool calls.
+- **Loop traps** (`loop-trap-cyclic-refs`) — corpus has cyclic links and the question's answer isn't present. A well-behaved agent bails cleanly; a regressed loop detector lets it spin until the turn aborts.
+- **Write actions** (`create-note-from-search`) — creates a new note from search results, scored on file existence + content.
+
+When adding a new task, prefer cloning the closest category's fixture pattern — the Wikipedia-paragraphs-as-interlinked-notes recipe in `multi-hop-retrieval/` is the template for any new multi-hop work.
+
 ## Task format reference
 
 | Field            | Type     | Required | Description                                    |
@@ -113,7 +122,7 @@ npm run eval:compare evals/results/run-a.json evals/results/run-b.json
 ### Output matcher types
 
 - `{ "type": "contains", "value": "text" }` — final response includes the substring
-- `{ "type": "regex", "value": "pattern" }` — final response matches the regex
+- `{ "type": "regex", "value": "pattern", "flags": "i" }` — final response matches the regex. JS regex syntax does NOT support inline flags like `(?i)` — pass `flags` explicitly as a separate field (`"i"` for case-insensitive, `"s"` for dotall, etc.). The field is optional; defaults to no flags.
 
 ## Scoring
 
