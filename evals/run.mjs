@@ -31,15 +31,23 @@ import {
 } from './lib/obsidian-driver.mjs';
 import { installCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
-import { buildResult, writeResults, printSummary } from './lib/reporter.mjs';
+import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
 
 const EVALS_DIR = resolve(import.meta.dirname);
 
+const DEFAULT_REPEAT = 3;
+
 function parseArgs() {
 	const args = process.argv.slice(2);
+	const repeatArg = args.find((a) => a.startsWith('--repeat='))?.split('=')[1];
+	const repeat = repeatArg ? parseInt(repeatArg, 10) : DEFAULT_REPEAT;
+	if (!Number.isInteger(repeat) || repeat < 1) {
+		throw new Error(`--repeat must be a positive integer, got "${repeatArg}"`);
+	}
 	return {
 		taskFilter: args.find((a) => a.startsWith('--task='))?.split('=')[1] || null,
 		keepArtifacts: args.includes('--keep-artifacts'),
+		repeat,
 	};
 }
 
@@ -95,7 +103,6 @@ async function getModelName() {
 
 async function runTask(task, keepArtifacts) {
 	const title = `[eval] ${task.id}`;
-	console.log(`\n--- Running: ${task.id} ---`);
 	console.log(`  "${task.description}"`);
 
 	let sessionInfo;
@@ -171,7 +178,7 @@ async function runTask(task, keepArtifacts) {
 }
 
 async function main() {
-	const { taskFilter, keepArtifacts } = parseArgs();
+	const { taskFilter, keepArtifacts, repeat } = parseArgs();
 	console.log('=== Gemini Scribe Eval Harness ===');
 
 	// Verify prerequisites
@@ -190,13 +197,19 @@ async function main() {
 		console.error('No tasks found' + (taskFilter ? ` matching "${taskFilter}"` : '') + '.');
 		process.exit(1);
 	}
-	console.log(`Running ${tasks.length} task(s)...`);
+	console.log(`Running ${tasks.length} task(s) × ${repeat} run${repeat === 1 ? '' : 's'}...`);
 
-	// Run tasks sequentially
+	// Run tasks sequentially. Each task runs `repeat` times so we can report
+	// pass^k reliability on top of per-run pass/solve rates.
 	const taskResults = [];
 	for (const task of tasks) {
-		const result = await runTask(task, keepArtifacts);
-		taskResults.push(result);
+		const runs = [];
+		for (let i = 0; i < repeat; i++) {
+			const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
+			console.log(`\n--- Running: ${task.id}${runLabel} ---`);
+			runs.push(await runTask(task, keepArtifacts));
+		}
+		taskResults.push(aggregateTaskRuns(task.id, runs));
 	}
 
 	// Build result, write, print

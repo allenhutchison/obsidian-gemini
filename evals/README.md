@@ -12,17 +12,31 @@ Measures agent-loop behavior across repeatable tasks. Produces scored results wi
 ## Running
 
 ```bash
-# Run all tasks
+# Run all tasks (each task runs 3 times by default — see Reliability below)
 npm run eval
 
 # Run a single task (prefix match on task ID)
 npm run eval -- --task=smoke
+
+# Override how many times each task runs
+npm run eval -- --repeat=5
 
 # Keep scratch files and session history for debugging
 npm run eval -- --keep-artifacts
 ```
 
 Results are written to `evals/results/<timestamp>.json` and a summary prints to stdout.
+
+## Reliability: pass^k
+
+Each task runs **N** times (default `N=3`, override with `--repeat=N`). Two sets of metrics come out of that:
+
+- **`pass^k` / `solve^k`** — a task "passes at k" only when **all N runs** pass. This is the τ-bench reliability signal ([arXiv 2406.12045](https://arxiv.org/abs/2406.12045)); it's the number to watch when judging whether a code change helped or hurt, because it's noise-free in the sense that LLM nondeterminism on a single run can't inflate it.
+- **`mean_pass_rate` / `mean_solve_rate`** — proportion of all task × run cells that passed/solved. Useful signal but noisier.
+
+Tasks that land between 0 and N solves are flagged as **flaky** (e.g. `2/3 ⚠` in the summary). One flaky task isn't necessarily a regression, but the trend matters — if a change takes a previously-stable task into flaky territory, that's visible in the compare output.
+
+Rule of thumb: `N=3` for day-to-day development, `N=5` or more if you're publishing numbers or making a merge-blocking decision.
 
 ## Comparing against a baseline
 
@@ -104,14 +118,19 @@ A task is **solved** if it passes AND:
 
 ## Aggregate metrics
 
-| Metric                             | Description                          |
-| ---------------------------------- | ------------------------------------ |
-| `pass_rate`                        | % of tasks passed                    |
-| `solve_rate`                       | % of tasks solved                    |
-| `mean_turns` / `p95_turns`         | Turn distribution                    |
-| `mean_cache_ratio`                 | Average implicit-cache effectiveness |
-| `mean_cost_usd` / `total_cost_usd` | Cost estimates                       |
-| `total_loop_fires`                 | Total loop-detection events          |
+| Metric                             | Description                                                             |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `pass_k_rate`                      | % of tasks where **every** run passed (τ-bench `pass^k`)                |
+| `solve_k_rate`                     | % of tasks where **every** run solved — primary signal for code changes |
+| `mean_pass_rate`                   | Proportion of task × run cells that passed                              |
+| `mean_solve_rate`                  | Proportion of task × run cells that solved                              |
+| `flaky_task_count`                 | Tasks where some (but not all) runs solved                              |
+| `n_runs`                           | Number of repeats per task                                              |
+| `total_runs`                       | Total task × run cells (`tasks × n_runs`)                               |
+| `mean_turns` / `p95_turns`         | Turn distribution across all runs                                       |
+| `mean_cache_ratio`                 | Average implicit-cache effectiveness                                    |
+| `mean_cost_usd` / `total_cost_usd` | Per-run mean and total spend (total grows with `--repeat`)              |
+| `total_loop_fires`                 | Total loop-detection events across all runs                             |
 
 ## Architecture
 
