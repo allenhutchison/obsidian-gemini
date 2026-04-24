@@ -14,14 +14,25 @@ const EVAL_TIMEOUT_MS = 10_000;
 /**
  * Run a JavaScript expression inside the live Obsidian process via CLI.
  * Returns the stringified result.
+ *
+ * The CLI may interleave log lines (e.g. `[Gemini Scribe] …`) before the
+ * actual reply line, so we locate the line beginning with `=> ` and treat
+ * everything from there to the end of stdout as the reply value. This
+ * preserves multi-line reply support (when the returned value contains
+ * real newlines) while filtering out plugin/console log noise.
  */
 export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
 	const { stdout } = await exec(OBSIDIAN_BIN, ['eval', `code=${code}`], {
 		timeout: timeoutMs,
 	});
-	const raw = stdout.trim();
-	if (raw.startsWith('=>')) return raw.slice(2).trim();
-	return raw;
+	const lines = stdout.split('\n');
+	const replyIdx = lines.findIndex((l) => l.startsWith('=>'));
+	if (replyIdx === -1) {
+		throw new Error(`obsidian eval did not return a "=>" reply. Stdout was:\n${stdout.slice(0, 500)}`);
+	}
+	const replyLines = lines.slice(replyIdx);
+	replyLines[0] = replyLines[0].slice(2); // strip leading "=>"
+	return replyLines.join('\n').trim();
 }
 
 /**
