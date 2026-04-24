@@ -28,6 +28,8 @@ import {
 	cleanup,
 	getLastModelResponse,
 	obsidianEval,
+	getSetting,
+	setSetting,
 } from './lib/obsidian-driver.mjs';
 import { installCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
@@ -44,12 +46,48 @@ function parseArgs() {
 	if (!Number.isInteger(repeat) || repeat < 1) {
 		throw new Error(`--repeat must be a positive integer, got "${repeatArg}"`);
 	}
+	// Use slice(1).join('=') so model ids containing '=' (none today, but
+	// future-proof for things like cross-region prefixes) survive the split.
+	const modelArg = args.find((a) => a.startsWith('--model='));
+	const model = modelArg ? modelArg.slice('--model='.length) : null;
+	if (model !== null && model.length === 0) {
+		throw new Error('--model requires a non-empty value');
+	}
 	return {
 		taskFilter: args.find((a) => a.startsWith('--task='))?.split('=')[1] || null,
 		keepArtifacts: args.includes('--keep-artifacts'),
 		repeat,
+		model,
 	};
 }
+
+// Module-scoped state for the chat-model override so signal handlers can
+// reach it. `originalChatModel` may be null/string; the boolean tracks
+// whether we successfully captured a prior value to restore.
+let originalChatModel = null;
+let modelWasOverridden = false;
+
+async function restoreChatModel() {
+	if (!modelWasOverridden) return;
+	try {
+		await setSetting('chatModelName', originalChatModel);
+	} catch (err) {
+		console.error(`Failed to restore chatModelName: ${err.message}`);
+	}
+	modelWasOverridden = false;
+}
+
+// Restore the override on Ctrl-C / kill so the user's plugin doesn't keep
+// running with the eval's model long after the harness exits.
+process.on('SIGINT', async () => {
+	console.log('\n[interrupted] restoring chatModelName...');
+	await restoreChatModel();
+	process.exit(130);
+});
+process.on('SIGTERM', async () => {
+	await restoreChatModel();
+	process.exit(143);
+});
 
 async function loadTasks(filter) {
 	const tasksDir = join(EVALS_DIR, 'tasks');
@@ -178,7 +216,7 @@ async function runTask(task, keepArtifacts) {
 }
 
 async function main() {
-	const { taskFilter, keepArtifacts, repeat } = parseArgs();
+	const { taskFilter, keepArtifacts, repeat, model } = parseArgs();
 	console.log('=== Gemini Scribe Eval Harness ===');
 
 	// Verify prerequisites
@@ -191,34 +229,47 @@ async function main() {
 	}
 	console.log(`Plugin v${pluginStatus.version} ready.`);
 
-	// Load tasks
-	const tasks = await loadTasks(taskFilter);
-	if (tasks.length === 0) {
-		console.error('No tasks found' + (taskFilter ? ` matching "${taskFilter}"` : '') + '.');
-		process.exit(1);
+	// Apply the chat-model override BEFORE loading tasks so the result-file's
+	// `model` field (read via getModelName at the end) reflects the override.
+	if (model) {
+		originalChatModel = await getSetting('chatModelName');
+		await setSetting('chatModelName', model);
+		modelWasOverridden = true;
+		console.log(`Overriding chatModelName: ${originalChatModel ?? '(unset)'} → ${model}`);
 	}
-	console.log(`Running ${tasks.length} task(s) × ${repeat} run${repeat === 1 ? '' : 's'}...`);
 
-	// Run tasks sequentially. Each task runs `repeat` times so we can report
-	// pass^k reliability on top of per-run pass/solve rates.
-	const taskResults = [];
-	for (const task of tasks) {
-		const runs = [];
-		for (let i = 0; i < repeat; i++) {
-			const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
-			console.log(`\n--- Running: ${task.id}${runLabel} ---`);
-			runs.push(await runTask(task, keepArtifacts));
+	try {
+		// Load tasks
+		const tasks = await loadTasks(taskFilter);
+		if (tasks.length === 0) {
+			console.error('No tasks found' + (taskFilter ? ` matching "${taskFilter}"` : '') + '.');
+			process.exit(1);
 		}
-		taskResults.push(aggregateTaskRuns(task.id, runs));
-	}
+		console.log(`Running ${tasks.length} task(s) × ${repeat} run${repeat === 1 ? '' : 's'}...`);
 
-	// Build result, write, print
-	const gitSha = getGitSha();
-	const modelName = await getModelName();
-	const result = buildResult(taskResults, gitSha, modelName);
-	const outPath = await writeResults(result, EVALS_DIR);
-	printSummary(result);
-	console.log(`Results written to: ${outPath}`);
+		// Run tasks sequentially. Each task runs `repeat` times so we can report
+		// pass^k reliability on top of per-run pass/solve rates.
+		const taskResults = [];
+		for (const task of tasks) {
+			const runs = [];
+			for (let i = 0; i < repeat; i++) {
+				const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
+				console.log(`\n--- Running: ${task.id}${runLabel} ---`);
+				runs.push(await runTask(task, keepArtifacts));
+			}
+			taskResults.push(aggregateTaskRuns(task.id, runs));
+		}
+
+		// Build result, write, print
+		const gitSha = getGitSha();
+		const modelName = await getModelName();
+		const result = buildResult(taskResults, gitSha, modelName);
+		const outPath = await writeResults(result, EVALS_DIR);
+		printSummary(result);
+		console.log(`Results written to: ${outPath}`);
+	} finally {
+		await restoreChatModel();
+	}
 }
 
 main().catch((err) => {
