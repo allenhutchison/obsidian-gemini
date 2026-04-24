@@ -51,7 +51,8 @@ describe('FolderInitializer', () => {
 	it('should create all plugin state folders in one pass', async () => {
 		await folderInitializer.initializeAll();
 
-		expect(mockEnsureFolderExists).toHaveBeenCalledTimes(4);
+		// root + 5 subfolders: Agent-Sessions, Prompts, Skills, Scheduled-Tasks, Scheduled-Tasks/Runs
+		expect(mockEnsureFolderExists).toHaveBeenCalledTimes(6);
 		expect(mockEnsureFolderExists).toHaveBeenCalledWith(
 			mockPlugin.app.vault,
 			'gemini-scribe',
@@ -76,6 +77,18 @@ describe('FolderInitializer', () => {
 			'Skills',
 			mockPlugin.logger
 		);
+		expect(mockEnsureFolderExists).toHaveBeenCalledWith(
+			mockPlugin.app.vault,
+			'gemini-scribe/Scheduled-Tasks',
+			'Scheduled-Tasks',
+			mockPlugin.logger
+		);
+		expect(mockEnsureFolderExists).toHaveBeenCalledWith(
+			mockPlugin.app.vault,
+			'gemini-scribe/Scheduled-Tasks/Runs',
+			'Scheduled-Tasks/Runs',
+			mockPlugin.logger
+		);
 	});
 
 	it('should create root folder before subfolders', async () => {
@@ -89,7 +102,13 @@ describe('FolderInitializer', () => {
 
 		expect(callOrder[0]).toBe('gemini-scribe');
 		expect(callOrder.slice(1)).toEqual(
-			expect.arrayContaining(['gemini-scribe/Agent-Sessions', 'gemini-scribe/Prompts', 'gemini-scribe/Skills'])
+			expect.arrayContaining([
+				'gemini-scribe/Agent-Sessions',
+				'gemini-scribe/Prompts',
+				'gemini-scribe/Skills',
+				'gemini-scribe/Scheduled-Tasks',
+				'gemini-scribe/Scheduled-Tasks/Runs',
+			])
 		);
 	});
 

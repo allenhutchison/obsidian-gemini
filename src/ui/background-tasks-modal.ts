@@ -71,7 +71,14 @@ export class BackgroundTasksModal extends Modal {
 		}
 
 		if (recent.length > 0) {
-			contentEl.createEl('h3', { text: 'Recent' });
+			const recentHeader = contentEl.createDiv({ cls: 'gemini-bg-tasks-recent-header' });
+			recentHeader.createEl('h3', { text: 'Recent' });
+			const clearBtn = recentHeader.createEl('button', { text: 'Clear', cls: 'gemini-bg-tasks-clear' });
+			clearBtn.addEventListener('click', () => {
+				this.plugin.backgroundTaskManager?.clearFinished();
+				this.render();
+			});
+
 			const scrollWrap = contentEl.createDiv({ cls: 'gemini-bg-tasks-scroll' });
 			const list = scrollWrap.createEl('ul', { cls: 'gemini-bg-tasks-list' });
 			for (const task of recent) {
@@ -116,9 +123,10 @@ export class BackgroundTasksModal extends Modal {
 			});
 		}
 
-		// Error message
+		// Error message — first sentence only, full text on hover
 		if (task.error && task.status === 'failed') {
-			info.createSpan({ text: task.error, cls: 'gemini-bg-task-error' });
+			const short = this.truncateError(task.error);
+			info.createSpan({ text: short, cls: 'gemini-bg-task-error', title: task.error } as any);
 		}
 
 		// Cancel button
@@ -140,6 +148,18 @@ export class BackgroundTasksModal extends Modal {
 			return `Started ${started} · ${durationLabel}`;
 		}
 		return `Started ${started}`;
+	}
+
+	/** Return the first meaningful line of an error, capped at 120 chars. */
+	private truncateError(raw: string): string {
+		const jsonMatch = raw.match(/"message"\s*:\s*"([^"]+)"/);
+		if (jsonMatch) {
+			const msg = jsonMatch[1].split(/[\n]/)[0].trim();
+			return msg.length > 120 ? msg.slice(0, 117) + '…' : msg;
+		}
+		const stripped = raw.replace(/^(ApiError:\s*)?\[\d+ [^\]]+\]\s*/, '').replace(/^ApiError:\s*/, '');
+		const firstLine = stripped.split(/[\n.]/)[0].trim();
+		return firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine;
 	}
 
 	onClose(): void {

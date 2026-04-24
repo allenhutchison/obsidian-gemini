@@ -4396,12 +4396,46 @@ If your plugin does not need CSS, delete this file.
 
 /* ── Background Tasks Modal ────────────────────────────────────────────────── */
 
+.gemini-bg-tasks-modal .modal-content {
+	padding-right: 16px;
+}
+
 .gemini-bg-tasks-modal h3 {
 	margin: 12px 0 6px;
 	font-size: var(--font-ui-small);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	color: var(--text-muted);
+}
+
+.gemini-bg-tasks-recent-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 12px 0 6px;
+}
+
+.gemini-bg-tasks-recent-header h3 {
+	margin: 0;
+	flex: 1;
+}
+
+.gemini-bg-tasks-clear {
+	font-size: var(--font-ui-smaller);
+	padding: 2px 10px;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-muted);
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.gemini-bg-tasks-clear:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+	border-color: var(--background-modifier-border-hover);
 }
 
 .gemini-bg-tasks-empty {
@@ -4531,4 +4565,138 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-bg-active .gemini-bg-status-icon svg {
 	animation: gemini-spin 1s linear infinite;
+}
+
+/* ── Scheduled Tasks Modal ─────────────────────────────────────── */
+
+.gemini-scheduled-tasks-modal .modal-content {
+	min-width: 420px;
+	max-width: 560px;
+}
+
+.gemini-scheduled-tasks-empty {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.gemini-scheduled-tasks-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.gemini-scheduled-task {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-scheduled-task--disabled {
+	opacity: 0.55;
+}
+
+.gemini-scheduled-task--paused {
+	border-color: var(--color-orange);
+	background: color-mix(in srgb, var(--color-orange) 8%, var(--background-secondary));
+}
+
+.gemini-scheduled-task-icon {
+	flex-shrink: 0;
+	margin-top: 2px;
+	color: var(--text-muted);
+}
+
+.gemini-scheduled-task--paused .gemini-scheduled-task-icon {
+	color: var(--color-orange);
+}
+
+.gemini-scheduled-task-info {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.gemini-scheduled-task-label {
+	font-weight: 600;
+	font-size: var(--font-ui-small);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-scheduled-task-badge {
+	display: inline-block;
+	font-size: 11px;
+	padding: 1px 7px;
+	border-radius: 99px;
+	background: var(--background-modifier-hover);
+	color: var(--text-muted);
+	width: fit-content;
+}
+
+.gemini-scheduled-task--paused .gemini-scheduled-task-badge {
+	background: color-mix(in srgb, var(--color-orange) 20%, transparent);
+	color: var(--color-orange);
+}
+
+.gemini-scheduled-task-meta {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.gemini-scheduled-task-error {
+	font-size: 11px;
+	color: var(--color-orange);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: help;
+}
+
+.gemini-scheduled-task-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.gemini-scheduled-task-run,
+.gemini-scheduled-task-reset {
+	font-size: var(--font-ui-smaller);
+	padding: 3px 10px;
+	border-radius: 4px;
+	cursor: pointer;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--interactive-normal);
+	color: var(--text-normal);
+	white-space: nowrap;
+}
+
+.gemini-scheduled-task-run:hover:not(:disabled),
+.gemini-scheduled-task-reset:hover:not(:disabled) {
+	background: var(--interactive-hover);
+}
+
+.gemini-scheduled-task-run:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.gemini-scheduled-task-reset {
+	background: color-mix(in srgb, var(--color-orange) 15%, var(--interactive-normal));
+	color: var(--color-orange);
+	border-color: var(--color-orange);
+}
+
+.gemini-scheduled-task-reset:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--color-orange) 25%, var(--interactive-normal));
 }

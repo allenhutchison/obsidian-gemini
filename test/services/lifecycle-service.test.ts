@@ -1,6 +1,7 @@
 jest.mock('obsidian', () => ({
 	TFile: class TFile {},
 	Notice: jest.fn(),
+	normalizePath: (p: string) => p,
 }));
 
 jest.mock('../../src/services/tool-registrar', () => ({
@@ -121,6 +122,13 @@ jest.mock('../../src/services/background-status-bar', () => ({
 		update: jest.fn(),
 		destroy: jest.fn(),
 		setRagProvider: jest.fn(),
+	})),
+}));
+jest.mock('../../src/services/scheduled-task-manager', () => ({
+	ScheduledTaskManager: jest.fn().mockImplementation(() => ({
+		initialize: jest.fn().mockResolvedValue(undefined),
+		start: jest.fn(),
+		destroy: jest.fn(),
 	})),
 }));
 

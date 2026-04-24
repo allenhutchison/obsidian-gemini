@@ -32,6 +32,7 @@ import { FolderInitializer } from './folder-initializer';
 import { UpdateNotificationModal } from '../ui/update-notification-modal';
 import { BackgroundTaskManager } from './background-task-manager';
 import { BackgroundStatusBar } from './background-status-bar';
+import { ScheduledTaskManager } from './scheduled-task-manager';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../../prompts/agentsMemoryTemplate.hbs';
@@ -73,6 +74,25 @@ export class LifecycleService {
 
 		// Phase C: Reinitializable services
 		await this.initializeReinitializableServices();
+
+		// If layout is already ready (i.e. this is a re-init triggered by a
+		// settings save), refresh the scheduled task manager so it picks up any
+		// historyFolder or other setting changes without requiring a restart.
+		if (plugin.app.workspace.layoutReady && plugin.scheduledTaskManager) {
+			// Cancel any in-flight scheduled-task background jobs before reinitialising.
+			// Without this, an older run's executeTask callback can call saveState()
+			// against the refreshed manager after initialize() reloads state, corrupting
+			// the new state (e.g. writing lastRunAt to the wrong historyFolder path).
+			if (plugin.backgroundTaskManager) {
+				for (const task of plugin.backgroundTaskManager.getActiveTasks()) {
+					if (task.type === 'scheduled-task') {
+						plugin.backgroundTaskManager.cancel(task.id);
+					}
+				}
+			}
+			await plugin.scheduledTaskManager.initialize();
+			plugin.scheduledTaskManager.start();
+		}
 	}
 
 	/**
@@ -129,6 +149,14 @@ export class LifecycleService {
 			await this.initializeRagIndexing();
 		}
 
+		// Initialise and start the scheduled task engine now that the vault is ready.
+		// initialize() is idempotent so it is safe to call again if onLayoutReady
+		// fires a second time (shouldn't happen, but guards against regressions).
+		if (plugin.scheduledTaskManager) {
+			await plugin.scheduledTaskManager.initialize();
+			plugin.scheduledTaskManager.start();
+		}
+
 		// Check for version updates and show notification
 		await this.checkForUpdates();
 	}
@@ -146,6 +174,8 @@ export class LifecycleService {
 		plugin.backgroundTaskManager = null;
 		plugin.backgroundStatusBar?.destroy();
 		plugin.backgroundStatusBar = null;
+		plugin.scheduledTaskManager?.destroy();
+		plugin.scheduledTaskManager = null;
 		plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
 		plugin.toolExecutionLogger?.destroy();
@@ -324,6 +354,11 @@ export class LifecycleService {
 			plugin.backgroundTaskManager = new BackgroundTaskManager(plugin, plugin.agentEventBus);
 			plugin.backgroundStatusBar = new BackgroundStatusBar(plugin, plugin.backgroundTaskManager);
 			plugin.backgroundStatusBar.setup();
+		}
+
+		// Scheduled task manager is created once and persists alongside the background infrastructure.
+		if (!plugin.scheduledTaskManager) {
+			plugin.scheduledTaskManager = new ScheduledTaskManager(plugin);
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);
