@@ -64,8 +64,12 @@ async function loadFixtureFiles(fixtureName) {
 	let files;
 	try {
 		files = await readdir(fixtureDir);
-	} catch {
-		return [];
+	} catch (err) {
+		// Missing fixture directory is fine — task simply has no fixtures.
+		// Permission / I/O errors must surface so we don't silently produce
+		// misleading eval results.
+		if (err?.code === 'ENOENT') return [];
+		throw new Error(`Failed to read fixture directory "${fixtureDir}": ${err.message}`);
 	}
 
 	const result = [];
@@ -153,11 +157,12 @@ async function runTask(task, keepArtifacts) {
 			solve_details: { expected_tools_met: false, forbidden_tools_clean: true, matchers_pass: false },
 		};
 	} finally {
-		// 7. Cleanup
+		// 7. Cleanup — must run even if session creation failed before sessionInfo
+		// was assigned, otherwise eval-scratch leaks into subsequent runs.
 		await removeCollector();
-		if (!keepArtifacts && sessionInfo) {
+		if (!keepArtifacts) {
 			try {
-				await cleanup(sessionInfo.historyPath);
+				await cleanup(sessionInfo?.historyPath);
 			} catch (e) {
 				console.warn(`  Cleanup warning: ${e.message}`);
 			}
