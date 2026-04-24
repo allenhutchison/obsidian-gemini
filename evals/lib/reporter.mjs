@@ -68,11 +68,17 @@ export function buildResult(taskResults, gitSha, modelName) {
  */
 export async function writeResults(result, evalsDir) {
 	const resultsDir = join(evalsDir, 'results');
-	await mkdir(resultsDir, { recursive: true });
 	const filename = `${result.run_id.replace(/[:.]/g, '-')}.json`;
 	const outPath = join(resultsDir, filename);
-	await writeFile(outPath, JSON.stringify(result, null, 2));
-	return outPath;
+	try {
+		await mkdir(resultsDir, { recursive: true });
+		await writeFile(outPath, JSON.stringify(result, null, 2));
+		return outPath;
+	} catch (err) {
+		throw new Error(`Failed to write eval results for run ${result.run_id} to ${outPath}: ${err.message}`, {
+			cause: err,
+		});
+	}
 }
 
 /**

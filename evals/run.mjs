@@ -27,6 +27,7 @@ import {
 	sendMessage,
 	cleanup,
 	getLastModelResponse,
+	obsidianEval,
 } from './lib/obsidian-driver.mjs';
 import { installCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
@@ -51,7 +52,7 @@ async function loadTasks(filter) {
 	for (const f of jsonFiles) {
 		const content = await readFile(join(tasksDir, f), 'utf8');
 		const task = JSON.parse(content);
-		if (filter && !task.id.includes(filter)) continue;
+		if (filter && !task.id.startsWith(filter)) continue;
 		tasks.push(task);
 	}
 	return tasks;
@@ -84,7 +85,6 @@ function getGitSha() {
 }
 
 async function getModelName() {
-	const { obsidianEval } = await import('./lib/obsidian-driver.mjs');
 	const result = await obsidianEval("app.plugins.plugins['gemini-scribe'].settings.chatModelName || 'unknown'");
 	return result.replace(/^["']|["']$/g, '');
 }

@@ -61,7 +61,14 @@ export async function readAndClearCollector() {
     window.__evalCollector = [];
     return JSON.stringify(events);
   })()`);
-	return JSON.parse(raw);
+	try {
+		return JSON.parse(raw);
+	} catch (err) {
+		// obsidianEval can return error strings or other unexpected output if
+		// the eval inside Obsidian crashes — surface the raw payload so the
+		// caller knows why parsing failed.
+		throw new Error(`Failed to parse collector events: ${err.message}. Raw output: ${raw.slice(0, 200)}`);
+	}
 }
 
 /**

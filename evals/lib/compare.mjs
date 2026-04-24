@@ -25,6 +25,16 @@ const AGG_KEYS = [
 ];
 const LOWER_IS_BETTER = new Set(['mean_turns', 'p95_turns', 'mean_cost_usd', 'total_cost_usd', 'total_loop_fires']);
 const HIGHER_IS_BETTER = new Set(['pass_rate', 'solve_rate', 'mean_cache_ratio']);
+// Per-task metric directionality. tool_calls is intentionally absent — more
+// or fewer tool calls isn't a regression on its own (it depends on the task).
+const PER_TASK_LOWER_IS_BETTER = new Set(['turns', 'cost_usd', 'loop_fires']);
+const PER_TASK_HIGHER_IS_BETTER = new Set(['cache_ratio']);
+
+function isMetricRegression(key, before, after) {
+	if (PER_TASK_LOWER_IS_BETTER.has(key) && after > before) return true;
+	if (PER_TASK_HIGHER_IS_BETTER.has(key) && after < before) return true;
+	return false;
+}
 
 function fmtDelta(before, after) {
 	const diff = after - before;
@@ -73,6 +83,7 @@ async function main() {
 	// Per-task comparison
 	console.log('\nPer-task changes:');
 	const baseTaskMap = new Map(baseline.tasks.map((t) => [t.id, t]));
+	const currentTaskMap = new Map(current.tasks.map((t) => [t.id, t]));
 	for (const ct of current.tasks) {
 		const bt = baseTaskMap.get(ct.id);
 		if (!bt) {
@@ -80,11 +91,17 @@ async function main() {
 			continue;
 		}
 		const changes = [];
-		if (bt.solved !== ct.solved) changes.push(`solved: ${bt.solved} → ${ct.solved}`);
+		if (bt.solved !== ct.solved) {
+			const marker = bt.solved && !ct.solved ? '⚠ ' : '';
+			changes.push(`${marker}solved: ${bt.solved} → ${ct.solved}`);
+		}
 		for (const key of METRIC_KEYS) {
 			const b = bt.metrics[key] ?? 0;
 			const c = ct.metrics[key] ?? 0;
-			if (Math.abs(b - c) > 0.001) changes.push(`${key}: ${fmtDelta(b, c)}`);
+			if (Math.abs(b - c) > 0.001) {
+				const marker = isMetricRegression(key, b, c) ? '⚠ ' : '';
+				changes.push(`${marker}${key}: ${fmtDelta(b, c)}`);
+			}
 		}
 		if (changes.length > 0) {
 			console.log(`  ${ct.id}: ${changes.join(', ')}`);
@@ -93,7 +110,7 @@ async function main() {
 
 	// Tasks in baseline but not in current
 	for (const bt of baseline.tasks) {
-		if (!current.tasks.find((ct) => ct.id === bt.id)) {
+		if (!currentTaskMap.has(bt.id)) {
 			console.log(`  [REMOVED] ${bt.id}`);
 		}
 	}
