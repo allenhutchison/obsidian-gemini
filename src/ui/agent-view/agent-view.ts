@@ -871,6 +871,17 @@ export class AgentView extends ItemView {
 		await this.updateTokenUsage();
 	}
 
+	/**
+	 * Programmatic entry point for the eval harness and automation.
+	 * Populates the input field and triggers the full send flow
+	 * (including tool execution, history persistence, and event-bus
+	 * emissions) without requiring DOM interaction.
+	 */
+	async sendMessageProgrammatically(text: string): Promise<void> {
+		this.userInput.innerText = text;
+		await this.send.sendMessage();
+	}
+
 	async onClose() {
 		// Cancel any in-flight execution before tearing down the view
 		this.send?.stopAgentLoop();

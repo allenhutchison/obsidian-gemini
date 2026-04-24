@@ -40,6 +40,9 @@ test-scripts/
 # TypeScript incremental compilation info
 *.tsbuildinfo
 
+# Eval results (regenerated per run)
+evals/results/
+
 # VitePress
 docs/.vitepress/dist/
 docs/.vitepress/cache/
