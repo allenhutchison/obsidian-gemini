@@ -47,7 +47,16 @@ jest.mock('../../src/agent/agent-loop', () => ({
 import { GeminiClientFactory } from '../../src/api';
 
 function successfulLoopResult(markdown = 'Tool result text.'): AgentLoopResult {
-	return { markdown, history: [], cancelled: false, retried: false, fellBack: false, exhausted: false, iterations: 1 };
+	return {
+		markdown,
+		history: [],
+		cancelled: false,
+		retried: false,
+		fellBack: false,
+		exhausted: false,
+		loopAborted: false,
+		iterations: 1,
+	};
 }
 
 function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
@@ -190,6 +199,13 @@ describe('ScheduledTaskRunner', () => {
 					plugin,
 					isCancelled: expect.any(Function),
 					maxIterations: 20,
+					// Regression guard: ScheduledTaskRunner must supply a headless
+					// confirmationProvider so AgentLoop never has to fall back.
+					confirmationProvider: expect.objectContaining({
+						showConfirmationInChat: expect.any(Function),
+						isToolAllowedWithoutConfirmation: expect.any(Function),
+						allowToolWithoutConfirmation: expect.any(Function),
+					}),
 				}),
 			})
 		);

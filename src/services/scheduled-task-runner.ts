@@ -2,6 +2,7 @@ import { normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask } from './scheduled-task-manager';
 import { ToolCategory, DestructiveAction } from '../types/agent';
+import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
 import { ToolExecutionContext } from '../tools/types';
 import { GeminiClientFactory } from '../api';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
@@ -9,6 +10,35 @@ import { ensureFolderExists } from '../utils/file-utils';
 import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
 import { buildTurnPreamble } from '../utils/turn-preamble';
 import { AgentLoop } from '../agent/agent-loop';
+
+/**
+ * Auto-approve all tool confirmations for headless scheduled-task runs.
+ * Scheduled tasks run unattended with an explicit `enabledTools` frontmatter
+ * allowlist — the user has already opted in by authoring the task file, so
+ * there's no surface on which to surface a mid-run confirmation dialog.
+ */
+class HeadlessConfirmationProvider implements IConfirmationProvider {
+	// Full signatures (rather than zero-arg stubs) pin this class to the real
+	// IConfirmationProvider contract — future additions to the interface will
+	// break compilation here instead of silently passing.
+	async showConfirmationInChat(
+		_tool: Tool,
+		_parameters: unknown,
+		_executionId: string,
+		_diffContext?: DiffContext
+	): Promise<ConfirmationResult> {
+		return { confirmed: true, allowWithoutConfirmation: false };
+	}
+	isToolAllowedWithoutConfirmation(_toolName: string): boolean {
+		return true;
+	}
+	allowToolWithoutConfirmation(_toolName: string): void {
+		/* no-op */
+	}
+	updateProgress(_message: string, _status: string): void {
+		/* no-op */
+	}
+}
 
 /**
  * Runs a single scheduled task headlessly:
@@ -88,6 +118,7 @@ export class ScheduledTaskRunner {
 					plugin: this.plugin,
 					session,
 					isCancelled,
+					confirmationProvider: new HeadlessConfirmationProvider(),
 					maxIterations: 20,
 				},
 			});
