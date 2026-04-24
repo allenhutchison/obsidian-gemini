@@ -1,0 +1,14 @@
+{
+	"id": "read-and-answer",
+	"description": "Read a specific file and answer a factual question about its contents",
+	"userMessage": "Read the file eval-scratch/project-notes.md and tell me what database technology was chosen for the project and what phase the project is currently in.",
+	"fixture": "multi-file-summary",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["delete_file", "modify_file", "create_file"],
+	"outputMatchers": [
+		{ "type": "contains", "value": "PostgreSQL" },
+		{ "type": "contains", "value": "Prototype" }
+	],
+	"maxTurns": 10,
+	"timeoutMs": 60000
+}
