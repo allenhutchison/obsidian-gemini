@@ -21,6 +21,9 @@ npm run eval -- --task=smoke
 # Override how many times each task runs
 npm run eval -- --repeat=5
 
+# Sweep models against a fixed task suite (see Model overrides below)
+npm run eval -- --model=gemini-2.5-flash-lite
+
 # Keep scratch files and session history for debugging
 npm run eval -- --keep-artifacts
 ```
@@ -37,6 +40,27 @@ Each task runs **N** times (default `N=3`, override with `--repeat=N`). Two sets
 Tasks that land between 0 and N solves are flagged as **flaky** (e.g. `2/3 ⚠` in the summary). One flaky task isn't necessarily a regression, but the trend matters — if a change takes a previously-stable task into flaky territory, that's visible in the compare output.
 
 Rule of thumb: `N=3` for day-to-day development, `N=5` or more if you're publishing numbers or making a merge-blocking decision.
+
+## Model overrides
+
+By default the harness uses whatever `chatModelName` is currently set in the plugin's settings. Pass `--model=<id>` to override that for the duration of the run:
+
+```bash
+npm run eval -- --model=gemini-2.5-flash-lite
+npm run eval -- --model=gemini-2.5-pro --repeat=5
+```
+
+The override is **transient**: it's applied to `plugin.settings.chatModelName` in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The setting is **not** persisted to disk, so the user's configured model is unaffected.
+
+The override stamps into the result file's `model` field, so a multi-model sweep produces one result file per invocation that compare and trend independently:
+
+```bash
+for m in gemini-2.5-flash gemini-2.5-flash-lite gemini-2.5-pro; do
+  npm run eval -- --model=$m --repeat=5
+done
+```
+
+Caveat: while the harness is running, the live agent view is using the override too. That's the same disruption already implied by the harness driving the agent — just don't try to use the agent view in another window mid-run.
 
 ## Comparing against a baseline
 

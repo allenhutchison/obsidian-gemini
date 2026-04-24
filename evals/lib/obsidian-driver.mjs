@@ -36,6 +36,40 @@ export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
 }
 
 /**
+ * Read a single key from the plugin's in-memory settings.
+ *
+ * Returns whatever is currently on `plugin.settings[key]` (including null
+ * or undefined for unset keys). Does not touch disk — pairs with `setSetting`
+ * to apply transient overrides for an eval run.
+ */
+export async function getSetting(key) {
+	const keyLiteral = JSON.stringify(key);
+	const result = await obsidianEval(
+		`JSON.stringify(app.plugins.plugins['gemini-scribe'].settings[${keyLiteral}] ?? null)`
+	);
+	return JSON.parse(result);
+}
+
+/**
+ * Mutate a single key on the plugin's in-memory settings without persisting.
+ *
+ * Used for transient eval-run overrides (e.g. `--model=` flag). Does NOT
+ * call `saveSettings()` — that would trigger a full plugin reinit, which
+ * is overkill for keys like `chatModelName` that are read fresh from
+ * `plugin.settings` per-request.
+ */
+export async function setSetting(key, value) {
+	const keyLiteral = JSON.stringify(key);
+	const valueLiteral = JSON.stringify(value);
+	await obsidianEval(
+		`(() => {
+    app.plugins.plugins['gemini-scribe'].settings[${keyLiteral}] = ${valueLiteral};
+    return '"set"';
+  })()`
+	);
+}
+
+/**
  * Verify the plugin is loaded and the agent view is available.
  */
 export async function verifyPlugin() {
