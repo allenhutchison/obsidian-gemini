@@ -117,7 +117,7 @@ A task is **solved** if it passes AND:
 
 The harness drives Obsidian via the `obsidian eval` CLI command, installing a temporary event-bus subscriber to capture agent lifecycle events. It does NOT modify plugin internals — all observation is via the existing `agentEventBus` subscriptions.
 
-```
+```text
 evals/
   run.mjs              # Main runner
   lib/

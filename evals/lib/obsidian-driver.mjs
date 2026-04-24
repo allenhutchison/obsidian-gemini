@@ -42,10 +42,11 @@ export async function verifyPlugin() {
  * Returns { sessionId, historyPath }.
  */
 export async function createSession(title) {
+	const titleLiteral = JSON.stringify(title);
 	const result = await obsidianEval(
 		`(async () => {
     const p = app.plugins.plugins['gemini-scribe'];
-    const session = await p.sessionManager.createAgentSession('${title}');
+    const session = await p.sessionManager.createAgentSession(${titleLiteral});
     // Load the session in the agent view
     await p.agentView?.session?.loadSession(session);
     return JSON.stringify({ sessionId: session.id, historyPath: session.historyPath });
@@ -60,7 +61,6 @@ export async function createSession(title) {
  * fixtureFiles is an array of { name, content } objects.
  */
 export async function setupFixtures(files) {
-	const escapedFiles = JSON.stringify(files).replace(/'/g, "\\'").replace(/\\/g, '\\\\');
 	await obsidianEval(
 		`(async () => {
     const vault = app.vault;
@@ -85,11 +85,13 @@ export async function setupFixtures(files) {
  * Returns immediately — use waitForTurnEnd() to wait.
  */
 export async function sendMessage(text) {
-	const escaped = text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+	// JSON.stringify produces a safely quoted/escaped JS string literal that can
+	// be inlined directly into the eval code, avoiding hand-rolled escaping.
+	const textLiteral = JSON.stringify(text);
 	await obsidianEval(
 		`(async () => {
     const p = app.plugins.plugins['gemini-scribe'];
-    await p.agentView.sendMessageProgrammatically(\`${escaped}\`);
+    await p.agentView.sendMessageProgrammatically(${textLiteral});
     return '"sent"';
   })()`,
 		{ timeoutMs: 300_000 }
@@ -100,6 +102,7 @@ export async function sendMessage(text) {
  * Clean up eval artifacts: scratch folder and session history.
  */
 export async function cleanup(sessionHistoryPath) {
+	const pathLiteral = JSON.stringify(sessionHistoryPath || '');
 	await obsidianEval(
 		`(async () => {
     const vault = app.vault;
@@ -107,8 +110,9 @@ export async function cleanup(sessionHistoryPath) {
     const scratch = vault.getAbstractFileByPath('eval-scratch');
     if (scratch) await vault.delete(scratch, true);
     // Delete session history
-    if ('${sessionHistoryPath}') {
-      const hist = vault.getAbstractFileByPath('${sessionHistoryPath}');
+    const histPath = ${pathLiteral};
+    if (histPath) {
+      const hist = vault.getAbstractFileByPath(histPath);
       if (hist) await vault.delete(hist);
     }
     return '"cleaned"';

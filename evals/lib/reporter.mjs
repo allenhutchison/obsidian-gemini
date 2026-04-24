@@ -17,7 +17,19 @@ function percentile(arr, p) {
  */
 export function computeAggregates(taskResults) {
 	const total = taskResults.length;
-	if (total === 0) return {};
+	if (total === 0) {
+		return {
+			total_tasks: 0,
+			pass_rate: 0,
+			solve_rate: 0,
+			mean_turns: 0,
+			p95_turns: 0,
+			mean_cache_ratio: 0,
+			mean_cost_usd: 0,
+			total_cost_usd: 0,
+			total_loop_fires: 0,
+		};
+	}
 
 	const passed = taskResults.filter((r) => r.passed).length;
 	const solved = taskResults.filter((r) => r.solved).length;

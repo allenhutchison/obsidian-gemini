@@ -59,9 +59,16 @@ export function scoreTask(task, events, modelResponse, modelName, durationMs) {
 	// Solve: check expected tools, forbidden tools, output matchers
 	const expectedToolsMet = (task.expectedTools || []).every((t) => toolSet.has(t));
 	const forbiddenToolsClean = !(task.forbiddenTools || []).some((t) => toolSet.has(t));
+	const responseText = typeof modelResponse === 'string' ? modelResponse : '';
 	const matchersPass = (task.outputMatchers || []).every((m) => {
-		if (m.type === 'contains') return modelResponse.includes(m.value);
-		if (m.type === 'regex') return new RegExp(m.value).test(modelResponse);
+		if (m.type === 'contains') return responseText.includes(m.value);
+		if (m.type === 'regex') {
+			try {
+				return new RegExp(m.value).test(responseText);
+			} catch {
+				return false;
+			}
+		}
 		return true;
 	});
 	const solved = passed && expectedToolsMet && forbiddenToolsClean && matchersPass;

@@ -20,14 +20,16 @@ const FALLBACK = PRICING['gemini-2.5-flash'];
 
 /**
  * Look up pricing for a model name. Falls back to flash pricing for unknowns.
- * Matches by prefix so "gemini-2.5-flash-001" resolves to "gemini-2.5-flash".
+ * Matches by longest prefix first so "gemini-2.5-flash-lite-001" resolves to
+ * "gemini-2.5-flash-lite" instead of "gemini-2.5-flash".
  */
 export function getModelPricing(modelName) {
 	if (!modelName) return FALLBACK;
 	const exact = PRICING[modelName];
 	if (exact) return exact;
-	for (const [key, value] of Object.entries(PRICING)) {
-		if (modelName.startsWith(key)) return value;
+	const keysBySpecificity = Object.keys(PRICING).sort((a, b) => b.length - a.length);
+	for (const key of keysBySpecificity) {
+		if (modelName.startsWith(`${key}-`)) return PRICING[key];
 	}
 	return FALLBACK;
 }

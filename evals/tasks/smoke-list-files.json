@@ -4,7 +4,7 @@
 	"userMessage": "Use the find_files_by_name tool to list all markdown files in the eval-scratch folder. Report their names.",
 	"fixture": "smoke-list-files",
 	"expectedTools": ["find_files_by_name"],
-	"forbiddenTools": ["delete_file", "modify_file"],
+	"forbiddenTools": ["delete_file", "modify_file", "create_file"],
 	"outputMatchers": [{ "type": "contains", "value": "hello-world" }],
 	"maxTurns": 10,
 	"timeoutMs": 60000

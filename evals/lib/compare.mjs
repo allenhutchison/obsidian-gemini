@@ -23,6 +23,8 @@ const AGG_KEYS = [
 	'total_cost_usd',
 	'total_loop_fires',
 ];
+const LOWER_IS_BETTER = new Set(['mean_turns', 'p95_turns', 'mean_cost_usd', 'total_cost_usd', 'total_loop_fires']);
+const HIGHER_IS_BETTER = new Set(['pass_rate', 'solve_rate', 'mean_cache_ratio']);
 
 function fmtDelta(before, after) {
 	const diff = after - before;
@@ -62,7 +64,9 @@ async function main() {
 	for (const key of AGG_KEYS) {
 		const b = baseline.aggregate[key] ?? 0;
 		const c = current.aggregate[key] ?? 0;
-		const flag = key.includes('cost') || key.includes('loop') ? (c > b ? ' ⚠' : '') : c < b ? ' ⚠' : '';
+		let flag = '';
+		if (LOWER_IS_BETTER.has(key) && c > b) flag = ' ⚠';
+		else if (HIGHER_IS_BETTER.has(key) && c < b) flag = ' ⚠';
 		console.log(`  ${key.padEnd(22)} ${fmtDelta(b, c)}${flag}`);
 	}
 
