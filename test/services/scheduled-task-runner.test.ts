@@ -47,7 +47,16 @@ jest.mock('../../src/agent/agent-loop', () => ({
 import { GeminiClientFactory } from '../../src/api';
 
 function successfulLoopResult(markdown = 'Tool result text.'): AgentLoopResult {
-	return { markdown, history: [], cancelled: false, retried: false, fellBack: false, exhausted: false, iterations: 1 };
+	return {
+		markdown,
+		history: [],
+		cancelled: false,
+		retried: false,
+		fellBack: false,
+		exhausted: false,
+		loopAborted: false,
+		iterations: 1,
+	};
 }
 
 function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
