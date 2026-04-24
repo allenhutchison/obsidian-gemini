@@ -199,6 +199,13 @@ describe('ScheduledTaskRunner', () => {
 					plugin,
 					isCancelled: expect.any(Function),
 					maxIterations: 20,
+					// Regression guard: ScheduledTaskRunner must supply a headless
+					// confirmationProvider so AgentLoop never has to fall back.
+					confirmationProvider: expect.objectContaining({
+						showConfirmationInChat: expect.any(Function),
+						isToolAllowedWithoutConfirmation: expect.any(Function),
+						allowToolWithoutConfirmation: expect.any(Function),
+					}),
 				}),
 			})
 		);

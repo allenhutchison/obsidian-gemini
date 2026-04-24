@@ -2,7 +2,8 @@ import { normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask } from './scheduled-task-manager';
 import { ToolCategory, DestructiveAction } from '../types/agent';
-import { IConfirmationProvider, ToolExecutionContext, ConfirmationResult } from '../tools/types';
+import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
+import { ToolExecutionContext } from '../tools/types';
 import { GeminiClientFactory } from '../api';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import { ensureFolderExists } from '../utils/file-utils';
@@ -17,16 +18,24 @@ import { AgentLoop } from '../agent/agent-loop';
  * there's no surface on which to surface a mid-run confirmation dialog.
  */
 class HeadlessConfirmationProvider implements IConfirmationProvider {
-	async showConfirmationInChat(): Promise<ConfirmationResult> {
+	// Full signatures (rather than zero-arg stubs) pin this class to the real
+	// IConfirmationProvider contract — future additions to the interface will
+	// break compilation here instead of silently passing.
+	async showConfirmationInChat(
+		_tool: Tool,
+		_parameters: unknown,
+		_executionId: string,
+		_diffContext?: DiffContext
+	): Promise<ConfirmationResult> {
 		return { confirmed: true, allowWithoutConfirmation: false };
 	}
-	isToolAllowedWithoutConfirmation(): boolean {
+	isToolAllowedWithoutConfirmation(_toolName: string): boolean {
 		return true;
 	}
-	allowToolWithoutConfirmation(): void {
+	allowToolWithoutConfirmation(_toolName: string): void {
 		/* no-op */
 	}
-	updateProgress(): void {
+	updateProgress(_message: string, _status: string): void {
 		/* no-op */
 	}
 }
