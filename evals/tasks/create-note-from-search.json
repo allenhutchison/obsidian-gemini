@@ -3,7 +3,7 @@
 	"description": "Search vault for information and create a new summary note",
 	"userMessage": "Search the eval-scratch folder for notes about AI topics. Create a new note called 'eval-scratch/AI Summary.md' that lists the key AI concepts found across those notes. Keep it concise.",
 	"fixture": "find-tagged-notes",
-	"expectedTools": ["find_files_by_content", "create_file"],
+	"expectedTools": ["write_file"],
 	"forbiddenTools": ["delete_file"],
 	"outputMatchers": [{ "type": "contains", "value": "AI Summary" }],
 	"maxTurns": 20,

@@ -46,9 +46,22 @@ export async function createSession(title) {
 	const result = await obsidianEval(
 		`(async () => {
     const p = app.plugins.plugins['gemini-scribe'];
-    const session = await p.sessionManager.createAgentSession(${titleLiteral});
-    // Load the session in the agent view
-    await p.agentView?.session?.loadSession(session);
+    // Empty requireConfirmation so the session metadata doesn't ask for
+    // confirmation. (The real gate is settings.toolPermissions, which we
+    // bypass via allowedWithoutConfirmation below.)
+    const session = await p.sessionManager.createAgentSession(${titleLiteral}, { requireConfirmation: [] });
+    // Use AgentView.loadSession (the public method) — it updates both the
+    // session controller AND AgentView's own currentSession field. Calling
+    // the controller's loadSession directly leaves AgentView.currentSession
+    // pointing at the previously-loaded session, so messages get persisted
+    // to the wrong session and the harness reads back stale history.
+    await p.agentView.loadSession(session);
+    // Pre-approve every registered tool for this session so write_file /
+    // delete_file / fetch_url etc. don't pop a UI confirmation mid-eval.
+    // loadSession() clears this set, so it must run AFTER the load.
+    for (const tool of p.toolRegistry?.getAllTools?.() || []) {
+      p.agentView.allowToolWithoutConfirmation(tool.name);
+    }
     return JSON.stringify({ sessionId: session.id, historyPath: session.historyPath });
   })()`,
 		{ timeoutMs: 15_000 }
