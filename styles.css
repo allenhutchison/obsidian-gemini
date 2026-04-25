@@ -3691,6 +3691,17 @@ If your plugin does not need CSS, delete this file.
 	padding: 8px 12px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	transition: background 0.15s ease;
+	/* reset <button> browser defaults */
+	width: 100%;
+	background: none;
+	border-left: none;
+	border-right: none;
+	border-top: none;
+	border-radius: 0;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	box-shadow: none;
 }
 
 .rag-status-file-item:last-child {

@@ -3,6 +3,7 @@ import type ObsidianGemini from '../main';
 import type { BackgroundTask } from '../services/background-task-manager';
 import type { RagDetailedStatus } from './rag-status-modal';
 import type { ProgressListener } from '../services/rag-types';
+import type { RagIndexingService } from '../services/rag-indexing';
 import { getErrorMessage } from '../utils/error-utils';
 
 type ModalTab = 'tasks' | 'rag';
@@ -32,6 +33,7 @@ export class BackgroundTasksModal extends Modal {
 	private ragSearchQuery = '';
 	private ragShowAllFiles = false;
 	private ragDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	private ragFileScrollTop = 0;
 	private readonly RAG_MAX_FILES_INITIAL = 200;
 
 	constructor(app: App, plugin: ObsidianGemini, defaultTab?: ModalTab) {
@@ -334,6 +336,7 @@ export class BackgroundTasksModal extends Modal {
 				this.ragInnerTab = id;
 				this.ragShowAllFiles = false;
 				this.ragSearchQuery = '';
+				this.ragFileScrollTop = 0;
 				this.renderTabContent();
 			};
 			tab.addEventListener('click', activate);
@@ -352,7 +355,7 @@ export class BackgroundTasksModal extends Modal {
 		}
 	}
 
-	private renderRagInnerContent(container: HTMLElement, status: RagDetailedStatus, rag: any): void {
+	private renderRagInnerContent(container: HTMLElement, status: RagDetailedStatus, rag: RagIndexingService): void {
 		switch (this.ragInnerTab) {
 			case 'overview':
 				this.renderRagOverview(container, status, rag);
@@ -366,7 +369,7 @@ export class BackgroundTasksModal extends Modal {
 		}
 	}
 
-	private renderRagOverview(container: HTMLElement, status: RagDetailedStatus, rag: any): void {
+	private renderRagOverview(container: HTMLElement, status: RagDetailedStatus, rag: RagIndexingService): void {
 		const infoEl = container.createDiv({ cls: 'rag-status-info' });
 
 		// Status row
@@ -476,10 +479,17 @@ export class BackgroundTasksModal extends Modal {
 		const listContainer = container.createDiv({ cls: 'rag-status-file-list' });
 		this.renderRagFileList(listContainer, status);
 
+		// Restore scroll position (lost on progress-tick re-render)
+		listContainer.scrollTop = this.ragFileScrollTop;
+		listContainer.addEventListener('scroll', () => {
+			this.ragFileScrollTop = listContainer.scrollTop;
+		});
+
 		searchInput.addEventListener('input', (e) => {
 			if (this.ragDebounceTimer) clearTimeout(this.ragDebounceTimer);
 			this.ragDebounceTimer = setTimeout(() => {
 				this.ragSearchQuery = (e.target as HTMLInputElement).value;
+				this.ragFileScrollTop = 0;
 				this.renderRagFileList(listContainer, status);
 			}, 150);
 		});
@@ -508,24 +518,17 @@ export class BackgroundTasksModal extends Modal {
 		const display = this.ragShowAllFiles ? filtered : filtered.slice(0, this.RAG_MAX_FILES_INITIAL);
 
 		for (const file of display) {
-			const item = container.createDiv({
+			const item = container.createEl('button', {
 				cls: 'rag-status-file-item rag-status-file-item--clickable',
-				attr: { role: 'button', tabindex: '0', 'aria-label': `Open ${file.path}` },
+				attr: { 'aria-label': `Open ${file.path}` },
 			});
 			const pathEl = item.createSpan({ cls: 'rag-status-file-path' });
 			pathEl.setText(file.path);
 			pathEl.setAttribute('title', file.path);
 			item.createSpan({ cls: 'rag-status-file-time', text: this.formatRagDate(file.lastIndexed) });
-			const open = () => {
+			item.addEventListener('click', () => {
 				this.close();
 				this.plugin.app.workspace.openLinkText(file.path, '', false);
-			};
-			item.addEventListener('click', open);
-			item.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					e.preventDefault();
-					open();
-				}
 			});
 		}
 
