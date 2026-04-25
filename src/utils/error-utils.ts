@@ -165,6 +165,12 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('model') &&
 			(messageLower.includes('not found') || messageLower.includes('does not exist'))
 		) {
+			// Ollama-specific guidance — its server returns "try pulling it first"
+			if (messageLower.includes('try pulling')) {
+				const match = error.message.match(/model\s+"?([\w./:-]+)"?/i);
+				const modelName = match ? match[1] : 'this model';
+				return `Ollama model not pulled. Run: ollama pull ${modelName}`;
+			}
 			return 'The selected model is not available. Please check your model settings.';
 		}
 
@@ -175,7 +181,10 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('econnrefused') ||
 			messageLower.includes('etimedout')
 		) {
-			return 'Network error: Unable to connect to Google Gemini API. Please check your internet connection.';
+			if (messageLower.includes('econnrefused') || messageLower.includes('localhost')) {
+				return 'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.';
+			}
+			return 'Network error: Unable to reach the model API. Please check your connection.';
 		}
 
 		// Timeout errors
@@ -265,6 +274,10 @@ export function extractStatusCode(error: any): number | null {
 	}
 	if (typeof error.statusCode === 'number') {
 		return error.statusCode;
+	}
+	// ollama-js throws ResponseError with `status_code`
+	if (typeof error.status_code === 'number') {
+		return error.status_code;
 	}
 	if (typeof error.code === 'number') {
 		return error.code;

@@ -230,6 +230,19 @@ export class LifecycleService {
 	async initializeRagIndexing(): Promise<void> {
 		const plugin = this.plugin;
 
+		// RAG uses Gemini's File Search Store cloud API — not available on Ollama in Phase 1.
+		if (plugin.settings.provider === 'ollama') {
+			if (plugin.ragIndexing) {
+				const { getRagTools } = await import('../tools/rag-search-tool');
+				for (const tool of getRagTools()) {
+					plugin.toolRegistry?.unregisterTool(tool.name);
+				}
+				await plugin.ragIndexing.destroy();
+				plugin.ragIndexing = null;
+			}
+			return;
+		}
+
 		if (plugin.settings.ragIndexing.enabled) {
 			// Clean up existing instance if re-initializing
 			if (plugin.ragIndexing) {
@@ -414,7 +427,7 @@ export class LifecycleService {
 		// Tool system
 		plugin.toolRegistry = new ToolRegistry(plugin);
 		plugin.toolExecutionEngine = new ToolExecutionEngine(plugin, plugin.toolRegistry);
-		await this.toolRegistrar.registerAll(plugin.toolRegistry, plugin.logger);
+		await this.toolRegistrar.registerAll(plugin.toolRegistry, plugin.logger, plugin);
 
 		// Folder and skill management
 		plugin.folderInitializer = new FolderInitializer(plugin);
@@ -447,9 +460,11 @@ export class LifecycleService {
 		// Deep research
 		plugin.deepResearch = new DeepResearchService(plugin);
 
-		// Image generation
-		plugin.imageGeneration = new ImageGeneration(plugin);
-		await plugin.imageGeneration.setupImageGenerationCommand();
+		// Image generation (Gemini-only — Ollama has no image generation API)
+		if (plugin.settings.provider !== 'ollama') {
+			plugin.imageGeneration = new ImageGeneration(plugin);
+			await plugin.imageGeneration.setupImageGenerationCommand();
+		}
 
 		// Selection actions
 		plugin.selectionActionService = new SelectionActionService(plugin);

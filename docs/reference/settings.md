@@ -14,10 +14,26 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 
 ## Basic Settings
 
+### Provider
+
+- **Setting**: `provider`
+- **Type**: `'gemini' | 'ollama'`
+- **Default**: `'gemini'`
+- **Description**: Selects the model backend. `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon.
+- **Notes**: Switching providers re-initialises the plugin and resets stale model selections to the new provider's defaults. Provider-coupled features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are hidden when `ollama` is active. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
+
+### Ollama Base URL
+
+- **Setting**: `ollamaBaseUrl`
+- **Type**: String
+- **Default**: `http://localhost:11434`
+- **Required when provider is `ollama`**: Yes
+- **Description**: HTTP endpoint of your Ollama daemon. Update if Ollama runs on a different host or port.
+
 ### API Key
 
 - **Type**: String
-- **Required**: Yes
+- **Required**: Yes (when provider is `gemini`; ignored for `ollama`)
 - **Storage**: Stored securely using Obsidian's SecretStorage API (not saved in `data.json`)
 - **Description**: Your Google AI API key for accessing Gemini models
 - **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)

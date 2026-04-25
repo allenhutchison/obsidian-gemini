@@ -151,23 +151,19 @@ describe('error-utils', () => {
 
 			test('Network fetch error', () => {
 				const error = new Error('fetch failed: Connection refused');
-				expect(getErrorMessage(error)).toBe(
-					'Network error: Unable to connect to Google Gemini API. Please check your internet connection.'
-				);
+				expect(getErrorMessage(error)).toBe('Network error: Unable to reach the model API. Please check your connection.');
 			});
 
 			test('ECONNREFUSED error', () => {
 				const error = new Error('ECONNREFUSED: Connection refused');
 				expect(getErrorMessage(error)).toBe(
-					'Network error: Unable to connect to Google Gemini API. Please check your internet connection.'
+					'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.'
 				);
 			});
 
 			test('ETIMEDOUT error', () => {
 				const error = new Error('ETIMEDOUT: Request timed out');
-				expect(getErrorMessage(error)).toBe(
-					'Network error: Unable to connect to Google Gemini API. Please check your internet connection.'
-				);
+				expect(getErrorMessage(error)).toBe('Network error: Unable to reach the model API. Please check your connection.');
 			});
 
 			test('Timeout error', () => {

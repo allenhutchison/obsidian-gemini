@@ -8,7 +8,7 @@ import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { getDefaultModelForRole, GeminiModel } from './models';
+import { getDefaultModelForRole, GeminiModel, ModelProvider } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -50,6 +50,10 @@ export interface RagIndexingSettings {
 }
 
 export interface ObsidianGeminiSettings {
+	/** Active model provider. 'gemini' is the cloud default; 'ollama' targets a local Ollama daemon. */
+	provider: ModelProvider;
+	/** Base URL for the Ollama HTTP API. Only used when provider === 'ollama'. */
+	ollamaBaseUrl: string;
 	apiKeySecretName: string;
 	chatModelName: string;
 	summaryModelName: string;
@@ -95,6 +99,8 @@ export interface ObsidianGeminiSettings {
 }
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
+	provider: 'gemini',
+	ollamaBaseUrl: 'http://localhost:11434',
 	apiKeySecretName: '',
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
@@ -151,6 +157,8 @@ export default class ObsidianGemini extends Plugin {
 	settings!: ObsidianGeminiSettings;
 
 	get apiKey(): string {
+		// Ollama runs locally with no auth, so no key is required.
+		if (this.settings?.provider === 'ollama') return '';
 		const secretName = this.settings?.apiKeySecretName;
 		if (!secretName) return '';
 		return this.app.secretStorage.getSecret(secretName) ?? '';
@@ -170,7 +178,7 @@ export default class ObsidianGemini extends Plugin {
 	public examplePrompts!: ExamplePromptsManager;
 	public vaultAnalyzer!: VaultAnalyzer;
 	public deepResearch!: DeepResearchService;
-	public imageGeneration!: ImageGeneration;
+	public imageGeneration: ImageGeneration | null = null;
 	public logger!: Logger;
 	public fileLogWriter: FileLogWriter | null = null;
 	public ragIndexing: RagIndexingService | null = null;
@@ -200,6 +208,8 @@ export default class ObsidianGemini extends Plugin {
 	public isGeminiInitialized: boolean = false;
 	private previousApiKey: string = '';
 	private previousRagEnabled: boolean = false;
+	private previousProvider: ModelProvider = 'gemini';
+	private previousOllamaBaseUrl: string = '';
 	private lifecycle!: LifecycleService;
 
 	async onload() {
@@ -226,6 +236,8 @@ export default class ObsidianGemini extends Plugin {
 			this.isGeminiInitialized = true;
 			this.previousApiKey = this.apiKey;
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
+			this.previousProvider = this.settings.provider;
+			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
 			new Notice(this.getInitErrorMessage(error));
@@ -255,6 +267,12 @@ export default class ObsidianGemini extends Plugin {
 	 * Distinguishes between "never configured" and "storage retrieval failure".
 	 */
 	private getApiKeyErrorMessage(): string {
+		if (this.settings.provider === 'ollama') {
+			return (
+				`Could not reach Ollama at ${this.settings.ollamaBaseUrl}. ` +
+				'Make sure the Ollama daemon is running and the base URL is correct in Settings \u2192 Gemini Scribe.'
+			);
+		}
 		if (!this.settings.apiKeySecretName) {
 			return (
 				'No Gemini API key configured. Open Settings \u2192 Gemini Scribe to add one. ' +
@@ -753,19 +771,25 @@ export default class ObsidianGemini extends Plugin {
 
 		// Check if we need to re-initialize
 		const apiKeyChanged = this.previousApiKey !== this.apiKey;
-		const needsInit = !this.isGeminiInitialized && this.apiKey;
+		const providerChanged = this.previousProvider !== this.settings.provider;
+		const ollamaUrlChanged =
+			this.settings.provider === 'ollama' && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
+		// Ollama needs no API key, so first-time init triggers on provider switch alone.
+		const hasCredentials = this.settings.provider === 'ollama' || !!this.apiKey;
+		const needsInit = !this.isGeminiInitialized && hasCredentials;
 
-		// Only re-initialize if API key changed or if not initialized but now have key
-		if (apiKeyChanged || needsInit) {
+		if (apiKeyChanged || providerChanged || ollamaUrlChanged || needsInit) {
 			try {
 				await this.lifecycle.setup();
 				this.isGeminiInitialized = true;
 				this.previousApiKey = this.apiKey;
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
+				this.previousProvider = this.settings.provider;
+				this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
 
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional
-				if (needsInit && !apiKeyChanged) {
+				if (needsInit && !apiKeyChanged && !providerChanged) {
 					new Notice('Gemini Scribe is now ready to use!');
 				}
 			} catch (error) {

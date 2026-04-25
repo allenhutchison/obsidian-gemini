@@ -33,28 +33,86 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 		);
 
 	new Setting(containerEl)
-		.setName('API Key')
+		.setName('Provider')
 		.setDesc(
-			'Link your Google Gemini API key. Click "Link..." and Obsidian will ask for a Secret Name (this is just a label — use any name like "gemini-api") and a Secret Value (paste your API key here). Get a key free at https://aistudio.google.com/apikey'
+			'Choose the model provider. Gemini uses the Google cloud API. Ollama runs models locally on your machine; install from https://ollama.com and pull a model with `ollama pull <name>`.'
 		)
-		.addComponent((el) =>
-			new SecretComponent(app, el).setValue(plugin.settings.apiKeySecretName).onChange(async (secretName) => {
-				plugin.settings.apiKeySecretName = secretName;
-				await plugin.saveSettings();
-			})
+		.addDropdown((dropdown) =>
+			dropdown
+				.addOption('gemini', 'Google Gemini (cloud)')
+				.addOption('ollama', 'Ollama (local)')
+				.setValue(plugin.settings.provider)
+				.onChange(async (value) => {
+					plugin.settings.provider = value as 'gemini' | 'ollama';
+					await plugin.saveSettings();
+					// Re-render the settings tab so provider-specific fields show/hide.
+					containerEl.empty();
+					await renderGeneralSettings(containerEl, plugin, app);
+				})
 		);
 
-	// Add note about model version filtering
-	new Setting(containerEl)
-		.setName('Model Versions')
-		.setDesc(
-			'ℹ️ Only Gemini 2.5+ models are shown. Older model versions have been deprecated by Google and are no longer supported.'
-		)
-		.addButton((button) =>
-			button.setButtonText('Learn More').onClick(() => {
-				window.open('https://ai.google.dev/gemini-api/docs/models/gemini');
-			})
-		);
+	if (plugin.settings.provider === 'ollama') {
+		new Setting(containerEl)
+			.setName('Ollama Base URL')
+			.setDesc('HTTP endpoint of your local Ollama daemon. Default is http://localhost:11434.')
+			.addText((text) =>
+				text
+					.setPlaceholder('http://localhost:11434')
+					.setValue(plugin.settings.ollamaBaseUrl)
+					.onChange((value) => {
+						plugin.settings.ollamaBaseUrl = value.trim() || 'http://localhost:11434';
+						debouncedSave();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Refresh model list')
+			.setDesc('Re-query the Ollama daemon for available models.')
+			.addButton((button) =>
+				button.setButtonText('Refresh').onClick(async () => {
+					try {
+						const manager = plugin.getModelManager();
+						manager.getOllamaModelsService().invalidate();
+						const models = await manager.getAvailableModels({ forceRefresh: true });
+						new Notice(`Found ${models.length} Ollama model${models.length === 1 ? '' : 's'}.`);
+						containerEl.empty();
+						await renderGeneralSettings(containerEl, plugin, app);
+					} catch (error) {
+						new Notice(`Failed to refresh: ${getErrorMessage(error)}`);
+					}
+				})
+			);
+
+		new Setting(containerEl)
+			.setName('Local-only feature notice')
+			.setDesc(
+				'Google Search, URL Context (web fetch), Deep Research, image generation, and RAG indexing are unavailable when using Ollama. They rely on Gemini built-in services.'
+			);
+	} else {
+		new Setting(containerEl)
+			.setName('API Key')
+			.setDesc(
+				'Link your Google Gemini API key. Click "Link..." and Obsidian will ask for a Secret Name (this is just a label — use any name like "gemini-api") and a Secret Value (paste your API key here). Get a key free at https://aistudio.google.com/apikey'
+			)
+			.addComponent((el) =>
+				new SecretComponent(app, el).setValue(plugin.settings.apiKeySecretName).onChange(async (secretName) => {
+					plugin.settings.apiKeySecretName = secretName;
+					await plugin.saveSettings();
+				})
+			);
+
+		// Add note about model version filtering
+		new Setting(containerEl)
+			.setName('Model Versions')
+			.setDesc(
+				'ℹ️ Only Gemini 2.5+ models are shown. Older model versions have been deprecated by Google and are no longer supported.'
+			)
+			.addButton((button) =>
+				button.setButtonText('Learn More').onClick(() => {
+					window.open('https://ai.google.dev/gemini-api/docs/models/gemini');
+				})
+			);
+	}
 
 	await selectModelSetting(
 		containerEl,
@@ -77,14 +135,16 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 		'Completion Model',
 		'Model used for IDE-style inline completions as you type in notes.'
 	);
-	await selectModelSetting(
-		containerEl,
-		plugin,
-		'imageModelName',
-		'Image Model',
-		'Model used for image generation.',
-		'image'
-	);
+	if (plugin.settings.provider === 'gemini') {
+		await selectModelSetting(
+			containerEl,
+			plugin,
+			'imageModelName',
+			'Image Model',
+			'Model used for image generation.',
+			'image'
+		);
+	}
 
 	new Setting(containerEl)
 		.setName('Summary Frontmatter Key')

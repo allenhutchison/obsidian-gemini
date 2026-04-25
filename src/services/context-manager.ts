@@ -13,6 +13,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
+import { GeminiClientFactory, ModelUseCase } from '../api/simple-factory';
 
 // @ts-ignore
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
@@ -22,6 +23,24 @@ const AGGRESSIVE_COMPACTION_THRESHOLD_PERCENT = 80;
 
 /** Default model input token limit (1M for all current Gemini models) */
 const DEFAULT_INPUT_TOKEN_LIMIT = 1_000_000;
+
+/**
+ * Conservative default input token limit for Ollama models. Local models vary
+ * widely (4k–128k); we pick a safe middle so compaction triggers before
+ * smaller models truncate. Users with larger-context models can let
+ * compaction happen later without harm.
+ */
+const OLLAMA_DEFAULT_INPUT_TOKEN_LIMIT = 32_000;
+
+/**
+ * Rough token-count estimate for providers that don't expose a countTokens
+ * endpoint (Ollama). Char/4 is the standard heuristic; drift vs. real tokens
+ * is acceptable here because we only use it to decide whether to compact.
+ */
+function estimateTokensFromContents(contents: any[]): number {
+	const json = JSON.stringify(contents ?? []);
+	return Math.ceil(json.length / 4);
+}
 
 /** Minimum number of recent turns to preserve during compaction */
 const MIN_RECENT_TURNS_TO_KEEP = 6;
@@ -72,13 +91,15 @@ export interface UsageMetadata {
 export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
 	private acceptNextLowerUpdate = false;
-	private ai: GoogleGenAI;
+	private ai: GoogleGenAI | null;
 
 	constructor(
 		private plugin: ObsidianGemini,
 		private logger: Logger
 	) {
-		this.ai = new GoogleGenAI({ apiKey: plugin.apiKey });
+		// Only construct the Gemini SDK when the active provider is Gemini —
+		// Ollama runs locally and has no key, so the SDK is unused.
+		this.ai = plugin.settings.provider === 'gemini' ? new GoogleGenAI({ apiKey: plugin.apiKey }) : null;
 	}
 
 	/**
@@ -140,6 +161,9 @@ export class ContextManager {
 	 * Get the input token limit for a given model.
 	 */
 	private async getInputTokenLimit(_modelName: string): Promise<number> {
+		if (this.plugin.settings.provider === 'ollama') {
+			return OLLAMA_DEFAULT_INPUT_TOKEN_LIMIT;
+		}
 		return DEFAULT_INPUT_TOKEN_LIMIT;
 	}
 
@@ -220,15 +244,24 @@ export class ContextManager {
 	}
 
 	/**
-	 * Count tokens for a given set of contents using the Gemini API.
+	 * Count tokens for a given set of contents.
+	 *
+	 * For Gemini, calls the SDK's countTokens endpoint. For Ollama (which has no
+	 * equivalent API) we fall back to a chars/4 estimate — compaction precision
+	 * is degraded but the trigger logic still works.
 	 */
 	async countTokens(modelName: string, contents: any[]): Promise<number> {
+		// Sanitize contents to only include text-compatible parts
+		const sanitizedContents = this.sanitizeContentsForTokenCount(contents);
+
+		if (this.plugin.settings.provider === 'ollama' || !this.ai) {
+			const estimate = estimateTokensFromContents(sanitizedContents);
+			this.logger.log(`[ContextManager] countTokens (Ollama estimate): ${estimate}`);
+			return estimate;
+		}
+
 		try {
 			const config: any = {};
-
-			// Sanitize contents to only include text-compatible parts
-			const sanitizedContents = this.sanitizeContentsForTokenCount(contents);
-
 			const response = await this.ai.models.countTokens({
 				model: modelName,
 				contents: sanitizedContents,
@@ -410,11 +443,29 @@ export class ContextManager {
 			.join('\n\n');
 
 		const summaryPrompt = contextSummaryPromptContent;
+		const fullPrompt = `${summaryPrompt}\n\n---\n\nConversation to summarize:\n\n${conversationText}`;
 
 		try {
+			// Ollama has no SDK instance here; route through the factory so we use
+			// whichever provider the user has configured.
+			if (this.plugin.settings.provider === 'ollama' || !this.ai) {
+				const summaryClient = GeminiClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
+				const response = await summaryClient.generateModelResponse({
+					model: modelName,
+					prompt: fullPrompt,
+					temperature: 0.3,
+				});
+				const summary = response.markdown?.trim();
+				if (!summary) {
+					this.logger.warn('[ContextManager] Summary generation returned empty result');
+					return 'Previous conversation context could not be summarized. The conversation continues below.';
+				}
+				return summary;
+			}
+
 			const response = await this.ai.models.generateContent({
 				model: modelName,
-				contents: `${summaryPrompt}\n\n---\n\nConversation to summarize:\n\n${conversationText}`,
+				contents: fullPrompt,
 				config: {
 					temperature: 0.3, // Low temperature for factual summarization
 					maxOutputTokens: 4096,
