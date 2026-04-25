@@ -439,6 +439,79 @@ describe('ScheduledTaskManager', () => {
 		});
 	});
 
+	// ── Pending defer cancellation ───────────────────────────────────────────
+
+	describe('pending defer cancellation', () => {
+		it('does not mutate state when destroy() runs before the 500 ms defer fires', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([]);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const vaultOnCalls = (plugin.app.vault.on as jest.Mock).mock.calls;
+			const createHandler = vaultOnCalls.find(([e]: [string]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
+			expect(createHandler).toBeDefined();
+
+			const { TFile: MockTFile } = jest.requireMock('obsidian');
+			const newFile = Object.assign(new MockTFile(), {
+				path: 'gemini-scribe/Scheduled-Tasks/late-task.md',
+				basename: 'late-task',
+				extension: 'md',
+			});
+			plugin.app.vault.read = jest.fn().mockResolvedValue('Prompt body.');
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+
+			jest.useFakeTimers();
+			// Fire create — starts the 500 ms defer
+			createHandler(newFile);
+			// destroy() before the defer fires
+			manager.destroy();
+			// Advance past the defer window — the cancelled timer must not fire
+			jest.advanceTimersByTime(600);
+			jest.useRealTimers();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			// parseTaskFile (vault.read) must never have been called
+			expect(plugin.app.vault.read).not.toHaveBeenCalled();
+		});
+
+		it('does not mutate state when initialize() re-runs before the 500 ms defer fires', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([]);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const vaultOnCalls = (plugin.app.vault.on as jest.Mock).mock.calls;
+			const createHandler = vaultOnCalls.find(([e]: [string]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
+			expect(createHandler).toBeDefined();
+
+			const { TFile: MockTFile } = jest.requireMock('obsidian');
+			const newFile = Object.assign(new MockTFile(), {
+				path: 'gemini-scribe/Scheduled-Tasks/stale-task.md',
+				basename: 'stale-task',
+				extension: 'md',
+			});
+			plugin.app.vault.read = jest.fn().mockResolvedValue('Prompt body.');
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+
+			jest.useFakeTimers();
+			// Fire create — starts the 500 ms defer
+			createHandler(newFile);
+			// Re-initialize before the defer fires — should cancel the pending timer
+			jest.useRealTimers();
+			await manager.initialize();
+			jest.useFakeTimers();
+			jest.advanceTimersByTime(600);
+			jest.useRealTimers();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			// parseTaskFile (vault.read) must never have been called from the stale defer
+			expect(plugin.app.vault.read).not.toHaveBeenCalled();
+		});
+	});
+
 	// ── Tick behaviour ──────────────────────────────────────────────────────
 
 	describe('tick', () => {

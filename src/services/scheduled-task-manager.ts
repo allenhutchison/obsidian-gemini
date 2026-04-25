@@ -147,6 +147,12 @@ export class ScheduledTaskManager {
 	 * to avoid double-parsing when both events fire for the same new file.
 	 */
 	private recentlyCreated = new Set<string>();
+	/**
+	 * IDs of in-flight setTimeout calls from vaultCreateHandler defers.
+	 * Tracked so they can be cancelled by initialize() (on re-init) and destroy()
+	 * to prevent stale callbacks from mutating state after teardown.
+	 */
+	private pendingDefers = new Set<ReturnType<typeof setTimeout>>();
 
 	constructor(private plugin: ObsidianGemini) {}
 
@@ -181,6 +187,15 @@ export class ScheduledTaskManager {
 	 */
 	async initialize(options?: { refresh?: boolean }): Promise<void> {
 		if (this.initialized && !options?.refresh) return;
+		// Cancel any 500 ms defers still waiting from a previous initialization so
+		// stale callbacks cannot fire against the freshly-loaded state.
+		for (const id of this.pendingDefers) {
+			clearTimeout(id);
+		}
+		this.pendingDefers.clear();
+		this.recentlyCreated.clear();
+
+
 		// Unregister previous listeners before re-registering so settings
 		// changes (e.g. historyFolder rename) don't leave stale handlers active.
 		if (this.metadataCacheHandler) {
@@ -245,8 +260,14 @@ export class ScheduledTaskManager {
 				// (which fires before our 500 ms defer) skips this file.
 				this.recentlyCreated.add(file.basename);
 				// Defer until the metadata cache has indexed the new file's frontmatter.
-				setTimeout(() => {
+				// Track the timer so initialize() and destroy() can cancel it if they
+				// run before the 500 ms elapses.
+				const timerId = setTimeout(() => {
+					this.pendingDefers.delete(timerId);
 					this.recentlyCreated.delete(file.basename);
+					// Guard: if the manager was destroyed or re-initialized while the
+					// defer was pending, skip the parse — state has been reset.
+					if (!this.initialized) return;
 					this.parseTaskFile(file)
 						.then(async (task) => {
 							if (!task) return;
@@ -261,6 +282,7 @@ export class ScheduledTaskManager {
 							this.plugin.logger.warn(`[ScheduledTaskManager] Failed to parse new task ${file.path}:`, err)
 						);
 				}, 500);
+				this.pendingDefers.add(timerId);
 			}
 		};
 		this.plugin.app.vault.on('create', this.vaultCreateHandler);
@@ -359,6 +381,13 @@ export class ScheduledTaskManager {
 			this.plugin.app.vault.off('create', this.vaultCreateHandler);
 			this.vaultCreateHandler = null;
 		}
+		// Cancel any 500 ms defers still in flight — their callbacks check
+		// this.initialized before touching state, but clearing here is the
+		// belt-and-suspenders guarantee that no timer fires after teardown.
+		for (const id of this.pendingDefers) {
+			clearTimeout(id);
+		}
+		this.pendingDefers.clear();
 		this.tasks.clear();
 		this.state = {};
 		this.recentlyCreated.clear();
