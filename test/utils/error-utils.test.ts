@@ -13,14 +13,14 @@ describe('error-utils', () => {
 			test('401 Unauthorized', () => {
 				const error = { status: 401, message: 'Unauthorized' };
 				expect(getErrorMessage(error)).toBe(
-					'Authentication failed: Invalid API key. Please check your Google Gemini API key in settings.'
+					'Authentication failed: Invalid API key. Please check your model provider credentials in settings.'
 				);
 			});
 
 			test('403 Forbidden', () => {
 				const error = { status: 403, message: 'Forbidden' };
 				expect(getErrorMessage(error)).toBe(
-					'Access forbidden: Your API key does not have permission to use this model or feature.'
+					'Access forbidden: The model provider denied access to this model or feature.'
 				);
 			});
 
@@ -107,25 +107,29 @@ describe('error-utils', () => {
 		describe('Error message pattern matching', () => {
 			test('API key error', () => {
 				const error = new Error('Invalid API key provided');
-				expect(getErrorMessage(error)).toBe('Invalid API key. Please check your Google Gemini API key in settings.');
+				expect(getErrorMessage(error)).toBe(
+					'Invalid API key. Please check your model provider credentials in settings.'
+				);
 			});
 
 			test('API_KEY error code', () => {
 				const error = new Error('INVALID_API_KEY: The key is not valid');
-				expect(getErrorMessage(error)).toBe('Invalid API key. Please check your Google Gemini API key in settings.');
+				expect(getErrorMessage(error)).toBe(
+					'Invalid API key. Please check your model provider credentials in settings.'
+				);
 			});
 
 			test('Permission denied error', () => {
 				const error = new Error('Permission denied to access this resource');
 				expect(getErrorMessage(error)).toBe(
-					'Authentication failed. Please verify your API key has access to the Gemini API.'
+					'Authentication failed. Please verify your model provider credentials and that your account has access to this model.'
 				);
 			});
 
 			test('Forbidden error', () => {
 				const error = new Error('Access forbidden for this model');
 				expect(getErrorMessage(error)).toBe(
-					'Authentication failed. Please verify your API key has access to the Gemini API.'
+					'Authentication failed. Please verify your model provider credentials and that your account has access to this model.'
 				);
 			});
 
@@ -157,7 +161,9 @@ describe('error-utils', () => {
 			});
 
 			test('ECONNREFUSED to a non-Ollama localhost endpoint stays generic', () => {
-				const error = new Error('ECONNREFUSED: Connection refused');
+				// Mention a non-11434 localhost target so this would actually catch a
+				// regression of the old "any localhost ECONNREFUSED is Ollama" heuristic.
+				const error = new Error('fetch failed: ECONNREFUSED 127.0.0.1:3000');
 				expect(getErrorMessage(error)).toBe(
 					'Network error: Unable to reach the model API. Please check your connection.'
 				);
