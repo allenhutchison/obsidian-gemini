@@ -11,22 +11,22 @@ import { TFile } from 'obsidian';
 // `requireConfirmation: []`, so the provider is never consulted — a deny stub
 // is fine. Tests that need to test the confirmation branch build their own.
 const denyProvider: IConfirmationProvider = {
-	showConfirmationInChat: jest.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
-	isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
-	allowToolWithoutConfirmation: jest.fn(),
+	showConfirmationInChat: vi.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
+	isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
+	allowToolWithoutConfirmation: vi.fn(),
 };
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
-jest.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils', () => ({
 	EXTENSION_TO_MIME: { '.md': 'text/markdown', '.txt': 'text/plain' },
 	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json']),
 }));
 
 // Mock dependencies
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
-	Notice: jest.fn(),
-	normalizePath: jest.fn((path: string) => path),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
+	Notice: vi.fn(),
+	normalizePath: vi.fn((path: string) => path),
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
@@ -35,15 +35,17 @@ jest.mock('obsidian', () => ({
 	},
 }));
 
-jest.mock('@google/genai');
+vi.mock('@google/genai');
 
 // Mock ScribeFile
-jest.mock('../../src/files', () => ({
-	ScribeFile: jest.fn().mockImplementation(() => ({
-		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
-		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-		getBacklinks: jest.fn().mockReturnValue(new Set()),
-	})),
+vi.mock('../../src/files', () => ({
+	ScribeFile: vi.fn().mockImplementation(function () {
+		return {
+			getUniqueLinks: vi.fn().mockReturnValue(new Set()),
+			getLinkText: vi.fn((file: any) => `[[${file.name || file.path}]]`),
+			getBacklinks: vi.fn().mockReturnValue(new Set()),
+		};
+	}),
 }));
 
 describe('Tool Integration Tests', () => {
@@ -64,28 +66,28 @@ describe('Tool Integration Tests', () => {
 			},
 			app: {
 				vault: {
-					getAbstractFileByPath: jest.fn(),
-					getMarkdownFiles: jest.fn().mockReturnValue([]),
-					getFiles: jest.fn().mockReturnValue([]),
-					read: jest.fn(),
-					create: jest.fn(),
-					modify: jest.fn(),
-					delete: jest.fn(),
-					processFrontMatter: jest.fn(),
-					getRoot: jest.fn().mockReturnValue({
+					getAbstractFileByPath: vi.fn(),
+					getMarkdownFiles: vi.fn().mockReturnValue([]),
+					getFiles: vi.fn().mockReturnValue([]),
+					read: vi.fn(),
+					create: vi.fn(),
+					modify: vi.fn(),
+					delete: vi.fn(),
+					processFrontMatter: vi.fn(),
+					getRoot: vi.fn().mockReturnValue({
 						children: [],
 						path: '/',
 					}),
 				},
 				metadataCache: {
-					getFileCache: jest.fn(),
-					getFirstLinkpathDest: jest.fn().mockReturnValue(null),
+					getFileCache: vi.fn(),
+					getFirstLinkpathDest: vi.fn().mockReturnValue(null),
 				},
 			},
 			gfile: {
-				getUniqueLinks: jest.fn().mockReturnValue(new Set()),
-				getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-				getBacklinks: jest.fn().mockReturnValue(new Set()),
+				getUniqueLinks: vi.fn().mockReturnValue(new Set()),
+				getLinkText: vi.fn((file: any) => `[[${file.name || file.path}]]`),
+				getBacklinks: vi.fn().mockReturnValue(new Set()),
 			},
 		};
 
@@ -198,7 +200,7 @@ describe('Tool Integration Tests', () => {
 			plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFolder);
 
 			// Mock root folder for empty path
-			plugin.app.vault.getRoot = jest.fn().mockReturnValue(mockFolder);
+			plugin.app.vault.getRoot = vi.fn().mockReturnValue(mockFolder);
 
 			// 1. List files in root
 			const listResult = await engine.executeTool(
@@ -246,7 +248,7 @@ describe('Tool Integration Tests', () => {
 			// We need to mock the tool to bypass API key check
 			const searchTool = registry.getTool('google_search');
 			if (searchTool) {
-				searchTool.execute = jest.fn().mockResolvedValue({
+				searchTool.execute = vi.fn().mockResolvedValue({
 					success: true,
 					data: {
 						query: 'obsidian plugins',
@@ -272,7 +274,7 @@ describe('Tool Integration Tests', () => {
 
 			// 2. Fetch specific URL
 			// Mock fetch response
-			global.fetch = jest.fn().mockResolvedValue({
+			global.fetch = vi.fn().mockResolvedValue({
 				ok: true,
 				text: async () => '<html><body><h1>Obsidian Plugins</h1></body></html>',
 				headers: new Headers({ 'content-type': 'text/html' }),
@@ -407,7 +409,7 @@ describe('Tool Integration Tests', () => {
 			];
 
 			// Mock getRoot for list_files
-			plugin.app.vault.getRoot = jest.fn().mockReturnValue({
+			plugin.app.vault.getRoot = vi.fn().mockReturnValue({
 				children: [],
 				path: '/',
 			});

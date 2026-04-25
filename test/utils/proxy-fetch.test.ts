@@ -1,19 +1,17 @@
-/**
- * @jest-environment node
- */
+// @vitest-environment node
 
 import { proxyFetch } from '../../src/utils/proxy-fetch';
 
 // Mock Obsidian's requestUrl
-const mockRequestUrl = jest.fn();
+const mockRequestUrl = vi.fn();
 
-jest.mock('obsidian', () => ({
+vi.mock('obsidian', () => ({
 	requestUrl: (params: any) => mockRequestUrl(params),
 }));
 
 describe('proxyFetch', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('request building', () => {

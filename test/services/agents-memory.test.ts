@@ -2,9 +2,9 @@ import { AgentsMemory, AgentsMemoryData } from '../../src/services/agents-memory
 import { TFile } from 'obsidian';
 
 // Mock obsidian
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
-	normalizePath: jest.fn((path: string) => path),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
+	normalizePath: vi.fn((path: string) => path),
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
@@ -12,8 +12,8 @@ jest.mock('obsidian', () => ({
 }));
 
 // Mock Handlebars
-jest.mock('handlebars', () => ({
-	compile: jest.fn((template: string) => {
+vi.mock('handlebars', () => {
+	const compile = vi.fn((template: string) => {
 		return (data: any) => {
 			// Simple template rendering for testing
 			let result = template;
@@ -29,8 +29,9 @@ jest.mock('handlebars', () => ({
 			});
 			return result;
 		};
-	}),
-}));
+	});
+	return { default: { compile }, compile };
+});
 
 describe('AgentsMemory', () => {
 	let agentsMemory: AgentsMemory;
@@ -40,16 +41,16 @@ describe('AgentsMemory', () => {
 
 	beforeEach(() => {
 		// Reset mocks
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
 		// Setup mock vault
 		mockVault = {
-			getAbstractFileByPath: jest.fn(),
-			read: jest.fn(),
-			modify: jest.fn(),
-			create: jest.fn(),
+			getAbstractFileByPath: vi.fn(),
+			read: vi.fn(),
+			modify: vi.fn(),
+			create: vi.fn(),
 			adapter: {
-				read: jest.fn(),
+				read: vi.fn(),
 			},
 		};
 
@@ -64,11 +65,11 @@ describe('AgentsMemory', () => {
 				historyFolder: 'test-folder',
 			},
 			logger: {
-				log: jest.fn(),
-				debug: jest.fn(),
-				warn: jest.fn(),
-				error: jest.fn(),
-				child: jest.fn(function (this: any, _prefix: string) {
+				log: vi.fn(),
+				debug: vi.fn(),
+				warn: vi.fn(),
+				error: vi.fn(),
+				child: vi.fn(function (this: any, _prefix: string) {
 					return this;
 				}),
 			},

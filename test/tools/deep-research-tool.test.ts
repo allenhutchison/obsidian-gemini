@@ -4,8 +4,8 @@ import { ToolCategory } from '../../src/types/agent';
 import { TFile } from 'obsidian';
 
 // Mock TFile
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
@@ -14,16 +14,16 @@ jest.mock('obsidian', () => ({
 
 // Mock DeepResearchService
 const mockDeepResearch = {
-	conductResearch: jest.fn(),
+	conductResearch: vi.fn(),
 };
 
 const mockBackgroundTaskManager = {
-	submit: jest.fn().mockReturnValue('bg-task-1'),
+	submit: vi.fn().mockReturnValue('bg-task-1'),
 };
 
-const mockEnsureFolderExists = jest.fn().mockResolvedValue(undefined);
-jest.mock('../../src/utils/file-utils', () => ({
-	...jest.requireActual('../../src/utils/file-utils'),
+const mockEnsureFolderExists = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../src/utils/file-utils', async () => ({
+	...(await vi.importActual<any>('../../src/utils/file-utils')),
 	ensureFolderExists: (...args: any[]) => mockEnsureFolderExists(...args),
 	sanitizeFileName: (name: string) =>
 		name
@@ -37,7 +37,7 @@ const mockPlugin = {
 	backgroundTaskManager: mockBackgroundTaskManager,
 	settings: { historyFolder: 'gemini-scribe' },
 	app: { vault: {} },
-	logger: { log: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
+	logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 } as any;
 
 const mockContext: ToolExecutionContext = {
@@ -56,7 +56,7 @@ const mockContext: ToolExecutionContext = {
 
 describe('DeepResearchTool', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('Tool Properties', () => {
@@ -360,7 +360,7 @@ describe('DeepResearchTool', () => {
 
 		beforeEach(() => {
 			tool = new DeepResearchTool();
-			jest.clearAllMocks();
+			vi.clearAllMocks();
 		});
 
 		it('returns taskId and output_file immediately without awaiting research', async () => {

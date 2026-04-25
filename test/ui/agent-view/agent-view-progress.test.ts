@@ -1,21 +1,27 @@
 import { AgentViewProgress } from '../../../src/ui/agent-view/agent-view-progress';
+import { MarkdownRenderer as MarkdownRendererBase } from 'obsidian';
+// MarkdownRenderer.render is replaced with a vi.fn() by the obsidian mock below;
+// cast to any so TS lets us call mockImplementationOnce/mock.calls on it.
+const MarkdownRenderer = MarkdownRendererBase as unknown as { render: any };
 
 // Mock the ChatTimer
-jest.mock('../../../src/utils/timer-utils', () => ({
-	ChatTimer: jest.fn().mockImplementation(() => ({
-		start: jest.fn(),
-		stop: jest.fn(),
-		isRunning: jest.fn().mockReturnValue(false),
-	})),
+vi.mock('../../../src/utils/timer-utils', () => ({
+	ChatTimer: vi.fn().mockImplementation(function () {
+		return {
+			start: vi.fn(),
+			stop: vi.fn(),
+			isRunning: vi.fn().mockReturnValue(false),
+		};
+	}),
 }));
 
 // Mock Obsidian MarkdownRenderer
-jest.mock('obsidian', () => {
-	const mock = jest.requireActual('../../../__mocks__/obsidian.js');
+vi.mock('obsidian', async () => {
+	const mock = await vi.importActual<any>('../../../__mocks__/obsidian.js');
 	return {
 		...mock,
 		MarkdownRenderer: {
-			render: jest.fn().mockImplementation((_app: any, markdown: string, el: HTMLElement) => {
+			render: vi.fn().mockImplementation((_app: any, markdown: string, el: HTMLElement) => {
 				// Simulate basic markdown rendering
 				const p = document.createElement('p');
 				p.textContent = markdown;
@@ -222,7 +228,6 @@ describe('AgentViewProgress', () => {
 		});
 
 		it('should render content in expandable section using MarkdownRenderer', () => {
-			const { MarkdownRenderer } = require('obsidian');
 			progress.show('Thinking...', 'thinking');
 			progress.updateThought('**bold** thought');
 
@@ -375,8 +380,6 @@ describe('AgentViewProgress', () => {
 
 	describe('async render versioning', () => {
 		it('should discard stale renders when newer thought arrives', async () => {
-			const { MarkdownRenderer } = require('obsidian');
-
 			// Make render resolve slowly for first call, instantly for second
 			let resolveFirst: () => void;
 			const firstRenderPromise = new Promise<void>((resolve) => {
@@ -473,7 +476,6 @@ describe('AgentViewProgress', () => {
 		});
 
 		it('should fall back to plain text when MarkdownRenderer.render rejects', async () => {
-			const { MarkdownRenderer } = require('obsidian');
 			MarkdownRenderer.render.mockImplementationOnce(() => {
 				return Promise.reject(new Error('Render failed'));
 			});

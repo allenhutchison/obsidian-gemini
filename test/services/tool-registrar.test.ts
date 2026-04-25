@@ -1,31 +1,31 @@
 import { ToolRegistrar } from '../../src/services/tool-registrar';
 
 // Mock all tool source modules
-jest.mock('../../src/tools/vault', () => ({
+vi.mock('../../src/tools/vault', () => ({
 	getVaultTools: () => [{ name: 'read_file' }, { name: 'write_file' }],
 }));
 
-jest.mock('../../src/tools/vault-tools-extended', () => ({
+vi.mock('../../src/tools/vault-tools-extended', () => ({
 	getExtendedVaultTools: () => [{ name: 'read_frontmatter' }],
 }));
 
-jest.mock('../../src/tools/web-tools', () => ({
+vi.mock('../../src/tools/web-tools', () => ({
 	getWebTools: () => [{ name: 'google_search' }],
 }));
 
-jest.mock('../../src/tools/memory-tool', () => ({
+vi.mock('../../src/tools/memory-tool', () => ({
 	getMemoryTools: () => [{ name: 'save_memory' }],
 }));
 
-jest.mock('../../src/tools/image-tools', () => ({
+vi.mock('../../src/tools/image-tools', () => ({
 	getImageTools: () => [{ name: 'generate_image' }],
 }));
 
-jest.mock('../../src/tools/skill-tools', () => ({
+vi.mock('../../src/tools/skill-tools', () => ({
 	getSkillTools: () => [{ name: 'activate_skill' }],
 }));
 
-jest.mock('../../src/tools/session-recall-tool', () => ({
+vi.mock('../../src/tools/session-recall-tool', () => ({
 	getSessionRecallTools: () => [{ name: 'recall_sessions' }],
 }));
 
@@ -35,17 +35,17 @@ describe('ToolRegistrar', () => {
 	let mockLogger: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		registrar = new ToolRegistrar();
 		mockRegistry = {
-			registerTool: jest.fn(),
-			unregisterTool: jest.fn(),
+			registerTool: vi.fn(),
+			unregisterTool: vi.fn(),
 		};
 		mockLogger = {
-			log: jest.fn(),
-			debug: jest.fn(),
-			error: jest.fn(),
-			warn: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
 		};
 	});
 

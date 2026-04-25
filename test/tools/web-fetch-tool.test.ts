@@ -1,15 +1,16 @@
+import type { Mock } from 'vitest';
 import { WebFetchTool } from '../../src/tools/web-fetch-tool';
 import { ToolExecutionContext } from '../../src/tools/types';
 import { GoogleGenAI } from '@google/genai';
 
 // Mock Google Gen AI
-jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn(),
+vi.mock('@google/genai', () => ({
+	GoogleGenAI: vi.fn(),
 }));
 
 // Mock proxy-fetch
-jest.mock('../../src/utils/proxy-fetch', () => ({
-	requestUrlWithRetry: jest.fn(),
+vi.mock('../../src/utils/proxy-fetch', () => ({
+	requestUrlWithRetry: vi.fn(),
 }));
 
 import { requestUrlWithRetry } from '../../src/utils/proxy-fetch';
@@ -20,17 +21,19 @@ describe('WebFetchTool', () => {
 	let mockGenAI: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
 		tool = new WebFetchTool();
 
 		mockGenAI = {
 			models: {
-				generateContent: jest.fn(),
+				generateContent: vi.fn(),
 			},
 		};
 
-		(GoogleGenAI as jest.Mock).mockImplementation(() => mockGenAI);
+		(GoogleGenAI as Mock).mockImplementation(function () {
+			return mockGenAI;
+		});
 
 		mockContext = {
 			plugin: {
@@ -40,10 +43,10 @@ describe('WebFetchTool', () => {
 					temperature: 0.7,
 				},
 				logger: {
-					log: jest.fn(),
-					debug: jest.fn(),
-					error: jest.fn(),
-					warn: jest.fn(),
+					log: vi.fn(),
+					debug: vi.fn(),
+					error: vi.fn(),
+					warn: vi.fn(),
 				},
 			},
 			session: {
@@ -84,7 +87,7 @@ describe('WebFetchTool', () => {
 				],
 			});
 
-			(requestUrlWithRetry as jest.Mock).mockResolvedValue({
+			(requestUrlWithRetry as Mock).mockResolvedValue({
 				status: 200,
 				text: html,
 			});

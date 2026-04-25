@@ -5,39 +5,41 @@ import { AgentEventBus } from '../../src/agent/agent-event-bus';
 
 function createMockLogger(): any {
 	return {
-		log: jest.fn(),
-		debug: jest.fn(),
-		error: jest.fn(),
-		warn: jest.fn(),
-		child: jest.fn().mockReturnThis(),
+		log: vi.fn(),
+		debug: vi.fn(),
+		error: vi.fn(),
+		warn: vi.fn(),
+		child: vi.fn().mockReturnThis(),
 	};
 }
 
 function createMockPlugin(overrides: Record<string, any> = {}): any {
 	return {
 		logger: createMockLogger(),
-		backgroundStatusBar: { update: jest.fn() },
+		backgroundStatusBar: { update: vi.fn() },
 		app: {
 			workspace: {
-				openLinkText: jest.fn(),
+				openLinkText: vi.fn(),
 			},
 		},
 		...overrides,
 	};
 }
 
-// Mock Obsidian's Notice — provide a noticeEl so showCompletionNotice doesn't throw
-jest.mock('obsidian', () => ({
-	Notice: jest.fn().mockImplementation(() => ({
-		noticeEl: {
-			createSpan: jest.fn().mockReturnValue({ setText: jest.fn() }),
-			createEl: jest.fn().mockReturnValue({
-				addEventListener: jest.fn(),
-				setText: jest.fn(),
+// Mock Obsidian's Notice — provide a noticeEl so showCompletionNotice doesn't throw.
+// Use a class so the source can `new Notice(...)` without tripping vitest's
+// "is not a constructor" check on arrow-function implementations.
+vi.mock('obsidian', () => ({
+	Notice: class Notice {
+		noticeEl = {
+			createSpan: vi.fn().mockReturnValue({ setText: vi.fn() }),
+			createEl: vi.fn().mockReturnValue({
+				addEventListener: vi.fn(),
+				setText: vi.fn(),
 			}),
-		},
-		hide: jest.fn(),
-	})),
+		};
+		hide = vi.fn();
+	},
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -113,8 +115,8 @@ describe('BackgroundTaskManager', () => {
 			const plugin = createMockPlugin();
 			const manager = new BackgroundTaskManager(plugin, bus);
 
-			const started = jest.fn().mockResolvedValue(undefined);
-			const completed = jest.fn().mockResolvedValue(undefined);
+			const started = vi.fn().mockResolvedValue(undefined);
+			const completed = vi.fn().mockResolvedValue(undefined);
 			bus.on('backgroundTaskStarted', started);
 			bus.on('backgroundTaskComplete', completed);
 
@@ -159,7 +161,7 @@ describe('BackgroundTaskManager', () => {
 			const plugin = createMockPlugin();
 			const manager = new BackgroundTaskManager(plugin, bus);
 
-			const failed = jest.fn().mockResolvedValue(undefined);
+			const failed = vi.fn().mockResolvedValue(undefined);
 			bus.on('backgroundTaskFailed', failed);
 
 			manager.submit('t', 'Bad task', async () => {
@@ -213,7 +215,7 @@ describe('BackgroundTaskManager', () => {
 			const plugin = createMockPlugin();
 			const manager = new BackgroundTaskManager(plugin, bus);
 
-			const failed = jest.fn().mockResolvedValue(undefined);
+			const failed = vi.fn().mockResolvedValue(undefined);
 			bus.on('backgroundTaskFailed', failed);
 
 			let resolveFn!: () => void;

@@ -6,7 +6,7 @@ describe('RagSearchTool', () => {
 	let mockContext: ToolExecutionContext;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		tool = new RagSearchTool();
 
 		// Mock context with RAG indexing disabled by default
@@ -21,10 +21,10 @@ describe('RagSearchTool', () => {
 				},
 				ragIndexing: null,
 				logger: {
-					log: jest.fn(),
-					debug: jest.fn(),
-					error: jest.fn(),
-					warn: jest.fn(),
+					log: vi.fn(),
+					debug: vi.fn(),
+					error: vi.fn(),
+					warn: vi.fn(),
 				},
 			},
 			session: {
@@ -277,7 +277,7 @@ describe('RagSearchTool', () => {
 		beforeEach(() => {
 			mockAi = {
 				models: {
-					generateContent: jest.fn(),
+					generateContent: vi.fn(),
 				},
 			};
 

@@ -12,7 +12,7 @@ import {
 import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
-jest.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils', () => ({
 	EXTENSION_TO_MIME: {
 		'.md': 'text/markdown',
 		'.txt': 'text/plain',
@@ -23,17 +23,19 @@ jest.mock('@allenhutchison/gemini-utils', () => ({
 }));
 
 // Mock ScribeFile
-jest.mock('../../src/files', () => ({
-	ScribeFile: jest.fn().mockImplementation(() => ({
-		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
-		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-		getBacklinks: jest.fn().mockReturnValue(new Set()),
-	})),
+vi.mock('../../src/files', () => ({
+	ScribeFile: vi.fn().mockImplementation(function () {
+		return {
+			getUniqueLinks: vi.fn().mockReturnValue(new Set()),
+			getLinkText: vi.fn((file: any) => `[[${file.name || file.path}]]`),
+			getBacklinks: vi.fn().mockReturnValue(new Set()),
+		};
+	}),
 }));
 
 // Use the existing mock by extending it
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
 	TFolder: class TFolder {
 		path: string;
 		name: string;
@@ -67,29 +69,29 @@ mockFolder.name = 'folder';
 mockFolder.children = [mockFile];
 
 const mockVault = {
-	getAbstractFileByPath: jest.fn(),
-	read: jest.fn(),
-	readBinary: jest.fn(),
-	cachedRead: jest.fn(),
-	create: jest.fn(),
-	modify: jest.fn(),
-	delete: jest.fn(),
-	createFolder: jest.fn(),
-	getMarkdownFiles: jest.fn(),
-	getFiles: jest.fn(),
-	getRoot: jest.fn(),
-	rename: jest.fn(),
+	getAbstractFileByPath: vi.fn(),
+	read: vi.fn(),
+	readBinary: vi.fn(),
+	cachedRead: vi.fn(),
+	create: vi.fn(),
+	modify: vi.fn(),
+	delete: vi.fn(),
+	createFolder: vi.fn(),
+	getMarkdownFiles: vi.fn(),
+	getFiles: vi.fn(),
+	getRoot: vi.fn(),
+	rename: vi.fn(),
 	adapter: {
-		exists: jest.fn(),
+		exists: vi.fn(),
 	},
 };
 
 const mockMetadataCache = {
-	getFirstLinkpathDest: jest.fn(),
+	getFirstLinkpathDest: vi.fn(),
 };
 
 const mockFileManager = {
-	renameFile: jest.fn().mockResolvedValue(undefined),
+	renameFile: vi.fn().mockResolvedValue(undefined),
 };
 
 const mockPlugin = {
@@ -98,22 +100,22 @@ const mockPlugin = {
 		metadataCache: mockMetadataCache,
 		fileManager: mockFileManager,
 		workspace: {
-			getLeavesOfType: jest.fn().mockReturnValue([]),
+			getLeavesOfType: vi.fn().mockReturnValue([]),
 		},
 	},
 	settings: {
 		historyFolder: 'test-history-folder',
 	},
 	gfile: {
-		getUniqueLinks: jest.fn().mockReturnValue(new Set()),
-		getLinkText: jest.fn((file: any) => `[[${file.name || file.path}]]`),
-		getBacklinks: jest.fn().mockReturnValue(new Set()),
+		getUniqueLinks: vi.fn().mockReturnValue(new Set()),
+		getLinkText: vi.fn((file: any) => `[[${file.name || file.path}]]`),
+		getBacklinks: vi.fn().mockReturnValue(new Set()),
 	},
 	logger: {
-		log: jest.fn(),
-		debug: jest.fn(),
-		error: jest.fn(),
-		warn: jest.fn(),
+		log: vi.fn(),
+		debug: vi.fn(),
+		error: vi.fn(),
+		warn: vi.fn(),
 	},
 } as any;
 
@@ -133,7 +135,7 @@ const mockContext: ToolExecutionContext = {
 
 describe('VaultTools', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('ReadFileTool', () => {
@@ -987,10 +989,10 @@ describe('VaultTools', () => {
 			tool = new SearchFileContentsTool();
 			// Add logger to mockPlugin for the tool
 			mockPlugin.logger = {
-				debug: jest.fn(),
-				log: jest.fn(),
-				error: jest.fn(),
-				warn: jest.fn(),
+				debug: vi.fn(),
+				log: vi.fn(),
+				error: vi.fn(),
+				warn: vi.fn(),
 			};
 		});
 
@@ -1146,9 +1148,9 @@ describe('VaultTools', () => {
 			// mock views don't pass the `instanceof MarkdownView` check.
 			// Full behavior is verified via integration testing in Obsidian.
 			const mockWorkspace = {
-				getActiveFile: jest.fn().mockReturnValue(null),
-				getActiveViewOfType: jest.fn().mockReturnValue(null),
-				iterateAllLeaves: jest.fn(),
+				getActiveFile: vi.fn().mockReturnValue(null),
+				getActiveViewOfType: vi.fn().mockReturnValue(null),
+				iterateAllLeaves: vi.fn(),
 			};
 
 			const contextWithWorkspace = {
@@ -1171,9 +1173,9 @@ describe('VaultTools', () => {
 
 		it('should return empty openFiles when no leaves are open', async () => {
 			const mockWorkspace = {
-				getActiveFile: jest.fn().mockReturnValue(null),
-				getActiveViewOfType: jest.fn().mockReturnValue(null),
-				iterateAllLeaves: jest.fn(),
+				getActiveFile: vi.fn().mockReturnValue(null),
+				getActiveViewOfType: vi.fn().mockReturnValue(null),
+				iterateAllLeaves: vi.fn(),
 			};
 
 			const contextWithWorkspace = {
@@ -1217,14 +1219,14 @@ describe('VaultTools', () => {
 				const leaf = { view, containerEl: { isShown: () => true } };
 
 				const mockWorkspace = {
-					getActiveFile: jest.fn().mockReturnValue(file),
-					getActiveViewOfType: jest.fn().mockReturnValue(view),
-					iterateAllLeaves: jest.fn((cb: (l: any) => void) => cb(leaf)),
+					getActiveFile: vi.fn().mockReturnValue(file),
+					getActiveViewOfType: vi.fn().mockReturnValue(view),
+					iterateAllLeaves: vi.fn((cb: (l: any) => void) => cb(leaf)),
 				};
 
 				const metadataCache = {
 					...mockMetadataCache,
-					fileToLinktext: jest.fn((f: any) => f.path.replace(/\.md$/, '')),
+					fileToLinktext: vi.fn((f: any) => f.path.replace(/\.md$/, '')),
 				};
 
 				return {

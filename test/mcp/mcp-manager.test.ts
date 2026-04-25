@@ -2,44 +2,66 @@ import { MCPServerConfig, MCPConnectionStatus, MCP_TRANSPORT_STDIO, MCP_TRANSPOR
 
 // --- Mocks ---
 
-// Mock the MCP SDK transports
-const mockStdioTransportClose = jest.fn();
-const MockStdioClientTransport = jest.fn().mockImplementation(() => ({
-	close: mockStdioTransportClose,
-}));
+// Mock the MCP SDK transports. vi.mock() is hoisted to the top of the module,
+// so we use vi.hoisted() to ensure the shared mock fixtures exist before the
+// factories run (uppercase identifiers don't match vitest's `mock`-prefix
+// auto-hoist heuristic, which is why we hoist explicitly).
+const {
+	mockStdioTransportClose,
+	MockStdioClientTransport,
+	mockHttpTransportClose,
+	MockStreamableHTTPClientTransport,
+	mockListTools,
+	mockClientConnect,
+	MockClient,
+} = vi.hoisted(() => {
+	const mockStdioTransportClose = vi.fn();
+	const MockStdioClientTransport = vi.fn().mockImplementation(function () {
+		return { close: mockStdioTransportClose };
+	});
 
-const mockHttpTransportClose = jest.fn();
-const MockStreamableHTTPClientTransport = jest.fn().mockImplementation(() => ({
-	close: mockHttpTransportClose,
-}));
+	const mockHttpTransportClose = vi.fn();
+	const MockStreamableHTTPClientTransport = vi.fn().mockImplementation(function () {
+		return { close: mockHttpTransportClose };
+	});
 
-const mockListTools = jest.fn().mockResolvedValue({ tools: [] });
-const mockClientConnect = jest.fn();
+	const mockListTools = vi.fn().mockResolvedValue({ tools: [] });
+	const mockClientConnect = vi.fn();
 
-const MockClient = jest.fn().mockImplementation(() => ({
-	connect: mockClientConnect,
-	listTools: mockListTools,
-}));
+	const MockClient = vi.fn().mockImplementation(function () {
+		return { connect: mockClientConnect, listTools: mockListTools };
+	});
 
-jest.mock('@modelcontextprotocol/sdk/client/index.js', () => ({
+	return {
+		mockStdioTransportClose,
+		MockStdioClientTransport,
+		mockHttpTransportClose,
+		MockStreamableHTTPClientTransport,
+		mockListTools,
+		mockClientConnect,
+		MockClient,
+	};
+});
+
+vi.mock('@modelcontextprotocol/sdk/client/index.js', () => ({
 	Client: MockClient,
 }));
 
-jest.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
+vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
 	StdioClientTransport: MockStdioClientTransport,
 }));
 
-jest.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
+vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
 	StreamableHTTPClientTransport: MockStreamableHTTPClientTransport,
 }));
 
 // Mock the OAuth callback server to prevent actual HTTP server creation
-jest.mock('../../src/mcp/mcp-oauth-callback', () => ({
-	startOAuthCallbackServer: jest.fn().mockResolvedValue({
+vi.mock('../../src/mcp/mcp-oauth-callback', () => ({
+	startOAuthCallbackServer: vi.fn().mockResolvedValue({
 		waitForCode: new Promise(() => {}), // never resolves — tests don't exercise full OAuth
-		close: jest.fn(),
+		close: vi.fn(),
 	}),
-	waitForOAuthCallback: jest.fn(),
+	waitForOAuthCallback: vi.fn(),
 }));
 
 // Import after mocks
@@ -52,9 +74,9 @@ function createMockPlugin(isMobile = false) {
 		app: {
 			isMobile,
 			secretStorage: {
-				getSecret: jest.fn((id: string) => secrets.get(id) ?? null),
-				setSecret: jest.fn((id: string, value: string) => secrets.set(id, value)),
-				listSecrets: jest.fn(() => Array.from(secrets.keys())),
+				getSecret: vi.fn((id: string) => secrets.get(id) ?? null),
+				setSecret: vi.fn((id: string, value: string) => secrets.set(id, value)),
+				listSecrets: vi.fn(() => Array.from(secrets.keys())),
 			},
 		},
 		manifest: { version: '1.0.0' },
@@ -62,14 +84,14 @@ function createMockPlugin(isMobile = false) {
 			mcpServers: [] as MCPServerConfig[],
 		},
 		logger: {
-			log: jest.fn(),
-			debug: jest.fn(),
-			warn: jest.fn(),
-			error: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			warn: vi.fn(),
+			error: vi.fn(),
 		},
 		toolRegistry: {
-			registerTool: jest.fn(),
-			unregisterTool: jest.fn(),
+			registerTool: vi.fn(),
+			unregisterTool: vi.fn(),
 		},
 	} as any;
 }
@@ -104,7 +126,7 @@ describe('MCPManager', () => {
 	let plugin: ReturnType<typeof createMockPlugin>;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		plugin = createMockPlugin();
 		manager = new MCPManager(plugin);
 	});

@@ -5,16 +5,16 @@ import { ModelApi, BaseModelRequest, ModelResponse, StreamingModelResponse } fro
 function createMockApi(responses: Array<ModelResponse | Error>): ModelApi {
 	let callCount = 0;
 	return {
-		generateModelResponse: jest.fn(async () => {
+		generateModelResponse: vi.fn(async () => {
 			const response = responses[callCount++];
 			if (response instanceof Error) throw response;
 			return response;
 		}),
-		generateStreamingResponse: jest.fn(() => {
+		generateStreamingResponse: vi.fn(() => {
 			const response = responses[callCount++];
 			return {
 				complete: response instanceof Error ? Promise.reject(response) : Promise.resolve(response),
-				cancel: jest.fn(),
+				cancel: vi.fn(),
 			} as StreamingModelResponse;
 		}),
 	};
@@ -33,11 +33,11 @@ const dummyRequest: BaseModelRequest = { prompt: 'test' };
 
 describe('RetryDecorator', () => {
 	beforeEach(() => {
-		jest.useFakeTimers();
+		vi.useFakeTimers();
 	});
 
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	describe('non-retryable errors', () => {
@@ -103,7 +103,7 @@ describe('RetryDecorator', () => {
 
 			const promise = decorator.generateModelResponse(dummyRequest);
 			// Advance timers to allow retry sleep to resolve
-			await jest.advanceTimersByTimeAsync(100);
+			await vi.advanceTimersByTimeAsync(100);
 			const result = await promise;
 
 			expect(result).toEqual(successResponse);
@@ -116,7 +116,7 @@ describe('RetryDecorator', () => {
 			const decorator = new RetryDecorator(api, createRetryConfig());
 
 			const promise = decorator.generateModelResponse(dummyRequest);
-			await jest.advanceTimersByTimeAsync(100);
+			await vi.advanceTimersByTimeAsync(100);
 			const result = await promise;
 
 			expect(result).toEqual(successResponse);
@@ -136,11 +136,11 @@ describe('RetryDecorator', () => {
 				],
 			});
 			const api = createMockApi([error, successResponse]);
-			const sleepSpy = jest.spyOn(RetryDecorator.prototype as any, 'sleep');
+			const sleepSpy = vi.spyOn(RetryDecorator.prototype as any, 'sleep');
 			const decorator = new RetryDecorator(api, createRetryConfig());
 
 			const promise = decorator.generateModelResponse(dummyRequest);
-			await jest.advanceTimersByTimeAsync(6000);
+			await vi.advanceTimersByTimeAsync(6000);
 			await promise;
 
 			// Should have used the API-provided 5000ms delay instead of the 10ms initial backoff
@@ -155,7 +155,7 @@ describe('RetryDecorator', () => {
 			const api = createMockApi([error]);
 			const decorator = new RetryDecorator(api, createRetryConfig());
 
-			const stream = decorator.generateStreamingResponse(dummyRequest, jest.fn());
+			const stream = decorator.generateStreamingResponse(dummyRequest, vi.fn());
 			await expect(stream.complete).rejects.toThrow('Forbidden');
 		});
 	});

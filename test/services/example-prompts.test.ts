@@ -2,9 +2,9 @@ import { ExamplePromptsManager, ExamplePrompt } from '../../src/services/example
 import { TFile } from 'obsidian';
 
 // Mock obsidian
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
-	normalizePath: jest.fn((path: string) => path),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
+	normalizePath: vi.fn((path: string) => path),
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
@@ -18,14 +18,14 @@ describe('ExamplePromptsManager', () => {
 
 	beforeEach(() => {
 		// Reset mocks
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
 		// Setup mock vault
 		mockVault = {
-			getAbstractFileByPath: jest.fn(),
-			read: jest.fn(),
-			modify: jest.fn(),
-			create: jest.fn(),
+			getAbstractFileByPath: vi.fn(),
+			read: vi.fn(),
+			modify: vi.fn(),
+			create: vi.fn(),
 		};
 
 		// Setup mock plugin
@@ -37,10 +37,10 @@ describe('ExamplePromptsManager', () => {
 				historyFolder: 'test-folder',
 			},
 			logger: {
-				log: jest.fn(),
-				debug: jest.fn(),
-				warn: jest.fn(),
-				error: jest.fn(),
+				log: vi.fn(),
+				debug: vi.fn(),
+				warn: vi.fn(),
+				error: vi.fn(),
 			},
 		};
 

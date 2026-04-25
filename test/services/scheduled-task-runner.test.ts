@@ -1,47 +1,50 @@
+import type { Mock } from 'vitest';
 import { ScheduledTaskRunner } from '../../src/services/scheduled-task-runner';
 import type { ScheduledTask } from '../../src/services/scheduled-task-manager';
 import type { AgentLoopResult } from '../../src/agent/agent-loop';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.mock('obsidian', () => ({
+vi.mock('obsidian', () => ({
 	normalizePath: (p: string) => p,
 	TFile: class {},
 }));
 
-jest.mock('../../src/utils/file-utils', () => ({
-	ensureFolderExists: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../src/utils/file-utils', () => ({
+	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../src/utils/format-utils', () => ({
-	formatLocalDate: jest.fn().mockReturnValue('2026-04-18'),
-	formatLocalTimestamp: jest.fn().mockReturnValue('2026-04-18 08:00'),
+vi.mock('../../src/utils/format-utils', () => ({
+	formatLocalDate: vi.fn().mockReturnValue('2026-04-18'),
+	formatLocalTimestamp: vi.fn().mockReturnValue('2026-04-18 08:00'),
 }));
 
-jest.mock('../../src/utils/turn-preamble', () => ({
-	buildTurnPreamble: jest.fn().mockReturnValue(''),
+vi.mock('../../src/utils/turn-preamble', () => ({
+	buildTurnPreamble: vi.fn().mockReturnValue(''),
 }));
 
 /** Minimal mock model API — no tool calls, returns plain text on first call. */
 function createMockModelApi(responseText = 'Task completed successfully.', toolCalls: any[] = []) {
 	return {
-		generateModelResponse: jest.fn().mockResolvedValue({
+		generateModelResponse: vi.fn().mockResolvedValue({
 			markdown: responseText,
 			toolCalls,
 		}),
 	};
 }
 
-jest.mock('../../src/api', () => ({
+vi.mock('../../src/api', () => ({
 	GeminiClientFactory: {
-		createChatModel: jest.fn(),
+		createChatModel: vi.fn(),
 	},
 }));
 
 /** Mock AgentLoop so tests don't pull in the real agent infrastructure. */
-const mockAgentLoopRun = jest.fn();
-jest.mock('../../src/agent/agent-loop', () => ({
-	AgentLoop: jest.fn().mockImplementation(() => ({ run: mockAgentLoopRun })),
+const mockAgentLoopRun = vi.fn();
+vi.mock('../../src/agent/agent-loop', () => ({
+	AgentLoop: vi.fn().mockImplementation(function () {
+		return { run: mockAgentLoopRun };
+	}),
 }));
 
 import { GeminiClientFactory } from '../../src/api';
@@ -61,14 +64,14 @@ function successfulLoopResult(markdown = 'Tool result text.'): AgentLoopResult {
 
 function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 	return {
-		logger: { log: jest.fn(), debug: jest.fn(), error: jest.fn(), warn: jest.fn() },
+		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
 			chatModelName: 'gemini-2.0-flash',
 			temperature: 1,
 			topP: 0.95,
 		},
 		sessionManager: {
-			createAgentSession: jest.fn().mockResolvedValue({
+			createAgentSession: vi.fn().mockResolvedValue({
 				id: 'session-1',
 				title: 'Scheduled: test-task',
 				created: new Date(),
@@ -77,18 +80,18 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 			}),
 		},
 		toolRegistry: {
-			getEnabledTools: jest.fn().mockReturnValue([]),
+			getEnabledTools: vi.fn().mockReturnValue([]),
 		},
 		toolExecutionEngine: {
-			executeTool: jest.fn().mockResolvedValue({ success: true, output: 'ok' }),
+			executeTool: vi.fn().mockResolvedValue({ success: true, output: 'ok' }),
 		},
 		app: {
 			vault: {
-				getAbstractFileByPath: jest.fn().mockReturnValue(null),
-				create: jest.fn().mockImplementation(async (path: string, content: string) => {
+				getAbstractFileByPath: vi.fn().mockReturnValue(null),
+				create: vi.fn().mockImplementation(async (path: string, content: string) => {
 					vaultFiles[path] = content;
 				}),
-				modify: jest.fn().mockImplementation(async (file: any, content: string) => {
+				modify: vi.fn().mockImplementation(async (file: any, content: string) => {
 					vaultFiles[file.path] = content;
 				}),
 			},
@@ -114,8 +117,8 @@ function makeTask(overrides: Partial<ScheduledTask> = {}): ScheduledTask {
 
 describe('ScheduledTaskRunner', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
-		(GeminiClientFactory.createChatModel as jest.Mock).mockReturnValue(createMockModelApi());
+		vi.clearAllMocks();
+		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi());
 		mockAgentLoopRun.mockResolvedValue(successfulLoopResult());
 	});
 
@@ -144,7 +147,7 @@ describe('ScheduledTaskRunner', () => {
 
 		await runner.run(() => false);
 
-		const written = (plugin.app.vault.create as jest.Mock).mock.calls[0][1] as string;
+		const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 		expect(written).toMatch(/scheduled_task:\s*"test-task"/);
 		expect(written).toMatch(/ran_at:/);
 	});
@@ -171,7 +174,7 @@ describe('ScheduledTaskRunner', () => {
 	});
 
 	it('throws when model returns empty text so manager records a failure', async () => {
-		(GeminiClientFactory.createChatModel as jest.Mock).mockReturnValue(
+		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(
 			createMockModelApi('') // empty response, no tool calls
 		);
 		const plugin = createMockPlugin();
@@ -183,7 +186,7 @@ describe('ScheduledTaskRunner', () => {
 
 	it('delegates to AgentLoop when initial response contains tool calls', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-		(GeminiClientFactory.createChatModel as jest.Mock).mockReturnValue(createMockModelApi('', toolCalls));
+		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
 		mockAgentLoopRun.mockResolvedValue(successfulLoopResult('Tool result text.'));
 
 		const plugin = createMockPlugin();
@@ -218,7 +221,7 @@ describe('ScheduledTaskRunner', () => {
 
 	it('returns undefined when AgentLoop reports cancellation', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-		(GeminiClientFactory.createChatModel as jest.Mock).mockReturnValue(createMockModelApi('', toolCalls));
+		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
 		mockAgentLoopRun.mockResolvedValue({
 			...successfulLoopResult(),
 			cancelled: true,
@@ -236,7 +239,7 @@ describe('ScheduledTaskRunner', () => {
 
 	it('throws after MAX_TOOL_ITERATIONS without a text response', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-		(GeminiClientFactory.createChatModel as jest.Mock).mockReturnValue(createMockModelApi('', toolCalls));
+		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
 		mockAgentLoopRun.mockResolvedValue({
 			...successfulLoopResult(),
 			exhausted: true,
@@ -258,9 +261,8 @@ describe('ScheduledTaskRunner', () => {
 
 		await runner.run(() => false);
 
-		const request = (
-			(GeminiClientFactory.createChatModel as jest.Mock).mock.results[0].value.generateModelResponse as jest.Mock
-		).mock.calls[0][0];
+		const request = ((GeminiClientFactory.createChatModel as Mock).mock.results[0].value.generateModelResponse as Mock)
+			.mock.calls[0][0];
 		expect(request.model).toBe('task-override-model');
 		expect(request.model).not.toBe(plugin.settings.chatModelName);
 	});
@@ -268,7 +270,7 @@ describe('ScheduledTaskRunner', () => {
 	it('generates a unique path when the resolved output file already exists', async () => {
 		const plugin = createMockPlugin();
 		// First call (base path) returns an existing file; second call (-1 suffix) returns null
-		plugin.app.vault.getAbstractFileByPath = jest
+		plugin.app.vault.getAbstractFileByPath = vi
 			.fn()
 			.mockReturnValueOnce({}) // base path exists
 			.mockReturnValueOnce(null); // -1 path is free

@@ -3,12 +3,12 @@ import { ToolExecutionContext } from '../../src/tools/types';
 
 // Mock the image generation service
 const mockImageGeneration = {
-	generateImage: jest.fn(),
-	resolveOutputPath: jest.fn(),
+	generateImage: vi.fn(),
+	resolveOutputPath: vi.fn(),
 };
 
 const mockBackgroundTaskManager = {
-	submit: jest.fn().mockReturnValue('bg-task-1'),
+	submit: vi.fn().mockReturnValue('bg-task-1'),
 };
 
 const mockPlugin = {
@@ -19,7 +19,7 @@ const mockPlugin = {
 	},
 	app: {
 		workspace: {
-			getActiveFile: jest.fn().mockReturnValue({ path: 'active-note.md' }),
+			getActiveFile: vi.fn().mockReturnValue({ path: 'active-note.md' }),
 		},
 	},
 } as any;
@@ -40,7 +40,7 @@ const mockContext: ToolExecutionContext = {
 
 describe('ImageTools', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('GenerateImageTool', () => {
@@ -184,7 +184,7 @@ describe('ImageTools', () => {
 
 		beforeEach(() => {
 			tool = new GenerateImageTool();
-			jest.clearAllMocks();
+			vi.clearAllMocks();
 			// Default: the resolver echoes back the explicit output_path (or a generic
 			// default if not provided). Individual tests override as needed.
 			mockImageGeneration.resolveOutputPath.mockImplementation(

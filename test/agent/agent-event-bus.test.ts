@@ -3,11 +3,11 @@ import { HandlerPriority } from '../../src/types/agent-events';
 
 function createMockLogger(): any {
 	return {
-		log: jest.fn(),
-		debug: jest.fn(),
-		error: jest.fn(),
-		warn: jest.fn(),
-		child: jest.fn().mockReturnThis(),
+		log: vi.fn(),
+		debug: vi.fn(),
+		error: vi.fn(),
+		warn: vi.fn(),
+		child: vi.fn().mockReturnThis(),
 	};
 }
 
@@ -22,7 +22,7 @@ describe('AgentEventBus', () => {
 
 	describe('on and emit', () => {
 		it('should call handler with correct payload', async () => {
-			const handler = jest.fn().mockResolvedValue(undefined);
+			const handler = vi.fn().mockResolvedValue(undefined);
 			bus.on('turnStart', handler);
 
 			const payload = { session: {} as any, userMessage: 'hello' };
@@ -33,8 +33,8 @@ describe('AgentEventBus', () => {
 		});
 
 		it('should call multiple handlers for the same event', async () => {
-			const handler1 = jest.fn().mockResolvedValue(undefined);
-			const handler2 = jest.fn().mockResolvedValue(undefined);
+			const handler1 = vi.fn().mockResolvedValue(undefined);
+			const handler2 = vi.fn().mockResolvedValue(undefined);
 			bus.on('turnEnd', handler1);
 			bus.on('turnEnd', handler2);
 
@@ -45,7 +45,7 @@ describe('AgentEventBus', () => {
 		});
 
 		it('should not call handlers for different events', async () => {
-			const handler = jest.fn().mockResolvedValue(undefined);
+			const handler = vi.fn().mockResolvedValue(undefined);
 			bus.on('turnStart', handler);
 
 			await bus.emit('turnEnd', { session: {} as any, toolCallCount: 0 });
@@ -92,8 +92,8 @@ describe('AgentEventBus', () => {
 
 	describe('error isolation', () => {
 		it('should continue executing handlers after one throws', async () => {
-			const handler1 = jest.fn().mockRejectedValue(new Error('boom'));
-			const handler2 = jest.fn().mockResolvedValue(undefined);
+			const handler1 = vi.fn().mockRejectedValue(new Error('boom'));
+			const handler2 = vi.fn().mockResolvedValue(undefined);
 			bus.on('turnStart', handler1);
 			bus.on('turnStart', handler2);
 
@@ -124,7 +124,7 @@ describe('AgentEventBus', () => {
 
 	describe('unsubscribe', () => {
 		it('should remove handler via returned unsubscribe function', async () => {
-			const handler = jest.fn().mockResolvedValue(undefined);
+			const handler = vi.fn().mockResolvedValue(undefined);
 			const unsub = bus.on('turnStart', handler);
 
 			unsub();
@@ -134,7 +134,7 @@ describe('AgentEventBus', () => {
 		});
 
 		it('should remove handler via off()', async () => {
-			const handler = jest.fn().mockResolvedValue(undefined);
+			const handler = vi.fn().mockResolvedValue(undefined);
 			bus.on('turnStart', handler);
 
 			bus.off('turnStart', handler);
@@ -150,8 +150,8 @@ describe('AgentEventBus', () => {
 
 	describe('removeAll', () => {
 		it('should remove all handlers for a specific event', async () => {
-			const handler1 = jest.fn().mockResolvedValue(undefined);
-			const handler2 = jest.fn().mockResolvedValue(undefined);
+			const handler1 = vi.fn().mockResolvedValue(undefined);
+			const handler2 = vi.fn().mockResolvedValue(undefined);
 			bus.on('turnStart', handler1);
 			bus.on('turnEnd', handler2);
 
@@ -165,8 +165,8 @@ describe('AgentEventBus', () => {
 		});
 
 		it('should remove all handlers when called without argument', async () => {
-			bus.on('turnStart', jest.fn().mockResolvedValue(undefined));
-			bus.on('turnEnd', jest.fn().mockResolvedValue(undefined));
+			bus.on('turnStart', vi.fn().mockResolvedValue(undefined));
+			bus.on('turnEnd', vi.fn().mockResolvedValue(undefined));
 
 			bus.removeAll();
 

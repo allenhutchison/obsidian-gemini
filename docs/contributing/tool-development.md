@@ -287,8 +287,8 @@ describe('WordCountTool', () => {
 		mockPlugin = {
 			app: {
 				vault: {
-					getAbstractFileByPath: jest.fn(),
-					read: jest.fn(),
+					getAbstractFileByPath: vi.fn(),
+					read: vi.fn(),
 				},
 			},
 		};

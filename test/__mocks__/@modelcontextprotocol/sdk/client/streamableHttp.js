@@ -1,9 +1,7 @@
 // Auto-mock for StreamableHTTPClientTransport
-// Used by moduleNameMapper in jest.config.mjs to prevent import failures
+// Wired into vitest.config.ts via resolve.alias to prevent import failures
 // in tests that transitively import mcp-manager.ts
-class StreamableHTTPClientTransport {
+export class StreamableHTTPClientTransport {
 	constructor() {}
 	async close() {}
 }
-
-module.exports = { StreamableHTTPClientTransport };

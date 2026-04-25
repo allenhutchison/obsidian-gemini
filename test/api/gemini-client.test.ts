@@ -2,18 +2,20 @@ import { GeminiClient, GeminiClientConfig } from '../../src/api/gemini-client';
 import { GeminiPrompts } from '../../src/prompts';
 
 // Mock @google/genai
-jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn().mockImplementation(() => ({
-		getModel: jest.fn(),
-	})),
+vi.mock('@google/genai', () => ({
+	GoogleGenAI: vi.fn().mockImplementation(function () {
+		return {
+			getModel: vi.fn(),
+		};
+	}),
 }));
 
 // Mock window.localStorage
 const mockLocalStorage = {
-	getItem: jest.fn().mockReturnValue('en'),
-	setItem: jest.fn(),
-	removeItem: jest.fn(),
-	clear: jest.fn(),
+	getItem: vi.fn().mockReturnValue('en'),
+	setItem: vi.fn(),
+	removeItem: vi.fn(),
+	clear: vi.fn(),
 };
 Object.defineProperty(window, 'localStorage', {
 	value: mockLocalStorage,
@@ -28,10 +30,10 @@ describe('GeminiClient', () => {
 	beforeEach(() => {
 		// Setup mock logger
 		mockLogger = {
-			log: jest.fn(),
-			debug: jest.fn(),
-			error: jest.fn(),
-			warn: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
 		};
 
 		// Setup mock plugin
@@ -50,7 +52,7 @@ describe('GeminiClient', () => {
 	});
 
 	afterEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('supportsThinking()', () => {

@@ -1,22 +1,23 @@
+import type { Mock } from 'vitest';
 import { AgentViewUI, UICallbacks } from '../../src/ui/agent-view/agent-view-ui';
 import { App, TFile, TFolder, Notice } from 'obsidian';
 import ObsidianGemini from '../../src/main';
 import { shouldExcludePathForPlugin } from '../../src/utils/file-utils';
 
 // Mock dependencies
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
 }));
-jest.mock('../../src/main');
-jest.mock('../../src/ui/agent-view/file-picker-modal');
-jest.mock('../../src/ui/agent-view/session-list-modal');
-jest.mock('../../src/ui/agent-view/file-mention-modal');
-jest.mock('../../src/ui/agent-view/session-settings-modal');
-jest.mock('../../src/utils/dom-context');
-jest.mock('../../src/utils/file-utils');
+vi.mock('../../src/main');
+vi.mock('../../src/ui/agent-view/file-picker-modal');
+vi.mock('../../src/ui/agent-view/session-list-modal');
+vi.mock('../../src/ui/agent-view/file-mention-modal');
+vi.mock('../../src/ui/agent-view/session-settings-modal');
+vi.mock('../../src/utils/dom-context');
+vi.mock('../../src/utils/file-utils');
 
 // Mock external ESM dependencies
-jest.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils', () => ({
 	ResearchManager: class {},
 	ReportGenerator: class {},
 	Interaction: class {},
@@ -28,12 +29,12 @@ jest.mock('@allenhutchison/gemini-utils', () => ({
 	},
 	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json', '.css']),
 }));
-jest.mock('@google/genai', () => ({
+vi.mock('@google/genai', () => ({
 	GoogleGenAI: class {},
 }));
 
 // Mock shouldExcludePathForPlugin implementation
-(shouldExcludePathForPlugin as jest.Mock).mockImplementation((path: string, _plugin: any) => {
+(shouldExcludePathForPlugin as Mock).mockImplementation((path: string, _plugin: any) => {
 	// Simple mock implementation
 	return path.startsWith('.') || path === 'GEMINI_SCRIBE_HISTORY';
 });
@@ -48,54 +49,54 @@ describe('AgentViewUI', () => {
 
 	beforeEach(() => {
 		// Reset mocks
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
 		// Setup App mock
 		app = {
 			vault: {
-				getAbstractFileByPath: jest.fn(),
+				getAbstractFileByPath: vi.fn(),
 				adapter: {
 					basePath: '/Users/test/vault',
 				},
-				readBinary: jest.fn().mockResolvedValue(new ArrayBuffer(100)),
+				readBinary: vi.fn().mockResolvedValue(new ArrayBuffer(100)),
 			},
 			metadataCache: {
-				getFirstLinkpathDest: jest.fn(),
+				getFirstLinkpathDest: vi.fn(),
 			},
 			workspace: {
-				getActiveFile: jest.fn(),
+				getActiveFile: vi.fn(),
 			},
 		} as unknown as App;
 
 		// Setup Plugin mock
 		plugin = new ObsidianGemini(app, {} as any);
 		plugin.logger = {
-			debug: jest.fn(),
-			error: jest.fn(),
-			log: jest.fn(),
-			warn: jest.fn(),
+			debug: vi.fn(),
+			error: vi.fn(),
+			log: vi.fn(),
+			warn: vi.fn(),
 		} as any;
 
 		// Setup Callbacks mock
 		callbacks = {
-			showFilePicker: jest.fn().mockResolvedValue(undefined),
-			showFileMention: jest.fn().mockResolvedValue(undefined),
-			showSkillPicker: jest.fn().mockResolvedValue(undefined),
-			showSessionList: jest.fn().mockResolvedValue(undefined),
-			showSessionSettings: jest.fn().mockResolvedValue(undefined),
-			createNewSession: jest.fn().mockResolvedValue(undefined),
-			sendMessage: jest.fn().mockResolvedValue(undefined),
-			stopAgentLoop: jest.fn(),
-			removeContextFile: jest.fn(),
-			updateSessionHeader: jest.fn(),
-			updateSessionMetadata: jest.fn().mockResolvedValue(undefined),
-			loadSession: jest.fn().mockResolvedValue(undefined),
-			isCurrentSession: jest.fn(),
-			addAttachment: jest.fn(),
-			removeAttachment: jest.fn(),
-			getAttachments: jest.fn().mockReturnValue([]),
-			handleDroppedFiles: jest.fn(),
-			switchProject: jest.fn(),
+			showFilePicker: vi.fn().mockResolvedValue(undefined),
+			showFileMention: vi.fn().mockResolvedValue(undefined),
+			showSkillPicker: vi.fn().mockResolvedValue(undefined),
+			showSessionList: vi.fn().mockResolvedValue(undefined),
+			showSessionSettings: vi.fn().mockResolvedValue(undefined),
+			createNewSession: vi.fn().mockResolvedValue(undefined),
+			sendMessage: vi.fn().mockResolvedValue(undefined),
+			stopAgentLoop: vi.fn(),
+			removeContextFile: vi.fn(),
+			updateSessionHeader: vi.fn(),
+			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),
+			loadSession: vi.fn().mockResolvedValue(undefined),
+			isCurrentSession: vi.fn(),
+			addAttachment: vi.fn(),
+			removeAttachment: vi.fn(),
+			getAttachments: vi.fn().mockReturnValue([]),
+			handleDroppedFiles: vi.fn(),
+			switchProject: vi.fn(),
 		};
 
 		// Instantiate AgentViewUI
@@ -106,7 +107,7 @@ describe('AgentViewUI', () => {
 		document.body.appendChild(container);
 
 		// Helper to create element mock
-		const createElMock = jest.fn().mockImplementation((tag: string, options?: any) => {
+		const createElMock = vi.fn().mockImplementation((tag: string, options?: any) => {
 			const el = document.createElement(tag);
 			if (options?.cls) el.className = options.cls;
 			if (options?.attr) {
@@ -120,7 +121,7 @@ describe('AgentViewUI', () => {
 
 		// Mock createDiv/createEl/empty on container and its children
 		const setupMockElement = (el: HTMLElement) => {
-			(el as any).createDiv = jest.fn().mockImplementation((opts) => {
+			(el as any).createDiv = vi.fn().mockImplementation((opts) => {
 				const div = document.createElement('div');
 				if (opts?.cls) div.className = opts.cls;
 				el.appendChild(div);
@@ -128,7 +129,7 @@ describe('AgentViewUI', () => {
 				return div;
 			});
 			(el as any).createEl = createElMock;
-			(el as any).createSpan = jest.fn().mockImplementation((opts) => {
+			(el as any).createSpan = vi.fn().mockImplementation((opts) => {
 				const span = document.createElement('span');
 				if (opts?.cls) span.className = opts.cls;
 				if (opts?.text) span.textContent = opts.text;
@@ -136,12 +137,12 @@ describe('AgentViewUI', () => {
 				setupMockElement(span);
 				return span;
 			});
-			(el as any).empty = jest.fn().mockImplementation(() => {
+			(el as any).empty = vi.fn().mockImplementation(() => {
 				el.innerHTML = '';
 			});
-			(el as any).addClass = jest.fn();
-			(el as any).removeClass = jest.fn();
-			(el as any).hasClass = jest.fn();
+			(el as any).addClass = vi.fn();
+			(el as any).removeClass = vi.fn();
+			(el as any).hasClass = vi.fn();
 		};
 
 		setupMockElement(container);
@@ -157,23 +158,23 @@ describe('AgentViewUI', () => {
 
 	describe('Slash Command Handling', () => {
 		it('should trigger showSkillPicker when / is typed in empty input', () => {
-			jest.useFakeTimers();
+			vi.useFakeTimers();
 			userInput.innerText = '';
 			const event = new KeyboardEvent('keydown', { key: '/', bubbles: true });
 			userInput.dispatchEvent(event);
-			jest.runAllTimers();
+			vi.runAllTimers();
 			expect(callbacks.showSkillPicker).toHaveBeenCalled();
-			jest.useRealTimers();
+			vi.useRealTimers();
 		});
 
 		it('should not trigger showSkillPicker when / is typed mid-sentence', () => {
-			jest.useFakeTimers();
+			vi.useFakeTimers();
 			userInput.innerText = 'some text';
 			const event = new KeyboardEvent('keydown', { key: '/', bubbles: true });
 			userInput.dispatchEvent(event);
-			jest.runAllTimers();
+			vi.runAllTimers();
 			expect(callbacks.showSkillPicker).not.toHaveBeenCalled();
-			jest.useRealTimers();
+			vi.useRealTimers();
 		});
 	});
 
@@ -184,8 +185,8 @@ describe('AgentViewUI', () => {
 				value: dataTransfer,
 			});
 			// Mock stopPropagation/preventDefault
-			event.preventDefault = jest.fn();
-			event.stopPropagation = jest.fn();
+			event.preventDefault = vi.fn();
+			event.stopPropagation = vi.fn();
 
 			userInput.dispatchEvent(event);
 			// Wait for async handler
@@ -203,7 +204,7 @@ describe('AgentViewUI', () => {
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
 			// Mock vault resolution
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			// Simulate dropping a file from OS explorer inside the vault
 			const droppedFile = {
@@ -239,7 +240,7 @@ describe('AgentViewUI', () => {
 			} as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			// Simulate Windows file path with backslashes
 			const droppedFile = {
@@ -266,11 +267,11 @@ describe('AgentViewUI', () => {
 			const mockFile = { path: 'My Note.md', extension: 'md' } as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			const dataTransfer = {
 				files: [],
-				getData: jest.fn().mockReturnValue('[[My Note]]'),
+				getData: vi.fn().mockReturnValue('[[My Note]]'),
 				types: ['text/plain'],
 			};
 
@@ -284,11 +285,11 @@ describe('AgentViewUI', () => {
 			const mockFile = { path: 'My Note.md', extension: 'md' } as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			const dataTransfer = {
 				files: [],
-				getData: jest.fn().mockReturnValue('[Display Name](My%20Note.md)'),
+				getData: vi.fn().mockReturnValue('[Display Name](My%20Note.md)'),
 				types: ['text/plain'],
 			};
 
@@ -302,12 +303,12 @@ describe('AgentViewUI', () => {
 			const mockFile = { path: 'note.md', extension: 'md' } as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			// Drop text with two identical links
 			const dataTransfer = {
 				files: [],
-				getData: jest.fn().mockReturnValue('[[note.md]]\n[[note.md]]'),
+				getData: vi.fn().mockReturnValue('[[note.md]]\n[[note.md]]'),
 				types: ['text/plain'],
 			};
 
@@ -315,18 +316,18 @@ describe('AgentViewUI', () => {
 
 			expect(callbacks.handleDroppedFiles).toHaveBeenCalledWith([mockFile]);
 			// Should be called only once with array of length 1
-			expect((callbacks.handleDroppedFiles as jest.Mock).mock.calls[0][0]).toHaveLength(1);
+			expect((callbacks.handleDroppedFiles as Mock).mock.calls[0][0]).toHaveLength(1);
 		});
 
 		it('should exclude system folders', async () => {
 			const mockFile = { path: '.obsidian/config', extension: 'config' } as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			const dataTransfer = {
 				files: [],
-				getData: jest.fn().mockReturnValue('[[.obsidian/config]]'),
+				getData: vi.fn().mockReturnValue('[[.obsidian/config]]'),
 				types: ['text/plain'],
 			};
 
@@ -344,7 +345,7 @@ describe('AgentViewUI', () => {
 			const dataTransfer = {
 				files: [droppedFile],
 				types: ['Files'],
-				getData: jest.fn().mockReturnValue(''), // Mock getData to return empty string for fallback
+				getData: vi.fn().mockReturnValue(''), // Mock getData to return empty string for fallback
 			};
 			Object.defineProperty(dataTransfer.files, 'length', { value: 1 });
 			(dataTransfer.files as any)[Symbol.iterator] = function* () {
@@ -365,8 +366,8 @@ describe('AgentViewUI', () => {
 			} as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
-			(app.vault.readBinary as jest.Mock).mockResolvedValue(new ArrayBuffer(100));
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
+			(app.vault.readBinary as Mock).mockResolvedValue(new ArrayBuffer(100));
 
 			const droppedFile = {
 				path: '/Users/test/vault/images/photo.png',
@@ -405,7 +406,7 @@ describe('AgentViewUI', () => {
 			} as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			const droppedFile = {
 				path: '/Users/test/vault/notes/test.md',
@@ -437,7 +438,7 @@ describe('AgentViewUI', () => {
 			} as unknown as TFile;
 			Object.setPrototypeOf(mockFile, TFile.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFile);
 
 			const droppedFile = {
 				path: '/Users/test/vault/files/archive.zip',
@@ -491,8 +492,8 @@ describe('AgentViewUI', () => {
 			} as unknown as TFolder;
 			Object.setPrototypeOf(mockFolder, TFolder.prototype);
 
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValue(mockFolder);
-			(app.vault.readBinary as jest.Mock).mockResolvedValue(new ArrayBuffer(100));
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValue(mockFolder);
+			(app.vault.readBinary as Mock).mockResolvedValue(new ArrayBuffer(100));
 
 			const droppedFile = {
 				path: '/Users/test/vault/folder',
@@ -538,16 +539,16 @@ describe('AgentViewUI', () => {
 			Object.setPrototypeOf(smallFile, TFile.prototype);
 
 			// First file is small, second is big
-			(app.vault.getAbstractFileByPath as jest.Mock).mockReturnValueOnce(smallFile).mockReturnValueOnce(bigFile);
+			(app.vault.getAbstractFileByPath as Mock).mockReturnValueOnce(smallFile).mockReturnValueOnce(bigFile);
 
-			(app.vault.readBinary as jest.Mock)
+			(app.vault.readBinary as Mock)
 				.mockResolvedValueOnce(new ArrayBuffer(100)) // small file
 				.mockResolvedValueOnce(bigBuffer); // big file
 
 			// Drop small file first (via text links since we need both resolved)
 			const dataTransfer = {
 				files: [],
-				getData: jest.fn().mockReturnValue('[[images/small.png]]\n[[videos/big.mp4]]'),
+				getData: vi.fn().mockReturnValue('[[images/small.png]]\n[[videos/big.mp4]]'),
 				types: ['text/plain'],
 			};
 

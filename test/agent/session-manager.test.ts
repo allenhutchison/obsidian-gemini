@@ -8,23 +8,23 @@ import { TFile } from 'obsidian';
 const mockPlugin = {
 	app: {
 		vault: {
-			getAbstractFileByPath: jest.fn(),
-			createFolder: jest.fn(),
-			read: jest.fn(),
+			getAbstractFileByPath: vi.fn(),
+			createFolder: vi.fn(),
+			read: vi.fn(),
 		},
 		metadataCache: {
-			getFileCache: jest.fn(),
+			getFileCache: vi.fn(),
 		},
 	},
 	settings: {
 		historyFolder: 'gemini-scribe',
 	},
 	logger: {
-		log: jest.fn(),
-		debug: jest.fn(),
-		warn: jest.fn(),
-		error: jest.fn(),
-		child: jest.fn(function (this: any, _prefix: string) {
+		log: vi.fn(),
+		debug: vi.fn(),
+		warn: vi.fn(),
+		error: vi.fn(),
+		child: vi.fn(function (this: any, _prefix: string) {
 			return this;
 		}),
 	},
@@ -43,7 +43,7 @@ describe('SessionManager', () => {
 
 	beforeEach(() => {
 		sessionManager = new SessionManager(mockPlugin);
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('createAgentSession', () => {
@@ -142,8 +142,8 @@ describe('SessionManager', () => {
 		beforeEach(() => {
 			// Mock metadataCache for link resolution
 			mockPlugin.app.metadataCache = {
-				getFirstLinkpathDest: jest.fn(),
-				getFileCache: jest.fn(),
+				getFirstLinkpathDest: vi.fn(),
+				getFileCache: vi.fn(),
 			};
 		});
 
@@ -229,8 +229,8 @@ describe('SessionManager', () => {
 	describe('loadSessionFromFile - accessed_files', () => {
 		beforeEach(() => {
 			mockPlugin.app.metadataCache = {
-				getFirstLinkpathDest: jest.fn(),
-				getFileCache: jest.fn(),
+				getFirstLinkpathDest: vi.fn(),
+				getFileCache: vi.fn(),
 			};
 		});
 
@@ -373,16 +373,16 @@ describe('SessionManager', () => {
 			};
 
 			// Mock getAgentSessionsFolder to return our mock folder
-			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(mockFolder);
+			vi.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(mockFolder);
 
 			// Mock loadSessionFromFile to return mock sessions
-			jest
-				.spyOn(sessionManager as any, 'loadSessionFromFile')
-				.mockImplementation(async (...args: unknown[]) => createMockSession(args[0] as TFile));
+			vi.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation(async (...args: unknown[]) =>
+				createMockSession(args[0] as TFile)
+			);
 		});
 
 		it('should return empty array when the agent sessions folder is missing', async () => {
-			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(null);
+			vi.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(null);
 
 			await expect(sessionManager.getRecentAgentSessions()).resolves.toEqual([]);
 		});
@@ -425,7 +425,7 @@ describe('SessionManager', () => {
 
 		it('should handle errors loading individual sessions gracefully', async () => {
 			// Override mock to throw for one file, reuse createMockSession for others
-			jest.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation(async (...args: unknown[]) => {
+			vi.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation(async (...args: unknown[]) => {
 				const file = args[0] as TFile;
 				if (file.basename === 'session2') {
 					throw new Error('Failed to load session');
@@ -491,11 +491,11 @@ describe('SessionManager', () => {
 				name: 'Agent-Sessions',
 			};
 
-			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(mockFolder);
+			vi.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(mockFolder);
 
 			mockPlugin.app.metadataCache = {
-				getFileCache: jest.fn(),
-				getFirstLinkpathDest: jest.fn(),
+				getFileCache: vi.fn(),
+				getFirstLinkpathDest: vi.fn(),
 			};
 		});
 
@@ -584,7 +584,7 @@ describe('SessionManager', () => {
 		});
 
 		it('should return empty array when folder is missing', async () => {
-			jest.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(null);
+			vi.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(null);
 
 			const metadata = await sessionManager.getSessionMetadata();
 

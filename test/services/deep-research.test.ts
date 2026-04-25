@@ -2,8 +2,8 @@ import { DeepResearchService, DeepResearchParams } from '../../src/services/deep
 import { TFile } from 'obsidian';
 
 // Mock obsidian
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
@@ -11,31 +11,37 @@ jest.mock('obsidian', () => ({
 }));
 
 // Mock ResearchManager and ReportGenerator from gemini-utils
-const mockStartResearch = jest.fn();
-const mockPoll = jest.fn();
-const mockCancel = jest.fn();
-const mockGenerateMarkdown = jest.fn();
+const mockStartResearch = vi.fn();
+const mockPoll = vi.fn();
+const mockCancel = vi.fn();
+const mockGenerateMarkdown = vi.fn();
 
-jest.mock('@allenhutchison/gemini-utils', () => ({
-	ResearchManager: jest.fn().mockImplementation(() => ({
-		startResearch: mockStartResearch,
-		poll: mockPoll,
-		cancel: mockCancel,
-	})),
-	ReportGenerator: jest.fn().mockImplementation(() => ({
-		generateMarkdown: mockGenerateMarkdown,
-	})),
+vi.mock('@allenhutchison/gemini-utils', () => ({
+	ResearchManager: vi.fn().mockImplementation(function () {
+		return {
+			startResearch: mockStartResearch,
+			poll: mockPoll,
+			cancel: mockCancel,
+		};
+	}),
+	ReportGenerator: vi.fn().mockImplementation(function () {
+		return {
+			generateMarkdown: mockGenerateMarkdown,
+		};
+	}),
 }));
 
 // Mock Google GenAI with interactions structure for proxyFetch injection
-jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn().mockImplementation(() => ({
-		interactions: {
-			_client: {
-				fetch: undefined,
+vi.mock('@google/genai', () => ({
+	GoogleGenAI: vi.fn().mockImplementation(function () {
+		return {
+			interactions: {
+				_client: {
+					fetch: undefined,
+				},
 			},
-		},
-	})),
+		};
+	}),
 }));
 
 describe('DeepResearchService', () => {
@@ -47,7 +53,7 @@ describe('DeepResearchService', () => {
 
 	beforeEach(() => {
 		// Reset mocks
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockStartResearch.mockClear();
 		mockPoll.mockClear();
 		mockCancel.mockClear();
@@ -55,22 +61,22 @@ describe('DeepResearchService', () => {
 
 		// Setup mock logger
 		mockLogger = {
-			log: jest.fn(),
-			error: jest.fn(),
-			warn: jest.fn(),
-			debug: jest.fn(),
+			log: vi.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
+			debug: vi.fn(),
 		};
 
 		// Setup mock vault
 		mockVault = {
-			getAbstractFileByPath: jest.fn(),
-			modify: jest.fn(),
-			create: jest.fn(),
+			getAbstractFileByPath: vi.fn(),
+			modify: vi.fn(),
+			create: vi.fn(),
 		};
 
 		// Setup mock RAG indexing
 		mockRagIndexing = {
-			getStoreName: jest.fn().mockReturnValue('stores/test-store'),
+			getStoreName: vi.fn().mockReturnValue('stores/test-store'),
 		};
 
 		// Setup mock plugin

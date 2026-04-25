@@ -4,10 +4,10 @@ import { SessionType, ToolCategory, DestructiveAction } from '../../src/types/ag
 import { TFile, TFolder } from 'obsidian';
 
 // Mock Obsidian
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
-	Notice: jest.fn(),
-	normalizePath: jest.fn((path: string) => path),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
+	Notice: vi.fn(),
+	normalizePath: vi.fn((path: string) => path),
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
@@ -44,12 +44,12 @@ describe('SessionManager Integration Tests', () => {
 			},
 			app: {
 				vault: {
-					getAbstractFileByPath: jest.fn().mockImplementation((path: string) => {
+					getAbstractFileByPath: vi.fn().mockImplementation((path: string) => {
 						return createdFolders[path] || null;
 					}),
-					getMarkdownFiles: jest.fn().mockReturnValue([]),
-					create: jest.fn(),
-					createFolder: jest.fn().mockImplementation(async (path: string) => {
+					getMarkdownFiles: vi.fn().mockReturnValue([]),
+					create: vi.fn(),
+					createFolder: vi.fn().mockImplementation(async (path: string) => {
 						const folder = new TFolder();
 						folder.path = path;
 						folder.name = path.split('/').pop() || '';
@@ -57,11 +57,11 @@ describe('SessionManager Integration Tests', () => {
 						createdFolders[path] = folder;
 					}),
 					adapter: {
-						exists: jest.fn().mockResolvedValue(false),
+						exists: vi.fn().mockResolvedValue(false),
 					},
 				},
 				fileManager: {
-					processFrontMatter: jest.fn(),
+					processFrontMatter: vi.fn(),
 				},
 			},
 		};
@@ -243,9 +243,10 @@ describe('SessionManager Integration Tests', () => {
 		it('should generate appropriate session titles', async () => {
 			// Mock date for consistent testing
 			const mockDate = new Date('2024-01-15T10:30:00');
-			// Mock Date for consistent testing
 			const originalDate = Date;
-			global.Date = jest.fn(() => mockDate) as any;
+			global.Date = vi.fn(function () {
+				return mockDate;
+			}) as any;
 			global.Date.now = originalDate.now;
 
 			// Agent session
@@ -259,7 +260,7 @@ describe('SessionManager Integration Tests', () => {
 			const noteSession = await sessionManager.createNoteChatSession(mockFile);
 			expect(noteSession.title).toBe('my-note Chat');
 
-			jest.restoreAllMocks();
+			vi.restoreAllMocks();
 		});
 	});
 });

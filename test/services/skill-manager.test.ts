@@ -1,34 +1,39 @@
 import { SkillManager, findFrontmatterEndOffset } from '../../src/services/skill-manager';
+// The mocked TFile/TFolder below take constructor args (path/children), unlike
+// Obsidian's real types — cast to `any` so TS lets us pass them through.
+import { TFile as TFileBase, TFolder as TFolderBase } from 'obsidian';
+const TFile: any = TFileBase;
+const TFolder: any = TFolderBase;
 
 // Mock BundledSkillRegistry
-jest.mock('../../src/services/bundled-skills', () => ({
+vi.mock('../../src/services/bundled-skills', () => ({
 	BundledSkillRegistry: {
-		getSummaries: jest.fn().mockReturnValue([
+		getSummaries: vi.fn().mockReturnValue([
 			{ name: 'gemini-scribe-help', description: 'Help with plugin features' },
 			{ name: 'obsidian-bases', description: 'Create Obsidian Bases' },
 		]),
-		loadSkill: jest.fn().mockImplementation((name: string) => {
+		loadSkill: vi.fn().mockImplementation((name: string) => {
 			if (name === 'gemini-scribe-help') return '# Help\n\nInstructions';
 			if (name === 'obsidian-bases') return '# Bases\n\nSyntax guide';
 			return null;
 		}),
-		readResource: jest.fn().mockImplementation((name: string, path: string) => {
+		readResource: vi.fn().mockImplementation((name: string, path: string) => {
 			if (name === 'gemini-scribe-help' && path === 'references/agent-mode.md') return 'Agent mode docs';
 			return null;
 		}),
-		listResources: jest.fn().mockImplementation((name: string) => {
+		listResources: vi.fn().mockImplementation((name: string) => {
 			if (name === 'gemini-scribe-help') return ['references/agent-mode.md', 'references/settings.md'];
 			return [];
 		}),
-		has: jest.fn().mockImplementation((name: string) => {
+		has: vi.fn().mockImplementation((name: string) => {
 			return name === 'gemini-scribe-help' || name === 'obsidian-bases';
 		}),
 	},
 }));
 
-// Mock obsidian module using factory functions - jest.mock is hoisted so we
+// Mock obsidian module using factory functions - vi.mock is hoisted so we
 // can't reference variables declared later. We use inline classes instead.
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	class TFile {
 		path: string;
 		parent: { path: string } | null;
@@ -57,32 +62,29 @@ jest.mock('obsidian', () => {
 		TFile,
 		TFolder,
 		normalizePath: (path: string) => path.replace(/\\/g, '/').replace(/\/+/g, '/'),
-		Notice: jest.fn(),
+		Notice: vi.fn(),
 	};
 });
 
-// Import after mock so instanceof checks work
-const { TFile, TFolder } = jest.requireMock('obsidian');
-
 // Mock plugin with vault and metadataCache
 const mockVault = {
-	getAbstractFileByPath: jest.fn(),
-	createFolder: jest.fn(),
-	create: jest.fn(),
-	read: jest.fn(),
-	getMarkdownFiles: jest.fn(),
+	getAbstractFileByPath: vi.fn(),
+	createFolder: vi.fn(),
+	create: vi.fn(),
+	read: vi.fn(),
+	getMarkdownFiles: vi.fn(),
 	adapter: {
-		exists: jest.fn().mockResolvedValue(false),
-		read: jest.fn().mockResolvedValue(''),
+		exists: vi.fn().mockResolvedValue(false),
+		read: vi.fn().mockResolvedValue(''),
 	},
 };
 
 const mockMetadataCache = {
-	getFileCache: jest.fn(),
+	getFileCache: vi.fn(),
 };
 
 const mockFileManager = {
-	processFrontMatter: jest.fn(),
+	processFrontMatter: vi.fn(),
 };
 
 const mockPlugin = {
@@ -95,10 +97,10 @@ const mockPlugin = {
 		fileManager: mockFileManager,
 	},
 	logger: {
-		warn: jest.fn(),
-		error: jest.fn(),
-		debug: jest.fn(),
-		info: jest.fn(),
+		warn: vi.fn(),
+		error: vi.fn(),
+		debug: vi.fn(),
+		info: vi.fn(),
 	},
 } as any;
 
@@ -106,7 +108,7 @@ describe('SkillManager', () => {
 	let manager: SkillManager;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		// clearAllMocks resets call history but keeps any custom implementations
 		// from prior tests, so re-pin adapter defaults explicitly.
 		mockVault.adapter.exists.mockReset().mockResolvedValue(false);

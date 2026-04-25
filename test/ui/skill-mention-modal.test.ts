@@ -1,8 +1,9 @@
+import type { Mock } from 'vitest';
 import { SkillMentionModal } from '../../src/ui/agent-view/skill-mention-modal';
 import type { SkillSummary } from '../../src/services/skill-manager';
 
-jest.mock('obsidian', () => {
-	const original = jest.requireActual('../../__mocks__/obsidian.js');
+vi.mock('obsidian', async () => {
+	const original = await vi.importActual<any>('../../__mocks__/obsidian.js');
 	// Add setPlaceholder to FuzzySuggestModal mock
 	const OriginalFuzzySuggestModal = original.FuzzySuggestModal;
 	class FuzzySuggestModal extends OriginalFuzzySuggestModal {
@@ -12,12 +13,12 @@ jest.mock('obsidian', () => {
 });
 
 describe('SkillMentionModal', () => {
-	let onSelect: jest.Mock;
+	let onSelect: Mock;
 	let skills: SkillSummary[];
 	let modal: SkillMentionModal;
 
 	beforeEach(() => {
-		onSelect = jest.fn();
+		onSelect = vi.fn();
 		skills = [
 			{ name: 'code-review', description: 'Review code for quality' },
 			{ name: 'gemini-scribe-help', description: 'Help with plugin usage' },

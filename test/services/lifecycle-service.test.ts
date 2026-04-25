@@ -1,138 +1,180 @@
-jest.mock('obsidian', () => ({
+import type { Mock } from 'vitest';
+
+vi.mock('obsidian', () => ({
 	TFile: class TFile {},
-	Notice: jest.fn(),
+	Notice: vi.fn(),
 	normalizePath: (p: string) => p,
 }));
 
-jest.mock('../../src/services/tool-registrar', () => ({
-	ToolRegistrar: jest.fn().mockImplementation(() => ({
-		registerAll: jest.fn(),
-		unregisterAll: jest.fn(),
-	})),
+vi.mock('../../src/services/tool-registrar', () => ({
+	ToolRegistrar: vi.fn().mockImplementation(function () {
+		return {
+			registerAll: vi.fn(),
+			unregisterAll: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/prompts', () => ({
-	GeminiPrompts: jest.fn(),
-	PromptManager: jest.fn().mockImplementation(() => ({
-		createDefaultPrompts: jest.fn(),
-		setupPromptCommands: jest.fn(),
-	})),
+vi.mock('../../src/prompts', () => ({
+	GeminiPrompts: vi.fn(),
+	PromptManager: vi.fn().mockImplementation(function () {
+		return {
+			createDefaultPrompts: vi.fn(),
+			setupPromptCommands: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/files', () => ({ ScribeFile: jest.fn() }));
-jest.mock('../../src/services/model-manager', () => ({
-	ModelManager: jest.fn().mockImplementation(() => ({
-		initialize: jest.fn(),
-		updateModels: jest.fn(),
-	})),
+vi.mock('../../src/files', () => ({ ScribeFile: vi.fn() }));
+vi.mock('../../src/services/model-manager', () => ({
+	ModelManager: vi.fn().mockImplementation(function () {
+		return {
+			initialize: vi.fn(),
+			updateModels: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/history/history', () => ({
-	GeminiHistory: jest.fn().mockImplementation(() => ({
-		setupHistoryCommands: jest.fn(),
-		onLayoutReady: jest.fn(),
-		onUnload: jest.fn(),
-	})),
+vi.mock('../../src/history/history', () => ({
+	GeminiHistory: vi.fn().mockImplementation(function () {
+		return {
+			setupHistoryCommands: vi.fn(),
+			onLayoutReady: vi.fn(),
+			onUnload: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/agent/session-manager', () => ({ SessionManager: jest.fn() }));
-jest.mock('../../src/agent/session-history', () => ({ SessionHistory: jest.fn() }));
-jest.mock('../../src/services/agents-memory', () => ({ AgentsMemory: jest.fn() }));
-jest.mock('../../src/services/example-prompts', () => ({ ExamplePromptsManager: jest.fn() }));
-jest.mock('../../src/tools/tool-registry', () => ({ ToolRegistry: jest.fn() }));
-jest.mock('../../src/tools/execution-engine', () => ({ ToolExecutionEngine: jest.fn() }));
-jest.mock('../../src/services/skill-manager', () => ({
-	SkillManager: jest.fn().mockImplementation(() => ({})),
+vi.mock('../../src/agent/session-manager', () => ({ SessionManager: vi.fn() }));
+vi.mock('../../src/agent/session-history', () => ({ SessionHistory: vi.fn() }));
+vi.mock('../../src/services/agents-memory', () => ({ AgentsMemory: vi.fn() }));
+vi.mock('../../src/services/example-prompts', () => ({ ExamplePromptsManager: vi.fn() }));
+vi.mock('../../src/tools/tool-registry', () => ({ ToolRegistry: vi.fn() }));
+vi.mock('../../src/tools/execution-engine', () => ({ ToolExecutionEngine: vi.fn() }));
+vi.mock('../../src/services/skill-manager', () => ({
+	SkillManager: vi.fn().mockImplementation(function () {
+		return {};
+	}),
 }));
-jest.mock('../../src/mcp/mcp-manager', () => ({
-	MCPManager: jest.fn().mockImplementation(() => ({
-		connectAllEnabled: jest.fn(),
-		disconnectAll: jest.fn(),
-	})),
+vi.mock('../../src/mcp/mcp-manager', () => ({
+	MCPManager: vi.fn().mockImplementation(function () {
+		return {
+			connectAllEnabled: vi.fn(),
+			disconnectAll: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/services/context-manager', () => ({ ContextManager: jest.fn() }));
-jest.mock('../../src/completions', () => ({
-	GeminiCompletions: jest.fn().mockImplementation(() => ({
-		setupCompletions: jest.fn(),
-		setupCompletionsCommands: jest.fn(),
-	})),
+vi.mock('../../src/services/context-manager', () => ({ ContextManager: vi.fn() }));
+vi.mock('../../src/completions', () => ({
+	GeminiCompletions: vi.fn().mockImplementation(function () {
+		return {
+			setupCompletions: vi.fn(),
+			setupCompletionsCommands: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/summary', () => ({
-	GeminiSummary: jest.fn().mockImplementation(() => ({
-		setupSummarizationCommand: jest.fn(),
-	})),
+vi.mock('../../src/summary', () => ({
+	GeminiSummary: vi.fn().mockImplementation(function () {
+		return {
+			setupSummarizationCommand: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/services/vault-analyzer', () => ({
-	VaultAnalyzer: jest.fn().mockImplementation(() => ({})),
+vi.mock('../../src/services/vault-analyzer', () => ({
+	VaultAnalyzer: vi.fn().mockImplementation(function () {
+		return {};
+	}),
 }));
-jest.mock('../../src/services/deep-research', () => ({ DeepResearchService: jest.fn() }));
-jest.mock('../../src/services/image-generation', () => ({
-	ImageGeneration: jest.fn().mockImplementation(() => ({
-		setupImageGenerationCommand: jest.fn(),
-	})),
+vi.mock('../../src/services/deep-research', () => ({ DeepResearchService: vi.fn() }));
+vi.mock('../../src/services/image-generation', () => ({
+	ImageGeneration: vi.fn().mockImplementation(function () {
+		return {
+			setupImageGenerationCommand: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/services/selection-action-service', () => ({ SelectionActionService: jest.fn() }));
-jest.mock('../../src/services/rag-indexing', () => ({ RagIndexingService: jest.fn() }));
-jest.mock('../../src/services/folder-initializer', () => ({
-	FolderInitializer: jest.fn().mockImplementation(() => ({
-		initializeAll: jest.fn(),
-	})),
+vi.mock('../../src/services/selection-action-service', () => ({ SelectionActionService: vi.fn() }));
+vi.mock('../../src/services/rag-indexing', () => ({ RagIndexingService: vi.fn() }));
+vi.mock('../../src/services/folder-initializer', () => ({
+	FolderInitializer: vi.fn().mockImplementation(function () {
+		return {
+			initializeAll: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/agent/agent-event-bus', () => ({
-	AgentEventBus: jest.fn().mockImplementation(() => ({
-		on: jest.fn().mockReturnValue(() => {}),
-		emit: jest.fn().mockResolvedValue(undefined),
-		removeAll: jest.fn(),
-	})),
+vi.mock('../../src/agent/agent-event-bus', () => ({
+	AgentEventBus: vi.fn().mockImplementation(function () {
+		return {
+			on: vi.fn().mockReturnValue(() => {}),
+			emit: vi.fn().mockResolvedValue(undefined),
+			removeAll: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/subscribers/tool-execution-logger', () => ({
-	ToolExecutionLogger: jest.fn().mockImplementation(() => ({
-		destroy: jest.fn(),
-	})),
+vi.mock('../../src/subscribers/tool-execution-logger', () => ({
+	ToolExecutionLogger: vi.fn().mockImplementation(function () {
+		return {
+			destroy: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/subscribers/context-tracking-subscriber', () => ({
-	ContextTrackingSubscriber: jest.fn().mockImplementation(() => ({
-		destroy: jest.fn(),
-	})),
+vi.mock('../../src/subscribers/context-tracking-subscriber', () => ({
+	ContextTrackingSubscriber: vi.fn().mockImplementation(function () {
+		return {
+			destroy: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/subscribers/accessed-files-subscriber', () => ({
-	AccessedFilesSubscriber: jest.fn().mockImplementation(() => ({
-		destroy: jest.fn(),
-	})),
+vi.mock('../../src/subscribers/accessed-files-subscriber', () => ({
+	AccessedFilesSubscriber: vi.fn().mockImplementation(function () {
+		return {
+			destroy: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/subscribers/project-activation-subscriber', () => ({
-	ProjectActivationSubscriber: jest.fn().mockImplementation(() => ({
-		destroy: jest.fn(),
-	})),
+vi.mock('../../src/subscribers/project-activation-subscriber', () => ({
+	ProjectActivationSubscriber: vi.fn().mockImplementation(function () {
+		return {
+			destroy: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/services/project-manager', () => ({
-	ProjectManager: jest.fn().mockImplementation(() => ({
-		initialize: jest.fn(),
-		registerVaultEvents: jest.fn(),
-		discoverProjects: jest.fn().mockReturnValue([]),
-		destroy: jest.fn(),
-	})),
+vi.mock('../../src/services/project-manager', () => ({
+	ProjectManager: vi.fn().mockImplementation(function () {
+		return {
+			initialize: vi.fn(),
+			registerVaultEvents: vi.fn(),
+			discoverProjects: vi.fn().mockReturnValue([]),
+			destroy: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/ui/update-notification-modal', () => ({ UpdateNotificationModal: jest.fn() }));
-jest.mock('../../src/services/background-task-manager', () => ({
-	BackgroundTaskManager: jest.fn().mockImplementation(() => ({
-		destroy: jest.fn(),
-		runningCount: 0,
-	})),
+vi.mock('../../src/ui/update-notification-modal', () => ({ UpdateNotificationModal: vi.fn() }));
+vi.mock('../../src/services/background-task-manager', () => ({
+	BackgroundTaskManager: vi.fn().mockImplementation(function () {
+		return {
+			destroy: vi.fn(),
+			runningCount: 0,
+		};
+	}),
 }));
-jest.mock('../../src/services/background-status-bar', () => ({
-	BackgroundStatusBar: jest.fn().mockImplementation(() => ({
-		setup: jest.fn(),
-		update: jest.fn(),
-		destroy: jest.fn(),
-		setRagProvider: jest.fn(),
-	})),
+vi.mock('../../src/services/background-status-bar', () => ({
+	BackgroundStatusBar: vi.fn().mockImplementation(function () {
+		return {
+			setup: vi.fn(),
+			update: vi.fn(),
+			destroy: vi.fn(),
+			setRagProvider: vi.fn(),
+		};
+	}),
 }));
-jest.mock('../../src/services/scheduled-task-manager', () => ({
-	ScheduledTaskManager: jest.fn().mockImplementation(() => ({
-		initialize: jest.fn().mockResolvedValue(undefined),
-		start: jest.fn(),
-		destroy: jest.fn(),
-	})),
+vi.mock('../../src/services/scheduled-task-manager', () => ({
+	ScheduledTaskManager: vi.fn().mockImplementation(function () {
+		return {
+			initialize: vi.fn().mockResolvedValue(undefined),
+			start: vi.fn(),
+			destroy: vi.fn(),
+		};
+	}),
 }));
 
-// Must be after all jest.mock calls
+// Must be after all vi.mock calls
 import { LifecycleService } from '../../src/services/lifecycle-service';
 import { BackgroundTaskManager } from '../../src/services/background-task-manager';
 import { BackgroundStatusBar } from '../../src/services/background-status-bar';
@@ -142,7 +184,7 @@ import { ProjectActivationSubscriber } from '../../src/subscribers/project-activ
 function createMockPlugin(overrides: Record<string, any> = {}): any {
 	return {
 		app: {
-			vault: { on: jest.fn() },
+			vault: { on: vi.fn() },
 			workspace: { layoutReady: false },
 		},
 		settings: {
@@ -153,23 +195,23 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 			lastSeenVersion: '1.0.0',
 		},
 		logger: {
-			log: jest.fn(),
-			debug: jest.fn(),
-			error: jest.fn(),
-			warn: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
 		},
 		isGeminiInitialized: false,
 		manifest: { version: '1.0.0' },
-		saveData: jest.fn(),
-		registerEvent: jest.fn(),
-		addStatusBarItem: jest.fn().mockReturnValue({
-			addClass: jest.fn(),
-			removeClass: jest.fn(),
-			createSpan: jest.fn().mockReturnValue({ setText: jest.fn() }),
-			addEventListener: jest.fn(),
-			remove: jest.fn(),
+		saveData: vi.fn(),
+		registerEvent: vi.fn(),
+		addStatusBarItem: vi.fn().mockReturnValue({
+			addClass: vi.fn(),
+			removeClass: vi.fn(),
+			createSpan: vi.fn().mockReturnValue({ setText: vi.fn() }),
+			addEventListener: vi.fn(),
+			remove: vi.fn(),
 			style: {},
-			querySelector: jest.fn().mockReturnValue(null),
+			querySelector: vi.fn().mockReturnValue(null),
 		}),
 		...overrides,
 	};
@@ -180,7 +222,7 @@ describe('LifecycleService', () => {
 	let mockPlugin: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockPlugin = createMockPlugin();
 		lifecycle = new LifecycleService(mockPlugin);
 	});
@@ -231,7 +273,7 @@ describe('LifecycleService', () => {
 			mockPlugin.isGeminiInitialized = true;
 
 			// Set up MCP manager from first setup
-			const mockDisconnectAll = jest.fn();
+			const mockDisconnectAll = vi.fn();
 			mockPlugin.mcpManager = { disconnectAll: mockDisconnectAll };
 
 			await lifecycle.setup();
@@ -257,7 +299,7 @@ describe('LifecycleService', () => {
 			await lifecycle.setup();
 
 			// Access the ToolRegistrar instance created in the LifecycleService constructor
-			const registrarInstance = (ToolRegistrar as unknown as jest.Mock).mock.results[0].value;
+			const registrarInstance = (ToolRegistrar as unknown as Mock).mock.results[0].value;
 			expect(registrarInstance.registerAll).toHaveBeenCalledWith(mockPlugin.toolRegistry, mockPlugin.logger);
 		});
 
@@ -306,7 +348,7 @@ describe('LifecycleService', () => {
 		});
 
 		it('should disconnect MCP servers', async () => {
-			const mockDisconnectAll = jest.fn();
+			const mockDisconnectAll = vi.fn();
 			mockPlugin.mcpManager = { disconnectAll: mockDisconnectAll };
 
 			await lifecycle.teardown();
@@ -329,7 +371,7 @@ describe('LifecycleService', () => {
 
 	describe('onUnload', () => {
 		it('should clean up MCP servers', async () => {
-			const mockDisconnectAll = jest.fn().mockResolvedValue(undefined);
+			const mockDisconnectAll = vi.fn().mockResolvedValue(undefined);
 			mockPlugin.mcpManager = { disconnectAll: mockDisconnectAll };
 
 			await lifecycle.onUnload();
@@ -339,7 +381,7 @@ describe('LifecycleService', () => {
 		});
 
 		it('should call destroy on ToolExecutionLogger', async () => {
-			const mockDestroy = jest.fn();
+			const mockDestroy = vi.fn();
 			mockPlugin.toolExecutionLogger = { destroy: mockDestroy };
 
 			await lifecycle.onUnload();
@@ -350,7 +392,7 @@ describe('LifecycleService', () => {
 
 		it('should call destroy on ProjectActivationSubscriber', async () => {
 			await lifecycle.setup();
-			const instance = (ProjectActivationSubscriber as unknown as jest.Mock).mock.results[0].value;
+			const instance = (ProjectActivationSubscriber as unknown as Mock).mock.results[0].value;
 
 			// Clear services that would interfere with onUnload
 			mockPlugin.mcpManager = null;
