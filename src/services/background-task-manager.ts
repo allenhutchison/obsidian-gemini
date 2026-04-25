@@ -30,6 +30,12 @@ export class BackgroundTaskManager {
 	private eventBus: AgentEventBus;
 	private tasks = new Map<string, BackgroundTask>();
 	private cancellationFlags = new Map<string, boolean>();
+	/**
+	 * Tracks the in-flight Promise returned by run() for each active task.
+	 * Populated in submit(), cleaned up in run()'s finally block.
+	 * Used by drain() to await full settlement after cancellation.
+	 */
+	private runPromises = new Map<string, Promise<void>>();
 	/** Maximum number of completed/failed tasks kept in memory for the monitoring modal. */
 	private static readonly MAX_RECENT = 20;
 	private nextId = 1;
@@ -64,8 +70,10 @@ export class BackgroundTaskManager {
 		this.tasks.set(id, task);
 		this.cancellationFlags.set(id, false);
 
-		// Fire-and-forget — intentionally not awaited by the caller
-		this.run(id, work);
+		// Fire-and-forget for the caller, but the promise is stored in runPromises so
+		// drain() can await full settlement (e.g. after cancel()) without blocking submit().
+		const p = this.run(id, work);
+		this.runPromises.set(id, p);
 
 		return id;
 	}
@@ -195,6 +203,7 @@ export class BackgroundTaskManager {
 
 			new Notice(`Background task failed: ${task.label}\n${task.error}`, 8000);
 		} finally {
+			this.runPromises.delete(id);
 			this.cancellationFlags.delete(id);
 			this.pruneOldTasks();
 			this.notifyStatusChange();
@@ -234,6 +243,28 @@ export class BackgroundTaskManager {
 	 */
 	private notifyStatusChange(): void {
 		this.plugin.backgroundStatusBar?.update();
+	}
+
+	/**
+	 * Wait for all currently in-flight tasks of the given type to finish.
+	 *
+	 * Intended for callers that cancel() a group of tasks and then need to be
+	 * certain those tasks have fully settled before proceeding (e.g. before
+	 * re-initializing a manager whose state the tasks write to).
+	 *
+	 * @param type  If provided, only tasks of this type are awaited.
+	 *              If omitted, all in-flight tasks are awaited.
+	 */
+	async drain(type?: string): Promise<void> {
+		const promises: Promise<void>[] = [];
+		for (const [id, promise] of this.runPromises) {
+			if (type === undefined || this.tasks.get(id)?.type === type) {
+				promises.push(promise);
+			}
+		}
+		if (promises.length > 0) {
+			await Promise.allSettled(promises);
+		}
 	}
 
 	destroy(): void {

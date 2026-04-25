@@ -269,6 +269,83 @@ describe('BackgroundTaskManager', () => {
 		});
 	});
 
+	describe('drain', () => {
+		it('resolves immediately when there are no active tasks', async () => {
+			const { manager } = makeManager();
+			// No tasks submitted — drain should resolve without hanging
+			await expect(manager.drain()).resolves.toBeUndefined();
+		});
+
+		it('waits for a cancelled task to fully settle before resolving', async () => {
+			const { manager } = makeManager();
+			const settled: string[] = [];
+
+			let resolveFn!: () => void;
+			const blocker = new Promise<void>((r) => (resolveFn = r));
+
+			const id = manager.submit('scheduled-task', 'Slow task', async (isCancelled) => {
+				await blocker;
+				settled.push('work-done');
+				if (isCancelled()) return undefined;
+				return 'output.md';
+			});
+
+			// Cancel the task (flag only — does NOT await the work)
+			manager.cancel(id);
+
+			// Start draining while the work is still blocked
+			const drainPromise = manager.drain('scheduled-task');
+			let drainResolved = false;
+			drainPromise.then(() => {
+				drainResolved = true;
+			});
+
+			// Allow the event loop to tick — drain should still be waiting
+			await Promise.resolve();
+			expect(drainResolved).toBe(false);
+			expect(settled).toHaveLength(0);
+
+			// Unblock the work — now both the work and drain should settle
+			resolveFn();
+			await drainPromise;
+
+			expect(drainResolved).toBe(true);
+			expect(settled).toEqual(['work-done']);
+		});
+
+		it('drain() with a type filter only awaits matching tasks', async () => {
+			const { manager } = makeManager();
+
+			let resolveScheduled!: () => void;
+			let resolveOther!: () => void;
+			const scheduledBlocker = new Promise<void>((r) => (resolveScheduled = r));
+			const otherBlocker = new Promise<void>((r) => (resolveOther = r));
+
+			const scheduledId = manager.submit('scheduled-task', 'Scheduled', async (isCancelled) => {
+				await scheduledBlocker;
+				if (isCancelled()) return undefined;
+				return undefined;
+			});
+			manager.submit('other-type', 'Other', async () => {
+				await otherBlocker;
+				return undefined;
+			});
+
+			manager.cancel(scheduledId);
+
+			// drain only the scheduled-task type — should not wait for the other task
+			const drainPromise = manager.drain('scheduled-task');
+			resolveScheduled(); // unblock scheduled task
+			await drainPromise; // should resolve now even though 'other' is still running
+
+			expect(manager.getActiveTasks().some((t) => t.type === 'other-type')).toBe(true);
+
+			// cleanup
+			resolveOther();
+			await flushAsync();
+		});
+	});
+
 	describe('destroy', () => {
 		it('cancels active tasks and clears state', async () => {
 			const { manager } = makeManager();
