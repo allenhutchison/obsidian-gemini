@@ -136,6 +136,30 @@ describe('ScheduledTaskManager', () => {
 		});
 	});
 
+	// ── Double-init guard ───────────────────────────────────────────────────
+
+	describe('initialize() idempotency', () => {
+		it('runs only once when called twice without refresh flag (plugin:reload path)', async () => {
+			const { manager, plugin } = makeManager();
+			await manager.initialize();
+			const callsAfterFirst = plugin.app.vault.getMarkdownFiles.mock.calls.length;
+
+			// Second call — simulates onLayoutReady() firing after setup() already ran
+			await manager.initialize();
+			expect(plugin.app.vault.getMarkdownFiles.mock.calls.length).toBe(callsAfterFirst);
+		});
+
+		it('re-runs when refresh: true is passed (settings-save path)', async () => {
+			const { manager, plugin } = makeManager();
+			await manager.initialize();
+			const callsAfterFirst = plugin.app.vault.getMarkdownFiles.mock.calls.length;
+
+			// refresh: true — simulates LifecycleService.setup() on settings change
+			await manager.initialize({ refresh: true });
+			expect(plugin.app.vault.getMarkdownFiles.mock.calls.length).toBeGreaterThan(callsAfterFirst);
+		});
+	});
+
 	// ── State read / write ──────────────────────────────────────────────────
 
 	describe('sidecar state', () => {

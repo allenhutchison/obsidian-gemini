@@ -90,7 +90,7 @@ export class LifecycleService {
 					}
 				}
 			}
-			await plugin.scheduledTaskManager.initialize();
+			await plugin.scheduledTaskManager.initialize({ refresh: true });
 			plugin.scheduledTaskManager.start();
 		}
 	}
