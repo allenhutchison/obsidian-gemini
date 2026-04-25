@@ -1,28 +1,27 @@
 // Mock for @google/generative-ai
+import { vi } from 'vitest';
 
-const GoogleGenerativeAI = jest.fn().mockImplementation(() => ({
-	getGenerativeModel: jest.fn().mockReturnValue({
-		generateContent: jest.fn().mockResolvedValue({
-			response: {
-				text: () => 'Mock response text',
-				candidates: [
-					{
-						groundingMetadata: {
-							webSearchQueries: ['test query'],
-							groundingAttributions: [
-								{
-									uri: 'https://example.com',
-									content: 'Mock content',
-								},
-							],
+export const GoogleGenerativeAI = vi.fn().mockImplementation(function () {
+	return {
+		getGenerativeModel: vi.fn().mockReturnValue({
+			generateContent: vi.fn().mockResolvedValue({
+				response: {
+					text: () => 'Mock response text',
+					candidates: [
+						{
+							groundingMetadata: {
+								webSearchQueries: ['test query'],
+								groundingAttributions: [
+									{
+										uri: 'https://example.com',
+										content: 'Mock content',
+									},
+								],
+							},
 						},
-					},
-				],
-			},
+					],
+				},
+			}),
 		}),
-	}),
-}));
-
-module.exports = {
-	GoogleGenerativeAI,
-};
+	};
+});

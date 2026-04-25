@@ -1,4 +1,4 @@
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	class TFile {
 		path: string = '';
 		basename: string = '';
@@ -27,26 +27,26 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 	return {
 		app: {
 			vault: {
-				getMarkdownFiles: jest.fn().mockReturnValue([]),
-				getAbstractFileByPath: jest.fn(),
-				read: jest.fn().mockResolvedValue(''),
-				on: jest.fn().mockReturnValue({ id: 'mock-event' }),
+				getMarkdownFiles: vi.fn().mockReturnValue([]),
+				getAbstractFileByPath: vi.fn(),
+				read: vi.fn().mockResolvedValue(''),
+				on: vi.fn().mockReturnValue({ id: 'mock-event' }),
 			},
 			metadataCache: {
-				getFileCache: jest.fn().mockReturnValue(null),
-				getFirstLinkpathDest: jest.fn().mockReturnValue(null),
+				getFileCache: vi.fn().mockReturnValue(null),
+				getFirstLinkpathDest: vi.fn().mockReturnValue(null),
 			},
 			fileManager: {
-				processFrontMatter: jest.fn(),
+				processFrontMatter: vi.fn(),
 			},
 		},
 		logger: {
-			log: jest.fn(),
-			debug: jest.fn(),
-			error: jest.fn(),
-			warn: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
 		},
-		registerEvent: jest.fn(),
+		registerEvent: vi.fn(),
 		...overrides,
 	};
 }
@@ -56,7 +56,7 @@ describe('ProjectManager', () => {
 	let mockPlugin: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockPlugin = createMockPlugin();
 		manager = new ProjectManager(mockPlugin);
 	});

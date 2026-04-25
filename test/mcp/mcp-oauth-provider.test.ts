@@ -5,15 +5,15 @@ function createMockApp() {
 	const secrets = new Map<string, string>();
 	return {
 		secretStorage: {
-			getSecret: jest.fn((id: string) => secrets.get(id) ?? null),
-			setSecret: jest.fn((id: string, value: string) => {
+			getSecret: vi.fn((id: string) => secrets.get(id) ?? null),
+			setSecret: vi.fn((id: string, value: string) => {
 				if (value === '') {
 					secrets.delete(id);
 				} else {
 					secrets.set(id, value);
 				}
 			}),
-			listSecrets: jest.fn(() => Array.from(secrets.keys())),
+			listSecrets: vi.fn(() => Array.from(secrets.keys())),
 		},
 	} as any;
 }
@@ -201,7 +201,7 @@ describe('ObsidianOAuthClientProvider', () => {
 
 	describe('redirectToAuthorization', () => {
 		it('should open browser with URL', () => {
-			const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+			const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 			const url = new URL('https://auth.example.com/authorize?client_id=test');
 
 			provider.redirectToAuthorization(url);

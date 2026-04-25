@@ -1,11 +1,12 @@
+import type { Mock } from 'vitest';
 import { GoogleSearchTool, getGoogleSearchTool } from '../../src/tools/google-search-tool';
 import { ToolExecutionContext } from '../../src/tools/types';
 import { GoogleGenAI } from '@google/genai';
 import { getDefaultModelForRole } from '../../src/models';
 
 // Mock Google Gen AI
-jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn(),
+vi.mock('@google/genai', () => ({
+	GoogleGenAI: vi.fn(),
 }));
 
 describe('GoogleSearchTool', () => {
@@ -14,19 +15,21 @@ describe('GoogleSearchTool', () => {
 	let mockGenAI: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
 		tool = new GoogleSearchTool();
 
 		// Mock genAI methods
 		mockGenAI = {
 			models: {
-				generateContent: jest.fn(),
+				generateContent: vi.fn(),
 			},
 		};
 
 		// Mock GoogleGenAI constructor
-		(GoogleGenAI as jest.Mock).mockImplementation(() => mockGenAI);
+		(GoogleGenAI as Mock).mockImplementation(function () {
+			return mockGenAI;
+		});
 
 		// Mock context
 		mockContext = {

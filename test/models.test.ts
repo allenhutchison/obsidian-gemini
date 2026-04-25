@@ -46,7 +46,7 @@ describe('getDefaultModelForRole', () => {
 			{ value: 'fallback-model', label: 'Fallback Model' },
 			{ value: 'another-model', label: 'Another Model' },
 		]);
-		const consoleWarnSpy = jest.spyOn(console, 'warn');
+		const consoleWarnSpy = vi.spyOn(console, 'warn');
 		const result = getDefaultModelForRole('completions'); // No explicit default for completions
 
 		// Should still fall back to first model, but no warning logged
@@ -63,11 +63,11 @@ describe('getDefaultModelForRole', () => {
 	});
 
 	// This test checks the actual imported GEMINI_MODELS state
-	it('should ensure the global GEMINI_MODELS array is never actually empty', () => {
+	it('should ensure the global GEMINI_MODELS array is never actually empty', async () => {
 		// This test relies on the original state of GEMINI_MODELS before any test modifications
 		// If originalModels was captured from an already empty state, this test would be misleading.
 		// This is more of an assertion about your actual data.
-		const actualImportedModels = jest.requireActual<typeof import('../src/models')>('../src/models').GEMINI_MODELS;
+		const actualImportedModels = (await vi.importActual<typeof import('../src/models')>('../src/models')).GEMINI_MODELS;
 		expect(actualImportedModels.length).toBeGreaterThan(0);
 	});
 

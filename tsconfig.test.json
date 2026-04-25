@@ -2,17 +2,12 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"rootDir": ".",
-		"types": ["jest"],
+		"types": ["vitest/globals", "node"],
 		"declaration": false,
 		"declarationMap": false,
 		"composite": false,
 		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		// ts-jest 29.x forces module=CommonJS at runtime, which drags the effective
-		// moduleResolution down to node10 regardless of what's set here. TS 6.x emits
-		// TS5107 for that; TS 7 will remove it. Drop this flag once we move to ts-jest 30
-		// (TS 7-compatible) or migrate to @swc/jest / vitest.
-		"ignoreDeprecations": "6.0"
+		"noUnusedParameters": false
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts"],
 	"exclude": []

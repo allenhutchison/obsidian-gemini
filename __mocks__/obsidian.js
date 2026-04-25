@@ -1,64 +1,65 @@
 // Mock for Obsidian module used in tests
+import { vi } from 'vitest';
 
-class ItemView {
+export class ItemView {
 	constructor() {
-		this.registerEvent = jest.fn();
+		this.registerEvent = vi.fn();
 		this.containerEl = {
-			addEventListener: jest.fn(),
-			querySelector: jest.fn(),
+			addEventListener: vi.fn(),
+			querySelector: vi.fn(),
 		};
 		this.contentEl = {
-			empty: jest.fn(),
-			createEl: jest.fn(),
-			createDiv: jest.fn(),
+			empty: vi.fn(),
+			createEl: vi.fn(),
+			createDiv: vi.fn(),
 		};
 		this.chatbox = null;
 	}
 }
 
-class Modal {
+export class Modal {
 	constructor(app) {
 		this.app = app;
 		this.modalEl = {
 			classList: {
-				add: jest.fn(),
+				add: vi.fn(),
 			},
 		};
 		this.contentEl = {
-			empty: jest.fn(),
-			createEl: jest.fn(),
-			createDiv: jest.fn(),
+			empty: vi.fn(),
+			createEl: vi.fn(),
+			createDiv: vi.fn(),
 		};
 	}
 	open() {}
 	close() {}
 }
 
-class WorkspaceLeaf {}
+export class WorkspaceLeaf {}
 
-class MarkdownView {
+export class MarkdownView {
 	constructor() {
 		this.file = null;
 		this.editor = {
-			getSelection: jest.fn().mockReturnValue(''),
+			getSelection: vi.fn().mockReturnValue(''),
 		};
 	}
 }
 
-class TFile {
+export class TFile {
 	constructor(path = 'test.md') {
 		this.path = path;
 	}
 }
 
-class TFolder {
+export class TFolder {
 	constructor(path = 'test-folder') {
 		this.path = path;
 		this.children = [];
 	}
 }
 
-class Setting {
+export class Setting {
 	constructor(containerEl) {
 		this.settingEl = containerEl;
 		this.components = [];
@@ -70,21 +71,21 @@ class Setting {
 		return this;
 	}
 	addText(cb) {
-		const component = { setValue: jest.fn(), setPlaceholder: jest.fn() };
+		const component = { setValue: vi.fn(), setPlaceholder: vi.fn() };
 		cb(component);
 		this.components.push(component);
 		return this;
 	}
 	addTextArea(cb) {
-		const component = { setValue: jest.fn(), setPlaceholder: jest.fn() };
+		const component = { setValue: vi.fn(), setPlaceholder: vi.fn() };
 		cb(component);
 		this.components.push(component);
 		return this;
 	}
 	addDropdown(cb) {
 		const component = {
-			setValue: jest.fn(),
-			addOption: jest.fn(),
+			setValue: vi.fn(),
+			addOption: vi.fn(),
 			selectEl: { value: '' },
 		};
 		cb(component);
@@ -92,16 +93,16 @@ class Setting {
 		return this;
 	}
 	addToggle(cb) {
-		const component = { setValue: jest.fn() };
+		const component = { setValue: vi.fn() };
 		cb(component);
 		this.components.push(component);
 		return this;
 	}
 	addButton(cb) {
 		const component = {
-			setButtonText: jest.fn(),
-			setCta: jest.fn(),
-			onClick: jest.fn(),
+			setButtonText: vi.fn(),
+			setCta: vi.fn(),
+			onClick: vi.fn(),
 		};
 		cb(component);
 		this.components.push(component);
@@ -109,15 +110,15 @@ class Setting {
 	}
 }
 
-const MarkdownRenderer = {
-	render: jest.fn(),
+export const MarkdownRenderer = {
+	render: vi.fn(),
 };
 
-const setIcon = jest.fn();
-const Notice = jest.fn();
+export const setIcon = vi.fn();
+export const Notice = vi.fn();
 // Mirrors Obsidian's normalizePath: collapses duplicate slashes, converts
 // backslashes, strips leading/trailing slashes, and returns '/' for empty input.
-const normalizePath = jest.fn((path) => {
+export const normalizePath = vi.fn((path) => {
 	if (path == null || /^\s*$/.test(path)) return '/';
 	const collapsed = path.replace(/[\\/]+/g, '/').replace(/(^\/+|\/+$)/g, '');
 	return collapsed || '/';
@@ -126,7 +127,7 @@ const normalizePath = jest.fn((path) => {
 // firing; `run()` drains the queue and invokes the callback; `cancel()` clears
 // it. This matches Obsidian's real debounce semantics (deferred firing) so
 // tests can assert coalescing behavior by driving `.run()` explicitly.
-const debounce = (cb, _timeout, _resetTimer) => {
+export const debounce = (cb, _timeout, _resetTimer) => {
 	let pendingArgs = null;
 	const debounced = (...args) => {
 		pendingArgs = args;
@@ -146,7 +147,7 @@ const debounce = (cb, _timeout, _resetTimer) => {
 	};
 	return debounced;
 };
-const prepareFuzzySearch = jest.fn((query) => {
+export const prepareFuzzySearch = vi.fn((query) => {
 	return (text) => {
 		if (!query || text.toLowerCase().includes(query.toLowerCase())) {
 			return { score: 1, matches: [] };
@@ -155,12 +156,12 @@ const prepareFuzzySearch = jest.fn((query) => {
 	};
 });
 
-class FuzzySuggestModal extends Modal {
+export class FuzzySuggestModal extends Modal {
 	constructor(app) {
 		super(app);
 		this.inputEl = {
 			value: '',
-			addEventListener: jest.fn(),
+			addEventListener: vi.fn(),
 		};
 	}
 	getItems() {
@@ -172,19 +173,21 @@ class FuzzySuggestModal extends Modal {
 	onChooseItem(item, evt) {}
 }
 
-class TAbstractFile {
+export class TAbstractFile {
 	constructor() {
 		this.path = '';
 		this.name = '';
 	}
 }
 
-const Menu = jest.fn().mockImplementation(() => ({
-	addItem: jest.fn().mockReturnThis(),
-	showAtMouseEvent: jest.fn(),
-}));
+export const Menu = vi.fn().mockImplementation(function () {
+	return {
+		addItem: vi.fn().mockReturnThis(),
+		showAtMouseEvent: vi.fn(),
+	};
+});
 
-class AbstractInputSuggest {
+export class AbstractInputSuggest {
 	constructor() {
 		this.inputEl = null;
 	}
@@ -201,14 +204,14 @@ class AbstractInputSuggest {
 	selectSuggestion() {}
 }
 
-class PluginSettingTab {
+export class PluginSettingTab {
 	constructor(app, plugin) {
 		this.app = app;
 		this.plugin = plugin;
 		this.containerEl = {
-			empty: jest.fn(),
-			createEl: jest.fn(),
-			createDiv: jest.fn(),
+			empty: vi.fn(),
+			createEl: vi.fn(),
+			createDiv: vi.fn(),
 		};
 	}
 
@@ -216,19 +219,19 @@ class PluginSettingTab {
 	hide() {}
 }
 
-class SuggestModal extends Modal {
+export class SuggestModal extends Modal {
 	constructor(app) {
 		super(app);
 		this.inputEl = {
-			addEventListener: jest.fn(),
-			removeEventListener: jest.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
 			value: '',
-			dispatchEvent: jest.fn(),
+			dispatchEvent: vi.fn(),
 		};
 		this.resultContainerEl = { scrollTop: 0 };
 		this.chooser = {
 			selectedItem: 0,
-			setSelectedItem: jest.fn(),
+			setSelectedItem: vi.fn(),
 			suggestions: [],
 		};
 	}
@@ -240,7 +243,7 @@ class SuggestModal extends Modal {
 	onChooseSuggestion() {}
 }
 
-class SecretComponent {
+export class SecretComponent {
 	constructor(app, containerEl) {
 		this.app = app;
 		this.containerEl = containerEl;
@@ -257,7 +260,7 @@ class SecretComponent {
 	}
 }
 
-class SecretStorage {
+export class SecretStorage {
 	constructor() {
 		this._secrets = {};
 	}
@@ -272,7 +275,7 @@ class SecretStorage {
 	}
 }
 
-class Plugin {
+export class Plugin {
 	constructor(app, manifest) {
 		this.app = app;
 		this.manifest = manifest;
@@ -281,10 +284,10 @@ class Plugin {
 	onload() {}
 	onunload() {}
 	addCommand() {
-		return jest.fn();
+		return vi.fn();
 	}
 	addRibbonIcon() {
-		return { remove: jest.fn() };
+		return { remove: vi.fn() };
 	}
 	addSettingTab() {}
 	registerView() {}
@@ -295,28 +298,3 @@ class Plugin {
 		return Promise.resolve();
 	}
 }
-
-module.exports = {
-	ItemView,
-	MarkdownView,
-	Modal,
-	WorkspaceLeaf,
-	TFile,
-	TFolder,
-	TAbstractFile,
-	Setting,
-	MarkdownRenderer,
-	setIcon,
-	Notice,
-	normalizePath,
-	FuzzySuggestModal,
-	Menu,
-	AbstractInputSuggest,
-	PluginSettingTab,
-	SuggestModal,
-	Plugin,
-	prepareFuzzySearch,
-	SecretComponent,
-	SecretStorage,
-	debounce,
-};

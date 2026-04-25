@@ -29,11 +29,11 @@ describe('formatLocalDate', () => {
 
 	it('should default to current date when no argument provided', () => {
 		const fixedNow = new Date(2026, 3, 7, 23, 59, 59, 900);
-		jest.useFakeTimers().setSystemTime(fixedNow);
+		vi.useFakeTimers().setSystemTime(fixedNow);
 		try {
 			expect(formatLocalDate()).toBe('2026-04-07');
 		} finally {
-			jest.useRealTimers();
+			vi.useRealTimers();
 		}
 	});
 });

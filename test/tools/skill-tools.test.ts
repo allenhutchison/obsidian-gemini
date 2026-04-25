@@ -4,13 +4,13 @@ import { ToolCategory } from '../../src/types/agent';
 
 // Mock SkillManager
 const mockSkillManager = {
-	loadSkill: jest.fn(),
-	readSkillResource: jest.fn(),
-	listSkillResources: jest.fn(),
-	getSkillSummaries: jest.fn(),
-	createSkill: jest.fn(),
-	updateSkill: jest.fn(),
-	validateSkillName: jest.fn(),
+	loadSkill: vi.fn(),
+	readSkillResource: vi.fn(),
+	listSkillResources: vi.fn(),
+	getSkillSummaries: vi.fn(),
+	createSkill: vi.fn(),
+	updateSkill: vi.fn(),
+	validateSkillName: vi.fn(),
 };
 
 const mockPlugin = {
@@ -33,7 +33,7 @@ const mockContext: ToolExecutionContext = {
 
 describe('Skill Tools', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('ActivateSkillTool', () => {

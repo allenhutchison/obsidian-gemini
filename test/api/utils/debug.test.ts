@@ -1,3 +1,4 @@
+import type { Mocked } from 'vitest';
 import {
 	isBaseModelRequest,
 	isExtendedModelRequest,
@@ -39,16 +40,16 @@ describe('isBaseModelRequest', () => {
 });
 
 describe('logDebugInfo', () => {
-	let mockLogger: jest.Mocked<Logger>;
+	let mockLogger: Mocked<Logger>;
 
 	beforeEach(() => {
 		// Create a mock logger
 		mockLogger = {
-			log: jest.fn(),
-			debug: jest.fn(),
-			error: jest.fn(),
-			warn: jest.fn(),
-			child: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
+			child: vi.fn(),
 		} as any;
 	});
 

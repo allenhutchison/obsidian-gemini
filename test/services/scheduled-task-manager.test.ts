@@ -1,13 +1,15 @@
+import type { Mock } from 'vitest';
+import { TFile as MockTFile } from 'obsidian';
 import { ScheduledTaskManager, computeNextRunAt, ScheduledTask } from '../../src/services/scheduled-task-manager';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 function createMockLogger(): any {
 	return {
-		log: jest.fn(),
-		debug: jest.fn(),
-		error: jest.fn(),
-		warn: jest.fn(),
+		log: vi.fn(),
+		debug: vi.fn(),
+		error: vi.fn(),
+		warn: vi.fn(),
 	};
 }
 
@@ -18,25 +20,25 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 		logger: createMockLogger(),
 		settings: { historyFolder: 'gemini-scribe' },
 		backgroundTaskManager: {
-			submit: jest.fn().mockReturnValue('bg-task-1'),
+			submit: vi.fn().mockReturnValue('bg-task-1'),
 		},
 		app: {
 			vault: {
-				getMarkdownFiles: jest.fn().mockReturnValue([]),
-				on: jest.fn(),
-				off: jest.fn(),
+				getMarkdownFiles: vi.fn().mockReturnValue([]),
+				on: vi.fn(),
+				off: vi.fn(),
 				adapter: {
-					exists: jest.fn().mockResolvedValue(false),
-					read: jest.fn().mockImplementation(async (path: string) => stateStore[path] ?? '{}'),
-					write: jest.fn().mockImplementation(async (path: string, content: string) => {
+					exists: vi.fn().mockResolvedValue(false),
+					read: vi.fn().mockImplementation(async (path: string) => stateStore[path] ?? '{}'),
+					write: vi.fn().mockImplementation(async (path: string, content: string) => {
 						stateStore[path] = content;
 					}),
 				},
 			},
 			metadataCache: {
-				getFileCache: jest.fn().mockReturnValue(null),
-				on: jest.fn(),
-				off: jest.fn(),
+				getFileCache: vi.fn().mockReturnValue(null),
+				on: vi.fn(),
+				off: vi.fn(),
 			},
 		},
 		...overrides,
@@ -44,20 +46,20 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 }
 
 // Silence Obsidian's normalizePath — just return the input unchanged in tests
-jest.mock('obsidian', () => ({
+vi.mock('obsidian', () => ({
 	normalizePath: (p: string) => p,
 	TFile: class {},
 	TFolder: class {},
 }));
 
 // ensureFolderExists is a no-op in tests
-jest.mock('../../src/utils/file-utils', () => ({
-	ensureFolderExists: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../src/utils/file-utils', () => ({
+	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
 // findFrontmatterEndOffset — return undefined (no frontmatter in test content)
-jest.mock('../../src/services/skill-manager', () => ({
-	findFrontmatterEndOffset: jest.fn().mockReturnValue(undefined),
+vi.mock('../../src/services/skill-manager', () => ({
+	findFrontmatterEndOffset: vi.fn().mockReturnValue(undefined),
 }));
 
 // ─── computeNextRunAt ─────────────────────────────────────────────────────────
@@ -213,7 +215,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: 'daily' },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Do something');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Do something');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 			expect(manager.getTasks()).toHaveLength(0);
@@ -233,7 +235,7 @@ describe('ScheduledTaskManager', () => {
 					runIfMissed: false,
 				},
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Summarise recent notes.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Summarise recent notes.');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -262,7 +264,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: 'daily' },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Do something daily.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Do something daily.');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -287,7 +289,7 @@ describe('ScheduledTaskManager', () => {
 					outputPath: 'my-reports/{slug}/{date}.md',
 				},
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Weekly report prompt.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Weekly report prompt.');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -304,7 +306,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: 'daily' },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Some prompt.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Some prompt.');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -319,7 +321,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: 'interval:30m' },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Prompt without tools.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt without tools.');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -339,13 +341,12 @@ describe('ScheduledTaskManager', () => {
 			expect(manager.getTasks()).toHaveLength(0);
 
 			// Capture the vault.on('create', ...) handler registered during initialize()
-			const vaultOnCalls = (plugin.app.vault.on as jest.Mock).mock.calls;
-			const createEntry = vaultOnCalls.find(([event]: [string]) => event === 'create');
+			const vaultOnCalls = (plugin.app.vault.on as Mock).mock.calls as Array<[string, (...args: any[]) => any]>;
+			const createEntry = vaultOnCalls.find(([event]) => event === 'create');
 			expect(createEntry).toBeDefined();
-			const createHandler = createEntry[1] as (...args: unknown[]) => unknown;
+			const createHandler = createEntry![1];
 
 			// Simulate a new task file appearing in the vault
-			const { TFile: MockTFile } = jest.requireMock('obsidian');
 			const newFile = Object.assign(new MockTFile(), {
 				path: 'gemini-scribe/Scheduled-Tasks/hot-task.md',
 				basename: 'hot-task',
@@ -354,13 +355,13 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: 'daily' },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Hot-loaded prompt.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Hot-loaded prompt.');
 
 			// Fire the create handler and wait for the 500 ms defer
-			jest.useFakeTimers();
+			vi.useFakeTimers();
 			createHandler(newFile);
-			jest.advanceTimersByTime(600);
-			jest.useRealTimers();
+			vi.advanceTimersByTime(600);
+			vi.useRealTimers();
 			// Allow the deferred async parseTaskFile promise to settle
 			await Promise.resolve();
 			await Promise.resolve();
@@ -382,7 +383,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: task.schedule ?? 'daily', enabled: task.enabled ?? true },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue(task.prompt ?? 'Do work');
+			plugin.app.vault.read = vi.fn().mockResolvedValue(task.prompt ?? 'Do work');
 
 			// Pre-seed state with a controlled nextRunAt
 			plugin.app.vault.adapter.exists.mockResolvedValue(true);
@@ -460,7 +461,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: 'daily' },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('prompt');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('prompt');
 
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();

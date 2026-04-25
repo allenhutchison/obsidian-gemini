@@ -1,28 +1,27 @@
 // Mock for @google/genai
+import { vi } from 'vitest';
 
-const GoogleGenAI = jest.fn().mockImplementation(() => ({
-	models: {
-		generateContent: jest.fn().mockResolvedValue({
-			response: {
-				text: () => 'Mock response text',
-				candidates: [
-					{
-						groundingMetadata: {
-							webSearchQueries: ['test query'],
-							groundingAttributions: [
-								{
-									uri: 'https://example.com',
-									content: 'Mock content',
-								},
-							],
+export const GoogleGenAI = vi.fn().mockImplementation(function () {
+	return {
+		models: {
+			generateContent: vi.fn().mockResolvedValue({
+				response: {
+					text: () => 'Mock response text',
+					candidates: [
+						{
+							groundingMetadata: {
+								webSearchQueries: ['test query'],
+								groundingAttributions: [
+									{
+										uri: 'https://example.com',
+										content: 'Mock content',
+									},
+								],
+							},
 						},
-					},
-				],
-			},
-		}),
-	},
-}));
-
-module.exports = {
-	GoogleGenAI,
-};
+					],
+				},
+			}),
+		},
+	};
+});

@@ -1,4 +1,4 @@
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	const MockTFile = class {
 		path: string;
 		constructor(path: string) {
@@ -8,11 +8,11 @@ jest.mock('obsidian', () => {
 	return {
 		TFile: MockTFile,
 		normalizePath: (path: string) => path,
-		Notice: jest.fn(),
+		Notice: vi.fn(),
 	};
 });
 
-jest.mock('../../src/utils/error-utils', () => ({
+vi.mock('../../src/utils/error-utils', () => ({
 	isRateLimitError: () => false,
 	isQuotaExhausted: () => false,
 	getErrorMessage: (e: any) => (e instanceof Error ? e.message : String(e)),
@@ -31,7 +31,7 @@ function createMockPlugin() {
 	return {
 		app: {
 			vault: {
-				getAbstractFileByPath: jest.fn().mockReturnValue(null),
+				getAbstractFileByPath: vi.fn().mockReturnValue(null),
 			},
 		},
 		settings: {
@@ -45,10 +45,10 @@ function createMockPlugin() {
 			},
 		},
 		logger: {
-			log: jest.fn(),
-			debug: jest.fn(),
-			warn: jest.fn(),
-			error: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			warn: vi.fn(),
+			error: vi.fn(),
 		},
 	} as any;
 }
@@ -61,44 +61,44 @@ describe('RagSyncQueue', () => {
 	let mockRateLimiter: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
-		jest.useFakeTimers();
+		vi.clearAllMocks();
+		vi.useFakeTimers();
 
 		mockPlugin = createMockPlugin();
 
 		mockCache = {
 			cache: { version: '1.0', storeName: 'test', lastSync: 0, files: {} },
 			indexedCount: 0,
-			saveCache: jest.fn().mockResolvedValue(undefined),
-			incrementAndMaybeSaveCache: jest.fn().mockResolvedValue(0),
-			refreshIndexedCount: jest.fn(),
+			saveCache: vi.fn().mockResolvedValue(undefined),
+			incrementAndMaybeSaveCache: vi.fn().mockResolvedValue(0),
+			refreshIndexedCount: vi.fn(),
 		};
 
 		mockRateLimiter = {
-			isRateLimitError: jest.fn().mockReturnValue(false),
-			resetTracking: jest.fn(),
-			handleRateLimit: jest.fn().mockResolvedValue(undefined),
+			isRateLimitError: vi.fn().mockReturnValue(false),
+			resetTracking: vi.fn(),
+			handleRateLimit: vi.fn().mockResolvedValue(undefined),
 		};
 
 		mockCallbacks = {
-			getStatus: jest.fn().mockReturnValue('idle'),
-			setStatus: jest.fn(),
-			isReady: jest.fn().mockReturnValue(true),
-			getVaultAdapter: jest.fn().mockReturnValue({
-				shouldIndex: jest.fn().mockReturnValue(true),
+			getStatus: vi.fn().mockReturnValue('idle'),
+			setStatus: vi.fn(),
+			isReady: vi.fn().mockReturnValue(true),
+			getVaultAdapter: vi.fn().mockReturnValue({
+				shouldIndex: vi.fn().mockReturnValue(true),
 			}),
-			getFileUploader: jest.fn().mockReturnValue({
-				uploadContent: jest.fn().mockResolvedValue(undefined),
+			getFileUploader: vi.fn().mockReturnValue({
+				uploadContent: vi.fn().mockResolvedValue(undefined),
 			}),
-			getStoreName: jest.fn().mockReturnValue('test-store'),
-			onUpdateStatusBar: jest.fn(),
+			getStoreName: vi.fn().mockReturnValue('test-store'),
+			onUpdateStatusBar: vi.fn(),
 		};
 
 		queue = new RagSyncQueue(mockPlugin, mockCache as any, mockRateLimiter as any, mockCallbacks);
 	});
 
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	describe('getPendingCount', () => {

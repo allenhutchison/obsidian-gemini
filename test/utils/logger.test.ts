@@ -1,7 +1,8 @@
+import type { MockInstance } from 'vitest';
 import { Logger } from '../../src/utils/logger';
 
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
 }));
 
 function createMockPlugin(overrides: Record<string, any> = {}): any {
@@ -15,19 +16,19 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 }
 
 describe('Logger', () => {
-	let consoleSpy: Record<string, jest.SpyInstance>;
+	let consoleSpy: Record<string, MockInstance>;
 
 	beforeEach(() => {
 		consoleSpy = {
-			log: jest.spyOn(console, 'log').mockImplementation(),
-			debug: jest.spyOn(console, 'debug').mockImplementation(),
-			error: jest.spyOn(console, 'error').mockImplementation(),
-			warn: jest.spyOn(console, 'warn').mockImplementation(),
+			log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+			debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
+			error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+			warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
 		};
 	});
 
 	afterEach(() => {
-		jest.restoreAllMocks();
+		vi.restoreAllMocks();
 	});
 
 	describe('console output', () => {
@@ -88,7 +89,7 @@ describe('Logger', () => {
 
 	describe('file log writer integration', () => {
 		it('should call fileLogWriter.write() for log() when debugMode is on', () => {
-			const mockWriter = { write: jest.fn() };
+			const mockWriter = { write: vi.fn() };
 			const plugin = createMockPlugin({
 				settings: { debugMode: true },
 				fileLogWriter: mockWriter,
@@ -101,7 +102,7 @@ describe('Logger', () => {
 		});
 
 		it('should not call fileLogWriter.write() for log() when debugMode is off', () => {
-			const mockWriter = { write: jest.fn() };
+			const mockWriter = { write: vi.fn() };
 			const plugin = createMockPlugin({
 				settings: { debugMode: false },
 				fileLogWriter: mockWriter,
@@ -114,7 +115,7 @@ describe('Logger', () => {
 		});
 
 		it('should call fileLogWriter.write() for debug() when debugMode is on', () => {
-			const mockWriter = { write: jest.fn() };
+			const mockWriter = { write: vi.fn() };
 			const plugin = createMockPlugin({
 				settings: { debugMode: true },
 				fileLogWriter: mockWriter,
@@ -127,7 +128,7 @@ describe('Logger', () => {
 		});
 
 		it('should always call fileLogWriter.write() for error()', () => {
-			const mockWriter = { write: jest.fn() };
+			const mockWriter = { write: vi.fn() };
 			const plugin = createMockPlugin({
 				settings: { debugMode: false },
 				fileLogWriter: mockWriter,
@@ -140,7 +141,7 @@ describe('Logger', () => {
 		});
 
 		it('should always call fileLogWriter.write() for warn()', () => {
-			const mockWriter = { write: jest.fn() };
+			const mockWriter = { write: vi.fn() };
 			const plugin = createMockPlugin({
 				settings: { debugMode: false },
 				fileLogWriter: mockWriter,
@@ -176,7 +177,7 @@ describe('Logger', () => {
 		});
 
 		it('should share the same fileLogWriter via plugin reference', () => {
-			const mockWriter = { write: jest.fn() };
+			const mockWriter = { write: vi.fn() };
 			const plugin = createMockPlugin({
 				settings: { debugMode: true },
 				fileLogWriter: mockWriter,

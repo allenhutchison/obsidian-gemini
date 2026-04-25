@@ -19,14 +19,14 @@ function makeSession(overrides: Partial<SessionMetadata> = {}): SessionMetadata 
 function makeContext(pluginOverrides: any = {}, session: any = null): ToolExecutionContext {
 	const basePlugin: any = {
 		sessionManager: {
-			getSessionMetadata: jest.fn().mockResolvedValue([]),
+			getSessionMetadata: vi.fn().mockResolvedValue([]),
 		},
 		projectManager: undefined,
 		logger: {
-			log: jest.fn(),
-			debug: jest.fn(),
-			warn: jest.fn(),
-			error: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			warn: vi.fn(),
+			error: vi.fn(),
 		},
 	};
 	return {
@@ -50,7 +50,7 @@ describe('RecallSessionsTool', () => {
 
 		// Intentionally out-of-order input — tool must sort.
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([older, newest, middle]) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([older, newest, middle]) },
 		});
 
 		const result = await getTool().execute({}, ctx);
@@ -63,7 +63,7 @@ describe('RecallSessionsTool', () => {
 		const current = makeSession({ id: 'current', title: 'Current' });
 		const other = makeSession({ id: 'other', title: 'Other' });
 		const ctx = makeContext(
-			{ sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([current, other]) } },
+			{ sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([current, other]) } },
 			current
 		);
 
@@ -78,7 +78,7 @@ describe('RecallSessionsTool', () => {
 			makeSession({ id: `s${i}`, title: `Session ${i}`, lastActive: new Date(2025, 0, i + 1) })
 		);
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue(many) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue(many) },
 		});
 
 		const overLimit = await getTool().execute({ limit: 9999 }, ctx);
@@ -100,7 +100,7 @@ describe('RecallSessionsTool', () => {
 			accessedFileRefs: ['other'],
 		});
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([matching, nonMatching]) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([matching, nonMatching]) },
 		});
 
 		const result = await getTool().execute({ filePath: 'meetingnotes' }, ctx);
@@ -121,7 +121,7 @@ describe('RecallSessionsTool', () => {
 			contextFileRefs: ['other'],
 		});
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([matching, nonMatching]) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([matching, nonMatching]) },
 		});
 
 		const result = await getTool().execute({ filePath: 'design' }, ctx);
@@ -150,7 +150,7 @@ describe('RecallSessionsTool', () => {
 			accessedFileRefs: ['Other'],
 		});
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([withDeleted, unrelated]) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([withDeleted, unrelated]) },
 		});
 
 		const result = await getTool().execute({ filePath: 'Deleted Note' }, ctx);
@@ -171,7 +171,7 @@ describe('RecallSessionsTool', () => {
 			accessedFileRefs: ['other'],
 		});
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([matching, nonMatching]) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([matching, nonMatching]) },
 		});
 
 		// Full path query should still match a basename-only ref
@@ -185,7 +185,7 @@ describe('RecallSessionsTool', () => {
 		const a = makeSession({ id: 'a', title: 'Planning Q1 goals' });
 		const b = makeSession({ id: 'b', title: 'Bug triage' });
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([a, b]) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([a, b]) },
 		});
 
 		const result = await getTool().execute({ query: 'planning' }, ctx);
@@ -203,7 +203,7 @@ describe('RecallSessionsTool', () => {
 			projectRef: 'Projects/widget.md', // matches substring "widget" even without lookup
 		});
 
-		const getProject = jest.fn(async (path: string) => {
+		const getProject = vi.fn(async (path: string) => {
 			if (path === 'Projects/broken.md') throw new Error('unreadable project');
 			if (path === 'Projects/good.md') return { config: { name: 'WidgetProj' } };
 			if (path === 'Projects/widget.md') return { config: { name: 'OtherName' } };
@@ -211,7 +211,7 @@ describe('RecallSessionsTool', () => {
 		});
 
 		const ctx = makeContext({
-			sessionManager: { getSessionMetadata: jest.fn().mockResolvedValue([bad, good, otherMatch]) },
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([bad, good, otherMatch]) },
 			projectManager: { getProject },
 		});
 

@@ -9,14 +9,14 @@ const mockPlugin = {
 		imageModelName: 'gemini-2.5-flash-image',
 	},
 	apiKey: 'test-api-key',
-	loadData: jest.fn().mockResolvedValue({}),
-	saveData: jest.fn(),
+	loadData: vi.fn().mockResolvedValue({}),
+	saveData: vi.fn(),
 	logger: {
-		log: jest.fn(),
-		debug: jest.fn(),
-		warn: jest.fn(),
-		error: jest.fn(),
-		child: jest.fn(function (this: any, _prefix: string) {
+		log: vi.fn(),
+		debug: vi.fn(),
+		warn: vi.fn(),
+		error: vi.fn(),
+		child: vi.fn(function (this: any, _prefix: string) {
 			return this;
 		}),
 	},
@@ -27,7 +27,7 @@ describe('ModelManager', () => {
 	let originalModels: GeminiModel[];
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		originalModels = [...GEMINI_MODELS];
 		modelManager = new ModelManager(mockPlugin);
 	});

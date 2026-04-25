@@ -6,14 +6,14 @@ import { ToolExecutionEngine } from '../../src/tools/execution-engine';
 import { WorkspaceLeaf, Notice } from 'obsidian';
 
 // Mock dependencies
-jest.mock('../../src/agent/session-history');
-jest.mock('../../src/tools/tool-registry');
-jest.mock('../../src/tools/execution-engine');
-jest.mock('../../src/ui/agent-view/file-picker-modal');
-jest.mock('../../src/ui/agent-view/session-settings-modal');
+vi.mock('../../src/agent/session-history');
+vi.mock('../../src/tools/tool-registry');
+vi.mock('../../src/tools/execution-engine');
+vi.mock('../../src/ui/agent-view/file-picker-modal');
+vi.mock('../../src/ui/agent-view/session-settings-modal');
 
 // Mock external ESM dependencies
-jest.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils', () => ({
 	ResearchManager: class {},
 	ReportGenerator: class {},
 	Interaction: class {},
@@ -24,13 +24,13 @@ jest.mock('@allenhutchison/gemini-utils', () => ({
 	},
 	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json', '.css']),
 }));
-jest.mock('@google/genai', () => ({
+vi.mock('@google/genai', () => ({
 	GoogleGenAI: class {},
 }));
 
 // Mock Obsidian
-jest.mock('obsidian', () => {
-	const mock = jest.requireActual('../../__mocks__/obsidian.js');
+vi.mock('obsidian', async () => {
+	const mock = await vi.importActual<any>('../../__mocks__/obsidian.js');
 	return {
 		...mock,
 		ItemView: class ItemView {
@@ -58,14 +58,16 @@ jest.mock('obsidian', () => {
 			}
 		},
 		MarkdownRenderer: {
-			render: jest.fn().mockResolvedValue(undefined),
+			render: vi.fn().mockResolvedValue(undefined),
 		},
-		setIcon: jest.fn(),
-		Notice: jest.fn(),
-		Menu: jest.fn().mockImplementation(() => ({
-			addItem: jest.fn().mockReturnThis(),
-			showAtMouseEvent: jest.fn(),
-		})),
+		setIcon: vi.fn(),
+		Notice: vi.fn(),
+		Menu: vi.fn().mockImplementation(function () {
+			return {
+				addItem: vi.fn().mockReturnThis(),
+				showAtMouseEvent: vi.fn(),
+			};
+		}),
 	};
 });
 
@@ -89,38 +91,38 @@ describe('AgentView UI Tests', () => {
 				chatHistory: true,
 			},
 			logger: {
-				debug: jest.fn(),
-				log: jest.fn(),
-				warn: jest.fn(),
-				error: jest.fn(),
+				debug: vi.fn(),
+				log: vi.fn(),
+				warn: vi.fn(),
+				error: vi.fn(),
 			},
 			sessionManager: null, // Will be set after plugin is created
 			toolRegistry: null, // Will be set after plugin is created
 			toolEngine: null, // Will be set after creation
 			app: {
 				workspace: {
-					getLeaf: jest.fn(),
-					revealLeaf: jest.fn(),
+					getLeaf: vi.fn(),
+					revealLeaf: vi.fn(),
 				},
 				vault: {
-					getMarkdownFiles: jest.fn().mockReturnValue([]),
-					getAbstractFileByPath: jest.fn(),
-					create: jest.fn(),
-					createFolder: jest.fn(),
+					getMarkdownFiles: vi.fn().mockReturnValue([]),
+					getAbstractFileByPath: vi.fn(),
+					create: vi.fn(),
+					createFolder: vi.fn(),
 					adapter: {
-						exists: jest.fn().mockResolvedValue(false),
+						exists: vi.fn().mockResolvedValue(false),
 					},
 				},
 				fileManager: {
-					processFrontMatter: jest.fn(),
+					processFrontMatter: vi.fn(),
 				},
 			},
 			prompts: {
-				agentSystemPrompt: jest.fn().mockReturnValue('System prompt'),
-				agentContextPrompt: jest.fn().mockReturnValue('Context prompt'),
+				agentSystemPrompt: vi.fn().mockReturnValue('System prompt'),
+				agentContextPrompt: vi.fn().mockReturnValue('Context prompt'),
 			},
 			geminiApi: {
-				generateModelResponse: jest.fn().mockResolvedValue({
+				generateModelResponse: vi.fn().mockResolvedValue({
 					markdown: 'Test response',
 					candidates: [
 						{
@@ -135,7 +137,7 @@ describe('AgentView UI Tests', () => {
 
 		// Create instances after plugin is defined
 		plugin.history = {
-			updateSessionMetadata: jest.fn(),
+			updateSessionMetadata: vi.fn(),
 		};
 		plugin.sessionManager = new SessionManager(plugin);
 		plugin.toolRegistry = new ToolRegistry(plugin);
@@ -184,7 +186,7 @@ describe('AgentView UI Tests', () => {
 		agentView.containerEl = mockContainer;
 
 		// Mock onOpen to avoid DOM creation issues
-		agentView.onOpen = jest.fn(async () => {
+		agentView.onOpen = vi.fn(async () => {
 			// Just mark as opened, don't try to create DOM
 			(agentView as any).opened = true;
 
@@ -197,43 +199,43 @@ describe('AgentView UI Tests', () => {
 				getUserInput: () => (agentView as any).userInput,
 				getSendButton: () => (agentView as any).sendButton,
 				getChatContainer: () => (agentView as any).chatContainer,
-				progress: (agentView as any).progress || { show: jest.fn(), hide: jest.fn(), update: jest.fn() },
-				messages: (agentView as any).messages || { displayMessage: jest.fn() },
-				tools: (agentView as any).tools || { handleToolCalls: jest.fn() },
-				session: (agentView as any).session || { autoLabelSessionIfNeeded: jest.fn() },
-				displayMessage: (agentView as any).displayMessage || jest.fn(),
-				updateTokenUsage: jest.fn(),
-				isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
-				allowToolWithoutConfirmation: jest.fn(),
-				showConfirmationInChat: jest.fn(),
+				progress: (agentView as any).progress || { show: vi.fn(), hide: vi.fn(), update: vi.fn() },
+				messages: (agentView as any).messages || { displayMessage: vi.fn() },
+				tools: (agentView as any).tools || { handleToolCalls: vi.fn() },
+				session: (agentView as any).session || { autoLabelSessionIfNeeded: vi.fn() },
+				displayMessage: (agentView as any).displayMessage || vi.fn(),
+				updateTokenUsage: vi.fn(),
+				isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
+				allowToolWithoutConfirmation: vi.fn(),
+				showConfirmationInChat: vi.fn(),
 			};
 			(agentView as any).send = new AgentViewSend(mockSendCtx as any);
 
 			// Initialize attachments component mock
 			(agentView as any).attachments = {
-				showFileMention: jest.fn(),
-				removeTrailingTriggerChar: jest.fn(),
-				handleDroppedFiles: jest.fn(),
-				addAttachment: jest.fn(),
-				removeAttachment: jest.fn(),
+				showFileMention: vi.fn(),
+				removeTrailingTriggerChar: vi.fn(),
+				handleDroppedFiles: vi.fn(),
+				addAttachment: vi.fn(),
+				removeAttachment: vi.fn(),
 			};
 		});
 
 		// Mock onClose
-		agentView.onClose = jest.fn(async () => {
+		agentView.onClose = vi.fn(async () => {
 			(agentView as any).currentSession = null;
 			(agentView as any).opened = false;
 		});
 
 		// Mock private methods that are used in tests
-		(agentView as any).displayMessage = jest.fn(async (entry: any) => {
+		(agentView as any).displayMessage = vi.fn(async (entry: any) => {
 			const messageEl = document.createElement('div');
 			messageEl.className = 'message-content';
 			messageEl.textContent = entry.message;
 			agentView.containerEl.appendChild(messageEl);
 		});
 
-		(agentView as any).loadSession = jest.fn(async (sessionId: string) => {
+		(agentView as any).loadSession = vi.fn(async (sessionId: string) => {
 			(agentView as any).currentSession = plugin.sessionManager.getSession(sessionId);
 			// Update header
 			const header = agentView.containerEl.querySelector('.gemini-agent-header');
@@ -242,11 +244,11 @@ describe('AgentView UI Tests', () => {
 			}
 		});
 
-		(agentView as any).openSessionSettings = jest.fn();
+		(agentView as any).openSessionSettings = vi.fn();
 	});
 
 	afterEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		document.body.innerHTML = '';
 	});
 
@@ -563,7 +565,7 @@ describe('AgentView UI Tests', () => {
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			// Should show error notice
-			expect(jest.mocked(Notice)).toHaveBeenCalledWith(expect.stringContaining('Error'));
+			expect(vi.mocked(Notice)).toHaveBeenCalledWith(expect.stringContaining('Error'));
 		});
 	});
 
@@ -939,7 +941,7 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).currentSession = session2;
 
 			// Mock getRecentAgentSessions to return all 3 sessions
-			const mockGetRecent = jest
+			const mockGetRecent = vi
 				.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
 				.mockResolvedValue([session3, session2, session1]); // Most recent first
 
@@ -974,7 +976,7 @@ describe('AgentView UI Tests', () => {
 			expect((agentView as any).isCurrentSession(session2)).toBe(false);
 
 			// Mock getRecentAgentSessions
-			const mockGetRecent = jest
+			const mockGetRecent = vi
 				.spyOn(plugin.sessionManager, 'getRecentAgentSessions')
 				.mockResolvedValue([session2, session1]);
 
@@ -1002,7 +1004,7 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).currentSession = currentSession;
 
 			// Mock getRecentAgentSessions to return all 6 sessions
-			const mockGetRecent = jest.spyOn(plugin.sessionManager, 'getRecentAgentSessions').mockResolvedValue(sessions);
+			const mockGetRecent = vi.spyOn(plugin.sessionManager, 'getRecentAgentSessions').mockResolvedValue(sessions);
 
 			// Fetch and filter (simulating what showEmptyState does)
 			const allSessions = await plugin.sessionManager.getRecentAgentSessions(6);
@@ -1059,7 +1061,7 @@ describe('AgentView UI Tests', () => {
 			sendButton.className = 'gemini-agent-send-btn';
 			sendButton.setAttribute('aria-label', 'Send message to agent');
 			// Add empty method mock
-			(sendButton as any).empty = jest.fn();
+			(sendButton as any).empty = vi.fn();
 			(agentView as any).sendButton = sendButton;
 
 			// Simulate starting execution
@@ -1109,7 +1111,7 @@ describe('AgentView UI Tests', () => {
 			(sendButton as any).removeClass = function (className: string) {
 				this.classList.remove(className);
 			};
-			(sendButton as any).empty = jest.fn();
+			(sendButton as any).empty = vi.fn();
 			(agentView as any).sendButton = sendButton;
 			(agentView as any).send['isExecuting'] = true;
 			(agentView as any).send['cancellationRequested'] = false;
@@ -1133,7 +1135,7 @@ describe('AgentView UI Tests', () => {
 
 			// Mock streaming response on the send component
 			const mockStreamingResponse = {
-				cancel: jest.fn(),
+				cancel: vi.fn(),
 			};
 			(agentView as any).send['currentStreamingResponse'] = mockStreamingResponse;
 
@@ -1174,7 +1176,7 @@ describe('AgentView UI Tests', () => {
 			(sendButton as any).removeClass = function (className: string) {
 				this.classList.remove(className);
 			};
-			(sendButton as any).empty = jest.fn();
+			(sendButton as any).empty = vi.fn();
 			(agentView as any).sendButton = sendButton;
 			(agentView as any).send['isExecuting'] = true;
 			(agentView as any).send['cancellationRequested'] = true;
@@ -1203,7 +1205,7 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).send['isExecuting'] = false;
 
 			// Track if resetExecutionUiState was called on the send component
-			const resetSpy = jest.spyOn((agentView as any).send as any, 'resetExecutionUiState');
+			const resetSpy = vi.spyOn((agentView as any).send as any, 'resetExecutionUiState');
 
 			// Simulate finally block behavior
 			if ((agentView as any).send.getIsExecuting()) {
@@ -1225,10 +1227,10 @@ describe('AgentView UI Tests', () => {
 
 			// Mock the methods on the send component
 			const send = (agentView as any).send;
-			send.sendMessage = jest.fn(() => {
+			send.sendMessage = vi.fn(() => {
 				sendMessageCalled = true;
 			});
-			send.stopAgentLoop = jest.fn(() => {
+			send.stopAgentLoop = vi.fn(() => {
 				stopAgentLoopCalled = true;
 			});
 
@@ -1263,8 +1265,8 @@ describe('AgentView UI Tests', () => {
 
 			const sendButton = document.createElement('button');
 			// Add Obsidian methods
-			(sendButton as any).empty = jest.fn();
-			(sendButton as any).addClass = jest.fn();
+			(sendButton as any).empty = vi.fn();
+			(sendButton as any).addClass = vi.fn();
 			(agentView as any).sendButton = sendButton;
 
 			// Set up mock session
@@ -1278,18 +1280,18 @@ describe('AgentView UI Tests', () => {
 
 			// Mock progress bar
 			(agentView as any).progress = {
-				show: jest.fn(),
-				hide: jest.fn(),
-				update: jest.fn(),
+				show: vi.fn(),
+				hide: vi.fn(),
+				update: vi.fn(),
 			};
 
 			// Mock attachment support
 			(agentView as any).pendingAttachments = [];
 			(agentView as any).shelf = {
-				markBinarySent: jest.fn(),
-				getItems: jest.fn().mockReturnValue([]),
-				getTextFiles: jest.fn().mockReturnValue([]),
-				getPendingAttachments: jest.fn().mockReturnValue([]),
+				markBinarySent: vi.fn(),
+				getItems: vi.fn().mockReturnValue([]),
+				getTextFiles: vi.fn().mockReturnValue([]),
+				getPendingAttachments: vi.fn().mockReturnValue([]),
 			};
 
 			// Set cancellation flag (simulating previous stop) on the send component
@@ -1297,7 +1299,7 @@ describe('AgentView UI Tests', () => {
 			send['cancellationRequested'] = true;
 
 			// Mock displayMessage on the send context to throw early and stop execution after flag reset
-			send['ctx'].displayMessage = jest.fn().mockRejectedValue(new Error('Stop execution here'));
+			send['ctx'].displayMessage = vi.fn().mockRejectedValue(new Error('Stop execution here'));
 
 			// Call sendMessage via send component - it will fail at displayMessage but the flag should be reset by then
 			try {
@@ -1317,13 +1319,13 @@ describe('AgentView UI Tests', () => {
 		// previous session's entries.
 		function installStubs(oldSession: any) {
 			const shelf = {
-				loadFromSession: jest.fn(),
-				clear: jest.fn(),
+				loadFromSession: vi.fn(),
+				clear: vi.fn(),
 			};
 			(agentView as any).shelf = shelf;
 			(agentView as any).currentSession = oldSession;
 			// Stub updateSessionHeader to avoid DOM rendering in test harness.
-			(agentView as any).updateSessionHeader = jest.fn();
+			(agentView as any).updateSessionHeader = vi.fn();
 			return shelf;
 		}
 
@@ -1338,7 +1340,7 @@ describe('AgentView UI Tests', () => {
 			// AgentViewSession, where updateContextPanel fires *before* agent-view
 			// mirrors the new currentSession reference.
 			(agentView as any).session = {
-				createNewSession: jest.fn(async () => {
+				createNewSession: vi.fn(async () => {
 					(agentView as any).session.getCurrentSession = () => newSession;
 					// The real module invokes uiCallbacks.updateContextPanel here,
 					// while agent-view.currentSession still points at oldSession.
@@ -1369,7 +1371,7 @@ describe('AgentView UI Tests', () => {
 			const shelf = installStubs(oldSession);
 
 			(agentView as any).session = {
-				loadSession: jest.fn(async () => {
+				loadSession: vi.fn(async () => {
 					(agentView as any).session.getCurrentSession = () => loadedSession;
 					(agentView as any).updateContextPanel();
 				}),

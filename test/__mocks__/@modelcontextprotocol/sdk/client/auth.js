@@ -1,12 +1,8 @@
-// Jest mock for @modelcontextprotocol/sdk/client/auth.js
+// Wired into vitest.config.ts via resolve.alias to prevent import failures.
 
-class UnauthorizedError extends Error {
+export class UnauthorizedError extends Error {
 	constructor(message) {
 		super(message ?? 'Unauthorized');
 		this.name = 'UnauthorizedError';
 	}
 }
-
-module.exports = {
-	UnauthorizedError,
-};

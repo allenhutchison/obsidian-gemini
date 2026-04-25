@@ -6,7 +6,7 @@ import { UpdateNotificationModal } from '../../src/ui/update-notification-modal'
 import { App } from 'obsidian';
 
 // Mock Obsidian
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	// Create a mock element with Obsidian-specific methods
 	const createMockElement = (tag: string = 'div'): any => {
 		const element = document.createElement(tag);
@@ -67,7 +67,7 @@ describe('UpdateNotificationModal', () => {
 	});
 
 	afterEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('Version-Specific Release Notes (v4.0.0)', () => {
@@ -215,7 +215,7 @@ describe('UpdateNotificationModal', () => {
 		beforeEach(() => {
 			modal = new UpdateNotificationModal(app, '4.0.0');
 			// Mock window.open
-			global.window.open = jest.fn();
+			global.window.open = vi.fn();
 		});
 
 		it('should prevent default link behavior and open in new window', () => {
@@ -225,7 +225,7 @@ describe('UpdateNotificationModal', () => {
 			expect(link).toBeDefined();
 
 			const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-			const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+			const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
 
 			link.dispatchEvent(event);
 

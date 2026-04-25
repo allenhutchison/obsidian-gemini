@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import {
 	shouldExcludePath,
 	shouldExcludePathForPlugin,
@@ -126,18 +127,18 @@ describe('file-utils', () => {
 
 	describe('ensureFolderExists', () => {
 		let mockVault: {
-			getAbstractFileByPath: jest.Mock;
-			createFolder: jest.Mock;
-			adapter: { exists: jest.Mock };
+			getAbstractFileByPath: Mock;
+			createFolder: Mock;
+			adapter: { exists: Mock };
 		};
 
 		beforeEach(() => {
 			mockVault = {
-				getAbstractFileByPath: jest.fn(),
-				createFolder: jest.fn(),
-				adapter: { exists: jest.fn().mockResolvedValue(false) },
+				getAbstractFileByPath: vi.fn(),
+				createFolder: vi.fn(),
+				adapter: { exists: vi.fn().mockResolvedValue(false) },
 			};
-			(Notice as unknown as jest.Mock).mockClear();
+			(Notice as unknown as Mock).mockClear();
 		});
 
 		it('should return existing folder without creating', async () => {
