@@ -34,4 +34,4 @@ When a user reports a bug or unexpected behavior, check whether they have **Log 
 
 Load them the same way as a reference, e.g. `activate_skill(name: "gemini-scribe-help", resource_path: "debug.log")`. Each entry is timestamped with a severity level (`LOG`, `DEBUG`, `ERROR`, `WARN`); focus on `ERROR` and `WARN` entries near the time the user encountered the issue.
 
-If `activate_skill` returns "Resource not found" for these paths, the user has not enabled Log to File. Ask them to enable it (and Debug Mode for verbose entries) and reproduce the issue, then re-check.
+If `activate_skill` returns "Resource not found" for these paths, Log to File may be disabled, or the log file may not exist yet (e.g. `debug.log.old` is only present after a rotation). Ask the user to enable Log to File (and Debug Mode for verbose entries), reproduce the issue once, then re-check.
