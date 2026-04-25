@@ -7,7 +7,8 @@ research and theoretical plasma physics.
 ## Background
 
 Vasquez completed her undergraduate studies at Caltech (B.S. Physics, 2007)
-and her doctoral work at the [[MIT Plasma Lab]], graduating in 2013. Her
+and her doctoral work at MIT, graduating in 2013. Her thesis title and
+committee details are archived in the [[Vasquez Academic Record]]. Her
 postdoctoral fellowship at Princeton's PPPL focused on tokamak instabilities
 before she moved into mission systems engineering at JPL.
 
