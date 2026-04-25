@@ -251,5 +251,29 @@ describe('OllamaClient', () => {
 
 			expect(abort).toHaveBeenCalled();
 		});
+
+		it('omits usageMetadata when the stream cancels before the done chunk', async () => {
+			// Ollama only emits prompt_eval_count / eval_count on the terminal
+			// done chunk. If the user cancels first, we should not synthesize a
+			// {0,0,0} payload — that would look like a real zero-token run in
+			// the token UI / eval reporter. usageMetadata should be omitted.
+			async function* slowStream() {
+				yield { message: { content: 'partial' }, done: false };
+			}
+			const stream: any = slowStream();
+			stream.abort = vi.fn();
+			ollamaCalls.chat.mockResolvedValue(stream);
+
+			const streaming = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
+				() => {}
+			);
+			await new Promise((r) => setTimeout(r, 0));
+			streaming.cancel();
+			const result = await streaming.complete;
+
+			expect(result.markdown).toBe('partial');
+			expect(result.usageMetadata).toBeUndefined();
+		});
 	});
 });

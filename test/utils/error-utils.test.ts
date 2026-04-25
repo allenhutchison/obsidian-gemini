@@ -176,6 +176,16 @@ describe('error-utils', () => {
 				);
 			});
 
+			test('Bare "11434" in unrelated text does not trigger Ollama copy', () => {
+				// E.g. a stack trace or path containing the digits but no host:port.
+				// Without a real `host:11434` shape we should fall back to the
+				// generic network-error message.
+				const error = new Error('fetch failed at /var/cache/run-11434/tmp');
+				expect(getErrorMessage(error)).toBe(
+					'Network error: Unable to reach the model API. Please check your connection.'
+				);
+			});
+
 			test('ETIMEDOUT error', () => {
 				const error = new Error('ETIMEDOUT: Request timed out');
 				expect(getErrorMessage(error)).toBe(

@@ -180,10 +180,13 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('etimedout')
 		) {
 			// Only attribute connection refusals to Ollama when the signal is
-			// specific (the message mentions Ollama or the default port). A bare
-			// `ECONNREFUSED` or `localhost` substring could come from any local
-			// proxy or test server, so we don't claim it's the daemon.
-			if (messageLower.includes('ollama') || messageLower.includes(':11434') || messageLower.includes('11434')) {
+			// specific. A bare `ECONNREFUSED` or `localhost` substring could
+			// come from any local proxy or test server, and a bare `11434`
+			// could appear in unrelated stack traces or paths, so we require
+			// either the Ollama keyword or a real `host:11434` endpoint shape.
+			const looksLikeOllamaEndpoint =
+				/(?:^|[\s(/])(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|\[::1\]|[\w.-]+):11434\b/.test(messageLower);
+			if (messageLower.includes('ollama') || looksLikeOllamaEndpoint) {
 				return 'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.';
 			}
 			return 'Network error: Unable to reach the model API. Please check your connection.';

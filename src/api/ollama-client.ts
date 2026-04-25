@@ -32,7 +32,6 @@ import {
 } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import type ObsidianGemini from '../main';
-import { getDefaultModelForRole } from '../models';
 
 export interface OllamaClientConfig {
 	baseUrl: string;
@@ -63,7 +62,12 @@ export class OllamaClient implements ModelApi {
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		const isExtended = 'userMessage' in request;
-		const model = request.model || this.config.model || getDefaultModelForRole('chat', 'ollama');
+		// The factory (`GeminiClientFactory.resolveModelName`) is the single
+		// source of role-aware model resolution and always populates
+		// `config.model` per use case (chat / summary / completions / rewrite).
+		// We don't fall back to a chat default here — that would silently route
+		// e.g. a summary request to the chat model when `config.model` is empty.
+		const model = request.model || this.config.model;
 		if (!model) {
 			throw new Error('No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.');
 		}
@@ -76,10 +80,11 @@ export class OllamaClient implements ModelApi {
 					stream: false,
 					options: this.buildOptions(request),
 				});
+				const usageMetadata = this.toUsageMetadata(generateResponse.prompt_eval_count, generateResponse.eval_count);
 				return {
 					markdown: generateResponse.response,
 					rendered: '',
-					usageMetadata: this.toUsageMetadata(generateResponse.prompt_eval_count, generateResponse.eval_count),
+					...(usageMetadata && { usageMetadata }),
 				};
 			}
 
@@ -97,7 +102,9 @@ export class OllamaClient implements ModelApi {
 		onChunk: StreamCallback
 	): StreamingModelResponse {
 		const isExtended = 'userMessage' in request;
-		const model = request.model || this.config.model || getDefaultModelForRole('chat', 'ollama');
+		// See note in generateModelResponse — the factory provides the
+		// role-correct model; no chat-default fallback here.
+		const model = request.model || this.config.model;
 
 		let cancelled = false;
 		let accumulatedText = '';
@@ -174,21 +181,23 @@ export class OllamaClient implements ModelApi {
 					}
 				}
 
+				const usageMetadata = this.toUsageMetadata(promptEvalCount, evalCount);
 				return {
 					markdown: accumulatedText,
 					rendered: '',
 					...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
 					...(toolCalls && toolCalls.length && { toolCalls }),
-					usageMetadata: this.toUsageMetadata(promptEvalCount, evalCount),
+					...(usageMetadata && { usageMetadata }),
 				};
 			} catch (error) {
 				if (cancelled) {
+					const usageMetadata = this.toUsageMetadata(promptEvalCount, evalCount);
 					return {
 						markdown: accumulatedText,
 						rendered: '',
 						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
 						...(toolCalls && toolCalls.length && { toolCalls }),
-						usageMetadata: this.toUsageMetadata(promptEvalCount, evalCount),
+						...(usageMetadata && { usageMetadata }),
 					};
 				}
 				this.plugin?.logger.error('[OllamaClient] Streaming error:', error);
@@ -421,22 +430,37 @@ export class OllamaClient implements ModelApi {
 				}))
 			: undefined;
 
+		const usageMetadata = this.toUsageMetadata(response.prompt_eval_count, response.eval_count);
 		return {
 			markdown: message.content ?? '',
 			rendered: '',
 			...(message.thinking && { thoughts: message.thinking }),
 			...(toolCalls && { toolCalls }),
-			usageMetadata: this.toUsageMetadata(response.prompt_eval_count, response.eval_count),
+			...(usageMetadata && { usageMetadata }),
 		};
 	}
 
-	private toUsageMetadata(promptTokens: number | undefined, candidateTokens: number | undefined) {
-		const prompt = promptTokens ?? 0;
-		const candidates = candidateTokens ?? 0;
-		return {
-			promptTokenCount: prompt,
-			candidatesTokenCount: candidates,
-			totalTokenCount: prompt + candidates,
-		};
+	/**
+	 * Build a usageMetadata object from Ollama's `prompt_eval_count` /
+	 * `eval_count` fields, which only arrive on the terminal `done` chunk.
+	 * Returning `undefined` (rather than `{0,0,0}`) when both inputs are
+	 * missing preserves the distinction between "stream cancelled, counts
+	 * unknown" and "stream completed with zero tokens" in the token UI and
+	 * eval reporter.
+	 */
+	private toUsageMetadata(
+		promptTokens: number | undefined,
+		candidateTokens: number | undefined
+	): ModelResponse['usageMetadata'] | undefined {
+		if (promptTokens === undefined && candidateTokens === undefined) {
+			return undefined;
+		}
+		const meta: NonNullable<ModelResponse['usageMetadata']> = {};
+		if (promptTokens !== undefined) meta.promptTokenCount = promptTokens;
+		if (candidateTokens !== undefined) meta.candidatesTokenCount = candidateTokens;
+		if (promptTokens !== undefined && candidateTokens !== undefined) {
+			meta.totalTokenCount = promptTokens + candidateTokens;
+		}
+		return meta;
 	}
 }
