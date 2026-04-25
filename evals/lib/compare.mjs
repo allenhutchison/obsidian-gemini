@@ -47,12 +47,16 @@ const PER_TASK_LOWER_IS_BETTER = new Set(['turns', 'cost_usd', 'loop_fires']);
 const PER_TASK_HIGHER_IS_BETTER = new Set(['cache_ratio']);
 
 function isMetricRegression(key, before, after) {
+	if (before === null || after === null) return false;
 	if (PER_TASK_LOWER_IS_BETTER.has(key) && after > before) return true;
 	if (PER_TASK_HIGHER_IS_BETTER.has(key) && after < before) return true;
 	return false;
 }
 
 function fmtDelta(before, after) {
+	if (before === null && after === null) return 'n/a';
+	if (before === null) return `n/a → ${after}`;
+	if (after === null) return `${before} → n/a`;
 	const diff = after - before;
 	const sign = diff > 0 ? '+' : '';
 	const pct = before !== 0 ? ` (${sign}${Math.round((diff / before) * 100)}%)` : '';
@@ -86,14 +90,26 @@ async function main() {
 	console.log(`Current:  ${current.run_id} (${current.git_sha})\n`);
 
 	// Aggregate comparison
+	const providersDiffer = (baseline.provider || 'gemini') !== (current.provider || 'gemini');
+	if (providersDiffer) {
+		console.log(`Providers differ: ${baseline.provider || 'gemini'} → ${current.provider || 'gemini'}`);
+		console.log('(cost and cache deltas are not directly comparable)\n');
+	}
 	console.log('Aggregates:');
 	for (const key of AGG_KEYS) {
-		const b = baseline.aggregate[key] ?? 0;
-		const c = current.aggregate[key] ?? 0;
+		const b = baseline.aggregate[key];
+		const c = current.aggregate[key];
+		const bothNull = b === null && c === null;
+		const bIsNull = b === null || b === undefined;
+		const cIsNull = c === null || c === undefined;
 		let flag = '';
-		if (LOWER_IS_BETTER.has(key) && c > b) flag = ' ⚠';
-		else if (HIGHER_IS_BETTER.has(key) && c < b) flag = ' ⚠';
-		console.log(`  ${key.padEnd(22)} ${fmtDelta(b, c)}${flag}`);
+		if (!bothNull && !bIsNull && !cIsNull) {
+			if (LOWER_IS_BETTER.has(key) && c > b) flag = ' ⚠';
+			else if (HIGHER_IS_BETTER.has(key) && c < b) flag = ' ⚠';
+		}
+		const bDisplay = bIsNull ? null : b;
+		const cDisplay = cIsNull ? null : c;
+		console.log(`  ${key.padEnd(22)} ${fmtDelta(bDisplay, cDisplay)}${flag}`);
 	}
 
 	// Per-task comparison. Solved/passed are per-task-run counts; treat any
@@ -124,8 +140,15 @@ async function main() {
 			changes.push(`${marker}passed: ${bPassed}/${bN} → ${cPassed}/${cN}`);
 		}
 		for (const key of METRIC_KEYS) {
-			const b = bt.metrics[key] ?? 0;
-			const c = ct.metrics[key] ?? 0;
+			const b = bt.metrics[key];
+			const c = ct.metrics[key];
+			const bIsNull = b === null || b === undefined;
+			const cIsNull = c === null || c === undefined;
+			if (bIsNull && cIsNull) continue;
+			if (bIsNull !== cIsNull) {
+				changes.push(`${key}: ${fmtDelta(bIsNull ? null : b, cIsNull ? null : c)}`);
+				continue;
+			}
 			if (Math.abs(b - c) > 0.001) {
 				const marker = isMetricRegression(key, b, c) ? '⚠ ' : '';
 				changes.push(`${marker}${key}: ${fmtDelta(b, c)}`);

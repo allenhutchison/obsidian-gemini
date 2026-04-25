@@ -136,34 +136,36 @@ A task is **solved** if it passes AND:
 
 ## Metrics captured per task
 
-| Metric          | Source                                                                        |
-| --------------- | ----------------------------------------------------------------------------- |
-| `turns`         | Count of `apiResponseReceived` events                                         |
-| `tool_calls`    | Count of `toolExecutionComplete` events                                       |
-| `prompt_tokens` | High-water `promptTokenCount`                                                 |
-| `cached_tokens` | `cachedContentTokenCount` at high-water                                       |
-| `cache_ratio`   | `cached / prompt`                                                             |
-| `output_tokens` | Sum of `candidatesTokenCount`                                                 |
-| `cost_usd`      | `(uncached × input_price) + (cached × cache_price) + (output × output_price)` |
-| `loop_fires`    | Tool executions returning "loop detected" error                               |
-| `duration_ms`   | Wall clock from turn start to end                                             |
-| `tool_list`     | Ordered list of tools called                                                  |
+| Metric          | Source                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| `turns`         | Count of `apiResponseReceived` events                                                                  |
+| `tool_calls`    | Count of `toolExecutionComplete` events                                                                |
+| `prompt_tokens` | High-water `promptTokenCount`                                                                          |
+| `cached_tokens` | `cachedContentTokenCount` at high-water (`null` for providers without cache)                           |
+| `cache_ratio`   | `cached / prompt` (`null` for providers without cache, e.g. Ollama)                                    |
+| `output_tokens` | Sum of `candidatesTokenCount`                                                                          |
+| `cost_usd`      | `(uncached × input_price) + (cached × cache_price) + (output × output_price)`; `0` for local providers |
+| `loop_fires`    | Tool executions returning "loop detected" error                                                        |
+| `duration_ms`   | Wall clock from turn start to end                                                                      |
+| `tool_list`     | Ordered list of tools called                                                                           |
 
 ## Aggregate metrics
 
-| Metric                             | Description                                                             |
-| ---------------------------------- | ----------------------------------------------------------------------- |
-| `pass_k_rate`                      | % of tasks where **every** run passed (τ-bench `pass^k`)                |
-| `solve_k_rate`                     | % of tasks where **every** run solved — primary signal for code changes |
-| `mean_pass_rate`                   | Proportion of task × run cells that passed                              |
-| `mean_solve_rate`                  | Proportion of task × run cells that solved                              |
-| `flaky_task_count`                 | Tasks where some (but not all) runs solved                              |
-| `n_runs`                           | Number of repeats per task                                              |
-| `total_runs`                       | Total task × run cells (`tasks × n_runs`)                               |
-| `mean_turns` / `p95_turns`         | Turn distribution across all runs                                       |
-| `mean_cache_ratio`                 | Average implicit-cache effectiveness                                    |
-| `mean_cost_usd` / `total_cost_usd` | Per-run mean and total spend (total grows with `--repeat`)              |
-| `total_loop_fires`                 | Total loop-detection events across all runs                             |
+| Metric                             | Description                                                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------- |
+| `pass_k_rate`                      | % of tasks where **every** run passed (τ-bench `pass^k`)                                |
+| `solve_k_rate`                     | % of tasks where **every** run solved — primary signal for code changes                 |
+| `mean_pass_rate`                   | Proportion of task × run cells that passed                                              |
+| `mean_solve_rate`                  | Proportion of task × run cells that solved                                              |
+| `flaky_task_count`                 | Tasks where some (but not all) runs solved                                              |
+| `n_runs`                           | Number of repeats per task                                                              |
+| `total_runs`                       | Total task × run cells (`tasks × n_runs`)                                               |
+| `mean_turns` / `p95_turns`         | Turn distribution across all runs                                                       |
+| `mean_cache_ratio`                 | Average implicit-cache effectiveness (`null` if the provider has no cache, e.g. Ollama) |
+| `mean_cost_usd` / `total_cost_usd` | Per-run mean and total spend (total grows with `--repeat`); `0` for local providers     |
+| `total_loop_fires`                 | Total loop-detection events across all runs                                             |
+
+The result file also records `provider` (e.g. `gemini`, `ollama`) at the top level so `compare` can flag cross-provider runs and skip metrics that aren't comparable.
 
 ## Architecture
 
