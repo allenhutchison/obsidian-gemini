@@ -46,6 +46,13 @@ const HIGHER_IS_BETTER = new Set([
 const PER_TASK_LOWER_IS_BETTER = new Set(['turns', 'cost_usd', 'loop_fires']);
 const PER_TASK_HIGHER_IS_BETTER = new Set(['cache_ratio']);
 
+// Metrics whose meaning depends on the active provider. Pricing tables and
+// cache semantics are not portable across providers (Ollama is free + has no
+// implicit cache; Gemini bills per token + caches), so cross-provider
+// comparison reports omit these rather than report misleading deltas.
+const CROSS_PROVIDER_AGG_KEYS = new Set(['mean_cache_ratio', 'mean_cost_usd', 'total_cost_usd']);
+const CROSS_PROVIDER_TASK_KEYS = new Set(['cache_ratio', 'cost_usd']);
+
 function isMetricRegression(key, before, after) {
 	if (before === null || after === null) return false;
 	if (PER_TASK_LOWER_IS_BETTER.has(key) && after > before) return true;
@@ -97,6 +104,10 @@ async function main() {
 	}
 	console.log('Aggregates:');
 	for (const key of AGG_KEYS) {
+		if (providersDiffer && CROSS_PROVIDER_AGG_KEYS.has(key)) {
+			console.log(`  ${key.padEnd(22)} n/a (cross-provider)`);
+			continue;
+		}
 		const b = baseline.aggregate[key];
 		const c = current.aggregate[key];
 		const bothNull = b === null && c === null;
@@ -140,6 +151,7 @@ async function main() {
 			changes.push(`${marker}passed: ${bPassed}/${bN} → ${cPassed}/${cN}`);
 		}
 		for (const key of METRIC_KEYS) {
+			if (providersDiffer && CROSS_PROVIDER_TASK_KEYS.has(key)) continue;
 			const b = bt.metrics[key];
 			const c = ct.metrics[key];
 			const bIsNull = b === null || b === undefined;

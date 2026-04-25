@@ -44,7 +44,7 @@ describe('OllamaModelsService', () => {
 		expect(models[1].supportsVision).toBe(false);
 	});
 
-	it('returns empty list and logs when the daemon is unreachable', async () => {
+	it('returns empty list when the daemon responds with an error status', async () => {
 		mockedRequestUrl.mockResolvedValue({ status: 500, json: null });
 		const svc = new OllamaModelsService(buildPlugin());
 		const models = await svc.getModels();
