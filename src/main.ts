@@ -591,11 +591,42 @@ export default class ObsidianGemini extends Plugin {
 			},
 		});
 
-		// RAG indexing commands
+		// Image generation command (Gemini-only). Registered unconditionally so
+		// the palette entry stays stable across runtime provider switches; the
+		// callback gates on provider before touching the (potentially null)
+		// `imageGeneration` service.
+		this.addCommand({
+			id: 'gemini-scribe-generate-image',
+			name: 'Generate Image',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				if (this.settings.provider === 'ollama') {
+					new Notice('Image generation is not available with the Ollama provider.');
+					return;
+				}
+				if (!this.imageGeneration) {
+					new Notice('Image generation is not available.');
+					return;
+				}
+				const prompt = await this.imageGeneration.promptForImageDescription();
+				if (prompt) {
+					await this.imageGeneration.generateAndInsertImage(prompt);
+				}
+			},
+		});
+
+		// RAG indexing commands. Same pattern as image generation: register
+		// unconditionally and gate at execution time so the palette stays
+		// consistent and the user gets a clear "not available" notice on the
+		// Ollama path (RAG depends on Gemini's File Search Store in Phase 1).
 		this.addCommand({
 			id: 'gemini-scribe-rag-pause',
 			name: 'Pause RAG Sync',
 			callback: () => {
+				if (this.settings.provider === 'ollama') {
+					new Notice('RAG sync is not available with the Ollama provider in Phase 1.');
+					return;
+				}
 				if (!this.ragIndexing) {
 					new Notice('RAG indexing is not enabled');
 					return;
@@ -617,6 +648,10 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-rag-resume',
 			name: 'Resume RAG Sync',
 			callback: () => {
+				if (this.settings.provider === 'ollama') {
+					new Notice('RAG sync is not available with the Ollama provider in Phase 1.');
+					return;
+				}
 				if (!this.ragIndexing) {
 					new Notice('RAG indexing is not enabled');
 					return;
@@ -634,6 +669,10 @@ export default class ObsidianGemini extends Plugin {
 			id: 'gemini-scribe-rag-status',
 			name: 'Show RAG Status',
 			callback: async () => {
+				if (this.settings.provider === 'ollama') {
+					new Notice('RAG sync is not available with the Ollama provider in Phase 1.');
+					return;
+				}
 				if (!this.ragIndexing) {
 					new Notice('RAG indexing is not enabled');
 					return;

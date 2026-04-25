@@ -464,10 +464,13 @@ export class LifecycleService {
 		// Deep research
 		plugin.deepResearch = new DeepResearchService(plugin);
 
-		// Image generation (Gemini-only — Ollama has no image generation API)
+		// Image generation service is Gemini-only — Ollama has no image-gen API.
+		// The command-palette entry is registered unconditionally in main.ts so
+		// it shows a clear "not available" notice on the Ollama path instead of
+		// silently disappearing or pointing at an orphaned closure after a
+		// runtime provider switch.
 		if (plugin.settings.provider !== 'ollama') {
 			plugin.imageGeneration = new ImageGeneration(plugin);
-			await plugin.imageGeneration.setupImageGenerationCommand();
 		}
 
 		// Selection actions
