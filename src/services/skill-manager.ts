@@ -35,6 +35,20 @@ const SKILL_NAME_MAX_LENGTH = 64;
 const SKILL_MD_FILENAME = 'SKILL.md';
 
 /**
+ * The bundled help skill exposes the plugin's debug log files as virtual
+ * resources when file logging is enabled, so the agent can self-diagnose
+ * user-reported issues. These files live in the plugin state folder, which
+ * the standard read_file tool blocks.
+ */
+const HELP_SKILL_NAME = 'gemini-scribe-help';
+const HELP_DEBUG_LOG_RESOURCES = ['debug.log', 'debug.log.old'] as const;
+type HelpDebugLogResource = (typeof HELP_DEBUG_LOG_RESOURCES)[number];
+
+function isHelpDebugLogResource(path: string): path is HelpDebugLogResource {
+	return (HELP_DEBUG_LOG_RESOURCES as readonly string[]).includes(path);
+}
+
+/**
  * Find the character offset of the closing YAML frontmatter delimiter in a file's content.
  * Returns the offset immediately AFTER the closing delimiter token (`---` or `...`)
  * and BEFORE any trailing line break characters, or undefined if the content does not
@@ -220,6 +234,11 @@ export class SkillManager {
 			return null;
 		}
 
+		// Help skill exposes debug.log / debug.log.old as virtual resources.
+		if (skillName === HELP_SKILL_NAME && isHelpDebugLogResource(relativePath)) {
+			return await this.readHelpDebugLog(relativePath);
+		}
+
 		const resourcePath = normalizePath(`${this.getSkillsFolderPath()}/${skillName}/${relativePath}`);
 
 		// Verify resolved path stays within the skill directory
@@ -239,6 +258,24 @@ export class SkillManager {
 	}
 
 	/**
+	 * Read a debug log file from the plugin state folder for the help skill.
+	 * Returns null when file logging is disabled or the log file is absent.
+	 */
+	private async readHelpDebugLog(filename: HelpDebugLogResource): Promise<string | null> {
+		if (!this.plugin.settings?.fileLogging) return null;
+		const adapter = this.plugin.app?.vault?.adapter;
+		if (!adapter) return null;
+		const path = normalizePath(`${this.plugin.settings.historyFolder}/${filename}`);
+		try {
+			if (!(await adapter.exists(path))) return null;
+			return await adapter.read(path);
+		} catch (error) {
+			this.plugin.logger.warn(`Failed to read debug log "${path}":`, error);
+			return null;
+		}
+	}
+
+	/**
 	 * List available resources within a skill directory
 	 */
 	async listSkillResources(skillName: string): Promise<string[]> {
@@ -251,14 +288,41 @@ export class SkillManager {
 		const skillDir = normalizePath(`${this.getSkillsFolderPath()}/${skillName}`);
 		const folder = this.plugin.app.vault.getAbstractFileByPath(skillDir);
 
-		if (!(folder instanceof TFolder)) {
+		let resources: string[];
+		if (folder instanceof TFolder) {
+			resources = [];
+			this.collectFiles(folder, skillDir, resources);
+		} else {
 			// Fall back to bundled skill resources
-			return BundledSkillRegistry.listResources(skillName);
+			resources = [...BundledSkillRegistry.listResources(skillName)];
 		}
 
-		const resources: string[] = [];
-		this.collectFiles(folder, skillDir, resources);
+		// Help skill exposes debug.log / debug.log.old as virtual resources
+		// when the user has file logging enabled and a log file exists.
+		if (skillName === HELP_SKILL_NAME) {
+			const debugLogs = await this.listHelpDebugLogResources();
+			for (const name of debugLogs) {
+				if (!resources.includes(name)) resources.push(name);
+			}
+		}
+
 		return resources;
+	}
+
+	private async listHelpDebugLogResources(): Promise<HelpDebugLogResource[]> {
+		if (!this.plugin.settings?.fileLogging) return [];
+		const adapter = this.plugin.app?.vault?.adapter;
+		if (!adapter) return [];
+		const present: HelpDebugLogResource[] = [];
+		for (const name of HELP_DEBUG_LOG_RESOURCES) {
+			const path = normalizePath(`${this.plugin.settings.historyFolder}/${name}`);
+			try {
+				if (await adapter.exists(path)) present.push(name);
+			} catch {
+				// Treat probe failures as "not present"; never throw from listing.
+			}
+		}
+		return present;
 	}
 
 	/**
