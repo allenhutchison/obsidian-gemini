@@ -273,26 +273,13 @@ export class ImageGeneration {
 	}
 
 	/**
-	 * Setup command palette command for image generation
+	 * Prompt the user to enter an image description.
+	 *
+	 * Public because the command-palette entry for image generation lives in
+	 * `main.ts` (so the provider gate stays consistent with the RAG commands)
+	 * and drives this dialog directly.
 	 */
-	async setupImageGenerationCommand() {
-		this.plugin.addCommand({
-			id: 'gemini-scribe-generate-image',
-			name: 'Generate Image',
-			callback: async () => {
-				// Prompt user for image description
-				const prompt = await this.promptForImageDescription();
-				if (prompt) {
-					await this.generateAndInsertImage(prompt);
-				}
-			},
-		});
-	}
-
-	/**
-	 * Prompt the user to enter an image description
-	 */
-	private async promptForImageDescription(): Promise<string | null> {
+	async promptForImageDescription(): Promise<string | null> {
 		return new Promise((resolve) => {
 			const modal = new ImagePromptModal(this.plugin.app, this.plugin, this, (prompt) => {
 				resolve(prompt);
