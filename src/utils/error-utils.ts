@@ -276,6 +276,13 @@ export function getErrorMessage(error: unknown): string {
  * Extract HTTP status code from error object
  */
 export function extractStatusCode(error: any): number | null {
+	// Guard non-object inputs so callers passing `null`, `undefined`, or a
+	// primitive (this is an exported helper typed as `any`) don't trigger a
+	// secondary TypeError inside an already-failing error path.
+	if (!error || (typeof error !== 'object' && typeof error !== 'function')) {
+		return null;
+	}
+
 	// Check common status code properties
 	if (typeof error.status === 'number') {
 		return error.status;

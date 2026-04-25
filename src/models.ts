@@ -65,11 +65,11 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 		return '';
 	}
 
-	// Gemini list should never be empty — that indicates a serious config problem.
-	if (GEMINI_MODELS.length > 0) {
-		return GEMINI_MODELS[0].value;
-	}
-
+	// Gemini list should never be empty (the bundled JSON is shipped). If it is,
+	// surface the configuration problem rather than falling through to
+	// `GEMINI_MODELS[0]` — when both providers populate that global,
+	// `GEMINI_MODELS[0]` could be an Ollama entry and we'd return a
+	// cross-provider model name as the Gemini default.
 	throw new Error('CRITICAL: GEMINI_MODELS array is empty. Please configure available models.');
 }
 
