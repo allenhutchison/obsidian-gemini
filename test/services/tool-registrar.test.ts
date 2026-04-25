@@ -33,6 +33,7 @@ describe('ToolRegistrar', () => {
 	let registrar: ToolRegistrar;
 	let mockRegistry: any;
 	let mockLogger: any;
+	let mockPlugin: any;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -47,11 +48,12 @@ describe('ToolRegistrar', () => {
 			error: vi.fn(),
 			warn: vi.fn(),
 		};
+		mockPlugin = { settings: { provider: 'gemini' } };
 	});
 
 	describe('registerAll', () => {
 		it('should register tools from all core sources', async () => {
-			await registrar.registerAll(mockRegistry, mockLogger);
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
 
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'read_file' }));
 			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'write_file' }));
@@ -64,10 +66,22 @@ describe('ToolRegistrar', () => {
 		});
 
 		it('should register the correct total number of tools', async () => {
-			await registrar.registerAll(mockRegistry, mockLogger);
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
 
 			// 2 vault + 1 extended + 1 web + 1 memory + 1 image + 1 skill + 1 session-recall = 8
 			expect(mockRegistry.registerTool).toHaveBeenCalledTimes(8);
+		});
+
+		it('should skip Gemini-only sources when provider is ollama', async () => {
+			mockPlugin.settings.provider = 'ollama';
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
+
+			// Web tools (google_search) and image tools (generate_image) should be skipped
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'google_search' }));
+			expect(mockRegistry.registerTool).not.toHaveBeenCalledWith(expect.objectContaining({ name: 'generate_image' }));
+			// Vault, memory, skill, session-recall still register
+			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'read_file' }));
+			expect(mockRegistry.registerTool).toHaveBeenCalledWith(expect.objectContaining({ name: 'save_memory' }));
 		});
 
 		it('should continue registering other sources if one fails', async () => {
@@ -78,7 +92,7 @@ describe('ToolRegistrar', () => {
 				}
 			});
 
-			await registrar.registerAll(mockRegistry, mockLogger);
+			await registrar.registerAll(mockRegistry, mockLogger, mockPlugin);
 
 			// Should log the error for the vault-extended source
 			expect(mockLogger.error).toHaveBeenCalledWith('Failed to register vault-extended tools:', expect.any(Error));

@@ -18,6 +18,7 @@ import refDeepResearch from '../../docs/guide/deep-research.md';
 import refFaq from '../../docs/guide/faq.md';
 import refGettingStarted from '../../docs/guide/getting-started.md';
 import refMcpServers from '../../docs/guide/mcp-servers.md';
+import refOllamaSetup from '../../docs/guide/ollama-setup.md';
 import refProjects from '../../docs/guide/projects.md';
 import refScheduledTasks from '../../docs/guide/scheduled-tasks.md';
 import refSelectionPrompts from '../../docs/guide/selection-prompts.md';
@@ -39,6 +40,7 @@ export const helpResources = new Map<string, string>([
 	['references/faq.md', refFaq],
 	['references/getting-started.md', refGettingStarted],
 	['references/mcp-servers.md', refMcpServers],
+	['references/ollama-setup.md', refOllamaSetup],
 	['references/projects.md', refProjects],
 	['references/scheduled-tasks.md', refScheduledTasks],
 	['references/selection-prompts.md', refSelectionPrompts],
@@ -62,6 +64,7 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/faq.md\` | Frequently Asked Questions |
 | \`references/getting-started.md\` | Getting Started |
 | \`references/mcp-servers.md\` | MCP Servers |
+| \`references/ollama-setup.md\` | Ollama (Local Models) |
 | \`references/projects.md\` | Projects |
 | \`references/scheduled-tasks.md\` | Scheduled Tasks |
 | \`references/selection-prompts.md\` | Selection Prompts |

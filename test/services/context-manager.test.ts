@@ -37,6 +37,7 @@ describe('ContextManager', () => {
 			apiKey: 'test-api-key',
 			logger: mockLogger,
 			settings: {
+				provider: 'gemini',
 				contextCompactionThreshold: 20,
 				chatModelName: 'gemini-2.5-flash',
 			},
