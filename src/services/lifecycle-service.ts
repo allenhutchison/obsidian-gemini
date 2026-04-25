@@ -117,9 +117,13 @@ export class LifecycleService {
 			plugin.mcpManager = null;
 		}
 
-		// Null out completions and summarizer for garbage collection
+		// Null out completions, summarizer, and image generation for gc.
+		// Nulling imageGeneration here is what allows a Gemini → Ollama provider
+		// switch to drop the old Gemini-only instance; the new setup() phase
+		// then creates one only if the active provider supports it.
 		plugin.completions = null;
 		plugin.summarizer = null;
+		plugin.imageGeneration = null;
 
 		// Note: We don't clean up history, sessionManager, etc. as they
 		// maintain user data that should persist across re-initializations

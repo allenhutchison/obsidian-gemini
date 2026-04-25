@@ -98,41 +98,30 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 		return !availableModelValues.has(modelName);
 	};
 
-	// Check chat model
-	if (needsUpdate(newSettings.chatModelName)) {
-		const newDefaultChat = getDefaultModelForRole('chat', provider);
-		if (newDefaultChat) {
-			changedSettingsInfo.push(
-				`Chat model: '${newSettings.chatModelName}' -> '${newDefaultChat}' (legacy model update)`
-			);
-			newSettings.chatModelName = newDefaultChat;
-			settingsChanged = true;
-		}
-	}
+	const reconcile = (
+		key: 'chatModelName' | 'summaryModelName' | 'completionsModelName',
+		role: ModelRole,
+		label: string
+	) => {
+		if (!needsUpdate(newSettings[key])) return;
+		const next = getDefaultModelForRole(role, provider);
+		// When the active provider has no default available (e.g. Ollama before
+		// /api/tags has resolved), clear the stale value so the factory falls
+		// through to its "no model selected" path instead of sending a
+		// cross-provider model name (e.g. `gemini-flash-latest` to Ollama).
+		const previous = newSettings[key];
+		newSettings[key] = next;
+		changedSettingsInfo.push(
+			next
+				? `${label}: '${previous}' -> '${next}' (legacy model update)`
+				: `${label}: cleared stale '${previous}' (no default for provider '${provider}')`
+		);
+		settingsChanged = true;
+	};
 
-	// Check summary model
-	if (needsUpdate(newSettings.summaryModelName)) {
-		const newDefaultSummary = getDefaultModelForRole('summary', provider);
-		if (newDefaultSummary) {
-			changedSettingsInfo.push(
-				`Summary model: '${newSettings.summaryModelName}' -> '${newDefaultSummary}' (legacy model update)`
-			);
-			newSettings.summaryModelName = newDefaultSummary;
-			settingsChanged = true;
-		}
-	}
-
-	// Check completions model
-	if (needsUpdate(newSettings.completionsModelName)) {
-		const newDefaultCompletions = getDefaultModelForRole('completions', provider);
-		if (newDefaultCompletions) {
-			changedSettingsInfo.push(
-				`Completions model: '${newSettings.completionsModelName}' -> '${newDefaultCompletions}' (legacy model update)`
-			);
-			newSettings.completionsModelName = newDefaultCompletions;
-			settingsChanged = true;
-		}
-	}
+	reconcile('chatModelName', 'chat', 'Chat model');
+	reconcile('summaryModelName', 'summary', 'Summary model');
+	reconcile('completionsModelName', 'completions', 'Completions model');
 
 	// Image generation is Gemini-only in Phase 1 — only reconcile when on Gemini.
 	if (provider === 'gemini' && needsUpdate(newSettings.imageModelName)) {

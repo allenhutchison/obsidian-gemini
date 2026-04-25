@@ -5,15 +5,26 @@ import { GeminiModel } from '../models';
 /**
  * Models that Ollama exposes for completions are tiny by convention. We pre-bias
  * known small models toward the completions role; everything else stays available
- * for chat / summary / rewrite.
+ * for chat / summary / rewrite. Patterns are matched with digit-aware boundaries
+ * so e.g. `1b` does not bleed into `11b` and bias `llava:13b` toward completions.
  */
-const COMPLETION_NAME_HINTS = ['mini', 'tiny', '1b', '3b', '0.5b', '1.5b', 'lite'];
+const COMPLETION_NAME_HINT_PATTERNS = [
+	/(?<!\d)0\.5b(?!\d)/i,
+	/(?<!\d)1\.5b(?!\d)/i,
+	/(?<!\d)1b(?!\d)/i,
+	/(?<!\d)3b(?!\d)/i,
+	/\bmini\b/i,
+	/\btiny\b/i,
+	/\blite\b/i,
+];
 
 /**
  * Models known to support vision (image input). Used as a hint only — Ollama
  * does not expose this in /api/tags, so we pattern-match on the family.
  */
 const VISION_NAME_HINTS = ['llava', 'bakllava', 'vision', 'moondream', 'qwen2-vl', 'qwen2.5-vl', 'minicpm-v'];
+
+const OLLAMA_DEFAULT_BASE_URL = 'http://localhost:11434';
 
 interface OllamaTagsModel {
 	name: string;
@@ -53,7 +64,9 @@ export class OllamaModelsService {
 	 * Cache is invalidated when the base URL changes.
 	 */
 	async getModels(forceRefresh = false): Promise<GeminiModel[]> {
-		const baseUrl = this.plugin.settings.ollamaBaseUrl;
+		// Mirror the runtime client's fallback so model refresh and generation
+		// target the same daemon when the user has cleared the field.
+		const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
 		if (!forceRefresh && this.cachedModels && this.lastBaseUrl === baseUrl) {
 			return this.cachedModels;
 		}
@@ -96,7 +109,7 @@ export class OllamaModelsService {
 	private toGeminiModel(m: OllamaTagsModel): GeminiModel {
 		const name = m.name;
 		const lower = name.toLowerCase();
-		const isCompletion = COMPLETION_NAME_HINTS.some((h) => lower.includes(h));
+		const isCompletion = COMPLETION_NAME_HINT_PATTERNS.some((re) => re.test(lower));
 		const isVision = VISION_NAME_HINTS.some((h) => lower.includes(h));
 
 		const defaultForRoles = isCompletion ? (['completions'] as const) : undefined;
