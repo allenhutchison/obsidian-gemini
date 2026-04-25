@@ -107,10 +107,22 @@ export class ModelManager {
 	}
 
 	/**
+	 * Returns the active provider's full model list (text + image) for the parameter helpers.
+	 * Provider-aware so e.g. Ollama models are validated against their own metadata
+	 * rather than the bundled Gemini list.
+	 */
+	private async getModelsForActiveProvider(): Promise<GeminiModel[]> {
+		if (this.plugin.settings.provider === 'ollama') {
+			return this.ollamaModelsService.getModels();
+		}
+		return this.listProvider.getModels();
+	}
+
+	/**
 	 * Get parameter ranges based on available models.
 	 */
 	async getParameterRanges(): Promise<ParameterRanges> {
-		return ParameterValidationService.getParameterRanges(this.listProvider.getModels());
+		return ParameterValidationService.getParameterRanges(await this.getModelsForActiveProvider());
 	}
 
 	/**
@@ -123,7 +135,7 @@ export class ModelManager {
 		temperature: { isValid: boolean; adjustedValue?: number; warning?: string };
 		topP: { isValid: boolean; adjustedValue?: number; warning?: string };
 	}> {
-		const models = this.listProvider.getModels();
+		const models = await this.getModelsForActiveProvider();
 		return {
 			temperature: ParameterValidationService.validateTemperature(temperature, undefined, models),
 			topP: ParameterValidationService.validateTopP(topP, undefined, models),
@@ -138,7 +150,7 @@ export class ModelManager {
 		topP: string;
 		hasModelData: boolean;
 	}> {
-		return ParameterValidationService.getParameterDisplayInfo(this.listProvider.getModels());
+		return ParameterValidationService.getParameterDisplayInfo(await this.getModelsForActiveProvider());
 	}
 
 	/**

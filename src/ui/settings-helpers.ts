@@ -8,7 +8,11 @@ export async function selectModelSetting(
 	plugin: ObsidianGemini,
 	settingName: NonNullable<
 		{
-			[K in keyof ObsidianGeminiSettings]: ObsidianGeminiSettings[K] extends string ? K : never;
+			// Reverse `extends` so we only match keys whose type is the broad
+			// `string` (e.g. `chatModelName`), not literal unions like
+			// `provider: 'gemini' | 'ollama'` which would otherwise pass the
+			// forward-extends check and break the assignment below.
+			[K in keyof ObsidianGeminiSettings]: string extends ObsidianGeminiSettings[K] ? K : never;
 		}[keyof ObsidianGeminiSettings]
 	>,
 	label: string,
@@ -58,7 +62,7 @@ export async function selectModelSetting(
 				plugin.logger.warn(
 					`${label}: Current value "${currentValue}" not found in available models. Defaulting to "${defaultValue}"`
 				);
-				(plugin.settings as any)[settingName] = defaultValue;
+				(plugin.settings as ObsidianGeminiSettings)[settingName] = defaultValue;
 				dropdown.setValue(defaultValue);
 				// Save the corrected setting
 				plugin.saveSettings().catch((e) => plugin.logger.error(`Failed to save corrected ${label} setting:`, e));
@@ -67,7 +71,7 @@ export async function selectModelSetting(
 			}
 
 			dropdown.onChange(async (value) => {
-				(plugin.settings as any)[settingName] = value;
+				(plugin.settings as ObsidianGeminiSettings)[settingName] = value;
 				await plugin.saveSettings();
 			});
 			return dropdown;

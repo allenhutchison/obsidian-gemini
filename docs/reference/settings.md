@@ -80,7 +80,10 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 
 ## Model Configuration
 
-All models are selected from available Gemini models. The plugin supports dynamic model discovery to automatically fetch the latest models from Google's API.
+The active model list depends on the [`provider`](#provider) setting:
+
+- **Gemini (default)** — models are selected from the bundled Gemini list, refreshed from Google's API on startup so the latest models appear automatically. `imageModelName` is only available on this provider.
+- **Ollama** — the chat / summary / completion dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
 
 ### Chat Model
 

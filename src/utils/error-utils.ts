@@ -120,13 +120,9 @@ export function getErrorMessage(error: unknown): string {
 
 	// Handle Error objects
 	if (error instanceof Error) {
-		// Check for HTTP status codes in the error
-		const statusCode = extractStatusCode(error);
-		if (statusCode) {
-			return getHttpErrorMessage(statusCode, error);
-		}
-
-		// Check for specific error patterns in the message
+		// Check for specific error patterns in the message FIRST so provider-specific
+		// guidance (e.g. Ollama 404 "try pulling it first") wins over the generic
+		// HTTP status-code mapping below.
 		const message = error.message;
 		const messageLower = message.toLowerCase();
 
@@ -181,7 +177,11 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('econnrefused') ||
 			messageLower.includes('etimedout')
 		) {
-			if (messageLower.includes('econnrefused') || messageLower.includes('localhost')) {
+			// Only attribute connection refusals to Ollama when the signal is
+			// specific (the message mentions Ollama or the default port). A bare
+			// `ECONNREFUSED` or `localhost` substring could come from any local
+			// proxy or test server, so we don't claim it's the daemon.
+			if (messageLower.includes('ollama') || messageLower.includes(':11434') || messageLower.includes('11434')) {
 				return 'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.';
 			}
 			return 'Network error: Unable to reach the model API. Please check your connection.';
@@ -200,6 +200,14 @@ export function getErrorMessage(error: unknown): string {
 		// Content filtering/safety
 		if (messageLower.includes('safety') || messageLower.includes('blocked')) {
 			return 'Content was blocked by safety filters. Please rephrase your request.';
+		}
+
+		// HTTP status code mapping runs after the message-based checks above so
+		// the provider-specific guidance (e.g. Ollama 404 "try pulling it first")
+		// wins over the generic 404 message.
+		const statusCode = extractStatusCode(error);
+		if (statusCode) {
+			return getHttpErrorMessage(statusCode, error);
 		}
 
 		// Token limit errors

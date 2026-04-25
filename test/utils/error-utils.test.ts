@@ -156,8 +156,15 @@ describe('error-utils', () => {
 				);
 			});
 
-			test('ECONNREFUSED error', () => {
+			test('ECONNREFUSED to a non-Ollama localhost endpoint stays generic', () => {
 				const error = new Error('ECONNREFUSED: Connection refused');
+				expect(getErrorMessage(error)).toBe(
+					'Network error: Unable to reach the model API. Please check your connection.'
+				);
+			});
+
+			test('ECONNREFUSED to the Ollama daemon (port 11434)', () => {
+				const error = new Error('fetch failed: ECONNREFUSED 127.0.0.1:11434');
 				expect(getErrorMessage(error)).toBe(
 					'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.'
 				);

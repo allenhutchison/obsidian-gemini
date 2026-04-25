@@ -122,6 +122,11 @@ export class OllamaClient implements ModelApi {
 						options: this.buildOptions(request),
 					});
 					activeStream = stream;
+					// cancel() may have fired while the await above was outstanding —
+					// abort immediately so the daemon stops generating.
+					if (cancelled) {
+						stream.abort();
+					}
 
 					for await (const chunk of stream) {
 						if (cancelled) break;
@@ -138,6 +143,9 @@ export class OllamaClient implements ModelApi {
 					const chatRequest = await this.buildChatRequest(request as ExtendedModelRequest, model, true);
 					const stream = await this.client.chat(chatRequest as ChatRequest & { stream: true });
 					activeStream = stream;
+					if (cancelled) {
+						stream.abort();
+					}
 
 					for await (const chunk of stream) {
 						if (cancelled) break;
