@@ -151,7 +151,9 @@ describe('error-utils', () => {
 
 			test('Network fetch error', () => {
 				const error = new Error('fetch failed: Connection refused');
-				expect(getErrorMessage(error)).toBe('Network error: Unable to reach the model API. Please check your connection.');
+				expect(getErrorMessage(error)).toBe(
+					'Network error: Unable to reach the model API. Please check your connection.'
+				);
 			});
 
 			test('ECONNREFUSED error', () => {
@@ -163,7 +165,9 @@ describe('error-utils', () => {
 
 			test('ETIMEDOUT error', () => {
 				const error = new Error('ETIMEDOUT: Request timed out');
-				expect(getErrorMessage(error)).toBe('Network error: Unable to reach the model API. Please check your connection.');
+				expect(getErrorMessage(error)).toBe(
+					'Network error: Unable to reach the model API. Please check your connection.'
+				);
 			});
 
 			test('Timeout error', () => {
