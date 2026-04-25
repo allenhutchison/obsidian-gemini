@@ -79,16 +79,21 @@ export class LifecycleService {
 		// settings save), refresh the scheduled task manager so it picks up any
 		// historyFolder or other setting changes without requiring a restart.
 		if (plugin.app.workspace.layoutReady && plugin.scheduledTaskManager) {
-			// Cancel any in-flight scheduled-task background jobs before reinitialising.
-			// Without this, an older run's executeTask callback can call saveState()
-			// against the refreshed manager after initialize() reloads state, corrupting
-			// the new state (e.g. writing lastRunAt to the wrong historyFolder path).
+			// Cancel any in-flight scheduled-task background jobs before reinitialising,
+			// then drain them so we are certain every executeTask callback has finished
+			// before initialize() reloads state.  Without the drain, a cancelled task
+			// that resumes after initialize() could still call saveState() against the
+			// freshly-loaded state, corrupting it (e.g. writing lastRunAt to a stale
+			// historyFolder path).  cancel() only sets a flag — it does not await; the
+			// task cooperative-cancels at its next isCancelled() poll.  drain() gives us
+			// the guarantee that all such tasks have fully settled before we proceed.
 			if (plugin.backgroundTaskManager) {
 				for (const task of plugin.backgroundTaskManager.getActiveTasks()) {
 					if (task.type === 'scheduled-task') {
 						plugin.backgroundTaskManager.cancel(task.id);
 					}
 				}
+				await plugin.backgroundTaskManager.drain('scheduled-task');
 			}
 			await plugin.scheduledTaskManager.initialize({ refresh: true });
 			plugin.scheduledTaskManager.start();
