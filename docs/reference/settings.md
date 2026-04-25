@@ -193,8 +193,8 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
   - Debug-level entries (`log()`, `debug()`) are only written when Debug Mode is also enabled
   - Log files are automatically rotated at 1 MB (previous log kept as `debug.log.old`)
   - Writes are batched and debounced to minimize I/O impact
-- **Use case**: Sharing diagnostic information in bug reports, or enabling the agent to read logs for self-diagnosis via vault tools
-- **Note**: Log files are stored in the plugin state folder and are automatically excluded from RAG indexing
+- **Use case**: Sharing diagnostic information in bug reports, or letting the agent self-diagnose issues via the bundled `gemini-scribe-help` skill (which exposes `debug.log` and `debug.log.old` as activatable resources only when this setting is on)
+- **Note**: Log files are stored in the plugin state folder and are automatically excluded from RAG indexing. The standard `read_file` tool blocks the state folder; the help skill is the supported path for the agent to read these logs.
 
 ### API Configuration
 

@@ -71,7 +71,10 @@ const mockVault = {
 	create: jest.fn(),
 	read: jest.fn(),
 	getMarkdownFiles: jest.fn(),
-	adapter: { exists: jest.fn().mockResolvedValue(false) },
+	adapter: {
+		exists: jest.fn().mockResolvedValue(false),
+		read: jest.fn().mockResolvedValue(''),
+	},
 };
 
 const mockMetadataCache = {
@@ -104,6 +107,11 @@ describe('SkillManager', () => {
 
 	beforeEach(() => {
 		jest.clearAllMocks();
+		// clearAllMocks resets call history but keeps any custom implementations
+		// from prior tests, so re-pin adapter defaults explicitly.
+		mockVault.adapter.exists.mockReset().mockResolvedValue(false);
+		mockVault.adapter.read.mockReset().mockResolvedValue('');
+		mockPlugin.settings.fileLogging = false;
 		manager = new SkillManager(mockPlugin);
 	});
 
@@ -265,6 +273,128 @@ describe('SkillManager', () => {
 		it('should return null for absolute resource paths', async () => {
 			const content = await manager.readSkillResource('my-skill', '/etc/passwd');
 			expect(content).toBeNull();
+		});
+
+		describe('help skill debug log virtual resources', () => {
+			beforeEach(() => {
+				// readHelpDebugLog goes through vault.adapter, not getAbstractFileByPath.
+				mockVault.getAbstractFileByPath.mockReturnValue(null);
+			});
+
+			it('should read debug.log via the help skill when fileLogging is on', async () => {
+				mockPlugin.settings.fileLogging = true;
+				mockVault.adapter.exists.mockImplementation(async (path: string) => path === 'gemini-scribe/debug.log');
+				mockVault.adapter.read.mockResolvedValue('[2026-04-25T10:00:00] [ERROR] [Gemini Scribe] boom');
+
+				const content = await manager.readSkillResource('gemini-scribe-help', 'debug.log');
+
+				expect(content).toBe('[2026-04-25T10:00:00] [ERROR] [Gemini Scribe] boom');
+				expect(mockVault.adapter.read).toHaveBeenCalledWith('gemini-scribe/debug.log');
+			});
+
+			it('should read debug.log.old when present', async () => {
+				mockPlugin.settings.fileLogging = true;
+				mockVault.adapter.exists.mockImplementation(async (path: string) => path === 'gemini-scribe/debug.log.old');
+				mockVault.adapter.read.mockResolvedValue('rotated content');
+
+				const content = await manager.readSkillResource('gemini-scribe-help', 'debug.log.old');
+
+				expect(content).toBe('rotated content');
+				expect(mockVault.adapter.read).toHaveBeenCalledWith('gemini-scribe/debug.log.old');
+			});
+
+			it('should return null when fileLogging is disabled', async () => {
+				mockPlugin.settings.fileLogging = false;
+				mockVault.adapter.exists.mockResolvedValue(true);
+
+				const content = await manager.readSkillResource('gemini-scribe-help', 'debug.log');
+
+				expect(content).toBeNull();
+				// Must not even probe disk when the user has opted out.
+				expect(mockVault.adapter.exists).not.toHaveBeenCalled();
+				expect(mockVault.adapter.read).not.toHaveBeenCalled();
+			});
+
+			it('should return null when log file does not exist', async () => {
+				mockPlugin.settings.fileLogging = true;
+				mockVault.adapter.exists.mockResolvedValue(false);
+
+				const content = await manager.readSkillResource('gemini-scribe-help', 'debug.log');
+
+				expect(content).toBeNull();
+				expect(mockVault.adapter.read).not.toHaveBeenCalled();
+			});
+
+			it('should not expose debug.log on other skills', async () => {
+				mockPlugin.settings.fileLogging = true;
+				mockVault.adapter.exists.mockResolvedValue(true);
+				mockVault.adapter.read.mockResolvedValue('should not be returned');
+
+				const content = await manager.readSkillResource('gemini-scribe', 'debug.log');
+
+				expect(content).toBeNull();
+				expect(mockVault.adapter.read).not.toHaveBeenCalled();
+			});
+
+			it('should still reject path traversal even for the help skill', async () => {
+				mockPlugin.settings.fileLogging = true;
+				const content = await manager.readSkillResource('gemini-scribe-help', '../debug.log');
+				expect(content).toBeNull();
+			});
+		});
+	});
+
+	describe('listSkillResources', () => {
+		beforeEach(() => {
+			// Default: no vault skill dir, no debug log files.
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+			mockVault.adapter.exists.mockResolvedValue(false);
+		});
+
+		it('should fall through to bundled resources when no vault folder', async () => {
+			const resources = await manager.listSkillResources('gemini-scribe-help');
+			expect(resources).toEqual(expect.arrayContaining(['references/agent-mode.md', 'references/settings.md']));
+		});
+
+		it('should append debug.log resources for the help skill when fileLogging is on and files exist', async () => {
+			mockPlugin.settings.fileLogging = true;
+			mockVault.adapter.exists.mockImplementation(
+				async (path: string) => path === 'gemini-scribe/debug.log' || path === 'gemini-scribe/debug.log.old'
+			);
+
+			const resources = await manager.listSkillResources('gemini-scribe-help');
+
+			expect(resources).toEqual(expect.arrayContaining(['debug.log', 'debug.log.old']));
+		});
+
+		it('should only include logs that exist on disk', async () => {
+			mockPlugin.settings.fileLogging = true;
+			mockVault.adapter.exists.mockImplementation(async (path: string) => path === 'gemini-scribe/debug.log');
+
+			const resources = await manager.listSkillResources('gemini-scribe-help');
+
+			expect(resources).toContain('debug.log');
+			expect(resources).not.toContain('debug.log.old');
+		});
+
+		it('should omit debug logs when fileLogging is disabled', async () => {
+			mockPlugin.settings.fileLogging = false;
+			mockVault.adapter.exists.mockResolvedValue(true);
+
+			const resources = await manager.listSkillResources('gemini-scribe-help');
+
+			expect(resources).not.toContain('debug.log');
+			expect(resources).not.toContain('debug.log.old');
+		});
+
+		it('should not add debug logs to other skills', async () => {
+			mockPlugin.settings.fileLogging = true;
+			mockVault.adapter.exists.mockResolvedValue(true);
+
+			const resources = await manager.listSkillResources('obsidian-bases');
+
+			expect(resources).not.toContain('debug.log');
+			expect(resources).not.toContain('debug.log.old');
 		});
 	});
 
