@@ -353,9 +353,12 @@ export class OllamaClient implements ModelApi {
 
 			const out: Message[] = [];
 
-			// Tool responses become tool-role messages
+			// Tool responses become tool-role messages. Don't coalesce `null` to
+			// `{}` — an explicit null response carries different meaning ("no
+			// result") than an empty object, and JSON.stringify(null) === "null"
+			// is the correct serialization to preserve that.
 			for (const tr of toolResponseParts) {
-				const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response ?? {});
+				const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response);
 				out.push({ role: 'tool', content: responseText, tool_name: tr.name });
 			}
 

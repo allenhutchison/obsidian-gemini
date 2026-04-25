@@ -132,7 +132,7 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('api_key') ||
 			messageLower.includes('invalid_api_key')
 		) {
-			return 'Invalid API key. Please check your Google Gemini API key in settings.';
+			return 'Invalid API key. Please check your model provider credentials in settings.';
 		}
 
 		// Authentication/permission errors
@@ -141,7 +141,7 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('forbidden') ||
 			messageLower.includes('unauthorized')
 		) {
-			return 'Authentication failed. Please verify your API key has access to the Gemini API.';
+			return 'Authentication failed. Please verify your model provider credentials and that your account has access to this model.';
 		}
 
 		// Rate limiting — distinguish transient from permanent quota exhaustion
@@ -336,9 +336,9 @@ function getHttpErrorMessage(statusCode: number, error: any): string {
 		case 400:
 			return 'Bad request: The API request was invalid. Please check your message and try again.';
 		case 401:
-			return 'Authentication failed: Invalid API key. Please check your Google Gemini API key in settings.';
+			return 'Authentication failed: Invalid API key. Please check your model provider credentials in settings.';
 		case 403:
-			return 'Access forbidden: Your API key does not have permission to use this model or feature.';
+			return 'Access forbidden: The model provider denied access to this model or feature.';
 		case 404:
 			return 'Model not found: The selected model is not available. Please check your model settings.';
 		case 429:
