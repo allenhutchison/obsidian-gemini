@@ -162,10 +162,19 @@ export class ScheduledTaskManager {
 
 	/**
 	 * Discover task definition files and load the sidecar state.
-	 * Idempotent — safe to call again after a settings change (e.g. historyFolder
-	 * rename). Re-registers the metadata cache listener and re-discovers tasks.
+	 *
+	 * On a fresh plugin load this is called once from onLayoutReady().
+	 * On a settings-save re-init it is called from LifecycleService.setup()
+	 * with refresh: true so that historyFolder changes are picked up without
+	 * requiring a full plugin restart.
+	 *
+	 * Passing no arguments (or refresh: false) after the first successful
+	 * initialization is a no-op — this prevents the double-init that occurs
+	 * when setup() runs with layoutReady === true and onLayoutReady() fires
+	 * immediately afterwards.
 	 */
-	async initialize(): Promise<void> {
+	async initialize(options?: { refresh?: boolean }): Promise<void> {
+		if (this.initialized && !options?.refresh) return;
 		// Unregister previous listeners before re-registering so settings
 		// changes (e.g. historyFolder rename) don't leave stale handlers active.
 		if (this.metadataCacheHandler) {
