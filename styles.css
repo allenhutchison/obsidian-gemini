@@ -3691,6 +3691,17 @@ If your plugin does not need CSS, delete this file.
 	padding: 8px 12px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	transition: background 0.15s ease;
+	/* reset <button> browser defaults */
+	width: 100%;
+	background: none;
+	border-left: none;
+	border-right: none;
+	border-top: none;
+	border-radius: 0;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	box-shadow: none;
 }
 
 .rag-status-file-item:last-child {
@@ -3699,6 +3710,10 @@ If your plugin does not need CSS, delete this file.
 
 .rag-status-file-item:hover {
 	background: var(--background-modifier-hover);
+}
+
+.rag-status-file-item--clickable {
+	cursor: pointer;
 }
 
 .rag-status-file-path {
@@ -4394,13 +4409,74 @@ If your plugin does not need CSS, delete this file.
 	height: 100%;
 }
 
+/* ── Unified Activity Modal (Background Tasks + RAG) ──────────────────────── */
+
+.modal.modal-container:has(.gemini-activity-modal) {
+	width: 600px;
+	max-width: 90vw;
+}
+
+.gemini-activity-tab-bar {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 16px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding-bottom: 8px;
+}
+
+.gemini-activity-tab {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.gemini-activity-tab:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.gemini-activity-tab--active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.gemini-activity-tab--active:hover {
+	background: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
+}
+
+.gemini-activity-tab-icon {
+	display: flex;
+	align-items: center;
+	width: 16px;
+	height: 16px;
+}
+
+.gemini-activity-tab-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+.gemini-activity-content {
+	min-height: 200px;
+}
+
 /* ── Background Tasks Modal ────────────────────────────────────────────────── */
 
 .gemini-bg-tasks-modal .modal-content {
 	padding-right: 16px;
 }
 
-.gemini-bg-tasks-modal h3 {
+.gemini-bg-tasks-modal h3,
+.gemini-activity-modal h3 {
 	margin: 12px 0 6px;
 	font-size: var(--font-ui-small);
 	text-transform: uppercase;

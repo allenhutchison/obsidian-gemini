@@ -391,7 +391,10 @@ export class RagVaultScanner {
 				parallel: { maxConcurrent: 5 },
 				logger: {
 					debug: (msg: string, ...args: any[]) => this.plugin.logger.debug(msg, ...args),
-					error: (msg: string, ...args: any[]) => this.plugin.logger.error(msg, ...args),
+					// Per-file upload failures are already tracked via the file_error progress
+					// event and surfaced in the RAG Failures tab — downgrade to warn to avoid
+					// alarming console noise for routine skips (empty files, inaccessible notes).
+					error: (msg: string, ...args: any[]) => this.plugin.logger.warn(msg, ...args),
 				},
 				onProgress: async (event: any) => {
 					// Check for cancellation
