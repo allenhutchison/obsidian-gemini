@@ -243,24 +243,30 @@ describe('SessionManager Integration Tests', () => {
 		it('should generate appropriate session titles', async () => {
 			// Mock date for consistent testing
 			const mockDate = new Date('2024-01-15T10:30:00');
-			const originalDate = Date;
+			const originalDate = global.Date;
 			global.Date = vi.fn(function () {
 				return mockDate;
 			}) as any;
 			global.Date.now = originalDate.now;
 
-			// Agent session
-			const agentSession = await sessionManager.createAgentSession();
-			expect(agentSession.title).toContain('Agent Session');
+			try {
+				// Agent session
+				const agentSession = await sessionManager.createAgentSession();
+				expect(agentSession.title).toContain('Agent Session');
 
-			// Note chat session
-			const mockFile = new TFile();
-			mockFile.path = 'my-note.md';
-			mockFile.basename = 'my-note';
-			const noteSession = await sessionManager.createNoteChatSession(mockFile);
-			expect(noteSession.title).toBe('my-note Chat');
-
-			vi.restoreAllMocks();
+				// Note chat session
+				const mockFile = new TFile();
+				mockFile.path = 'my-note.md';
+				mockFile.basename = 'my-note';
+				const noteSession = await sessionManager.createNoteChatSession(mockFile);
+				expect(noteSession.title).toBe('my-note Chat');
+			} finally {
+				// vi.restoreAllMocks() doesn't undo direct global assignments — only
+				// spies registered via vi.spyOn — so we have to restore Date by hand
+				// before any other test runs.
+				global.Date = originalDate;
+				vi.restoreAllMocks();
+			}
 		});
 	});
 });
