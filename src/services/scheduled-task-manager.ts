@@ -141,6 +141,12 @@ export class ScheduledTaskManager {
 	private vaultCreateHandler: ((...data: unknown[]) => unknown) | null = null;
 	/** Slugs of tasks currently being submitted — prevents double-fire from tick + runNow race. */
 	private submitting = new Set<string>();
+	/**
+	 * Slugs claimed by the vault.on('create') handler while its 500 ms defer is
+	 * pending. The metadataCache.on('changed') handler skips any slug in this set
+	 * to avoid double-parsing when both events fire for the same new file.
+	 */
+	private recentlyCreated = new Set<string>();
 
 	constructor(private plugin: ObsidianGemini) {}
 
@@ -199,6 +205,9 @@ export class ScheduledTaskManager {
 			const runsPrefix = this.runsFolder + '/';
 			if (file?.path?.startsWith(prefix) && !file.path.startsWith(runsPrefix) && file.extension === 'md') {
 				const slug = file.basename;
+				// Skip if the vault create handler already claimed this slug — it will
+				// parse the file after its 500 ms defer, so we don't need to do it here.
+				if (this.recentlyCreated.has(slug)) return;
 				this.parseTaskFile(file)
 					.then(async (task) => {
 						if (task) {
@@ -232,8 +241,12 @@ export class ScheduledTaskManager {
 			const prefix = this.scheduledTasksFolder + '/';
 			const runsPrefix = this.runsFolder + '/';
 			if (file.path.startsWith(prefix) && !file.path.startsWith(runsPrefix) && file.extension === 'md') {
+				// Claim the slug immediately so the metadataCache 'changed' handler
+				// (which fires before our 500 ms defer) skips this file.
+				this.recentlyCreated.add(file.basename);
 				// Defer until the metadata cache has indexed the new file's frontmatter.
 				setTimeout(() => {
+					this.recentlyCreated.delete(file.basename);
 					this.parseTaskFile(file)
 						.then(async (task) => {
 							if (!task) return;
@@ -348,6 +361,7 @@ export class ScheduledTaskManager {
 		}
 		this.tasks.clear();
 		this.state = {};
+		this.recentlyCreated.clear();
 		this.initialized = false;
 		this.plugin.logger.log('[ScheduledTaskManager] Destroyed');
 	}
