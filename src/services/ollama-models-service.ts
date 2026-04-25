@@ -90,11 +90,11 @@ export class OllamaModelsService {
 			return this.cachedModels;
 		} catch (error) {
 			this.plugin.logger.warn('[OllamaModelsService] Failed to fetch model list:', error);
-			// Cache an empty list so we don't hammer a down server, but tag with the
-			// base URL so a successful retry later replaces it.
-			this.cachedModels = [];
-			this.lastBaseUrl = baseUrl;
-			return [];
+			// Don't poison the cache with an empty array — that would stick until
+			// the user manually clicks "Refresh" even after the daemon comes back.
+			// Returning the previous cache (or an empty list as a non-cached
+			// fallback) lets a subsequent automatic call retry the fetch.
+			return this.cachedModels ?? [];
 		}
 	}
 
