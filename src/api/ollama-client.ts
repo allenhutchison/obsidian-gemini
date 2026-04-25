@@ -331,6 +331,13 @@ export class OllamaClient implements ModelApi {
 					textChunks.push(part.text);
 				} else if (part?.inlineData?.mimeType?.startsWith('image/') && part.inlineData.data) {
 					images.push(part.inlineData.data);
+				} else if (part?.inlineData?.mimeType) {
+					// Mirror buildChatRequest's current-turn handling so resumed sessions
+					// don't silently drop PDF/audio/video context the model never sees.
+					throw new Error(
+						`Ollama only supports image attachments; conversation history contains ${part.inlineData.mimeType}. ` +
+							`Switch to the Gemini provider for PDF, audio, or video input.`
+					);
 				} else if (part?.functionCall) {
 					toolCallParts.push({
 						name: part.functionCall.name,

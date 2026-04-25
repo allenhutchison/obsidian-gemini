@@ -163,7 +163,9 @@ export function getErrorMessage(error: unknown): string {
 		) {
 			// Ollama-specific guidance — its server returns "try pulling it first"
 			if (messageLower.includes('try pulling')) {
-				const match = error.message.match(/model\s+"?([\w./:-]+)"?/i);
+				// Ollama wraps model names in either single- or double-quotes
+				// (e.g. `model 'llama3.2' not found, try pulling it first`).
+				const match = error.message.match(/model\s+["']?([\w./:-]+)["']?/i);
 				const modelName = match ? match[1] : 'this model';
 				return `Ollama model not pulled. Run: ollama pull ${modelName}`;
 			}
@@ -194,7 +196,7 @@ export function getErrorMessage(error: unknown): string {
 
 		// Service unavailable
 		if (messageLower.includes('unavailable') || messageLower.includes('service')) {
-			return 'Google Gemini API is temporarily unavailable. Please try again later.';
+			return 'The model API is temporarily unavailable. Please try again later.';
 		}
 
 		// Content filtering/safety
@@ -225,7 +227,7 @@ export function getErrorMessage(error: unknown): string {
 		}
 
 		// Fallback for Error objects without useful message
-		return 'An error occurred while communicating with the Gemini API';
+		return 'An error occurred while communicating with the model API';
 	}
 
 	// Handle objects with error information
@@ -269,7 +271,7 @@ export function getErrorMessage(error: unknown): string {
 	}
 
 	// Final fallback
-	return 'An unknown error occurred while communicating with the Gemini API';
+	return 'An unknown error occurred while communicating with the model API';
 }
 
 /**
@@ -345,14 +347,14 @@ function getHttpErrorMessage(statusCode: number, error: any): string {
 			}
 			return 'Rate limit exceeded: Too many requests. Please wait a moment and try again.';
 		case 500:
-			return 'Server error: Google Gemini API encountered an internal error. Please try again later.';
+			return 'Server error: The model API encountered an internal error. Please try again later.';
 		case 503:
-			return 'Service unavailable: Google Gemini API is temporarily down. Please try again later.';
+			return 'Service unavailable: The model API is temporarily down. Please try again later.';
 		case 504:
 			return 'Gateway timeout: The API request took too long. Please try again.';
 		default:
 			if (statusCode >= 500) {
-				return `Server error (${statusCode}): Google Gemini API is experiencing issues. Please try again later.`;
+				return `Server error (${statusCode}): The model API is experiencing issues. Please try again later.`;
 			}
 			if (statusCode >= 400) {
 				return `Client error (${statusCode}): ${errorMessage || 'Please check your request and try again.'}`;

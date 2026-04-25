@@ -57,14 +57,14 @@ describe('error-utils', () => {
 			test('500 Internal Server Error', () => {
 				const error = { status: 500, message: 'Internal error' };
 				expect(getErrorMessage(error)).toBe(
-					'Server error: Google Gemini API encountered an internal error. Please try again later.'
+					'Server error: The model API encountered an internal error. Please try again later.'
 				);
 			});
 
 			test('503 Service Unavailable', () => {
 				const error = { status: 503, message: 'Service unavailable' };
 				expect(getErrorMessage(error)).toBe(
-					'Service unavailable: Google Gemini API is temporarily down. Please try again later.'
+					'Service unavailable: The model API is temporarily down. Please try again later.'
 				);
 			});
 
@@ -184,7 +184,7 @@ describe('error-utils', () => {
 
 			test('Service unavailable error', () => {
 				const error = new Error('Service temporarily unavailable');
-				expect(getErrorMessage(error)).toBe('Google Gemini API is temporarily unavailable. Please try again later.');
+				expect(getErrorMessage(error)).toBe('The model API is temporarily unavailable. Please try again later.');
 			});
 
 			test('Safety filter error', () => {
@@ -239,12 +239,12 @@ describe('error-utils', () => {
 
 			test('Empty string error', () => {
 				const error = new Error('');
-				expect(getErrorMessage(error)).toBe('An error occurred while communicating with the Gemini API');
+				expect(getErrorMessage(error)).toBe('An error occurred while communicating with the model API');
 			});
 
 			test('Error without message property', () => {
 				const error = {} as Error;
-				expect(getErrorMessage(error)).toBe('An unknown error occurred while communicating with the Gemini API');
+				expect(getErrorMessage(error)).toBe('An unknown error occurred while communicating with the model API');
 			});
 
 			test('Object with nested error message', () => {
@@ -259,7 +259,7 @@ describe('error-utils', () => {
 
 			test('Empty object', () => {
 				const error = {};
-				expect(getErrorMessage(error)).toBe('An unknown error occurred while communicating with the Gemini API');
+				expect(getErrorMessage(error)).toBe('An unknown error occurred while communicating with the model API');
 			});
 
 			test('Complex object with toString', () => {
