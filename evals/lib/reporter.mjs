@@ -105,7 +105,11 @@ export function computeAggregates(taskResults) {
 	const allRuns = taskResults.flatMap((t) => t.runs);
 	const turns = allRuns.map((r) => r.metrics.turns);
 	const costs = allRuns.map((r) => r.metrics.cost_usd);
-	const cacheRatios = allRuns.map((r) => r.metrics.cache_ratio);
+	// Cache ratio is null on providers without a cache (e.g. Ollama). Drop those
+	// from the mean so we don't average "no cache" with real cache hit rates,
+	// and report null when no run had cache data at all.
+	const cacheRatios = allRuns.map((r) => r.metrics.cache_ratio).filter((v) => typeof v === 'number');
+	const meanCache = cacheRatios.length === 0 ? null : round(mean(cacheRatios), 3);
 	const loopFires = allRuns.reduce((a, r) => a + r.metrics.loop_fires, 0);
 
 	return {
@@ -119,7 +123,7 @@ export function computeAggregates(taskResults) {
 		flaky_task_count: flakyCount,
 		mean_turns: round(mean(turns), 1),
 		p95_turns: percentile(turns, 95),
-		mean_cache_ratio: round(mean(cacheRatios), 3),
+		mean_cache_ratio: meanCache,
 		mean_cost_usd: round(mean(costs), 6),
 		total_cost_usd: round(
 			costs.reduce((a, b) => a + b, 0),
@@ -132,11 +136,12 @@ export function computeAggregates(taskResults) {
 /**
  * Build the full result object.
  */
-export function buildResult(taskResults, gitSha, modelName) {
+export function buildResult(taskResults, gitSha, modelName, provider) {
 	return {
 		run_id: new Date().toISOString(),
 		git_sha: gitSha,
 		model: modelName,
+		provider: provider || 'gemini',
 		tasks: taskResults,
 		aggregate: computeAggregates(taskResults),
 	};
@@ -166,9 +171,10 @@ export async function writeResults(result, evalsDir) {
 export function printSummary(result) {
 	const a = result.aggregate;
 	console.log('\n=== Eval Run Summary ===');
-	console.log(`Git SHA: ${result.git_sha}`);
-	console.log(`Model:   ${result.model}`);
-	console.log(`Tasks:   ${a.total_tasks} × ${a.n_runs} run${a.n_runs === 1 ? '' : 's'} = ${a.total_runs} total`);
+	console.log(`Git SHA:  ${result.git_sha}`);
+	console.log(`Provider: ${result.provider || 'gemini'}`);
+	console.log(`Model:    ${result.model}`);
+	console.log(`Tasks:    ${a.total_tasks} × ${a.n_runs} run${a.n_runs === 1 ? '' : 's'} = ${a.total_runs} total`);
 	console.log('');
 
 	// Per-task table
@@ -181,7 +187,7 @@ export function printSummary(result) {
 		let solveStr = `${t.solved_count}/${n}`;
 		if (t.flaky) solveStr += ' ⚠';
 		else solveStr += '  ';
-		const cacheStr = `${Math.round(m.cache_ratio * 100)}%`;
+		const cacheStr = m.cache_ratio === null ? '  -  ' : `${Math.round(m.cache_ratio * 100)}%`;
 		console.log(
 			`${t.id.padEnd(30)} ${passStr}  ${solveStr.padStart(5)}  ${m.turns.toFixed(1).padStart(5)}  ${cacheStr.padStart(6)}  ${m.cost_usd.toFixed(4).padStart(7)}  ${String(Math.round(m.loop_fires)).padStart(5)}`
 		);
@@ -203,7 +209,8 @@ export function printSummary(result) {
 		console.log(`Flaky tasks:    0`);
 	}
 	console.log(`Mean turns:     ${a.mean_turns} (p95: ${a.p95_turns})`);
-	console.log(`Mean cache:     ${Math.round(a.mean_cache_ratio * 100)}%`);
+	const meanCacheStr = a.mean_cache_ratio === null ? 'n/a' : `${Math.round(a.mean_cache_ratio * 100)}%`;
+	console.log(`Mean cache:     ${meanCacheStr}`);
 	console.log(`Mean cost:      $${a.mean_cost_usd.toFixed(4)} per run`);
 	console.log(`Total cost:     $${a.total_cost_usd.toFixed(4)} (${a.total_runs} runs)`);
 	console.log(`Loop fires:     ${a.total_loop_fires}`);

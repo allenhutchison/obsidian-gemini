@@ -139,7 +139,12 @@ async function getModelName() {
 	return result.replace(/^["']|["']$/g, '');
 }
 
-async function runTask(task, keepArtifacts) {
+async function getProvider() {
+	const result = await obsidianEval("app.plugins.plugins['gemini-scribe'].settings.provider || 'gemini'");
+	return result.replace(/^["']|["']$/g, '');
+}
+
+async function runTask(task, keepArtifacts, provider) {
 	const title = `[eval] ${task.id}`;
 	console.log(`  "${task.description}"`);
 
@@ -173,9 +178,10 @@ async function runTask(task, keepArtifacts) {
 
 		// 6. Score
 		const modelName = await getModelName();
-		const result = scoreTask(task, events, modelResponse, modelName, durationMs);
+		const result = scoreTask(task, events, modelResponse, modelName, durationMs, provider);
+		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
 		console.log(
-			`  ${result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED'} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, $${result.metrics.cost_usd.toFixed(4)}`
+			`  ${result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED'} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`
 		);
 
 		return result;
@@ -190,8 +196,8 @@ async function runTask(task, keepArtifacts) {
 				turns: 0,
 				tool_calls: 0,
 				prompt_tokens: 0,
-				cached_tokens: 0,
-				cache_ratio: 0,
+				cached_tokens: provider === 'ollama' ? null : 0,
+				cache_ratio: provider === 'ollama' ? null : 0,
 				output_tokens: 0,
 				cost_usd: 0,
 				loop_fires: 0,
@@ -247,6 +253,9 @@ async function main() {
 		}
 		console.log(`Running ${tasks.length} task(s) × ${repeat} run${repeat === 1 ? '' : 's'}...`);
 
+		// Resolve provider once up front so per-run scoring stays consistent.
+		const provider = await getProvider();
+
 		// Run tasks sequentially. Each task runs `repeat` times so we can report
 		// pass^k reliability on top of per-run pass/solve rates.
 		const taskResults = [];
@@ -255,7 +264,7 @@ async function main() {
 			for (let i = 0; i < repeat; i++) {
 				const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
 				console.log(`\n--- Running: ${task.id}${runLabel} ---`);
-				runs.push(await runTask(task, keepArtifacts));
+				runs.push(await runTask(task, keepArtifacts, provider));
 			}
 			taskResults.push(aggregateTaskRuns(task.id, runs));
 		}
@@ -263,7 +272,7 @@ async function main() {
 		// Build result, write, print
 		const gitSha = getGitSha();
 		const modelName = await getModelName();
-		const result = buildResult(taskResults, gitSha, modelName);
+		const result = buildResult(taskResults, gitSha, modelName, provider);
 		const outPath = await writeResults(result, EVALS_DIR);
 		printSummary(result);
 		console.log(`Results written to: ${outPath}`);
