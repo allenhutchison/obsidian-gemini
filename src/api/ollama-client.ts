@@ -79,10 +79,7 @@ export class OllamaClient implements ModelApi {
 				return {
 					markdown: generateResponse.response,
 					rendered: '',
-					usageMetadata: this.toUsageMetadata(
-						generateResponse.prompt_eval_count,
-						generateResponse.eval_count
-					),
+					usageMetadata: this.toUsageMetadata(generateResponse.prompt_eval_count, generateResponse.eval_count),
 				};
 			}
 
@@ -112,9 +109,7 @@ export class OllamaClient implements ModelApi {
 
 		const complete = (async (): Promise<ModelResponse> => {
 			if (!model) {
-				throw new Error(
-					'No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.'
-				);
+				throw new Error('No Ollama model selected. Pull a model with `ollama pull <name>` and choose it in settings.');
 			}
 
 			try {
@@ -345,8 +340,7 @@ export class OllamaClient implements ModelApi {
 
 			// Tool responses become tool-role messages
 			for (const tr of toolResponseParts) {
-				const responseText =
-					typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response ?? {});
+				const responseText = typeof tr.response === 'string' ? tr.response : JSON.stringify(tr.response ?? {});
 				out.push({ role: 'tool', content: responseText, tool_name: tr.name });
 			}
 
