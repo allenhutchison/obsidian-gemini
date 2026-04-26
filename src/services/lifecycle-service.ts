@@ -160,6 +160,10 @@ export class LifecycleService {
 		if (plugin.scheduledTaskManager) {
 			await plugin.scheduledTaskManager.initialize();
 			plugin.scheduledTaskManager.start();
+
+			// After initialization, check for tasks that were missed while the plugin
+			// was offline. Only tasks with runIfMissed: true are included.
+			await this.handleCatchUp();
 		}
 
 		// Check for version updates and show notification
@@ -485,6 +489,33 @@ export class LifecycleService {
 		} else if (!shouldRun && plugin.toolExecutionLogger) {
 			plugin.toolExecutionLogger.destroy();
 			plugin.toolExecutionLogger = null;
+		}
+	}
+
+	/**
+	 * Detect scheduled tasks missed while the plugin was offline and either run
+	 * them automatically (autoRunCatchUp: true) or surface the approval modal.
+	 */
+	private async handleCatchUp(): Promise<void> {
+		const plugin = this.plugin;
+		if (!plugin.scheduledTaskManager || !plugin.backgroundStatusBar) return;
+
+		const pending = plugin.scheduledTaskManager.detectMissedRuns();
+		if (pending.length === 0) return;
+
+		if (plugin.settings.autoRunCatchUp) {
+			// Silent mode — submit all missed runs without asking
+			for (const entry of pending) {
+				try {
+					await plugin.scheduledTaskManager.runNow(entry.task.slug);
+					plugin.logger.log(`[LifecycleService] Auto catch-up: submitted "${entry.task.slug}"`);
+				} catch (err) {
+					plugin.logger.error(`[LifecycleService] Auto catch-up failed for "${entry.task.slug}":`, err);
+				}
+			}
+		} else {
+			// Show the ! badge — clicking it opens the CatchUpModal
+			plugin.backgroundStatusBar.setPendingCatchUpCount(pending.length);
 		}
 	}
 
