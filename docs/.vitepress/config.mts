@@ -33,6 +33,7 @@ export default defineConfig({
 					text: 'Getting Started',
 					items: [
 						{ text: 'Introduction', link: '/guide/getting-started' },
+						{ text: 'Ollama (Local Models)', link: '/guide/ollama-setup' },
 						{ text: 'FAQ', link: '/guide/faq' },
 					],
 				},

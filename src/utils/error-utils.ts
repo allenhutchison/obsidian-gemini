@@ -120,13 +120,9 @@ export function getErrorMessage(error: unknown): string {
 
 	// Handle Error objects
 	if (error instanceof Error) {
-		// Check for HTTP status codes in the error
-		const statusCode = extractStatusCode(error);
-		if (statusCode) {
-			return getHttpErrorMessage(statusCode, error);
-		}
-
-		// Check for specific error patterns in the message
+		// Check for specific error patterns in the message FIRST so provider-specific
+		// guidance (e.g. Ollama 404 "try pulling it first") wins over the generic
+		// HTTP status-code mapping below.
 		const message = error.message;
 		const messageLower = message.toLowerCase();
 
@@ -136,7 +132,7 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('api_key') ||
 			messageLower.includes('invalid_api_key')
 		) {
-			return 'Invalid API key. Please check your Google Gemini API key in settings.';
+			return 'Invalid API key. Please check your model provider credentials in settings.';
 		}
 
 		// Authentication/permission errors
@@ -145,7 +141,7 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('forbidden') ||
 			messageLower.includes('unauthorized')
 		) {
-			return 'Authentication failed. Please verify your API key has access to the Gemini API.';
+			return 'Authentication failed. Please verify your model provider credentials and that your account has access to this model.';
 		}
 
 		// Rate limiting — distinguish transient from permanent quota exhaustion
@@ -165,6 +161,14 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('model') &&
 			(messageLower.includes('not found') || messageLower.includes('does not exist'))
 		) {
+			// Ollama-specific guidance — its server returns "try pulling it first"
+			if (messageLower.includes('try pulling')) {
+				// Ollama wraps model names in either single- or double-quotes
+				// (e.g. `model 'llama3.2' not found, try pulling it first`).
+				const match = error.message.match(/model\s+["']?([\w./:-]+)["']?/i);
+				const modelName = match ? match[1] : 'this model';
+				return `Ollama model not pulled. Run: ollama pull ${modelName}`;
+			}
 			return 'The selected model is not available. Please check your model settings.';
 		}
 
@@ -175,7 +179,17 @@ export function getErrorMessage(error: unknown): string {
 			messageLower.includes('econnrefused') ||
 			messageLower.includes('etimedout')
 		) {
-			return 'Network error: Unable to connect to Google Gemini API. Please check your internet connection.';
+			// Only attribute connection refusals to Ollama when the signal is
+			// specific. A bare `ECONNREFUSED` or `localhost` substring could
+			// come from any local proxy or test server, and a bare `11434`
+			// could appear in unrelated stack traces or paths, so we require
+			// either the Ollama keyword or a real `host:11434` endpoint shape.
+			const looksLikeOllamaEndpoint =
+				/(?:^|[\s(/])(?:https?:\/\/)?(?:localhost|127\.0\.0\.1|\[::1\]|[\w.-]+):11434\b/.test(messageLower);
+			if (messageLower.includes('ollama') || looksLikeOllamaEndpoint) {
+				return 'Could not connect to the Ollama daemon. Make sure `ollama serve` is running and the base URL in settings is correct.';
+			}
+			return 'Network error: Unable to reach the model API. Please check your connection.';
 		}
 
 		// Timeout errors
@@ -185,12 +199,20 @@ export function getErrorMessage(error: unknown): string {
 
 		// Service unavailable
 		if (messageLower.includes('unavailable') || messageLower.includes('service')) {
-			return 'Google Gemini API is temporarily unavailable. Please try again later.';
+			return 'The model API is temporarily unavailable. Please try again later.';
 		}
 
 		// Content filtering/safety
 		if (messageLower.includes('safety') || messageLower.includes('blocked')) {
 			return 'Content was blocked by safety filters. Please rephrase your request.';
+		}
+
+		// HTTP status code mapping runs after the message-based checks above so
+		// the provider-specific guidance (e.g. Ollama 404 "try pulling it first")
+		// wins over the generic 404 message.
+		const statusCode = extractStatusCode(error);
+		if (statusCode) {
+			return getHttpErrorMessage(statusCode, error);
 		}
 
 		// Token limit errors
@@ -208,7 +230,7 @@ export function getErrorMessage(error: unknown): string {
 		}
 
 		// Fallback for Error objects without useful message
-		return 'An error occurred while communicating with the Gemini API';
+		return 'An error occurred while communicating with the model API';
 	}
 
 	// Handle objects with error information
@@ -252,19 +274,30 @@ export function getErrorMessage(error: unknown): string {
 	}
 
 	// Final fallback
-	return 'An unknown error occurred while communicating with the Gemini API';
+	return 'An unknown error occurred while communicating with the model API';
 }
 
 /**
  * Extract HTTP status code from error object
  */
 export function extractStatusCode(error: any): number | null {
+	// Guard non-object inputs so callers passing `null`, `undefined`, or a
+	// primitive (this is an exported helper typed as `any`) don't trigger a
+	// secondary TypeError inside an already-failing error path.
+	if (!error || (typeof error !== 'object' && typeof error !== 'function')) {
+		return null;
+	}
+
 	// Check common status code properties
 	if (typeof error.status === 'number') {
 		return error.status;
 	}
 	if (typeof error.statusCode === 'number') {
 		return error.statusCode;
+	}
+	// ollama-js throws ResponseError with `status_code`
+	if (typeof error.status_code === 'number') {
+		return error.status_code;
 	}
 	if (typeof error.code === 'number') {
 		return error.code;
@@ -306,9 +339,9 @@ function getHttpErrorMessage(statusCode: number, error: any): string {
 		case 400:
 			return 'Bad request: The API request was invalid. Please check your message and try again.';
 		case 401:
-			return 'Authentication failed: Invalid API key. Please check your Google Gemini API key in settings.';
+			return 'Authentication failed: Invalid API key. Please check your model provider credentials in settings.';
 		case 403:
-			return 'Access forbidden: Your API key does not have permission to use this model or feature.';
+			return 'Access forbidden: The model provider denied access to this model or feature.';
 		case 404:
 			return 'Model not found: The selected model is not available. Please check your model settings.';
 		case 429:
@@ -317,14 +350,14 @@ function getHttpErrorMessage(statusCode: number, error: any): string {
 			}
 			return 'Rate limit exceeded: Too many requests. Please wait a moment and try again.';
 		case 500:
-			return 'Server error: Google Gemini API encountered an internal error. Please try again later.';
+			return 'Server error: The model API encountered an internal error. Please try again later.';
 		case 503:
-			return 'Service unavailable: Google Gemini API is temporarily down. Please try again later.';
+			return 'Service unavailable: The model API is temporarily down. Please try again later.';
 		case 504:
 			return 'Gateway timeout: The API request took too long. Please try again.';
 		default:
 			if (statusCode >= 500) {
-				return `Server error (${statusCode}): Google Gemini API is experiencing issues. Please try again later.`;
+				return `Server error (${statusCode}): The model API is experiencing issues. Please try again later.`;
 			}
 			if (statusCode >= 400) {
 				return `Client error (${statusCode}): ${errorMessage || 'Please check your request and try again.'}`;

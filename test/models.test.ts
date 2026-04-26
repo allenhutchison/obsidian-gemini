@@ -235,6 +235,44 @@ describe('getUpdatedModelSettings', () => {
 		]);
 	});
 
+	it('tolerates empty Ollama model names while the model list has not loaded yet', () => {
+		setTestModels([]); // Simulates Ollama before /api/tags responds — no models registered
+		const currentSettings = {
+			provider: 'ollama',
+			chatModelName: '', // Empty after a previous reconcile cleared a stale Gemini value
+			summaryModelName: '',
+			completionsModelName: '',
+		};
+		// Should NOT throw; empty values are allowed when the daemon hasn't reported
+		// any models yet (the throw only fires when an empty needs replacing AND no
+		// models are available, but for Ollama the "we'll backfill later" path wins).
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(false);
+		expect(result.updatedSettings.chatModelName).toBe('');
+		expect(result.updatedSettings.summaryModelName).toBe('');
+		expect(result.updatedSettings.completionsModelName).toBe('');
+		expect(result.changedSettingsInfo).toEqual([]);
+	});
+
+	it('backfills empty Ollama model names once the model list has loaded', () => {
+		setTestModels([
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+			{ value: 'mistral', label: 'Mistral', provider: 'ollama' as const, defaultForRoles: ['summary'] },
+			{ value: 'qwen2.5', label: 'Qwen 2.5', provider: 'ollama' as const, defaultForRoles: ['completions'] },
+		]);
+		const currentSettings = {
+			provider: 'ollama',
+			chatModelName: '', // Cleared on an earlier reconcile when daemon was unreachable
+			summaryModelName: '',
+			completionsModelName: '',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.chatModelName).toBe('llama3.2');
+		expect(result.updatedSettings.summaryModelName).toBe('mistral');
+		expect(result.updatedSettings.completionsModelName).toBe('qwen2.5');
+	});
+
 	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {
 		setTestModels([]); // GEMINI_MODELS is empty
 		const currentSettings = {

@@ -28,6 +28,10 @@ Welcome to Gemini Scribe, an Obsidian plugin that integrates Google's Gemini AI 
 3. **Initialize Context** — Click "Initialize Vault Context" to help the agent understand your vault
 4. **Start Chatting** — Open Gemini Chat with the ribbon icon or command palette and start giving the AI tasks!
 
+### Prefer running models locally?
+
+Gemini Scribe also supports [Ollama](https://ollama.com) as a provider so you can use local models such as Llama 3.2, Qwen 2.5, or Gemma 3 without an API key. Some Gemini-built-in features (Google Search, URL Context, Deep Research, image generation, RAG) are unavailable on Ollama. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
+
 ## Feature Overview
 
 ### Agent Mode (Core Feature)

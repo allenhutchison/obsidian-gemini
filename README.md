@@ -2,7 +2,10 @@
 
 Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, providing powerful AI-driven assistance for note-taking, writing, and knowledge management directly within Obsidian. It leverages your notes as context for AI interactions, making it a highly personalized and integrated experience.
 
-> **Note:** This plugin requires a Google Gemini API key. Free tier available at [Google AI Studio](https://aistudio.google.com/apikey).
+> **Note:** Pick one of two setup paths in plugin settings → **Provider**:
+>
+> - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
+> - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
 ## What's New in v4.6.0
 
@@ -61,6 +64,8 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 4. Open Agent Chat with the ribbon icon or command palette
 5. Start using the AI agent to work with your vault!
 
+**Prefer running models locally?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)". A few Gemini-built-in features (Google Search, URL Context, Deep Research, image generation, RAG) are unavailable on Ollama; see [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
+
 ## Installation
 
 1.  **Community Plugins (Recommended):**
@@ -85,7 +90,8 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 2.  **Configure Plugin Settings:**
     - Open Obsidian Settings.
     - Go to "Gemini Scribe" under "Community plugins".
-    - **API Key:** Paste your Gemini API key here. Your key is stored securely using Obsidian's SecretStorage.
+    - **Provider:** Choose `Google Gemini (cloud)` (default) or `Ollama (local)`. The Ollama option exposes a base-URL field and refreshes the model list from `GET /api/tags`.
+    - **API Key:** (Gemini only) Paste your Gemini API key here. Your key is stored securely using Obsidian's SecretStorage.
     - **Chat Model:** Select the preferred Gemini model for chat interactions (default: `gemini-flash-latest`).
     - **Summary Model:** Select the preferred Gemini model for generating summaries (default: `gemini-flash-latest`).
     - **Completion Model:** Select the preferred model for IDE-style completions (default: `gemini-flash-lite-latest`).

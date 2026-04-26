@@ -37,6 +37,7 @@ describe('ContextManager', () => {
 			apiKey: 'test-api-key',
 			logger: mockLogger,
 			settings: {
+				provider: 'gemini',
 				contextCompactionThreshold: 20,
 				chatModelName: 'gemini-2.5-flash',
 			},
@@ -244,6 +245,27 @@ describe('ContextManager', () => {
 
 			expect(result).toBe(3000);
 			expect(mockLogger.error).toHaveBeenCalledWith('[ContextManager] countTokens failed:', expect.any(Error));
+		});
+
+		test('Ollama provider: estimates from char count instead of calling Gemini SDK', async () => {
+			// Build a fresh ContextManager scoped to provider=ollama; the constructor
+			// must not instantiate the Gemini SDK and countTokens must not call it.
+			const ollamaPlugin = {
+				...mockPlugin,
+				apiKey: '',
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+			};
+			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+
+			const result = await ollamaCtx.countTokens('llama3.2', [{ role: 'user', parts: [{ text: 'hello world' }] }]);
+
+			// Heuristic is Math.ceil(JSON.stringify(sanitized).length / 4); the exact
+			// value isn't important, only that it is a positive integer derived
+			// locally without hitting the SDK.
+			expect(result).toBeGreaterThan(0);
+			expect(Number.isInteger(result)).toBe(true);
+			expect(mockCountTokens).not.toHaveBeenCalled();
+			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (Ollama estimate)'));
 		});
 	});
 

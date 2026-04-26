@@ -8,7 +8,11 @@ export async function selectModelSetting(
 	plugin: ObsidianGemini,
 	settingName: NonNullable<
 		{
-			[K in keyof ObsidianGeminiSettings]: ObsidianGeminiSettings[K] extends string ? K : never;
+			// Reverse `extends` so we only match keys whose type is the broad
+			// `string` (e.g. `chatModelName`), not literal unions like
+			// `provider: 'gemini' | 'ollama'` which would otherwise pass the
+			// forward-extends check and break the assignment below.
+			[K in keyof ObsidianGeminiSettings]: string extends ObsidianGeminiSettings[K] ? K : never;
 		}[keyof ObsidianGeminiSettings]
 	>,
 	label: string,
@@ -67,7 +71,7 @@ export async function selectModelSetting(
 			}
 
 			dropdown.onChange(async (value) => {
-				(plugin.settings as ObsidianGeminiSettings)[settingName] = value as string;
+				(plugin.settings as ObsidianGeminiSettings)[settingName] = value;
 				await plugin.saveSettings();
 			});
 			return dropdown;

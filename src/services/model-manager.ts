@@ -2,6 +2,7 @@ import type ObsidianGemini from '../main';
 import * as modelsModule from '../models';
 import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings, DEFAULT_GEMINI_MODELS } from '../models';
 import { ModelListProvider } from './model-list-provider';
+import { OllamaModelsService } from './ollama-models-service';
 import { ParameterValidationService, ParameterRanges } from './parameter-validation';
 
 export interface ModelUpdateOptions {
@@ -12,32 +13,50 @@ export interface ModelUpdateOptions {
 export class ModelManager {
 	private plugin: ObsidianGemini;
 	private listProvider: ModelListProvider;
+	private ollamaModelsService: OllamaModelsService;
 	private static staticModels: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.listProvider = new ModelListProvider(plugin);
+		this.ollamaModelsService = new OllamaModelsService(plugin);
 	}
 
 	/**
-	 * Get current text/chat models (excludes image generation models).
+	 * Get current text/chat models (excludes image generation models). Provider-aware:
+	 * returns Ollama tags when provider === 'ollama', Gemini bundled+remote otherwise.
 	 */
-	async getAvailableModels(_options: ModelUpdateOptions = {}): Promise<GeminiModel[]> {
+	async getAvailableModels(options: ModelUpdateOptions = {}): Promise<GeminiModel[]> {
+		if (this.plugin.settings.provider === 'ollama') {
+			return this.ollamaModelsService.getModels(options.forceRefresh);
+		}
 		return this.listProvider.getTextModels();
 	}
 
 	/**
-	 * Get image generation models.
+	 * Get image generation models. Phase-1 Ollama support omits image generation, so
+	 * this always returns the Gemini list — the image-model dropdown is hidden in the
+	 * UI when Ollama is the active provider.
 	 */
 	async getImageGenerationModels(): Promise<GeminiModel[]> {
 		return this.listProvider.getImageModels();
 	}
 
 	/**
-	 * Update the global GEMINI_MODELS list from the provider and fix any stale settings.
+	 * Get the Ollama models service for direct interaction (e.g. cache refresh).
 	 */
-	async updateModels(_options: ModelUpdateOptions = {}): Promise<ModelUpdateResult> {
-		const allModels = this.listProvider.getModels();
+	getOllamaModelsService(): OllamaModelsService {
+		return this.ollamaModelsService;
+	}
+
+	/**
+	 * Update the global GEMINI_MODELS list from the active provider and fix any stale settings.
+	 */
+	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult> {
+		const allModels =
+			this.plugin.settings.provider === 'ollama'
+				? await this.ollamaModelsService.getModels(options.forceRefresh)
+				: this.listProvider.getModels();
 		const previousModels = this.getCurrentGeminiModels();
 
 		const hasChanges = this.detectModelChanges(allModels, previousModels);
@@ -55,17 +74,23 @@ export class ModelManager {
 	}
 
 	/**
-	 * Initialize the model manager: load cached remote data and start background fetch.
+	 * Initialize the model manager: load cached data and start background fetch.
 	 */
 	async initialize(): Promise<void> {
 		this.listProvider.initialize();
 
-		// Sync global GEMINI_MODELS with the provider's list
-		const allModels = this.listProvider.getModels();
-		this.updateGlobalModelsList(allModels);
+		if (this.plugin.settings.provider === 'ollama') {
+			// Populate GEMINI_MODELS with Ollama tags (best-effort; daemon may be down).
+			const ollamaModels = await this.ollamaModelsService.getModels();
+			this.updateGlobalModelsList(ollamaModels);
+		} else {
+			// Sync global GEMINI_MODELS with the bundled/remote Gemini list
+			const allModels = this.listProvider.getModels();
+			this.updateGlobalModelsList(allModels);
 
-		// Start non-blocking remote fetch for updates
-		this.listProvider.startRemoteFetch();
+			// Start non-blocking remote fetch for updates
+			this.listProvider.startRemoteFetch();
+		}
 	}
 
 	/**
@@ -83,10 +108,22 @@ export class ModelManager {
 	}
 
 	/**
+	 * Returns the active provider's full model list (text + image) for the parameter helpers.
+	 * Provider-aware so e.g. Ollama models are validated against their own metadata
+	 * rather than the bundled Gemini list.
+	 */
+	private async getModelsForActiveProvider(): Promise<GeminiModel[]> {
+		if (this.plugin.settings.provider === 'ollama') {
+			return this.ollamaModelsService.getModels();
+		}
+		return this.listProvider.getModels();
+	}
+
+	/**
 	 * Get parameter ranges based on available models.
 	 */
 	async getParameterRanges(): Promise<ParameterRanges> {
-		return ParameterValidationService.getParameterRanges(this.listProvider.getModels());
+		return ParameterValidationService.getParameterRanges(await this.getModelsForActiveProvider());
 	}
 
 	/**
@@ -99,7 +136,7 @@ export class ModelManager {
 		temperature: { isValid: boolean; adjustedValue?: number; warning?: string };
 		topP: { isValid: boolean; adjustedValue?: number; warning?: string };
 	}> {
-		const models = this.listProvider.getModels();
+		const models = await this.getModelsForActiveProvider();
 		return {
 			temperature: ParameterValidationService.validateTemperature(temperature, undefined, models),
 			topP: ParameterValidationService.validateTopP(topP, undefined, models),
@@ -114,7 +151,7 @@ export class ModelManager {
 		topP: string;
 		hasModelData: boolean;
 	}> {
-		return ParameterValidationService.getParameterDisplayInfo(this.listProvider.getModels());
+		return ParameterValidationService.getParameterDisplayInfo(await this.getModelsForActiveProvider());
 	}
 
 	/**

@@ -14,10 +14,26 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 
 ## Basic Settings
 
+### Provider
+
+- **Setting**: `provider`
+- **Type**: `'gemini' | 'ollama'`
+- **Default**: `'gemini'`
+- **Description**: Selects the model backend. `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon.
+- **Notes**: Switching providers re-initialises the plugin and resets stale model selections to the new provider's defaults. Provider-coupled features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are hidden when `ollama` is active. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
+
+### Ollama Base URL
+
+- **Setting**: `ollamaBaseUrl`
+- **Type**: String
+- **Default**: `http://localhost:11434`
+- **Required when provider is `ollama`**: Yes
+- **Description**: HTTP endpoint of your Ollama daemon. Update if Ollama runs on a different host or port.
+
 ### API Key
 
 - **Type**: String
-- **Required**: Yes
+- **Required**: Yes (when provider is `gemini`; ignored for `ollama`)
 - **Storage**: Stored securely using Obsidian's SecretStorage API (not saved in `data.json`)
 - **Description**: Your Google AI API key for accessing Gemini models
 - **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
@@ -64,7 +80,10 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 
 ## Model Configuration
 
-All models are selected from available Gemini models. The plugin supports dynamic model discovery to automatically fetch the latest models from Google's API.
+The active model list depends on the [`provider`](#provider) setting:
+
+- **Gemini (default)** — models are selected from the bundled Gemini list, refreshed from Google's API on startup so the latest models appear automatically. `imageModelName` is only available on this provider.
+- **Ollama** — the chat / summary / completion dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
 
 ### Chat Model
 

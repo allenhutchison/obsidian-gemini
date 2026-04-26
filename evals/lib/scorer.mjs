@@ -3,7 +3,7 @@
  * Takes raw collector events and produces a structured TaskResult.
  */
 
-import { calculateCost } from './pricing.mjs';
+import { calculateCost, providerSupportsCache } from './pricing.mjs';
 
 /**
  * Score a single task run.
@@ -13,9 +13,10 @@ import { calculateCost } from './pricing.mjs';
  * @param {string} modelResponse - Final model response text
  * @param {string} modelName - Model used for this run
  * @param {number} durationMs - Wall-clock duration
+ * @param {string} [provider] - Provider id ("gemini" or "ollama"); affects pricing and cache reporting
  * @returns {object} TaskResult
  */
-export function scoreTask(task, events, modelResponse, modelName, durationMs) {
+export function scoreTask(task, events, modelResponse, modelName, durationMs, provider) {
 	const apiEvents = events.filter((e) => e.event === 'apiResponseReceived');
 	const toolEvents = events.filter((e) => e.event === 'toolExecutionComplete');
 	const errorEvents = events.filter((e) => e.event === 'turnError');
@@ -43,8 +44,12 @@ export function scoreTask(task, events, modelResponse, modelName, durationMs) {
 		totalOutput += output;
 	}
 
-	const cacheRatio = maxPrompt > 0 ? maxCached / maxPrompt : 0;
-	const costUsd = calculateCost(maxPrompt, maxCached, totalOutput, modelName);
+	// Cache is provider-specific. Ollama has no implicit cache, so we emit null
+	// to mark "not applicable" — distinct from a Gemini run that genuinely served
+	// 0% from cache.
+	const cacheRatio = !providerSupportsCache(provider) ? null : maxPrompt > 0 ? maxCached / maxPrompt : 0;
+	const cachedTokens = !providerSupportsCache(provider) ? null : maxCached;
+	const costUsd = calculateCost(maxPrompt, maxCached, totalOutput, modelName, provider);
 
 	// Loop fires
 	const loopFires = toolEvents.filter(
@@ -83,8 +88,8 @@ export function scoreTask(task, events, modelResponse, modelName, durationMs) {
 			turns,
 			tool_calls: toolCalls,
 			prompt_tokens: maxPrompt,
-			cached_tokens: maxCached,
-			cache_ratio: Math.round(cacheRatio * 1000) / 1000,
+			cached_tokens: cachedTokens,
+			cache_ratio: cacheRatio === null ? null : Math.round(cacheRatio * 1000) / 1000,
 			output_tokens: totalOutput,
 			cost_usd: Math.round(costUsd * 1_000_000) / 1_000_000,
 			loop_fires: loopFires,
