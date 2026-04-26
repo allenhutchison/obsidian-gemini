@@ -258,7 +258,11 @@ describe('LifecycleService', () => {
 
 			// Access the ToolRegistrar instance created in the LifecycleService constructor
 			const registrarInstance = (ToolRegistrar as unknown as jest.Mock).mock.results[0].value;
-			expect(registrarInstance.registerAll).toHaveBeenCalledWith(mockPlugin.toolRegistry, mockPlugin.logger);
+			expect(registrarInstance.registerAll).toHaveBeenCalledWith(
+				mockPlugin.toolRegistry,
+				mockPlugin.logger,
+				mockPlugin
+			);
 		});
 
 		it('should create ProjectActivationSubscriber with plugin', async () => {

@@ -117,9 +117,13 @@ export class LifecycleService {
 			plugin.mcpManager = null;
 		}
 
-		// Null out completions and summarizer for garbage collection
+		// Null out completions, summarizer, and image generation for gc.
+		// Nulling imageGeneration here is what allows a Gemini → Ollama provider
+		// switch to drop the old Gemini-only instance; the new setup() phase
+		// then creates one only if the active provider supports it.
 		plugin.completions = null;
 		plugin.summarizer = null;
+		plugin.imageGeneration = null;
 
 		// Note: We don't clean up history, sessionManager, etc. as they
 		// maintain user data that should persist across re-initializations
@@ -234,6 +238,19 @@ export class LifecycleService {
 	 */
 	async initializeRagIndexing(): Promise<void> {
 		const plugin = this.plugin;
+
+		// RAG uses Gemini's File Search Store cloud API — not available on Ollama in Phase 1.
+		if (plugin.settings.provider === 'ollama') {
+			if (plugin.ragIndexing) {
+				const { getRagTools } = await import('../tools/rag-search-tool');
+				for (const tool of getRagTools()) {
+					plugin.toolRegistry?.unregisterTool(tool.name);
+				}
+				await plugin.ragIndexing.destroy();
+				plugin.ragIndexing = null;
+			}
+			return;
+		}
 
 		if (plugin.settings.ragIndexing.enabled) {
 			// Clean up existing instance if re-initializing
@@ -419,7 +436,7 @@ export class LifecycleService {
 		// Tool system
 		plugin.toolRegistry = new ToolRegistry(plugin);
 		plugin.toolExecutionEngine = new ToolExecutionEngine(plugin, plugin.toolRegistry);
-		await this.toolRegistrar.registerAll(plugin.toolRegistry, plugin.logger);
+		await this.toolRegistrar.registerAll(plugin.toolRegistry, plugin.logger, plugin);
 
 		// Folder and skill management
 		plugin.folderInitializer = new FolderInitializer(plugin);
@@ -452,9 +469,14 @@ export class LifecycleService {
 		// Deep research
 		plugin.deepResearch = new DeepResearchService(plugin);
 
-		// Image generation
-		plugin.imageGeneration = new ImageGeneration(plugin);
-		await plugin.imageGeneration.setupImageGenerationCommand();
+		// Image generation service is Gemini-only — Ollama has no image-gen API.
+		// The command-palette entry is registered unconditionally in main.ts so
+		// it shows a clear "not available" notice on the Ollama path instead of
+		// silently disappearing or pointing at an orphaned closure after a
+		// runtime provider switch.
+		if (plugin.settings.provider !== 'ollama') {
+			plugin.imageGeneration = new ImageGeneration(plugin);
+		}
 
 		// Selection actions
 		plugin.selectionActionService = new SelectionActionService(plugin);

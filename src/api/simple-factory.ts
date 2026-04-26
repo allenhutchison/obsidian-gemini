@@ -6,6 +6,7 @@
  */
 
 import { GeminiClient, GeminiClientConfig } from './gemini-client';
+import { OllamaClient, OllamaClientConfig } from './ollama-client';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
@@ -38,35 +39,33 @@ export class GeminiClientFactory {
 	static createFromPlugin(
 		plugin: ObsidianGemini,
 		useCase: ModelUseCase,
-		overrides?: Partial<GeminiClientConfig>
+		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig>
 	): ModelApi {
 		const settings = plugin.settings;
+		const provider = settings.provider ?? 'gemini';
 
-		// Determine which model to use based on use case
-		let modelName: string;
-		switch (useCase) {
-			case ModelUseCase.CHAT:
-				modelName = settings.chatModelName || getDefaultModelForRole('chat');
-				break;
-			case ModelUseCase.SUMMARY:
-				modelName = settings.summaryModelName || getDefaultModelForRole('summary');
-				break;
-			case ModelUseCase.COMPLETIONS:
-				modelName = settings.completionsModelName || getDefaultModelForRole('completions');
-				break;
-			case ModelUseCase.REWRITE:
-				// Rewrite uses chat model
-				modelName = settings.chatModelName || getDefaultModelForRole('chat');
-				break;
-			case ModelUseCase.SEARCH:
-				// Search uses chat model
-				modelName = settings.chatModelName || getDefaultModelForRole('chat');
-				break;
-			default:
-				modelName = getDefaultModelForRole('chat');
+		const modelName = this.resolveModelName(plugin, useCase);
+
+		const prompts = new GeminiPrompts(plugin);
+
+		const retryConfig = {
+			maxRetries: settings.maxRetries ?? 3,
+			initialBackoffDelay: settings.initialBackoffDelay ?? 1000,
+		};
+
+		if (provider === 'ollama') {
+			const config: OllamaClientConfig = {
+				baseUrl: settings.ollamaBaseUrl || 'http://localhost:11434',
+				model: modelName,
+				temperature: settings.temperature ?? 0.7,
+				topP: settings.topP ?? 1,
+				streamingEnabled: settings.streamingEnabled ?? true,
+				...overrides,
+			};
+			const client = new OllamaClient(config, prompts, plugin);
+			return new RetryDecorator(client, retryConfig, plugin.logger);
 		}
 
-		// Build config
 		const config: GeminiClientConfig = {
 			apiKey: plugin.apiKey,
 			model: modelName,
@@ -75,20 +74,27 @@ export class GeminiClientFactory {
 			streamingEnabled: settings.streamingEnabled ?? true,
 			...overrides,
 		};
-
-		// Create prompts instance with plugin reference so it can access settings
-		const prompts = new GeminiPrompts(plugin);
-
-		// Create client
 		const client = new GeminiClient(config, prompts, plugin);
-
-		// Wrap with retry decorator
-		const retryConfig = {
-			maxRetries: settings.maxRetries ?? 3,
-			initialBackoffDelay: settings.initialBackoffDelay ?? 1000,
-		};
-
 		return new RetryDecorator(client, retryConfig, plugin.logger);
+	}
+
+	private static resolveModelName(plugin: ObsidianGemini, useCase: ModelUseCase): string {
+		const settings = plugin.settings;
+		const provider = settings.provider ?? 'gemini';
+		switch (useCase) {
+			case ModelUseCase.CHAT:
+				return settings.chatModelName || getDefaultModelForRole('chat', provider);
+			case ModelUseCase.SUMMARY:
+				return settings.summaryModelName || getDefaultModelForRole('summary', provider);
+			case ModelUseCase.COMPLETIONS:
+				return settings.completionsModelName || getDefaultModelForRole('completions', provider);
+			case ModelUseCase.REWRITE:
+				return settings.chatModelName || getDefaultModelForRole('chat', provider);
+			case ModelUseCase.SEARCH:
+				return settings.chatModelName || getDefaultModelForRole('chat', provider);
+			default:
+				return getDefaultModelForRole('chat', provider);
+		}
 	}
 
 	/**

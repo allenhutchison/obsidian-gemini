@@ -296,6 +296,8 @@ class Plugin {
 	}
 }
 
+const requestUrl = jest.fn();
+
 module.exports = {
 	ItemView,
 	MarkdownView,
@@ -319,4 +321,5 @@ module.exports = {
 	SecretComponent,
 	SecretStorage,
 	debounce,
+	requestUrl,
 };
