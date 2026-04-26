@@ -61,6 +61,8 @@ export class BackgroundStatusBar {
 					new CatchUpModal(this.plugin.app, this.plugin, pending).open();
 					return;
 				}
+				// detectMissedRuns returned empty — stale badge; self-correct
+				this.setPendingCatchUpCount(0);
 			}
 			const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
 			const defaultTab = this.taskManager.runningCount > 0 ? 'tasks' : 'rag';

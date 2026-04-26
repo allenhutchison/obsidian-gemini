@@ -4715,7 +4715,7 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-catchup-item-age {
 	color: var(--text-muted);
-	font-size: var(--font-smaller);
+	font-size: var(--font-ui-smaller);
 	flex-shrink: 0;
 }
 

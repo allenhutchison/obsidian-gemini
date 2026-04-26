@@ -148,6 +148,8 @@ export class ScheduledTaskManager {
 	private vaultCreateHandler: ((...data: unknown[]) => unknown) | null = null;
 	/** Slugs of tasks currently being submitted — prevents double-fire from tick + runNow race. */
 	private submitting = new Set<string>();
+	/** Slugs reserved for catch-up approval — tick skips these until approved or skipped. */
+	private catchUpPending = new Set<string>();
 
 	constructor(private plugin: ObsidianGemini) {}
 
@@ -296,6 +298,13 @@ export class ScheduledTaskManager {
 				continue;
 			}
 
+			if (this.catchUpPending.has(task.slug)) {
+				this.plugin.logger.log(
+					`[ScheduledTaskManager] Task "${task.slug}" is awaiting catch-up approval — skipping tick`
+				);
+				continue;
+			}
+
 			const nextRunAt = new Date(taskState.nextRunAt);
 			if (now < nextRunAt) continue;
 
@@ -311,6 +320,7 @@ export class ScheduledTaskManager {
 	async runNow(slug: string): Promise<string> {
 		const task = this.tasks.get(slug);
 		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
+		this.catchUpPending.delete(slug);
 		return this.submitTask(task, new Date());
 	}
 
@@ -370,10 +380,21 @@ export class ScheduledTaskManager {
 	}
 
 	/**
+	 * Mark slugs as pending catch-up approval so the tick loop skips them
+	 * until the user approves or skips each one via the CatchUpModal.
+	 */
+	reserveForCatchUp(slugs: string[]): void {
+		for (const slug of slugs) {
+			this.catchUpPending.add(slug);
+		}
+	}
+
+	/**
 	 * Advance a task's nextRunAt without running it — used by the catch-up modal
 	 * "Skip" action so the task is not re-detected on the next plugin launch.
 	 */
 	async skipCatchUp(slug: string): Promise<void> {
+		this.catchUpPending.delete(slug);
 		const task = this.tasks.get(slug);
 		if (!task || !this.state[slug]) return;
 		const nextRunAt = computeNextRunAt(task.schedule, new Date());

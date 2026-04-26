@@ -498,7 +498,7 @@ export class LifecycleService {
 	 */
 	private async handleCatchUp(): Promise<void> {
 		const plugin = this.plugin;
-		if (!plugin.scheduledTaskManager || !plugin.backgroundStatusBar) return;
+		if (!plugin.scheduledTaskManager) return;
 
 		const pending = plugin.scheduledTaskManager.detectMissedRuns();
 		if (pending.length === 0) return;
@@ -514,8 +514,10 @@ export class LifecycleService {
 				}
 			}
 		} else {
+			// Reserve slugs so the tick loop skips them until user approves/skips
+			plugin.scheduledTaskManager.reserveForCatchUp(pending.map((e) => e.task.slug));
 			// Show the ! badge — clicking it opens the CatchUpModal
-			plugin.backgroundStatusBar.setPendingCatchUpCount(pending.length);
+			plugin.backgroundStatusBar?.setPendingCatchUpCount(pending.length);
 		}
 	}
 
