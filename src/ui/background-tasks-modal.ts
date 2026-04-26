@@ -134,6 +134,11 @@ export class BackgroundTasksModal extends Modal {
 
 			const activate = () => {
 				if (this.activeTab === id) return;
+				// Cancel any pending RAG search debounce so it doesn't fire against the new tab
+				if (this.ragDebounceTimer) {
+					clearTimeout(this.ragDebounceTimer);
+					this.ragDebounceTimer = null;
+				}
 				this.activeTab = id;
 				// Reset RAG inner state when switching to the RAG tab
 				if (id === 'rag') {
@@ -214,7 +219,11 @@ export class BackgroundTasksModal extends Modal {
 		if (recent.length > 0) {
 			const recentHeader = container.createDiv({ cls: 'gemini-bg-tasks-recent-header' });
 			recentHeader.createEl('h3', { text: 'Recent' });
-			const clearBtn = recentHeader.createEl('button', { text: 'Clear', cls: 'gemini-bg-tasks-clear' });
+			const clearBtn = recentHeader.createEl('button', {
+				text: 'Clear',
+				cls: 'gemini-bg-tasks-clear',
+				attr: { type: 'button' },
+			});
 			clearBtn.addEventListener('click', () => {
 				this.plugin.backgroundTaskManager?.clearFinished();
 				this.renderTabContent();
@@ -267,7 +276,11 @@ export class BackgroundTasksModal extends Modal {
 		}
 
 		if (canCancel) {
-			const btn = li.createEl('button', { text: 'Cancel', cls: 'gemini-bg-task-cancel mod-warning' });
+			const btn = li.createEl('button', {
+				text: 'Cancel',
+				cls: 'gemini-bg-task-cancel mod-warning',
+				attr: { type: 'button' },
+			});
 			btn.addEventListener('click', () => {
 				this.plugin.backgroundTaskManager?.cancel(task.id);
 				this.renderTabContent();
@@ -520,7 +533,7 @@ export class BackgroundTasksModal extends Modal {
 		for (const file of display) {
 			const item = container.createEl('button', {
 				cls: 'rag-status-file-item rag-status-file-item--clickable',
-				attr: { 'aria-label': `Open ${file.path}` },
+				attr: { type: 'button', 'aria-label': `Open ${file.path}` },
 			});
 			const pathEl = item.createSpan({ cls: 'rag-status-file-path' });
 			pathEl.setText(file.path);

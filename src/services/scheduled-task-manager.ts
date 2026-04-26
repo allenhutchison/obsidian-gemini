@@ -195,7 +195,6 @@ export class ScheduledTaskManager {
 		this.pendingDefers.clear();
 		this.recentlyCreated.clear();
 
-
 		// Unregister previous listeners before re-registering so settings
 		// changes (e.g. historyFolder rename) don't leave stale handlers active.
 		if (this.metadataCacheHandler) {
