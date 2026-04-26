@@ -202,13 +202,18 @@ export class ScheduledTaskManager {
 				this.parseTaskFile(file)
 					.then(async (task) => {
 						if (task) {
+							const isNew = !this.tasks.has(task.slug);
 							this.tasks.set(task.slug, task);
 							// Seed state for tasks newly seen by the hot-reload path
 							if (!this.state[task.slug]) {
 								this.state[task.slug] = { nextRunAt: new Date().toISOString() };
 								await this.saveState();
 							}
-							this.plugin.logger.log(`[ScheduledTaskManager] Task "${task.slug}" reloaded from disk`);
+							// Only log when this is a genuine edit reload, not a re-parse of a task
+							// that was already registered by createTask()'s immediate in-memory update.
+							if (isNew) {
+								this.plugin.logger.log(`[ScheduledTaskManager] Task "${task.slug}" reloaded from disk`);
+							}
 						} else {
 							// File lost its schedule/prompt — remove from scheduler
 							this.tasks.delete(slug);
@@ -237,6 +242,8 @@ export class ScheduledTaskManager {
 					this.parseTaskFile(file)
 						.then(async (task) => {
 							if (!task) return;
+							// Skip if createTask() already registered this task immediately.
+							if (this.tasks.has(task.slug)) return;
 							this.tasks.set(task.slug, task);
 							if (!this.state[task.slug]) {
 								this.state[task.slug] = { nextRunAt: new Date().toISOString() };
@@ -310,6 +317,119 @@ export class ScheduledTaskManager {
 	/** Returns a snapshot of all known task definitions. */
 	getTasks(): ScheduledTask[] {
 		return [...this.tasks.values()];
+	}
+
+	/**
+	 * Create a new scheduled task by writing a markdown file to the tasks folder.
+	 * The metadata cache 'create' listener will pick it up within ~500 ms.
+	 */
+	async createTask(params: {
+		slug: string;
+		schedule: string;
+		enabledTools?: string[];
+		outputPath?: string;
+		model?: string;
+		enabled?: boolean;
+		runIfMissed?: boolean;
+		prompt: string;
+	}): Promise<void> {
+		const slug = params.slug.trim();
+		if (!slug) throw new Error('Task slug cannot be empty');
+		if (this.tasks.has(slug)) throw new Error(`A task named "${slug}" already exists`);
+
+		// Validate schedule before touching the vault — computeNextRunAt throws on
+		// unrecognised formats, surfacing the error early rather than persisting a
+		// broken task file.
+		computeNextRunAt(params.schedule, new Date());
+
+		const filePath = normalizePath(`${this.scheduledTasksFolder}/${slug}.md`);
+		const defaultOutputPath = normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`);
+		const content = this.serializeTask({ ...params, slug });
+		await this.plugin.app.vault.create(filePath, content);
+
+		// Immediately reflect in the in-memory map — don't wait for the vault
+		// 'create' listener which depends on the metadata cache (~500 ms).
+		const task: ScheduledTask = {
+			slug,
+			schedule: params.schedule,
+			enabledTools: params.enabledTools ?? [],
+			outputPath: params.outputPath ?? defaultOutputPath,
+			model: params.model,
+			enabled: params.enabled ?? true,
+			runIfMissed: params.runIfMissed ?? false,
+			prompt: params.prompt,
+			filePath,
+		};
+		this.tasks.set(slug, task);
+		if (!this.state[slug]) {
+			this.state[slug] = { nextRunAt: new Date().toISOString() };
+			await this.saveState();
+		}
+	}
+
+	/**
+	 * Delete a scheduled task: remove the definition file and its state entry.
+	 * The metadata cache 'changed' handler will drop the task from the in-memory
+	 * map once Obsidian indexes the deletion; the state cleanup happens immediately.
+	 */
+	async deleteTask(slug: string): Promise<void> {
+		const task = this.tasks.get(slug);
+		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
+
+		const file = this.plugin.app.vault.getAbstractFileByPath(task.filePath);
+		if (file) {
+			await this.plugin.app.vault.delete(file);
+		}
+
+		this.tasks.delete(slug);
+		delete this.state[slug];
+		await this.saveState();
+	}
+
+	/**
+	 * Rewrite a task's definition file (frontmatter + prompt body).
+	 * Slug is the stable identifier — renaming is not supported via this method.
+	 */
+	async updateTask(
+		slug: string,
+		params: {
+			schedule?: string;
+			enabledTools?: string[];
+			outputPath?: string;
+			model?: string;
+			enabled?: boolean;
+			runIfMissed?: boolean;
+			prompt?: string;
+		}
+	): Promise<void> {
+		const task = this.tasks.get(slug);
+		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
+
+		// Validate the new schedule (if provided) before touching the vault.
+		if (params.schedule !== undefined) {
+			computeNextRunAt(params.schedule, new Date());
+		}
+
+		const file = this.plugin.app.vault.getAbstractFileByPath(task.filePath);
+		if (!file) throw new Error(`Task file not found: ${task.filePath}`);
+
+		const merged = {
+			slug,
+			schedule: params.schedule ?? task.schedule,
+			enabledTools: params.enabledTools ?? task.enabledTools,
+			outputPath: params.outputPath ?? task.outputPath,
+			model: params.model ?? task.model,
+			enabled: params.enabled ?? task.enabled,
+			runIfMissed: params.runIfMissed ?? task.runIfMissed,
+			prompt: params.prompt ?? task.prompt,
+		};
+
+		const content = this.serializeTask(merged);
+		await this.plugin.app.vault.modify(file as TFile, content);
+
+		// Immediately reflect the new values in the in-memory map so callers
+		// don't have to wait for the metadata cache listener to re-parse the file.
+		this.tasks.set(slug, { ...task, ...merged, filePath: task.filePath });
 	}
 
 	/**
@@ -494,6 +614,51 @@ export class ScheduledTaskManager {
 			prompt,
 			filePath: file.path,
 		};
+	}
+
+	/**
+	 * Serialize a task definition to markdown (YAML frontmatter + prompt body).
+	 * Only non-default values are written to keep files minimal.
+	 */
+	private serializeTask(params: {
+		slug?: string;
+		schedule: string;
+		enabledTools?: string[];
+		outputPath?: string;
+		model?: string;
+		enabled?: boolean;
+		runIfMissed?: boolean;
+		prompt: string;
+	}): string {
+		const lines: string[] = ['---'];
+		lines.push(`schedule: '${params.schedule}'`);
+
+		const tools = params.enabledTools ?? [];
+		if (tools.length > 0) {
+			lines.push('enabledTools:');
+			for (const t of tools) {
+				lines.push(`  - ${t}`);
+			}
+		}
+
+		const defaultOutputPath =
+			params.slug && normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${params.slug}/{date}.md`);
+		if (params.outputPath && params.outputPath !== defaultOutputPath) {
+			lines.push(`outputPath: '${params.outputPath}'`);
+		}
+
+		if (params.model) {
+			lines.push(`model: '${params.model}'`);
+		}
+		if (params.enabled === false) {
+			lines.push('enabled: false');
+		}
+		if (params.runIfMissed === true) {
+			lines.push('runIfMissed: true');
+		}
+
+		lines.push('---', '', params.prompt.trim(), '');
+		return lines.join('\n');
 	}
 
 	private async loadState(): Promise<void> {

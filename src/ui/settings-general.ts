@@ -126,6 +126,30 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 			text.setValue(plugin.settings.historyFolder);
 		});
 
+	// Scheduled Tasks
+	new Setting(containerEl).setName('Scheduled Tasks').setHeading();
+
+	new Setting(containerEl)
+		.setName('Manage scheduled tasks')
+		.setDesc(
+			'Create, edit, enable/disable, and delete scheduled AI tasks. Tasks run automatically in the background while Obsidian is open.'
+		)
+		.addButton((button) =>
+			button
+				.setButtonText('Open Scheduler')
+				.setCta()
+				.onClick(async () => {
+					const { SchedulerManagementModal } = await import('./scheduler-management-modal');
+					new SchedulerManagementModal(app, plugin, 'list').open();
+				})
+		)
+		.addButton((button) =>
+			button.setButtonText('New task').onClick(async () => {
+				const { SchedulerManagementModal } = await import('./scheduler-management-modal');
+				new SchedulerManagementModal(app, plugin, 'create').open();
+			})
+		);
+
 	// Session History
 	new Setting(containerEl).setName('Session History').setHeading();
 
