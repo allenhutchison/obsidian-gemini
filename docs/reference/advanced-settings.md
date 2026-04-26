@@ -152,18 +152,18 @@ In v4.0+, context is manually managed through session-based file selection:
 
 **For Chat (Quality focused):**
 
-- Primary: Gemini 1.5 Pro
-- Alternative: Gemini 1.5 Flash (faster)
+- Primary: Gemini Flash Latest (default)
+- Alternative: Gemini 2.5 Pro for harder reasoning (requires billing)
 
 **For Completions (Speed focused):**
 
-- Primary: Gemini 1.5 Flash-8B
-- Alternative: Gemini 1.5 Flash
+- Primary: Gemini Flash Lite Latest (default)
+- Alternative: Gemini Flash Latest if you want richer suggestions
 
 **For Summaries (Balanced):**
 
-- Primary: Gemini 1.5 Flash
-- Alternative: Gemini 1.5 Pro (more detailed)
+- Primary: Gemini Flash Latest (default)
+- Alternative: Gemini 2.5 Pro for long or technical documents
 
 ## Best Practices
 

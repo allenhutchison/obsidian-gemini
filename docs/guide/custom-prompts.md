@@ -97,9 +97,9 @@ tags: ['category', 'use-case'] # Optional: For organization
 
 #### Special Tags
 
-| Tag                | Purpose                                                                                                                                 |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `selection-action` | Makes the prompt available in the "Explain Selection" feature. See [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
+| Tag                              | Purpose                                                                                                                                                                                                                        |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gemini-scribe/selection-prompt` | Makes the prompt available in the right-click "Explain Selection" / "Ask about Selection" menu. See [Selection Prompts](/guide/selection-prompts) and the [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
 
 ### Example: Technical Documentation Assistant
 

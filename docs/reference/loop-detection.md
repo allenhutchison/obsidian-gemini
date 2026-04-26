@@ -32,9 +32,14 @@ The AI will receive an error message:
 
 > Execution loop detected: read_file has been called 3 times with the same parameters in the last 30 seconds. Please try a different approach.
 
+## Per-Turn Abort
+
+In addition to the per-tool detection above, the agent loop counts how many times loop detection fires within a single turn. If it fires three or more times in one turn (the model keeps trying near-identical calls after being blocked), the entire turn aborts cleanly with a "loop detected — turn aborted" notice. This prevents a model that is genuinely stuck from spinning through every tool variation. The abort is per-turn — the next user message starts fresh.
+
 ## Implementation Details
 
 - Uses deterministic key generation for tool calls to ensure consistent detection
 - Automatically cleans up old execution history to prevent memory issues
 - Session-specific tracking - each agent session has its own loop detection history
 - History is cleared when creating new sessions or loading from history
+- Per-turn abort threshold is fixed at 3 fires; the per-tool threshold and time window above are user-configurable

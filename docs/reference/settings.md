@@ -55,12 +55,13 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 - **Structure**:
   ```
   gemini-scribe/
-  ├── History/        # Legacy chat history files (v3.x)
-  ├── Prompts/        # Custom prompt templates
-  ├── Skills/         # Custom agent skills (<skill-name>/SKILL.md)
-  ├── Agent-Sessions/ # Agent mode sessions with conversation history
-  ├── debug.log       # Current log file (when file logging is enabled)
-  └── debug.log.old   # Previous rotated log file
+  ├── History/         # Legacy chat history files (v3.x)
+  ├── Prompts/         # Custom prompt templates
+  ├── Skills/          # Custom agent skills (<skill-name>/SKILL.md)
+  ├── Agent-Sessions/  # Agent mode sessions with conversation history
+  ├── Scheduled-Tasks/ # Scheduled task definitions and run output
+  ├── debug.log        # Current log file (when file logging is enabled)
+  └── debug.log.old    # Previous rotated log file
   ```
 
 ### Enable Chat History
@@ -95,7 +96,7 @@ The active model list depends on the [`provider`](#provider) setting:
   - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient, default for chat)
   - `gemini-2.5-pro` - Gemini 2.5 Pro (most capable, requires billing)
   - `gemini-flash-lite-latest` - Gemini Flash Lite Latest (lightweight)
-  - `gemini-3-pro-preview` - Gemini 3 Pro Preview (experimental)
+  - `gemini-3.1-pro-preview` - Gemini 3.1 Pro Preview (experimental)
 - **Note**: Model discovery automatically fetches the latest available models from Google's API
 
 ### Summary Model
