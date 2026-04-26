@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { AgentLoop } from '../../src/agent/agent-loop';
 import type { ToolCall, ModelResponse, ModelApi } from '../../src/api/interfaces/model-api';
 import type { IConfirmationProvider, ToolResult } from '../../src/tools/types';
@@ -6,33 +7,35 @@ import type { IConfirmationProvider, ToolResult } from '../../src/tools/types';
 // are empty, so no tool requires confirmation) — the loop only needs *some* provider to
 // hand through to the engine. A noop stub is fine.
 const confirmationProvider: IConfirmationProvider = {
-	showConfirmationInChat: jest.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
-	isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
-	allowToolWithoutConfirmation: jest.fn(),
+	showConfirmationInChat: vi.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
+	isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
+	allowToolWithoutConfirmation: vi.fn(),
 };
 
 // Build a minimal plugin stub with just enough surface for AgentLoop and the
 // followup helpers to walk through. Each test customises only what it cares about.
 function buildPlugin(overrides: any = {}) {
 	const toolRegistry = {
-		getTool: jest.fn().mockImplementation((name: string) => ({
-			name,
-			displayName: name,
-		})),
-		getEnabledTools: jest.fn().mockReturnValue([]),
+		getTool: vi.fn().mockImplementation(function (name: string) {
+			return {
+				name,
+				displayName: name,
+			};
+		}),
+		getEnabledTools: vi.fn().mockReturnValue([]),
 		...overrides.toolRegistry,
 	};
 
 	const toolExecutionEngine = {
-		executeTool: jest
+		executeTool: vi
 			.fn()
 			.mockImplementation((tc: ToolCall) => Promise.resolve({ success: true, data: { tool: tc.name } })),
 		...overrides.toolExecutionEngine,
 	};
 
-	const agentEventBus = { emit: jest.fn().mockResolvedValue(undefined), ...overrides.agentEventBus };
+	const agentEventBus = { emit: vi.fn().mockResolvedValue(undefined), ...overrides.agentEventBus };
 
-	const logger = { log: jest.fn(), debug: jest.fn(), warn: jest.fn(), error: jest.fn(), ...overrides.logger };
+	const logger = { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn(), ...overrides.logger };
 
 	const settings = {
 		chatModelName: 'gemini-test',
@@ -41,7 +44,7 @@ function buildPlugin(overrides: any = {}) {
 		...overrides.settings,
 	};
 
-	const sessionHistory = { addEntryToSession: jest.fn().mockResolvedValue(undefined), ...overrides.sessionHistory };
+	const sessionHistory = { addEntryToSession: vi.fn().mockResolvedValue(undefined), ...overrides.sessionHistory };
 
 	return {
 		toolRegistry,
@@ -71,7 +74,7 @@ function makeScriptedModelApi(responses: ModelResponse[]): ModelApi & { calls: n
 		get calls() {
 			return calls;
 		},
-		generateModelResponse: jest.fn().mockImplementation(() => {
+		generateModelResponse: vi.fn().mockImplementation(() => {
 			const next = responses[calls];
 			calls++;
 			if (!next) throw new Error(`Scripted model API ran out of responses at call ${calls}`);
@@ -194,7 +197,7 @@ describe('AgentLoop', () => {
 			const api = makeScriptedModelApi([textResponse('skipped')]);
 
 			let cancelled = false;
-			plugin.toolExecutionEngine.executeTool = jest.fn().mockImplementation(() => {
+			plugin.toolExecutionEngine.executeTool = vi.fn().mockImplementation(() => {
 				cancelled = true; // flip after the first tool runs
 				return Promise.resolve({ success: true });
 			});
@@ -223,7 +226,7 @@ describe('AgentLoop', () => {
 			const api = makeScriptedModelApi([toolResponse([tc('read_file')]), textResponse('never')]);
 
 			let toolsRun = 0;
-			plugin.toolExecutionEngine.executeTool = jest.fn().mockImplementation(() => {
+			plugin.toolExecutionEngine.executeTool = vi.fn().mockImplementation(() => {
 				toolsRun++;
 				return Promise.resolve({ success: true });
 			});
@@ -288,7 +291,7 @@ describe('AgentLoop', () => {
 			const plugin = buildPlugin();
 			const session = buildSession();
 			const api = makeScriptedModelApi([textResponse(''), textResponse('done')]);
-			const onEmptyResponseRetry = jest.fn();
+			const onEmptyResponseRetry = vi.fn();
 
 			const loop = new AgentLoop();
 			await loop.run({
@@ -315,7 +318,7 @@ describe('AgentLoop', () => {
 			const session = buildSession();
 			// Model always returns more tool calls — would loop forever without a cap
 			const api = {
-				generateModelResponse: jest.fn().mockResolvedValue(toolResponse([tc('read_file')])),
+				generateModelResponse: vi.fn().mockResolvedValue(toolResponse([tc('read_file')])),
 			} as any;
 
 			const loop = new AgentLoop();
@@ -404,14 +407,14 @@ describe('AgentLoop', () => {
 
 		test('passes the description string to onToolCallStart', async () => {
 			const plugin = buildPlugin();
-			plugin.toolRegistry.getTool = jest.fn().mockReturnValue({
+			plugin.toolRegistry.getTool = vi.fn().mockReturnValue({
 				name: 'read_file',
 				displayName: 'Read File',
 				getProgressDescription: () => 'Custom description here',
 			});
 			const session = buildSession();
 			const api = makeScriptedModelApi([textResponse('done')]);
-			const onToolCallStart = jest.fn();
+			const onToolCallStart = vi.fn();
 
 			const loop = new AgentLoop();
 			await loop.run({
@@ -442,7 +445,7 @@ describe('AgentLoop', () => {
 				toolResponse([tc('write_file', { path: 'b' }), tc('read_file', { path: 'c' })]),
 				textResponse('done'),
 			]);
-			const onToolBatchStart = jest.fn();
+			const onToolBatchStart = vi.fn();
 
 			const loop = new AgentLoop();
 			await loop.run({
@@ -476,7 +479,7 @@ describe('AgentLoop', () => {
 			const plugin = buildPlugin();
 			const session = buildSession();
 			const api = makeScriptedModelApi([toolResponse([tc('read_file')]), textResponse('done')]);
-			const onFollowUpRequestStart = jest.fn();
+			const onFollowUpRequestStart = vi.fn();
 
 			const loop = new AgentLoop();
 			await loop.run({
@@ -499,13 +502,13 @@ describe('AgentLoop', () => {
 
 		test('fires onToolCounted once per executed tool, even on failure', async () => {
 			const plugin = buildPlugin();
-			plugin.toolExecutionEngine.executeTool = jest
+			plugin.toolExecutionEngine.executeTool = vi
 				.fn()
 				.mockResolvedValueOnce({ success: true })
 				.mockRejectedValueOnce(new Error('boom'));
 			const session = buildSession();
 			const api = makeScriptedModelApi([textResponse('done')]);
-			const onToolCounted = jest.fn();
+			const onToolCounted = vi.fn();
 
 			const loop = new AgentLoop();
 			await loop.run({
@@ -576,7 +579,7 @@ describe('AgentLoop', () => {
 	describe('error handling', () => {
 		test('tool throw is captured as a failed result and the loop continues', async () => {
 			const plugin = buildPlugin();
-			plugin.toolExecutionEngine.executeTool = jest
+			plugin.toolExecutionEngine.executeTool = vi
 				.fn()
 				.mockRejectedValueOnce(new Error('disk full'))
 				.mockResolvedValueOnce({ success: true });
@@ -659,7 +662,7 @@ describe('AgentLoop', () => {
 
 			// The follow-up request should carry the SUCCESSFUL tool result through —
 			// the onToolCallComplete throw must not roll the result back to a failure.
-			const followUpRequest = (api.generateModelResponse as jest.Mock).mock.calls[0][0];
+			const followUpRequest = (api.generateModelResponse as Mock).mock.calls[0][0];
 			const fnResponseTurn = followUpRequest.conversationHistory.find(
 				(t: any) => t.role === 'user' && t.parts.some((p: any) => p.functionResponse)
 			);
@@ -669,7 +672,7 @@ describe('AgentLoop', () => {
 
 		test('a throwing event bus subscriber does not abort the loop', async () => {
 			const plugin = buildPlugin();
-			plugin.agentEventBus.emit = jest.fn().mockImplementation((event: string) => {
+			plugin.agentEventBus.emit = vi.fn().mockImplementation((event: string) => {
 				if (event === 'toolChainComplete') {
 					return Promise.reject(new Error('subscriber broke'));
 				}
@@ -708,7 +711,7 @@ describe('AgentLoop', () => {
 				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
 			});
 
-			const followUpRequest = (api.generateModelResponse as jest.Mock).mock.calls[0][0];
+			const followUpRequest = (api.generateModelResponse as Mock).mock.calls[0][0];
 			const modelTurn = followUpRequest.conversationHistory.find((t: any) => t.role === 'model');
 			expect(modelTurn.parts[0]).toHaveProperty('thoughtSignature', 'sig_xyz');
 		});
@@ -739,14 +742,14 @@ describe('AgentLoop', () => {
 			const plugin = buildPlugin();
 			// Every tool call comes back already blocked by the engine — mimics the
 			// model stubbornly re-attempting the same call after being told to stop.
-			plugin.toolExecutionEngine.executeTool = jest
+			plugin.toolExecutionEngine.executeTool = vi
 				.fn()
 				.mockResolvedValue({ success: false, loopDetected: true, error: 'Execution loop detected' });
 
 			const session = buildSession();
 			// Model keeps replying with more tool calls — would loop forever without the abort.
 			const api = {
-				generateModelResponse: jest.fn().mockResolvedValue(toolResponse([tc('read_file', { path: 'a' })])),
+				generateModelResponse: vi.fn().mockResolvedValue(toolResponse([tc('read_file', { path: 'a' })])),
 			} as any;
 
 			const loop = new AgentLoop();
@@ -769,9 +772,7 @@ describe('AgentLoop', () => {
 		test('does not abort when only non-loop failures occur', async () => {
 			const plugin = buildPlugin();
 			// Regular failures without the loopDetected flag must not escalate.
-			plugin.toolExecutionEngine.executeTool = jest
-				.fn()
-				.mockResolvedValue({ success: false, error: 'generic failure' });
+			plugin.toolExecutionEngine.executeTool = vi.fn().mockResolvedValue({ success: false, error: 'generic failure' });
 
 			const session = buildSession();
 			const api = makeScriptedModelApi([textResponse('recovered')]);

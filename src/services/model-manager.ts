@@ -1,4 +1,5 @@
 import type ObsidianGemini from '../main';
+import * as modelsModule from '../models';
 import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings, DEFAULT_GEMINI_MODELS } from '../models';
 import { ModelListProvider } from './model-list-provider';
 import { ParameterValidationService, ParameterRanges } from './parameter-validation';
@@ -120,17 +121,15 @@ export class ModelManager {
 	 * Get the current GEMINI_MODELS array.
 	 */
 	private getCurrentGeminiModels(): GeminiModel[] {
-		const models = require('../models');
-		return models.GEMINI_MODELS || [];
+		return modelsModule.GEMINI_MODELS || [];
 	}
 
 	/**
 	 * Update the global GEMINI_MODELS array.
 	 */
 	private updateGlobalModelsList(newModels: GeminiModel[]): void {
-		const models = require('../models');
-		if (models.setGeminiModels) {
-			models.setGeminiModels(newModels);
+		if (modelsModule.setGeminiModels) {
+			modelsModule.setGeminiModels(newModels);
 		}
 	}
 

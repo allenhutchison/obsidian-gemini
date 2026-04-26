@@ -9,24 +9,24 @@ import { TFile } from 'obsidian';
 // Deny-by-default provider used when a test never reaches the confirmation branch.
 // Tests that do reach confirmation build their own stub inline.
 const denyProvider: IConfirmationProvider = {
-	showConfirmationInChat: jest.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
-	isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
-	allowToolWithoutConfirmation: jest.fn(),
+	showConfirmationInChat: vi.fn().mockResolvedValue({ confirmed: false, allowWithoutConfirmation: false }),
+	isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
+	allowToolWithoutConfirmation: vi.fn(),
 };
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
-jest.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils', () => ({
 	EXTENSION_TO_MIME: { '.md': 'text/markdown', '.txt': 'text/plain' },
 	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json']),
 }));
 
 // Mock Obsidian
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
-	Notice: jest.fn().mockImplementation(() => ({
-		hide: jest.fn(),
-	})),
-	normalizePath: jest.fn((path: string) => path),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
+	Notice: class Notice {
+		hide = vi.fn();
+	},
+	normalizePath: vi.fn((path: string) => path),
 	TFile: class TFile {
 		path: string = '';
 		name: string = '';
@@ -53,14 +53,14 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 			},
 			app: {
 				vault: {
-					getAbstractFileByPath: jest.fn(),
-					read: jest.fn().mockResolvedValue('file content'),
-					getMarkdownFiles: jest.fn().mockReturnValue([]),
-					getFiles: jest.fn().mockReturnValue([]),
-					getRoot: jest.fn().mockReturnValue({ children: [] }),
+					getAbstractFileByPath: vi.fn(),
+					read: vi.fn().mockResolvedValue('file content'),
+					getMarkdownFiles: vi.fn().mockReturnValue([]),
+					getFiles: vi.fn().mockReturnValue([]),
+					getRoot: vi.fn().mockReturnValue({ children: [] }),
 				},
 				metadataCache: {
-					getFirstLinkpathDest: jest.fn().mockReturnValue(null),
+					getFirstLinkpathDest: vi.fn().mockReturnValue(null),
 				},
 			},
 			agentView: null,
@@ -77,7 +77,7 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 	});
 
 	afterEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	it('should not require confirmation for READ_ONLY tools', async () => {
@@ -140,12 +140,12 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 
 		// Mock agentView with in-chat confirmation that declines
 		const mockAgentView = {
-			showConfirmationInChat: jest.fn().mockResolvedValue({
+			showConfirmationInChat: vi.fn().mockResolvedValue({
 				confirmed: false,
 				allowWithoutConfirmation: false,
 			}),
-			isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
-			allowToolWithoutConfirmation: jest.fn(),
+			isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
+			allowToolWithoutConfirmation: vi.fn(),
 		};
 
 		// Test write_file - should require confirmation
@@ -180,15 +180,15 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 
 		// Mock agentView that approves with edited content
 		const mockAgentView = {
-			showConfirmationInChat: jest.fn().mockResolvedValue({
+			showConfirmationInChat: vi.fn().mockResolvedValue({
 				confirmed: true,
 				allowWithoutConfirmation: false,
 				finalContent: 'user edited content',
 				userEdited: true,
 			}),
-			isToolAllowedWithoutConfirmation: jest.fn().mockReturnValue(false),
-			allowToolWithoutConfirmation: jest.fn(),
-			updateProgress: jest.fn(),
+			isToolAllowedWithoutConfirmation: vi.fn().mockReturnValue(false),
+			allowToolWithoutConfirmation: vi.fn(),
+			updateProgress: vi.fn(),
 		};
 
 		// Mock vault to allow the write to succeed - use TFile instance for instanceof check
@@ -197,7 +197,7 @@ describe('ToolExecutionEngine - Confirmation Requirements', () => {
 		(mockFile as any).name = 'test.md';
 		(mockFile as any).stat = { size: 100, mtime: Date.now(), ctime: Date.now() };
 		plugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
-		plugin.app.vault.modify = jest.fn().mockResolvedValue(undefined);
+		plugin.app.vault.modify = vi.fn().mockResolvedValue(undefined);
 
 		const writeResult = await engine.executeTool(
 			{
@@ -232,14 +232,14 @@ describe('ToolExecutionEngine - Error Handling', () => {
 			},
 			app: {
 				vault: {
-					getAbstractFileByPath: jest.fn(),
-					read: jest.fn().mockResolvedValue('file content'),
-					getMarkdownFiles: jest.fn().mockReturnValue([]),
-					getFiles: jest.fn().mockReturnValue([]),
-					getRoot: jest.fn().mockReturnValue({ children: [] }),
+					getAbstractFileByPath: vi.fn(),
+					read: vi.fn().mockResolvedValue('file content'),
+					getMarkdownFiles: vi.fn().mockReturnValue([]),
+					getFiles: vi.fn().mockReturnValue([]),
+					getRoot: vi.fn().mockReturnValue({ children: [] }),
 				},
 				metadataCache: {
-					getFirstLinkpathDest: jest.fn().mockReturnValue(null),
+					getFirstLinkpathDest: vi.fn().mockReturnValue(null),
 				},
 			},
 			agentView: null,
@@ -251,7 +251,7 @@ describe('ToolExecutionEngine - Error Handling', () => {
 	});
 
 	afterEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	it('should handle non-existent tool gracefully', async () => {
@@ -339,7 +339,7 @@ describe('ToolExecutionEngine - Error Handling', () => {
 				properties: {},
 				required: [],
 			},
-			execute: jest.fn().mockRejectedValue(new Error('Tool execution failed')),
+			execute: vi.fn().mockRejectedValue(new Error('Tool execution failed')),
 		};
 		registry.registerTool(errorTool);
 
@@ -436,7 +436,7 @@ describe('ToolExecutionEngine - Loop Detection', () => {
 		category: ToolCategory.READ_ONLY,
 		classification: ToolClassification.READ,
 		parameters: { type: 'object' as const, properties: {}, required: [] },
-		execute: jest.fn().mockResolvedValue({ success: true, data: {} }),
+		execute: vi.fn().mockResolvedValue({ success: true, data: {} }),
 	};
 
 	beforeEach(() => {
@@ -446,8 +446,8 @@ describe('ToolExecutionEngine - Loop Detection', () => {
 				loopDetectionThreshold: 3,
 				loopDetectionTimeWindowSeconds: 60,
 			},
-			logger: { log: jest.fn(), debug: jest.fn(), warn: jest.fn(), error: jest.fn() },
-			agentEventBus: { emit: jest.fn().mockResolvedValue(undefined) },
+			logger: { log: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+			agentEventBus: { emit: vi.fn().mockResolvedValue(undefined) },
 		};
 
 		registry = new ToolRegistry(plugin);
@@ -456,7 +456,7 @@ describe('ToolExecutionEngine - Loop Detection', () => {
 	});
 
 	afterEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	it('blocks further identical calls with loopDetected: true and emits toolLoopDetected', async () => {

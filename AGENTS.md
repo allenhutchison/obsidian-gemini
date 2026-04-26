@@ -207,9 +207,9 @@ if (this.plugin.settings.debugMode) {
 
 ## Testing Guidelines
 
-- Jest with ts-jest for TypeScript support
-- JSDOM environment for DOM testing
-- Test pattern: `**/?(*.)+(spec|test).[tj]s`
+- Vitest (esbuild-powered) for TypeScript support
+- jsdom environment for DOM testing
+- Test pattern: `test/**/?(*.)+(spec|test).[tj]s`
 - Keep unit tests next to implementations and name them after the unit (`models.test.ts`, `main.test.ts`)
 - Assert observable behavior of prompts, services, and tool orchestration; add regression coverage for bugs
 - Extend shared fixtures under `__mocks__/` when mocking new APIs

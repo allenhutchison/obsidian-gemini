@@ -4,9 +4,9 @@ import { ToolCategory } from '../../src/types/agent';
 
 // Mock AgentsMemory
 const mockAgentsMemory = {
-	read: jest.fn(),
-	append: jest.fn(),
-	getMemoryFilePath: jest.fn(),
+	read: vi.fn(),
+	append: vi.fn(),
+	getMemoryFilePath: vi.fn(),
 };
 
 const mockPlugin = {
@@ -29,7 +29,7 @@ const mockContext: ToolExecutionContext = {
 
 describe('Memory Tools', () => {
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('UpdateMemoryTool', () => {

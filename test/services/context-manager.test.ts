@@ -6,16 +6,18 @@ import {
 } from '../../src/services/context-manager';
 
 // Mock @google/genai
-const mockCountTokens = jest.fn();
-const mockGenerateContent = jest.fn();
+const mockCountTokens = vi.fn();
+const mockGenerateContent = vi.fn();
 
-jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn().mockImplementation(() => ({
-		models: {
-			countTokens: (...args: any[]) => mockCountTokens(...args),
-			generateContent: (...args: any[]) => mockGenerateContent(...args),
-		},
-	})),
+vi.mock('@google/genai', () => ({
+	GoogleGenAI: vi.fn().mockImplementation(function () {
+		return {
+			models: {
+				countTokens: (...args: any[]) => mockCountTokens(...args),
+				generateContent: (...args: any[]) => mockGenerateContent(...args),
+			},
+		};
+	}),
 }));
 
 describe('ContextManager', () => {
@@ -25,10 +27,10 @@ describe('ContextManager', () => {
 
 	beforeEach(() => {
 		mockLogger = {
-			log: jest.fn(),
-			debug: jest.fn(),
-			error: jest.fn(),
-			warn: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
 		};
 
 		mockPlugin = {
@@ -38,7 +40,7 @@ describe('ContextManager', () => {
 				contextCompactionThreshold: 20,
 				chatModelName: 'gemini-2.5-flash',
 			},
-			getModelManager: jest.fn().mockReturnValue({}),
+			getModelManager: vi.fn().mockReturnValue({}),
 		};
 
 		contextManager = new ContextManager(mockPlugin, mockLogger);
@@ -57,7 +59,7 @@ describe('ContextManager', () => {
 	});
 
 	afterEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 	});
 
 	describe('updateUsageMetadata', () => {

@@ -1,4 +1,4 @@
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	class TFolder {
 		path: string;
 		constructor(path: string) {
@@ -15,8 +15,8 @@ jest.mock('obsidian', () => {
 import { FolderInitializer } from '../../src/services/folder-initializer';
 
 // Mock ensureFolderExists
-const mockEnsureFolderExists = jest.fn().mockResolvedValue({});
-jest.mock('../../src/utils/file-utils', () => ({
+const mockEnsureFolderExists = vi.fn().mockResolvedValue({});
+vi.mock('../../src/utils/file-utils', () => ({
 	ensureFolderExists: (...args: any[]) => mockEnsureFolderExists(...args),
 }));
 
@@ -25,24 +25,24 @@ describe('FolderInitializer', () => {
 	let mockPlugin: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockPlugin = {
 			app: {
 				vault: {
-					getAbstractFileByPath: jest.fn().mockReturnValue(null),
+					getAbstractFileByPath: vi.fn().mockReturnValue(null),
 				},
 				fileManager: {
-					renameFile: jest.fn(),
+					renameFile: vi.fn(),
 				},
 			},
 			settings: {
 				historyFolder: 'gemini-scribe',
 			},
 			logger: {
-				log: jest.fn(),
-				debug: jest.fn(),
-				error: jest.fn(),
-				warn: jest.fn(),
+				log: vi.fn(),
+				debug: vi.fn(),
+				error: vi.fn(),
+				warn: vi.fn(),
 			},
 		};
 		folderInitializer = new FolderInitializer(mockPlugin);

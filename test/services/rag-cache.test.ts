@@ -1,4 +1,4 @@
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	const MockTFile = class {
 		path: string;
 		constructor(path: string) {
@@ -22,14 +22,14 @@ function createMockPlugin(overrides: Partial<any> = {}) {
 	return {
 		app: {
 			vault: {
-				getAbstractFileByPath: jest.fn().mockReturnValue(null),
-				read: jest.fn().mockResolvedValue('{}'),
-				modify: jest.fn().mockResolvedValue(undefined),
-				create: jest.fn().mockResolvedValue(undefined),
+				getAbstractFileByPath: vi.fn().mockReturnValue(null),
+				read: vi.fn().mockResolvedValue('{}'),
+				modify: vi.fn().mockResolvedValue(undefined),
+				create: vi.fn().mockResolvedValue(undefined),
 				adapter: {
-					write: jest.fn().mockResolvedValue(undefined),
-					exists: jest.fn().mockResolvedValue(false),
-					read: jest.fn().mockResolvedValue('{}'),
+					write: vi.fn().mockResolvedValue(undefined),
+					exists: vi.fn().mockResolvedValue(false),
+					read: vi.fn().mockResolvedValue('{}'),
 				},
 			},
 		},
@@ -37,10 +37,10 @@ function createMockPlugin(overrides: Partial<any> = {}) {
 			historyFolder: 'gemini-scribe',
 		},
 		logger: {
-			log: jest.fn(),
-			debug: jest.fn(),
-			warn: jest.fn(),
-			error: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			warn: vi.fn(),
+			error: vi.fn(),
 		},
 		...overrides,
 	} as any;
@@ -51,7 +51,7 @@ describe('RagCache', () => {
 	let mockPlugin: ReturnType<typeof createMockPlugin>;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mockPlugin = createMockPlugin();
 		cache = new RagCache(mockPlugin);
 	});

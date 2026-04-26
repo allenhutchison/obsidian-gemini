@@ -1,11 +1,11 @@
 import { PromptManager } from '../../src/prompts/prompt-manager';
-import { Vault, TFile } from 'obsidian';
+import { Vault, TFile, TFolder as MockTFolder } from 'obsidian';
 import type ObsidianGemini from '../../src/main';
 
 // Mock obsidian module
-jest.mock('obsidian', () => {
-	const TFile = jest.fn();
-	const TFolder = jest.fn();
+vi.mock('obsidian', () => {
+	const TFile = vi.fn();
+	const TFolder = vi.fn();
 
 	// Mock SuggestModal base class
 	class MockSuggestModal {
@@ -22,41 +22,45 @@ jest.mock('obsidian', () => {
 		onOpen() {}
 		onClose() {}
 		contentEl = {
-			empty: jest.fn(),
-			createEl: jest.fn(() => ({
-				style: {},
-				addEventListener: jest.fn(),
-				createEl: jest.fn(() => ({
+			empty: vi.fn(),
+			createEl: vi.fn(function () {
+				return {
 					style: {},
-					addEventListener: jest.fn(),
-				})),
-				createDiv: jest.fn(() => ({
-					style: {},
-					createEl: jest.fn(() => ({
+					addEventListener: vi.fn(),
+					createEl: vi.fn(() => ({
 						style: {},
-						addEventListener: jest.fn(),
+						addEventListener: vi.fn(),
 					})),
-				})),
-			})),
-			createDiv: jest.fn(() => ({
-				style: {},
-				createEl: jest.fn(() => ({
+					createDiv: vi.fn(() => ({
+						style: {},
+						createEl: vi.fn(() => ({
+							style: {},
+							addEventListener: vi.fn(),
+						})),
+					})),
+				};
+			}),
+			createDiv: vi.fn(function () {
+				return {
 					style: {},
-					addEventListener: jest.fn(),
-				})),
-			})),
+					createEl: vi.fn(() => ({
+						style: {},
+						addEventListener: vi.fn(),
+					})),
+				};
+			}),
 		};
 	}
 
 	return {
-		Vault: jest.fn(),
+		Vault: vi.fn(),
 		TFile: TFile,
 		TFolder: TFolder,
-		normalizePath: jest.fn((path: string) => path),
-		Notice: jest.fn(),
+		normalizePath: vi.fn((path: string) => path),
+		Notice: vi.fn(),
 		SuggestModal: MockSuggestModal,
 		Modal: MockModal,
-		App: jest.fn(),
+		App: vi.fn(),
 	};
 });
 
@@ -73,16 +77,16 @@ describe('PromptManager', () => {
 			},
 			app: {
 				metadataCache: {
-					getFileCache: jest.fn(),
-					getFirstLinkpathDest: jest.fn(),
+					getFileCache: vi.fn(),
+					getFirstLinkpathDest: vi.fn(),
 				},
 			},
 			logger: {
-				log: jest.fn(),
-				debug: jest.fn(),
-				warn: jest.fn(),
-				error: jest.fn(),
-				child: jest.fn(function (this: any, _prefix: string) {
+				log: vi.fn(),
+				debug: vi.fn(),
+				warn: vi.fn(),
+				error: vi.fn(),
+				child: vi.fn(function (this: any, _prefix: string) {
 					return this;
 				}),
 			},
@@ -90,14 +94,14 @@ describe('PromptManager', () => {
 
 		mockVault = {
 			adapter: {
-				exists: jest.fn(),
-				list: jest.fn(),
+				exists: vi.fn(),
+				list: vi.fn(),
 			},
-			createFolder: jest.fn(() => Promise.resolve()),
-			getAbstractFileByPath: jest.fn(),
-			read: jest.fn(),
-			create: jest.fn(),
-			getMarkdownFiles: jest.fn(() => []),
+			createFolder: vi.fn(() => Promise.resolve()),
+			getAbstractFileByPath: vi.fn(),
+			read: vi.fn(),
+			create: vi.fn(),
+			getMarkdownFiles: vi.fn(() => []),
 		};
 
 		promptManager = new PromptManager(mockPlugin as ObsidianGemini, mockVault as Vault);
@@ -194,7 +198,6 @@ Test prompt content`;
 	describe('listAvailablePrompts', () => {
 		it('should list all markdown files in prompts directory', async () => {
 			// Mock the prompts folder
-			const MockTFolder = jest.requireMock('obsidian').TFolder;
 			const mockFolder = Object.create(MockTFolder.prototype);
 			mockFolder.path = 'gemini-scribe/Prompts';
 

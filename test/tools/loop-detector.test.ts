@@ -6,11 +6,11 @@ describe('ToolLoopDetector', () => {
 
 	beforeEach(() => {
 		detector = new ToolLoopDetector(3, 60); // 3 identical calls within 60 seconds
-		jest.useFakeTimers();
+		vi.useFakeTimers();
 	});
 
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	it('should not detect loop for different tool calls', () => {
@@ -62,7 +62,7 @@ describe('ToolLoopDetector', () => {
 		detector.recordExecution(sessionId, toolCall);
 
 		// Advance time past the window (60 seconds)
-		jest.advanceTimersByTime(61000);
+		vi.advanceTimersByTime(61000);
 
 		// Should not detect loop since old calls expired
 		expect(detector.isLoopDetected(sessionId, toolCall)).toBe(false);

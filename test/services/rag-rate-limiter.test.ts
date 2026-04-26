@@ -1,4 +1,4 @@
-jest.mock('../../src/utils/error-utils', () => ({
+vi.mock('../../src/utils/error-utils', () => ({
 	isRateLimitError: (error: unknown) => {
 		if (!error) return false;
 		const msg = error instanceof Error ? error.message : String(error);
@@ -12,7 +12,7 @@ jest.mock('../../src/utils/error-utils', () => ({
 	},
 }));
 
-jest.mock('../../src/utils/retry', () => ({
+vi.mock('../../src/utils/retry', () => ({
 	parseRetryDelay: (error: unknown) => {
 		if (error && (error as any).retryAfter) {
 			return (error as any).retryAfter * 1000;
@@ -28,27 +28,27 @@ describe('RagRateLimiter', () => {
 	let mockCallbacks: any;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
-		jest.useFakeTimers();
+		vi.clearAllMocks();
+		vi.useFakeTimers();
 
 		mockCallbacks = {
-			onStatusChange: jest.fn(),
-			onUpdateStatusBar: jest.fn(),
-			onNotifyListeners: jest.fn(),
+			onStatusChange: vi.fn(),
+			onUpdateStatusBar: vi.fn(),
+			onNotifyListeners: vi.fn(),
 		};
 
 		const mockLogger = {
-			log: jest.fn(),
-			debug: jest.fn(),
-			warn: jest.fn(),
-			error: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			warn: vi.fn(),
+			error: vi.fn(),
 		};
 
 		limiter = new RagRateLimiter(mockLogger as any, mockCallbacks);
 	});
 
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	describe('isRateLimitError', () => {
@@ -84,7 +84,7 @@ describe('RagRateLimiter', () => {
 
 			expect(mockCallbacks.onStatusChange).toHaveBeenCalledWith('rate_limited');
 
-			jest.advanceTimersByTime(35000);
+			vi.advanceTimersByTime(35000);
 			await promise;
 		});
 
@@ -94,7 +94,7 @@ describe('RagRateLimiter', () => {
 			const promise = limiter.handleRateLimit();
 			expect(limiter.consecutiveCount).toBe(1);
 
-			jest.advanceTimersByTime(35000);
+			vi.advanceTimersByTime(35000);
 			await promise;
 		});
 
@@ -104,7 +104,7 @@ describe('RagRateLimiter', () => {
 			expect((limiter as any).rateLimitTimer).not.toBeUndefined();
 			expect(mockCallbacks.onUpdateStatusBar).toHaveBeenCalled();
 
-			jest.advanceTimersByTime(35000);
+			vi.advanceTimersByTime(35000);
 			await promise;
 
 			expect((limiter as any).rateLimitTimer).toBeUndefined();

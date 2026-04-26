@@ -7,20 +7,21 @@
  *  - Validation / save rejections must surface through plugin.logger.error
  *    and a user-facing Notice, not silent unhandled promise rejections.
  */
+import type { Mock } from 'vitest';
 
-// `var` (not `const`) so that jest.mock hoisting can reference these below.
-// jest.mock is hoisted to the top of the file, while `const` would hit the
+// `var` (not `const`) so that vi.mock hoisting can reference these below.
+// vi.mock is hoisted to the top of the file, while `const` would hit the
 // Temporal Dead Zone when the factory runs during module evaluation.
 // eslint-disable-next-line no-var
 var mockSliderRegistry: Record<string, any>;
 // eslint-disable-next-line no-var
-var mockNotice: jest.Mock;
+var mockNotice: Mock;
 
-jest.mock('../../src/main');
+vi.mock('../../src/main');
 
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	mockSliderRegistry = {};
-	mockNotice = jest.fn();
+	mockNotice = vi.fn();
 
 	class Setting {
 		private _name = '';
@@ -52,7 +53,7 @@ jest.mock('obsidian', () => {
 		}
 		addSlider(cb: (c: any) => void) {
 			const component: any = {};
-			component.setValue = jest.fn(() => component);
+			component.setValue = vi.fn(() => component);
 			component.setLimits = () => component;
 			component.setDynamicTooltip = () => component;
 			component._handler = null;
@@ -107,12 +108,12 @@ import { renderApiSettings } from '../../src/ui/settings-api';
 
 interface FakePlugin {
 	settings: any;
-	saveSettings: jest.Mock;
+	saveSettings: Mock;
 	logger: {
-		error: jest.Mock;
-		warn: jest.Mock;
-		log: jest.Mock;
-		debug: jest.Mock;
+		error: Mock;
+		warn: Mock;
+		log: Mock;
+		debug: Mock;
 	};
 	getModelManager: () => any;
 }
@@ -128,32 +129,32 @@ function buildPlugin(): FakePlugin {
 			initialBackoffDelay: 1000,
 			modelDiscovery: { enabled: false, autoUpdateInterval: 24, fallbackToStatic: true },
 		},
-		saveSettings: jest.fn().mockResolvedValue(undefined),
+		saveSettings: vi.fn().mockResolvedValue(undefined),
 		logger: {
-			error: jest.fn(),
-			warn: jest.fn(),
-			log: jest.fn(),
-			debug: jest.fn(),
+			error: vi.fn(),
+			warn: vi.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
 		},
 		getModelManager: () => ({}),
 	};
 }
 
-async function setup(validateImpl?: jest.Mock) {
+async function setup(validateImpl?: Mock) {
 	const plugin = buildPlugin();
 	const modelManager = {
-		getParameterRanges: jest.fn().mockResolvedValue({
+		getParameterRanges: vi.fn().mockResolvedValue({
 			temperature: { min: 0, max: 2, step: 0.1 },
 			topP: { min: 0, max: 1, step: 0.05 },
 		}),
-		getParameterDisplayInfo: jest.fn().mockResolvedValue({
+		getParameterDisplayInfo: vi.fn().mockResolvedValue({
 			hasModelData: false,
 			temperature: '',
 			topP: '',
 		}),
 		validateParameters:
 			validateImpl ||
-			jest.fn().mockResolvedValue({
+			vi.fn().mockResolvedValue({
 				temperature: { isValid: true },
 				topP: { isValid: true },
 			}),
@@ -161,7 +162,7 @@ async function setup(validateImpl?: jest.Mock) {
 	plugin.getModelManager = () => modelManager;
 
 	const containerEl = {} as HTMLElement;
-	const context = { redisplay: jest.fn(), showDeveloperSettings: false };
+	const context = { redisplay: vi.fn(), showDeveloperSettings: false };
 	await renderApiSettings(containerEl, plugin as any, context);
 	return { plugin, modelManager };
 }
@@ -179,12 +180,12 @@ describe('settings-api slider debounce (issue #601)', () => {
 			delete mockSliderRegistry[key];
 		}
 		mockNotice.mockClear();
-		jest.clearAllMocks();
-		jest.useFakeTimers();
+		vi.clearAllMocks();
+		vi.useFakeTimers();
 	});
 
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	describe('temperature slider', () => {
@@ -194,7 +195,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 				resolveFirst = res;
 			});
 
-			const validateParameters = jest
+			const validateParameters = vi
 				.fn()
 				.mockImplementationOnce(() => firstPending)
 				.mockImplementationOnce(() =>
@@ -211,7 +212,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			// User moves the slider to 0.5; advance past the debounce so the
 			// async body starts and awaits validation.
 			slider._handler(0.5);
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			expect(validateParameters).toHaveBeenCalledTimes(1);
 
 			// User moves the slider again to 0.9 while validation is still pending.
@@ -232,7 +233,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			expect(mockNotice).not.toHaveBeenCalledWith('out of range');
 
 			// The second debounce fires and validates the current value.
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			await flushMicrotasks();
 			expect(validateParameters).toHaveBeenCalledTimes(2);
 			expect(validateParameters).toHaveBeenLastCalledWith(0.9, 1.0);
@@ -243,12 +244,12 @@ describe('settings-api slider debounce (issue #601)', () => {
 
 		it('logs and surfaces a Notice when validation rejects', async () => {
 			const err = new Error('validate failed');
-			const validateParameters = jest.fn().mockRejectedValue(err);
+			const validateParameters = vi.fn().mockRejectedValue(err);
 			const { plugin } = await setup(validateParameters);
 
 			const slider = mockSliderRegistry['Temperature'];
 			slider._handler(0.5);
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			await flushMicrotasks();
 
 			expect(plugin.logger.error).toHaveBeenCalledWith('Failed to validate/save temperature setting:', err);
@@ -261,7 +262,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 				rejectFirst = rej;
 			});
 
-			const validateParameters = jest
+			const validateParameters = vi
 				.fn()
 				.mockImplementationOnce(() => firstPending)
 				.mockImplementationOnce(() =>
@@ -276,7 +277,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 
 			// First change: fire timer so the async body starts and awaits validation.
 			slider._handler(0.5);
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			expect(validateParameters).toHaveBeenCalledTimes(1);
 
 			// Second change supersedes the in-flight run.
@@ -291,7 +292,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			expect(mockNotice).not.toHaveBeenCalledWith(expect.stringContaining('Failed to save temperature setting'));
 
 			// The current run still completes cleanly.
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			await flushMicrotasks();
 			expect(plugin.settings.temperature).toBe(0.9);
 			expect(plugin.saveSettings).toHaveBeenCalled();
@@ -304,7 +305,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			slider.setValue.mockClear();
 
 			slider._handler(0.6);
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			await flushMicrotasks();
 
 			expect(plugin.settings.temperature).toBe(0.6);
@@ -321,7 +322,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 				resolveFirst = res;
 			});
 
-			const validateParameters = jest
+			const validateParameters = vi
 				.fn()
 				.mockImplementationOnce(() => firstPending)
 				.mockImplementationOnce(() =>
@@ -336,7 +337,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			expect(slider).toBeDefined();
 
 			slider._handler(0.5);
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			expect(validateParameters).toHaveBeenCalledTimes(1);
 
 			slider._handler(0.9);
@@ -352,7 +353,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			expect(plugin.settings.topP).toBe(0.9);
 			expect(mockNotice).not.toHaveBeenCalledWith('stale');
 
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			await flushMicrotasks();
 
 			expect(validateParameters).toHaveBeenCalledTimes(2);
@@ -363,12 +364,12 @@ describe('settings-api slider debounce (issue #601)', () => {
 
 		it('logs and surfaces a Notice when validation rejects', async () => {
 			const err = new Error('validate failed');
-			const validateParameters = jest.fn().mockRejectedValue(err);
+			const validateParameters = vi.fn().mockRejectedValue(err);
 			const { plugin } = await setup(validateParameters);
 
 			const slider = mockSliderRegistry['Top P'];
 			slider._handler(0.5);
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			await flushMicrotasks();
 
 			expect(plugin.logger.error).toHaveBeenCalledWith('Failed to validate/save topP setting:', err);
@@ -381,7 +382,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 				rejectFirst = rej;
 			});
 
-			const validateParameters = jest
+			const validateParameters = vi
 				.fn()
 				.mockImplementationOnce(() => firstPending)
 				.mockImplementationOnce(() =>
@@ -395,7 +396,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			const slider = mockSliderRegistry['Top P'];
 
 			slider._handler(0.5);
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			expect(validateParameters).toHaveBeenCalledTimes(1);
 
 			slider._handler(0.9);
@@ -406,7 +407,7 @@ describe('settings-api slider debounce (issue #601)', () => {
 			expect(plugin.logger.error).not.toHaveBeenCalled();
 			expect(mockNotice).not.toHaveBeenCalledWith(expect.stringContaining('Failed to save Top P setting'));
 
-			await jest.advanceTimersByTimeAsync(300);
+			await vi.advanceTimersByTimeAsync(300);
 			await flushMicrotasks();
 			expect(plugin.settings.topP).toBe(0.9);
 			expect(plugin.saveSettings).toHaveBeenCalled();

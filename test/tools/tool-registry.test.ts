@@ -17,11 +17,11 @@ const mockPlugin = {
 		},
 	},
 	logger: {
-		log: jest.fn(),
-		debug: jest.fn(),
-		warn: jest.fn(),
-		error: jest.fn(),
-		child: jest.fn(function (this: any, _prefix: string) {
+		log: vi.fn(),
+		debug: vi.fn(),
+		warn: vi.fn(),
+		error: vi.fn(),
+		child: vi.fn(function (this: any, _prefix: string) {
 			return this;
 		}),
 	},

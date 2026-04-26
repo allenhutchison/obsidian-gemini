@@ -1,14 +1,14 @@
 import { FileLogWriter } from '../../src/utils/file-log-writer';
 
 // Mock obsidian module
-jest.mock('obsidian', () => ({
-	...jest.requireActual('../../__mocks__/obsidian.js'),
-	normalizePath: jest.fn((path: string) => path),
+vi.mock('obsidian', async () => ({
+	...(await vi.importActual<any>('../../__mocks__/obsidian.js')),
+	normalizePath: vi.fn((path: string) => path),
 }));
 
 // Mock format-utils to control timestamp output
-jest.mock('../../src/utils/format-utils', () => ({
-	formatLocalTimestamp: jest.fn(() => '2026-04-08T14:00:00.000+00:00'),
+vi.mock('../../src/utils/format-utils', () => ({
+	formatLocalTimestamp: vi.fn(() => '2026-04-08T14:00:00.000+00:00'),
 }));
 
 function createMockPlugin(overrides: Record<string, any> = {}): any {
@@ -22,11 +22,11 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 		app: {
 			vault: {
 				adapter: {
-					exists: jest.fn().mockResolvedValue(false),
-					read: jest.fn().mockResolvedValue(''),
-					write: jest.fn().mockResolvedValue(undefined),
-					stat: jest.fn().mockResolvedValue({ size: 0 }),
-					remove: jest.fn().mockResolvedValue(undefined),
+					exists: vi.fn().mockResolvedValue(false),
+					read: vi.fn().mockResolvedValue(''),
+					write: vi.fn().mockResolvedValue(undefined),
+					stat: vi.fn().mockResolvedValue({ size: 0 }),
+					remove: vi.fn().mockResolvedValue(undefined),
 				},
 				...overrides.vault,
 			},
@@ -41,14 +41,14 @@ describe('FileLogWriter', () => {
 	let writer: FileLogWriter;
 
 	beforeEach(() => {
-		jest.useFakeTimers();
+		vi.useFakeTimers();
 		mockPlugin = createMockPlugin();
 		writer = new FileLogWriter(mockPlugin);
 	});
 
 	afterEach(async () => {
 		await writer.destroy();
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	describe('write()', () => {
@@ -56,7 +56,7 @@ describe('FileLogWriter', () => {
 			mockPlugin.settings.fileLogging = false;
 			writer.write('LOG', '[Gemini Scribe]', ['test message']);
 
-			jest.advanceTimersByTime(2000);
+			vi.advanceTimersByTime(2000);
 			expect(mockPlugin.app.vault.adapter.write).not.toHaveBeenCalled();
 		});
 
@@ -67,8 +67,8 @@ describe('FileLogWriter', () => {
 			expect(mockPlugin.app.vault.adapter.write).not.toHaveBeenCalled();
 
 			// Advance timer to trigger flush
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalled();
 		});
@@ -78,8 +78,8 @@ describe('FileLogWriter', () => {
 		it('should write formatted content via adapter.write()', async () => {
 			writer.write('ERROR', '[Gemini Scribe]', ['something failed']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalledWith(
 				'gemini-scribe/debug.log',
@@ -92,8 +92,8 @@ describe('FileLogWriter', () => {
 			writer.write('DEBUG', '[Gemini Scribe]', ['message 2']);
 			writer.write('ERROR', '[Gemini Scribe]', ['message 3']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalledTimes(1);
 			const writtenContent = mockPlugin.app.vault.adapter.write.mock.calls[0][1];
@@ -109,8 +109,8 @@ describe('FileLogWriter', () => {
 
 			writer.write('LOG', '[Gemini Scribe]', ['new message']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			const writtenContent = mockPlugin.app.vault.adapter.write.mock.calls[0][1];
 			expect(writtenContent).toMatch(/^existing line\n/);
@@ -119,8 +119,8 @@ describe('FileLogWriter', () => {
 
 		it('should not flush when buffer is empty', async () => {
 			// Don't write anything, just advance time
-			jest.advanceTimersByTime(2000);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(2000);
+			await vi.runAllTimersAsync();
 
 			expect(mockPlugin.app.vault.adapter.write).not.toHaveBeenCalled();
 		});
@@ -130,8 +130,8 @@ describe('FileLogWriter', () => {
 
 			expect(() => writer.write('ERROR', '[Gemini Scribe]', ['test'])).not.toThrow();
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			// Adapter was null, so no write should have occurred
 			expect(mockPlugin.app.vault.adapter).toBeNull();
@@ -142,8 +142,8 @@ describe('FileLogWriter', () => {
 		it('should include timestamp, level, prefix, and message', async () => {
 			writer.write('WARN', '[Gemini Scribe] [MCP]', ['connection lost']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			const writtenContent = mockPlugin.app.vault.adapter.write.mock.calls[0][1];
 			expect(writtenContent).toBe('[2026-04-08T14:00:00.000+00:00] [WARN] [Gemini Scribe] [MCP] connection lost\n');
@@ -155,8 +155,8 @@ describe('FileLogWriter', () => {
 
 			writer.write('ERROR', '[Gemini Scribe]', ['Failed:', error]);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			const writtenContent = mockPlugin.app.vault.adapter.write.mock.calls[0][1];
 			expect(writtenContent).toContain('test error');
@@ -166,8 +166,8 @@ describe('FileLogWriter', () => {
 		it('should serialize objects as JSON', async () => {
 			writer.write('DEBUG', '[Gemini Scribe]', ['data:', { key: 'value', count: 42 }]);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			const writtenContent = mockPlugin.app.vault.adapter.write.mock.calls[0][1];
 			expect(writtenContent).toContain('{"key":"value","count":42}');
@@ -176,8 +176,8 @@ describe('FileLogWriter', () => {
 		it('should handle null and undefined args', async () => {
 			writer.write('LOG', '[Gemini Scribe]', [null, undefined, 'text']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			const writtenContent = mockPlugin.app.vault.adapter.write.mock.calls[0][1];
 			expect(writtenContent).toContain('null undefined text');
@@ -189,8 +189,8 @@ describe('FileLogWriter', () => {
 
 			writer.write('LOG', '[Gemini Scribe]', ['circular:', circular]);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			// Should not throw; falls back to String()
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalled();
@@ -205,8 +205,8 @@ describe('FileLogWriter', () => {
 
 			writer.write('LOG', '[Gemini Scribe]', ['new entry']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			// Should have written old content to .old path
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalledWith('gemini-scribe/debug.log.old', 'old content');
@@ -229,8 +229,8 @@ describe('FileLogWriter', () => {
 
 			writer.write('LOG', '[Gemini Scribe]', ['msg']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			// Should remove old log first
 			expect(mockPlugin.app.vault.adapter.remove).toHaveBeenCalledWith('gemini-scribe/debug.log.old');
@@ -240,12 +240,12 @@ describe('FileLogWriter', () => {
 	describe('error handling', () => {
 		it('should not propagate write errors', async () => {
 			mockPlugin.app.vault.adapter.write.mockRejectedValue(new Error('disk full'));
-			const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 			writer.write('LOG', '[Gemini Scribe]', ['test']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			// Should log error to console but not throw
 			expect(consoleSpy).toHaveBeenCalledWith('[Gemini Scribe] FileLogWriter write error:', expect.any(Error));
@@ -256,12 +256,12 @@ describe('FileLogWriter', () => {
 			mockPlugin.app.vault.adapter.exists.mockResolvedValue(true);
 			mockPlugin.app.vault.adapter.stat.mockResolvedValue({ size: 2_000_000 });
 			mockPlugin.app.vault.adapter.remove.mockRejectedValue(new Error('permission denied'));
-			const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 			writer.write('LOG', '[Gemini Scribe]', ['test']);
 
-			jest.advanceTimersByTime(1100);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(1100);
+			await vi.runAllTimersAsync();
 
 			// Should handle gracefully
 			expect(consoleSpy).toHaveBeenCalled();
@@ -289,8 +289,8 @@ describe('FileLogWriter', () => {
 			await writer.destroy();
 
 			// Advance timers to verify the original timer doesn't fire again
-			jest.advanceTimersByTime(2000);
-			await jest.runAllTimersAsync();
+			vi.advanceTimersByTime(2000);
+			await vi.runAllTimersAsync();
 
 			// Only one write from destroy's flush, not a double write
 			expect(mockPlugin.app.vault.adapter.write).toHaveBeenCalledTimes(1);

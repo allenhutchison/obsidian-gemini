@@ -1,5 +1,5 @@
 // Mock obsidian module with TFile class defined inside
-jest.mock('obsidian', () => {
+vi.mock('obsidian', () => {
 	// Define MockTFile inside the factory to avoid hoisting issues
 	const MockTFile = class {
 		path: string;
@@ -10,9 +10,9 @@ jest.mock('obsidian', () => {
 	return {
 		TFile: MockTFile,
 		normalizePath: (path: string) => path,
-		Notice: jest.fn(),
-		setIcon: jest.fn(),
-		setTooltip: jest.fn(),
+		Notice: vi.fn(),
+		setIcon: vi.fn(),
+		setTooltip: vi.fn(),
 	};
 });
 
@@ -20,32 +20,38 @@ import { RagIndexingService, RagIndexCache } from '../../src/services/rag-indexi
 import { TFile } from 'obsidian';
 
 // Mock GoogleGenAI
-jest.mock('@google/genai', () => ({
-	GoogleGenAI: jest.fn().mockImplementation(() => ({
-		fileSearchStores: {
-			get: jest.fn().mockResolvedValue({ name: 'test-store' }),
-			create: jest.fn().mockResolvedValue({ name: 'new-store' }),
-			delete: jest.fn().mockResolvedValue(undefined),
-		},
-	})),
+vi.mock('@google/genai', () => ({
+	GoogleGenAI: vi.fn().mockImplementation(function () {
+		return {
+			fileSearchStores: {
+				get: vi.fn().mockResolvedValue({ name: 'test-store' }),
+				create: vi.fn().mockResolvedValue({ name: 'new-store' }),
+				delete: vi.fn().mockResolvedValue(undefined),
+			},
+		};
+	}),
 }));
 
 // Mock FileUploader
-jest.mock('@allenhutchison/gemini-utils', () => ({
-	FileUploader: jest.fn().mockImplementation(() => ({
-		uploadWithAdapter: jest.fn().mockResolvedValue(undefined),
-		uploadContent: jest.fn().mockResolvedValue(undefined),
-	})),
+vi.mock('@allenhutchison/gemini-utils', () => ({
+	FileUploader: vi.fn().mockImplementation(function () {
+		return {
+			uploadWithAdapter: vi.fn().mockResolvedValue(undefined),
+			uploadContent: vi.fn().mockResolvedValue(undefined),
+		};
+	}),
 }));
 
 // Mock ObsidianVaultAdapter
-jest.mock('../../src/services/obsidian-file-adapter', () => ({
-	ObsidianVaultAdapter: jest.fn().mockImplementation(() => ({
-		shouldIndex: jest.fn().mockReturnValue(true),
-		listFiles: jest.fn().mockResolvedValue([]),
-		readFileForUpload: jest.fn().mockResolvedValue({ content: 'test', hash: 'abc123' }),
-		computeHash: jest.fn().mockResolvedValue('hash123'),
-	})),
+vi.mock('../../src/services/obsidian-file-adapter', () => ({
+	ObsidianVaultAdapter: vi.fn().mockImplementation(function () {
+		return {
+			shouldIndex: vi.fn().mockReturnValue(true),
+			listFiles: vi.fn().mockResolvedValue([]),
+			readFileForUpload: vi.fn().mockResolvedValue({ content: 'test', hash: 'abc123' }),
+			computeHash: vi.fn().mockResolvedValue('hash123'),
+		};
+	}),
 }));
 
 // Create mock TFile - use the mocked TFile class so instanceof checks work
@@ -56,17 +62,17 @@ function createMockTFile(path: string): TFile {
 // Create mock plugin
 function createMockPlugin(overrides: Partial<any> = {}) {
 	const mockVault = {
-		getAbstractFileByPath: jest.fn().mockReturnValue(null),
-		read: jest.fn().mockResolvedValue('{}'),
-		modify: jest.fn().mockResolvedValue(undefined),
-		create: jest.fn().mockResolvedValue(undefined),
-		delete: jest.fn().mockResolvedValue(undefined),
-		getMarkdownFiles: jest.fn().mockReturnValue([]),
-		getFiles: jest.fn().mockReturnValue([]),
-		getName: jest.fn().mockReturnValue('test-vault'),
+		getAbstractFileByPath: vi.fn().mockReturnValue(null),
+		read: vi.fn().mockResolvedValue('{}'),
+		modify: vi.fn().mockResolvedValue(undefined),
+		create: vi.fn().mockResolvedValue(undefined),
+		delete: vi.fn().mockResolvedValue(undefined),
+		getMarkdownFiles: vi.fn().mockReturnValue([]),
+		getFiles: vi.fn().mockReturnValue([]),
+		getName: vi.fn().mockReturnValue('test-vault'),
 		adapter: {
-			write: jest.fn().mockResolvedValue(undefined),
-			exists: jest.fn().mockResolvedValue(false),
+			write: vi.fn().mockResolvedValue(undefined),
+			exists: vi.fn().mockResolvedValue(false),
 		},
 	};
 
@@ -74,7 +80,7 @@ function createMockPlugin(overrides: Partial<any> = {}) {
 		app: {
 			vault: mockVault,
 			metadataCache: {
-				getFileCache: jest.fn().mockReturnValue(null),
+				getFileCache: vi.fn().mockReturnValue(null),
 			},
 		},
 		apiKey: 'test-api-key',
@@ -90,22 +96,22 @@ function createMockPlugin(overrides: Partial<any> = {}) {
 			...overrides.settings,
 		},
 		logger: {
-			log: jest.fn(),
-			debug: jest.fn(),
-			warn: jest.fn(),
-			error: jest.fn(),
+			log: vi.fn(),
+			debug: vi.fn(),
+			warn: vi.fn(),
+			error: vi.fn(),
 		},
-		saveData: jest.fn().mockResolvedValue(undefined),
-		addStatusBarItem: jest.fn().mockReturnValue({
-			addClass: jest.fn(),
-			createSpan: jest.fn().mockReturnValue({
-				setText: jest.fn(),
+		saveData: vi.fn().mockResolvedValue(undefined),
+		addStatusBarItem: vi.fn().mockReturnValue({
+			addClass: vi.fn(),
+			createSpan: vi.fn().mockReturnValue({
+				setText: vi.fn(),
 			}),
-			addEventListener: jest.fn(),
-			remove: jest.fn(),
+			addEventListener: vi.fn(),
+			remove: vi.fn(),
 			style: {},
-			querySelector: jest.fn().mockReturnValue(null),
-			removeClass: jest.fn(),
+			querySelector: vi.fn().mockReturnValue(null),
+			removeClass: vi.fn(),
 		}),
 		...overrides,
 	} as any;
@@ -136,14 +142,14 @@ describe('RagIndexingService', () => {
 	let mockPlugin: ReturnType<typeof createMockPlugin>;
 
 	beforeEach(() => {
-		jest.clearAllMocks();
-		jest.useFakeTimers();
+		vi.clearAllMocks();
+		vi.useFakeTimers();
 		mockPlugin = createMockPlugin();
 		service = new RagIndexingService(mockPlugin);
 	});
 
 	afterEach(() => {
-		jest.useRealTimers();
+		vi.useRealTimers();
 	});
 
 	describe('constructor', () => {
@@ -236,7 +242,7 @@ describe('RagIndexingService', () => {
 			getSyncQueue(service).pendingChanges = new Map([
 				['test.md', { type: 'create', path: 'test.md', timestamp: Date.now() }],
 			]);
-			const flushSpy = jest.spyOn(getSyncQueue(service), 'flushPendingChanges').mockResolvedValue(undefined);
+			const flushSpy = vi.spyOn(getSyncQueue(service), 'flushPendingChanges').mockResolvedValue(undefined);
 
 			service.resume();
 
@@ -264,7 +270,7 @@ describe('RagIndexingService', () => {
 			(service as any).status = 'idle';
 			(service as any).ai = {};
 			(service as any).vaultAdapter = {
-				shouldIndex: jest.fn().mockReturnValue(true),
+				shouldIndex: vi.fn().mockReturnValue(true),
 			};
 			mockPlugin.settings.ragIndexing.autoSync = true;
 		});
@@ -369,7 +375,7 @@ describe('RagIndexingService', () => {
 		});
 
 		it('should call flushPendingChanges after debounce timer fires', async () => {
-			const flushSpy = jest.spyOn(getSyncQueue(service), 'flushPendingChanges').mockResolvedValue(undefined);
+			const flushSpy = vi.spyOn(getSyncQueue(service), 'flushPendingChanges').mockResolvedValue(undefined);
 
 			getSyncQueue(service).queueChange({
 				type: 'create',
@@ -380,7 +386,7 @@ describe('RagIndexingService', () => {
 			expect(getSyncQueue(service).debounceTimer).not.toBeNull();
 
 			// Advance timer past debounce period (2000ms)
-			jest.advanceTimersByTime(2500);
+			vi.advanceTimersByTime(2500);
 
 			expect(flushSpy).toHaveBeenCalled();
 		});
@@ -392,7 +398,7 @@ describe('RagIndexingService', () => {
 			(service as any).status = 'idle';
 			(service as any).ai = {};
 			(service as any).vaultAdapter = {
-				shouldIndex: jest.fn().mockReturnValue(true),
+				shouldIndex: vi.fn().mockReturnValue(true),
 			};
 			mockPlugin.settings.ragIndexing.autoSync = true;
 		});
@@ -543,7 +549,7 @@ describe('RagIndexingService', () => {
 
 	describe('progress listeners', () => {
 		it('should add and remove progress listeners', () => {
-			const listener = jest.fn();
+			const listener = vi.fn();
 
 			service.addProgressListener(listener);
 			expect((service as any).progressListeners.size).toBe(1);
@@ -553,8 +559,8 @@ describe('RagIndexingService', () => {
 		});
 
 		it('should notify all progress listeners', () => {
-			const listener1 = jest.fn();
-			const listener2 = jest.fn();
+			const listener1 = vi.fn();
+			const listener2 = vi.fn();
 
 			service.addProgressListener(listener1);
 			service.addProgressListener(listener2);
@@ -566,10 +572,10 @@ describe('RagIndexingService', () => {
 		});
 
 		it('should handle listener errors gracefully', () => {
-			const errorListener = jest.fn().mockImplementation(() => {
+			const errorListener = vi.fn().mockImplementation(() => {
 				throw new Error('Listener error');
 			});
-			const goodListener = jest.fn();
+			const goodListener = vi.fn();
 
 			service.addProgressListener(errorListener);
 			service.addProgressListener(goodListener);
@@ -702,7 +708,7 @@ describe('RagIndexingService', () => {
 			expect((service as any).status).toBe('rate_limited');
 
 			// Advance through the base delay (30000ms)
-			jest.advanceTimersByTime(35000);
+			vi.advanceTimersByTime(35000);
 			await handlePromise;
 
 			// Verify timer is cleared after cooldown
@@ -860,7 +866,7 @@ describe('RagIndexingService', () => {
 			});
 
 			// Mock _doIndexVault on the vault scanner to return our controlled promise
-			const doIndexSpy = jest.spyOn(getVaultScanner(service) as any, '_doIndexVault').mockReturnValue(slowPromise);
+			const doIndexSpy = vi.spyOn(getVaultScanner(service) as any, '_doIndexVault').mockReturnValue(slowPromise);
 
 			// Start two concurrent index operations
 			const promise1 = service.indexVault();
@@ -883,7 +889,7 @@ describe('RagIndexingService', () => {
 			getSyncQueue(service).debounceTimer = setTimeout(() => {}, 1000);
 			getSyncQueue(service).pendingChanges = new Map([['test.md', {}]]);
 			getRateLimiter(service).rateLimitTimer = setInterval(() => {}, 1000);
-			(service as any).statusBar.statusBarItem = { remove: jest.fn() };
+			(service as any).statusBar.statusBarItem = { remove: vi.fn() };
 			(service as any).ai = {};
 			getRagCache(service).cache = {};
 			getVaultScanner(service).failedFiles = [{}];

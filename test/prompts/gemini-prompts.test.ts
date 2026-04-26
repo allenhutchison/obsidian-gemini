@@ -3,7 +3,7 @@ import type ObsidianGemini from '../../src/main';
 
 // Mock window.localStorage
 const mockLocalStorage = {
-	getItem: jest.fn(),
+	getItem: vi.fn(),
 };
 Object.defineProperty(window, 'localStorage', {
 	value: mockLocalStorage,
@@ -20,7 +20,7 @@ describe('GeminiPrompts', () => {
 				ragIndexing: { enabled: false },
 			},
 			logger: {
-				warn: jest.fn(),
+				warn: vi.fn(),
 			},
 		};
 		geminiPrompts = new GeminiPrompts(mockPlugin as ObsidianGemini);
