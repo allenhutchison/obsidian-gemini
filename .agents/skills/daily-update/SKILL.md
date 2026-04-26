@@ -34,10 +34,11 @@ When adding a new daily sub-skill in the future, append it here with the same sh
 
 ```bash
 git checkout master && git pull
-git checkout -b daily-update-$(date +%Y-%m-%d)
+BRANCH_NAME="daily-update-$(date +%Y-%m-%d)"
+git checkout -b "$BRANCH_NAME"
 ```
 
-If a branch by that exact name already exists locally (the cron fired twice, or a manual run already happened today), append `-2`, `-3`, etc. — never reuse a branch from a previous run; the diff would conflate two days.
+If a branch by that exact name already exists locally (the cron fired twice, or a manual run already happened today), append `-2`, `-3`, etc. — never reuse a branch from a previous run; the diff would conflate two days. Update `BRANCH_NAME` to the chosen suffix so the cleanup steps below find the right branch.
 
 ### 2. Run each sub-skill in sequence
 
@@ -62,13 +63,13 @@ Decide what to do based on three cases:
 **Case A — the working tree is clean and `triage-issues` did nothing.** Quiet day:
 
 - Don't commit. Don't push. Don't open a PR. Empty PRs are noise.
-- Delete the branch you just created (`git checkout master && git branch -D daily-update-YYYY-MM-DD`) so the local branch list stays clean.
+- Delete the branch you just created (`git checkout master && git branch -D "$BRANCH_NAME"`) so the local branch list stays clean.
 - Report "no daily changes" and stop. The cron's job is done; absence of a PR is the signal.
 
 **Case B — the working tree is clean but `triage-issues` applied labels.** Report-only day:
 
 - Don't open a PR. Labels on GitHub are already applied — opening an empty-diff PR just to write a summary is more friction than it's worth.
-- Delete the branch (same as Case A).
+- Delete the branch (same as Case A: `git checkout master && git branch -D "$BRANCH_NAME"`).
 - Reply with the triage summary so a human can audit the labels if they want.
 
 **Case C — the working tree has changes.** Commit them all in one commit:
