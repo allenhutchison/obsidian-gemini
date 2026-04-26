@@ -495,7 +495,7 @@ describe('ScheduledTaskManager', () => {
 
 			expect(plugin.app.vault.create).toHaveBeenCalledWith(
 				'gemini-scribe/Scheduled-Tasks/new-task.md',
-				expect.stringContaining('schedule: daily')
+				expect.stringContaining("schedule: 'daily'")
 			);
 			const tasks = manager.getTasks();
 			expect(tasks).toHaveLength(1);
@@ -648,7 +648,7 @@ describe('ScheduledTaskManager', () => {
 			await manager.updateTask('editable', { schedule: 'weekly' });
 
 			const written = (plugin.app.vault.modify as jest.Mock).mock.calls[0][1] as string;
-			expect(written).toContain('schedule: weekly');
+			expect(written).toContain("schedule: 'weekly'");
 		});
 
 		it('immediately updates the in-memory task so re-render is instant', async () => {

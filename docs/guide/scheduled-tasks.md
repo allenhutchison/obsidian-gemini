@@ -149,7 +149,7 @@ If a task fails **3 consecutive times**, the scheduler automatically pauses it t
 
 To resume a paused task:
 
-1. Open **Command Palette → Open Scheduler** (or **View Scheduled Tasks**)
+1. Open **Command Palette → Open Scheduler**
 2. Fix the underlying issue (e.g. invalid prompt, missing API key)
 3. Click **Reset** next to the paused task
 
