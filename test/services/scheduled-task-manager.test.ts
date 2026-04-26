@@ -380,28 +380,27 @@ describe('ScheduledTaskManager', () => {
 			await manager.initialize();
 
 			// Capture both handlers registered during initialize()
-			const vaultOnCalls = (plugin.app.vault.on as jest.Mock).mock.calls;
-			const createHandler = vaultOnCalls.find(([e]: [string]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
-			const cacheOnCalls = (plugin.app.metadataCache.on as jest.Mock).mock.calls;
-			const changedHandler = cacheOnCalls.find(([e]: [string]) => e === 'changed')?.[1] as (...a: unknown[]) => unknown;
+			const vaultOnCalls = (plugin.app.vault.on as Mock).mock.calls;
+			const createHandler = vaultOnCalls.find(([e]: any[]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
+			const cacheOnCalls = (plugin.app.metadataCache.on as Mock).mock.calls;
+			const changedHandler = cacheOnCalls.find(([e]: any[]) => e === 'changed')?.[1] as (...a: unknown[]) => unknown;
 			expect(createHandler).toBeDefined();
 			expect(changedHandler).toBeDefined();
 
-			const { TFile: MockTFile } = jest.requireMock('obsidian');
 			const newFile = Object.assign(new MockTFile(), {
 				path: 'gemini-scribe/Scheduled-Tasks/new-task.md',
 				basename: 'new-task',
 				extension: 'md',
 			});
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Do something.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Do something.');
 
 			// Fire create then changed (as Obsidian would)
-			jest.useFakeTimers();
+			vi.useFakeTimers();
 			createHandler(newFile);
 			changedHandler(newFile); // fires before the 500 ms defer
-			jest.advanceTimersByTime(600);
-			jest.useRealTimers();
+			vi.advanceTimersByTime(600);
+			vi.useRealTimers();
 			await Promise.resolve();
 			await Promise.resolve();
 
@@ -416,20 +415,19 @@ describe('ScheduledTaskManager', () => {
 				{ path: 'gemini-scribe/Scheduled-Tasks/existing-task.md', basename: 'existing-task' },
 			]);
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Original prompt.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Original prompt.');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
 			// Simulate an edit to the existing file (only changed fires, not create)
-			const cacheOnCalls = (plugin.app.metadataCache.on as jest.Mock).mock.calls;
-			const changedHandler = cacheOnCalls.find(([e]: [string]) => e === 'changed')?.[1] as (...a: unknown[]) => unknown;
-			const { TFile: MockTFile } = jest.requireMock('obsidian');
+			const cacheOnCalls = (plugin.app.metadataCache.on as Mock).mock.calls;
+			const changedHandler = cacheOnCalls.find(([e]: any[]) => e === 'changed')?.[1] as (...a: unknown[]) => unknown;
 			const existingFile = Object.assign(new MockTFile(), {
 				path: 'gemini-scribe/Scheduled-Tasks/existing-task.md',
 				basename: 'existing-task',
 				extension: 'md',
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Updated prompt.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Updated prompt.');
 			changedHandler(existingFile);
 			await Promise.resolve();
 			await Promise.resolve();
@@ -449,27 +447,26 @@ describe('ScheduledTaskManager', () => {
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
-			const vaultOnCalls = (plugin.app.vault.on as jest.Mock).mock.calls;
-			const createHandler = vaultOnCalls.find(([e]: [string]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
+			const vaultOnCalls = (plugin.app.vault.on as Mock).mock.calls;
+			const createHandler = vaultOnCalls.find(([e]: any[]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
 			expect(createHandler).toBeDefined();
 
-			const { TFile: MockTFile } = jest.requireMock('obsidian');
 			const newFile = Object.assign(new MockTFile(), {
 				path: 'gemini-scribe/Scheduled-Tasks/late-task.md',
 				basename: 'late-task',
 				extension: 'md',
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Prompt body.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt body.');
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
 
-			jest.useFakeTimers();
+			vi.useFakeTimers();
 			// Fire create — starts the 500 ms defer
 			createHandler(newFile);
 			// destroy() before the defer fires
 			manager.destroy();
 			// Advance past the defer window — the cancelled timer must not fire
-			jest.advanceTimersByTime(600);
-			jest.useRealTimers();
+			vi.advanceTimersByTime(600);
+			vi.useRealTimers();
 			await Promise.resolve();
 			await Promise.resolve();
 
@@ -483,28 +480,27 @@ describe('ScheduledTaskManager', () => {
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
-			const vaultOnCalls = (plugin.app.vault.on as jest.Mock).mock.calls;
-			const createHandler = vaultOnCalls.find(([e]: [string]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
+			const vaultOnCalls = (plugin.app.vault.on as Mock).mock.calls;
+			const createHandler = vaultOnCalls.find(([e]: any[]) => e === 'create')?.[1] as (...a: unknown[]) => unknown;
 			expect(createHandler).toBeDefined();
 
-			const { TFile: MockTFile } = jest.requireMock('obsidian');
 			const newFile = Object.assign(new MockTFile(), {
 				path: 'gemini-scribe/Scheduled-Tasks/stale-task.md',
 				basename: 'stale-task',
 				extension: 'md',
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Prompt body.');
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt body.');
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
 
-			jest.useFakeTimers();
+			vi.useFakeTimers();
 			// Fire create — starts the 500 ms defer
 			createHandler(newFile);
 			// Re-initialize before the defer fires — should cancel the pending timer
-			jest.useRealTimers();
+			vi.useRealTimers();
 			await manager.initialize();
-			jest.useFakeTimers();
-			jest.advanceTimersByTime(600);
-			jest.useRealTimers();
+			vi.useFakeTimers();
+			vi.advanceTimersByTime(600);
+			vi.useRealTimers();
 			await Promise.resolve();
 			await Promise.resolve();
 
