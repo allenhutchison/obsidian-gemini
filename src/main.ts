@@ -94,6 +94,8 @@ export interface ObsidianGeminiSettings {
 	alwaysShowDiffView: boolean;
 	// Tool execution logging
 	logToolExecution: boolean;
+	// Scheduled task catch-up
+	autoRunCatchUp: boolean;
 	// Cached remote model list (managed by ModelListProvider)
 	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
 }
@@ -147,6 +149,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	alwaysShowDiffView: false,
 	// Tool execution logging
 	logToolExecution: true,
+	// Scheduled task catch-up
+	autoRunCatchUp: false,
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';

@@ -35,14 +35,14 @@ Summarise the notes I created or modified today. List the key topics and any ope
 
 ### Frontmatter Fields
 
-| Field          | Required | Default                                                  | Description                                                                 |
-| -------------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `schedule`     | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.               |
-| `enabledTools` | No       | `[]` (read-only)                                         | List of tool categories the agent may use. See [Tool Access](#tool-access). |
-| `outputPath`   | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.        |
-| `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-2.0-flash`).                 |
-| `enabled`      | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                     |
-| `runIfMissed`  | No       | `false`                                                  | Reserved for future use — catch-up runs are not yet implemented.            |
+| Field          | Required | Default                                                  | Description                                                                                                                 |
+| -------------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `schedule`     | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.                                                               |
+| `enabledTools` | No       | `[]` (read-only)                                         | List of tool categories the agent may use. See [Tool Access](#tool-access).                                                 |
+| `outputPath`   | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                        |
+| `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-2.0-flash`).                                                                 |
+| `enabled`      | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                                                                     |
+| `runIfMissed`  | No       | `false`                                                  | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs). |
 
 ### Schedule Formats
 
@@ -102,9 +102,31 @@ To resume a paused task:
 2. Fix the underlying issue (e.g. invalid prompt, missing API key)
 3. Click **Reset** next to the paused task
 
+## Catch-up Runs
+
+When Obsidian is closed, scheduled tasks cannot run. Set `runIfMissed: true` in a task's frontmatter to have it caught up automatically the next time Obsidian starts.
+
+On startup, the plugin compares each task's `nextRunAt` against the current time. Any task with `runIfMissed: true` that is overdue (and not paused) is treated as a missed run. By default, a red `!` badge appears on the background-tasks status bar item — click it to open the **Missed Scheduled Runs** modal, which lists each missed task with **Run** and **Skip** buttons:
+
+- **Run** — submits the task immediately as a background task
+- **Skip** — advances the schedule without running
+- **Run all / Skip all** — bulk actions for all listed tasks
+
+Dismissing the modal (Escape or ✕) leaves the `!` badge in place so you can reopen the modal later by clicking the badge.
+
+### Auto-run on startup
+
+Enable **Settings → UI Settings → Auto-run missed scheduled tasks on startup** to skip the approval modal entirely and submit all missed tasks silently on every startup.
+
+### Notes
+
+- Only tasks with `runIfMissed: true` and `enabled: true` are included; tasks paused due to repeated failures are excluded.
+- Only one catch-up run is submitted per task per startup, regardless of how many intervals were missed.
+- Tasks missed more than 7 days ago are considered stale and excluded.
+
 ## Scheduler Timing
 
-The scheduler checks for due tasks every **60 seconds**. Task files created while Obsidian is running are discovered immediately via a vault file-creation listener. Files that exist when the plugin loads are discovered on startup — if Obsidian's metadata cache hasn't finished indexing at that point, a task may be missed until the next plugin reload. This is a known startup race and will be addressed in a follow-up.
+The scheduler checks for due tasks every **60 seconds**. Task files created while Obsidian is running are discovered immediately via a vault file-creation listener. Files that exist when the plugin loads are discovered on startup.
 
 A task is considered due when the current time is at or past its `nextRunAt` value stored in `scheduled-tasks-state.json`. The first run of a newly discovered task is triggered immediately on the next tick.
 

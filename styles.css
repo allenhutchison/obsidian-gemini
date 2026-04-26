@@ -4643,6 +4643,100 @@ If your plugin does not need CSS, delete this file.
 	animation: gemini-spin 1s linear infinite;
 }
 
+/* ── Catch-up badge ────────────────────────────────────────────── */
+
+.gemini-bg-status-badge {
+	display: none;
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--text-on-accent);
+	background: var(--color-red);
+	border-radius: 50%;
+	width: 14px;
+	height: 14px;
+	line-height: 14px;
+	text-align: center;
+	margin-left: 2px;
+	vertical-align: middle;
+}
+
+/* ── Catch-up modal ────────────────────────────────────────────── */
+
+.gemini-catchup-modal .modal-content {
+	min-width: 420px;
+	max-width: 560px;
+}
+
+.gemini-catchup-description {
+	color: var(--text-muted);
+	margin-bottom: 16px;
+}
+
+.gemini-catchup-list {
+	list-style: none;
+	margin: 0 0 16px;
+	padding: 0;
+}
+
+.gemini-catchup-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gemini-catchup-item:last-child {
+	border-bottom: none;
+}
+
+.gemini-catchup-item-info {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex: 1;
+	min-width: 0;
+}
+
+.gemini-catchup-item-icon svg {
+	width: 14px;
+	height: 14px;
+	color: var(--text-muted);
+	flex-shrink: 0;
+}
+
+.gemini-catchup-item-slug {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-catchup-item-age {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	flex-shrink: 0;
+}
+
+.gemini-catchup-item-btns {
+	display: flex;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.gemini-catchup-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	padding-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.gemini-catchup-empty {
+	color: var(--text-muted);
+}
+
 /* ── Scheduled Tasks Modal ─────────────────────────────────────── */
 
 .gemini-scheduled-tasks-modal .modal-content {
