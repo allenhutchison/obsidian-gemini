@@ -37,4 +37,16 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 				await plugin.saveSettings();
 			})
 		);
+
+	new Setting(containerEl)
+		.setName('Auto-run missed scheduled tasks on startup')
+		.setDesc(
+			'When enabled, tasks that were missed while Obsidian was closed (and have "Run if missed" set) are submitted automatically on startup without showing the approval modal.'
+		)
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.autoRunCatchUp).onChange(async (value) => {
+				plugin.settings.autoRunCatchUp = value;
+				await plugin.saveSettings();
+			})
+		);
 }

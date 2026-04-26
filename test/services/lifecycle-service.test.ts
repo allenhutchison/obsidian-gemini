@@ -170,6 +170,10 @@ vi.mock('../../src/services/scheduled-task-manager', () => ({
 			initialize: vi.fn().mockResolvedValue(undefined),
 			start: vi.fn(),
 			destroy: vi.fn(),
+			detectMissedRuns: vi.fn().mockReturnValue([]),
+			runNow: vi.fn().mockResolvedValue('bg-task-1'),
+			skipCatchUp: vi.fn().mockResolvedValue(undefined),
+			reserveForCatchUp: vi.fn(),
 		};
 	}),
 }));

@@ -593,6 +593,92 @@ describe('ScheduledTaskManager', () => {
 		});
 	});
 
+	// ── detectMissedRuns ────────────────────────────────────────────────────
+
+	describe('detectMissedRuns', () => {
+		async function makeManagerWithMissedRuns(
+			tasks: Array<{ slug: string; schedule: string; runIfMissed: boolean; enabled?: boolean }>,
+			states: Record<string, { nextRunAt: string }>
+		) {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue(
+				tasks.map((t) => ({ path: `gemini-scribe/Scheduled-Tasks/${t.slug}.md`, basename: t.slug }))
+			);
+			plugin.app.metadataCache.getFileCache.mockImplementation(({ basename }: { basename: string }) => {
+				const t = tasks.find((x) => x.slug === basename);
+				if (!t) return null;
+				return { frontmatter: { schedule: t.schedule, enabled: t.enabled ?? true, runIfMissed: t.runIfMissed } };
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('prompt');
+			plugin.app.vault.adapter.exists.mockResolvedValue(true);
+			plugin.app.vault.adapter.read.mockResolvedValue(JSON.stringify(states));
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+			return manager;
+		}
+
+		it('returns tasks overdue within the window with runIfMissed: true', async () => {
+			const missedAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+			const manager = await makeManagerWithMissedRuns([{ slug: 'task-a', schedule: 'daily', runIfMissed: true }], {
+				'task-a': { nextRunAt: missedAt.toISOString() },
+			});
+			const missed = manager.detectMissedRuns();
+			expect(missed).toHaveLength(1);
+			expect(missed[0].task.slug).toBe('task-a');
+		});
+
+		it('excludes tasks with runIfMissed: false', async () => {
+			const missedAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+			const manager = await makeManagerWithMissedRuns([{ slug: 'no-catchup', schedule: 'daily', runIfMissed: false }], {
+				'no-catchup': { nextRunAt: missedAt.toISOString() },
+			});
+			expect(manager.detectMissedRuns()).toHaveLength(0);
+		});
+
+		it('excludes tasks outside the catch-up window', async () => {
+			const tooOld = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+			const manager = await makeManagerWithMissedRuns([{ slug: 'stale', schedule: 'daily', runIfMissed: true }], {
+				stale: { nextRunAt: tooOld.toISOString() },
+			});
+			expect(manager.detectMissedRuns()).toHaveLength(0);
+		});
+
+		it('returns one entry per task regardless of how many runs were missed', async () => {
+			const missedAt = new Date(Date.now() - 1 * 60 * 60 * 1000);
+			const manager = await makeManagerWithMissedRuns(
+				[
+					{ slug: 'task-1', schedule: 'daily', runIfMissed: true },
+					{ slug: 'task-2', schedule: 'daily', runIfMissed: true },
+				],
+				{
+					'task-1': { nextRunAt: missedAt.toISOString() },
+					'task-2': { nextRunAt: missedAt.toISOString() },
+				}
+			);
+			const missed = manager.detectMissedRuns();
+			expect(missed).toHaveLength(2);
+			expect(missed.map((m) => m.task.slug).sort()).toEqual(['task-1', 'task-2']);
+		});
+
+		it('excludes disabled tasks', async () => {
+			const missedAt = new Date(Date.now() - 1 * 60 * 60 * 1000);
+			const manager = await makeManagerWithMissedRuns(
+				[{ slug: 'disabled', schedule: 'daily', runIfMissed: true, enabled: false }],
+				{ disabled: { nextRunAt: missedAt.toISOString() } }
+			);
+			expect(manager.detectMissedRuns()).toHaveLength(0);
+		});
+
+		it('respects a custom window', async () => {
+			const missedAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+			const manager = await makeManagerWithMissedRuns([{ slug: 'task-a', schedule: 'daily', runIfMissed: true }], {
+				'task-a': { nextRunAt: missedAt.toISOString() },
+			});
+			expect(manager.detectMissedRuns(3 * 60 * 60 * 1000)).toHaveLength(1);
+			expect(manager.detectMissedRuns(1 * 60 * 60 * 1000)).toHaveLength(0);
+		});
+	});
+
 	// ── destroy ──────────────────────────────────────────────────────────────
 
 	describe('destroy', () => {
