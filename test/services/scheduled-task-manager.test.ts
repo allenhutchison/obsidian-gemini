@@ -493,14 +493,20 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
 
 			vi.useFakeTimers();
-			// Fire create — starts the 500 ms defer
-			createHandler(newFile);
-			// Re-initialize before the defer fires — should cancel the pending timer
-			vi.useRealTimers();
-			await manager.initialize();
-			vi.useFakeTimers();
-			vi.advanceTimersByTime(600);
-			vi.useRealTimers();
+			try {
+				// Fire create — starts the 500 ms defer
+				createHandler(newFile);
+				// Re-initialize before the defer fires — should cancel the pending timer.
+				// Pass refresh: true; without it initialize() short-circuits on
+				// already-initialized state and never runs the cancellation loop.
+				// Stay on fake timers throughout: under vitest 4, toggling
+				// fake → real → fake discards the pending defer, which would make
+				// this test pass trivially instead of verifying initialize()'s cancel.
+				await manager.initialize({ refresh: true });
+				vi.advanceTimersByTime(600);
+			} finally {
+				vi.useRealTimers();
+			}
 			await Promise.resolve();
 			await Promise.resolve();
 
