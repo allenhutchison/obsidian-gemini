@@ -249,6 +249,9 @@ describe('getUpdatedModelSettings', () => {
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(false);
 		expect(result.updatedSettings.chatModelName).toBe('');
+		expect(result.updatedSettings.summaryModelName).toBe('');
+		expect(result.updatedSettings.completionsModelName).toBe('');
+		expect(result.changedSettingsInfo).toEqual([]);
 	});
 
 	it('backfills empty Ollama model names once the model list has loaded', () => {
