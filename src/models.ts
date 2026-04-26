@@ -89,11 +89,14 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	const newSettings = { ...currentSettings };
 
 	// Helper function to check if a model needs updating.
-	// For Ollama we tolerate empty (the list may not have loaded yet) — only
-	// reset when the configured value is present but no longer in the list.
+	// For Ollama we tolerate empty *only* while the model list hasn't loaded
+	// yet — once /api/tags has resolved, an empty value should be backfilled
+	// to a real default (otherwise a Gemini → Ollama switch made before the
+	// daemon was reachable would leave chat/summary/completions blank
+	// indefinitely, since the empty value never re-triggers reconciliation).
 	const needsUpdate = (modelName: string) => {
 		if (!modelName) {
-			return provider !== 'ollama';
+			return provider !== 'ollama' || availableModelValues.size > 0;
 		}
 		return !availableModelValues.has(modelName);
 	};
