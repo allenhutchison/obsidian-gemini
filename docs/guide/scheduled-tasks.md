@@ -106,13 +106,13 @@ To resume a paused task:
 
 When Obsidian is closed, scheduled tasks cannot run. Set `runIfMissed: true` in a task's frontmatter to have it caught up automatically the next time Obsidian starts.
 
-On startup, the plugin compares each task's `nextRunAt` against the current time. Any task with `runIfMissed: true` that is overdue (and not paused) is treated as a missed run. By default, a **Missed Scheduled Runs** modal appears listing each missed task with **Run** and **Skip** buttons:
+On startup, the plugin compares each task's `nextRunAt` against the current time. Any task with `runIfMissed: true` that is overdue (and not paused) is treated as a missed run. By default, a red `!` badge appears on the background-tasks status bar item — click it to open the **Missed Scheduled Runs** modal, which lists each missed task with **Run** and **Skip** buttons:
 
 - **Run** — submits the task immediately as a background task
 - **Skip** — advances the schedule without running
 - **Run all / Skip all** — bulk actions for all listed tasks
 
-Dismissing the modal (Escape or ✕) leaves the `!` badge on the status bar so you can reopen it later by clicking the badge.
+Dismissing the modal (Escape or ✕) leaves the `!` badge in place so you can reopen the modal later by clicking the badge.
 
 ### Auto-run on startup
 
