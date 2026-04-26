@@ -233,7 +233,8 @@ export class SchedulerManagementModal extends Modal {
 			} catch (err) {
 				this.plugin.logger.error(`[SchedulerManagementModal] runNow failed for "${task.slug}":`, err);
 				new Notice(`Failed to run "${task.slug}"`);
-				runBtn.setText('Error');
+				runBtn.disabled = false;
+				runBtn.setText('Run now');
 			}
 		});
 

@@ -712,7 +712,7 @@ describe('ScheduledTaskManager', () => {
 	describe('createTask', () => {
 		it('writes a markdown file and immediately adds the task to the in-memory map', async () => {
 			const plugin = createMockPlugin();
-			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -725,7 +725,7 @@ describe('ScheduledTaskManager', () => {
 
 			expect(plugin.app.vault.create).toHaveBeenCalledWith(
 				'gemini-scribe/Scheduled-Tasks/new-task.md',
-				expect.stringContaining('schedule: daily')
+				expect.stringContaining("schedule: 'daily'")
 			);
 			const tasks = manager.getTasks();
 			expect(tasks).toHaveLength(1);
@@ -736,7 +736,7 @@ describe('ScheduledTaskManager', () => {
 
 		it('seeds state immediately so the task is due on next tick', async () => {
 			const plugin = createMockPlugin();
-			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -755,8 +755,8 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({
 				frontmatter: { schedule: 'daily' },
 			});
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Prompt.');
-			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt.');
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
 
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
@@ -778,7 +778,7 @@ describe('ScheduledTaskManager', () => {
 
 		it('serialized content includes enabledTools list', async () => {
 			const plugin = createMockPlugin();
-			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
@@ -789,20 +789,20 @@ describe('ScheduledTaskManager', () => {
 				prompt: 'With tools.',
 			});
 
-			const written = (plugin.app.vault.create as jest.Mock).mock.calls[0][1] as string;
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 			expect(written).toContain('- read_only');
 			expect(written).toContain('- read_write');
 		});
 
 		it('omits optional fields from serialized content when not set', async () => {
 			const plugin = createMockPlugin();
-			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
 			await manager.createTask({ slug: 'minimal', schedule: 'once', prompt: 'Once only.' });
 
-			const written = (plugin.app.vault.create as jest.Mock).mock.calls[0][1] as string;
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 			expect(written).not.toContain('model:');
 			expect(written).not.toContain('enabled: false');
 			expect(written).not.toContain('runIfMissed:');
@@ -817,9 +817,9 @@ describe('ScheduledTaskManager', () => {
 			const fakeFile = { path: 'gemini-scribe/Scheduled-Tasks/to-delete.md', basename: 'to-delete' };
 			plugin.app.vault.getMarkdownFiles.mockReturnValue([fakeFile]);
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Delete me.');
-			plugin.app.vault.getAbstractFileByPath = jest.fn().mockReturnValue(fakeFile);
-			plugin.app.vault.delete = jest.fn().mockResolvedValue(undefined);
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Delete me.');
+			plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValue(fakeFile);
+			plugin.app.vault.delete = vi.fn().mockResolvedValue(undefined);
 
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
@@ -863,9 +863,9 @@ describe('ScheduledTaskManager', () => {
 			const fakeFile = { path: 'gemini-scribe/Scheduled-Tasks/editable.md', basename: 'editable' };
 			plugin.app.vault.getMarkdownFiles.mockReturnValue([fakeFile]);
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
-			plugin.app.vault.read = jest.fn().mockResolvedValue('Original prompt.');
-			plugin.app.vault.getAbstractFileByPath = jest.fn().mockReturnValue(fakeFile);
-			plugin.app.vault.modify = jest.fn().mockResolvedValue(undefined);
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Original prompt.');
+			plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValue(fakeFile);
+			plugin.app.vault.modify = vi.fn().mockResolvedValue(undefined);
 
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
@@ -877,8 +877,8 @@ describe('ScheduledTaskManager', () => {
 
 			await manager.updateTask('editable', { schedule: 'weekly' });
 
-			const written = (plugin.app.vault.modify as jest.Mock).mock.calls[0][1] as string;
-			expect(written).toContain('schedule: weekly');
+			const written = (plugin.app.vault.modify as Mock).mock.calls[0][1] as string;
+			expect(written).toContain("schedule: 'weekly'");
 		});
 
 		it('immediately updates the in-memory task so re-render is instant', async () => {

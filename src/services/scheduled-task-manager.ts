@@ -388,6 +388,11 @@ export class ScheduledTaskManager {
 		if (!slug) throw new Error('Task slug cannot be empty');
 		if (this.tasks.has(slug)) throw new Error(`A task named "${slug}" already exists`);
 
+		// Validate schedule before touching the vault — computeNextRunAt throws on
+		// unrecognised formats, surfacing the error early rather than persisting a
+		// broken task file.
+		computeNextRunAt(params.schedule, new Date());
+
 		const filePath = normalizePath(`${this.scheduledTasksFolder}/${slug}.md`);
 		const defaultOutputPath = normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`);
 		const content = this.serializeTask({ ...params, slug });
@@ -450,6 +455,11 @@ export class ScheduledTaskManager {
 	): Promise<void> {
 		const task = this.tasks.get(slug);
 		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
+
+		// Validate the new schedule (if provided) before touching the vault.
+		if (params.schedule !== undefined) {
+			computeNextRunAt(params.schedule, new Date());
+		}
 
 		const file = this.plugin.app.vault.getAbstractFileByPath(task.filePath);
 		if (!file) throw new Error(`Task file not found: ${task.filePath}`);
@@ -740,7 +750,7 @@ export class ScheduledTaskManager {
 		prompt: string;
 	}): string {
 		const lines: string[] = ['---'];
-		lines.push(`schedule: ${params.schedule}`);
+		lines.push(`schedule: '${params.schedule}'`);
 
 		const tools = params.enabledTools ?? [];
 		if (tools.length > 0) {
@@ -753,11 +763,11 @@ export class ScheduledTaskManager {
 		const defaultOutputPath =
 			params.slug && normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${params.slug}/{date}.md`);
 		if (params.outputPath && params.outputPath !== defaultOutputPath) {
-			lines.push(`outputPath: ${params.outputPath}`);
+			lines.push(`outputPath: '${params.outputPath}'`);
 		}
 
 		if (params.model) {
-			lines.push(`model: ${params.model}`);
+			lines.push(`model: '${params.model}'`);
 		}
 		if (params.enabled === false) {
 			lines.push('enabled: false');
