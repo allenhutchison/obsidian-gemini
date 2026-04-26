@@ -314,7 +314,27 @@ export default class ObsidianGemini extends Plugin {
 			},
 		});
 
-		// View scheduled tasks
+		// Open scheduler management modal
+		this.addCommand({
+			id: 'gemini-scribe-open-scheduler',
+			name: 'Open Scheduler',
+			callback: async () => {
+				const { SchedulerManagementModal } = await import('./ui/scheduler-management-modal');
+				new SchedulerManagementModal(this.app, this, 'list').open();
+			},
+		});
+
+		// New scheduled task — jump straight to create form
+		this.addCommand({
+			id: 'gemini-scribe-new-scheduled-task',
+			name: 'New Scheduled Task',
+			callback: async () => {
+				const { SchedulerManagementModal } = await import('./ui/scheduler-management-modal');
+				new SchedulerManagementModal(this.app, this, 'create').open();
+			},
+		});
+
+		// View scheduled tasks (read-only legacy — kept for backwards compatibility)
 		this.addCommand({
 			id: 'gemini-scribe-view-scheduled-tasks',
 			name: 'View Scheduled Tasks',

@@ -17,7 +17,14 @@ gemini-scribe/Scheduled-Tasks/
 
 ## Creating a Task
 
-> **Note:** A task creation UI (command palette → "New Scheduled Task") is planned for a follow-up release. For now, create task files manually as described below.
+The easiest way to create a task is through the **Scheduler** UI:
+
+1. Open the command palette and run **Open Scheduler** (or go to Settings → General → Scheduled Tasks → **Open Scheduler**)
+2. Click **New task**
+3. Fill in the slug, schedule, tool access, and prompt
+4. Click **Create task**
+
+You can also create tasks manually by writing a markdown file directly:
 
 Create a markdown file inside `<history-folder>/Scheduled-Tasks/`. The filename (without `.md`) becomes the task's **slug** — used in output paths and the task monitor.
 
@@ -35,14 +42,14 @@ Summarise the notes I created or modified today. List the key topics and any ope
 
 ### Frontmatter Fields
 
-| Field          | Required | Default                                                  | Description                                                                 |
-| -------------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `schedule`     | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.               |
-| `enabledTools` | No       | `[]` (read-only)                                         | List of tool categories the agent may use. See [Tool Access](#tool-access). |
-| `outputPath`   | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.        |
-| `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-2.0-flash`).                 |
-| `enabled`      | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                     |
-| `runIfMissed`  | No       | `false`                                                  | Reserved for future use — catch-up runs are not yet implemented.            |
+| Field          | Required | Default                                                  | Description                                                                                                                                          |
+| -------------- | -------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schedule`     | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.                                                                                        |
+| `enabledTools` | No       | `[]` (read-only)                                         | List of tool categories the agent may use. See [Tool Access](#tool-access).                                                                          |
+| `outputPath`   | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                                                 |
+| `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-2.0-flash`).                                                                                          |
+| `enabled`      | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                                                                                              |
+| `runIfMissed`  | No       | `false`                                                  | When true, if the task was due while Obsidian was closed, it appears in the catch-up modal on the next startup. See [Catch-up Runs](#catch-up-runs). |
 
 ### Schedule Formats
 
@@ -66,16 +73,34 @@ The `enabledTools` list controls what the agent can do during a run:
 
 If `enabledTools` is empty the task defaults to `read_only`.
 
-## Viewing Task Status
+## Managing Tasks
 
-Open **Command Palette → View Scheduled Tasks** to see all tasks with:
+### Open Scheduler
 
-- Next scheduled run time
-- Last run time
-- Last error (if any)
-- Status badge (`disabled`, `paused`, or schedule string)
+The **Scheduler** modal is the primary way to manage your tasks. Open it from:
 
-From this panel you can also **Run now** to trigger a task immediately, or **Reset** a task that has been paused after repeated failures.
+- Command palette → **Open Scheduler**
+- Settings → General → Scheduled Tasks → **Open Scheduler**
+
+From the Scheduler you can:
+
+| Action                                  | How                             |
+| --------------------------------------- | ------------------------------- |
+| View all tasks with next/last run times | Task list                       |
+| Create a new task                       | Click **New task**              |
+| Edit an existing task                   | Click **Edit** on any row       |
+| Enable or disable a task                | Click **Disable** / **Enable**  |
+| Trigger an immediate run                | Click **Run now**               |
+| Reset a paused task                     | Click **Reset** on a paused row |
+| Delete a task                           | Click **Delete**                |
+
+### Create a New Task via Command
+
+You can also open the create form directly: **Command Palette → New Scheduled Task**.
+
+### Read-Only Status View
+
+For a lightweight read-only summary, use **Command Palette → View Scheduled Tasks**. This panel shows the same task list without edit controls.
 
 ## Output Files
 
@@ -92,13 +117,39 @@ ran_at: '2026-04-18T08:00:00.000Z'
 
 The `{date}` placeholder in `outputPath` is replaced with the local date (`YYYY-MM-DD`), so each run produces a separate file by default.
 
+## Catch-up Runs
+
+When Obsidian is closed, scheduled tasks cannot run. Tasks with `runIfMissed: true` are detected on the next startup and surfaced in a **Missed Scheduled Runs** approval modal.
+
+### Approval modal
+
+The modal lists all overdue `runIfMissed` tasks (within a 7-day look-back window) and lets you decide per task:
+
+- **Run** — submit the task immediately as a background task
+- **Skip** — advance the task's schedule without running it
+- **Run all** / **Skip all** — bulk actions for all pending tasks
+
+If you dismiss the modal without acting, the `!` badge on the status bar remains — click it to reopen the modal.
+
+### Auto-run setting
+
+In **Settings → UI Settings → Auto-run missed scheduled tasks on startup**, enable this toggle to have the plugin silently submit all missed tasks on startup without showing the modal.
+
+### Notes
+
+- Only tasks with `runIfMissed: true` appear in the catch-up list; the default is `false`.
+- Tasks paused due to repeated failures are excluded from catch-up.
+- Runs missed more than 7 days ago are excluded (treated as stale).
+- One catch-up entry per task per startup, regardless of how many intervals were missed.
+- On mobile, Obsidian hides the status bar, so the badge is not visible. The modal still opens automatically on startup if there are pending catch-up tasks.
+
 ## Error Handling and Pausing
 
 If a task fails **3 consecutive times**, the scheduler automatically pauses it to prevent runaway retries. The task monitor shows it with a `paused` badge and displays the last error.
 
 To resume a paused task:
 
-1. Open **Command Palette → View Scheduled Tasks**
+1. Open **Command Palette → Open Scheduler** (or **View Scheduled Tasks**)
 2. Fix the underlying issue (e.g. invalid prompt, missing API key)
 3. Click **Reset** next to the paused task
 
