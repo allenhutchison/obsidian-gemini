@@ -16,6 +16,8 @@ export class BackgroundStatusBar {
 	private taskManager: BackgroundTaskManager;
 	private ragProvider: RagStatusProvider | null = null;
 	private statusBarItem: HTMLElement | null = null;
+	/** Number of missed scheduled runs awaiting user approval. Drives the ! badge. */
+	private _pendingCatchUpCount = 0;
 
 	constructor(plugin: ObsidianGemini, taskManager: BackgroundTaskManager) {
 		this.plugin = plugin;
@@ -29,6 +31,16 @@ export class BackgroundStatusBar {
 		this.update();
 	}
 
+	/** Set the number of pending catch-up approvals and re-render the badge. */
+	setPendingCatchUpCount(count: number): void {
+		this._pendingCatchUpCount = count;
+		this.update();
+	}
+
+	get pendingCatchUpCount(): number {
+		return this._pendingCatchUpCount;
+	}
+
 	/** Attach the status bar item to the Obsidian status bar. */
 	setup(): void {
 		if (this.statusBarItem) return;
@@ -38,8 +50,20 @@ export class BackgroundStatusBar {
 
 		this.statusBarItem.createSpan({ cls: 'gemini-bg-status-icon' });
 		this.statusBarItem.createSpan({ cls: 'gemini-bg-status-text' });
+		this.statusBarItem.createSpan({ cls: 'gemini-bg-status-badge' });
 
 		this.statusBarItem.addEventListener('click', async () => {
+			// Pending catch-up approvals take priority — open the approval modal first
+			if (this._pendingCatchUpCount > 0 && this.plugin.scheduledTaskManager) {
+				const pending = this.plugin.scheduledTaskManager.detectMissedRuns();
+				if (pending.length > 0) {
+					const { CatchUpModal } = await import('../ui/catch-up-modal');
+					new CatchUpModal(this.plugin.app, this.plugin, pending).open();
+					return;
+				}
+				// detectMissedRuns returned empty — stale badge; self-correct
+				this.setPendingCatchUpCount(0);
+			}
 			const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
 			const defaultTab = this.taskManager.runningCount > 0 ? 'tasks' : 'rag';
 			new BackgroundTasksModal(this.plugin.app, this.plugin, defaultTab).open();
@@ -54,7 +78,19 @@ export class BackgroundStatusBar {
 
 		const iconEl = this.statusBarItem.querySelector('.gemini-bg-status-icon') as HTMLElement | null;
 		const textEl = this.statusBarItem.querySelector('.gemini-bg-status-text') as HTMLElement | null;
+		const badgeEl = this.statusBarItem.querySelector('.gemini-bg-status-badge') as HTMLElement | null;
 		if (!iconEl || !textEl) return;
+
+		// Catch-up badge — show ! when there are pending approvals
+		if (badgeEl) {
+			if (this._pendingCatchUpCount > 0) {
+				badgeEl.setText('!');
+				badgeEl.style.display = 'inline-block';
+			} else {
+				badgeEl.setText('');
+				badgeEl.style.display = 'none';
+			}
+		}
 
 		const runningCount = this.taskManager.runningCount;
 		const ragStatus = this.ragProvider?.getStatus() ?? 'disabled';

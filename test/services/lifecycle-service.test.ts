@@ -129,6 +129,9 @@ jest.mock('../../src/services/scheduled-task-manager', () => ({
 		initialize: jest.fn().mockResolvedValue(undefined),
 		start: jest.fn(),
 		destroy: jest.fn(),
+		detectMissedRuns: jest.fn().mockReturnValue([]),
+		runNow: jest.fn().mockResolvedValue('bg-task-1'),
+		skipCatchUp: jest.fn().mockResolvedValue(undefined),
 	})),
 }));
 

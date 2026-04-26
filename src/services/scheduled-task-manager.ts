@@ -80,6 +80,13 @@ export interface TaskState {
 /** The full sidecar state file — a map of slug → TaskState. */
 export type ScheduledTasksState = Record<string, TaskState>;
 
+/** A single missed-run entry returned by detectMissedRuns(). */
+export interface PendingCatchUp {
+	task: ScheduledTask;
+	/** The nextRunAt instant that was missed. */
+	missedAt: Date;
+}
+
 // ─── Pure helper ─────────────────────────────────────────────────────────────
 
 /**
@@ -141,6 +148,8 @@ export class ScheduledTaskManager {
 	private vaultCreateHandler: ((...data: unknown[]) => unknown) | null = null;
 	/** Slugs of tasks currently being submitted — prevents double-fire from tick + runNow race. */
 	private submitting = new Set<string>();
+	/** Slugs reserved for catch-up approval — tick skips these until approved or skipped. */
+	private catchUpPending = new Set<string>();
 
 	constructor(private plugin: ObsidianGemini) {}
 
@@ -289,6 +298,13 @@ export class ScheduledTaskManager {
 				continue;
 			}
 
+			if (this.catchUpPending.has(task.slug)) {
+				this.plugin.logger.log(
+					`[ScheduledTaskManager] Task "${task.slug}" is awaiting catch-up approval — skipping tick`
+				);
+				continue;
+			}
+
 			const nextRunAt = new Date(taskState.nextRunAt);
 			if (now < nextRunAt) continue;
 
@@ -304,6 +320,7 @@ export class ScheduledTaskManager {
 	async runNow(slug: string): Promise<string> {
 		const task = this.tasks.get(slug);
 		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
+		this.catchUpPending.delete(slug);
 		return this.submitTask(task, new Date());
 	}
 
@@ -326,6 +343,66 @@ export class ScheduledTaskManager {
 			pausedDueToErrors: false,
 		};
 		await this.saveState();
+	}
+
+	/**
+	 * Returns one entry per task that missed its scheduled run while the plugin
+	 * was offline. Only tasks with `runIfMissed: true` and `enabled: true` are
+	 * included. Multiple missed windows for the same task are collapsed into a
+	 * single entry — the caller just needs to know "this task needs a catch-up
+	 * run", not how many it missed.
+	 *
+	 * @param windowMs  How far back to look (default: 7 days). Tasks whose
+	 *                  nextRunAt is older than this are considered stale and
+	 *                  excluded — they missed their window entirely.
+	 */
+	detectMissedRuns(windowMs = 7 * 24 * 60 * 60 * 1000): PendingCatchUp[] {
+		const now = new Date();
+		const cutoff = new Date(now.getTime() - windowMs);
+		const result: PendingCatchUp[] = [];
+
+		for (const task of this.tasks.values()) {
+			if (!task.enabled || !task.runIfMissed) continue;
+			if (task.schedule === 'once') continue;
+
+			const taskState = this.state[task.slug];
+			if (!taskState) continue;
+			if (taskState.pausedDueToErrors) continue;
+
+			const nextRunAt = new Date(taskState.nextRunAt);
+			// Due in the past AND within the catch-up window
+			if (nextRunAt < now && nextRunAt >= cutoff) {
+				result.push({ task, missedAt: nextRunAt });
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Mark slugs as pending catch-up approval so the tick loop skips them
+	 * until the user approves or skips each one via the CatchUpModal.
+	 */
+	reserveForCatchUp(slugs: string[]): void {
+		for (const slug of slugs) {
+			this.catchUpPending.add(slug);
+		}
+	}
+
+	/**
+	 * Advance a task's nextRunAt without running it — used by the catch-up modal
+	 * "Skip" action so the task is not re-detected on the next plugin launch.
+	 */
+	async skipCatchUp(slug: string): Promise<void> {
+		this.catchUpPending.delete(slug);
+		const task = this.tasks.get(slug);
+		if (!task || !this.state[slug]) return;
+		const nextRunAt = computeNextRunAt(task.schedule, new Date());
+		this.state[slug] = { ...this.state[slug], nextRunAt: nextRunAt.toISOString() };
+		await this.saveState();
+		this.plugin.logger.log(
+			`[ScheduledTaskManager] Catch-up skipped for "${slug}" — next run at ${nextRunAt.toISOString()}`
+		);
 	}
 
 	/** Returns a copy of the current runtime state map. */
