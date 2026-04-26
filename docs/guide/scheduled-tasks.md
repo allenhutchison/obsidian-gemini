@@ -17,7 +17,14 @@ gemini-scribe/Scheduled-Tasks/
 
 ## Creating a Task
 
-> **Note:** A task creation UI (command palette → "New Scheduled Task") is planned for a follow-up release. For now, create task files manually as described below.
+The easiest way to create a task is through the **Scheduler** UI:
+
+1. Open the command palette and run **Open Scheduler** (or go to Settings → General → Scheduled Tasks → **Open Scheduler**)
+2. Click **New task**
+3. Fill in the slug, schedule, tool access, and prompt
+4. Click **Create task**
+
+You can also create tasks manually by writing a markdown file directly:
 
 Create a markdown file inside `<history-folder>/Scheduled-Tasks/`. The filename (without `.md`) becomes the task's **slug** — used in output paths and the task monitor.
 
@@ -66,16 +73,34 @@ The `enabledTools` list controls what the agent can do during a run:
 
 If `enabledTools` is empty the task defaults to `read_only`.
 
-## Viewing Task Status
+## Managing Tasks
 
-Open **Command Palette → View Scheduled Tasks** to see all tasks with:
+### Open Scheduler
 
-- Next scheduled run time
-- Last run time
-- Last error (if any)
-- Status badge (`disabled`, `paused`, or schedule string)
+The **Scheduler** modal is the primary way to manage your tasks. Open it from:
 
-From this panel you can also **Run now** to trigger a task immediately, or **Reset** a task that has been paused after repeated failures.
+- Command palette → **Open Scheduler**
+- Settings → General → Scheduled Tasks → **Open Scheduler**
+
+From the Scheduler you can:
+
+| Action                                  | How                             |
+| --------------------------------------- | ------------------------------- |
+| View all tasks with next/last run times | Task list                       |
+| Create a new task                       | Click **New task**              |
+| Edit an existing task                   | Click **Edit** on any row       |
+| Enable or disable a task                | Click **Disable** / **Enable**  |
+| Trigger an immediate run                | Click **Run now**               |
+| Reset a paused task                     | Click **Reset** on a paused row |
+| Delete a task                           | Click **Delete**                |
+
+### Create a New Task via Command
+
+You can also open the create form directly: **Command Palette → New Scheduled Task**.
+
+### Read-Only Status View
+
+For a lightweight read-only summary, use **Command Palette → View Scheduled Tasks**. This panel shows the same task list without edit controls.
 
 ## Output Files
 
@@ -98,7 +123,7 @@ If a task fails **3 consecutive times**, the scheduler automatically pauses it t
 
 To resume a paused task:
 
-1. Open **Command Palette → View Scheduled Tasks**
+1. Open **Command Palette → Open Scheduler** (or **View Scheduled Tasks**)
 2. Fix the underlying issue (e.g. invalid prompt, missing API key)
 3. Click **Reset** next to the paused task
 

@@ -4870,3 +4870,305 @@ If your plugin does not need CSS, delete this file.
 .gemini-scheduled-task-reset:hover:not(:disabled) {
 	background: color-mix(in srgb, var(--color-orange) 25%, var(--interactive-normal));
 }
+
+/* ── Scheduler Management Modal ─────────────────────────────────── */
+
+.gemini-scheduler-modal .modal-content {
+	min-width: 460px;
+	max-width: 640px;
+	padding-top: 48px; /* clear Obsidian's × close button */
+}
+
+.gemini-scheduler-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+	padding-right: 8px; /* keep New task button away from right edge */
+}
+
+.gemini-scheduler-header h2 {
+	margin: 0;
+}
+
+.gemini-scheduler-new-btn {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: var(--font-ui-small);
+}
+
+.gemini-scheduler-btn-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.gemini-scheduler-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 32px 16px;
+	gap: 8px;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.gemini-scheduler-empty-icon {
+	font-size: 32px;
+	opacity: 0.5;
+}
+
+.gemini-scheduler-empty-hint {
+	font-size: var(--font-ui-smaller);
+	max-width: 340px;
+}
+
+.gemini-scheduler-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.gemini-scheduler-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 12px;
+	border-radius: 8px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-scheduler-item--disabled {
+	opacity: 0.55;
+}
+
+.gemini-scheduler-item--paused {
+	border-color: var(--color-orange);
+	background: color-mix(in srgb, var(--color-orange) 8%, var(--background-secondary));
+}
+
+.gemini-scheduler-item-icon {
+	flex-shrink: 0;
+	margin-top: 2px;
+	color: var(--text-muted);
+}
+
+.gemini-scheduler-item--paused .gemini-scheduler-item-icon {
+	color: var(--color-orange);
+}
+
+.gemini-scheduler-item-info {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.gemini-scheduler-item-slug {
+	font-weight: 600;
+	font-size: var(--font-ui-small);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.gemini-scheduler-item-badge {
+	display: inline-block;
+	font-size: 11px;
+	padding: 1px 7px;
+	border-radius: 99px;
+	background: var(--background-modifier-hover);
+	color: var(--text-muted);
+	width: fit-content;
+}
+
+.gemini-scheduler-item--paused .gemini-scheduler-item-badge {
+	background: color-mix(in srgb, var(--color-orange) 20%, transparent);
+	color: var(--color-orange);
+}
+
+.gemini-scheduler-item-meta {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.gemini-scheduler-item-error {
+	font-size: 11px;
+	color: var(--color-orange);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: help;
+}
+
+.gemini-scheduler-item-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	flex-shrink: 0;
+	min-width: 76px;
+}
+
+.gemini-scheduler-action {
+	font-size: var(--font-ui-smaller);
+	padding: 4px 10px;
+	border-radius: 4px;
+	cursor: pointer;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--interactive-normal);
+	color: var(--text-normal);
+	white-space: nowrap;
+	text-align: center;
+}
+
+.gemini-scheduler-action:hover:not(:disabled) {
+	background: var(--interactive-hover);
+}
+
+.gemini-scheduler-action:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.gemini-scheduler-modal .gemini-scheduler-action--delete {
+	background: var(--color-red);
+	border-color: var(--color-red);
+	color: #fff;
+	font-weight: 600;
+}
+
+.gemini-scheduler-modal .gemini-scheduler-action--delete:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--color-red) 80%, #000);
+	border-color: color-mix(in srgb, var(--color-red) 80%, #000);
+}
+
+/* Confirm delete */
+.gemini-scheduler-delete-hint {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.gemini-scheduler-confirm-btns {
+	display: flex;
+	gap: 10px;
+	margin-top: 20px;
+}
+
+.gemini-scheduler-modal .gemini-scheduler-confirm-delete {
+	padding: 6px 16px;
+	border-radius: 4px;
+	cursor: pointer;
+	border: 1px solid var(--color-red);
+	background: var(--color-red);
+	color: #fff;
+	font-weight: 600;
+}
+
+.gemini-scheduler-modal .gemini-scheduler-confirm-delete:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--color-red) 80%, #000);
+	border-color: color-mix(in srgb, var(--color-red) 80%, #000);
+}
+
+/* Create / Edit form */
+.gemini-scheduler-modal .gemini-scheduler-back {
+	background: none;
+	border: none;
+	box-shadow: none;
+	color: var(--text-accent);
+	cursor: pointer;
+	padding: 0;
+	font-size: var(--font-ui-small);
+	margin-bottom: 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.gemini-scheduler-modal .gemini-scheduler-back:hover {
+	background: none;
+	text-decoration: underline;
+}
+
+.gemini-scheduler-form .setting-item {
+	border-top: none;
+	padding: 6px 0;
+}
+
+.gemini-scheduler-schedule-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.gemini-scheduler-select {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	padding: 4px 8px;
+	font-size: var(--font-ui-small);
+}
+
+.gemini-scheduler-custom-interval {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	padding: 4px 8px;
+	font-size: var(--font-ui-small);
+	width: 100px;
+}
+
+.gemini-scheduler-tools {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 8px;
+}
+
+.gemini-scheduler-tool-label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+}
+
+.gemini-scheduler-prompt {
+	width: 100%;
+	box-sizing: border-box;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	padding: 8px;
+	resize: vertical;
+	margin-bottom: 8px;
+}
+
+.gemini-scheduler-advanced {
+	margin-top: 8px;
+}
+
+.gemini-scheduler-advanced summary {
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	padding: 4px 0;
+}
+
+.gemini-scheduler-footer {
+	display: flex;
+	gap: 8px;
+	margin-top: 16px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border);
+}

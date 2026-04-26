@@ -706,4 +706,203 @@ describe('ScheduledTaskManager', () => {
 			expect(() => manager.destroy()).not.toThrow();
 		});
 	});
+
+	// ── createTask ───────────────────────────────────────────────────────────
+
+	describe('createTask', () => {
+		it('writes a markdown file and immediately adds the task to the in-memory map', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await manager.createTask({
+				slug: 'new-task',
+				schedule: 'daily',
+				enabledTools: ['read_only'],
+				prompt: 'Do something daily.',
+			});
+
+			expect(plugin.app.vault.create).toHaveBeenCalledWith(
+				'gemini-scribe/Scheduled-Tasks/new-task.md',
+				expect.stringContaining('schedule: daily')
+			);
+			const tasks = manager.getTasks();
+			expect(tasks).toHaveLength(1);
+			expect(tasks[0].slug).toBe('new-task');
+			expect(tasks[0].schedule).toBe('daily');
+			expect(tasks[0].enabled).toBe(true);
+		});
+
+		it('seeds state immediately so the task is due on next tick', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await manager.createTask({ slug: 'seeded', schedule: 'weekly', prompt: 'Weekly job.' });
+
+			const state = manager.getState();
+			expect(state['seeded']).toBeDefined();
+			expect(state['seeded'].nextRunAt).toBeDefined();
+		});
+
+		it('throws when a task with the same slug already exists', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: 'gemini-scribe/Scheduled-Tasks/existing.md', basename: 'existing' },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily' },
+			});
+			plugin.app.vault.read = jest.fn().mockResolvedValue('Prompt.');
+			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await expect(manager.createTask({ slug: 'existing', schedule: 'daily', prompt: 'Duplicate.' })).rejects.toThrow(
+				'already exists'
+			);
+		});
+
+		it('throws when slug is empty', async () => {
+			const plugin = createMockPlugin();
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await expect(manager.createTask({ slug: '   ', schedule: 'daily', prompt: 'x' })).rejects.toThrow(
+				'slug cannot be empty'
+			);
+		});
+
+		it('serialized content includes enabledTools list', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await manager.createTask({
+				slug: 'tools-task',
+				schedule: 'daily',
+				enabledTools: ['read_only', 'read_write'],
+				prompt: 'With tools.',
+			});
+
+			const written = (plugin.app.vault.create as jest.Mock).mock.calls[0][1] as string;
+			expect(written).toContain('- read_only');
+			expect(written).toContain('- read_write');
+		});
+
+		it('omits optional fields from serialized content when not set', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = jest.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await manager.createTask({ slug: 'minimal', schedule: 'once', prompt: 'Once only.' });
+
+			const written = (plugin.app.vault.create as jest.Mock).mock.calls[0][1] as string;
+			expect(written).not.toContain('model:');
+			expect(written).not.toContain('enabled: false');
+			expect(written).not.toContain('runIfMissed:');
+		});
+	});
+
+	// ── deleteTask ───────────────────────────────────────────────────────────
+
+	describe('deleteTask', () => {
+		async function makeManagerWithTask() {
+			const plugin = createMockPlugin();
+			const fakeFile = { path: 'gemini-scribe/Scheduled-Tasks/to-delete.md', basename: 'to-delete' };
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([fakeFile]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+			plugin.app.vault.read = jest.fn().mockResolvedValue('Delete me.');
+			plugin.app.vault.getAbstractFileByPath = jest.fn().mockReturnValue(fakeFile);
+			plugin.app.vault.delete = jest.fn().mockResolvedValue(undefined);
+
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+			return { manager, plugin };
+		}
+
+		it('removes the task from the in-memory map', async () => {
+			const { manager } = await makeManagerWithTask();
+			expect(manager.getTasks()).toHaveLength(1);
+
+			await manager.deleteTask('to-delete');
+
+			expect(manager.getTasks()).toHaveLength(0);
+		});
+
+		it('removes the task state entry', async () => {
+			const { manager } = await makeManagerWithTask();
+			await manager.deleteTask('to-delete');
+
+			expect(manager.getState()['to-delete']).toBeUndefined();
+		});
+
+		it('calls vault.delete on the task file', async () => {
+			const { manager, plugin } = await makeManagerWithTask();
+			await manager.deleteTask('to-delete');
+
+			expect(plugin.app.vault.delete).toHaveBeenCalled();
+		});
+
+		it('throws when the slug is not found', async () => {
+			const { manager } = await makeManagerWithTask();
+			await expect(manager.deleteTask('nonexistent')).rejects.toThrow('"nonexistent"');
+		});
+	});
+
+	// ── updateTask ───────────────────────────────────────────────────────────
+
+	describe('updateTask', () => {
+		async function makeManagerWithTask() {
+			const plugin = createMockPlugin();
+			const fakeFile = { path: 'gemini-scribe/Scheduled-Tasks/editable.md', basename: 'editable' };
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([fakeFile]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
+			plugin.app.vault.read = jest.fn().mockResolvedValue('Original prompt.');
+			plugin.app.vault.getAbstractFileByPath = jest.fn().mockReturnValue(fakeFile);
+			plugin.app.vault.modify = jest.fn().mockResolvedValue(undefined);
+
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+			return { manager, plugin };
+		}
+
+		it('writes updated content to the vault file', async () => {
+			const { manager, plugin } = await makeManagerWithTask();
+
+			await manager.updateTask('editable', { schedule: 'weekly' });
+
+			const written = (plugin.app.vault.modify as jest.Mock).mock.calls[0][1] as string;
+			expect(written).toContain('schedule: weekly');
+		});
+
+		it('immediately updates the in-memory task so re-render is instant', async () => {
+			const { manager } = await makeManagerWithTask();
+
+			await manager.updateTask('editable', { enabled: false });
+
+			const task = manager.getTasks().find((t) => t.slug === 'editable');
+			expect(task?.enabled).toBe(false);
+		});
+
+		it('preserves unchanged fields when only one field is updated', async () => {
+			const { manager } = await makeManagerWithTask();
+
+			await manager.updateTask('editable', { schedule: 'weekly' });
+
+			const task = manager.getTasks().find((t) => t.slug === 'editable');
+			expect(task?.schedule).toBe('weekly');
+			expect(task?.enabled).toBe(true); // unchanged default
+		});
+
+		it('throws when the slug is not found', async () => {
+			const { manager } = await makeManagerWithTask();
+			await expect(manager.updateTask('ghost', { schedule: 'daily' })).rejects.toThrow('"ghost"');
+		});
+	});
 });
