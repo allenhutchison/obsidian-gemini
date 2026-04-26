@@ -7,24 +7,23 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
-## What's New in v4.6.0
+## What's New in v4.7.0
 
-**✨ Unified Shelf, Diff View & Skill Editing**
+**✨ Projects, Session Memory & File Shelf**
 
-- **📂 Unified file context shelf** - All context files, folders, and binary attachments displayed in a single horizontal strip with keyboard navigation and animations
-- **📝 Diff view for file changes** - Side-by-side diff view for write_file, append_content, create_skill, and edit_skill with inline editing before approval
-- **✏️ edit_skill tool** - Update existing skill instructions and descriptions directly through the agent
-- **🔧 get_workspace_state** - Replaced get_active_file with a comprehensive workspace snapshot showing all open files, visibility, selections, and project info
-- **📎 Binary files in @ mentions** - The file picker now supports images, PDFs, audio, and video files alongside text
-- **🗂️ Folder re-expansion** - Folders in context automatically include newly created files on each turn
-- **⌨️ Keyboard accessibility** - Full Arrow/Enter/Delete keyboard navigation for the file shelf
+- **📂 Projects** - Scope agent sessions to a folder with custom instructions, permission overrides, and skill filters. See the [Projects guide](docs/guide/projects.md).
+- **🧠 Session recall** - The agent can search past conversations for relevant context via the `recall_sessions` tool.
+- **📦 Bundled skills** - Built-in help and Obsidian-knowledge skills, auto-generated from the docs site at build time.
+- **📄 Binary file awareness in tools** - `read_file` can return images, audio, video, and PDFs directly to the model when encountered during tool execution.
+- **🏗️ Layered prompt architecture** - System prompts refactored into composable Handlebars sections.
 
-**Previous Updates (v4.5.0):**
+**Previous Updates (v4.6.0):**
 
-- **🔌 [Experimental] MCP server support** - Connect external tool servers via stdio or HTTP transport with OAuth
-- **🧠 Agent skills system** - Extensible AI capabilities following the agentskills.io spec
-- **📎 Unified drag-and-drop** - Attach images, audio, video, PDFs, and text files with smart classification
-- **🔐 Secure API key storage** - API key migrated to Obsidian SecretStorage (OS keychain)
+- **📝 Diff review view** - Side-by-side diff for `write_file`, `append_content`, `create_skill`, and `edit_skill` with inline editing before approval
+- **✏️ edit_skill tool** - Update existing skill instructions through the agent
+- **🔧 get_workspace_state** - Comprehensive workspace snapshot replacing the old `get_active_file`
+- **📎 Binary files in @ mentions** - File picker supports images, PDFs, audio, and video alongside text
+- **🗂️ Folder re-expansion** - Folders in context auto-include newly created files on each turn
 
 ## Features
 
@@ -251,7 +250,7 @@ Precisely rewrite any portion of your text with AI assistance. This feature prov
 
 ### IDE-Style Completions
 
-1.  **Toggle Completions:** Use the command palette (Ctrl/Cmd + P) and select "Gemini Scribe: Toggle Completions". A notice will confirm whether completions are enabled or disabled.
+1.  **Toggle Completions:** Use the command palette (Ctrl/Cmd + P) and select "Gemini Scribe: Toggle completions". A notice will confirm whether completions are enabled or disabled.
 2.  **Write:** Begin typing in a Markdown file.
 3.  **Suggestions:** After a short pause in typing (750ms), Gemini will provide an inline suggestion based on your current context.
 4.  **Accept/Dismiss:**
@@ -261,13 +260,13 @@ Precisely rewrite any portion of your text with AI assistance. This feature prov
 
 ### Chat History
 
-- **Per-Note History:** Each note's chat history is stored in a separate markdown file in the configured history folder, making it easy to manage and backup.
-- **View History:** Open the history file from the chat interface or navigate to `[History Folder]/[Note Name] - Gemini History.md`
-- **Clear History:** Use the command palette to run "Gemini Scribe: Clear All Chat History" to remove all history files
-- **Automatic Management:** The plugin automatically:
-  - Creates history files when you start chatting about a note
-  - Updates links when notes are renamed or moved
-  - Preserves history across Obsidian sessions
+- **Sessions in your vault:** Agent sessions are stored as markdown files under `[Plugin State Folder]/Agent-Sessions/`, making them easy to browse, back up, and version-control.
+- **Browse and resume:** Use the session dropdown in the agent panel to load a previous session and continue the conversation.
+- **Manual management:** Sessions are plain markdown — delete the files in `Agent-Sessions/` to remove old conversations. There is no in-app "clear all" command.
+- **Automatic management:** The plugin automatically:
+  - Creates a session file the first time you send a message
+  - Adds a YYYY-MM-DD prefix and an AI-generated description to the session title after the first exchange
+  - Tracks every file the agent reads or writes in `accessed_files` frontmatter for audit and recall
 
 ### Custom Prompts
 
@@ -297,7 +296,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - Try typing a few words and pausing to trigger the suggestion
   - Check that you're in a Markdown file
   - Disable other completion plugins that might conflict
-- **History Not Loading:** Ensure "Enable Chat History" is enabled and the "History Folder" is correctly set.
+- **Sessions Not Loading:** Ensure "Enable Chat History" is on and the "Plugin State Folder" path is correct. Sessions live under `[Plugin State Folder]/Agent-Sessions/`.
 - **Custom Prompts Not Working:**
   - Ensure "Enable Custom Prompts" is toggled on in settings
   - Verify the prompt file exists in the Prompts folder

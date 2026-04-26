@@ -292,7 +292,26 @@ Move completed tasks to the Archive folder
 Rename "Untitled" to "Project Proposal"
 ```
 
-### Web Operations
+#### create_folder
+
+Create a new folder in your vault:
+
+```text
+Create a "Meetings/2026" folder for this year's meeting notes
+```
+
+#### update_memory / read_memory
+
+Append to or read your vault's `AGENTS.md` memory file. The agent uses these to remember vault-wide context — folder layout, naming conventions, user preferences — across sessions:
+
+```text
+Remember that I keep all meeting notes under "Meetings/" by quarter
+What do you remember about my vault?
+```
+
+`update_memory` requires confirmation; `read_memory` is read-only. The "Initialize Vault Context" button is the seed that creates AGENTS.md in the first place.
+
+### Web & Research Operations
 
 #### google_search
 
@@ -310,6 +329,33 @@ Retrieve and analyze web page content:
 ```
 Get the content from this documentation page
 Analyze this blog post and summarize key points
+```
+
+#### deep_research
+
+Conduct multi-source research with citations and (optionally) save the report to your vault. Distinct from `google_search` — Deep Research runs iterative multi-turn investigation that takes minutes rather than seconds. See the [Deep Research guide](/guide/deep-research) for scope options (`web_only`, `vault_only`, `both`) and example prompts.
+
+```text
+Research the latest developments in quantum error correction and save it to Research/quantum.md
+```
+
+#### generate_image
+
+Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Available on the Gemini provider only.
+
+```text
+Generate a watercolor diagram of a Zettelkasten workflow and embed it in my notes
+```
+
+### Vault Search
+
+#### vault_semantic_search
+
+Search your vault by meaning, not just keywords, via the indexed File Search Store. Available when [Semantic Vault Search](/guide/semantic-search) is enabled. The agent uses this automatically when a question calls for concept-based retrieval; you don't need to invoke it directly.
+
+```text
+Find my notes about machine learning algorithms
+What did I write about project deadlines in my work folder?
 ```
 
 ### Session Memory
@@ -410,7 +456,7 @@ Override global settings for specific conversations:
 
 1. Click the settings icon next to session name
 2. Configure:
-   - Model (e.g., use GPT-4 for complex tasks)
+   - Model (e.g., switch to Gemini 2.5 Pro for harder reasoning)
    - Temperature (creativity level)
    - Top-P (response diversity)
    - Custom prompt template
@@ -694,7 +740,7 @@ Prevents infinite execution loops:
 
 1. Check agent mode is enabled
 2. Verify API key supports function calling
-3. Ensure selected model supports tools (e.g., Gemini 1.5 Pro)
+3. Ensure selected model supports tools (all current Gemini models do)
 
 ### Tools Not Available
 

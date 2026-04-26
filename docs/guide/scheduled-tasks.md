@@ -47,7 +47,7 @@ Summarise the notes I created or modified today. List the key topics and any ope
 | `schedule`     | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.                                                               |
 | `enabledTools` | No       | `[]` (read-only)                                         | List of tool categories the agent may use. See [Tool Access](#tool-access).                                                 |
 | `outputPath`   | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                        |
-| `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-2.0-flash`).                                                                 |
+| `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-flash-latest`).                                                              |
 | `enabled`      | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                                                                     |
 | `runIfMissed`  | No       | `false`                                                  | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs). |
 

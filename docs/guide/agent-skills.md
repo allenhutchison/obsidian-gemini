@@ -50,7 +50,7 @@ Custom skills are stored in your plugin state folder:
 
 ```
 gemini-scribe/
-└── skills/
+└── Skills/
     └── my-skill/
         ├── SKILL.md          # Required — skill definition
         ├── references/       # Optional — reference documents

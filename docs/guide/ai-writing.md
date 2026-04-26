@@ -218,7 +218,7 @@ The Explain Selection feature lets you get AI-powered explanations of any select
 
 1. **Select text** in your document
 2. **Right-click** and choose "Explain Selection"
-3. **Pick a prompt** from the selection modal (prompts tagged with `selection-action`)
+3. **Pick a prompt** from the selection modal (prompts tagged with `gemini-scribe/selection-prompt`)
 4. **View the response** in a modal window
 5. **Choose an action**:
    - **Insert as Callout**: Adds the explanation as a callout block after your selection
@@ -241,7 +241,7 @@ When you first use Explain Selection, three default prompts are created in your 
 
 ## Creating Custom Explain Prompts {#creating-custom-explain-prompts}
 
-Create your own prompts for specific use cases by adding files to your Prompts folder with the `selection-action` tag:
+Create your own prompts for specific use cases by adding files to your Prompts folder with the `gemini-scribe/selection-prompt` tag:
 
 ```markdown
 ---
@@ -249,7 +249,7 @@ name: 'Explain for Beginners'
 description: 'Explain in simple terms for beginners'
 version: 1
 override_system_prompt: false
-tags: ['selection-action', 'explain', 'beginner']
+tags: ['gemini-scribe/selection-prompt', 'explain', 'beginner']
 ---
 
 Please explain the following text in very simple terms:
@@ -270,7 +270,7 @@ name: 'Technical Deep Dive'
 description: 'Provide deep technical analysis of content'
 version: 1
 override_system_prompt: false
-tags: ['selection-action', 'technical']
+tags: ['gemini-scribe/selection-prompt', 'technical']
 ---
 
 Provide a deep technical analysis of this content:
@@ -288,7 +288,7 @@ name: 'Study Helper'
 description: 'Help study and memorize content'
 version: 1
 override_system_prompt: false
-tags: ['selection-action', 'study']
+tags: ['gemini-scribe/selection-prompt', 'study']
 ---
 
 Help me study this content:

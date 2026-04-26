@@ -354,7 +354,7 @@ Create reusable session configurations:
 **Creative Writing Session:**
 
 - Context: Character profiles, world building
-- Model: Gemini 3 Pro (if available)
+- Model: Gemini 3.1 Pro Preview (if available)
 - Custom Prompt: Creative writing coach
 
 **Research Session:**

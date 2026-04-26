@@ -38,7 +38,7 @@ Completions provide:
 ### Enable Completions
 
 1. Open Command Palette (`Ctrl/Cmd + P`)
-2. Search for "Gemini Scribe: Toggle Completions"
+2. Search for "Gemini Scribe: Toggle completions"
 3. Press Enter
 4. See confirmation notice: "Completions enabled" or "Completions disabled"
 
@@ -123,17 +123,19 @@ In Settings → Gemini Scribe:
 
 **Completion Model**
 
-- Gemini 1.5 Flash-8B (fastest, recommended)
-- Gemini 1.5 Flash (balanced)
-- Gemini 1.5 Pro (highest quality, slower)
+- Gemini Flash Lite Latest (fastest, default)
+- Gemini Flash Latest (balanced)
+- Gemini 2.5 Pro (highest quality, slower; requires billing)
+
+The dropdown reflects whatever models the bundled list and Model Discovery have surfaced — the names above are today's defaults, but newer Flash / Pro models will appear automatically as Google ships them.
 
 ### Model Comparison
 
-| Model    | Speed  | Quality | Best For                  |
-| -------- | ------ | ------- | ------------------------- |
-| Flash-8B | ~500ms | Good    | Most writing, note-taking |
-| Flash    | ~750ms | Better  | Important documents       |
-| Pro      | ~2s    | Best    | Critical content          |
+| Model             | Speed   | Quality | Best For                            |
+| ----------------- | ------- | ------- | ----------------------------------- |
+| Flash Lite Latest | Fastest | Good    | Most writing, note-taking (default) |
+| Flash Latest      | Fast    | Better  | Longer / more nuanced suggestions   |
+| Gemini 2.5 Pro    | Slowest | Best    | Critical content; requires billing  |
 
 ### Performance Tuning
 
@@ -383,7 +385,7 @@ Train the AI by:
 
 **Slow suggestions**
 
-- Switch to Flash-8B model
+- Switch to Gemini Flash Lite Latest (the default)
 - Check network speed
 - Reduce document size
 
