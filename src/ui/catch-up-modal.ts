@@ -1,4 +1,4 @@
-import { App, Modal, setIcon } from 'obsidian';
+import { App, Modal, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { PendingCatchUp } from '../services/scheduled-task-manager';
 
@@ -45,9 +45,18 @@ export class CatchUpModal extends Modal {
 			attr: { type: 'button' },
 		});
 		runAllBtn.addEventListener('click', async () => {
-			await this.approveAll();
-			this.pending = [];
-			this.close();
+			runAllBtn.disabled = true;
+			skipAllBtn.disabled = true;
+			try {
+				await this.approveAll();
+				this.pending = [];
+				this.close();
+			} catch (err) {
+				this.plugin.logger.error('[CatchUpModal] Run all failed:', err);
+				new Notice('Some tasks failed to run — check logs for details.');
+				runAllBtn.disabled = false;
+				skipAllBtn.disabled = false;
+			}
 		});
 
 		const skipAllBtn = actions.createEl('button', {
@@ -55,9 +64,18 @@ export class CatchUpModal extends Modal {
 			attr: { type: 'button' },
 		});
 		skipAllBtn.addEventListener('click', async () => {
-			await this.skipAll();
-			this.pending = [];
-			this.close();
+			runAllBtn.disabled = true;
+			skipAllBtn.disabled = true;
+			try {
+				await this.skipAll();
+				this.pending = [];
+				this.close();
+			} catch (err) {
+				this.plugin.logger.error('[CatchUpModal] Skip all failed:', err);
+				new Notice('Some tasks failed to skip — check logs for details.');
+				runAllBtn.disabled = false;
+				skipAllBtn.disabled = false;
+			}
 		});
 	}
 
@@ -100,12 +118,21 @@ export class CatchUpModal extends Modal {
 				attr: { type: 'button' },
 			});
 			approveBtn.addEventListener('click', async () => {
-				await this.approveOne(entry);
-				this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
-				if (this.pending.length === 0) {
-					this.close();
-				} else {
-					this.renderList(list);
+				approveBtn.disabled = true;
+				skipBtn.disabled = true;
+				try {
+					await this.approveOne(entry);
+					this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
+					if (this.pending.length === 0) {
+						this.close();
+					} else {
+						this.renderList(list);
+					}
+				} catch (err) {
+					this.plugin.logger.error(`[CatchUpModal] Failed to run "${entry.task.slug}":`, err);
+					new Notice(`Failed to run "${entry.task.slug}" — check logs for details.`);
+					approveBtn.disabled = false;
+					skipBtn.disabled = false;
 				}
 			});
 
@@ -114,12 +141,21 @@ export class CatchUpModal extends Modal {
 				attr: { type: 'button' },
 			});
 			skipBtn.addEventListener('click', async () => {
-				await this.skipOne(entry);
-				this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
-				if (this.pending.length === 0) {
-					this.close();
-				} else {
-					this.renderList(list);
+				approveBtn.disabled = true;
+				skipBtn.disabled = true;
+				try {
+					await this.skipOne(entry);
+					this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
+					if (this.pending.length === 0) {
+						this.close();
+					} else {
+						this.renderList(list);
+					}
+				} catch (err) {
+					this.plugin.logger.error(`[CatchUpModal] Failed to skip "${entry.task.slug}":`, err);
+					new Notice(`Failed to skip "${entry.task.slug}" — check logs for details.`);
+					approveBtn.disabled = false;
+					skipBtn.disabled = false;
 				}
 			});
 		}
