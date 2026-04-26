@@ -95,9 +95,10 @@ export class BackgroundStatusBar {
 		const runningCount = this.taskManager.runningCount;
 		const ragStatus = this.ragProvider?.getStatus() ?? 'disabled';
 
-		// Nothing to show — hide only when RAG is fully disabled and no tasks are running.
-		// When RAG is idle, show the database icon + indexed-file count.
-		if (runningCount === 0 && ragStatus === 'disabled') {
+		// Nothing to show — hide only when RAG is fully disabled, no tasks are running,
+		// AND there are no pending catch-up approvals (otherwise the ! badge would be
+		// unreachable). When RAG is idle, show the database icon + indexed-file count.
+		if (runningCount === 0 && ragStatus === 'disabled' && this._pendingCatchUpCount === 0) {
 			this.statusBarItem.style.display = 'none';
 			return;
 		}
@@ -113,6 +114,11 @@ export class BackgroundStatusBar {
 			setIcon(iconEl, 'loader');
 			textEl.setText(runningCount > 1 ? `${runningCount} tasks` : '1 task');
 			tooltipParts.push(`${runningCount} background task${runningCount > 1 ? 's' : ''} running — click to view`);
+		} else if (ragStatus === 'disabled' && this._pendingCatchUpCount > 0) {
+			// Catch-up only — no tasks running and RAG disabled, but pending approvals.
+			// Use a clock icon so the badge isn't sitting next to an unrelated database icon.
+			setIcon(iconEl, 'clock');
+			textEl.setText('');
 		} else {
 			// No tasks running — let RAG drive the icon
 			const ragIcon = ragStatus === 'indexing' ? 'upload-cloud' : ragStatus === 'paused' ? 'pause-circle' : 'database';
@@ -127,6 +133,12 @@ export class BackgroundStatusBar {
 							return '…';
 						})()
 					: String(this.ragProvider?.getIndexedFileCount() ?? '')
+			);
+		}
+
+		if (this._pendingCatchUpCount > 0) {
+			tooltipParts.push(
+				`${this._pendingCatchUpCount} missed scheduled run${this._pendingCatchUpCount > 1 ? 's' : ''} — click to review`
 			);
 		}
 

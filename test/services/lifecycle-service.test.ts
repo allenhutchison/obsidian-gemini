@@ -161,6 +161,7 @@ vi.mock('../../src/services/background-status-bar', () => ({
 			update: vi.fn(),
 			destroy: vi.fn(),
 			setRagProvider: vi.fn(),
+			setPendingCatchUpCount: vi.fn(),
 		};
 	}),
 }));
@@ -182,6 +183,7 @@ vi.mock('../../src/services/scheduled-task-manager', () => ({
 import { LifecycleService } from '../../src/services/lifecycle-service';
 import { BackgroundTaskManager } from '../../src/services/background-task-manager';
 import { BackgroundStatusBar } from '../../src/services/background-status-bar';
+import { ScheduledTaskManager } from '../../src/services/scheduled-task-manager';
 import { ToolRegistrar } from '../../src/services/tool-registrar';
 import { ProjectActivationSubscriber } from '../../src/subscribers/project-activation-subscriber';
 
@@ -374,6 +376,75 @@ describe('LifecycleService', () => {
 			expect(mockPlugin.promptManager.createDefaultPrompts).toHaveBeenCalled();
 			expect(mockPlugin.promptManager.setupPromptCommands).toHaveBeenCalled();
 			expect(mockPlugin.history.onLayoutReady).toHaveBeenCalled();
+		});
+	});
+
+	describe('catch-up handling on layout ready', () => {
+		const missedTask = (slug: string) => ({ task: { slug }, missedAt: new Date(Date.now() - 60_000) });
+
+		// Wires the ScheduledTaskManager mock so `detectMissedRuns` returns the
+		// supplied entries on the next instantiation. Returns the live mock
+		// instance once setup() has run, so tests can assert on its methods.
+		async function withMissedRuns(entries: ReturnType<typeof missedTask>[], settingsOverride: any = {}) {
+			Object.assign(mockPlugin.settings, settingsOverride);
+			(ScheduledTaskManager as unknown as Mock).mockImplementationOnce(function () {
+				return {
+					initialize: vi.fn().mockResolvedValue(undefined),
+					start: vi.fn(),
+					destroy: vi.fn(),
+					detectMissedRuns: vi.fn().mockReturnValue(entries),
+					runNow: vi.fn().mockResolvedValue('bg-task-1'),
+					skipCatchUp: vi.fn().mockResolvedValue(undefined),
+					reserveForCatchUp: vi.fn(),
+				};
+			});
+			await lifecycle.setup();
+			return mockPlugin.scheduledTaskManager;
+		}
+
+		it('auto-runs every missed task when autoRunCatchUp is true', async () => {
+			const mgr = await withMissedRuns([missedTask('task-a'), missedTask('task-b')], { autoRunCatchUp: true });
+
+			await lifecycle.onLayoutReady();
+
+			expect(mgr.runNow).toHaveBeenCalledTimes(2);
+			expect(mgr.runNow).toHaveBeenCalledWith('task-a');
+			expect(mgr.runNow).toHaveBeenCalledWith('task-b');
+			expect(mgr.reserveForCatchUp).not.toHaveBeenCalled();
+			expect(mockPlugin.backgroundStatusBar.setPendingCatchUpCount).not.toHaveBeenCalled();
+		});
+
+		it('reserves slugs and surfaces a badge when autoRunCatchUp is false', async () => {
+			const mgr = await withMissedRuns([missedTask('task-a'), missedTask('task-b')], { autoRunCatchUp: false });
+
+			await lifecycle.onLayoutReady();
+
+			expect(mgr.runNow).not.toHaveBeenCalled();
+			expect(mgr.reserveForCatchUp).toHaveBeenCalledWith(['task-a', 'task-b']);
+			expect(mockPlugin.backgroundStatusBar.setPendingCatchUpCount).toHaveBeenCalledWith(2);
+		});
+
+		it('is a no-op when no missed runs are detected', async () => {
+			const mgr = await withMissedRuns([], { autoRunCatchUp: false });
+
+			await lifecycle.onLayoutReady();
+
+			expect(mgr.runNow).not.toHaveBeenCalled();
+			expect(mgr.reserveForCatchUp).not.toHaveBeenCalled();
+			expect(mockPlugin.backgroundStatusBar.setPendingCatchUpCount).not.toHaveBeenCalled();
+		});
+
+		it('continues catch-up after a single runNow failure', async () => {
+			const mgr = await withMissedRuns([missedTask('boom'), missedTask('ok')], { autoRunCatchUp: true });
+			mgr.runNow.mockRejectedValueOnce(new Error('submit failed')).mockResolvedValueOnce('bg-task-2');
+
+			await lifecycle.onLayoutReady();
+
+			expect(mgr.runNow).toHaveBeenCalledTimes(2);
+			expect(mockPlugin.logger.error).toHaveBeenCalledWith(
+				expect.stringContaining('Auto catch-up failed for "boom"'),
+				expect.any(Error)
+			);
 		});
 	});
 
