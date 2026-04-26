@@ -98,8 +98,11 @@ export class ContextManager {
 		private logger: Logger
 	) {
 		// Only construct the Gemini SDK when the active provider is Gemini —
-		// Ollama runs locally and has no key, so the SDK is unused.
-		this.ai = plugin.settings.provider === 'gemini' ? new GoogleGenAI({ apiKey: plugin.apiKey }) : null;
+		// Ollama runs locally and has no key, so the SDK is unused. Default
+		// missing `provider` to 'gemini' so legacy/upgraded users don't fall
+		// into the Ollama estimation path with `this.ai` left null.
+		const provider = plugin.settings.provider ?? 'gemini';
+		this.ai = provider === 'gemini' ? new GoogleGenAI({ apiKey: plugin.apiKey }) : null;
 	}
 
 	/**
@@ -449,9 +452,13 @@ export class ContextManager {
 			// Ollama has no SDK instance here; route through the factory so we use
 			// whichever provider the user has configured.
 			if (this.plugin.settings.provider === 'ollama' || !this.ai) {
+				// Pass ModelUseCase.SUMMARY to the factory and let its
+				// resolveModelName populate the request — overriding `model`
+				// here would route compaction through the chat model on Ollama
+				// (where the client honours request.model over config.model)
+				// instead of the user's configured `summaryModelName`.
 				const summaryClient = GeminiClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
 				const response = await summaryClient.generateModelResponse({
-					model: modelName,
 					prompt: fullPrompt,
 					temperature: 0.3,
 				});

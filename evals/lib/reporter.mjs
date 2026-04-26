@@ -47,8 +47,16 @@ export function aggregateTaskRuns(taskId, runs) {
 	];
 	const aggMetrics = {};
 	for (const key of metricKeys) {
+		// cache_ratio is null on providers without a cache (e.g. Ollama). Coercing
+		// missing values to 0 here would make per-task rows show 0% instead of "-"
+		// and let zero-cache providers pollute the per-task aggregate average.
+		if (key === 'cache_ratio') {
+			const values = runs.map((r) => r.metrics.cache_ratio).filter((v) => typeof v === 'number');
+			aggMetrics.cache_ratio = values.length === 0 ? null : round(mean(values), 3);
+			continue;
+		}
 		const values = runs.map((r) => r.metrics[key] ?? 0);
-		aggMetrics[key] = key === 'cache_ratio' ? round(mean(values), 3) : round(mean(values), 6);
+		aggMetrics[key] = round(mean(values), 6);
 	}
 	// tool_list is useful for debugging; keep the first run's so the shape
 	// matches a single-run TaskResult for any downstream consumer.

@@ -67,7 +67,8 @@ export class OllamaModelsService {
 		// Mirror the runtime client's fallback so model refresh and generation
 		// target the same daemon when the user has cleared the field.
 		const baseUrl = this.plugin.settings.ollamaBaseUrl || OLLAMA_DEFAULT_BASE_URL;
-		if (!forceRefresh && this.cachedModels && this.lastBaseUrl === baseUrl) {
+		const cacheMatchesBaseUrl = this.lastBaseUrl === baseUrl;
+		if (!forceRefresh && this.cachedModels && cacheMatchesBaseUrl) {
 			return this.cachedModels;
 		}
 
@@ -99,8 +100,11 @@ export class OllamaModelsService {
 			// Don't poison the cache with an empty array — that would stick until
 			// the user manually clicks "Refresh" even after the daemon comes back.
 			// Returning the previous cache (or an empty list as a non-cached
-			// fallback) lets a subsequent automatic call retry the fetch.
-			return this.cachedModels ?? [];
+			// fallback) lets a subsequent automatic call retry the fetch. But only
+			// reuse the cache when it matches the active base URL — falling back to
+			// another daemon's models would let the dropdown surface entries that
+			// don't exist on the new daemon and let the user save invalid selections.
+			return cacheMatchesBaseUrl ? (this.cachedModels ?? []) : [];
 		}
 	}
 

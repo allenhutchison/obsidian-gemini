@@ -79,4 +79,25 @@ describe('OllamaModelsService', () => {
 		await svc.getModels();
 		expect(mockedRequestUrl).toHaveBeenCalledTimes(2);
 	});
+
+	it('does not return stale models from a previous base URL after a failed refresh', async () => {
+		const plugin = buildPlugin();
+
+		// First daemon: warm the cache with two models
+		mockedRequestUrl.mockResolvedValueOnce({
+			status: 200,
+			json: { models: [{ name: 'old-only-model' }, { name: 'shared-model' }] },
+		});
+		const svc = new OllamaModelsService(plugin);
+		const initial = await svc.getModels();
+		expect(initial).toHaveLength(2);
+
+		// Switch to a new daemon that refuses the connection
+		plugin.settings.ollamaBaseUrl = 'http://10.0.0.1:11434';
+		mockedRequestUrl.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+		const afterFailure = await svc.getModels();
+
+		// Must not surface the previous daemon's models as choices for the new one
+		expect(afterFailure).toEqual([]);
+	});
 });
