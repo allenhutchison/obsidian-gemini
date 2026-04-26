@@ -211,6 +211,10 @@ export default class ObsidianGemini extends Plugin {
 	private previousProvider: ModelProvider = 'gemini';
 	private previousOllamaBaseUrl: string = '';
 	private lifecycle!: LifecycleService;
+	// Captures the last initialization failure so guarded commands can surface
+	// the actual cause (e.g. "model not pulled") instead of the ephemeral Notice
+	// the user may have missed. Cleared on a subsequent successful init.
+	private lastInitError: string | null = null;
 
 	async onload() {
 		// Initialize logger early so it's available during setup
@@ -234,12 +238,14 @@ export default class ObsidianGemini extends Plugin {
 		try {
 			await this.lifecycle.setup();
 			this.isGeminiInitialized = true;
+			this.lastInitError = null;
 			this.previousApiKey = this.apiKey;
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 			this.previousProvider = this.settings.provider;
 			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
+			this.lastInitError = error instanceof Error ? error.message : String(error);
 			new Notice(this.getInitErrorMessage(error));
 			this.isGeminiInitialized = false;
 		}
@@ -268,6 +274,15 @@ export default class ObsidianGemini extends Plugin {
 	 */
 	private getApiKeyErrorMessage(): string {
 		if (this.settings.provider === 'ollama') {
+			// Surface the captured init error when we have one \u2014 connectivity is the
+			// most common Ollama failure but far from the only one (no model
+			// selected, model not pulled, base URL points at a non-Ollama HTTP
+			// server). The init-time Notice may have already disappeared by the
+			// time the user invokes a guarded command, so reuse the error here
+			// instead of always defaulting to "make sure the daemon is running".
+			if (this.lastInitError) {
+				return `Gemini Scribe failed to initialize: ${this.lastInitError}. Open Settings \u2192 Gemini Scribe to fix.`;
+			}
 			return (
 				`Could not reach Ollama at ${this.settings.ollamaBaseUrl}. ` +
 				'Make sure the Ollama daemon is running and the base URL is correct in Settings \u2192 Gemini Scribe.'
@@ -821,6 +836,7 @@ export default class ObsidianGemini extends Plugin {
 			try {
 				await this.lifecycle.setup();
 				this.isGeminiInitialized = true;
+				this.lastInitError = null;
 				this.previousApiKey = this.apiKey;
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
 				this.previousProvider = this.settings.provider;
@@ -833,6 +849,7 @@ export default class ObsidianGemini extends Plugin {
 				}
 			} catch (error) {
 				this.logger.error('Failed to re-initialize after settings change:', error);
+				this.lastInitError = error instanceof Error ? error.message : String(error);
 				this.isGeminiInitialized = false;
 			}
 		}
