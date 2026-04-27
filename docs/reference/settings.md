@@ -145,6 +145,15 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Description**: Enable streaming responses in the chat interface for a more interactive experience
 - **Note**: When disabled, full responses are displayed at once
 
+### Auto-run missed scheduled tasks on startup
+
+- **Setting**: `autoRunCatchUp`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: When enabled, tasks with `runIfMissed: true` that were missed while Obsidian was closed are submitted silently as background tasks on startup, without showing the approval modal.
+- **When disabled**: The "Missed Scheduled Runs" modal appears on startup so you can choose Run or Skip per task. A red `!` badge on the status bar persists if the modal is dismissed without acting.
+- **See also**: [Catch-up Runs](/guide/scheduled-tasks#catch-up-runs)
+
 ## Context Management
 
 Context management automatically monitors and controls conversation size to prevent exceeding model token limits.

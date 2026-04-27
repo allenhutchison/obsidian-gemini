@@ -19,7 +19,7 @@ npm install          # Install dependencies
 npm run dev          # Development build with watch mode
 npm run build        # Production build (generates refs, runs TypeScript check, then bundles)
 npm run generate-refs # Regenerate help references from docs/ (runs automatically in build/dev)
-npm test             # Run Jest tests
+npm test             # Run Vitest tests
 npm run format       # Format code with Prettier
 npm run format-check # Check formatting without changes
 ```
