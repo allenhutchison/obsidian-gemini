@@ -1,4 +1,4 @@
-import { TFile } from 'obsidian';
+import { TFile, Platform } from 'obsidian';
 import { Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { AgentEventBus } from '../agent/agent-event-bus';
@@ -540,6 +540,13 @@ export class LifecycleService {
 			plugin.scheduledTaskManager.reserveForCatchUp(pending.map((e) => e.task.slug));
 			// Show the ! badge — clicking it opens the CatchUpModal
 			plugin.backgroundStatusBar?.setPendingCatchUpCount(pending.length);
+
+			// On mobile the status bar is hidden, so the badge is unreachable.
+			// Open the approval modal directly so the user can act on missed runs.
+			if (Platform.isMobile) {
+				const { CatchUpModal } = await import('../ui/catch-up-modal');
+				new CatchUpModal(plugin.app, plugin, pending).open();
+			}
 		}
 	}
 
