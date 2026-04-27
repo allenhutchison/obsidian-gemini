@@ -295,12 +295,18 @@ export class DeepResearchService {
 			}
 		}
 
-		// Check if path is inside the plugin's history folder (or is the folder itself)
+		// Check if path is inside the plugin's history folder (or is the folder itself).
+		// Background-Tasks/ is the one allowed subfolder — it is the canonical output
+		// location for background and scheduled-task outputs.
 		const historyFolder = this.plugin.settings.historyFolder;
 		if (historyFolder) {
-			// Normalize the history folder to ensure consistent comparison
 			const normalizedHistoryFolder = normalizePath(historyFolder);
-			if (normalizedPath === normalizedHistoryFolder || normalizedPath.startsWith(normalizedHistoryFolder + '/')) {
+			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
+			const insideStateFolder =
+				normalizedPath === normalizedHistoryFolder || normalizedPath.startsWith(normalizedHistoryFolder + '/');
+			const insideBackgroundTasks =
+				normalizedPath === backgroundTasksFolder || normalizedPath.startsWith(backgroundTasksFolder + '/');
+			if (insideStateFolder && !insideBackgroundTasks) {
 				throw new Error(
 					`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`
 				);

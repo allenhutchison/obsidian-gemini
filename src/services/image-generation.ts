@@ -114,8 +114,7 @@ export class ImageGeneration {
 	 * actual-write.
 	 *
 	 * Throws synchronously on an invalid explicit path (vault escape,
-	 * protected folder, etc.) or when the default branch has no active file
-	 * and no `targetNotePath` to anchor the attachment folder.
+	 * protected folder, etc.).
 	 */
 	async resolveOutputPath(prompt: string, targetNotePath?: string, outputPath?: string): Promise<string> {
 		if (outputPath) {
@@ -128,18 +127,17 @@ export class ImageGeneration {
 
 	/**
 	 * Resolve the path the image WOULD be saved at when no explicit `outputPath`
-	 * is given. Mirrors the no-`outputPath` branch of saveImageToVault.
+	 * is given. Writes to [state-folder]/Background-Tasks/ so all background
+	 * outputs share one predictable location alongside deep-research reports.
 	 *
 	 * Prefer `resolveOutputPath` for callers that may or may not have an
 	 * explicit path — it handles both branches consistently. This method is
 	 * kept public for callers that specifically want the default flow.
-	 *
-	 * Throws if no active file exists and no `targetNotePath` is provided.
 	 */
-	async resolveDefaultOutputPath(prompt: string, targetNotePath?: string): Promise<string> {
+	async resolveDefaultOutputPath(prompt: string, _targetNotePath?: string): Promise<string> {
 		const filename = this.buildDefaultFilename(prompt);
-		const referenceNotePath = this.resolveReferenceNotePath(targetNotePath);
-		return this.plugin.app.fileManager.getAvailablePathForAttachment(filename, referenceNotePath);
+		const backgroundTasksFolder = normalizePath(`${this.plugin.settings.historyFolder}/Background-Tasks`);
+		return normalizePath(`${backgroundTasksFolder}/${filename}`);
 	}
 
 	/**
@@ -163,20 +161,6 @@ export class ImageGeneration {
 			.replace(/^-|-$/g, '');
 		const randomSuffix = Math.random().toString(36).substring(2, 8);
 		return `generated-${sanitizedPrompt}-${Date.now()}-${randomSuffix}.png`;
-	}
-
-	/**
-	 * Resolve the note path used as the attachment-folder reference. Falls back
-	 * to the active file when no explicit target is given. Throws when neither
-	 * is available — Obsidian's getAvailablePathForAttachment requires a context.
-	 */
-	private resolveReferenceNotePath(targetNotePath?: string): string {
-		if (targetNotePath) return targetNotePath;
-		const activeFile = this.plugin.app.workspace.getActiveFile();
-		if (!activeFile) {
-			throw new Error('No active file and no target note path provided');
-		}
-		return activeFile.path;
 	}
 
 	/**
@@ -204,11 +188,17 @@ export class ImageGeneration {
 			throw new Error(`Output path cannot be inside the Obsidian configuration folder: "${outputPath}"`);
 		}
 
-		// Reject paths inside the plugin state folder
+		// Reject paths inside the plugin state folder, except for the canonical
+		// Background-Tasks/ subfolder which is the designated output location.
 		const historyFolder = this.plugin.settings.historyFolder;
 		if (historyFolder) {
 			const normalizedHistoryFolder = normalizePath(historyFolder);
-			if (normalized === normalizedHistoryFolder || normalized.startsWith(normalizedHistoryFolder + '/')) {
+			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
+			const insideStateFolder =
+				normalized === normalizedHistoryFolder || normalized.startsWith(normalizedHistoryFolder + '/');
+			const insideBackgroundTasks =
+				normalized === backgroundTasksFolder || normalized.startsWith(backgroundTasksFolder + '/');
+			if (insideStateFolder && !insideBackgroundTasks) {
 				throw new Error(`Output path cannot be inside the plugin state folder: "${outputPath}"`);
 			}
 		}
