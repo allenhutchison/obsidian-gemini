@@ -60,7 +60,7 @@ export function getMimeType(file: File | Blob): string {
  * Check if a MIME type is a supported image type
  */
 export function isSupportedImageType(mimeType: string): boolean {
-	const supported = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+	const supported = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'];
 	return supported.includes(mimeType);
 }
 
@@ -75,6 +75,7 @@ export function getExtensionFromMimeType(mimeType: string): string {
 		'image/webp': 'webp',
 		'image/heic': 'heic',
 		'image/heif': 'heif',
+		'image/svg+xml': 'svg',
 		'audio/wav': 'wav',
 		'audio/mp3': 'mp3',
 		'audio/aac': 'aac',

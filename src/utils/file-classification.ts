@@ -23,6 +23,8 @@ export const GEMINI_INLINE_BINARY_MIMES: Record<string, string> = {
 	webp: 'image/webp',
 	heic: 'image/heic',
 	heif: 'image/heif',
+	svg: 'image/svg+xml',
+	svgz: 'image/svg+xml',
 
 	// Audio
 	wav: 'audio/wav',

@@ -32,6 +32,18 @@ const mockLogger = {
 	error: vi.fn(),
 };
 
+// Mock window.localStorage
+const mockLocalStorage = {
+	getItem: vi.fn().mockReturnValue('en'),
+	setItem: vi.fn(),
+	removeItem: vi.fn(),
+	clear: vi.fn(),
+};
+Object.defineProperty(window, 'localStorage', {
+	value: mockLocalStorage,
+	writable: true,
+});
+
 const buildPlugin = () =>
 	({
 		logger: mockLogger,
