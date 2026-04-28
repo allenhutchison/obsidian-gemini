@@ -304,8 +304,7 @@ export class DeepResearchService {
 			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
 			const insideStateFolder =
 				normalizedPath === normalizedHistoryFolder || normalizedPath.startsWith(normalizedHistoryFolder + '/');
-			const insideBackgroundTasks =
-				normalizedPath === backgroundTasksFolder || normalizedPath.startsWith(backgroundTasksFolder + '/');
+			const insideBackgroundTasks = normalizedPath.startsWith(backgroundTasksFolder + '/');
 			if (insideStateFolder && !insideBackgroundTasks) {
 				throw new Error(
 					`Cannot write report to plugin state folder: "${historyFolder}". Please choose a different output location.`

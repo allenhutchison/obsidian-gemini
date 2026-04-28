@@ -188,6 +188,15 @@ export class ImageGeneration {
 			throw new Error(`Output path cannot be inside the Obsidian configuration folder: "${outputPath}"`);
 		}
 
+		// Always ensure the file ends with .png — the code always writes PNG bytes.
+		// Rewrite extension before the state-folder check so the validated path
+		// matches what will actually be written (e.g. "Background-Tasks" bare →
+		// "Background-Tasks.png", which is outside the allowed subfolder).
+		const dotIndex = normalized.lastIndexOf('.');
+		const slashIndex = normalized.lastIndexOf('/');
+		const hasExtension = dotIndex > slashIndex + 1;
+		const normalizedFilePath = hasExtension ? normalized.slice(0, dotIndex) + '.png' : normalized + '.png';
+
 		// Reject paths inside the plugin state folder, except for the canonical
 		// Background-Tasks/ subfolder which is the designated output location.
 		const historyFolder = this.plugin.settings.historyFolder;
@@ -195,20 +204,14 @@ export class ImageGeneration {
 			const normalizedHistoryFolder = normalizePath(historyFolder);
 			const backgroundTasksFolder = normalizePath(`${normalizedHistoryFolder}/Background-Tasks`);
 			const insideStateFolder =
-				normalized === normalizedHistoryFolder || normalized.startsWith(normalizedHistoryFolder + '/');
-			const insideBackgroundTasks =
-				normalized === backgroundTasksFolder || normalized.startsWith(backgroundTasksFolder + '/');
+				normalizedFilePath === normalizedHistoryFolder || normalizedFilePath.startsWith(normalizedHistoryFolder + '/');
+			const insideBackgroundTasks = normalizedFilePath.startsWith(backgroundTasksFolder + '/');
 			if (insideStateFolder && !insideBackgroundTasks) {
 				throw new Error(`Output path cannot be inside the plugin state folder: "${outputPath}"`);
 			}
 		}
 
-		// Always ensure the file ends with .png — the code always writes PNG bytes.
-		// Replace any existing extension (or append if none) so the vault file is readable.
-		const dotIndex = normalized.lastIndexOf('.');
-		const slashIndex = normalized.lastIndexOf('/');
-		const hasExtension = dotIndex > slashIndex + 1;
-		return hasExtension ? normalized.slice(0, dotIndex) + '.png' : normalized + '.png';
+		return normalizedFilePath;
 	}
 
 	/**
