@@ -392,8 +392,8 @@ Available permission bypasses:
 ### Models not appearing
 
 1. Check API key is valid
-2. Enable Model Discovery in Developer Settings
-3. Click "Refresh models" button
+2. For Gemini: restart Obsidian — model discovery runs automatically on startup
+3. For Ollama: go to Settings → General and click **Refresh** in the **Refresh model list** row after pulling new models
 4. Check console for errors (with Debug Mode enabled)
 
 ### Tool execution issues
@@ -405,7 +405,7 @@ Available permission bypasses:
 
 ### Chat history not saving
 
-1. Verify "Enable Chat History" is toggled on
+1. Verify "Enable Session History" is toggled on
 2. Check Plugin State Folder path is valid
 3. Ensure you have write permissions to vault
 
