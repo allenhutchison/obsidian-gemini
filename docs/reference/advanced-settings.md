@@ -33,7 +33,7 @@ Advanced settings are hidden by default to keep the interface clean. To access t
 **Top P** controls the diversity of word choices the AI considers:
 
 - **Range**: 0 to 1.0 (always fixed range for Gemini models)
-- **Default**: Varies by model (typically 0.95-1.0)
+- **Default**: `1.0`
 - **Lower values** (0.1-0.5): More focused, predictable responses
 - **Higher values** (0.8-1.0): More diverse, exploratory responses
 
@@ -82,43 +82,9 @@ Configure how the plugin handles API failures:
 
 ## Model Discovery
 
-### Dynamic Model Discovery
+Model discovery is fully automatic — there are no user-configurable settings for it. On startup, the plugin fetches the latest available Gemini models from Google's API and updates the model dropdowns. If the API fetch fails, the bundled static model list is used as a fallback.
 
-Automatically fetch available models from Google's API:
-
-**Enable Dynamic Model Discovery**
-
-- **Default**: Enabled
-- **Purpose**: Keeps model list current with Google's latest releases
-- **Updates**: Model parameter limits and availability
-
-**Auto-update Interval**
-
-- **Default**: 24 hours
-- **Range**: 0-168 hours (7 days)
-- **0 = Manual only**: Disable automatic updates
-
-**Fallback to Static Models**
-
-- **Default**: Enabled
-- **Purpose**: Use built-in model list when API discovery fails
-- **Recommended**: Keep enabled for reliability
-
-### Discovery Status
-
-Monitor and control model discovery:
-
-**Status Indicators:**
-
-- ✓ Working: Discovery successful, shows last update time
-- ✗ Not working: Shows error details
-- Model count: Number of models found
-
-**Manual Refresh:**
-
-- Click "Refresh models" to update immediately
-- Useful when new models are released
-- Shows success/failure status
+When using the **Ollama** provider, a **Refresh model list** button appears in Settings → General. Click it after pulling new models with `ollama pull <name>` to force a re-query of the Ollama daemon without restarting Obsidian.
 
 ## Performance Optimization
 
@@ -181,12 +147,11 @@ In v4.0+, context is manually managed through session-based file selection:
 3. **Adjust retry settings** - More retries for unreliable connections
 4. **Enable fallback models** - Ensures continued functionality
 
-### Model Discovery
+### Model List
 
-1. **Keep discovery enabled** - Stay current with new releases
-2. **Use manual refresh** - When you know new models are available
-3. **Monitor discovery status** - Check for API key or connection issues
-4. **Update regularly** - Enable auto-updates for convenience
+1. **Restart Obsidian** to pick up newly published Gemini models — discovery runs automatically on startup
+2. **Use Refresh model list** (Ollama provider) after pulling new models with `ollama pull`
+3. **Check your API key** if the model list looks empty or stale
 
 ## Troubleshooting
 
@@ -220,21 +185,13 @@ In v4.0+, context is manually managed through session-based file selection:
 - Start new session to clear conversation history
 - Lower retry count for quicker failures
 
-### Model Discovery Issues
+### Model List Issues
 
-**Discovery failing:**
+**Models not appearing or stale:**
 
-- Check API key validity
-- Verify network connectivity
-- Try manual refresh
-- Enable fallback to static models
-
-**Models not updating:**
-
-- Check auto-update interval
-- Force refresh manually
-- Clear plugin cache (restart Obsidian)
-- Verify API key permissions
+- For Gemini: check API key validity and network connectivity; restart Obsidian to trigger a fresh fetch
+- For Ollama: click **Refresh model list** in Settings → General after pulling new models
+- If the list still looks wrong, restart Obsidian to clear the cached model list
 
 ## Security Considerations
 

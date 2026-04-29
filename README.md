@@ -97,7 +97,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
     - **Summary Frontmatter Key:** Specify the key to use when storing summaries in the frontmatter (default: `summary`).
     - **Your Name:** Enter your name, which the AI will use when addressing you.
     - **Chat History:**
-      - **Enable Chat History:** Toggle whether to save agent session history.
+      - **Enable Session History:** Toggle whether to save agent session history.
       - **Plugin State Folder:** Choose the folder within your vault to store plugin data (agent sessions and custom prompts).
     - **Custom Prompts:**
       - **Allow System Prompt Override:** Allow custom prompts to completely replace the system prompt (use with caution).
@@ -106,7 +106,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
     - **Advanced Settings:** (Click "Show Advanced Settings" to reveal)
       - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
       - **Top P:** Control response diversity and focus (0-1.0).
-      - **Model Discovery:** Automatically fetch and update available Gemini models with their parameter limits.
+      - **Model Discovery:** Gemini models are automatically fetched on startup; Ollama users can click **Refresh model list** after pulling new models.
       - **API Configuration:** Configure retry behavior and backoff delays.
       - **Tool Execution:** Control whether to stop agent execution on tool errors.
       - **Tool Loop Detection:** Prevent infinite tool execution loops.
@@ -296,7 +296,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - Try typing a few words and pausing to trigger the suggestion
   - Check that you're in a Markdown file
   - Disable other completion plugins that might conflict
-- **Sessions Not Loading:** Ensure "Enable Chat History" is on and the "Plugin State Folder" path is correct. Sessions live under `[Plugin State Folder]/Agent-Sessions/`.
+- **Sessions Not Loading:** Ensure "Enable Session History" is on and the "Plugin State Folder" path is correct. Sessions live under `[Plugin State Folder]/Agent-Sessions/`.
 - **Custom Prompts Not Working:**
   - Ensure "Enable Custom Prompts" is toggled on in settings
   - Verify the prompt file exists in the Prompts folder
@@ -305,7 +305,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
 - **Parameter/Advanced Settings Issues:**
   - Check if your model supports the temperature range you're using
   - Reset temperature and Top P to defaults if getting unexpected responses
-  - Enable model discovery to get latest parameter limits
+  - Restart Obsidian to trigger a fresh model list fetch (for Gemini), or click **Refresh model list** (for Ollama)
   - See the [Advanced Settings Guide](docs/reference/advanced-settings.md) for detailed configuration help
 - **Agent Mode / Tool Issues:**
   - Verify your Gemini model supports function calling (all Gemini 2.0+ models do)

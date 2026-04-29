@@ -64,13 +64,13 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
   └── debug.log.old    # Previous rotated log file
   ```
 
-### Enable Chat History
+### Enable Session History
 
 - **Setting**: `chatHistory`
 - **Type**: Boolean
 - **Default**: `false`
-- **Description**: Save chat conversations to markdown files
-- **Note**: Chat history is stored in Agent Sessions folder in v4.0.0
+- **Description**: Store agent session history as markdown files in your vault
+- **Note**: Sessions are saved in the Agent-Sessions subfolder with auto-generated titles
 
 ### Summary Frontmatter Key
 
@@ -268,37 +268,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 
 ### Model Discovery
 
-Dynamic model discovery automatically fetches the latest available Gemini models and their capabilities from Google's API.
-
-#### Enable Model Discovery
-
-- **Setting**: `modelDiscovery.enabled`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Automatically discover and update available Gemini models
-
-#### Auto-Update Interval
-
-- **Setting**: `modelDiscovery.autoUpdateInterval`
-- **Type**: Number (hours)
-- **Default**: `24`
-- **Description**: How often to check for new models (0 to disable)
-- **Range**: 0-168 hours (0-7 days)
-
-#### Fallback to Static Models
-
-- **Setting**: `modelDiscovery.fallbackToStatic`
-- **Type**: Boolean
-- **Default**: `true`
-- **Description**: Use built-in model list when API discovery fails
-- **Recommendation**: Keep enabled for reliability
-
-#### Last Update
-
-- **Setting**: `modelDiscovery.lastUpdate`
-- **Type**: Number (timestamp)
-- **Description**: Timestamp of last successful model discovery
-- **Note**: Read-only, automatically updated
+Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from Google's API and falls back to the bundled list if the fetch fails. When using the Ollama provider, a **Refresh model list** button appears in Settings → General to re-query the Ollama daemon for newly pulled models. The remote model list is cached in `data.json` under `remoteModelCache` (managed internally; do not edit by hand).
 
 ### Tool Execution
 
