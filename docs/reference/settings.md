@@ -393,7 +393,7 @@ Available permission bypasses:
 
 1. Check API key is valid
 2. For Gemini: restart Obsidian — model discovery runs automatically on startup
-3. For Ollama: click **Refresh model list** in Settings → General after pulling new models
+3. For Ollama: go to Settings → General and click **Refresh** in the **Refresh model list** row after pulling new models
 4. Check console for errors (with Debug Mode enabled)
 
 ### Tool execution issues

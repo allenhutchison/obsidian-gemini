@@ -12,7 +12,7 @@ Gemini Scribe can route chat, summary, completions, rewrite, and agent tool-call
    ollama pull llava:13b      # for vision (image input)
    ```
 3. **Switch the provider in Gemini Scribe** — Open Settings → Gemini Scribe → Provider and choose **Ollama (local)**.
-4. **Pick a model** — The Chat / Summary / Completion dropdowns now list whatever you have pulled. Click **Refresh model list** if a new pull doesn't show up.
+4. **Pick a model** — The Chat / Summary / Completion dropdowns now list whatever you have pulled. In Settings → General, click **Refresh** in the **Refresh model list** row if a new pull doesn't show up.
 
 If the daemon runs on a different host or port, edit the **Ollama Base URL** field (e.g. `http://10.0.0.5:11434`).
 
