@@ -60,9 +60,14 @@ export class GeminiClient implements ModelApi {
 		};
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
-		this.ai = new GoogleGenAI({ apiKey: config.apiKey });
+		//this.ai = new GoogleGenAI({ apiKey: config.apiKey });
+		const customUrl = this.plugin?.settings?.customBaseUrl;
+		this.ai = new GoogleGenAI({
+			apiKey: config.apiKey,
+			// 将 baseUrl 嵌套在 httpOptions 中
+			httpOptions: customUrl ? { baseUrl: customUrl } : undefined,
+		});
 	}
-
 	/**
 	 * Generate a non-streaming response
 	 */

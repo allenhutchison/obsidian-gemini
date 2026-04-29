@@ -62,6 +62,20 @@ export async function renderApiSettings(
 
 	// API Configuration
 	new Setting(containerEl).setName('API Configuration').setHeading();
+	// === 【新增的代理设置面板区 开始】 ===
+	new Setting(containerEl)
+		.setName('Custom API Endpoint (自定义代理地址)')
+		.setDesc('可选。用于覆盖默认的 Google API 地址，例如本地反向代理服务器。留空则使用官方默认地址。')
+		.addText((text) =>
+			text
+				.setPlaceholder('例如：https://c.baicai.qzz.io')
+				.setValue(plugin.settings.customBaseUrl)
+				.onChange((value) => {
+					plugin.settings.customBaseUrl = value.trim();
+					debouncedSave();
+				})
+		);
+	// === 【新增的代理设置面板区 结束】 ===
 
 	new Setting(containerEl)
 		.setName('Maximum Retries')

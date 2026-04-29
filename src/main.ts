@@ -69,6 +69,7 @@ export interface ObsidianGeminiSettings {
 	initialBackoffDelay: number;
 	streamingEnabled: boolean;
 	allowSystemPromptOverride: boolean;
+	customBaseUrl: string;
 	temperature: number;
 	topP: number;
 	stopOnToolError: boolean;
@@ -118,6 +119,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	initialBackoffDelay: 1000,
 	streamingEnabled: true,
 	allowSystemPromptOverride: false,
+	customBaseUrl: '',
 	temperature: 0.7,
 	topP: 1,
 	stopOnToolError: true,
