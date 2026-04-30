@@ -50,7 +50,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 1. **API Layer** (`src/api/`): Factory pattern (`GeminiClientFactory`) for creating Google Gemini clients, decorator pattern (`RetryDecorator`) for resilience, and interface abstraction (`ModelApi`) for consistent API interactions
 2. **Feature Modules**: Separate modules for chat, completions (`completions.ts`), summary (`summary.ts`), and rewrite (`rewrite.ts`)
 3. **Context System** (`src/files/file-context.ts`): Builds linked note trees for context-aware AI interactions
-4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates, stored in `[state-folder]/Agent-Sessions/`
+4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates for agent sessions, stored in `[state-folder]/Agent-Sessions/` (legacy note-centric chat history from v3.x remains in `[state-folder]/History/`)
 5. **Custom Prompts** (`src/prompts/`): User-defined prompt templates stored in `[state-folder]/Prompts/`
 6. **Agent Mode** (`src/agent/`, `src/tools/`): AI agent with tool calling capabilities
    - Session management with persistent history
