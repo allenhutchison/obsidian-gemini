@@ -50,7 +50,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 1. **API Layer** (`src/api/`): Factory pattern (`GeminiClientFactory`) for creating Google Gemini clients, decorator pattern (`RetryDecorator`) for resilience, and interface abstraction (`ModelApi`) for consistent API interactions
 2. **Feature Modules**: Separate modules for chat, completions (`completions.ts`), summary (`summary.ts`), and rewrite (`rewrite.ts`)
 3. **Context System** (`src/files/file-context.ts`): Builds linked note trees for context-aware AI interactions
-4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates, stored in `[state-folder]/History/`
+4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates for agent sessions, stored in `[state-folder]/Agent-Sessions/` (legacy note-centric chat history from v3.x remains in `[state-folder]/History/`)
 5. **Custom Prompts** (`src/prompts/`): User-defined prompt templates stored in `[state-folder]/Prompts/`
 6. **Agent Mode** (`src/agent/`, `src/tools/`): AI agent with tool calling capabilities
    - Session management with persistent history
@@ -97,10 +97,11 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
 6. **State Management**: Plugin instance holds all component references with proper cleanup
 7. **Folder Structure**: Plugin uses structured state folder:
    - `[state-folder]/` - Main plugin state folder (default: `gemini-scribe`)
-   - `[state-folder]/History/` - Chat history files
+   - `[state-folder]/History/` - Legacy note-centric chat history files (v3.x)
    - `[state-folder]/Prompts/` - Custom prompt templates
    - `[state-folder]/Agent-Sessions/` - Agent mode session files
    - `[state-folder]/Skills/` - Agent skill packages (agentskills.io format)
+   - `[state-folder]/Scheduled-Tasks/` - Scheduled task definitions and run output
    - Automatic migration for existing users from flat structure
 8. **System Folder Protection**: Always exclude system folders from file operations:
    - The plugin state folder (`settings.historyFolder`)
