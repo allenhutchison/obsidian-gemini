@@ -65,13 +65,14 @@ Summarise the notes I created or modified today. List the key topics and any ope
 
 The `enabledTools` list controls what the agent can do during a run:
 
-| Category      | Capabilities                         |
-| ------------- | ------------------------------------ |
-| `read_only`   | Read files, list files, search vault |
-| `read_write`  | Read + write, create, move files     |
-| `destructive` | Read + write + delete files          |
+| Category       | Capabilities                                           |
+| -------------- | ------------------------------------------------------ |
+| `read_only`    | Read files, list files, search vault, web search/fetch |
+| `vault_ops`    | Create, modify, move, and delete files in the vault    |
+| `external_mcp` | Tools provided by connected MCP servers                |
+| `skills`       | Load and activate agent skills                         |
 
-If `enabledTools` is empty the task defaults to `read_only`.
+Categories are additive — list as many as the task needs. If `enabledTools` is empty the task defaults to read-only tools only.
 
 ## Managing Tasks
 
