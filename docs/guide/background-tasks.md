@@ -28,7 +28,7 @@ Completed tasks with output files show an **Open result** link that opens the fi
 
 Background tasks are created automatically when you trigger long-running operations:
 
-- **Deep Research** — starts a research task; result saved to `<history-folder>/background-tasks/<id>.md`
+- **Deep Research** — starts a research task; result saved to `Background Research/YYYY-MM-DD <topic>.md` by default (you can specify a custom path via the `outputFile` parameter)
 - **Image Generation** — generates and saves an image; result path shown in the completion notice
 
 Both operations fire a completion notice with a clickable vault link when done. If a task fails, a notice explains the error.
@@ -42,7 +42,7 @@ Click **Cancel** next to a running task in the panel. The task stops at the next
 When a task completes you'll see a notice in the bottom-right corner with an **Open result** link. You can also find the result by:
 
 1. Clicking the status bar indicator → **Open result** in the Recent section
-2. Navigating directly to `<history-folder>/background-tasks/` in the file explorer
+2. Navigating directly to `Background Research/` in the file explorer (unless you set a custom `outputFile` path)
 
 ## Troubleshooting
 

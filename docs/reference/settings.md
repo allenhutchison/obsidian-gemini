@@ -115,6 +115,14 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Description**: Model used for IDE-style auto-completions
 - **Note**: Completions must be enabled via command palette
 
+### Image Model
+
+- **Setting**: `imageModelName`
+- **Type**: String
+- **Default**: `gemini-2.5-flash-image`
+- **Only available when**: Provider is `gemini`
+- **Description**: Model used for image generation via the `generate_image` tool and the **Generate Image** command. Only models with image-generation capability appear in this dropdown.
+
 ## Custom Prompts
 
 Custom prompts allow you to create reusable AI instruction templates that modify how the AI behaves for specific sessions.
