@@ -1,10 +1,26 @@
 import type { Mock } from 'vitest';
 
+const { mockPlatform, mockCatchUpModal, MockCatchUpModalClass } = vi.hoisted(() => {
+	const mockCatchUpModal = { open: vi.fn() };
+	// Must use a regular function (not arrow) so it can be called with `new`
+	function MockCatchUpModalClass() {
+		return mockCatchUpModal;
+	}
+	return {
+		mockPlatform: { isMobile: false },
+		mockCatchUpModal,
+		MockCatchUpModalClass: vi.fn().mockImplementation(MockCatchUpModalClass),
+	};
+});
+
 vi.mock('obsidian', () => ({
 	TFile: class TFile {},
 	Notice: vi.fn(),
 	normalizePath: (p: string) => p,
+	Platform: mockPlatform,
 }));
+
+vi.mock('../../src/ui/catch-up-modal', () => ({ CatchUpModal: MockCatchUpModalClass }));
 
 vi.mock('../../src/services/tool-registrar', () => ({
 	ToolRegistrar: vi.fn().mockImplementation(function () {
@@ -382,6 +398,12 @@ describe('LifecycleService', () => {
 	describe('catch-up handling on layout ready', () => {
 		const missedTask = (slug: string) => ({ task: { slug }, missedAt: new Date(Date.now() - 60_000) });
 
+		beforeEach(() => {
+			mockPlatform.isMobile = false;
+			MockCatchUpModalClass.mockClear();
+			mockCatchUpModal.open.mockClear();
+		});
+
 		// Wires the ScheduledTaskManager mock so `detectMissedRuns` returns the
 		// supplied entries on the next instantiation. Returns the live mock
 		// instance once setup() has run, so tests can assert on its methods.
@@ -445,6 +467,36 @@ describe('LifecycleService', () => {
 				expect.stringContaining('Auto catch-up failed for "boom"'),
 				expect.any(Error)
 			);
+		});
+
+		it('opens CatchUpModal directly on mobile when autoRunCatchUp is false', async () => {
+			mockPlatform.isMobile = true;
+			await withMissedRuns([missedTask('task-a'), missedTask('task-b')], { autoRunCatchUp: false });
+
+			await lifecycle.onLayoutReady();
+
+			expect(MockCatchUpModalClass).toHaveBeenCalledTimes(1);
+			expect(MockCatchUpModalClass).toHaveBeenCalledWith(
+				mockPlugin.app,
+				mockPlugin,
+				expect.arrayContaining([
+					expect.objectContaining({ task: { slug: 'task-a' } }),
+					expect.objectContaining({ task: { slug: 'task-b' } }),
+				])
+			);
+			expect(mockCatchUpModal.open).toHaveBeenCalledTimes(1);
+		});
+
+		it('does not open CatchUpModal on desktop when autoRunCatchUp is false', async () => {
+			mockPlatform.isMobile = false;
+			await withMissedRuns([missedTask('task-a')], { autoRunCatchUp: false });
+
+			await lifecycle.onLayoutReady();
+
+			expect(MockCatchUpModalClass).not.toHaveBeenCalled();
+			expect(mockCatchUpModal.open).not.toHaveBeenCalled();
+			// Badge is still set so the desktop status-bar entry point works
+			expect(mockPlugin.backgroundStatusBar.setPendingCatchUpCount).toHaveBeenCalledWith(1);
 		});
 	});
 
