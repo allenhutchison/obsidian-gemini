@@ -42,7 +42,7 @@ Click **Cancel** next to a running task in the panel. The task stops at the next
 When a task completes you'll see a notice in the bottom-right corner with an **Open result** link. You can also find the result by:
 
 1. Clicking the status bar indicator → **Open result** in the Recent section
-2. Navigating directly to `<history-folder>/background-tasks/` in the file explorer
+2. Navigating directly to `Background Research/` in the file explorer (unless you set a custom `outputFile` path)
 
 ## Troubleshooting
 
