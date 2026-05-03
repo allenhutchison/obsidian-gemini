@@ -539,7 +539,9 @@ export class SchedulerManagementModal extends Modal {
 	private async handleSave(isEdit: boolean): Promise<void> {
 		const schedule = this.resolvedSchedule();
 		if (!schedule) {
-			new Notice('Please enter a valid schedule (e.g. 30m or 2h for custom intervals).');
+			new Notice(
+				'Please enter a valid schedule. Custom interval expects 30m or 2h. Daily at time and Weekly on days at time both need a valid HH:MM (and Weekly needs at least one day).'
+			);
 			return;
 		}
 		if (!this.form.prompt.trim()) {
