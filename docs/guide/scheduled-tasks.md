@@ -45,7 +45,7 @@ Summarise the notes I created or modified today. List the key topics and any ope
 | Field          | Required | Default                                                  | Description                                                                                                                 |
 | -------------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `schedule`     | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.                                                               |
-| `enabledTools` | No       | `[]` (read-only)                                         | List of tool categories the agent may use. See [Tool Access](#tool-access).                                                 |
+| `enabledTools` | No       | `[]` (read-only + skills)                                | List of tool categories the agent may use. See [Tool Access](#tool-access).                                                 |
 | `outputPath`   | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                        |
 | `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-flash-latest`).                                                              |
 | `enabled`      | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                                                                     |
@@ -72,7 +72,7 @@ The `enabledTools` list controls what the agent can do during a run:
 | `external_mcp` | Tools provided by connected MCP servers                |
 | `skills`       | Load and activate agent skills                         |
 
-Categories are additive — list as many as the task needs. If `enabledTools` is empty the task defaults to read-only tools only.
+Categories are additive — list as many as the task needs. If `enabledTools` is empty the task defaults to `read_only` + `skills`, so common patterns like "run skill X on a schedule" work without extra setup. Set `enabledTools: ['read_only']` explicitly if you want a stricter allowlist that omits skill tools.
 
 ## Managing Tasks
 
