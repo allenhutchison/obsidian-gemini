@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { Notice, App, Modal, Setting, TextAreaComponent, normalizePath } from 'obsidian';
+import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, normalizePath } from 'obsidian';
 import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
@@ -26,34 +26,123 @@ export class ImageGeneration {
 	}
 
 	/**
-	 * Generate an image and insert it at the cursor position
+	 * Generate an image as a background task and insert the wikilink at the
+	 * cursor position when the task completes.
+	 *
+	 * Captures the target file path and cursor coordinates at submit time so
+	 * the insertion lands in the right place even if the user navigates to
+	 * another note while waiting (typical: image generation takes 30–90s).
+	 *
+	 * Behavior on completion:
+	 *  - If the captured file is still open in a MarkdownView and the captured
+	 *    cursor is still in-bounds → insert there.
+	 *  - Otherwise → show a Notice containing the wikilink so the user can
+	 *    paste it manually. The image file itself is always saved either way.
+	 *
+	 * Falls back to the original synchronous flow if `backgroundTaskManager`
+	 * is unavailable, so the command keeps working during plugin startup or
+	 * if the manager fails to initialise.
 	 */
 	async generateAndInsertImage(prompt: string): Promise<void> {
-		const editor = this.plugin.app.workspace.activeEditor?.editor;
-		if (!editor) {
-			new Notice('No active editor. Please open a note first.');
+		const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeView || !activeView.file) {
+			new Notice('No active note. Please open a note first.');
 			return;
 		}
 
+		const targetPath = activeView.file.path;
+		const cursor = activeView.editor.getCursor();
+		const taskManager = this.plugin.backgroundTaskManager;
+
+		if (!taskManager) {
+			await this.generateAndInsertSynchronously(prompt, activeView, cursor);
+			return;
+		}
+
+		const label = prompt.length > 40 ? prompt.slice(0, 37) + '…' : prompt;
+		taskManager.submit('image-generation', label, async (isCancelled) => {
+			if (isCancelled()) return undefined;
+
+			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
+			if (isCancelled()) return undefined;
+
+			const imagePath = await this.saveImageToVault(base64Data, prompt);
+			if (isCancelled()) return imagePath;
+
+			this.insertWikilinkAtCapturedPosition(targetPath, cursor, imagePath);
+			return imagePath;
+		});
+
+		new Notice('Image generation submitted — you can keep working.', 3000);
+	}
+
+	/**
+	 * Synchronous flow used as a fallback when BackgroundTaskManager is not
+	 * initialised (e.g. early plugin startup).
+	 */
+	private async generateAndInsertSynchronously(
+		prompt: string,
+		activeView: MarkdownView,
+		cursor: { line: number; ch: number }
+	): Promise<void> {
 		try {
 			new Notice('Generating image...');
-
-			// Generate the image
 			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
-
-			// Save the image to vault
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
-
-			// Insert markdown link at cursor
-			const cursor = editor.getCursor();
-			editor.replaceRange(`![[${imagePath}]]`, cursor);
-
+			activeView.editor.replaceRange(`![[${imagePath}]]`, cursor);
 			new Notice('Image generated and inserted successfully!');
 		} catch (error) {
 			const errorMsg = `Failed to generate image: ${getErrorMessage(error)}`;
 			this.plugin.logger.error(errorMsg, error);
 			new Notice(errorMsg);
 		}
+	}
+
+	/**
+	 * Insert a wikilink at the captured (file, cursor) coordinates if the
+	 * file is still open in a MarkdownView and the cursor is in-bounds;
+	 * otherwise show a Notice with the wikilink so the user can paste it
+	 * manually. We don't silently modify a file the user isn't editing.
+	 */
+	private insertWikilinkAtCapturedPosition(
+		targetPath: string,
+		cursor: { line: number; ch: number },
+		imagePath: string
+	): void {
+		const wikilink = `![[${imagePath}]]`;
+		const file = this.plugin.app.vault.getAbstractFileByPath(targetPath);
+
+		if (!(file instanceof TFile)) {
+			this.notifyManualInsertion(wikilink, 'target note no longer exists');
+			return;
+		}
+
+		let editorView: MarkdownView | null = null;
+		this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+			if (editorView) return;
+			const view = leaf.view;
+			if (view instanceof MarkdownView && view.file?.path === targetPath) {
+				editorView = view;
+			}
+		});
+
+		if (!editorView) {
+			this.notifyManualInsertion(wikilink, 'note is no longer open');
+			return;
+		}
+
+		const editor = (editorView as MarkdownView).editor;
+		if (cursor.line >= editor.lineCount()) {
+			this.notifyManualInsertion(wikilink, 'cursor position is no longer valid');
+			return;
+		}
+		const lineLength = editor.getLine(cursor.line).length;
+		const safeCh = Math.min(cursor.ch, lineLength);
+		editor.replaceRange(wikilink, { line: cursor.line, ch: safeCh });
+	}
+
+	private notifyManualInsertion(wikilink: string, reason: string): void {
+		new Notice(`Image saved (${reason}). Wikilink: ${wikilink}`, 10000);
 	}
 
 	/**
