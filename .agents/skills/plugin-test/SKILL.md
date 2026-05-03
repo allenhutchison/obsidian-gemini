@@ -81,6 +81,8 @@ If the guard fails, **stop the skill entirely**. Tell the user exactly what was 
 
 **Continue passing `vault="$EXPECTED"` on every CLI command** even though it doesn't currently route — it documents intent, and may start working in a future Obsidian release.
 
+> **About the examples in this file**: many subsequent code blocks omit `vault="$EXPECTED"` for readability — the directive above still applies to every CLI invocation in the actual run. Treat the examples as templates: when executing them, append `vault="$EXPECTED"` to every `obsidian` command. Don't take the omission in the docs as permission to skip it in execution.
+
 ## Heavy use of the obsidian-cli skill
 
 This skill is layered on top of the `obsidian-cli` skill. Read that skill before starting if you haven't recently — it documents the full command surface (`eval`, `command`, `dev:screenshot`, `dev:cdp`, `dev:mobile`, `files`, `plugin:reload`, `dev:console`, etc.). Don't reinvent commands here; just call them.
