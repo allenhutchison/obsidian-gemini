@@ -113,13 +113,21 @@ Before any test runs, build the test list:
    - Schedule formats / frontmatter fields the doc claims are accepted
    - Tools the doc says the agent has
 
-2. **What's new since the last release?** Find the last tag and diff:
+2. **What's new since the last release?** Find the last tag and diff. Guard against repos with no tags so the skill still works as a template elsewhere:
 
    ```bash
    LAST=$(git tag --sort=-v:refname | head -1)
-   git log "$LAST..HEAD" --oneline
-   git diff "$LAST..HEAD" --stat -- src/ docs/
-   gh pr list --state merged --search "merged:>$(git log -1 --format=%aI $LAST)" --limit 50
+   if [ -n "$LAST" ]; then
+     git log "$LAST..HEAD" --oneline
+     git diff "$LAST..HEAD" --stat -- src/ docs/
+     LAST_DATE=$(git log -1 --format=%aI "$LAST")
+     gh pr list --state merged --search "merged:>$LAST_DATE" --limit 50
+   else
+     echo "No release tag found — using full repo history as the baseline."
+     git log --oneline -n 200
+     git diff --stat -- src/ docs/
+     # Skip the PR-since-tag query; report the absence in the scope file.
+   fi
    ```
 
    Cross-reference this with `src/release-notes.json` (entries above the last-released version) and `planning/changelog/` (per-day rollups) to understand the _intent_ of what shipped, not just the diff.
@@ -152,7 +160,7 @@ npx tsc --noEmit --skipLibCheck --project tsconfig.test.json
 
 - Test count (e.g. "1534 passed, 5 skipped")
 - Whether the count moved since the last test report (read prior `planning/test-reports/*/REPORT.md` and grep for the test-count line — non-mutating, no git operations needed)
-- Any new test files added since last release (`git diff $LAST..HEAD --stat -- test/`)
+- Any new test files added since last release (`git diff "$LAST..HEAD" --stat -- test/` when `LAST` is set; otherwise note "baseline unavailable, no prior release tag")
 
 **Don't `git stash` or `git checkout <tag>` to compute a baseline.** This skill must not mutate the working tree. If the user wants a richer baseline comparison than "previous report file", offer to run a separate baseline pass in a clean git worktree (`git worktree add ../baseline $LAST`) — but only with explicit user authorization, and as its own task, not inline.
 
