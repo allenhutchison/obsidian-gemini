@@ -109,6 +109,20 @@ When you specify an output file:
 
 The agent has both tools available and will choose the right one based on your request. A question like "what year was Python created?" gets a quick Google Search, while "research the evolution of Python's type system" triggers Deep Research.
 
+## Background Mode
+
+Because Deep Research takes several minutes, the agent can run it as a background task so it doesn't block your editing session. To trigger background mode, ask:
+
+```text
+Run deep research on quantum error correction in the background and save it to Research/quantum.md
+```
+
+When the task starts, the agent returns immediately with a task ID. A notification appears in the bottom-right corner when the research completes, with an **Open result** link. You can track progress (or cancel) from the **Background Tasks** panel (Command Palette → **View Background Tasks**).
+
+If you don't specify an output file, results land in `[state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md` by default.
+
+See [Background Tasks](/guide/background-tasks) for more on the status bar indicator, the task panel, and cancellation.
+
 ## Limitations
 
 - **Takes time** — Expect several minutes per research request. The API performs multiple rounds of searching and analysis.

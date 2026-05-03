@@ -102,6 +102,7 @@ The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create G
    - `[state-folder]/Agent-Sessions/` - Agent mode session files
    - `[state-folder]/Skills/` - Agent skill packages (agentskills.io format)
    - `[state-folder]/Scheduled-Tasks/` - Scheduled task definitions and run output
+   - `[state-folder]/Background-Tasks/` - Output from background deep-research and image-gen tasks
    - Automatic migration for existing users from flat structure
 8. **System Folder Protection**: Always exclude system folders from file operations:
    - The plugin state folder (`settings.historyFolder`)
