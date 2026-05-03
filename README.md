@@ -270,16 +270,14 @@ Precisely rewrite any portion of your text with AI assistance. This feature prov
 
 ### Custom Prompts
 
-Create reusable AI instruction templates that customize how the AI behaves for specific notes.
+Create reusable AI instruction templates that customize how the AI behaves for specific sessions.
 
-1. **Enable Custom Prompts:** In plugin settings, ensure "Enable Custom Prompts" is toggled ON.
-
-2. **Create New Prompts:**
+1. **Create New Prompts:**
    - Use the command palette: "Gemini Scribe: Create New Custom Prompt"
    - Enter a name and edit the generated template
-   - Or manually create `.md` files in `[History Folder]/Prompts/`
+   - Or manually create `.md` files in `[Plugin State Folder]/Prompts/`
 
-3. **Apply to Sessions:**
+2. **Apply to Sessions:**
    - Open the agent panel and click the gear icon in the session header
    - Select your prompt from the "Prompt Template" dropdown
    - The prompt applies to all messages in that session

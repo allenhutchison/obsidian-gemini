@@ -55,13 +55,14 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 - **Structure**:
   ```
   gemini-scribe/
-  ├── History/         # Legacy chat history files (v3.x)
-  ├── Prompts/         # Custom prompt templates
-  ├── Skills/          # Custom agent skills (<skill-name>/SKILL.md)
-  ├── Agent-Sessions/  # Agent mode sessions with conversation history
-  ├── Scheduled-Tasks/ # Scheduled task definitions and run output
-  ├── debug.log        # Current log file (when file logging is enabled)
-  └── debug.log.old    # Previous rotated log file
+  ├── History/          # Legacy chat history files (v3.x)
+  ├── Prompts/          # Custom prompt templates
+  ├── Skills/           # Custom agent skills (<skill-name>/SKILL.md)
+  ├── Agent-Sessions/   # Agent mode sessions with conversation history
+  ├── Scheduled-Tasks/  # Scheduled task definitions and run output
+  ├── Background-Tasks/ # Output from background deep-research and image-gen tasks
+  ├── debug.log         # Current log file (when file logging is enabled)
+  └── debug.log.old     # Previous rotated log file
   ```
 
 ### Enable Session History
