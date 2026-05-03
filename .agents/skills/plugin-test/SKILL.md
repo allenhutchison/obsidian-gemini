@@ -162,7 +162,27 @@ If any check fails, write a short report under `planning/test-reports/<timestamp
 
 This is the cheap visual + behavioural pass. The Obsidian CLI is essentially a remote-control + screenshot tool here. Spend nothing, but exercise everything.
 
-**Setup once at the start of the pass:**
+**Preflight: verify required CLI subcommands exist.** The Obsidian CLI evolves — commands get renamed, removed, or gated behind plugins. Failing fast at the start with a clear "command X is missing" message is far better than a mid-pass mystery. Run this check before anything else:
+
+```bash
+required="plugin:reload dev:debug dev:console dev:errors dev:screenshot dev:dom dev:cdp dev:mobile command commands eval"
+missing=""
+for cmd in $required; do
+  if ! obsidian "$cmd" --help >/dev/null 2>&1; then
+    # --help on most CLI commands prints usage and exits 0; missing commands fail
+    missing="$missing $cmd"
+  fi
+done
+if [ -n "$missing" ]; then
+  echo "Aborting Pass 2: required CLI subcommands missing:$missing" >&2
+  echo "The Obsidian CLI may have changed. Update the obsidian-cli skill and this list, then retry." >&2
+  exit 1
+fi
+```
+
+If this check fails, **stop and report** — don't try to work around the missing command. The skill must be honest about what it can no longer do, so the maintainer can update both this skill and the `obsidian-cli` skill in tandem.
+
+**Setup once at the start of the pass (after preflight):**
 
 ```bash
 obsidian plugin:reload id=gemini-scribe
