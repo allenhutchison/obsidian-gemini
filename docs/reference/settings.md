@@ -53,7 +53,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
 - **Default**: `gemini-scribe`
 - **Description**: Folder where plugin stores history, prompts, and sessions
 - **Structure**:
-  ```
+  ```text
   gemini-scribe/
   ├── History/          # Legacy chat history files (v3.x)
   ├── Prompts/          # Custom prompt templates

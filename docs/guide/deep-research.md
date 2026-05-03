@@ -113,7 +113,7 @@ The agent has both tools available and will choose the right one based on your r
 
 Because Deep Research takes several minutes, the agent can run it as a background task so it doesn't block your editing session. To trigger background mode, ask:
 
-```
+```text
 Run deep research on quantum error correction in the background and save it to Research/quantum.md
 ```
 
