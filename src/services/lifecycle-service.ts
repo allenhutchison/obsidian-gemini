@@ -1,5 +1,4 @@
-import { TFile, Platform } from 'obsidian';
-import { Notice } from 'obsidian';
+import { TFile, Platform, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { AgentEventBus } from '../agent/agent-event-bus';
 import { ContextTrackingSubscriber } from '../subscribers/context-tracking-subscriber';
@@ -538,7 +537,8 @@ export class LifecycleService {
 		} else {
 			// Reserve slugs so the tick loop skips them until user approves/skips
 			plugin.scheduledTaskManager.reserveForCatchUp(pending.map((e) => e.task.slug));
-			// Show the ! badge — clicking it opens the CatchUpModal
+			// Set the badge regardless of platform: it drives the desktop entry point,
+			// and on mobile the call is a harmless no-op that keeps internal state consistent.
 			plugin.backgroundStatusBar?.setPendingCatchUpCount(pending.length);
 
 			// On mobile the status bar is hidden, so the badge is unreachable.
