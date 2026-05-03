@@ -101,7 +101,7 @@ describe('ImageGeneration.validateOutputPath (output-path validator)', () => {
 
 describe('ImageGeneration.generateAndInsertImage (palette flow)', () => {
 	let service: ImageGeneration;
-	let activeView: MockMarkdownView;
+	let activeView: InstanceType<typeof MockMarkdownView>;
 	let mockEditor: { getCursor: any; replaceRange: any; lineCount: any; getLine: any };
 	let mockSubmit: ReturnType<typeof vi.fn>;
 	let mockPlugin: any;
