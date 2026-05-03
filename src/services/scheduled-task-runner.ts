@@ -61,10 +61,16 @@ export class ScheduledTaskRunner {
 			throw new Error('[ScheduledTaskRunner] Agent services not initialised');
 		}
 
-		// Map task's enabledTools strings to ToolCategory enum values,
-		// defaulting to read-only when the list is empty.
+		// Map task's enabledTools strings to ToolCategory enum values, defaulting
+		// to read-only + skills when the list is empty. SKILLS is included so the
+		// most natural scheduled-task pattern — "run skill X on a schedule" — works
+		// out of the box; this matches DEFAULT_CONTEXTS.AGENT_SESSION (which also
+		// includes SKILLS by default for live agent sessions). Users who want a
+		// stricter allowlist can set `enabledTools: ['read_only']` explicitly.
 		const enabledToolCategories =
-			this.task.enabledTools.length > 0 ? (this.task.enabledTools as ToolCategory[]) : [ToolCategory.READ_ONLY];
+			this.task.enabledTools.length > 0
+				? (this.task.enabledTools as ToolCategory[])
+				: [ToolCategory.READ_ONLY, ToolCategory.SKILLS];
 
 		// Create a headless session — no confirmation required.
 		const session = await this.plugin.sessionManager.createAgentSession(`Scheduled: ${this.task.slug}`, {

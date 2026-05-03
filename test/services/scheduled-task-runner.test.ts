@@ -285,4 +285,38 @@ describe('ScheduledTaskRunner', () => {
 		);
 		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
 	});
+
+	describe('default enabledTools', () => {
+		// Pin the broadened default added to fix #728: scheduled tasks with empty
+		// enabledTools should get read_only + skills (not just read_only) so the
+		// "run skill X on a schedule" pattern works without extra setup.
+		it('defaults to read_only + skills when frontmatter enabledTools is empty', async () => {
+			const plugin = createMockPlugin();
+			const runner = new ScheduledTaskRunner(plugin, makeTask({ enabledTools: [] }));
+
+			await runner.run(() => false);
+
+			expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledWith(
+				expect.any(String),
+				expect.objectContaining({
+					enabledTools: ['read_only', 'skills'],
+				})
+			);
+		});
+
+		it('honors an explicit enabledTools list and does not augment it', async () => {
+			const plugin = createMockPlugin();
+			const runner = new ScheduledTaskRunner(plugin, makeTask({ enabledTools: ['read_only'] }));
+
+			await runner.run(() => false);
+
+			// User explicitly chose read_only — must NOT silently add skills.
+			expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledWith(
+				expect.any(String),
+				expect.objectContaining({
+					enabledTools: ['read_only'],
+				})
+			);
+		});
+	});
 });
