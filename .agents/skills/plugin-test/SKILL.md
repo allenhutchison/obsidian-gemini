@@ -151,8 +151,10 @@ npx tsc --noEmit --skipLibCheck --project tsconfig.test.json
 **Judge:** all four must pass. Report:
 
 - Test count (e.g. "1534 passed, 5 skipped")
-- Whether the count went up since the last run (use `git stash` + checkout last tag if you need a baseline)
+- Whether the count moved since the last test report (read prior `planning/test-reports/*/REPORT.md` and grep for the test-count line — non-mutating, no git operations needed)
 - Any new test files added since last release (`git diff $LAST..HEAD --stat -- test/`)
+
+**Don't `git stash` or `git checkout <tag>` to compute a baseline.** This skill must not mutate the working tree. If the user wants a richer baseline comparison than "previous report file", offer to run a separate baseline pass in a clean git worktree (`git worktree add ../baseline $LAST`) — but only with explicit user authorization, and as its own task, not inline.
 
 If any check fails, write a short report under `planning/test-reports/<timestamp>/pass-1-failure.md` with the failing output and stop. Do not proceed to Pass 2.
 
