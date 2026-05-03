@@ -386,11 +386,11 @@ describe('DeepResearchTool', () => {
 			);
 		});
 
-		it('auto-generates output_file under Background Research/ when none provided', async () => {
+		it('auto-generates output_file under [state-folder]/Background-Tasks/ when none provided', async () => {
 			const result = await tool.execute({ topic: 'Test Topic', background: true }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_file).toMatch(/^Background Research\/\d{4}-\d{2}-\d{2} Test Topic\.md$/);
+			expect(result.data.output_file).toMatch(/^gemini-scribe\/Background-Tasks\/\d{4}-\d{2}-\d{2} Test Topic\.md$/);
 		});
 
 		it('truncates long topic in the BackgroundTaskManager label', async () => {
@@ -419,7 +419,7 @@ describe('DeepResearchTool', () => {
 				topic: 'AI Ethics',
 				report: 'Report',
 				sourceCount: 5,
-				outputFile: { path: 'Background Research/2026-01-01 AI Ethics.md' },
+				outputFile: { path: 'gemini-scribe/Background-Tasks/2026-01-01 AI Ethics.md' },
 			});
 
 			await tool.execute({ topic: 'AI Ethics', background: true, outputFile: 'research/ai.md' }, mockContext);
@@ -431,7 +431,7 @@ describe('DeepResearchTool', () => {
 			expect(mockDeepResearch.conductResearch).toHaveBeenCalledWith(
 				expect.objectContaining({ topic: 'AI Ethics', outputFile: 'research/ai.md' })
 			);
-			expect(outputPath).toBe('Background Research/2026-01-01 AI Ethics.md');
+			expect(outputPath).toBe('gemini-scribe/Background-Tasks/2026-01-01 AI Ethics.md');
 		});
 
 		it('callback returns undefined when cancelled before research starts', async () => {

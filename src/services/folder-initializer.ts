@@ -11,6 +11,7 @@ export class FolderInitializer {
 	// Subfolder names relative to the plugin state root
 	private static readonly SUBFOLDERS = [
 		'Agent-Sessions',
+		'Background-Tasks',
 		'Prompts',
 		'Skills',
 		'Scheduled-Tasks',

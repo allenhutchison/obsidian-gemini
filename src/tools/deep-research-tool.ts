@@ -111,10 +111,12 @@ export class DeepResearchTool implements Tool {
 				}
 
 				// Resolve the output path upfront so the agent knows where to read results.
-				// Falls back to "Background Research/YYYY-MM-DD <topic>.md" at the vault root
-				// (outside the plugin state folder, which validators reject).
+				// Falls back to [state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md,
+				// which the deep-research validator now explicitly allows.
+				const backgroundTasksFolder = normalizePath(`${plugin.settings.historyFolder}/Background-Tasks`);
 				const resolvedOutputFile =
-					outputFile ?? normalizePath(`Background Research/${formatLocalDate()} ${sanitizeFileName(params.topic)}.md`);
+					outputFile ??
+					normalizePath(`${backgroundTasksFolder}/${formatLocalDate()} ${sanitizeFileName(params.topic)}.md`);
 
 				const deepResearch = plugin.deepResearch;
 				const label = params.topic.length > 40 ? params.topic.slice(0, 37) + '…' : params.topic;
