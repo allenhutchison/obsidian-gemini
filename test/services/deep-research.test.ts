@@ -426,4 +426,44 @@ describe('DeepResearchService', () => {
 			expect(result.sourceCount).toBe(0);
 		});
 	});
+
+	describe('validateAndNormalizeFilePath (output-path validator)', () => {
+		// Pin the state-folder allowlist behavior added in #724: Background-Tasks/
+		// is the one allowed subtree under the plugin state folder; everything
+		// else under it must still be rejected.
+		const validate = (path: string): string => (service as any).validateAndNormalizeFilePath(path);
+
+		beforeEach(() => {
+			mockPlugin.settings.historyFolder = 'gemini-scribe';
+		});
+
+		it('allows a file under [state-folder]/Background-Tasks/', () => {
+			expect(validate('gemini-scribe/Background-Tasks/2026-01-01 topic.md')).toBe(
+				'gemini-scribe/Background-Tasks/2026-01-01 topic.md'
+			);
+		});
+
+		it('rejects other subfolders under the state folder', () => {
+			expect(() => validate('gemini-scribe/Skills/foo.md')).toThrow(/plugin state folder/);
+			expect(() => validate('gemini-scribe/Agent-Sessions/foo.md')).toThrow(/plugin state folder/);
+		});
+
+		it('rejects the bare state folder', () => {
+			expect(() => validate('gemini-scribe')).toThrow(/plugin state folder/);
+		});
+
+		it('rejects sibling-prefix paths that start with Background-Tasks but are not the subfolder', () => {
+			// Without the trailing-slash check, "Background-Tasks-Other/foo" would
+			// sneak past startsWith('Background-Tasks') — guard that.
+			expect(() => validate('gemini-scribe/Background-Tasks-Other/foo.md')).toThrow(/plugin state folder/);
+		});
+
+		it('rejects paths inside .obsidian/', () => {
+			expect(() => validate('.obsidian/snippets/foo.md')).toThrow(/protected system folder/);
+		});
+
+		it('allows arbitrary paths outside the state folder', () => {
+			expect(validate('Notes/foo.md')).toBe('Notes/foo.md');
+		});
+	});
 });

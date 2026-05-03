@@ -60,18 +60,17 @@ export class ImageGeneration {
 	 * Generate an image and return the file path.
 	 * Used by the agent tool.
 	 *
-	 * @param prompt         - Text description of the image to generate
-	 * @param targetNotePath - Optional: note path used to resolve the attachment folder
-	 * @param outputPath     - Optional: explicit vault path for the output file.
-	 *                         When provided it takes priority over targetNotePath-based resolution.
+	 * @param prompt     - Text description of the image to generate
+	 * @param outputPath - Optional: explicit vault path for the output file.
+	 *                     When omitted, the image lands in [state-folder]/Background-Tasks/.
 	 */
-	async generateImage(prompt: string, targetNotePath?: string, outputPath?: string): Promise<string> {
+	async generateImage(prompt: string, outputPath?: string): Promise<string> {
 		try {
 			// Generate the image
 			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
 
 			// Save the image to vault
-			return await this.saveImageToVault(base64Data, prompt, targetNotePath, outputPath);
+			return await this.saveImageToVault(base64Data, prompt, outputPath);
 		} catch (error) {
 			this.plugin.logger.error('Failed to generate image:', error);
 			throw error;
@@ -101,11 +100,11 @@ export class ImageGeneration {
 
 	/**
 	 * Resolve the exact vault path an image will be saved at, for either an
-	 * explicit caller-supplied path or the default attachment-folder flow.
+	 * explicit caller-supplied path or the Background-Tasks default.
 	 *
 	 * When `outputPath` is provided, validates it and rewrites the extension
 	 * to `.png` (saveImageToVault writes PNG bytes unconditionally). When it
-	 * isn't, falls back to the default attachment-folder resolution.
+	 * isn't, falls back to [state-folder]/Background-Tasks/<generated-filename>.
 	 *
 	 * Used by background mode of GenerateImageTool to pre-compute the path at
 	 * submit time and return it synchronously — the agent relies on this path
@@ -116,13 +115,13 @@ export class ImageGeneration {
 	 * Throws synchronously on an invalid explicit path (vault escape,
 	 * protected folder, etc.).
 	 */
-	async resolveOutputPath(prompt: string, targetNotePath?: string, outputPath?: string): Promise<string> {
+	async resolveOutputPath(prompt: string, outputPath?: string): Promise<string> {
 		if (outputPath) {
 			// Runs the same validation/normalisation saveImageToVault uses,
 			// including rewriting any non-.png extension to .png.
 			return this.validateOutputPath(outputPath);
 		}
-		return this.resolveDefaultOutputPath(prompt, targetNotePath);
+		return this.resolveDefaultOutputPath(prompt);
 	}
 
 	/**
@@ -134,7 +133,7 @@ export class ImageGeneration {
 	 * explicit path — it handles both branches consistently. This method is
 	 * kept public for callers that specifically want the default flow.
 	 */
-	async resolveDefaultOutputPath(prompt: string, _targetNotePath?: string): Promise<string> {
+	async resolveDefaultOutputPath(prompt: string): Promise<string> {
 		const filename = this.buildDefaultFilename(prompt);
 		const backgroundTasksFolder = normalizePath(`${this.plugin.settings.historyFolder}/Background-Tasks`);
 		return normalizePath(`${backgroundTasksFolder}/${filename}`);
@@ -145,13 +144,11 @@ export class ImageGeneration {
 	 * Centralised so resolveDefaultOutputPath and saveImageToVault can't drift.
 	 *
 	 * Includes a timestamp AND a short random suffix so two concurrent
-	 * background tasks can't propose the same path. `getAvailablePathForAttachment`
-	 * is a non-atomic availability check — if it returned the same "free" path
-	 * to two callers, the second write would throw when `vault.createBinary`
-	 * encountered the file the first task wrote. The random suffix drops
-	 * collision probability to ~1-in-2-billion per same-millisecond submission
-	 * with the same prompt slice, from the ~100% it would be otherwise in
-	 * that (rare) case.
+	 * background tasks can't propose the same path. `vault.createBinary`
+	 * throws if the target exists, so two tasks landing on the same name
+	 * within the same millisecond would otherwise collide; the random suffix
+	 * drops collision probability to ~1-in-2-billion per same-millisecond
+	 * submission with the same prompt slice.
 	 */
 	private buildDefaultFilename(prompt: string): string {
 		const sanitizedPrompt = prompt
@@ -217,17 +214,11 @@ export class ImageGeneration {
 	/**
 	 * Save base64 image data to the vault.
 	 *
-	 * @param base64Data     - Base64 encoded image data
-	 * @param prompt         - The prompt used to generate the image (used for filename generation)
-	 * @param targetNotePath - Optional note path used to resolve the Obsidian attachment folder
-	 * @param outputPath     - Optional explicit vault path for the file; skips attachment-folder resolution
+	 * @param base64Data - Base64 encoded image data
+	 * @param prompt     - The prompt used to generate the image (used for filename generation)
+	 * @param outputPath - Optional explicit vault path for the file; falls back to the Background-Tasks default
 	 */
-	private async saveImageToVault(
-		base64Data: string,
-		prompt: string,
-		targetNotePath?: string,
-		outputPath?: string
-	): Promise<string> {
+	private async saveImageToVault(base64Data: string, prompt: string, outputPath?: string): Promise<string> {
 		// Convert base64 to binary with validation
 		let binaryData: string;
 		try {
@@ -256,7 +247,7 @@ export class ImageGeneration {
 				await ensureFolderExists(this.plugin.app.vault, parentPath, 'image output folder', this.plugin.logger);
 			}
 		} else {
-			resolvedPath = await this.resolveDefaultOutputPath(prompt, targetNotePath);
+			resolvedPath = await this.resolveDefaultOutputPath(prompt);
 		}
 
 		// Save to vault
