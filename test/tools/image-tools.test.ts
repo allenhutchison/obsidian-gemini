@@ -51,7 +51,7 @@ describe('ImageTools', () => {
 		});
 
 		it('should generate image and return wikilink', async () => {
-			const imagePath = 'attachments/generated-image-123.png';
+			const imagePath = 'gemini-scribe/Background-Tasks/generated-image-123.png';
 			mockImageGeneration.generateImage.mockResolvedValue(imagePath);
 
 			const result = await tool.execute({ prompt: 'a loaf of bread' }, mockContext);
@@ -62,23 +62,7 @@ describe('ImageTools', () => {
 				prompt: 'a loaf of bread',
 				wikilink: `![[${imagePath}]]`,
 			});
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a loaf of bread', undefined, undefined);
-		});
-
-		it('should pass target_note parameter when provided', async () => {
-			const imagePath = 'attachments/generated-image-456.png';
-			mockImageGeneration.generateImage.mockResolvedValue(imagePath);
-
-			const result = await tool.execute(
-				{
-					prompt: 'a sunset',
-					target_note: 'my-note.md',
-				},
-				mockContext
-			);
-
-			expect(result.success).toBe(true);
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a sunset', 'my-note.md', undefined);
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a loaf of bread', undefined);
 		});
 
 		it('should pass output_path parameter when provided', async () => {
@@ -99,28 +83,7 @@ describe('ImageTools', () => {
 				prompt: 'a mountain',
 				wikilink: `![[${imagePath}]]`,
 			});
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith(
-				'a mountain',
-				undefined,
-				'attachments/my-custom-image.png'
-			);
-		});
-
-		it('should prefer output_path over target_note when both are provided', async () => {
-			const imagePath = 'custom/path/image.png';
-			mockImageGeneration.generateImage.mockResolvedValue(imagePath);
-
-			await tool.execute(
-				{
-					prompt: 'test',
-					target_note: 'some-note.md',
-					output_path: 'custom/path/image.png',
-				},
-				mockContext
-			);
-
-			// output_path and target_note are both forwarded; resolution priority is in the service
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('test', 'some-note.md', 'custom/path/image.png');
+			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a mountain', 'attachments/my-custom-image.png');
 		});
 
 		it('should return error when image generation service is not available', async () => {
@@ -186,9 +149,9 @@ describe('ImageTools', () => {
 			tool = new GenerateImageTool();
 			vi.clearAllMocks();
 			// Default: the resolver echoes back the explicit output_path (or a generic
-			// default if not provided). Individual tests override as needed.
+			// Background-Tasks default if not provided). Individual tests override as needed.
 			mockImageGeneration.resolveOutputPath.mockImplementation(
-				async (_prompt: string, _target: string | undefined, explicit?: string) => explicit ?? 'attachments/default.png'
+				async (_prompt: string, explicit?: string) => explicit ?? 'gemini-scribe/Background-Tasks/default.png'
 			);
 		});
 
@@ -223,15 +186,16 @@ describe('ImageTools', () => {
 			expect(label.endsWith('…')).toBe(true);
 		});
 
-		it('pre-resolves output_path via attachment folder when none provided', async () => {
-			mockImageGeneration.resolveOutputPath.mockResolvedValue('attachments/generated-a-dog-12345.png');
+		it('pre-resolves output_path via the Background-Tasks default when none provided', async () => {
+			mockImageGeneration.resolveOutputPath.mockResolvedValue(
+				'gemini-scribe/Background-Tasks/generated-a-dog-12345.png'
+			);
 
 			const result = await tool.execute({ prompt: 'a dog', background: true }, mockContext);
 
 			expect(result.success).toBe(true);
-			expect(result.data.output_path).toBe('attachments/generated-a-dog-12345.png');
-			// Resolver is called with the prompt, active file as reference, and no explicit path
-			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', 'active-note.md', undefined);
+			expect(result.data.output_path).toBe('gemini-scribe/Background-Tasks/generated-a-dog-12345.png');
+			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', undefined);
 		});
 
 		it('routes explicit output_path through the service resolver so validation applies', async () => {
@@ -246,7 +210,7 @@ describe('ImageTools', () => {
 
 			expect(result.success).toBe(true);
 			expect(result.data.output_path).toBe('pictures/dog.png');
-			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', 'active-note.md', 'pictures/dog.jpg');
+			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a dog', 'pictures/dog.jpg');
 		});
 
 		it('returns a tool error synchronously when the resolver throws (invalid path or no reference)', async () => {
@@ -278,8 +242,8 @@ describe('ImageTools', () => {
 		});
 
 		it('callback invokes generateImage with the pre-resolved output_path', async () => {
-			mockImageGeneration.resolveOutputPath.mockResolvedValue('attachments/result.png');
-			mockImageGeneration.generateImage.mockResolvedValue('attachments/result.png');
+			mockImageGeneration.resolveOutputPath.mockResolvedValue('gemini-scribe/Background-Tasks/result.png');
+			mockImageGeneration.generateImage.mockResolvedValue('gemini-scribe/Background-Tasks/result.png');
 
 			await tool.execute({ prompt: 'a sunset', background: true }, mockContext);
 
@@ -290,23 +254,9 @@ describe('ImageTools', () => {
 			// task writes exactly where we told the agent it would land.
 			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith(
 				'a sunset',
-				'active-note.md',
-				'attachments/result.png'
+				'gemini-scribe/Background-Tasks/result.png'
 			);
-			expect(returnedPath).toBe('attachments/result.png');
-		});
-
-		it('callback uses explicit target_note over captured active file', async () => {
-			mockImageGeneration.resolveOutputPath.mockResolvedValue('my-folder/result.png');
-			mockImageGeneration.generateImage.mockResolvedValue('my-folder/result.png');
-
-			await tool.execute({ prompt: 'a fox', background: true, target_note: 'my-note.md' }, mockContext);
-
-			const callback = mockBackgroundTaskManager.submit.mock.calls[0][2];
-			await callback(() => false);
-
-			expect(mockImageGeneration.resolveOutputPath).toHaveBeenCalledWith('a fox', 'my-note.md', undefined);
-			expect(mockImageGeneration.generateImage).toHaveBeenCalledWith('a fox', 'my-note.md', 'my-folder/result.png');
+			expect(returnedPath).toBe('gemini-scribe/Background-Tasks/result.png');
 		});
 
 		it('callback returns undefined when cancelled', async () => {

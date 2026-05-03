@@ -22,15 +22,10 @@ export class GenerateImageTool implements Tool {
 				type: 'string' as const,
 				description: 'Detailed description of the image to generate',
 			},
-			target_note: {
-				type: 'string' as const,
-				description:
-					'Optional: The path of the note to use for determining the attachment folder location where the image file will be saved. This does NOT insert the image into the note - it only affects where the image file is stored. If not provided, uses the currently active note to determine the attachment folder.',
-			},
 			output_path: {
 				type: 'string' as const,
 				description:
-					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). When provided, the image is saved at exactly this path regardless of target_note. Useful when the caller needs a predictable location to retrieve the result later.',
+					'Optional: Explicit vault path where the generated image file should be saved (e.g. "attachments/my-image.png"). When omitted, the image is saved under the plugin\'s Background-Tasks folder.',
 			},
 			background: {
 				type: 'boolean' as const,
@@ -48,8 +43,6 @@ export class GenerateImageTool implements Tool {
 		let message = `Generate an image with prompt: "${params.prompt}"?\n\nThis will create a new image file in your vault.`;
 		if (params.output_path) {
 			message += `\n\nDestination: ${params.output_path}`;
-		} else if (params.target_note) {
-			message += `\n\nAttachment folder resolved from: ${params.target_note}`;
 		}
 		return message;
 	};
@@ -88,23 +81,14 @@ export class GenerateImageTool implements Tool {
 					return { success: false, error: 'Background task manager not available' };
 				}
 
-				// Capture the active file now — it may change while the task is in flight.
-				// Used as the attachment-folder reference when no explicit output_path is given.
-				const activeFilePath = plugin.app.workspace.getActiveFile()?.path ?? undefined;
-				const referenceNotePath = params.target_note ?? activeFilePath;
-
 				// Pre-resolve the output path at submit time so the agent has a concrete
 				// vault path to read_file later. resolveOutputPath handles both the
 				// explicit-path case (validation + .png extension rewrite) and the
-				// default attachment-folder case — so the path we return here always
+				// default Background-Tasks fallback — so the path we return here always
 				// matches where the task will actually write.
 				let resolvedOutputPath: string;
 				try {
-					resolvedOutputPath = await plugin.imageGeneration.resolveOutputPath(
-						params.prompt,
-						referenceNotePath,
-						params.output_path
-					);
+					resolvedOutputPath = await plugin.imageGeneration.resolveOutputPath(params.prompt, params.output_path);
 				} catch (error) {
 					return {
 						success: false,
@@ -118,7 +102,7 @@ export class GenerateImageTool implements Tool {
 					if (isCancelled()) return undefined;
 					// Always pass the pre-resolved path as the explicit outputPath so the
 					// task writes exactly where we told the agent it would land.
-					return imageGeneration.generateImage(params.prompt, referenceNotePath, resolvedOutputPath);
+					return imageGeneration.generateImage(params.prompt, resolvedOutputPath);
 				});
 
 				return {
@@ -128,11 +112,7 @@ export class GenerateImageTool implements Tool {
 			}
 
 			// ── Foreground mode (default) ────────────────────────────────────────
-			const imagePath = await plugin.imageGeneration.generateImage(
-				params.prompt,
-				params.target_note,
-				params.output_path
-			);
+			const imagePath = await plugin.imageGeneration.generateImage(params.prompt, params.output_path);
 
 			return {
 				success: true,
