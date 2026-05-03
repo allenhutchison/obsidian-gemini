@@ -53,13 +53,29 @@ Summarise the notes I created or modified today. List the key topics and any ope
 
 ### Schedule Formats
 
-| Value         | Runs…                                 |
-| ------------- | ------------------------------------- |
-| `once`        | Exactly once, then stops              |
-| `daily`       | Every 24 hours                        |
-| `weekly`      | Every 7 days                          |
-| `interval:Xm` | Every X minutes (e.g. `interval:30m`) |
-| `interval:Xh` | Every X hours (e.g. `interval:2h`)    |
+| Value               | Runs…                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `once`              | Exactly once, then stops                                                                                          |
+| `daily`             | Every 24 hours from when the task was created                                                                     |
+| `daily@HH:MM`       | Every day at the given local time (24-hour). Example: `daily@16:30` for 4:30 PM                                   |
+| `weekly`            | Every 7 days from when the task was created                                                                       |
+| `weekly@HH:MM:DAYS` | At the given local time on the listed weekdays. `DAYS` is a comma-separated list of `sun,mon,tue,wed,thu,fri,sat` |
+| `interval:Xm`       | Every X minutes (e.g. `interval:30m`)                                                                             |
+| `interval:Xh`       | Every X hours (e.g. `interval:2h`)                                                                                |
+
+`HH:MM` is 24-hour and uses your local timezone. The scheduler ticks once a minute, so a task scheduled for 16:30 may fire any time between 16:30:00 and 16:30:59. Daylight saving transitions follow JavaScript `Date` semantics — on the spring-forward day, a `daily@02:30` slot may shift by one hour.
+
+**Example — run a daily summary every weekday at 4:30 PM:**
+
+```markdown
+---
+schedule: weekly@16:30:mon,tue,wed,thu,fri
+enabledTools:
+  - read_only
+---
+
+Summarise the notes I created or modified today.
+```
 
 ### Tool Access
 

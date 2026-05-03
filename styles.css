@@ -5128,6 +5128,30 @@ If your plugin does not need CSS, delete this file.
 	width: 100px;
 }
 
+.gemini-scheduler-time-input {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	padding: 4px 8px;
+	font-size: var(--font-ui-small);
+}
+
+.gemini-scheduler-days-row {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 8px;
+}
+
+.gemini-scheduler-day-label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+}
+
 .gemini-scheduler-tools {
 	display: flex;
 	gap: 12px;

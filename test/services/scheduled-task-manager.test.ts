@@ -118,6 +118,136 @@ describe('computeNextRunAt', () => {
 	});
 });
 
+// ─── computeNextRunAt — daily@HH:MM ───────────────────────────────────────────
+//
+// These tests use `new Date(year, monthIndex, day, hour, minute)` (local-time
+// constructor) on purpose: the `daily@HH:MM` and `weekly@HH:MM:DAYS` schedule
+// formats are specified in the *user's local time* by design, so testing them
+// with UTC ISO strings would produce timezone-dependent assertions.
+
+describe('computeNextRunAt — daily@HH:MM (time-of-day)', () => {
+	it('returns today at HH:MM when current time is earlier', () => {
+		// 2026-04-17 (Friday) 14:00 local → next 16:30 = today 16:30
+		const from = new Date(2026, 3, 17, 14, 0);
+		const result = computeNextRunAt('daily@16:30', from);
+		expect(result).toEqual(new Date(2026, 3, 17, 16, 30));
+	});
+
+	it('returns tomorrow at HH:MM when current time is later', () => {
+		// 17:00 → next 16:30 = tomorrow 16:30
+		const from = new Date(2026, 3, 17, 17, 0);
+		const result = computeNextRunAt('daily@16:30', from);
+		expect(result).toEqual(new Date(2026, 3, 18, 16, 30));
+	});
+
+	it('returns tomorrow at HH:MM when current time is exactly the slot (avoids same-tick double-fire)', () => {
+		const from = new Date(2026, 3, 17, 16, 30, 0, 0);
+		const result = computeNextRunAt('daily@16:30', from);
+		expect(result).toEqual(new Date(2026, 3, 18, 16, 30));
+	});
+
+	it('handles midnight (00:00)', () => {
+		// Yesterday 23:00 → today 00:00
+		const from = new Date(2026, 3, 17, 23, 0);
+		const result = computeNextRunAt('daily@00:00', from);
+		expect(result).toEqual(new Date(2026, 3, 18, 0, 0));
+	});
+
+	it('rejects out-of-range hour', () => {
+		expect(() => computeNextRunAt('daily@25:00', new Date())).toThrow(/Hour must be 0-23/);
+	});
+
+	it('rejects out-of-range minute', () => {
+		expect(() => computeNextRunAt('daily@16:60', new Date())).toThrow(/minute must be 0-59/);
+	});
+
+	it('rejects missing time', () => {
+		expect(() => computeNextRunAt('daily@', new Date())).toThrow(/Expected HH:MM/);
+	});
+
+	it('rejects non-numeric time', () => {
+		expect(() => computeNextRunAt('daily@abc', new Date())).toThrow(/Expected HH:MM/);
+	});
+
+	it('rejects extra trailing colon', () => {
+		expect(() => computeNextRunAt('daily@16:30:', new Date())).toThrow(/Expected HH:MM/);
+	});
+});
+
+// ─── computeNextRunAt — weekly@HH:MM:DAYS ─────────────────────────────────────
+
+describe('computeNextRunAt — weekly@HH:MM:DAYS (day-of-week + time)', () => {
+	// April 2026 weekday reference:
+	//   Mon Apr 13, Tue Apr 14, Wed Apr 15, Thu Apr 16, Fri Apr 17,
+	//   Sat Apr 18, Sun Apr 19, Mon Apr 20, …
+
+	it('returns today when today qualifies and the time is still in the future', () => {
+		// Tuesday Apr 14 at 14:00, allowed = {tue}
+		const from = new Date(2026, 3, 14, 14, 0);
+		const result = computeNextRunAt('weekly@16:30:tue', from);
+		expect(result).toEqual(new Date(2026, 3, 14, 16, 30));
+	});
+
+	it('rolls forward to the next allowed weekday when today qualifies but the time has passed', () => {
+		// Tuesday Apr 14 at 17:00, allowed = {tue, thu}
+		const from = new Date(2026, 3, 14, 17, 0);
+		const result = computeNextRunAt('weekly@16:30:tue,thu', from);
+		expect(result).toEqual(new Date(2026, 3, 16, 16, 30));
+	});
+
+	it('finds the next allowed day later in the week when today is not allowed', () => {
+		// Monday Apr 13 at 12:00, allowed = {sat}
+		const from = new Date(2026, 3, 13, 12, 0);
+		const result = computeNextRunAt('weekly@16:30:sat', from);
+		expect(result).toEqual(new Date(2026, 3, 18, 16, 30));
+	});
+
+	it('wraps to next week when no day in the rest of this week qualifies', () => {
+		// Sunday Apr 19 at 17:00, allowed = {sun} → next Sunday Apr 26 16:30
+		const from = new Date(2026, 3, 19, 17, 0);
+		const result = computeNextRunAt('weekly@16:30:sun', from);
+		expect(result).toEqual(new Date(2026, 3, 26, 16, 30));
+	});
+
+	it('handles the issue #727 motivating case (Sun-Thu at 16:30)', () => {
+		// Friday Apr 17 (not in set) at 12:00 → Sunday Apr 19 at 16:30
+		const fri = new Date(2026, 3, 17, 12, 0);
+		expect(computeNextRunAt('weekly@16:30:sun,mon,tue,wed,thu', fri)).toEqual(new Date(2026, 3, 19, 16, 30));
+		// Saturday (also not in set) → still Sunday
+		const sat = new Date(2026, 3, 18, 9, 0);
+		expect(computeNextRunAt('weekly@16:30:sun,mon,tue,wed,thu', sat)).toEqual(new Date(2026, 3, 19, 16, 30));
+		// Sunday at 17:00 (slot already passed today) → Monday 16:30
+		const sun = new Date(2026, 3, 19, 17, 0);
+		expect(computeNextRunAt('weekly@16:30:sun,mon,tue,wed,thu', sun)).toEqual(new Date(2026, 3, 20, 16, 30));
+	});
+
+	it('accepts uppercase day codes (case-insensitive)', () => {
+		const from = new Date(2026, 3, 13, 12, 0);
+		expect(computeNextRunAt('weekly@16:30:SAT', from)).toEqual(new Date(2026, 3, 18, 16, 30));
+	});
+
+	it('rejects unknown weekday codes', () => {
+		expect(() => computeNextRunAt('weekly@16:30:funday', new Date())).toThrow(/Invalid weekday "funday"/);
+	});
+
+	it('rejects empty days list', () => {
+		// "weekly@16:30:" — colon present but no days
+		expect(() => computeNextRunAt('weekly@16:30:', new Date())).toThrow(/Expected format: weekly@HH:MM:days/);
+	});
+
+	it('rejects empty entries within the days list', () => {
+		expect(() => computeNextRunAt('weekly@16:30:mon,,tue', new Date())).toThrow(/empty entries/);
+	});
+
+	it('rejects out-of-range time', () => {
+		expect(() => computeNextRunAt('weekly@25:00:mon', new Date())).toThrow(/Hour must be 0-23/);
+	});
+
+	it('rejects missing time component', () => {
+		expect(() => computeNextRunAt('weekly@mon', new Date())).toThrow(/Expected format: weekly@HH:MM:days/);
+	});
+});
+
 // ─── ScheduledTaskManager ─────────────────────────────────────────────────────
 
 describe('ScheduledTaskManager', () => {

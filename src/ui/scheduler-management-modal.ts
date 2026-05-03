@@ -8,9 +8,22 @@ const TOOL_CATEGORIES = ['read_only', 'read_write', 'destructive'] as const;
 
 const SCHEDULE_PRESETS = [
 	{ label: 'Once', value: 'once' },
-	{ label: 'Daily', value: 'daily' },
-	{ label: 'Weekly', value: 'weekly' },
+	{ label: 'Daily (every 24h)', value: 'daily' },
+	{ label: 'Daily at time', value: 'daily-at' },
+	{ label: 'Weekly (every 7d)', value: 'weekly' },
+	{ label: 'Weekly on days at time', value: 'weekly-days' },
 	{ label: 'Custom interval', value: 'custom' },
+] as const;
+
+// Order matches JS Date.getDay(); shown left-to-right in the day picker.
+const WEEKDAY_OPTIONS = [
+	{ code: 'sun', label: 'Sun' },
+	{ code: 'mon', label: 'Mon' },
+	{ code: 'tue', label: 'Tue' },
+	{ code: 'wed', label: 'Wed' },
+	{ code: 'thu', label: 'Thu' },
+	{ code: 'fri', label: 'Fri' },
+	{ code: 'sat', label: 'Sat' },
 ] as const;
 
 /**
@@ -305,10 +318,15 @@ export class SchedulerManagementModal extends Modal {
 	private openEdit(task: ScheduledTask): void {
 		this.view = 'edit';
 		this.editingSlug = task.slug;
+		const preset = this.detectPreset(task.schedule);
+		const blank = this.blankForm();
+		const { time, days } = this.parseTimeAndDaysFromSchedule(task.schedule);
 		this.form = {
 			slug: task.slug,
-			schedulePreset: this.detectPreset(task.schedule),
+			schedulePreset: preset,
 			scheduleCustom: task.schedule.startsWith('interval:') ? task.schedule.slice('interval:'.length) : '',
+			scheduleTime: time ?? blank.scheduleTime,
+			scheduleDays: days ?? blank.scheduleDays,
 			enabledTools: [...task.enabledTools],
 			outputPath: task.outputPath,
 			model: task.model ?? '',
@@ -372,14 +390,51 @@ export class SchedulerManagementModal extends Modal {
 				value: this.form.scheduleCustom,
 			},
 		});
-		customInput.style.display = this.form.schedulePreset === 'custom' ? '' : 'none';
+
+		// Time picker (HTML5 native — works on desktop and mobile without deps).
+		// Shown for the time-of-day presets only.
+		const timeInput = scheduleRow.createEl('input', {
+			cls: 'gemini-scheduler-time-input',
+			attr: {
+				type: 'time',
+				value: this.form.scheduleTime,
+			},
+		});
+
+		// Day-of-week checkbox row, shown only for the weekly-days preset.
+		const daysRow = form.createDiv({ cls: 'gemini-scheduler-days-row' });
+		const dayCheckboxes: HTMLInputElement[] = [];
+		for (const day of WEEKDAY_OPTIONS) {
+			const label = daysRow.createEl('label', { cls: 'gemini-scheduler-day-label' });
+			const cb = label.createEl('input', { attr: { type: 'checkbox' } }) as HTMLInputElement;
+			cb.checked = this.form.scheduleDays.includes(day.code);
+			cb.addEventListener('change', () => {
+				if (cb.checked) {
+					if (!this.form.scheduleDays.includes(day.code)) this.form.scheduleDays.push(day.code);
+				} else {
+					this.form.scheduleDays = this.form.scheduleDays.filter((d) => d !== day.code);
+				}
+			});
+			label.appendText(` ${day.label}`);
+			dayCheckboxes.push(cb);
+		}
+
+		const updateScheduleVisibility = (preset: string) => {
+			customInput.style.display = preset === 'custom' ? '' : 'none';
+			timeInput.style.display = preset === 'daily-at' || preset === 'weekly-days' ? '' : 'none';
+			daysRow.style.display = preset === 'weekly-days' ? '' : 'none';
+		};
+		updateScheduleVisibility(this.form.schedulePreset);
 
 		presetSelect.addEventListener('change', () => {
 			this.form.schedulePreset = presetSelect.value as any;
-			customInput.style.display = presetSelect.value === 'custom' ? '' : 'none';
+			updateScheduleVisibility(presetSelect.value);
 		});
 		customInput.addEventListener('input', () => {
 			this.form.scheduleCustom = customInput.value;
+		});
+		timeInput.addEventListener('input', () => {
+			this.form.scheduleTime = timeInput.value;
 		});
 
 		// Tool access
@@ -545,6 +600,8 @@ export class SchedulerManagementModal extends Modal {
 			slug: '',
 			schedulePreset: 'daily' as string,
 			scheduleCustom: '',
+			scheduleTime: '09:00',
+			scheduleDays: ['mon', 'tue', 'wed', 'thu', 'fri'] as string[],
 			enabledTools: ['read_only'] as string[],
 			outputPath: '',
 			model: '',
@@ -556,17 +613,61 @@ export class SchedulerManagementModal extends Modal {
 
 	private detectPreset(schedule: string): string {
 		if (schedule === 'once' || schedule === 'daily' || schedule === 'weekly') return schedule;
+		if (/^daily@\d{1,2}:\d{2}$/.test(schedule)) return 'daily-at';
+		if (/^weekly@\d{1,2}:\d{2}:[a-z,]+$/i.test(schedule)) return 'weekly-days';
 		return 'custom';
 	}
 
 	private resolvedSchedule(): string | null {
-		if (this.form.schedulePreset !== 'custom') return this.form.schedulePreset;
+		const preset = this.form.schedulePreset;
+		if (preset === 'once' || preset === 'daily' || preset === 'weekly') return preset;
+		if (preset === 'daily-at') {
+			if (!this.isValidTime(this.form.scheduleTime)) return null;
+			return `daily@${this.form.scheduleTime}`;
+		}
+		if (preset === 'weekly-days') {
+			if (!this.isValidTime(this.form.scheduleTime) || this.form.scheduleDays.length === 0) return null;
+			// Sort by canonical weekday order so the persisted value is stable
+			// regardless of the order the user clicked the checkboxes in.
+			const orderedDays = WEEKDAY_OPTIONS.map((d) => d.code).filter((c) => this.form.scheduleDays.includes(c));
+			return `weekly@${this.form.scheduleTime}:${orderedDays.join(',')}`;
+		}
+		// custom
 		const raw = this.form.scheduleCustom.trim();
 		if (!raw) return null;
 		if (/^\d+(m|h)$/.test(raw)) return `interval:${raw}`;
 		// Accept full form too
 		if (/^interval:\d+(m|h)$/.test(raw)) return raw;
 		return null;
+	}
+
+	private isValidTime(value: string): boolean {
+		const m = /^(\d{1,2}):(\d{2})$/.exec(value);
+		if (!m) return false;
+		const h = parseInt(m[1], 10);
+		const min = parseInt(m[2], 10);
+		return h >= 0 && h <= 23 && min >= 0 && min <= 59;
+	}
+
+	/**
+	 * Pull the time and day-list out of a `daily@HH:MM` or `weekly@HH:MM:days`
+	 * schedule so the form can pre-fill its time/day controls when editing.
+	 * Returns nulls for any other schedule shape (the caller falls back to
+	 * defaults from `blankForm()`).
+	 */
+	private parseTimeAndDaysFromSchedule(schedule: string): { time: string | null; days: string[] | null } {
+		const dailyAt = /^daily@(\d{1,2}:\d{2})$/.exec(schedule);
+		if (dailyAt) return { time: dailyAt[1], days: null };
+		const weeklyDays = /^weekly@(\d{1,2}:\d{2}):([a-z,]+)$/i.exec(schedule);
+		if (weeklyDays) {
+			const validCodes = WEEKDAY_OPTIONS.map((d) => d.code) as readonly string[];
+			const days = weeklyDays[2]
+				.toLowerCase()
+				.split(',')
+				.filter((d) => validCodes.includes(d));
+			return { time: weeklyDays[1], days: days.length > 0 ? days : null };
+		}
+		return { time: null, days: null };
 	}
 
 	private truncateError(raw: string): string {
