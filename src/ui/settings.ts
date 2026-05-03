@@ -18,6 +18,7 @@ export interface SettingsSectionContext {
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;
 	private showDeveloperSettings = false;
+	private renderToken = 0;
 
 	constructor(app: App, plugin: ObsidianGemini) {
 		super(app, plugin);
@@ -25,6 +26,10 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	}
 
 	async display(): Promise<void> {
+		// Each call claims a fresh token; concurrent calls (e.g. Obsidian opening
+		// the tab while a redisplay() is mid-await) compare against this and bail
+		// out before re-appending into the now-cleared container.
+		const token = ++this.renderToken;
 		const { containerEl } = this;
 
 		containerEl.empty();
@@ -35,6 +40,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		};
 
 		await renderGeneralSettings(containerEl, this.plugin, this.app);
+		if (token !== this.renderToken) return;
 		renderUISettings(containerEl, this.plugin);
 		renderContextSettings(containerEl, this.plugin);
 
@@ -43,8 +49,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 
 		if (this.showDeveloperSettings) {
 			await renderApiSettings(containerEl, this.plugin, context);
+			if (token !== this.renderToken) return;
 			await renderToolSettings(containerEl, this.plugin, this.app, context);
+			if (token !== this.renderToken) return;
 			await renderMCPSettings(containerEl, this.plugin, this.app, context);
+			if (token !== this.renderToken) return;
 			await renderRAGSettings(containerEl, this.plugin, this.app, context);
 		}
 	}
