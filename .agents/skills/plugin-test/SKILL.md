@@ -338,7 +338,7 @@ The report is the deliverable. Don't commit it; the user decides whether to keep
 - **Modals stacking.** If a previous test left a modal open, the next screenshot will be wrong. Verify `document.querySelector('.modal-container')` is null between surfaces, or close all modals at the top of each surface.
 - **Screenshot timing.** DOM updates are async. `sleep 1` is the floor; for animations or first-time renders, `sleep 2`. If a screenshot looks blank, retry with a longer settle.
 - **Mobile emulation persists.** Confirmed above; restating because it's a common foot-gun.
-- **Pass 1 baseline drift.** If `npm test` count went down since last release, that's a regression in coverage even if all remaining tests pass — flag it.
+- **Pass 1 baseline drift.** If `npm test` count went down since last release, flag it for review and require an explanation in the report (intentional consolidation / removal of obsolete coverage vs. unintended coverage loss). Don't auto-fail the run on a count drop alone — only block when the explanation is missing or unsatisfactory.
 
 ## A complete example
 
