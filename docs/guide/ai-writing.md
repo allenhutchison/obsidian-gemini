@@ -71,7 +71,7 @@ Selection-Based Text Rewriting allows you to:
 ### Basic Workflow
 
 1. **Select text** you want to improve
-2. **Right-click** and choose "Rewrite with Gemini" (or use command palette)
+2. **Right-click** and choose "Gemini Scribe: Rewrite Text..." (or use the command palette)
 3. **Enter instructions** in the modal dialog
 4. **Review** the rewritten text
 5. **Accept** the changes automatically applied to your selection
@@ -415,7 +415,7 @@ Use the chat feature alongside selection rewriting:
 
 ### Keyboard Shortcuts
 
-- Use **Command Palette** (Ctrl/Cmd + P) and type "Rewrite selected text" for quick access
+- Use **Command Palette** (Ctrl/Cmd + P) and type "Rewrite text with AI" for quick access
 - The modal supports **Ctrl/Cmd + Enter** to submit quickly
 
 ### Selection Strategies
