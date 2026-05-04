@@ -91,6 +91,11 @@ export class HookRunner {
 			availableTools,
 			renderContent: false,
 			sessionStartedAt: startedAt,
+			// Apply the hook's enabledSkills as a skill filter — the model API
+			// uses projectSkills as its include-list when filtering the registered
+			// skill set. Empty list ⇒ no filter, so the hook sees every available
+			// skill (matches the documented "leave blank to inherit" semantics).
+			projectSkills: hook.enabledSkills.length > 0 ? hook.enabledSkills : undefined,
 		};
 
 		const initialResponse = await modelApi.generateModelResponse(initialRequest);
