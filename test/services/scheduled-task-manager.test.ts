@@ -310,6 +310,14 @@ describe('ScheduledTaskManager', () => {
 			const plugin = createMockPlugin();
 			plugin.app.vault.adapter.exists.mockResolvedValue(true);
 			plugin.app.vault.adapter.read.mockResolvedValue(JSON.stringify(existingState));
+			// Provide a matching task file so the orphan-state purge keeps the entry.
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: 'gemini-scribe/Scheduled-Tasks/my-task.md', basename: 'my-task' },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily' },
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt body.');
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 			expect(manager.getState()['my-task'].nextRunAt).toBe('2026-04-18T08:00:00.000Z');
@@ -456,6 +464,61 @@ describe('ScheduledTaskManager', () => {
 			await manager.initialize();
 
 			expect(manager.getTasks()[0].enabledTools).toEqual([]);
+		});
+
+		it('purges state entries for slugs whose task file no longer exists', async () => {
+			// Pre-existing state contains an orphan ("deleted-task") plus an entry
+			// for a task whose file is still present. After init, only the live
+			// entry should remain.
+			const existingState = {
+				'deleted-task': {
+					nextRunAt: '2026-04-01T00:00:00.000Z',
+					lastError: 'old failure',
+					consecutiveFailures: 1,
+				},
+				'live-task': { nextRunAt: '2026-05-04T00:00:00.000Z' },
+			};
+			const plugin = createMockPlugin();
+			plugin.app.vault.adapter.exists.mockResolvedValue(true);
+			plugin.app.vault.adapter.read.mockResolvedValue(JSON.stringify(existingState));
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: 'gemini-scribe/Scheduled-Tasks/live-task.md', basename: 'live-task' },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily' },
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Live prompt.');
+
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			const state = manager.getState();
+			expect(state['live-task']).toBeDefined();
+			// nextRunAt should be preserved verbatim from the loaded state, not
+			// reseeded to "now" — the entry pre-existed for this slug.
+			expect(state['live-task'].nextRunAt).toBe('2026-05-04T00:00:00.000Z');
+			expect(state['deleted-task']).toBeUndefined();
+		});
+
+		it('keeps state entries when the task file is present (no false positives)', async () => {
+			const existingState = {
+				'my-task': { nextRunAt: '2026-05-04T00:00:00.000Z', lastRunAt: '2026-05-03T00:00:00.000Z' },
+			};
+			const plugin = createMockPlugin();
+			plugin.app.vault.adapter.exists.mockResolvedValue(true);
+			plugin.app.vault.adapter.read.mockResolvedValue(JSON.stringify(existingState));
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: 'gemini-scribe/Scheduled-Tasks/my-task.md', basename: 'my-task' },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily' },
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt.');
+
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			expect(manager.getState()['my-task']).toEqual(existingState['my-task']);
 		});
 	});
 

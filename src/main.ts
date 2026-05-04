@@ -347,7 +347,9 @@ export default class ObsidianGemini extends Plugin {
 			name: 'View Background Tasks',
 			callback: async () => {
 				const { BackgroundTasksModal } = await import('./ui/background-tasks-modal');
-				new BackgroundTasksModal(this.app, this).open();
+				// Command name is unambiguous, so always land on the Tasks tab.
+				// The status-bar entry uses its own context-aware default.
+				new BackgroundTasksModal(this.app, this, 'tasks').open();
 			},
 		});
 
