@@ -217,7 +217,7 @@ describe('HookRunner.writeOutput retry', () => {
 		// The final attempt must hit the timestamp-suffixed fallback path. With
 		// the day-granular base "Hooks/Runs/test-hook/2026-05-04.md", the fallback
 		// shape is "Hooks/Runs/test-hook/2026-05-04-<digits>.md".
-		const finalCallPath = create.mock.calls.at(-1)?.[0];
+		const finalCallPath = create.mock.calls[create.mock.calls.length - 1][0];
 		expect(finalCallPath).toMatch(/^Hooks\/Runs\/test-hook\/2026-05-04-\d+\.md$/);
 	});
 });
