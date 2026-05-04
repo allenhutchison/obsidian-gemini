@@ -809,6 +809,18 @@ export class ScheduledTaskManager {
 			}
 		}
 
+		// Drop state entries for slugs whose definition file is gone. The tick
+		// already tolerates orphan state, but stripping it on init keeps the
+		// JSON tidy and prevents stale lastError messages from accumulating.
+		for (const slug of Object.keys(this.state)) {
+			if (!this.tasks.has(slug)) {
+				delete this.state[slug];
+				this.plugin.logger.log(
+					`[ScheduledTaskManager] Purged orphan state entry for "${slug}" (no matching task file)`
+				);
+			}
+		}
+
 		await this.saveState();
 	}
 
