@@ -163,6 +163,15 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **When disabled**: The "Missed Scheduled Runs" modal appears on startup so you can choose Run or Skip per task. A red `!` badge on the status bar persists if the modal is dismissed without acting.
 - **See also**: [Catch-up Runs](/guide/scheduled-tasks#catch-up-runs)
 
+### Enable lifecycle hooks
+
+- **Setting**: `hooksEnabled`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Subscribe to vault events (file created/modified/deleted/renamed) and dispatch them to hook definitions in `<history-folder>/Hooks/`. Each matching event fires a headless agent run with debounce, rate-limit, and loop-prevention guards.
+- **Why opt-in**: Vault events fire continuously; an unintentionally-broad hook can drain API quota quickly. The default is off so users opt in deliberately.
+- **See also**: [Lifecycle Hooks](/guide/lifecycle-hooks)
+
 ## Context Management
 
 Context management automatically monitors and controls conversation size to prevent exceeding model token limits.

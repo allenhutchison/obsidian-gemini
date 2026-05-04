@@ -17,6 +17,7 @@ import refCustomPrompts from '../../docs/guide/custom-prompts.md';
 import refDeepResearch from '../../docs/guide/deep-research.md';
 import refFaq from '../../docs/guide/faq.md';
 import refGettingStarted from '../../docs/guide/getting-started.md';
+import refLifecycleHooks from '../../docs/guide/lifecycle-hooks.md';
 import refMcpServers from '../../docs/guide/mcp-servers.md';
 import refOllamaSetup from '../../docs/guide/ollama-setup.md';
 import refProjects from '../../docs/guide/projects.md';
@@ -39,6 +40,7 @@ export const helpResources = new Map<string, string>([
 	['references/deep-research.md', refDeepResearch],
 	['references/faq.md', refFaq],
 	['references/getting-started.md', refGettingStarted],
+	['references/lifecycle-hooks.md', refLifecycleHooks],
 	['references/mcp-servers.md', refMcpServers],
 	['references/ollama-setup.md', refOllamaSetup],
 	['references/projects.md', refProjects],
@@ -63,6 +65,7 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/deep-research.md\` | Deep Research |
 | \`references/faq.md\` | Frequently Asked Questions |
 | \`references/getting-started.md\` | Getting Started |
+| \`references/lifecycle-hooks.md\` | Lifecycle Hooks |
 | \`references/mcp-servers.md\` | MCP Servers |
 | \`references/ollama-setup.md\` | Ollama (Local Models) |
 | \`references/projects.md\` | Projects |
