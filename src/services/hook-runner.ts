@@ -153,9 +153,7 @@ export class HookRunner {
 	}
 
 	private async writeOutput(outputPath: string, content: string): Promise<void> {
-		const uniquePath = this.resolveUniquePath(outputPath);
-
-		const parentPath = uniquePath.includes('/') ? uniquePath.slice(0, uniquePath.lastIndexOf('/')) : null;
+		const parentPath = outputPath.includes('/') ? outputPath.slice(0, outputPath.lastIndexOf('/')) : null;
 		if (parentPath) {
 			await ensureFolderExists(this.plugin.app.vault, parentPath, 'hook output folder', this.plugin.logger);
 		}
@@ -166,8 +164,40 @@ export class HookRunner {
 			`triggered_by: ${JSON.stringify(this.ctx.filePath)}\n` +
 			`trigger: ${JSON.stringify(this.ctx.trigger)}\n` +
 			`ran_at: ${JSON.stringify(ranAt)}\n---\n\n`;
+		const fullContent = header + content;
 
-		await this.plugin.app.vault.create(uniquePath, header + content);
+		// Two concurrent hook fires can independently choose the same candidate
+		// path (resolveUniquePath() + vault.create() is non-atomic), so retry on
+		// "already exists" rejections by re-resolving each attempt. After
+		// CREATE_RETRY_LIMIT collisions, fall back to a timestamp-suffixed path
+		// — guaranteed unique since `Date.now()` advances on every attempt.
+		const CREATE_RETRY_LIMIT = 8;
+		let lastError: unknown;
+		for (let attempt = 0; attempt < CREATE_RETRY_LIMIT; attempt++) {
+			const candidate = this.resolveUniquePath(outputPath);
+			try {
+				await this.plugin.app.vault.create(candidate, fullContent);
+				return;
+			} catch (err) {
+				lastError = err;
+				if (!isAlreadyExistsError(err)) throw err;
+				// Lost a race with another concurrent fire — loop and pick the
+				// next free suffix. resolveUniquePath() will skip the file the
+				// other writer just created.
+			}
+		}
+		// All retries collided with concurrent writers. Try one more time with a
+		// timestamp suffix that no other fire could have proposed.
+		const fallback = this.resolveTimestampPath(outputPath);
+		try {
+			await this.plugin.app.vault.create(fallback, fullContent);
+		} catch (err) {
+			const inner = err instanceof Error ? err.message : String(err);
+			const prior = lastError instanceof Error ? lastError.message : String(lastError);
+			throw new Error(
+				`[HookRunner] Failed to write hook output after ${CREATE_RETRY_LIMIT + 1} attempts: ${inner} (prior: ${prior})`
+			);
+		}
 	}
 
 	private resolveUniquePath(base: string): string {
@@ -183,4 +213,21 @@ export class HookRunner {
 		}
 		return `${stem}-${Date.now()}${ext}`;
 	}
+
+	private resolveTimestampPath(base: string): string {
+		const dotIdx = base.lastIndexOf('.');
+		const stem = dotIdx >= 0 ? base.slice(0, dotIdx) : base;
+		const ext = dotIdx >= 0 ? base.slice(dotIdx) : '';
+		return `${stem}-${Date.now()}${ext}`;
+	}
+}
+
+/**
+ * Obsidian's `vault.create` rejects with a generic Error when the target file
+ * already exists; the message text is the only signal. Match conservatively:
+ * either the canonical "already exists" string or any wrapper that includes it.
+ */
+function isAlreadyExistsError(err: unknown): boolean {
+	if (!(err instanceof Error)) return false;
+	return /already exists/i.test(err.message);
 }
