@@ -39,6 +39,7 @@ import { LifecycleService } from './services/lifecycle-service';
 import { BackgroundTaskManager } from './services/background-task-manager';
 import { BackgroundStatusBar } from './services/background-status-bar';
 import { ScheduledTaskManager } from './services/scheduled-task-manager';
+import { HookManager } from './services/hook-manager';
 import { getErrorMessage } from './utils/error-utils';
 
 export interface RagIndexingSettings {
@@ -96,6 +97,8 @@ export interface ObsidianGeminiSettings {
 	logToolExecution: boolean;
 	// Scheduled task catch-up
 	autoRunCatchUp: boolean;
+	// Lifecycle hooks (opt-in: AI runs triggered by vault events)
+	hooksEnabled: boolean;
 	// Cached remote model list (managed by ModelListProvider)
 	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
 }
@@ -151,6 +154,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	logToolExecution: true,
 	// Scheduled task catch-up
 	autoRunCatchUp: false,
+	// Lifecycle hooks default off (opt-in)
+	hooksEnabled: false,
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
@@ -200,6 +205,7 @@ export default class ObsidianGemini extends Plugin {
 	public backgroundTaskManager: BackgroundTaskManager | null = null;
 	public backgroundStatusBar: BackgroundStatusBar | null = null;
 	public scheduledTaskManager: ScheduledTaskManager | null = null;
+	public hookManager: HookManager | null = null;
 
 	// Snapshot of the last non-empty editor selection at the moment the user
 	// engaged the agent input. Used as a fallback in GetWorkspaceStateTool,
