@@ -196,6 +196,30 @@ describe('HookRunner.writeOutput retry', () => {
 		await expect(runner.run()).rejects.toThrow(/Disk full/);
 		expect(create).toHaveBeenCalledTimes(1);
 	});
+
+	it('exhausts the retry loop and falls back to a timestamp-suffixed path', async () => {
+		// Every candidate path is reported as occupied AND every create attempt
+		// rejects with "already exists" — simulates the worst-case race where
+		// concurrent fires keep claiming slots faster than this runner can
+		// propose them. The loop should run 8 times against numeric suffixes,
+		// then make a 9th attempt against the explicit timestamp fallback.
+		const create = vi.fn().mockRejectedValue(new Error('File already exists.'));
+		const plugin = createMockPlugin({ createBehaviour: create });
+		(plugin.app.vault.getAbstractFileByPath as any).mockReturnValue({ path: 'occupied' });
+
+		const runner = new HookRunner(plugin as any, makeContext());
+
+		await expect(runner.run()).rejects.toThrow(/Failed to write hook output after 9 attempts/);
+
+		// 8 retry attempts + 1 fallback attempt = 9 create calls.
+		expect(create).toHaveBeenCalledTimes(9);
+
+		// The final attempt must hit the timestamp-suffixed fallback path. With
+		// the day-granular base "Hooks/Runs/test-hook/2026-05-04.md", the fallback
+		// shape is "Hooks/Runs/test-hook/2026-05-04-<digits>.md".
+		const finalCallPath = create.mock.calls.at(-1)?.[0];
+		expect(finalCallPath).toMatch(/^Hooks\/Runs\/test-hook\/2026-05-04-\d+\.md$/);
+	});
 });
 
 describe('HookRunner.run skill propagation', () => {
