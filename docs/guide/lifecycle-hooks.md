@@ -7,7 +7,7 @@ Hooks are disabled by default. Set **Enable lifecycle hooks** in plugin settings
 :::
 
 ::: info Early access
-This is the foundation release. Hooks are configured by hand-editing markdown files; a management UI is on the way. The `agent-task` action is the only action type available today.
+The `agent-task` action is the only action type available today; `summarize`, `rewrite`, and `command` are tracked for follow-up PRs.
 :::
 
 ## Overview
@@ -25,14 +25,21 @@ gemini-scribe/Hooks/
 
 ## Enabling Hooks
 
-1. Open Settings → General
+1. Open Settings → General → Lifecycle Hooks
 2. Toggle **Enable lifecycle hooks**
 
 When the toggle is on the plugin creates the `Hooks/` folder, subscribes to vault events, and starts dispatching matching events to your hook definitions.
 
 ## Creating a Hook
 
-Create a markdown file inside `<history-folder>/Hooks/`. The filename (without `.md`) becomes the hook's **slug**.
+The fastest path is the **Hook Manager** modal. Two ways to open it:
+
+- Settings → General → Lifecycle Hooks → **Open Hook Manager**
+- Command palette → **Gemini Scribe: Open Hook Manager** (or **New Lifecycle Hook** to skip straight to the create form)
+
+The modal has a list view (toggle / edit / delete / reset on each row) and a create/edit form covering trigger, path glob, tool access, prompt, plus an Advanced section for debounce, cooldown, rate limit, model override, output path, and the desktop-only flag.
+
+You can also create hooks by hand-editing markdown files inside `<history-folder>/Hooks/`. The filename (without `.md`) becomes the hook's **slug**.
 
 **Minimal example** — `gemini-scribe/Hooks/summarise-on-save.md`:
 
@@ -167,7 +174,7 @@ The user updated meeting notes at {{filePath}}. Use the meeting-extractor skill 
 
 - Hooks only fire while Obsidian is running. There's no catch-up for events missed while the app was closed (vault events don't have a "missed run" concept).
 - Workspace and editor events (`file-open`, active leaf change, editor changes) are not supported — they fire too noisily and the AI features that respond to typing already exist via Completions.
-- The management UI is not yet available; hooks are configured by hand-editing markdown files in this release.
+- The management UI doesn't currently include a frontmatter-filter editor — set the `frontmatterFilter:` block by hand-editing the hook's markdown file.
 - A hook that triggers another hook (chained fires) is supported but not encouraged. Use one hook with a multi-step prompt instead.
 
 ## Related

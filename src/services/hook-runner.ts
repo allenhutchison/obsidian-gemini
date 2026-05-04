@@ -51,10 +51,12 @@ export class HookRunner {
 		private ctx: HookFireContext
 	) {}
 
-	async run(): Promise<string | undefined> {
+	async run(isCancelled: () => boolean = () => false): Promise<string | undefined> {
 		if (!this.plugin.sessionManager || !this.plugin.toolRegistry || !this.plugin.toolExecutionEngine) {
 			throw new Error('[HookRunner] Agent services not initialised');
 		}
+
+		if (isCancelled()) return undefined;
 
 		const { hook } = this.ctx;
 
@@ -98,7 +100,9 @@ export class HookRunner {
 			projectSkills: hook.enabledSkills.length > 0 ? hook.enabledSkills : undefined,
 		};
 
+		if (isCancelled()) return undefined;
 		const initialResponse = await modelApi.generateModelResponse(initialRequest);
+		if (isCancelled()) return undefined;
 
 		let finalText: string;
 		if (initialResponse.toolCalls?.length) {
@@ -110,11 +114,12 @@ export class HookRunner {
 				options: {
 					plugin: this.plugin,
 					session,
-					isCancelled: () => false,
+					isCancelled,
 					confirmationProvider: new HeadlessConfirmationProvider(),
 					maxIterations: 20,
 				},
 			});
+			if (result.cancelled) return undefined;
 			if (result.exhausted) {
 				throw new Error(`[HookRunner] Hook "${hook.slug}" exhausted 20 tool iterations without producing a response`);
 			}
@@ -123,6 +128,7 @@ export class HookRunner {
 			finalText = initialResponse.markdown ?? '';
 		}
 
+		if (isCancelled()) return undefined;
 		if (!hook.outputPath) return undefined;
 		if (!finalText) return undefined;
 

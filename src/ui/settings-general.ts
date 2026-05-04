@@ -210,6 +210,42 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 			})
 		);
 
+	// Lifecycle Hooks
+	new Setting(containerEl).setName('Lifecycle Hooks').setHeading();
+
+	new Setting(containerEl)
+		.setName('Enable lifecycle hooks')
+		.setDesc(
+			'Subscribe to vault events (file created/modified/deleted/renamed) and run AI agent tasks in response. Off by default — vault events fire continuously, and a broadly-scoped hook can drain API quota quickly.'
+		)
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.hooksEnabled).onChange(async (value) => {
+				plugin.settings.hooksEnabled = value;
+				await plugin.saveSettings();
+			})
+		);
+
+	new Setting(containerEl)
+		.setName('Manage lifecycle hooks')
+		.setDesc(
+			'Create, edit, enable/disable, and delete hooks. Each hook fires when a matching vault event occurs and runs as a headless agent session.'
+		)
+		.addButton((button) =>
+			button
+				.setButtonText('Open Hook Manager')
+				.setCta()
+				.onClick(async () => {
+					const { HookManagementModal } = await import('./hook-management-modal');
+					new HookManagementModal(app, plugin, 'list').open();
+				})
+		)
+		.addButton((button) =>
+			button.setButtonText('New hook').onClick(async () => {
+				const { HookManagementModal } = await import('./hook-management-modal');
+				new HookManagementModal(app, plugin, 'create').open();
+			})
+		);
+
 	// Session History
 	new Setting(containerEl).setName('Session History').setHeading();
 

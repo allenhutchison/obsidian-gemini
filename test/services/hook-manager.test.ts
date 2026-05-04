@@ -73,13 +73,21 @@ function createMockPlugin(overrides: Record<string, any> = {}) {
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: { historyFolder: 'gemini-scribe', hooksEnabled: true },
 		registerEvent: vi.fn(),
+		// backgroundTaskManager is optional; when absent the manager's
+		// runDirect fallback path keeps tests deterministic. Tests that need
+		// to exercise the bg-manager path inject one explicitly.
+		backgroundTaskManager: undefined as any,
 		app: {
 			vault: {
 				getMarkdownFiles: vi.fn().mockReturnValue([]),
+				getAbstractFileByPath: vi.fn().mockReturnValue(null),
 				on: vi.fn().mockReturnValue({ __ref: true }),
 				off: vi.fn(),
 				offref: vi.fn(),
 				read: vi.fn().mockResolvedValue(''),
+				create: vi.fn().mockResolvedValue(undefined),
+				modify: vi.fn().mockResolvedValue(undefined),
+				delete: vi.fn().mockResolvedValue(undefined),
 				adapter: {
 					exists: vi.fn().mockResolvedValue(false),
 					read: vi.fn().mockImplementation(async (path: string) => stateStore[path] ?? '{}'),
@@ -98,6 +106,30 @@ function createMockPlugin(overrides: Record<string, any> = {}) {
 		__fmCache: fmCache,
 		...overrides,
 	};
+}
+
+/**
+ * BackgroundTaskManager mock that resolves submit() inline so tests don't
+ * need a separate sync point to await the bg-manager path. Records every
+ * submission for assertion. Pass `runImmediately: false` to capture the work
+ * function without invoking it (lets tests assert on cancellation behavior).
+ */
+function createMockBackgroundTaskManager(opts: { runImmediately?: boolean; cancelImmediately?: boolean } = {}) {
+	const submissions: { type: string; label: string; work: (isCancelled: () => boolean) => Promise<unknown> }[] = [];
+	const runImmediately = opts.runImmediately ?? true;
+	const cancelImmediately = opts.cancelImmediately ?? false;
+
+	const submit = vi
+		.fn()
+		.mockImplementation((type: string, label: string, work: (isCancelled: () => boolean) => Promise<unknown>) => {
+			submissions.push({ type, label, work });
+			if (runImmediately) {
+				void work(() => cancelImmediately);
+			}
+			return `bg-${submissions.length}`;
+		});
+
+	return { submit, __submissions: submissions };
 }
 
 function makeHook(overrides: Partial<Hook> = {}): Hook {
@@ -175,6 +207,169 @@ describe('matchesFrontmatterFilter', () => {
 	it('matches every key/value', () => {
 		expect(matchesFrontmatterFilter({ a: 1, b: 'x' }, { a: 1 })).toBe(true);
 		expect(matchesFrontmatterFilter({ a: 2 }, { a: 1 })).toBe(false);
+	});
+});
+
+describe('HookManager CRUD', () => {
+	function createPluginWithVaultStore() {
+		const files = new Map<string, string>();
+		const plugin = createMockPlugin();
+		plugin.app.vault.create = vi.fn().mockImplementation(async (path: string, content: string) => {
+			if (files.has(path)) throw new Error('File already exists.');
+			files.set(path, content);
+			return { path };
+		});
+		plugin.app.vault.modify = vi.fn().mockImplementation(async (file: any, content: string) => {
+			files.set(file.path, content);
+		});
+		plugin.app.vault.delete = vi.fn().mockImplementation(async (file: any) => {
+			files.delete(file.path);
+		});
+		plugin.app.vault.getAbstractFileByPath = vi
+			.fn()
+			.mockImplementation((path: string) => (files.has(path) ? { path } : null));
+		(plugin as any).__files = files;
+		return plugin as any;
+	}
+
+	function newManager(plugin: any): HookManager {
+		const manager = new HookManager(plugin);
+		(manager as any).initialized = true;
+		return manager;
+	}
+
+	const baseCreateParams = {
+		slug: 'summarise',
+		trigger: 'file-modified' as const,
+		action: 'agent-task' as const,
+		prompt: 'Summarise {{filePath}}.',
+	};
+
+	it('rejects empty slugs', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await expect(manager.createHook({ ...baseCreateParams, slug: '   ' })).rejects.toThrow(/empty/);
+	});
+
+	it('rejects slugs with disallowed characters', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await expect(manager.createHook({ ...baseCreateParams, slug: 'Bad Slug' })).rejects.toThrow(/lowercase/);
+		await expect(manager.createHook({ ...baseCreateParams, slug: '-leading' })).rejects.toThrow(/lowercase/);
+		await expect(manager.createHook({ ...baseCreateParams, slug: 'a--b' })).rejects.toThrow(/lowercase/);
+	});
+
+	it('rejects duplicate slugs', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook(baseCreateParams);
+		await expect(manager.createHook(baseCreateParams)).rejects.toThrow(/already exists/);
+	});
+
+	it('writes a minimal hook file with only required fields', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook(baseCreateParams);
+
+		const filePath = 'gemini-scribe/Hooks/summarise.md';
+		expect(plugin.__files.has(filePath)).toBe(true);
+		const content = plugin.__files.get(filePath);
+		expect(content).toContain("trigger: 'file-modified'");
+		expect(content).toContain("action: 'agent-task'");
+		expect(content).toContain('Summarise {{filePath}}');
+		// Defaults should NOT be serialised — keeps the file clean.
+		expect(content).not.toContain('debounceMs');
+		expect(content).not.toContain('cooldownMs');
+		expect(content).not.toContain('enabled:');
+		expect(content).not.toContain('desktopOnly:');
+	});
+
+	it('serialises non-default optional fields', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook({
+			...baseCreateParams,
+			pathGlob: 'Daily/**/*.md',
+			debounceMs: 7500,
+			cooldownMs: 60_000,
+			maxRunsPerHour: 12,
+			enabledTools: ['read_only'],
+			enabledSkills: ['index-files'],
+			model: 'gemini-2.5-flash-lite',
+			outputPath: 'Hooks/Runs/{slug}/{date}.md',
+			enabled: false,
+			desktopOnly: false,
+		});
+
+		const content = plugin.__files.get('gemini-scribe/Hooks/summarise.md');
+		expect(content).toContain('pathGlob: "Daily/**/*.md"');
+		expect(content).toContain('debounceMs: 7500');
+		expect(content).toContain('cooldownMs: 60000');
+		expect(content).toContain('maxRunsPerHour: 12');
+		expect(content).toContain('enabledTools:');
+		expect(content).toContain('  - read_only');
+		expect(content).toContain('enabledSkills:');
+		expect(content).toContain('  - index-files');
+		expect(content).toContain('model: "gemini-2.5-flash-lite"');
+		expect(content).toContain('outputPath: "Hooks/Runs/{slug}/{date}.md"');
+		expect(content).toContain('enabled: false');
+		expect(content).toContain('desktopOnly: false');
+	});
+
+	it('updateHook rewrites the file with merged values', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook(baseCreateParams);
+		await manager.updateHook('summarise', {
+			prompt: 'Updated prompt for {{filePath}}.',
+			model: 'gemini-2.5-pro',
+		});
+
+		const content = plugin.__files.get('gemini-scribe/Hooks/summarise.md');
+		expect(content).toContain('Updated prompt for {{filePath}}');
+		expect(content).toContain('model: "gemini-2.5-pro"');
+
+		const hook = manager.getHooks().find((h) => h.slug === 'summarise');
+		expect(hook?.model).toBe('gemini-2.5-pro');
+		expect(hook?.prompt).toContain('Updated prompt');
+	});
+
+	it('updateHook throws when the hook is unknown', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await expect(manager.updateHook('nope', { enabled: false })).rejects.toThrow(/not found/);
+	});
+
+	it('toggleHook flips the enabled flag and rewrites the file', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook(baseCreateParams);
+		await manager.toggleHook('summarise', false);
+
+		const hook = manager.getHooks().find((h) => h.slug === 'summarise');
+		expect(hook?.enabled).toBe(false);
+		const content = plugin.__files.get('gemini-scribe/Hooks/summarise.md');
+		expect(content).toContain('enabled: false');
+	});
+
+	it('deleteHook removes the file and clears state', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await manager.createHook(baseCreateParams);
+		// Plant a state entry so we can verify it gets cleaned up.
+		(manager as any).state['summarise'] = { lastError: 'old' };
+
+		await manager.deleteHook('summarise');
+
+		expect(plugin.__files.has('gemini-scribe/Hooks/summarise.md')).toBe(false);
+		expect(manager.getHooks().some((h) => h.slug === 'summarise')).toBe(false);
+		expect(manager.getStateSnapshot()['summarise']).toBeUndefined();
+	});
+
+	it('deleteHook throws when the hook is unknown', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+		await expect(manager.deleteHook('nope')).rejects.toThrow(/not found/);
 	});
 });
 
@@ -380,6 +575,57 @@ describe('HookManager dispatch', () => {
 		manager.handleEvent('file-modified', makeFile('a.md'));
 		await vi.advanceTimersByTimeAsync(500);
 		expect(runnerRunMock).not.toHaveBeenCalled();
+	});
+
+	it('submits matching fires through BackgroundTaskManager when one is available', async () => {
+		const bg = createMockBackgroundTaskManager();
+		const plugin = createMockPlugin({ backgroundTaskManager: bg });
+		const manager = withSeededHooks(plugin, [makeHook({ debounceMs: 10 })]);
+
+		manager.handleEvent('file-modified', makeFile('Notes/foo.md'));
+		await vi.advanceTimersByTimeAsync(50);
+
+		expect(bg.submit).toHaveBeenCalledTimes(1);
+		const [type, label] = bg.submit.mock.calls[0];
+		expect(type).toBe('lifecycle-hook');
+		expect(label).toContain('test-hook');
+		expect(label).toContain('foo.md');
+		// The runner mock fires inside the bg-manager work function, not in
+		// runDirect, so the runner-was-called assertion still proves the
+		// submitted work executed.
+		expect(runnerRunMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('propagates cancellation from BackgroundTaskManager to the runner', async () => {
+		const bg = createMockBackgroundTaskManager({ cancelImmediately: true });
+		const plugin = createMockPlugin({ backgroundTaskManager: bg });
+		const manager = withSeededHooks(plugin, [makeHook({ debounceMs: 10 })]);
+
+		// Capture the isCancelled predicate handed to the runner.
+		let observedCancelled = false;
+		runnerRunMock.mockImplementation(async (isCancelled: () => boolean) => {
+			observedCancelled = isCancelled();
+			return undefined;
+		});
+
+		manager.handleEvent('file-modified', makeFile('Notes/foo.md'));
+		await vi.advanceTimersByTimeAsync(50);
+
+		expect(runnerRunMock).toHaveBeenCalledTimes(1);
+		expect(observedCancelled).toBe(true);
+	});
+
+	it('falls back to direct execution when no BackgroundTaskManager is wired', async () => {
+		const plugin = createMockPlugin(); // backgroundTaskManager undefined
+		const manager = withSeededHooks(plugin, [makeHook({ debounceMs: 10 })]);
+
+		manager.handleEvent('file-modified', makeFile('Notes/foo.md'));
+		await vi.advanceTimersByTimeAsync(50);
+
+		// Runner still ran via runDirect — this is the safety-net path used
+		// in early plugin lifecycle and in tests that don't provision a bg
+		// manager.
+		expect(runnerRunMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('drops re-entrant events while a fire is in flight', async () => {

@@ -220,6 +220,7 @@ export default class ObsidianGemini extends Plugin {
 	private previousRagEnabled: boolean = false;
 	private previousProvider: ModelProvider = 'gemini';
 	private previousOllamaBaseUrl: string = '';
+	private previousHooksEnabled: boolean = false;
 	private lifecycle!: LifecycleService;
 	// Captures the last initialization failure so guarded commands can surface
 	// the actual cause (e.g. "model not pulled") instead of the ephemeral Notice
@@ -253,6 +254,7 @@ export default class ObsidianGemini extends Plugin {
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 			this.previousProvider = this.settings.provider;
 			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
+			this.previousHooksEnabled = this.settings.hooksEnabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
 			this.lastInitError = error instanceof Error ? error.message : String(error);
@@ -376,6 +378,26 @@ export default class ObsidianGemini extends Plugin {
 			callback: async () => {
 				const { SchedulerManagementModal } = await import('./ui/scheduler-management-modal');
 				new SchedulerManagementModal(this.app, this, 'create').open();
+			},
+		});
+
+		// Open lifecycle hook management modal
+		this.addCommand({
+			id: 'gemini-scribe-open-hook-manager',
+			name: 'Open Hook Manager',
+			callback: async () => {
+				const { HookManagementModal } = await import('./ui/hook-management-modal');
+				new HookManagementModal(this.app, this, 'list').open();
+			},
+		});
+
+		// New lifecycle hook — jump straight to create form
+		this.addCommand({
+			id: 'gemini-scribe-new-hook',
+			name: 'New Lifecycle Hook',
+			callback: async () => {
+				const { HookManagementModal } = await import('./ui/hook-management-modal');
+				new HookManagementModal(this.app, this, 'create').open();
 			},
 		});
 
@@ -873,6 +895,7 @@ export default class ObsidianGemini extends Plugin {
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
 				this.previousProvider = this.settings.provider;
 				this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
+				this.previousHooksEnabled = this.settings.hooksEnabled;
 
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional
@@ -903,6 +926,18 @@ export default class ObsidianGemini extends Plugin {
 				if (transitioned) {
 					this.previousRagEnabled = nextRagEnabled;
 				}
+			}
+		}
+
+		// Handle hooksEnabled toggle without a full plugin reload — flipping
+		// the setting triggers a HookManager.initialize({ refresh: true })
+		// which tears down and re-registers vault listeners against the
+		// freshly-loaded enabled state.
+		if (this.isGeminiInitialized && this.app.workspace.layoutReady) {
+			const hooksStateChanged = this.previousHooksEnabled !== this.settings.hooksEnabled;
+			if (hooksStateChanged && this.hookManager) {
+				await this.hookManager.initialize({ refresh: true });
+				this.previousHooksEnabled = this.settings.hooksEnabled;
 			}
 		}
 
