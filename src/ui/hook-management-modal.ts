@@ -1,6 +1,6 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
-import type { Hook, HookState, HookTrigger } from '../services/hook-manager';
+import type { Hook, HookAction, HookState, HookTrigger } from '../services/hook-manager';
 
 type View = 'list' | 'create' | 'edit';
 
@@ -11,6 +11,17 @@ const TRIGGER_OPTIONS: { value: HookTrigger; label: string; hint: string }[] = [
 	{ value: 'file-created', label: 'File created', hint: 'Fires when a new file appears.' },
 	{ value: 'file-deleted', label: 'File deleted', hint: 'Fires after a file is removed.' },
 	{ value: 'file-renamed', label: 'File renamed/moved', hint: 'Fires when a path changes.' },
+];
+
+const ACTION_OPTIONS: { value: HookAction; label: string; hint: string }[] = [
+	{ value: 'agent-task', label: 'Agent task', hint: 'Run a headless agent session with the prompt body.' },
+	{ value: 'summarize', label: 'Summarise file', hint: 'Run the summary feature against the triggering file.' },
+	{
+		value: 'rewrite',
+		label: 'Rewrite file',
+		hint: 'Rewrite the entire triggering file using the prompt body as the instruction.',
+	},
+	{ value: 'command', label: 'Run command', hint: 'Execute a registered command palette command by id.' },
 ];
 
 const DEFAULT_DEBOUNCE_MS = 5000;
@@ -167,7 +178,9 @@ export class HookManagementModal extends Modal {
 		info.createDiv({ text: hook.slug, cls: 'gemini-scheduler-item-slug' });
 
 		const triggerLabel = TRIGGER_OPTIONS.find((t) => t.value === hook.trigger)?.label ?? hook.trigger;
-		const badge = isDisabled ? `${triggerLabel} · disabled` : isPaused ? `${triggerLabel} · paused` : triggerLabel;
+		const actionLabel = ACTION_OPTIONS.find((a) => a.value === hook.action)?.label ?? hook.action;
+		const baseBadge = `${triggerLabel} → ${actionLabel}`;
+		const badge = isDisabled ? `${baseBadge} · disabled` : isPaused ? `${baseBadge} · paused` : baseBadge;
 		info.createSpan({ text: badge, cls: 'gemini-scheduler-item-badge' });
 
 		if (hook.pathGlob) {
@@ -291,6 +304,7 @@ export class HookManagementModal extends Modal {
 		this.form = {
 			slug: hook.slug,
 			trigger: hook.trigger,
+			action: hook.action,
 			pathGlob: hook.pathGlob ?? '',
 			debounceMs: hook.debounceMs,
 			cooldownMs: hook.cooldownMs,
@@ -302,6 +316,7 @@ export class HookManagementModal extends Modal {
 			enabled: hook.enabled,
 			desktopOnly: hook.desktopOnly,
 			prompt: hook.prompt,
+			commandId: hook.commandId ?? '',
 		};
 		this.render();
 	}
@@ -351,6 +366,20 @@ export class HookManagementModal extends Modal {
 				});
 			});
 
+		// Action — what to do when the hook fires. Drives which other inputs
+		// are visible (tools/prompt for agent-task and rewrite, commandId for
+		// command, none for summarize).
+		new Setting(form)
+			.setName('Action')
+			.setDesc('What this hook does on each fire.')
+			.addDropdown((dd) => {
+				for (const opt of ACTION_OPTIONS) dd.addOption(opt.value, opt.label);
+				dd.setValue(this.form.action).onChange((v) => {
+					this.form.action = v as HookAction;
+					updateActionVisibility();
+				});
+			});
+
 		// Path glob
 		new Setting(form)
 			.setName('Path glob (optional)')
@@ -366,8 +395,24 @@ export class HookManagementModal extends Modal {
 					})
 			);
 
-		// Tool access
-		new Setting(form).setName('Tool access').setDesc('Which tool categories the agent may use.');
+		// Command id — only shown when action=command.
+		const commandIdSetting = new Setting(form)
+			.setName('Command id')
+			.setDesc(
+				'Command palette id to fire. Examples: editor:save-file, gemini-scribe-summarize-active-file. View Command IDs via Settings → Hotkeys (open the developer console with Ctrl+Shift+I to inspect ids).'
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder('plugin-id:command-name')
+					.setValue(this.form.commandId)
+					.onChange((v) => {
+						this.form.commandId = v.trim();
+					})
+			);
+		const commandIdEl = commandIdSetting.settingEl;
+
+		// Tool access — only meaningful for the agent-task action.
+		const toolsSetting = new Setting(form).setName('Tool access').setDesc('Which tool categories the agent may use.');
 		const toolsContainer = form.createDiv({ cls: 'gemini-scheduler-tools' });
 		for (const cat of TOOL_CATEGORIES) {
 			const label = toolsContainer.createEl('label', { cls: 'gemini-scheduler-tool-label' });
@@ -383,8 +428,8 @@ export class HookManagementModal extends Modal {
 			label.appendText(` ${cat}`);
 		}
 
-		// Prompt
-		new Setting(form)
+		// Prompt — required for agent-task and rewrite, ignored for the rest.
+		const promptSetting = new Setting(form)
 			.setName('Prompt')
 			.setDesc(
 				'Instruction sent to the AI on each fire. Available variables: {{filePath}}, {{fileName}}, {{trigger}}, {{oldPath}}.'
@@ -397,6 +442,20 @@ export class HookManagementModal extends Modal {
 		promptArea.addEventListener('input', () => {
 			this.form.prompt = promptArea.value;
 		});
+
+		const updateActionVisibility = () => {
+			const action = this.form.action;
+			const showCommandId = action === 'command';
+			const showTools = action === 'agent-task';
+			const showPrompt = action === 'agent-task' || action === 'rewrite';
+
+			commandIdEl.style.display = showCommandId ? '' : 'none';
+			toolsSetting.settingEl.style.display = showTools ? '' : 'none';
+			toolsContainer.style.display = showTools ? '' : 'none';
+			promptSetting.settingEl.style.display = showPrompt ? '' : 'none';
+			promptArea.style.display = showPrompt ? '' : 'none';
+		};
+		updateActionVisibility();
 
 		// Advanced
 		const advDetails = form.createEl('details', { cls: 'gemini-scheduler-advanced' });
@@ -520,8 +579,15 @@ export class HookManagementModal extends Modal {
 	}
 
 	private async handleSave(isEdit: boolean): Promise<void> {
-		if (!this.form.prompt.trim()) {
-			new Notice('Prompt cannot be empty.');
+		const action = this.form.action;
+		const promptRequired = action === 'agent-task' || action === 'rewrite';
+
+		if (promptRequired && !this.form.prompt.trim()) {
+			new Notice('Prompt cannot be empty for this action.');
+			return;
+		}
+		if (action === 'command' && !this.form.commandId.trim()) {
+			new Notice('Command id cannot be empty for the "command" action.');
 			return;
 		}
 		if (!isEdit && !this.form.slug.trim()) {
@@ -539,6 +605,7 @@ export class HookManagementModal extends Modal {
 			if (isEdit && this.editingSlug) {
 				await manager.updateHook(this.editingSlug, {
 					trigger: this.form.trigger,
+					action,
 					pathGlob: this.form.pathGlob || undefined,
 					debounceMs: this.form.debounceMs,
 					cooldownMs: this.form.cooldownMs,
@@ -550,13 +617,14 @@ export class HookManagementModal extends Modal {
 					enabled: this.form.enabled,
 					desktopOnly: this.form.desktopOnly,
 					prompt: this.form.prompt,
+					commandId: this.form.commandId || undefined,
 				});
 				new Notice(`Hook "${this.editingSlug}" updated`);
 			} else {
 				await manager.createHook({
 					slug: this.form.slug,
 					trigger: this.form.trigger,
-					action: 'agent-task',
+					action,
 					prompt: this.form.prompt,
 					pathGlob: this.form.pathGlob || undefined,
 					debounceMs: this.form.debounceMs,
@@ -568,6 +636,7 @@ export class HookManagementModal extends Modal {
 					outputPath: this.form.outputPath || undefined,
 					enabled: this.form.enabled,
 					desktopOnly: this.form.desktopOnly,
+					commandId: this.form.commandId || undefined,
 				});
 				new Notice(`Hook "${this.form.slug}" created`);
 			}
@@ -586,6 +655,7 @@ export class HookManagementModal extends Modal {
 		return {
 			slug: '',
 			trigger: 'file-modified' as HookTrigger,
+			action: 'agent-task' as HookAction,
 			pathGlob: '',
 			debounceMs: DEFAULT_DEBOUNCE_MS,
 			cooldownMs: DEFAULT_COOLDOWN_MS,
@@ -597,6 +667,7 @@ export class HookManagementModal extends Modal {
 			enabled: true,
 			desktopOnly: true,
 			prompt: '',
+			commandId: '',
 		};
 	}
 

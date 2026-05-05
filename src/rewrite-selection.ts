@@ -1,5 +1,5 @@
 import type ObsidianGemini from './main';
-import { Editor, Notice } from 'obsidian';
+import { Editor, Notice, TFile } from 'obsidian';
 import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
 import { GeminiClientFactory } from './api/simple-factory';
@@ -130,5 +130,38 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 			const errorMessage = getErrorMessage(error);
 			new Notice(errorMessage, 8000);
 		}
+	}
+
+	/**
+	 * Rewrite an arbitrary file in the vault without going through an editor.
+	 * Reads via `vault.read`, sends the same full-file rewrite prompt the
+	 * editor path uses, and writes the result back via `vault.modify`. Used
+	 * by lifecycle hook runners and other non-interactive callers that don't
+	 * have a focused editor on the target file.
+	 *
+	 * Throws on read/model/write failures so callers can record the error
+	 * their own way; no Notice is shown.
+	 */
+	async rewriteFile(file: TFile, instructions: string): Promise<string> {
+		const fileContent = await this.plugin.app.vault.read(file);
+
+		const prompt = this.buildFullFilePrompt({
+			fileContent,
+			instructions,
+		});
+
+		const request: ExtendedModelRequest = {
+			prompt: '',
+			perTurnContext: prompt,
+			conversationHistory: [],
+			userMessage: instructions,
+		};
+
+		const modelApi = GeminiClientFactory.createRewriteModel(this.plugin);
+		const result = await modelApi.generateModelResponse(request);
+		const rewritten = result.markdown.trim();
+
+		await this.plugin.app.vault.modify(file, rewritten);
+		return rewritten;
 	}
 }

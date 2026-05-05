@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TFile as MockTFile } from 'obsidian';
 import { HookRunner } from '../../src/services/hook-runner';
 import type { Hook, HookFireContext } from '../../src/services/hook-manager';
 import type { AgentLoopResult } from '../../src/agent/agent-loop';
@@ -8,6 +9,16 @@ import type { AgentLoopResult } from '../../src/agent/agent-loop';
 vi.mock('obsidian', () => ({
 	normalizePath: (p: string) => p,
 	TFile: class {},
+	Notice: class {
+		constructor(_msg?: string) {}
+	},
+	Modal: class {
+		app: any;
+		constructor(app: any) {
+			this.app = app;
+		}
+	},
+	Platform: { isMobile: false },
 }));
 
 vi.mock('../../src/utils/file-utils', () => ({
@@ -26,6 +37,33 @@ vi.mock('../../src/utils/turn-preamble', () => ({
 vi.mock('../../src/api', () => ({
 	GeminiClientFactory: {
 		createChatModel: vi.fn(),
+		createSummaryModel: vi.fn(),
+		createRewriteModel: vi.fn(),
+	},
+}));
+
+// SelectionRewriter / GeminiSummary import the API package directly via a
+// different path; mock that side too.
+vi.mock('../../src/api/simple-factory', () => ({
+	GeminiClientFactory: {
+		createChatModel: vi.fn(),
+		createSummaryModel: vi.fn(),
+		createRewriteModel: vi.fn(),
+	},
+}));
+
+// SelectionRewriter constructs a fresh GeminiPrompts; stub the registration.
+vi.mock('../../src/prompts', () => ({
+	GeminiPrompts: class {
+		summaryPrompt(_vars: any) {
+			return 'summary prompt';
+		}
+		selectionRewritePrompt(_vars: any) {
+			return 'selection rewrite prompt';
+		}
+		contextPrompt(_vars: any) {
+			return 'context prompt';
+		}
 	},
 }));
 
@@ -101,6 +139,7 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 		logger: { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 		settings: {
 			chatModelName: 'gemini-2.0-flash',
+			summaryFrontmatterKey: 'summary',
 			temperature: 1,
 			topP: 0.95,
 		},
@@ -115,10 +154,23 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 		},
 		toolRegistry: { getEnabledTools: vi.fn().mockReturnValue([]) },
 		toolExecutionEngine: { executeTool: vi.fn() },
+		// Optional injected services — left undefined by default; tests
+		// override per scenario (e.g. summarize tests set `summarizer`).
+		summarizer: undefined as any,
 		app: {
 			vault: {
 				create,
+				modify: vi.fn().mockResolvedValue(undefined),
+				read: vi.fn().mockResolvedValue('Original file content.'),
 				getAbstractFileByPath: vi.fn().mockImplementation((p: string) => (existing.has(p) ? { path: p } : null)),
+			},
+			fileManager: {
+				processFrontMatter: vi.fn().mockImplementation((_file: any, mutator: (fm: Record<string, unknown>) => void) => {
+					mutator({});
+				}),
+			},
+			commands: {
+				executeCommandById: vi.fn().mockReturnValue(true),
 			},
 		},
 		__existing: existing,
@@ -253,5 +305,171 @@ describe('HookRunner.run skill propagation', () => {
 
 		const request = generateModelResponse.mock.calls[0][0];
 		expect(request.projectSkills).toBeUndefined();
+	});
+});
+
+// ─── Action dispatch (PR 3) ──────────────────────────────────────────────────
+
+/**
+ * Replace the trigger-file resolver with a TFile-shaped object. The mock
+ * `obsidian.TFile` class is empty, so `instanceof` checks rely on this
+ * helper to plant the right prototype chain.
+ */
+function plantFile(plugin: any, path: string, extension = 'md') {
+	const Mock = MockTFile as any;
+	const file = new Mock();
+	file.path = path;
+	file.name = path.includes('/') ? path.slice(path.lastIndexOf('/') + 1) : path;
+	file.basename = file.name.includes('.') ? file.name.slice(0, file.name.lastIndexOf('.')) : file.name;
+	file.extension = extension;
+	plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
+	return file;
+}
+
+describe('HookRunner action: summarize', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('calls summarizer.summarizeFile with the resolved triggering file', async () => {
+		const plugin = createMockPlugin();
+		const summarizeFile = vi.fn().mockResolvedValue('summary text');
+		plugin.summarizer = { summarizeFile };
+		const file = plantFile(plugin, 'Notes/foo.md');
+
+		const hook = makeHook({ action: 'summarize', outputPath: undefined });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(summarizeFile).toHaveBeenCalledTimes(1);
+		expect(summarizeFile).toHaveBeenCalledWith(file);
+	});
+
+	it('skips silently when the triggering file is not present (e.g. file-deleted)', async () => {
+		const plugin = createMockPlugin();
+		const summarizeFile = vi.fn();
+		plugin.summarizer = { summarizeFile };
+		// getAbstractFileByPath defaults to the existing-set lookup which
+		// returns null for unknown paths — the runner should bail out.
+
+		const hook = makeHook({ action: 'summarize' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(summarizeFile).not.toHaveBeenCalled();
+	});
+
+	it('skips non-markdown files without erroring', async () => {
+		const plugin = createMockPlugin();
+		const summarizeFile = vi.fn();
+		plugin.summarizer = { summarizeFile };
+		plantFile(plugin, 'Attachments/photo.png', 'png');
+
+		const hook = makeHook({ action: 'summarize' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(summarizeFile).not.toHaveBeenCalled();
+	});
+});
+
+describe('HookRunner action: rewrite', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('reads the file, sends a rewrite request, and writes the result back', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'rewritten markdown', toolCalls: [] });
+		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		// Some import paths read the factory through src/api/simple-factory; mirror
+		// the model-API mock there so SelectionRewriter sees the same stub.
+		const simple = await import('../../src/api/simple-factory');
+		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const file = plantFile(plugin, 'Notes/foo.md');
+		plugin.app.vault.read = vi.fn().mockResolvedValue('# Original\n\nbody');
+
+		const hook = makeHook({ action: 'rewrite', prompt: 'Rewrite as terse {{trigger}} notes.' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		// rewriteFile should have read the file, called the model, and modified.
+		expect(plugin.app.vault.read).toHaveBeenCalledWith(file);
+		expect(generateModelResponse).toHaveBeenCalledTimes(1);
+		expect(plugin.app.vault.modify).toHaveBeenCalledWith(file, 'rewritten markdown');
+	});
+
+	it('substitutes prompt template variables in the rewrite instruction', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'out', toolCalls: [] });
+		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		const simple = await import('../../src/api/simple-factory');
+		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		plantFile(plugin, 'Notes/foo.md');
+
+		const hook = makeHook({ action: 'rewrite', prompt: 'Style this {{fileName}}.' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+		await runner.run();
+
+		// SelectionRewriter passes the (rendered) instruction as `userMessage`
+		// on the request — assert the variable was expanded.
+		const request = generateModelResponse.mock.calls[0][0];
+		expect(request.userMessage).toBe('Style this foo.md.');
+	});
+
+	it('skips when the file is missing (e.g. file-deleted trigger)', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'out', toolCalls: [] });
+		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const hook = makeHook({ action: 'rewrite', prompt: 'r' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(generateModelResponse).not.toHaveBeenCalled();
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
+	});
+});
+
+describe('HookRunner action: command', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('dispatches the configured commandId via app.commands.executeCommandById', async () => {
+		const plugin = createMockPlugin();
+		const hook = makeHook({ action: 'command', commandId: 'editor:save-file', prompt: '' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(plugin.app.commands.executeCommandById).toHaveBeenCalledTimes(1);
+		expect(plugin.app.commands.executeCommandById).toHaveBeenCalledWith('editor:save-file');
+	});
+
+	it('throws when the commandId is missing', async () => {
+		const plugin = createMockPlugin();
+		const hook = makeHook({ action: 'command', prompt: '' });
+		// commandId left undefined — the runner should refuse to fire.
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await expect(runner.run()).rejects.toThrow(/no commandId/);
+		expect(plugin.app.commands.executeCommandById).not.toHaveBeenCalled();
+	});
+
+	it('throws when executeCommandById returns false (unknown command id)', async () => {
+		const plugin = createMockPlugin();
+		plugin.app.commands.executeCommandById.mockReturnValue(false);
+		const hook = makeHook({ action: 'command', commandId: 'missing-command', prompt: '' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await expect(runner.run()).rejects.toThrow(/not found/);
 	});
 });

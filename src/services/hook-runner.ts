@@ -1,4 +1,4 @@
-import { normalizePath } from 'obsidian';
+import { App, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ToolCategory, DestructiveAction } from '../types/agent';
 import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
@@ -9,6 +9,8 @@ import { ensureFolderExists } from '../utils/file-utils';
 import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
 import { buildTurnPreamble } from '../utils/turn-preamble';
 import { AgentLoop } from '../agent/agent-loop';
+import { GeminiSummary } from '../summary';
+import { SelectionRewriter } from '../rewrite-selection';
 import { HookFireContext, renderPrompt } from './hook-manager';
 
 /**
@@ -52,11 +54,29 @@ export class HookRunner {
 	) {}
 
 	async run(isCancelled: () => boolean = () => false): Promise<string | undefined> {
+		if (isCancelled()) return undefined;
+
+		const { hook } = this.ctx;
+		switch (hook.action) {
+			case 'agent-task':
+				return this.runAgentTask(isCancelled);
+			case 'summarize':
+				return this.runSummarize();
+			case 'rewrite':
+				return this.runRewrite();
+			case 'command':
+				return this.runCommand();
+			default:
+				throw new Error(`[HookRunner] Unknown action "${hook.action}" for hook "${hook.slug}"`);
+		}
+	}
+
+	// ── agent-task action ────────────────────────────────────────────────────
+
+	private async runAgentTask(isCancelled: () => boolean): Promise<string | undefined> {
 		if (!this.plugin.sessionManager || !this.plugin.toolRegistry || !this.plugin.toolExecutionEngine) {
 			throw new Error('[HookRunner] Agent services not initialised');
 		}
-
-		if (isCancelled()) return undefined;
 
 		const { hook } = this.ctx;
 
@@ -135,6 +155,84 @@ export class HookRunner {
 		const outputPath = this.resolveOutputPath();
 		await this.writeOutput(outputPath, finalText);
 		return outputPath;
+	}
+
+	// ── summarize action ─────────────────────────────────────────────────────
+
+	private async runSummarize(): Promise<string | undefined> {
+		const file = this.resolveTriggerFile();
+		if (!file) return undefined;
+		// Existing summary feature only supports markdown — non-md fires are a
+		// silent no-op rather than a failure, so a hook with a broad pathGlob
+		// that catches images doesn't pollute the failure counter.
+		if (file.extension !== 'md') {
+			this.plugin.logger.log(
+				`[HookRunner] Hook "${this.ctx.hook.slug}" — summarize: skipping non-markdown file ${file.path}`
+			);
+			return undefined;
+		}
+		const summarizer = this.plugin.summarizer ?? new GeminiSummary(this.plugin);
+		await summarizer.summarizeFile(file);
+		// summarize writes back to frontmatter on the original file rather
+		// than producing a new output file, so there's nothing meaningful to
+		// return as an outputPath.
+		return undefined;
+	}
+
+	// ── rewrite action ───────────────────────────────────────────────────────
+
+	private async runRewrite(): Promise<string | undefined> {
+		const file = this.resolveTriggerFile();
+		if (!file) return undefined;
+		if (file.extension !== 'md') {
+			this.plugin.logger.log(
+				`[HookRunner] Hook "${this.ctx.hook.slug}" — rewrite: skipping non-markdown file ${file.path}`
+			);
+			return undefined;
+		}
+		const instructions = renderPrompt(this.ctx.hook.prompt, this.promptVars());
+		const rewriter = new SelectionRewriter(this.plugin);
+		await rewriter.rewriteFile(file, instructions);
+		return undefined;
+	}
+
+	// ── command action ───────────────────────────────────────────────────────
+
+	private async runCommand(): Promise<string | undefined> {
+		const { hook } = this.ctx;
+		const commandId = hook.commandId;
+		if (!commandId) {
+			throw new Error(`[HookRunner] Hook "${hook.slug}" has action=command but no commandId`);
+		}
+		// `executeCommandById` is part of the Obsidian Commands API. It's not
+		// in the public types but it's a documented runtime surface every
+		// plugin uses (no other way to fire a registered command by id). It
+		// returns true when the command exists and was dispatched; false when
+		// the id is unknown. We surface the false case as a hook failure so
+		// a typo doesn't silently no-op.
+		const commands = (this.plugin.app as App & { commands?: { executeCommandById?: (id: string) => boolean } })
+			.commands;
+		if (!commands || typeof commands.executeCommandById !== 'function') {
+			throw new Error('[HookRunner] Obsidian Commands API not available');
+		}
+		const dispatched = commands.executeCommandById(commandId);
+		if (!dispatched) {
+			throw new Error(`[HookRunner] Command "${commandId}" not found or refused to run`);
+		}
+		return undefined;
+	}
+
+	private resolveTriggerFile(): TFile | undefined {
+		// `file-deleted` hooks don't have a TFile to act on (the file is
+		// gone). Skip silently rather than fail. The agent-task path
+		// tolerates this because it just renders a prompt with the path
+		// string, but summarize / rewrite need the file to exist.
+		const f = this.plugin.app.vault.getAbstractFileByPath(this.ctx.filePath);
+		if (f instanceof TFile) return f;
+		this.plugin.logger.log(
+			`[HookRunner] Hook "${this.ctx.hook.slug}" — file ${this.ctx.filePath} is not present (deleted, renamed away, or never existed); skipping`
+		);
+		return undefined;
 	}
 
 	private promptVars(): Record<string, string> {
