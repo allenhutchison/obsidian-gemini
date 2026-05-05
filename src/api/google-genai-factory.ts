@@ -8,8 +8,7 @@ import type ObsidianGemini from '../main';
  */
 export function createGoogleGenAI(plugin: ObsidianGemini): GoogleGenAI {
 	const apiKey = plugin.apiKey;
-	const customBaseUrl = plugin.settings.customBaseUrl;
-
+	const customBaseUrl = plugin.settings.customBaseUrl?.trim();
 	const httpOptions: HttpOptions | undefined = customBaseUrl ? { baseUrl: customBaseUrl } : undefined;
 
 	return new GoogleGenAI({

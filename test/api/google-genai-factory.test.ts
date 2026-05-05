@@ -54,13 +54,10 @@ describe('createGoogleGenAI', () => {
 	test('does not pass httpOptions when customBaseUrl is whitespace only', () => {
 		mockPlugin.settings.customBaseUrl = '   ';
 
-		// 注意：createGoogleGenAI 直接用 settings.customBaseUrl，
-		// 空格字符串是 truthy，所以会传入。这个测试验证实际行为。
 		createGoogleGenAI(mockPlugin);
 
 		const callArg = MockedGoogleGenAI.mock.calls[0][0];
-		// 空格字符串是 truthy，httpOptions 会被设置
-		expect(callArg.httpOptions).toBeDefined();
+		expect(callArg.httpOptions).toBeUndefined();
 	});
 
 	test('returns a GoogleGenAI instance', () => {
