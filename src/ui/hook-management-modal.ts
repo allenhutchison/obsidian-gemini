@@ -317,6 +317,7 @@ export class HookManagementModal extends Modal {
 			desktopOnly: hook.desktopOnly,
 			prompt: hook.prompt,
 			commandId: hook.commandId ?? '',
+			focusFile: hook.focusFile === true,
 		};
 		this.render();
 	}
@@ -411,6 +412,22 @@ export class HookManagementModal extends Modal {
 			);
 		const commandIdEl = commandIdSetting.settingEl;
 
+		// Focus file — only shown when action=command. Editor-scoped commands
+		// run against the active workspace state; this toggle lets the hook
+		// open the trigger file before dispatching so commands like
+		// `editor:save-file` target the right note.
+		const focusFileSetting = new Setting(form)
+			.setName('Focus trigger file before dispatch')
+			.setDesc(
+				'When on, the triggering file is opened in the workspace before the command runs — useful for editor-scoped commands. When off, the command runs against whatever file is currently active. Default off.'
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.form.focusFile).onChange((v) => {
+					this.form.focusFile = v;
+				})
+			);
+		const focusFileEl = focusFileSetting.settingEl;
+
 		// Tool access — only meaningful for the agent-task action.
 		const toolsSetting = new Setting(form).setName('Tool access').setDesc('Which tool categories the agent may use.');
 		const toolsContainer = form.createDiv({ cls: 'gemini-scheduler-tools' });
@@ -450,6 +467,7 @@ export class HookManagementModal extends Modal {
 			const showPrompt = action === 'agent-task' || action === 'rewrite';
 
 			commandIdEl.style.display = showCommandId ? '' : 'none';
+			focusFileEl.style.display = showCommandId ? '' : 'none';
 			toolsSetting.settingEl.style.display = showTools ? '' : 'none';
 			toolsContainer.style.display = showTools ? '' : 'none';
 			promptSetting.settingEl.style.display = showPrompt ? '' : 'none';
@@ -618,6 +636,7 @@ export class HookManagementModal extends Modal {
 					desktopOnly: this.form.desktopOnly,
 					prompt: this.form.prompt,
 					commandId: this.form.commandId || undefined,
+					focusFile: this.form.focusFile === true ? true : undefined,
 				});
 				new Notice(`Hook "${this.editingSlug}" updated`);
 			} else {
@@ -637,6 +656,7 @@ export class HookManagementModal extends Modal {
 					enabled: this.form.enabled,
 					desktopOnly: this.form.desktopOnly,
 					commandId: this.form.commandId || undefined,
+					focusFile: this.form.focusFile === true ? true : undefined,
 				});
 				new Notice(`Hook "${this.form.slug}" created`);
 			}
@@ -668,6 +688,7 @@ export class HookManagementModal extends Modal {
 			desktopOnly: true,
 			prompt: '',
 			commandId: '',
+			focusFile: false,
 		};
 	}
 

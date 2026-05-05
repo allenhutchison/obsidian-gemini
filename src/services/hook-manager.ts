@@ -93,6 +93,15 @@ export interface Hook {
 	 * Ignored for every other action.
 	 */
 	commandId?: string;
+	/**
+	 * When `action: command` and this is true, focus the triggering file in
+	 * the workspace before dispatching the command. Lets editor-scoped
+	 * commands (`editor:save-file`, etc.) target the file that fired the
+	 * hook rather than whatever happens to be active. Defaults to false to
+	 * keep global-command hooks from jumping the user's view on every fire.
+	 * Ignored for every action other than `command`.
+	 */
+	focusFile?: boolean;
 	/** Vault path of the hook definition file. */
 	filePath: string;
 }
@@ -151,6 +160,7 @@ export interface HookCreateParams {
 	enabled?: boolean;
 	desktopOnly?: boolean;
 	commandId?: string;
+	focusFile?: boolean;
 }
 
 export type HookUpdateParams = Partial<Omit<HookCreateParams, 'slug'>>;
@@ -402,6 +412,7 @@ export class HookManager {
 			desktopOnly: params.desktopOnly ?? hook.desktopOnly,
 			prompt: params.prompt ?? hook.prompt,
 			commandId: params.commandId ?? hook.commandId ?? '',
+			focusFile: params.focusFile ?? hook.focusFile ?? false,
 		};
 
 		const content = this.serializeHook(merged);
@@ -458,6 +469,7 @@ export class HookManager {
 			desktopOnly: params.desktopOnly ?? true,
 			prompt: params.prompt,
 			commandId: params.commandId || undefined,
+			focusFile: params.focusFile === true ? true : undefined,
 			filePath,
 		};
 	}
@@ -506,10 +518,11 @@ export class HookManager {
 		if (params.outputPath) lines.push(`outputPath: ${JSON.stringify(params.outputPath)}`);
 		if (params.commandId) lines.push(`commandId: ${JSON.stringify(params.commandId)}`);
 
-		// Defaults are enabled=true, desktopOnly=true — only write when the
-		// user picked the non-default value.
+		// Defaults are enabled=true, desktopOnly=true, focusFile=false —
+		// only write when the user picked the non-default value.
 		if (params.enabled === false) lines.push('enabled: false');
 		if (params.desktopOnly === false) lines.push('desktopOnly: false');
+		if (params.focusFile === true) lines.push('focusFile: true');
 
 		// `summarize` and `command` actions don't use the prompt body, but
 		// `parseHookFile` rejects empty bodies for `agent-task` and `rewrite`.
@@ -898,6 +911,7 @@ export class HookManager {
 			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
 			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : undefined,
 			commandId,
+			focusFile: frontmatter.focusFile === true ? true : undefined,
 			enabled: frontmatter.enabled !== false,
 			desktopOnly: frontmatter.desktopOnly !== false,
 			prompt,

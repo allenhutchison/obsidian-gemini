@@ -169,6 +169,9 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 					mutator({});
 				}),
 			},
+			workspace: {
+				openLinkText: vi.fn().mockResolvedValue(undefined),
+			},
 			commands: {
 				executeCommandById: vi.fn().mockReturnValue(true),
 			},
@@ -563,5 +566,68 @@ describe('HookRunner action: command', () => {
 		const runner = new HookRunner(plugin as any, makeContext(hook));
 
 		await expect(runner.run()).rejects.toThrow(/not found/);
+	});
+
+	it('does not call openLinkText when focusFile is unset (default)', async () => {
+		const plugin = createMockPlugin();
+		const hook = makeHook({ action: 'command', commandId: 'editor:save-file', prompt: '' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(plugin.app.workspace.openLinkText).not.toHaveBeenCalled();
+		expect(plugin.app.commands.executeCommandById).toHaveBeenCalledTimes(1);
+	});
+
+	it('focuses the trigger file before dispatching when focusFile is true', async () => {
+		const plugin = createMockPlugin();
+		plantFile(plugin, 'Notes/foo.md');
+		const order: string[] = [];
+		plugin.app.workspace.openLinkText.mockImplementation(async () => {
+			order.push('focus');
+		});
+		plugin.app.commands.executeCommandById.mockImplementation(() => {
+			order.push('dispatch');
+			return true;
+		});
+
+		const hook = makeHook({
+			action: 'command',
+			commandId: 'editor:save-file',
+			focusFile: true,
+			prompt: '',
+		});
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(plugin.app.workspace.openLinkText).toHaveBeenCalledTimes(1);
+		expect(plugin.app.workspace.openLinkText).toHaveBeenCalledWith('Notes/foo.md', '', false);
+		expect(plugin.app.commands.executeCommandById).toHaveBeenCalledTimes(1);
+		// Focus must precede dispatch — otherwise the command runs against
+		// the wrong file.
+		expect(order).toEqual(['focus', 'dispatch']);
+	});
+
+	it('skips dispatch (and logs) when focusFile is true but the file is missing', async () => {
+		const plugin = createMockPlugin();
+		// getAbstractFileByPath defaults to null lookup — file is gone.
+		const hook = makeHook({
+			action: 'command',
+			commandId: 'editor:save-file',
+			focusFile: true,
+			prompt: '',
+		});
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		expect(plugin.app.workspace.openLinkText).not.toHaveBeenCalled();
+		expect(plugin.app.commands.executeCommandById).not.toHaveBeenCalled();
+		// The skip path logs at info level so the user can see why nothing
+		// happened — assert it landed.
+		expect(plugin.logger.log).toHaveBeenCalledWith(
+			expect.stringContaining('focusFile is on but Notes/foo.md is not present')
+		);
 	});
 });
