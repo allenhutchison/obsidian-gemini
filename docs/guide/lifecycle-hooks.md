@@ -6,10 +6,6 @@ Lifecycle Hooks let you trigger an AI agent run in response to Obsidian vault ev
 Hooks are disabled by default. Set **Enable lifecycle hooks** in plugin settings before any hook will fire. The default is off because vault events fire continuously and an unintentionally-broad hook can drain API quota quickly.
 :::
 
-::: info Early access
-The `agent-task` action is the only action type available today; `summarize`, `rewrite`, and `command` are tracked for follow-up PRs.
-:::
-
 ## Overview
 
 A hook is a markdown file stored in `<history-folder>/Hooks/`. The file's frontmatter controls the trigger, filter, and action; the body is the prompt template.
@@ -60,21 +56,22 @@ The user just saved {{filePath}}. Read it and write a one-paragraph summary high
 
 ### Frontmatter Fields
 
-| Field               | Required | Default                   | Description                                                                                                        |
-| ------------------- | -------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `trigger`           | Yes      | —                         | Vault event. One of: `file-created`, `file-modified`, `file-deleted`, `file-renamed`.                              |
-| `action`            | Yes      | —                         | What to do when the trigger fires. Currently only `agent-task` is supported.                                       |
-| `pathGlob`          | No       | (matches all paths)       | Glob pattern matched against the triggering file's vault path. Supports `*` and `**`.                              |
-| `frontmatterFilter` | No       | —                         | Object of key/value pairs the note's frontmatter must match for the hook to fire.                                  |
-| `debounceMs`        | No       | `5000`                    | Per-(hook, file) debounce window in milliseconds. Coalesces rapid saves into one fire.                             |
-| `maxRunsPerHour`    | No       | unlimited                 | Sliding-window rate limit per hook (across all files).                                                             |
-| `cooldownMs`        | No       | `30000`                   | After a fire completes, suppress further events on the same (hook, file) for this window. Prevents self-retrigger. |
-| `enabledTools`      | No       | `['read_only', 'skills']` | Tool categories the agent may use during the run.                                                                  |
-| `enabledSkills`     | No       | `[]`                      | Skill slugs to pre-activate in the headless session.                                                               |
-| `model`             | No       | Plugin chat model         | Override the model for this hook (e.g. `gemini-2.5-flash-lite`).                                                   |
-| `outputPath`        | No       | (no file written)         | Where to write the agent's final response. Supports `{slug}`, `{date}`, and `{fileName}` placeholders.             |
-| `enabled`           | No       | `true`                    | Set to `false` to disable the hook without deleting it.                                                            |
-| `desktopOnly`       | No       | `true`                    | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                       |
+| Field               | Required               | Default                   | Description                                                                                                        |
+| ------------------- | ---------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `trigger`           | Yes                    | —                         | Vault event. One of: `file-created`, `file-modified`, `file-deleted`, `file-renamed`.                              |
+| `action`            | Yes                    | —                         | What to do on each fire. One of: `agent-task`, `summarize`, `rewrite`, `command`. See [Actions](#actions) below.   |
+| `commandId`         | When `action: command` | —                         | Command palette id to dispatch (e.g. `editor:save-file`).                                                          |
+| `pathGlob`          | No                     | (matches all paths)       | Glob pattern matched against the triggering file's vault path. Supports `*` and `**`.                              |
+| `frontmatterFilter` | No                     | —                         | Object of key/value pairs the note's frontmatter must match for the hook to fire.                                  |
+| `debounceMs`        | No                     | `5000`                    | Per-(hook, file) debounce window in milliseconds. Coalesces rapid saves into one fire.                             |
+| `maxRunsPerHour`    | No                     | unlimited                 | Sliding-window rate limit per hook (across all files).                                                             |
+| `cooldownMs`        | No                     | `30000`                   | After a fire completes, suppress further events on the same (hook, file) for this window. Prevents self-retrigger. |
+| `enabledTools`      | No                     | `['read_only', 'skills']` | Tool categories the agent may use during the run.                                                                  |
+| `enabledSkills`     | No                     | `[]`                      | Skill slugs to pre-activate in the headless session.                                                               |
+| `model`             | No                     | Plugin chat model         | Override the model for this hook (e.g. `gemini-2.5-flash-lite`).                                                   |
+| `outputPath`        | No                     | (no file written)         | Where to write the agent's final response. Supports `{slug}`, `{date}`, and `{fileName}` placeholders.             |
+| `enabled`           | No                     | `true`                    | Set to `false` to disable the hook without deleting it.                                                            |
+| `desktopOnly`       | No                     | `true`                    | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                       |
 
 ### Prompt Template Variables
 
@@ -86,6 +83,26 @@ The body of the hook file is a prompt template. The following placeholders are s
 | `{{fileName}}` | File name including extension.                              |
 | `{{trigger}}`  | The trigger that fired (e.g. `file-modified`).              |
 | `{{oldPath}}`  | Previous path on `file-renamed`; empty otherwise.           |
+
+## Actions
+
+Each hook does one of four things on fire. The form's **Action** dropdown switches the visible inputs to match.
+
+### `agent-task` (default)
+
+Run a headless agent session with the prompt body as the instruction. Honours `enabledTools`, `enabledSkills`, `model`, and writes the model's final response to `outputPath` if configured. This is the most flexible action — the agent can call tools, read other files, run skills, etc.
+
+### `summarize`
+
+Run the existing **Summarize Active File** feature against the triggering file, but without needing it to be active. The summary is written into the file's frontmatter under the `summary` key (configurable via `summaryFrontmatterKey` in plugin settings). The prompt body is ignored. Non-markdown triggers are silently skipped so a broad `pathGlob` that catches images doesn't pollute the failure counter.
+
+### `rewrite`
+
+Run a full-file rewrite using the prompt body as the rewrite instruction. The triggering file's content is sent to the model with the instruction; the model's response replaces the file. Template variables in the prompt body are substituted before sending — e.g. `Style this {{fileName}} as terse meeting notes.` Non-markdown triggers are silently skipped.
+
+### `command`
+
+Execute a registered command palette command by id. The hook frontmatter must include `commandId:` (e.g. `editor:save-file`, `gemini-scribe-summarize-active-file`); the prompt body is ignored. The command runs in whatever context Obsidian gives it — most commands depend on the active file/editor, so chaining a hook to a command that operates on the active file is best when paired with a trigger that means the file is already focused (e.g. `file-modified`). If the command id is unknown, the hook records a failure rather than silently no-op.
 
 ## Safety Features
 
@@ -169,6 +186,45 @@ enabledSkills:
 
 The user updated meeting notes at {{filePath}}. Use the meeting-extractor skill to extract action items and add them to the user's task list.
 ```
+
+### Auto-summarize on save
+
+```markdown
+---
+trigger: file-modified
+pathGlob: 'Articles/**/*.md'
+debounceMs: 30000
+maxRunsPerHour: 6
+action: summarize
+---
+```
+
+The body is ignored — the summarize action calls the existing summary feature against the triggering file and writes the result into its frontmatter.
+
+### Reformat drafts on save
+
+```markdown
+---
+trigger: file-modified
+pathGlob: 'Drafts/**/*.md'
+debounceMs: 60000
+action: rewrite
+---
+
+Tighten the prose in {{fileName}}: remove filler words, hedging, and passive voice. Preserve all headings, links, and code blocks.
+```
+
+### Save the active file via a command
+
+```markdown
+---
+trigger: file-modified
+action: command
+commandId: editor:save-file
+---
+```
+
+A loop-trap example more than a useful one — but it shows how `command` dispatches a registered command by id.
 
 ## Limitations
 
