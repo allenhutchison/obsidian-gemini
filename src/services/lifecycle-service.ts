@@ -32,6 +32,7 @@ import { UpdateNotificationModal } from '../ui/update-notification-modal';
 import { BackgroundTaskManager } from './background-task-manager';
 import { BackgroundStatusBar } from './background-status-bar';
 import { ScheduledTaskManager } from './scheduled-task-manager';
+import { HookManager } from './hook-manager';
 
 // @ts-ignore
 import agentsMemoryTemplateContent from '../../prompts/agentsMemoryTemplate.hbs';
@@ -96,6 +97,14 @@ export class LifecycleService {
 			}
 			await plugin.scheduledTaskManager.initialize({ refresh: true });
 			plugin.scheduledTaskManager.start();
+		}
+
+		// Refresh the hook manager so a settings change to historyFolder or
+		// hooksEnabled is applied without a plugin restart. initialize() with
+		// refresh: true tears down and re-registers vault listeners against
+		// the freshly-loaded folder.
+		if (plugin.app.workspace.layoutReady && plugin.hookManager) {
+			await plugin.hookManager.initialize({ refresh: true });
 		}
 	}
 
@@ -169,6 +178,13 @@ export class LifecycleService {
 			await this.handleCatchUp();
 		}
 
+		// Initialise the hook manager. When hooksEnabled is false the
+		// initialize() call short-circuits without creating folders or
+		// registering vault listeners.
+		if (plugin.hookManager) {
+			await plugin.hookManager.initialize();
+		}
+
 		// Check for version updates and show notification
 		await this.checkForUpdates();
 	}
@@ -188,6 +204,8 @@ export class LifecycleService {
 		plugin.backgroundStatusBar = null;
 		plugin.scheduledTaskManager?.destroy();
 		plugin.scheduledTaskManager = null;
+		plugin.hookManager?.destroy();
+		plugin.hookManager = null;
 		plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
 		plugin.toolExecutionLogger?.destroy();
@@ -384,6 +402,12 @@ export class LifecycleService {
 		// Scheduled task manager is created once and persists alongside the background infrastructure.
 		if (!plugin.scheduledTaskManager) {
 			plugin.scheduledTaskManager = new ScheduledTaskManager(plugin);
+		}
+
+		// Hook manager is created once and persists; it is a no-op when
+		// settings.hooksEnabled is false (the default for new installs).
+		if (!plugin.hookManager) {
+			plugin.hookManager = new HookManager(plugin);
 		}
 
 		plugin.prompts = new GeminiPrompts(plugin);

@@ -217,7 +217,7 @@ The Explain Selection feature lets you get AI-powered explanations of any select
 ## How to Use Explain {#how-to-use-explain}
 
 1. **Select text** in your document
-2. **Right-click** and choose "Explain Selection"
+2. **Right-click** and choose "Gemini Scribe: Apply Prompt..."
 3. **Pick a prompt** from the selection modal (prompts tagged with `gemini-scribe/selection-prompt`)
 4. **View the response** in a modal window
 5. **Choose an action**:
@@ -307,7 +307,7 @@ The Ask about Selection feature lets you ask any question about selected text. T
 ## How to Use Ask {#how-to-use-ask}
 
 1. **Select text** in your document
-2. **Right-click** and choose "Ask about Selection"
+2. **Right-click** and choose "Gemini Scribe: Ask Question..."
 3. **Type your question** in the modal
 4. **Press Enter** or click "Ask"
 5. **View the response** and choose an action:

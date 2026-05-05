@@ -1,4 +1,19 @@
 {
+	"4.8.0": {
+		"title": "✨ Gemini Scribe 4.8 - Scheduled & Background Tasks, Ollama, Activity Modal",
+		"highlights": [
+			"⏰ Scheduled tasks — run agent tasks on a cron, time-of-day, or day-of-week schedule with full management UI",
+			"🌙 Missed-run catch-up — tasks that should have run while Obsidian was closed surface on startup for review",
+			"🛰️ Background tasks — deep research and image generation now run in the background with output consolidated under [state-folder]/Background-Tasks/",
+			"📊 Unified activity modal — Background Tasks and RAG status share a single tabbed view",
+			"🦙 Ollama provider — point the plugin at a local Ollama server for offline, local-model chat",
+			"🛑 Runaway-loop abort — repeated tool-loop detections within a turn now abort the turn with a clear notice instead of churning",
+			"🧪 Eval harness — new harness for agent-loop changes with multi-hop retrieval, loop-trap tasks, pass^k reliability, and per-run model overrides",
+			"📱 Mobile fixes — agent view layout on iOS and CatchUpModal now opens directly on mobile",
+			"🛠️ Headless agent loop — AgentLoop extracted from the agent view so scheduled and background runners share the same execution engine"
+		],
+		"details": "This release introduces scheduled tasks: define agent tasks with cron, time-of-day, or day-of-week schedules and manage them with a dedicated UI. If Obsidian was closed when a run was due, a catch-up modal surfaces missed runs on startup. Long-running operations like deep research and image generation now run as background tasks, with all their output consolidated under [state-folder]/Background-Tasks/, and a unified activity modal gives you a single place to monitor background work alongside RAG indexing status. Ollama joins as a provider option for fully local chat. The runaway-loop detector now escalates to a per-turn abort with a user-visible notice. Under the hood, AgentLoop has been extracted so scheduled and background runners share the same engine as the UI, and a new eval harness with multi-hop, loop-trap, and pass^k reliability checks helps verify agent-loop changes. Includes mobile fixes for iOS layout and the catch-up modal, plus a migration of the test runner from ts-jest to Vitest."
+	},
 	"4.7.0": {
 		"title": "✨ Gemini Scribe 4.7 - Projects, Session Memory & File Shelf",
 		"highlights": [
