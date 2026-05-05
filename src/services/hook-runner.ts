@@ -219,7 +219,10 @@ export class HookRunner {
 		if (hook.focusFile) {
 			const file = this.resolveTriggerFile();
 			if (!file) {
-				this.plugin.logger.log(
+				// Warn-level: the user explicitly opted into focusFile, so a
+				// silent skip would mask why the command didn't fire. Per
+				// AGENTS.md, logger.log only surfaces in debug mode.
+				this.plugin.logger.warn(
 					`[HookRunner] Hook "${hook.slug}" — command: focusFile is on but ${this.ctx.filePath} is not present; skipping dispatch`
 				);
 				return undefined;

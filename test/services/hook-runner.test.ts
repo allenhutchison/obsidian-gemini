@@ -624,9 +624,9 @@ describe('HookRunner action: command', () => {
 
 		expect(plugin.app.workspace.openLinkText).not.toHaveBeenCalled();
 		expect(plugin.app.commands.executeCommandById).not.toHaveBeenCalled();
-		// The skip path logs at info level so the user can see why nothing
-		// happened — assert it landed.
-		expect(plugin.logger.log).toHaveBeenCalledWith(
+		// Skip path uses warn so the user sees why nothing happened even
+		// without debug mode enabled (logger.log is debug-gated per AGENTS.md).
+		expect(plugin.logger.warn).toHaveBeenCalledWith(
 			expect.stringContaining('focusFile is on but Notes/foo.md is not present')
 		);
 	});
