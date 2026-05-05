@@ -436,6 +436,98 @@ describe('HookRunner action: rewrite', () => {
 		expect(generateModelResponse).not.toHaveBeenCalled();
 		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
 	});
+
+	it('refuses to write back when the file mtime advanced during the model call', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'rewritten', toolCalls: [] });
+		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		const simple = await import('../../src/api/simple-factory');
+		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		// Plant the trigger file with an initial mtime, then on the live
+		// re-fetch return a fresher TFile-shaped instance so the
+		// `instanceof TFile` guard in rewriteFile passes.
+		const file = plantFile(plugin, 'Notes/foo.md');
+		(file as any).stat = { mtime: 1000 };
+		const liveFile = plantFile(plugin, 'Notes/foo.md');
+		(liveFile as any).stat = { mtime: 2000 };
+		plugin.app.vault.read = vi.fn().mockResolvedValue('original');
+		plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValueOnce(file).mockReturnValue(liveFile);
+
+		const hook = makeHook({ action: 'rewrite', prompt: 'r' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await expect(runner.run()).rejects.toThrow(/modified during rewrite/);
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('aborts the write when the file is deleted during the model call', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'rewritten', toolCalls: [] });
+		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		const simple = await import('../../src/api/simple-factory');
+		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const file = plantFile(plugin, 'Notes/foo.md');
+		(file as any).stat = { mtime: 1000 };
+		plugin.app.vault.read = vi.fn().mockResolvedValue('original');
+		// Live re-fetch returns null (file deleted).
+		plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValueOnce(file).mockReturnValue(null);
+
+		const hook = makeHook({ action: 'rewrite', prompt: 'r' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await expect(runner.run()).rejects.toThrow(/removed during rewrite/);
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
+	});
+});
+
+describe('HookRunner cancellation threading', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('summarize: bails out before invoking the summarizer when cancelled', async () => {
+		const plugin = createMockPlugin();
+		const summarizeFile = vi.fn().mockResolvedValue('s');
+		plugin.summarizer = { summarizeFile };
+		plantFile(plugin, 'Notes/foo.md');
+
+		const hook = makeHook({ action: 'summarize' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run(() => true);
+
+		expect(summarizeFile).not.toHaveBeenCalled();
+	});
+
+	it('rewrite: bails out before reading or modifying when cancelled', async () => {
+		const generateModelResponse = vi.fn();
+		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		const simple = await import('../../src/api/simple-factory');
+		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		plantFile(plugin, 'Notes/foo.md');
+
+		const hook = makeHook({ action: 'rewrite', prompt: 'r' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run(() => true);
+
+		expect(generateModelResponse).not.toHaveBeenCalled();
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('command: bails out before dispatching when cancelled', async () => {
+		const plugin = createMockPlugin();
+		const hook = makeHook({ action: 'command', commandId: 'editor:save-file', prompt: '' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run(() => true);
+
+		expect(plugin.app.commands.executeCommandById).not.toHaveBeenCalled();
+	});
 });
 
 describe('HookRunner action: command', () => {

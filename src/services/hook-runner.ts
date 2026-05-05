@@ -61,11 +61,11 @@ export class HookRunner {
 			case 'agent-task':
 				return this.runAgentTask(isCancelled);
 			case 'summarize':
-				return this.runSummarize();
+				return this.runSummarize(isCancelled);
 			case 'rewrite':
-				return this.runRewrite();
+				return this.runRewrite(isCancelled);
 			case 'command':
-				return this.runCommand();
+				return this.runCommand(isCancelled);
 			default:
 				throw new Error(`[HookRunner] Unknown action "${hook.action}" for hook "${hook.slug}"`);
 		}
@@ -159,7 +159,8 @@ export class HookRunner {
 
 	// ── summarize action ─────────────────────────────────────────────────────
 
-	private async runSummarize(): Promise<string | undefined> {
+	private async runSummarize(isCancelled: () => boolean): Promise<string | undefined> {
+		if (isCancelled()) return undefined;
 		const file = this.resolveTriggerFile();
 		if (!file) return undefined;
 		// Existing summary feature only supports markdown — non-md fires are a
@@ -171,6 +172,7 @@ export class HookRunner {
 			);
 			return undefined;
 		}
+		if (isCancelled()) return undefined;
 		const summarizer = this.plugin.summarizer ?? new GeminiSummary(this.plugin);
 		await summarizer.summarizeFile(file);
 		// summarize writes back to frontmatter on the original file rather
@@ -181,7 +183,8 @@ export class HookRunner {
 
 	// ── rewrite action ───────────────────────────────────────────────────────
 
-	private async runRewrite(): Promise<string | undefined> {
+	private async runRewrite(isCancelled: () => boolean): Promise<string | undefined> {
+		if (isCancelled()) return undefined;
 		const file = this.resolveTriggerFile();
 		if (!file) return undefined;
 		if (file.extension !== 'md') {
@@ -190,6 +193,7 @@ export class HookRunner {
 			);
 			return undefined;
 		}
+		if (isCancelled()) return undefined;
 		const instructions = renderPrompt(this.ctx.hook.prompt, this.promptVars());
 		const rewriter = new SelectionRewriter(this.plugin);
 		await rewriter.rewriteFile(file, instructions);
@@ -198,7 +202,8 @@ export class HookRunner {
 
 	// ── command action ───────────────────────────────────────────────────────
 
-	private async runCommand(): Promise<string | undefined> {
+	private async runCommand(isCancelled: () => boolean): Promise<string | undefined> {
+		if (isCancelled()) return undefined;
 		const { hook } = this.ctx;
 		const commandId = hook.commandId;
 		if (!commandId) {
