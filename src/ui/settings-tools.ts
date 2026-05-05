@@ -11,6 +11,7 @@ import {
 	DEFAULT_TOOL_POLICY,
 } from '../types/tool-policy';
 import { getErrorMessage } from '../utils/error-utils';
+import { createCollapsibleSection } from './settings-helpers';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderToolSettings(
@@ -19,10 +20,8 @@ export async function renderToolSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	// Tool Execution Settings
-	new Setting(containerEl).setName('Tool Execution').setHeading();
-
-	new Setting(containerEl)
+	const executionEl = createCollapsibleSection(plugin, containerEl, 'Tool Execution', 'tool-execution');
+	new Setting(executionEl)
 		.setName('Stop on tool error')
 		.setDesc(
 			'Stop agent execution when a tool call fails. If disabled, the agent will continue executing subsequent tools.'
@@ -34,15 +33,11 @@ export async function renderToolSettings(
 			})
 		);
 
-	// Tool Permissions Settings
-	new Setting(containerEl).setName('Tool Permissions').setHeading();
+	const permissionsEl = createCollapsibleSection(plugin, containerEl, 'Tool Permissions', 'tool-permissions');
+	await createToolPermissionsSettings(permissionsEl, plugin, app, context);
 
-	await createToolPermissionsSettings(containerEl, plugin, app, context);
-
-	// Tool Loop Detection Settings
-	new Setting(containerEl).setName('Tool Loop Detection').setHeading();
-
-	new Setting(containerEl)
+	const loopEl = createCollapsibleSection(plugin, containerEl, 'Tool Loop Detection', 'tool-loop-detection');
+	new Setting(loopEl)
 		.setName('Enable loop detection')
 		.setDesc('Prevent the AI from repeatedly calling the same tool with identical parameters')
 		.addToggle((toggle) =>
@@ -54,7 +49,7 @@ export async function renderToolSettings(
 		);
 
 	if (plugin.settings.loopDetectionEnabled) {
-		new Setting(containerEl)
+		new Setting(loopEl)
 			.setName('Loop threshold')
 			.setDesc('Number of identical tool calls before considering it a loop (default: 3)')
 			.addSlider((slider) =>
@@ -68,7 +63,7 @@ export async function renderToolSettings(
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(loopEl)
 			.setName('Time window (seconds)')
 			.setDesc('Time window to check for repeated calls (default: 30 seconds)')
 			.addSlider((slider) =>

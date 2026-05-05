@@ -2,6 +2,7 @@ import type ObsidianGemini from '../main';
 import { App, Setting, Notice, setIcon } from 'obsidian';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 import { getErrorMessage } from '../utils/error-utils';
+import { createCollapsibleSection } from './settings-helpers';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderMCPSettings(
@@ -21,12 +22,12 @@ export async function renderMCPSettings(
 }
 
 async function createMCPSettings(
-	containerEl: HTMLElement,
+	outerContainerEl: HTMLElement,
 	plugin: ObsidianGemini,
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	new Setting(containerEl).setName('MCP Servers').setHeading();
+	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'MCP Servers', 'mcp-servers');
 
 	new Setting(containerEl)
 		.setName('Enable MCP servers')

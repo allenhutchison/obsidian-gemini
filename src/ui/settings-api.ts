@@ -1,5 +1,6 @@
 import type ObsidianGemini from '../main';
 import { Setting, Notice, debounce } from 'obsidian';
+import { createCollapsibleSection } from './settings-helpers';
 import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
@@ -30,8 +31,22 @@ export async function renderApiSettings(
 		true
 	);
 
-	// File Logging
-	new Setting(containerEl)
+	const promptsEl = createCollapsibleSection(plugin, containerEl, 'Custom Prompts', 'custom-prompts');
+	new Setting(promptsEl)
+		.setName('Allow system prompt override')
+		.setDesc(
+			'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
+		)
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
+				plugin.settings.allowSystemPromptOverride = value;
+				await plugin.saveSettings();
+			})
+		);
+
+	const apiEl = createCollapsibleSection(plugin, containerEl, 'API Configuration', 'api-config');
+
+	new Setting(apiEl)
 		.setName('Log to file')
 		.setDesc(
 			'Write log entries to a file in the plugin state folder. ' +
@@ -45,25 +60,7 @@ export async function renderApiSettings(
 			})
 		);
 
-	// Custom Prompts Advanced Settings
-	new Setting(containerEl).setName('Custom Prompts').setHeading();
-
-	new Setting(containerEl)
-		.setName('Allow system prompt override')
-		.setDesc(
-			'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
-				plugin.settings.allowSystemPromptOverride = value;
-				await plugin.saveSettings();
-			})
-		);
-
-	// API Configuration
-	new Setting(containerEl).setName('API Configuration').setHeading();
-
-	new Setting(containerEl)
+	new Setting(apiEl)
 		.setName('Maximum Retries')
 		.setDesc('Maximum number of retries when a model request fails.')
 		.addText((text) =>
@@ -79,7 +76,7 @@ export async function renderApiSettings(
 				})
 		);
 
-	new Setting(containerEl)
+	new Setting(apiEl)
 		.setName('Initial Backoff Delay (ms)')
 		.setDesc('Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.')
 		.addText((text) =>
@@ -95,11 +92,8 @@ export async function renderApiSettings(
 				})
 		);
 
-	// Create temperature setting with dynamic ranges
-	await createTemperatureSetting(containerEl, plugin);
-
-	// Create topP setting with dynamic ranges
-	await createTopPSetting(containerEl, plugin);
+	await createTemperatureSetting(apiEl, plugin);
+	await createTopPSetting(apiEl, plugin);
 }
 
 async function createTemperatureSetting(containerEl: HTMLElement, plugin: ObsidianGemini): Promise<void> {

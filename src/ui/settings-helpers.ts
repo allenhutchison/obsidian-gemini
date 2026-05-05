@@ -3,6 +3,70 @@ import type ObsidianGemini from '../main';
 import { ObsidianGeminiSettings } from '../main';
 import { GEMINI_MODELS } from '../models';
 
+/**
+ * Render a collapsible settings section using a native `<details>` element.
+ * Returns the inner content element; pass it as the container for any
+ * `new Setting(...)` calls that belong inside the section.
+ *
+ * Expand state is persisted in `plugin.settings.expandedSettingsSections`
+ * (array of section ids) so collapsed/expanded state survives a reload.
+ *
+ * Uses plain DOM APIs (not Obsidian's `createEl`/`createDiv` extensions) so
+ * the helper is callable in jsdom-based unit tests with a stub container.
+ * If `containerEl` lacks `appendChild` (e.g. a test fixture passes `{}`), the
+ * helper falls back to returning a detached div so tests that only exercise
+ * the inner settings still work.
+ */
+export function createCollapsibleSection(
+	plugin: ObsidianGemini,
+	containerEl: HTMLElement,
+	title: string,
+	id: string
+): HTMLElement {
+	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
+		// Stub container in unit tests — return a detached div so callers can
+		// keep passing it to `new Setting(...)` without DOM side-effects.
+		return typeof document !== 'undefined' ? document.createElement('div') : (containerEl as HTMLElement);
+	}
+
+	const expanded = plugin.settings.expandedSettingsSections ?? [];
+	const isOpen = expanded.includes(id);
+
+	const details = document.createElement('details');
+	details.classList.add('gemini-settings-section');
+	details.dataset.sectionId = id;
+	if (isOpen) details.setAttribute('open', '');
+	containerEl.appendChild(details);
+
+	const summary = document.createElement('summary');
+	summary.classList.add('gemini-settings-section-summary');
+	const titleEl = document.createElement('span');
+	titleEl.classList.add('gemini-settings-section-title');
+	titleEl.textContent = title;
+	summary.appendChild(titleEl);
+	details.appendChild(summary);
+
+	const content = document.createElement('div');
+	content.classList.add('gemini-settings-section-content');
+	details.appendChild(content);
+
+	details.addEventListener('toggle', async () => {
+		const current = plugin.settings.expandedSettingsSections ?? [];
+		const next = details.open ? Array.from(new Set([...current, id])) : current.filter((x) => x !== id);
+		// Skip the save if nothing actually changed (e.g. a programmatic toggle that
+		// fires after setAttribute('open') without altering the user's persisted set).
+		if (next.length === current.length && next.every((x, i) => x === current[i])) return;
+		plugin.settings.expandedSettingsSections = next;
+		try {
+			await plugin.saveSettings();
+		} catch (error) {
+			plugin.logger.error('Failed to save expandedSettingsSections:', error);
+		}
+	});
+
+	return content;
+}
+
 export async function selectModelSetting(
 	containerEl: HTMLElement,
 	plugin: ObsidianGemini,

@@ -1,10 +1,11 @@
 import type ObsidianGemini from '../main';
 import { Setting } from 'obsidian';
+import { createCollapsibleSection } from './settings-helpers';
 
 export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemini): void {
-	new Setting(containerEl).setName('UI Settings').setHeading();
+	const sectionEl = createCollapsibleSection(plugin, containerEl, 'UI Settings', 'ui');
 
-	new Setting(containerEl)
+	new Setting(sectionEl)
 		.setName('Enable Streaming')
 		.setDesc('Stream AI responses word-by-word as they are generated for a more interactive chat experience.')
 		.addToggle((toggle) =>
@@ -14,7 +15,7 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 			})
 		);
 
-	new Setting(containerEl)
+	new Setting(sectionEl)
 		.setName('Always show diff view for file writes')
 		.setDesc(
 			'Automatically open a diff view when the agent proposes file changes, instead of requiring a button click.'
@@ -26,7 +27,7 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 			})
 		);
 
-	new Setting(containerEl)
+	new Setting(sectionEl)
 		.setName('Log tool execution to session history')
 		.setDesc(
 			'Append a summary of each tool execution to the session history file for auditing. Requires plugin reload to take effect.'
@@ -38,7 +39,7 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 			})
 		);
 
-	new Setting(containerEl)
+	new Setting(sectionEl)
 		.setName('Auto-run missed scheduled tasks on startup')
 		.setDesc(
 			'When enabled, tasks that were missed while Obsidian was closed (and have "Run if missed" set) are submitted automatically on startup without showing the approval modal.'

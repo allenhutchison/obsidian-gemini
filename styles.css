@@ -5199,3 +5199,61 @@ If your plugin does not need CSS, delete this file.
 	padding-top: 12px;
 	border-top: 1px solid var(--background-modifier-border);
 }
+
+/* Collapsible settings sections (issue #430).
+   Native <details> wrapped to look like a heading row that toggles its content. */
+.gemini-settings-section {
+	border-top: 1px solid var(--background-modifier-border);
+	margin-top: 0.75em;
+}
+
+.gemini-settings-section:first-of-type {
+	border-top: none;
+	margin-top: 0;
+}
+
+.gemini-settings-section-summary {
+	cursor: pointer;
+	user-select: none;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: 0.75em 0 0.5em;
+	font-size: var(--h4-size, 1.1em);
+	font-weight: var(--h4-weight, 600);
+	color: var(--text-normal);
+}
+
+/* Hide default disclosure marker — we render our own chevron. */
+.gemini-settings-section-summary::-webkit-details-marker {
+	display: none;
+}
+
+.gemini-settings-section-summary::before {
+	content: '';
+	display: inline-block;
+	width: 0;
+	height: 0;
+	border-top: 5px solid transparent;
+	border-bottom: 5px solid transparent;
+	border-left: 6px solid var(--text-muted);
+	transition: transform 0.15s ease;
+	flex-shrink: 0;
+}
+
+.gemini-settings-section[open] > .gemini-settings-section-summary::before {
+	transform: rotate(90deg);
+}
+
+.gemini-settings-section-summary:hover {
+	color: var(--text-accent);
+}
+
+.gemini-settings-section-summary:hover::before {
+	border-left-color: var(--text-accent);
+}
+
+.gemini-settings-section-content {
+	padding-bottom: 0.5em;
+}

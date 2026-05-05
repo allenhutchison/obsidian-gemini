@@ -2,6 +2,8 @@
 
 This document provides a comprehensive reference for all Obsidian Gemini Scribe settings.
 
+The settings tab is organised into collapsible sections (▶ collapsed, ▼ expanded). Click a section header to toggle it; the expand/collapse state of each section is remembered between sessions in the `expandedSettingsSections` setting. All sections are collapsed by default. Advanced sections (Custom Prompts, API Configuration, Tool Execution, Tool Permissions, Tool Loop Detection, MCP Servers, Vault Search Index) only appear after clicking **Show Advanced Settings**.
+
 ## Table of Contents
 
 - [Basic Settings](#basic-settings)
@@ -172,6 +174,14 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Description**: Subscribe to vault events (file created/modified/deleted/renamed) and dispatch them to hook definitions in `<history-folder>/Hooks/`. Each matching event fires a headless agent run with debounce, rate-limit, and loop-prevention guards.
 - **Why opt-in**: Vault events fire continuously; an unintentionally-broad hook can drain API quota quickly. The default is off so users opt in deliberately.
 - **See also**: [Lifecycle Hooks](/guide/lifecycle-hooks)
+
+### Expanded Settings Sections
+
+- **Setting**: `expandedSettingsSections`
+- **Type**: `string[]`
+- **Default**: `[]`
+- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `general`, `scheduled-tasks`, `lifecycle-hooks`, `session-history`, `ui`, `context`, `custom-prompts`, `api-config`, `tool-execution`, `tool-permissions`, `tool-loop-detection`, `mcp-servers`, `rag`.
+- **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
 ## Context Management
 
