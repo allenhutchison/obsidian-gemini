@@ -139,11 +139,18 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 	 * by lifecycle hook runners and other non-interactive callers that don't
 	 * have a focused editor on the target file.
 	 *
+	 * Mid-request edit safety: model calls take seconds, and the user can
+	 * keep editing while the request is in flight. Capture the file's
+	 * `stat.mtime` before the model call and refuse to write if the file
+	 * has changed on disk meanwhile — better to fail loud than overwrite a
+	 * newer save with a rewrite based on stale text.
+	 *
 	 * Throws on read/model/write failures so callers can record the error
 	 * their own way; no Notice is shown.
 	 */
 	async rewriteFile(file: TFile, instructions: string): Promise<string> {
 		const fileContent = await this.plugin.app.vault.read(file);
+		const baselineMtime = file.stat?.mtime;
 
 		const prompt = this.buildFullFilePrompt({
 			fileContent,
@@ -161,7 +168,22 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 		const result = await modelApi.generateModelResponse(request);
 		const rewritten = result.markdown.trim();
 
-		await this.plugin.app.vault.modify(file, rewritten);
+		// Re-fetch the live file reference so we see writes that landed
+		// during the model call. If the file is gone, abort cleanly. If the
+		// mtime advanced past our baseline, abort to preserve the newer
+		// version — the alternative is silently clobbering the user.
+		const live = this.plugin.app.vault.getAbstractFileByPath(file.path);
+		if (!(live instanceof TFile)) {
+			throw new Error(`[SelectionRewriter] File "${file.path}" was removed during rewrite — discarding result`);
+		}
+		const liveMtime = live.stat?.mtime;
+		if (baselineMtime !== undefined && liveMtime !== undefined && liveMtime > baselineMtime) {
+			throw new Error(
+				`[SelectionRewriter] File "${file.path}" was modified during rewrite (mtime ${baselineMtime} → ${liveMtime}); aborting to avoid clobbering newer content`
+			);
+		}
+
+		await this.plugin.app.vault.modify(live, rewritten);
 		return rewritten;
 	}
 }
