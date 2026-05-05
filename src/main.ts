@@ -54,6 +54,8 @@ export interface ObsidianGeminiSettings {
 	provider: ModelProvider;
 	/** Base URL for the Ollama HTTP API. Only used when provider === 'ollama'. */
 	ollamaBaseUrl: string;
+	/** Optional custom base URL to override the default Google Gemini API endpoint. */
+	customBaseUrl: string;
 	apiKeySecretName: string;
 	chatModelName: string;
 	summaryModelName: string;
@@ -103,6 +105,7 @@ export interface ObsidianGeminiSettings {
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	provider: 'gemini',
 	ollamaBaseUrl: 'http://localhost:11434',
+	customBaseUrl: '',
 	apiKeySecretName: '',
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),

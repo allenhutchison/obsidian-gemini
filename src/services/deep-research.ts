@@ -1,6 +1,6 @@
+import { createGoogleGenAI } from '../api/google-genai-factory';
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { GoogleGenAI } from '@google/genai';
 import { ResearchManager, ReportGenerator, Interaction } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
@@ -58,10 +58,7 @@ export class DeepResearchService {
 		}
 
 		if (!this.researchManager) {
-			const genAI = new GoogleGenAI({
-				apiKey: this.plugin.apiKey,
-			});
-
+			const genAI = createGoogleGenAI(this.plugin);
 			// WORKAROUND (as of @google/genai v0.14.x): The GoogleGenAI interactions getter creates
 			// a new client that ignores the fetch option passed to the constructor. We must manually
 			// inject our proxyFetch into the generated interactions client to ensure CORS requests

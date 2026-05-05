@@ -19,6 +19,7 @@ export class ImageGeneration {
 				temperature: plugin.settings.temperature,
 				topP: plugin.settings.topP,
 				streamingEnabled: false,
+				customBaseUrl: plugin.settings.customBaseUrl || undefined,
 			},
 			this.prompts,
 			plugin

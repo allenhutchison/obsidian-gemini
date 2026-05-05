@@ -236,6 +236,17 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 
 ### API Configuration
 
+#### Custom API Endpoint
+
+- **Setting**: `customBaseUrl`
+- **Type**: String
+- **Default**: `""` (empty)
+- **Only applies when**: Provider is `gemini`
+- **Description**: Overrides the default Google API base URL for all SDK calls. Use this to route requests through a corporate proxy, local gateway, or regional mirror.
+- **Example**: `https://my-proxy.example.com`
+- **Scope**: Applies to all Google API call sites in the plugin (chat, search, web fetch, image generation, RAG indexing, deep research, context management).
+- **Note**: Leave blank to use the official Google endpoint. Invalid URLs are rejected immediately with a validation error.
+
 #### Maximum Retries
 
 - **Setting**: `maxRetries`

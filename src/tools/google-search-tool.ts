@@ -1,8 +1,8 @@
+import { createGoogleGenAI } from '../api/google-genai-factory';
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
-import { GoogleGenAI } from '@google/genai';
 import { getDefaultModelForRole } from '../models';
 
 /**
@@ -49,8 +49,7 @@ export class GoogleSearchTool implements Tool {
 			}
 
 			// Create a separate model instance with Google Search enabled
-			const genAI = new GoogleGenAI({ apiKey: plugin.apiKey });
-
+			const genAI = createGoogleGenAI(plugin);
 			// Use the models API similar to gemini-api-new.ts
 			const modelToUse = plugin.settings.chatModelName || getDefaultModelForRole('chat');
 			const config = {

@@ -4,7 +4,6 @@
  * This replaces the complex API abstraction layer with a single,
  * streamlined implementation powered by @google/genai.
  */
-
 import { GoogleGenAI, Content, Part, GenerateContentParameters, GenerateContentResponse } from '@google/genai';
 import {
 	ModelApi,
@@ -34,6 +33,7 @@ interface PartWithThought extends Part {
 export interface GeminiClientConfig {
 	apiKey: string;
 	model?: string;
+	customBaseUrl?: string;
 	temperature?: number;
 	topP?: number;
 	maxOutputTokens?: number;
@@ -60,7 +60,8 @@ export class GeminiClient implements ModelApi {
 		};
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
-		this.ai = new GoogleGenAI({ apiKey: config.apiKey });
+		const httpOptions = config.customBaseUrl ? { baseUrl: config.customBaseUrl } : undefined;
+		this.ai = new GoogleGenAI({ apiKey: config.apiKey, ...(httpOptions && { httpOptions }) });
 	}
 
 	/**
