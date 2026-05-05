@@ -630,4 +630,34 @@ describe('HookRunner action: command', () => {
 			expect.stringContaining('focusFile is on but Notes/foo.md is not present')
 		);
 	});
+
+	it('skips dispatch when cancellation flips true between focus and command dispatch', async () => {
+		// Locks in the isCancelled re-check that sits between openLinkText
+		// and executeCommandById in runCommand. Without that guard a
+		// cancellation that lands during the focus await would still fire
+		// the command.
+		const plugin = createMockPlugin();
+		plantFile(plugin, 'Notes/foo.md');
+
+		let cancelled = false;
+		// Simulate cancellation arriving while the focus await is pending.
+		plugin.app.workspace.openLinkText.mockImplementation(async () => {
+			cancelled = true;
+		});
+
+		const hook = makeHook({
+			action: 'command',
+			commandId: 'editor:save-file',
+			focusFile: true,
+			prompt: '',
+		});
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run(() => cancelled);
+
+		// Focus completed before cancellation flipped, so it should have
+		// been called once. Dispatch must NOT have happened.
+		expect(plugin.app.workspace.openLinkText).toHaveBeenCalledTimes(1);
+		expect(plugin.app.commands.executeCommandById).not.toHaveBeenCalled();
+	});
 });
