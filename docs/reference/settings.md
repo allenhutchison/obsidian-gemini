@@ -61,6 +61,7 @@ This document provides a comprehensive reference for all Obsidian Gemini Scribe 
   ├── Agent-Sessions/   # Agent mode sessions with conversation history
   ├── Scheduled-Tasks/  # Scheduled task definitions and run output
   ├── Background-Tasks/ # Output from background deep-research and image-gen tasks
+  ├── Hooks/            # Lifecycle hook definitions and run output (created when hooksEnabled is true)
   ├── debug.log         # Current log file (when file logging is enabled)
   └── debug.log.old     # Previous rotated log file
   ```
