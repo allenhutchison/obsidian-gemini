@@ -31,7 +31,11 @@ export async function renderApiSettings(
 		true
 	);
 
-	const promptsEl = createCollapsibleSection(plugin, containerEl, 'Custom Prompts', 'custom-prompts');
+	const promptsEl = createCollapsibleSection(plugin, containerEl, 'Custom Prompts', 'custom-prompts', {
+		description:
+			'Override the system prompts the plugin sends to the model. Use with care — incorrect prompts can break expected functionality.',
+		advanced: true,
+	});
 	new Setting(promptsEl)
 		.setName('Allow system prompt override')
 		.setDesc(
@@ -44,7 +48,10 @@ export async function renderApiSettings(
 			})
 		);
 
-	const apiEl = createCollapsibleSection(plugin, containerEl, 'API Configuration', 'api-config');
+	const apiEl = createCollapsibleSection(plugin, containerEl, 'API Configuration', 'api-config', {
+		description: 'Retry behavior, generation parameters (temperature, top-p), and API logging.',
+		advanced: true,
+	});
 
 	new Setting(apiEl)
 		.setName('Log to file')

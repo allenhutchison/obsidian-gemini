@@ -5201,7 +5201,9 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Collapsible settings sections (issue #430).
-   Native <details> wrapped to look like a heading row that toggles its content. */
+   Native <details> wrapped to look like a heading row that toggles its content.
+   `--always-open` is used for the "General" section, which is rendered as a
+   plain div (no <details>) but reuses the same heading + description styling. */
 .gemini-settings-section {
 	border-top: 1px solid var(--background-modifier-border);
 	margin-top: 0.75em;
@@ -5217,12 +5219,15 @@ If your plugin does not need CSS, delete this file.
 	user-select: none;
 	list-style: none;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: var(--size-2-2);
 	padding: 0.75em 0 0.5em;
-	font-size: var(--h4-size, 1.1em);
-	font-weight: var(--h4-weight, 600);
 	color: var(--text-normal);
+}
+
+/* Always-open variant uses the same shape but isn't clickable. */
+.gemini-settings-section--always-open > .gemini-settings-section-header {
+	padding: 0.5em 0 0.5em;
 }
 
 /* Hide default disclosure marker — we render our own chevron. */
@@ -5235,6 +5240,7 @@ If your plugin does not need CSS, delete this file.
 	display: inline-block;
 	width: 0;
 	height: 0;
+	margin-top: 0.4em;
 	border-top: 5px solid transparent;
 	border-bottom: 5px solid transparent;
 	border-left: 6px solid var(--text-muted);
@@ -5246,12 +5252,46 @@ If your plugin does not need CSS, delete this file.
 	transform: rotate(90deg);
 }
 
-.gemini-settings-section-summary:hover {
+.gemini-settings-section-summary:hover .gemini-settings-section-title {
 	color: var(--text-accent);
 }
 
 .gemini-settings-section-summary:hover::before {
 	border-left-color: var(--text-accent);
+}
+
+.gemini-settings-section-header {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+}
+
+.gemini-settings-section-title-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	font-size: var(--h4-size, 1.1em);
+	font-weight: var(--h4-weight, 600);
+}
+
+.gemini-settings-section-badge {
+	font-size: 0.7em;
+	font-weight: 500;
+	padding: 1px 7px;
+	border-radius: 8px;
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.gemini-settings-section-description {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	font-weight: normal;
+	line-height: 1.4;
 }
 
 .gemini-settings-section-content {

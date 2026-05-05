@@ -1,10 +1,16 @@
 import type ObsidianGemini from '../main';
 import { App, Notice, Setting, SecretComponent, debounce } from 'obsidian';
-import { createCollapsibleSection, selectModelSetting } from './settings-helpers';
+import { createAlwaysOpenSection, createCollapsibleSection, selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { getErrorMessage } from '../utils/error-utils';
+import type { SettingsSectionContext } from './settings';
 
-export async function renderGeneralSettings(containerEl: HTMLElement, plugin: ObsidianGemini, app: App): Promise<void> {
+export async function renderGeneralSettings(
+	containerEl: HTMLElement,
+	plugin: ObsidianGemini,
+	app: App,
+	context: SettingsSectionContext
+): Promise<void> {
 	// Debounce saveSettings() to avoid re-running the plugin lifecycle on every keystroke
 	// in text inputs. In-memory settings are mutated immediately so the UI stays responsive.
 	// The callback is async + wrapped in try/catch so rejections from saveSettings() don't
@@ -22,10 +28,16 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 		true
 	);
 
-	const generalEl = createCollapsibleSection(plugin, containerEl, 'General', 'general');
-	await renderGeneralSection(generalEl, plugin, app, debouncedSave);
+	const generalEl = createAlwaysOpenSection(
+		containerEl,
+		'General',
+		'Set up your provider, API key, and the models the plugin uses. Required for the plugin to work.'
+	);
+	await renderGeneralSection(generalEl, plugin, app, context, debouncedSave);
 
-	const scheduledEl = createCollapsibleSection(plugin, containerEl, 'Scheduled Tasks', 'scheduled-tasks');
+	const scheduledEl = createCollapsibleSection(plugin, containerEl, 'Scheduled Tasks', 'scheduled-tasks', {
+		description: 'Schedule AI tasks to run at fixed times — daily summaries, weekly reviews, periodic background work.',
+	});
 	new Setting(scheduledEl)
 		.setName('Manage scheduled tasks')
 		.setDesc(
@@ -47,7 +59,9 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 			})
 		);
 
-	const hooksEl = createCollapsibleSection(plugin, containerEl, 'Lifecycle Hooks', 'lifecycle-hooks');
+	const hooksEl = createCollapsibleSection(plugin, containerEl, 'Lifecycle Hooks', 'lifecycle-hooks', {
+		description: 'Trigger AI agent runs in response to vault events (file created/modified/deleted/renamed).',
+	});
 	new Setting(hooksEl)
 		.setName('Enable lifecycle hooks')
 		.setDesc(
@@ -81,7 +95,10 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 			})
 		);
 
-	const historyEl = createCollapsibleSection(plugin, containerEl, 'Session History', 'session-history');
+	const historyEl = createCollapsibleSection(plugin, containerEl, 'Session History', 'session-history', {
+		description:
+			'Persist agent chat sessions as markdown files in your vault, and choose where the plugin stores its state.',
+	});
 	new Setting(historyEl)
 		.setName('Enable Session History')
 		.setDesc(
@@ -93,6 +110,19 @@ export async function renderGeneralSettings(containerEl: HTMLElement, plugin: Ob
 				await plugin.saveSettings();
 			})
 		);
+
+	new Setting(historyEl)
+		.setName('Plugin State Folder')
+		.setDesc(
+			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.'
+		)
+		.addText((text) => {
+			new FolderSuggest(app, text.inputEl, (folder) => {
+				plugin.settings.historyFolder = folder;
+				debouncedSave();
+			});
+			text.setValue(plugin.settings.historyFolder);
+		});
 }
 
 /**
@@ -104,6 +134,7 @@ async function renderGeneralSection(
 	sectionEl: HTMLElement,
 	plugin: ObsidianGemini,
 	app: App,
+	context: SettingsSectionContext,
 	debouncedSave: () => void
 ): Promise<void> {
 	new Setting(sectionEl)
@@ -131,7 +162,7 @@ async function renderGeneralSection(
 					// Re-render only the General section so provider-specific fields show/hide
 					// without tearing down sections rendered later in the settings tab.
 					sectionEl.empty();
-					await renderGeneralSection(sectionEl, plugin, app, debouncedSave);
+					await renderGeneralSection(sectionEl, plugin, app, context, debouncedSave);
 				})
 		);
 
@@ -160,7 +191,7 @@ async function renderGeneralSection(
 						const models = await manager.getAvailableModels({ forceRefresh: true });
 						new Notice(`Found ${models.length} Ollama model${models.length === 1 ? '' : 's'}.`);
 						sectionEl.empty();
-						await renderGeneralSection(sectionEl, plugin, app, debouncedSave);
+						await renderGeneralSection(sectionEl, plugin, app, context, debouncedSave);
 					} catch (error) {
 						new Notice(`Failed to refresh: ${getErrorMessage(error)}`);
 					}
@@ -230,41 +261,24 @@ async function renderGeneralSection(
 	}
 
 	new Setting(sectionEl)
-		.setName('Summary Frontmatter Key')
-		.setDesc('Frontmatter property name where summaries are stored when using "Summarize Active File" command.')
-		.addText((text) =>
-			text
-				.setPlaceholder('summary')
-				.setValue(plugin.settings.summaryFrontmatterKey)
-				.onChange((value) => {
-					plugin.settings.summaryFrontmatterKey = value;
-					debouncedSave();
-				})
+		.setName('Debug Mode')
+		.setDesc('Enable debug logging to the console. Useful for troubleshooting.')
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.debugMode).onChange(async (value) => {
+				plugin.settings.debugMode = value;
+				await plugin.saveSettings();
+			})
 		);
 
 	new Setting(sectionEl)
-		.setName('Your Name')
-		.setDesc('Your name used in system instructions so the AI can address you personally in conversations.')
-		.addText((text) =>
-			text
-				.setPlaceholder('Enter your name')
-				.setValue(plugin.settings.userName)
-				.onChange((value) => {
-					plugin.settings.userName = value;
-					debouncedSave();
-				})
-		);
-
-	new Setting(sectionEl)
-		.setName('Plugin State Folder')
+		.setName('Show Advanced Settings')
 		.setDesc(
-			'Folder where plugin data is stored. Agent sessions are saved in Agent-Sessions/, custom prompts in Prompts/.'
+			'Reveal advanced sections (Custom Prompts, API Configuration, Tool Execution, Tool Permissions, Tool Loop Detection, MCP Servers) for power users.'
 		)
-		.addText((text) => {
-			new FolderSuggest(app, text.inputEl, (folder) => {
-				plugin.settings.historyFolder = folder;
-				debouncedSave();
-			});
-			text.setValue(plugin.settings.historyFolder);
-		});
+		.addToggle((toggle) =>
+			toggle.setValue(context.showDeveloperSettings).onChange((value) => {
+				context.setShowDeveloperSettings(value);
+				context.redisplay();
+			})
+		);
 }

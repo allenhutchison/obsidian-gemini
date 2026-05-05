@@ -152,9 +152,10 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		expect(generalCalls).toBe(2);
 		expect(uiCalls).toBe(1);
 		expect(contextCalls).toBe(1);
+		expect(ragCalls).toBe(1);
 	});
 
-	it('runs every section exactly once for a single uncontended call', async () => {
+	it('runs every always-on section exactly once for a single uncontended call', async () => {
 		const plugin = { settings: { debugMode: false }, saveSettings: vi.fn() };
 		const tab = new ObsidianGeminiSettingTab({} as never, plugin as never);
 
@@ -163,10 +164,11 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		expect(generalCalls).toBe(1);
 		expect(uiCalls).toBe(1);
 		expect(contextCalls).toBe(1);
-		// Advanced sections stay collapsed by default.
+		// Vault Search Index renders unconditionally (promoted out of advanced).
+		expect(ragCalls).toBe(1);
+		// Advanced-only sections stay hidden until "Show Advanced Settings" is on.
 		expect(apiCalls).toBe(0);
 		expect(toolCalls).toBe(0);
 		expect(mcpCalls).toBe(0);
-		expect(ragCalls).toBe(0);
 	});
 });

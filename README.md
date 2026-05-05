@@ -28,7 +28,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 ## Features
 
 - **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, move and rename files, create folders, and even conduct deep research with proper citations. Features persistent sessions, granular permission controls, session-specific model configuration, and a diff review view that lets you inspect and edit proposed file changes before they're written.
-- **Semantic Vault Search:** [Experimental] Search your vault by meaning, not just keywords. Uses Google's File Search API to index your notes in the background. The AI can find relevant content even when you don't remember exact words. Supports PDFs and attachments, with pause/resume controls and detailed status tracking.
+- **Semantic Vault Search:** Search your vault by meaning, not just keywords. Uses Google's File Search API to index your notes in the background. The AI can find relevant content even when you don't remember exact words. Supports PDFs and attachments, with pause/resume controls and detailed status tracking.
 - **Context-Aware Agent:** Add specific notes as persistent context for your agent sessions. The agent can access and reference these context files throughout your conversation, providing highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **Selection-Based AI Features:** Work with selected text in powerful ways:

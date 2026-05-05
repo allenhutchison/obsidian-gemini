@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab } from 'obsidian';
 import { renderGeneralSettings } from './settings-general';
 import { renderUISettings } from './settings-ui';
 import { renderContextSettings } from './settings-context';
@@ -13,6 +13,8 @@ export interface SettingsSectionContext {
 	redisplay: () => void;
 	/** Whether advanced settings are currently visible */
 	showDeveloperSettings: boolean;
+	/** Update the show-advanced flag from inside a section (e.g. the toggle in General). */
+	setShowDeveloperSettings: (value: boolean) => void;
 }
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
@@ -37,15 +39,17 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		const context: SettingsSectionContext = {
 			redisplay: () => this.display(),
 			showDeveloperSettings: this.showDeveloperSettings,
+			setShowDeveloperSettings: (value: boolean) => {
+				this.showDeveloperSettings = value;
+			},
 		};
 
-		await renderGeneralSettings(containerEl, this.plugin, this.app);
+		await renderGeneralSettings(containerEl, this.plugin, this.app, context);
 		if (token !== this.renderToken) return;
 		renderUISettings(containerEl, this.plugin);
 		renderContextSettings(containerEl, this.plugin);
-
-		// Advanced toggle + debug mode stay here (they control class state)
-		this.renderAdvancedToggle(containerEl);
+		await renderRAGSettings(containerEl, this.plugin, this.app, context);
+		if (token !== this.renderToken) return;
 
 		if (this.showDeveloperSettings) {
 			await renderApiSettings(containerEl, this.plugin, context);
@@ -53,35 +57,6 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			await renderToolSettings(containerEl, this.plugin, this.app, context);
 			if (token !== this.renderToken) return;
 			await renderMCPSettings(containerEl, this.plugin, this.app, context);
-			if (token !== this.renderToken) return;
-			await renderRAGSettings(containerEl, this.plugin, this.app, context);
 		}
-	}
-
-	private renderAdvancedToggle(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName('Advanced Settings').setHeading();
-
-		new Setting(containerEl)
-			.setName('Debug Mode')
-			.setDesc('Enable debug logging to the console. Useful for troubleshooting.')
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.debugMode).onChange(async (value) => {
-					this.plugin.settings.debugMode = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		new Setting(containerEl)
-			.setName('Show Advanced Settings')
-			.setDesc('Reveal advanced settings for power users.')
-			.addButton((button) =>
-				button
-					.setButtonText(this.showDeveloperSettings ? 'Hide Advanced Settings' : 'Show Advanced Settings')
-					.setClass(this.showDeveloperSettings ? 'mod-warning' : 'mod-cta')
-					.onClick(() => {
-						this.showDeveloperSettings = !this.showDeveloperSettings;
-						this.display();
-					})
-			);
 	}
 }

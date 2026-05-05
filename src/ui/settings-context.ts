@@ -3,7 +3,9 @@ import { Setting } from 'obsidian';
 import { createCollapsibleSection } from './settings-helpers';
 
 export function renderContextSettings(containerEl: HTMLElement, plugin: ObsidianGemini): void {
-	const sectionEl = createCollapsibleSection(plugin, containerEl, 'Context Management', 'context');
+	const sectionEl = createCollapsibleSection(plugin, containerEl, 'Context Management', 'context', {
+		description: 'Control automatic conversation summarization and token-usage tracking for long agent sessions.',
+	});
 
 	const thresholdSetting = new Setting(sectionEl)
 		.setName('Context compaction threshold')

@@ -20,7 +20,10 @@ export async function renderToolSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const executionEl = createCollapsibleSection(plugin, containerEl, 'Tool Execution', 'tool-execution');
+	const executionEl = createCollapsibleSection(plugin, containerEl, 'Tool Execution', 'tool-execution', {
+		description: 'How the agent handles tool failures.',
+		advanced: true,
+	});
 	new Setting(executionEl)
 		.setName('Stop on tool error')
 		.setDesc(
@@ -33,10 +36,16 @@ export async function renderToolSettings(
 			})
 		);
 
-	const permissionsEl = createCollapsibleSection(plugin, containerEl, 'Tool Permissions', 'tool-permissions');
+	const permissionsEl = createCollapsibleSection(plugin, containerEl, 'Tool Permissions', 'tool-permissions', {
+		description: 'Control which agent tools require confirmation, run automatically, or are blocked entirely.',
+		advanced: true,
+	});
 	await createToolPermissionsSettings(permissionsEl, plugin, app, context);
 
-	const loopEl = createCollapsibleSection(plugin, containerEl, 'Tool Loop Detection', 'tool-loop-detection');
+	const loopEl = createCollapsibleSection(plugin, containerEl, 'Tool Loop Detection', 'tool-loop-detection', {
+		description: 'Prevent the AI from getting stuck in loops by detecting and blocking repeated tool calls.',
+		advanced: true,
+	});
 	new Setting(loopEl)
 		.setName('Enable loop detection')
 		.setDesc('Prevent the AI from repeatedly calling the same tool with identical parameters')

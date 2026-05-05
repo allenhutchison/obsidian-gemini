@@ -27,7 +27,10 @@ async function createMCPSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'MCP Servers', 'mcp-servers');
+	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'MCP Servers', 'mcp-servers', {
+		description: 'Connect external Model Context Protocol servers to extend the agent with additional tools.',
+		advanced: true,
+	});
 
 	new Setting(containerEl)
 		.setName('Enable MCP servers')

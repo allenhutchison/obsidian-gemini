@@ -1,9 +1,52 @@
 import type ObsidianGemini from '../main';
-import { Setting } from 'obsidian';
+import { Setting, debounce, Notice } from 'obsidian';
 import { createCollapsibleSection } from './settings-helpers';
+import { getErrorMessage } from '../utils/error-utils';
 
 export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemini): void {
-	const sectionEl = createCollapsibleSection(plugin, containerEl, 'UI Settings', 'ui');
+	const sectionEl = createCollapsibleSection(plugin, containerEl, 'User Experience', 'ui', {
+		description:
+			'Streaming, diff view, scheduler catch-up, and personalization options that affect how you interact with the plugin.',
+	});
+
+	const debouncedSave = debounce(
+		async () => {
+			try {
+				await plugin.saveSettings();
+			} catch (error) {
+				plugin.logger.error('Failed to save settings:', error);
+				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+			}
+		},
+		300,
+		true
+	);
+
+	new Setting(sectionEl)
+		.setName('Your Name')
+		.setDesc('Your name used in system instructions so the AI can address you personally in conversations.')
+		.addText((text) =>
+			text
+				.setPlaceholder('Enter your name')
+				.setValue(plugin.settings.userName)
+				.onChange((value) => {
+					plugin.settings.userName = value;
+					debouncedSave();
+				})
+		);
+
+	new Setting(sectionEl)
+		.setName('Summary Frontmatter Key')
+		.setDesc('Frontmatter property name where summaries are stored when using "Summarize Active File" command.')
+		.addText((text) =>
+			text
+				.setPlaceholder('summary')
+				.setValue(plugin.settings.summaryFrontmatterKey)
+				.onChange((value) => {
+					plugin.settings.summaryFrontmatterKey = value;
+					debouncedSave();
+				})
+		);
 
 	new Setting(sectionEl)
 		.setName('Enable Streaming')

@@ -2,7 +2,9 @@
 
 This document provides a comprehensive reference for all Obsidian Gemini Scribe settings.
 
-The settings tab is organised into collapsible sections (▶ collapsed, ▼ expanded). Click a section header to toggle it; the expand/collapse state of each section is remembered between sessions in the `expandedSettingsSections` setting. All sections are collapsed by default. Advanced sections (Custom Prompts, API Configuration, Tool Execution, Tool Permissions, Tool Loop Detection, MCP Servers, Vault Search Index) only appear after clicking **Show Advanced Settings**.
+The settings tab is organised into a permanently-open **General** section at the top — covering provider, API key, and model selection — followed by collapsible sections for everything else (▶ collapsed, ▼ expanded). Click a section header to toggle it; expand/collapse state is remembered between sessions in the `expandedSettingsSections` setting. All collapsible sections start collapsed.
+
+Advanced sections — Custom Prompts, API Configuration, Tool Execution, Tool Permissions, Tool Loop Detection, MCP Servers — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of the General section. Vault Search Index is no longer hidden behind that toggle.
 
 ## Table of Contents
 

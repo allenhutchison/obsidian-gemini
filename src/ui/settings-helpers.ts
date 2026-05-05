@@ -3,6 +3,13 @@ import type ObsidianGemini from '../main';
 import { ObsidianGeminiSettings } from '../main';
 import { GEMINI_MODELS } from '../models';
 
+export interface CollapsibleSectionOptions {
+	/** Description shown under the title; visible whether the section is open or closed. */
+	description?: string;
+	/** When true, render an "Advanced" badge next to the title. */
+	advanced?: boolean;
+}
+
 /**
  * Render a collapsible settings section using a native `<details>` element.
  * Returns the inner content element; pass it as the container for any
@@ -21,7 +28,8 @@ export function createCollapsibleSection(
 	plugin: ObsidianGemini,
 	containerEl: HTMLElement,
 	title: string,
-	id: string
+	id: string,
+	options: CollapsibleSectionOptions = {}
 ): HTMLElement {
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
 		// Stub container in unit tests — return a detached div so callers can
@@ -34,16 +42,36 @@ export function createCollapsibleSection(
 
 	const details = document.createElement('details');
 	details.classList.add('gemini-settings-section');
+	if (options.advanced) details.classList.add('gemini-settings-section--advanced');
 	details.dataset.sectionId = id;
 	if (isOpen) details.setAttribute('open', '');
 	containerEl.appendChild(details);
 
 	const summary = document.createElement('summary');
 	summary.classList.add('gemini-settings-section-summary');
+
+	const header = document.createElement('div');
+	header.classList.add('gemini-settings-section-header');
+	const titleRow = document.createElement('div');
+	titleRow.classList.add('gemini-settings-section-title-row');
 	const titleEl = document.createElement('span');
 	titleEl.classList.add('gemini-settings-section-title');
 	titleEl.textContent = title;
-	summary.appendChild(titleEl);
+	titleRow.appendChild(titleEl);
+	if (options.advanced) {
+		const badge = document.createElement('span');
+		badge.classList.add('gemini-settings-section-badge');
+		badge.textContent = 'Advanced';
+		titleRow.appendChild(badge);
+	}
+	header.appendChild(titleRow);
+	if (options.description) {
+		const descEl = document.createElement('div');
+		descEl.classList.add('gemini-settings-section-description');
+		descEl.textContent = options.description;
+		header.appendChild(descEl);
+	}
+	summary.appendChild(header);
 	details.appendChild(summary);
 
 	const content = document.createElement('div');
@@ -63,6 +91,43 @@ export function createCollapsibleSection(
 			plugin.logger.error('Failed to save expandedSettingsSections:', error);
 		}
 	});
+
+	return content;
+}
+
+/**
+ * Render an always-open settings section header (used for "General"). Returns
+ * the inner content element; visually matches the collapsibles minus chevron.
+ */
+export function createAlwaysOpenSection(containerEl: HTMLElement, title: string, description?: string): HTMLElement {
+	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
+		return typeof document !== 'undefined' ? document.createElement('div') : (containerEl as HTMLElement);
+	}
+
+	const wrapper = document.createElement('div');
+	wrapper.classList.add('gemini-settings-section', 'gemini-settings-section--always-open');
+	containerEl.appendChild(wrapper);
+
+	const header = document.createElement('div');
+	header.classList.add('gemini-settings-section-header');
+	const titleRow = document.createElement('div');
+	titleRow.classList.add('gemini-settings-section-title-row');
+	const titleEl = document.createElement('span');
+	titleEl.classList.add('gemini-settings-section-title');
+	titleEl.textContent = title;
+	titleRow.appendChild(titleEl);
+	header.appendChild(titleRow);
+	if (description) {
+		const descEl = document.createElement('div');
+		descEl.classList.add('gemini-settings-section-description');
+		descEl.textContent = description;
+		header.appendChild(descEl);
+	}
+	wrapper.appendChild(header);
+
+	const content = document.createElement('div');
+	content.classList.add('gemini-settings-section-content');
+	wrapper.appendChild(content);
 
 	return content;
 }

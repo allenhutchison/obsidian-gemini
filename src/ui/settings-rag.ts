@@ -10,7 +10,10 @@ export async function renderRAGSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'Vault Search Index (Experimental)', 'rag');
+	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'Vault Search Index', 'rag', {
+		description:
+			'Semantic search across your vault using Google File Search. Powers retrieval-augmented agent responses. Privacy: indexed files are uploaded to Google Cloud.',
+	});
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
 	// The store-name field uses `pendingStoreNameMessage` to queue a confirmation
