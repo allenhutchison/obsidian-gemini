@@ -52,6 +52,21 @@ export async function installCollector() {
 }
 
 /**
+ * Read all captured events without clearing them. Used by the progress
+ * poller to render mid-run "[turn N | M tool calls | …]" lines while the
+ * agent is still working — the final read+clear happens once the turn
+ * actually ends.
+ */
+export async function peekCollector() {
+	const raw = await obsidianEval(`(() => JSON.stringify(window.__evalCollector || []))()`);
+	try {
+		return JSON.parse(raw);
+	} catch (err) {
+		throw new Error(`Failed to parse collector events: ${err.message}. Raw output: ${raw.slice(0, 200)}`);
+	}
+}
+
+/**
  * Read all captured events and clear the collector.
  * Returns an array of { event, timestamp, payload } objects.
  */

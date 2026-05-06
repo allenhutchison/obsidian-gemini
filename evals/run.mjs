@@ -25,21 +25,38 @@ import {
 	createSession,
 	setupFixtures,
 	sendMessage,
+	cancelAgent,
 	cleanup,
 	getLastModelResponse,
 	obsidianEval,
 	getSetting,
 	setSetting,
 } from './lib/obsidian-driver.mjs';
-import { installCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
+import { installCollector, peekCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
 import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
 import { createJudge } from './lib/judge.mjs';
+import { summarizeProgress, formatProgressLine, progressChanged } from './lib/progress.mjs';
 
 const EVALS_DIR = resolve(import.meta.dirname);
 
 const DEFAULT_REPEAT = 3;
+// Default per-task wall-clock budget. Tasks may override via `timeoutMs`. Hits
+// the timeout path in runTask and counts as a non-pass for `pass^k`.
+const DEFAULT_TASK_TIMEOUT_MS = 5 * 60 * 1000;
+// How often the progress poller wakes up to read window.__evalCollector. ~2s
+// keeps the operator's "is this thing alive?" feedback loop short without
+// hammering the obsidian CLI bridge.
+const PROGRESS_POLL_INTERVAL_MS = 2_000;
+// Grace window we give the in-flight sendMessage to settle after a timeout
+// fires + cancelAgent runs, so the plugin's eval call returns instead of
+// dangling.
+const TIMEOUT_SETTLE_MS = 5_000;
+
+function sleep(ms) {
+	return new Promise((r) => setTimeout(r, ms));
+}
 
 function parseArgs() {
 	const args = process.argv.slice(2);
@@ -63,11 +80,21 @@ function parseArgs() {
 	};
 }
 
-// Module-scoped state for the chat-model override so signal handlers can
-// reach it. `originalChatModel` may be null/string; the boolean tracks
-// whether we successfully captured a prior value to restore.
+// Module-scoped state shared with signal handlers so a Ctrl-C mid-run can:
+//   - Restore the chat-model override (otherwise the user's plugin keeps the
+//     eval's model long after the harness is gone).
+//   - Cancel the in-flight agent loop in the plugin (otherwise tools keep
+//     firing in the background).
+//   - Clean the in-progress task's scratch files + session history (otherwise
+//     eval-scratch leaks into the user's vault).
+//   - Print a "N of M tasks completed" summary so the operator knows where
+//     the run stopped.
 let originalChatModel = null;
 let modelWasOverridden = false;
+let currentTaskInfo = null; // { taskId, sessionInfo, runIndex, repeat } when a task is mid-flight
+let completedTaskCount = 0;
+let totalPlannedTasks = 0;
+let interruptInProgress = false;
 
 async function restoreChatModel() {
 	if (!modelWasOverridden) return;
@@ -79,17 +106,32 @@ async function restoreChatModel() {
 	modelWasOverridden = false;
 }
 
-// Restore the override on Ctrl-C / kill so the user's plugin doesn't keep
-// running with the eval's model long after the harness exits.
-process.on('SIGINT', async () => {
-	console.log('\n[interrupted] restoring chatModelName...');
+async function handleInterrupt(signal, exitCode) {
+	// Re-entry guard: a second Ctrl-C arrives while we're still cleaning up
+	// from the first. Without this the cleanup awaits race against each other.
+	if (interruptInProgress) return;
+	interruptInProgress = true;
+
+	const inflight = currentTaskInfo;
+	const completedLabel =
+		totalPlannedTasks > 0 ? `${completedTaskCount} of ${totalPlannedTasks}` : `${completedTaskCount}`;
+	console.log(`\n=== Interrupted (${signal}): ${completedLabel} tasks completed ===`);
+	if (inflight) {
+		const runLabel = inflight.repeat > 1 ? ` [run ${inflight.runIndex + 1}/${inflight.repeat}]` : '';
+		console.log(`  in progress: ${inflight.taskId}${runLabel} — cancelling and cleaning up`);
+		await cancelAgent();
+		try {
+			await cleanup(inflight.sessionInfo?.historyPath);
+		} catch (err) {
+			console.warn(`  cleanup warning: ${err.message}`);
+		}
+	}
 	await restoreChatModel();
-	process.exit(130);
-});
-process.on('SIGTERM', async () => {
-	await restoreChatModel();
-	process.exit(143);
-});
+	process.exit(exitCode);
+}
+
+process.on('SIGINT', () => handleInterrupt('SIGINT', 130));
+process.on('SIGTERM', () => handleInterrupt('SIGTERM', 143));
 
 async function loadTasks(filter) {
 	const tasksDir = join(EVALS_DIR, 'tasks');
@@ -152,6 +194,8 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 
 	let sessionInfo;
 	const startTime = Date.now();
+	const taskTimeoutMs = task.timeoutMs ?? DEFAULT_TASK_TIMEOUT_MS;
+	let timedOut = false;
 
 	try {
 		// 1. Setup fixtures
@@ -165,26 +209,73 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		sessionInfo = await createSession(title);
 		console.log(`  Session: ${sessionInfo.sessionId}`);
 
+		// Publish current task to module state so the SIGINT handler can find
+		// the historyPath / sessionId for cleanup.
+		if (currentTaskInfo) currentTaskInfo.sessionInfo = sessionInfo;
+
 		// 3. Install collector
 		await installCollector();
 
-		// 4. Send the user message and wait for completion
-		console.log(`  Sending message...`);
-		await sendMessage(task.userMessage);
-		console.log(`  Turn completed.`);
+		// 4. Send the user message and race against the per-task wall-clock
+		// budget. A polling loop reads events while sendMessage is in flight
+		// so the operator sees per-turn progress instead of a silent wait.
+		console.log(`  Sending message... (budget ${Math.round(taskTimeoutMs / 1000)}s)`);
+		const sendPromise = sendMessage(task.userMessage);
+		// Swallow rejections on the unawaited handle — we surface errors via
+		// the awaited race below; this just prevents an unhandled-rejection
+		// crash if sendMessage rejects after the timeout path took over.
+		const sendSafe = sendPromise.catch(() => {});
+
+		let pollerActive = true;
+		let lastSummary = null;
+		const pollLoop = (async () => {
+			while (pollerActive) {
+				await sleep(PROGRESS_POLL_INTERVAL_MS);
+				if (!pollerActive) break;
+				try {
+					const peek = await peekCollector();
+					const summary = summarizeProgress(peek, startTime, Date.now(), task.maxTurns);
+					if (progressChanged(lastSummary, summary)) {
+						console.log(formatProgressLine(summary));
+						lastSummary = summary;
+					}
+				} catch {
+					// Transient eval failure (CLI hiccup mid-run); ignore and
+					// keep polling — the next tick will succeed.
+				}
+			}
+		})();
+
+		const timeoutPromise = sleep(taskTimeoutMs).then(() => 'TIMEOUT');
+		const winner = await Promise.race([sendSafe.then(() => 'OK'), timeoutPromise]);
+
+		pollerActive = false;
+		await pollLoop;
+
+		if (winner === 'TIMEOUT') {
+			timedOut = true;
+			console.log(`  ⏱ task exceeded ${Math.round(taskTimeoutMs / 1000)}s budget — cancelling agent.`);
+			await cancelAgent();
+			// Give the in-flight sendMessage a brief settle window so its
+			// obsidianEval child can exit cleanly. After that we proceed —
+			// the dangling promise is left to its own outer timeout.
+			await Promise.race([sendSafe, sleep(TIMEOUT_SETTLE_MS)]);
+		} else {
+			console.log(`  Turn completed.`);
+		}
 
 		// 5. Read events and model response
 		const events = await readAndClearCollector();
-		const modelResponse = await getLastModelResponse();
+		const modelResponse = timedOut ? '' : await getLastModelResponse();
 		const durationMs = Date.now() - startTime;
 
 		// 6. Score
 		const modelName = await getModelName();
 		const result = await scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn);
+		if (timedOut) result.timedOut = true;
 		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
-		console.log(
-			`  ${result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED'} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`
-		);
+		const verdict = timedOut ? 'TIMEOUT' : result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED';
+		console.log(`  ${verdict} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`);
 
 		return result;
 	} catch (err) {
@@ -299,14 +390,24 @@ async function main() {
 		}
 
 		// Run tasks sequentially. Each task runs `repeat` times so we can report
-		// pass^k reliability on top of per-run pass/solve rates.
+		// pass^k reliability on top of per-run pass/solve rates. Module-scoped
+		// task tracking lets the SIGINT handler print "N of M completed" and
+		// clean up the in-progress task's scratch files.
+		totalPlannedTasks = tasks.length * repeat;
+		completedTaskCount = 0;
 		const taskResults = [];
 		for (const task of tasks) {
 			const runs = [];
 			for (let i = 0; i < repeat; i++) {
 				const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
 				console.log(`\n--- Running: ${task.id}${runLabel} ---`);
-				runs.push(await runTask(task, keepArtifacts, provider, judgeFn));
+				currentTaskInfo = { taskId: task.id, sessionInfo: null, runIndex: i, repeat };
+				try {
+					runs.push(await runTask(task, keepArtifacts, provider, judgeFn));
+				} finally {
+					currentTaskInfo = null;
+					completedTaskCount += 1;
+				}
 			}
 			taskResults.push(aggregateTaskRuns(task.id, runs));
 		}
