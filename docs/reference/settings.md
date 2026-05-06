@@ -11,7 +11,7 @@ The order of sections is:
 3. **Automation** — scheduled tasks, scheduler catch-up, and lifecycle hooks combined.
 4. **Vault Search Index** — semantic search over your vault using Google File Search.
 
-Advanced sections — Agent Config, Tool Permissions, MCP Servers, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of General. **Agent Config** bundles four related sub-areas (Custom Prompts, API Configuration, Context Management, Tool Loop Detection) under one collapsible since they all tune how the agent talks to the model.
+Advanced sections — Tool Permissions, MCP Servers, Agent Config, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of General. **Agent Config** bundles four related sub-areas (Custom Prompts, API Configuration, Context Management, Tool Loop Detection) under one collapsible since they all tune how the agent talks to the model.
 
 ## Table of Contents
 
@@ -189,7 +189,7 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Setting**: `expandedSettingsSections`
 - **Type**: `string[]`
 - **Default**: `[]`
-- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `agent-config`, `tool-permissions`, `mcp-servers`, `debug`. (General is always open; it has no id and ignores this setting.)
+- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `tool-permissions`, `mcp-servers`, `agent-config`, `debug`. (General is always open; it has no id and ignores this setting.)
 - **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
 ## Context Management

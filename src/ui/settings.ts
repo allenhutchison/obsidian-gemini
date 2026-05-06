@@ -53,11 +53,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		if (token !== this.renderToken) return;
 
 		if (this.showDeveloperSettings) {
-			await renderAgentConfigSettings(containerEl, this.plugin, context);
-			if (token !== this.renderToken) return;
 			await renderToolSettings(containerEl, this.plugin, this.app, context);
 			if (token !== this.renderToken) return;
 			await renderMCPSettings(containerEl, this.plugin, this.app, context);
+			if (token !== this.renderToken) return;
+			await renderAgentConfigSettings(containerEl, this.plugin, context);
 			if (token !== this.renderToken) return;
 			renderDebugSettings(containerEl, this.plugin);
 		}
