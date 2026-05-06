@@ -15,13 +15,17 @@ Advanced sections — Tool Permissions, MCP Servers, Agent Config, Debug — are
 
 ## Table of Contents
 
-- [Basic Settings](#basic-settings)
-- [Model Configuration](#model-configuration)
-- [Custom Prompts](#custom-prompts)
-- [UI Settings](#ui-settings)
-- [Context Management](#context-management)
-- [Developer Settings](#developer-settings)
+The reference below groups settings by topic for lookup, which doesn't always map 1:1 to the UI section names. The annotation in parentheses tells you which UI section a topic appears under.
+
+- [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
+- [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
+- [Custom Prompts](#custom-prompts) (UI: _Agent Config_ — advanced)
+- [UI Settings](#ui-settings) (UI: _User Experience_ — streaming, diff view, identity, frontmatter key, session history)
+- [Context Management](#context-management) (UI: _Agent Config_ — advanced)
+- [Developer Settings](#developer-settings) (UI: split across _Agent Config_, _Tool Permissions_, _MCP Servers_, _Debug_)
 - [Session-Level Settings](#session-level-settings)
+
+UI sections without a dedicated topic in this reference: _Automation_ (covered in the [Scheduled Tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides) and _Vault Search Index_ (covered in [Semantic Search](/guide/semantic-search)).
 
 ## Basic Settings
 
