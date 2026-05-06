@@ -67,11 +67,17 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 	const expectedToolsMet = (task.expectedTools || []).every((t) => toolSet.has(t));
 	const forbiddenToolsClean = !(task.forbiddenTools || []).some((t) => toolSet.has(t));
 	const responseText = typeof modelResponse === 'string' ? modelResponse : '';
-	const {
-		pass: matchersPass,
-		judgeAttempted,
-		judgeAvailable,
-	} = await evaluateMatchers(task.outputMatchers, { responseText, userMessage: task.userMessage }, judgeFn);
+	// Short-circuit when the run already failed: `solved` requires `passed`,
+	// so calling evaluateMatchers can't change the outcome — it would just
+	// burn a judge API call (and rate-limit budget) on every error/timeout.
+	const matcherEval = passed
+		? await evaluateMatchers(task.outputMatchers, { responseText, userMessage: task.userMessage }, judgeFn)
+		: {
+				pass: false,
+				judgeAttempted: (task.outputMatchers || []).some((m) => m?.type === 'judge'),
+				judgeAvailable: typeof judgeFn === 'function',
+			};
+	const { pass: matchersPass, judgeAttempted, judgeAvailable } = matcherEval;
 	const solved = passed && expectedToolsMet && forbiddenToolsClean && matchersPass;
 
 	return {
