@@ -99,26 +99,38 @@ async function latestResult(evalsDir) {
 }
 
 /**
- * Sanitize a model id for use as part of a baseline filename. Replaces
- * filesystem-unsafe characters (slash, colon — the latter shows up in
- * Ollama tags like `gemma3:27b`) with hyphens. Lowercases for consistency.
+ * Lowercase and strip filesystem-unsafe characters (path separators on any
+ * platform, plus the colon that shows up in Ollama tags like `gemma3:27b`).
+ * Used as the building block for both the model and provider segments of a
+ * baseline filename, so neither side can contribute `..` or `/` to escape
+ * the `evals/baselines` directory.
  */
-export function sanitizeModelForFilename(model) {
-	return String(model || 'unknown')
+function sanitizeForFilename(value, fallback) {
+	const cleaned = String(value || fallback)
 		.toLowerCase()
 		.replace(/[\\/:*?"<>|]/g, '-')
 		.replace(/^-+|-+$/g, '');
+	return cleaned || fallback;
+}
+
+/**
+ * Sanitize a model id for use as part of a baseline filename. Public name
+ * kept stable for the test suite; internally delegates to the shared helper
+ * so `model` and `provider` get identical treatment.
+ */
+export function sanitizeModelForFilename(model) {
+	return sanitizeForFilename(model, 'unknown');
 }
 
 /**
  * Resolve the on-disk baseline path for a (provider, model) pair under
- * `<evalsDir>/baselines/`. Format: `<provider>-<sanitized-model>.json`.
+ * `<evalsDir>/baselines/`. Format: `<sanitized-provider>-<sanitized-model>.json`.
  * Following the issue spec — keeps the boundary explicit (e.g.
  * `gemini-gemini-2.5-flash-lite.json`, `ollama-gemma3-27b.json`).
  */
 export function getBaselinePath(evalsDir, provider, model) {
-	const safeProvider = String(provider || 'gemini').toLowerCase();
-	const safeModel = sanitizeModelForFilename(model);
+	const safeProvider = sanitizeForFilename(provider, 'gemini');
+	const safeModel = sanitizeForFilename(model, 'unknown');
 	return join(evalsDir, 'baselines', `${safeProvider}-${safeModel}.json`);
 }
 

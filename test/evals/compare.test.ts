@@ -82,6 +82,18 @@ describe('getBaselinePath', () => {
 		const path = getBaselinePath('/tmp/evals', undefined as any, 'gemini-2.5-flash');
 		expect(path).toBe('/tmp/evals/baselines/gemini-gemini-2.5-flash.json');
 	});
+
+	it('sanitizes path-traversal attempts in provider', () => {
+		// In practice provider comes from plugin settings ('gemini' / 'ollama'),
+		// but the function must still neutralize separators so neither segment
+		// can escape evals/baselines or compose unintended paths.
+		const path = getBaselinePath('/tmp/evals', '../foo' as any, 'gemini-2.5');
+		expect(path).toBe('/tmp/evals/baselines/..-foo-gemini-2.5.json');
+		expect(path.startsWith('/tmp/evals/baselines/')).toBe(true);
+
+		const slashy = getBaselinePath('/tmp/evals', 'a/b' as any, 'm');
+		expect(slashy).toBe('/tmp/evals/baselines/a-b-m.json');
+	});
 });
 
 describe('loadBaseline', () => {
