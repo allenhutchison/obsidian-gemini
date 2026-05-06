@@ -66,7 +66,7 @@ Caveat: while the harness is running, the live agent view is using the override 
 
 `npm run eval` automatically compares each run against the blessed baseline for the active `(provider, model)` and prints a regressions-only summary at the end:
 
-```
+```text
 === Regression check vs baseline (abc123 / 2026-04-26) ===
   pass^3     100% → 100% (=)
   solve^3    66.7% → 33.3% (-33.3pp) ⚠
