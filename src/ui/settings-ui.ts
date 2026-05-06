@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import { Setting, debounce, Notice } from 'obsidian';
+import { Setting, ToggleComponent, debounce, Notice } from 'obsidian';
 import { createCollapsibleSection } from './settings-helpers';
 import { getErrorMessage } from '../utils/error-utils';
 
@@ -70,29 +70,10 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 			})
 		);
 
-	new Setting(sectionEl)
-		.setName('Log tool execution to session history')
-		.setDesc(
-			'Append a summary of each tool execution to the session history file for auditing. Requires plugin reload to take effect.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.logToolExecution).onChange(async (value) => {
-				plugin.settings.logToolExecution = value;
-				await plugin.saveSettings();
-			})
-		);
-
-	new Setting(sectionEl)
-		.setName('Auto-run missed scheduled tasks on startup')
-		.setDesc(
-			'When enabled, tasks that were missed while Obsidian was closed (and have "Run if missed" set) are submitted automatically on startup without showing the approval modal.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.autoRunCatchUp).onChange(async (value) => {
-				plugin.settings.autoRunCatchUp = value;
-				await plugin.saveSettings();
-			})
-		);
+	// Hold a reference to the dependent "Log tool execution" toggle so we can
+	// flip its disabled state when Session History is toggled off — there's
+	// nowhere to log to when sessions aren't being persisted.
+	let logToolExecutionToggle: ToggleComponent | null = null;
 
 	new Setting(sectionEl)
 		.setName('Enable Session History')
@@ -103,6 +84,23 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 			toggle.setValue(plugin.settings.chatHistory).onChange(async (value) => {
 				plugin.settings.chatHistory = value;
 				await plugin.saveSettings();
+				logToolExecutionToggle?.setDisabled(!value);
 			})
 		);
+
+	new Setting(sectionEl)
+		.setName('Log tool execution to session history')
+		.setDesc(
+			'Append a summary of each tool execution to the session history file for auditing. Requires Session History to be enabled. Requires plugin reload to take effect.'
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.logToolExecution)
+				.setDisabled(!plugin.settings.chatHistory)
+				.onChange(async (value) => {
+					plugin.settings.logToolExecution = value;
+					await plugin.saveSettings();
+				});
+			logToolExecutionToggle = toggle;
+		});
 }

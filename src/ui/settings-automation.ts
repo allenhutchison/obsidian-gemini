@@ -30,6 +30,18 @@ export function renderAutomationSettings(containerEl: HTMLElement, plugin: Obsid
 		);
 
 	new Setting(sectionEl)
+		.setName('Auto-run missed scheduled tasks on startup')
+		.setDesc(
+			'When enabled, tasks that were missed while Obsidian was closed (and have "Run if missed" set) are submitted automatically on startup without showing the approval modal.'
+		)
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.autoRunCatchUp).onChange(async (value) => {
+				plugin.settings.autoRunCatchUp = value;
+				await plugin.saveSettings();
+			})
+		);
+
+	new Setting(sectionEl)
 		.setName('Enable lifecycle hooks')
 		.setDesc(
 			'Subscribe to vault events and run AI agent tasks in response. Off by default — vault events fire continuously, and a broadly-scoped hook can drain API quota quickly.'
