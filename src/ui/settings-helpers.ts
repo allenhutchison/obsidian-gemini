@@ -50,9 +50,11 @@ export function createCollapsibleSection(
 	const summary = document.createElement('summary');
 	summary.classList.add('gemini-settings-section-summary');
 
-	const header = document.createElement('div');
+	// HTML spec: <summary> only permits phrasing/heading content; <div> isn't
+	// valid here. Use <span>s styled with flex/block via CSS instead.
+	const header = document.createElement('span');
 	header.classList.add('gemini-settings-section-header');
-	const titleRow = document.createElement('div');
+	const titleRow = document.createElement('span');
 	titleRow.classList.add('gemini-settings-section-title-row');
 	const titleEl = document.createElement('span');
 	titleEl.classList.add('gemini-settings-section-title');
@@ -66,7 +68,7 @@ export function createCollapsibleSection(
 	}
 	header.appendChild(titleRow);
 	if (options.description) {
-		const descEl = document.createElement('div');
+		const descEl = document.createElement('span');
 		descEl.classList.add('gemini-settings-section-description');
 		descEl.textContent = options.description;
 		header.appendChild(descEl);
@@ -111,9 +113,11 @@ export function createAlwaysOpenSection(containerEl: HTMLElement, title: string,
 	wrapper.classList.add('gemini-settings-section', 'gemini-settings-section--always-open');
 	containerEl.appendChild(wrapper);
 
-	const header = document.createElement('div');
+	// Use spans here too for parity with the collapsible variant (where the
+	// elements live inside <summary> and must be phrasing content).
+	const header = document.createElement('span');
 	header.classList.add('gemini-settings-section-header');
-	const titleRow = document.createElement('div');
+	const titleRow = document.createElement('span');
 	titleRow.classList.add('gemini-settings-section-title-row');
 	const titleEl = document.createElement('span');
 	titleEl.classList.add('gemini-settings-section-title');
@@ -121,7 +125,7 @@ export function createAlwaysOpenSection(containerEl: HTMLElement, title: string,
 	titleRow.appendChild(titleEl);
 	header.appendChild(titleRow);
 	if (description) {
-		const descEl = document.createElement('div');
+		const descEl = document.createElement('span');
 		descEl.classList.add('gemini-settings-section-description');
 		descEl.textContent = description;
 		header.appendChild(descEl);

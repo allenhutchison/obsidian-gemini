@@ -5288,6 +5288,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-settings-section-description {
+	display: block;
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
 	font-weight: normal;
