@@ -64,13 +64,51 @@ Caveat: while the harness is running, the live agent view is using the override 
 
 ## Comparing against a baseline
 
+`npm run eval` automatically compares each run against the blessed baseline for the active `(provider, model)` and prints a regressions-only summary at the end:
+
+```text
+=== Regression check vs baseline (abc123 / 2026-04-26) ===
+  pass^3     100% → 100% (=)
+  solve^3    66.7% → 33.3% (-33.3pp) ⚠
+
+  Tasks with degraded solve/pass rate:
+    find-tagged-notes: solved 3/3 → 0/3
+```
+
+Baselines live in `evals/baselines/<provider>-<sanitized-model>.json` (one per provider/model pair). The matching baseline is resolved automatically from the result's `provider` and `model` fields. If no baseline exists yet, the runner prints the path it expected and points at `eval:bless`.
+
+### Promoting a result to baseline
+
 ```bash
-# Compare latest run against committed baseline
-npm run eval:compare evals/baseline.json
+# Bless the most recent result file as the baseline for its (provider, model)
+npm run eval:bless
+
+# Bless a specific result file
+npm run eval:bless evals/results/2026-05-06T12-00-00-000Z.json
+```
+
+`eval:bless` is an explicit operator action — baselines never auto-drift. The new baseline overwrites the previous one for that (provider, model) pair; recover prior baselines via git history.
+
+### Manual comparison
+
+The auto-compare uses a brief regressions-only view. For the verbose per-task diff (every aggregate, every changed metric), use `eval:compare` directly:
+
+```bash
+# Compare latest run against an explicit baseline file
+npm run eval:compare evals/baselines/gemini-gemini-2.5-flash-lite.json
 
 # Compare two specific runs
 npm run eval:compare evals/results/run-a.json evals/results/run-b.json
 ```
+
+### What counts as a regression
+
+The summary flags two things:
+
+- **Aggregate `pass^k` or `solve^k` rate dropping** vs baseline. Mean rates and turn/cost movements are reported but not flagged — they shift with prompt tweaks and LLM nondeterminism without indicating a real quality drop.
+- **Per-task `solved` or `passed` fraction dropping** (e.g. 3/3 → 2/3 or 3/3 → 0/3). Catches both flakiness onset and hard regressions even when N changes between runs.
+
+Adding a task or removing a task is reported but not treated as a regression — the operator did that intentionally.
 
 ## Adding a new task
 

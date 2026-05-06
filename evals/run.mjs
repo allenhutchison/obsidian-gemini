@@ -34,6 +34,7 @@ import {
 import { installCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
 import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
+import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
 
 const EVALS_DIR = resolve(import.meta.dirname);
 
@@ -221,6 +222,29 @@ async function runTask(task, keepArtifacts, provider) {
 	}
 }
 
+/**
+ * Look up the baseline for this run's (provider, model) and print a
+ * regression summary if one exists. Missing baseline is informational, not
+ * an error — the operator just hasn't run `eval:bless` yet.
+ */
+async function maybeCompareToBaseline(result) {
+	let baseline;
+	try {
+		baseline = await loadBaseline(EVALS_DIR, result.provider, result.model);
+	} catch (err) {
+		console.warn(`\n[baseline] failed to load baseline: ${err.message}`);
+		return;
+	}
+	if (!baseline) {
+		const expected = getBaselinePath(EVALS_DIR, result.provider, result.model);
+		console.log(`\n[baseline] no baseline at ${expected}`);
+		console.log(`           run 'npm run eval:bless' to promote this result as the baseline.`);
+		return;
+	}
+	const comparison = compareResults(baseline.content, result);
+	printRegressionSummary(comparison);
+}
+
 async function main() {
 	const { taskFilter, keepArtifacts, repeat, model } = parseArgs();
 	console.log('=== Gemini Scribe Eval Harness ===');
@@ -276,6 +300,10 @@ async function main() {
 		const outPath = await writeResults(result, EVALS_DIR);
 		printSummary(result);
 		console.log(`Results written to: ${outPath}`);
+
+		// Auto-compare against the blessed baseline for this (provider, model)
+		// so the operator sees regressions without typing eval:compare.
+		await maybeCompareToBaseline(result);
 	} finally {
 		await restoreChatModel();
 	}
