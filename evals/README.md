@@ -159,8 +159,12 @@ When adding a new task, prefer cloning the closest category's fixture pattern �
 
 ### Output matcher types
 
-- `{ "type": "contains", "value": "text" }` — final response includes the substring
-- `{ "type": "regex", "value": "pattern", "flags": "i" }` — final response matches the regex. JS regex syntax does NOT support inline flags like `(?i)` — pass `flags` explicitly as a separate field (`"i"` for case-insensitive, `"s"` for dotall, etc.). The field is optional; defaults to no flags.
+- `{ "type": "contains", "value": "text" }` — final response includes the substring.
+- `{ "type": "contains", "value": ["form-A", "form-B", "form-C"] }` — any-of substring match. The matcher passes if the response contains **any** of the listed forms. Use this when an answer has multiple correct surface forms — e.g., `"Neural Networks"` vs `"[[neural-networks]]"`.
+- `{ "type": "regex", "value": "pattern", "flags": "i" }` — final response matches the regex. JS regex syntax does NOT support inline flags like `(?i)` — pass `flags` explicitly as a separate field (`"i"` for case-insensitive, `"s"` for dotall, etc.). `value` may also be an array of patterns (any-of). The field is optional; defaults to no flags.
+- `{ "type": "judge", "criteria": "..." }` — LLM-as-judge for prose-heavy rubrics where literal substrings would be too brittle. The judge is a separate, **pinned** Gemini model (default `gemini-2.5-flash`; override with `EVAL_JUDGE_MODEL` env var) called with `temperature: 0` and a strict YES/NO contract. The judge always uses Gemini even when the system under test is Ollama, so the verdict doesn't drift across model-swap experiments. Use sparingly — each judge matcher is one extra API call per task run, and `judge` matchers fail if no Gemini API key is reachable.
+
+When mixing matcher types, every matcher must pass (logical AND); within a single matcher, an array `value` is logical OR.
 
 ## Scoring
 
