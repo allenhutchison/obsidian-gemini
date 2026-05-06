@@ -5205,13 +5205,16 @@ If your plugin does not need CSS, delete this file.
    `--always-open` is used for the "General" section, which is rendered as a
    plain div (no <details>) but reuses the same heading + description styling. */
 .gemini-settings-section {
-	border-top: 1px solid var(--background-modifier-border);
-	margin-top: 0.75em;
-}
-
-.gemini-settings-section:first-of-type {
 	border-top: none;
 	margin-top: 0;
+}
+
+/* Separator between adjacent sections only — `:first-of-type` matched both
+   the General `<div>` and the first `<details>` of its type, so the first
+   collapsible lost its border. Adjacent-sibling selector is element-agnostic. */
+.gemini-settings-section + .gemini-settings-section {
+	border-top: 1px solid var(--background-modifier-border);
+	margin-top: 0.75em;
 }
 
 .gemini-settings-section-summary {
