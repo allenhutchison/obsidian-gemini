@@ -171,11 +171,11 @@ Make sure you're on v4.0 or later — earlier versions had a bug where context f
 
 This command requires: (1) a markdown file actively open in the editor, and (2) context sending to be enabled. If no file is open, you'll see "Failed to get file content for summary." ([#134](https://github.com/allenhutchison/obsidian-gemini/issues/134))
 
-## Semantic Vault Search (Experimental)
+## Semantic Vault Search
 
 ### What does the Vault Index feature do? Is my data private?
 
-The vault index uses Google's File Search API to enable semantic (meaning-based) search of your vault. Files are stored in an index private to your GCP project, tied to your API key. Your data is not shared or used for model training. The feature is experimental and located under Advanced Settings. ([#297](https://github.com/allenhutchison/obsidian-gemini/discussions/297))
+The vault index uses Google's File Search API to enable semantic (meaning-based) search of your vault. Files are stored in an index private to your GCP project, tied to your API key. Your data is not shared or used for model training. The feature is configured under the **Vault Search Index** section in the plugin settings. ([#297](https://github.com/allenhutchison/obsidian-gemini/discussions/297))
 
 ## Plugin Conflicts
 

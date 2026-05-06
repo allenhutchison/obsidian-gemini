@@ -5199,3 +5199,105 @@ If your plugin does not need CSS, delete this file.
 	padding-top: 12px;
 	border-top: 1px solid var(--background-modifier-border);
 }
+
+/* Collapsible settings sections (issue #430).
+   Native <details> wrapped to look like a heading row that toggles its content.
+   `--always-open` is used for the "General" section, which is rendered as a
+   plain div (no <details>) but reuses the same heading + description styling. */
+.gemini-settings-section {
+	border-top: none;
+	margin-top: 0;
+}
+
+/* Separator between adjacent sections only — `:first-of-type` matched both
+   the General `<div>` and the first `<details>` of its type, so the first
+   collapsible lost its border. Adjacent-sibling selector is element-agnostic. */
+.gemini-settings-section + .gemini-settings-section {
+	border-top: 1px solid var(--background-modifier-border);
+	margin-top: 0.75em;
+}
+
+.gemini-settings-section-summary {
+	cursor: pointer;
+	user-select: none;
+	list-style: none;
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-2-2);
+	padding: 0.75em 0 0.5em;
+	color: var(--text-normal);
+}
+
+/* Always-open variant uses the same shape but isn't clickable. */
+.gemini-settings-section--always-open > .gemini-settings-section-header {
+	padding: 0.5em 0 0.5em;
+}
+
+/* Hide default disclosure marker — we render our own chevron. */
+.gemini-settings-section-summary::-webkit-details-marker {
+	display: none;
+}
+
+.gemini-settings-section-summary::before {
+	content: '';
+	display: inline-block;
+	width: 0;
+	height: 0;
+	margin-top: 0.4em;
+	border-top: 5px solid transparent;
+	border-bottom: 5px solid transparent;
+	border-left: 6px solid var(--text-muted);
+	transition: transform 0.15s ease;
+	flex-shrink: 0;
+}
+
+.gemini-settings-section[open] > .gemini-settings-section-summary::before {
+	transform: rotate(90deg);
+}
+
+.gemini-settings-section-summary:hover .gemini-settings-section-title {
+	color: var(--text-accent);
+}
+
+.gemini-settings-section-summary:hover::before {
+	border-left-color: var(--text-accent);
+}
+
+.gemini-settings-section-header {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+}
+
+.gemini-settings-section-title-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	font-size: var(--h4-size, 1.1em);
+	font-weight: var(--h4-weight, 600);
+}
+
+.gemini-settings-section-badge {
+	font-size: 0.7em;
+	font-weight: 500;
+	padding: 1px 7px;
+	border-radius: 8px;
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.gemini-settings-section-description {
+	display: block;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	font-weight: normal;
+	line-height: 1.4;
+}
+
+.gemini-settings-section-content {
+	padding-bottom: 0.5em;
+}

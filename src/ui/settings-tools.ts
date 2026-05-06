@@ -11,6 +11,7 @@ import {
 	DEFAULT_TOOL_POLICY,
 } from '../types/tool-policy';
 import { getErrorMessage } from '../utils/error-utils';
+import { createCollapsibleSection } from './settings-helpers';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderToolSettings(
@@ -19,69 +20,11 @@ export async function renderToolSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	// Tool Execution Settings
-	new Setting(containerEl).setName('Tool Execution').setHeading();
-
-	new Setting(containerEl)
-		.setName('Stop on tool error')
-		.setDesc(
-			'Stop agent execution when a tool call fails. If disabled, the agent will continue executing subsequent tools.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.stopOnToolError).onChange(async (value) => {
-				plugin.settings.stopOnToolError = value;
-				await plugin.saveSettings();
-			})
-		);
-
-	// Tool Permissions Settings
-	new Setting(containerEl).setName('Tool Permissions').setHeading();
-
-	await createToolPermissionsSettings(containerEl, plugin, app, context);
-
-	// Tool Loop Detection Settings
-	new Setting(containerEl).setName('Tool Loop Detection').setHeading();
-
-	new Setting(containerEl)
-		.setName('Enable loop detection')
-		.setDesc('Prevent the AI from repeatedly calling the same tool with identical parameters')
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.loopDetectionEnabled).onChange(async (value) => {
-				plugin.settings.loopDetectionEnabled = value;
-				await plugin.saveSettings();
-				context.redisplay();
-			})
-		);
-
-	if (plugin.settings.loopDetectionEnabled) {
-		new Setting(containerEl)
-			.setName('Loop threshold')
-			.setDesc('Number of identical tool calls before considering it a loop (default: 3)')
-			.addSlider((slider) =>
-				slider
-					.setLimits(2, 10, 1)
-					.setValue(plugin.settings.loopDetectionThreshold)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						plugin.settings.loopDetectionThreshold = value;
-						await plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName('Time window (seconds)')
-			.setDesc('Time window to check for repeated calls (default: 30 seconds)')
-			.addSlider((slider) =>
-				slider
-					.setLimits(10, 120, 5)
-					.setValue(plugin.settings.loopDetectionTimeWindowSeconds)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						plugin.settings.loopDetectionTimeWindowSeconds = value;
-						await plugin.saveSettings();
-					})
-			);
-	}
+	const permissionsEl = createCollapsibleSection(plugin, containerEl, 'Tool Permissions', 'tool-permissions', {
+		description: 'Control which agent tools require confirmation, run automatically, or are blocked entirely.',
+		advanced: true,
+	});
+	await createToolPermissionsSettings(permissionsEl, plugin, app, context);
 }
 
 async function createToolPermissionsSettings(

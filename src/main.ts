@@ -99,6 +99,8 @@ export interface ObsidianGeminiSettings {
 	autoRunCatchUp: boolean;
 	// Lifecycle hooks (opt-in: AI runs triggered by vault events)
 	hooksEnabled: boolean;
+	// IDs of collapsible settings sections currently expanded; persists across reloads.
+	expandedSettingsSections: string[];
 	// Cached remote model list (managed by ModelListProvider)
 	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
 }
@@ -156,6 +158,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	autoRunCatchUp: false,
 	// Lifecycle hooks default off (opt-in)
 	hooksEnabled: false,
+	// All settings sections start collapsed
+	expandedSettingsSections: [],
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';

@@ -2,15 +2,30 @@
 
 This document provides a comprehensive reference for all Obsidian Gemini Scribe settings.
 
+The settings tab is organised into a permanently-open **General** section at the top — covering provider, API key, models, and the plugin state folder — followed by collapsible sections (▶ collapsed, ▼ expanded). Click any header to toggle it; expand/collapse state is remembered between sessions in the `expandedSettingsSections` setting. All collapsible sections start collapsed.
+
+The order of sections is:
+
+1. **General** (always open) — provider, API key, models, plugin state folder, Show Advanced Settings toggle.
+2. **User Experience** — your name, frontmatter key, streaming, diff view, session history toggle, tool execution logging.
+3. **Automation** — scheduled tasks, scheduler catch-up, and lifecycle hooks combined.
+4. **Vault Search Index** — semantic search over your vault using Google File Search.
+
+Advanced sections — Tool Permissions, MCP Servers, Agent Config, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of General. **Agent Config** bundles four related sub-areas (Custom Prompts, API Configuration, Context Management, Tool Loop Detection) under one collapsible since they all tune how the agent talks to the model.
+
 ## Table of Contents
 
-- [Basic Settings](#basic-settings)
-- [Model Configuration](#model-configuration)
-- [Custom Prompts](#custom-prompts)
-- [UI Settings](#ui-settings)
-- [Context Management](#context-management)
-- [Developer Settings](#developer-settings)
+The reference below groups settings by topic for lookup, which doesn't always map 1:1 to the UI section names. The annotation in parentheses tells you which UI section a topic appears under.
+
+- [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
+- [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
+- [Custom Prompts](#custom-prompts) (UI: _Agent Config_ — advanced)
+- [UI Settings](#ui-settings) (UI: _User Experience_ — streaming, diff view, identity, frontmatter key, session history)
+- [Context Management](#context-management) (UI: _Agent Config_ — advanced)
+- [Developer Settings](#developer-settings) (UI: split across _Agent Config_, _Tool Permissions_, _MCP Servers_, _Debug_)
 - [Session-Level Settings](#session-level-settings)
+
+UI sections without a dedicated topic in this reference: _Automation_ (covered in the [Scheduled Tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides) and _Vault Search Index_ (covered in [Semantic Search](/guide/semantic-search)).
 
 ## Basic Settings
 
@@ -172,6 +187,14 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Description**: Subscribe to vault events (file created/modified/deleted/renamed) and dispatch them to hook definitions in `<history-folder>/Hooks/`. Each matching event fires a headless agent run with debounce, rate-limit, and loop-prevention guards.
 - **Why opt-in**: Vault events fire continuously; an unintentionally-broad hook can drain API quota quickly. The default is off so users opt in deliberately.
 - **See also**: [Lifecycle Hooks](/guide/lifecycle-hooks)
+
+### Expanded Settings Sections
+
+- **Setting**: `expandedSettingsSections`
+- **Type**: `string[]`
+- **Default**: `[]`
+- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `tool-permissions`, `mcp-servers`, `agent-config`, `debug`. (General is always open; it has no id and ignores this setting.)
+- **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
 ## Context Management
 

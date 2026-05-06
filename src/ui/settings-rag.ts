@@ -1,14 +1,19 @@
 import type ObsidianGemini from '../main';
 import { App, Setting, Notice, debounce } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
+import { createCollapsibleSection } from './settings-helpers';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderRAGSettings(
-	containerEl: HTMLElement,
+	outerContainerEl: HTMLElement,
 	plugin: ObsidianGemini,
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
+	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'Vault Search Index', 'rag', {
+		description:
+			'Semantic search across your vault using Google File Search. Powers retrieval-augmented agent responses. Privacy: indexed files are uploaded to Google Cloud.',
+	});
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
 	// The store-name field uses `pendingStoreNameMessage` to queue a confirmation
@@ -32,8 +37,6 @@ export async function renderRAGSettings(
 		300,
 		true
 	);
-
-	new Setting(containerEl).setName('Vault Search Index (Experimental)').setHeading();
 
 	// Privacy warning
 	const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });

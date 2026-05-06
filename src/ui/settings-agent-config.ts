@@ -1,5 +1,6 @@
 import type ObsidianGemini from '../main';
 import { Setting, Notice, debounce } from 'obsidian';
+import { createCollapsibleSection } from './settings-helpers';
 import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
@@ -8,15 +9,24 @@ let temperatureRunId = 0;
 let topPDebounceTimer: NodeJS.Timeout | null = null;
 let topPRunId = 0;
 
-export async function renderApiSettings(
+/**
+ * "Agent Config" advanced section — combines Custom Prompts, API Configuration,
+ * Context Management, and Tool Loop Detection into a single collapsible with
+ * labeled sub-groups, since they all tune how the agent talks to the model.
+ */
+export async function renderAgentConfigSettings(
 	containerEl: HTMLElement,
 	plugin: ObsidianGemini,
-	_context: SettingsSectionContext
+	context: SettingsSectionContext
 ): Promise<void> {
+	const sectionEl = createCollapsibleSection(plugin, containerEl, 'Agent Config', 'agent-config', {
+		description:
+			'Tune how the agent talks to the model: custom prompts, retry/generation parameters, conversation summarization, and loop guards.',
+		advanced: true,
+	});
+
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
-	// The callback is async + wrapped in try/catch so rejections from saveSettings() don't
-	// become unhandled promise rejections.
 	const debouncedSave = debounce(
 		async () => {
 			try {
@@ -30,8 +40,25 @@ export async function renderApiSettings(
 		true
 	);
 
-	// File Logging
-	new Setting(containerEl)
+	// --- Custom Prompts ---
+	new Setting(sectionEl).setName('Custom Prompts').setHeading();
+
+	new Setting(sectionEl)
+		.setName('Allow system prompt override')
+		.setDesc(
+			'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
+		)
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
+				plugin.settings.allowSystemPromptOverride = value;
+				await plugin.saveSettings();
+			})
+		);
+
+	// --- API Configuration ---
+	new Setting(sectionEl).setName('API Configuration').setHeading();
+
+	new Setting(sectionEl)
 		.setName('Log to file')
 		.setDesc(
 			'Write log entries to a file in the plugin state folder. ' +
@@ -45,25 +72,7 @@ export async function renderApiSettings(
 			})
 		);
 
-	// Custom Prompts Advanced Settings
-	new Setting(containerEl).setName('Custom Prompts').setHeading();
-
-	new Setting(containerEl)
-		.setName('Allow system prompt override')
-		.setDesc(
-			'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
-				plugin.settings.allowSystemPromptOverride = value;
-				await plugin.saveSettings();
-			})
-		);
-
-	// API Configuration
-	new Setting(containerEl).setName('API Configuration').setHeading();
-
-	new Setting(containerEl)
+	new Setting(sectionEl)
 		.setName('Maximum Retries')
 		.setDesc('Maximum number of retries when a model request fails.')
 		.addText((text) =>
@@ -79,7 +88,7 @@ export async function renderApiSettings(
 				})
 		);
 
-	new Setting(containerEl)
+	new Setting(sectionEl)
 		.setName('Initial Backoff Delay (ms)')
 		.setDesc('Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.')
 		.addText((text) =>
@@ -95,11 +104,75 @@ export async function renderApiSettings(
 				})
 		);
 
-	// Create temperature setting with dynamic ranges
-	await createTemperatureSetting(containerEl, plugin);
+	await createTemperatureSetting(sectionEl, plugin);
+	await createTopPSetting(sectionEl, plugin);
 
-	// Create topP setting with dynamic ranges
-	await createTopPSetting(containerEl, plugin);
+	// --- Context Management ---
+	new Setting(sectionEl).setName('Context Management').setHeading();
+
+	const thresholdSetting = new Setting(sectionEl)
+		.setName('Context compaction threshold')
+		.setDesc(
+			`Automatically summarize older conversation turns when token usage exceeds this percentage of the model context window. Current: ${plugin.settings.contextCompactionThreshold}%`
+		);
+
+	thresholdSetting.addSlider((slider) =>
+		slider
+			.setLimits(5, 50, 5)
+			.setValue(plugin.settings.contextCompactionThreshold)
+			.setDynamicTooltip()
+			.onChange(async (value) => {
+				plugin.settings.contextCompactionThreshold = value;
+				thresholdSetting.setDesc(
+					`Automatically summarize older conversation turns when token usage exceeds this percentage of the model context window. Current: ${value}%`
+				);
+				await plugin.saveSettings();
+			})
+	);
+
+	// --- Tool Loop Detection ---
+	new Setting(sectionEl).setName('Tool Loop Detection').setHeading();
+
+	new Setting(sectionEl)
+		.setName('Enable loop detection')
+		.setDesc('Prevent the AI from repeatedly calling the same tool with identical parameters.')
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.loopDetectionEnabled).onChange(async (value) => {
+				plugin.settings.loopDetectionEnabled = value;
+				await plugin.saveSettings();
+				context.redisplay();
+			})
+		);
+
+	if (plugin.settings.loopDetectionEnabled) {
+		new Setting(sectionEl)
+			.setName('Loop threshold')
+			.setDesc('Number of identical tool calls before considering it a loop (default: 3).')
+			.addSlider((slider) =>
+				slider
+					.setLimits(2, 10, 1)
+					.setValue(plugin.settings.loopDetectionThreshold)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						plugin.settings.loopDetectionThreshold = value;
+						await plugin.saveSettings();
+					})
+			);
+
+		new Setting(sectionEl)
+			.setName('Time window (seconds)')
+			.setDesc('Time window to check for repeated calls (default: 30 seconds).')
+			.addSlider((slider) =>
+				slider
+					.setLimits(10, 120, 5)
+					.setValue(plugin.settings.loopDetectionTimeWindowSeconds)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						plugin.settings.loopDetectionTimeWindowSeconds = value;
+						await plugin.saveSettings();
+					})
+			);
+	}
 }
 
 async function createTemperatureSetting(containerEl: HTMLElement, plugin: ObsidianGemini): Promise<void> {
@@ -120,18 +193,14 @@ async function createTemperatureSetting(containerEl: HTMLElement, plugin: Obsidi
 				.setValue(plugin.settings.temperature)
 				.setDynamicTooltip()
 				.onChange(async (value) => {
-					// Clear previous timeout
 					if (temperatureDebounceTimer) {
 						clearTimeout(temperatureDebounceTimer);
 					}
 
-					// Set immediate value for responsive UI
 					plugin.settings.temperature = value;
 
-					// Capture the run ID upfront so we can discard stale async results.
 					const runId = ++temperatureRunId;
 
-					// Debounce validation and saving
 					temperatureDebounceTimer = setTimeout(async () => {
 						try {
 							// Validate the current value against model capabilities. Read from
@@ -189,30 +258,21 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemin
 				.setValue(plugin.settings.topP)
 				.setDynamicTooltip()
 				.onChange(async (value) => {
-					// Clear previous timeout
 					if (topPDebounceTimer) {
 						clearTimeout(topPDebounceTimer);
 					}
 
-					// Set immediate value for responsive UI
 					plugin.settings.topP = value;
 
-					// Capture the run ID upfront so we can discard stale async results.
 					const runId = ++topPRunId;
 
-					// Debounce validation and saving
 					topPDebounceTimer = setTimeout(async () => {
 						try {
-							// Validate the current value against model capabilities. Read from
-							// settings rather than the captured `value` so the validation always
-							// matches the most recent user input.
 							const validation = await modelManager.validateParameters(
 								plugin.settings.temperature,
 								plugin.settings.topP
 							);
 
-							// A newer slider change has superseded this run — discard the
-							// stale result instead of clobbering the current slider/value.
 							if (runId !== topPRunId) {
 								return;
 							}
@@ -227,8 +287,6 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemin
 
 							await plugin.saveSettings();
 						} catch (error) {
-							// If a newer run has superseded us, drop this stale failure silently —
-							// surfacing it would contradict whatever the current run is doing.
 							if (runId !== topPRunId) {
 								return;
 							}
