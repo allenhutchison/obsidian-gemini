@@ -143,8 +143,12 @@ export async function loadBaseline(evalsDir, provider, model) {
 	const path = getBaselinePath(evalsDir, provider, model);
 	try {
 		await access(path);
-	} catch {
-		return null;
+	} catch (err) {
+		// Only "file does not exist" should be treated as "no baseline yet" —
+		// permission and other I/O errors must surface so we don't silently
+		// skip auto-compare on a misconfigured environment.
+		if (err?.code === 'ENOENT') return null;
+		throw err;
 	}
 	const raw = await readFile(path, 'utf8');
 	return { path, content: JSON.parse(raw) };
