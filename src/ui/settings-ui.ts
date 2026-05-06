@@ -93,4 +93,16 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 				await plugin.saveSettings();
 			})
 		);
+
+	new Setting(sectionEl)
+		.setName('Enable Session History')
+		.setDesc(
+			'Persist agent chat sessions as markdown files in your vault. Sessions are saved under Agent-Sessions/ with auto-generated titles.'
+		)
+		.addToggle((toggle) =>
+			toggle.setValue(plugin.settings.chatHistory).onChange(async (value) => {
+				plugin.settings.chatHistory = value;
+				await plugin.saveSettings();
+			})
+		);
 }

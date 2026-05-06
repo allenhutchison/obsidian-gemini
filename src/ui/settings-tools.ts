@@ -20,22 +20,6 @@ export async function renderToolSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const executionEl = createCollapsibleSection(plugin, containerEl, 'Tool Execution', 'tool-execution', {
-		description: 'How the agent handles tool failures.',
-		advanced: true,
-	});
-	new Setting(executionEl)
-		.setName('Stop on tool error')
-		.setDesc(
-			'Stop agent execution when a tool call fails. If disabled, the agent will continue executing subsequent tools.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.stopOnToolError).onChange(async (value) => {
-				plugin.settings.stopOnToolError = value;
-				await plugin.saveSettings();
-			})
-		);
-
 	const permissionsEl = createCollapsibleSection(plugin, containerEl, 'Tool Permissions', 'tool-permissions', {
 		description: 'Control which agent tools require confirmation, run automatically, or are blocked entirely.',
 		advanced: true,

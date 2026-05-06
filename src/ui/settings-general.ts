@@ -1,6 +1,6 @@
 import type ObsidianGemini from '../main';
 import { App, Notice, Setting, SecretComponent, debounce } from 'obsidian';
-import { createAlwaysOpenSection, createCollapsibleSection, selectModelSetting } from './settings-helpers';
+import { createAlwaysOpenSection, selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
@@ -34,95 +34,6 @@ export async function renderGeneralSettings(
 		'Set up your provider, API key, and the models the plugin uses. Required for the plugin to work.'
 	);
 	await renderGeneralSection(generalEl, plugin, app, context, debouncedSave);
-
-	const scheduledEl = createCollapsibleSection(plugin, containerEl, 'Scheduled Tasks', 'scheduled-tasks', {
-		description: 'Schedule AI tasks to run at fixed times — daily summaries, weekly reviews, periodic background work.',
-	});
-	new Setting(scheduledEl)
-		.setName('Manage scheduled tasks')
-		.setDesc(
-			'Create, edit, enable/disable, and delete scheduled AI tasks. Tasks run automatically in the background while Obsidian is open.'
-		)
-		.addButton((button) =>
-			button
-				.setButtonText('Open Scheduler')
-				.setCta()
-				.onClick(async () => {
-					const { SchedulerManagementModal } = await import('./scheduler-management-modal');
-					new SchedulerManagementModal(app, plugin, 'list').open();
-				})
-		)
-		.addButton((button) =>
-			button.setButtonText('New task').onClick(async () => {
-				const { SchedulerManagementModal } = await import('./scheduler-management-modal');
-				new SchedulerManagementModal(app, plugin, 'create').open();
-			})
-		);
-
-	const hooksEl = createCollapsibleSection(plugin, containerEl, 'Lifecycle Hooks', 'lifecycle-hooks', {
-		description: 'Trigger AI agent runs in response to vault events (file created/modified/deleted/renamed).',
-	});
-	new Setting(hooksEl)
-		.setName('Enable lifecycle hooks')
-		.setDesc(
-			'Subscribe to vault events (file created/modified/deleted/renamed) and run AI agent tasks in response. Off by default — vault events fire continuously, and a broadly-scoped hook can drain API quota quickly.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.hooksEnabled).onChange(async (value) => {
-				plugin.settings.hooksEnabled = value;
-				await plugin.saveSettings();
-			})
-		);
-
-	new Setting(hooksEl)
-		.setName('Manage lifecycle hooks')
-		.setDesc(
-			'Create, edit, enable/disable, and delete hooks. Each hook fires when a matching vault event occurs and runs as a headless agent session.'
-		)
-		.addButton((button) =>
-			button
-				.setButtonText('Open Hook Manager')
-				.setCta()
-				.onClick(async () => {
-					const { HookManagementModal } = await import('./hook-management-modal');
-					new HookManagementModal(app, plugin, 'list').open();
-				})
-		)
-		.addButton((button) =>
-			button.setButtonText('New hook').onClick(async () => {
-				const { HookManagementModal } = await import('./hook-management-modal');
-				new HookManagementModal(app, plugin, 'create').open();
-			})
-		);
-
-	const historyEl = createCollapsibleSection(plugin, containerEl, 'Session History', 'session-history', {
-		description:
-			'Persist agent chat sessions as markdown files in your vault, and choose where the plugin stores its state.',
-	});
-	new Setting(historyEl)
-		.setName('Enable Session History')
-		.setDesc(
-			'Store agent session history as markdown files in your vault. Sessions are automatically saved in the Agent-Sessions subfolder with auto-generated titles based on conversation content.'
-		)
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.chatHistory).onChange(async (value) => {
-				plugin.settings.chatHistory = value;
-				await plugin.saveSettings();
-			})
-		);
-
-	new Setting(historyEl)
-		.setName('Plugin State Folder')
-		.setDesc(
-			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.'
-		)
-		.addText((text) => {
-			new FolderSuggest(app, text.inputEl, (folder) => {
-				plugin.settings.historyFolder = folder;
-				debouncedSave();
-			});
-			text.setValue(plugin.settings.historyFolder);
-		});
 }
 
 /**
@@ -215,17 +126,6 @@ async function renderGeneralSection(
 					await plugin.saveSettings();
 				})
 			);
-
-		new Setting(sectionEl)
-			.setName('Model Versions')
-			.setDesc(
-				'ℹ️ Only Gemini 2.5+ models are shown. Older model versions have been deprecated by Google and are no longer supported.'
-			)
-			.addButton((button) =>
-				button.setButtonText('Learn More').onClick(() => {
-					window.open('https://ai.google.dev/gemini-api/docs/models/gemini');
-				})
-			);
 	}
 
 	await selectModelSetting(
@@ -261,19 +161,22 @@ async function renderGeneralSection(
 	}
 
 	new Setting(sectionEl)
-		.setName('Debug Mode')
-		.setDesc('Enable debug logging to the console. Useful for troubleshooting.')
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.debugMode).onChange(async (value) => {
-				plugin.settings.debugMode = value;
-				await plugin.saveSettings();
-			})
-		);
+		.setName('Plugin State Folder')
+		.setDesc(
+			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.'
+		)
+		.addText((text) => {
+			new FolderSuggest(app, text.inputEl, (folder) => {
+				plugin.settings.historyFolder = folder;
+				debouncedSave();
+			});
+			text.setValue(plugin.settings.historyFolder);
+		});
 
 	new Setting(sectionEl)
 		.setName('Show Advanced Settings')
 		.setDesc(
-			'Reveal advanced sections (Custom Prompts, API Configuration, Tool Execution, Tool Permissions, Tool Loop Detection, MCP Servers) for power users.'
+			'Reveal advanced sections (Custom Prompts, API Configuration, Tool Permissions, Tool Loop Detection, MCP Servers, Debug) for power users.'
 		)
 		.addToggle((toggle) =>
 			toggle.setValue(context.showDeveloperSettings).onChange((value) => {

@@ -26,14 +26,4 @@ export function renderContextSettings(containerEl: HTMLElement, plugin: Obsidian
 				await plugin.saveSettings();
 			})
 	);
-
-	new Setting(sectionEl)
-		.setName('Show token usage')
-		.setDesc('Display estimated token usage in the agent view (for debugging purposes).')
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.showTokenUsage).onChange(async (value) => {
-				plugin.settings.showTokenUsage = value;
-				await plugin.saveSettings();
-			})
-		);
 }

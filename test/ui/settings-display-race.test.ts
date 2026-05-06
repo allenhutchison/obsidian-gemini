@@ -8,6 +8,8 @@ var generalCalls = 0;
 // eslint-disable-next-line no-var
 var uiCalls = 0;
 // eslint-disable-next-line no-var
+var automationCalls = 0;
+// eslint-disable-next-line no-var
 var contextCalls = 0;
 // eslint-disable-next-line no-var
 var apiCalls = 0;
@@ -17,6 +19,8 @@ var toolCalls = 0;
 var mcpCalls = 0;
 // eslint-disable-next-line no-var
 var ragCalls = 0;
+// eslint-disable-next-line no-var
+var debugCalls = 0;
 // eslint-disable-next-line no-var
 var advancedToggleCalls = 0;
 
@@ -35,6 +39,11 @@ vi.mock('../../src/ui/settings-general', () => ({
 vi.mock('../../src/ui/settings-ui', () => ({
 	renderUISettings: vi.fn(() => {
 		uiCalls += 1;
+	}),
+}));
+vi.mock('../../src/ui/settings-automation', () => ({
+	renderAutomationSettings: vi.fn(() => {
+		automationCalls += 1;
 	}),
 }));
 vi.mock('../../src/ui/settings-context', () => ({
@@ -60,6 +69,11 @@ vi.mock('../../src/ui/settings-mcp', () => ({
 vi.mock('../../src/ui/settings-rag', () => ({
 	renderRAGSettings: vi.fn(async () => {
 		ragCalls += 1;
+	}),
+}));
+vi.mock('../../src/ui/settings-debug', () => ({
+	renderDebugSettings: vi.fn(() => {
+		debugCalls += 1;
 	}),
 }));
 
@@ -106,11 +120,13 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 	beforeEach(() => {
 		generalCalls = 0;
 		uiCalls = 0;
+		automationCalls = 0;
 		contextCalls = 0;
 		apiCalls = 0;
 		toolCalls = 0;
 		mcpCalls = 0;
 		ragCalls = 0;
+		debugCalls = 0;
 		advancedToggleCalls = 0;
 		gate = null;
 	});
@@ -132,6 +148,7 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		expect(generalCalls).toBe(1);
 		// Sync sections must NOT have run yet because of the gate.
 		expect(uiCalls).toBe(0);
+		expect(automationCalls).toBe(0);
 		expect(contextCalls).toBe(0);
 
 		// While the first render is still awaiting the gate, the second call
@@ -151,6 +168,7 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		// render's pass.
 		expect(generalCalls).toBe(2);
 		expect(uiCalls).toBe(1);
+		expect(automationCalls).toBe(1);
 		expect(contextCalls).toBe(1);
 		expect(ragCalls).toBe(1);
 	});
@@ -163,6 +181,7 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 
 		expect(generalCalls).toBe(1);
 		expect(uiCalls).toBe(1);
+		expect(automationCalls).toBe(1);
 		expect(contextCalls).toBe(1);
 		// Vault Search Index renders unconditionally (promoted out of advanced).
 		expect(ragCalls).toBe(1);
@@ -170,5 +189,6 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		expect(apiCalls).toBe(0);
 		expect(toolCalls).toBe(0);
 		expect(mcpCalls).toBe(0);
+		expect(debugCalls).toBe(0);
 	});
 });

@@ -2,9 +2,17 @@
 
 This document provides a comprehensive reference for all Obsidian Gemini Scribe settings.
 
-The settings tab is organised into a permanently-open **General** section at the top — covering provider, API key, and model selection — followed by collapsible sections for everything else (▶ collapsed, ▼ expanded). Click a section header to toggle it; expand/collapse state is remembered between sessions in the `expandedSettingsSections` setting. All collapsible sections start collapsed.
+The settings tab is organised into a permanently-open **General** section at the top — covering provider, API key, models, and the plugin state folder — followed by collapsible sections (▶ collapsed, ▼ expanded). Click any header to toggle it; expand/collapse state is remembered between sessions in the `expandedSettingsSections` setting. All collapsible sections start collapsed.
 
-Advanced sections — Custom Prompts, API Configuration, Tool Execution, Tool Permissions, Tool Loop Detection, MCP Servers — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of the General section. Vault Search Index is no longer hidden behind that toggle.
+The order of sections is:
+
+1. **General** (always open) — provider, API key, models, plugin state folder, Show Advanced Settings toggle.
+2. **User Experience** — your name, frontmatter key, streaming, diff view, tool execution logging, scheduler catch-up, session history toggle.
+3. **Automation** — scheduled tasks and lifecycle hooks combined.
+4. **Context Management** — auto-summarization threshold for long conversations.
+5. **Vault Search Index** — semantic search over your vault using Google File Search.
+
+Advanced sections — Custom Prompts, API Configuration, Tool Permissions, Tool Loop Detection, MCP Servers, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of General.
 
 ## Table of Contents
 
@@ -182,7 +190,7 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Setting**: `expandedSettingsSections`
 - **Type**: `string[]`
 - **Default**: `[]`
-- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `general`, `scheduled-tasks`, `lifecycle-hooks`, `session-history`, `ui`, `context`, `custom-prompts`, `api-config`, `tool-execution`, `tool-permissions`, `tool-loop-detection`, `mcp-servers`, `rag`.
+- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `context`, `rag`, `custom-prompts`, `api-config`, `tool-permissions`, `tool-loop-detection`, `mcp-servers`, `debug`. (General is always open; it has no id and ignores this setting.)
 - **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
 ## Context Management
