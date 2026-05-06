@@ -163,7 +163,7 @@ async function setup(validateImpl?: Mock) {
 	plugin.getModelManager = () => modelManager;
 
 	const containerEl = {} as HTMLElement;
-	const context = { redisplay: vi.fn(), showDeveloperSettings: false };
+	const context = { redisplay: vi.fn(), showDeveloperSettings: false, setShowDeveloperSettings: vi.fn() };
 	await renderAgentConfigSettings(containerEl, plugin as any, context);
 	return { plugin, modelManager };
 }
