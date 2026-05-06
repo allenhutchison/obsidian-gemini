@@ -6,9 +6,12 @@
 	"expectedTools": [],
 	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content"],
 	"outputMatchers": [
-		{ "type": "contains", "value": "Neural Networks" },
-		{ "type": "contains", "value": "Transformer Architecture" },
-		{ "type": "contains", "value": "Reinforcement Learning" }
+		{ "type": "contains", "value": ["Neural Networks", "neural-networks", "neural_networks"] },
+		{
+			"type": "contains",
+			"value": ["Transformer Architecture", "transformer-architecture", "transformer_architecture"]
+		},
+		{ "type": "contains", "value": ["Reinforcement Learning", "reinforcement-learning", "reinforcement_learning"] }
 	],
 	"maxTurns": 15,
 	"timeoutMs": 90000

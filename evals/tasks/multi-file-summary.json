@@ -6,8 +6,10 @@
 	"expectedTools": ["read_file"],
 	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content"],
 	"outputMatchers": [
-		{ "type": "contains", "value": "machine learning" },
-		{ "type": "contains", "value": "productivity" }
+		{
+			"type": "judge",
+			"criteria": "The response is a coherent summary that mentions all three topics covered by the source notes: (1) machine learning or AI, (2) personal productivity or focus methods, and (3) a software project (Project Alpha or similar). Synonyms and rephrasing are fine — what matters is that all three topic areas are covered."
+		}
 	],
 	"maxTurns": 20,
 	"timeoutMs": 120000

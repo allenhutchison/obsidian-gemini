@@ -4,6 +4,7 @@
  */
 
 import { calculateCost, providerSupportsCache } from './pricing.mjs';
+import { evaluateMatchers } from './matchers.mjs';
 
 /**
  * Score a single task run.
@@ -14,9 +15,10 @@ import { calculateCost, providerSupportsCache } from './pricing.mjs';
  * @param {string} modelName - Model used for this run
  * @param {number} durationMs - Wall-clock duration
  * @param {string} [provider] - Provider id ("gemini" or "ollama"); affects pricing and cache reporting
- * @returns {object} TaskResult
+ * @param {Function} [judgeFn] - Optional async judge for `judge`-type matchers; see matchers.mjs / judge.mjs
+ * @returns {Promise<object>} TaskResult
  */
-export function scoreTask(task, events, modelResponse, modelName, durationMs, provider) {
+export async function scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn) {
 	const apiEvents = events.filter((e) => e.event === 'apiResponseReceived');
 	const toolEvents = events.filter((e) => e.event === 'toolExecutionComplete');
 	const errorEvents = events.filter((e) => e.event === 'turnError');
@@ -65,19 +67,11 @@ export function scoreTask(task, events, modelResponse, modelName, durationMs, pr
 	const expectedToolsMet = (task.expectedTools || []).every((t) => toolSet.has(t));
 	const forbiddenToolsClean = !(task.forbiddenTools || []).some((t) => toolSet.has(t));
 	const responseText = typeof modelResponse === 'string' ? modelResponse : '';
-	const matchersPass = (task.outputMatchers || []).every((m) => {
-		if (m.type === 'contains') return responseText.includes(m.value);
-		if (m.type === 'regex') {
-			try {
-				// `flags` is optional. JS regex syntax doesn't support inline (?i)
-				// etc. — pass flags explicitly via the matcher object instead.
-				return new RegExp(m.value, m.flags ?? '').test(responseText);
-			} catch {
-				return false;
-			}
-		}
-		return true;
-	});
+	const {
+		pass: matchersPass,
+		judgeAttempted,
+		judgeAvailable,
+	} = await evaluateMatchers(task.outputMatchers, { responseText, userMessage: task.userMessage }, judgeFn);
 	const solved = passed && expectedToolsMet && forbiddenToolsClean && matchersPass;
 
 	return {
@@ -101,6 +95,8 @@ export function scoreTask(task, events, modelResponse, modelName, durationMs, pr
 			expected_tools_met: expectedToolsMet,
 			forbidden_tools_clean: forbiddenToolsClean,
 			matchers_pass: matchersPass,
+			judge_attempted: judgeAttempted,
+			judge_available: judgeAvailable,
 		},
 	};
 }

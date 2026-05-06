@@ -35,6 +35,7 @@ import { installCollector, readAndClearCollector, removeCollector } from './lib/
 import { scoreTask } from './lib/scorer.mjs';
 import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
+import { createJudge } from './lib/judge.mjs';
 
 const EVALS_DIR = resolve(import.meta.dirname);
 
@@ -145,7 +146,7 @@ async function getProvider() {
 	return result.replace(/^["']|["']$/g, '');
 }
 
-async function runTask(task, keepArtifacts, provider) {
+async function runTask(task, keepArtifacts, provider, judgeFn) {
 	const title = `[eval] ${task.id}`;
 	console.log(`  "${task.description}"`);
 
@@ -179,7 +180,7 @@ async function runTask(task, keepArtifacts, provider) {
 
 		// 6. Score
 		const modelName = await getModelName();
-		const result = scoreTask(task, events, modelResponse, modelName, durationMs, provider);
+		const result = await scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn);
 		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
 		console.log(
 			`  ${result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED'} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`
@@ -280,6 +281,23 @@ async function main() {
 		// Resolve provider once up front so per-run scoring stays consistent.
 		const provider = await getProvider();
 
+		// Initialize the LLM-as-judge once so prose-rubric tasks can opt in to
+		// `{ type: 'judge', criteria: '...' }` matchers. The judge always uses a
+		// pinned Gemini model (gemini-2.5-flash by default; `EVAL_JUDGE_MODEL`
+		// env override) — independent of the system under test, so an Ollama
+		// run still scores its prose tasks against a stable judge.
+		const judgeFn = await createJudge();
+		if (judgeFn) {
+			console.log(`Judge: ${judgeFn.modelId}`);
+		} else {
+			const usingJudge = tasks.some((t) => (t.outputMatchers || []).some((m) => m?.type === 'judge'));
+			if (usingJudge) {
+				console.warn(
+					'⚠ Tasks reference `judge` matchers but no Gemini API key is reachable; those matchers will fail.'
+				);
+			}
+		}
+
 		// Run tasks sequentially. Each task runs `repeat` times so we can report
 		// pass^k reliability on top of per-run pass/solve rates.
 		const taskResults = [];
@@ -288,7 +306,7 @@ async function main() {
 			for (let i = 0; i < repeat; i++) {
 				const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
 				console.log(`\n--- Running: ${task.id}${runLabel} ---`);
-				runs.push(await runTask(task, keepArtifacts, provider));
+				runs.push(await runTask(task, keepArtifacts, provider, judgeFn));
 			}
 			taskResults.push(aggregateTaskRuns(task.id, runs));
 		}
