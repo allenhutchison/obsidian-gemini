@@ -85,8 +85,11 @@ export function createCollapsibleSection(
 		// fires after setAttribute('open') without altering the user's persisted set).
 		if (next.length === current.length && next.every((x, i) => x === current[i])) return;
 		plugin.settings.expandedSettingsSections = next;
+		// Persist directly via saveData rather than saveSettings — this is UI-only
+		// state and shouldn't trigger plugin.saveSettings()'s lifecycle reconciliation
+		// (re-init on api-key/provider/RAG changes).
 		try {
-			await plugin.saveSettings();
+			await plugin.saveData(plugin.settings);
 		} catch (error) {
 			plugin.logger.error('Failed to save expandedSettingsSections:', error);
 		}
