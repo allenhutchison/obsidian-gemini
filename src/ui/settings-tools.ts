@@ -25,51 +25,6 @@ export async function renderToolSettings(
 		advanced: true,
 	});
 	await createToolPermissionsSettings(permissionsEl, plugin, app, context);
-
-	const loopEl = createCollapsibleSection(plugin, containerEl, 'Tool Loop Detection', 'tool-loop-detection', {
-		description: 'Prevent the AI from getting stuck in loops by detecting and blocking repeated tool calls.',
-		advanced: true,
-	});
-	new Setting(loopEl)
-		.setName('Enable loop detection')
-		.setDesc('Prevent the AI from repeatedly calling the same tool with identical parameters')
-		.addToggle((toggle) =>
-			toggle.setValue(plugin.settings.loopDetectionEnabled).onChange(async (value) => {
-				plugin.settings.loopDetectionEnabled = value;
-				await plugin.saveSettings();
-				context.redisplay();
-			})
-		);
-
-	if (plugin.settings.loopDetectionEnabled) {
-		new Setting(loopEl)
-			.setName('Loop threshold')
-			.setDesc('Number of identical tool calls before considering it a loop (default: 3)')
-			.addSlider((slider) =>
-				slider
-					.setLimits(2, 10, 1)
-					.setValue(plugin.settings.loopDetectionThreshold)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						plugin.settings.loopDetectionThreshold = value;
-						await plugin.saveSettings();
-					})
-			);
-
-		new Setting(loopEl)
-			.setName('Time window (seconds)')
-			.setDesc('Time window to check for repeated calls (default: 30 seconds)')
-			.addSlider((slider) =>
-				slider
-					.setLimits(10, 120, 5)
-					.setValue(plugin.settings.loopDetectionTimeWindowSeconds)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						plugin.settings.loopDetectionTimeWindowSeconds = value;
-						await plugin.saveSettings();
-					})
-			);
-	}
 }
 
 async function createToolPermissionsSettings(

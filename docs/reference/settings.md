@@ -7,12 +7,11 @@ The settings tab is organised into a permanently-open **General** section at the
 The order of sections is:
 
 1. **General** (always open) — provider, API key, models, plugin state folder, Show Advanced Settings toggle.
-2. **User Experience** — your name, frontmatter key, streaming, diff view, tool execution logging, scheduler catch-up, session history toggle.
-3. **Automation** — scheduled tasks and lifecycle hooks combined.
-4. **Context Management** — auto-summarization threshold for long conversations.
-5. **Vault Search Index** — semantic search over your vault using Google File Search.
+2. **User Experience** — your name, frontmatter key, streaming, diff view, session history toggle, tool execution logging.
+3. **Automation** — scheduled tasks, scheduler catch-up, and lifecycle hooks combined.
+4. **Vault Search Index** — semantic search over your vault using Google File Search.
 
-Advanced sections — Custom Prompts, API Configuration, Tool Permissions, Tool Loop Detection, MCP Servers, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of General.
+Advanced sections — Agent Config, Tool Permissions, MCP Servers, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of General. **Agent Config** bundles four related sub-areas (Custom Prompts, API Configuration, Context Management, Tool Loop Detection) under one collapsible since they all tune how the agent talks to the model.
 
 ## Table of Contents
 
@@ -190,7 +189,7 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Setting**: `expandedSettingsSections`
 - **Type**: `string[]`
 - **Default**: `[]`
-- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `context`, `rag`, `custom-prompts`, `api-config`, `tool-permissions`, `tool-loop-detection`, `mcp-servers`, `debug`. (General is always open; it has no id and ignores this setting.)
+- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `agent-config`, `tool-permissions`, `mcp-servers`, `debug`. (General is always open; it has no id and ignores this setting.)
 - **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
 ## Context Management

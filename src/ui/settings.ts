@@ -3,8 +3,7 @@ import { App, PluginSettingTab } from 'obsidian';
 import { renderGeneralSettings } from './settings-general';
 import { renderUISettings } from './settings-ui';
 import { renderAutomationSettings } from './settings-automation';
-import { renderContextSettings } from './settings-context';
-import { renderApiSettings } from './settings-api';
+import { renderAgentConfigSettings } from './settings-agent-config';
 import { renderToolSettings } from './settings-tools';
 import { renderMCPSettings } from './settings-mcp';
 import { renderRAGSettings } from './settings-rag';
@@ -50,12 +49,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		if (token !== this.renderToken) return;
 		renderUISettings(containerEl, this.plugin);
 		renderAutomationSettings(containerEl, this.plugin, this.app);
-		renderContextSettings(containerEl, this.plugin);
 		await renderRAGSettings(containerEl, this.plugin, this.app, context);
 		if (token !== this.renderToken) return;
 
 		if (this.showDeveloperSettings) {
-			await renderApiSettings(containerEl, this.plugin, context);
+			await renderAgentConfigSettings(containerEl, this.plugin, context);
 			if (token !== this.renderToken) return;
 			await renderToolSettings(containerEl, this.plugin, this.app, context);
 			if (token !== this.renderToken) return;
