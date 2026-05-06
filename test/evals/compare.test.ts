@@ -195,6 +195,18 @@ describe('printRegressionSummary', () => {
 		expect(output).toContain('No regressions');
 	});
 
+	it('renders the headline with the actual run count (pass^3, not pass^k)', () => {
+		const baseline = makeResult({ tasks: [makeTask('a', 3, 3)] });
+		const current = makeResult({ tasks: [makeTask('a', 3, 3)] });
+		printRegressionSummary(compareResults(baseline, current));
+		const output = logSpy.mock.calls.map((c: unknown[]) => c[0]).join('\n');
+		expect(output).toContain('pass^3');
+		expect(output).toContain('solve^3');
+		// Defensive: ensure we don't fall back to literal "k" when run count is known.
+		expect(output).not.toMatch(/pass\^k\s/);
+		expect(output).not.toMatch(/solve\^k\s/);
+	});
+
 	it('lists regressed tasks with their solved-count drop', () => {
 		const baseline = makeResult({ tasks: [makeTask('find-tagged', 3, 3), makeTask('summary', 3, 3)] });
 		const current = makeResult({ tasks: [makeTask('find-tagged', 0, 3), makeTask('summary', 3, 3)] });
