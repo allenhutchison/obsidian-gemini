@@ -7,23 +7,25 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
-## What's New in v4.7.0
+## What's New in v4.8.0
 
-**✨ Projects, Session Memory & File Shelf**
+**✨ Gemini Scribe 4.8 - Scheduled & Background Tasks, Ollama, Activity Modal**
+
+- **⏰ Scheduled tasks** - Run agent tasks on a cron, time-of-day, or day-of-week schedule with full management UI. See the [Scheduled Tasks guide](docs/guide/scheduled-tasks.md).
+- **🌙 Missed-run catch-up** - Tasks that should have run while Obsidian was closed surface on startup for review.
+- **🛰️ Background tasks** - Deep research and image generation now run in the background with output consolidated under `[state-folder]/Background-Tasks/`. See the [Background Tasks guide](docs/guide/background-tasks.md).
+- **📊 Unified activity modal** - Background Tasks and RAG status share a single tabbed view.
+- **🦙 Ollama provider** - Point the plugin at a local Ollama server for offline, local-model chat. See the [Ollama Setup guide](docs/guide/ollama-setup.md).
+- **🛑 Runaway-loop abort** - Repeated tool-loop detections within a turn now abort the turn with a clear notice instead of churning.
+- **🛠️ Headless agent loop** - AgentLoop extracted from the agent view so scheduled and background runners share the same execution engine.
+
+**Previous Updates (v4.7.0):**
 
 - **📂 Projects** - Scope agent sessions to a folder with custom instructions, permission overrides, and skill filters. See the [Projects guide](docs/guide/projects.md).
 - **🧠 Session recall** - The agent can search past conversations for relevant context via the `recall_sessions` tool.
 - **📦 Bundled skills** - Built-in help and Obsidian-knowledge skills, auto-generated from the docs site at build time.
 - **📄 Binary file awareness in tools** - `read_file` can return images, audio, video, and PDFs directly to the model when encountered during tool execution.
 - **🏗️ Layered prompt architecture** - System prompts refactored into composable Handlebars sections.
-
-**Previous Updates (v4.6.0):**
-
-- **📝 Diff review view** - Side-by-side diff for `write_file`, `append_content`, `create_skill`, and `edit_skill` with inline editing before approval
-- **✏️ edit_skill tool** - Update existing skill instructions through the agent
-- **🔧 get_workspace_state** - Comprehensive workspace snapshot replacing the old `get_active_file`
-- **📎 Binary files in @ mentions** - File picker supports images, PDFs, audio, and video alongside text
-- **🗂️ Folder re-expansion** - Folders in context auto-include newly created files on each turn
 
 ## Features
 
