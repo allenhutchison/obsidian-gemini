@@ -299,10 +299,17 @@ export class ContextManager {
 		// that the (more expensive) summarization pass never runs. The most
 		// recent few tool-result turns are left intact — see truncateOldToolResults
 		// for defaults. Tracked under #763.
+		//
+		// `truncateOldToolResults` returns the input array reference when nothing
+		// gets truncated, so the identity check is a free fast-path that avoids
+		// the double JSON.stringify on every prepareHistory call (which fires on
+		// every send — keeping the no-truncation path O(1) matters).
 		const truncatedHistory = truncateOldToolResults(conversationHistory);
-		const truncationDelta = JSON.stringify(conversationHistory).length - JSON.stringify(truncatedHistory).length;
-		if (truncationDelta > 0) {
-			this.logger.log(`[ContextManager] Truncated old tool results: shed ~${truncationDelta} bytes from history`);
+		if (truncatedHistory !== conversationHistory) {
+			const truncationDelta = JSON.stringify(conversationHistory).length - JSON.stringify(truncatedHistory).length;
+			if (truncationDelta > 0) {
+				this.logger.log(`[ContextManager] Truncated old tool results: shed ~${truncationDelta} bytes from history`);
+			}
 		}
 
 		// Short-circuit for very short conversations

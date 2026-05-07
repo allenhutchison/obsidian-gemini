@@ -462,9 +462,18 @@ describe('truncateOldToolResults', () => {
 		content: 'x'.repeat(size),
 	});
 
-	test('returns history unchanged when there are no tool-result turns', () => {
+	test('returns the exact input reference when there are no tool-result turns', () => {
+		// Identity (not just deep equality) matters — ContextManager uses
+		// `truncated !== history` as a fast-path to skip the double
+		// JSON.stringify when no truncation occurred.
 		const history = [userText('hi'), modelText('hello')];
-		expect(truncateOldToolResults(history)).toEqual(history);
+		expect(truncateOldToolResults(history)).toBe(history);
+	});
+
+	test('returns the exact input reference when fewer tool-result turns exist than keepRecent', () => {
+		const history = [fnCallTurn('read_file'), fnResponseTurn('read_file', { success: true, content: 'tiny' })];
+		// Only 1 tool-result turn, keepRecent=2 — nothing to truncate.
+		expect(truncateOldToolResults(history, { keepRecent: 2 })).toBe(history);
 	});
 
 	test('keeps the most recent N tool-result turns intact', () => {
