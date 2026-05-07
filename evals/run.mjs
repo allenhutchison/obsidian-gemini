@@ -221,10 +221,17 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		// so the operator sees per-turn progress instead of a silent wait.
 		console.log(`  Sending message... (budget ${Math.round(taskTimeoutMs / 1000)}s)`);
 		const sendPromise = sendMessage(task.userMessage);
-		// Swallow rejections on the unawaited handle — we surface errors via
-		// the awaited race below; this just prevents an unhandled-rejection
-		// crash if sendMessage rejects after the timeout path took over.
-		const sendSafe = sendPromise.catch(() => {});
+		// Capture (rather than swallow) any rejection. Without this, a
+		// sendMessage failure would let the race resolve as 'OK', score
+		// against an empty collector, and silently report FAILED with no
+		// reason — masking the real error from the outer try/catch.
+		// `sendError` is rethrown after the race resolves to a non-TIMEOUT
+		// winner so the existing error path (catch block below) handles it
+		// the same way it did before the timeout refactor.
+		let sendError = null;
+		const sendSafe = sendPromise.catch((err) => {
+			sendError = err;
+		});
 
 		let pollerActive = true;
 		let lastSummary = null;
@@ -260,6 +267,11 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 			// obsidianEval child can exit cleanly. After that we proceed —
 			// the dangling promise is left to its own outer timeout.
 			await Promise.race([sendSafe, sleep(TIMEOUT_SETTLE_MS)]);
+		} else if (sendError) {
+			// sendMessage rejected before the timeout fired — propagate to the
+			// outer catch so the run is recorded as ERROR (with the message)
+			// rather than silently FAILED against an empty event stream.
+			throw sendError;
 		} else {
 			console.log(`  Turn completed.`);
 		}
