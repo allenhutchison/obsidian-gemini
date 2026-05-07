@@ -24,6 +24,7 @@
 		"prepare": "husky",
 		"eval": "node evals/run.mjs",
 		"eval:compare": "node evals/lib/compare.mjs",
+		"eval:bless": "node evals/lib/bless.mjs",
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
 		"docs:preview": "vitepress preview docs"

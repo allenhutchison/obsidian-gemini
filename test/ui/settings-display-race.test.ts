@@ -8,15 +8,17 @@ var generalCalls = 0;
 // eslint-disable-next-line no-var
 var uiCalls = 0;
 // eslint-disable-next-line no-var
-var contextCalls = 0;
+var automationCalls = 0;
 // eslint-disable-next-line no-var
-var apiCalls = 0;
+var agentConfigCalls = 0;
 // eslint-disable-next-line no-var
 var toolCalls = 0;
 // eslint-disable-next-line no-var
 var mcpCalls = 0;
 // eslint-disable-next-line no-var
 var ragCalls = 0;
+// eslint-disable-next-line no-var
+var debugCalls = 0;
 // eslint-disable-next-line no-var
 var advancedToggleCalls = 0;
 
@@ -37,14 +39,14 @@ vi.mock('../../src/ui/settings-ui', () => ({
 		uiCalls += 1;
 	}),
 }));
-vi.mock('../../src/ui/settings-context', () => ({
-	renderContextSettings: vi.fn(() => {
-		contextCalls += 1;
+vi.mock('../../src/ui/settings-automation', () => ({
+	renderAutomationSettings: vi.fn(() => {
+		automationCalls += 1;
 	}),
 }));
-vi.mock('../../src/ui/settings-api', () => ({
-	renderApiSettings: vi.fn(async () => {
-		apiCalls += 1;
+vi.mock('../../src/ui/settings-agent-config', () => ({
+	renderAgentConfigSettings: vi.fn(async () => {
+		agentConfigCalls += 1;
 	}),
 }));
 vi.mock('../../src/ui/settings-tools', () => ({
@@ -60,6 +62,11 @@ vi.mock('../../src/ui/settings-mcp', () => ({
 vi.mock('../../src/ui/settings-rag', () => ({
 	renderRAGSettings: vi.fn(async () => {
 		ragCalls += 1;
+	}),
+}));
+vi.mock('../../src/ui/settings-debug', () => ({
+	renderDebugSettings: vi.fn(() => {
+		debugCalls += 1;
 	}),
 }));
 
@@ -106,11 +113,12 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 	beforeEach(() => {
 		generalCalls = 0;
 		uiCalls = 0;
-		contextCalls = 0;
-		apiCalls = 0;
+		automationCalls = 0;
+		agentConfigCalls = 0;
 		toolCalls = 0;
 		mcpCalls = 0;
 		ragCalls = 0;
+		debugCalls = 0;
 		advancedToggleCalls = 0;
 		gate = null;
 	});
@@ -132,7 +140,7 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		expect(generalCalls).toBe(1);
 		// Sync sections must NOT have run yet because of the gate.
 		expect(uiCalls).toBe(0);
-		expect(contextCalls).toBe(0);
+		expect(automationCalls).toBe(0);
 
 		// While the first render is still awaiting the gate, the second call
 		// arrives. With the token guard, the first render must abort after the
@@ -151,10 +159,11 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		// render's pass.
 		expect(generalCalls).toBe(2);
 		expect(uiCalls).toBe(1);
-		expect(contextCalls).toBe(1);
+		expect(automationCalls).toBe(1);
+		expect(ragCalls).toBe(1);
 	});
 
-	it('runs every section exactly once for a single uncontended call', async () => {
+	it('runs every always-on section exactly once for a single uncontended call', async () => {
 		const plugin = { settings: { debugMode: false }, saveSettings: vi.fn() };
 		const tab = new ObsidianGeminiSettingTab({} as never, plugin as never);
 
@@ -162,11 +171,13 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 
 		expect(generalCalls).toBe(1);
 		expect(uiCalls).toBe(1);
-		expect(contextCalls).toBe(1);
-		// Advanced sections stay collapsed by default.
-		expect(apiCalls).toBe(0);
+		expect(automationCalls).toBe(1);
+		// Vault Search Index renders unconditionally (promoted out of advanced).
+		expect(ragCalls).toBe(1);
+		// Advanced-only sections stay hidden until "Show Advanced Settings" is on.
+		expect(agentConfigCalls).toBe(0);
 		expect(toolCalls).toBe(0);
 		expect(mcpCalls).toBe(0);
-		expect(ragCalls).toBe(0);
+		expect(debugCalls).toBe(0);
 	});
 });

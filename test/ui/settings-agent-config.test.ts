@@ -1,5 +1,6 @@
 /**
- * Regression tests for settings-api temperature/topP slider debounce handlers.
+ * Regression tests for the temperature/topP slider debounce handlers in the
+ * Agent Config settings section (formerly settings-api.ts).
  *
  * Covers issue #601:
  *  - Stale async validation results must not overwrite current slider state
@@ -105,7 +106,7 @@ vi.mock('obsidian', () => {
 	};
 });
 
-import { renderApiSettings } from '../../src/ui/settings-api';
+import { renderAgentConfigSettings } from '../../src/ui/settings-agent-config';
 
 interface FakePlugin {
 	settings: any;
@@ -164,8 +165,8 @@ async function setup(validateImpl?: Mock) {
 	plugin.getModelManager = () => modelManager;
 
 	const containerEl = {} as HTMLElement;
-	const context = { redisplay: vi.fn(), showDeveloperSettings: false };
-	await renderApiSettings(containerEl, plugin as any, context);
+	const context = { redisplay: vi.fn(), showDeveloperSettings: false, setShowDeveloperSettings: vi.fn() };
+	await renderAgentConfigSettings(containerEl, plugin as any, context);
 	return { plugin, modelManager };
 }
 
@@ -176,7 +177,7 @@ async function flushMicrotasks() {
 	}
 }
 
-describe('settings-api slider debounce (issue #601)', () => {
+describe('settings-agent-config slider debounce (issue #601)', () => {
 	beforeEach(() => {
 		for (const key of Object.keys(mockSliderRegistry)) {
 			delete mockSliderRegistry[key];

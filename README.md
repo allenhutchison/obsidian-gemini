@@ -7,9 +7,19 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
-## What's New in v4.7.0
+## What's New in v4.8.0
 
-**✨ Projects, Session Memory & File Shelf**
+**✨ Gemini Scribe 4.8 - Scheduled & Background Tasks, Ollama, Activity Modal**
+
+- **⏰ Scheduled tasks** - Run agent tasks on a cron, time-of-day, or day-of-week schedule with full management UI. See the [Scheduled Tasks guide](docs/guide/scheduled-tasks.md).
+- **🌙 Missed-run catch-up** - Tasks that should have run while Obsidian was closed surface on startup for review.
+- **🛰️ Background tasks** - Deep research and image generation now run in the background with output consolidated under `[state-folder]/Background-Tasks/`. See the [Background Tasks guide](docs/guide/background-tasks.md).
+- **📊 Unified activity modal** - Background Tasks and RAG status share a single tabbed view.
+- **🦙 Ollama provider** - Point the plugin at a local Ollama server for offline, local-model chat. See the [Ollama Setup guide](docs/guide/ollama-setup.md).
+- **🛑 Runaway-loop abort** - Repeated tool-loop detections within a turn now abort the turn with a clear notice instead of churning.
+- **🛠️ Headless agent loop** - AgentLoop extracted from the agent view so scheduled and background runners share the same execution engine.
+
+**Previous Updates (v4.7.0):**
 
 - **📂 Projects** - Scope agent sessions to a folder with custom instructions, permission overrides, and skill filters. See the [Projects guide](docs/guide/projects.md).
 - **🧠 Session recall** - The agent can search past conversations for relevant context via the `recall_sessions` tool.
@@ -17,18 +27,10 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 - **📄 Binary file awareness in tools** - `read_file` can return images, audio, video, and PDFs directly to the model when encountered during tool execution.
 - **🏗️ Layered prompt architecture** - System prompts refactored into composable Handlebars sections.
 
-**Previous Updates (v4.6.0):**
-
-- **📝 Diff review view** - Side-by-side diff for `write_file`, `append_content`, `create_skill`, and `edit_skill` with inline editing before approval
-- **✏️ edit_skill tool** - Update existing skill instructions through the agent
-- **🔧 get_workspace_state** - Comprehensive workspace snapshot replacing the old `get_active_file`
-- **📎 Binary files in @ mentions** - File picker supports images, PDFs, audio, and video alongside text
-- **🗂️ Folder re-expansion** - Folders in context auto-include newly created files on each turn
-
 ## Features
 
 - **Agent Mode with Tool Calling:** An AI agent that can actively work with your vault! It can search for files, read content, create new notes, edit existing ones, move and rename files, create folders, and even conduct deep research with proper citations. Features persistent sessions, granular permission controls, session-specific model configuration, and a diff review view that lets you inspect and edit proposed file changes before they're written.
-- **Semantic Vault Search:** [Experimental] Search your vault by meaning, not just keywords. Uses Google's File Search API to index your notes in the background. The AI can find relevant content even when you don't remember exact words. Supports PDFs and attachments, with pause/resume controls and detailed status tracking.
+- **Semantic Vault Search:** Search your vault by meaning, not just keywords. Uses Google's File Search API to index your notes in the background. The AI can find relevant content even when you don't remember exact words. Supports PDFs and attachments, with pause/resume controls and detailed status tracking.
 - **Context-Aware Agent:** Add specific notes as persistent context for your agent sessions. The agent can access and reference these context files throughout your conversation, providing highly relevant and personalized responses.
 - **Smart Summarization:** Quickly generate concise, one-sentence summaries of your notes and automatically store them in the document's frontmatter, using a dedicated Gemini model optimized for summarization.
 - **Selection-Based AI Features:** Work with selected text in powerful ways:
@@ -42,6 +44,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 - **Image Paste Support:** Paste images directly into the chat input to send them to Gemini for multimodal analysis. Images are automatically saved to your Obsidian attachment folder, displayed as thumbnails before sending, and the AI receives the image path for embedding in notes.
 - **MCP Server Support:** [Experimental] Connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers to extend the agent with external tools. Supports stdio (desktop) and HTTP transports (all platforms including mobile), with OAuth authentication for remote servers. Configure per-tool trust settings with seamless integration into the confirmation flow.
 - **Scheduled Tasks:** Automate recurring AI prompts — daily summaries, weekly reports, periodic vault maintenance — without manual intervention. Create and manage tasks from the **Open Scheduler** command or Settings → General → Scheduled Tasks. Each task has a frontmatter schedule (`daily`, `daily@HH:MM`, `weekly`, `weekly@HH:MM:DAYS`, `interval:Xm`, etc.) and a prompt body; tasks run as headless agent sessions and write output to your vault. Supports per-task model and tool-category overrides, catch-up runs for tasks missed while Obsidian was closed (`runIfMissed: true`), automatic pause after repeated failures, and a task monitor via the command palette.
+- **Lifecycle Hooks:** [Opt-in] Trigger headless AI agent runs in response to vault events — file created, modified, deleted, or renamed. Create and manage hooks from the **Open Hook Manager** command or Settings → General → Lifecycle Hooks. Each hook specifies a trigger, an optional path glob and frontmatter filter, and a prompt template; runs include debounce, per-hour rate limits, cooldown, and auto-pause guards to keep API costs in check. Requires enabling the `hooksEnabled` setting.
 - **Projects:** Create scoped agent profiles for different areas of your vault. A project bundles custom instructions, file scope, skill selection, and permission overrides into a single configuration. The agent auto-detects projects from your folder structure and applies project-specific behavior — including scoped file discovery, filtered skills, and per-tool permission overrides. See the [Projects guide](https://allenhutchison.github.io/obsidian-gemini/guide/projects) for details and the [blog post](https://allen.hutchison.org/2026/04/09/scoping-ai-context-with-projects-in-gemini-scribe/) for a walkthrough.
 - **Agent Skills:** Create, edit, and use extensible skill packages that give the agent specialized knowledge and workflows. Skills follow the [agentskills.io](https://agentskills.io) specification and are stored in your plugin state folder. The agent automatically discovers available skills and activates them on demand. Update existing skills via the `edit_skill` tool with diff review.
 - **Built-in Prompt Templates:** The plugin uses carefully crafted Handlebars templates for system prompts, agent prompts, summarization prompts, selection rewrite prompts, and completion prompts. These ensure consistent and effective AI interaction.
@@ -188,6 +191,7 @@ For detailed guides on all features, visit the [Documentation Site](https://alle
 - [MCP Servers Guide](docs/guide/mcp-servers.md) - Connect external tool servers
 - [Agent Skills Guide](docs/guide/agent-skills.md) - Create extensible AI skill packages
 - [Scheduled Tasks Guide](docs/guide/scheduled-tasks.md) - Automate recurring AI prompts
+- [Lifecycle Hooks Guide](docs/guide/lifecycle-hooks.md) - Trigger AI runs from vault events
 
 **Configuration & Development:**
 

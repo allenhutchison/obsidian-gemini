@@ -56,22 +56,23 @@ The user just saved {{filePath}}. Read it and write a one-paragraph summary high
 
 ### Frontmatter Fields
 
-| Field               | Required               | Default                   | Description                                                                                                        |
-| ------------------- | ---------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `trigger`           | Yes                    | —                         | Vault event. One of: `file-created`, `file-modified`, `file-deleted`, `file-renamed`.                              |
-| `action`            | Yes                    | —                         | What to do on each fire. One of: `agent-task`, `summarize`, `rewrite`, `command`. See [Actions](#actions) below.   |
-| `commandId`         | When `action: command` | —                         | Command palette id to dispatch (e.g. `editor:save-file`).                                                          |
-| `pathGlob`          | No                     | (matches all paths)       | Glob pattern matched against the triggering file's vault path. Supports `*` and `**`.                              |
-| `frontmatterFilter` | No                     | —                         | Object of key/value pairs the note's frontmatter must match for the hook to fire.                                  |
-| `debounceMs`        | No                     | `5000`                    | Per-(hook, file) debounce window in milliseconds. Coalesces rapid saves into one fire.                             |
-| `maxRunsPerHour`    | No                     | unlimited                 | Sliding-window rate limit per hook (across all files).                                                             |
-| `cooldownMs`        | No                     | `30000`                   | After a fire completes, suppress further events on the same (hook, file) for this window. Prevents self-retrigger. |
-| `enabledTools`      | No                     | `['read_only', 'skills']` | Tool categories the agent may use during the run.                                                                  |
-| `enabledSkills`     | No                     | `[]`                      | Skill slugs to pre-activate in the headless session.                                                               |
-| `model`             | No                     | Plugin chat model         | Override the model for this hook (e.g. `gemini-2.5-flash-lite`).                                                   |
-| `outputPath`        | No                     | (no file written)         | Where to write the agent's final response. Supports `{slug}`, `{date}`, and `{fileName}` placeholders.             |
-| `enabled`           | No                     | `true`                    | Set to `false` to disable the hook without deleting it.                                                            |
-| `desktopOnly`       | No                     | `true`                    | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                       |
+| Field               | Required               | Default                   | Description                                                                                                                                                                      |
+| ------------------- | ---------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trigger`           | Yes                    | —                         | Vault event. One of: `file-created`, `file-modified`, `file-deleted`, `file-renamed`.                                                                                            |
+| `action`            | Yes                    | —                         | What to do on each fire. One of: `agent-task`, `summarize`, `rewrite`, `command`. See [Actions](#actions) below.                                                                 |
+| `commandId`         | When `action: command` | —                         | Command palette id to dispatch (e.g. `editor:save-file`).                                                                                                                        |
+| `focusFile`         | No                     | `false`                   | When `action: command`, focus the triggering file in the workspace before dispatching so editor-scoped commands target it. Off by default — see [Actions → `command`](#command). |
+| `pathGlob`          | No                     | (matches all paths)       | Glob pattern matched against the triggering file's vault path. Supports `*` and `**`.                                                                                            |
+| `frontmatterFilter` | No                     | —                         | Object of key/value pairs the note's frontmatter must match for the hook to fire.                                                                                                |
+| `debounceMs`        | No                     | `5000`                    | Per-(hook, file) debounce window in milliseconds. Coalesces rapid saves into one fire.                                                                                           |
+| `maxRunsPerHour`    | No                     | unlimited                 | Sliding-window rate limit per hook (across all files).                                                                                                                           |
+| `cooldownMs`        | No                     | `30000`                   | After a fire completes, suppress further events on the same (hook, file) for this window. Prevents self-retrigger.                                                               |
+| `enabledTools`      | No                     | `['read_only', 'skills']` | Tool categories the agent may use during the run.                                                                                                                                |
+| `enabledSkills`     | No                     | `[]`                      | Skill slugs to pre-activate in the headless session.                                                                                                                             |
+| `model`             | No                     | Plugin chat model         | Override the model for this hook (e.g. `gemini-2.5-flash-lite`).                                                                                                                 |
+| `outputPath`        | No                     | (no file written)         | Where to write the agent's final response. Supports `{slug}`, `{date}`, and `{fileName}` placeholders.                                                                           |
+| `enabled`           | No                     | `true`                    | Set to `false` to disable the hook without deleting it.                                                                                                                          |
+| `desktopOnly`       | No                     | `true`                    | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                                                                                     |
 
 ### Prompt Template Variables
 
@@ -102,7 +103,20 @@ Run a full-file rewrite using the prompt body as the rewrite instruction. The tr
 
 ### `command`
 
-Execute a registered command palette command by id. The hook frontmatter must include `commandId:` (e.g. `editor:save-file`, `gemini-scribe-summarize-active-file`); the prompt body is ignored. The command runs in whatever context Obsidian gives it — most commands depend on the active file/editor, so chaining a hook to a command that operates on the active file is best when paired with a trigger that means the file is already focused (e.g. `file-modified`). If the command id is unknown, the hook records a failure rather than silently no-op.
+Execute a registered command palette command by id. The hook frontmatter must include `commandId:` (e.g. `editor:save-file`, `gemini-scribe-summarize-active-file`); the prompt body is ignored. If the command id is unknown, the hook records a failure rather than silently no-op.
+
+**Active file vs. trigger file.** Obsidian's command API (`app.commands.executeCommandById`) always runs the command against whatever workspace state is currently active — there's no way to scope a single dispatch to a specific file. By default a hook just dispatches; if your trigger file is already focused (typical for `file-modified`), an editor-scoped command like `editor:save-file` will act on it. If you can't rely on that, opt in to `focusFile: true`:
+
+```yaml
+---
+trigger: file-modified
+action: command
+commandId: editor:save-file
+focusFile: true
+---
+```
+
+With `focusFile: true`, the runner calls `app.workspace.openLinkText(filePath, '', false)` before dispatching, so the trigger file is the active editor when the command runs. If the trigger file is gone (e.g. a `file-deleted` trigger), the dispatch is skipped with a log entry. The flag is opt-in because focusing the file changes the user's view — disruptive on every fire of a global command (`app:reload`, `theme:toggle`, etc.) where the active file is irrelevant.
 
 ## Safety Features
 
@@ -214,17 +228,19 @@ action: rewrite
 Tighten the prose in {{fileName}}: remove filler words, hedging, and passive voice. Preserve all headings, links, and code blocks.
 ```
 
-### Save the active file via a command
+### Run a command against the trigger file
 
 ```markdown
 ---
-trigger: file-modified
+trigger: file-created
+pathGlob: 'Inbox/**/*.md'
 action: command
-commandId: editor:save-file
+commandId: gemini-scribe-summarize-active-file
+focusFile: true
 ---
 ```
 
-A loop-trap example more than a useful one — but it shows how `command` dispatches a registered command by id.
+When a new file lands in `Inbox/`, focus it in the workspace and run the **Summarize Active File** command against it. `focusFile: true` is the bit that ensures the command targets the trigger file rather than whatever the user happens to be looking at.
 
 ## Limitations
 

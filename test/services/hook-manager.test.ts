@@ -316,6 +316,37 @@ describe('HookManager CRUD', () => {
 		expect(content).toContain('desktopOnly: false');
 	});
 
+	it('serialises focusFile only when the user opts in (default false stays out of the file)', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+
+		// Default: focusFile not provided → serialized file omits the line.
+		await manager.createHook({
+			...baseCreateParams,
+			slug: 'no-focus',
+			action: 'command',
+			commandId: 'editor:save-file',
+		});
+		const noFocusContent = plugin.__files.get('gemini-scribe/Hooks/no-focus.md');
+		expect(noFocusContent).not.toContain('focusFile');
+
+		// Opted in: file gains the line.
+		await manager.createHook({
+			...baseCreateParams,
+			slug: 'with-focus',
+			action: 'command',
+			commandId: 'editor:save-file',
+			focusFile: true,
+		});
+		const focusContent = plugin.__files.get('gemini-scribe/Hooks/with-focus.md');
+		expect(focusContent).toContain('focusFile: true');
+
+		// In-memory hook reflects the same.
+		const hooks = manager.getHooks();
+		expect(hooks.find((h) => h.slug === 'no-focus')?.focusFile).toBeUndefined();
+		expect(hooks.find((h) => h.slug === 'with-focus')?.focusFile).toBe(true);
+	});
+
 	it('updateHook rewrites the file with merged values', async () => {
 		const plugin = createPluginWithVaultStore();
 		const manager = newManager(plugin);

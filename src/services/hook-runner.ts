@@ -209,6 +209,28 @@ export class HookRunner {
 		if (!commandId) {
 			throw new Error(`[HookRunner] Hook "${hook.slug}" has action=command but no commandId`);
 		}
+
+		// Optional focus step: editor-scoped commands like `editor:save-file`
+		// run against whatever workspace state is active when dispatched, not
+		// against ctx.filePath. When the hook opts in via `focusFile: true`,
+		// we open the trigger file first so the command targets it. If the
+		// file is gone (file-deleted, renamed away, etc.) we skip the
+		// dispatch with a log entry rather than fire on the wrong file.
+		if (hook.focusFile) {
+			const file = this.resolveTriggerFile();
+			if (!file) {
+				// Warn-level: the user explicitly opted into focusFile, so a
+				// silent skip would mask why the command didn't fire. Per
+				// AGENTS.md, logger.log only surfaces in debug mode.
+				this.plugin.logger.warn(
+					`[HookRunner] Hook "${hook.slug}" — command: focusFile is on but ${this.ctx.filePath} is not present; skipping dispatch`
+				);
+				return undefined;
+			}
+			await this.plugin.app.workspace.openLinkText(this.ctx.filePath, '', false);
+			if (isCancelled()) return undefined;
+		}
+
 		// `executeCommandById` is part of the Obsidian Commands API. It's not
 		// in the public types but it's a documented runtime surface every
 		// plugin uses (no other way to fire a registered command by id). It
