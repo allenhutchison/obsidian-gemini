@@ -278,7 +278,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 - **Description**: Overrides the default Google API base URL for all SDK calls. Use this to route requests through a corporate proxy, local gateway, or regional mirror.
 - **Example**: `https://my-proxy.example.com`
 - **Scope**: Applies to all Google API call sites in the plugin (chat, search, web fetch, image generation, RAG indexing, deep research, context management).
-- **Note**: Leave blank to use the official Google endpoint. Invalid URLs are silently ignored until corrected.
+- **Note**: Leave blank to use the official Google endpoint. Invalid URLs will show a warning and be cleared automatically.
 
 #### Maximum Retries
 
