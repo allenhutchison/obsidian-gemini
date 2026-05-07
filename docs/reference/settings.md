@@ -209,6 +209,10 @@ Context management automatically monitors and controls conversation size to prev
 - **How it works**: When conversation tokens exceed this percentage, older turns are summarized and replaced with a compact summary while preserving recent messages
 - **Hard ceiling**: Aggressive compaction triggers at 80% of the input limit to prevent API errors
 
+### Tool-result truncation in history
+
+In addition to compaction, the plugin sheds bloat from older tool-result turns before each request. When a tool (typically `read_file`) returns a payload larger than ~4 KB, the response in conversation history is replaced with a small `{ truncated: true, truncatedFrom: N, note: "..." }` marker once it falls outside the most recent two tool-result turns. This keeps the agent's reasoning intact for the current and immediately previous tool call while preventing the long tail of past tool responses from dominating every subsequent prompt. Re-issuing the original tool call brings the full output back when needed. The behavior is always-on and not currently exposed as a setting.
+
 ### Show Token Usage
 
 - **Setting**: `showTokenUsage`
