@@ -65,25 +65,31 @@ export async function renderApiSettings(
 	new Setting(containerEl)
 		.setName('Custom API endpoint')
 		.setDesc(
-			'Optional. Override the default Google Gemini API endpoint, for example to route through a local reverse proxy. Leave blank to use the official endpoint.'
+			'Override the default Google API base URL (e.g. for a corporate proxy or local gateway). Leave blank to use the official endpoint.'
 		)
-		.addText((text) =>
+		.addText((text) => {
 			text
-				.setPlaceholder('e.g. http://127.0.0.1:8080')
+				.setPlaceholder('https://my-proxy.example.com')
 				.setValue(plugin.settings.customBaseUrl)
 				.onChange((value) => {
-					const trimmed = value.trim();
-					if (trimmed !== '') {
-						try {
-							new URL(trimmed);
-						} catch {
-							return;
-						}
-					}
-					plugin.settings.customBaseUrl = trimmed;
+					// Save raw value optimistically; validate on blur.
+					plugin.settings.customBaseUrl = value.trim();
 					debouncedSave();
-				})
-		);
+				});
+			text.inputEl.addEventListener('blur', () => {
+				const trimmed = plugin.settings.customBaseUrl.trim();
+				if (trimmed === '') return;
+				try {
+					new URL(trimmed);
+				} catch {
+					new Notice('Custom API endpoint is not a valid URL — clearing.');
+					plugin.settings.customBaseUrl = '';
+					text.setValue('');
+					debouncedSave();
+				}
+			});
+			return text;
+		});
 	new Setting(containerEl)
 		.setName('Maximum Retries')
 		.setDesc('Maximum number of retries when a model request fails.')

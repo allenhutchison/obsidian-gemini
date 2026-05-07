@@ -65,4 +65,26 @@ describe('createGoogleGenAI', () => {
 		expect(MockedGoogleGenAI).toHaveBeenCalledTimes(1);
 		expect(result).toBeDefined();
 	});
+
+	test('does not call createGoogleGenAI when plugin is absent (no-plugin fallback)', () => {
+		mockPlugin.apiKey = undefined;
+		mockPlugin.settings.customBaseUrl = '';
+
+		expect(() => createGoogleGenAI(mockPlugin)).not.toThrow();
+		expect(MockedGoogleGenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: undefined }));
+	});
+
+	test('passes httpOptions.baseUrl when provider is gemini and customBaseUrl is set', () => {
+		mockPlugin.apiKey = 'test-api-key';
+		mockPlugin.settings.customBaseUrl = 'https://corporate-proxy.example.com';
+
+		createGoogleGenAI(mockPlugin);
+
+		expect(MockedGoogleGenAI).toHaveBeenCalledWith(
+			expect.objectContaining({
+				apiKey: 'test-api-key',
+				httpOptions: { baseUrl: 'https://corporate-proxy.example.com' },
+			})
+		);
+	});
 });

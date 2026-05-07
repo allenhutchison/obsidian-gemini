@@ -72,7 +72,6 @@ export class GeminiClientFactory {
 			temperature: settings.temperature ?? 1.0,
 			topP: settings.topP ?? 0.95,
 			streamingEnabled: settings.streamingEnabled ?? true,
-			customBaseUrl: settings.customBaseUrl || undefined,
 			...overrides,
 		};
 		const client = new GeminiClient(config, prompts, plugin);

@@ -48,6 +48,7 @@ vi.mock('obsidian', () => {
 			component.setPlaceholder = () => component;
 			component.setValue = () => component;
 			component.onChange = () => component;
+			component.inputEl = { addEventListener: vi.fn() };
 			cb(component);
 			return this;
 		}
@@ -128,6 +129,7 @@ function buildPlugin(): FakePlugin {
 			maxRetries: 3,
 			initialBackoffDelay: 1000,
 			modelDiscovery: { enabled: false, autoUpdateInterval: 24, fallbackToStatic: true },
+			customBaseUrl: '',
 		},
 		saveSettings: vi.fn().mockResolvedValue(undefined),
 		logger: {
