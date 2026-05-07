@@ -155,7 +155,7 @@ When adding a new task, prefer cloning the closest category's fixture pattern â€
 | `forbiddenTools` | string[] | no       | Tools that must NOT be called                  |
 | `outputMatchers` | object[] | no       | Checks on the final model response             |
 | `maxTurns`       | number   | no       | Max API calls before timeout (default: 15)     |
-| `timeoutMs`      | number   | no       | Wall-clock timeout in ms (default: 120000)     |
+| `timeoutMs`      | number   | no       | Wall-clock timeout in ms (default: 300000)     |
 
 ### Output matcher types
 
@@ -165,6 +165,36 @@ When adding a new task, prefer cloning the closest category's fixture pattern â€
 - `{ "type": "judge", "criteria": "..." }` â€” LLM-as-judge for prose-heavy rubrics where literal substrings would be too brittle. The judge is a separate, **pinned** Gemini model (default `gemini-2.5-flash`; override with `EVAL_JUDGE_MODEL` env var) called with `temperature: 0` and a strict YES/NO contract. The judge always uses Gemini even when the system under test is Ollama, so the verdict doesn't drift across model-swap experiments. Use sparingly â€” each judge matcher is one extra API call per task run, and `judge` matchers fail if no Gemini API key is reachable.
 
 When mixing matcher types, every matcher must pass (logical AND); within a single matcher, an array `value` is logical OR.
+
+## Per-task timeout and progress
+
+Each task runs against a wall-clock budget â€” `timeoutMs` from the task JSON, defaulting to **5 minutes**. When the budget is exceeded the harness:
+
+1. Cancels the in-flight agent loop in the plugin (`AgentView.cancelCurrentRun`).
+2. Waits a few seconds for the in-flight CLI call to settle.
+3. Records the run as a `TIMEOUT` (counts as a non-pass for `pass^k`).
+4. Continues to the next task.
+
+While a task is running, a polling loop prints a progress line every ~2 seconds when the turn or tool-call count changes:
+
+```text
+  [turn 1 | 2 tool calls | 14s elapsed | ETA 28s]
+  [turn 2 | 4 tool calls | 19s elapsed | ETA 19s]
+```
+
+ETA is shown only when the task declares `maxTurns` and at least one turn has completed; otherwise the line omits it.
+
+## Interrupting a run
+
+`Ctrl-C` (SIGINT) and SIGTERM trigger a clean shutdown:
+
+- Prints `=== Interrupted (SIGINT): N of M tasks completed ===`.
+- Cancels the in-flight agent loop in the plugin.
+- Cleans the in-progress task's scratch fixtures and session history (so `eval-scratch/` doesn't leak into the user's vault).
+- Restores any `--model=` override that was applied for the run.
+- Exits with `130` (SIGINT) or `143` (SIGTERM) so CI / wrappers can distinguish "interrupted" from "all green."
+
+A second Ctrl-C while cleanup is in flight is ignored; let the first one finish.
 
 ## Scoring
 
