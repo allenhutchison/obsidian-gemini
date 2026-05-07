@@ -8,8 +8,7 @@ Advanced settings are hidden by default to keep the interface clean. To access t
 
 1. Open Obsidian Settings
 2. Navigate to **Gemini Scribe** under Community plugins
-3. Scroll down to the **Developer Settings** section
-4. Click **Show Advanced Settings**
+3. In the **General** section, scroll to the bottom and click **Show Advanced Settings**
 
 ## Model Parameter Controls
 

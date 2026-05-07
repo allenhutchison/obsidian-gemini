@@ -19,7 +19,7 @@ gemini-scribe/Scheduled-Tasks/
 
 The easiest way to create a task is through the **Scheduler** UI:
 
-1. Open the command palette and run **Open Scheduler** (or go to Settings → General → Scheduled Tasks → **Open Scheduler**)
+1. Open the command palette and run **Open Scheduler** (or go to Settings → Gemini Scribe → Automation → **Open Scheduler**)
 2. Click **New task**
 3. Fill in the slug, schedule, tool access, and prompt
 4. Click **Create task**
@@ -97,7 +97,7 @@ Categories are additive — list as many as the task needs. If `enabledTools` is
 The **Scheduler** modal is the primary way to manage your tasks. Open it from:
 
 - Command palette → **Open Scheduler**
-- Settings → General → Scheduled Tasks → **Open Scheduler**
+- Settings → Gemini Scribe → Automation → **Open Scheduler**
 
 From the Scheduler you can:
 
@@ -158,7 +158,7 @@ Dismissing the modal (Escape or ✕) leaves the `!` badge in place so you can re
 
 ### Auto-run on startup
 
-Enable **Settings → UI Settings → Auto-run missed scheduled tasks on startup** to skip the approval modal entirely and submit all missed tasks silently on every startup.
+Enable **Settings → Gemini Scribe → Automation → Auto-run missed scheduled tasks on startup** to skip the approval modal entirely and submit all missed tasks silently on every startup.
 
 ### Notes
 
