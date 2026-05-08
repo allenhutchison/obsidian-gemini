@@ -14,6 +14,7 @@ import { GoogleGenAI } from '@google/genai';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
 import { GeminiClientFactory, ModelUseCase } from '../api/simple-factory';
+import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 
 // @ts-ignore
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
@@ -290,12 +291,42 @@ export class ContextManager {
 	 * compaction to measure the result size.
 	 */
 	async prepareHistory(conversationHistory: any[], modelName: string): Promise<CompactionResult> {
-		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
+		let estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
+
+		// Shed bloat from old tool-result turns (e.g., big `read_file` payloads)
+		// before any threshold check. This is cheap, deterministic, always-helpful,
+		// and often keeps a session below the compaction threshold long enough
+		// that the (more expensive) summarization pass never runs. The most
+		// recent few tool-result turns are left intact — see truncateOldToolResults
+		// for defaults. Tracked under #763.
+		//
+		// `truncateOldToolResults` returns the input array reference when nothing
+		// gets truncated, so the identity check is a free fast-path that avoids
+		// the double JSON.stringify on every prepareHistory call (which fires on
+		// every send — keeping the no-truncation path O(1) matters).
+		const truncatedHistory = truncateOldToolResults(conversationHistory);
+		if (truncatedHistory !== conversationHistory) {
+			const truncationDelta = JSON.stringify(conversationHistory).length - JSON.stringify(truncatedHistory).length;
+			if (truncationDelta > 0) {
+				this.logger.log(`[ContextManager] Truncated old tool results: shed ~${truncationDelta} bytes from history`);
+				// `estimatedTokens` came from the *previous* response, when the
+				// now-shed bytes were still in history. Without correcting it
+				// here, the threshold check below would fire compaction the
+				// turn truncation kicks in even though the actual outgoing
+				// prompt is smaller. Using the standard 4-chars-per-token
+				// heuristic — the same one used elsewhere in this file for
+				// Ollama — avoids an extra countTokens API roundtrip while
+				// staying accurate enough to skip the spurious compaction.
+				if (estimatedTokens > 0) {
+					estimatedTokens = Math.max(0, estimatedTokens - Math.ceil(truncationDelta / 4));
+				}
+			}
+		}
 
 		// Short-circuit for very short conversations
-		if (conversationHistory.length <= MIN_RECENT_TURNS_TO_KEEP) {
+		if (truncatedHistory.length <= MIN_RECENT_TURNS_TO_KEEP) {
 			return {
-				compactedHistory: conversationHistory,
+				compactedHistory: truncatedHistory,
 				wasCompacted: false,
 				estimatedTokens,
 			};
@@ -305,7 +336,7 @@ export class ContextManager {
 		if (estimatedTokens === 0) {
 			this.logger.log('[ContextManager] No cached token usage, skipping compaction');
 			return {
-				compactedHistory: conversationHistory,
+				compactedHistory: truncatedHistory,
 				wasCompacted: false,
 				estimatedTokens: 0,
 			};
@@ -318,7 +349,7 @@ export class ContextManager {
 				`[ContextManager] Under threshold (${estimatedTokens} < ${compactionThreshold}), skipping compaction`
 			);
 			return {
-				compactedHistory: conversationHistory,
+				compactedHistory: truncatedHistory,
 				wasCompacted: false,
 				estimatedTokens,
 			};
@@ -329,7 +360,7 @@ export class ContextManager {
 
 		const aggressiveThreshold = await this.getAggressiveThreshold(modelName);
 		const isAggressive = estimatedTokens >= aggressiveThreshold;
-		const result = await this.compactHistory(conversationHistory, modelName, isAggressive);
+		const result = await this.compactHistory(truncatedHistory, modelName, isAggressive);
 
 		// Verify the compacted history is smaller
 		const compactedTokens = await this.countTokens(modelName, result.compactedHistory);

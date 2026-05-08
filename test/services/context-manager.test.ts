@@ -399,6 +399,49 @@ describe('ContextManager', () => {
 			// So compacted history = summary + ack + ~5 recent = ~7
 			expect(result.compactedHistory.length).toBeLessThanOrEqual(8);
 		});
+
+		test('skips compaction when post-truncation estimate falls under threshold', async () => {
+			// Cached estimate is *just* over the 200K threshold (20% of 1M),
+			// reflecting the previous turn when a 600 KB tool result was still
+			// in history. Truncating that result sheds ~150K tokens by the
+			// chars-per-token heuristic — enough to push us back under the
+			// threshold and skip compaction entirely.
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 220_000,
+				totalTokenCount: 230_000,
+			});
+
+			// Three tool-result turns: the oldest carries the fat payload; the
+			// two newer ones are kept intact by `keepRecent: 2` (the helper's
+			// default). We need MIN_RECENT_TURNS_TO_KEEP (6) total turns so we
+			// don't take the short-conversation early return — pad with text
+			// turns between tool exchanges.
+			const fatResponse = { success: true, content: 'x'.repeat(600_000) };
+			const smallResponse = { success: true, files: ['a'] };
+			const history = [
+				{ role: 'user', parts: [{ text: 'go' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: { path: 'big.md' } } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: fatResponse } }] }, // OLDEST tool result — truncate
+				{ role: 'model', parts: [{ text: 'reasoning…' }] },
+				{ role: 'user', parts: [{ text: 'now list' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] }, // recent — kept
+				{ role: 'model', parts: [{ text: 'thinking' }] },
+				{ role: 'user', parts: [{ text: 'and one more' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] }, // most recent — kept
+			];
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(false);
+			// The big tool-result payload (oldest of 3) should be replaced with the elision marker.
+			const oldToolResult = result.compactedHistory[2].parts[0].functionResponse.response;
+			expect(oldToolResult.truncated).toBe(true);
+			// No countTokens API call should have fired — we relied on the
+			// byte-delta heuristic to update the estimate, not a roundtrip.
+			expect(mockCountTokens).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('reset', () => {

@@ -3,6 +3,8 @@ import {
 	buildFunctionCallParts,
 	buildFunctionResponseParts,
 	buildToolHistoryTurns,
+	truncateOldToolResults,
+	DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES,
 	ToolCallResultPair,
 } from '../../src/agent/agent-loop-helpers';
 import type { ToolCall } from '../../src/api/interfaces/model-api';
@@ -440,5 +442,127 @@ describe('buildToolHistoryTurns', () => {
 		expect(userResponseTurn.parts).toHaveLength(2);
 		expect(userResponseTurn.parts[0].functionResponse).toBeDefined();
 		expect(userResponseTurn.parts[1].inlineData).toEqual({ mimeType: 'image/png', data: 'imgbytes' });
+	});
+});
+
+describe('truncateOldToolResults', () => {
+	const fnResponseTurn = (name: string, response: any) => ({
+		role: 'user',
+		parts: [{ functionResponse: { name, response } }],
+	});
+	const fnCallTurn = (name: string) => ({
+		role: 'model',
+		parts: [{ functionCall: { name, args: {} } }],
+	});
+	const userText = (text: string) => ({ role: 'user', parts: [{ text }] });
+	const modelText = (text: string) => ({ role: 'model', parts: [{ text }] });
+
+	const big = (size = DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES + 1000) => ({
+		success: true,
+		content: 'x'.repeat(size),
+	});
+
+	test('returns the exact input reference when there are no tool-result turns', () => {
+		// Identity (not just deep equality) matters — ContextManager uses
+		// `truncated !== history` as a fast-path to skip the double
+		// JSON.stringify when no truncation occurred.
+		const history = [userText('hi'), modelText('hello')];
+		expect(truncateOldToolResults(history)).toBe(history);
+	});
+
+	test('returns the exact input reference when fewer tool-result turns exist than keepRecent', () => {
+		const history = [fnCallTurn('read_file'), fnResponseTurn('read_file', { success: true, content: 'tiny' })];
+		// Only 1 tool-result turn, keepRecent=2 — nothing to truncate.
+		expect(truncateOldToolResults(history, { keepRecent: 2 })).toBe(history);
+	});
+
+	test('keeps the most recent N tool-result turns intact', () => {
+		const history = [
+			fnCallTurn('read_file'),
+			fnResponseTurn('read_file', big()), // index 1 — old
+			modelText('thinking'),
+			fnCallTurn('read_file'),
+			fnResponseTurn('read_file', big()), // index 4 — recent
+			modelText('more'),
+			fnCallTurn('read_file'),
+			fnResponseTurn('read_file', big()), // index 7 — most recent
+		];
+		const out = truncateOldToolResults(history, { keepRecent: 2 });
+		// First (oldest) tool-result turn should be truncated.
+		expect(out[1].parts[0].functionResponse.response.truncated).toBe(true);
+		expect(out[1].parts[0].functionResponse.response.success).toBe(true);
+		// The two most recent tool-result turns should be untouched.
+		expect(out[4]).toBe(history[4]);
+		expect(out[7]).toBe(history[7]);
+	});
+
+	test('does not truncate small responses regardless of age', () => {
+		const small = { success: true, content: 'short' };
+		const history = [
+			fnResponseTurn('read_file', small),
+			fnResponseTurn('read_file', small),
+			fnResponseTurn('read_file', small),
+		];
+		const out = truncateOldToolResults(history, { keepRecent: 1 });
+		// All three responses are well under the threshold — none should be marked truncated.
+		for (const turn of out) {
+			expect(turn.parts[0].functionResponse.response.truncated).toBeUndefined();
+		}
+	});
+
+	test('preserves the original success flag when truncating', () => {
+		const history = [
+			fnResponseTurn('read_file', { success: false, error: 'x'.repeat(5000) }),
+			fnResponseTurn('read_file', big()),
+		];
+		const out = truncateOldToolResults(history, { keepRecent: 1 });
+		expect(out[0].parts[0].functionResponse.response.success).toBe(false);
+		expect(out[0].parts[0].functionResponse.response.truncated).toBe(true);
+		// truncatedFrom should be the serialized JSON length, which exceeds maxBytes.
+		expect(out[0].parts[0].functionResponse.response.truncatedFrom).toBeGreaterThan(
+			DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES
+		);
+	});
+
+	test('does not mutate the input history array', () => {
+		const original = fnResponseTurn('read_file', big());
+		const history = [original, fnResponseTurn('read_file', big())];
+		truncateOldToolResults(history, { keepRecent: 1 });
+		// The first turn was a candidate for truncation; the original object should be unchanged.
+		expect(original.parts[0].functionResponse.response.truncated).toBeUndefined();
+	});
+
+	test('passes through inlineData and other non-functionResponse parts', () => {
+		const history = [
+			{
+				role: 'user',
+				parts: [
+					{ functionResponse: { name: 'read_file', response: big() } },
+					{ inlineData: { mimeType: 'image/png', data: 'abc' } },
+				],
+			},
+			fnResponseTurn('read_file', big()), // recent — kept intact
+		];
+		const out = truncateOldToolResults(history, { keepRecent: 1 });
+		// The functionResponse in the older turn was truncated...
+		expect(out[0].parts[0].functionResponse.response.truncated).toBe(true);
+		// ...but the inlineData sibling is preserved.
+		expect(out[0].parts[1].inlineData).toEqual({ mimeType: 'image/png', data: 'abc' });
+	});
+
+	test('respects custom maxBytes / keepRecent options', () => {
+		const history = [
+			fnResponseTurn('read_file', { success: true, content: 'x'.repeat(20) }),
+			fnResponseTurn('read_file', { success: true, content: 'x'.repeat(20) }),
+		];
+		const out = truncateOldToolResults(history, { maxBytes: 10, keepRecent: 1 });
+		expect(out[0].parts[0].functionResponse.response.truncated).toBe(true);
+		// keepRecent=1 → most recent is intact.
+		expect(out[1]).toBe(history[1]);
+	});
+
+	test('handles empty / undefined input', () => {
+		expect(truncateOldToolResults([])).toEqual([]);
+		expect(truncateOldToolResults(undefined as any)).toEqual([]);
 	});
 });
