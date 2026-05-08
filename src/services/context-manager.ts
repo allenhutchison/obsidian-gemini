@@ -56,13 +56,20 @@ const AGGRESSIVE_RECENT_TURNS = 5;
 export const CONTEXT_SUMMARY_MARKER = '[Context Summary]';
 
 export interface CompactionResult {
-	/** The compacted history array ready to send to the API */
+	/** The history array ready to send to the API. May be the original
+	 *  reference (no changes), the truncated form (phase 1), or a fully
+	 *  summarized form (phase 2). */
 	compactedHistory: any[];
-	/** Whether compaction was performed */
+	/** True iff phase 2 summarization occurred — i.e. older turns were
+	 *  replaced with a generated summary entry. NOT set for phase 1
+	 *  truncation, which only sheds bytes from existing tool-result turns
+	 *  without producing a summary. Paired with `summaryText`: callers that
+	 *  surface a "Context Compacted" notification gate on the conjunction
+	 *  (see agent-view-send.ts) so phase 1 stays silent. */
 	wasCompacted: boolean;
 	/** Current estimated token count */
 	estimatedTokens: number;
-	/** Summary text that was generated (if compacted) */
+	/** Summary text that was generated (only set when phase 2 ran) */
 	summaryText?: string;
 }
 
