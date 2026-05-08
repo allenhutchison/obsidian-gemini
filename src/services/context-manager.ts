@@ -291,7 +291,7 @@ export class ContextManager {
 	 * compaction to measure the result size.
 	 */
 	async prepareHistory(conversationHistory: any[], modelName: string): Promise<CompactionResult> {
-		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
+		let estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
 
 		// Shed bloat from old tool-result turns (e.g., big `read_file` payloads)
 		// before any threshold check. This is cheap, deterministic, always-helpful,
@@ -309,6 +309,17 @@ export class ContextManager {
 			const truncationDelta = JSON.stringify(conversationHistory).length - JSON.stringify(truncatedHistory).length;
 			if (truncationDelta > 0) {
 				this.logger.log(`[ContextManager] Truncated old tool results: shed ~${truncationDelta} bytes from history`);
+				// `estimatedTokens` came from the *previous* response, when the
+				// now-shed bytes were still in history. Without correcting it
+				// here, the threshold check below would fire compaction the
+				// turn truncation kicks in even though the actual outgoing
+				// prompt is smaller. Using the standard 4-chars-per-token
+				// heuristic — the same one used elsewhere in this file for
+				// Ollama — avoids an extra countTokens API roundtrip while
+				// staying accurate enough to skip the spurious compaction.
+				if (estimatedTokens > 0) {
+					estimatedTokens = Math.max(0, estimatedTokens - Math.ceil(truncationDelta / 4));
+				}
 			}
 		}
 
