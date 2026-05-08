@@ -209,9 +209,17 @@ Context management automatically monitors and controls conversation size to prev
 - **How it works**: When conversation tokens exceed this percentage, older turns are summarized and replaced with a compact summary while preserving recent messages
 - **Hard ceiling**: Aggressive compaction triggers at 80% of the input limit to prevent API errors
 
-### Tool-result truncation in history
+### Two-phase compaction
 
-In addition to compaction, the plugin sheds bloat from older tool-result turns before each request. When a tool (typically `read_file`) returns a payload larger than ~4 KB, the response in conversation history is replaced with a small `{ truncated: true, truncatedFrom: N, note: "..." }` marker once it falls outside the most recent two tool-result turns. This keeps the agent's reasoning intact for the current and immediately previous tool call while preventing the long tail of past tool responses from dominating every subsequent prompt. Re-issuing the original tool call brings the full output back when needed. The behavior is always-on and not currently exposed as a setting.
+When a session crosses the compaction threshold the plugin runs a cheaper pass before reaching for full summarization:
+
+1. **Phase 1 — tool-result truncation.** Walks history and replaces oversized (>4 KB) `functionResponse` payloads in older turns with a small `{ truncated: true, truncatedFrom: N, note: "..." }` marker. The most recent two tool-result turns are kept intact so the agent reasoning across recent tool calls still has the full text. This is purely structural — no LLM call, no extra tokens spent.
+2. **Re-evaluation.** If phase 1 freed enough room to put us back under the threshold (e.g., a single 600 KB `read_file` was responsible for most of the bloat), the request goes out with the truncated history and phase 2 is skipped entirely.
+3. **Phase 2 — summarization.** Only fires when truncation alone wasn't enough. Older turns are summarized via an LLM call into a single context-summary entry preserving recent messages.
+
+Below the threshold, neither phase fires — older history bytes are left untouched so Gemini's implicit prefix cache stays valid and subsequent turns keep their cached-token discount. Truncation breaks the cache from the modified point forward, so it's restricted to turns where we'd be paying that cost anyway (compaction would have run otherwise).
+
+Re-issuing a tool call brings the full output back if the agent needs it. The behavior is always-on and not currently exposed as a setting.
 
 ### Show Token Usage
 
