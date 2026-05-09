@@ -179,7 +179,7 @@ pathGlob: 'Attachments/**'
 action: agent-task
 enabledTools:
   - read_only
-  - read_write
+  - vault_ops
 ---
 
 A new file was just added at {{filePath}}. Read it (if it's text-based), generate a short description, and append a row to `Attachments/index.md` with the file path and description.
