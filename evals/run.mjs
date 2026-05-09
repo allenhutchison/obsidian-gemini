@@ -126,6 +126,17 @@ async function handleInterrupt(signal, exitCode) {
 			console.warn(`  cleanup warning: ${err.message}`);
 		}
 	}
+	// runTask's finally block normally calls removeCollector() — but we're
+	// about to call process.exit, which skips the in-progress task's finally.
+	// Without an explicit removeCollector here, `window.__evalCollector` and
+	// every subscriber on the agent event bus stays attached until the user
+	// reloads the plugin. Idempotent — safe to call when no collector was
+	// installed (fires before the first runTask, or after the last one).
+	try {
+		await removeCollector();
+	} catch (err) {
+		console.warn(`  collector cleanup warning: ${err.message}`);
+	}
 	await restoreChatModel();
 	process.exit(exitCode);
 }
