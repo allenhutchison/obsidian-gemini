@@ -141,13 +141,21 @@ The parent's `exec` promise will reject with `"Command failed"`, `runTask` will 
 
 ### Quiet monitor pattern
 
-Watching every per-task verdict on a 21-run sweep produces 21 notifications. Prefer a monitor that fires only on the final summary or process exit:
+Watching every per-task verdict on a 21-run sweep produces 21 notifications. Prefer a monitor that fires only on the final summary or process exit. Match `evals/run.mjs` directly (without `--model=`) so the same pattern works for both `npm run eval` and `npm run eval -- --model=<id>`:
 
 ```bash
-until ! pgrep -f "node evals/run.mjs --model=<id>" >/dev/null; do sleep 60; done; echo "exited"
+until ! pgrep -f "node evals/run.mjs" >/dev/null; do sleep 60; done; echo "exited"
 ```
 
-That gives one notification per run. Spot-check progress between notifications by tailing the log.
+If you need to disambiguate when multiple sweeps are running back-to-back (or when restarting after a hang), capture the PID at launch and wait on it directly:
+
+```bash
+npm run eval -- --model=gemini-2.5-pro 2>&1 | tee /tmp/eval-pro.log &
+EVAL_PID=$!
+until ! kill -0 $EVAL_PID 2>/dev/null; do sleep 60; done; echo "exited"
+```
+
+Either pattern gives one notification per run. Spot-check progress between notifications by tailing the log.
 
 ## Bless gate (quality bar for baselines)
 
