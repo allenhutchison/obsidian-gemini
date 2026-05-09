@@ -21,8 +21,7 @@
 				"output_tokens": 410.333333,
 				"cost_usd": 0.001209,
 				"loop_fires": 0,
-				"duration_ms": 12779.666667,
-				"tool_list": ["list_files", "read_file", "read_file", "read_file", "write_file"]
+				"duration_ms": 12779.666667
 			},
 			"runs": [
 				{
@@ -119,16 +118,7 @@
 				"output_tokens": 225,
 				"cost_usd": 0.001134,
 				"loop_fires": 0,
-				"duration_ms": 29557.333333,
-				"tool_list": [
-					"vault_semantic_search",
-					"find_files_by_content",
-					"list_files",
-					"read_file",
-					"read_file",
-					"read_file",
-					"read_file"
-				]
+				"duration_ms": 29557.333333
 			},
 			"runs": [
 				{
@@ -249,8 +239,7 @@
 				"output_tokens": 215.666667,
 				"cost_usd": 0.001157,
 				"loop_fires": 0,
-				"duration_ms": 9438.333333,
-				"tool_list": ["list_files", "read_file", "read_file", "read_file", "read_file", "read_file"]
+				"duration_ms": 9438.333333
 			},
 			"runs": [
 				{
@@ -347,8 +336,7 @@
 				"output_tokens": 222.333333,
 				"cost_usd": 0.001026,
 				"loop_fires": 0,
-				"duration_ms": 10091.333333,
-				"tool_list": ["list_files", "read_file", "read_file", "read_file"]
+				"duration_ms": 10091.333333
 			},
 			"runs": [
 				{
@@ -445,8 +433,7 @@
 				"output_tokens": 108.333333,
 				"cost_usd": 0.001048,
 				"loop_fires": 0,
-				"duration_ms": 38602.333333,
-				"tool_list": ["list_files", "read_file", "read_file"]
+				"duration_ms": 38602.333333
 			},
 			"runs": [
 				{
@@ -544,8 +531,7 @@
 				"output_tokens": 62.333333,
 				"cost_usd": 0.000836,
 				"loop_fires": 0,
-				"duration_ms": 5403.333333,
-				"tool_list": ["read_file"]
+				"duration_ms": 5403.333333
 			},
 			"runs": [
 				{
@@ -642,8 +628,7 @@
 				"output_tokens": 61.666667,
 				"cost_usd": 0.000837,
 				"loop_fires": 0,
-				"duration_ms": 25185.333333,
-				"tool_list": ["find_files_by_name"]
+				"duration_ms": 25185.333333
 			},
 			"runs": [
 				{
