@@ -26,11 +26,20 @@ const EVAL_TIMEOUT_MS = 10_000;
  * window so the parent always settles within bounded time.
  */
 export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
-	const { stdout } = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], { timeoutMs });
-	const lines = stdout.split('\n');
+	const result = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], { timeoutMs });
+	// Surface CLI failures before parsing. A real failure (auth, plugin not
+	// loaded, malformed eval) tends to land on stderr with a non-zero exit;
+	// without this guard we'd fall through to the "=> reply" parser and
+	// throw a confusing "did not return a reply" error that obscures the
+	// actual cause.
+	if (result.code !== 0 || result.signal !== null) {
+		const stderrTail = result.stderr ? ` Stderr: ${result.stderr.slice(0, 300)}` : '';
+		throw new Error(`obsidian eval failed (exit=${result.code}, signal=${result.signal}).${stderrTail}`);
+	}
+	const lines = result.stdout.split('\n');
 	const replyIdx = lines.findIndex((l) => l.startsWith('=>'));
 	if (replyIdx === -1) {
-		throw new Error(`obsidian eval did not return a "=>" reply. Stdout was:\n${stdout.slice(0, 500)}`);
+		throw new Error(`obsidian eval did not return a "=>" reply. Stdout was:\n${result.stdout.slice(0, 500)}`);
 	}
 	const replyLines = lines.slice(replyIdx);
 	replyLines[0] = replyLines[0].slice(2); // strip leading "=>"
