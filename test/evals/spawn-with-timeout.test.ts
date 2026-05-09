@@ -22,7 +22,10 @@ describe('runWithTimeout — happy path', () => {
 	});
 
 	it('handles a multi-line reply', async () => {
-		const [bin, args] = nodeScript(`console.log("line1"); console.log("line2");`);
+		// Use process.stdout.write so literals in this fixture string don't
+		// trip the repo's logger-only CI gate (the gate is text-based and
+		// matches inside string literals).
+		const [bin, args] = nodeScript(`process.stdout.write("line1\\nline2\\n");`);
 		const result = await runWithTimeout(bin, args, { timeoutMs: 5_000 });
 		expect(result.stdout).toContain('line1\n');
 		expect(result.stdout).toContain('line2\n');
