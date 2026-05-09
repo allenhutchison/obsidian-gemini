@@ -95,6 +95,26 @@ export function runWithTimeout(
 		child.stdout.on('data', accumulate('stdout'));
 		child.stderr.on('data', accumulate('stderr'));
 
+		// Settle on `exit` rather than `close`. `close` only fires once every
+		// stdio handle has closed, which can lag the process death by an
+		// unbounded amount when the child has spawned long-lived helpers
+		// that inherit its stdio — obsidian's Electron app has exactly that
+		// shape. Using `exit` keeps the documented `timeoutMs +
+		// SIGKILL_GRACE_MS` settlement bound load-bearing.
+		//
+		// `settled` guards against double-settlement when both `error` and
+		// `exit` fire (rare but possible on spawn failure into immediate
+		// exit), and against race conditions if a future change reintroduces
+		// a `close` listener.
+		let settled = false;
+		const settle = (action) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(termTimer);
+			if (killTimer) clearTimeout(killTimer);
+			action();
+		};
+
 		const termTimer = setTimeout(() => {
 			timedOut = true;
 			try {
@@ -111,34 +131,32 @@ export function runWithTimeout(
 					try {
 						child.kill('SIGKILL');
 					} catch {
-						// Already gone; the close event will fire shortly anyway.
+						// Already gone; the exit event will fire shortly anyway.
 					}
 				}
 			}, SIGKILL_GRACE_MS);
 		}, timeoutMs);
 
 		child.on('error', (err) => {
-			clearTimeout(termTimer);
-			if (killTimer) clearTimeout(killTimer);
-			reject(err);
+			settle(() => reject(err));
 		});
 
-		child.on('close', (code, signal) => {
-			clearTimeout(termTimer);
-			if (killTimer) clearTimeout(killTimer);
-			if (outputExceeded) {
-				return reject(
-					new Error(`Command \`${bin} ${args.join(' ')}\` exceeded ${maxOutputBytes} bytes of output and was killed.`)
-				);
-			}
-			if (timedOut) {
-				const escalation = escalated ? ' (escalated to SIGKILL)' : '';
-				const stderrTail = stderr ? ` Stderr: ${stderr.slice(0, 300)}` : '';
-				return reject(
-					new Error(`Command \`${bin} ${args.join(' ')}\` timed out after ${timeoutMs}ms${escalation}.${stderrTail}`)
-				);
-			}
-			resolve({ stdout, stderr, code, signal });
+		child.on('exit', (code, signal) => {
+			settle(() => {
+				if (outputExceeded) {
+					return reject(
+						new Error(`Command \`${bin} ${args.join(' ')}\` exceeded ${maxOutputBytes} bytes of output and was killed.`)
+					);
+				}
+				if (timedOut) {
+					const escalation = escalated ? ' (escalated to SIGKILL)' : '';
+					const stderrTail = stderr ? ` Stderr: ${stderr.slice(0, 300)}` : '';
+					return reject(
+						new Error(`Command \`${bin} ${args.join(' ')}\` timed out after ${timeoutMs}ms${escalation}.${stderrTail}`)
+					);
+				}
+				resolve({ stdout, stderr, code, signal });
+			});
 		});
 	});
 }
