@@ -177,3 +177,96 @@ export function buildToolHistoryTurns(args: {
 
 	return updated;
 }
+
+/**
+ * Default per-tool-result size cap before we treat a stored response as
+ * bloat worth shedding from history. 4 KB comfortably covers prose answers,
+ * structured JSON, and short file fragments; anything larger is usually a
+ * `read_file` of source code that the model has already digested and won't
+ * need verbatim again.
+ */
+export const DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES = 4096;
+
+/**
+ * Default number of most-recent tool-result turns to leave intact. Two
+ * gives the agent the just-executed turn plus the previous one (so a model
+ * that's reasoning across a small batch of recent tool calls still has the
+ * full text), while older results — the long tail that drives quadratic
+ * input growth (#763) — get shed.
+ */
+export const DEFAULT_TOOL_RESPONSE_KEEP_RECENT = 2;
+
+/**
+ * Build the elision marker that replaces a `functionResponse.response`
+ * payload when it's truncated. Preserves whatever the original `success`
+ * flag was so loop-detection / scoring code that switches on success keeps
+ * working, and tells the model to re-call the tool if it actually needs
+ * the full content again.
+ */
+function buildTruncatedResponse(originalResponse: any, originalBytes: number): any {
+	return {
+		success: originalResponse?.success ?? false,
+		truncated: true,
+		truncatedFrom: originalBytes,
+		note: `Tool result truncated to save context (${originalBytes} bytes elided). Re-call the tool if you need the full output.`,
+	};
+}
+
+/**
+ * Shed bloat from older tool-result turns in a conversation history.
+ *
+ * The agent loop appends tool results to history as user-role turns
+ * containing `functionResponse` parts; on a long coding session those
+ * results (especially `read_file` returning hundreds of KB of source)
+ * are replayed on every subsequent send and drive input-token growth
+ * roughly quadratically in turns. This pass walks history, identifies
+ * tool-result turns, and replaces oversized response payloads in older
+ * turns with a small elision marker (preserving `success` and noting
+ * the original size).
+ *
+ * Defaults:
+ *   - `maxBytes`: only responses whose JSON exceeds this size get
+ *     truncated (4 KB by default). Smaller responses pass through.
+ *   - `keepRecent`: the latest N tool-result turns are left intact (2
+ *     by default), so an agent reasoning across a small batch of recent
+ *     tool calls still has full text.
+ *
+ * Returns a new array; the input is not mutated. Non-tool-result turns
+ * (user messages, model text, etc.) and the actual `functionCall`
+ * parts are passed through unchanged.
+ *
+ * Tracked under #763.
+ */
+export function truncateOldToolResults(history: any[], opts?: { maxBytes?: number; keepRecent?: number }): any[] {
+	const list = history || [];
+	const maxBytes = opts?.maxBytes ?? DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES;
+	const keepRecent = Math.max(0, opts?.keepRecent ?? DEFAULT_TOOL_RESPONSE_KEEP_RECENT);
+
+	const isToolResultTurn = (turn: any) =>
+		turn?.role === 'user' && Array.isArray(turn.parts) && turn.parts.some((p: any) => p?.functionResponse);
+
+	const toolTurnIndices = list.reduce<number[]>((acc, turn, i) => {
+		if (isToolResultTurn(turn)) acc.push(i);
+		return acc;
+	}, []);
+	if (toolTurnIndices.length <= keepRecent) return list;
+
+	const cutoff = toolTurnIndices[toolTurnIndices.length - keepRecent] ?? Infinity;
+
+	return list.map((turn, i) => {
+		if (i >= cutoff || !isToolResultTurn(turn)) return turn;
+		const newParts = turn.parts.map((p: any) => {
+			if (!p?.functionResponse?.response) return p;
+			const serialized = JSON.stringify(p.functionResponse.response);
+			if (serialized.length <= maxBytes) return p;
+			return {
+				...p,
+				functionResponse: {
+					...p.functionResponse,
+					response: buildTruncatedResponse(p.functionResponse.response, serialized.length),
+				},
+			};
+		});
+		return { ...turn, parts: newParts };
+	});
+}

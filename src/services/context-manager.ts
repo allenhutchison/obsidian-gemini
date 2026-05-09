@@ -14,6 +14,7 @@ import { createGoogleGenAI } from '../api/google-genai-factory';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
 import { GeminiClientFactory, ModelUseCase } from '../api/simple-factory';
+import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 
 // @ts-ignore
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
@@ -55,13 +56,20 @@ const AGGRESSIVE_RECENT_TURNS = 5;
 export const CONTEXT_SUMMARY_MARKER = '[Context Summary]';
 
 export interface CompactionResult {
-	/** The compacted history array ready to send to the API */
+	/** The history array ready to send to the API. May be the original
+	 *  reference (no changes), the truncated form (phase 1), or a fully
+	 *  summarized form (phase 2). */
 	compactedHistory: any[];
-	/** Whether compaction was performed */
+	/** True iff phase 2 summarization occurred — i.e. older turns were
+	 *  replaced with a generated summary entry. NOT set for phase 1
+	 *  truncation, which only sheds bytes from existing tool-result turns
+	 *  without producing a summary. Paired with `summaryText`: callers that
+	 *  surface a "Context Compacted" notification gate on the conjunction
+	 *  (see agent-view-send.ts) so phase 1 stays silent. */
 	wasCompacted: boolean;
 	/** Current estimated token count */
 	estimatedTokens: number;
-	/** Summary text that was generated (if compacted) */
+	/** Summary text that was generated (only set when phase 2 ran) */
 	summaryText?: string;
 }
 
@@ -313,6 +321,15 @@ export class ContextManager {
 
 		const compactionThreshold = await this.getCompactionThreshold(modelName);
 
+		// Under threshold: do nothing. In particular, do **not** truncate
+		// older tool-result turns. Truncation modifies older history bytes,
+		// which invalidates Gemini's implicit prefix cache from that point
+		// forward — those bytes get billed at full input rate this turn
+		// instead of the cached rate. Below threshold, that "cache-miss tax"
+		// is pure waste: we could have served subsequent turns at the
+		// discounted rate without any structural change. So truncation only
+		// fires when we'd otherwise compact (compaction already breaks the
+		// cache, so truncation rides along for free). See #763.
 		if (estimatedTokens < compactionThreshold) {
 			this.logger.log(
 				`[ContextManager] Under threshold (${estimatedTokens} < ${compactionThreshold}), skipping compaction`
@@ -324,12 +341,47 @@ export class ContextManager {
 			};
 		}
 
-		// Over threshold — perform compaction
-		this.logger.log(`[ContextManager] Over threshold (${estimatedTokens} >= ${compactionThreshold}), compacting...`);
+		// Over threshold — multi-phase compaction.
+		//
+		// Phase 1: try truncating old tool-result payloads. Cheap (no LLM
+		// call), deterministic, and often enough on its own when a single big
+		// `read_file` is responsible for most of the bloat. We reuse the
+		// existing 4-chars-per-token heuristic to estimate the post-truncation
+		// size without spending a `countTokens` roundtrip.
+		//
+		// Phase 2: if truncation alone didn't get us back under threshold, fall
+		// through to summarization. Summarization runs against the truncated
+		// history (so the compactor isn't paying to re-serialize content that
+		// already got elided to markers).
+		const truncatedHistory = truncateOldToolResults(conversationHistory);
+		let postPhase1Tokens = estimatedTokens;
+		if (truncatedHistory !== conversationHistory) {
+			const truncationDelta = JSON.stringify(conversationHistory).length - JSON.stringify(truncatedHistory).length;
+			if (truncationDelta > 0) {
+				this.logger.log(`[ContextManager] Phase 1 (truncation): shed ~${truncationDelta} bytes from old tool results`);
+				postPhase1Tokens = Math.max(0, estimatedTokens - Math.ceil(truncationDelta / 4));
+			}
+		}
+
+		if (postPhase1Tokens < compactionThreshold) {
+			this.logger.log(
+				`[ContextManager] Phase 1 sufficient (${postPhase1Tokens} < ${compactionThreshold}); skipping summarization`
+			);
+			return {
+				compactedHistory: truncatedHistory,
+				wasCompacted: false,
+				estimatedTokens: postPhase1Tokens,
+			};
+		}
+
+		// Phase 2: still over threshold — perform full summarization compaction.
+		this.logger.log(
+			`[ContextManager] Phase 2 (summarization): still over threshold (${postPhase1Tokens} >= ${compactionThreshold}) after truncation`
+		);
 
 		const aggressiveThreshold = await this.getAggressiveThreshold(modelName);
-		const isAggressive = estimatedTokens >= aggressiveThreshold;
-		const result = await this.compactHistory(conversationHistory, modelName, isAggressive);
+		const isAggressive = postPhase1Tokens >= aggressiveThreshold;
+		const result = await this.compactHistory(truncatedHistory, modelName, isAggressive);
 
 		// Verify the compacted history is smaller
 		const compactedTokens = await this.countTokens(modelName, result.compactedHistory);

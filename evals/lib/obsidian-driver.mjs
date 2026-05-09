@@ -157,6 +157,33 @@ export async function sendMessage(text) {
 }
 
 /**
+ * Ask the running plugin to cancel the in-flight agent run. Best-effort —
+ * calls AgentView's cancellation hook if available; swallows errors so the
+ * caller can continue with cleanup even if the plugin has already moved on.
+ *
+ * Used both by the per-task timeout path (to stop the agent before scoring
+ * the partial state) and by the SIGINT handler (to avoid leaving an
+ * orphaned agent loop chewing on tools after the harness exits).
+ */
+export async function cancelAgent() {
+	try {
+		await obsidianEval(
+			`(() => {
+        const p = app.plugins.plugins['gemini-scribe'];
+        try {
+          if (p?.agentView?.cancelCurrentRun) p.agentView.cancelCurrentRun();
+          else if (p?.agentView?.cancel) p.agentView.cancel();
+          return '"cancelled"';
+        } catch { return '"cancel-failed"'; }
+      })()`,
+			{ timeoutMs: 5_000 }
+		);
+	} catch {
+		// Squash — best-effort by design.
+	}
+}
+
+/**
  * Clean up eval artifacts: scratch folder and session history.
  */
 export async function cleanup(sessionHistoryPath) {

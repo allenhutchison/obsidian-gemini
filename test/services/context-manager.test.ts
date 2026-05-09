@@ -399,6 +399,106 @@ describe('ContextManager', () => {
 			// So compacted history = summary + ack + ~5 recent = ~7
 			expect(result.compactedHistory.length).toBeLessThanOrEqual(8);
 		});
+
+		test('phase 1 (truncation) suffices when over threshold but big tool result dominates', async () => {
+			// Cached estimate is over the 200K threshold (20% of 1M). Phase 1
+			// truncation sheds ~150K tokens via the chars-per-token heuristic —
+			// enough to fall back under the threshold and skip the expensive
+			// summarization phase entirely.
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 220_000,
+				totalTokenCount: 230_000,
+			});
+
+			// Three tool-result turns: the oldest carries the fat payload; the
+			// two newer ones are kept intact by `keepRecent: 2`.
+			const fatResponse = { success: true, content: 'x'.repeat(600_000) };
+			const smallResponse = { success: true, files: ['a'] };
+			const history = [
+				{ role: 'user', parts: [{ text: 'go' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: { path: 'big.md' } } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: fatResponse } }] }, // OLDEST tool result — truncate
+				{ role: 'model', parts: [{ text: 'reasoning…' }] },
+				{ role: 'user', parts: [{ text: 'now list' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] }, // recent — kept
+				{ role: 'model', parts: [{ text: 'thinking' }] },
+				{ role: 'user', parts: [{ text: 'and one more' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] }, // most recent — kept
+			];
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(false);
+			// Phase 1 truncated the oldest tool result.
+			const oldToolResult = result.compactedHistory[2].parts[0].functionResponse.response;
+			expect(oldToolResult.truncated).toBe(true);
+			// No summarization roundtrip — phase 1 alone was sufficient.
+			expect(mockCountTokens).not.toHaveBeenCalled();
+		});
+
+		test('does not truncate under threshold even when big tool results are present (cache preservation)', async () => {
+			// Modifying older history bytes invalidates Gemini's prefix cache for
+			// the rest of the prompt. So when we're still under the compaction
+			// threshold, truncation must not fire — even if there's a fat old
+			// tool-result payload sitting in history that we *could* shed.
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 50_000,
+				totalTokenCount: 60_000,
+			});
+
+			const fatResponse = { success: true, content: 'x'.repeat(600_000) };
+			const smallResponse = { success: true, files: ['a'] };
+			const history = [
+				{ role: 'user', parts: [{ text: 'go' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: { path: 'big.md' } } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: fatResponse } }] },
+				{ role: 'model', parts: [{ text: 'reasoning…' }] },
+				{ role: 'user', parts: [{ text: 'now list' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] },
+				{ role: 'model', parts: [{ text: 'thinking' }] },
+				{ role: 'user', parts: [{ text: 'and one more' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'list_files', args: {} } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'list_files', response: smallResponse } }] },
+			];
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(false);
+			// Returns the input reference unchanged — cache prefix is not disturbed.
+			expect(result.compactedHistory).toBe(history);
+			// And specifically, the fat tool result is left whole.
+			const oldToolResult = result.compactedHistory[2].parts[0].functionResponse.response;
+			expect(oldToolResult.truncated).toBeUndefined();
+			expect(oldToolResult.content).toHaveLength(600_000);
+		});
+
+		test('phase 2 (summarization) fires when truncation alone is insufficient', async () => {
+			// Cached estimate is far over the threshold and the bloat is *not*
+			// concentrated in old tool results — most of it is genuine
+			// conversation. Phase 1 truncation runs but doesn't bring us under
+			// threshold; phase 2 has to run.
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 850_000,
+				totalTokenCount: 900_000,
+			});
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+
+			// Plenty of text turns (no tool-result bloat to shed) so phase 1 is a no-op.
+			const history = Array.from({ length: 20 }, (_, i) => ({
+				role: i % 2 === 0 ? 'user' : 'model',
+				parts: [{ text: `Message ${i} `.repeat(100) }],
+			}));
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(true);
+			expect(result.summaryText).toBeTruthy();
+			// Phase 2 ran (countTokens fired post-summarization to size the result).
+			expect(mockCountTokens).toHaveBeenCalled();
+		});
 	});
 
 	describe('reset', () => {
