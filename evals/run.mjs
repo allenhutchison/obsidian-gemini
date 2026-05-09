@@ -116,18 +116,38 @@ async function handleInterrupt(signal, exitCode) {
 	const completedLabel =
 		totalPlannedTasks > 0 ? `${completedTaskCount} of ${totalPlannedTasks}` : `${completedTaskCount}`;
 	console.log(`\n=== Interrupted (${signal}): ${completedLabel} tasks completed ===`);
-	if (inflight) {
-		const runLabel = inflight.repeat > 1 ? ` [run ${inflight.runIndex + 1}/${inflight.repeat}]` : '';
-		console.log(`  in progress: ${inflight.taskId}${runLabel} — cancelling and cleaning up`);
-		await cancelAgent();
-		try {
-			await cleanup(inflight.sessionInfo?.historyPath);
-		} catch (err) {
-			console.warn(`  cleanup warning: ${err.message}`);
+
+	try {
+		if (inflight) {
+			const runLabel = inflight.repeat > 1 ? ` [run ${inflight.runIndex + 1}/${inflight.repeat}]` : '';
+			console.log(`  in progress: ${inflight.taskId}${runLabel} — cancelling and cleaning up`);
+			try {
+				await cancelAgent();
+			} catch (err) {
+				console.warn(`  cancel warning: ${err.message}`);
+			}
+			try {
+				await cleanup(inflight.sessionInfo?.historyPath);
+			} catch (err) {
+				console.warn(`  cleanup warning: ${err.message}`);
+			}
 		}
+	} finally {
+		// Always-run section. `runTask`'s finally would normally call
+		// `removeCollector()`, but `process.exit` below skips that — so this
+		// block has to fire even if the in-flight cleanup above threw, or we
+		// leak `window.__evalCollector` and ~6 subscribers onto the agent
+		// event bus until the user reloads the plugin (#777). The structural
+		// `finally` is the contract: anything load-bearing for next-run state
+		// goes here, not before the `try`.
+		try {
+			await removeCollector();
+		} catch (err) {
+			console.warn(`  collector cleanup warning: ${err.message}`);
+		}
+		await restoreChatModel();
+		process.exit(exitCode);
 	}
-	await restoreChatModel();
-	process.exit(exitCode);
 }
 
 process.on('SIGINT', () => handleInterrupt('SIGINT', 130));
