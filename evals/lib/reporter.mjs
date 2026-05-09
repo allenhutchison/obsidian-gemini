@@ -58,9 +58,12 @@ export function aggregateTaskRuns(taskId, runs) {
 		const values = runs.map((r) => r.metrics[key] ?? 0);
 		aggMetrics[key] = round(mean(values), 6);
 	}
-	// tool_list is useful for debugging; keep the first run's so the shape
-	// matches a single-run TaskResult for any downstream consumer.
-	aggMetrics.tool_list = runs[0]?.metrics.tool_list ?? [];
+	// `tool_list` is intentionally not lifted to the aggregate. Aggregating a
+	// scalar like `tool_calls` as the mean across runs is meaningful, but a
+	// tool *sequence* can't be averaged — and using `runs[0]`'s sequence
+	// produced a confusing shape mismatch when runs had different lengths
+	// (e.g., aggregate `tool_calls=5` next to a 6-element `tool_list` from
+	// run 0). Per-run tool_list arrays remain available on `runs[i].metrics`.
 
 	return {
 		id: taskId,
