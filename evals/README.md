@@ -5,9 +5,10 @@ Measures agent-loop behavior across repeatable tasks. Produces scored results wi
 ## Prerequisites
 
 - Obsidian desktop running with the `gemini-scribe` plugin enabled
-- Agent view panel open (the eval runner sends messages programmatically)
+- Agent view panel **visible** (the eval runner drives `sendMessageProgrammatically` on the agent view; if the pane is collapsed or behind another tab you won't see activity, but the run still drives the model — open the pane if you want a UI signal)
 - API key configured in plugin settings
 - `obsidian` CLI accessible from your terminal (`obsidian version` should work)
+- **Single-tenant Obsidian instance** — only one `npm run eval` may run at a time against a given Obsidian process. Concurrent runs fight for the same agent view session and produce stuck CLI children; see "Operational gotchas" below.
 
 ## Running
 
@@ -195,6 +196,76 @@ ETA is shown only when the task declares `maxTurns` and at least one turn has co
 - Exits with `130` (SIGINT) or `143` (SIGTERM) so CI / wrappers can distinguish "interrupted" from "all green."
 
 A second Ctrl-C while cleanup is in flight is ignored; let the first one finish.
+
+> **Known issue (#777)**: when SIGINT triggers `process.exit`, `runTask`'s `finally` block doesn't run, so `removeCollector()` never fires. Result: `window.__evalCollector` and ~6 subscribers leak on the agent event bus until you reload the plugin or close Obsidian. Manual cleanup:
+>
+> ```bash
+> obsidian eval code="(() => { for (const u of (window.__evalUnsubscribers || [])) try { u(); } catch {}; window.__evalUnsubscribers = []; delete window.__evalCollector; })()"
+> ```
+
+## Operational gotchas
+
+Lessons learned from real eval sessions; treat as a reliability checklist before kicking off a long sweep.
+
+### Don't run two evals concurrently against the same Obsidian instance
+
+Each `npm run eval` drives `app.plugins.plugins['gemini-scribe'].agentView` directly. Two runs at once will fight for the same agent view session — fixtures from one task get torn down while another is mid-flight, sessions get reassigned, and the CLI bridge ends up with multiple children stuck in queue. Symptoms: log shows "Setting up N fixture files..." but no `Session:` line follows; live agent view shows a session from a different task than the one printed in the log.
+
+If you need to compare models, run them sequentially. A typical 21-run sweep takes 30–120 min depending on the model; budget accordingly.
+
+### CLI-bridge hangs (#776)
+
+`obsidian eval` child processes occasionally don't exit after their work completes — they sit in `S` state with 0 CPU. The next CLI call from the same harness queues behind them indefinitely. The harness's `execFile` `timeoutMs: 10_000` doesn't always fire.
+
+Symptoms in the log:
+
+- `Turn completed.` printed, but no `SOLVED` / `PASSED` / `FAILED` / `TIMEOUT` verdict line for ≥ 10s
+- The harness's node process at near-zero CPU
+- A standalone `obsidian eval code="1+1"` from another shell **does** respond instantly (so the CLI itself is fine; the harness's specific child is wedged)
+
+Workaround until #776 is fixed:
+
+```bash
+# Find stuck children (zero CPU, alive for minutes)
+ps aux | grep "obsidian eval" | grep -v grep
+
+# Kill the oldest one
+kill -KILL <pid>
+```
+
+The parent's `exec` promise will reject with `"Command failed"`, which `runTask`'s catch block records as **ERROR** and moves to the next run. **Do not bless** a baseline that includes a manual-kill ERROR — the verdict was caused by the harness, not the model. Rerun the whole sweep instead.
+
+### Don't bless a corrupted run
+
+A baseline must reflect actual model behavior, not harness friction. Skip the bless step if any of these happened during the run:
+
+- A manual `kill -KILL` of a stuck CLI child (causes a fake ERROR verdict)
+- A second Ctrl-C while the first interrupt was still cleaning up (state may be partial)
+- Concurrent runs against the same Obsidian instance
+
+Rerun, _then_ bless.
+
+### Pre-flight cleanup
+
+Before kicking off a fresh run after a previous one was interrupted or hit a hang:
+
+```bash
+# 1. No leftover harness processes
+ps aux | grep "node evals/run.mjs" | grep -v grep
+# 2. No leftover CLI children
+ps aux | grep "obsidian eval" | grep -v grep
+# 3. No leaked collector / subscribers
+obsidian eval code="JSON.stringify({hasCollector:typeof window.__evalCollector !== 'undefined', subs:(window.__evalUnsubscribers||[]).length, scratch:!!app.vault.getAbstractFileByPath('eval-scratch')})"
+# 4. chatModelName matches what you expect (model override was restored)
+obsidian eval code="app.plugins.plugins['gemini-scribe'].settings.chatModelName"
+```
+
+If any of these show stale state, kill / clean before starting the new run. The harness's interrupt handler tries to restore everything but doesn't always succeed (see #777 for one known leak).
+
+### Model-specific caveats
+
+- **`*-latest` model pointers** (`gemini-flash-latest`, etc.) shift under us — Google may swap the underlying model on any given day. Don't bless a baseline against `-latest`; the comparison won't be stable. Use pinned IDs (`gemini-2.5-flash`, `gemini-2.5-pro`, etc.).
+- **`gemini-2.5-flash-lite`** reproducibly hangs the harness mid-sweep (#778). Skip it for now.
 
 ## Scoring
 
