@@ -63,6 +63,22 @@ describe('runWithTimeout — timeout escalation', () => {
 	}, 10_000);
 });
 
+describe('runWithTimeout — output ceiling', () => {
+	it('rejects when combined stdout+stderr exceeds maxOutputBytes', async () => {
+		// Write 200 KB of stdout — well above our 10 KB cap.
+		const [bin, args] = nodeScript(`process.stdout.write("x".repeat(200000)); setTimeout(() => process.exit(0), 100);`);
+		await expect(runWithTimeout(bin, args, { timeoutMs: 5_000, maxOutputBytes: 10_000 })).rejects.toThrow(
+			/exceeded 10000 bytes of output/
+		);
+	});
+
+	it('does not trip the ceiling for output strictly under the limit', async () => {
+		const [bin, args] = nodeScript(`process.stdout.write("x".repeat(500));`);
+		const result = await runWithTimeout(bin, args, { timeoutMs: 5_000, maxOutputBytes: 1000 });
+		expect(result.stdout.length).toBe(500);
+	});
+});
+
 describe('runWithTimeout — error paths', () => {
 	it('rejects when the binary does not exist', async () => {
 		await expect(runWithTimeout('/this/path/does/not/exist/xyz123', [], { timeoutMs: 2_000 })).rejects.toThrow();

@@ -29,18 +29,32 @@ import { spawn } from 'node:child_process';
 export const SIGKILL_GRACE_MS = 1_000;
 
 /**
- * Run `bin args` and resolve with `{ stdout, stderr }` once the child
- * exits cleanly. On timeout, rejects with a descriptive Error after the
- * SIGTERM → SIGKILL escalation.
+ * Default ceiling on combined stdout + stderr bytes the parent will buffer.
+ * Mirrors execFile's historical 1 MB `maxBuffer` default. Beyond this we
+ * SIGKILL the child and reject — a noisy or wedged child mustn't OOM the
+ * harness before the timeout path fires.
+ */
+export const DEFAULT_MAX_OUTPUT_BYTES = 1024 * 1024;
+
+/**
+ * Run `bin args` and resolve with `{ stdout, stderr, code, signal }` once
+ * the child exits cleanly. On timeout, rejects with a descriptive Error
+ * after the SIGTERM → SIGKILL escalation. On output exceeding
+ * `maxOutputBytes`, kills the child immediately with SIGKILL and rejects.
  *
  * @param {string} bin - Executable to spawn
  * @param {string[]} args - Arguments
  * @param {object} [opts]
  * @param {number} [opts.timeoutMs=10000] - Hard deadline for child completion
  * @param {string|null} [opts.stdinData=null] - Optional bytes to write to stdin (then closed)
+ * @param {number} [opts.maxOutputBytes=1048576] - Combined stdout+stderr ceiling
  * @returns {Promise<{ stdout: string, stderr: string, code: number|null, signal: string|null }>}
  */
-export function runWithTimeout(bin, args, { timeoutMs = 10_000, stdinData = null } = {}) {
+export function runWithTimeout(
+	bin,
+	args,
+	{ timeoutMs = 10_000, stdinData = null, maxOutputBytes = DEFAULT_MAX_OUTPUT_BYTES } = {}
+) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(bin, args, {
 			stdio: [stdinData === null ? 'ignore' : 'pipe', 'pipe', 'pipe'],
@@ -52,18 +66,34 @@ export function runWithTimeout(bin, args, { timeoutMs = 10_000, stdinData = null
 
 		let stdout = '';
 		let stderr = '';
+		let outputBytes = 0;
 		let timedOut = false;
 		let escalated = false;
+		let outputExceeded = false;
 		let killTimer = null;
 
 		child.stdout.setEncoding('utf-8');
 		child.stderr.setEncoding('utf-8');
-		child.stdout.on('data', (chunk) => {
-			stdout += chunk;
-		});
-		child.stderr.on('data', (chunk) => {
-			stderr += chunk;
-		});
+
+		// Drop chunks once we've crossed maxOutputBytes; the kill is in flight,
+		// further accumulation just wastes memory while we wait for `close`.
+		const accumulate = (which) => (chunk) => {
+			if (outputExceeded) return;
+			outputBytes += Buffer.byteLength(chunk, 'utf-8');
+			if (outputBytes > maxOutputBytes) {
+				outputExceeded = true;
+				try {
+					child.kill('SIGKILL');
+				} catch {
+					// Already gone; close event will fire shortly.
+				}
+				return;
+			}
+			if (which === 'stdout') stdout += chunk;
+			else stderr += chunk;
+		};
+		child.stdout.on('data', accumulate('stdout'));
+		child.stderr.on('data', accumulate('stderr'));
 
 		const termTimer = setTimeout(() => {
 			timedOut = true;
@@ -96,6 +126,11 @@ export function runWithTimeout(bin, args, { timeoutMs = 10_000, stdinData = null
 		child.on('close', (code, signal) => {
 			clearTimeout(termTimer);
 			if (killTimer) clearTimeout(killTimer);
+			if (outputExceeded) {
+				return reject(
+					new Error(`Command \`${bin} ${args.join(' ')}\` exceeded ${maxOutputBytes} bytes of output and was killed.`)
+				);
+			}
 			if (timedOut) {
 				const escalation = escalated ? ' (escalated to SIGKILL)' : '';
 				const stderrTail = stderr ? ` Stderr: ${stderr.slice(0, 300)}` : '';
