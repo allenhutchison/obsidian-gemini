@@ -4,7 +4,34 @@ import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 
-export interface FollowUpRequestParams {
+/**
+ * Per-turn system-prompt fields that must stay stable across the initial
+ * model call AND every follow-up/retry within the same user turn.
+ *
+ * These are set once when the user sends a message (in `agent-view-send.ts`)
+ * and threaded through `AgentLoopOptions` so the system prompt rebuilt on
+ * each model call inside the loop is byte-identical to the initial one.
+ *
+ * Two reasons this matters:
+ *  1. Correctness — `perTurnContext` carries the rendered content of files
+ *     dragged or @-mentioned into the chat. Dropping it on follow-ups means
+ *     the model can't reference that content after a tool call, so it tends
+ *     to re-read the same files via tools. `projectInstructions` /
+ *     `projectSkills` similarly disappear, so project-scoped behavior
+ *     degrades the moment a tool fires.
+ *  2. Cache stability — Gemini's implicit prefix cache keys on the exact
+ *     system-prompt bytes. Rebuilding without these fields between the
+ *     initial call and the follow-up changes the prefix and forces a
+ *     cache miss on every follow-up in a long tool chain.
+ */
+export interface PerTurnContext {
+	perTurnContext?: string;
+	projectInstructions?: string;
+	projectSkills?: string[];
+	sessionStartedAt?: string;
+}
+
+export interface FollowUpRequestParams extends PerTurnContext {
 	plugin: ObsidianGemini;
 	currentSession: ChatSession;
 	updatedHistory: any[];
@@ -13,10 +40,11 @@ export interface FollowUpRequestParams {
 	projectPermissions?: Record<string, import('../../types/tool-policy').ToolPermission>;
 }
 
-export interface RetryRequestParams {
+export interface RetryRequestParams extends PerTurnContext {
 	plugin: ObsidianGemini;
 	currentSession: ChatSession;
 	updatedHistory: any[];
+	customPrompt?: CustomPrompt;
 }
 
 /**
@@ -24,7 +52,18 @@ export interface RetryRequestParams {
  * Includes available tools so the model can chain additional calls.
  */
 export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedModelRequest {
-	const { plugin, currentSession, updatedHistory, customPrompt, projectRootPath, projectPermissions } = params;
+	const {
+		plugin,
+		currentSession,
+		updatedHistory,
+		customPrompt,
+		projectRootPath,
+		projectPermissions,
+		perTurnContext,
+		projectInstructions,
+		projectSkills,
+		sessionStartedAt,
+	} = params;
 
 	const availableToolsContext: ToolExecutionContext = {
 		plugin,
@@ -42,8 +81,12 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		model: modelConfig.model || plugin.settings.chatModelName,
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline
-		customPrompt, // Pass custom prompt through to follow-up requests
+		prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+		customPrompt,
+		projectInstructions,
+		projectSkills,
+		perTurnContext,
+		sessionStartedAt,
 		renderContent: false,
 		availableTools, // Include tools so model can chain calls
 	};
@@ -54,7 +97,16 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
  * Does not include tools — just asks the model to summarize what it did.
  */
 export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequest {
-	const { plugin, currentSession, updatedHistory } = params;
+	const {
+		plugin,
+		currentSession,
+		updatedHistory,
+		customPrompt,
+		perTurnContext,
+		projectInstructions,
+		projectSkills,
+		sessionStartedAt,
+	} = params;
 	const modelConfig = currentSession?.modelConfig || {};
 
 	return {
@@ -63,7 +115,12 @@ export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequ
 		model: modelConfig.model || plugin.settings.chatModelName,
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline
+		prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+		customPrompt,
+		projectInstructions,
+		projectSkills,
+		perTurnContext,
+		sessionStartedAt,
 		renderContent: false,
 	};
 }

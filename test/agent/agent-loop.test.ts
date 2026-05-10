@@ -737,6 +737,109 @@ describe('AgentLoop', () => {
 		});
 	});
 
+	describe('per-turn context propagation', () => {
+		// The system prompt is rebuilt on each model call inside the loop. Per-turn
+		// fields (perTurnContext, projectInstructions, projectSkills, sessionStartedAt)
+		// must be threaded onto every follow-up request so the system prompt stays
+		// byte-stable across initial + follow-ups. Without this:
+		//   1. Context-file content the user dragged in disappears once a tool fires,
+		//      forcing the model to re-read via tools.
+		//   2. Gemini implicit prefix cache misses on every follow-up because the
+		//      system-prompt prefix changes shape mid-turn.
+		test('follow-up request carries the same perTurn context the initial call had', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('done')]);
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					perTurn: {
+						perTurnContext: 'CONTEXT FILES: foo.md\n<rendered contents>',
+						projectInstructions: 'be concise',
+						projectSkills: ['code-review'],
+						sessionStartedAt: '2026-05-09T10:00:00',
+					},
+				},
+			});
+
+			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
+			const followUpRequest = (api.generateModelResponse as Mock).mock.calls[0][0];
+			expect(followUpRequest.perTurnContext).toBe('CONTEXT FILES: foo.md\n<rendered contents>');
+			expect(followUpRequest.projectInstructions).toBe('be concise');
+			expect(followUpRequest.projectSkills).toEqual(['code-review']);
+			expect(followUpRequest.sessionStartedAt).toBe('2026-05-09T10:00:00');
+		});
+
+		test('retry request (empty-response path) also carries perTurn context', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			// First follow-up returns empty → triggers retry path.
+			const api = makeScriptedModelApi([textResponse(''), textResponse('summary text')]);
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					perTurn: {
+						perTurnContext: 'CTX',
+						sessionStartedAt: '2026-05-09T10:00:00',
+					},
+				},
+			});
+
+			expect(result.retried).toBe(true);
+			expect(api.generateModelResponse).toHaveBeenCalledTimes(2);
+			const retryRequest = (api.generateModelResponse as Mock).mock.calls[1][0];
+			expect(retryRequest.perTurnContext).toBe('CTX');
+			expect(retryRequest.sessionStartedAt).toBe('2026-05-09T10:00:00');
+		});
+
+		test('multi-iteration: every follow-up carries perTurn context, not just the first', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([
+				toolResponse([tc('write_file', { path: 'b.md', content: 'x' })]),
+				textResponse('after two batches'),
+			]);
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					perTurn: { perTurnContext: 'CTX' },
+				},
+			});
+
+			const calls = (api.generateModelResponse as Mock).mock.calls;
+			expect(calls).toHaveLength(2);
+			expect(calls[0][0].perTurnContext).toBe('CTX');
+			expect(calls[1][0].perTurnContext).toBe('CTX');
+		});
+	});
+
 	describe('loop-detector escalation', () => {
 		test('aborts the turn once loopDetected fires accumulate past threshold', async () => {
 			const plugin = buildPlugin();
