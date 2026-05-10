@@ -3,10 +3,7 @@
  * All Obsidian interaction runs through `obsidian eval code="..."`.
  */
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const exec = promisify(execFile);
+import { runWithTimeout } from './spawn-with-timeout.mjs';
 
 const OBSIDIAN_BIN = 'obsidian';
 const EVAL_TIMEOUT_MS = 10_000;
@@ -20,15 +17,29 @@ const EVAL_TIMEOUT_MS = 10_000;
  * everything from there to the end of stdout as the reply value. This
  * preserves multi-line reply support (when the returned value contains
  * real newlines) while filtering out plugin/console log noise.
+ *
+ * Uses `runWithTimeout` (not `execFile`) for the underlying spawn — the
+ * default `execFile` timeout sends SIGTERM and waits for the child to
+ * exit, but we observed during the multi-model baselines (#776) that
+ * the obsidian CLI sometimes ignores SIGTERM and keeps the parent
+ * blocked forever. `runWithTimeout` escalates to SIGKILL after a grace
+ * window so the parent always settles within bounded time.
  */
 export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
-	const { stdout } = await exec(OBSIDIAN_BIN, ['eval', `code=${code}`], {
-		timeout: timeoutMs,
-	});
-	const lines = stdout.split('\n');
+	const result = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], { timeoutMs });
+	// Surface CLI failures before parsing. A real failure (auth, plugin not
+	// loaded, malformed eval) tends to land on stderr with a non-zero exit;
+	// without this guard we'd fall through to the "=> reply" parser and
+	// throw a confusing "did not return a reply" error that obscures the
+	// actual cause.
+	if (result.code !== 0 || result.signal !== null) {
+		const stderrTail = result.stderr ? ` Stderr: ${result.stderr.slice(0, 300)}` : '';
+		throw new Error(`obsidian eval failed (exit=${result.code}, signal=${result.signal}).${stderrTail}`);
+	}
+	const lines = result.stdout.split('\n');
 	const replyIdx = lines.findIndex((l) => l.startsWith('=>'));
 	if (replyIdx === -1) {
-		throw new Error(`obsidian eval did not return a "=>" reply. Stdout was:\n${stdout.slice(0, 500)}`);
+		throw new Error(`obsidian eval did not return a "=>" reply. Stdout was:\n${result.stdout.slice(0, 500)}`);
 	}
 	const replyLines = lines.slice(replyIdx);
 	replyLines[0] = replyLines[0].slice(2); // strip leading "=>"
