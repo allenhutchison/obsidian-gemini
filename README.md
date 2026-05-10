@@ -64,7 +64,8 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 2. Get your free API key from [Google AI Studio](https://aistudio.google.com/apikey)
 3. Add the API key in plugin settings
 4. Open Agent Chat with the ribbon icon or command palette
-5. Start using the AI agent to work with your vault!
+5. Manage sessions directly with command palette actions: "New Agent Session", "Browse Agent Sessions", "Link Project to Agent Session", and "Agent Session Settings"
+6. Start using the AI agent to work with your vault!
 
 **Prefer running models locally?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)". A few Gemini-built-in features (Google Search, URL Context, Deep Research, image generation, RAG) are unavailable on Ollama; see [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
 

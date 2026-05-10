@@ -22,6 +22,11 @@ In v4.0+, the agent is always available and can:
 - Use Command Palette: "Gemini Scribe: Open Gemini Chat"
 - Or click the sparkles icon (⭐) in the ribbon
 - Or use your configured hotkey
+- You can also manage sessions directly from the command palette with:
+  - "New Agent Session"
+  - "Browse Agent Sessions"
+  - "Link Project to Agent Session"
+  - "Agent Session Settings"
 
 ### 2. Initialize Vault Context (Recommended)
 
