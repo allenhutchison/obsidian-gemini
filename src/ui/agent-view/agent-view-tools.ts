@@ -129,6 +129,7 @@ export class AgentViewTools {
 				message: result.markdown,
 				notePath: '',
 				created_at: new Date(),
+				model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
 			};
 
 			await this.context.displayMessage(aiEntry);

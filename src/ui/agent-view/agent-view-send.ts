@@ -319,6 +319,7 @@ To reference an attachment in your response, use the path shown above.`;
 						message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${compactionResult.summaryText}`,
 						notePath: '',
 						created_at: new Date(),
+						model: modelName,
 					};
 					await this.ctx.displayMessage(compactionEntry);
 					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
@@ -429,6 +430,7 @@ To reference an attachment in your response, use the path shown above.`;
 									message: accumulatedMarkdown,
 									notePath: '',
 									created_at: new Date(),
+									model: modelName,
 								};
 								await this.ctx.messages.finalizeStreamingMessage(
 									modelMessageContainer,
@@ -459,6 +461,7 @@ To reference an attachment in your response, use the path shown above.`;
 									message: response.markdown,
 									notePath: '',
 									created_at: new Date(),
+									model: modelName,
 								};
 
 								// Finalize the streaming message with proper rendering
@@ -536,6 +539,7 @@ To reference an attachment in your response, use the path shown above.`;
 								message: response.markdown,
 								notePath: '',
 								created_at: new Date(),
+								model: modelName,
 							};
 							await this.ctx.displayMessage(aiEntry);
 
