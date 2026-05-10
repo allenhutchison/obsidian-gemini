@@ -159,3 +159,7 @@ The research succeeded but saving failed. Check that:
 - The output path isn't in a protected folder (`.obsidian`, plugin state folder)
 - You have write permissions to the target directory
 - The research results are still available in the chat — you can copy them manually
+
+## Further Reading
+
+- [I combined Gemini Deep Research with Obsidian and my notes finally feel connected](https://www.makeuseof.com/gemini-deep-research-with-obsidian-connected-notes/) (MakeUseOf) — A practical walkthrough of using Gemini Scribe to bring Deep Research reports into Obsidian: writing prompts as research briefs, importing reports with consistent naming, and linking notes so the agent has the context it needs to synthesize.
