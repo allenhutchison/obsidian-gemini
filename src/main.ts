@@ -227,6 +227,7 @@ export default class ObsidianGemini extends Plugin {
 	private previousRagEnabled: boolean = false;
 	private previousProvider: ModelProvider = 'gemini';
 	private previousOllamaBaseUrl: string = '';
+	private previousCustomBaseUrl: string = '';
 	private previousHooksEnabled: boolean = false;
 	private lifecycle!: LifecycleService;
 	// Captures the last initialization failure so guarded commands can surface
@@ -261,6 +262,7 @@ export default class ObsidianGemini extends Plugin {
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 			this.previousProvider = this.settings.provider;
 			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
+			this.previousCustomBaseUrl = this.settings.customBaseUrl;
 			this.previousHooksEnabled = this.settings.hooksEnabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
@@ -889,11 +891,13 @@ export default class ObsidianGemini extends Plugin {
 		const providerChanged = this.previousProvider !== this.settings.provider;
 		const ollamaUrlChanged =
 			this.settings.provider === 'ollama' && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
+		const customBaseUrlChanged =
+			this.settings.provider === 'gemini' && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
 		// Ollama needs no API key, so first-time init triggers on provider switch alone.
 		const hasCredentials = this.settings.provider === 'ollama' || !!this.apiKey;
 		const needsInit = !this.isGeminiInitialized && hasCredentials;
 
-		if (apiKeyChanged || providerChanged || ollamaUrlChanged || needsInit) {
+		if (apiKeyChanged || providerChanged || ollamaUrlChanged || customBaseUrlChanged || needsInit) {
 			try {
 				await this.lifecycle.setup();
 				this.isGeminiInitialized = true;
@@ -902,12 +906,17 @@ export default class ObsidianGemini extends Plugin {
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
 				this.previousProvider = this.settings.provider;
 				this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
+				this.previousCustomBaseUrl = this.settings.customBaseUrl;
 				this.previousHooksEnabled = this.settings.hooksEnabled;
 
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional
 				if (needsInit && !apiKeyChanged && !providerChanged) {
 					new Notice('Gemini Scribe is now ready to use!');
+				}
+				// Invalidate cached DeepResearch manager so it rebuilds with the new base URL
+				if (customBaseUrlChanged && this.deepResearch) {
+					this.deepResearch.invalidateResearchManager();
 				}
 			} catch (error) {
 				this.logger.error('Failed to re-initialize after settings change:', error);

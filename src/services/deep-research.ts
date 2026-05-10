@@ -48,6 +48,13 @@ export class DeepResearchService {
 		this.reportGenerator = new ReportGenerator();
 		this.retryConfig = DEFAULT_RETRY_CONFIG;
 	}
+	/**
+	 * Invalidate the cached ResearchManager so it is rebuilt with the
+	 * current plugin settings (e.g. after customBaseUrl changes).
+	 */
+	public invalidateResearchManager(): void {
+		this.researchManager = null;
+	}
 
 	/**
 	 * Initialize the ResearchManager with a GoogleGenAI client
