@@ -532,7 +532,7 @@ export class ContextManager {
 			});
 
 			const summary = response.candidates?.[0]?.content?.parts
-				?.map((part) => ('text' in part && part.text ? (part as { text: string }).text : ''))
+				?.map((part) => ('text' in part && part.text ? part.text : ''))
 				.join('');
 
 			if (!summary?.trim()) {

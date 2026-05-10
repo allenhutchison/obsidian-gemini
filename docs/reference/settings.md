@@ -291,6 +291,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 - **Example**: `https://my-proxy.example.com`
 - **Scope**: Applies to all Google API call sites in the plugin (chat, search, web fetch, image generation, RAG indexing, deep research, context management).
 - **Note**: Leave blank to use the official Google endpoint. Invalid URLs will show a warning and be cleared automatically.
+- **Security note**: Requests routed through this proxy will include your Google API key in the `x-goog-api-key` header.
 
 #### Maximum Retries
 
