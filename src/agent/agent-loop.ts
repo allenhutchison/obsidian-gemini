@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import type { ChatSession } from '../types/agent';
+import type { ChatSession, PerTurnContext } from '../types/agent';
 import type { ToolPermission } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi } from '../api/interfaces/model-api';
 import type { CustomPrompt } from '../prompts/types';
@@ -66,6 +66,15 @@ export interface AgentLoopOptions {
 	customPrompt?: CustomPrompt;
 	projectRootPath?: string;
 	projectPermissions?: Record<string, ToolPermission>;
+	/**
+	 * System-prompt fields that must stay byte-stable across the initial model
+	 * call and every follow-up/retry within this turn. Without these, follow-up
+	 * requests rebuild the system prompt without context-file content / project
+	 * scope, which both confuses the model after a tool call and forces a
+	 * Gemini implicit-cache miss on every follow-up. Caller (agent-view-send)
+	 * sets these once when the user submits the turn.
+	 */
+	perTurn?: PerTurnContext;
 	hooks?: AgentLoopHooks;
 	/**
 	 * Factory for the model API used for follow-up and retry requests.
@@ -138,7 +147,7 @@ export class AgentLoop {
 		options: AgentLoopOptions;
 	}): Promise<AgentLoopResult> {
 		const { initialResponse, initialUserMessage, initialHistory, options } = args;
-		const { plugin, session, isCancelled, hooks, customPrompt, projectRootPath, projectPermissions } = options;
+		const { plugin, session, isCancelled, hooks, customPrompt, projectRootPath, projectPermissions, perTurn } = options;
 		const maxIterations = options.maxIterations;
 
 		const toolContext: ToolExecutionContext = {
@@ -254,6 +263,7 @@ export class AgentLoop {
 				customPrompt,
 				projectRootPath,
 				projectPermissions,
+				...perTurn,
 			});
 
 			const modelApi = createModel();
@@ -303,6 +313,8 @@ export class AgentLoop {
 				plugin,
 				currentSession: session,
 				updatedHistory,
+				customPrompt,
+				...perTurn,
 			});
 
 			const retryModelApi = createModel();

@@ -327,6 +327,18 @@ To reference an attachment in your response, use the path shown above.`;
 					);
 				}
 
+				// Per-turn fields that must stay byte-stable across the initial
+				// model call AND every follow-up/retry inside the agent loop.
+				// Threaded through to handleToolCalls below so the system prompt
+				// rebuilt on each tool-loop iteration is identical to the one
+				// the model saw on the initial call (correctness + cache).
+				const perTurn = {
+					perTurnContext: additionalInstructions,
+					projectInstructions,
+					projectSkills: activeProject?.config.skills,
+					sessionStartedAt: formatLocalTimestamp(currentSession.created),
+				};
+
 				const request: ExtendedModelRequest = {
 					userMessage: message,
 					conversationHistory: compactionResult.compactedHistory,
@@ -334,16 +346,13 @@ To reference an attachment in your response, use the path shown above.`;
 					temperature: modelConfig.temperature ?? this.ctx.plugin.settings.temperature,
 					topP: modelConfig.topP ?? this.ctx.plugin.settings.topP,
 					prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
-					perTurnContext: additionalInstructions, // Context files, attachments, rendered content
-					customPrompt: customPrompt, // Custom prompt template (if configured)
-					projectInstructions: projectInstructions, // Project-scoped instructions (if active)
-					projectSkills: activeProject?.config.skills, // Filter skills to project scope
+					perTurnContext: perTurn.perTurnContext,
+					customPrompt: customPrompt,
+					projectInstructions: perTurn.projectInstructions,
+					projectSkills: perTurn.projectSkills,
 					renderContent: false, // We already rendered content above
 					availableTools: availableTools,
-					// Session-start anchor for the system prompt. Derived from the
-					// session's immutable `created` date so it's stable across every
-					// tool-loop iteration within this turn.
-					sessionStartedAt: formatLocalTimestamp(currentSession.created),
+					sessionStartedAt: perTurn.sessionStartedAt,
 					inlineAttachments: attachments.map((a: InlineAttachment) => ({ base64: a.base64, mimeType: a.mimeType })),
 				};
 
@@ -438,7 +447,8 @@ To reference an attachment in your response, use the path shown above.`;
 								message,
 								compactionResult.compactedHistory,
 								userEntry,
-								customPrompt
+								customPrompt,
+								perTurn
 							);
 						} else {
 							// Normal response without tool calls
@@ -513,7 +523,8 @@ To reference an attachment in your response, use the path shown above.`;
 							message,
 							compactionResult.compactedHistory,
 							userEntry,
-							customPrompt
+							customPrompt,
+							perTurn
 						);
 					} else {
 						// Normal response without tool calls

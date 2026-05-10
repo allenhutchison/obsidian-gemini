@@ -1,10 +1,16 @@
 import type ObsidianGemini from '../../main';
-import { ChatSession } from '../../types/agent';
+import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 
-export interface FollowUpRequestParams {
+// Re-export so existing callers that import PerTurnContext from this module
+// keep working — the canonical home is now `src/types/agent.ts` so the
+// UI-agnostic `AgentLoop` can depend on the type without reaching into a
+// UI module.
+export type { PerTurnContext };
+
+export interface FollowUpRequestParams extends PerTurnContext {
 	plugin: ObsidianGemini;
 	currentSession: ChatSession;
 	updatedHistory: any[];
@@ -13,10 +19,11 @@ export interface FollowUpRequestParams {
 	projectPermissions?: Record<string, import('../../types/tool-policy').ToolPermission>;
 }
 
-export interface RetryRequestParams {
+export interface RetryRequestParams extends PerTurnContext {
 	plugin: ObsidianGemini;
 	currentSession: ChatSession;
 	updatedHistory: any[];
+	customPrompt?: CustomPrompt;
 }
 
 /**
@@ -24,7 +31,18 @@ export interface RetryRequestParams {
  * Includes available tools so the model can chain additional calls.
  */
 export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedModelRequest {
-	const { plugin, currentSession, updatedHistory, customPrompt, projectRootPath, projectPermissions } = params;
+	const {
+		plugin,
+		currentSession,
+		updatedHistory,
+		customPrompt,
+		projectRootPath,
+		projectPermissions,
+		perTurnContext,
+		projectInstructions,
+		projectSkills,
+		sessionStartedAt,
+	} = params;
 
 	const availableToolsContext: ToolExecutionContext = {
 		plugin,
@@ -42,8 +60,12 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		model: modelConfig.model || plugin.settings.chatModelName,
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline
-		customPrompt, // Pass custom prompt through to follow-up requests
+		prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+		customPrompt,
+		projectInstructions,
+		projectSkills,
+		perTurnContext,
+		sessionStartedAt,
 		renderContent: false,
 		availableTools, // Include tools so model can chain calls
 	};
@@ -54,7 +76,16 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
  * Does not include tools — just asks the model to summarize what it did.
  */
 export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequest {
-	const { plugin, currentSession, updatedHistory } = params;
+	const {
+		plugin,
+		currentSession,
+		updatedHistory,
+		customPrompt,
+		perTurnContext,
+		projectInstructions,
+		projectSkills,
+		sessionStartedAt,
+	} = params;
 	const modelConfig = currentSession?.modelConfig || {};
 
 	return {
@@ -63,7 +94,12 @@ export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequ
 		model: modelConfig.model || plugin.settings.chatModelName,
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline
+		prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+		customPrompt,
+		projectInstructions,
+		projectSkills,
+		perTurnContext,
+		sessionStartedAt,
 		renderContent: false,
 	};
 }

@@ -24,6 +24,7 @@ import {
 	verifyPlugin,
 	createSession,
 	setupFixtures,
+	addContextFiles,
 	sendMessage,
 	cancelAgent,
 	cleanup,
@@ -232,6 +233,15 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		// Publish current task to module state so the SIGINT handler can find
 		// the historyPath / sessionId for cleanup.
 		if (currentTaskInfo) currentTaskInfo.sessionInfo = sessionInfo;
+
+		// 2b. Optional: populate the session's context shelf with vault files.
+		// Mirrors the user's drag-and-drop / @-mention flow so tasks can
+		// exercise the perTurnContext path. Paths must resolve in the vault
+		// (i.e. fixture files must already be present from step 1).
+		if (Array.isArray(task.contextFiles) && task.contextFiles.length > 0) {
+			console.log(`  Adding ${task.contextFiles.length} context file(s) to shelf...`);
+			await addContextFiles(task.contextFiles);
+		}
 
 		// 3. Install collector
 		await installCollector();

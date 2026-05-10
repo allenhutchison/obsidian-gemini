@@ -5,6 +5,7 @@ import { IConfirmationProvider, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentLoop } from '../../agent/agent-loop';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
+import type { PerTurnContext } from './agent-view-tool-followup';
 
 /**
  * Callbacks and state access that AgentViewTools needs from AgentView
@@ -54,7 +55,8 @@ export class AgentViewTools {
 		userMessage: string,
 		conversationHistory: any[],
 		_userEntry: GeminiConversationEntry,
-		customPrompt?: CustomPrompt
+		customPrompt?: CustomPrompt,
+		perTurn?: PerTurnContext
 	) {
 		const currentSession = this.context.getCurrentSession();
 		if (!currentSession) return;
@@ -77,6 +79,7 @@ export class AgentViewTools {
 					customPrompt,
 					projectRootPath: activeProject?.rootPath,
 					projectPermissions: activeProject?.config.permissions,
+					perTurn,
 					hooks: {
 						onToolBatchStart: (batch) => {
 							this.ensureGroupContainer(batch.length);

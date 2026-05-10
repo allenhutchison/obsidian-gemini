@@ -1,0 +1,15 @@
+{
+	"id": "context-from-shelf",
+	"description": "A file dragged or @-mentioned into the chat is rendered into the system prompt; the model should answer from that context without re-reading via tools",
+	"userMessage": "Without using any tools, list the three confirmed top destinations from the file in my context. Just list them, one per line, no extra commentary.",
+	"fixture": "context-from-shelf",
+	"contextFiles": ["eval-scratch/places-i-want-to-visit.md"],
+	"forbiddenTools": ["read_file", "find_files_by_name", "find_files_by_content", "list_files"],
+	"outputMatchers": [
+		{ "type": "contains", "value": "Great Wall" },
+		{ "type": "contains", "value": "Machu Picchu" },
+		{ "type": "contains", "value": "Petra" }
+	],
+	"maxTurns": 5,
+	"timeoutMs": 60000
+}

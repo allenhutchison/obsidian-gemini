@@ -186,6 +186,42 @@ describe('OllamaClient', () => {
 			expect(userTurn.images).toEqual(['b64data']);
 		});
 
+		// Regression test for the drag-and-drop / @-mention bug fixed in
+		// the perTurnContext-on-followup PR. perTurnContext is the rendered
+		// content of context-chip files; the OllamaClient must paste it into
+		// the system message under "## Turn Context" so the model can read
+		// dropped/@-mentioned files without a redundant `read_file` tool call.
+		// This test asserts the wiring on the initial request — see
+		// agent-loop.test.ts for the follow-up propagation guarantee.
+		it('embeds perTurnContext into the system message under "## Turn Context"', async () => {
+			ollamaCalls.chat.mockResolvedValue({
+				message: { role: 'assistant', content: 'ok' },
+				prompt_eval_count: 1,
+				eval_count: 1,
+				done: true,
+			});
+
+			const renderedContext =
+				'CONTEXT FILES: foo.md\n\n==============================\nFile Label: Context File\nFile Name: foo.md\n==============================\n\nThe quick brown fox jumps over the lazy dog.';
+
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'what does the file say',
+				conversationHistory: [],
+				perTurnContext: renderedContext,
+				projectInstructions: 'always cite file paths',
+				sessionStartedAt: '2026-05-09T10:00:00',
+			});
+
+			const args = ollamaCalls.chat.mock.calls[0][0];
+			const systemMessage = args.messages.find((m: any) => m.role === 'system');
+			expect(systemMessage).toBeDefined();
+			expect(systemMessage.content).toContain('## Turn Context');
+			expect(systemMessage.content).toContain('The quick brown fox jumps over the lazy dog.');
+			expect(systemMessage.content).toContain('always cite file paths');
+			expect(systemMessage.content).toContain('2026-05-09T10:00:00');
+		});
+
 		it('rejects non-image attachments with a clear error', async () => {
 			await expect(
 				client.generateModelResponse({

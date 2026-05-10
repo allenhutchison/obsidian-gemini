@@ -1,11 +1,23 @@
+import type { Mock } from 'vitest';
 import { GeminiClient, GeminiClientConfig } from '../../src/api/gemini-client';
 import { GeminiPrompts } from '../../src/prompts';
+import type { ExtendedModelRequest } from '../../src/api/interfaces/model-api';
 
-// Mock @google/genai
+// Capture every call to `client.models.generateContent` so tests can assert on
+// the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
+// us share the spy with the factory while keeping vitest's mock-hoisting safe.
+const { generateContentMock } = vi.hoisted(() => ({
+	generateContentMock: vi.fn(),
+}));
+
 vi.mock('@google/genai', () => ({
 	GoogleGenAI: vi.fn().mockImplementation(function () {
 		return {
 			getModel: vi.fn(),
+			models: {
+				generateContent: generateContentMock,
+				generateContentStream: vi.fn(),
+			},
 		};
 	}),
 }));
@@ -203,6 +215,67 @@ describe('GeminiClient', () => {
 				expect(testSupportsThinking('my-gemini-3-model')).toBe(true); // contains "gemini-3"
 				expect(testSupportsThinking('custom-thinking-exp-model')).toBe(true); // contains "thinking-exp"
 			});
+		});
+	});
+
+	// Regression coverage for the drag-and-drop / @-mention bug. perTurnContext
+	// carries the rendered content of context-chip files; the GeminiClient
+	// must paste it into the SDK request's `systemInstruction` so the model
+	// can read those files without a redundant tool call. See agent-loop
+	// tests for the follow-up propagation guarantee — this test confirms the
+	// initial-request wiring on the Gemini path.
+	describe('perTurnContext propagation to systemInstruction', () => {
+		beforeEach(() => {
+			generateContentMock.mockReset();
+			generateContentMock.mockResolvedValue({
+				candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+				usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+			});
+
+			// Stub agentsMemory + skillManager so buildSystemInstruction doesn't NPE.
+			(mockPlugin as any).agentsMemory = { read: vi.fn().mockResolvedValue('') };
+			(mockPlugin as any).skillManager = { getSkillSummaries: vi.fn().mockResolvedValue([]) };
+			(mockPlugin as any).settings = { userName: 'Tester', ragIndexing: { enabled: false } };
+		});
+
+		test('embeds perTurnContext under "## Turn Context" in systemInstruction', async () => {
+			const renderedContext =
+				'CONTEXT FILES: places.md\n\n==============================\nFile Label: Context File\nFile Name: places.md\n==============================\n\nMachu Picchu, Petra, the Great Wall.';
+
+			const request: ExtendedModelRequest = {
+				prompt: '',
+				userMessage: 'list the places',
+				conversationHistory: [],
+				perTurnContext: renderedContext,
+				projectInstructions: 'always cite paths',
+				sessionStartedAt: '2026-05-09T10:00:00',
+			};
+
+			await client.generateModelResponse(request);
+
+			expect(generateContentMock).toHaveBeenCalledTimes(1);
+			const params = (generateContentMock as Mock).mock.calls[0][0];
+			expect(params.config.systemInstruction).toBeTruthy();
+			expect(params.config.systemInstruction).toContain('## Turn Context');
+			expect(params.config.systemInstruction).toContain('Machu Picchu, Petra, the Great Wall.');
+			expect(params.config.systemInstruction).toContain('always cite paths');
+			expect(params.config.systemInstruction).toContain('2026-05-09T10:00:00');
+		});
+
+		test('omits "## Turn Context" section when perTurnContext is empty', async () => {
+			// Without a per-turn context (e.g. a chat with no chip files), the
+			// section should not appear in the system instruction. This guards
+			// against accidentally always-injecting an empty heading that would
+			// shift the prefix bytes Gemini's implicit cache keys on.
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'just chat',
+				conversationHistory: [],
+			});
+
+			expect(generateContentMock).toHaveBeenCalledTimes(1);
+			const params = (generateContentMock as Mock).mock.calls[0][0];
+			expect(params.config.systemInstruction).not.toContain('## Turn Context');
 		});
 	});
 });
