@@ -1,5 +1,5 @@
 import type ObsidianGemini from '../main';
-import type { ChatSession } from '../types/agent';
+import type { ChatSession, PerTurnContext } from '../types/agent';
 import type { ToolPermission } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi } from '../api/interfaces/model-api';
 import type { CustomPrompt } from '../prompts/types';
@@ -10,7 +10,6 @@ import {
 	buildFollowUpRequest,
 	buildRetryRequest,
 	buildEmptyResponseMessage,
-	type PerTurnContext,
 } from '../ui/agent-view/agent-view-tool-followup';
 
 /**

@@ -219,3 +219,34 @@ export const DEFAULT_CONTEXTS = {
 		maxCharsPerFile: 15000,
 	} as AgentContext,
 } as const;
+
+/**
+ * Per-turn system-prompt fields that must stay byte-stable across the
+ * initial model call AND every follow-up/retry within the same user turn.
+ *
+ * These are set once when the user sends a message (in `agent-view-send.ts`)
+ * and threaded through `AgentLoopOptions` so the system prompt rebuilt on
+ * each model call inside the loop is byte-identical to the initial one.
+ *
+ * Two reasons this matters:
+ *  1. Correctness — `perTurnContext` carries the rendered content of files
+ *     dragged or @-mentioned into the chat. Dropping it on follow-ups means
+ *     the model can't reference that content after a tool call, so it tends
+ *     to re-read the same files via tools. `projectInstructions` /
+ *     `projectSkills` similarly disappear, so project-scoped behavior
+ *     degrades the moment a tool fires.
+ *  2. Cache stability — Gemini's implicit prefix cache keys on the exact
+ *     system-prompt bytes. Rebuilding without these fields between the
+ *     initial call and the follow-up changes the prefix and forces a
+ *     cache miss on every follow-up in a long tool chain.
+ *
+ * Lives in this shared types module (rather than the UI agent-view module)
+ * so the UI-agnostic `AgentLoop` can depend on the type without crossing
+ * the agent → UI boundary.
+ */
+export interface PerTurnContext {
+	perTurnContext?: string;
+	projectInstructions?: string;
+	projectSkills?: string[];
+	sessionStartedAt?: string;
+}

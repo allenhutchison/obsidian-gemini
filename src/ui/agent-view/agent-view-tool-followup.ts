@@ -1,35 +1,14 @@
 import type ObsidianGemini from '../../main';
-import { ChatSession } from '../../types/agent';
+import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 
-/**
- * Per-turn system-prompt fields that must stay stable across the initial
- * model call AND every follow-up/retry within the same user turn.
- *
- * These are set once when the user sends a message (in `agent-view-send.ts`)
- * and threaded through `AgentLoopOptions` so the system prompt rebuilt on
- * each model call inside the loop is byte-identical to the initial one.
- *
- * Two reasons this matters:
- *  1. Correctness — `perTurnContext` carries the rendered content of files
- *     dragged or @-mentioned into the chat. Dropping it on follow-ups means
- *     the model can't reference that content after a tool call, so it tends
- *     to re-read the same files via tools. `projectInstructions` /
- *     `projectSkills` similarly disappear, so project-scoped behavior
- *     degrades the moment a tool fires.
- *  2. Cache stability — Gemini's implicit prefix cache keys on the exact
- *     system-prompt bytes. Rebuilding without these fields between the
- *     initial call and the follow-up changes the prefix and forces a
- *     cache miss on every follow-up in a long tool chain.
- */
-export interface PerTurnContext {
-	perTurnContext?: string;
-	projectInstructions?: string;
-	projectSkills?: string[];
-	sessionStartedAt?: string;
-}
+// Re-export so existing callers that import PerTurnContext from this module
+// keep working — the canonical home is now `src/types/agent.ts` so the
+// UI-agnostic `AgentLoop` can depend on the type without reaching into a
+// UI module.
+export type { PerTurnContext };
 
 export interface FollowUpRequestParams extends PerTurnContext {
 	plugin: ObsidianGemini;
