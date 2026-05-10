@@ -53,6 +53,12 @@ export class DeepResearchService {
 	 * current plugin settings (e.g. after customBaseUrl changes).
 	 */
 	public invalidateResearchManager(): void {
+		// Do not invalidate while a research job is active — cancelResearch()
+		// still needs the manager to send the cancel request.
+		if (this.currentInteractionId !== null) {
+			this.plugin.logger.warn('[DeepResearch] Cannot invalidate manager while research is in progress');
+			return;
+		}
 		this.researchManager = null;
 	}
 
