@@ -1,0 +1,800 @@
+{
+	"run_id": "2026-05-10T01:03:37.777Z",
+	"git_sha": "6eb4b2a",
+	"model": "gemma4:latest",
+	"provider": "ollama",
+	"tasks": [
+		{
+			"id": "context-from-shelf",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 3,
+			"pass_k": true,
+			"solve_k": true,
+			"flaky": false,
+			"metrics": {
+				"turns": 1,
+				"tool_calls": 0,
+				"prompt_tokens": 9347,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 228.666667,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 11408.666667
+			},
+			"runs": [
+				{
+					"id": "context-from-shelf",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 1,
+						"tool_calls": 0,
+						"prompt_tokens": 9347,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 191,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 12081,
+						"tool_list": []
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "context-from-shelf",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 1,
+						"tool_calls": 0,
+						"prompt_tokens": 9347,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 327,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 12077,
+						"tool_list": []
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "context-from-shelf",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 1,
+						"tool_calls": 0,
+						"prompt_tokens": 9347,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 168,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 10068,
+						"tool_list": []
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				}
+			]
+		},
+		{
+			"id": "create-note-from-search",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 2,
+			"pass_k": true,
+			"solve_k": false,
+			"flaky": true,
+			"metrics": {
+				"turns": 4,
+				"tool_calls": 3.666667,
+				"prompt_tokens": 14626.666667,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 1068.666667,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 28838.666667
+			},
+			"runs": [
+				{
+					"id": "create-note-from-search",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 7,
+						"tool_calls": 6,
+						"prompt_tokens": 10285,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 1090,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 24129,
+						"tool_list": ["list_files", "read_file", "read_file", "read_file", "read_file", "write_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "create-note-from-search",
+					"passed": true,
+					"solved": false,
+					"metrics": {
+						"turns": 1,
+						"tool_calls": 0,
+						"prompt_tokens": 9064,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 376,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 12092,
+						"tool_list": []
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": false,
+						"forbidden_tools_clean": true,
+						"matchers_pass": false,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "create-note-from-search",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 4,
+						"tool_calls": 5,
+						"prompt_tokens": 24531,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 1740,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 50295,
+						"tool_list": ["find_files_by_content", "read_file", "read_file", "read_file", "write_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				}
+			]
+		},
+		{
+			"id": "find-tagged-notes",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 3,
+			"pass_k": true,
+			"solve_k": true,
+			"flaky": false,
+			"metrics": {
+				"turns": 4.333333,
+				"tool_calls": 4.333333,
+				"prompt_tokens": 9796,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 1377,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 28168.666667
+			},
+			"runs": [
+				{
+					"id": "find-tagged-notes",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 3,
+						"tool_calls": 2,
+						"prompt_tokens": 9371,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 1129,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 24154,
+						"tool_list": ["find_files_by_content", "list_files"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "find-tagged-notes",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 3,
+						"tool_calls": 5,
+						"prompt_tokens": 9969,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 844,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 22144,
+						"tool_list": ["list_files", "read_file", "read_file", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "find-tagged-notes",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 7,
+						"tool_calls": 6,
+						"prompt_tokens": 10048,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 2158,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 38208,
+						"tool_list": ["find_files_by_content", "list_files", "read_file", "read_file", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				}
+			]
+		},
+		{
+			"id": "loop-trap-cyclic-refs",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 2,
+			"pass_k": true,
+			"solve_k": false,
+			"flaky": true,
+			"metrics": {
+				"turns": 4,
+				"tool_calls": 3,
+				"prompt_tokens": 10050.666667,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 863.666667,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 28230.666667
+			},
+			"runs": [
+				{
+					"id": "loop-trap-cyclic-refs",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 4,
+						"tool_calls": 3,
+						"prompt_tokens": 10048,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 599,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 20129,
+						"tool_list": ["list_files", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "loop-trap-cyclic-refs",
+					"passed": true,
+					"solved": false,
+					"metrics": {
+						"turns": 4,
+						"tool_calls": 3,
+						"prompt_tokens": 10052,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 822,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 30270,
+						"tool_list": ["list_files", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": false,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "loop-trap-cyclic-refs",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 4,
+						"tool_calls": 3,
+						"prompt_tokens": 10052,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 1170,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 34293,
+						"tool_list": ["list_files", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				}
+			]
+		},
+		{
+			"id": "multi-file-summary",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 0,
+			"pass_k": true,
+			"solve_k": false,
+			"flaky": false,
+			"metrics": {
+				"turns": 3,
+				"tool_calls": 4,
+				"prompt_tokens": 9786,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 621,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 22825.666667
+			},
+			"runs": [
+				{
+					"id": "multi-file-summary",
+					"passed": true,
+					"solved": false,
+					"metrics": {
+						"turns": 3,
+						"tool_calls": 4,
+						"prompt_tokens": 9786,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 486,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 18150,
+						"tool_list": ["list_files", "read_file", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": false,
+						"judge_attempted": true,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "multi-file-summary",
+					"passed": true,
+					"solved": false,
+					"metrics": {
+						"turns": 3,
+						"tool_calls": 4,
+						"prompt_tokens": 9786,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 700,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 26169,
+						"tool_list": ["list_files", "read_file", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": false,
+						"judge_attempted": true,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "multi-file-summary",
+					"passed": true,
+					"solved": false,
+					"metrics": {
+						"turns": 3,
+						"tool_calls": 4,
+						"prompt_tokens": 9786,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 677,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 24158,
+						"tool_list": ["list_files", "read_file", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": false,
+						"judge_attempted": true,
+						"judge_available": false
+					}
+				}
+			]
+		},
+		{
+			"id": "multi-hop-retrieval",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 3,
+			"pass_k": true,
+			"solve_k": true,
+			"flaky": false,
+			"metrics": {
+				"turns": 4.333333,
+				"tool_calls": 3.333333,
+				"prompt_tokens": 10317.333333,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 797,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 25494.666667
+			},
+			"runs": [
+				{
+					"id": "multi-hop-retrieval",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 4,
+						"tool_calls": 3,
+						"prompt_tokens": 10283,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 909,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 28173,
+						"tool_list": ["list_files", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "multi-hop-retrieval",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 5,
+						"tool_calls": 4,
+						"prompt_tokens": 10386,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 926,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 26163,
+						"tool_list": ["find_files_by_content", "list_files", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "multi-hop-retrieval",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 4,
+						"tool_calls": 3,
+						"prompt_tokens": 10283,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 556,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 22148,
+						"tool_list": ["list_files", "read_file", "read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				}
+			]
+		},
+		{
+			"id": "read-and-answer",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 3,
+			"pass_k": true,
+			"solve_k": true,
+			"flaky": false,
+			"metrics": {
+				"turns": 2,
+				"tool_calls": 1,
+				"prompt_tokens": 9243,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 136.666667,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 14814.666667
+			},
+			"runs": [
+				{
+					"id": "read-and-answer",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 2,
+						"tool_calls": 1,
+						"prompt_tokens": 9243,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 171,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 16117,
+						"tool_list": ["read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "read-and-answer",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 2,
+						"tool_calls": 1,
+						"prompt_tokens": 9243,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 187,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 16222,
+						"tool_list": ["read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "read-and-answer",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 2,
+						"tool_calls": 1,
+						"prompt_tokens": 9243,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 52,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 12105,
+						"tool_list": ["read_file"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				}
+			]
+		},
+		{
+			"id": "smoke-list-files",
+			"n_runs": 3,
+			"passed_count": 3,
+			"solved_count": 3,
+			"pass_k": true,
+			"solve_k": true,
+			"flaky": false,
+			"metrics": {
+				"turns": 2,
+				"tool_calls": 1,
+				"prompt_tokens": 9195,
+				"cached_tokens": 0,
+				"cache_ratio": null,
+				"output_tokens": 166.333333,
+				"cost_usd": 0,
+				"loop_fires": 0,
+				"duration_ms": 14772.666667
+			},
+			"runs": [
+				{
+					"id": "smoke-list-files",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 2,
+						"tool_calls": 1,
+						"prompt_tokens": 9195,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 57,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 14110,
+						"tool_list": ["find_files_by_name"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "smoke-list-files",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 2,
+						"tool_calls": 1,
+						"prompt_tokens": 9195,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 208,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 14103,
+						"tool_list": ["find_files_by_name"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				},
+				{
+					"id": "smoke-list-files",
+					"passed": true,
+					"solved": true,
+					"metrics": {
+						"turns": 2,
+						"tool_calls": 1,
+						"prompt_tokens": 9195,
+						"cached_tokens": null,
+						"cache_ratio": null,
+						"output_tokens": 234,
+						"cost_usd": 0,
+						"loop_fires": 0,
+						"duration_ms": 16105,
+						"tool_list": ["find_files_by_name"]
+					},
+					"errors": [],
+					"solve_details": {
+						"expected_tools_met": true,
+						"forbidden_tools_clean": true,
+						"matchers_pass": true,
+						"judge_attempted": false,
+						"judge_available": false
+					}
+				}
+			]
+		}
+	],
+	"aggregate": {
+		"total_tasks": 8,
+		"n_runs": 3,
+		"total_runs": 24,
+		"pass_k_rate": 100,
+		"solve_k_rate": 62.5,
+		"mean_pass_rate": 100,
+		"mean_solve_rate": 79.2,
+		"flaky_task_count": 2,
+		"mean_turns": 3.1,
+		"p95_turns": 7,
+		"mean_cache_ratio": null,
+		"mean_cost_usd": 0,
+		"total_cost_usd": 0,
+		"total_loop_fires": 0
+	}
+}

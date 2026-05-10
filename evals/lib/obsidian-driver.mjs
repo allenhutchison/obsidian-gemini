@@ -3,10 +3,7 @@
  * All Obsidian interaction runs through `obsidian eval code="..."`.
  */
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const exec = promisify(execFile);
+import { runWithTimeout } from './spawn-with-timeout.mjs';
 
 const OBSIDIAN_BIN = 'obsidian';
 const EVAL_TIMEOUT_MS = 10_000;
@@ -20,15 +17,29 @@ const EVAL_TIMEOUT_MS = 10_000;
  * everything from there to the end of stdout as the reply value. This
  * preserves multi-line reply support (when the returned value contains
  * real newlines) while filtering out plugin/console log noise.
+ *
+ * Uses `runWithTimeout` (not `execFile`) for the underlying spawn — the
+ * default `execFile` timeout sends SIGTERM and waits for the child to
+ * exit, but we observed during the multi-model baselines (#776) that
+ * the obsidian CLI sometimes ignores SIGTERM and keeps the parent
+ * blocked forever. `runWithTimeout` escalates to SIGKILL after a grace
+ * window so the parent always settles within bounded time.
  */
 export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
-	const { stdout } = await exec(OBSIDIAN_BIN, ['eval', `code=${code}`], {
-		timeout: timeoutMs,
-	});
-	const lines = stdout.split('\n');
+	const result = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], { timeoutMs });
+	// Surface CLI failures before parsing. A real failure (auth, plugin not
+	// loaded, malformed eval) tends to land on stderr with a non-zero exit;
+	// without this guard we'd fall through to the "=> reply" parser and
+	// throw a confusing "did not return a reply" error that obscures the
+	// actual cause.
+	if (result.code !== 0 || result.signal !== null) {
+		const stderrTail = result.stderr ? ` Stderr: ${result.stderr.slice(0, 300)}` : '';
+		throw new Error(`obsidian eval failed (exit=${result.code}, signal=${result.signal}).${stderrTail}`);
+	}
+	const lines = result.stdout.split('\n');
 	const replyIdx = lines.findIndex((l) => l.startsWith('=>'));
 	if (replyIdx === -1) {
-		throw new Error(`obsidian eval did not return a "=>" reply. Stdout was:\n${stdout.slice(0, 500)}`);
+		throw new Error(`obsidian eval did not return a "=>" reply. Stdout was:\n${result.stdout.slice(0, 500)}`);
 	}
 	const replyLines = lines.slice(replyIdx);
 	replyLines[0] = replyLines[0].slice(2); // strip leading "=>"
@@ -112,6 +123,45 @@ export async function createSession(title) {
 		{ timeoutMs: 15_000 }
 	);
 	return JSON.parse(result);
+}
+
+/**
+ * Populate the current agent session's shelf with the given vault paths so
+ * subsequent turns receive the rendered file content via `perTurnContext`,
+ * mirroring the user-facing drag-and-drop / @-mention flow.
+ *
+ * Must be called AFTER createSession() so `agentView.currentSession` and
+ * `agentView.shelf` reference the session under test. Throws if a path
+ * doesn't resolve to a vault TFile — that's an eval-task authoring error,
+ * not something the harness should silently paper over.
+ *
+ * Used by tasks that test context-chip behavior (e.g. "context-from-shelf"):
+ * the file lives on disk via setupFixtures, then this routine threads it
+ * into the agent context the same way the user would.
+ */
+export async function addContextFiles(paths) {
+	if (!Array.isArray(paths) || paths.length === 0) return;
+	const pathsLiteral = JSON.stringify(paths);
+	await obsidianEval(
+		`(async () => {
+    const p = app.plugins.plugins['gemini-scribe'];
+    const session = p.agentView?.currentSession;
+    if (!session) throw new Error('addContextFiles: no current session — call createSession() first');
+    const paths = ${pathsLiteral};
+    const missing = [];
+    for (const path of paths) {
+      const file = app.vault.getAbstractFileByPath(path);
+      if (!file) { missing.push(path); continue; }
+      p.agentView.addContextFileToShelf(file);
+      // Also persist into the session context so loadSession round-trips
+      // would hydrate the shelf — same code path as the user's @ pick.
+      p.agentView.context?.addFileToContext(file, session);
+    }
+    if (missing.length) throw new Error('addContextFiles: not found in vault: ' + missing.join(', '));
+    return JSON.stringify({ shelf: p.agentView.shelf.getItems().map(i => i.path).filter(Boolean) });
+  })()`,
+		{ timeoutMs: 10_000 }
+	);
 }
 
 /**
