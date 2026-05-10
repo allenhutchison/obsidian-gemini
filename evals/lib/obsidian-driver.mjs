@@ -126,6 +126,45 @@ export async function createSession(title) {
 }
 
 /**
+ * Populate the current agent session's shelf with the given vault paths so
+ * subsequent turns receive the rendered file content via `perTurnContext`,
+ * mirroring the user-facing drag-and-drop / @-mention flow.
+ *
+ * Must be called AFTER createSession() so `agentView.currentSession` and
+ * `agentView.shelf` reference the session under test. Throws if a path
+ * doesn't resolve to a vault TFile — that's an eval-task authoring error,
+ * not something the harness should silently paper over.
+ *
+ * Used by tasks that test context-chip behavior (e.g. "context-from-shelf"):
+ * the file lives on disk via setupFixtures, then this routine threads it
+ * into the agent context the same way the user would.
+ */
+export async function addContextFiles(paths) {
+	if (!Array.isArray(paths) || paths.length === 0) return;
+	const pathsLiteral = JSON.stringify(paths);
+	await obsidianEval(
+		`(async () => {
+    const p = app.plugins.plugins['gemini-scribe'];
+    const session = p.agentView?.currentSession;
+    if (!session) throw new Error('addContextFiles: no current session — call createSession() first');
+    const paths = ${pathsLiteral};
+    const missing = [];
+    for (const path of paths) {
+      const file = app.vault.getAbstractFileByPath(path);
+      if (!file) { missing.push(path); continue; }
+      p.agentView.addContextFileToShelf(file);
+      // Also persist into the session context so loadSession round-trips
+      // would hydrate the shelf — same code path as the user's @ pick.
+      p.agentView.context?.addFileToContext(file, session);
+    }
+    if (missing.length) throw new Error('addContextFiles: not found in vault: ' + missing.join(', '));
+    return JSON.stringify({ shelf: p.agentView.shelf.getItems().map(i => i.path).filter(Boolean) });
+  })()`,
+		{ timeoutMs: 10_000 }
+	);
+}
+
+/**
  * Copy fixture files into the vault's eval-scratch folder.
  * fixtureFiles is an array of { name, content } objects.
  */
