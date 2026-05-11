@@ -26,6 +26,11 @@ describe('ModelListProvider.startRemoteFetch', () => {
 	afterEach(() => {
 		if (originalDescriptor) {
 			Object.defineProperty(globalThis.navigator, 'onLine', originalDescriptor);
+		} else {
+			// In jsdom, navigator.onLine is inherited from Navigator.prototype, so
+			// getOwnPropertyDescriptor returns undefined. setOnline() then installs an
+			// own property that would leak across tests if we didn't delete it here.
+			delete (globalThis.navigator as { onLine?: boolean }).onLine;
 		}
 	});
 
