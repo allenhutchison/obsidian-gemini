@@ -785,6 +785,60 @@ export default class ObsidianGemini extends Plugin {
 				modal.open();
 			},
 		});
+
+		// Agent session management commands
+		this.addCommand({
+			id: 'gemini-scribe-new-session',
+			name: 'New Agent Session',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				// Check if the agent view already exists before activating it.
+				// AgentView.onOpen() automatically creates a default session, so we only
+				// call createNewSession() if the view was already open (user is asking for
+				// a fresh session, not the existing default).
+				const viewAlreadyExists = !!this.agentView;
+				await this.activateAgentView();
+				if (viewAlreadyExists && this.agentView) {
+					await this.agentView.createNewSession();
+				}
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-browse-sessions',
+			name: 'Browse Agent Sessions',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await this.activateAgentView();
+				if (this.agentView) {
+					await this.agentView.showSessionList();
+				}
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-link-project',
+			name: 'Link Project to Agent Session',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await this.activateAgentView();
+				if (this.agentView) {
+					this.agentView.switchProject();
+				}
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-session-settings',
+			name: 'Agent Session Settings',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await this.activateAgentView();
+				if (this.agentView) {
+					await this.agentView.showSessionSettings();
+				}
+			},
+		});
 	}
 
 	async activateAgentView() {

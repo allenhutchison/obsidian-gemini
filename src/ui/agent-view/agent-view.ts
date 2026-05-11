@@ -507,7 +507,7 @@ export class AgentView extends ItemView {
 	/**
 	 * Show session list modal
 	 */
-	private async showSessionList() {
+	async showSessionList() {
 		const modal = new SessionListModal(
 			this.app,
 			this.plugin,
@@ -530,7 +530,7 @@ export class AgentView extends ItemView {
 	/**
 	 * Show session settings modal
 	 */
-	private async showSessionSettings() {
+	async showSessionSettings() {
 		if (!this.currentSession) {
 			new Notice('No active session');
 			return;
@@ -555,7 +555,7 @@ export class AgentView extends ItemView {
 	/**
 	 * Create a new agent session (delegates to session component)
 	 */
-	private async createNewSession() {
+	async createNewSession() {
 		await this.session.createNewSession();
 		this.currentSession = this.session.getCurrentSession();
 		// Re-render header and shelf now that currentSession is updated — the
@@ -584,7 +584,7 @@ export class AgentView extends ItemView {
 	/**
 	 * Open the project picker and switch the current session's project
 	 */
-	private switchProject() {
+	switchProject() {
 		if (!this.currentSession) return;
 
 		const modal = new ProjectPickerModal(
