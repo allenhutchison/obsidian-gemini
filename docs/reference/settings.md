@@ -363,6 +363,35 @@ Prevents the AI agent from executing identical tools repeatedly, which can cause
 - **Description**: Time window for detecting repeated calls
 - **Example**: If threshold is 3 and window is 30s, calling the same tool 3+ times within 30 seconds triggers detection
 
+### Tool Permissions
+
+Controls which agent tools execute automatically, which require user confirmation before each run, and which are blocked entirely. Access via Settings → Gemini Scribe → Show Advanced Settings → Tool Permissions.
+
+#### Permission Preset
+
+- **Setting**: `toolPolicy.activePreset`
+- **Type**: String
+- **Default**: `cautious`
+- **Options**:
+
+| Preset      | Label              | Read tools         | Write tools        | Destructive tools  | External tools     |
+| ----------- | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| `read_only` | Read Only          | Auto               | Blocked            | Blocked            | Blocked            |
+| `cautious`  | Cautious (Default) | Auto               | Ask                | Ask                | Ask                |
+| `edit_mode` | Edit Mode          | Auto               | Auto               | Ask                | Ask                |
+| `yolo`      | YOLO Mode          | Auto               | Auto               | Auto               | Auto               |
+| `custom`    | Custom             | Per-tool overrides | Per-tool overrides | Per-tool overrides | Per-tool overrides |
+
+- **YOLO Mode warning**: Selecting YOLO Mode requires explicit confirmation in a modal. All operations execute without prompts — use only in trusted, well-understood workflows.
+- **Custom preset**: Automatically activated when you override any individual tool's permission. Selecting a named preset resets all per-tool overrides.
+
+#### Per-Tool Overrides
+
+- **Setting**: `toolPolicy.toolPermissions`
+- **Type**: Object (tool name → permission)
+- **Default**: `{}` (empty — preset governs all tools)
+- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask_user` (confirmation required), or `approve` (runs automatically). Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`.
+
 ### MCP Servers
 
 MCP (Model Context Protocol) server support allows the agent to use tools from external MCP servers. Supports both local (stdio) and remote (HTTP) servers.
