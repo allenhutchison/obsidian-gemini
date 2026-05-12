@@ -281,6 +281,18 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 
 ### API Configuration
 
+#### Custom API Endpoint
+
+- **Setting**: `customBaseUrl`
+- **Type**: String
+- **Default**: `""` (empty)
+- **Only applies when**: Provider is `gemini`
+- **Description**: Overrides the default Google API base URL for all SDK calls. Use this to route requests through a corporate proxy, local gateway, or regional mirror.
+- **Example**: `https://my-proxy.example.com`
+- **Scope**: Applies to all Google API call sites in the plugin (chat, search, web fetch, image generation, RAG indexing, deep research, context management).
+- **Note**: Leave blank to use the official Google endpoint. Invalid URLs will show a warning and be cleared automatically.
+- **Security note**: Requests routed through this proxy will include your Google API key in the `x-goog-api-key` header.
+
 #### Maximum Retries
 
 - **Setting**: `maxRetries`
@@ -362,6 +374,35 @@ Prevents the AI agent from executing identical tools repeatedly, which can cause
 - **Range**: 10-120
 - **Description**: Time window for detecting repeated calls
 - **Example**: If threshold is 3 and window is 30s, calling the same tool 3+ times within 30 seconds triggers detection
+
+### Tool Permissions
+
+Controls which agent tools execute automatically, which require user confirmation before each run, and which are blocked entirely. Access via Settings → Gemini Scribe → Show Advanced Settings → Tool Permissions.
+
+#### Permission Preset
+
+- **Setting**: `toolPolicy.activePreset`
+- **Type**: String
+- **Default**: `cautious`
+- **Options**:
+
+| Preset      | Label              | Read tools         | Write tools        | Destructive tools  | External tools     |
+| ----------- | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| `read_only` | Read Only          | Auto               | Blocked            | Blocked            | Blocked            |
+| `cautious`  | Cautious (Default) | Auto               | Ask                | Ask                | Ask                |
+| `edit_mode` | Edit Mode          | Auto               | Auto               | Ask                | Ask                |
+| `yolo`      | YOLO Mode          | Auto               | Auto               | Auto               | Auto               |
+| `custom`    | Custom             | Per-tool overrides | Per-tool overrides | Per-tool overrides | Per-tool overrides |
+
+- **YOLO Mode warning**: Selecting YOLO Mode requires explicit confirmation in a modal. All operations execute without prompts — use only in trusted, well-understood workflows.
+- **Custom preset**: Automatically activated when you override any individual tool's permission. Selecting a named preset resets all per-tool overrides.
+
+#### Per-Tool Overrides
+
+- **Setting**: `toolPolicy.toolPermissions`
+- **Type**: Object (tool name → permission)
+- **Default**: `{}` (empty — preset governs all tools)
+- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask_user` (confirmation required), or `approve` (runs automatically). Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`.
 
 ### MCP Servers
 

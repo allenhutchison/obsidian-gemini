@@ -18,7 +18,7 @@ export type {
 export { ModelClientFactory, ModelUseCase } from './factory';
 
 // Providers
-export { GeminiClient } from './providers/gemini';
+export { GeminiClient, createGoogleGenAI } from './providers/gemini';
 export type { GeminiClientConfig } from './providers/gemini';
 export { OllamaClient } from './providers/ollama';
 export type { OllamaClientConfig } from './providers/ollama';

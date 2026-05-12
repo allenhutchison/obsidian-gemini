@@ -55,6 +55,8 @@ export interface ObsidianGeminiSettings {
 	provider: ModelProvider;
 	/** Base URL for the Ollama HTTP API. Only used when provider === 'ollama'. */
 	ollamaBaseUrl: string;
+	/** Optional custom base URL to override the default Google Gemini API endpoint. */
+	customBaseUrl: string;
 	apiKeySecretName: string;
 	chatModelName: string;
 	summaryModelName: string;
@@ -108,6 +110,7 @@ export interface ObsidianGeminiSettings {
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	provider: 'gemini',
 	ollamaBaseUrl: 'http://localhost:11434',
+	customBaseUrl: '',
 	apiKeySecretName: '',
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
@@ -224,6 +227,7 @@ export default class ObsidianGemini extends Plugin {
 	private previousRagEnabled: boolean = false;
 	private previousProvider: ModelProvider = 'gemini';
 	private previousOllamaBaseUrl: string = '';
+	private previousCustomBaseUrl: string = '';
 	private previousHooksEnabled: boolean = false;
 	private lifecycle!: LifecycleService;
 	// Captures the last initialization failure so guarded commands can surface
@@ -258,6 +262,7 @@ export default class ObsidianGemini extends Plugin {
 			this.previousRagEnabled = this.settings.ragIndexing.enabled;
 			this.previousProvider = this.settings.provider;
 			this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
+			this.previousCustomBaseUrl = this.settings.customBaseUrl;
 			this.previousHooksEnabled = this.settings.hooksEnabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
@@ -785,6 +790,60 @@ export default class ObsidianGemini extends Plugin {
 				modal.open();
 			},
 		});
+
+		// Agent session management commands
+		this.addCommand({
+			id: 'gemini-scribe-new-session',
+			name: 'New Agent Session',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				// Check if the agent view already exists before activating it.
+				// AgentView.onOpen() automatically creates a default session, so we only
+				// call createNewSession() if the view was already open (user is asking for
+				// a fresh session, not the existing default).
+				const viewAlreadyExists = !!this.agentView;
+				await this.activateAgentView();
+				if (viewAlreadyExists && this.agentView) {
+					await this.agentView.createNewSession();
+				}
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-browse-sessions',
+			name: 'Browse Agent Sessions',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await this.activateAgentView();
+				if (this.agentView) {
+					await this.agentView.showSessionList();
+				}
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-link-project',
+			name: 'Link Project to Agent Session',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await this.activateAgentView();
+				if (this.agentView) {
+					this.agentView.switchProject();
+				}
+			},
+		});
+
+		this.addCommand({
+			id: 'gemini-scribe-session-settings',
+			name: 'Agent Session Settings',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await this.activateAgentView();
+				if (this.agentView) {
+					await this.agentView.showSessionSettings();
+				}
+			},
+		});
 	}
 
 	async activateAgentView() {
@@ -886,11 +945,13 @@ export default class ObsidianGemini extends Plugin {
 		const providerChanged = this.previousProvider !== this.settings.provider;
 		const ollamaUrlChanged =
 			this.settings.provider === 'ollama' && this.previousOllamaBaseUrl !== this.settings.ollamaBaseUrl;
+		const customBaseUrlChanged =
+			this.settings.provider === 'gemini' && this.previousCustomBaseUrl !== this.settings.customBaseUrl;
 		// Ollama needs no API key, so first-time init triggers on provider switch alone.
 		const hasCredentials = this.settings.provider === 'ollama' || !!this.apiKey;
 		const needsInit = !this.isGeminiInitialized && hasCredentials;
 
-		if (apiKeyChanged || providerChanged || ollamaUrlChanged || needsInit) {
+		if (apiKeyChanged || providerChanged || ollamaUrlChanged || customBaseUrlChanged || needsInit) {
 			try {
 				await this.lifecycle.setup();
 				this.isGeminiInitialized = true;
@@ -899,6 +960,7 @@ export default class ObsidianGemini extends Plugin {
 				this.previousRagEnabled = this.settings.ragIndexing.enabled;
 				this.previousProvider = this.settings.provider;
 				this.previousOllamaBaseUrl = this.settings.ollamaBaseUrl;
+				this.previousCustomBaseUrl = this.settings.customBaseUrl;
 				this.previousHooksEnabled = this.settings.hooksEnabled;
 
 				// If this is the first successful initialization, we may need to

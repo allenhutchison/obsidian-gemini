@@ -4,7 +4,7 @@
  * This replaces the complex API abstraction layer with a single,
  * streamlined implementation powered by @google/genai.
  */
-
+import { createGoogleGenAI } from './google-genai-factory';
 import { GoogleGenAI, Content, Part, GenerateContentParameters, GenerateContentResponse } from '@google/genai';
 import {
 	ModelApi,
@@ -49,7 +49,7 @@ export class GeminiClient implements ModelApi {
 		};
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
-		this.ai = new GoogleGenAI({ apiKey: config.apiKey });
+		this.ai = this.plugin ? createGoogleGenAI(this.plugin, config.apiKey) : new GoogleGenAI({ apiKey: config.apiKey });
 	}
 
 	/**
