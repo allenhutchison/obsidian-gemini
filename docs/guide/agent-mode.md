@@ -553,7 +553,7 @@ By default, these operations require confirmation:
 - **create_skill**: Creating new skill packages
 - **edit_skill**: Updating existing skill instructions
 
-You can configure which operations require confirmation in **Settings → Gemini Scribe → Agent Permissions**.
+You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool Permissions** (under Advanced Settings).
 
 ### Session-Level Permissions
 

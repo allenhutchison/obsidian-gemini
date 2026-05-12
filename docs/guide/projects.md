@@ -39,7 +39,7 @@ skills:
   - writing-coach
   - continuity-tracker
 permissions:
-  edit_file: allow
+  write_file: allow
   delete_file: deny
 ---
 ```
