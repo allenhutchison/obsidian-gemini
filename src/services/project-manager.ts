@@ -29,7 +29,7 @@ const PERMISSION_REVERSE_MAP: Record<ToolPermission, string> = {
 export class ProjectManager {
 	private plugin: ObsidianGemini;
 	private projectCache: Map<string, Project> = new Map();
-	private pendingTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+	private pendingTimers: Map<string, number> = new Map();
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -260,7 +260,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 */
 	destroy(): void {
 		for (const timer of this.pendingTimers.values()) {
-			clearTimeout(timer);
+			window.clearTimeout(timer);
 		}
 		this.pendingTimers.clear();
 	}
@@ -308,7 +308,7 @@ Add your project instructions here. This text will be injected into the agent's 
 
 	private scheduleRefresh(file: TFile): void {
 		this.cancelPendingRefresh(file.path);
-		const timer = setTimeout(() => {
+		const timer = window.setTimeout(() => {
 			this.pendingTimers.delete(file.path);
 			this.onFileCreateOrModify(file);
 		}, 500);
@@ -318,7 +318,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	private cancelPendingRefresh(path: string): void {
 		const existing = this.pendingTimers.get(path);
 		if (existing) {
-			clearTimeout(existing);
+			window.clearTimeout(existing);
 			this.pendingTimers.delete(path);
 		}
 	}

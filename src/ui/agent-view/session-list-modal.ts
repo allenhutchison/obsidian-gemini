@@ -235,6 +235,7 @@ export class SessionListModal extends Modal {
 
 				deleteBtn.addEventListener('click', async (e) => {
 					e.stopPropagation();
+					// eslint-disable-next-line no-alert -- TODO: replace with Obsidian confirmation Modal
 					if (confirm(`Delete session "${session.title}"?`)) {
 						await this.deleteSession(session);
 					}

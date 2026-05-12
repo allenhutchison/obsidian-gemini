@@ -115,7 +115,7 @@ describe('RagRateLimiter', () => {
 		it('should clear all rate limit state', () => {
 			(limiter as any).consecutiveRateLimits = 3;
 			(limiter as any).rateLimitResumeTime = Date.now() + 10000;
-			(limiter as any).rateLimitTimer = setInterval(() => {}, 1000);
+			(limiter as any).rateLimitTimer = window.setInterval(() => {}, 1000);
 
 			limiter.resetTracking();
 
@@ -134,7 +134,7 @@ describe('RagRateLimiter', () => {
 	describe('destroy', () => {
 		it('should clear all state', () => {
 			(limiter as any).consecutiveRateLimits = 3;
-			(limiter as any).rateLimitTimer = setInterval(() => {}, 1000);
+			(limiter as any).rateLimitTimer = window.setInterval(() => {}, 1000);
 
 			limiter.destroy();
 

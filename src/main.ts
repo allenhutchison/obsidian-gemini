@@ -345,6 +345,7 @@ export default class ObsidianGemini extends Plugin {
 		});
 
 		// Register views
+		// eslint-disable-next-line obsidianmd/no-view-references-in-plugin -- TODO: replace `this.agentView` reads with `app.workspace.getLeavesOfType(VIEW_TYPE_AGENT)`
 		this.registerView(VIEW_TYPE_AGENT, (leaf) => (this.agentView = new AgentView(leaf, this)));
 		this.registerView(VIEW_TYPE_DIFF, (leaf) => new GeminiDiffView(leaf, this));
 

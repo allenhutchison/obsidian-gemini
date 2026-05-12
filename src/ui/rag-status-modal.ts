@@ -30,7 +30,7 @@ export class RagStatusModal extends Modal {
 	private searchQuery: string = '';
 	private showAllFiles: boolean = false;
 	private readonly MAX_FILES_INITIAL = 200;
-	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	private debounceTimer: number | null = null;
 
 	constructor(
 		app: App,
@@ -68,7 +68,7 @@ export class RagStatusModal extends Modal {
 	onClose() {
 		// Clear any pending debounce timer to prevent updates after modal is closed
 		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
+			window.clearTimeout(this.debounceTimer);
 			this.debounceTimer = null;
 		}
 	}
@@ -224,9 +224,9 @@ export class RagStatusModal extends Modal {
 
 		searchInput.addEventListener('input', (e) => {
 			if (this.debounceTimer) {
-				clearTimeout(this.debounceTimer);
+				window.clearTimeout(this.debounceTimer);
 			}
-			this.debounceTimer = setTimeout(() => {
+			this.debounceTimer = window.setTimeout(() => {
 				this.searchQuery = (e.target as HTMLInputElement).value;
 				this.renderFileList(listContainer);
 			}, 150);

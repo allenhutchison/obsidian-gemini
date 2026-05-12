@@ -130,9 +130,9 @@ export class DeepResearchTool implements Tool {
 					}
 
 					// Poll for cancellation every 2 s and signal the API if the task is cancelled.
-					const cancelPoller = setInterval(() => {
+					const cancelPoller = window.setInterval(() => {
 						if (isCancelled()) {
-							clearInterval(cancelPoller);
+							window.clearInterval(cancelPoller);
 							deepResearch.cancelResearch().catch(() => {});
 						}
 					}, 2000);
@@ -145,7 +145,7 @@ export class DeepResearchTool implements Tool {
 						});
 						return result.outputFile?.path;
 					} finally {
-						clearInterval(cancelPoller);
+						window.clearInterval(cancelPoller);
 					}
 				});
 

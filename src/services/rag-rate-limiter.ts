@@ -20,7 +20,7 @@ export class RagRateLimiter {
 	private callbacks: RateLimiterCallbacks;
 	private consecutiveRateLimits: number = 0;
 	private rateLimitResumeTime?: number;
-	private rateLimitTimer?: ReturnType<typeof setInterval>;
+	private rateLimitTimer?: number;
 
 	constructor(logger: Logger, callbacks: RateLimiterCallbacks) {
 		this.logger = logger;
@@ -78,18 +78,18 @@ export class RagRateLimiter {
 
 		// Start countdown timer for status bar updates (clear any existing one first)
 		if (this.rateLimitTimer) {
-			clearInterval(this.rateLimitTimer);
+			window.clearInterval(this.rateLimitTimer);
 		}
-		this.rateLimitTimer = setInterval(() => {
+		this.rateLimitTimer = window.setInterval(() => {
 			this.callbacks.onUpdateStatusBar();
 		}, 1000);
 
 		// Wait for cooldown
-		await new Promise((resolve) => setTimeout(resolve, delay));
+		await new Promise((resolve) => window.setTimeout(resolve, delay));
 
 		// Clear timer and reset state
 		if (this.rateLimitTimer) {
-			clearInterval(this.rateLimitTimer);
+			window.clearInterval(this.rateLimitTimer);
 			this.rateLimitTimer = undefined;
 		}
 		this.rateLimitResumeTime = undefined;
@@ -103,7 +103,7 @@ export class RagRateLimiter {
 		this.consecutiveRateLimits = 0;
 		this.rateLimitResumeTime = undefined;
 		if (this.rateLimitTimer) {
-			clearInterval(this.rateLimitTimer);
+			window.clearInterval(this.rateLimitTimer);
 			this.rateLimitTimer = undefined;
 		}
 	}
@@ -121,7 +121,7 @@ export class RagRateLimiter {
 	 */
 	destroy(): void {
 		if (this.rateLimitTimer) {
-			clearInterval(this.rateLimitTimer);
+			window.clearInterval(this.rateLimitTimer);
 			this.rateLimitTimer = undefined;
 		}
 		this.rateLimitResumeTime = undefined;

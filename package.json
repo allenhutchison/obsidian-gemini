@@ -19,6 +19,8 @@
 		"postversion": "git push && git push --follow-tags",
 		"format": "prettier --write .",
 		"format-check": "prettier --check .",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
 		"test": "npm run generate-refs && vitest run",
 		"test:watch": "npm run generate-refs && vitest",
 		"prepare": "husky",
@@ -33,6 +35,8 @@
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
+		"@eslint/js": "^9.39.4",
+		"@eslint/json": "^0.14.0",
 		"@google/genai": "^1.51.0",
 		"@modelcontextprotocol/sdk": "^1.29.0",
 		"@types/node": "^25.6.0",
@@ -42,6 +46,8 @@
 		"codemirror-companion-extension": "^0.0.11",
 		"esbuild": "0.28.0",
 		"esbuild-plugin-alias": "^0.2.1",
+		"eslint": "^9.39.4",
+		"eslint-plugin-obsidianmd": "^0.3.0",
 		"handlebars": "^4.7.9",
 		"husky": "^9.1.7",
 		"jsdom": "^29.1.1",
@@ -50,6 +56,7 @@
 		"prettier": "^3.8.3",
 		"tslib": "2.8.1",
 		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.59.3",
 		"vitepress": "^1.6.4",
 		"vitest": "^4.1.5"
 	},
@@ -61,7 +68,8 @@
 		"turndown": "^7.2.4"
 	},
 	"lint-staged": {
-		"*": "prettier --write --ignore-unknown"
+		"*": "prettier --write --ignore-unknown",
+		"*.ts": "eslint --fix"
 	},
 	"overrides": {
 		"esbuild": "0.28.0"

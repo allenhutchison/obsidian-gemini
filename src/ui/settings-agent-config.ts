@@ -4,9 +4,9 @@ import { createCollapsibleSection } from './settings-helpers';
 import { getErrorMessage } from '../utils/error-utils';
 import type { SettingsSectionContext } from './settings';
 
-let temperatureDebounceTimer: NodeJS.Timeout | null = null;
+let temperatureDebounceTimer: number | null = null;
 let temperatureRunId = 0;
-let topPDebounceTimer: NodeJS.Timeout | null = null;
+let topPDebounceTimer: number | null = null;
 let topPRunId = 0;
 
 /**
@@ -227,14 +227,14 @@ async function createTemperatureSetting(containerEl: HTMLElement, plugin: Obsidi
 				.setDynamicTooltip()
 				.onChange(async (value) => {
 					if (temperatureDebounceTimer) {
-						clearTimeout(temperatureDebounceTimer);
+						window.clearTimeout(temperatureDebounceTimer);
 					}
 
 					plugin.settings.temperature = value;
 
 					const runId = ++temperatureRunId;
 
-					temperatureDebounceTimer = setTimeout(async () => {
+					temperatureDebounceTimer = window.setTimeout(async () => {
 						try {
 							// Validate the current value against model capabilities. Read from
 							// settings rather than the captured `value` so the validation always
@@ -292,14 +292,14 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemin
 				.setDynamicTooltip()
 				.onChange(async (value) => {
 					if (topPDebounceTimer) {
-						clearTimeout(topPDebounceTimer);
+						window.clearTimeout(topPDebounceTimer);
 					}
 
 					plugin.settings.topP = value;
 
 					const runId = ++topPRunId;
 
-					topPDebounceTimer = setTimeout(async () => {
+					topPDebounceTimer = window.setTimeout(async () => {
 						try {
 							const validation = await modelManager.validateParameters(
 								plugin.settings.temperature,

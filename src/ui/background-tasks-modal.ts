@@ -32,7 +32,7 @@ export class BackgroundTasksModal extends Modal {
 	private ragInnerTab: RagInnerTab = 'overview';
 	private ragSearchQuery = '';
 	private ragShowAllFiles = false;
-	private ragDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	private ragDebounceTimer: number | null = null;
 	private ragFileScrollTop = 0;
 	private readonly RAG_MAX_FILES_INITIAL = 200;
 
@@ -90,7 +90,7 @@ export class BackgroundTasksModal extends Modal {
 		}
 
 		if (this.ragDebounceTimer) {
-			clearTimeout(this.ragDebounceTimer);
+			window.clearTimeout(this.ragDebounceTimer);
 			this.ragDebounceTimer = null;
 		}
 
@@ -136,7 +136,7 @@ export class BackgroundTasksModal extends Modal {
 				if (this.activeTab === id) return;
 				// Cancel any pending RAG search debounce so it doesn't fire against the new tab
 				if (this.ragDebounceTimer) {
-					clearTimeout(this.ragDebounceTimer);
+					window.clearTimeout(this.ragDebounceTimer);
 					this.ragDebounceTimer = null;
 				}
 				this.activeTab = id;
@@ -499,8 +499,8 @@ export class BackgroundTasksModal extends Modal {
 		});
 
 		searchInput.addEventListener('input', (e) => {
-			if (this.ragDebounceTimer) clearTimeout(this.ragDebounceTimer);
-			this.ragDebounceTimer = setTimeout(() => {
+			if (this.ragDebounceTimer) window.clearTimeout(this.ragDebounceTimer);
+			this.ragDebounceTimer = window.setTimeout(() => {
 				this.ragSearchQuery = (e.target as HTMLInputElement).value;
 				this.ragFileScrollTop = 0;
 				this.renderRagFileList(listContainer, status);

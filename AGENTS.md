@@ -22,6 +22,8 @@ npm run generate-refs # Regenerate help references from docs/ (runs automaticall
 npm test             # Run Vitest tests
 npm run format       # Format code with Prettier
 npm run format-check # Check formatting without changes
+npm run lint         # Lint with ESLint (eslint-plugin-obsidianmd recommended preset)
+npm run lint:fix     # Auto-fix ESLint violations where possible
 ```
 
 **IMPORTANT**: Always run `npm install` first if you encounter TypeScript errors or missing module errors during build. The build requires all dependencies in `node_modules` to be present. If you get errors about missing modules like `obsidian`, `@google/genai`, `handlebars`, or `tslib`, run `npm install` before attempting `npm run build` again.
@@ -144,6 +146,7 @@ For in-depth code quality standards (DRY, SOLID, error handling, performance, se
 
 - TypeScript-first codebase; group modules by domain and add barrel exports only when they simplify imports.
 - Format with Prettier (`npm run format`): 2-space indent, 120-column width, semicolons, single quotes, trailing commas.
+- Lint with ESLint (`npm run lint`, autofix with `npm run lint:fix`): the `eslint-plugin-obsidianmd` recommended preset enforces Obsidian-specific best practices (memory-leak prevention, cross-window safety, command-ID conventions, manifest validation, etc.). Pervasive rules that need broader refactoring are temporarily disabled in `eslint.config.mjs` — see the `PERVASIVE_OBSIDIANMD_RULES_TODO` block for follow-up items. Runs in precommit (lint-staged, staged `*.ts` only) and CI (`.github/workflows/lint.yml`).
 - `.editorconfig` enforces LF endings and tabbed Markdown/config; avoid hand-editing generated bundles.
 - Use camelCase for variables/functions, PascalCase for classes/types, and kebab-case filenames aligned with their feature area.
 - Handle TypeScript errors properly - ensure all properties are correctly typed

@@ -146,7 +146,7 @@ export class SelectionActionService {
 			});
 
 			const timeoutPromise = new Promise<never>((_, reject) => {
-				setTimeout(() => reject(new Error('Request timed out after 60 seconds')), timeoutMs);
+				window.setTimeout(() => reject(new Error('Request timed out after 60 seconds')), timeoutMs);
 			});
 
 			const response = await Promise.race([responsePromise, timeoutPromise]);

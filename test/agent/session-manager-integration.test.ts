@@ -243,11 +243,11 @@ describe('SessionManager Integration Tests', () => {
 		it('should generate appropriate session titles', async () => {
 			// Mock date for consistent testing
 			const mockDate = new Date('2024-01-15T10:30:00');
-			const originalDate = global.Date;
-			global.Date = vi.fn(function () {
+			const originalDate = window.Date;
+			window.Date = vi.fn(function () {
 				return mockDate;
 			}) as any;
-			global.Date.now = originalDate.now;
+			window.Date.now = originalDate.now;
 
 			try {
 				// Agent session
@@ -264,7 +264,7 @@ describe('SessionManager Integration Tests', () => {
 				// vi.restoreAllMocks() doesn't undo direct global assignments — only
 				// spies registered via vi.spyOn — so we have to restore Date by hand
 				// before any other test runs.
-				global.Date = originalDate;
+				window.Date = originalDate;
 				vi.restoreAllMocks();
 			}
 		});

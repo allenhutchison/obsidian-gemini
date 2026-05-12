@@ -274,7 +274,7 @@ describe('Tool Integration Tests', () => {
 
 			// 2. Fetch specific URL
 			// Mock fetch response
-			global.fetch = vi.fn().mockResolvedValue({
+			window.fetch = vi.fn().mockResolvedValue({
 				ok: true,
 				text: async () => '<html><body><h1>Obsidian Plugins</h1></body></html>',
 				headers: new Headers({ 'content-type': 'text/html' }),

@@ -1,4 +1,5 @@
 import * as Handlebars from 'handlebars';
+import { getLanguage } from 'obsidian';
 import { CustomPrompt } from './types';
 import { ToolDefinition } from '../api/interfaces/model-api';
 import type ObsidianGemini from '../main';
@@ -82,7 +83,7 @@ export class GeminiPrompts {
 
 	// Get language code helper
 	private getLanguageCode(): string {
-		return window.localStorage.getItem('language') || 'en';
+		return getLanguage() || 'en';
 	}
 
 	/**

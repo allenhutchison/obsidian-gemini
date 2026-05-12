@@ -39,6 +39,7 @@ export class VaultAnalysisModal extends Modal {
 		const statusContainer = contentEl.createDiv({ cls: 'gemini-vault-analysis-status' });
 
 		this.spinnerEl = statusContainer.createDiv({ cls: 'gemini-vault-analysis-spinner' });
+		// eslint-disable-next-line @microsoft/sdl/no-inner-html -- static SVG literal, no user input
 		this.spinnerEl.innerHTML = `
 			<svg class="gemini-spinner" viewBox="0 0 50 50">
 				<circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
@@ -68,7 +69,7 @@ export class VaultAnalysisModal extends Modal {
 		const stepEl = this.stepsEl.createDiv({ cls: 'gemini-vault-analysis-step' });
 
 		const iconEl = stepEl.createDiv({ cls: 'gemini-vault-analysis-step-icon' });
-		iconEl.innerHTML = '⏳'; // Waiting icon
+		iconEl.setText('⏳');
 
 		const textEl = stepEl.createDiv({ cls: 'gemini-vault-analysis-step-text' });
 		textEl.setText(message);
@@ -138,7 +139,7 @@ export class VaultAnalysisModal extends Modal {
 		}
 
 		// Add a close button
-		setTimeout(() => {
+		window.setTimeout(() => {
 			this.close();
 		}, 2000); // Auto-close after 2 seconds
 	}

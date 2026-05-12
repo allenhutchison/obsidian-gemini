@@ -54,7 +54,7 @@ function makeManager() {
 
 /** Returns a promise that resolves after all pending micro-tasks + one macro-task tick. */
 function flushAsync(): Promise<void> {
-	return new Promise((r) => setTimeout(r, 0));
+	return new Promise((r) => window.setTimeout(r, 0));
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────

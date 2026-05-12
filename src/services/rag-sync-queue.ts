@@ -31,7 +31,7 @@ export class RagSyncQueue {
 	private rateLimiter: RagRateLimiter;
 	private callbacks: SyncQueueCallbacks;
 	private pendingChanges: Map<string, PendingChange> = new Map();
-	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	private debounceTimer: number | null = null;
 	private isProcessing: boolean = false;
 
 	constructor(plugin: ObsidianGemini, ragCache: RagCache, rateLimiter: RagRateLimiter, callbacks: SyncQueueCallbacks) {
@@ -159,10 +159,10 @@ export class RagSyncQueue {
 
 		// Reset debounce timer
 		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
+			window.clearTimeout(this.debounceTimer);
 		}
 
-		this.debounceTimer = setTimeout(() => {
+		this.debounceTimer = window.setTimeout(() => {
 			this.flushPendingChanges().catch((error) => {
 				this.plugin.logger.error('RAG Indexing: Error in debounced flush', error);
 			});
@@ -183,7 +183,7 @@ export class RagSyncQueue {
 
 		// Clear debounce timer and process immediately
 		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
+			window.clearTimeout(this.debounceTimer);
 			this.debounceTimer = null;
 		}
 
@@ -357,7 +357,7 @@ export class RagSyncQueue {
 	 */
 	clearTimer(): void {
 		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
+			window.clearTimeout(this.debounceTimer);
 			this.debounceTimer = null;
 		}
 	}

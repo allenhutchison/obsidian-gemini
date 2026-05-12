@@ -416,7 +416,7 @@ describe('AgentViewProgress', () => {
 			await firstRenderPromise;
 
 			// Wait for microtasks to settle
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
 
 			// The second render should win — verify no stale content leaked through
 			const content = container.querySelector('.gemini-agent-thinking-content');
@@ -484,7 +484,7 @@ describe('AgentViewProgress', () => {
 			progress.updateThought('Fallback on error');
 
 			// Wait for the async render to complete and catch
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
 
 			const content = container.querySelector('.gemini-agent-thinking-content');
 			expect(content?.textContent).toBe('Fallback on error');

@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-nodejs-modules -- desktop-only OAuth loopback server
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
 
@@ -79,7 +80,7 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 
 			settled = true;
 			resolveCode({ code });
-			setTimeout(() => server.close(), 500);
+			window.setTimeout(() => server.close(), 500);
 		} else {
 			const errorDesc = escapeHtml(parsedUrl.searchParams.get('error_description') || error || 'Unknown error');
 			res.writeHead(400, { 'Content-Type': 'text/html' });
@@ -91,12 +92,12 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 
 			settled = true;
 			rejectCode(new Error(`OAuth authorization failed: ${errorDesc}`));
-			setTimeout(() => server.close(), 500);
+			window.setTimeout(() => server.close(), 500);
 		}
 	});
 
 	// Timeout: shut down if no callback received
-	const timeout = setTimeout(() => {
+	const timeout = window.setTimeout(() => {
 		if (!settled) {
 			settled = true;
 			server.close();
@@ -105,7 +106,7 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 	}, timeoutMs);
 
 	server.on('close', () => {
-		clearTimeout(timeout);
+		window.clearTimeout(timeout);
 	});
 
 	// Wait for the server to actually start listening before resolving
@@ -113,7 +114,7 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 		server.on('error', (err) => {
 			if (!settled) {
 				settled = true;
-				clearTimeout(timeout);
+				window.clearTimeout(timeout);
 				rejectCode(new Error(`OAuth callback server error: ${err.message}`));
 			}
 			reject(err);
@@ -129,7 +130,7 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 		close: () => {
 			if (!settled) {
 				settled = true;
-				clearTimeout(timeout);
+				window.clearTimeout(timeout);
 				server.close();
 				rejectCode(new Error('OAuth callback server closed'));
 			}

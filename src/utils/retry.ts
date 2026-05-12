@@ -46,6 +46,7 @@ export interface RetryOptions {
  * Sleep for a specified number of milliseconds
  */
 function sleep(ms: number): Promise<void> {
+	// eslint-disable-next-line obsidianmd/prefer-window-timers -- shared with tests running in node environment
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 

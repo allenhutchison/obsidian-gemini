@@ -33,3 +33,6 @@ jobs:
 
       - name: TypeScript type check (tests)
         run: npm run typecheck:test
+
+      - name: Run ESLint
+        run: npm run lint

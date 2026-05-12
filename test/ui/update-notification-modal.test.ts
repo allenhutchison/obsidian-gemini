@@ -215,7 +215,7 @@ describe('UpdateNotificationModal', () => {
 		beforeEach(() => {
 			modal = new UpdateNotificationModal(app, '4.0.0');
 			// Mock window.open
-			global.window.open = vi.fn();
+			window.window.open = vi.fn();
 		});
 
 		it('should prevent default link behavior and open in new window', () => {

@@ -117,6 +117,7 @@ export const MarkdownRenderer = {
 export const setIcon = vi.fn();
 export const Notice = vi.fn();
 export const requestUrl = vi.fn();
+export const getLanguage = vi.fn(() => 'en');
 // Mirrors Obsidian's normalizePath: collapses duplicate slashes, converts
 // backslashes, strips leading/trailing slashes, and returns '/' for empty input.
 export const normalizePath = vi.fn((path) => {

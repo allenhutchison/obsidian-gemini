@@ -201,7 +201,7 @@ export class RagIndexingService {
 		// Wait for any in-flight change processing
 		if (this.syncQueue) {
 			while (this.syncQueue.getIsProcessing()) {
-				await new Promise((resolve) => setTimeout(resolve, 100));
+				await new Promise((resolve) => window.setTimeout(resolve, 100));
 			}
 		}
 

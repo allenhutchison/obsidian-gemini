@@ -261,7 +261,7 @@ export class ScheduledTaskManager {
 	 * Tracked so they can be cancelled by initialize() (on re-init) and destroy()
 	 * to prevent stale callbacks from mutating state after teardown.
 	 */
-	private pendingDefers = new Set<ReturnType<typeof setTimeout>>();
+	private pendingDefers = new Set<number>();
 	/** Slugs reserved for catch-up approval — tick skips these until approved or skipped. */
 	private catchUpPending = new Set<string>();
 
@@ -301,7 +301,7 @@ export class ScheduledTaskManager {
 		// Cancel any 500 ms defers still waiting from a previous initialization so
 		// stale callbacks cannot fire against the freshly-loaded state.
 		for (const id of this.pendingDefers) {
-			clearTimeout(id);
+			window.clearTimeout(id);
 		}
 		this.pendingDefers.clear();
 		this.recentlyCreated.clear();
@@ -377,7 +377,7 @@ export class ScheduledTaskManager {
 				// Defer until the metadata cache has indexed the new file's frontmatter.
 				// Track the timer so initialize() and destroy() can cancel it if they
 				// run before the 500 ms elapses.
-				const timerId = setTimeout(() => {
+				const timerId = window.setTimeout(() => {
 					this.pendingDefers.delete(timerId);
 					this.recentlyCreated.delete(file.basename);
 					// Guard: if the manager was destroyed or re-initialized while the
@@ -683,7 +683,7 @@ export class ScheduledTaskManager {
 		// this.initialized before touching state, but clearing here is the
 		// belt-and-suspenders guarantee that no timer fires after teardown.
 		for (const id of this.pendingDefers) {
-			clearTimeout(id);
+			window.clearTimeout(id);
 		}
 		this.pendingDefers.clear();
 		this.tasks.clear();

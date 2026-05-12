@@ -484,7 +484,7 @@ export class AgentViewToolDisplay {
 							copyBtn.addEventListener('click', () => {
 								navigator.clipboard.writeText(result.data.wikilink).then(() => {
 									copyBtn.textContent = 'Copied!';
-									setTimeout(() => {
+									window.setTimeout(() => {
 										copyBtn.textContent = 'Copy';
 									}, 2000);
 								});

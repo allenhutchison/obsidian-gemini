@@ -1,13 +1,6 @@
 import { GeminiPrompts } from '../../src/prompts/gemini-prompts';
 import type ObsidianGemini from '../../src/main';
-
-// Mock window.localStorage
-const mockLocalStorage = {
-	getItem: vi.fn(),
-};
-Object.defineProperty(window, 'localStorage', {
-	value: mockLocalStorage,
-});
+import { getLanguage } from 'obsidian';
 
 describe('GeminiPrompts', () => {
 	let geminiPrompts: GeminiPrompts;
@@ -24,7 +17,7 @@ describe('GeminiPrompts', () => {
 			},
 		};
 		geminiPrompts = new GeminiPrompts(mockPlugin as ObsidianGemini);
-		mockLocalStorage.getItem.mockReturnValue('fr'); // Set language to French
+		(getLanguage as ReturnType<typeof vi.fn>).mockReturnValue('fr'); // Set language to French
 	});
 
 	it('should inject language into system prompt', () => {
@@ -74,7 +67,7 @@ describe('GeminiPrompts', () => {
 	});
 
 	it('should default to "en" when no language is set', () => {
-		mockLocalStorage.getItem.mockReturnValue(null);
+		(getLanguage as ReturnType<typeof vi.fn>).mockReturnValue('');
 		const prompt = geminiPrompts.systemPrompt({
 			userName: 'Test User',
 			date: '2023-10-27',

@@ -399,7 +399,7 @@ class ImagePromptModal extends Modal {
 				text.inputEl.rows = 4;
 				text.inputEl.cols = 40;
 				// Focus the text area
-				setTimeout(() => text.inputEl.focus(), 100);
+				window.setTimeout(() => text.inputEl.focus(), 100);
 			});
 
 		// Add "Generate from Page" button
