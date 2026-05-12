@@ -56,6 +56,9 @@ export interface ToolPolicyEditorOptions {
  *   editor.destroy();
  */
 export class ToolPolicyEditor {
+	/** Monotonic counter for generating unique DOM ids per editor instance. */
+	private static nextInheritId = 0;
+
 	private state: FeatureToolPolicy | undefined;
 	private container: HTMLElement;
 	private bodyEl!: HTMLElement;
@@ -120,9 +123,19 @@ export class ToolPolicyEditor {
 
 		// Inherit toggle — when on, hides the rest of the editor.
 		const inheritRow = this.container.createDiv({ cls: 'gemini-tool-policy-editor-inherit' });
-		const inheritCb = inheritRow.createEl('input', { attr: { type: 'checkbox' } }) as HTMLInputElement;
+		// Bind the label to the checkbox via for/id so click-through and
+		// assistive tech work correctly. The id needs to be unique across the
+		// page, not just within this component, since multiple editors could
+		// briefly coexist during a modal re-render.
+		const inheritId = `gemini-tool-policy-inherit-${++ToolPolicyEditor.nextInheritId}`;
+		const inheritCb = inheritRow.createEl('input', {
+			attr: { type: 'checkbox', id: inheritId },
+		}) as HTMLInputElement;
 		inheritCb.checked = this.state === undefined;
-		inheritRow.createEl('label', { text: ' Inherit global plugin tool policy' });
+		inheritRow.createEl('label', {
+			text: ' Inherit global plugin tool policy',
+			attr: { for: inheritId },
+		});
 		inheritCb.addEventListener('change', () => {
 			if (inheritCb.checked) {
 				this.state = undefined;
