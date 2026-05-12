@@ -9,8 +9,8 @@
  * - #328: Tool calling unreliability in long conversations
  * - #129: 429 errors from oversized context
  */
-
 import { GoogleGenAI } from '@google/genai';
+import { createGoogleGenAI } from '../api/google-genai-factory';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
 import { GeminiClientFactory, ModelUseCase } from '../api/simple-factory';
@@ -110,7 +110,7 @@ export class ContextManager {
 		// missing `provider` to 'gemini' so legacy/upgraded users don't fall
 		// into the Ollama estimation path with `this.ai` left null.
 		const provider = plugin.settings.provider ?? 'gemini';
-		this.ai = provider === 'gemini' ? new GoogleGenAI({ apiKey: plugin.apiKey }) : null;
+		this.ai = provider === 'gemini' ? createGoogleGenAI(plugin) : null;
 	}
 
 	/**

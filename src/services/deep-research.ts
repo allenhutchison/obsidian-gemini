@@ -1,9 +1,9 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { GoogleGenAI } from '@google/genai';
 import { ResearchManager, ReportGenerator, Interaction } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
+import { createGoogleGenAI } from '../api/google-genai-factory';
 
 /**
  * System folders that should not be written to
@@ -48,6 +48,19 @@ export class DeepResearchService {
 		this.reportGenerator = new ReportGenerator();
 		this.retryConfig = DEFAULT_RETRY_CONFIG;
 	}
+	/**
+	 * Invalidate the cached ResearchManager so it is rebuilt with the
+	 * current plugin settings (e.g. after customBaseUrl changes).
+	 */
+	public invalidateResearchManager(): void {
+		// Do not invalidate while a research job is active — cancelResearch()
+		// still needs the manager to send the cancel request.
+		if (this.currentInteractionId !== null) {
+			this.plugin.logger.warn('[DeepResearch] Cannot invalidate manager while research is in progress');
+			return;
+		}
+		this.researchManager = null;
+	}
 
 	/**
 	 * Initialize the ResearchManager with a GoogleGenAI client
@@ -58,10 +71,7 @@ export class DeepResearchService {
 		}
 
 		if (!this.researchManager) {
-			const genAI = new GoogleGenAI({
-				apiKey: this.plugin.apiKey,
-			});
-
+			const genAI = createGoogleGenAI(this.plugin);
 			// WORKAROUND (as of @google/genai v0.14.x): The GoogleGenAI interactions getter creates
 			// a new client that ignores the fetch option passed to the constructor. We must manually
 			// inject our proxyFetch into the generated interactions client to ensure CORS requests

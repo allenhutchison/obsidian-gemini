@@ -53,6 +53,19 @@ Gemini Scribe automatically discovers the parameter limits for your available mo
 
 ## API Configuration
 
+### Custom API Endpoint
+
+Route all Google API requests through a proxy or gateway instead of hitting the public endpoint directly.
+
+- **Setting name**: Custom API endpoint
+- **Default**: empty (uses official Google endpoint)
+- **When to use**:
+  - Corporate networks that block `generativelanguage.googleapis.com` or `aiplatform.googleapis.com`
+  - Local reverse proxies for API key management or cost tracking
+  - Regional mirrors for latency or compliance requirements
+- **Scope**: All seven Google GenAI SDK call sites are covered — chat, streaming, web fetch, Google Search grounding, RAG embedding, deep research, and token counting. Leaving one path unproxied while routing others is not possible with this setting.
+- **Validation**: The value is validated on blur; invalid URLs will show a warning notice and be cleared automatically.
+
 ### Retry Settings
 
 Configure how the plugin handles API failures:

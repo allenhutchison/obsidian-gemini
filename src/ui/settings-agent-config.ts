@@ -73,6 +73,34 @@ export async function renderAgentConfigSettings(
 		);
 
 	new Setting(sectionEl)
+		.setName('Custom API endpoint')
+		.setDesc(
+			'Override the default Google API base URL (e.g. for a corporate proxy or local gateway). Leave blank to use the official endpoint.'
+		)
+		.addText((text) => {
+			text
+				.setPlaceholder('https://my-proxy.example.com')
+				.setValue(plugin.settings.customBaseUrl)
+				.onChange((value) => {
+					plugin.settings.customBaseUrl = value.trim();
+					debouncedSave();
+				});
+			text.inputEl.addEventListener('blur', () => {
+				const trimmed = plugin.settings.customBaseUrl.trim();
+				if (trimmed === '') return;
+				try {
+					new URL(trimmed);
+				} catch {
+					new Notice('Custom API endpoint is not a valid URL — clearing.');
+					plugin.settings.customBaseUrl = '';
+					text.setValue('');
+					debouncedSave();
+				}
+			});
+			return text;
+		});
+
+	new Setting(sectionEl)
 		.setName('Maximum Retries')
 		.setDesc('Maximum number of retries when a model request fails.')
 		.addText((text) =>

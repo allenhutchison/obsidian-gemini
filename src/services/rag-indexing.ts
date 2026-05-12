@@ -1,5 +1,5 @@
-import { TFile, Notice } from 'obsidian';
 import { GoogleGenAI } from '@google/genai';
+import { TFile, Notice } from 'obsidian';
 import { FileUploader } from '@allenhutchison/gemini-utils';
 import type ObsidianGemini from '../main';
 import { ObsidianVaultAdapter } from './obsidian-file-adapter';
@@ -9,6 +9,7 @@ import { RagRateLimiter } from './rag-rate-limiter';
 import { RagStatusBar } from './rag-status-bar';
 import { RagSyncQueue } from './rag-sync-queue';
 import { RagVaultScanner } from './rag-vault-scanner';
+import { createGoogleGenAI } from '../api/google-genai-factory';
 import type {
 	IndexProgress,
 	IndexResult,
@@ -118,7 +119,7 @@ export class RagIndexingService {
 
 		try {
 			// Initialize Google GenAI client
-			this.ai = new GoogleGenAI({ apiKey: this.plugin.apiKey });
+			this.ai = createGoogleGenAI(this.plugin);
 
 			// Create vault adapter for file operations
 			this.vaultAdapter = new ObsidianVaultAdapter({

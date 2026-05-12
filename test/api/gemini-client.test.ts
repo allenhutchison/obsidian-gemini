@@ -51,6 +51,10 @@ describe('GeminiClient', () => {
 		// Setup mock plugin
 		mockPlugin = {
 			logger: mockLogger,
+			apiKey: 'test-api-key',
+			settings: {
+				customBaseUrl: '',
+			},
 		};
 
 		// Create client with minimal config
