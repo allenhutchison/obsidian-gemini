@@ -38,6 +38,7 @@ export class AgentViewMessages {
 	private plugin: ObsidianGemini;
 	private userInput: HTMLDivElement;
 	private scrollTimeout: number | null = null;
+	private autoOpenDiffTimeout: number | null = null;
 	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
 	private viewContext: any; // For MarkdownRenderer context
 
@@ -748,7 +749,11 @@ export class AgentViewMessages {
 			// Auto-open diff view if setting enabled
 			// Small delay allows the confirmation card DOM to render before opening the leaf
 			if (diffContext && this.plugin.settings.alwaysShowDiffView) {
-				window.setTimeout(() => {
+				if (this.autoOpenDiffTimeout !== null) {
+					window.clearTimeout(this.autoOpenDiffTimeout);
+				}
+				this.autoOpenDiffTimeout = window.setTimeout(() => {
+					this.autoOpenDiffTimeout = null;
 					this.openDiffView(
 						diffContext,
 						handleResponse,
@@ -920,6 +925,10 @@ export class AgentViewMessages {
 		if (this.scrollTimeout) {
 			window.clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
+		}
+		if (this.autoOpenDiffTimeout !== null) {
+			window.clearTimeout(this.autoOpenDiffTimeout);
+			this.autoOpenDiffTimeout = null;
 		}
 
 		// Settle any pending confirmation promises so tool executions don't hang
