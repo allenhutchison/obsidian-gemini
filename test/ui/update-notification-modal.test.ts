@@ -215,7 +215,7 @@ describe('UpdateNotificationModal', () => {
 		beforeEach(() => {
 			modal = new UpdateNotificationModal(app, '4.0.0');
 			// Mock window.open
-			window.window.open = vi.fn();
+			window.open = vi.fn();
 		});
 
 		it('should prevent default link behavior and open in new window', () => {
@@ -230,6 +230,7 @@ describe('UpdateNotificationModal', () => {
 			link.dispatchEvent(event);
 
 			expect(preventDefaultSpy).toHaveBeenCalled();
+			expect(window.open).toHaveBeenCalled();
 		});
 	});
 
