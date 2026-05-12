@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { TFile as MockTFile } from 'obsidian';
 import { ScheduledTaskManager, computeNextRunAt, ScheduledTask } from '../../src/services/scheduled-task-manager';
-import { ToolPermission } from '../../src/types/tool-policy';
+import { PolicyPreset, ToolPermission } from '../../src/types/tool-policy';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -915,7 +915,7 @@ describe('ScheduledTaskManager', () => {
 			await manager.createTask({
 				slug: 'new-task',
 				schedule: 'daily',
-				toolPolicy: { preset: 'read_only' as any },
+				toolPolicy: { preset: PolicyPreset.READ_ONLY },
 				prompt: 'Do something daily.',
 			});
 
@@ -982,7 +982,7 @@ describe('ScheduledTaskManager', () => {
 				slug: 'tools-task',
 				schedule: 'daily',
 				toolPolicy: {
-					preset: 'edit_mode' as any,
+					preset: PolicyPreset.EDIT_MODE,
 					overrides: { write_file: ToolPermission.DENY },
 				},
 				prompt: 'With tools.',

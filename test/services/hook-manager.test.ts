@@ -8,6 +8,7 @@ import {
 	renderPrompt,
 	type Hook,
 } from '../../src/services/hook-manager';
+import { PolicyPreset } from '../../src/types/tool-policy';
 
 // ─── Module mocks ────────────────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ function makeHook(overrides: Partial<Hook> = {}): Hook {
 		debounceMs: 100,
 		cooldownMs: 0,
 		action: 'agent-task',
-		toolPolicy: { preset: 'read_only' as any },
+		toolPolicy: { preset: PolicyPreset.READ_ONLY },
 		enabledSkills: [],
 		enabled: true,
 		desktopOnly: false,
@@ -293,7 +294,7 @@ describe('HookManager CRUD', () => {
 			debounceMs: 7500,
 			cooldownMs: 60_000,
 			maxRunsPerHour: 12,
-			toolPolicy: { preset: 'read_only' as any },
+			toolPolicy: { preset: PolicyPreset.READ_ONLY },
 			enabledSkills: ['index-files'],
 			model: 'gemini-2.5-flash-lite',
 			outputPath: 'Hooks/Runs/{slug}/{date}.md',
