@@ -130,6 +130,7 @@ function buildPlugin(): FakePlugin {
 			maxRetries: 3,
 			initialBackoffDelay: 1000,
 			modelDiscovery: { enabled: false, autoUpdateInterval: 24, fallbackToStatic: true },
+			provider: 'gemini',
 			customBaseUrl: '',
 		},
 		saveSettings: vi.fn().mockResolvedValue(undefined),
