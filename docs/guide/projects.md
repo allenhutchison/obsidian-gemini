@@ -133,13 +133,14 @@ When you create a **new** agent session, the plugin inspects the session's initi
 | **Tool discovery**    | `list_files`, `find_files_by_name`, and `find_files_by_content` scope to the project root   |
 | **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them |
 | **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)              |
-| **Permissions**       | Project permissions take priority over global presets and per-tool overrides                |
+| **Tool policy**       | The project's `toolPolicy` is layered on top of the global plugin tool policy               |
 
-### Permission Resolution Order
+### Tool Policy Resolution Order
 
-1. Project-level permission (`permissions` in project frontmatter)
-2. Per-tool global override (`Settings → Tool Policy → Custom`)
-3. Global preset default (Cautious, Edit Mode, etc.)
+1. Project `toolPolicy.overrides[toolName]`
+2. Global per-tool override (`Settings → Tool Policy → Custom`)
+3. Project `toolPolicy.preset` (if set)
+4. Global preset default (Cautious, Edit Mode, etc.)
 
 ## Managing Projects
 
@@ -166,5 +167,5 @@ Open the project file and use the **"Remove Project"** command to strip the `gem
 - **Keep project files at the root of the relevant folder** — the parent directory becomes the scope boundary
 - **Use wikilinks in the body** to reference files outside the project that the agent should know about
 - **Start with an empty `skills` array** to allow all skills, then narrow down as needed
-- **Set `delete_file: deny`** in permissions for projects where you want to prevent accidental deletions
+- **Set `delete_file: deny`** under `toolPolicy.overrides` for projects where you want to prevent accidental deletions
 - **Project instructions stack with custom prompts** — use projects for persistent context and custom prompts for per-session behavior
