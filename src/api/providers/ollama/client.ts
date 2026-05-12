@@ -29,18 +29,10 @@ import {
 	StreamCallback,
 	StreamingModelResponse,
 	InlineDataPart,
-} from './interfaces/model-api';
-import { GeminiPrompts } from '../prompts';
-import type ObsidianGemini from '../main';
-
-export interface OllamaClientConfig {
-	baseUrl: string;
-	model?: string;
-	temperature?: number;
-	topP?: number;
-	maxOutputTokens?: number;
-	streamingEnabled?: boolean;
-}
+} from '../../interfaces/model-api';
+import { GeminiPrompts } from '../../../prompts';
+import type ObsidianGemini from '../../../main';
+import type { OllamaClientConfig } from './config';
 
 export class OllamaClient implements ModelApi {
 	private client: Ollama;
@@ -62,7 +54,7 @@ export class OllamaClient implements ModelApi {
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		const isExtended = 'userMessage' in request;
-		// The factory (`GeminiClientFactory.resolveModelName`) is the single
+		// The factory (`ModelClientFactory.resolveModelName`) is the single
 		// source of role-aware model resolution and always populates
 		// `config.model` per use case (chat / summary / completions / rewrite).
 		// We don't fall back to a chat default here — that would silently route

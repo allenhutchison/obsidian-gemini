@@ -3,7 +3,7 @@ import type ObsidianGemini from '../main';
 import { ToolCategory, DestructiveAction } from '../types/agent';
 import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
 import { ToolExecutionContext } from '../tools/types';
-import { GeminiClientFactory } from '../api';
+import { ModelClientFactory } from '../api';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import { ensureFolderExists } from '../utils/file-utils';
 import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
@@ -95,7 +95,7 @@ export class HookRunner {
 		}
 
 		const toolContext: ToolExecutionContext = { plugin: this.plugin, session };
-		const modelApi = GeminiClientFactory.createChatModel(this.plugin);
+		const modelApi = ModelClientFactory.createChatModel(this.plugin);
 		const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 
 		const renderedPrompt = renderPrompt(hook.prompt, this.promptVars());

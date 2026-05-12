@@ -34,7 +34,7 @@ function createMockModelApi(responseText = 'Task completed successfully.', toolC
 }
 
 vi.mock('../../src/api', () => ({
-	GeminiClientFactory: {
+	ModelClientFactory: {
 		createChatModel: vi.fn(),
 	},
 }));
@@ -47,7 +47,7 @@ vi.mock('../../src/agent/agent-loop', () => ({
 	}),
 }));
 
-import { GeminiClientFactory } from '../../src/api';
+import { ModelClientFactory } from '../../src/api';
 
 function successfulLoopResult(markdown = 'Tool result text.'): AgentLoopResult {
 	return {
@@ -118,7 +118,7 @@ function makeTask(overrides: Partial<ScheduledTask> = {}): ScheduledTask {
 describe('ScheduledTaskRunner', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi());
+		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi());
 		mockAgentLoopRun.mockResolvedValue(successfulLoopResult());
 	});
 
@@ -174,7 +174,7 @@ describe('ScheduledTaskRunner', () => {
 	});
 
 	it('throws when model returns empty text so manager records a failure', async () => {
-		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(
+		(ModelClientFactory.createChatModel as Mock).mockReturnValue(
 			createMockModelApi('') // empty response, no tool calls
 		);
 		const plugin = createMockPlugin();
@@ -186,7 +186,7 @@ describe('ScheduledTaskRunner', () => {
 
 	it('delegates to AgentLoop when initial response contains tool calls', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
+		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
 		mockAgentLoopRun.mockResolvedValue(successfulLoopResult('Tool result text.'));
 
 		const plugin = createMockPlugin();
@@ -221,7 +221,7 @@ describe('ScheduledTaskRunner', () => {
 
 	it('returns undefined when AgentLoop reports cancellation', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
+		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
 		mockAgentLoopRun.mockResolvedValue({
 			...successfulLoopResult(),
 			cancelled: true,
@@ -239,7 +239,7 @@ describe('ScheduledTaskRunner', () => {
 
 	it('throws after MAX_TOOL_ITERATIONS without a text response', async () => {
 		const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
-		(GeminiClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
+		(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
 		mockAgentLoopRun.mockResolvedValue({
 			...successfulLoopResult(),
 			exhausted: true,
@@ -261,7 +261,7 @@ describe('ScheduledTaskRunner', () => {
 
 		await runner.run(() => false);
 
-		const request = ((GeminiClientFactory.createChatModel as Mock).mock.results[0].value.generateModelResponse as Mock)
+		const request = ((ModelClientFactory.createChatModel as Mock).mock.results[0].value.generateModelResponse as Mock)
 			.mock.calls[0][0];
 		expect(request.model).toBe('task-override-model');
 		expect(request.model).not.toBe(plugin.settings.chatModelName);

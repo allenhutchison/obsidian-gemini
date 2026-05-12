@@ -14,11 +14,12 @@ import {
 	ToolCall,
 	StreamCallback,
 	StreamingModelResponse,
-} from './interfaces/model-api';
-import { GeminiPrompts } from '../prompts';
-import type ObsidianGemini from '../main';
-import { getDefaultModelForRole } from '../models';
-import { decodeHtmlEntities } from '../utils/html-entities';
+} from '../../interfaces/model-api';
+import { GeminiPrompts } from '../../../prompts';
+import type ObsidianGemini from '../../../main';
+import { getDefaultModelForRole } from '../../../models';
+import { decodeHtmlEntities } from '../../../utils/html-entities';
+import type { GeminiClientConfig } from './config';
 
 /**
  * Extends Part to include the optional thought property
@@ -26,18 +27,6 @@ import { decodeHtmlEntities } from '../utils/html-entities';
 interface PartWithThought extends Part {
 	thought?: boolean;
 	thoughtSignature?: string;
-}
-
-/**
- * Configuration for GeminiClient
- */
-export interface GeminiClientConfig {
-	apiKey: string;
-	model?: string;
-	temperature?: number;
-	topP?: number;
-	maxOutputTokens?: number;
-	streamingEnabled?: boolean;
 }
 
 /**

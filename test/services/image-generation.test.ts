@@ -28,7 +28,7 @@ vi.mock('../../src/api', () => ({
 	GeminiClient: vi.fn().mockImplementation(function () {
 		return { generateImage: mockGenerateImageBytes };
 	}),
-	GeminiClientFactory: { createSummaryModel: vi.fn() },
+	ModelClientFactory: { createSummaryModel: vi.fn() },
 }));
 
 vi.mock('../../src/prompts', () => ({

@@ -1,4 +1,13 @@
 {
+	"4.9.0": {
+		"title": "🧱 Gemini Scribe 4.9 - Per-provider package layout",
+		"highlights": [
+			"🧱 Model provider code reorganized under src/api/providers/{gemini,ollama}/ so new providers can be added without piling siblings into a flat directory",
+			"🏷️ Public SDK rename: GeminiClientFactory → ModelClientFactory (breaking change for plugins that build on the Gemini Scribe SDK)",
+			"📦 OllamaClient and OllamaClientConfig are now exported from the public SDK barrel alongside the Gemini equivalents"
+		],
+		"details": "Internal refactor that moves each model provider into its own package under src/api/providers/. The factory class was renamed from GeminiClientFactory to ModelClientFactory to match its actual responsibility (it dispatches to either provider based on the configured backend); the legacy name has been removed. Gemini-only services (image generation, deep research, Google Search, web fetch) are unchanged and continue to use the @google/genai SDK directly — a later refactor will introduce provider-agnostic interfaces for those capabilities."
+	},
 	"4.8.0": {
 		"title": "✨ Gemini Scribe 4.8 - Scheduled & Background Tasks, Ollama, Activity Modal",
 		"highlights": [

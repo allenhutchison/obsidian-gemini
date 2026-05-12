@@ -1,6 +1,7 @@
 import type { Mock } from 'vitest';
-import { OllamaClient, OllamaClientConfig } from '../../src/api/ollama-client';
-import { ExtendedModelRequest } from '../../src/api/interfaces/model-api';
+import { OllamaClient } from '../../../../src/api/providers/ollama/client';
+import type { OllamaClientConfig } from '../../../../src/api/providers/ollama/config';
+import { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
 
 // vitest hoists vi.mock to the top of the file; vi.hoisted() lets us share
 // fixtures with the factory while keeping initialization order safe.
