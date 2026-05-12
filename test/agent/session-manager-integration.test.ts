@@ -247,7 +247,7 @@ describe('SessionManager Integration Tests', () => {
 			window.Date = vi.fn(function () {
 				return mockDate;
 			}) as any;
-			window.Date.now = originalDate.now;
+			window.Date.now = vi.fn(() => mockDate.getTime());
 
 			try {
 				// Agent session
