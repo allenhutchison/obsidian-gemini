@@ -40,14 +40,14 @@ For the full release process, use the **release-process** skill.
 ### Core Pattern: Factory + Decorator
 
 ```
-src/main.ts → GeminiClientFactory.createFromPlugin() → GeminiClient → RetryDecorator → ModelApi
+src/main.ts → ModelClientFactory.createFromPlugin() → GeminiClient | OllamaClient → RetryDecorator → ModelApi
 ```
 
-The plugin uses a simplified factory pattern (`GeminiClientFactory`) to create Gemini API clients, wrapped with a retry decorator (`RetryDecorator`) for resilience. All API implementations follow the `ModelApi` interface. The factory supports different use cases (chat, summary, completions, rewrite) and provides retry logic with exponential backoff for handling transient API failures.
+The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`) to create model API clients, wrapped with a retry decorator (`RetryDecorator`) for resilience. The factory branches on `settings.provider` to instantiate either a `GeminiClient` or an `OllamaClient`. All API implementations follow the `ModelApi` interface. The factory supports different use cases (chat, summary, completions, rewrite) and provides retry logic with exponential backoff for handling transient API failures. Each provider lives in its own package under `src/api/providers/{gemini,ollama}/`.
 
 ### Key Components
 
-1. **API Layer** (`src/api/`): Factory pattern (`GeminiClientFactory`) for creating Google Gemini clients, decorator pattern (`RetryDecorator`) for resilience, and interface abstraction (`ModelApi`) for consistent API interactions
+1. **API Layer** (`src/api/`): Factory pattern (`ModelClientFactory`) for creating provider-appropriate model API clients, decorator pattern (`RetryDecorator`) for resilience, and interface abstraction (`ModelApi`) for consistent API interactions. Provider-specific code is encapsulated under `src/api/providers/{gemini,ollama}/`.
 2. **Feature Modules**: Separate modules for chat, completions (`completions.ts`), summary (`summary.ts`), and rewrite (`rewrite.ts`)
 3. **Context System** (`src/files/file-context.ts`): Builds linked note trees for context-aware AI interactions
 4. **History** (`src/history/`): Markdown-based conversation history with Handlebars templates for agent sessions, stored in `[state-folder]/Agent-Sessions/` (legacy note-centric chat history from v3.x remains in `[state-folder]/History/`)

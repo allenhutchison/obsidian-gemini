@@ -326,7 +326,7 @@ describe('GeminiClient', () => {
 
 		test('no-plugin fallback constructs GoogleGenAI with config.apiKey only', () => {
 			// When GeminiClient is constructed without a plugin (e.g. via
-			// GeminiClientFactory.createCustom in code paths that don't have one
+			// ModelClientFactory.createCustom in code paths that don't have one
 			// handy), the helper isn't invoked — the constructor falls back to
 			// using config.apiKey directly and customBaseUrl is unreachable.
 			const promptsPlugin: any = { logger: mockLogger, settings: {} };
