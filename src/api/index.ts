@@ -1,8 +1,8 @@
 /**
- * API module for Gemini AI integration
+ * API module — public barrel for model provider integration.
  */
 
-// Re-export the interfaces
+// Interfaces
 export type {
 	ModelApi,
 	ModelResponse,
@@ -14,9 +14,11 @@ export type {
 	ToolDefinition,
 } from './interfaces/model-api';
 
-// Export the simplified factory
-export { GeminiClientFactory, ModelUseCase } from './simple-factory';
+// Factory
+export { ModelClientFactory, ModelUseCase } from './factory';
 
-// Export the client
-export { GeminiClient } from './gemini-client';
-export type { GeminiClientConfig } from './gemini-client';
+// Providers
+export { GeminiClient, createGoogleGenAI } from './providers/gemini';
+export type { GeminiClientConfig } from './providers/gemini';
+export { OllamaClient } from './providers/ollama';
+export type { OllamaClientConfig } from './providers/ollama';

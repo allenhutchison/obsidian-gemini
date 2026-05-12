@@ -1,8 +1,9 @@
 import type { Mock } from 'vitest';
 import { GoogleGenAI } from '@google/genai';
-import { GeminiClient, GeminiClientConfig } from '../../src/api/gemini-client';
-import { GeminiPrompts } from '../../src/prompts';
-import type { ExtendedModelRequest } from '../../src/api/interfaces/model-api';
+import { GeminiClient } from '../../../../src/api/providers/gemini/client';
+import type { GeminiClientConfig } from '../../../../src/api/providers/gemini/config';
+import { GeminiPrompts } from '../../../../src/prompts';
+import type { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
 
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
@@ -325,7 +326,7 @@ describe('GeminiClient', () => {
 
 		test('no-plugin fallback constructs GoogleGenAI with config.apiKey only', () => {
 			// When GeminiClient is constructed without a plugin (e.g. via
-			// GeminiClientFactory.createCustom in code paths that don't have one
+			// ModelClientFactory.createCustom in code paths that don't have one
 			// handy), the helper isn't invoked — the constructor falls back to
 			// using config.apiKey directly and customBaseUrl is unreachable.
 			const promptsPlugin: any = { logger: mockLogger, settings: {} };

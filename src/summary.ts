@@ -1,7 +1,7 @@
 import type ObsidianGemini from './main';
 import { GeminiPrompts } from './prompts';
 import { BaseModelRequest } from './api/index';
-import { GeminiClientFactory } from './api/simple-factory';
+import { ModelClientFactory } from './api';
 import { Notice, TFile } from 'obsidian';
 import { getErrorMessage } from './utils/error-utils';
 
@@ -53,7 +53,7 @@ export class GeminiSummary {
 			throw new Error(`File "${file.path}" is empty or unreadable`);
 		}
 
-		const modelApi = GeminiClientFactory.createSummaryModel(this.plugin);
+		const modelApi = ModelClientFactory.createSummaryModel(this.plugin);
 		const request: BaseModelRequest = {
 			prompt: this.prompts.summaryPrompt({ content: fileContent }),
 		};

@@ -3,7 +3,7 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 import { getDefaultModelForRole } from '../models';
-import { createGoogleGenAI } from '../api/google-genai-factory';
+import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 
 /**
  * Google Search tool that uses a separate model instance with search grounding

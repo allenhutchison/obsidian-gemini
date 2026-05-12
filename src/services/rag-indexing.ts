@@ -9,7 +9,7 @@ import { RagRateLimiter } from './rag-rate-limiter';
 import { RagStatusBar } from './rag-status-bar';
 import { RagSyncQueue } from './rag-sync-queue';
 import { RagVaultScanner } from './rag-vault-scanner';
-import { createGoogleGenAI } from '../api/google-genai-factory';
+import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import type {
 	IndexProgress,
 	IndexResult,

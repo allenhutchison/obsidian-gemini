@@ -1,12 +1,15 @@
 /**
- * Simplified factory for creating Gemini API clients
+ * Factory for creating model API clients.
  *
- * Replaces the complex ApiFactory and ModelFactory with a single,
- * straightforward approach focused solely on Gemini.
+ * Branches on `settings.provider` to instantiate either a GeminiClient or an
+ * OllamaClient, then wraps the result in a RetryDecorator. This is the single
+ * creation entry point for the agent and all role-specific use cases.
  */
 
-import { GeminiClient, GeminiClientConfig } from './gemini-client';
-import { OllamaClient, OllamaClientConfig } from './ollama-client';
+import { GeminiClient } from './providers/gemini/client';
+import type { GeminiClientConfig } from './providers/gemini/config';
+import { OllamaClient } from './providers/ollama/client';
+import type { OllamaClientConfig } from './providers/ollama/config';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
@@ -25,16 +28,16 @@ export enum ModelUseCase {
 }
 
 /**
- * Simple factory for creating Gemini API clients
+ * Factory for creating provider-appropriate ModelApi clients.
  */
-export class GeminiClientFactory {
+export class ModelClientFactory {
 	/**
-	 * Create a GeminiClient from plugin settings
+	 * Create a ModelApi client from plugin settings
 	 *
 	 * @param plugin - Plugin instance with settings
 	 * @param useCase - The use case for this model (determines which model to use)
 	 * @param overrides - Optional config overrides (for per-session settings)
-	 * @returns Configured GeminiClient instance
+	 * @returns Configured ModelApi instance wrapped with retry logic
 	 */
 	static createFromPlugin(
 		plugin: ObsidianGemini,
@@ -127,7 +130,7 @@ export class GeminiClientFactory {
 	 *
 	 * @param plugin - Plugin instance
 	 * @param sessionConfig - Optional session-level config (model, temperature, topP)
-	 * @returns Configured GeminiClient for chat
+	 * @returns Configured ModelApi client for chat
 	 */
 	static createChatModel(
 		plugin: ObsidianGemini,
@@ -153,7 +156,7 @@ export class GeminiClientFactory {
 	 * Create a summary model
 	 *
 	 * @param plugin - Plugin instance
-	 * @returns Configured GeminiClient for summaries
+	 * @returns Configured ModelApi client for summaries
 	 */
 	static createSummaryModel(plugin: ObsidianGemini): ModelApi {
 		return this.createFromPlugin(plugin, ModelUseCase.SUMMARY);
@@ -163,7 +166,7 @@ export class GeminiClientFactory {
 	 * Create a completions model
 	 *
 	 * @param plugin - Plugin instance
-	 * @returns Configured GeminiClient for completions
+	 * @returns Configured ModelApi client for completions
 	 */
 	static createCompletionsModel(plugin: ObsidianGemini): ModelApi {
 		return this.createFromPlugin(plugin, ModelUseCase.COMPLETIONS);
@@ -173,7 +176,7 @@ export class GeminiClientFactory {
 	 * Create a rewrite model
 	 *
 	 * @param plugin - Plugin instance
-	 * @returns Configured GeminiClient for rewriting
+	 * @returns Configured ModelApi client for rewriting
 	 */
 	static createRewriteModel(plugin: ObsidianGemini): ModelApi {
 		return this.createFromPlugin(plugin, ModelUseCase.REWRITE);
@@ -183,7 +186,7 @@ export class GeminiClientFactory {
 	 * Create a search model
 	 *
 	 * @param plugin - Plugin instance
-	 * @returns Configured GeminiClient for search operations
+	 * @returns Configured ModelApi client for search operations
 	 */
 	static createSearchModel(plugin: ObsidianGemini): ModelApi {
 		return this.createFromPlugin(plugin, ModelUseCase.SEARCH);

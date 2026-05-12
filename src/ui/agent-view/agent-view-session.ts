@@ -2,7 +2,7 @@ import { App, Notice } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
-import { GeminiClientFactory } from '../../api/simple-factory';
+import { ModelClientFactory } from '../../api';
 import { HandlerPriority } from '../../types/agent-events';
 import { sanitizeFileName } from '../../utils/file-utils';
 import { formatLocalDate } from '../../utils/format-utils';
@@ -231,7 +231,7 @@ ${contextFiles ? `Context Files: ${contextFiles}\n` : ''}User: ${firstUserMsg}
 Assistant: ${modelSummary}`;
 
 			// Generate title using the model
-			const modelApi = GeminiClientFactory.createChatModel(this.plugin);
+			const modelApi = ModelClientFactory.createChatModel(this.plugin);
 			const response = await modelApi.generateModelResponse({
 				userMessage: titlePrompt,
 				conversationHistory: [],

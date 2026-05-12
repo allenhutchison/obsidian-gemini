@@ -35,17 +35,7 @@ vi.mock('../../src/utils/turn-preamble', () => ({
 }));
 
 vi.mock('../../src/api', () => ({
-	GeminiClientFactory: {
-		createChatModel: vi.fn(),
-		createSummaryModel: vi.fn(),
-		createRewriteModel: vi.fn(),
-	},
-}));
-
-// SelectionRewriter / GeminiSummary import the API package directly via a
-// different path; mock that side too.
-vi.mock('../../src/api/simple-factory', () => ({
-	GeminiClientFactory: {
+	ModelClientFactory: {
 		createChatModel: vi.fn(),
 		createSummaryModel: vi.fn(),
 		createRewriteModel: vi.fn(),
@@ -74,7 +64,7 @@ vi.mock('../../src/agent/agent-loop', () => ({
 	}),
 }));
 
-import { GeminiClientFactory } from '../../src/api';
+import { ModelClientFactory } from '../../src/api';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -186,7 +176,7 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 describe('HookRunner.writeOutput retry', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		(GeminiClientFactory.createChatModel as any).mockReturnValue({
+		(ModelClientFactory.createChatModel as any).mockReturnValue({
 			generateModelResponse: vi.fn().mockResolvedValue({ markdown: 'Hook output.', toolCalls: [] }),
 		});
 	});
@@ -284,7 +274,7 @@ describe('HookRunner.run skill propagation', () => {
 
 	it('passes hook.enabledSkills as projectSkills on the request', async () => {
 		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'ok', toolCalls: [] });
-		(GeminiClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		const hook = makeHook({ enabledSkills: ['summarise', 'index-files'] });
@@ -299,7 +289,7 @@ describe('HookRunner.run skill propagation', () => {
 
 	it('omits projectSkills when enabledSkills is empty (inherit-all default)', async () => {
 		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'ok', toolCalls: [] });
-		(GeminiClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		const runner = new HookRunner(plugin as any, makeContext());
@@ -386,11 +376,7 @@ describe('HookRunner action: rewrite', () => {
 
 	it('reads the file, sends a rewrite request, and writes the result back', async () => {
 		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'rewritten markdown', toolCalls: [] });
-		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
-		// Some import paths read the factory through src/api/simple-factory; mirror
-		// the model-API mock there so SelectionRewriter sees the same stub.
-		const simple = await import('../../src/api/simple-factory');
-		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		const file = plantFile(plugin, 'Notes/foo.md');
@@ -409,9 +395,7 @@ describe('HookRunner action: rewrite', () => {
 
 	it('substitutes prompt template variables in the rewrite instruction', async () => {
 		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'out', toolCalls: [] });
-		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
-		const simple = await import('../../src/api/simple-factory');
-		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		plantFile(plugin, 'Notes/foo.md');
@@ -428,7 +412,7 @@ describe('HookRunner action: rewrite', () => {
 
 	it('skips when the file is missing (e.g. file-deleted trigger)', async () => {
 		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'out', toolCalls: [] });
-		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		const hook = makeHook({ action: 'rewrite', prompt: 'r' });
@@ -442,9 +426,7 @@ describe('HookRunner action: rewrite', () => {
 
 	it('refuses to write back when the file mtime advanced during the model call', async () => {
 		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'rewritten', toolCalls: [] });
-		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
-		const simple = await import('../../src/api/simple-factory');
-		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		// Plant the trigger file with an initial mtime, then on the live
@@ -466,9 +448,7 @@ describe('HookRunner action: rewrite', () => {
 
 	it('aborts the write when the file is deleted during the model call', async () => {
 		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'rewritten', toolCalls: [] });
-		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
-		const simple = await import('../../src/api/simple-factory');
-		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		const file = plantFile(plugin, 'Notes/foo.md');
@@ -506,9 +486,7 @@ describe('HookRunner cancellation threading', () => {
 
 	it('rewrite: bails out before reading or modifying when cancelled', async () => {
 		const generateModelResponse = vi.fn();
-		(GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
-		const simple = await import('../../src/api/simple-factory');
-		(simple.GeminiClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+		(ModelClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
 
 		const plugin = createMockPlugin();
 		plantFile(plugin, 'Notes/foo.md');

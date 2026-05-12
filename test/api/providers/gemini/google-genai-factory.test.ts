@@ -1,4 +1,4 @@
-import { createGoogleGenAI } from '../../src/api/google-genai-factory';
+import { createGoogleGenAI } from '../../../../src/api/providers/gemini/google-genai-factory';
 import { GoogleGenAI } from '@google/genai';
 
 // Mock @google/genai

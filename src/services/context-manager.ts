@@ -10,10 +10,10 @@
  * - #129: 429 errors from oversized context
  */
 import { GoogleGenAI } from '@google/genai';
-import { createGoogleGenAI } from '../api/google-genai-factory';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
-import { GeminiClientFactory, ModelUseCase } from '../api/simple-factory';
+import { ModelClientFactory, ModelUseCase } from '../api';
+import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 
 // @ts-ignore
@@ -509,7 +509,7 @@ export class ContextManager {
 				// here would route compaction through the chat model on Ollama
 				// (where the client honours request.model over config.model)
 				// instead of the user's configured `summaryModelName`.
-				const summaryClient = GeminiClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
+				const summaryClient = ModelClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
 				const response = await summaryClient.generateModelResponse({
 					prompt: fullPrompt,
 					temperature: 0.3,
