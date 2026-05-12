@@ -1,6 +1,6 @@
 import { TFolder, TFile, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { GeminiClientFactory } from '../api/simple-factory';
+import { ModelClientFactory } from '../api';
 import { AgentsMemoryData } from './agents-memory';
 import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
 
@@ -73,7 +73,7 @@ export class VaultAnalyzer {
 			stepStart = Date.now();
 			modal.setStepInProgress('analyze');
 			modal.updateStatus(`Generating vault context with ${modelName}...`);
-			const modelApi = GeminiClientFactory.createChatModel(this.plugin);
+			const modelApi = ModelClientFactory.createChatModel(this.plugin);
 			const response = await modelApi.generateModelResponse({
 				prompt: analysisPrompt,
 				model: this.plugin.settings.chatModelName,

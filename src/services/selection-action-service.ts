@@ -3,7 +3,7 @@ import type ObsidianGemini from '../main';
 import { ExplainPromptSelectionModal } from '../ui/explain-prompt-modal';
 import { SelectionResponseModal, AskQuestionModal } from '../ui/selection-response-modal';
 import { CustomPrompt } from '../prompts/types';
-import { GeminiClientFactory } from '../api/simple-factory';
+import { ModelClientFactory } from '../api';
 
 /**
  * Service to coordinate selection-based actions.
@@ -129,9 +129,9 @@ export class SelectionActionService {
 			}
 
 			// Call the Gemini API
-			// Note: GeminiClientFactory.createChatModel wraps the client with RetryDecorator
+			// Note: ModelClientFactory.createChatModel wraps the client with RetryDecorator
 			// which provides automatic retry with exponential backoff for transient failures
-			const modelApi = GeminiClientFactory.createChatModel(this.plugin);
+			const modelApi = ModelClientFactory.createChatModel(this.plugin);
 
 			// Add timeout protection (60 seconds) to prevent indefinite hanging
 			const timeoutMs = 60000;

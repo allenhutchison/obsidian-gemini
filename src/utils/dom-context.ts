@@ -39,25 +39,6 @@ export function createContextRange(element: HTMLElement): Range {
 }
 
 /**
- * Create a new DOM element in the correct document context.
- */
-export function createContextElement<K extends keyof HTMLElementTagNameMap>(
-	contextElement: HTMLElement,
-	tagName: K
-): HTMLElementTagNameMap[K] {
-	const { doc } = getDOMContext(contextElement);
-	return doc.createElement(tagName);
-}
-
-/**
- * Create a text node in the correct document context.
- */
-export function createContextTextNode(contextElement: HTMLElement, text: string): Text {
-	const { doc } = getDOMContext(contextElement);
-	return doc.createTextNode(text);
-}
-
-/**
  * Insert text at the current cursor position within an element.
  * Handles both main window and popout window contexts.
  */
@@ -105,54 +86,6 @@ export function insertTextAtCursor(element: HTMLElement, text: string): void {
 		range.collapse(false);
 		selection.removeAllRanges();
 		selection.addRange(range);
-	}
-}
-
-/**
- * Insert a node at the current cursor position within an element.
- * Handles both main window and popout window contexts.
- */
-export function insertNodeAtCursor(element: HTMLElement, node: Node): void {
-	const { doc, win } = getDOMContext(element);
-	const selection = win.getSelection();
-
-	if (!selection || selection.rangeCount === 0) {
-		// No selection, append to end
-		element.appendChild(node);
-
-		// Move cursor after the inserted node
-		if (selection && node.parentNode) {
-			const range = doc.createRange();
-			range.setStartAfter(node);
-			range.collapse(true);
-			selection.removeAllRanges();
-			selection.addRange(range);
-		}
-	} else {
-		const range = selection.getRangeAt(0);
-
-		// Ensure the range is within our element
-		if (element.contains(range.commonAncestorContainer)) {
-			range.insertNode(node);
-
-			// Move cursor after the node
-			range.setStartAfter(node);
-			range.collapse(true);
-			selection.removeAllRanges();
-			selection.addRange(range);
-		} else {
-			// Selection is outside our element, append to end
-			element.appendChild(node);
-
-			// Move cursor after the inserted node
-			if (node.parentNode) {
-				const range = doc.createRange();
-				range.setStartAfter(node);
-				range.collapse(true);
-				selection.removeAllRanges();
-				selection.addRange(range);
-			}
-		}
 	}
 }
 

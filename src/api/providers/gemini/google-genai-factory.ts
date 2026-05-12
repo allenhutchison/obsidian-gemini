@@ -1,5 +1,5 @@
 import { GoogleGenAI, HttpOptions } from '@google/genai';
-import type ObsidianGemini from '../main';
+import type ObsidianGemini from '../../../main';
 
 /**
  * Creates a GoogleGenAI instance using plugin settings.

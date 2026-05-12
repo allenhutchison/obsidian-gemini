@@ -61,7 +61,7 @@ export type { ParameterRanges, ModelParameterInfo } from './services/parameter-v
 export type { LoopDetectionInfo } from './tools/loop-detector';
 
 // Model and Agent Factories
-export { GeminiClientFactory, ModelUseCase } from './api/simple-factory';
+export { ModelClientFactory, ModelUseCase } from './api/factory';
 
 export { AgentFactory } from './agent/agent-factory';
 
@@ -100,10 +100,14 @@ export { GoogleSearchTool } from './tools/google-search-tool';
 
 export { WebFetchTool } from './tools/web-fetch-tool';
 
-// Gemini API Client (for advanced usage)
-export { GeminiClient } from './api/gemini-client';
+// Provider API Clients (for advanced usage)
+export { GeminiClient } from './api/providers/gemini';
 
-export type { GeminiClientConfig } from './api/gemini-client';
+export type { GeminiClientConfig } from './api/providers/gemini';
+
+export { OllamaClient } from './api/providers/ollama';
+
+export type { OllamaClientConfig } from './api/providers/ollama';
 
 // Main Plugin Class (for type reference)
 export { default as ObsidianGeminiPlugin } from './main';

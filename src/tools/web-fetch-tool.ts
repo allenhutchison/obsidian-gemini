@@ -5,7 +5,7 @@ import type ObsidianGemini from '../main';
 import { requestUrlWithRetry } from '../utils/proxy-fetch';
 import TurndownService from 'turndown';
 import { decodeHtmlEntities } from '../utils/html-entities';
-import { createGoogleGenAI } from '../api/google-genai-factory';
+import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 
 /**
  * Web fetch tool using Google's URL Context feature

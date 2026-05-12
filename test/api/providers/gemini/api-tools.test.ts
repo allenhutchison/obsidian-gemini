@@ -1,6 +1,6 @@
-import { Tool } from '../../src/tools/types';
-import { ToolCategory } from '../../src/types/agent';
-import { ToolClassification } from '../../src/types/tool-policy';
+import { Tool } from '../../../../src/tools/types';
+import { ToolCategory } from '../../../../src/types/agent';
+import { ToolClassification } from '../../../../src/types/tool-policy';
 
 describe('Gemini API Tools Formatting', () => {
 	test('should format tools correctly for Gemini API', () => {

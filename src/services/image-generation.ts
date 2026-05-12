@@ -1,6 +1,6 @@
 import type ObsidianGemini from '../main';
 import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, normalizePath } from 'obsidian';
-import { BaseModelRequest, GeminiClient, GeminiClientFactory } from '../api';
+import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
 import { ensureFolderExists } from '../utils/file-utils';
@@ -177,7 +177,7 @@ export class ImageGeneration {
 		}
 
 		// Create a summary-specific model API for prompt generation
-		const modelApi = GeminiClientFactory.createSummaryModel(this.plugin);
+		const modelApi = ModelClientFactory.createSummaryModel(this.plugin);
 
 		const request: BaseModelRequest = {
 			prompt: this.prompts.imagePromptGenerator({ content: fileContent }),

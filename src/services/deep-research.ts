@@ -3,7 +3,7 @@ import type ObsidianGemini from '../main';
 import { ResearchManager, ReportGenerator, Interaction } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
-import { createGoogleGenAI } from '../api/google-genai-factory';
+import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 
 /**
  * System folders that should not be written to
