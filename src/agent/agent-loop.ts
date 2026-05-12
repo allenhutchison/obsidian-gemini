@@ -72,6 +72,14 @@ export interface AgentLoopOptions {
 	 */
 	featureToolPolicy?: FeatureToolPolicy;
 	/**
+	 * True when running unattended (scheduled task, hook fire). Headless runs
+	 * auto-approve confirmations, so we must hide ASK_USER tools from the
+	 * model — otherwise the user's "ask first" intent gets silently bypassed.
+	 * UI callers leave this false; the interactive confirmation provider
+	 * handles ASK_USER tools at execution time.
+	 */
+	headless?: boolean;
+	/**
 	 * System-prompt fields that must stay byte-stable across the initial model
 	 * call and every follow-up/retry within this turn. Without these, follow-up
 	 * requests rebuild the system prompt without context-file content / project
@@ -152,7 +160,8 @@ export class AgentLoop {
 		options: AgentLoopOptions;
 	}): Promise<AgentLoopResult> {
 		const { initialResponse, initialUserMessage, initialHistory, options } = args;
-		const { plugin, session, isCancelled, hooks, customPrompt, projectRootPath, featureToolPolicy, perTurn } = options;
+		const { plugin, session, isCancelled, hooks, customPrompt, projectRootPath, featureToolPolicy, perTurn, headless } =
+			options;
 		const maxIterations = options.maxIterations;
 
 		const toolContext: ToolExecutionContext = {
@@ -268,6 +277,7 @@ export class AgentLoop {
 				customPrompt,
 				projectRootPath,
 				featureToolPolicy,
+				headless,
 				...perTurn,
 			});
 

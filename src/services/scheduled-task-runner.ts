@@ -82,7 +82,11 @@ export class ScheduledTaskRunner {
 			featureToolPolicy: this.task.toolPolicy,
 		};
 		const modelApi = ModelClientFactory.createChatModel(this.plugin);
-		const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
+		// Headless runs auto-approve confirmations, so only expose tools the
+		// user explicitly opted into (APPROVE under the layered policy).
+		// ASK_USER tools are excluded — exposing them would silently bypass
+		// the user's "ask first" intent because there's no UI to ask on.
+		const availableTools = this.plugin.toolRegistry.getAutoApprovedTools(toolContext);
 
 		// Prepend a turn preamble so the model has accurate "now" awareness.
 		const startedAt = formatLocalTimestamp(session.created);
@@ -123,6 +127,7 @@ export class ScheduledTaskRunner {
 					confirmationProvider: new HeadlessConfirmationProvider(),
 					maxIterations: 20,
 					featureToolPolicy: this.task.toolPolicy,
+					headless: true,
 				},
 			});
 

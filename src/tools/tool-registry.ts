@@ -97,6 +97,22 @@ export class ToolRegistry {
 	}
 
 	/**
+	 * Subset of `getEnabledTools` for headless callers (scheduled tasks, hooks).
+	 *
+	 * Returns only tools whose effective permission is APPROVE — i.e. tools the
+	 * user has explicitly opted into. Tools mapped to ASK_USER are excluded
+	 * because headless runs auto-approve every confirmation prompt, which would
+	 * silently bypass the user's ASK_USER intent. To allow a tool in a headless
+	 * flow, the task / hook policy must explicitly mark it APPROVE (via preset
+	 * or `overrides`).
+	 */
+	getAutoApprovedTools(context: ToolExecutionContext): Tool[] {
+		return this.getAllTools().filter(
+			(tool) => this.getEffectivePermission(tool.name, context.featureToolPolicy) === ToolPermission.APPROVE
+		);
+	}
+
+	/**
 	 * Check if a tool requires confirmation based on the effective policy.
 	 *
 	 * - APPROVE → no confirmation needed

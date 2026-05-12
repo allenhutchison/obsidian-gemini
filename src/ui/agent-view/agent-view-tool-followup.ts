@@ -17,6 +17,13 @@ export interface FollowUpRequestParams extends PerTurnContext {
 	customPrompt?: CustomPrompt;
 	projectRootPath?: string;
 	featureToolPolicy?: import('../../types/tool-policy').FeatureToolPolicy;
+	/**
+	 * When true, restrict follow-up tools to those auto-approved by the
+	 * effective policy. Scheduled-task and hook runners set this so the
+	 * model never sees an ASK_USER tool that would auto-approve through
+	 * the headless confirmation provider.
+	 */
+	headless?: boolean;
 }
 
 export interface RetryRequestParams extends PerTurnContext {
@@ -38,6 +45,7 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		customPrompt,
 		projectRootPath,
 		featureToolPolicy,
+		headless,
 		perTurnContext,
 		projectInstructions,
 		projectSkills,
@@ -50,7 +58,12 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		projectRootPath,
 		featureToolPolicy,
 	};
-	const availableTools = plugin.toolRegistry.getEnabledTools(availableToolsContext);
+	// Headless callers can't surface a confirmation prompt mid-run, so they
+	// must only see APPROVE tools. UI callers see the full enabled set and
+	// confirm ASK_USER tools through the in-chat prompt.
+	const availableTools = headless
+		? plugin.toolRegistry.getAutoApprovedTools(availableToolsContext)
+		: plugin.toolRegistry.getEnabledTools(availableToolsContext);
 
 	const modelConfig = currentSession?.modelConfig || {};
 

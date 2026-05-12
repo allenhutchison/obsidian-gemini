@@ -2,6 +2,7 @@ import type { Mock } from 'vitest';
 import { ScheduledTaskRunner } from '../../src/services/scheduled-task-runner';
 import type { ScheduledTask } from '../../src/services/scheduled-task-manager';
 import type { AgentLoopResult } from '../../src/agent/agent-loop';
+import { PolicyPreset } from '../../src/types/tool-policy';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,7 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 		},
 		toolRegistry: {
 			getEnabledTools: vi.fn().mockReturnValue([]),
+			getAutoApprovedTools: vi.fn().mockReturnValue([]),
 		},
 		toolExecutionEngine: {
 			executeTool: vi.fn().mockResolvedValue({ success: true, output: 'ok' }),
@@ -304,7 +306,7 @@ describe('ScheduledTaskRunner', () => {
 
 		it('forwards an explicit task.toolPolicy to the session', async () => {
 			const plugin = createMockPlugin();
-			const taskPolicy = { preset: 'read_only' as any };
+			const taskPolicy = { preset: PolicyPreset.READ_ONLY };
 			const runner = new ScheduledTaskRunner(plugin, makeTask({ toolPolicy: taskPolicy }));
 
 			await runner.run(() => false);

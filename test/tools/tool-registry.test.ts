@@ -284,6 +284,44 @@ describe('ToolRegistry', () => {
 		});
 	});
 
+	describe('getAutoApprovedTools', () => {
+		// Regression for the headless ASK_USER bypass: scheduled tasks and
+		// hooks must only see tools with APPROVE permission. ASK_USER tools
+		// would otherwise be auto-approved by the headless confirmation
+		// provider, silently bypassing the user's "ask first" intent.
+		it('returns only tools whose effective permission is APPROVE', () => {
+			const readOnlyTool = new TestTool();
+			const destructiveTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(destructiveTool);
+
+			// Default CAUTIOUS: READ → APPROVE, DESTRUCTIVE → ASK_USER.
+			const context = { session: { context: {} } } as any;
+			const tools = registry.getAutoApprovedTools(context);
+			expect(tools).toHaveLength(1);
+			expect(tools[0]).toBe(readOnlyTool);
+		});
+
+		it('upgrades ASK_USER tools to APPROVE when the feature policy says so', () => {
+			const readOnlyTool = new TestTool();
+			const destructiveTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(destructiveTool);
+
+			const context = {
+				session: { context: {} },
+				featureToolPolicy: {
+					overrides: { destructive_tool: ToolPermission.APPROVE },
+				},
+			} as any;
+
+			const tools = registry.getAutoApprovedTools(context);
+			expect(tools.map((t) => t.name).sort()).toEqual(['destructive_tool', 'test_tool']);
+		});
+	});
+
 	describe('requiresConfirmation', () => {
 		beforeEach(() => {
 			registry.registerTool(new TestTool());
