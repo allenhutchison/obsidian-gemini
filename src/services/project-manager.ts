@@ -363,10 +363,16 @@ Add your project instructions here. This text will be injected into the agent's 
 	 * Parse the project's tool policy from frontmatter. Prefers the new
 	 * `toolPolicy:` block; falls back to the legacy `permissions:` map and
 	 * lifts it into `toolPolicy.overrides`.
+	 *
+	 * If `toolPolicy:` is present (even as an empty block), it's authoritative
+	 * — explicit "inherit global" intent must not silently fall through to
+	 * stale `permissions:` overrides that the user thought they migrated away
+	 * from.
 	 */
 	private parseToolPolicy(frontmatter: any): FeatureToolPolicy | undefined {
-		const fromNewShape = parseToolPolicyFrontmatter(frontmatter.toolPolicy);
-		if (fromNewShape) return fromNewShape;
+		if (Object.prototype.hasOwnProperty.call(frontmatter, 'toolPolicy')) {
+			return parseToolPolicyFrontmatter(frontmatter.toolPolicy);
+		}
 
 		const legacy = frontmatter.permissions;
 		if (!legacy || typeof legacy !== 'object') return undefined;
