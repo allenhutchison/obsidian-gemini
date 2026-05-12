@@ -88,7 +88,7 @@ function makeHook(overrides: Partial<Hook> = {}): Hook {
 		debounceMs: 100,
 		cooldownMs: 0,
 		action: 'agent-task',
-		enabledTools: ['read_only'],
+		toolPolicy: { preset: 'read_only' as any },
 		enabledSkills: [],
 		enabled: true,
 		desktopOnly: false,
