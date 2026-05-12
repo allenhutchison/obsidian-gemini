@@ -40,8 +40,32 @@ export class ModelListProvider {
 	/**
 	 * Fire-and-forget fetch of the latest models.json from GitHub.
 	 * Uses a 24h cache to avoid unnecessary fetches.
+	 *
+	 * Skipped when:
+	 *   1. The active provider is not Gemini — the remote list only describes
+	 *      Gemini models, so fetching it would be wasted work for Ollama users
+	 *      who run fully offline (and risks a slow GitHub round-trip on every
+	 *      reload). Defense-in-depth: the caller in ModelManager.initialize()
+	 *      also gates this branch by provider, but enforcing it here keeps the
+	 *      contract local to the fetch.
+	 *   2. The host reports offline (`navigator.onLine === false`). Skipping
+	 *      avoids piling up doomed requestUrl calls when WiFi is down — Obsidian's
+	 *      requestUrl has no built-in timeout, so a hung connection (versus a
+	 *      clean refusal) could leave the promise pending. Caught Gemini users
+	 *      on airplane mode too, not just Ollama.
 	 */
 	startRemoteFetch(): void {
+		const provider = this.plugin.settings?.provider ?? 'gemini';
+		if (provider !== 'gemini') {
+			this.plugin.logger.debug(`[ModelListProvider] Skipping remote fetch (provider=${provider})`);
+			return;
+		}
+
+		if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+			this.plugin.logger.debug('[ModelListProvider] Skipping remote fetch (navigator reports offline)');
+			return;
+		}
+
 		const now = Date.now();
 		if (now - this.cacheTimestamp < CACHE_DURATION) {
 			this.plugin.logger.debug('[ModelListProvider] Remote cache still fresh, skipping fetch');
