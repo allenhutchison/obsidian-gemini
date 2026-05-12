@@ -8,9 +8,15 @@ import {
 	CLASSIFICATION_LABELS,
 	DEFAULT_TOOL_POLICY,
 	resolvePermission,
+	resolveEffectivePermission,
 	buildPermissionsForPreset,
+	parseToolPolicyFrontmatter,
+	serializeToolPolicy,
+	clonePolicy,
+	FeatureToolPolicy,
 	ToolPolicySettings,
 } from '../../src/types/tool-policy';
+import { migrateLegacyToolCategoryArray, formatToolPolicyYaml } from '../../src/services/feature-policy-yaml';
 
 describe('tool-policy types', () => {
 	describe('enums', () => {
@@ -182,6 +188,184 @@ describe('tool-policy types', () => {
 		it('should return empty object for empty tool list', () => {
 			const result = buildPermissionsForPreset(PolicyPreset.CAUTIOUS, []);
 			expect(result).toEqual({});
+		});
+	});
+
+	// ── Unified feature-level policy helpers ────────────────────────────────
+
+	describe('resolveEffectivePermission', () => {
+		const global = (extra: Partial<ToolPolicySettings> = {}): ToolPolicySettings => ({
+			activePreset: PolicyPreset.CAUTIOUS,
+			toolPermissions: {},
+			...extra,
+		});
+
+		it('feature overrides win over every other layer', () => {
+			const settings = global({
+				toolPermissions: { write_file: ToolPermission.DENY },
+			});
+			const feature: FeatureToolPolicy = {
+				overrides: { write_file: ToolPermission.APPROVE },
+			};
+			expect(resolveEffectivePermission('write_file', ToolClassification.WRITE, settings, feature)).toBe(
+				ToolPermission.APPROVE
+			);
+		});
+
+		it('global overrides win over feature preset', () => {
+			const settings = global({
+				toolPermissions: { write_file: ToolPermission.DENY },
+			});
+			const feature: FeatureToolPolicy = { preset: PolicyPreset.EDIT_MODE };
+			expect(resolveEffectivePermission('write_file', ToolClassification.WRITE, settings, feature)).toBe(
+				ToolPermission.DENY
+			);
+		});
+
+		it('feature preset wins over global preset', () => {
+			// CAUTIOUS would map WRITE → ASK_USER; READ_ONLY maps it to DENY.
+			const feature: FeatureToolPolicy = { preset: PolicyPreset.READ_ONLY };
+			expect(resolveEffectivePermission('write_file', ToolClassification.WRITE, global(), feature)).toBe(
+				ToolPermission.DENY
+			);
+		});
+
+		it('inherits global preset when no feature policy is supplied', () => {
+			expect(resolveEffectivePermission('read_file', ToolClassification.READ, global())).toBe(ToolPermission.APPROVE);
+			expect(resolveEffectivePermission('delete_file', ToolClassification.DESTRUCTIVE, global())).toBe(
+				ToolPermission.ASK_USER
+			);
+		});
+
+		it('feature CUSTOM preset is treated as "no preset contribution"', () => {
+			const feature: FeatureToolPolicy = { preset: PolicyPreset.CUSTOM };
+			expect(resolveEffectivePermission('write_file', ToolClassification.WRITE, global(), feature)).toBe(
+				ToolPermission.ASK_USER
+			);
+		});
+	});
+
+	describe('parseToolPolicyFrontmatter', () => {
+		it('returns undefined for null/undefined input', () => {
+			expect(parseToolPolicyFrontmatter(null)).toBeUndefined();
+			expect(parseToolPolicyFrontmatter(undefined)).toBeUndefined();
+		});
+
+		it('parses a preset-only block', () => {
+			expect(parseToolPolicyFrontmatter({ preset: 'read_only' })).toEqual({
+				preset: PolicyPreset.READ_ONLY,
+			});
+		});
+
+		it('parses overrides via the YAML permission strings', () => {
+			expect(
+				parseToolPolicyFrontmatter({
+					overrides: { write_file: 'allow', delete_file: 'deny', move_file: 'ask' },
+				})
+			).toEqual({
+				overrides: {
+					write_file: ToolPermission.APPROVE,
+					delete_file: ToolPermission.DENY,
+					move_file: ToolPermission.ASK_USER,
+				},
+			});
+		});
+
+		it('drops unknown preset values', () => {
+			expect(parseToolPolicyFrontmatter({ preset: 'made_up' })).toBeUndefined();
+		});
+
+		it('drops unknown override values without throwing', () => {
+			expect(
+				parseToolPolicyFrontmatter({
+					overrides: { ok: 'allow', bad: 'lolwut' },
+				})
+			).toEqual({ overrides: { ok: ToolPermission.APPROVE } });
+		});
+	});
+
+	describe('serializeToolPolicy', () => {
+		it('round-trips through parseToolPolicyFrontmatter', () => {
+			const original: FeatureToolPolicy = {
+				preset: PolicyPreset.EDIT_MODE,
+				overrides: { write_file: ToolPermission.DENY },
+			};
+			expect(parseToolPolicyFrontmatter(serializeToolPolicy(original))).toEqual(original);
+		});
+
+		it('returns undefined for an empty policy', () => {
+			expect(serializeToolPolicy(undefined)).toBeUndefined();
+			expect(serializeToolPolicy({})).toBeUndefined();
+			expect(serializeToolPolicy({ overrides: {} })).toBeUndefined();
+		});
+	});
+
+	describe('clonePolicy', () => {
+		it('deep-clones overrides so mutations do not alias the source', () => {
+			const source: FeatureToolPolicy = {
+				preset: PolicyPreset.READ_ONLY,
+				overrides: { write_file: ToolPermission.DENY },
+			};
+			const clone = clonePolicy(source)!;
+			clone.overrides!.write_file = ToolPermission.APPROVE;
+			expect(source.overrides!.write_file).toBe(ToolPermission.DENY);
+		});
+
+		it('returns undefined for undefined input', () => {
+			expect(clonePolicy(undefined)).toBeUndefined();
+		});
+	});
+
+	describe('migrateLegacyToolCategoryArray', () => {
+		it('read_only only ⇒ READ_ONLY preset', () => {
+			expect(migrateLegacyToolCategoryArray(['read_only'])).toEqual({
+				preset: PolicyPreset.READ_ONLY,
+			});
+		});
+
+		it('read_only + vault_ops ⇒ EDIT_MODE preset', () => {
+			expect(migrateLegacyToolCategoryArray(['read_only', 'vault_ops'])).toEqual({
+				preset: PolicyPreset.EDIT_MODE,
+			});
+		});
+
+		it('bugged read_write string maps to EDIT_MODE (treated as vault_ops)', () => {
+			expect(migrateLegacyToolCategoryArray(['read_only', 'read_write'])).toEqual({
+				preset: PolicyPreset.EDIT_MODE,
+			});
+		});
+
+		it('bugged destructive string maps to YOLO preset', () => {
+			expect(migrateLegacyToolCategoryArray(['read_only', 'destructive'])).toEqual({
+				preset: PolicyPreset.YOLO,
+			});
+		});
+
+		it('full default-agent list ⇒ inherit global', () => {
+			expect(migrateLegacyToolCategoryArray(['read_only', 'vault_ops', 'external_mcp', 'skills'])).toBeUndefined();
+		});
+
+		it('empty / non-array input ⇒ undefined', () => {
+			expect(migrateLegacyToolCategoryArray([])).toBeUndefined();
+			expect(migrateLegacyToolCategoryArray(null)).toBeUndefined();
+			expect(migrateLegacyToolCategoryArray('read_only')).toBeUndefined();
+		});
+	});
+
+	describe('formatToolPolicyYaml', () => {
+		it('renders a preset + overrides block', () => {
+			expect(
+				formatToolPolicyYaml({
+					preset: PolicyPreset.READ_ONLY,
+					overrides: { write_file: ToolPermission.DENY },
+				})
+			).toEqual(['toolPolicy:', '  preset: read_only', '  overrides:', '    write_file: deny']);
+		});
+
+		it('returns null for an empty policy so callers can omit the field', () => {
+			expect(formatToolPolicyYaml(undefined)).toBeNull();
+			expect(formatToolPolicyYaml({})).toBeNull();
+			expect(formatToolPolicyYaml({ overrides: {} })).toBeNull();
 		});
 	});
 });

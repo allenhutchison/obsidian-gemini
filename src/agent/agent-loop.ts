@@ -1,6 +1,6 @@
 import type ObsidianGemini from '../main';
 import type { ChatSession, PerTurnContext } from '../types/agent';
-import type { ToolPermission } from '../types/tool-policy';
+import type { FeatureToolPolicy } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi } from '../api/interfaces/model-api';
 import type { CustomPrompt } from '../prompts/types';
 import type { IConfirmationProvider, ToolExecutionContext, ToolResult } from '../tools/types';
@@ -65,7 +65,12 @@ export interface AgentLoopOptions {
 	maxIterations?: number;
 	customPrompt?: CustomPrompt;
 	projectRootPath?: string;
-	projectPermissions?: Record<string, ToolPermission>;
+	/**
+	 * Feature-level tool policy (project / scheduled-task / hook scope) applied
+	 * on top of the global plugin policy for the duration of the turn. When
+	 * unset, only the global policy applies.
+	 */
+	featureToolPolicy?: FeatureToolPolicy;
 	/**
 	 * System-prompt fields that must stay byte-stable across the initial model
 	 * call and every follow-up/retry within this turn. Without these, follow-up
@@ -147,14 +152,14 @@ export class AgentLoop {
 		options: AgentLoopOptions;
 	}): Promise<AgentLoopResult> {
 		const { initialResponse, initialUserMessage, initialHistory, options } = args;
-		const { plugin, session, isCancelled, hooks, customPrompt, projectRootPath, projectPermissions, perTurn } = options;
+		const { plugin, session, isCancelled, hooks, customPrompt, projectRootPath, featureToolPolicy, perTurn } = options;
 		const maxIterations = options.maxIterations;
 
 		const toolContext: ToolExecutionContext = {
 			plugin,
 			session,
 			projectRootPath,
-			projectPermissions,
+			featureToolPolicy,
 		};
 
 		// `currentToolCalls` is what we execute on the next iteration. Seed it
@@ -262,7 +267,7 @@ export class AgentLoop {
 				updatedHistory,
 				customPrompt,
 				projectRootPath,
-				projectPermissions,
+				featureToolPolicy,
 				...perTurn,
 			});
 

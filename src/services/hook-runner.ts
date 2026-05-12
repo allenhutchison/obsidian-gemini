@@ -1,6 +1,6 @@
 import { App, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { ToolCategory, DestructiveAction } from '../types/agent';
+import { DestructiveAction } from '../types/agent';
 import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
 import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';
@@ -80,13 +80,8 @@ export class HookRunner {
 
 		const { hook } = this.ctx;
 
-		const enabledToolCategories =
-			hook.enabledTools.length > 0
-				? (hook.enabledTools as ToolCategory[])
-				: [ToolCategory.READ_ONLY, ToolCategory.SKILLS];
-
 		const session = await this.plugin.sessionManager.createAgentSession(`Hook: ${hook.slug}`, {
-			enabledTools: enabledToolCategories,
+			toolPolicy: hook.toolPolicy,
 			requireConfirmation: [] as DestructiveAction[],
 		});
 
@@ -94,7 +89,11 @@ export class HookRunner {
 			session.modelConfig = { model: hook.model };
 		}
 
-		const toolContext: ToolExecutionContext = { plugin: this.plugin, session };
+		const toolContext: ToolExecutionContext = {
+			plugin: this.plugin,
+			session,
+			featureToolPolicy: hook.toolPolicy,
+		};
 		const modelApi = ModelClientFactory.createChatModel(this.plugin);
 		const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 
@@ -137,6 +136,7 @@ export class HookRunner {
 					isCancelled,
 					confirmationProvider: new HeadlessConfirmationProvider(),
 					maxIterations: 20,
+					featureToolPolicy: hook.toolPolicy,
 				},
 			});
 			if (result.cancelled) return undefined;

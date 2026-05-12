@@ -179,3 +179,148 @@ export function resolvePermission(
 	// Fall back to preset-defined permission
 	return PRESET_PERMISSIONS[settings.activePreset][classification];
 }
+
+/**
+ * Per-feature tool policy. Lets a Project, Scheduled Task, Hook, or Session
+ * narrow (or open up) the global tool policy for the duration of one run.
+ *
+ * When `preset` is unset the feature inherits the global active preset; when
+ * `overrides` is unset (or missing a tool entry) the feature inherits the
+ * global per-tool overrides.
+ */
+export interface FeatureToolPolicy {
+	preset?: PolicyPreset;
+	overrides?: Record<string, ToolPermission>;
+}
+
+/**
+ * Resolve the effective permission for a tool, layering a feature-level
+ * policy on top of the global policy.
+ *
+ * Resolution order (most specific wins):
+ *   1. Feature `overrides[toolName]`
+ *   2. Global `toolPermissions[toolName]`
+ *   3. Feature `preset[classification]`
+ *   4. Global `activePreset[classification]`
+ */
+export function resolveEffectivePermission(
+	toolName: string,
+	classification: ToolClassification,
+	global: ToolPolicySettings,
+	feature?: FeatureToolPolicy
+): ToolPermission {
+	if (feature?.overrides && feature.overrides[toolName] !== undefined) {
+		return feature.overrides[toolName];
+	}
+	const globalOverride = global.toolPermissions[toolName];
+	if (globalOverride !== undefined) {
+		return globalOverride;
+	}
+	if (feature?.preset !== undefined && feature.preset !== PolicyPreset.CUSTOM) {
+		return PRESET_PERMISSIONS[feature.preset][classification];
+	}
+	return PRESET_PERMISSIONS[global.activePreset][classification];
+}
+
+/**
+ * Map of user-facing permission strings to ToolPermission enum values.
+ * Used by YAML frontmatter parsers in project / scheduled-task / hook configs.
+ *
+ * - `allow` and `approve` both map to APPROVE (project frontmatter has historically used `allow`)
+ * - `ask` and `ask_user` both map to ASK_USER
+ * - `deny` maps to DENY
+ */
+export const PERMISSION_STRING_MAP: Record<string, ToolPermission> = {
+	allow: ToolPermission.APPROVE,
+	approve: ToolPermission.APPROVE,
+	deny: ToolPermission.DENY,
+	ask: ToolPermission.ASK_USER,
+	ask_user: ToolPermission.ASK_USER,
+};
+
+/**
+ * Reverse map: ToolPermission enum values back to preferred YAML strings.
+ * APPROVE serializes as `allow` (shorter, matches the legacy project format).
+ */
+export const PERMISSION_TO_STRING: Record<ToolPermission, string> = {
+	[ToolPermission.APPROVE]: 'allow',
+	[ToolPermission.DENY]: 'deny',
+	[ToolPermission.ASK_USER]: 'ask',
+};
+
+/**
+ * Parse a raw frontmatter value into a FeatureToolPolicy, or return undefined
+ * when the input doesn't look like a policy block (inherit-global semantics).
+ *
+ * Accepts shapes like:
+ *   { preset: 'read_only' }
+ *   { overrides: { read_file: 'allow', delete_file: 'deny' } }
+ *   { preset: 'cautious', overrides: { web_fetch: 'deny' } }
+ *
+ * Returns undefined for null/undefined input.
+ */
+export function parseToolPolicyFrontmatter(raw: unknown): FeatureToolPolicy | undefined {
+	if (raw === null || raw === undefined) return undefined;
+	if (typeof raw !== 'object') return undefined;
+
+	const obj = raw as Record<string, unknown>;
+	const policy: FeatureToolPolicy = {};
+
+	if (typeof obj.preset === 'string') {
+		const presetCandidate = obj.preset.toLowerCase();
+		if ((Object.values(PolicyPreset) as string[]).includes(presetCandidate)) {
+			policy.preset = presetCandidate as PolicyPreset;
+		}
+	}
+
+	if (obj.overrides && typeof obj.overrides === 'object') {
+		const overrides: Record<string, ToolPermission> = {};
+		for (const [tool, value] of Object.entries(obj.overrides as Record<string, unknown>)) {
+			if (typeof value !== 'string') continue;
+			const mapped = PERMISSION_STRING_MAP[value.toLowerCase()];
+			if (mapped !== undefined) {
+				overrides[tool] = mapped;
+			}
+		}
+		if (Object.keys(overrides).length > 0) {
+			policy.overrides = overrides;
+		}
+	}
+
+	if (policy.preset === undefined && policy.overrides === undefined) {
+		return undefined;
+	}
+	return policy;
+}
+
+/**
+ * Deep-clone a FeatureToolPolicy. Used by SessionManager and friends to avoid
+ * sharing nested `overrides` references with the static DEFAULT_CONTEXTS.
+ */
+export function clonePolicy(policy: FeatureToolPolicy | undefined): FeatureToolPolicy | undefined {
+	if (!policy) return undefined;
+	return {
+		...(policy.preset !== undefined ? { preset: policy.preset } : {}),
+		...(policy.overrides ? { overrides: { ...policy.overrides } } : {}),
+	};
+}
+
+/**
+ * Serialize a FeatureToolPolicy back to a plain frontmatter-friendly object.
+ * Returns undefined when the policy is effectively empty.
+ */
+export function serializeToolPolicy(policy: FeatureToolPolicy | undefined): Record<string, unknown> | undefined {
+	if (!policy) return undefined;
+	const out: Record<string, unknown> = {};
+	if (policy.preset !== undefined) {
+		out.preset = policy.preset;
+	}
+	if (policy.overrides && Object.keys(policy.overrides).length > 0) {
+		const overrides: Record<string, string> = {};
+		for (const [tool, perm] of Object.entries(policy.overrides)) {
+			overrides[tool] = PERMISSION_TO_STRING[perm];
+		}
+		out.overrides = overrides;
+	}
+	return Object.keys(out).length > 0 ? out : undefined;
+}

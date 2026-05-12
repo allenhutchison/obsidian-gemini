@@ -1,10 +1,10 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask, TaskState } from '../services/scheduled-task-manager';
+import type { FeatureToolPolicy } from '../types/tool-policy';
+import { ToolPolicyEditor } from './components/tool-policy-editor';
 
 type View = 'list' | 'create' | 'edit';
-
-const TOOL_CATEGORIES = ['read_only', 'read_write', 'destructive'] as const;
 
 const SCHEDULE_PRESETS = [
 	{ label: 'Once', value: 'once' },
@@ -40,9 +40,22 @@ export class SchedulerManagementModal extends Modal {
 	private view: View;
 	private editingSlug: string | null = null;
 	private eventUnsubscribers: Array<() => void> = [];
+	/**
+	 * The form is re-rendered on every view switch, so the editor instance is
+	 * re-created from scratch each time. Tracked here so we can dispose the
+	 * previous instance before the new one is built.
+	 */
+	private toolPolicyEditor: ToolPolicyEditor | null = null;
 
 	// Form state (shared between create and edit views)
 	private form = this.blankForm();
+
+	private disposeToolPolicyEditor(): void {
+		if (this.toolPolicyEditor) {
+			this.toolPolicyEditor.destroy();
+			this.toolPolicyEditor = null;
+		}
+	}
 
 	constructor(
 		app: App,
@@ -61,6 +74,7 @@ export class SchedulerManagementModal extends Modal {
 	onClose(): void {
 		this.eventUnsubscribers.forEach((fn) => fn());
 		this.eventUnsubscribers = [];
+		this.disposeToolPolicyEditor();
 		this.contentEl.empty();
 	}
 
@@ -327,7 +341,7 @@ export class SchedulerManagementModal extends Modal {
 			scheduleCustom: task.schedule.startsWith('interval:') ? task.schedule.slice('interval:'.length) : '',
 			scheduleTime: time ?? blank.scheduleTime,
 			scheduleDays: days ?? blank.scheduleDays,
-			enabledTools: [...task.enabledTools],
+			toolPolicy: task.toolPolicy,
 			outputPath: task.outputPath,
 			model: task.model ?? '',
 			enabled: task.enabled,
@@ -437,22 +451,20 @@ export class SchedulerManagementModal extends Modal {
 			this.form.scheduleTime = timeInput.value;
 		});
 
-		// Tool access
-		new Setting(form).setName('Tool access').setDesc('Which tool categories the agent may use during a run.');
+		// Tool access — shared editor (preset + per-tool overrides). Replaces
+		// the old category checkbox row, which silently dropped vault-ops and
+		// destructive tools because the checkbox values didn't match real
+		// ToolCategory enum values.
 		const toolsContainer = form.createDiv({ cls: 'gemini-scheduler-tools' });
-		for (const cat of TOOL_CATEGORIES) {
-			const label = toolsContainer.createEl('label', { cls: 'gemini-scheduler-tool-label' });
-			const cb = label.createEl('input', { attr: { type: 'checkbox' } }) as HTMLInputElement;
-			cb.checked = this.form.enabledTools.includes(cat);
-			cb.addEventListener('change', () => {
-				if (cb.checked) {
-					if (!this.form.enabledTools.includes(cat)) this.form.enabledTools.push(cat);
-				} else {
-					this.form.enabledTools = this.form.enabledTools.filter((t) => t !== cat);
-				}
-			});
-			label.appendText(` ${cat}`);
-		}
+		this.disposeToolPolicyEditor();
+		this.toolPolicyEditor = new ToolPolicyEditor(this.plugin, toolsContainer, {
+			title: 'Tool access',
+			description: 'When inherited, this task uses the plugin’s global tool policy.',
+			value: this.form.toolPolicy,
+			onChange: (next) => {
+				this.form.toolPolicy = next;
+			},
+		});
 
 		// Prompt
 		new Setting(form)
@@ -563,7 +575,7 @@ export class SchedulerManagementModal extends Modal {
 			if (isEdit && this.editingSlug) {
 				await manager.updateTask(this.editingSlug, {
 					schedule,
-					enabledTools: this.form.enabledTools,
+					toolPolicy: this.form.toolPolicy,
 					outputPath: this.form.outputPath || undefined,
 					model: this.form.model || undefined,
 					enabled: this.form.enabled,
@@ -575,7 +587,7 @@ export class SchedulerManagementModal extends Modal {
 				await manager.createTask({
 					slug: this.form.slug,
 					schedule,
-					enabledTools: this.form.enabledTools,
+					toolPolicy: this.form.toolPolicy,
 					outputPath: this.form.outputPath || undefined,
 					model: this.form.model || undefined,
 					enabled: this.form.enabled,
@@ -604,7 +616,7 @@ export class SchedulerManagementModal extends Modal {
 			scheduleCustom: '',
 			scheduleTime: '09:00',
 			scheduleDays: ['mon', 'tue', 'wed', 'thu', 'fri'] as string[],
-			enabledTools: ['read_only'] as string[],
+			toolPolicy: undefined as FeatureToolPolicy | undefined,
 			outputPath: '',
 			model: '',
 			enabled: true,

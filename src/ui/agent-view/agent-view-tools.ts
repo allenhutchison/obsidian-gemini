@@ -78,7 +78,7 @@ export class AgentViewTools {
 					confirmationProvider: this.context.confirmationProvider,
 					customPrompt,
 					projectRootPath: activeProject?.rootPath,
-					projectPermissions: activeProject?.config.permissions,
+					featureToolPolicy: activeProject?.config.toolPolicy,
 					perTurn,
 					hooks: {
 						onToolBatchStart: (batch) => {

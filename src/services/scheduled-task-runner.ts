@@ -1,7 +1,7 @@
 import { normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask } from './scheduled-task-manager';
-import { ToolCategory, DestructiveAction } from '../types/agent';
+import { DestructiveAction } from '../types/agent';
 import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
 import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';
@@ -61,20 +61,12 @@ export class ScheduledTaskRunner {
 			throw new Error('[ScheduledTaskRunner] Agent services not initialised');
 		}
 
-		// Map task's enabledTools strings to ToolCategory enum values, defaulting
-		// to read-only + skills when the list is empty. SKILLS is included so the
-		// most natural scheduled-task pattern — "run skill X on a schedule" — works
-		// out of the box; this matches DEFAULT_CONTEXTS.AGENT_SESSION (which also
-		// includes SKILLS by default for live agent sessions). Users who want a
-		// stricter allowlist can set `enabledTools: ['read_only']` explicitly.
-		const enabledToolCategories =
-			this.task.enabledTools.length > 0
-				? (this.task.enabledTools as ToolCategory[])
-				: [ToolCategory.READ_ONLY, ToolCategory.SKILLS];
-
-		// Create a headless session — no confirmation required.
+		// Create a headless session bound to this task's tool policy. When the
+		// task has no toolPolicy, the session inherits the global plugin policy
+		// — the registry filter is permission-driven so a task without a policy
+		// sees the same tools as an interactive agent session.
 		const session = await this.plugin.sessionManager.createAgentSession(`Scheduled: ${this.task.slug}`, {
-			enabledTools: enabledToolCategories,
+			toolPolicy: this.task.toolPolicy,
 			requireConfirmation: [] as DestructiveAction[],
 		});
 
@@ -84,7 +76,11 @@ export class ScheduledTaskRunner {
 			session.modelConfig = { model: this.task.model };
 		}
 
-		const toolContext: ToolExecutionContext = { plugin: this.plugin, session };
+		const toolContext: ToolExecutionContext = {
+			plugin: this.plugin,
+			session,
+			featureToolPolicy: this.task.toolPolicy,
+		};
 		const modelApi = ModelClientFactory.createChatModel(this.plugin);
 		const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
 
@@ -126,6 +122,7 @@ export class ScheduledTaskRunner {
 					isCancelled,
 					confirmationProvider: new HeadlessConfirmationProvider(),
 					maxIterations: 20,
+					featureToolPolicy: this.task.toolPolicy,
 				},
 			});
 

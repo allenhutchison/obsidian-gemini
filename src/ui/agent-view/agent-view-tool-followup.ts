@@ -16,7 +16,7 @@ export interface FollowUpRequestParams extends PerTurnContext {
 	updatedHistory: any[];
 	customPrompt?: CustomPrompt;
 	projectRootPath?: string;
-	projectPermissions?: Record<string, import('../../types/tool-policy').ToolPermission>;
+	featureToolPolicy?: import('../../types/tool-policy').FeatureToolPolicy;
 }
 
 export interface RetryRequestParams extends PerTurnContext {
@@ -37,7 +37,7 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		updatedHistory,
 		customPrompt,
 		projectRootPath,
-		projectPermissions,
+		featureToolPolicy,
 		perTurnContext,
 		projectInstructions,
 		projectSkills,
@@ -48,7 +48,7 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		plugin,
 		session: currentSession,
 		projectRootPath,
-		projectPermissions,
+		featureToolPolicy,
 	};
 	const availableTools = plugin.toolRegistry.getEnabledTools(availableToolsContext);
 

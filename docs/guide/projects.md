@@ -38,9 +38,10 @@ name: My Project
 skills:
   - writing-coach
   - continuity-tracker
-permissions:
-  write_file: allow
-  delete_file: deny
+toolPolicy:
+  preset: edit_mode
+  overrides:
+    delete_file: deny
 ---
 ```
 
@@ -48,20 +49,38 @@ permissions:
 
 ### Frontmatter
 
-| Field         | Type     | Description                                              |
-| ------------- | -------- | -------------------------------------------------------- |
-| `tags`        | string[] | Must include `gemini-scribe/project`                     |
-| `name`        | string   | Display name (defaults to file basename)                 |
-| `skills`      | string[] | Skills to activate for this project (empty = all skills) |
-| `permissions` | object   | Per-tool permission overrides                            |
+| Field        | Type     | Description                                                                           |
+| ------------ | -------- | ------------------------------------------------------------------------------------- |
+| `tags`       | string[] | Must include `gemini-scribe/project`                                                  |
+| `name`       | string   | Display name (defaults to file basename)                                              |
+| `skills`     | string[] | Skills to activate for this project (empty = all skills)                              |
+| `toolPolicy` | object   | Project-scoped tool policy. Omit to inherit the global plugin tool policy. See below. |
 
-### Permission Values
+### Tool Policy
+
+The `toolPolicy` block lets a project narrow or open the agent's tool surface for any session linked to the project. It has the same shape every other policy-bearing feature uses (scheduled tasks, hooks, sessions):
+
+```yaml
+toolPolicy:
+  preset: read_only # one of: read_only, cautious, edit_mode, yolo
+  overrides: # optional per-tool overrides (most specific wins)
+    write_file: allow
+    delete_file: deny
+```
+
+- `preset` chooses the baseline permission for every tool by classification (READ / WRITE / DESTRUCTIVE / EXTERNAL). Omit to inherit the global plugin preset.
+- `overrides` maps individual tool names to a permission; entries here win over both the project preset and the global policy's per-tool overrides.
+- An omitted `toolPolicy` block means "inherit the global plugin tool policy entirely."
+
+#### Permission Values
 
 | Value   | Effect                             |
 | ------- | ---------------------------------- |
 | `allow` | Tool executes without confirmation |
 | `deny`  | Tool is blocked entirely           |
 | `ask`   | Tool requires user confirmation    |
+
+> **Legacy note** — the older `permissions: { tool: 'allow' }` frontmatter map still loads. The first time the plugin reads such a file it rewrites the frontmatter into the new `toolPolicy.overrides` shape.
 
 ### Body Text
 

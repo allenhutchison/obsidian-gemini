@@ -1,7 +1,13 @@
 import { TFile } from 'obsidian';
+import { FeatureToolPolicy, PolicyPreset } from './tool-policy';
 
 /**
- * Tool categories that can be enabled/disabled for an agent
+ * UI-only grouping label for tools (e.g. for "read-only tools" pickers).
+ *
+ * NOTE: As of the unified-tool-policy refactor this is no longer a security
+ * boundary — runtime tool filtering is permission-driven and goes through
+ * `ToolPolicySettings` / `FeatureToolPolicy`. The enum stays so existing tool
+ * declarations and grouped UIs keep working.
  */
 export enum ToolCategory {
 	READ_ONLY = 'read_only', // Search, read files, analyze
@@ -28,8 +34,12 @@ export interface AgentContext {
 	/** Files to include in the conversation context */
 	contextFiles: TFile[];
 
-	/** Tool categories enabled for this agent session */
-	enabledTools: ToolCategory[];
+	/**
+	 * Session-scoped tool policy. When unset, the session inherits the global
+	 * plugin tool policy. When set, the policy is layered on top of the global
+	 * policy at every tool resolution.
+	 */
+	toolPolicy?: FeatureToolPolicy;
 
 	/** Actions that require user confirmation */
 	requireConfirmation: DestructiveAction[];
@@ -195,7 +205,10 @@ export interface ToolExecution {
 export const DEFAULT_CONTEXTS = {
 	NOTE_CHAT: {
 		contextFiles: [], // Will be set to current file
-		enabledTools: [ToolCategory.READ_ONLY],
+		// Note-chat sessions are read-only by default; the policy maps every
+		// non-read classification to DENY, so write/destructive/external tools
+		// are filtered out of the registry.
+		toolPolicy: { preset: PolicyPreset.READ_ONLY },
 		requireConfirmation: [],
 		maxContextChars: 50000,
 		maxCharsPerFile: 10000,
@@ -203,12 +216,10 @@ export const DEFAULT_CONTEXTS = {
 
 	AGENT_SESSION: {
 		contextFiles: [],
-		enabledTools: [
-			ToolCategory.READ_ONLY,
-			ToolCategory.VAULT_OPERATIONS,
-			ToolCategory.EXTERNAL_MCP,
-			ToolCategory.SKILLS,
-		],
+		// Inherit the global tool policy — full agent sessions see the full
+		// tool surface unless the user narrows it via the plugin settings or
+		// a project / scheduled-task / hook policy.
+		toolPolicy: undefined,
 		requireConfirmation: [
 			DestructiveAction.MODIFY_FILES,
 			DestructiveAction.CREATE_FILES,

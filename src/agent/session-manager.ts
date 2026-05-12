@@ -10,6 +10,54 @@ import {
 import type ObsidianGemini from '../main';
 import { sanitizeFileName } from '../utils/file-utils';
 import { formatLocalDate } from '../utils/format-utils';
+import { PolicyPreset, FeatureToolPolicy, parseToolPolicyFrontmatter, clonePolicy } from '../types/tool-policy';
+
+/**
+ * Map a legacy `enabled_tools` array (category-level allowlist from the
+ * pre-unified-policy era) to a FeatureToolPolicy. The mapping is best-effort:
+ *
+ * - `read_only` only ⇒ READ_ONLY preset
+ * - `read_only` + `vault_ops` ⇒ EDIT_MODE preset (writes execute, destructive asks)
+ * - any list containing `external_mcp` or `system` ⇒ undefined (inherit global)
+ *
+ * Broken legacy values (`read_write`, `destructive`) — written by the bugged
+ * scheduler/hook modals before this refactor — are folded into the closest
+ * preset.
+ */
+function migrateLegacyEnabledTools(value: unknown): FeatureToolPolicy | undefined {
+	if (!Array.isArray(value)) return undefined;
+	const set = new Set(value.filter((v): v is string => typeof v === 'string').map((v) => v.toLowerCase()));
+	if (set.size === 0) return undefined;
+
+	const hasReadOnly = set.has('read_only');
+	const hasVaultOps = set.has('vault_ops') || set.has('read_write');
+	const hasDestructive = set.has('destructive');
+	const hasExternal = set.has('external_mcp') || set.has('system');
+
+	if (hasExternal || (hasReadOnly && hasVaultOps && hasDestructive)) {
+		return undefined; // Inherit global — broadest legacy intent.
+	}
+	if (hasDestructive) return { preset: PolicyPreset.YOLO };
+	if (hasVaultOps) return { preset: PolicyPreset.EDIT_MODE };
+	if (hasReadOnly) return { preset: PolicyPreset.READ_ONLY };
+	return undefined;
+}
+
+/**
+ * Parse a session's tool policy from frontmatter. Prefers the new
+ * `tool_policy:` block; falls back to the legacy `enabled_tools` array;
+ * falls back to the supplied default.
+ */
+function parseSessionToolPolicy(
+	frontmatter: any,
+	fallback: FeatureToolPolicy | undefined
+): FeatureToolPolicy | undefined {
+	const fromNewShape = parseToolPolicyFrontmatter(frontmatter?.tool_policy);
+	if (fromNewShape) return fromNewShape;
+	const fromLegacy = migrateLegacyEnabledTools(frontmatter?.enabled_tools);
+	if (fromLegacy !== undefined) return fromLegacy;
+	return clonePolicy(fallback);
+}
 
 /**
  * Manages chat sessions for both note-centric and agent modes
@@ -33,8 +81,9 @@ export class SessionManager {
 		const context: AgentContext = {
 			...DEFAULT_CONTEXTS.NOTE_CHAT,
 			contextFiles: [sourceFile],
-			// Create new arrays to avoid sharing references between sessions
-			enabledTools: [...DEFAULT_CONTEXTS.NOTE_CHAT.enabledTools],
+			// Clone the policy so per-session mutations (e.g. overrides) don't bleed
+			// into the shared default. requireConfirmation is similarly cloned below.
+			toolPolicy: clonePolicy(DEFAULT_CONTEXTS.NOTE_CHAT.toolPolicy),
 			requireConfirmation: [...DEFAULT_CONTEXTS.NOTE_CHAT.requireConfirmation],
 		};
 
@@ -64,7 +113,10 @@ export class SessionManager {
 			...initialContext,
 			// Create new arrays to avoid sharing references between sessions
 			contextFiles: [...(initialContext?.contextFiles ?? [])],
-			enabledTools: [...(initialContext?.enabledTools ?? DEFAULT_CONTEXTS.AGENT_SESSION.enabledTools)],
+			toolPolicy:
+				'toolPolicy' in (initialContext ?? {})
+					? clonePolicy(initialContext?.toolPolicy)
+					: clonePolicy(DEFAULT_CONTEXTS.AGENT_SESSION.toolPolicy),
 			requireConfirmation: [
 				...(initialContext?.requireConfirmation ?? DEFAULT_CONTEXTS.AGENT_SESSION.requireConfirmation),
 			],
@@ -380,7 +432,7 @@ export class SessionManager {
 
 		return {
 			contextFiles,
-			enabledTools: frontmatter.enabled_tools || DEFAULT_CONTEXTS.NOTE_CHAT.enabledTools,
+			toolPolicy: parseSessionToolPolicy(frontmatter, DEFAULT_CONTEXTS.NOTE_CHAT.toolPolicy),
 			requireConfirmation: frontmatter.require_confirmation || [],
 			maxContextChars: frontmatter.max_context_chars,
 			maxCharsPerFile: frontmatter.max_chars_per_file,

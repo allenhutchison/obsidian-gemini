@@ -1,6 +1,11 @@
 import { Tool, ToolExecutionContext } from './types';
-import { ToolCategory } from '../types/agent';
-import { ToolPermission, resolvePermission, ToolPolicySettings, DEFAULT_TOOL_POLICY } from '../types/tool-policy';
+import {
+	ToolPermission,
+	FeatureToolPolicy,
+	resolveEffectivePermission,
+	ToolPolicySettings,
+	DEFAULT_TOOL_POLICY,
+} from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 
 /**
@@ -61,55 +66,45 @@ export class ToolRegistry {
 	}
 
 	/**
-	 * Resolve the effective permission for a tool based on the current policy settings.
+	 * Resolve the effective permission for a tool, layering the optional
+	 * feature-level policy on top of the global plugin policy.
 	 *
-	 * Resolution order:
-	 * 1. Explicit per-tool override in `toolPolicy.toolPermissions`
-	 * 2. Preset-defined permission based on tool classification
+	 * Resolution order (most specific wins):
+	 *   1. Feature `overrides[toolName]`
+	 *   2. Global `toolPermissions[toolName]`
+	 *   3. Feature `preset[classification]`
+	 *   4. Global `activePreset[classification]`
 	 */
-	getEffectivePermission(toolName: string, projectPermissions?: Record<string, ToolPermission>): ToolPermission {
+	getEffectivePermission(toolName: string, featurePolicy?: FeatureToolPolicy): ToolPermission {
 		const tool = this.getTool(toolName);
 		if (!tool) return ToolPermission.DENY;
 
-		// Project-level override takes priority
-		if (projectPermissions?.[toolName] !== undefined) {
-			return projectPermissions[toolName];
-		}
-
-		return resolvePermission(toolName, tool.classification, this.getToolPolicy());
+		return resolveEffectivePermission(toolName, tool.classification, this.getToolPolicy(), featurePolicy);
 	}
 
 	/**
-	 * Get tools that are enabled for the current session.
+	 * Get tools that are enabled for the current execution context.
 	 *
-	 * A tool is enabled if:
-	 * 1. Its category is in the session's `enabledTools` list (session-level filtering)
-	 * 2. Its effective permission is NOT `DENY` (global policy filtering)
-	 *
-	 * Session contexts never escalate beyond global policy — a DENY tool
-	 * cannot be enabled by a session.
+	 * A tool is enabled iff its effective permission is not DENY. Filtering is
+	 * permission-driven only — there is no category filter. To narrow the tool
+	 * surface for a feature run, set a `featureToolPolicy` whose preset (or
+	 * per-tool overrides) maps the unwanted tools to DENY.
 	 */
 	getEnabledTools(context: ToolExecutionContext): Tool[] {
-		const enabledCategories = context.session.context.enabledTools;
-		return this.getAllTools().filter((tool) => {
-			// Session-level category filter
-			if (!enabledCategories.includes(tool.category as ToolCategory)) {
-				return false;
-			}
-			// Policy filter — exclude DENY tools (project overrides → global policy)
-			return this.getEffectivePermission(tool.name, context.projectPermissions) !== ToolPermission.DENY;
-		});
+		return this.getAllTools().filter(
+			(tool) => this.getEffectivePermission(tool.name, context.featureToolPolicy) !== ToolPermission.DENY
+		);
 	}
 
 	/**
-	 * Check if a tool requires confirmation based on global policy.
+	 * Check if a tool requires confirmation based on the effective policy.
 	 *
 	 * - APPROVE → no confirmation needed
 	 * - ASK_USER → confirmation required
 	 * - DENY → tool should not be present (but returns false as a safe default)
 	 */
-	requiresConfirmation(toolName: string, projectPermissions?: Record<string, ToolPermission>): boolean {
-		return this.getEffectivePermission(toolName, projectPermissions) === ToolPermission.ASK_USER;
+	requiresConfirmation(toolName: string, featurePolicy?: FeatureToolPolicy): boolean {
+		return this.getEffectivePermission(toolName, featurePolicy) === ToolPermission.ASK_USER;
 	}
 
 	/**

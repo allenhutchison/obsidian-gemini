@@ -2,6 +2,8 @@ import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
 import { findFrontmatterEndOffset } from './skill-manager';
+import { FeatureToolPolicy, parseToolPolicyFrontmatter } from '../types/tool-policy';
+import { migrateLegacyToolCategoryArray, formatToolPolicyYaml } from './feature-policy-yaml';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -37,8 +39,12 @@ export interface ScheduledTask {
 	 *   interval:Xh        — every X hours   (e.g. interval:2h)
 	 */
 	schedule: string;
-	/** ToolCategory enum values to enable for this session (e.g. ['read_only']). */
-	enabledTools: string[];
+	/**
+	 * Tool policy applied for the duration of each run. Layered on top of the
+	 * global plugin policy via FeatureToolPolicy. Undefined means inherit the
+	 * global policy.
+	 */
+	toolPolicy?: FeatureToolPolicy;
 	/**
 	 * Output path template. Supports {slug} and {date} placeholders.
 	 * Default: Scheduled-Tasks/Runs/{slug}/{date}.md
@@ -479,7 +485,7 @@ export class ScheduledTaskManager {
 	async createTask(params: {
 		slug: string;
 		schedule: string;
-		enabledTools?: string[];
+		toolPolicy?: FeatureToolPolicy;
 		outputPath?: string;
 		model?: string;
 		enabled?: boolean;
@@ -505,7 +511,7 @@ export class ScheduledTaskManager {
 		const task: ScheduledTask = {
 			slug,
 			schedule: params.schedule,
-			enabledTools: params.enabledTools ?? [],
+			toolPolicy: params.toolPolicy,
 			outputPath: params.outputPath ?? defaultOutputPath,
 			model: params.model,
 			enabled: params.enabled ?? true,
@@ -547,7 +553,7 @@ export class ScheduledTaskManager {
 		slug: string,
 		params: {
 			schedule?: string;
-			enabledTools?: string[];
+			toolPolicy?: FeatureToolPolicy;
 			outputPath?: string;
 			model?: string;
 			enabled?: boolean;
@@ -569,7 +575,7 @@ export class ScheduledTaskManager {
 		const merged = {
 			slug,
 			schedule: params.schedule ?? task.schedule,
-			enabledTools: params.enabledTools ?? task.enabledTools,
+			toolPolicy: 'toolPolicy' in params ? params.toolPolicy : task.toolPolicy,
 			outputPath: params.outputPath ?? task.outputPath,
 			model: params.model ?? task.model,
 			enabled: params.enabled ?? task.enabled,
@@ -836,10 +842,16 @@ export class ScheduledTaskManager {
 		const slug = file.basename;
 		const defaultOutputPath = `${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`;
 
-		return {
+		// Prefer the new `toolPolicy:` block; fall back to the legacy
+		// `enabledTools:` array (which the bugged modal also populated with
+		// `read_write` / `destructive`, both handled here).
+		const toolPolicy =
+			parseToolPolicyFrontmatter(frontmatter.toolPolicy) ?? migrateLegacyToolCategoryArray(frontmatter.enabledTools);
+
+		const task: ScheduledTask = {
 			slug,
 			schedule: String(frontmatter.schedule),
-			enabledTools: Array.isArray(frontmatter.enabledTools) ? (frontmatter.enabledTools as string[]) : [],
+			toolPolicy,
 			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : defaultOutputPath,
 			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
 			enabled: frontmatter.enabled !== false,
@@ -847,6 +859,18 @@ export class ScheduledTaskManager {
 			prompt,
 			filePath: file.path,
 		};
+
+		// Auto-migrate the file in place when we read the legacy shape so the
+		// next read uses the canonical key. Failures are non-fatal.
+		if (frontmatter.enabledTools !== undefined && frontmatter.toolPolicy === undefined) {
+			try {
+				await this.plugin.app.vault.modify(file, this.serializeTask(task));
+			} catch (err) {
+				this.plugin.logger.warn(`[ScheduledTaskManager] legacy enabledTools migration failed for ${file.path}:`, err);
+			}
+		}
+
+		return task;
 	}
 
 	/**
@@ -856,7 +880,7 @@ export class ScheduledTaskManager {
 	private serializeTask(params: {
 		slug?: string;
 		schedule: string;
-		enabledTools?: string[];
+		toolPolicy?: FeatureToolPolicy;
 		outputPath?: string;
 		model?: string;
 		enabled?: boolean;
@@ -866,12 +890,9 @@ export class ScheduledTaskManager {
 		const lines: string[] = ['---'];
 		lines.push(`schedule: '${params.schedule}'`);
 
-		const tools = params.enabledTools ?? [];
-		if (tools.length > 0) {
-			lines.push('enabledTools:');
-			for (const t of tools) {
-				lines.push(`  - ${t}`);
-			}
+		const policyLines = formatToolPolicyYaml(params.toolPolicy);
+		if (policyLines) {
+			lines.push(...policyLines);
 		}
 
 		const defaultOutputPath =

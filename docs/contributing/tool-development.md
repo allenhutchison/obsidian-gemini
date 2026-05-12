@@ -160,18 +160,16 @@ if (shouldExcludePath(params.path, plugin)) {
 
 ### 4. **Permissions**
 
-Respect the context permissions:
+Tool gating is permission-driven. The `ToolRegistry` calls `resolveEffectivePermission()` for every registered tool when a session asks for its available tools, layering the optional `context.featureToolPolicy` on top of the global plugin policy:
 
-```typescript
-// Check if tool category is enabled
-const session = context.session;
-if (!session.context.enabledTools.includes(this.category)) {
-	return {
-		success: false,
-		error: 'Tool category not enabled for this session',
-	};
-}
-```
+1. Feature `overrides[toolName]`
+2. Global `toolPermissions[toolName]`
+3. Feature preset's `classification → permission` mapping
+4. Global active preset's `classification → permission` mapping
+
+Tools whose effective permission is `DENY` never reach `executeTool`. Tools mapped to `ASK_USER` are prompted for confirmation through the active `IConfirmationProvider`. You don't need to re-check categories or session enablement inside a tool's `execute` method — `ToolExecutionEngine.executeTool` already filters and confirms before calling you.
+
+The legacy `session.context.enabledTools` category array is gone; declare your tool's `classification` (READ / WRITE / DESTRUCTIVE / EXTERNAL) and let the policy system handle the rest.
 
 ### 5. **Return Meaningful Data**
 

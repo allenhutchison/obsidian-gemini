@@ -30,8 +30,13 @@ export interface ToolExecutionContext {
 	plugin: any; // Will be typed to ObsidianGemini
 	/** When set, discovery tools default their search scope to this directory */
 	projectRootPath?: string;
-	/** When set, project-level permission overrides are applied to tool resolution */
-	projectPermissions?: Record<string, import('../types/tool-policy').ToolPermission>;
+	/**
+	 * Feature-level tool policy applied on top of the global plugin policy.
+	 * Used by Projects, Scheduled Tasks, Hooks, and Sessions to narrow or open
+	 * the tool surface for a single run. When unset, only the global policy
+	 * applies.
+	 */
+	featureToolPolicy?: import('../types/tool-policy').FeatureToolPolicy;
 }
 
 /**

@@ -282,7 +282,10 @@ describe('ToolExecutionEngine - Error Handling', () => {
 		expect(result.error).toBe('Tool non_existent_tool not found');
 	});
 
-	it('should handle tool not in enabled category', async () => {
+	it('should reject tools the feature policy maps to DENY', async () => {
+		// Under the unified-policy model the registry no longer filters by
+		// ToolCategory — disabling a tool is expressed as a DENY permission
+		// via the feature-level policy (or the global policy).
 		const context = {
 			plugin,
 			session: {
@@ -291,13 +294,14 @@ describe('ToolExecutionEngine - Error Handling', () => {
 				context: {
 					contextFiles: [],
 					contextDepth: 2,
-					enabledTools: [ToolCategory.READ_ONLY], // Only READ_ONLY enabled
 					requireConfirmation: [],
 				},
 			},
+			featureToolPolicy: {
+				overrides: { write_file: 'deny' as any },
+			},
 		} as any;
 
-		// Register a VAULT_OPERATIONS tool
 		registry.registerTool(new WriteFileTool());
 
 		const result = await engine.executeTool(

@@ -139,7 +139,7 @@ function makeHook(overrides: Partial<Hook> = {}): Hook {
 		debounceMs: 100,
 		cooldownMs: 0,
 		action: 'agent-task',
-		enabledTools: ['read_only'],
+		toolPolicy: { preset: 'read_only' as any },
 		enabledSkills: [],
 		enabled: true,
 		desktopOnly: false,
@@ -293,7 +293,7 @@ describe('HookManager CRUD', () => {
 			debounceMs: 7500,
 			cooldownMs: 60_000,
 			maxRunsPerHour: 12,
-			enabledTools: ['read_only'],
+			toolPolicy: { preset: 'read_only' as any },
 			enabledSkills: ['index-files'],
 			model: 'gemini-2.5-flash-lite',
 			outputPath: 'Hooks/Runs/{slug}/{date}.md',
@@ -306,8 +306,8 @@ describe('HookManager CRUD', () => {
 		expect(content).toContain('debounceMs: 7500');
 		expect(content).toContain('cooldownMs: 60000');
 		expect(content).toContain('maxRunsPerHour: 12');
-		expect(content).toContain('enabledTools:');
-		expect(content).toContain('  - read_only');
+		expect(content).toContain('toolPolicy:');
+		expect(content).toContain('preset: read_only');
 		expect(content).toContain('enabledSkills:');
 		expect(content).toContain('  - index-files');
 		expect(content).toContain('model: "gemini-2.5-flash-lite"');

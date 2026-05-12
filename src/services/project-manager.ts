@@ -1,26 +1,16 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { Project, ProjectConfig, ProjectSummary, PROJECT_TAG } from '../types/project';
-import { ToolPermission } from '../types/tool-policy';
+import {
+	FeatureToolPolicy,
+	ToolPermission,
+	PERMISSION_STRING_MAP,
+	parseToolPolicyFrontmatter,
+	serializeToolPolicy,
+} from '../types/tool-policy';
 
 /** Regex to strip dataview/dataviewjs/bases fenced code blocks from body text */
 const UNSUPPORTED_CODE_BLOCK_RE = /```(?:dataview|dataviewjs|bases?)[\s\S]*?```/g;
-
-/** Map user-facing permission strings to ToolPermission enum values */
-const PERMISSION_MAP: Record<string, ToolPermission> = {
-	allow: ToolPermission.APPROVE,
-	approve: ToolPermission.APPROVE,
-	deny: ToolPermission.DENY,
-	ask: ToolPermission.ASK_USER,
-	ask_user: ToolPermission.ASK_USER,
-};
-
-/** Reverse map: ToolPermission enum values back to preferred user-friendly strings */
-const PERMISSION_REVERSE_MAP: Record<ToolPermission, string> = {
-	[ToolPermission.APPROVE]: 'allow',
-	[ToolPermission.DENY]: 'deny',
-	[ToolPermission.ASK_USER]: 'ask',
-};
 
 /**
  * Discovers, parses, and caches project definitions from the vault.
@@ -129,13 +119,15 @@ export class ProjectManager {
 		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
 			if (updates.name !== undefined) frontmatter.name = updates.name;
 			if (updates.skills !== undefined) frontmatter.skills = updates.skills;
-			if (updates.permissions !== undefined) {
-				// Convert ToolPermission enum values back to user-friendly strings
-				const permObj: Record<string, string> = {};
-				for (const [tool, perm] of Object.entries(updates.permissions)) {
-					permObj[tool] = PERMISSION_REVERSE_MAP[perm] ?? perm;
+			if ('toolPolicy' in updates) {
+				const serialized = serializeToolPolicy(updates.toolPolicy);
+				if (serialized) {
+					frontmatter.toolPolicy = serialized;
+				} else {
+					delete frontmatter.toolPolicy;
 				}
-				frontmatter.permissions = permObj;
+				// Drop the legacy field whenever we write the new shape.
+				delete frontmatter.permissions;
 			}
 		});
 
@@ -154,7 +146,7 @@ tags:
   - ${PROJECT_TAG}
 name: "${name}"
 skills: []
-permissions: {}
+toolPolicy: {}
 ---
 
 Add your project instructions here. This text will be injected into the agent's system prompt when a session is linked to this project.
@@ -279,6 +271,25 @@ Add your project instructions here. This text will be injected into the agent's 
 		// Parse config from frontmatter
 		const config = this.parseConfig(frontmatter, file.basename);
 
+		// Auto-migrate legacy `permissions:` shape → `toolPolicy.overrides`.
+		// Project frontmatter from before the unified-policy refactor wrote a
+		// flat `permissions: { tool: 'allow' }` map; the new shape nests it under
+		// toolPolicy. Rewrite once so future reads use the canonical shape.
+		// Failures here are non-fatal — the in-memory shape is correct either way.
+		if (frontmatter.permissions !== undefined && frontmatter.toolPolicy === undefined) {
+			try {
+				await this.plugin.app.fileManager.processFrontMatter(file, (fm: any) => {
+					const serialized = serializeToolPolicy(config.toolPolicy);
+					if (serialized) {
+						fm.toolPolicy = serialized;
+					}
+					delete fm.permissions;
+				});
+			} catch (err) {
+				this.plugin.logger.warn(`ProjectManager: legacy permissions migration failed for ${file.path}:`, err);
+			}
+		}
+
 		// Extract body text (strip frontmatter)
 		const fullContent = await this.plugin.app.vault.read(file);
 		let body = fullContent;
@@ -343,28 +354,37 @@ Add your project instructions here. This text will be injected into the agent's 
 		const skills = Array.isArray(frontmatter.skills)
 			? frontmatter.skills.filter((s: any) => typeof s === 'string')
 			: [];
-		const permissions = this.parsePermissions(frontmatter.permissions);
+		const toolPolicy = this.parseToolPolicy(frontmatter);
 
-		return { name, skills, permissions };
+		return { name, skills, toolPolicy };
 	}
 
-	private parsePermissions(raw: unknown): Record<string, ToolPermission> {
-		if (!raw || typeof raw !== 'object') return {};
+	/**
+	 * Parse the project's tool policy from frontmatter. Prefers the new
+	 * `toolPolicy:` block; falls back to the legacy `permissions:` map and
+	 * lifts it into `toolPolicy.overrides`.
+	 */
+	private parseToolPolicy(frontmatter: any): FeatureToolPolicy | undefined {
+		const fromNewShape = parseToolPolicyFrontmatter(frontmatter.toolPolicy);
+		if (fromNewShape) return fromNewShape;
 
-		const result: Record<string, ToolPermission> = {};
-		for (const [tool, value] of Object.entries(raw as Record<string, unknown>)) {
+		const legacy = frontmatter.permissions;
+		if (!legacy || typeof legacy !== 'object') return undefined;
+
+		const overrides: Record<string, ToolPermission> = {};
+		for (const [tool, value] of Object.entries(legacy as Record<string, unknown>)) {
 			if (typeof value !== 'string') continue;
-			const mapped = PERMISSION_MAP[value.toLowerCase()];
-			if (mapped) {
-				result[tool] = mapped;
+			const mapped = PERMISSION_STRING_MAP[value.toLowerCase()];
+			if (mapped !== undefined) {
+				overrides[tool] = mapped;
 			} else {
 				this.plugin.logger.warn(
 					`ProjectManager: Unknown permission value '${value}' for tool '${tool}', defaulting to ask_user`
 				);
-				result[tool] = ToolPermission.ASK_USER;
+				overrides[tool] = ToolPermission.ASK_USER;
 			}
 		}
-		return result;
+		return Object.keys(overrides).length > 0 ? { overrides } : undefined;
 	}
 
 	private resolveLinks(links: Array<{ link: string }> | undefined, sourcePath: string): TFile[] {
