@@ -60,7 +60,7 @@ export class GeminiClient implements ModelApi {
 		};
 		this.plugin = plugin;
 		this.prompts = prompts || new GeminiPrompts(plugin);
-		this.ai = this.plugin ? createGoogleGenAI(this.plugin) : new GoogleGenAI({ apiKey: config.apiKey });
+		this.ai = this.plugin ? createGoogleGenAI(this.plugin, config.apiKey) : new GoogleGenAI({ apiKey: config.apiKey });
 	}
 
 	/**

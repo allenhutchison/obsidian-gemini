@@ -1,4 +1,5 @@
 import type { Mock } from 'vitest';
+import { GoogleGenAI } from '@google/genai';
 import { GeminiClient, GeminiClientConfig } from '../../src/api/gemini-client';
 import { GeminiPrompts } from '../../src/prompts';
 import type { ExtendedModelRequest } from '../../src/api/interfaces/model-api';
@@ -21,6 +22,8 @@ vi.mock('@google/genai', () => ({
 		};
 	}),
 }));
+
+const MockedGoogleGenAI = GoogleGenAI as unknown as Mock;
 
 // Mock window.localStorage
 const mockLocalStorage = {
@@ -280,6 +283,55 @@ describe('GeminiClient', () => {
 			expect(generateContentMock).toHaveBeenCalledTimes(1);
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			expect(params.config.systemInstruction).not.toContain('## Turn Context');
+		});
+	});
+
+	// Wiring coverage: the constructor must route through createGoogleGenAI so a
+	// user-configured customBaseUrl reaches the SDK as httpOptions.baseUrl. The
+	// google-genai-factory tests cover the helper in isolation; these guard the
+	// integration so a future refactor that bypasses the helper would fail loudly.
+	describe('customBaseUrl wiring', () => {
+		beforeEach(() => {
+			MockedGoogleGenAI.mockClear();
+		});
+
+		test('forwards httpOptions.baseUrl when plugin.settings.customBaseUrl is set', () => {
+			const plugin: any = {
+				logger: mockLogger,
+				apiKey: 'test-api-key',
+				settings: { customBaseUrl: 'https://my-proxy.example.com' },
+			};
+			new GeminiClient({ apiKey: 'test-api-key', model: 'gemini-pro' }, new GeminiPrompts(plugin), plugin);
+
+			expect(MockedGoogleGenAI).toHaveBeenCalledWith(
+				expect.objectContaining({
+					apiKey: 'test-api-key',
+					httpOptions: { baseUrl: 'https://my-proxy.example.com' },
+				})
+			);
+		});
+
+		test('omits httpOptions when plugin.settings.customBaseUrl is empty', () => {
+			const plugin: any = {
+				logger: mockLogger,
+				apiKey: 'test-api-key',
+				settings: { customBaseUrl: '' },
+			};
+			new GeminiClient({ apiKey: 'test-api-key', model: 'gemini-pro' }, new GeminiPrompts(plugin), plugin);
+
+			const callArg = MockedGoogleGenAI.mock.calls[0][0];
+			expect(callArg.httpOptions).toBeUndefined();
+		});
+
+		test('no-plugin fallback constructs GoogleGenAI with config.apiKey only', () => {
+			// When GeminiClient is constructed without a plugin (e.g. via
+			// GeminiClientFactory.createCustom in code paths that don't have one
+			// handy), the helper isn't invoked — the constructor falls back to
+			// using config.apiKey directly and customBaseUrl is unreachable.
+			const promptsPlugin: any = { logger: mockLogger, settings: {} };
+			new GeminiClient({ apiKey: 'config-only-key', model: 'gemini-pro' }, new GeminiPrompts(promptsPlugin), undefined);
+
+			expect(MockedGoogleGenAI).toHaveBeenCalledWith({ apiKey: 'config-only-key' });
 		});
 	});
 });

@@ -48,19 +48,6 @@ export class DeepResearchService {
 		this.reportGenerator = new ReportGenerator();
 		this.retryConfig = DEFAULT_RETRY_CONFIG;
 	}
-	/**
-	 * Invalidate the cached ResearchManager so it is rebuilt with the
-	 * current plugin settings (e.g. after customBaseUrl changes).
-	 */
-	public invalidateResearchManager(): void {
-		// Do not invalidate while a research job is active — cancelResearch()
-		// still needs the manager to send the cancel request.
-		if (this.currentInteractionId !== null) {
-			this.plugin.logger.warn('[DeepResearch] Cannot invalidate manager while research is in progress');
-			return;
-		}
-		this.researchManager = null;
-	}
 
 	/**
 	 * Initialize the ResearchManager with a GoogleGenAI client

@@ -968,10 +968,6 @@ export default class ObsidianGemini extends Plugin {
 				if (needsInit && !apiKeyChanged && !providerChanged) {
 					new Notice('Gemini Scribe is now ready to use!');
 				}
-				// Invalidate cached DeepResearch manager so it rebuilds with the new base URL
-				if (customBaseUrlChanged && this.deepResearch) {
-					this.deepResearch.invalidateResearchManager();
-				}
 			} catch (error) {
 				this.logger.error('Failed to re-initialize after settings change:', error);
 				this.lastInitError = error instanceof Error ? error.message : String(error);

@@ -66,25 +66,24 @@ describe('createGoogleGenAI', () => {
 		expect(result).toBeDefined();
 	});
 
-	test('does not call createGoogleGenAI when plugin is absent (no-plugin fallback)', () => {
+	test('apiKeyOverride wins over plugin.apiKey when provided', () => {
+		mockPlugin.apiKey = 'plugin-key';
+
+		createGoogleGenAI(mockPlugin, 'override-key');
+
+		expect(MockedGoogleGenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'override-key' }));
+	});
+
+	test('tolerates undefined apiKey without throwing', () => {
+		// Defensive: if the plugin is initialised before the user enters an API key,
+		// the helper still has to return something — it forwards apiKey: undefined
+		// to GoogleGenAI rather than throwing. The actual no-plugin fallback path
+		// (constructing GoogleGenAI without going through the helper at all) lives
+		// in GeminiClient and is covered in test/api/gemini-client.test.ts.
 		mockPlugin.apiKey = undefined;
 		mockPlugin.settings.customBaseUrl = '';
 
 		expect(() => createGoogleGenAI(mockPlugin)).not.toThrow();
 		expect(MockedGoogleGenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: undefined }));
-	});
-
-	test('passes httpOptions.baseUrl when provider is gemini and customBaseUrl is set', () => {
-		mockPlugin.apiKey = 'test-api-key';
-		mockPlugin.settings.customBaseUrl = 'https://corporate-proxy.example.com';
-
-		createGoogleGenAI(mockPlugin);
-
-		expect(MockedGoogleGenAI).toHaveBeenCalledWith(
-			expect.objectContaining({
-				apiKey: 'test-api-key',
-				httpOptions: { baseUrl: 'https://corporate-proxy.example.com' },
-			})
-		);
 	});
 });
