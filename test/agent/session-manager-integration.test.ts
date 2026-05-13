@@ -1,6 +1,7 @@
 import { SessionManager } from '../../src/agent/session-manager';
 import { SessionHistory } from '../../src/agent/session-history';
-import { SessionType, ToolCategory, DestructiveAction } from '../../src/types/agent';
+import { SessionType, DestructiveAction } from '../../src/types/agent';
+import { PolicyPreset } from '../../src/types/tool-policy';
 import { TFile, TFolder } from 'obsidian';
 
 // Mock Obsidian
@@ -76,7 +77,7 @@ describe('SessionManager Integration Tests', () => {
 			// Create session
 			const session = await sessionManager.createAgentSession('Test Session', {
 				contextFiles: [],
-				enabledTools: [ToolCategory.READ_ONLY],
+				toolPolicy: { preset: PolicyPreset.READ_ONLY },
 			});
 
 			expect(session).toBeDefined();
@@ -129,7 +130,7 @@ describe('SessionManager Integration Tests', () => {
 			// Create session with custom config
 			const session = await sessionManager.createAgentSession('Test Session', {
 				contextFiles: [{ path: 'context.md', basename: 'context' } as TFile],
-				enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
+				toolPolicy: { preset: PolicyPreset.EDIT_MODE },
 				requireConfirmation: [DestructiveAction.DELETE_FILES],
 			});
 
@@ -202,18 +203,18 @@ describe('SessionManager Integration Tests', () => {
 	describe('Permission Updates', () => {
 		it('should update session permissions dynamically', async () => {
 			const session = await sessionManager.createAgentSession('Test Session', {
-				enabledTools: [ToolCategory.READ_ONLY],
+				toolPolicy: { preset: PolicyPreset.READ_ONLY },
 				requireConfirmation: [DestructiveAction.MODIFY_FILES],
 			});
 
-			// Update permissions
+			// Update permissions — broaden from READ_ONLY to EDIT_MODE.
 			await sessionManager.updateSessionContext(session.id, {
-				enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
+				toolPolicy: { preset: PolicyPreset.EDIT_MODE },
 				requireConfirmation: [],
 			});
 
 			const updated = sessionManager.getSession(session.id);
-			expect(updated?.context.enabledTools).toContain(ToolCategory.VAULT_OPERATIONS);
+			expect(updated?.context.toolPolicy?.preset).toBe(PolicyPreset.EDIT_MODE);
 			expect(updated?.context.requireConfirmation).toHaveLength(0);
 		});
 	});

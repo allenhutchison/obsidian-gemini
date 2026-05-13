@@ -46,8 +46,8 @@ pathGlob: 'Daily/**/*.md'
 debounceMs: 5000
 maxRunsPerHour: 12
 action: agent-task
-enabledTools:
-  - read_only
+toolPolicy:
+  preset: read_only
 outputPath: 'Hooks/Runs/summarise-on-save/{date}.md'
 ---
 
@@ -56,23 +56,23 @@ The user just saved {{filePath}}. Read it and write a one-paragraph summary high
 
 ### Frontmatter Fields
 
-| Field               | Required               | Default                   | Description                                                                                                                                                                      |
-| ------------------- | ---------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `trigger`           | Yes                    | —                         | Vault event. One of: `file-created`, `file-modified`, `file-deleted`, `file-renamed`.                                                                                            |
-| `action`            | Yes                    | —                         | What to do on each fire. One of: `agent-task`, `summarize`, `rewrite`, `command`. See [Actions](#actions) below.                                                                 |
-| `commandId`         | When `action: command` | —                         | Command palette id to dispatch (e.g. `editor:save-file`).                                                                                                                        |
-| `focusFile`         | No                     | `false`                   | When `action: command`, focus the triggering file in the workspace before dispatching so editor-scoped commands target it. Off by default — see [Actions → `command`](#command). |
-| `pathGlob`          | No                     | (matches all paths)       | Glob pattern matched against the triggering file's vault path. Supports `*` and `**`.                                                                                            |
-| `frontmatterFilter` | No                     | —                         | Object of key/value pairs the note's frontmatter must match for the hook to fire.                                                                                                |
-| `debounceMs`        | No                     | `5000`                    | Per-(hook, file) debounce window in milliseconds. Coalesces rapid saves into one fire.                                                                                           |
-| `maxRunsPerHour`    | No                     | unlimited                 | Sliding-window rate limit per hook (across all files).                                                                                                                           |
-| `cooldownMs`        | No                     | `30000`                   | After a fire completes, suppress further events on the same (hook, file) for this window. Prevents self-retrigger.                                                               |
-| `enabledTools`      | No                     | `['read_only', 'skills']` | Tool categories the agent may use during the run.                                                                                                                                |
-| `enabledSkills`     | No                     | `[]`                      | Skill slugs to pre-activate in the headless session.                                                                                                                             |
-| `model`             | No                     | Plugin chat model         | Override the model for this hook (e.g. `gemini-2.5-flash-lite`).                                                                                                                 |
-| `outputPath`        | No                     | (no file written)         | Where to write the agent's final response. Supports `{slug}`, `{date}`, and `{fileName}` placeholders.                                                                           |
-| `enabled`           | No                     | `true`                    | Set to `false` to disable the hook without deleting it.                                                                                                                          |
-| `desktopOnly`       | No                     | `true`                    | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                                                                                     |
+| Field               | Required               | Default                        | Description                                                                                                                                                                      |
+| ------------------- | ---------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trigger`           | Yes                    | —                              | Vault event. One of: `file-created`, `file-modified`, `file-deleted`, `file-renamed`.                                                                                            |
+| `action`            | Yes                    | —                              | What to do on each fire. One of: `agent-task`, `summarize`, `rewrite`, `command`. See [Actions](#actions) below.                                                                 |
+| `commandId`         | When `action: command` | —                              | Command palette id to dispatch (e.g. `editor:save-file`).                                                                                                                        |
+| `focusFile`         | No                     | `false`                        | When `action: command`, focus the triggering file in the workspace before dispatching so editor-scoped commands target it. Off by default — see [Actions → `command`](#command). |
+| `pathGlob`          | No                     | (matches all paths)            | Glob pattern matched against the triggering file's vault path. Supports `*` and `**`.                                                                                            |
+| `frontmatterFilter` | No                     | —                              | Object of key/value pairs the note's frontmatter must match for the hook to fire.                                                                                                |
+| `debounceMs`        | No                     | `5000`                         | Per-(hook, file) debounce window in milliseconds. Coalesces rapid saves into one fire.                                                                                           |
+| `maxRunsPerHour`    | No                     | unlimited                      | Sliding-window rate limit per hook (across all files).                                                                                                                           |
+| `cooldownMs`        | No                     | `30000`                        | After a fire completes, suppress further events on the same (hook, file) for this window. Prevents self-retrigger.                                                               |
+| `toolPolicy`        | No                     | _inherit global plugin policy_ | Per-fire tool policy (preset + per-tool overrides). Same shape used by projects and scheduled tasks — see [Tool Access](#tool-access) below.                                     |
+| `enabledSkills`     | No                     | `[]`                           | Skill slugs to pre-activate in the headless session.                                                                                                                             |
+| `model`             | No                     | Plugin chat model              | Override the model for this hook (e.g. `gemini-2.5-flash-lite`).                                                                                                                 |
+| `outputPath`        | No                     | (no file written)              | Where to write the agent's final response. Supports `{slug}`, `{date}`, and `{fileName}` placeholders.                                                                           |
+| `enabled`           | No                     | `true`                         | Set to `false` to disable the hook without deleting it.                                                                                                                          |
+| `desktopOnly`       | No                     | `true`                         | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                                                                                     |
 
 ### Prompt Template Variables
 
@@ -91,7 +91,24 @@ Each hook does one of four things on fire. The form's **Action** dropdown switch
 
 ### `agent-task` (default)
 
-Run a headless agent session with the prompt body as the instruction. Honours `enabledTools`, `enabledSkills`, `model`, and writes the model's final response to `outputPath` if configured. This is the most flexible action — the agent can call tools, read other files, run skills, etc.
+Run a headless agent session with the prompt body as the instruction. Honours `toolPolicy`, `enabledSkills`, `model`, and writes the model's final response to `outputPath` if configured. This is the most flexible action — the agent can call tools, read other files, run skills, etc.
+
+### Tool Access
+
+The `toolPolicy` block uses the same shape every other policy-bearing feature uses:
+
+```yaml
+toolPolicy:
+  preset: read_only # one of: read_only, cautious, edit_mode, yolo
+  overrides:
+    web_fetch: deny
+```
+
+- `preset` chooses the baseline permission for every tool by classification. Omit to inherit the global plugin preset.
+- `overrides` maps individual tool names to a permission and beats both the hook preset and the global per-tool overrides.
+- An omitted `toolPolicy` block means "inherit the global plugin tool policy entirely."
+
+> **Legacy note** — older hook files used `enabledTools: ['read_only', …]` instead of `toolPolicy`. They still load: the plugin maps the old category list onto the closest preset and rewrites the file to the new shape the first time it is read.
 
 ### `summarize`
 
@@ -162,8 +179,8 @@ pathGlob: 'Daily/**/*.md'
 debounceMs: 10000
 maxRunsPerHour: 6
 action: agent-task
-enabledTools:
-  - read_only
+toolPolicy:
+  preset: read_only
 outputPath: 'Hooks/Runs/daily-summary/{fileName}'
 ---
 
@@ -177,9 +194,8 @@ Read the daily note at {{filePath}}. Append a brief summary of the day's main to
 trigger: file-created
 pathGlob: 'Attachments/**'
 action: agent-task
-enabledTools:
-  - read_only
-  - vault_ops
+toolPolicy:
+  preset: edit_mode
 ---
 
 A new file was just added at {{filePath}}. Read it (if it's text-based), generate a short description, and append a row to `Attachments/index.md` with the file path and description.

@@ -3,6 +3,7 @@ import { TFile as MockTFile } from 'obsidian';
 import { HookRunner } from '../../src/services/hook-runner';
 import type { Hook, HookFireContext } from '../../src/services/hook-manager';
 import type { AgentLoopResult } from '../../src/agent/agent-loop';
+import { PolicyPreset } from '../../src/types/tool-policy';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ function makeHook(overrides: Partial<Hook> = {}): Hook {
 		debounceMs: 100,
 		cooldownMs: 0,
 		action: 'agent-task',
-		enabledTools: ['read_only'],
+		toolPolicy: { preset: PolicyPreset.READ_ONLY },
 		enabledSkills: [],
 		enabled: true,
 		desktopOnly: false,
@@ -142,7 +143,10 @@ function createMockPlugin(opts: { existingPaths?: string[]; createBehaviour?: Va
 				modelConfig: {},
 			}),
 		},
-		toolRegistry: { getEnabledTools: vi.fn().mockReturnValue([]) },
+		toolRegistry: {
+			getEnabledTools: vi.fn().mockReturnValue([]),
+			getAutoApprovedTools: vi.fn().mockReturnValue([]),
+		},
 		toolExecutionEngine: { executeTool: vi.fn() },
 		// Optional injected services — left undefined by default; tests
 		// override per scenario (e.g. summarize tests set `summarizer`).

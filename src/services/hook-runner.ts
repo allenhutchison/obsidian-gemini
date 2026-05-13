@@ -1,6 +1,6 @@
 import { App, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { ToolCategory, DestructiveAction } from '../types/agent';
+import { DestructiveAction } from '../types/agent';
 import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
 import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';
@@ -80,13 +80,8 @@ export class HookRunner {
 
 		const { hook } = this.ctx;
 
-		const enabledToolCategories =
-			hook.enabledTools.length > 0
-				? (hook.enabledTools as ToolCategory[])
-				: [ToolCategory.READ_ONLY, ToolCategory.SKILLS];
-
 		const session = await this.plugin.sessionManager.createAgentSession(`Hook: ${hook.slug}`, {
-			enabledTools: enabledToolCategories,
+			toolPolicy: hook.toolPolicy,
 			requireConfirmation: [] as DestructiveAction[],
 		});
 
@@ -94,9 +89,17 @@ export class HookRunner {
 			session.modelConfig = { model: hook.model };
 		}
 
-		const toolContext: ToolExecutionContext = { plugin: this.plugin, session };
+		const toolContext: ToolExecutionContext = {
+			plugin: this.plugin,
+			session,
+			featureToolPolicy: hook.toolPolicy,
+		};
 		const modelApi = ModelClientFactory.createChatModel(this.plugin);
-		const availableTools = this.plugin.toolRegistry.getEnabledTools(toolContext);
+		// Headless hook fires auto-approve confirmations, so only expose
+		// APPROVE tools — ASK_USER tools would otherwise execute unattended.
+		// To allow an ASK_USER tool in a hook, the hook's toolPolicy must
+		// explicitly upgrade it (preset or per-tool override).
+		const availableTools = this.plugin.toolRegistry.getAutoApprovedTools(toolContext);
 
 		const renderedPrompt = renderPrompt(hook.prompt, this.promptVars());
 		const startedAt = formatLocalTimestamp(session.created);
@@ -137,6 +140,8 @@ export class HookRunner {
 					isCancelled,
 					confirmationProvider: new HeadlessConfirmationProvider(),
 					maxIterations: 20,
+					featureToolPolicy: hook.toolPolicy,
+					headless: true,
 				},
 			});
 			if (result.cancelled) return undefined;

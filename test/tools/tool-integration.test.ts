@@ -298,7 +298,7 @@ describe('Tool Integration Tests', () => {
 	});
 
 	describe('Permission Boundaries', () => {
-		it('should respect tool category restrictions', async () => {
+		it('should respect tool restrictions expressed as a READ_ONLY feature policy', async () => {
 			const context = {
 				plugin,
 				session: {
@@ -306,10 +306,13 @@ describe('Tool Integration Tests', () => {
 					type: SessionType.AGENT_SESSION,
 					context: {
 						contextFiles: [],
-						enabledTools: [ToolCategory.READ_ONLY], // Only read operations
 						requireConfirmation: [],
 					},
 				},
+				// READ_ONLY preset maps WRITE/DESTRUCTIVE/EXTERNAL to DENY, so
+				// write_file is filtered out of getEnabledTools while read_file
+				// stays available.
+				featureToolPolicy: { preset: 'read_only' },
 			} as any;
 
 			// Try to execute write operation

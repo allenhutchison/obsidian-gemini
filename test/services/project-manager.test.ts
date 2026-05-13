@@ -130,7 +130,7 @@ describe('ProjectManager', () => {
 			expect(project).not.toBeNull();
 			expect(project!.config.name).toBe('Test Project');
 			expect(project!.config.skills).toEqual(['writing-coach', 'continuity-tracker']);
-			expect(project!.config.permissions).toEqual({
+			expect(project!.config.toolPolicy?.overrides).toEqual({
 				edit_file: ToolPermission.APPROVE,
 				delete_file: ToolPermission.DENY,
 			});
@@ -268,7 +268,7 @@ describe('ProjectManager', () => {
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
 			const project = await manager.parseProjectFile(file);
-			expect(project!.config.permissions.write_file).toBe(ToolPermission.APPROVE);
+			expect(project!.config.toolPolicy!.overrides!.write_file).toBe(ToolPermission.APPROVE);
 		});
 
 		it('should map deny to DENY', async () => {
@@ -280,7 +280,7 @@ describe('ProjectManager', () => {
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
 			const project = await manager.parseProjectFile(file);
-			expect(project!.config.permissions.delete_file).toBe(ToolPermission.DENY);
+			expect(project!.config.toolPolicy!.overrides!.delete_file).toBe(ToolPermission.DENY);
 		});
 
 		it('should map ask to ASK_USER', async () => {
@@ -292,7 +292,7 @@ describe('ProjectManager', () => {
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
 			const project = await manager.parseProjectFile(file);
-			expect(project!.config.permissions.move_file).toBe(ToolPermission.ASK_USER);
+			expect(project!.config.toolPolicy!.overrides!.move_file).toBe(ToolPermission.ASK_USER);
 		});
 
 		it('should warn and default unknown values to ASK_USER', async () => {
@@ -304,8 +304,27 @@ describe('ProjectManager', () => {
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
 			const project = await manager.parseProjectFile(file);
-			expect(project!.config.permissions.write_file).toBe(ToolPermission.ASK_USER);
+			expect(project!.config.toolPolicy!.overrides!.write_file).toBe(ToolPermission.ASK_USER);
 			expect(mockPlugin.logger.warn).toHaveBeenCalled();
+		});
+
+		// Regression: an explicit but empty `toolPolicy:` block means "inherit
+		// global policy", not "fall back to legacy permissions" — otherwise
+		// stale legacy overrides would silently override the user's intent.
+		it('treats an explicit empty toolPolicy as inherit-global, ignoring legacy permissions', async () => {
+			const file = createMockFile('project/EmptyPolicy.md');
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: {
+					tags: [PROJECT_TAG],
+					toolPolicy: {},
+					permissions: { write_file: 'allow' },
+				},
+				frontmatterPosition: { end: { offset: 0 } },
+			});
+			mockPlugin.app.vault.read.mockResolvedValue('');
+
+			const project = await manager.parseProjectFile(file);
+			expect(project!.config.toolPolicy).toBeUndefined();
 		});
 	});
 

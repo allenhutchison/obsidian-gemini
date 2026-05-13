@@ -8,6 +8,7 @@ import {
 	renderPrompt,
 	type Hook,
 } from '../../src/services/hook-manager';
+import { PolicyPreset } from '../../src/types/tool-policy';
 
 // ─── Module mocks ────────────────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ function makeHook(overrides: Partial<Hook> = {}): Hook {
 		debounceMs: 100,
 		cooldownMs: 0,
 		action: 'agent-task',
-		enabledTools: ['read_only'],
+		toolPolicy: { preset: PolicyPreset.READ_ONLY },
 		enabledSkills: [],
 		enabled: true,
 		desktopOnly: false,
@@ -293,7 +294,7 @@ describe('HookManager CRUD', () => {
 			debounceMs: 7500,
 			cooldownMs: 60_000,
 			maxRunsPerHour: 12,
-			enabledTools: ['read_only'],
+			toolPolicy: { preset: PolicyPreset.READ_ONLY },
 			enabledSkills: ['index-files'],
 			model: 'gemini-2.5-flash-lite',
 			outputPath: 'Hooks/Runs/{slug}/{date}.md',
@@ -306,8 +307,13 @@ describe('HookManager CRUD', () => {
 		expect(content).toContain('debounceMs: 7500');
 		expect(content).toContain('cooldownMs: 60000');
 		expect(content).toContain('maxRunsPerHour: 12');
-		expect(content).toContain('enabledTools:');
-		expect(content).toContain('  - read_only');
+		expect(content).toContain('toolPolicy:');
+		expect(content).toContain('preset: read_only');
+		// Regression guard: the serializer must not also emit the legacy
+		// `enabledTools:` key. Dual-writing both shapes would re-introduce
+		// the pre-refactor confusion where readers had to pick which one to
+		// trust on subsequent loads.
+		expect(content).not.toContain('enabledTools');
 		expect(content).toContain('enabledSkills:');
 		expect(content).toContain('  - index-files');
 		expect(content).toContain('model: "gemini-2.5-flash-lite"');

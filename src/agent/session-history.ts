@@ -4,6 +4,7 @@ import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
 import { pathToWikilink } from '../utils/accessed-files';
 import { formatLocalTimestamp } from '../utils/format-utils';
+import { serializeToolPolicy } from '../types/tool-policy';
 import * as Handlebars from 'handlebars';
 // @ts-ignore
 import historyEntryTemplate from '../history/templates/historyEntry.hbs';
@@ -338,11 +339,16 @@ export class SessionHistory {
 				delete frontmatter.accessed_files;
 			}
 
-			if (session.context?.enabledTools?.length) {
-				frontmatter.enabled_tools = session.context.enabledTools;
+			const serializedPolicy = serializeToolPolicy(session.context?.toolPolicy);
+			if (serializedPolicy) {
+				frontmatter.tool_policy = serializedPolicy;
 			} else {
-				delete frontmatter.enabled_tools;
+				delete frontmatter.tool_policy;
 			}
+			// Drop the legacy field whenever we rewrite this session — readers
+			// already migrate it in-memory; clearing here finishes the on-disk
+			// transition the first time we save the session.
+			delete frontmatter.enabled_tools;
 
 			if (session.context?.requireConfirmation !== undefined) {
 				frontmatter.require_confirmation = session.context.requireConfirmation;

@@ -2,6 +2,7 @@ import type { Mock } from 'vitest';
 import { ScheduledTaskRunner } from '../../src/services/scheduled-task-runner';
 import type { ScheduledTask } from '../../src/services/scheduled-task-manager';
 import type { AgentLoopResult } from '../../src/agent/agent-loop';
+import { PolicyPreset } from '../../src/types/tool-policy';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,7 @@ function createMockPlugin(vaultFiles: Record<string, string> = {}): any {
 		},
 		toolRegistry: {
 			getEnabledTools: vi.fn().mockReturnValue([]),
+			getAutoApprovedTools: vi.fn().mockReturnValue([]),
 		},
 		toolExecutionEngine: {
 			executeTool: vi.fn().mockResolvedValue({ success: true, output: 'ok' }),
@@ -103,7 +105,7 @@ function makeTask(overrides: Partial<ScheduledTask> = {}): ScheduledTask {
 	return {
 		slug: 'test-task',
 		schedule: 'daily',
-		enabledTools: [],
+		toolPolicy: undefined,
 		outputPath: 'gemini-scribe/Scheduled-Tasks/Runs/test-task/{date}.md',
 		enabled: true,
 		runIfMissed: false,
@@ -286,36 +288,32 @@ describe('ScheduledTaskRunner', () => {
 		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
 	});
 
-	describe('default enabledTools', () => {
-		// Pin the broadened default added to fix #728: scheduled tasks with empty
-		// enabledTools should get read_only + skills (not just read_only) so the
-		// "run skill X on a schedule" pattern works without extra setup.
-		it('defaults to read_only + skills when frontmatter enabledTools is empty', async () => {
+	describe('toolPolicy plumbing', () => {
+		// Under the unified-policy model, an unset task.toolPolicy means
+		// "inherit the global plugin tool policy" — the runner should pass
+		// `toolPolicy: undefined` to createAgentSession so the session inherits.
+		it('passes toolPolicy: undefined when the task has no policy', async () => {
 			const plugin = createMockPlugin();
-			const runner = new ScheduledTaskRunner(plugin, makeTask({ enabledTools: [] }));
+			const runner = new ScheduledTaskRunner(plugin, makeTask({ toolPolicy: undefined }));
 
 			await runner.run(() => false);
 
 			expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledWith(
 				expect.any(String),
-				expect.objectContaining({
-					enabledTools: ['read_only', 'skills'],
-				})
+				expect.objectContaining({ toolPolicy: undefined })
 			);
 		});
 
-		it('honors an explicit enabledTools list and does not augment it', async () => {
+		it('forwards an explicit task.toolPolicy to the session', async () => {
 			const plugin = createMockPlugin();
-			const runner = new ScheduledTaskRunner(plugin, makeTask({ enabledTools: ['read_only'] }));
+			const taskPolicy = { preset: PolicyPreset.READ_ONLY };
+			const runner = new ScheduledTaskRunner(plugin, makeTask({ toolPolicy: taskPolicy }));
 
 			await runner.run(() => false);
 
-			// User explicitly chose read_only — must NOT silently add skills.
 			expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledWith(
 				expect.any(String),
-				expect.objectContaining({
-					enabledTools: ['read_only'],
-				})
+				expect.objectContaining({ toolPolicy: taskPolicy })
 			);
 		});
 	});

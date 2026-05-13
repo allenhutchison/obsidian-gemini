@@ -1,5 +1,5 @@
 import { TFile } from 'obsidian';
-import { ToolPermission } from './tool-policy';
+import { FeatureToolPolicy } from './tool-policy';
 
 /**
  * Tag that identifies a markdown file as a project definition.
@@ -16,8 +16,11 @@ export interface ProjectConfig {
 	/** Skill names to auto-activate for this project */
 	skills: string[];
 
-	/** Per-tool permission overrides */
-	permissions: Record<string, ToolPermission>;
+	/**
+	 * Project-scoped tool policy (preset + per-tool overrides).
+	 * When unset, the project inherits the global plugin tool policy.
+	 */
+	toolPolicy?: FeatureToolPolicy;
 }
 
 /**

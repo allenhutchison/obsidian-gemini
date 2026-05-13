@@ -1,6 +1,7 @@
 import type { Mock } from 'vitest';
 import { TFile as MockTFile } from 'obsidian';
 import { ScheduledTaskManager, computeNextRunAt, ScheduledTask } from '../../src/services/scheduled-task-manager';
+import { PolicyPreset, ToolPermission } from '../../src/types/tool-policy';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -381,7 +382,8 @@ describe('ScheduledTaskManager', () => {
 			expect(tasks).toHaveLength(1);
 			expect(tasks[0].slug).toBe('daily-summary');
 			expect(tasks[0].schedule).toBe('daily');
-			expect(tasks[0].enabledTools).toEqual(['read_only']);
+			// Legacy `enabledTools: ['read_only']` migrates to the READ_ONLY preset.
+			expect(tasks[0].toolPolicy).toEqual({ preset: 'read_only' });
 			expect(tasks[0].prompt).toBe('Summarise recent notes.');
 
 			// State entry seeded for newly-discovered task
@@ -451,7 +453,7 @@ describe('ScheduledTaskManager', () => {
 			expect(manager.getTasks()[0].enabled).toBe(true);
 		});
 
-		it('enabledTools defaults to empty array when omitted from frontmatter', async () => {
+		it('toolPolicy is undefined when no toolPolicy or enabledTools frontmatter is present', async () => {
 			const plugin = createMockPlugin();
 			plugin.app.vault.getMarkdownFiles.mockReturnValue([
 				{ path: 'gemini-scribe/Scheduled-Tasks/no-tools.md', basename: 'no-tools' },
@@ -463,7 +465,8 @@ describe('ScheduledTaskManager', () => {
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
 
-			expect(manager.getTasks()[0].enabledTools).toEqual([]);
+			// Absent policy means inherit-global, encoded as undefined on the task.
+			expect(manager.getTasks()[0].toolPolicy).toBeUndefined();
 		});
 
 		it('purges state entries for slugs whose task file no longer exists', async () => {
@@ -912,7 +915,7 @@ describe('ScheduledTaskManager', () => {
 			await manager.createTask({
 				slug: 'new-task',
 				schedule: 'daily',
-				enabledTools: ['read_only'],
+				toolPolicy: { preset: PolicyPreset.READ_ONLY },
 				prompt: 'Do something daily.',
 			});
 
@@ -969,7 +972,7 @@ describe('ScheduledTaskManager', () => {
 			);
 		});
 
-		it('serialized content includes enabledTools list', async () => {
+		it('serialized content includes toolPolicy block when policy is set', async () => {
 			const plugin = createMockPlugin();
 			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
 			const manager = new ScheduledTaskManager(plugin);
@@ -978,13 +981,17 @@ describe('ScheduledTaskManager', () => {
 			await manager.createTask({
 				slug: 'tools-task',
 				schedule: 'daily',
-				enabledTools: ['read_only', 'read_write'],
+				toolPolicy: {
+					preset: PolicyPreset.EDIT_MODE,
+					overrides: { write_file: ToolPermission.DENY },
+				},
 				prompt: 'With tools.',
 			});
 
 			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
-			expect(written).toContain('- read_only');
-			expect(written).toContain('- read_write');
+			expect(written).toContain('toolPolicy:');
+			expect(written).toContain('preset: edit_mode');
+			expect(written).toContain('write_file: deny');
 		});
 
 		it('omits optional fields from serialized content when not set', async () => {

@@ -2,6 +2,8 @@ import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
 import { findFrontmatterEndOffset } from './skill-manager';
+import { FeatureToolPolicy, parseToolPolicyFrontmatter } from '../types/tool-policy';
+import { formatToolPolicyYaml, migrateLegacyToolCategoryArray } from './feature-policy-yaml';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -62,8 +64,12 @@ export interface Hook {
 	 */
 	cooldownMs: number;
 	action: HookAction;
-	/** ToolCategory enum values to enable for the headless session. */
-	enabledTools: string[];
+	/**
+	 * Tool policy applied for the duration of each headless fire. Layered on
+	 * top of the global plugin policy via FeatureToolPolicy. Undefined means
+	 * inherit the global policy.
+	 */
+	toolPolicy?: FeatureToolPolicy;
 	/** Slugs of skills to pre-activate in the headless session. */
 	enabledSkills: string[];
 	/** Optional model override; defaults to plugin chat model. */
@@ -153,7 +159,7 @@ export interface HookCreateParams {
 	debounceMs?: number;
 	maxRunsPerHour?: number;
 	cooldownMs?: number;
-	enabledTools?: string[];
+	toolPolicy?: FeatureToolPolicy;
 	enabledSkills?: string[];
 	model?: string;
 	outputPath?: string;
@@ -395,7 +401,10 @@ export class HookManager {
 		const file = this.plugin.app.vault.getAbstractFileByPath(hook.filePath);
 		if (!file) throw new Error(`Hook file not found: ${hook.filePath}`);
 
-		const merged: Required<HookCreateParams> = {
+		// `toolPolicy` is genuinely optional (undefined == inherit global), so
+		// the merged shape can't use `Required<HookCreateParams>` like it used
+		// to. The other fields keep their default-coercion behavior below.
+		const merged: HookCreateParams & { slug: string } = {
 			slug,
 			trigger: params.trigger ?? hook.trigger,
 			pathGlob: params.pathGlob ?? hook.pathGlob ?? '',
@@ -404,7 +413,7 @@ export class HookManager {
 			maxRunsPerHour: params.maxRunsPerHour ?? hook.maxRunsPerHour ?? 0,
 			cooldownMs: params.cooldownMs ?? hook.cooldownMs,
 			action: params.action ?? hook.action,
-			enabledTools: params.enabledTools ?? hook.enabledTools,
+			toolPolicy: 'toolPolicy' in params ? params.toolPolicy : hook.toolPolicy,
 			enabledSkills: params.enabledSkills ?? hook.enabledSkills,
 			model: params.model ?? hook.model ?? '',
 			outputPath: params.outputPath ?? hook.outputPath ?? '',
@@ -461,7 +470,7 @@ export class HookManager {
 			maxRunsPerHour: params.maxRunsPerHour && params.maxRunsPerHour > 0 ? params.maxRunsPerHour : undefined,
 			cooldownMs: params.cooldownMs ?? DEFAULT_COOLDOWN_MS,
 			action: params.action,
-			enabledTools: params.enabledTools ?? [],
+			toolPolicy: params.toolPolicy,
 			enabledSkills: params.enabledSkills ?? [],
 			model: params.model || undefined,
 			outputPath: params.outputPath || undefined,
@@ -502,10 +511,9 @@ export class HookManager {
 			lines.push(`cooldownMs: ${params.cooldownMs}`);
 		}
 
-		const tools = params.enabledTools ?? [];
-		if (tools.length > 0) {
-			lines.push('enabledTools:');
-			for (const t of tools) lines.push(`  - ${t}`);
+		const policyLines = formatToolPolicyYaml(params.toolPolicy);
+		if (policyLines) {
+			lines.push(...policyLines);
 		}
 
 		const skills = params.enabledSkills ?? [];
@@ -894,7 +902,10 @@ export class HookManager {
 		const commandId = typeof frontmatter.commandId === 'string' ? frontmatter.commandId : undefined;
 		if (action === 'command' && !commandId) return null;
 
-		return {
+		const toolPolicy =
+			parseToolPolicyFrontmatter(frontmatter.toolPolicy) ?? migrateLegacyToolCategoryArray(frontmatter.enabledTools);
+
+		const hook: Hook = {
 			slug: file.basename,
 			trigger,
 			pathGlob: typeof frontmatter.pathGlob === 'string' ? frontmatter.pathGlob : undefined,
@@ -906,7 +917,7 @@ export class HookManager {
 			maxRunsPerHour: typeof frontmatter.maxRunsPerHour === 'number' ? frontmatter.maxRunsPerHour : undefined,
 			cooldownMs: typeof frontmatter.cooldownMs === 'number' ? frontmatter.cooldownMs : DEFAULT_COOLDOWN_MS,
 			action,
-			enabledTools: Array.isArray(frontmatter.enabledTools) ? (frontmatter.enabledTools as string[]) : [],
+			toolPolicy,
 			enabledSkills: Array.isArray(frontmatter.enabledSkills) ? (frontmatter.enabledSkills as string[]) : [],
 			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
 			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : undefined,
@@ -916,6 +927,45 @@ export class HookManager {
 			desktopOnly: frontmatter.desktopOnly !== false,
 			prompt,
 			filePath: file.path,
+		};
+
+		// Auto-migrate the legacy on-disk shape so the next load reads the new
+		// canonical key without re-running the migration. Failures are non-fatal.
+		if (frontmatter.enabledTools !== undefined && frontmatter.toolPolicy === undefined) {
+			try {
+				await this.plugin.app.vault.modify(file, this.serializeHook(this.hookToParams(hook)));
+			} catch (err) {
+				this.plugin.logger.warn(`[HookManager] legacy enabledTools migration failed for ${file.path}:`, err);
+			}
+		}
+
+		return hook;
+	}
+
+	/**
+	 * Convert a Hook back into the params shape expected by serializeHook —
+	 * used by the legacy-frontmatter migration path so the rewritten file
+	 * matches what a fresh create/update would produce.
+	 */
+	private hookToParams(hook: Hook): HookCreateParams & { slug: string } {
+		return {
+			slug: hook.slug,
+			trigger: hook.trigger,
+			action: hook.action,
+			prompt: hook.prompt,
+			pathGlob: hook.pathGlob,
+			frontmatterFilter: hook.frontmatterFilter,
+			debounceMs: hook.debounceMs,
+			maxRunsPerHour: hook.maxRunsPerHour,
+			cooldownMs: hook.cooldownMs,
+			toolPolicy: hook.toolPolicy,
+			enabledSkills: hook.enabledSkills,
+			model: hook.model,
+			outputPath: hook.outputPath,
+			enabled: hook.enabled,
+			desktopOnly: hook.desktopOnly,
+			commandId: hook.commandId,
+			focusFile: hook.focusFile,
 		};
 	}
 

@@ -285,7 +285,7 @@ To reference an attachment in your response, use the path shown above.`;
 				plugin: this.ctx.plugin,
 				session: currentSession,
 				projectRootPath: activeProject?.rootPath,
-				projectPermissions: activeProject?.config.permissions,
+				featureToolPolicy: activeProject?.config.toolPolicy,
 			};
 			const availableTools = this.ctx.plugin.toolRegistry.getEnabledTools(toolContext);
 			this.ctx.plugin.logger.log('Available tools from registry:', availableTools);

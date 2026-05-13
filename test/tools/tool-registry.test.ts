@@ -206,37 +206,37 @@ describe('ToolRegistry', () => {
 	});
 
 	describe('getEnabledTools', () => {
-		it('should return tools enabled for context', () => {
+		it('should return all tools when no policy denies them', () => {
 			const readOnlyTool = new TestTool();
 			const vaultTool = new DestructiveTestTool();
 
 			registry.registerTool(readOnlyTool);
 			registry.registerTool(vaultTool);
 
+			// Cautious (default) maps READ to APPROVE and DESTRUCTIVE to ASK_USER;
+			// nothing is DENY, so both tools are enabled.
+			const context = { session: { context: {} } } as any;
+			const enabledTools = registry.getEnabledTools(context);
+			expect(enabledTools).toHaveLength(2);
+		});
+
+		it('should drop tools that the feature preset maps to DENY', () => {
+			const readOnlyTool = new TestTool();
+			const vaultTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(vaultTool);
+
+			// READ_ONLY preset maps WRITE / DESTRUCTIVE / EXTERNAL to DENY, so a
+			// session carrying that preset should only see the read tool.
 			const context = {
-				session: {
-					context: {
-						enabledTools: [ToolCategory.READ_ONLY],
-					},
-				},
+				session: { context: {} },
+				featureToolPolicy: { preset: PolicyPreset.READ_ONLY },
 			} as any;
 
 			const enabledTools = registry.getEnabledTools(context);
 			expect(enabledTools).toHaveLength(1);
 			expect(enabledTools[0]).toBe(readOnlyTool);
-		});
-
-		it('should return empty array when no tools enabled', () => {
-			const context = {
-				session: {
-					context: {
-						enabledTools: [],
-					},
-				},
-			} as any;
-
-			const enabledTools = registry.getEnabledTools(context);
-			expect(enabledTools).toHaveLength(0);
 		});
 
 		it('should filter out DENY tools from enabled list', () => {
@@ -251,17 +251,39 @@ describe('ToolRegistry', () => {
 				destructive_tool: ToolPermission.DENY,
 			};
 
+			const context = { session: { context: {} } } as any;
+			const enabledTools = registry.getEnabledTools(context);
+			expect(enabledTools).toHaveLength(1);
+			expect(enabledTools[0]).toBe(readOnlyTool);
+		});
+
+		// Pins the documented resolveEffectivePermission precedence:
+		// feature overrides > global overrides > feature preset > global preset.
+		// Without this, a future "let's just merge the maps" refactor could
+		// silently flip the priority and DENY-stuck tools couldn't be opened up
+		// by a project / scheduled-task / hook.
+		it('feature override wins over a conflicting global override for the same tool', () => {
+			const readOnlyTool = new TestTool();
+			const vaultTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(vaultTool);
+
+			// Global says DENY...
+			mockPlugin.settings.toolPolicy.toolPermissions = {
+				destructive_tool: ToolPermission.DENY,
+			};
+
+			// ...but the feature explicitly opens it back up.
 			const context = {
-				session: {
-					context: {
-						enabledTools: [ToolCategory.READ_ONLY, ToolCategory.VAULT_OPERATIONS],
-					},
+				session: { context: {} },
+				featureToolPolicy: {
+					overrides: { destructive_tool: ToolPermission.APPROVE },
 				},
 			} as any;
 
 			const enabledTools = registry.getEnabledTools(context);
-			expect(enabledTools).toHaveLength(1);
-			expect(enabledTools[0]).toBe(readOnlyTool);
+			expect(enabledTools.map((t) => t.name).sort()).toEqual(['destructive_tool', 'test_tool']);
 		});
 
 		it('should preserve permissions for untouched tools when switching to CUSTOM', () => {
@@ -291,6 +313,44 @@ describe('ToolRegistry', () => {
 		});
 	});
 
+	describe('getAutoApprovedTools', () => {
+		// Regression for the headless ASK_USER bypass: scheduled tasks and
+		// hooks must only see tools with APPROVE permission. ASK_USER tools
+		// would otherwise be auto-approved by the headless confirmation
+		// provider, silently bypassing the user's "ask first" intent.
+		it('returns only tools whose effective permission is APPROVE', () => {
+			const readOnlyTool = new TestTool();
+			const destructiveTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(destructiveTool);
+
+			// Default CAUTIOUS: READ → APPROVE, DESTRUCTIVE → ASK_USER.
+			const context = { session: { context: {} } } as any;
+			const tools = registry.getAutoApprovedTools(context);
+			expect(tools).toHaveLength(1);
+			expect(tools[0]).toBe(readOnlyTool);
+		});
+
+		it('upgrades ASK_USER tools to APPROVE when the feature policy says so', () => {
+			const readOnlyTool = new TestTool();
+			const destructiveTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(destructiveTool);
+
+			const context = {
+				session: { context: {} },
+				featureToolPolicy: {
+					overrides: { destructive_tool: ToolPermission.APPROVE },
+				},
+			} as any;
+
+			const tools = registry.getAutoApprovedTools(context);
+			expect(tools.map((t) => t.name).sort()).toEqual(['destructive_tool', 'test_tool']);
+		});
+	});
+
 	describe('requiresConfirmation', () => {
 		beforeEach(() => {
 			registry.registerTool(new TestTool());
@@ -309,7 +369,7 @@ describe('ToolRegistry', () => {
 			// destructive_tool is ASK_USER in Cautious mode
 			expect(
 				registry.requiresConfirmation('destructive_tool', {
-					destructive_tool: ToolPermission.APPROVE,
+					overrides: { destructive_tool: ToolPermission.APPROVE },
 				})
 			).toBe(false);
 		});
@@ -317,7 +377,7 @@ describe('ToolRegistry', () => {
 		it('should return false when project overrides to DENY (tool blocked, not asked)', () => {
 			expect(
 				registry.requiresConfirmation('destructive_tool', {
-					destructive_tool: ToolPermission.DENY,
+					overrides: { destructive_tool: ToolPermission.DENY },
 				})
 			).toBe(false);
 		});
@@ -326,7 +386,7 @@ describe('ToolRegistry', () => {
 			// test_tool is READ → APPROVE in Cautious mode
 			expect(
 				registry.requiresConfirmation('test_tool', {
-					test_tool: ToolPermission.ASK_USER,
+					overrides: { test_tool: ToolPermission.ASK_USER },
 				})
 			).toBe(true);
 		});

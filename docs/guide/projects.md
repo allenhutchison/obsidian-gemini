@@ -38,9 +38,10 @@ name: My Project
 skills:
   - writing-coach
   - continuity-tracker
-permissions:
-  write_file: allow
-  delete_file: deny
+toolPolicy:
+  preset: edit_mode
+  overrides:
+    delete_file: deny
 ---
 ```
 
@@ -48,20 +49,38 @@ permissions:
 
 ### Frontmatter
 
-| Field         | Type     | Description                                              |
-| ------------- | -------- | -------------------------------------------------------- |
-| `tags`        | string[] | Must include `gemini-scribe/project`                     |
-| `name`        | string   | Display name (defaults to file basename)                 |
-| `skills`      | string[] | Skills to activate for this project (empty = all skills) |
-| `permissions` | object   | Per-tool permission overrides                            |
+| Field        | Type     | Description                                                                           |
+| ------------ | -------- | ------------------------------------------------------------------------------------- |
+| `tags`       | string[] | Must include `gemini-scribe/project`                                                  |
+| `name`       | string   | Display name (defaults to file basename)                                              |
+| `skills`     | string[] | Skills to activate for this project (empty = all skills)                              |
+| `toolPolicy` | object   | Project-scoped tool policy. Omit to inherit the global plugin tool policy. See below. |
 
-### Permission Values
+### Tool Policy
+
+The `toolPolicy` block lets a project narrow or open the agent's tool surface for any session linked to the project. It has the same shape every other policy-bearing feature uses (scheduled tasks, hooks, sessions):
+
+```yaml
+toolPolicy:
+  preset: read_only # one of: read_only, cautious, edit_mode, yolo
+  overrides: # optional per-tool overrides (most specific wins)
+    write_file: allow
+    delete_file: deny
+```
+
+- `preset` chooses the baseline permission for every tool by classification (READ / WRITE / DESTRUCTIVE / EXTERNAL). Omit to inherit the global plugin preset.
+- `overrides` maps individual tool names to a permission; entries here win over both the project preset and the global policy's per-tool overrides.
+- An omitted `toolPolicy` block means "inherit the global plugin tool policy entirely."
+
+#### Permission Values
 
 | Value   | Effect                             |
 | ------- | ---------------------------------- |
 | `allow` | Tool executes without confirmation |
 | `deny`  | Tool is blocked entirely           |
 | `ask`   | Tool requires user confirmation    |
+
+> **Legacy note** — the older `permissions: { tool: 'allow' }` frontmatter map still loads. The first time the plugin reads such a file it rewrites the frontmatter into the new `toolPolicy.overrides` shape.
 
 ### Body Text
 
@@ -114,13 +133,14 @@ When you create a **new** agent session, the plugin inspects the session's initi
 | **Tool discovery**    | `list_files`, `find_files_by_name`, and `find_files_by_content` scope to the project root   |
 | **Read/write access** | Unrestricted — the agent can still access files outside the project when you reference them |
 | **Skills**            | Only skills listed in the project's `skills` array are available (empty = all)              |
-| **Permissions**       | Project permissions take priority over global presets and per-tool overrides                |
+| **Tool policy**       | The project's `toolPolicy` is layered on top of the global plugin tool policy               |
 
-### Permission Resolution Order
+### Tool Policy Resolution Order
 
-1. Project-level permission (`permissions` in project frontmatter)
-2. Per-tool global override (`Settings → Tool Policy → Custom`)
-3. Global preset default (Cautious, Edit Mode, etc.)
+1. Project `toolPolicy.overrides[toolName]`
+2. Global per-tool override (`Settings → Tool Policy → Custom`)
+3. Project `toolPolicy.preset` (if set)
+4. Global preset default (Cautious, Edit Mode, etc.)
 
 ## Managing Projects
 
@@ -147,5 +167,5 @@ Open the project file and use the **"Remove Project"** command to strip the `gem
 - **Keep project files at the root of the relevant folder** — the parent directory becomes the scope boundary
 - **Use wikilinks in the body** to reference files outside the project that the agent should know about
 - **Start with an empty `skills` array** to allow all skills, then narrow down as needed
-- **Set `delete_file: deny`** in permissions for projects where you want to prevent accidental deletions
+- **Set `delete_file: deny`** under `toolPolicy.overrides` for projects where you want to prevent accidental deletions
 - **Project instructions stack with custom prompts** — use projects for persistent context and custom prompts for per-session behavior

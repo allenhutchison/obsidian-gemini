@@ -1,10 +1,10 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { Hook, HookAction, HookState, HookTrigger } from '../services/hook-manager';
+import type { FeatureToolPolicy } from '../types/tool-policy';
+import { ToolPolicyEditor } from './components/tool-policy-editor';
 
 type View = 'list' | 'create' | 'edit';
-
-const TOOL_CATEGORIES = ['read_only', 'read_write', 'destructive'] as const;
 
 const TRIGGER_OPTIONS: { value: HookTrigger; label: string; hint: string }[] = [
 	{ value: 'file-modified', label: 'File modified (save)', hint: 'Fires when a file is saved.' },
@@ -44,7 +44,15 @@ export class HookManagementModal extends Modal {
 	private view: View;
 	private editingSlug: string | null = null;
 	private eventUnsubscribers: Array<() => void> = [];
+	private toolPolicyEditor: ToolPolicyEditor | null = null;
 	private form = this.blankForm();
+
+	private disposeToolPolicyEditor(): void {
+		if (this.toolPolicyEditor) {
+			this.toolPolicyEditor.destroy();
+			this.toolPolicyEditor = null;
+		}
+	}
 
 	constructor(
 		app: App,
@@ -63,6 +71,7 @@ export class HookManagementModal extends Modal {
 	onClose(): void {
 		this.eventUnsubscribers.forEach((fn) => fn());
 		this.eventUnsubscribers = [];
+		this.disposeToolPolicyEditor();
 		this.contentEl.empty();
 	}
 
@@ -309,7 +318,7 @@ export class HookManagementModal extends Modal {
 			debounceMs: hook.debounceMs,
 			cooldownMs: hook.cooldownMs,
 			maxRunsPerHour: hook.maxRunsPerHour ?? 0,
-			enabledTools: [...hook.enabledTools],
+			toolPolicy: hook.toolPolicy,
 			enabledSkills: [...hook.enabledSkills],
 			model: hook.model ?? '',
 			outputPath: hook.outputPath ?? '',
@@ -428,22 +437,21 @@ export class HookManagementModal extends Modal {
 			);
 		const focusFileEl = focusFileSetting.settingEl;
 
-		// Tool access — only meaningful for the agent-task action.
-		const toolsSetting = new Setting(form).setName('Tool access').setDesc('Which tool categories the agent may use.');
+		// Tool access — only meaningful for the agent-task action. Uses the
+		// shared ToolPolicyEditor, replacing the old category checkbox row
+		// whose hardcoded string list didn't match real ToolCategory values.
 		const toolsContainer = form.createDiv({ cls: 'gemini-scheduler-tools' });
-		for (const cat of TOOL_CATEGORIES) {
-			const label = toolsContainer.createEl('label', { cls: 'gemini-scheduler-tool-label' });
-			const cb = label.createEl('input', { attr: { type: 'checkbox' } }) as HTMLInputElement;
-			cb.checked = this.form.enabledTools.includes(cat);
-			cb.addEventListener('change', () => {
-				if (cb.checked) {
-					if (!this.form.enabledTools.includes(cat)) this.form.enabledTools.push(cat);
-				} else {
-					this.form.enabledTools = this.form.enabledTools.filter((t) => t !== cat);
-				}
-			});
-			label.appendText(` ${cat}`);
-		}
+		this.disposeToolPolicyEditor();
+		this.toolPolicyEditor = new ToolPolicyEditor(this.plugin, toolsContainer, {
+			title: 'Tool access',
+			description: 'When inherited, this hook uses the plugin’s global tool policy.',
+			value: this.form.toolPolicy,
+			onChange: (next) => {
+				this.form.toolPolicy = next;
+			},
+		});
+		// Container reference for action-visibility toggle below.
+		const toolsSetting = { settingEl: toolsContainer } as { settingEl: HTMLElement };
 
 		// Prompt — required for agent-task and rewrite, ignored for the rest.
 		const promptSetting = new Setting(form)
@@ -628,7 +636,7 @@ export class HookManagementModal extends Modal {
 					debounceMs: this.form.debounceMs,
 					cooldownMs: this.form.cooldownMs,
 					maxRunsPerHour: this.form.maxRunsPerHour > 0 ? this.form.maxRunsPerHour : undefined,
-					enabledTools: this.form.enabledTools,
+					toolPolicy: this.form.toolPolicy,
 					enabledSkills: this.form.enabledSkills,
 					model: this.form.model || undefined,
 					outputPath: this.form.outputPath || undefined,
@@ -649,7 +657,7 @@ export class HookManagementModal extends Modal {
 					debounceMs: this.form.debounceMs,
 					cooldownMs: this.form.cooldownMs,
 					maxRunsPerHour: this.form.maxRunsPerHour > 0 ? this.form.maxRunsPerHour : undefined,
-					enabledTools: this.form.enabledTools,
+					toolPolicy: this.form.toolPolicy,
 					enabledSkills: this.form.enabledSkills,
 					model: this.form.model || undefined,
 					outputPath: this.form.outputPath || undefined,
@@ -680,7 +688,7 @@ export class HookManagementModal extends Modal {
 			debounceMs: DEFAULT_DEBOUNCE_MS,
 			cooldownMs: DEFAULT_COOLDOWN_MS,
 			maxRunsPerHour: 0,
-			enabledTools: ['read_only'] as string[],
+			toolPolicy: undefined as FeatureToolPolicy | undefined,
 			enabledSkills: [] as string[],
 			model: '',
 			outputPath: '',

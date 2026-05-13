@@ -33,8 +33,8 @@ Create a markdown file inside `<history-folder>/Scheduled-Tasks/`. The filename 
 ```markdown
 ---
 schedule: daily
-enabledTools:
-  - read_only
+toolPolicy:
+  preset: read_only
 ---
 
 Summarise the notes I created or modified today. List the key topics and any open questions.
@@ -42,14 +42,14 @@ Summarise the notes I created or modified today. List the key topics and any ope
 
 ### Frontmatter Fields
 
-| Field          | Required | Default                                                  | Description                                                                                                                              |
-| -------------- | -------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `schedule`     | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.                                                                            |
-| `enabledTools` | No       | `['read_only', 'skills']`                                | List of tool categories the agent may use. See [Tool Access](#tool-access). Omitting the field or setting `[]` resolves to this default. |
-| `outputPath`   | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                                     |
-| `model`        | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-flash-latest`).                                                                           |
-| `enabled`      | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                                                                                  |
-| `runIfMissed`  | No       | `false`                                                  | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs).              |
+| Field         | Required | Default                                                  | Description                                                                                                                 |
+| ------------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `schedule`    | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.                                                               |
+| `toolPolicy`  | No       | _inherit global plugin policy_                           | Per-run tool policy (preset + per-tool overrides). See [Tool Access](#tool-access).                                         |
+| `outputPath`  | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                        |
+| `model`       | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-flash-latest`).                                                              |
+| `enabled`     | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                                                                     |
+| `runIfMissed` | No       | `false`                                                  | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs). |
 
 ### Schedule Formats
 
@@ -70,8 +70,8 @@ Summarise the notes I created or modified today. List the key topics and any ope
 ```markdown
 ---
 schedule: weekly@16:30:mon,tue,wed,thu,fri
-enabledTools:
-  - read_only
+toolPolicy:
+  preset: read_only
 ---
 
 Summarise the notes I created or modified today.
@@ -79,16 +79,26 @@ Summarise the notes I created or modified today.
 
 ### Tool Access
 
-The `enabledTools` list controls what the agent can do during a run:
+The `toolPolicy` block controls what the agent can do during a run. It uses the same shape as the global plugin tool policy and as project / hook / session policies — a preset baseline plus optional per-tool overrides:
 
-| Category       | Capabilities                                           |
-| -------------- | ------------------------------------------------------ |
-| `read_only`    | Read files, list files, search vault, web search/fetch |
-| `vault_ops`    | Create, modify, move, and delete files in the vault    |
-| `external_mcp` | Tools provided by connected MCP servers                |
-| `skills`       | Load and activate agent skills                         |
+```yaml
+toolPolicy:
+  preset: read_only # one of: read_only, cautious, edit_mode, yolo
+  overrides: # optional per-tool overrides
+    web_fetch: deny
+    write_file: allow
+```
 
-Categories are additive — list as many as the task needs. If `enabledTools` is empty the task defaults to `read_only` + `skills`, so common patterns like "run skill X on a schedule" work without extra setup. Set `enabledTools: ['read_only']` explicitly if you want a stricter allowlist that omits skill tools.
+| Preset      | Effect                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| `read_only` | Read tools only — write / destructive / external tools are removed from the registry.     |
+| `cautious`  | Reads allowed; writes/destructive/external ask for confirmation. (Default global preset.) |
+| `edit_mode` | Reads + writes execute; destructive/external still ask.                                   |
+| `yolo`      | Everything executes without confirmation. Use with care.                                  |
+
+Omitting `toolPolicy` (or setting it to an empty object) means **inherit the global plugin tool policy**. The Scheduler UI exposes the same controls — picking a preset and adjusting per-tool overrides — so you usually don't need to author the YAML by hand.
+
+> **Legacy note** — older task files used `enabledTools: ['read_only', …]` instead of `toolPolicy`. They still load: the plugin maps the old category list onto the closest preset and rewrites the file to the new shape the first time it is read.
 
 ## Managing Tasks
 
