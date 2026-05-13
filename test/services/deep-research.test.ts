@@ -120,7 +120,7 @@ describe('DeepResearchService', () => {
 							{
 								type: 'text',
 								text: 'Research results here',
-								annotations: [{ source: 'https://example.com' }],
+								annotations: [{ type: 'url_citation', url: 'https://example.com' }],
 							},
 						],
 					},
@@ -401,15 +401,15 @@ describe('DeepResearchService', () => {
 								type: 'text',
 								text: 'Content',
 								annotations: [
-									{ source: 'https://source1.com' },
-									{ source: 'https://source2.com' },
-									{ source: 'https://source1.com' }, // Duplicate
+									{ type: 'url_citation', url: 'https://source1.com' },
+									{ type: 'url_citation', url: 'https://source2.com' },
+									{ type: 'url_citation', url: 'https://source1.com' }, // Duplicate
 								],
 							},
 							{
 								type: 'text',
 								text: 'More content',
-								annotations: [{ source: 'https://source3.com' }],
+								annotations: [{ type: 'url_citation', url: 'https://source3.com' }],
 							},
 						],
 					},

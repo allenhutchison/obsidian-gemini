@@ -1,5 +1,6 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
+import type { Interactions } from '@google/genai';
 import { ResearchManager, ReportGenerator, Interaction, InteractionOutput } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
@@ -265,20 +266,33 @@ export class DeepResearchService {
 	}
 
 	/**
+	 * Extract a stable identifier from a citation annotation. The Gemini SDK's
+	 * Annotation union (URL/file/place) does not have a single shared field, so
+	 * pick the most identifying one per type.
+	 */
+	private annotationSource(annotation: Interactions.Annotation): string | undefined {
+		switch (annotation.type) {
+			case 'url_citation':
+				return annotation.url;
+			case 'file_citation':
+				return annotation.document_uri ?? annotation.file_name;
+			case 'place_citation':
+				return annotation.url ?? annotation.place_id;
+		}
+	}
+
+	/**
 	 * Count unique sources from the interaction outputs
 	 */
 	private countSources(interaction: Interaction): number {
 		const sources = new Set<string>();
 
 		for (const output of this.extractOutputs(interaction)) {
-			if (output.type === 'text') {
-				const annotations = (output as any).annotations as Array<{ source?: string }> | undefined;
-				if (annotations) {
-					for (const annotation of annotations) {
-						if (annotation.source) {
-							sources.add(annotation.source);
-						}
-					}
+			if (output.type !== 'text' || !output.annotations) continue;
+			for (const annotation of output.annotations) {
+				const source = this.annotationSource(annotation);
+				if (source) {
+					sources.add(source);
 				}
 			}
 		}
