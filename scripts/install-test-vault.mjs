@@ -27,7 +27,9 @@ if (missing.length > 0) {
 }
 
 if (!existsSync(dirname(dest))) {
-	console.error(`Plugins folder not found: ${dirname(dest)}. Is the test vault open in Obsidian at least once?`);
+	console.error(
+		`Parent directory not found: ${dirname(dest)}. Check TEST_VAULT_PLUGIN_DIR, or ensure the test vault has been opened in Obsidian at least once.`
+	);
 	process.exit(1);
 }
 
