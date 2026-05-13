@@ -37,7 +37,7 @@ export function setGeminiModels(newModels: GeminiModel[]): void {
  * Resolve the effective provider for a model entry. Entries without an
  * explicit provider are treated as Gemini (legacy bundled list).
  */
-export function getModelProvider(model: GeminiModel): ModelProvider {
+function getModelProvider(model: GeminiModel): ModelProvider {
 	return model.provider ?? 'gemini';
 }
 

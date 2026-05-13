@@ -14,7 +14,7 @@
  * Get the correct document and window context for a DOM element.
  * This handles both main window and popout window scenarios.
  */
-export function getDOMContext(element: HTMLElement) {
+function getDOMContext(element: HTMLElement) {
 	const doc = element.ownerDocument;
 	const win = doc.defaultView || window;
 

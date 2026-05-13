@@ -67,7 +67,7 @@ export function isSupportedImageType(mimeType: string): boolean {
 /**
  * Get file extension from MIME type
  */
-export function getExtensionFromMimeType(mimeType: string): string {
+function getExtensionFromMimeType(mimeType: string): string {
 	const map: Record<string, string> = {
 		'image/png': 'png',
 		'image/jpeg': 'jpg',
@@ -94,7 +94,7 @@ export function getExtensionFromMimeType(mimeType: string): string {
 /**
  * Get the default attachment folder from Obsidian settings
  */
-export function getAttachmentFolder(app: App): string {
+function getAttachmentFolder(app: App): string {
 	// Access Obsidian's internal config for attachment location
 	// @ts-ignore - accessing internal Obsidian config
 	const attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;

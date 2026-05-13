@@ -242,7 +242,7 @@ export const PERMISSION_STRING_MAP: Record<string, ToolPermission> = {
  * Reverse map: ToolPermission enum values back to preferred YAML strings.
  * APPROVE serializes as `allow` (shorter, matches the legacy project format).
  */
-export const PERMISSION_TO_STRING: Record<ToolPermission, string> = {
+const PERMISSION_TO_STRING: Record<ToolPermission, string> = {
 	[ToolPermission.APPROVE]: 'allow',
 	[ToolPermission.DENY]: 'deny',
 	[ToolPermission.ASK_USER]: 'ask',

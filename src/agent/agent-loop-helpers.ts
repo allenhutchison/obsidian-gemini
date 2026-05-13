@@ -194,7 +194,7 @@ export const DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES = 4096;
  * full text), while older results — the long tail that drives quadratic
  * input growth (#763) — get shed.
  */
-export const DEFAULT_TOOL_RESPONSE_KEEP_RECENT = 2;
+const DEFAULT_TOOL_RESPONSE_KEEP_RECENT = 2;
 
 /**
  * Build the elision marker that replaces a `functionResponse.response`
