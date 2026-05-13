@@ -13,7 +13,7 @@ import { formatLocalTimestamp } from './format-utils';
 export class FileLogWriter {
 	private plugin: ObsidianGemini;
 	private buffer: string[] = [];
-	private flushTimer: ReturnType<typeof setTimeout> | null = null;
+	private flushTimer: number | null = null;
 	private isFlushing = false;
 	private currentFlushPromise: Promise<void> | null = null;
 
@@ -49,7 +49,7 @@ export class FileLogWriter {
 
 	private scheduleFlush(): void {
 		if (this.flushTimer) return;
-		this.flushTimer = setTimeout(() => {
+		this.flushTimer = window.setTimeout(() => {
 			this.flushTimer = null;
 			this.flush().catch((error) => {
 				// Log to console only — never recurse through the Logger
@@ -129,7 +129,7 @@ export class FileLogWriter {
 	 */
 	async destroy(): Promise<void> {
 		if (this.flushTimer) {
-			clearTimeout(this.flushTimer);
+			window.clearTimeout(this.flushTimer);
 			this.flushTimer = null;
 		}
 

@@ -325,7 +325,7 @@ class PromptNameModal extends Modal {
 		createButton.addEventListener('click', () => this.submit());
 
 		// Focus the input
-		setTimeout(() => this.inputEl.focus(), 100);
+		window.setTimeout(() => this.inputEl.focus(), 100);
 	}
 
 	private submit() {

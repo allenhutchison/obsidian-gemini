@@ -376,12 +376,12 @@ export class AgentViewUI {
 				// Defer to next microtask so the browser commits the @ character first.
 				// If user selects a file, the @ will be removed before inserting the chip.
 				// If user dismisses the picker, the @ stays as a literal character.
-				setTimeout(() => callbacks.showFileMention(), 0);
+				window.setTimeout(() => callbacks.showFileMention(), 0);
 			} else if (e.key === '/') {
 				// Trigger skill picker only when input is empty (slash command, not mid-sentence slash)
 				const text = userInput.innerText || '';
 				if (text.trim().length === 0) {
-					setTimeout(() => callbacks.showSkillPicker(), 0);
+					window.setTimeout(() => callbacks.showSkillPicker(), 0);
 				}
 			}
 		});
@@ -808,7 +808,7 @@ export class AgentViewUI {
 						execContextCommand(userInput, 'paste');
 
 						// Give it a moment to paste, then clean up formatting
-						setTimeout(() => {
+						window.setTimeout(() => {
 							// Get just the text content, removing all HTML
 							const plainText = userInput.innerText || userInput.textContent || '';
 

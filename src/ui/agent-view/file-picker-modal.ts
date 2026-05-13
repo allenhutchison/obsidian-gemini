@@ -130,7 +130,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 			const scrollTop = this.resultContainerEl.scrollTop;
 			const selectedIndex = chooser?.selectedItem ?? 0;
 			this.inputEl.dispatchEvent(new Event('input'));
-			requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => {
 				this.resultContainerEl.scrollTop = scrollTop;
 				chooser?.setSelectedItem(selectedIndex, false);
 			});

@@ -26,7 +26,7 @@ export class RagProgressModal extends Modal {
 	private failedCountEl: HTMLElement | null = null;
 	private cancelBtn: HTMLButtonElement | null = null;
 	private backgroundBtn: HTMLButtonElement | null = null;
-	private timerInterval: ReturnType<typeof setInterval> | null = null;
+	private timerInterval: number | null = null;
 
 	constructor(
 		app: App,
@@ -131,7 +131,7 @@ export class RagProgressModal extends Modal {
 		});
 
 		// Start timer for elapsed time updates
-		this.timerInterval = setInterval(() => {
+		this.timerInterval = window.setInterval(() => {
 			this.updateTimeDisplay();
 		}, 1000);
 
@@ -145,7 +145,7 @@ export class RagProgressModal extends Modal {
 
 		// Clear timer
 		if (this.timerInterval) {
-			clearInterval(this.timerInterval);
+			window.clearInterval(this.timerInterval);
 			this.timerInterval = null;
 		}
 	}
@@ -238,7 +238,7 @@ export class RagProgressModal extends Modal {
 	private handleComplete(): void {
 		// Clear timer
 		if (this.timerInterval) {
-			clearInterval(this.timerInterval);
+			window.clearInterval(this.timerInterval);
 			this.timerInterval = null;
 		}
 

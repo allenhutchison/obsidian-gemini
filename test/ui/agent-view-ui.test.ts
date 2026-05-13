@@ -190,7 +190,7 @@ describe('AgentViewUI', () => {
 
 			userInput.dispatchEvent(event);
 			// Wait for async handler
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
 			return event;
 		};
 

@@ -34,7 +34,7 @@ function normalizeNewlines(text: string): string {
 
 		// Improved table detection
 		const hasUnescapedPipe = line.split('\\|').join('').includes('|');
-		const isTableDivider = /^\s*\|?\s*[:\-]+\s*\|/.test(line);
+		const isTableDivider = /^\s*\|?\s*[:-]+\s*\|/.test(line);
 		const isTableRow = hasUnescapedPipe && !isTableDivider && trimmedLine !== '|';
 
 		// Check if we're starting a table
@@ -166,6 +166,7 @@ export class SelectionResponseModal extends Modal {
 
 		// Render markdown response
 		this.responseContainer.empty();
+		// eslint-disable-next-line obsidianmd/no-plugin-as-component -- modal lifecycle is short; render happens once and Obsidian cleans up on close
 		await MarkdownRenderer.render(this.app, normalizedResponse, this.responseContainer, '', this.plugin);
 	}
 

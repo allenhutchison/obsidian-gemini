@@ -38,7 +38,7 @@ export class RetryDecorator implements ModelApi {
 	 * Sleep for a specified number of milliseconds
 	 */
 	private sleep(ms: number): Promise<void> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
+		return new Promise((resolve) => window.setTimeout(resolve, ms));
 	}
 
 	/** Maximum delay cap when using API-provided retry delays (60 seconds) */

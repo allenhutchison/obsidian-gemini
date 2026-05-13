@@ -37,7 +37,8 @@ export class AgentViewMessages {
 	private chatContainer: HTMLElement;
 	private plugin: ObsidianGemini;
 	private userInput: HTMLDivElement;
-	private scrollTimeout: NodeJS.Timeout | null = null;
+	private scrollTimeout: number | null = null;
+	private autoOpenDiffTimeout: number | null = null;
 	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
 	private viewContext: any; // For MarkdownRenderer context
 
@@ -356,11 +357,11 @@ export class AgentViewMessages {
 	debouncedScrollToBottom() {
 		// Clear existing timeout
 		if (this.scrollTimeout) {
-			clearTimeout(this.scrollTimeout);
+			window.clearTimeout(this.scrollTimeout);
 		}
 
 		// Set a new timeout to scroll after a brief delay
-		this.scrollTimeout = setTimeout(() => {
+		this.scrollTimeout = window.setTimeout(() => {
 			this.scrollToBottom();
 			this.scrollTimeout = null;
 		}, 50); // 50ms debounce
@@ -748,7 +749,11 @@ export class AgentViewMessages {
 			// Auto-open diff view if setting enabled
 			// Small delay allows the confirmation card DOM to render before opening the leaf
 			if (diffContext && this.plugin.settings.alwaysShowDiffView) {
-				setTimeout(() => {
+				if (this.autoOpenDiffTimeout !== null) {
+					window.clearTimeout(this.autoOpenDiffTimeout);
+				}
+				this.autoOpenDiffTimeout = window.setTimeout(() => {
+					this.autoOpenDiffTimeout = null;
 					this.openDiffView(
 						diffContext,
 						handleResponse,
@@ -918,8 +923,12 @@ export class AgentViewMessages {
 	 */
 	cleanup() {
 		if (this.scrollTimeout) {
-			clearTimeout(this.scrollTimeout);
+			window.clearTimeout(this.scrollTimeout);
 			this.scrollTimeout = null;
+		}
+		if (this.autoOpenDiffTimeout !== null) {
+			window.clearTimeout(this.autoOpenDiffTimeout);
+			this.autoOpenDiffTimeout = null;
 		}
 
 		// Settle any pending confirmation promises so tool executions don't hang

@@ -2,7 +2,7 @@
  * Utility class for managing timer display in chat interfaces
  */
 export class ChatTimer {
-	private timerInterval: NodeJS.Timeout | null = null;
+	private timerInterval: number | null = null;
 	private startTime: number | null = null;
 	private timerDisplay: HTMLElement | null = null;
 
@@ -21,7 +21,7 @@ export class ChatTimer {
 		this.updateDisplay();
 
 		// Update every 100ms for smooth display
-		this.timerInterval = setInterval(() => {
+		this.timerInterval = window.setInterval(() => {
 			this.updateDisplay();
 		}, 100);
 	}
@@ -31,7 +31,7 @@ export class ChatTimer {
 	 */
 	stop(): void {
 		if (this.timerInterval) {
-			clearInterval(this.timerInterval);
+			window.clearInterval(this.timerInterval);
 			this.timerInterval = null;
 		}
 		this.startTime = null;

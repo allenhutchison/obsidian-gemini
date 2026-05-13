@@ -262,7 +262,7 @@ export class HookManager {
 	private state: HooksState = {};
 	private initialized = false;
 	/** Per-(hook, file) debounce timers, keyed by `${slug}::${filePath}`. */
-	private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+	private debounceTimers = new Map<string, number>();
 	/** Set of `${slug}::${filePath}` currently executing — drops re-entrant events. */
 	private inflight = new Set<string>();
 	/** Vault event handlers registered via plugin.registerEvent — kept for off(). */
@@ -593,9 +593,9 @@ export class HookManager {
 
 		// Reset/extend the per-(hook, file) debounce window.
 		const existingTimer = this.debounceTimers.get(key);
-		if (existingTimer) clearTimeout(existingTimer);
+		if (existingTimer) window.clearTimeout(existingTimer);
 
-		const timer = setTimeout(() => {
+		const timer = window.setTimeout(() => {
 			this.debounceTimers.delete(key);
 			void this.fireNow(hook, trigger, file, oldPath);
 		}, hook.debounceMs);
@@ -837,7 +837,7 @@ export class HookManager {
 	}
 
 	private clearDebounceTimers(): void {
-		for (const timer of this.debounceTimers.values()) clearTimeout(timer);
+		for (const timer of this.debounceTimers.values()) window.clearTimeout(timer);
 		this.debounceTimers.clear();
 	}
 

@@ -336,7 +336,7 @@ describe('DeepResearchService', () => {
 
 			// Wait for startResearch to complete and currentInteractionId to be set
 			// Need to flush multiple promise microtasks due to retry wrapper
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
 
 			// Cancel the research
 			await service.cancelResearch();

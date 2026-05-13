@@ -282,7 +282,7 @@ describe('OllamaClient', () => {
 				() => {}
 			);
 			// Allow the first chunk to be consumed
-			await new Promise((r) => setTimeout(r, 0));
+			await new Promise((r) => window.setTimeout(r, 0));
 			streaming.cancel();
 			await streaming.complete;
 
@@ -305,7 +305,7 @@ describe('OllamaClient', () => {
 				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
 				() => {}
 			);
-			await new Promise((r) => setTimeout(r, 0));
+			await new Promise((r) => window.setTimeout(r, 0));
 			streaming.cancel();
 			const result = await streaming.complete;
 

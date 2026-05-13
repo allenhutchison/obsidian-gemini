@@ -229,7 +229,7 @@ describe('RagSyncQueue', () => {
 
 	describe('clearTimer', () => {
 		it('should clear debounce timer', () => {
-			(queue as any).debounceTimer = setTimeout(() => {}, 1000);
+			(queue as any).debounceTimer = window.setTimeout(() => {}, 1000);
 			queue.clearTimer();
 			expect((queue as any).debounceTimer).toBeNull();
 		});
@@ -237,7 +237,7 @@ describe('RagSyncQueue', () => {
 
 	describe('destroy', () => {
 		it('should clear all state', () => {
-			(queue as any).debounceTimer = setTimeout(() => {}, 1000);
+			(queue as any).debounceTimer = window.setTimeout(() => {}, 1000);
 			(queue as any).pendingChanges = new Map([['test.md', {}]]);
 
 			queue.destroy();

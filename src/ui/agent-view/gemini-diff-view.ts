@@ -1,5 +1,7 @@
 import { ItemView, WorkspaceLeaf, setIcon } from 'obsidian';
+// eslint-disable-next-line import/no-extraneous-dependencies -- bundled by Obsidian
 import { EditorView, basicSetup } from 'codemirror';
+// eslint-disable-next-line import/no-extraneous-dependencies -- bundled by Obsidian
 import { EditorState } from '@codemirror/state';
 import { unifiedMergeView } from '@codemirror/merge';
 import type ObsidianGemini from '../../main';

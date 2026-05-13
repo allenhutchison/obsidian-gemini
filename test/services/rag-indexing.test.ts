@@ -218,7 +218,7 @@ describe('RagIndexingService', () => {
 
 		it('should clear debounce timer when pausing', () => {
 			(service as any).status = 'idle';
-			getSyncQueue(service).debounceTimer = setTimeout(() => {}, 1000);
+			getSyncQueue(service).debounceTimer = window.setTimeout(() => {}, 1000);
 			service.pause();
 			expect(getSyncQueue(service).debounceTimer).toBeNull();
 		});
@@ -886,9 +886,9 @@ describe('RagIndexingService', () => {
 
 	describe('destroy', () => {
 		it('should clear all state on destroy', async () => {
-			getSyncQueue(service).debounceTimer = setTimeout(() => {}, 1000);
+			getSyncQueue(service).debounceTimer = window.setTimeout(() => {}, 1000);
 			getSyncQueue(service).pendingChanges = new Map([['test.md', {}]]);
-			getRateLimiter(service).rateLimitTimer = setInterval(() => {}, 1000);
+			getRateLimiter(service).rateLimitTimer = window.setInterval(() => {}, 1000);
 			(service as any).statusBar.statusBarItem = { remove: vi.fn() };
 			(service as any).ai = {};
 			getRagCache(service).cache = {};

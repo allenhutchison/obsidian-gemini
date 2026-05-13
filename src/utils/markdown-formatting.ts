@@ -12,7 +12,7 @@
  */
 
 /** Matches a markdown table divider line (e.g. | --- | :---: |). */
-const tableDividerRe = /^[\s|]*[:?\-]+\s*\|/;
+const tableDividerRe = /^[\s|]*[:?-]+\s*\|/;
 
 /** Returns true if the line contains at least one unescaped pipe character. */
 function hasUnescapedPipe(line: string): boolean {

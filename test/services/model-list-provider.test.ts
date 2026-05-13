@@ -20,22 +20,22 @@ describe('ModelListProvider.startRemoteFetch', () => {
 	beforeEach(() => {
 		mockedRequestUrl.mockReset();
 		// Capture the existing onLine descriptor so we can restore it between tests.
-		originalDescriptor = Object.getOwnPropertyDescriptor(globalThis.navigator, 'onLine');
+		originalDescriptor = Object.getOwnPropertyDescriptor(window.navigator, 'onLine');
 	});
 
 	afterEach(() => {
 		if (originalDescriptor) {
-			Object.defineProperty(globalThis.navigator, 'onLine', originalDescriptor);
+			Object.defineProperty(window.navigator, 'onLine', originalDescriptor);
 		} else {
 			// In jsdom, navigator.onLine is inherited from Navigator.prototype, so
 			// getOwnPropertyDescriptor returns undefined. setOnline() then installs an
 			// own property that would leak across tests if we didn't delete it here.
-			delete (globalThis.navigator as { onLine?: boolean }).onLine;
+			delete (window.navigator as { onLine?: boolean }).onLine;
 		}
 	});
 
 	const setOnline = (value: boolean) => {
-		Object.defineProperty(globalThis.navigator, 'onLine', {
+		Object.defineProperty(window.navigator, 'onLine', {
 			configurable: true,
 			get: () => value,
 		});

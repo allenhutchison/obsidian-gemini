@@ -473,7 +473,7 @@ describe('AgentView UI Tests', () => {
 			sendButton.click();
 
 			// Wait for async operations
-			await new Promise((resolve) => setTimeout(resolve, 10));
+			await new Promise((resolve) => window.setTimeout(resolve, 10));
 
 			// Should call API
 			expect(plugin.geminiApi.generateModelResponse).toHaveBeenCalled();
@@ -562,7 +562,7 @@ describe('AgentView UI Tests', () => {
 			sendButton.click();
 
 			// Wait for error handling
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			await new Promise((resolve) => window.setTimeout(resolve, 100));
 
 			// Should show error notice
 			expect(vi.mocked(Notice)).toHaveBeenCalledWith(expect.stringContaining('Error'));

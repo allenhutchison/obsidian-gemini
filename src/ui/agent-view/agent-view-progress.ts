@@ -64,6 +64,7 @@ export class AgentViewProgress {
 		this.thinkingChevron = this.progressStatusContainer.createSpan({
 			cls: 'gemini-agent-thinking-chevron',
 		});
+		// eslint-disable-next-line @microsoft/sdl/no-inner-html -- static SVG literal, no user input
 		this.thinkingChevron.innerHTML =
 			'<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
 		this.thinkingChevron.style.display = 'none'; // Hidden until thinking content arrives
@@ -113,6 +114,7 @@ export class AgentViewProgress {
 		if (!this.progressBarContainer) return;
 
 		this.progressBarContainer.style.display = 'block';
+		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
 		this.progressStatus.innerHTML = this.formatProgressText(statusText);
 
 		// Update state class for color coding
@@ -131,6 +133,7 @@ export class AgentViewProgress {
 	update(statusText: string, state?: ProgressState): void {
 		if (!this.progressBarContainer || this.progressBarContainer.style.display === 'none') return;
 
+		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
 		this.progressStatus.innerHTML = this.formatProgressText(statusText);
 
 		if (state) {
@@ -161,6 +164,7 @@ export class AgentViewProgress {
 
 		// Update status line with truncated preview
 		const preview = this.truncateThought(accumulatedThought);
+		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
 		this.progressStatus.innerHTML = this.formatProgressText(preview);
 
 		// Update the full thinking content in the expandable section (fire-and-forget async)
@@ -202,7 +206,7 @@ export class AgentViewProgress {
 
 		// Auto-scroll to bottom of thinking section if expanded
 		if (this.isThinkingExpanded) {
-			requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => {
 				if (renderVersion !== this.thinkingRenderVersion) return;
 				this.thinkingContent.scrollTop = this.thinkingContent.scrollHeight;
 			});
@@ -259,7 +263,7 @@ export class AgentViewProgress {
 		this.progressStatusContainer.setAttribute('aria-expanded', 'true');
 
 		// Scroll to bottom to show latest content
-		requestAnimationFrame(() => {
+		window.requestAnimationFrame(() => {
 			this.thinkingContent.scrollTop = this.thinkingContent.scrollHeight;
 		});
 	}
