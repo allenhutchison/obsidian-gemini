@@ -422,6 +422,46 @@ describe('DeepResearchService', () => {
 			expect(result.sourceCount).toBe(3); // Unique sources
 		});
 
+		it('should aggregate sources across multiple model_output steps and ignore other step types', async () => {
+			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
+			mockPoll.mockResolvedValue({
+				id: 'interaction-123',
+				status: 'completed',
+				steps: [
+					{ type: 'user_input', content: 'ignored' },
+					{
+						type: 'model_output',
+						content: [
+							{
+								type: 'text',
+								text: 'A',
+								annotations: [{ type: 'url_citation', url: 'https://a.com' }],
+							},
+						],
+					},
+					{ type: 'function_call', name: 'ignored' },
+					{
+						type: 'model_output',
+						content: [
+							{
+								type: 'text',
+								text: 'B',
+								annotations: [
+									{ type: 'url_citation', url: 'https://b.com' },
+									{ type: 'url_citation', url: 'https://a.com' }, // dedup across steps
+								],
+							},
+						],
+					},
+				],
+			});
+			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
+
+			const result = await service.conductResearch({ topic: 'Test' });
+
+			expect(result.sourceCount).toBe(2);
+		});
+
 		it('should handle outputs without annotations', async () => {
 			mockStartResearch.mockResolvedValue({ id: 'interaction-123' });
 			mockPoll.mockResolvedValue({
