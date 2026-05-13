@@ -309,6 +309,11 @@ describe('HookManager CRUD', () => {
 		expect(content).toContain('maxRunsPerHour: 12');
 		expect(content).toContain('toolPolicy:');
 		expect(content).toContain('preset: read_only');
+		// Regression guard: the serializer must not also emit the legacy
+		// `enabledTools:` key. Dual-writing both shapes would re-introduce
+		// the pre-refactor confusion where readers had to pick which one to
+		// trust on subsequent loads.
+		expect(content).not.toContain('enabledTools');
 		expect(content).toContain('enabledSkills:');
 		expect(content).toContain('  - index-files');
 		expect(content).toContain('model: "gemini-2.5-flash-lite"');
