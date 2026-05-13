@@ -113,11 +113,16 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [
+				steps: [
 					{
-						type: 'text',
-						text: 'Research results here',
-						annotations: [{ source: 'https://example.com' }],
+						type: 'model_output',
+						content: [
+							{
+								type: 'text',
+								text: 'Research results here',
+								annotations: [{ source: 'https://example.com' }],
+							},
+						],
 					},
 				],
 			});
@@ -144,7 +149,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [],
+				steps: [],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -166,7 +171,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [],
+				steps: [],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -202,7 +207,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [],
+				steps: [],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -223,7 +228,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [],
+				steps: [],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -247,7 +252,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [],
+				steps: [],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 
@@ -301,7 +306,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [],
+				steps: [],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 			mockVault.create.mockRejectedValue(new Error('Save failed'));
@@ -369,7 +374,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [{ type: 'text', text: 'Content here' }],
+				steps: [{ type: 'model_output', content: [{ type: 'text', text: 'Content here' }] }],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\nContent here\n');
 
@@ -388,20 +393,25 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [
+				steps: [
 					{
-						type: 'text',
-						text: 'Content',
-						annotations: [
-							{ source: 'https://source1.com' },
-							{ source: 'https://source2.com' },
-							{ source: 'https://source1.com' }, // Duplicate
+						type: 'model_output',
+						content: [
+							{
+								type: 'text',
+								text: 'Content',
+								annotations: [
+									{ source: 'https://source1.com' },
+									{ source: 'https://source2.com' },
+									{ source: 'https://source1.com' }, // Duplicate
+								],
+							},
+							{
+								type: 'text',
+								text: 'More content',
+								annotations: [{ source: 'https://source3.com' }],
+							},
 						],
-					},
-					{
-						type: 'text',
-						text: 'More content',
-						annotations: [{ source: 'https://source3.com' }],
 					},
 				],
 			});
@@ -417,7 +427,7 @@ describe('DeepResearchService', () => {
 			mockPoll.mockResolvedValue({
 				id: 'interaction-123',
 				status: 'completed',
-				outputs: [{ type: 'text', text: 'Content without sources' }],
+				steps: [{ type: 'model_output', content: [{ type: 'text', text: 'Content without sources' }] }],
 			});
 			mockGenerateMarkdown.mockReturnValue('# Research Report\n\n');
 

@@ -1,6 +1,6 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { ResearchManager, ReportGenerator, Interaction } from '@allenhutchison/gemini-utils';
+import { ResearchManager, ReportGenerator, Interaction, InteractionOutput } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
@@ -231,11 +231,25 @@ export class DeepResearchService {
 	}
 
 	/**
+	 * Flatten the model_output steps of an interaction into a Content[] array,
+	 * matching the shape gemini-utils 0.x exposed as `interaction.outputs`.
+	 */
+	private extractOutputs(interaction: Interaction): InteractionOutput[] {
+		const outputs: InteractionOutput[] = [];
+		for (const step of interaction.steps ?? []) {
+			if (step.type === 'model_output' && step.content) {
+				outputs.push(...step.content);
+			}
+		}
+		return outputs;
+	}
+
+	/**
 	 * Generate a formatted markdown report from the interaction outputs
 	 */
 	private generateReport(topic: string, interaction: Interaction): string {
 		// Use the report generator from gemini-utils for basic structure
-		const baseReport = this.reportGenerator.generateMarkdown(interaction.outputs || []);
+		const baseReport = this.reportGenerator.generateMarkdown(this.extractOutputs(interaction));
 
 		// Add our custom header with topic and date
 		const header = `# ${topic}\n\n*Generated on ${new Date().toLocaleDateString()}*\n\n---\n\n`;
@@ -256,7 +270,7 @@ export class DeepResearchService {
 	private countSources(interaction: Interaction): number {
 		const sources = new Set<string>();
 
-		for (const output of interaction.outputs || []) {
+		for (const output of this.extractOutputs(interaction)) {
 			if (output.type === 'text') {
 				const annotations = (output as any).annotations as Array<{ source?: string }> | undefined;
 				if (annotations) {
