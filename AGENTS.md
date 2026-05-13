@@ -24,6 +24,7 @@ npm run format       # Format code with Prettier
 npm run format-check # Check formatting without changes
 npm run lint         # Lint with ESLint (eslint-plugin-obsidianmd recommended preset)
 npm run lint:fix     # Auto-fix ESLint violations where possible
+npm run install:test-vault # Copy built artifacts into test vault (override path with TEST_VAULT_PLUGIN_DIR)
 ```
 
 **IMPORTANT**: Always run `npm install` first if you encounter TypeScript errors or missing module errors during build. The build requires all dependencies in `node_modules` to be present. If you get errors about missing modules like `obsidian`, `@google/genai`, `handlebars`, or `tslib`, run `npm install` before attempting `npm run build` again.

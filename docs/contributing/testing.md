@@ -12,9 +12,39 @@ This guide covers how to test Gemini Scribe changes on desktop and mobile, what 
 - A dedicated test vault (separate from your primary vault)
 - The plugin repository cloned locally
 
-### Symlink Setup
+### Wiring the Plugin into a Test Vault
 
-Link your development build into your test vault so changes appear immediately:
+There are two ways to connect your development build to a test vault. Choose whichever fits your workflow.
+
+#### Option A: `npm run install:test-vault` (recommended for multi-worktree setups)
+
+This script copies the built artifacts (`main.js`, `manifest.json`, `styles.css`) from the current worktree into the test vault's plugin directory:
+
+```bash
+npm run install:test-vault
+```
+
+By default it targets `~/Obsidian/Test Vault/.obsidian/plugins/obsidian-gemini`. Override it with the `TEST_VAULT_PLUGIN_DIR` environment variable:
+
+```bash
+TEST_VAULT_PLUGIN_DIR=/path/to/vault/.obsidian/plugins/gemini-scribe npm run install:test-vault
+```
+
+Pair this with the [pjeby/hot-reload](https://github.com/pjeby/hot-reload) community plugin (touch an empty `.hotreload` file in the plugin directory) and `npm run dev` for a live-reload loop:
+
+```bash
+# terminal 1
+npm run dev
+
+# terminal 2 (after each rebuild, or wired to a file-watcher)
+npm run install:test-vault
+```
+
+Use this approach when you work across multiple git worktrees — a symlink would bind the test vault to one worktree's output, whereas this script always pushes the current worktree's build.
+
+#### Option B: Symlink (simpler for single-worktree setups)
+
+Link your development build into your test vault so changes appear immediately (no copy needed on every rebuild):
 
 ```bash
 # macOS / Linux
