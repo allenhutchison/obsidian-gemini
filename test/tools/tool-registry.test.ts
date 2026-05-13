@@ -257,6 +257,35 @@ describe('ToolRegistry', () => {
 			expect(enabledTools[0]).toBe(readOnlyTool);
 		});
 
+		// Pins the documented resolveEffectivePermission precedence:
+		// feature overrides > global overrides > feature preset > global preset.
+		// Without this, a future "let's just merge the maps" refactor could
+		// silently flip the priority and DENY-stuck tools couldn't be opened up
+		// by a project / scheduled-task / hook.
+		it('feature override wins over a conflicting global override for the same tool', () => {
+			const readOnlyTool = new TestTool();
+			const vaultTool = new DestructiveTestTool();
+
+			registry.registerTool(readOnlyTool);
+			registry.registerTool(vaultTool);
+
+			// Global says DENY...
+			mockPlugin.settings.toolPolicy.toolPermissions = {
+				destructive_tool: ToolPermission.DENY,
+			};
+
+			// ...but the feature explicitly opens it back up.
+			const context = {
+				session: { context: {} },
+				featureToolPolicy: {
+					overrides: { destructive_tool: ToolPermission.APPROVE },
+				},
+			} as any;
+
+			const enabledTools = registry.getEnabledTools(context);
+			expect(enabledTools.map((t) => t.name).sort()).toEqual(['destructive_tool', 'test_tool']);
+		});
+
 		it('should preserve permissions for untouched tools when switching to CUSTOM', () => {
 			const writeToolA = new WriteTestTool('write_tool_a');
 			const writeToolB = new WriteTestTool('write_tool_b');
