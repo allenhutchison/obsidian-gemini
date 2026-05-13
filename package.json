@@ -21,6 +21,7 @@
 		"format-check": "prettier --check .",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
+		"install:test-vault": "node scripts/install-test-vault.mjs",
 		"test": "npm run generate-refs && vitest run",
 		"test:watch": "npm run generate-refs && vitest",
 		"prepare": "husky",
