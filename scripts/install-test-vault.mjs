@@ -16,7 +16,7 @@ import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-const DEFAULT_DEST = join(homedir(), 'Obsidian', 'Test Vault', '.obsidian', 'plugins', 'obsidian-gemini');
+const DEFAULT_DEST = join(homedir(), 'Obsidian', 'Test Vault', '.obsidian', 'plugins', 'gemini-scribe');
 const dest = process.env.TEST_VAULT_PLUGIN_DIR ?? DEFAULT_DEST;
 const files = ['main.js', 'manifest.json', 'styles.css'];
 
