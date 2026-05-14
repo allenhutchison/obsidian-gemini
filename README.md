@@ -301,8 +301,7 @@ Create reusable AI instruction templates that customize how the AI behaves for s
   - Disable other completion plugins that might conflict
 - **Sessions Not Loading:** Ensure "Enable Session History" is on and the "Plugin State Folder" path is correct. Sessions live under `[Plugin State Folder]/Agent-Sessions/`.
 - **Custom Prompts Not Working:**
-  - Ensure "Enable Custom Prompts" is toggled on in settings
-  - Verify the prompt file exists in the Prompts folder
+  - Verify the prompt file exists in the `[Plugin State Folder]/Prompts/` folder
   - Check that the prompt is selected in session settings (gear icon)
   - See the [Custom Prompts Guide](docs/guide/custom-prompts.md) for detailed troubleshooting
 - **Parameter/Advanced Settings Issues:**
