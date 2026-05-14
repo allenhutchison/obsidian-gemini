@@ -1,10 +1,8 @@
-import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
-import type ObsidianGemini from '../main';
-import type { ScheduledTask, TaskState } from '../services/scheduled-task-manager';
+import { Notice, Setting, setIcon } from 'obsidian';
+import type { ScheduledTask, TaskState, ScheduledTasksState } from '../services/scheduled-task-manager';
 import type { FeatureToolPolicy } from '../types/tool-policy';
+import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
-
-type View = 'list' | 'create' | 'edit';
 
 const SCHEDULE_PRESETS = [
 	{ label: 'Once', value: 'once' },
@@ -27,140 +25,56 @@ const WEEKDAY_OPTIONS = [
 ] as const;
 
 /**
- * Full CRUD management modal for scheduled tasks.
- *
- * Views:
- *   list   — lists all tasks with toggle, edit, delete, run-now controls
- *   create — form for a new task
- *   edit   — form pre-filled with an existing task's values
- *
- * Opening via "New Scheduled Task" command skips straight to the create view.
+ * Full CRUD management modal for scheduled tasks. Extends the shared
+ * ManagementModalBase to get the common scaffolding (view state machine,
+ * list skeleton, delete confirmation, form skeleton) and implements the
+ * task-specific rendering and CRUD.
  */
-export class SchedulerManagementModal extends Modal {
-	private view: View;
-	private editingSlug: string | null = null;
-	private eventUnsubscribers: Array<() => void> = [];
-	/**
-	 * The form is re-rendered on every view switch, so the editor instance is
-	 * re-created from scratch each time. Tracked here so we can dispose the
-	 * previous instance before the new one is built.
-	 */
-	private toolPolicyEditor: ToolPolicyEditor | null = null;
-
-	// Form state (shared between create and edit views)
+export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask, TaskState> {
 	private form = this.blankForm();
 
-	private disposeToolPolicyEditor(): void {
-		if (this.toolPolicyEditor) {
-			this.toolPolicyEditor.destroy();
-			this.toolPolicyEditor = null;
-		}
+	// ── Configuration ────────────────────────────────────────────────────────
+
+	protected readonly entityLabel = 'task';
+	protected readonly entityLabelPlural = 'Scheduled Tasks';
+	protected readonly entityIcon = 'calendar-clock';
+	protected readonly newButtonText = 'New task';
+	protected readonly emptyText = 'No scheduled tasks yet.';
+	protected readonly emptyHint =
+		'Create your first task to automate recurring AI prompts — daily summaries, weekly reports, and more.';
+	protected readonly deleteTitle = 'Delete Task';
+	protected readonly deleteHint = 'Run output files in Scheduled-Tasks/Runs/ are not deleted.';
+	protected readonly slugPlaceholder = 'e.g. daily-summary';
+
+	protected getCssClasses(): string[] {
+		return ['gemini-scheduler-modal'];
 	}
 
-	constructor(
-		app: App,
-		private plugin: ObsidianGemini,
-		initialView: View = 'list'
-	) {
-		super(app);
-		this.view = initialView;
+	protected getFormTitle(isEdit: boolean): string {
+		return isEdit ? `Edit: ${this.editingSlug}` : 'New Scheduled Task';
 	}
 
-	onOpen(): void {
-		this.render();
-		this.subscribeToTaskEvents();
+	// ── Data access ──────────────────────────────────────────────────────────
+
+	protected getManager() {
+		return this.plugin.scheduledTaskManager;
 	}
 
-	onClose(): void {
-		this.eventUnsubscribers.forEach((fn) => fn());
-		this.eventUnsubscribers = [];
-		this.disposeToolPolicyEditor();
-		this.contentEl.empty();
+	protected getEntities(): ScheduledTask[] {
+		return this.plugin.scheduledTaskManager?.getTasks() ?? [];
 	}
 
-	/**
-	 * Re-render the list whenever a background task finishes so errors and
-	 * last-run times appear immediately without closing and reopening the modal.
-	 */
-	private subscribeToTaskEvents(): void {
-		const bus = this.plugin.agentEventBus;
-		if (!bus) return;
-
-		const refresh = async () => {
-			if (this.view === 'list') this.render();
-		};
-
-		this.eventUnsubscribers.push(bus.on('backgroundTaskComplete', refresh), bus.on('backgroundTaskFailed', refresh));
+	protected getEntityStates(): ScheduledTasksState {
+		return this.plugin.scheduledTaskManager?.getState() ?? {};
 	}
 
-	// ---------------------------------------------------------------------------
-	// Render dispatcher
-	// ---------------------------------------------------------------------------
-
-	private render(): void {
-		const { contentEl } = this;
-		contentEl.empty();
-		contentEl.addClass('gemini-scheduler-modal');
-
-		switch (this.view) {
-			case 'list':
-				this.renderList();
-				break;
-			case 'create':
-				this.renderForm(false);
-				break;
-			case 'edit':
-				this.renderForm(true);
-				break;
-		}
+	protected getEntitySlug(entity: ScheduledTask): string {
+		return entity.slug;
 	}
 
-	// ---------------------------------------------------------------------------
-	// List view
-	// ---------------------------------------------------------------------------
+	// ── Row rendering ────────────────────────────────────────────────────────
 
-	private renderList(): void {
-		const { contentEl } = this;
-
-		const header = contentEl.createDiv({ cls: 'gemini-scheduler-header' });
-		header.createEl('h2', { text: 'Scheduled Tasks' });
-
-		const newBtn = header.createEl('button', {
-			text: 'New task',
-			cls: 'mod-cta gemini-scheduler-new-btn',
-			attr: { type: 'button' },
-		});
-		setIcon(newBtn.createSpan({ cls: 'gemini-scheduler-btn-icon' }), 'plus');
-		newBtn.addEventListener('click', () => this.openCreate());
-
-		const manager = this.plugin.scheduledTaskManager;
-		if (!manager) {
-			contentEl.createEl('p', { text: 'Scheduled task manager not available.' });
-			return;
-		}
-
-		const tasks = manager.getTasks();
-		const state = manager.getState();
-
-		if (tasks.length === 0) {
-			const empty = contentEl.createDiv({ cls: 'gemini-scheduler-empty' });
-			const iconEl = empty.createDiv({ cls: 'gemini-scheduler-empty-icon' });
-			setIcon(iconEl, 'calendar-clock');
-			empty.createEl('p', { text: 'No scheduled tasks yet.' });
-			empty.createEl('p', {
-				text: 'Create your first task to automate recurring AI prompts — daily summaries, weekly reports, and more.',
-				cls: 'gemini-scheduler-empty-hint',
-			});
-			return;
-		}
-
-		const list = contentEl.createEl('ul', { cls: 'gemini-scheduler-list' });
-		for (const task of tasks) {
-			this.renderTaskRow(list, task, state[task.slug]);
-		}
-	}
-
-	private renderTaskRow(container: HTMLElement, task: ScheduledTask, taskState: TaskState | undefined): void {
+	protected renderEntityRow(container: HTMLElement, task: ScheduledTask, taskState: TaskState | undefined): void {
 		const isPaused = taskState?.pausedDueToErrors === true;
 		const isDisabled = !task.enabled;
 
@@ -282,114 +196,13 @@ export class SchedulerManagementModal extends Modal {
 		deleteBtn.addEventListener('click', () => this.confirmDelete(task.slug));
 	}
 
-	private confirmDelete(slug: string): void {
-		const { contentEl } = this;
-		contentEl.empty();
+	// ── Form body ────────────────────────────────────────────────────────────
 
-		contentEl.createEl('h2', { text: 'Delete Task' });
-		contentEl.createEl('p', { text: `Delete "${slug}"? This removes the task definition file permanently.` });
-		contentEl.createEl('p', {
-			text: 'Run output files in Scheduled-Tasks/Runs/ are not deleted.',
-			cls: 'gemini-scheduler-delete-hint',
-		});
-
-		const btns = contentEl.createDiv({ cls: 'gemini-scheduler-confirm-btns' });
-
-		const cancelBtn = btns.createEl('button', { text: 'Cancel', attr: { type: 'button' } });
-		cancelBtn.addEventListener('click', () => this.render());
-
-		const confirmBtn = btns.createEl('button', {
-			text: 'Delete',
-			cls: 'gemini-scheduler-confirm-delete',
-			attr: { type: 'button' },
-		});
-		confirmBtn.addEventListener('click', async () => {
-			confirmBtn.disabled = true;
-			confirmBtn.setText('Deleting…');
-			try {
-				await this.plugin.scheduledTaskManager?.deleteTask(slug);
-				new Notice(`Task "${slug}" deleted`);
-				this.render();
-			} catch (err) {
-				this.plugin.logger.error(`[SchedulerManagementModal] Delete failed for "${slug}":`, err);
-				new Notice(`Failed to delete "${slug}"`);
-				this.render();
-			}
-		});
-	}
-
-	// ---------------------------------------------------------------------------
-	// Create / Edit form view
-	// ---------------------------------------------------------------------------
-
-	private openCreate(): void {
-		this.view = 'create';
-		this.editingSlug = null;
-		this.form = this.blankForm();
-		this.render();
-	}
-
-	private openEdit(task: ScheduledTask): void {
-		this.view = 'edit';
-		this.editingSlug = task.slug;
-		const preset = this.detectPreset(task.schedule);
-		const blank = this.blankForm();
-		const { time, days } = this.parseTimeAndDaysFromSchedule(task.schedule);
-		this.form = {
-			slug: task.slug,
-			schedulePreset: preset,
-			scheduleCustom: task.schedule.startsWith('interval:') ? task.schedule.slice('interval:'.length) : '',
-			scheduleTime: time ?? blank.scheduleTime,
-			scheduleDays: days ?? blank.scheduleDays,
-			toolPolicy: task.toolPolicy,
-			outputPath: task.outputPath,
-			model: task.model ?? '',
-			enabled: task.enabled,
-			runIfMissed: task.runIfMissed,
-			prompt: task.prompt,
-		};
-		this.render();
-	}
-
-	private renderForm(isEdit: boolean): void {
-		const { contentEl } = this;
-
-		// Back link
-		const back = contentEl.createEl('button', {
-			text: '← Back to list',
-			cls: 'gemini-scheduler-back',
-			attr: { type: 'button' },
-		});
-		back.addEventListener('click', () => {
-			this.view = 'list';
-			this.render();
-		});
-
-		contentEl.createEl('h2', { text: isEdit ? `Edit: ${this.editingSlug}` : 'New Scheduled Task' });
-
-		const form = contentEl.createEl('form', { cls: 'gemini-scheduler-form' });
-		form.addEventListener('submit', (e) => e.preventDefault());
-
-		// Slug (create only)
-		if (!isEdit) {
-			new Setting(form)
-				.setName('Task name (slug)')
-				.setDesc('Lowercase identifier used as the filename and in output paths. Cannot be changed after creation.')
-				.addText((text) =>
-					text
-						.setPlaceholder('e.g. daily-summary')
-						.setValue(this.form.slug)
-						.onChange((v) => {
-							this.form.slug = v.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-							text.setValue(this.form.slug);
-						})
-				);
-		}
-
+	protected renderFormBody(formEl: HTMLElement, _isEdit: boolean): void {
 		// Schedule
-		new Setting(form).setName('Schedule').setDesc('How often the task should run.');
+		new Setting(formEl).setName('Schedule').setDesc('How often the task should run.');
 
-		const scheduleRow = form.createDiv({ cls: 'gemini-scheduler-schedule-row' });
+		const scheduleRow = formEl.createDiv({ cls: 'gemini-scheduler-schedule-row' });
 		const presetSelect = scheduleRow.createEl('select', { cls: 'gemini-scheduler-select' });
 		for (const preset of SCHEDULE_PRESETS) {
 			const opt = presetSelect.createEl('option', { value: preset.value, text: preset.label });
@@ -416,7 +229,7 @@ export class SchedulerManagementModal extends Modal {
 		});
 
 		// Day-of-week checkbox row, shown only for the weekly-days preset.
-		const daysRow = form.createDiv({ cls: 'gemini-scheduler-days-row' });
+		const daysRow = formEl.createDiv({ cls: 'gemini-scheduler-days-row' });
 		const dayCheckboxes: HTMLInputElement[] = [];
 		for (const day of WEEKDAY_OPTIONS) {
 			const label = daysRow.createEl('label', { cls: 'gemini-scheduler-day-label' });
@@ -455,11 +268,11 @@ export class SchedulerManagementModal extends Modal {
 		// the old category checkbox row, which silently dropped vault-ops and
 		// destructive tools because the checkbox values didn't match real
 		// ToolCategory enum values.
-		const toolsContainer = form.createDiv({ cls: 'gemini-scheduler-tools' });
+		const toolsContainer = formEl.createDiv({ cls: 'gemini-scheduler-tools' });
 		this.disposeToolPolicyEditor();
 		this.toolPolicyEditor = new ToolPolicyEditor(this.plugin, toolsContainer, {
 			title: 'Tool access',
-			description: 'When inherited, this task uses the plugin’s global tool policy.',
+			description: 'When inherited, this task uses the plugin\u2019s global tool policy.',
 			value: this.form.toolPolicy,
 			onChange: (next) => {
 				this.form.toolPolicy = next;
@@ -467,12 +280,12 @@ export class SchedulerManagementModal extends Modal {
 		});
 
 		// Prompt
-		new Setting(form)
+		new Setting(formEl)
 			.setName('Prompt')
 			.setDesc(
 				'The instruction sent to the AI on each run. Supports the same markdown you would use in the agent chat.'
 			);
-		const promptArea = form.createEl('textarea', {
+		const promptArea = formEl.createEl('textarea', {
 			cls: 'gemini-scheduler-prompt',
 			attr: { rows: '8', placeholder: 'Write your prompt here…' },
 		});
@@ -482,7 +295,7 @@ export class SchedulerManagementModal extends Modal {
 		});
 
 		// Advanced section (collapsible)
-		const advDetails = form.createEl('details', { cls: 'gemini-scheduler-advanced' });
+		const advDetails = formEl.createEl('details', { cls: 'gemini-scheduler-advanced' });
 		advDetails.createEl('summary', { text: 'Advanced options' });
 
 		new Setting(advDetails)
@@ -527,28 +340,15 @@ export class SchedulerManagementModal extends Modal {
 					this.form.enabled = v;
 				})
 			);
-
-		// Footer buttons
-		const footer = form.createDiv({ cls: 'gemini-scheduler-footer' });
-
-		const saveBtn = footer.createEl('button', {
-			text: isEdit ? 'Save changes' : 'Create task',
-			cls: 'mod-cta',
-			attr: { type: 'button' },
-		});
-		saveBtn.addEventListener('click', () => this.handleSave(isEdit));
-
-		const cancelBtn = footer.createEl('button', {
-			text: 'Cancel',
-			attr: { type: 'button' },
-		});
-		cancelBtn.addEventListener('click', () => {
-			this.view = 'list';
-			this.render();
-		});
 	}
 
-	private async handleSave(isEdit: boolean): Promise<void> {
+	// ── CRUD ─────────────────────────────────────────────────────────────────
+
+	protected async deleteEntity(slug: string): Promise<void> {
+		await this.plugin.scheduledTaskManager?.deleteTask(slug);
+	}
+
+	protected async handleSave(isEdit: boolean): Promise<void> {
 		const schedule = this.resolvedSchedule();
 		if (!schedule) {
 			new Notice(
@@ -605,9 +405,55 @@ export class SchedulerManagementModal extends Modal {
 		}
 	}
 
-	// ---------------------------------------------------------------------------
-	// Helpers
-	// ---------------------------------------------------------------------------
+	// ── Form state ───────────────────────────────────────────────────────────
+
+	protected resetForm(): void {
+		this.form = this.blankForm();
+	}
+
+	protected populateFormForEdit(task: ScheduledTask): void {
+		const preset = this.detectPreset(task.schedule);
+		const blank = this.blankForm();
+		const { time, days } = this.parseTimeAndDaysFromSchedule(task.schedule);
+		this.form = {
+			slug: task.slug,
+			schedulePreset: preset,
+			scheduleCustom: task.schedule.startsWith('interval:') ? task.schedule.slice('interval:'.length) : '',
+			scheduleTime: time ?? blank.scheduleTime,
+			scheduleDays: days ?? blank.scheduleDays,
+			toolPolicy: task.toolPolicy,
+			outputPath: task.outputPath,
+			model: task.model ?? '',
+			enabled: task.enabled,
+			runIfMissed: task.runIfMissed,
+			prompt: task.prompt,
+		};
+	}
+
+	protected getFormSlug(): string {
+		return this.form.slug;
+	}
+
+	protected setFormSlug(slug: string): void {
+		this.form.slug = slug;
+	}
+
+	// ── Helpers (scheduler-specific) ─────────────────────────────────────────
+
+	/**
+	 * Override the base class truncateError with a richer version that
+	 * extracts JSON "message" fields and strips ApiError prefixes.
+	 */
+	protected truncateError(raw: string): string {
+		const jsonMatch = raw.match(/"message"\s*:\s*"([^"]+)"/);
+		if (jsonMatch) {
+			const msg = jsonMatch[1].split(/[\n]/)[0].trim();
+			return msg.length > 120 ? msg.slice(0, 117) + '…' : msg;
+		}
+		const stripped = raw.replace(/^(ApiError:\s*)?\[\d+ [^\]]+\]\s*/, '').replace(/^ApiError:\s*/, '');
+		const firstLine = stripped.split(/[\n.]/)[0].trim();
+		return firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine;
+	}
 
 	private blankForm() {
 		return {
@@ -682,25 +528,5 @@ export class SchedulerManagementModal extends Modal {
 			return { time: weeklyDays[1], days: days.length > 0 ? days : null };
 		}
 		return { time: null, days: null };
-	}
-
-	private truncateError(raw: string): string {
-		const jsonMatch = raw.match(/"message"\s*:\s*"([^"]+)"/);
-		if (jsonMatch) {
-			const msg = jsonMatch[1].split(/[\n]/)[0].trim();
-			return msg.length > 120 ? msg.slice(0, 117) + '…' : msg;
-		}
-		const stripped = raw.replace(/^(ApiError:\s*)?\[\d+ [^\]]+\]\s*/, '').replace(/^ApiError:\s*/, '');
-		const firstLine = stripped.split(/[\n.]/)[0].trim();
-		return firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine;
-	}
-
-	private formatDate(date: Date): string {
-		return date.toLocaleString([], {
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-		});
 	}
 }

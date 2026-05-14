@@ -1,10 +1,8 @@
-import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
-import type ObsidianGemini from '../main';
-import type { Hook, HookAction, HookState, HookTrigger } from '../services/hook-manager';
+import { Notice, Setting, setIcon } from 'obsidian';
+import type { Hook, HookAction, HookState, HookTrigger, HooksState } from '../services/hook-manager';
 import type { FeatureToolPolicy } from '../types/tool-policy';
+import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
-
-type View = 'list' | 'create' | 'edit';
 
 const TRIGGER_OPTIONS: { value: HookTrigger; label: string; hint: string }[] = [
 	{ value: 'file-modified', label: 'File modified (save)', hint: 'Fires when a file is saved.' },
@@ -28,112 +26,60 @@ const DEFAULT_DEBOUNCE_MS = 5000;
 const DEFAULT_COOLDOWN_MS = 30_000;
 
 /**
- * Full CRUD management modal for lifecycle hooks. Visually mirrors
- * SchedulerManagementModal so the two automation surfaces feel like one
- * design family — same row layout, same actions, same form patterns.
- *
- * Views:
- *   list   — every hook with toggle / reset / edit / delete
- *   create — empty form
- *   edit   — form pre-filled with an existing hook's values
- *
- * Frontmatter filters can be authored in the YAML directly; the form keeps
- * the advanced section minimal to avoid a complex key/value editor in v1.
+ * Full CRUD management modal for lifecycle hooks. Extends the shared
+ * ManagementModalBase to get the common scaffolding (view state machine,
+ * list skeleton, delete confirmation, form skeleton) and implements the
+ * hook-specific rendering and CRUD.
  */
-export class HookManagementModal extends Modal {
-	private view: View;
-	private editingSlug: string | null = null;
-	private eventUnsubscribers: Array<() => void> = [];
-	private toolPolicyEditor: ToolPolicyEditor | null = null;
+export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 	private form = this.blankForm();
 
-	private disposeToolPolicyEditor(): void {
-		if (this.toolPolicyEditor) {
-			this.toolPolicyEditor.destroy();
-			this.toolPolicyEditor = null;
-		}
-	}
+	// ── Configuration ────────────────────────────────────────────────────────
 
-	constructor(
-		app: App,
-		private plugin: ObsidianGemini,
-		initialView: View = 'list'
-	) {
-		super(app);
-		this.view = initialView;
-	}
+	protected readonly entityLabel = 'hook';
+	protected readonly entityLabelPlural = 'Lifecycle Hooks';
+	protected readonly entityIcon = 'webhook';
+	protected readonly newButtonText = 'New hook';
+	protected readonly emptyText = 'No hooks yet.';
+	protected readonly emptyHint =
+		'Hooks run an AI agent in response to vault events — file saves, creates, deletes, renames. Create your first hook to summarise on save, index new attachments, or run a skill on certain notes.';
+	protected readonly deleteTitle = 'Delete Hook';
+	protected readonly deleteHint = 'Output files in Hooks/Runs/ are not deleted.';
+	protected readonly slugPlaceholder = 'e.g. summarise-on-save';
 
-	onOpen(): void {
-		this.render();
-		this.subscribeToBackgroundEvents();
-	}
-
-	onClose(): void {
-		this.eventUnsubscribers.forEach((fn) => fn());
-		this.eventUnsubscribers = [];
-		this.disposeToolPolicyEditor();
-		this.contentEl.empty();
-	}
-
-	/**
-	 * Re-render the list when a hook fire finishes so last-error / last-run
-	 * info appears immediately without manual refresh.
-	 */
-	private subscribeToBackgroundEvents(): void {
-		const bus = this.plugin.agentEventBus;
-		if (!bus) return;
-		const refresh = async () => {
-			if (this.view === 'list') this.render();
-		};
-		this.eventUnsubscribers.push(bus.on('backgroundTaskComplete', refresh), bus.on('backgroundTaskFailed', refresh));
-	}
-
-	// ── Render dispatcher ────────────────────────────────────────────────────
-
-	private render(): void {
-		const { contentEl } = this;
-		contentEl.empty();
+	protected getCssClasses(): string[] {
 		// Reuse the scheduler modal's CSS class so the two share a visual
 		// design language without a parallel CSS file. `gemini-hook-modal`
 		// is the per-feature hook so theme overrides can target hooks
 		// specifically when they need to.
-		contentEl.addClass('gemini-scheduler-modal', 'gemini-hook-modal');
-
-		switch (this.view) {
-			case 'list':
-				this.renderList();
-				break;
-			case 'create':
-				this.renderForm(false);
-				break;
-			case 'edit':
-				this.renderForm(true);
-				break;
-		}
+		return ['gemini-scheduler-modal', 'gemini-hook-modal'];
 	}
 
-	// ── List view ────────────────────────────────────────────────────────────
+	protected getFormTitle(isEdit: boolean): string {
+		return isEdit ? `Edit hook: ${this.editingSlug}` : 'New hook';
+	}
 
-	private renderList(): void {
-		const { contentEl } = this;
+	// ── Data access ──────────────────────────────────────────────────────────
 
-		const header = contentEl.createDiv({ cls: 'gemini-scheduler-header' });
-		header.createEl('h2', { text: 'Lifecycle Hooks' });
+	protected getManager() {
+		return this.plugin.hookManager;
+	}
 
-		const newBtn = header.createEl('button', {
-			text: 'New hook',
-			cls: 'mod-cta gemini-scheduler-new-btn',
-			attr: { type: 'button' },
-		});
-		setIcon(newBtn.createSpan({ cls: 'gemini-scheduler-btn-icon' }), 'plus');
-		newBtn.addEventListener('click', () => this.openCreate());
+	protected getEntities(): Hook[] {
+		return this.plugin.hookManager?.getHooks() ?? [];
+	}
 
-		const manager = this.plugin.hookManager;
-		if (!manager) {
-			contentEl.createEl('p', { text: 'Hook manager not available.' });
-			return;
-		}
+	protected getEntityStates(): HooksState {
+		return this.plugin.hookManager?.getStateSnapshot() ?? {};
+	}
 
+	protected getEntitySlug(entity: Hook): string {
+		return entity.slug;
+	}
+
+	// ── List preamble ────────────────────────────────────────────────────────
+
+	protected renderListPreamble(contentEl: HTMLElement): void {
 		if (!this.plugin.settings.hooksEnabled) {
 			const banner = contentEl.createDiv({ cls: 'gemini-scheduler-empty' });
 			const iconEl = banner.createDiv({ cls: 'gemini-scheduler-empty-icon' });
@@ -144,29 +90,11 @@ export class HookManagementModal extends Modal {
 				cls: 'gemini-scheduler-empty-hint',
 			});
 		}
-
-		const hooks = manager.getHooks();
-		const state = manager.getStateSnapshot();
-
-		if (hooks.length === 0) {
-			const empty = contentEl.createDiv({ cls: 'gemini-scheduler-empty' });
-			const iconEl = empty.createDiv({ cls: 'gemini-scheduler-empty-icon' });
-			setIcon(iconEl, 'webhook');
-			empty.createEl('p', { text: 'No hooks yet.' });
-			empty.createEl('p', {
-				text: 'Hooks run an AI agent in response to vault events — file saves, creates, deletes, renames. Create your first hook to summarise on save, index new attachments, or run a skill on certain notes.',
-				cls: 'gemini-scheduler-empty-hint',
-			});
-			return;
-		}
-
-		const list = contentEl.createEl('ul', { cls: 'gemini-scheduler-list' });
-		for (const hook of hooks) {
-			this.renderHookRow(list, hook, state[hook.slug]);
-		}
 	}
 
-	private renderHookRow(container: HTMLElement, hook: Hook, hookState: HookState | undefined): void {
+	// ── Row rendering ────────────────────────────────────────────────────────
+
+	protected renderEntityRow(container: HTMLElement, hook: Hook, hookState: HookState | undefined): void {
 		const isPaused = hookState?.pausedDueToErrors === true;
 		const isDisabled = !hook.enabled;
 
@@ -263,110 +191,11 @@ export class HookManagementModal extends Modal {
 		deleteBtn.addEventListener('click', () => this.confirmDelete(hook.slug));
 	}
 
-	private confirmDelete(slug: string): void {
-		const { contentEl } = this;
-		contentEl.empty();
+	// ── Form body ────────────────────────────────────────────────────────────
 
-		contentEl.createEl('h2', { text: 'Delete Hook' });
-		contentEl.createEl('p', { text: `Delete "${slug}"? This removes the hook definition file permanently.` });
-		contentEl.createEl('p', {
-			text: 'Output files in Hooks/Runs/ are not deleted.',
-			cls: 'gemini-scheduler-delete-hint',
-		});
-
-		const btns = contentEl.createDiv({ cls: 'gemini-scheduler-confirm-btns' });
-		const cancelBtn = btns.createEl('button', { text: 'Cancel', attr: { type: 'button' } });
-		cancelBtn.addEventListener('click', () => this.render());
-
-		const confirmBtn = btns.createEl('button', {
-			text: 'Delete',
-			cls: 'gemini-scheduler-confirm-delete',
-			attr: { type: 'button' },
-		});
-		confirmBtn.addEventListener('click', async () => {
-			confirmBtn.disabled = true;
-			confirmBtn.setText('Deleting…');
-			try {
-				await this.plugin.hookManager?.deleteHook(slug);
-				new Notice(`Hook "${slug}" deleted`);
-				this.render();
-			} catch (err) {
-				this.plugin.logger.error(`[HookManagementModal] Delete failed for "${slug}":`, err);
-				new Notice(`Failed to delete "${slug}"`);
-				this.render();
-			}
-		});
-	}
-
-	// ── Form view ────────────────────────────────────────────────────────────
-
-	private openCreate(): void {
-		this.view = 'create';
-		this.editingSlug = null;
-		this.form = this.blankForm();
-		this.render();
-	}
-
-	private openEdit(hook: Hook): void {
-		this.view = 'edit';
-		this.editingSlug = hook.slug;
-		this.form = {
-			slug: hook.slug,
-			trigger: hook.trigger,
-			action: hook.action,
-			pathGlob: hook.pathGlob ?? '',
-			debounceMs: hook.debounceMs,
-			cooldownMs: hook.cooldownMs,
-			maxRunsPerHour: hook.maxRunsPerHour ?? 0,
-			toolPolicy: hook.toolPolicy,
-			enabledSkills: [...hook.enabledSkills],
-			model: hook.model ?? '',
-			outputPath: hook.outputPath ?? '',
-			enabled: hook.enabled,
-			desktopOnly: hook.desktopOnly,
-			prompt: hook.prompt,
-			commandId: hook.commandId ?? '',
-			focusFile: hook.focusFile === true,
-		};
-		this.render();
-	}
-
-	private renderForm(isEdit: boolean): void {
-		const { contentEl } = this;
-
-		const back = contentEl.createEl('button', {
-			text: '← Back to list',
-			cls: 'gemini-scheduler-back',
-			attr: { type: 'button' },
-		});
-		back.addEventListener('click', () => {
-			this.view = 'list';
-			this.render();
-		});
-
-		contentEl.createEl('h2', { text: isEdit ? `Edit hook: ${this.editingSlug}` : 'New hook' });
-
-		const form = contentEl.createEl('form', { cls: 'gemini-scheduler-form' });
-		form.addEventListener('submit', (e) => e.preventDefault());
-
-		// Slug (create only)
-		if (!isEdit) {
-			new Setting(form)
-				.setName('Hook name (slug)')
-				.setDesc('Lowercase identifier used as the filename and in output paths. Cannot be changed after creation.')
-				.addText((text) =>
-					text
-						.setPlaceholder('e.g. summarise-on-save')
-						.setValue(this.form.slug)
-						.onChange((v) => {
-							this.form.slug = v.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-							text.setValue(this.form.slug);
-						})
-				);
-		}
-
+	protected renderFormBody(formEl: HTMLElement, _isEdit: boolean): void {
 		// Trigger
-		new Setting(form)
+		new Setting(formEl)
 			.setName('Trigger')
 			.setDesc('The vault event that fires this hook.')
 			.addDropdown((dd) => {
@@ -379,7 +208,7 @@ export class HookManagementModal extends Modal {
 		// Action — what to do when the hook fires. Drives which other inputs
 		// are visible (tools/prompt for agent-task and rewrite, commandId for
 		// command, none for summarize).
-		new Setting(form)
+		new Setting(formEl)
 			.setName('Action')
 			.setDesc('What this hook does on each fire.')
 			.addDropdown((dd) => {
@@ -391,7 +220,7 @@ export class HookManagementModal extends Modal {
 			});
 
 		// Path glob
-		new Setting(form)
+		new Setting(formEl)
 			.setName('Path glob (optional)')
 			.setDesc(
 				'Limit fires to paths matching this glob. Examples: Daily/**/*.md, Notes/*.md. Leave blank for any path.'
@@ -406,7 +235,7 @@ export class HookManagementModal extends Modal {
 			);
 
 		// Command id — only shown when action=command.
-		const commandIdSetting = new Setting(form)
+		const commandIdSetting = new Setting(formEl)
 			.setName('Command id')
 			.setDesc(
 				'Command palette id to fire. Examples: editor:save-file, gemini-scribe-summarize-active-file. View Command IDs via Settings → Hotkeys (open the developer console with Ctrl+Shift+I to inspect ids).'
@@ -425,7 +254,7 @@ export class HookManagementModal extends Modal {
 		// run against the active workspace state; this toggle lets the hook
 		// open the trigger file before dispatching so commands like
 		// `editor:save-file` target the right note.
-		const focusFileSetting = new Setting(form)
+		const focusFileSetting = new Setting(formEl)
 			.setName('Focus trigger file before dispatch')
 			.setDesc(
 				'When on, the triggering file is opened in the workspace before the command runs — useful for editor-scoped commands. When off, the command runs against whatever file is currently active. Default off.'
@@ -440,11 +269,11 @@ export class HookManagementModal extends Modal {
 		// Tool access — only meaningful for the agent-task action. Uses the
 		// shared ToolPolicyEditor, replacing the old category checkbox row
 		// whose hardcoded string list didn't match real ToolCategory values.
-		const toolsContainer = form.createDiv({ cls: 'gemini-scheduler-tools' });
+		const toolsContainer = formEl.createDiv({ cls: 'gemini-scheduler-tools' });
 		this.disposeToolPolicyEditor();
 		this.toolPolicyEditor = new ToolPolicyEditor(this.plugin, toolsContainer, {
 			title: 'Tool access',
-			description: 'When inherited, this hook uses the plugin’s global tool policy.',
+			description: 'When inherited, this hook uses the plugin\u2019s global tool policy.',
 			value: this.form.toolPolicy,
 			onChange: (next) => {
 				this.form.toolPolicy = next;
@@ -454,12 +283,12 @@ export class HookManagementModal extends Modal {
 		const toolsSetting = { settingEl: toolsContainer } as { settingEl: HTMLElement };
 
 		// Prompt — required for agent-task and rewrite, ignored for the rest.
-		const promptSetting = new Setting(form)
+		const promptSetting = new Setting(formEl)
 			.setName('Prompt')
 			.setDesc(
 				'Instruction sent to the AI on each fire. Available variables: {{filePath}}, {{fileName}}, {{trigger}}, {{oldPath}}.'
 			);
-		const promptArea = form.createEl('textarea', {
+		const promptArea = formEl.createEl('textarea', {
 			cls: 'gemini-scheduler-prompt',
 			attr: { rows: '8', placeholder: 'e.g. Summarise the changes in {{filePath}}.' },
 		});
@@ -484,7 +313,7 @@ export class HookManagementModal extends Modal {
 		updateActionVisibility();
 
 		// Advanced
-		const advDetails = form.createEl('details', { cls: 'gemini-scheduler-advanced' });
+		const advDetails = formEl.createEl('details', { cls: 'gemini-scheduler-advanced' });
 		advDetails.createEl('summary', { text: 'Advanced options' });
 
 		new Setting(advDetails)
@@ -586,25 +415,15 @@ export class HookManagementModal extends Modal {
 					this.form.enabled = v;
 				})
 			);
-
-		// Footer
-		const footer = form.createDiv({ cls: 'gemini-scheduler-footer' });
-
-		const saveBtn = footer.createEl('button', {
-			text: isEdit ? 'Save changes' : 'Create hook',
-			cls: 'mod-cta',
-			attr: { type: 'button' },
-		});
-		saveBtn.addEventListener('click', () => this.handleSave(isEdit));
-
-		const cancelBtn = footer.createEl('button', { text: 'Cancel', attr: { type: 'button' } });
-		cancelBtn.addEventListener('click', () => {
-			this.view = 'list';
-			this.render();
-		});
 	}
 
-	private async handleSave(isEdit: boolean): Promise<void> {
+	// ── CRUD ─────────────────────────────────────────────────────────────────
+
+	protected async deleteEntity(slug: string): Promise<void> {
+		await this.plugin.hookManager?.deleteHook(slug);
+	}
+
+	protected async handleSave(isEdit: boolean): Promise<void> {
 		const action = this.form.action;
 		const promptRequired = action === 'agent-task' || action === 'rewrite';
 
@@ -677,7 +496,40 @@ export class HookManagementModal extends Modal {
 		}
 	}
 
-	// ── Helpers ──────────────────────────────────────────────────────────────
+	// ── Form state ───────────────────────────────────────────────────────────
+
+	protected resetForm(): void {
+		this.form = this.blankForm();
+	}
+
+	protected populateFormForEdit(hook: Hook): void {
+		this.form = {
+			slug: hook.slug,
+			trigger: hook.trigger,
+			action: hook.action,
+			pathGlob: hook.pathGlob ?? '',
+			debounceMs: hook.debounceMs,
+			cooldownMs: hook.cooldownMs,
+			maxRunsPerHour: hook.maxRunsPerHour ?? 0,
+			toolPolicy: hook.toolPolicy,
+			enabledSkills: [...hook.enabledSkills],
+			model: hook.model ?? '',
+			outputPath: hook.outputPath ?? '',
+			enabled: hook.enabled,
+			desktopOnly: hook.desktopOnly,
+			prompt: hook.prompt,
+			commandId: hook.commandId ?? '',
+			focusFile: hook.focusFile === true,
+		};
+	}
+
+	protected getFormSlug(): string {
+		return this.form.slug;
+	}
+
+	protected setFormSlug(slug: string): void {
+		this.form.slug = slug;
+	}
 
 	private blankForm() {
 		return {
@@ -698,14 +550,5 @@ export class HookManagementModal extends Modal {
 			commandId: '',
 			focusFile: false,
 		};
-	}
-
-	private formatDate(d: Date): string {
-		// Same shape SchedulerManagementModal uses — locale-aware short form.
-		return d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
-	}
-
-	private truncateError(msg: string): string {
-		return msg.length > 80 ? `${msg.slice(0, 77)}…` : msg;
 	}
 }
