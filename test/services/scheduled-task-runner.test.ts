@@ -317,4 +317,84 @@ describe('ScheduledTaskRunner', () => {
 			);
 		});
 	});
+
+	describe('HeadlessConfirmationProvider', () => {
+		it('auto-approves confirmations and reports all tools allowed', async () => {
+			const plugin = createMockPlugin();
+			// Trigger the tool-call path so the runner constructs a HeadlessConfirmationProvider
+			const toolCalls = [{ name: 'list_files', arguments: { path: '/' } }];
+			(ModelClientFactory.createChatModel as Mock).mockReturnValue(createMockModelApi('', toolCalls));
+			mockAgentLoopRun.mockResolvedValue(successfulLoopResult('Tool output.'));
+
+			const runner = new ScheduledTaskRunner(plugin, makeTask());
+			await runner.run(() => false);
+
+			// Extract the confirmationProvider from the AgentLoop.run call
+			const options = mockAgentLoopRun.mock.calls[0][0].options;
+			const provider = options.confirmationProvider;
+
+			// Exercise the HeadlessConfirmationProvider methods (lines 30-33)
+			const confirmation = await provider.showConfirmationInChat({}, {}, 'exec-1');
+			expect(confirmation).toEqual({ confirmed: true, allowWithoutConfirmation: false });
+			expect(provider.isToolAllowedWithoutConfirmation('any_tool')).toBe(true);
+			// These are no-ops; just verify they don't throw
+			provider.allowToolWithoutConfirmation('any_tool');
+			provider.updateProgress('msg', 'status');
+		});
+	});
+
+	describe('missing agent services', () => {
+		it('throws when sessionManager is not initialised', async () => {
+			const plugin = createMockPlugin();
+			plugin.sessionManager = null;
+
+			const runner = new ScheduledTaskRunner(plugin, makeTask());
+			await expect(runner.run(() => false)).rejects.toThrow('Agent services not initialised');
+		});
+
+		it('throws when toolRegistry is not initialised', async () => {
+			const plugin = createMockPlugin();
+			plugin.toolRegistry = null;
+
+			const runner = new ScheduledTaskRunner(plugin, makeTask());
+			await expect(runner.run(() => false)).rejects.toThrow('Agent services not initialised');
+		});
+
+		it('throws when toolExecutionEngine is not initialised', async () => {
+			const plugin = createMockPlugin();
+			plugin.toolExecutionEngine = null;
+
+			const runner = new ScheduledTaskRunner(plugin, makeTask());
+			await expect(runner.run(() => false)).rejects.toThrow('Agent services not initialised');
+		});
+	});
+
+	describe('resolveUniquePath — Date.now() fallback', () => {
+		it('falls back to a timestamp suffix when all numeric suffixes 1-99 are taken', async () => {
+			const plugin = createMockPlugin();
+			// Make getAbstractFileByPath return a truthy value for the base path
+			// and all -1 through -99 suffixes, so the runner has to fall back.
+			plugin.app.vault.getAbstractFileByPath = vi.fn().mockImplementation((path: string) => {
+				// Return truthy (file exists) for base and -1 through -99
+				if (path.includes('-') && !path.includes('-task')) {
+					const suffixMatch = path.match(/-(\d+)\.md$/);
+					if (suffixMatch) {
+						const num = parseInt(suffixMatch[1], 10);
+						if (num >= 1 && num <= 99) return { path };
+					}
+					// Timestamp suffix — file doesn't exist yet
+					return null;
+				}
+				// Base path exists
+				return { path };
+			});
+
+			const runner = new ScheduledTaskRunner(plugin, makeTask());
+			await runner.run(() => false);
+
+			const createdPath = (plugin.app.vault.create as Mock).mock.calls[0][0] as string;
+			// Must be a timestamp-suffixed path (digits longer than 2, i.e. not -1 through -99)
+			expect(createdPath).toMatch(/-\d{4,}\.md$/);
+		});
+	});
 });

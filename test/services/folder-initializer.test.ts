@@ -137,4 +137,79 @@ describe('FolderInitializer', () => {
 			mockPlugin.logger
 		);
 	});
+
+	describe('skills folder migration', () => {
+		it('should migrate old lowercase skills folder to Skills when old exists and new does not', async () => {
+			// Import TFolder from the mocked obsidian module
+			const { TFolder } = await import('obsidian');
+			const oldFolder = new TFolder();
+			(oldFolder as any).path = 'gemini-scribe/skills';
+
+			// getAbstractFileByPath returns oldFolder for old path, null for new path
+			mockPlugin.app.vault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/skills') return oldFolder;
+				return null;
+			});
+
+			await folderInitializer.initializeAll();
+
+			expect(mockPlugin.app.fileManager.renameFile).toHaveBeenCalledWith(oldFolder, 'gemini-scribe/Skills');
+			expect(mockPlugin.logger.log).toHaveBeenCalledWith(expect.stringContaining('Migrated skills folder'));
+		});
+
+		it('should not migrate if old folder does not exist', async () => {
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+
+			await folderInitializer.initializeAll();
+
+			expect(mockPlugin.app.fileManager.renameFile).not.toHaveBeenCalled();
+		});
+
+		it('should not migrate if new folder already exists', async () => {
+			const { TFolder } = await import('obsidian');
+			const oldFolder = new TFolder();
+			(oldFolder as any).path = 'gemini-scribe/skills';
+			const newFolder = new TFolder();
+			(newFolder as any).path = 'gemini-scribe/Skills';
+
+			mockPlugin.app.vault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/skills') return oldFolder;
+				if (path === 'gemini-scribe/Skills') return newFolder;
+				return null;
+			});
+
+			await folderInitializer.initializeAll();
+
+			expect(mockPlugin.app.fileManager.renameFile).not.toHaveBeenCalled();
+		});
+
+		it('should log warning when migration fails', async () => {
+			const { TFolder } = await import('obsidian');
+			const oldFolder = new TFolder();
+			(oldFolder as any).path = 'gemini-scribe/skills';
+
+			mockPlugin.app.vault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/skills') return oldFolder;
+				return null;
+			});
+
+			mockPlugin.app.fileManager.renameFile.mockRejectedValue(new Error('Permission denied'));
+
+			await folderInitializer.initializeAll();
+
+			expect(mockPlugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to migrate skills folder'));
+		});
+
+		it('should not migrate if old path is not a TFolder (e.g., a TFile)', async () => {
+			// Return a plain object that is not an instance of TFolder
+			mockPlugin.app.vault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/skills') return { path: 'gemini-scribe/skills' }; // Not a TFolder
+				return null;
+			});
+
+			await folderInitializer.initializeAll();
+
+			expect(mockPlugin.app.fileManager.renameFile).not.toHaveBeenCalled();
+		});
+	});
 });

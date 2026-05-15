@@ -499,6 +499,73 @@ describe('ContextManager', () => {
 			// Phase 2 ran (countTokens fired post-summarization to size the result).
 			expect(mockCountTokens).toHaveBeenCalled();
 		});
+
+		test('handles empty Gemini summary result with fallback message', async () => {
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 250_000,
+				totalTokenCount: 300_000,
+			});
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+			// Return empty summary from generateContent
+			mockGenerateContent.mockResolvedValue({
+				candidates: [{ content: { parts: [{ text: '' }] } }],
+			});
+
+			const history = Array.from({ length: 20 }, (_, i) => ({
+				role: i % 2 === 0 ? 'user' : 'model',
+				parts: [{ text: `Message ${i}` }],
+			}));
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(true);
+			expect(result.summaryText).toContain('could not be summarized');
+			expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('Summary generation returned empty result'));
+		});
+
+		test('handles Gemini summary with no candidates gracefully', async () => {
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 250_000,
+				totalTokenCount: 300_000,
+			});
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+			// Return undefined candidates
+			mockGenerateContent.mockResolvedValue({ candidates: undefined });
+
+			const history = Array.from({ length: 20 }, (_, i) => ({
+				role: i % 2 === 0 ? 'user' : 'model',
+				parts: [{ text: `Message ${i}` }],
+			}));
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(true);
+			expect(result.summaryText).toContain('could not be summarized');
+		});
+
+		test('handles error during summarization with fallback message', async () => {
+			contextManager.updateUsageMetadata({
+				promptTokenCount: 250_000,
+				totalTokenCount: 300_000,
+			});
+			mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+			// Make generateContent throw
+			mockGenerateContent.mockRejectedValue(new Error('API down'));
+
+			const history = Array.from({ length: 20 }, (_, i) => ({
+				role: i % 2 === 0 ? 'user' : 'model',
+				parts: [{ text: `Message ${i}` }],
+			}));
+
+			const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash');
+
+			expect(result.wasCompacted).toBe(true);
+			expect(result.summaryText).toContain('could not be summarized due to an error');
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				expect.stringContaining('Failed to generate summary'),
+				expect.any(Error)
+			);
+		});
 	});
 
 	describe('reset', () => {

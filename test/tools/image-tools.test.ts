@@ -134,6 +134,33 @@ describe('ImageTools', () => {
 			expect(message).toContain('a beautiful sunset');
 		});
 
+		it('should include destination in confirmation message when output_path is provided', () => {
+			const message = tool.confirmationMessage!({
+				prompt: 'a mountain',
+				output_path: 'attachments/mountain.png',
+			});
+			expect(message).toContain('Destination: attachments/mountain.png');
+		});
+
+		describe('getProgressDescription', () => {
+			it('returns a truncated prompt when it exceeds 25 characters', () => {
+				const longPrompt = 'A very detailed and elaborate scene description';
+				const desc = tool.getProgressDescription({ prompt: longPrompt });
+				expect(desc).toBe('Generating image: "A very detailed and el..."');
+			});
+
+			it('returns the full prompt when it is 25 characters or fewer', () => {
+				const shortPrompt = 'a cat';
+				const desc = tool.getProgressDescription({ prompt: shortPrompt });
+				expect(desc).toBe('Generating image: "a cat"');
+			});
+
+			it('returns a generic message when prompt is empty/falsy', () => {
+				const desc = tool.getProgressDescription({ prompt: '' });
+				expect(desc).toBe('Generating image');
+			});
+		});
+
 		it('should have correct tool metadata', () => {
 			expect(tool.name).toBe('generate_image');
 			expect(tool.displayName).toBe('Generate Image');

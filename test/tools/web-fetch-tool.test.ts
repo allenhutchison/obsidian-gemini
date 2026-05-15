@@ -330,4 +330,294 @@ describe('WebFetchTool', () => {
 			expect(result.error).toBe('Only HTTP and HTTPS URLs are supported');
 		});
 	});
+
+	describe('execute - successful primary URL context fetch', () => {
+		it('should return success with urlsRetrieved data when URL context succeeds', async () => {
+			mockGenAI.models.generateContent.mockResolvedValueOnce({
+				candidates: [
+					{
+						content: {
+							parts: [{ text: 'Analyzed content from the page' }],
+						},
+						urlContextMetadata: {
+							urlMetadata: [
+								{
+									retrievedUrl: 'https://example.com',
+									urlRetrievalStatus: 'URL_RETRIEVAL_STATUS_SUCCESS',
+								},
+							],
+						},
+					},
+				],
+			});
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data.content).toBe('Analyzed content from the page');
+			expect(result.data.url).toBe('https://example.com');
+			expect(result.data.query).toBe('summarize');
+			expect(result.data.urlsRetrieved).toEqual([
+				{ url: 'https://example.com', status: 'URL_RETRIEVAL_STATUS_SUCCESS' },
+			]);
+			expect(result.data.fetchedAt).toBeDefined();
+		});
+	});
+
+	describe('execute - URL retrieval failure triggers fallback', () => {
+		async function setupFallbackFromUrlStatus(status: string): Promise<any> {
+			// Primary returns text but with a failed URL retrieval status
+			mockGenAI.models.generateContent.mockResolvedValueOnce({
+				candidates: [
+					{
+						content: {
+							parts: [{ text: 'Some text' }],
+						},
+						urlContextMetadata: {
+							urlMetadata: [
+								{
+									retrievedUrl: 'https://example.com',
+									urlRetrievalStatus: status,
+								},
+							],
+						},
+					},
+				],
+			});
+
+			// Fallback fetch
+			(requestUrlWithRetry as Mock).mockResolvedValueOnce({
+				status: 200,
+				text: '<html><head><title>Test</title></head><body><p>Fallback content</p></body></html>',
+			});
+
+			// Fallback Gemini analysis
+			mockGenAI.models.generateContent.mockResolvedValueOnce({
+				candidates: [
+					{
+						content: {
+							parts: [{ text: 'Fallback analysis result' }],
+						},
+					},
+				],
+			});
+
+			return tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+		}
+
+		it('should fallback when URL_RETRIEVAL_STATUS_ERROR', async () => {
+			const result = await setupFallbackFromUrlStatus('URL_RETRIEVAL_STATUS_ERROR');
+
+			expect(result.success).toBe(true);
+			expect(result.data.fallbackMethod).toBe(true);
+			expect(requestUrlWithRetry).toHaveBeenCalled();
+		});
+
+		it('should fallback when URL_RETRIEVAL_STATUS_ACCESS_DENIED', async () => {
+			const result = await setupFallbackFromUrlStatus('URL_RETRIEVAL_STATUS_ACCESS_DENIED');
+
+			expect(result.success).toBe(true);
+			expect(result.data.fallbackMethod).toBe(true);
+			expect(requestUrlWithRetry).toHaveBeenCalled();
+		});
+
+		it('should fallback when URL_RETRIEVAL_STATUS_NOT_FOUND', async () => {
+			const result = await setupFallbackFromUrlStatus('URL_RETRIEVAL_STATUS_NOT_FOUND');
+
+			expect(result.success).toBe(true);
+			expect(result.data.fallbackMethod).toBe(true);
+			expect(requestUrlWithRetry).toHaveBeenCalled();
+		});
+	});
+
+	describe('execute - empty text from primary response', () => {
+		it('should return error when primary returns no text', async () => {
+			mockGenAI.models.generateContent.mockResolvedValueOnce({
+				candidates: [
+					{
+						content: {
+							parts: [],
+						},
+					},
+				],
+			});
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('No response generated from URL content');
+		});
+
+		it('should return error when candidates have no content parts', async () => {
+			mockGenAI.models.generateContent.mockResolvedValueOnce({
+				candidates: [{}],
+			});
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('No response generated from URL content');
+		});
+	});
+
+	describe('execute - error classification', () => {
+		it('should classify 404 errors', async () => {
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new Error('Resource not found 404'));
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'test' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('URL not found (404)');
+		});
+
+		it('should classify 403 errors', async () => {
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new Error('Forbidden 403'));
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'test' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('Access forbidden to this URL (403)');
+		});
+
+		it('should classify quota errors', async () => {
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new Error('API quota exceeded'));
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'test' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('API quota exceeded');
+		});
+
+		it('should classify TypeError for invalid URL', async () => {
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new TypeError("Failed to construct 'URL': Invalid URL"));
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'test' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('Invalid URL format: https://example.com');
+		});
+	});
+
+	describe('execute - generic error with fallback', () => {
+		it('should succeed via fallback when primary throws generic error', async () => {
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new Error('Unknown server error')).mockResolvedValueOnce({
+				candidates: [
+					{
+						content: {
+							parts: [{ text: 'Fallback analysis' }],
+						},
+					},
+				],
+			});
+
+			(requestUrlWithRetry as Mock).mockResolvedValueOnce({
+				status: 200,
+				text: '<html><head><title>Page</title></head><body><p>Content</p></body></html>',
+			});
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(true);
+			expect(result.data.fallbackMethod).toBe(true);
+		});
+
+		it('should return fallback error when both primary and fallback fail', async () => {
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new Error('Primary failure'));
+
+			// Fallback requestUrlWithRetry also fails — fallbackFetch catches it and returns error
+			(requestUrlWithRetry as Mock).mockRejectedValueOnce(new Error('Fallback failure'));
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Fallback fetch failed');
+			expect(result.error).toContain('Fallback failure');
+		});
+	});
+
+	describe('execute - fallback path edge cases', () => {
+		it('should return error on fallback HTTP non-200 status', async () => {
+			// Make primary fail to trigger fallback
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new Error('Primary error'));
+
+			(requestUrlWithRetry as Mock).mockResolvedValueOnce({
+				status: 503,
+				text: 'Service Unavailable',
+			});
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('HTTP 503');
+		});
+
+		it('should return error when fallback analysis returns empty text', async () => {
+			// Make primary fail to trigger fallback
+			mockGenAI.models.generateContent.mockRejectedValueOnce(new Error('Primary error')).mockResolvedValueOnce({
+				candidates: [
+					{
+						content: {
+							parts: [],
+						},
+					},
+				],
+			});
+
+			(requestUrlWithRetry as Mock).mockResolvedValueOnce({
+				status: 200,
+				text: '<html><head><title>Test</title></head><body><p>Content</p></body></html>',
+			});
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toBe('No analysis generated from page content');
+		});
+
+		it('should return fallback fetch failed error when requestUrlWithRetry throws', async () => {
+			// Make primary fail with URL retrieval status to trigger fallback
+			mockGenAI.models.generateContent.mockResolvedValueOnce({
+				candidates: [
+					{
+						content: {
+							parts: [{ text: 'Some text' }],
+						},
+						urlContextMetadata: {
+							urlMetadata: [
+								{
+									retrievedUrl: 'https://example.com',
+									urlRetrievalStatus: 'URL_RETRIEVAL_STATUS_ERROR',
+								},
+							],
+						},
+					},
+				],
+			});
+
+			(requestUrlWithRetry as Mock).mockRejectedValueOnce(new Error('Network timeout'));
+
+			const result = await tool.execute({ url: 'https://example.com', query: 'summarize' }, mockContext);
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Fallback fetch failed');
+			expect(result.error).toContain('Network timeout');
+		});
+	});
+
+	describe('getProgressDescription', () => {
+		it('should extract domain from valid URL', () => {
+			const desc = tool.getProgressDescription({ url: 'https://www.example.com/path/to/page' });
+			expect(desc).toBe('Fetching from example.com');
+		});
+
+		it('should return generic message for invalid URL', () => {
+			const desc = tool.getProgressDescription({ url: 'not-a-url' });
+			expect(desc).toBe('Fetching web page');
+		});
+
+		it('should return generic message when url is empty', () => {
+			const desc = tool.getProgressDescription({ url: '' });
+			expect(desc).toBe('Fetching web page');
+		});
+	});
 });

@@ -54,6 +54,23 @@ vi.mock('../../src/services/obsidian-file-adapter', () => ({
 	}),
 }));
 
+// Mock createGoogleGenAI factory
+vi.mock('../../src/api/providers/gemini/google-genai-factory', () => ({
+	createGoogleGenAI: vi.fn().mockReturnValue({
+		fileSearchStores: {
+			get: vi.fn().mockResolvedValue({ name: 'test-store' }),
+			create: vi.fn().mockResolvedValue({ name: 'new-store' }),
+		},
+	}),
+}));
+
+// Mock RagProgressModal (dynamic import target)
+vi.mock('../../src/ui/rag-progress-modal', () => ({
+	RagProgressModal: vi.fn().mockImplementation(function () {
+		return { open: vi.fn() };
+	}),
+}));
+
 // Create mock TFile - use the mocked TFile class so instanceof checks work
 function createMockTFile(path: string): TFile {
 	return new (TFile as any)(path) as TFile;
@@ -100,6 +117,10 @@ function createMockPlugin(overrides: Partial<any> = {}) {
 			debug: vi.fn(),
 			warn: vi.fn(),
 			error: vi.fn(),
+		},
+		backgroundStatusBar: {
+			setRagProvider: vi.fn(),
+			update: vi.fn(),
 		},
 		saveData: vi.fn().mockResolvedValue(undefined),
 		addStatusBarItem: vi.fn().mockReturnValue({
@@ -902,6 +923,418 @@ describe('RagIndexingService', () => {
 			expect(getRagCache(service).cache).toBeNull();
 			expect(getVaultScanner(service).failedFiles).toEqual([]);
 			expect((service as any).status).toBe('disabled');
+		});
+
+		it('should wait for active indexing promise during destroy', async () => {
+			let resolveIndexing: (result: any) => void;
+			const slowPromise = new Promise<any>((resolve) => {
+				resolveIndexing = resolve;
+			});
+
+			// Simulate an active indexing promise
+			getVaultScanner(service)._indexingPromise = slowPromise;
+			vi.spyOn(getVaultScanner(service) as any, '_doIndexVault').mockReturnValue(slowPromise);
+			(service as any).status = 'idle';
+			(service as any).ai = {};
+
+			const destroyPromise = service.destroy();
+
+			// Resolve the indexing so destroy can complete
+			resolveIndexing!({ indexed: 3, skipped: 0, failed: 0, duration: 100 });
+
+			await destroyPromise;
+
+			expect((service as any).status).toBe('disabled');
+		});
+
+		it('should log error when indexVault throws during destroy and continue cleanup', async () => {
+			// hasActivePromise returns true but indexVault rejects
+			vi.spyOn(getVaultScanner(service), 'hasActivePromise').mockReturnValue(true);
+			vi.spyOn(getVaultScanner(service), 'indexVault').mockRejectedValue(new Error('indexing failed'));
+			(service as any).status = 'idle';
+			(service as any).ai = {};
+
+			await service.destroy();
+
+			expect(mockPlugin.logger.error).toHaveBeenCalledWith(
+				'RAG Indexing: Error while waiting for indexing during destroy',
+				expect.any(Error)
+			);
+			// Cleanup still completes
+			expect((service as any).status).toBe('disabled');
+			expect((service as any).ai).toBeNull();
+		});
+
+		it('should wait for sync queue processing to finish during destroy', async () => {
+			let processingCallCount = 0;
+			const getIsProcessingSpy = vi.spyOn(getSyncQueue(service), 'getIsProcessing').mockImplementation(() => {
+				processingCallCount++;
+				// Return true the first time, then false to exit the while loop
+				return processingCallCount <= 1;
+			});
+
+			const destroyPromise = service.destroy();
+
+			// Advance timer to allow the setTimeout(100) in the while loop to fire
+			vi.advanceTimersByTime(200);
+
+			await destroyPromise;
+
+			expect(getIsProcessingSpy).toHaveBeenCalledTimes(2);
+			expect((service as any).status).toBe('disabled');
+		});
+
+		it('should unregister from backgroundStatusBar on destroy', async () => {
+			await service.destroy();
+
+			expect(mockPlugin.backgroundStatusBar.setRagProvider).toHaveBeenCalledWith(null);
+		});
+	});
+
+	describe('initialize', () => {
+		it('should set status to disabled and return when ragIndexing is not enabled', async () => {
+			mockPlugin.settings.ragIndexing.enabled = false;
+
+			await service.initialize();
+
+			expect(service.getStatus()).toBe('disabled');
+		});
+
+		it('should log warning and set error status when apiKey is missing', async () => {
+			mockPlugin.apiKey = '';
+
+			await service.initialize();
+
+			expect(mockPlugin.logger.warn).toHaveBeenCalledWith('RAG Indexing: No API key configured');
+			expect(service.getStatus()).toBe('error');
+		});
+
+		it('should initialize successfully on happy path with existing indexed files', async () => {
+			// Pre-populate cache so indexedCount > 0 and indexingInProgress is false
+			getRagCache(service).cache = {
+				version: '1.0',
+				storeName: 'test-store',
+				lastSync: Date.now(),
+				indexingInProgress: false,
+				files: {
+					'note.md': { resourceName: 'res1', contentHash: 'h1', lastIndexed: Date.now() },
+				},
+			};
+			getRagCache(service).indexedCount = 1;
+
+			// Mock loadCache to keep our pre-populated cache
+			vi.spyOn(getRagCache(service), 'loadCache').mockResolvedValue(undefined);
+			vi.spyOn(getVaultScanner(service), 'ensureFileSearchStore').mockResolvedValue(undefined);
+
+			await service.initialize();
+
+			expect(service.getStatus()).toBe('idle');
+			expect(mockPlugin.logger.log).toHaveBeenCalledWith('RAG Indexing: Initialized successfully');
+			expect(mockPlugin.backgroundStatusBar.setRagProvider).toHaveBeenCalled();
+		});
+
+		it('should call handleInterruptedIndexing when cache shows indexingInProgress', async () => {
+			getRagCache(service).cache = {
+				version: '1.0',
+				storeName: 'test-store',
+				lastSync: Date.now(),
+				indexingInProgress: true,
+				files: { 'note.md': { resourceName: 'res1', contentHash: 'h1', lastIndexed: Date.now() } },
+			};
+			getRagCache(service).indexedCount = 1;
+
+			vi.spyOn(getRagCache(service), 'loadCache').mockResolvedValue(undefined);
+			vi.spyOn(getVaultScanner(service), 'ensureFileSearchStore').mockResolvedValue(undefined);
+			const handleInterruptedSpy = vi
+				.spyOn(getVaultScanner(service), 'handleInterruptedIndexing')
+				.mockResolvedValue(undefined);
+
+			await service.initialize();
+
+			expect(handleInterruptedSpy).toHaveBeenCalledWith(service);
+			expect(mockPlugin.logger.log).toHaveBeenCalledWith('RAG Indexing: Detected interrupted indexing, prompting user');
+		});
+
+		it('should trigger initial indexing with progress modal when indexedCount is 0', async () => {
+			getRagCache(service).cache = {
+				version: '1.0',
+				storeName: 'test-store',
+				lastSync: 0,
+				indexingInProgress: false,
+				files: {},
+			};
+			getRagCache(service).indexedCount = 0;
+
+			vi.spyOn(getRagCache(service), 'loadCache').mockResolvedValue(undefined);
+			vi.spyOn(getVaultScanner(service), 'ensureFileSearchStore').mockResolvedValue(undefined);
+
+			// Mock indexVault to prevent actual execution
+			vi.spyOn(service, 'indexVault').mockResolvedValue({
+				indexed: 5,
+				skipped: 0,
+				failed: 0,
+				duration: 100,
+			});
+
+			await service.initialize();
+
+			// The dynamic import for RagProgressModal should have been triggered
+			const { RagProgressModal } = await import('../../src/ui/rag-progress-modal');
+			expect(RagProgressModal).toHaveBeenCalled();
+			expect(service.getStatus()).toBe('idle');
+		});
+
+		it('should set error status when initialization throws', async () => {
+			vi.spyOn(getRagCache(service), 'loadCache').mockRejectedValue(new Error('disk error'));
+
+			await service.initialize();
+
+			expect(service.getStatus()).toBe('error');
+			expect(mockPlugin.logger.error).toHaveBeenCalledWith('RAG Indexing: Failed to initialize', expect.any(Error));
+		});
+	});
+
+	describe('getProgressInfo', () => {
+		it('should return full progress info with all fields', () => {
+			(service as any).status = 'indexing';
+			getVaultScanner(service).runningIndexed = 10;
+			getVaultScanner(service).runningSkipped = 3;
+			getVaultScanner(service).runningFailed = 1;
+			getVaultScanner(service).indexingProgress = { current: 14, total: 20 };
+			getVaultScanner(service).currentFile = 'notes/current.md';
+			getVaultScanner(service).indexingStartTime = 1234567890;
+			mockPlugin.settings.ragIndexing.fileSearchStoreName = 'my-store';
+			getRagCache(service).cache = { lastSync: 9999 };
+
+			const info = service.getProgressInfo();
+
+			expect(info.status).toBe('indexing');
+			expect(info.indexedCount).toBe(10);
+			expect(info.skippedCount).toBe(3);
+			expect(info.failedCount).toBe(1);
+			expect(info.totalCount).toBe(20);
+			expect(info.currentFile).toBe('notes/current.md');
+			expect(info.startTime).toBe(1234567890);
+			expect(info.storeName).toBe('my-store');
+			expect(info.lastSync).toBe(9999);
+		});
+
+		it('should return defaults when vault scanner has no data', () => {
+			const info = service.getProgressInfo();
+
+			expect(info.indexedCount).toBe(0);
+			expect(info.skippedCount).toBe(0);
+			expect(info.failedCount).toBe(0);
+			expect(info.totalCount).toBe(0);
+		});
+	});
+
+	describe('getClient', () => {
+		it('should return null when ai is not initialized', () => {
+			expect(service.getClient()).toBeNull();
+		});
+
+		it('should return the ai client when initialized', () => {
+			const mockAi = { fileSearchStores: {} };
+			(service as any).ai = mockAi;
+
+			expect(service.getClient()).toBe(mockAi);
+		});
+	});
+
+	describe('getIndexingProgress', () => {
+		it('should return vault scanner progress', () => {
+			getVaultScanner(service).indexingProgress = { current: 7, total: 15 };
+
+			expect(service.getIndexingProgress()).toEqual({ current: 7, total: 15 });
+		});
+
+		it('should return default when vault scanner is unavailable', () => {
+			(service as any).vaultScanner = null;
+
+			expect(service.getIndexingProgress()).toEqual({ current: 0, total: 0 });
+		});
+	});
+
+	describe('updateStatusBar', () => {
+		it('should call both statusBar.update() and backgroundStatusBar.update()', () => {
+			const statusBarUpdateSpy = vi.spyOn((service as any).statusBar, 'update').mockImplementation(() => {});
+
+			(service as any).updateStatusBar();
+
+			expect(statusBarUpdateSpy).toHaveBeenCalled();
+			expect(mockPlugin.backgroundStatusBar.update).toHaveBeenCalled();
+		});
+	});
+
+	describe('createStatusProvider', () => {
+		it('should return a provider that delegates all methods to the service', () => {
+			const provider = (service as any).createStatusProvider();
+
+			// Test getStatus delegation
+			(service as any).status = 'indexing';
+			expect(provider.getStatus()).toBe('indexing');
+
+			// Test getIndexedFileCount delegation
+			getRagCache(service).indexedCount = 42;
+			expect(provider.getIndexedFileCount()).toBe(42);
+
+			// Test isPaused delegation
+			(service as any).status = 'paused';
+			expect(provider.isPaused()).toBe(true);
+
+			// Test getIndexingProgress delegation
+			getVaultScanner(service).indexingProgress = { current: 3, total: 10 };
+			expect(provider.getIndexingProgress()).toEqual({ current: 3, total: 10 });
+
+			// Test getRateLimitRemainingSeconds delegation
+			getRateLimiter(service).rateLimitResumeTime = undefined;
+			expect(provider.getRateLimitRemainingSeconds()).toBe(0);
+
+			// Test cancelIndexing delegation
+			(service as any).status = 'indexing';
+			provider.cancelIndexing();
+			expect(getVaultScanner(service).cancelRequested).toBe(true);
+
+			// Test addProgressListener / removeProgressListener delegation
+			const listener = vi.fn();
+			provider.addProgressListener(listener);
+			expect((service as any).progressListeners.size).toBe(1);
+			provider.removeProgressListener(listener);
+			expect((service as any).progressListeners.size).toBe(0);
+		});
+
+		it('should return getProgressInfo with correct data', () => {
+			const provider = (service as any).createStatusProvider();
+			(service as any).status = 'idle';
+			getRagCache(service).cache = { lastSync: 5555 };
+			mockPlugin.settings.ragIndexing.fileSearchStoreName = 'provider-store';
+
+			const info = provider.getProgressInfo();
+			expect(info.status).toBe('idle');
+			expect(info.storeName).toBe('provider-store');
+			expect(info.lastSync).toBe(5555);
+		});
+
+		it('should return getDetailedStatus with correct structure', () => {
+			const provider = (service as any).createStatusProvider();
+			(service as any).status = 'idle';
+			getRagCache(service).indexedCount = 2;
+			getRagCache(service).cache = {
+				version: '1.0',
+				storeName: 'test-store',
+				lastSync: 1000,
+				files: {
+					'a.md': { resourceName: 'r1', contentHash: 'h1', lastIndexed: 1000 },
+				},
+			};
+
+			const detailed = provider.getDetailedStatus();
+			expect(detailed.status).toBe('idle');
+			expect(detailed.indexedCount).toBe(2);
+			expect(detailed.indexedFiles).toHaveLength(1);
+		});
+	});
+
+	// ── createStatusProvider delegation ──────────────────────────────────
+
+	describe('createStatusProvider delegation', () => {
+		it('should delegate indexVault through the provider', async () => {
+			const provider = (service as any).createStatusProvider();
+			const spy = vi
+				.spyOn(service as any, 'indexVault')
+				.mockResolvedValue({ indexed: 0, skipped: 0, failed: 0, duration: 0 });
+			await provider.indexVault();
+			expect(spy).toHaveBeenCalled();
+		});
+
+		it('should delegate syncPendingChanges through the provider', async () => {
+			const provider = (service as any).createStatusProvider();
+			const spy = vi.spyOn(service as any, 'syncPendingChanges').mockResolvedValue(true);
+			const result = await provider.syncPendingChanges();
+			expect(spy).toHaveBeenCalled();
+			expect(result).toBe(true);
+		});
+	});
+
+	// ── getDetailedStatus sort order ─────────────────────────────────────
+
+	describe('getDetailedStatus sort order', () => {
+		it('should sort indexed files by lastIndexed descending', () => {
+			const cache = (service as any).ragCache;
+			cache.cache = {
+				version: '1.0',
+				storeName: 'test-store',
+				lastSync: 1000,
+				files: {
+					'old.md': { resourceName: 'r1', contentHash: 'h1', lastIndexed: 100 },
+					'new.md': { resourceName: 'r2', contentHash: 'h2', lastIndexed: 300 },
+					'mid.md': { resourceName: 'r3', contentHash: 'h3', lastIndexed: 200 },
+				},
+			};
+			cache.indexedCount = 3;
+
+			const detailed = service.getDetailedStatus();
+			expect(detailed.indexedFiles[0].path).toBe('new.md');
+			expect(detailed.indexedFiles[1].path).toBe('mid.md');
+			expect(detailed.indexedFiles[2].path).toBe('old.md');
+		});
+	});
+
+	// ── Constructor callback lambdas ─────────────────────────────────────
+
+	describe('constructor callback lambdas', () => {
+		it('syncQueue callbacks should delegate to service state', () => {
+			const syncQueue = (service as any).syncQueue;
+			const callbacks = syncQueue.callbacks;
+
+			// Test setStatus callback
+			callbacks.setStatus('indexing');
+			expect((service as any).status).toBe('indexing');
+
+			// Test getStatus callback
+			(service as any).status = 'idle';
+			expect(callbacks.getStatus()).toBe('idle');
+
+			// Test isReady callback
+			expect(typeof callbacks.isReady()).toBe('boolean');
+
+			// Test getVaultAdapter callback
+			expect(callbacks.getVaultAdapter()).toBeNull();
+
+			// Test getFileUploader callback
+			expect(callbacks.getFileUploader()).toBeNull();
+
+			// Test getStoreName callback
+			expect(typeof callbacks.getStoreName()).toBe('string');
+		});
+
+		it('vaultScanner callbacks should delegate to service state', () => {
+			const vaultScanner = getVaultScanner(service);
+			const callbacks = vaultScanner.callbacks;
+
+			// Test setStatus callback
+			callbacks.setStatus('error');
+			expect((service as any).status).toBe('error');
+
+			// Test getAi callback
+			expect(callbacks.getAi()).toBeNull();
+
+			// Test onUpdateStatusBar callback
+			expect(() => callbacks.onUpdateStatusBar()).not.toThrow();
+
+			// Test onNotifyListeners callback
+			expect(() => callbacks.onNotifyListeners()).not.toThrow();
+		});
+	});
+
+	// ── deleteFileSearchStore delegation ─────────────────────────────────
+
+	describe('deleteFileSearchStore', () => {
+		it('should delegate to vaultScanner', async () => {
+			const spy = vi.spyOn(getVaultScanner(service), 'deleteFileSearchStore').mockResolvedValue(undefined);
+			await service.deleteFileSearchStore();
+			expect(spy).toHaveBeenCalled();
 		});
 	});
 });

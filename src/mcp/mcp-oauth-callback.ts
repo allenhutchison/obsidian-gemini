@@ -57,6 +57,10 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 		rejectCode = reject;
 	});
 
+	// Prevent unhandled rejection if the server fails to start and rejectCode fires
+	// before waitForCode is returned to the caller (the outer await rejects first).
+	waitForCode.catch(() => {});
+
 	const server = createServer((req: IncomingMessage, res: ServerResponse) => {
 		// Ignore favicon etc.
 		if (!req.url?.startsWith('/callback')) {

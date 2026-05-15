@@ -142,6 +142,11 @@ describe('Memory Tools', () => {
 			expect(result.success).toBe(false);
 			expect(result.error).toContain('Failed to update memory');
 		});
+
+		it('should return a progress description', () => {
+			const desc = tool.getProgressDescription({});
+			expect(desc).toBe('Updating vault memory');
+		});
 	});
 
 	describe('ReadMemoryTool', () => {
@@ -161,6 +166,11 @@ describe('Memory Tools', () => {
 
 		it('should not require confirmation', () => {
 			expect((tool as any).requiresConfirmation).toBeUndefined();
+		});
+
+		it('should return a progress description', () => {
+			const desc = tool.getProgressDescription({});
+			expect(desc).toBe('Reading vault memory');
 		});
 
 		it('should read memory successfully', async () => {

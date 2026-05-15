@@ -72,6 +72,7 @@ const mockVault = {
 	createFolder: vi.fn(),
 	create: vi.fn(),
 	read: vi.fn(),
+	modify: vi.fn(),
 	getMarkdownFiles: vi.fn(),
 	adapter: {
 		exists: vi.fn().mockResolvedValue(false),
@@ -618,6 +619,148 @@ describe('SkillManager', () => {
 				expect(resources).toContain('references/agent-mode.md');
 				expect(resources).toContain('references/settings.md');
 			});
+		});
+	});
+
+	describe('updateSkill', () => {
+		it('should update only the body content while preserving frontmatter', async () => {
+			const file = new TFile('gemini-scribe/Skills/my-skill/SKILL.md');
+			const originalContent = '---\nname: my-skill\ndescription: Original desc\n---\n\n# Old Instructions';
+
+			mockVault.getAbstractFileByPath.mockReturnValue(file);
+			mockVault.read.mockResolvedValue(originalContent);
+			mockMetadataCache.getFileCache.mockReturnValue({
+				frontmatterPosition: { end: { offset: originalContent.indexOf('---\n\n') + 3 } },
+			});
+			const path = await manager.updateSkill('my-skill', undefined, '# New Instructions');
+
+			expect(mockVault.modify).toHaveBeenCalledWith(
+				file,
+				expect.stringContaining('---\nname: my-skill\ndescription: Original desc\n---')
+			);
+			expect(mockVault.modify).toHaveBeenCalledWith(file, expect.stringContaining('# New Instructions'));
+			expect(mockFileManager.processFrontMatter).not.toHaveBeenCalled();
+			expect(path).toBe('gemini-scribe/Skills/my-skill/SKILL.md');
+		});
+
+		it('should update only the description via processFrontMatter', async () => {
+			const file = new TFile('gemini-scribe/Skills/my-skill/SKILL.md');
+			mockVault.getAbstractFileByPath.mockReturnValue(file);
+			mockFileManager.processFrontMatter.mockImplementation(async (_file: any, callback: (fm: any) => void) => {
+				const fm: Record<string, any> = {};
+				callback(fm);
+				expect(fm.description).toBe('Updated desc');
+			});
+
+			const path = await manager.updateSkill('my-skill', 'Updated desc');
+
+			expect(mockFileManager.processFrontMatter).toHaveBeenCalledWith(file, expect.any(Function));
+			expect(path).toBe('gemini-scribe/Skills/my-skill/SKILL.md');
+		});
+
+		it('should throw when neither description nor content is provided', async () => {
+			await expect(manager.updateSkill('my-skill', undefined, undefined)).rejects.toThrow(
+				'At least one of description or content must be provided'
+			);
+		});
+
+		it('should throw when skill does not exist', async () => {
+			mockVault.getAbstractFileByPath.mockReturnValue(null);
+
+			await expect(manager.updateSkill('nonexistent', 'desc')).rejects.toThrow('not found');
+		});
+
+		it('should throw for invalid skill name', async () => {
+			await expect(manager.updateSkill('Invalid Name', 'desc')).rejects.toThrow();
+		});
+
+		it('should update both description and content when both are provided', async () => {
+			const file = new TFile('gemini-scribe/Skills/my-skill/SKILL.md');
+			const originalContent = '---\nname: my-skill\ndescription: Old\n---\n\nOld body';
+
+			mockVault.getAbstractFileByPath.mockReturnValue(file);
+			mockVault.read.mockResolvedValue(originalContent);
+			mockMetadataCache.getFileCache.mockReturnValue({
+				frontmatterPosition: { end: { offset: originalContent.indexOf('---\n\n') + 3 } },
+			});
+			mockFileManager.processFrontMatter.mockImplementation(async (_file: any, callback: (fm: any) => void) => {
+				const fm: Record<string, any> = {};
+				callback(fm);
+			});
+
+			await manager.updateSkill('my-skill', 'New desc', 'New body');
+
+			expect(mockVault.modify).toHaveBeenCalled();
+			expect(mockFileManager.processFrontMatter).toHaveBeenCalled();
+		});
+
+		it('should use findFrontmatterEndOffset fallback when metadata cache has no position', async () => {
+			const file = new TFile('gemini-scribe/Skills/my-skill/SKILL.md');
+			const originalContent = '---\nname: my-skill\n---\nOld body';
+
+			mockVault.getAbstractFileByPath.mockReturnValue(file);
+			mockVault.read.mockResolvedValue(originalContent);
+			mockMetadataCache.getFileCache.mockReturnValue({});
+			await manager.updateSkill('my-skill', undefined, 'Replaced body');
+
+			expect(mockVault.modify).toHaveBeenCalledWith(file, expect.stringContaining('Replaced body'));
+		});
+	});
+
+	describe('listSkillResources with vault folder', () => {
+		it('should list files recursively and exclude SKILL.md', async () => {
+			const skillMd = new TFile('gemini-scribe/Skills/my-skill/SKILL.md');
+			const ref1 = new TFile('gemini-scribe/Skills/my-skill/references/ref1.md');
+			const ref2 = new TFile('gemini-scribe/Skills/my-skill/references/ref2.md');
+			const refsFolder = new TFolder('gemini-scribe/Skills/my-skill/references', [ref1, ref2]);
+			const skillFolder = new TFolder('gemini-scribe/Skills/my-skill', [skillMd, refsFolder]);
+
+			mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+				if (path === 'gemini-scribe/Skills/my-skill') return skillFolder;
+				return null;
+			});
+
+			const resources = await manager.listSkillResources('my-skill');
+
+			expect(resources).toContain('references/ref1.md');
+			expect(resources).toContain('references/ref2.md');
+			expect(resources).not.toContain('SKILL.md');
+		});
+
+		it('should return empty array for invalid skill name', async () => {
+			const resources = await manager.listSkillResources('Invalid Name');
+			expect(resources).toEqual([]);
+		});
+	});
+
+	describe('validateSkillName edge cases', () => {
+		it('should accept a name at exactly max length (64 chars)', () => {
+			const name64 = 'a'.repeat(64);
+			expect(manager.validateSkillName(name64).valid).toBe(true);
+		});
+
+		it('should reject a name at max length + 1 (65 chars)', () => {
+			const name65 = 'a'.repeat(65);
+			const result = manager.validateSkillName(name65);
+			expect(result.valid).toBe(false);
+			expect(result.error).toContain('64 characters');
+		});
+
+		it('should accept a name with digits only', () => {
+			// Single digit fails the regex (must start with lowercase alpha)
+			expect(manager.validateSkillName('1').valid).toBe(false);
+			// But alphanumeric with leading letter is fine
+			expect(manager.validateSkillName('a1').valid).toBe(true);
+		});
+
+		it('should accept a single character name', () => {
+			expect(manager.validateSkillName('a').valid).toBe(true);
+			expect(manager.validateSkillName('z').valid).toBe(true);
+		});
+
+		it('should reject names with path separators', () => {
+			expect(manager.validateSkillName('my/skill').valid).toBe(false);
+			expect(manager.validateSkillName('my\\skill').valid).toBe(false);
 		});
 	});
 });

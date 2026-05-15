@@ -411,4 +411,184 @@ describe('ToolRegistry', () => {
 			expect(allTools).toHaveLength(0);
 		});
 	});
+
+	describe('getEffectivePermission edge cases', () => {
+		it('should return DENY for unknown tool', () => {
+			expect(registry.getEffectivePermission('nonexistent_tool')).toBe(ToolPermission.DENY);
+		});
+
+		it('should fallback to DEFAULT_TOOL_POLICY when settings.toolPolicy is undefined', () => {
+			// Temporarily set toolPolicy to undefined
+			mockPlugin.settings.toolPolicy = undefined;
+
+			const tool = new TestTool();
+			registry.registerTool(tool);
+
+			// DEFAULT_TOOL_POLICY is CAUTIOUS with no overrides.
+			// READ classification in CAUTIOUS → APPROVE.
+			const result = registry.getEffectivePermission('test_tool');
+			expect(result).toBe(ToolPermission.APPROVE);
+		});
+
+		it('should fallback to DEFAULT_TOOL_POLICY when settings.toolPolicy is null', () => {
+			mockPlugin.settings.toolPolicy = null;
+
+			const tool = new TestTool();
+			registry.registerTool(tool);
+
+			const result = registry.getEffectivePermission('test_tool');
+			expect(result).toBe(ToolPermission.APPROVE);
+		});
+	});
+
+	describe('validateParameters edge cases', () => {
+		it('should detect unknown parameters', () => {
+			registry.registerTool(new TestTool());
+
+			const result = registry.validateParameters('test_tool', {
+				message: 'hello',
+				unknownParam: 'should fail',
+			});
+
+			expect(result.valid).toBe(false);
+			expect(result.errors).toContain('Unknown parameter: unknownParam');
+		});
+
+		it('should validate enum - valid value', () => {
+			// Create a tool with an enum parameter
+			const enumTool: Tool = {
+				name: 'enum_tool',
+				category: ToolCategory.READ_ONLY,
+				classification: ToolClassification.READ,
+				description: 'Tool with enum param',
+				parameters: {
+					type: 'object' as const,
+					properties: {
+						color: {
+							type: 'string' as const,
+							description: 'Pick a color',
+							enum: ['red', 'green', 'blue'],
+						},
+					},
+					required: ['color'],
+				},
+				execute: vi.fn(),
+			};
+			registry.registerTool(enumTool);
+
+			const result = registry.validateParameters('enum_tool', { color: 'red' });
+			expect(result.valid).toBe(true);
+			expect(result.errors).toBeUndefined();
+		});
+
+		it('should validate enum - invalid value', () => {
+			const enumTool: Tool = {
+				name: 'enum_tool2',
+				category: ToolCategory.READ_ONLY,
+				classification: ToolClassification.READ,
+				description: 'Tool with enum param',
+				parameters: {
+					type: 'object' as const,
+					properties: {
+						color: {
+							type: 'string' as const,
+							description: 'Pick a color',
+							enum: ['red', 'green', 'blue'],
+						},
+					},
+					required: ['color'],
+				},
+				execute: vi.fn(),
+			};
+			registry.registerTool(enumTool);
+
+			const result = registry.validateParameters('enum_tool2', { color: 'yellow' });
+			expect(result.valid).toBe(false);
+			expect(result.errors).toContain('Parameter color must be one of: red, green, blue');
+		});
+
+		it('should reject array when string is expected', () => {
+			registry.registerTool(new TestTool());
+
+			const result = registry.validateParameters('test_tool', {
+				message: ['not', 'a', 'string'],
+			});
+
+			expect(result.valid).toBe(false);
+			expect(result.errors).toContain('Parameter message should be string but got array');
+		});
+	});
+
+	describe('getToolDescriptions', () => {
+		it('should return correct format with function wrappers', () => {
+			const tool = new TestTool();
+			registry.registerTool(tool);
+
+			const context = { session: { context: {} } } as any;
+			const descriptions = registry.getToolDescriptions(context);
+
+			expect(descriptions).toHaveLength(1);
+			expect(descriptions[0]).toEqual({
+				type: 'function',
+				function: {
+					name: 'test_tool',
+					description: 'A test tool',
+					parameters: {
+						type: 'object',
+						properties: {
+							message: {
+								type: 'string',
+								description: 'A test message',
+							},
+						},
+						required: ['message'],
+					},
+				},
+			});
+		});
+
+		it('should only include enabled (non-DENY) tools', () => {
+			const readTool = new TestTool();
+			const destructiveTool = new DestructiveTestTool();
+
+			registry.registerTool(readTool);
+			registry.registerTool(destructiveTool);
+
+			// DENY the destructive tool
+			mockPlugin.settings.toolPolicy.toolPermissions = {
+				destructive_tool: ToolPermission.DENY,
+			};
+
+			const context = { session: { context: {} } } as any;
+			const descriptions = registry.getToolDescriptions(context);
+
+			expect(descriptions).toHaveLength(1);
+			expect(descriptions[0].function.name).toBe('test_tool');
+		});
+	});
+
+	describe('unregisterTool', () => {
+		it('should return true when unregistering an existing tool', () => {
+			registry.registerTool(new TestTool());
+
+			const result = registry.unregisterTool('test_tool');
+
+			expect(result).toBe(true);
+			expect(registry.getTool('test_tool')).toBeUndefined();
+		});
+
+		it('should return false when unregistering a non-existent tool', () => {
+			const result = registry.unregisterTool('nonexistent_tool');
+			expect(result).toBe(false);
+		});
+
+		it('should remove tool from getAllTools after unregistering', () => {
+			const tool = new TestTool();
+			registry.registerTool(tool);
+			expect(registry.getAllTools()).toHaveLength(1);
+
+			registry.unregisterTool('test_tool');
+			expect(registry.getAllTools()).toHaveLength(0);
+		});
+	});
 });

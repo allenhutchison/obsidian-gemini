@@ -1,4 +1,10 @@
-import { parseRetryDelay, isRetryableApiError } from '../../src/utils/retry';
+import {
+	parseRetryDelay,
+	isRetryableApiError,
+	isRetryableHttpStatus,
+	isTransientNetworkError,
+	executeWithRetry,
+} from '../../src/utils/retry';
 
 describe('retry utilities', () => {
 	describe('parseRetryDelay', () => {
@@ -179,6 +185,145 @@ describe('retry utilities', () => {
 		test('RESOURCE_EXHAUSTED without FreeTier message is retryable', () => {
 			const error = new Error('RESOURCE_EXHAUSTED: Too many requests per minute');
 			expect(isRetryableApiError(error)).toBe(true);
+		});
+
+		test('quota message without status code and without FreeTier is retryable', () => {
+			const error = { message: 'rate limit exceeded temporarily' };
+			expect(isRetryableApiError(error)).toBe(true);
+		});
+	});
+
+	describe('isRetryableHttpStatus', () => {
+		test('returns true for 500', () => {
+			expect(isRetryableHttpStatus(500)).toBe(true);
+		});
+
+		test('returns true for 503', () => {
+			expect(isRetryableHttpStatus(503)).toBe(true);
+		});
+
+		test('returns true for 429', () => {
+			expect(isRetryableHttpStatus(429)).toBe(true);
+		});
+
+		test('returns false for 200', () => {
+			expect(isRetryableHttpStatus(200)).toBe(false);
+		});
+
+		test('returns false for 400', () => {
+			expect(isRetryableHttpStatus(400)).toBe(false);
+		});
+	});
+
+	describe('isTransientNetworkError', () => {
+		test('returns true for timeout errors', () => {
+			expect(isTransientNetworkError(new Error('Connection timeout'))).toBe(true);
+		});
+
+		test('returns true for ECONNRESET', () => {
+			expect(isTransientNetworkError(new Error('ECONNRESET'))).toBe(true);
+		});
+
+		test('returns true for ECONNREFUSED', () => {
+			expect(isTransientNetworkError(new Error('ECONNREFUSED'))).toBe(true);
+		});
+
+		test('returns true for ENOTFOUND', () => {
+			expect(isTransientNetworkError(new Error('ENOTFOUND'))).toBe(true);
+		});
+
+		test('returns true for network errors', () => {
+			expect(isTransientNetworkError(new Error('network error'))).toBe(true);
+		});
+
+		test('returns true for dns errors', () => {
+			expect(isTransientNetworkError(new Error('dns resolution failed'))).toBe(true);
+		});
+
+		test('returns true for socket errors', () => {
+			expect(isTransientNetworkError(new Error('socket hang up'))).toBe(true);
+		});
+
+		test('returns false for non-transient errors', () => {
+			expect(isTransientNetworkError(new Error('Invalid URL'))).toBe(false);
+		});
+
+		test('returns false for non-Error values', () => {
+			expect(isTransientNetworkError('string error')).toBe(false);
+			expect(isTransientNetworkError(42)).toBe(false);
+			expect(isTransientNetworkError(null)).toBe(false);
+		});
+	});
+
+	describe('executeWithRetry', () => {
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		test('returns the result on first success', async () => {
+			const op = vi.fn().mockResolvedValue('ok');
+			const result = await executeWithRetry(
+				op,
+				{ maxRetries: 3, initialDelayMs: 100, jitter: false },
+				{ operationName: 'test' }
+			);
+			expect(result).toBe('ok');
+			expect(op).toHaveBeenCalledTimes(1);
+		});
+
+		test('retries and succeeds on second attempt', async () => {
+			const op = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue('ok');
+
+			const promise = executeWithRetry(
+				op,
+				{ maxRetries: 3, initialDelayMs: 100, jitter: false },
+				{ operationName: 'test' }
+			);
+			// Flush all pending timers
+			await vi.runAllTimersAsync();
+
+			const result = await promise;
+			expect(result).toBe('ok');
+			expect(op).toHaveBeenCalledTimes(2);
+		});
+
+		test('throws after exhausting all retries and logs error with logger', async () => {
+			vi.useRealTimers();
+			const mockLogger = { log: vi.fn(), debug: vi.fn(), error: vi.fn(), warn: vi.fn() };
+			const op = vi.fn().mockImplementation(() => Promise.reject(new Error('persistent failure')));
+
+			await expect(
+				executeWithRetry(
+					op,
+					{ maxRetries: 2, initialDelayMs: 1, jitter: false },
+					{ operationName: 'testOp', logger: mockLogger as any }
+				)
+			).rejects.toThrow('persistent failure');
+
+			expect(op).toHaveBeenCalledTimes(3); // 1 initial + 2 retries
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				expect.stringContaining('testOp failed after 3 attempts'),
+				expect.any(Error)
+			);
+			expect(mockLogger.warn).toHaveBeenCalled();
+			vi.useFakeTimers();
+		});
+
+		test('does not retry when isRetryable returns false', async () => {
+			const op = vi.fn().mockRejectedValue(new Error('not retryable'));
+
+			await expect(
+				executeWithRetry(
+					op,
+					{ maxRetries: 3, initialDelayMs: 100, jitter: false },
+					{ operationName: 'test', isRetryable: () => false }
+				)
+			).rejects.toThrow('not retryable');
+			expect(op).toHaveBeenCalledTimes(1);
 		});
 	});
 });
