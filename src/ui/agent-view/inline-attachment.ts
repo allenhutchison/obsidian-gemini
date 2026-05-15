@@ -22,9 +22,6 @@ export interface InlineAttachment {
 	fileName?: string;
 }
 
-/** Backward-compatible alias */
-export type ImageAttachment = InlineAttachment;
-
 /**
  * Generate a unique ID for an attachment
  */
@@ -166,6 +163,3 @@ export async function saveAttachmentToVault(app: App, attachment: InlineAttachme
 
 	return filePath;
 }
-
-/** Backward-compatible alias */
-export const saveImageToVault = saveAttachmentToVault;
