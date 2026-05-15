@@ -82,10 +82,16 @@ export async function obsidianFetch(url: string | URL, init?: RequestInit): Prom
 		}, MCP_FETCH_TIMEOUT_MS);
 	});
 
-	// Also reject if the caller's signal aborts mid-flight.
+	// Also reject if the caller's signal aborts mid-flight. Re-check `aborted`
+	// inside the executor in case it flipped between the pre-check at the top
+	// of the function and now — this is the standard AbortController idiom.
 	let abortHandler: (() => void) | undefined;
 	const abortPromise: Promise<never> | undefined = init?.signal
 		? new Promise<never>((_, reject) => {
+				if (init.signal!.aborted) {
+					reject(new TypeError('Network request failed: aborted'));
+					return;
+				}
 				abortHandler = () => reject(new TypeError('Network request failed: aborted'));
 				init.signal!.addEventListener('abort', abortHandler, { once: true });
 			})
