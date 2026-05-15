@@ -229,19 +229,23 @@ describe('ModelManager', () => {
 			expect(true).toBe(true);
 		});
 
-		it('getAvailableModels() returns Ollama models instead of Gemini models', async () => {
+		it('getAvailableModels() does not return Gemini bundled models', async () => {
 			const models = await ollamaManager.getAvailableModels();
 
 			// OllamaModelsService.getModels() may return empty if daemon is down,
 			// but the important thing is it doesn't return Gemini bundled models.
 			expect(Array.isArray(models)).toBe(true);
+			const bundledValues = new Set(originalModels.map((m) => m.value));
+			expect(models.some((m) => bundledValues.has(m.value))).toBe(false);
 		});
 
-		it('getParameterRanges() works via Ollama provider path', async () => {
+		it('getParameterRanges() returns normalized numeric ranges', async () => {
 			const ranges = await ollamaManager.getParameterRanges();
 
 			expect(ranges.temperature.min).toBe(0);
 			expect(ranges.topP.min).toBe(0);
+			expect(ranges.temperature.step).toBeGreaterThan(0);
+			expect(ranges.topP.step).toBeGreaterThan(0);
 		});
 	});
 });

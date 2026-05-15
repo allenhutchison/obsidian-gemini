@@ -199,17 +199,9 @@ describe('startOAuthCallbackServer', () => {
 	});
 
 	it('should reject with listen error', async () => {
-		mockListen.mockImplementation(() => {
-			// Don't call the callback — instead trigger the error handler
-		});
+		mockListen.mockImplementation(() => {});
 		mockOn.mockImplementation((event: string, cb: any) => {
-			if (event === 'error') {
-				// Fire error synchronously — the source code calls reject(err) which
-				// rejects both the outer promise and the internal waitForCode promise.
-				// By firing synchronously, both rejections are set up before any
-				// await, so vitest's rejection tracker sees them as handled.
-				cb(new Error('EADDRINUSE'));
-			}
+			if (event === 'error') cb(new Error('EADDRINUSE'));
 			return mockServer;
 		});
 

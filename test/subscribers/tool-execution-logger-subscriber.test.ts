@@ -29,7 +29,7 @@ function createMockSession(overrides: Partial<ChatSession> = {}): ChatSession {
 }
 
 function createMockPlugin(bus: AgentEventBus): any {
-	const mockFile = new TFile('gemini-scribe/Agent-Sessions/test.md');
+	const mockFile = Object.assign(new TFile(), { path: 'gemini-scribe/Agent-Sessions/test.md' });
 	return {
 		agentEventBus: bus,
 		logger: createMockLogger(),

@@ -1003,7 +1003,7 @@ describe('RagVaultScanner', () => {
 
 			// Import the mocked modal to configure it
 			const { RagResumeModal } = await import('../../src/ui/rag-resume-modal');
-			(RagResumeModal as any).mockImplementation(function (_app: any, resumeInfo: any, callback: any) {
+			(RagResumeModal as any).mockImplementation(function (this: any, _app: any, resumeInfo: any, callback: any) {
 				// Verify resumeInfo was built correctly
 				expect(resumeInfo.filesIndexed).toBe(2);
 				expect(resumeInfo.interruptedAt).toBe(1000);
@@ -1045,7 +1045,7 @@ describe('RagVaultScanner', () => {
 			const { scanner } = createScanner({ plugin, ragCache, callbacks });
 
 			const { RagResumeModal } = await import('../../src/ui/rag-resume-modal');
-			(RagResumeModal as any).mockImplementation(function (_app: any, _resumeInfo: any, callback: any) {
+			(RagResumeModal as any).mockImplementation(function (this: any, _app: any, _resumeInfo: any, callback: any) {
 				this.open = () => {
 					// Simulate user choosing start fresh
 					callback(false);
@@ -1077,7 +1077,7 @@ describe('RagVaultScanner', () => {
 			const { scanner } = createScanner({ callbacks });
 
 			const { RagProgressModal } = await import('../../src/ui/rag-progress-modal');
-			(RagProgressModal as any).mockImplementation(function () {
+			(RagProgressModal as any).mockImplementation(function (this: any) {
 				this.open = vi.fn();
 			});
 

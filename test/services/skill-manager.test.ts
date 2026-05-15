@@ -72,6 +72,7 @@ const mockVault = {
 	createFolder: vi.fn(),
 	create: vi.fn(),
 	read: vi.fn(),
+	modify: vi.fn(),
 	getMarkdownFiles: vi.fn(),
 	adapter: {
 		exists: vi.fn().mockResolvedValue(false),
@@ -631,8 +632,6 @@ describe('SkillManager', () => {
 			mockMetadataCache.getFileCache.mockReturnValue({
 				frontmatterPosition: { end: { offset: originalContent.indexOf('---\n\n') + 3 } },
 			});
-			mockVault.modify = vi.fn();
-
 			const path = await manager.updateSkill('my-skill', undefined, '# New Instructions');
 
 			expect(mockVault.modify).toHaveBeenCalledWith(
@@ -684,7 +683,6 @@ describe('SkillManager', () => {
 			mockMetadataCache.getFileCache.mockReturnValue({
 				frontmatterPosition: { end: { offset: originalContent.indexOf('---\n\n') + 3 } },
 			});
-			mockVault.modify = vi.fn();
 			mockFileManager.processFrontMatter.mockImplementation(async (_file: any, callback: (fm: any) => void) => {
 				const fm: Record<string, any> = {};
 				callback(fm);
@@ -703,8 +701,6 @@ describe('SkillManager', () => {
 			mockVault.getAbstractFileByPath.mockReturnValue(file);
 			mockVault.read.mockResolvedValue(originalContent);
 			mockMetadataCache.getFileCache.mockReturnValue({});
-			mockVault.modify = vi.fn();
-
 			await manager.updateSkill('my-skill', undefined, 'Replaced body');
 
 			expect(mockVault.modify).toHaveBeenCalledWith(file, expect.stringContaining('Replaced body'));

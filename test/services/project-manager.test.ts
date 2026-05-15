@@ -963,7 +963,7 @@ describe('ProjectManager – extended coverage', () => {
 
 			manager.destroy();
 
-			expect(clearTimeoutSpy.calls?.length ?? clearTimeoutSpy.mock.calls.length).toBe(2);
+			expect(clearTimeoutSpy.mock.calls.length).toBe(2);
 			expect(mgr.pendingTimers.size).toBe(0);
 
 			clearTimeoutSpy.mockRestore();

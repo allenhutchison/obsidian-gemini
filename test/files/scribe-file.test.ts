@@ -2,7 +2,7 @@ import { TFile } from 'obsidian';
 
 // Mock the GeminiPrompts and debug modules
 vi.mock('../../src/prompts', () => {
-	const MockGeminiPrompts = vi.fn().mockImplementation(function () {
+	const MockGeminiPrompts = vi.fn().mockImplementation(function (this: any) {
 		this.contextPrompt = vi.fn(({ file_name, file_contents }: any) => `[Context: ${file_name}]\n${file_contents}`);
 	});
 	return { GeminiPrompts: MockGeminiPrompts };
@@ -17,10 +17,13 @@ import { ScribeFile } from '../../src/files/index';
 
 // --- Helpers ---
 
+function makeTFile(path: string, extension = 'md'): TFile {
+	const basename = path.includes('/') ? path.split('/').pop()! : path;
+	return Object.assign(new TFile(), { path, basename, extension });
+}
+
 function createMockFile(path: string, extension = 'md'): TFile {
-	const file = new TFile(path);
-	(file as any).extension = extension;
-	return file;
+	return makeTFile(path, extension);
 }
 
 function createMockPlugin(overrides?: Record<string, any>) {

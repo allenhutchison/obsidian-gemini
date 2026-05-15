@@ -23,11 +23,17 @@ import { isExtensionSupportedWithFallback } from '@allenhutchison/gemini-utils';
 
 // --- Helpers ---
 
-function createMockFile(path: string, opts?: { size?: number; mtime?: number }): TFile {
-	const file = new TFile(path);
+function makeTFile(path: string): TFile {
 	const filename = path.substring(path.lastIndexOf('/') + 1);
 	const dotIdx = filename.lastIndexOf('.');
-	(file as any).extension = dotIdx > 0 ? filename.substring(dotIdx + 1) : '';
+	return Object.assign(new TFile(), {
+		path,
+		extension: dotIdx > 0 ? filename.substring(dotIdx + 1) : '',
+	});
+}
+
+function createMockFile(path: string, opts?: { size?: number; mtime?: number }): TFile {
+	const file = makeTFile(path);
 	(file as any).stat = {
 		size: opts?.size ?? 1024,
 		mtime: opts?.mtime ?? Date.now(),
@@ -219,7 +225,7 @@ describe('ObsidianVaultAdapter', () => {
 
 		it('should return null for non-file entries', async () => {
 			const vault = createMockVault([]);
-			vault.getAbstractFileByPath.mockReturnValue({ path: 'folder/', children: [] }); // TFolder-like
+			vault.getAbstractFileByPath.mockReturnValue({ path: 'folder/', children: [] } as any); // TFolder-like
 			const { adapter } = createAdapter({ vault });
 
 			const info = await adapter.getFileInfo('folder/');
