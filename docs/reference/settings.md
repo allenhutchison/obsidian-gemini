@@ -184,7 +184,7 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Setting**: `hooksEnabled`
 - **Type**: Boolean
 - **Default**: `false`
-- **Description**: Subscribe to vault events (file created/modified/deleted/renamed) and dispatch them to hook definitions in `<history-folder>/Hooks/`. Each matching event fires a headless agent run with debounce, rate-limit, and loop-prevention guards.
+- **Description**: Subscribe to vault events (file created/modified/deleted/renamed) and dispatch them to hook definitions in `[state-folder]/Hooks/`. Each matching event fires a headless agent run with debounce, rate-limit, and loop-prevention guards.
 - **Why opt-in**: Vault events fire continuously; an unintentionally-broad hook can drain API quota quickly. The default is off so users opt in deliberately.
 - **See also**: [Lifecycle Hooks](/guide/lifecycle-hooks)
 

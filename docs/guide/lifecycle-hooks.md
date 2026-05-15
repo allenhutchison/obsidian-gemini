@@ -8,7 +8,7 @@ Hooks are disabled by default. Set **Enable lifecycle hooks** in plugin settings
 
 ## Overview
 
-A hook is a markdown file stored in `<history-folder>/Hooks/`. The file's frontmatter controls the trigger, filter, and action; the body is the prompt template.
+A hook is a markdown file stored in `[state-folder]/Hooks/`. The file's frontmatter controls the trigger, filter, and action; the body is the prompt template.
 
 ```text
 gemini-scribe/Hooks/
@@ -35,7 +35,7 @@ The fastest path is the **Hook Manager** modal. Two ways to open it:
 
 The modal has a list view (toggle / edit / delete / reset on each row) and a create/edit form covering trigger, path glob, tool access, prompt, plus an Advanced section for debounce, cooldown, rate limit, model override, output path, and the desktop-only flag.
 
-You can also create hooks by hand-editing markdown files inside `<history-folder>/Hooks/`. The filename (without `.md`) becomes the hook's **slug**.
+You can also create hooks by hand-editing markdown files inside `[state-folder]/Hooks/`. The filename (without `.md`) becomes the hook's **slug**.
 
 **Minimal example** — `gemini-scribe/Hooks/summarise-on-save.md`:
 
@@ -143,7 +143,7 @@ Hooks fire reactively and can run continuously, so the engine has several guardr
 
 Two folders never trigger hooks regardless of glob:
 
-- The plugin state folder (`<history-folder>/`)
+- The plugin state folder (`[state-folder]/`)
 - Obsidian's own configuration folder (`.obsidian/`)
 
 This prevents trivial loops where a hook's own output (in `Hooks/Runs/...`) would re-trigger it.
@@ -166,7 +166,7 @@ If a single hook fires 5+ times within 60 seconds (regardless of file), the engi
 
 ### Auto-Pause on Repeated Failure
 
-After three consecutive errors, a hook is auto-paused. Inspect `<history-folder>/Hooks/hooks-state.json` to see the last error message and clear the `pausedDueToErrors` flag to resume.
+After three consecutive errors, a hook is auto-paused. Inspect `[state-folder]/Hooks/hooks-state.json` to see the last error message and clear the `pausedDueToErrors` flag to resume.
 
 ## Examples
 
