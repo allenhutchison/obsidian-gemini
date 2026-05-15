@@ -5,9 +5,19 @@ import { MCPServerConfig, MCPConnectionStatus, MCPServerState, MCP_TRANSPORT_HTT
 import { MCPToolWrapper } from './mcp-tool-wrapper';
 import { ObsidianOAuthClientProvider, OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
 import { obsidianFetch } from './mcp-fetch';
+import {
+	MCP_CLOSE_TIMEOUT_MS,
+	MCP_CONNECT_TIMEOUT_MS,
+	MCP_LIST_TOOLS_TIMEOUT_MS,
+	MCP_OAUTH_WAIT_TIMEOUT_MS,
+} from './mcp-constants';
+import { withTimeout } from '../utils/timeout';
 import type ObsidianGemini from '../main';
 import { Logger } from '../utils/logger';
 import { Notice } from 'obsidian';
+
+/** Marker on MCPServerState.error so the online listener knows which servers to retry. */
+const OFFLINE_ERROR_PREFIX = 'Machine is offline';
 
 // Desktop-only modules loaded dynamically to avoid pulling in Node.js builtins
 // (http, child_process) that crash the plugin on iOS/mobile.
@@ -114,6 +124,7 @@ export class MCPManager {
 	private logger: Logger;
 	private connections = new Map<string, ServerConnection>();
 	private serverStates = new Map<string, MCPServerState>();
+	private onlineHandler: (() => void) | null = null;
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -121,10 +132,71 @@ export class MCPManager {
 	}
 
 	/**
+	 * True when the browser/Electron reports the machine is offline.
+	 * `navigator.onLine` is a hint, not a guarantee — a working LAN with no
+	 * upstream still reports online — but it lets us fail fast in the common
+	 * "Wi-Fi is off" case without waiting for a 10-second timeout.
+	 */
+	private isMachineOffline(): boolean {
+		return typeof navigator !== 'undefined' && navigator.onLine === false;
+	}
+
+	/**
+	 * Install a window 'online' listener (once) so HTTP servers marked offline
+	 * are retried automatically when the network returns. Idempotent.
+	 */
+	private setupOnlineListener(): void {
+		if (this.onlineHandler) return;
+		if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+		this.onlineHandler = () => {
+			void this.handleOnline();
+		};
+		window.addEventListener('online', this.onlineHandler);
+	}
+
+	private teardownOnlineListener(): void {
+		if (!this.onlineHandler) return;
+		if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+			window.removeEventListener('online', this.onlineHandler);
+		}
+		this.onlineHandler = null;
+	}
+
+	/**
+	 * Network came back: reconnect HTTP servers that were skipped because
+	 * the machine was offline. Errors are logged but not surfaced — this is
+	 * a background best-effort retry.
+	 */
+	private async handleOnline(): Promise<void> {
+		const servers = this.plugin.settings.mcpServers || [];
+		for (const config of servers) {
+			if (!config.enabled || config.transport !== MCP_TRANSPORT_HTTP) continue;
+			const state = this.serverStates.get(config.name);
+			if (!state || state.status !== MCPConnectionStatus.ERROR) continue;
+			if (!state.error?.startsWith(OFFLINE_ERROR_PREFIX)) continue;
+
+			this.logger.log(`MCP: Network online — reconnecting "${config.name}"`);
+			try {
+				await this.connectServer(config);
+			} catch (error) {
+				this.logger.warn(
+					`MCP: Reconnect on online event failed for "${config.name}":`,
+					error instanceof Error ? error.message : error
+				);
+			}
+		}
+	}
+
+	/**
 	 * Connect to all enabled MCP servers.
-	 * Called during plugin startup. Failures are logged but do not block startup.
+	 * Called during plugin startup (deferred to onLayoutReady; fire-and-forget).
+	 * Failures are logged but do not block startup.
 	 */
 	async connectAllEnabled(): Promise<void> {
+		// Set up the online listener once, regardless of whether any HTTP
+		// servers are currently configured — the user may add one mid-session.
+		this.setupOnlineListener();
+
 		const servers = this.plugin.settings.mcpServers || [];
 		const enabledServers = servers.filter((s) => s.enabled);
 
@@ -161,6 +233,22 @@ export class MCPManager {
 			return;
 		}
 
+		// HTTP servers can't reach anywhere when the machine is offline. Skip
+		// fast and let the online listener retry when the network returns.
+		// Stdio servers are local processes and unaffected by network state.
+		if (useHttp && this.isMachineOffline()) {
+			this.logger.log(
+				`MCP: Skipping HTTP server "${config.name}" — machine is offline, will retry when network returns`
+			);
+			this.updateState(config.name, {
+				status: MCPConnectionStatus.ERROR,
+				error: `${OFFLINE_ERROR_PREFIX} — will retry when network returns`,
+				toolNames: [],
+			});
+			this.setupOnlineListener();
+			return;
+		}
+
 		// Disconnect if already connected
 		if (this.connections.has(config.name)) {
 			await this.disconnectServer(config.name);
@@ -184,9 +272,14 @@ export class MCPManager {
 
 			this.logger.debug(`MCP: client.connect() succeeded for "${config.name}"`);
 
-			// Discover tools
+			// Discover tools (bounded — a server can accept the connection but
+			// hang forever on listTools, which would freeze the agent setup).
 			this.logger.debug(`MCP: Listing tools for "${config.name}"...`);
-			const { tools } = await client.listTools();
+			const { tools } = await withTimeout(
+				client.listTools(),
+				MCP_LIST_TOOLS_TIMEOUT_MS,
+				`MCP listTools for "${config.name}"`
+			);
 			this.logger.log(`MCP: Server "${config.name}" connected with ${tools.length} tool(s)`);
 
 			// Create tool wrappers and register them
@@ -204,10 +297,11 @@ export class MCPManager {
 				toolNames: tools.map((t) => t.name),
 			});
 		} catch (error) {
-			// Close the transport if it was created
+			// Close the transport if it was created (best-effort, bounded so a
+			// hung server can't keep us in the catch block indefinitely).
 			if (transport) {
 				try {
-					await transport.close();
+					await withTimeout(transport.close(), MCP_CLOSE_TIMEOUT_MS, 'MCP transport close');
 				} catch {
 					// Ignore close errors during cleanup
 				}
@@ -240,9 +334,10 @@ export class MCPManager {
 			this.plugin.toolRegistry.unregisterTool(wrapper.name);
 		}
 
-		// Close transport (which kills the spawned process)
+		// Close transport (which kills the spawned process). Bounded so a hung
+		// server can't make plugin teardown hang.
 		try {
-			await conn.transport.close();
+			await withTimeout(conn.transport.close(), MCP_CLOSE_TIMEOUT_MS, `MCP transport close for "${serverName}"`);
 		} catch (error) {
 			this.logger.debug(`MCP: Error closing transport for "${serverName}":`, error);
 		}
@@ -253,9 +348,10 @@ export class MCPManager {
 	}
 
 	/**
-	 * Disconnect all connected MCP servers.
+	 * Disconnect all connected MCP servers and stop listening for network changes.
 	 */
 	async disconnectAll(): Promise<void> {
+		this.teardownOnlineListener();
 		const serverNames = Array.from(this.connections.keys());
 		for (const name of serverNames) {
 			try {
@@ -284,7 +380,11 @@ export class MCPManager {
 
 		// Re-query and build new wrappers first so a listTools() failure
 		// doesn't leave us with no tools registered.
-		const { tools } = await conn.client.listTools();
+		const { tools } = await withTimeout(
+			conn.client.listTools(),
+			MCP_LIST_TOOLS_TIMEOUT_MS,
+			`MCP listTools (refresh) for "${serverName}"`
+		);
 		const newWrappers: MCPToolWrapper[] = [];
 		for (const toolDef of tools) {
 			const wrapper = new MCPToolWrapper(conn.client, config.name, toolDef);
@@ -339,6 +439,12 @@ export class MCPManager {
 			throw new Error('Stdio MCP server connections are not supported on mobile');
 		}
 
+		// HTTP test can't possibly succeed when offline — fail fast with a
+		// clear message instead of waiting out the connect timeout.
+		if (useHttp && this.isMachineOffline()) {
+			throw new Error(`${OFFLINE_ERROR_PREFIX} — cannot test HTTP MCP server`);
+		}
+
 		if (useHttp) {
 			this.logger.debug(`MCP: Test connection to "${config.name}" — url: ${config.url}`);
 		} else {
@@ -353,11 +459,15 @@ export class MCPManager {
 			transport = result.transport;
 
 			this.logger.debug(`MCP: Test — connected, listing tools...`);
-			const { tools } = await result.client.listTools();
+			const { tools } = await withTimeout(
+				result.client.listTools(),
+				MCP_LIST_TOOLS_TIMEOUT_MS,
+				`MCP listTools (test) for "${config.name}"`
+			);
 			const toolNames = tools.map((t) => t.name);
 			this.logger.debug(`MCP: Test — found ${toolNames.length} tool(s): ${toolNames.join(', ')}`);
 
-			await transport.close();
+			await withTimeout(transport.close(), MCP_CLOSE_TIMEOUT_MS, 'MCP transport close (test)');
 			return toolNames;
 		} catch (error) {
 			const errorMsg = error instanceof Error ? error.message : String(error);
@@ -368,7 +478,7 @@ export class MCPManager {
 			}
 			if (transport) {
 				try {
-					await transport.close();
+					await withTimeout(transport.close(), MCP_CLOSE_TIMEOUT_MS, 'MCP transport close (test cleanup)');
 				} catch {
 					// Ignore close errors during cleanup
 				}
@@ -438,7 +548,7 @@ export class MCPManager {
 		});
 
 		try {
-			await client.connect(transport);
+			await withTimeout(client.connect(transport), MCP_CONNECT_TIMEOUT_MS, `MCP connect to "${config.name}"`);
 		} catch (connectError) {
 			if (connectError instanceof UnauthorizedError && useHttp && transport instanceof StreamableHTTPClientTransport) {
 				this.logger.log(`MCP: OAuth required for "${config.name}", waiting for authorization...`);
@@ -448,8 +558,15 @@ export class MCPManager {
 					throw new Error('OAuth required but callback server is not available (mobile or port conflict)');
 				}
 
-				// Wait for OAuth callback — server is already listening
-				const { code } = await callbackHandle.waitForCode;
+				// Wait for OAuth callback — server is already listening. Bound this
+				// to the OAuth window so an abandoned browser tab can't hang us
+				// indefinitely (the callback server itself also enforces this, but
+				// belt-and-braces avoids drift if that ever changes).
+				const { code } = await withTimeout(
+					callbackHandle.waitForCode,
+					MCP_OAUTH_WAIT_TIMEOUT_MS,
+					`MCP OAuth callback for "${config.name}"`
+				);
 				callbackHandle = null; // Server auto-closes after receiving the code
 				await transport.finishAuth(code);
 				this.logger.log(`MCP: OAuth token exchange complete for "${config.name}", reconnecting...`);
@@ -457,7 +574,11 @@ export class MCPManager {
 				// Reconnect with the now-authenticated provider
 				await transport.close().catch(() => {});
 				transport = new StreamableHTTPClientTransport(new URL(config.url!), { authProvider, fetch: obsidianFetch });
-				await client.connect(transport);
+				await withTimeout(
+					client.connect(transport),
+					MCP_CONNECT_TIMEOUT_MS,
+					`MCP connect (post-OAuth) to "${config.name}"`
+				);
 			} else {
 				throw connectError;
 			}

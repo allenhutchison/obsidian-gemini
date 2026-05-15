@@ -2,6 +2,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { Tool, ToolResult, ToolExecutionContext, ToolParameterSchema } from '../tools/types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
+import { MCP_CALL_TOOL_TIMEOUT_MS } from './mcp-constants';
+import { withTimeout } from '../utils/timeout';
 
 /**
  * MCP tool definition as returned by client.listTools()
@@ -42,10 +44,17 @@ export class MCPToolWrapper implements Tool {
 
 	async execute(params: any, _context: ToolExecutionContext): Promise<ToolResult> {
 		try {
-			const result = await this.client.callTool({
-				name: this.originalToolName,
-				arguments: params,
-			});
+			// Bound the wait — a hung MCP server must not freeze the agent loop.
+			// Timeout surfaces as `{ success: false, error }` via the catch below,
+			// which is the same shape any other tool failure produces.
+			const result = await withTimeout(
+				this.client.callTool({
+					name: this.originalToolName,
+					arguments: params,
+				}),
+				MCP_CALL_TOOL_TIMEOUT_MS,
+				`MCP tool "${this.displayName}"`
+			);
 
 			// Convert MCP CallToolResult to plugin ToolResult
 			const textParts: string[] = [];

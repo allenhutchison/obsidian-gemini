@@ -185,6 +185,12 @@ export class LifecycleService {
 			await plugin.hookManager.initialize();
 		}
 
+		// Kick off MCP server connections in the background. Fire-and-forget so
+		// the layout-ready path never waits on a slow or unreachable server.
+		if (plugin.mcpManager && plugin.settings.mcpEnabled) {
+			void plugin.mcpManager.connectAllEnabled();
+		}
+
 		// Check for version updates and show notification
 		await this.checkForUpdates();
 	}
@@ -472,10 +478,17 @@ export class LifecycleService {
 		}
 		plugin.skillManager = new SkillManager(plugin);
 
-		// MCP server connections
+		// MCP server connections. Never block plugin startup on MCP — a slow or
+		// unreachable HTTP server with no timeout used to hang Obsidian for as
+		// long as the OS kept the socket alive (see discussion #576).
+		//
+		// First plugin load: layout is not ready yet, so we just construct the
+		// manager and let onLayoutReady() kick off the connect in the background.
+		// Re-init (settings change after layout is ready): we fire-and-forget
+		// here since onLayoutReady() won't run again.
 		plugin.mcpManager = new MCPManager(plugin);
-		if (plugin.settings.mcpEnabled) {
-			await plugin.mcpManager.connectAllEnabled();
+		if (plugin.settings.mcpEnabled && plugin.app.workspace.layoutReady) {
+			void plugin.mcpManager.connectAllEnabled();
 		}
 
 		// Context management

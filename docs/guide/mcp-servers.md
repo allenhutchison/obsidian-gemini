@@ -173,6 +173,29 @@ When an MCP server is connected:
 - Check that the tool hasn't been removed from the server
 - Try disconnecting and reconnecting the server
 - Enable Debug Mode for detailed error logs
+- Tool calls have a 60-second timeout; a tool that takes longer will return a timeout error
+
+## Timeouts and offline behavior
+
+To prevent a slow or unreachable MCP server from hanging Obsidian, the plugin enforces these timeouts:
+
+| Operation                                 | Timeout    |
+| ----------------------------------------- | ---------- |
+| Connect + first tool listing (per server) | 10 seconds |
+| Tool list refresh / **Test Connection**   | 10 seconds |
+| Tool invocation by the agent              | 60 seconds |
+| Underlying HTTP request                   | 15 seconds |
+| OAuth authorization wait                  | 2 minutes  |
+
+These values are not user-configurable. If a working server consistently exceeds them, please open a discussion.
+
+**Offline machines**
+
+When the machine reports that it has no network connection (`navigator.onLine === false`), HTTP MCP servers are skipped at startup and show an "offline" error in settings. The plugin listens for the network coming back and reconnects them automatically. Stdio (local process) servers are unaffected by network state and always attempt to start.
+
+**Startup is non-blocking**
+
+MCP servers are connected in the background after Obsidian's layout is ready. The plugin loads immediately even if every configured MCP server is unreachable. The agent may see fewer tools for a few seconds during this connection phase.
 
 ## Limitations
 
