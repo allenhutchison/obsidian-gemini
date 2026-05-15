@@ -1,4 +1,6 @@
 import { MCPServerConfig, MCPConnectionStatus, MCP_TRANSPORT_STDIO, MCP_TRANSPORT_HTTP } from '../../src/mcp/types';
+import { TimeoutError } from '../../src/utils/timeout';
+import { MCP_CONNECT_TIMEOUT_MS, MCP_LIST_TOOLS_TIMEOUT_MS } from '../../src/mcp/mcp-constants';
 
 // --- Mocks ---
 
@@ -316,6 +318,147 @@ describe('MCPManager', () => {
 			const status = manager.getServerStatus('unknown');
 			expect(status.status).toBe(MCPConnectionStatus.DISCONNECTED);
 			expect(status.toolNames).toEqual([]);
+		});
+	});
+
+	describe('timeouts', () => {
+		// These tests use fake timers so a stuck connect/listTools rejects on a
+		// schedule, not in real wall-clock time.
+		beforeEach(() => {
+			vi.useFakeTimers();
+		});
+
+		afterEach(() => {
+			vi.useRealTimers();
+		});
+
+		it('rejects with TimeoutError when client.connect() never settles', async () => {
+			mockClientConnect.mockImplementationOnce(() => new Promise(() => {}));
+
+			const settled = manager.connectServer(createHttpConfig());
+			// Attach assertion BEFORE advancing time so the rejection has a handler.
+			const assertion = expect(settled).rejects.toBeInstanceOf(TimeoutError);
+			await vi.advanceTimersByTimeAsync(MCP_CONNECT_TIMEOUT_MS + 50);
+			await assertion;
+
+			const status = manager.getServerStatus('test-http');
+			expect(status.status).toBe(MCPConnectionStatus.ERROR);
+			expect(status.error).toMatch(/timed out/);
+		});
+
+		it('rejects with TimeoutError when listTools() never settles', async () => {
+			mockClientConnect.mockResolvedValueOnce(undefined);
+			mockListTools.mockImplementationOnce(() => new Promise(() => {}));
+
+			const settled = manager.connectServer(createHttpConfig());
+			const assertion = expect(settled).rejects.toBeInstanceOf(TimeoutError);
+			await vi.advanceTimersByTimeAsync(MCP_LIST_TOOLS_TIMEOUT_MS + 50);
+			await assertion;
+
+			const status = manager.getServerStatus('test-http');
+			expect(status.status).toBe(MCPConnectionStatus.ERROR);
+		});
+
+		it('queryToolsForConfig also times out a hung listTools()', async () => {
+			mockClientConnect.mockResolvedValueOnce(undefined);
+			mockListTools.mockImplementationOnce(() => new Promise(() => {}));
+
+			const settled = manager.queryToolsForConfig(createHttpConfig());
+			const assertion = expect(settled).rejects.toBeInstanceOf(TimeoutError);
+			await vi.advanceTimersByTimeAsync(MCP_LIST_TOOLS_TIMEOUT_MS + 50);
+			await assertion;
+		});
+	});
+
+	describe('offline behaviour', () => {
+		let originalOnLine: PropertyDescriptor | undefined;
+
+		beforeEach(() => {
+			originalOnLine = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+		});
+
+		afterEach(() => {
+			if (originalOnLine) {
+				Object.defineProperty(navigator, 'onLine', originalOnLine);
+			}
+		});
+
+		function setOnline(value: boolean): void {
+			Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => value });
+		}
+
+		it('marks HTTP servers as offline without attempting connect when navigator.onLine is false', async () => {
+			setOnline(false);
+
+			await manager.connectServer(createHttpConfig());
+
+			expect(MockStreamableHTTPClientTransport).not.toHaveBeenCalled();
+			expect(mockClientConnect).not.toHaveBeenCalled();
+
+			const status = manager.getServerStatus('test-http');
+			expect(status.status).toBe(MCPConnectionStatus.ERROR);
+			expect(status.error).toContain('offline');
+		});
+
+		it('still attempts stdio connections when navigator.onLine is false', async () => {
+			setOnline(false);
+			mockListTools.mockResolvedValueOnce({ tools: [{ name: 'tool1' }] });
+
+			await manager.connectServer(createStdioConfig());
+
+			expect(MockStdioClientTransport).toHaveBeenCalled();
+			expect(mockClientConnect).toHaveBeenCalled();
+
+			const status = manager.getServerStatus('test-stdio');
+			expect(status.status).toBe(MCPConnectionStatus.CONNECTED);
+		});
+
+		it('queryToolsForConfig fails fast for HTTP when offline', async () => {
+			setOnline(false);
+
+			await expect(manager.queryToolsForConfig(createHttpConfig())).rejects.toThrow(/offline/);
+			expect(MockStreamableHTTPClientTransport).not.toHaveBeenCalled();
+		});
+
+		it("reconnects offline-marked HTTP servers when the 'online' event fires", async () => {
+			setOnline(false);
+			plugin.settings.mcpServers = [createHttpConfig()];
+
+			// connectAllEnabled registers the online listener and marks the server offline.
+			await manager.connectAllEnabled();
+			expect(manager.getServerStatus('test-http').status).toBe(MCPConnectionStatus.ERROR);
+			expect(MockStreamableHTTPClientTransport).not.toHaveBeenCalled();
+
+			// Network returns; the listener should reconnect.
+			setOnline(true);
+			mockClientConnect.mockResolvedValueOnce(undefined);
+			mockListTools.mockResolvedValueOnce({ tools: [{ name: 'tool1' }] });
+
+			window.dispatchEvent(new Event('online'));
+
+			// Let microtasks drain so the async handler completes.
+			await new Promise((r) => window.setTimeout(r, 0));
+
+			expect(MockStreamableHTTPClientTransport).toHaveBeenCalled();
+			expect(manager.getServerStatus('test-http').status).toBe(MCPConnectionStatus.CONNECTED);
+		});
+
+		it('disconnectAll removes the online listener', async () => {
+			plugin.settings.mcpServers = [createHttpConfig()];
+			setOnline(true);
+			mockListTools.mockResolvedValueOnce({ tools: [] });
+
+			await manager.connectAllEnabled();
+			await manager.disconnectAll();
+
+			// After disconnectAll, an online event should not trigger a reconnect.
+			setOnline(false);
+			setOnline(true);
+			window.dispatchEvent(new Event('online'));
+			await new Promise((r) => window.setTimeout(r, 0));
+
+			// HTTP transport was created only once (during the initial connect).
+			expect(MockStreamableHTTPClientTransport).toHaveBeenCalledTimes(1);
 		});
 	});
 });

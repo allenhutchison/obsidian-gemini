@@ -1,4 +1,5 @@
 import { requestUrl } from 'obsidian';
+import { MCP_FETCH_TIMEOUT_MS } from './mcp-constants';
 
 /**
  * A fetch-compatible wrapper around Obsidian's `requestUrl`.
@@ -10,9 +11,18 @@ import { requestUrl } from 'obsidian';
  *
  * Conforms to the MCP SDK's `FetchLike` type:
  *   `(url: string | URL, init?: RequestInit) => Promise<Response>`
+ *
+ * Applies MCP_FETCH_TIMEOUT_MS as a ceiling on each request. `requestUrl`
+ * does not accept an AbortSignal, so when the timer fires we stop waiting
+ * but the underlying socket continues until the OS times it out.
  */
 export async function obsidianFetch(url: string | URL, init?: RequestInit): Promise<Response> {
 	const urlString = url instanceof URL ? url.toString() : url;
+
+	// Honour a pre-aborted caller signal before doing any work.
+	if (init?.signal?.aborted) {
+		throw new TypeError('Network request failed: aborted');
+	}
 
 	const headers: Record<string, string> = {};
 	if (init?.headers) {
@@ -47,24 +57,62 @@ export async function obsidianFetch(url: string | URL, init?: RequestInit): Prom
 		}
 	}
 
-	try {
-		const response = await requestUrl({
-			url: urlString,
-			method: init?.method || 'GET',
-			headers,
-			body,
-			throw: false, // Don't throw on 4xx/5xx — let the SDK handle errors
-		});
+	// Build the request promise (resolves to a Response or throws).
+	const requestPromise = requestUrl({
+		url: urlString,
+		method: init?.method || 'GET',
+		headers,
+		body,
+		throw: false, // Don't throw on 4xx/5xx — let the SDK handle errors
+	}).then(
+		(response) =>
+			new Response(response.text, {
+				status: response.status,
+				headers: new Headers(response.headers),
+			})
+	);
 
-		// Convert Obsidian's response to a Web API Response object
-		// Use response.text as the raw body (requestUrl always provides this)
-		return new Response(response.text, {
-			status: response.status,
-			headers: new Headers(response.headers),
-		});
+	// Race against the fetch-level timeout. We throw the same TypeError shape
+	// the existing catch block produced, so the MCP SDK's error handling is
+	// unchanged.
+	let timer: number | undefined;
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		timer = window.setTimeout(() => {
+			reject(new TypeError(`Network request failed: timed out after ${MCP_FETCH_TIMEOUT_MS}ms`));
+		}, MCP_FETCH_TIMEOUT_MS);
+	});
+
+	// Also reject if the caller's signal aborts mid-flight. Re-check `aborted`
+	// inside the executor in case it flipped between the pre-check at the top
+	// of the function and now — this is the standard AbortController idiom.
+	let abortHandler: (() => void) | undefined;
+	const abortPromise: Promise<never> | undefined = init?.signal
+		? new Promise<never>((_, reject) => {
+				if (init.signal!.aborted) {
+					reject(new TypeError('Network request failed: aborted'));
+					return;
+				}
+				abortHandler = () => reject(new TypeError('Network request failed: aborted'));
+				init.signal!.addEventListener('abort', abortHandler, { once: true });
+			})
+		: undefined;
+
+	try {
+		const racers: Array<Promise<Response>> = [requestPromise, timeoutPromise];
+		if (abortPromise) racers.push(abortPromise);
+		return await Promise.race(racers);
 	} catch (error) {
-		// For network-level errors, create a Response-like TypeError
-		// to match what fetch() would throw
+		// Network/timeout/abort — keep the TypeError shape the SDK expects.
+		if (error instanceof TypeError) {
+			throw error;
+		}
 		throw new TypeError(`Network request failed: ${error instanceof Error ? error.message : String(error)}`);
+	} finally {
+		if (timer !== undefined) {
+			window.clearTimeout(timer);
+		}
+		if (abortHandler && init?.signal) {
+			init.signal.removeEventListener('abort', abortHandler);
+		}
 	}
 }
