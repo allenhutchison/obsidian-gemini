@@ -1,9 +1,6 @@
 import { TFile } from 'obsidian';
-import {
-	UpdateFrontmatterTool,
-	AppendContentTool,
-	getExtendedVaultTools,
-} from '../../../src/tools/vault-tools-extended';
+import { getExtendedVaultTools } from '../../../src/tools/vault-tools-extended';
+import type { Tool } from '../../../src/tools/types';
 import { ToolExecutionContext } from '../../../src/tools/types';
 import { ToolCategory } from '../../../src/types/agent';
 import { ToolClassification } from '../../../src/types/tool-policy';
@@ -61,11 +58,11 @@ function makeTFile(path: string, extension = 'md'): TFile {
 // ─── UpdateFrontmatterTool ───────────────────────────────────────────────────
 
 describe('UpdateFrontmatterTool', () => {
-	let tool: UpdateFrontmatterTool;
+	let tool: Tool;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		tool = new UpdateFrontmatterTool();
+		tool = getExtendedVaultTools().find((t) => t.name === 'update_frontmatter')!;
 	});
 
 	// ── Static properties ────────────────────────────────────────────────
@@ -284,11 +281,11 @@ describe('UpdateFrontmatterTool', () => {
 // ─── AppendContentTool ───────────────────────────────────────────────────────
 
 describe('AppendContentTool', () => {
-	let tool: AppendContentTool;
+	let tool: Tool;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		tool = new AppendContentTool();
+		tool = getExtendedVaultTools().find((t) => t.name === 'append_content')!;
 	});
 
 	// ── Static properties ────────────────────────────────────────────────

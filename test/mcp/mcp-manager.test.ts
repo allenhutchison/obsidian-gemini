@@ -63,7 +63,6 @@ vi.mock('../../src/mcp/mcp-oauth-callback', () => ({
 		waitForCode: new Promise(() => {}), // never resolves — tests don't exercise full OAuth
 		close: vi.fn(),
 	}),
-	waitForOAuthCallback: vi.fn(),
 }));
 
 // Import after mocks
