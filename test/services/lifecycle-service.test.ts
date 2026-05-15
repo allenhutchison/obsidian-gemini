@@ -658,6 +658,8 @@ describe('LifecycleService', () => {
 		it('should call mcpManager.connectAllEnabled() when mcpEnabled is true', async () => {
 			mockPlugin.settings.mcpEnabled = true;
 			await lifecycle.setup();
+			// connectAllEnabled is called during onLayoutReady (first boot path)
+			await lifecycle.onLayoutReady();
 
 			expect(mockPlugin.mcpManager.connectAllEnabled).toHaveBeenCalled();
 		});

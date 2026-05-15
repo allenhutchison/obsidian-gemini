@@ -34,6 +34,12 @@ vi.mock('../../src/types/tool-policy', async (importOriginal) => {
 	};
 });
 
+function makeTFile(path: string): TFile {
+	const basename = path.includes('/') ? path.split('/').pop()! : path;
+	const extension = basename.includes('.') ? basename.split('.').pop()! : '';
+	return Object.assign(new TFile(), { path, basename, extension });
+}
+
 function createMockPlugin(overrides: any = {}): any {
 	return {
 		app: {
@@ -41,9 +47,7 @@ function createMockPlugin(overrides: any = {}): any {
 				getAbstractFileByPath: vi.fn().mockReturnValue(null),
 				read: vi.fn().mockResolvedValue(''),
 				create: vi.fn().mockImplementation(async (path: string) => {
-					const file = new TFile(path);
-					(file as any).basename = path.split('/').pop()?.replace('.md', '') ?? '';
-					(file as any).extension = 'md';
+					const file = makeTFile(path);
 					(file as any).stat = { ctime: Date.now(), mtime: Date.now() };
 					return file;
 				}),
@@ -112,7 +116,7 @@ describe('SessionHistory', () => {
 
 		it('should have a working entryTemplate after construction', async () => {
 			// Verify the template works by calling addEntryToSession and checking modify is called
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
@@ -162,7 +166,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should read the file and parse history content', async () => {
-			const mockFile = new TFile('gemini-scribe/Agent-Sessions/Test Session.md');
+			const mockFile = makeTFile('gemini-scribe/Agent-Sessions/Test Session.md');
 			(mockFile as any).extension = 'md';
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
@@ -191,7 +195,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should return empty array and log error on read failure', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockRejectedValue(new Error('read failed'));
 
@@ -210,7 +214,7 @@ describe('SessionHistory', () => {
 		let mockFile: TFile;
 
 		beforeEach(() => {
-			mockFile = new TFile('gemini-scribe/Agent-Sessions/Test.md');
+			mockFile = makeTFile('gemini-scribe/Agent-Sessions/Test.md');
 			(mockFile as any).extension = 'md';
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
@@ -468,7 +472,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should use existing file when it exists', async () => {
-			const mockFile = new TFile(createMockSession().historyPath);
+			const mockFile = makeTFile(createMockSession().historyPath);
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('# Test Session\n\n');
 
@@ -487,7 +491,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should capitalize role name for display', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
@@ -508,7 +512,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should use configured userName for user entries', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
@@ -531,7 +535,7 @@ describe('SessionHistory', () => {
 		it('should fall back to "User" when userName is not configured', async () => {
 			mockPlugin.settings.userName = '';
 			sessionHistory = new SessionHistory(mockPlugin);
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
@@ -552,7 +556,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should use explicitTimestamp when provided', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
@@ -572,7 +576,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should update session lastActive after writing', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('');
 
@@ -591,7 +595,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should throw and log error when reading existing content fails', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockRejectedValue(new Error('read error'));
 
@@ -611,7 +615,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should throw and log error when modify fails', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('existing content');
 			mockPlugin.app.vault.modify.mockRejectedValue(new Error('write error'));
@@ -634,7 +638,7 @@ describe('SessionHistory', () => {
 
 	describe('applySessionFrontmatter (via updateSessionMetadata)', () => {
 		it('should set required fields in frontmatter', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -662,7 +666,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should set context_files when present', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -674,7 +678,7 @@ describe('SessionHistory', () => {
 				}
 			);
 
-			const contextFile = new TFile('notes/Context.md');
+			const contextFile = makeTFile('notes/Context.md');
 			(contextFile as any).basename = 'Context';
 			const session = createMockSession({
 				context: {
@@ -689,7 +693,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should delete context_files when empty', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -714,7 +718,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should set accessed_files from session accessedFiles Set', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -735,7 +739,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should delete accessed_files when session has no accessedFiles', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -756,7 +760,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should set tool_policy when serializable', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -782,7 +786,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should delete tool_policy when not serializable', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -808,7 +812,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should always delete legacy enabled_tools field', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -828,7 +832,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should set model config fields when present', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -858,7 +862,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should delete model config fields when absent', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -886,7 +890,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should set project linkage as wikilink', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			let capturedFrontmatter: any = {};
@@ -938,11 +942,11 @@ describe('SessionHistory', () => {
 
 		it('should filter to only markdown TFile instances', async () => {
 			const now = Date.now();
-			const mdFile = Object.assign(new TFile('session.md'), {
+			const mdFile = Object.assign(makeTFile('session.md'), {
 				extension: 'md',
 				stat: { ctime: now, mtime: now },
 			});
-			const txtFile = Object.assign(new TFile('note.txt'), {
+			const txtFile = Object.assign(makeTFile('note.txt'), {
 				extension: 'txt',
 				stat: { ctime: now, mtime: now },
 			});
@@ -959,11 +963,11 @@ describe('SessionHistory', () => {
 
 		it('should sort by mtime descending (most recent first)', async () => {
 			const now = Date.now();
-			const olderFile = Object.assign(new TFile('older.md'), {
+			const olderFile = Object.assign(makeTFile('older.md'), {
 				extension: 'md',
 				stat: { ctime: now - 3000, mtime: now - 3000 },
 			});
-			const newerFile = Object.assign(new TFile('newer.md'), {
+			const newerFile = Object.assign(makeTFile('newer.md'), {
 				extension: 'md',
 				stat: { ctime: now - 1000, mtime: now - 1000 },
 			});
@@ -996,7 +1000,7 @@ describe('SessionHistory', () => {
 
 	describe('deleteSessionHistory', () => {
 		it('should delete the file when it exists', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 
 			const session = createMockSession();
@@ -1015,7 +1019,7 @@ describe('SessionHistory', () => {
 		});
 
 		it('should throw and log error on delete failure', async () => {
-			const mockFile = new TFile('test.md');
+			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.delete.mockRejectedValue(new Error('delete failed'));
 

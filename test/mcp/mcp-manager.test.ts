@@ -321,7 +321,6 @@ describe('MCPManager', () => {
 		});
 	});
 
-
 	describe('timeouts', () => {
 		// These tests use fake timers so a stuck connect/listTools rejects on a
 		// schedule, not in real wall-clock time.
@@ -623,6 +622,8 @@ describe('MCPManager', () => {
 
 	describe('disconnectAll', () => {
 		it('should disconnect all connected servers', async () => {
+			// Ensure online so HTTP server connects (master added offline detection)
+			Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true });
 			mockListTools.mockResolvedValue({ tools: [] });
 
 			// Connect two servers
@@ -696,7 +697,6 @@ describe('MCPManager', () => {
 					}),
 				})
 			);
-
 		});
 	});
 });

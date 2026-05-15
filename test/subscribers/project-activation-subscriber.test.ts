@@ -5,6 +5,12 @@ import { TFile } from 'obsidian';
 
 vi.mock('obsidian');
 
+function makeTFile(path: string): TFile {
+	const basename = path.includes('/') ? path.split('/').pop()! : path;
+	const extension = basename.includes('.') ? basename.split('.').pop()! : '';
+	return Object.assign(new TFile(), { path, basename, extension });
+}
+
 function createMockLogger(): any {
 	return {
 		log: vi.fn(),
@@ -68,8 +74,8 @@ describe('ProjectActivationSubscriber', () => {
 		});
 
 		it('should auto-detect project from context files and break after first match', async () => {
-			const contextFile1 = new TFile('src/file1.md');
-			const contextFile2 = new TFile('src/file2.md');
+			const contextFile1 = makeTFile('src/file1.md');
+			const contextFile2 = makeTFile('src/file2.md');
 			const session = createMockSession({
 				context: {
 					contextFiles: [contextFile1, contextFile2],
@@ -93,7 +99,7 @@ describe('ProjectActivationSubscriber', () => {
 		});
 
 		it('should not set projectPath when no context files match a project', async () => {
-			const contextFile = new TFile('notes/random.md');
+			const contextFile = makeTFile('notes/random.md');
 			const session = createMockSession({
 				context: {
 					contextFiles: [contextFile],
@@ -110,7 +116,7 @@ describe('ProjectActivationSubscriber', () => {
 		});
 
 		it('should log error but not throw when persistence fails', async () => {
-			const contextFile = new TFile('src/file.md');
+			const contextFile = makeTFile('src/file.md');
 			const session = createMockSession({
 				context: {
 					contextFiles: [contextFile],
@@ -179,7 +185,7 @@ describe('ProjectActivationSubscriber', () => {
 
 		const session = createMockSession({
 			context: {
-				contextFiles: [new TFile('src/file.md')],
+				contextFiles: [makeTFile('src/file.md')],
 				requireConfirmation: [],
 			},
 		});
