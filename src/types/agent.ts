@@ -13,7 +13,6 @@ export enum ToolCategory {
 	READ_ONLY = 'read_only', // Search, read files, analyze
 	VAULT_OPERATIONS = 'vault_ops', // Create, modify, delete notes
 	EXTERNAL_MCP = 'external_mcp', // MCP server integrations
-	SYSTEM = 'system', // System operations
 	SKILLS = 'skills', // Agent skill management
 }
 

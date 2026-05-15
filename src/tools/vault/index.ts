@@ -18,7 +18,6 @@ export { MoveFileTool } from './move-file-tool';
 export { SearchFilesTool } from './search-files-tool';
 export { SearchFileContentsTool } from './search-file-contents-tool';
 export { GetWorkspaceStateTool } from './get-workspace-state-tool';
-export { resolvePathToFile, resolvePathToFileOrFolder } from './utils';
 
 /**
  * Get all available vault tools

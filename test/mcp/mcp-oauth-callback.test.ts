@@ -209,30 +209,3 @@ describe('startOAuthCallbackServer', () => {
 		await expect(startOAuthCallbackServer()).rejects.toThrow('EADDRINUSE');
 	});
 });
-
-describe('waitForOAuthCallback', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		mockListen.mockImplementation((_port: number, _host: string, cb: () => void) => {
-			cb();
-		});
-		mockOn.mockImplementation(() => mockServer);
-		(window as any).setTimeout = vi.fn(() => 999);
-		(window as any).clearTimeout = vi.fn();
-	});
-
-	it('should return the waitForCode promise from the handle', async () => {
-		const { waitForOAuthCallback } = await import('../../src/mcp/mcp-oauth-callback');
-
-		// Start the callback and simulate a code
-		const promise = waitForOAuthCallback();
-
-		const handler = (mockServer as any)._handler;
-		const mockReq = { url: '/callback?code=abc' };
-		const mockRes = { writeHead: vi.fn(), end: vi.fn() };
-		handler(mockReq, mockRes);
-
-		const result = await promise;
-		expect(result.code).toBe('abc');
-	});
-});

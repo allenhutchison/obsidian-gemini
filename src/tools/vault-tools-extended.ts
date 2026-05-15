@@ -9,7 +9,7 @@ import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-u
  * Tool to safely update YAML frontmatter without touching content
  * Critical for integration with Obsidian Bases and other metadata-driven plugins
  */
-export class UpdateFrontmatterTool implements Tool {
+class UpdateFrontmatterTool implements Tool {
 	name = 'update_frontmatter';
 	displayName = 'Update Frontmatter';
 	category = ToolCategory.VAULT_OPERATIONS;
@@ -141,7 +141,7 @@ export class UpdateFrontmatterTool implements Tool {
  * Tool to append content to the end of a file
  * Useful for logging, journaling, or adding items to lists without rewriting the whole file
  */
-export class AppendContentTool implements Tool {
+class AppendContentTool implements Tool {
 	name = 'append_content';
 	displayName = 'Append Content';
 	category = ToolCategory.VAULT_OPERATIONS;

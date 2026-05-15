@@ -1,12 +1,24 @@
 import { TFile } from 'obsidian';
-import {
-	UpdateFrontmatterTool,
-	AppendContentTool,
-	getExtendedVaultTools,
-} from '../../../src/tools/vault-tools-extended';
+import { getExtendedVaultTools } from '../../../src/tools/vault-tools-extended';
+import type { Tool } from '../../../src/tools/types';
 import { ToolExecutionContext } from '../../../src/tools/types';
 import { ToolCategory } from '../../../src/types/agent';
 import { ToolClassification } from '../../../src/types/tool-policy';
+
+/** Tool narrowed to include the optional methods these tests exercise. */
+type ToolWithOptionals = Tool & {
+	getProgressDescription: NonNullable<Tool['getProgressDescription']>;
+	confirmationMessage: NonNullable<Tool['confirmationMessage']>;
+};
+
+function getToolByName(name: string): ToolWithOptionals {
+	const tool = getExtendedVaultTools().find(
+		(t): t is ToolWithOptionals =>
+			t.name === name && typeof t.getProgressDescription === 'function' && typeof t.confirmationMessage === 'function'
+	);
+	if (!tool) throw new Error(`Tool not found: ${name}`);
+	return tool;
+}
 
 vi.mock('obsidian', async () => ({
 	...(await vi.importActual<any>('../../../__mocks__/obsidian.js')),
@@ -61,11 +73,11 @@ function makeTFile(path: string, extension = 'md'): TFile {
 // ─── UpdateFrontmatterTool ───────────────────────────────────────────────────
 
 describe('UpdateFrontmatterTool', () => {
-	let tool: UpdateFrontmatterTool;
+	let tool: ToolWithOptionals;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		tool = new UpdateFrontmatterTool();
+		tool = getToolByName('update_frontmatter');
 	});
 
 	// ── Static properties ────────────────────────────────────────────────
@@ -284,11 +296,11 @@ describe('UpdateFrontmatterTool', () => {
 // ─── AppendContentTool ───────────────────────────────────────────────────────
 
 describe('AppendContentTool', () => {
-	let tool: AppendContentTool;
+	let tool: ToolWithOptionals;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		tool = new AppendContentTool();
+		tool = getToolByName('append_content');
 	});
 
 	// ── Static properties ────────────────────────────────────────────────

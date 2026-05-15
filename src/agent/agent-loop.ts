@@ -135,7 +135,7 @@ export interface AgentLoopResult {
  * keeps re-attempting the same call after being told "loop detected" still
  * gets stopped cleanly instead of burning iterations and tokens.
  */
-export const AGENT_LOOP_ABORT_THRESHOLD = 3;
+const AGENT_LOOP_ABORT_THRESHOLD = 3;
 
 /**
  * Drives the tool-execution loop after the initial model response. Iterates

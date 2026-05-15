@@ -3,22 +3,10 @@
  */
 
 // Interfaces
-export type {
-	ModelApi,
-	ModelResponse,
-	BaseModelRequest,
-	ExtendedModelRequest,
-	InlineDataPart,
-	ImagePart,
-	ToolCall,
-	ToolDefinition,
-} from './interfaces/model-api';
+export type { BaseModelRequest, ExtendedModelRequest } from './interfaces/model-api';
 
 // Factory
 export { ModelClientFactory, ModelUseCase } from './factory';
 
 // Providers
-export { GeminiClient, createGoogleGenAI } from './providers/gemini';
-export type { GeminiClientConfig } from './providers/gemini';
-export { OllamaClient } from './providers/ollama';
-export type { OllamaClientConfig } from './providers/ollama';
+export { GeminiClient } from './providers/gemini';

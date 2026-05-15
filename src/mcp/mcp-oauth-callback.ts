@@ -141,11 +141,3 @@ export async function startOAuthCallbackServer(timeoutMs = CALLBACK_TIMEOUT_MS):
 		},
 	};
 }
-
-/**
- * Convenience wrapper: start server, wait for code, return result.
- * @deprecated Use `startOAuthCallbackServer` for two-phase control.
- */
-export function waitForOAuthCallback(timeoutMs = CALLBACK_TIMEOUT_MS): Promise<OAuthCallbackResult> {
-	return startOAuthCallbackServer(timeoutMs).then((handle) => handle.waitForCode);
-}
