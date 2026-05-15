@@ -256,7 +256,9 @@ describe('RagVaultScanner', () => {
 			const promise1 = scanner.indexVault();
 			const promise2 = scanner.indexVault();
 
-			// Both should be the exact same promise reference
+			// Deduplication is active — both calls share the same underlying _indexingPromise.
+			// Note: promise1 !== promise2 because indexVault wraps _indexingPromise with
+			// `return await` which creates a distinct Promise, but the work is deduplicated.
 			expect(scanner.hasActivePromise()).toBe(true);
 
 			const [result1, result2] = await Promise.all([promise1, promise2]);
@@ -1083,10 +1085,10 @@ describe('RagVaultScanner', () => {
 
 			scanner.startResumeIndexing({});
 
-			// Wait for the background indexing to complete
-			await new Promise((resolve) => window.setTimeout(resolve, 50));
-
-			expect(RagProgressModal).toHaveBeenCalled();
+			// Use deterministic polling instead of a fixed setTimeout delay
+			await vi.waitFor(() => {
+				expect(RagProgressModal).toHaveBeenCalled();
+			});
 		});
 	});
 
