@@ -11,7 +11,7 @@ import { MCP_CONNECT_TIMEOUT_MS, MCP_LIST_TOOLS_TIMEOUT_MS } from '../../src/mcp
 const {
 	mockStdioTransportClose,
 	MockStdioClientTransport,
-	mockHttpTransportClose,
+	_mockHttpTransportClose,
 	MockStreamableHTTPClientTransport,
 	mockListTools,
 	mockClientConnect,
@@ -22,9 +22,9 @@ const {
 		return { close: mockStdioTransportClose };
 	});
 
-	const mockHttpTransportClose = vi.fn();
+	const _mockHttpTransportClose = vi.fn();
 	const MockStreamableHTTPClientTransport = vi.fn().mockImplementation(function () {
-		return { close: mockHttpTransportClose };
+		return { close: _mockHttpTransportClose };
 	});
 
 	const mockListTools = vi.fn().mockResolvedValue({ tools: [] });
@@ -37,7 +37,7 @@ const {
 	return {
 		mockStdioTransportClose,
 		MockStdioClientTransport,
-		mockHttpTransportClose,
+		_mockHttpTransportClose,
 		MockStreamableHTTPClientTransport,
 		mockListTools,
 		mockClientConnect,
@@ -321,6 +321,7 @@ describe('MCPManager', () => {
 		});
 	});
 
+
 	describe('timeouts', () => {
 		// These tests use fake timers so a stuck connect/listTools rejects on a
 		// schedule, not in real wall-clock time.
@@ -459,6 +460,243 @@ describe('MCPManager', () => {
 
 			// HTTP transport was created only once (during the initial connect).
 			expect(MockStreamableHTTPClientTransport).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('connectAllEnabled - edge cases', () => {
+		it('should log and return when no servers are configured', async () => {
+			plugin.settings.mcpServers = [];
+
+			await manager.connectAllEnabled();
+
+			expect(plugin.logger.log).toHaveBeenCalledWith('MCP: No enabled servers to connect');
+			expect(MockStdioClientTransport).not.toHaveBeenCalled();
+			expect(MockStreamableHTTPClientTransport).not.toHaveBeenCalled();
+		});
+
+		it('should log and return when all servers are disabled', async () => {
+			plugin.settings.mcpServers = [
+				createStdioConfig({ name: 'disabled1', enabled: false }),
+				createStdioConfig({ name: 'disabled2', enabled: false }),
+			];
+
+			await manager.connectAllEnabled();
+
+			expect(plugin.logger.log).toHaveBeenCalledWith('MCP: No enabled servers to connect');
+			expect(mockClientConnect).not.toHaveBeenCalled();
+		});
+
+		it('should continue connecting other servers when one fails', async () => {
+			// First server connect fails, second succeeds
+			mockClientConnect.mockRejectedValueOnce(new Error('Server 1 down')).mockResolvedValueOnce(undefined);
+			mockListTools.mockResolvedValue({ tools: [] });
+
+			plugin.settings.mcpServers = [
+				createStdioConfig({ name: 'failing-server', enabled: true }),
+				createStdioConfig({ name: 'working-server', enabled: true }),
+			];
+
+			await manager.connectAllEnabled();
+
+			expect(plugin.logger.warn).toHaveBeenCalledWith(
+				expect.stringContaining('Failed to connect to server "failing-server"'),
+				expect.any(String)
+			);
+			// Second server should still be connected
+			expect(manager.isConnected('working-server')).toBe(true);
+		});
+	});
+
+	describe('connectServer - reconnection', () => {
+		it('should disconnect existing connection before reconnecting', async () => {
+			mockListTools.mockResolvedValue({ tools: [{ name: 'tool1' }] });
+
+			// First connection
+			await manager.connectServer(createStdioConfig());
+			expect(manager.isConnected('test-stdio')).toBe(true);
+
+			// Reconnect — should disconnect first
+			await manager.connectServer(createStdioConfig());
+
+			// Transport close should have been called for the first connection
+			expect(mockStdioTransportClose).toHaveBeenCalled();
+			// Should still be connected after reconnection
+			expect(manager.isConnected('test-stdio')).toBe(true);
+		});
+	});
+
+	describe('connectServer - error handling', () => {
+		it('should log stack trace when error has stack property', async () => {
+			const error = new Error('Connection timeout');
+			mockClientConnect.mockRejectedValueOnce(error);
+
+			await expect(manager.connectServer(createStdioConfig())).rejects.toThrow('Connection timeout');
+
+			expect(plugin.logger.debug).toHaveBeenCalledWith(
+				expect.stringContaining('Stack trace'),
+				expect.stringContaining('Connection timeout')
+			);
+		});
+
+		it('should set error state when client.connect fails', async () => {
+			mockClientConnect.mockRejectedValueOnce(new Error('Connect failed'));
+
+			await expect(manager.connectServer(createStdioConfig())).rejects.toThrow('Connect failed');
+
+			// Error state should be recorded
+			const status = manager.getServerStatus('test-stdio');
+			expect(status.status).toBe(MCPConnectionStatus.ERROR);
+			expect(status.error).toBe('Connect failed');
+			expect(manager.isConnected('test-stdio')).toBe(false);
+		});
+	});
+
+	describe('disconnectServer - edge cases', () => {
+		it('should return without error for non-connected server', async () => {
+			// Should not throw
+			await expect(manager.disconnectServer('nonexistent')).resolves.toBeUndefined();
+		});
+
+		it('should complete disconnect even if transport.close throws', async () => {
+			mockListTools.mockResolvedValueOnce({ tools: [{ name: 'tool1' }] });
+			await manager.connectServer(createStdioConfig());
+
+			mockStdioTransportClose.mockRejectedValueOnce(new Error('Close failed'));
+
+			await manager.disconnectServer('test-stdio');
+
+			// Should still be disconnected despite close error
+			expect(manager.isConnected('test-stdio')).toBe(false);
+			expect(plugin.toolRegistry.unregisterTool).toHaveBeenCalled();
+		});
+	});
+
+	describe('refreshTools', () => {
+		it('should unregister old tools and register new ones', async () => {
+			// Initial connection with 1 tool
+			mockListTools.mockResolvedValueOnce({ tools: [{ name: 'old_tool' }] });
+			plugin.settings.mcpServers = [createStdioConfig()];
+			await manager.connectServer(createStdioConfig());
+
+			vi.clearAllMocks();
+
+			// Refresh returns different tools
+			mockListTools.mockResolvedValueOnce({
+				tools: [
+					{ name: 'new_tool_a', description: 'A' },
+					{ name: 'new_tool_b', description: 'B' },
+				],
+			});
+
+			await manager.refreshTools('test-stdio');
+
+			// Old tools unregistered
+			expect(plugin.toolRegistry.unregisterTool).toHaveBeenCalledTimes(1);
+			// New tools registered
+			expect(plugin.toolRegistry.registerTool).toHaveBeenCalledTimes(2);
+			// Status updated
+			const status = manager.getServerStatus('test-stdio');
+			expect(status.toolNames).toEqual(['new_tool_a', 'new_tool_b']);
+		});
+
+		it('should warn and return for disconnected server', async () => {
+			await manager.refreshTools('not-connected');
+
+			expect(plugin.logger.warn).toHaveBeenCalledWith(
+				expect.stringContaining('Cannot refresh tools for disconnected server')
+			);
+		});
+
+		it('should warn and return when config is missing', async () => {
+			// Connect a server
+			mockListTools.mockResolvedValueOnce({ tools: [] });
+			await manager.connectServer(createStdioConfig());
+
+			// Remove config from settings
+			plugin.settings.mcpServers = [];
+
+			await manager.refreshTools('test-stdio');
+
+			expect(plugin.logger.warn).toHaveBeenCalledWith(expect.stringContaining('config not found'));
+		});
+	});
+
+	describe('disconnectAll', () => {
+		it('should disconnect all connected servers', async () => {
+			mockListTools.mockResolvedValue({ tools: [] });
+
+			// Connect two servers
+			await manager.connectServer(createStdioConfig({ name: 'server-a' }));
+			await manager.connectServer(createHttpConfig({ name: 'server-b' }));
+
+			expect(manager.isConnected('server-a')).toBe(true);
+			expect(manager.isConnected('server-b')).toBe(true);
+
+			await manager.disconnectAll();
+
+			expect(manager.isConnected('server-a')).toBe(false);
+			expect(manager.isConnected('server-b')).toBe(false);
+		});
+	});
+
+	describe('getAllServerStatuses', () => {
+		it('should return a copy of all server states', async () => {
+			mockListTools.mockResolvedValue({ tools: [{ name: 'tool1' }] });
+			await manager.connectServer(createStdioConfig());
+
+			const statuses = manager.getAllServerStatuses();
+
+			expect(statuses).toBeInstanceOf(Map);
+			expect(statuses.get('test-stdio')).toBeDefined();
+			expect(statuses.get('test-stdio')!.status).toBe(MCPConnectionStatus.CONNECTED);
+
+			// Verify it's a copy (mutating returned map shouldn't affect internal state)
+			statuses.delete('test-stdio');
+			expect(manager.getServerStatus('test-stdio').status).toBe(MCPConnectionStatus.CONNECTED);
+		});
+	});
+
+	describe('isConnected', () => {
+		it('should return true when server is connected', async () => {
+			mockListTools.mockResolvedValueOnce({ tools: [] });
+			await manager.connectServer(createStdioConfig());
+
+			expect(manager.isConnected('test-stdio')).toBe(true);
+		});
+
+		it('should return false when server is not connected', () => {
+			expect(manager.isConnected('unknown-server')).toBe(false);
+		});
+
+		it('should return false after server is disconnected', async () => {
+			mockListTools.mockResolvedValueOnce({ tools: [] });
+			await manager.connectServer(createStdioConfig());
+
+			await manager.disconnectServer('test-stdio');
+
+			expect(manager.isConnected('test-stdio')).toBe(false);
+		});
+	});
+
+	describe('connectServer - env vars', () => {
+		it('should pass merged env to StdioClientTransport when env is provided', async () => {
+			mockListTools.mockResolvedValueOnce({ tools: [] });
+
+			const config = createStdioConfig({
+				env: { MY_VAR: 'hello', ANOTHER: 'world' },
+			});
+
+			await manager.connectServer(config);
+
+			expect(MockStdioClientTransport).toHaveBeenCalledWith(
+				expect.objectContaining({
+					env: expect.objectContaining({
+						MY_VAR: 'hello',
+						ANOTHER: 'world',
+					}),
+				})
+			);
+
 		});
 	});
 });

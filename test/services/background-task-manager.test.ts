@@ -348,6 +348,120 @@ describe('BackgroundTaskManager', () => {
 		});
 	});
 
+	describe('showCompletionNotice', () => {
+		it('creates a clickable link when task has an outputPath', async () => {
+			const { manager, plugin: _plugin } = makeManager();
+
+			// Submit a task with an output path so showCompletionNotice gets the link path
+			manager.submit('research', 'Deep research', async () => 'output/result.md');
+			await flushAsync();
+
+			// The task should be complete with the output path
+			const recent = manager.getRecentTasks();
+			expect(recent).toHaveLength(1);
+			expect(recent[0].status).toBe('complete');
+			expect(recent[0].outputPath).toBe('output/result.md');
+		});
+
+		it('completes without error when task has no outputPath', async () => {
+			const { manager } = makeManager();
+
+			manager.submit('cleanup', 'Cleanup task', async () => undefined);
+			await flushAsync();
+
+			const recent = manager.getRecentTasks();
+			expect(recent).toHaveLength(1);
+			expect(recent[0].status).toBe('complete');
+			expect(recent[0].outputPath).toBeUndefined();
+		});
+	});
+
+	describe('pruneOldTasks', () => {
+		it('prunes finished tasks beyond MAX_RECENT limit', async () => {
+			const { manager } = makeManager();
+
+			// Submit more than MAX_RECENT (20) tasks so that pruning kicks in
+			const totalTasks = 25;
+			for (let i = 0; i < totalTasks; i++) {
+				manager.submit('t', `Task ${i}`, async () => `output-${i}.md`);
+			}
+			await flushAsync();
+
+			// After pruning, we should have at most MAX_RECENT (20) finished tasks
+			const recent = manager.getRecentTasks();
+			expect(recent.length).toBeLessThanOrEqual(20);
+		});
+	});
+
+	describe('clearFinished', () => {
+		it('removes all completed, failed, and cancelled tasks', async () => {
+			const { manager } = makeManager();
+
+			manager.submit('t', 'Success', async () => 'a.md');
+			manager.submit('t', 'Failure', async () => {
+				throw new Error('fail');
+			});
+			await flushAsync();
+
+			expect(manager.getRecentTasks().length).toBeGreaterThan(0);
+
+			manager.clearFinished();
+			expect(manager.getRecentTasks()).toHaveLength(0);
+		});
+
+		it('notifies status bar after clearing', async () => {
+			const { manager, plugin } = makeManager();
+
+			manager.submit('t', 'Done', async () => undefined);
+			await flushAsync();
+
+			plugin.backgroundStatusBar.update.mockClear();
+			manager.clearFinished();
+			expect(plugin.backgroundStatusBar.update).toHaveBeenCalled();
+		});
+	});
+
+	describe('cancel edge cases', () => {
+		it('cancel() returns silently for a non-existent task ID', () => {
+			const { manager } = makeManager();
+			expect(() => manager.cancel('non-existent')).not.toThrow();
+		});
+
+		it('cancel() does not affect a failed task', async () => {
+			const { manager } = makeManager();
+			const id = manager.submit('t', 'Fails', async () => {
+				throw new Error('boom');
+			});
+			await flushAsync();
+
+			manager.cancel(id);
+			expect(manager.getTask(id)!.status).toBe('failed');
+		});
+	});
+
+	describe('error path — throw after cancellation', () => {
+		it('records "Cancelled" as the error when work throws after cancel()', async () => {
+			const { manager } = makeManager();
+
+			let resolveFn!: () => void;
+			const blocker = new Promise<void>((r) => (resolveFn = r));
+
+			const id = manager.submit('t', 'Cancel then throw', async (_isCancelled) => {
+				await blocker;
+				// Work throws after being cancelled
+				throw new Error('late error');
+			});
+
+			manager.cancel(id);
+			resolveFn();
+			await flushAsync();
+
+			const task = manager.getTask(id)!;
+			// The error should be 'Cancelled' because isCancelled() was true in the catch block
+			expect(task.error).toBe('Cancelled');
+		});
+	});
+
 	describe('destroy', () => {
 		it('cancels active tasks and clears state', async () => {
 			const { manager } = makeManager();

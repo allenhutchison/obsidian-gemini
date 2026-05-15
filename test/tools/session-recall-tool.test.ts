@@ -230,4 +230,106 @@ describe('RecallSessionsTool', () => {
 		expect((result.data as any).sessions).toEqual([]);
 		expect((result.data as any).count).toBe(0);
 	});
+
+	// ── getProgressDescription ───────────────────────────────────────────
+
+	describe('getProgressDescription', () => {
+		it('shows query when provided', () => {
+			const tool = getTool();
+			expect(tool.getProgressDescription!({ query: 'planning' })).toBe('Searching sessions for "planning"');
+		});
+
+		it('shows filePath when provided (and no query)', () => {
+			const tool = getTool();
+			expect(tool.getProgressDescription!({ filePath: 'notes/foo.md' })).toBe(
+				'Finding sessions that touched notes/foo.md'
+			);
+		});
+
+		it('shows project when provided (and no query or filePath)', () => {
+			const tool = getTool();
+			expect(tool.getProgressDescription!({ project: 'My Project' })).toBe('Finding sessions for project My Project');
+		});
+
+		it('shows generic message when no params given', () => {
+			const tool = getTool();
+			expect(tool.getProgressDescription!({})).toBe('Searching past sessions');
+		});
+	});
+
+	// ── Error handling ───────────────────────────────────────────────────
+
+	it('returns a failure result when sessionManager throws', async () => {
+		const ctx = makeContext({
+			sessionManager: {
+				getSessionMetadata: vi.fn().mockRejectedValue(new Error('DB unavailable')),
+			},
+		});
+
+		const result = await getTool().execute({}, ctx);
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('DB unavailable');
+	});
+
+	it('returns a failure result when a non-Error is thrown', async () => {
+		const ctx = makeContext({
+			sessionManager: {
+				getSessionMetadata: vi.fn().mockRejectedValue('string error'),
+			},
+		});
+
+		const result = await getTool().execute({}, ctx);
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('Unknown error');
+	});
+
+	// ── Project filter edge cases ────────────────────────────────────────
+
+	it('project filter excludes sessions without a projectRef', async () => {
+		const noProject = makeSession({ id: 'no-proj', title: 'No Project' });
+		const hasProject = makeSession({
+			id: 'has-proj',
+			title: 'Has Project',
+			projectRef: 'Projects/widget.md',
+		});
+
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([noProject, hasProject]) },
+			projectManager: {
+				getProject: vi.fn().mockResolvedValue(null),
+			},
+		});
+
+		const result = await getTool().execute({ project: 'widget' }, ctx);
+		expect(result.success).toBe(true);
+		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		// noProject has no projectRef so it's excluded; hasProject matches via substring
+		expect(titles).toEqual(['Has Project']);
+	});
+
+	it('truncates accessedFileRefs to 20 in the output', async () => {
+		const refs = Array.from({ length: 25 }, (_, i) => `File${i}`);
+		const session = makeSession({ id: 'many-refs', title: 'Many Refs', accessedFileRefs: refs });
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue([session]) },
+		});
+
+		const result = await getTool().execute({}, ctx);
+		expect(result.success).toBe(true);
+		expect((result.data as any).sessions[0].filesAccessed.length).toBe(20);
+	});
+
+	it('reports totalMatched as filtered count before limit', async () => {
+		const sessions = Array.from({ length: 15 }, (_, i) =>
+			makeSession({ id: `s${i}`, title: `Session ${i}`, lastActive: new Date(2025, 0, i + 1) })
+		);
+		const ctx = makeContext({
+			sessionManager: { getSessionMetadata: vi.fn().mockResolvedValue(sessions) },
+		});
+
+		const result = await getTool().execute({ limit: 5 }, ctx);
+		expect(result.success).toBe(true);
+		expect((result.data as any).sessions.length).toBe(5);
+		expect((result.data as any).totalMatched).toBe(15);
+	});
 });

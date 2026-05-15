@@ -643,3 +643,212 @@ describe('HookRunner action: command', () => {
 		expect(plugin.app.commands.executeCommandById).not.toHaveBeenCalled();
 	});
 });
+
+// ─── Agent-task exhaustion ───────────────────────────────────────────────────
+
+describe('HookRunner agent-task: exhausted iterations', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('throws when AgentLoop reports exhausted iterations', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({
+			markdown: '',
+			toolCalls: [{ name: 'some_tool', arguments: {} }],
+		});
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		mockAgentLoopRun.mockResolvedValue({
+			...successfulLoopResult(),
+			exhausted: true,
+			markdown: '',
+		});
+
+		const plugin = createMockPlugin();
+		const hook = makeHook();
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await expect(runner.run()).rejects.toThrow(/exhausted 20 tool iterations/);
+	});
+});
+
+// ─── Rewrite non-markdown skip ───────────────────────────────────────────────
+
+describe('HookRunner action: rewrite non-markdown files', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('skips non-markdown files without erroring and logs the skip', async () => {
+		const generateModelResponse = vi.fn();
+		(ModelClientFactory.createRewriteModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		plantFile(plugin, 'Attachments/photo.png', 'png');
+
+		const hook = makeHook({ action: 'rewrite', prompt: 'Rewrite it.' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		const result = await runner.run();
+
+		expect(result).toBeUndefined();
+		expect(generateModelResponse).not.toHaveBeenCalled();
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
+		expect(plugin.logger.log).toHaveBeenCalledWith(expect.stringContaining('rewrite: skipping non-markdown file'));
+	});
+});
+
+// ─── Missing Commands API ────────────────────────────────────────────────────
+
+describe('HookRunner action: command — missing Commands API', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('throws when the Obsidian Commands API is not available', async () => {
+		const plugin = createMockPlugin();
+		// Remove the commands API entirely
+		delete (plugin.app as any).commands;
+
+		const hook = makeHook({ action: 'command', commandId: 'some:command', prompt: '' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await expect(runner.run()).rejects.toThrow(/Commands API not available/);
+	});
+});
+
+// ─── Unknown action ──────────────────────────────────────────────────────────
+
+describe('HookRunner action: unknown', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('throws on an unrecognised action string', async () => {
+		const plugin = createMockPlugin();
+		const hook = makeHook({ action: 'not-a-real-action' as any, prompt: '' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await expect(runner.run()).rejects.toThrow(/Unknown action "not-a-real-action"/);
+	});
+});
+
+// ─── Agent-task: no outputPath / no finalText ────────────────────────────────
+
+describe('HookRunner agent-task: no output scenarios', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('returns undefined when hook has no outputPath', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'result', toolCalls: [] });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const hook = makeHook({ outputPath: undefined });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		const result = await runner.run();
+		expect(result).toBeUndefined();
+		expect(plugin.__create).not.toHaveBeenCalled();
+	});
+
+	it('returns undefined when model returns empty markdown and no tool calls', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: '', toolCalls: [] });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const hook = makeHook();
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		const result = await runner.run();
+		expect(result).toBeUndefined();
+		expect(plugin.__create).not.toHaveBeenCalled();
+	});
+
+	it('returns undefined when model returns null markdown and no tool calls', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: null, toolCalls: [] });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const hook = makeHook();
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		const result = await runner.run();
+		expect(result).toBeUndefined();
+	});
+});
+
+// ─── Agent-task: cancelled during tool loop ──────────────────────────────────
+
+describe('HookRunner agent-task: cancelled during loop', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('returns undefined when AgentLoop reports cancelled', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({
+			markdown: '',
+			toolCalls: [{ name: 'some_tool', arguments: {} }],
+		});
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		mockAgentLoopRun.mockResolvedValue({
+			...successfulLoopResult(),
+			cancelled: true,
+		});
+
+		const plugin = createMockPlugin();
+		const hook = makeHook();
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		const result = await runner.run();
+		expect(result).toBeUndefined();
+	});
+});
+
+// ─── Agent-task: model override ──────────────────────────────────────────────
+
+describe('HookRunner agent-task: model override', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('uses the hook model override on the session and the request', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'ok', toolCalls: [] });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const hook = makeHook({ model: 'gemini-2.5-pro' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		// Session should have modelConfig set
+		expect(plugin.sessionManager.createAgentSession).toHaveBeenCalledTimes(1);
+		const request = generateModelResponse.mock.calls[0][0];
+		expect(request.model).toBe('gemini-2.5-pro');
+	});
+});
+
+// ─── resolveOutputPath template ──────────────────────────────────────────────
+
+describe('HookRunner resolveOutputPath template', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('substitutes {fileName} in outputPath template', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({ markdown: 'output', toolCalls: [] });
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+
+		const plugin = createMockPlugin();
+		const hook = makeHook({ outputPath: 'Hooks/Runs/{slug}/{fileName}-{date}.md' });
+		const runner = new HookRunner(plugin as any, makeContext(hook));
+
+		await runner.run();
+
+		const [path] = plugin.__create.mock.calls[0];
+		expect(path).toContain('foo.md');
+		expect(path).toContain('test-hook');
+		expect(path).toContain('2026-05-04');
+	});
+});
