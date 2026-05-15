@@ -4,7 +4,7 @@ Scheduled Tasks let you automate recurring AI prompts — daily summaries, weekl
 
 ## Overview
 
-A scheduled task is a markdown file stored in `<history-folder>/Scheduled-Tasks/`. The file's frontmatter controls when and how it runs; the body is the prompt sent to the model.
+A scheduled task is a markdown file stored in `[state-folder]/Scheduled-Tasks/`. The file's frontmatter controls when and how it runs; the body is the prompt sent to the model.
 
 ```text
 gemini-scribe/Scheduled-Tasks/
@@ -26,7 +26,7 @@ The easiest way to create a task is through the **Scheduler** UI:
 
 You can also create tasks manually by writing a markdown file directly:
 
-Create a markdown file inside `<history-folder>/Scheduled-Tasks/`. The filename (without `.md`) becomes the task's **slug** — used in output paths and the task monitor.
+Create a markdown file inside `[state-folder]/Scheduled-Tasks/`. The filename (without `.md`) becomes the task's **slug** — used in output paths and the task monitor.
 
 **Minimal example** — `gemini-scribe/Scheduled-Tasks/daily-summary.md`:
 
@@ -42,14 +42,14 @@ Summarise the notes I created or modified today. List the key topics and any ope
 
 ### Frontmatter Fields
 
-| Field         | Required | Default                                                  | Description                                                                                                                 |
-| ------------- | -------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `schedule`    | Yes      | —                                                        | When to run. See [Schedule Formats](#schedule-formats) below.                                                               |
-| `toolPolicy`  | No       | _inherit global plugin policy_                           | Per-run tool policy (preset + per-tool overrides). See [Tool Access](#tool-access).                                         |
-| `outputPath`  | No       | `<history-folder>/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                        |
-| `model`       | No       | Plugin chat model                                        | Override the model for this task (e.g. `gemini-flash-latest`).                                                              |
-| `enabled`     | No       | `true`                                                   | Set to `false` to disable the task without deleting it.                                                                     |
-| `runIfMissed` | No       | `false`                                                  | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs). |
+| Field         | Required | Default                                                | Description                                                                                                                 |
+| ------------- | -------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `schedule`    | Yes      | —                                                      | When to run. See [Schedule Formats](#schedule-formats) below.                                                               |
+| `toolPolicy`  | No       | _inherit global plugin policy_                         | Per-run tool policy (preset + per-tool overrides). See [Tool Access](#tool-access).                                         |
+| `outputPath`  | No       | `[state-folder]/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                        |
+| `model`       | No       | Plugin chat model                                      | Override the model for this task (e.g. `gemini-flash-latest`).                                                              |
+| `enabled`     | No       | `true`                                                 | Set to `false` to disable the task without deleting it.                                                                     |
+| `runIfMissed` | No       | `false`                                                | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs). |
 
 ### Schedule Formats
 
