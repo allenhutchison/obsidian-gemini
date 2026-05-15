@@ -6,7 +6,6 @@ import { pathToWikilink } from '../utils/accessed-files';
 import { formatLocalTimestamp } from '../utils/format-utils';
 import { serializeToolPolicy } from '../types/tool-policy';
 import * as Handlebars from 'handlebars';
-// @ts-ignore
 import historyEntryTemplate from '../history/templates/historyEntry.hbs';
 
 /**

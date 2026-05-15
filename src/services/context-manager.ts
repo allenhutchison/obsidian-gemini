@@ -16,7 +16,6 @@ import { ModelClientFactory, ModelUseCase } from '../api';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 
-// @ts-ignore
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
 
 /** Aggressive compaction triggers at this % of total model context window */
