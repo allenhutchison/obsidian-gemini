@@ -27,19 +27,25 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 }
 
 // Mock Obsidian's Notice — provide a noticeEl so showCompletionNotice doesn't throw.
-// Use a class so the source can `new Notice(...)` without tripping vitest's
-// "is not a constructor" check on arrow-function implementations.
-vi.mock('obsidian', () => ({
-	Notice: class Notice {
-		noticeEl = {
+// Track instances via noticeInstances so tests can assert on noticeEl method calls.
+const { noticeInstances, NoticeMock } = vi.hoisted(() => {
+	const instances: any[] = [];
+	const Mock = vi.fn().mockImplementation(function (this: any) {
+		this.noticeEl = {
 			createSpan: vi.fn().mockReturnValue({ setText: vi.fn() }),
 			createEl: vi.fn().mockReturnValue({
 				addEventListener: vi.fn(),
 				setText: vi.fn(),
 			}),
 		};
-		hide = vi.fn();
-	},
+		this.hide = vi.fn();
+		instances.push(this);
+	});
+	return { noticeInstances: instances, NoticeMock: Mock };
+});
+
+vi.mock('obsidian', () => ({
+	Notice: NoticeMock,
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -349,8 +355,13 @@ describe('BackgroundTaskManager', () => {
 	});
 
 	describe('showCompletionNotice', () => {
+		beforeEach(() => {
+			noticeInstances.length = 0;
+			NoticeMock.mockClear();
+		});
+
 		it('creates a clickable link when task has an outputPath', async () => {
-			const { manager, plugin: _plugin } = makeManager();
+			const { manager } = makeManager();
 
 			// Submit a task with an output path so showCompletionNotice gets the link path
 			manager.submit('research', 'Deep research', async () => 'output/result.md');
@@ -361,6 +372,15 @@ describe('BackgroundTaskManager', () => {
 			expect(recent).toHaveLength(1);
 			expect(recent[0].status).toBe('complete');
 			expect(recent[0].outputPath).toBe('output/result.md');
+
+			// showCompletionNotice should have created a Notice with a clickable link
+			expect(NoticeMock).toHaveBeenCalled();
+			const notice = noticeInstances.find((n) => n.noticeEl.createEl.mock.calls.length > 0);
+			expect(notice).toBeDefined();
+			expect(notice.noticeEl.createSpan).toHaveBeenCalledWith(
+				expect.objectContaining({ text: expect.stringContaining('Deep research') })
+			);
+			expect(notice.noticeEl.createEl).toHaveBeenCalledWith('a', expect.objectContaining({ text: 'Open result' }));
 		});
 
 		it('completes without error when task has no outputPath', async () => {

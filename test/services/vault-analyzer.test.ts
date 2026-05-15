@@ -531,12 +531,12 @@ describe('VaultAnalyzer', () => {
 			try {
 				const files = Array.from({ length: 1001 }, (_, i) => createMockFile(`file${i}.md`, 100));
 				mockPlugin.app.vault.getMarkdownFiles.mockReturnValue(files);
-				const result1 = (analyzer as any).collectVaultInformation();
+				(analyzer as any).collectVaultInformation();
 
 				// Advance time past the 5-minute TTL
 				vi.advanceTimersByTime(6 * 60 * 1000);
 
-				const result2 = (analyzer as any).collectVaultInformation();
+				(analyzer as any).collectVaultInformation();
 
 				// getRoot should have been called twice (cache miss both times)
 				expect(mockPlugin.app.vault.getRoot).toHaveBeenCalledTimes(2);
