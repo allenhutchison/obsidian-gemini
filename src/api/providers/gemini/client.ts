@@ -325,21 +325,22 @@ export class GeminiClient implements ModelApi {
 			for (const entry of extReq.conversationHistory) {
 				// Support Content format (already has role and parts)
 				if ('role' in entry && 'parts' in entry) {
-					contents.push(entry as Content);
+					contents.push(entry);
 				}
 				// Support our internal format with role and text
 				else if ('role' in entry && 'text' in entry) {
+					const legacy = entry as Content & { text: string };
 					contents.push({
-						role: entry.role === 'user' ? 'user' : 'model',
-						parts: [{ text: entry.text }],
+						role: legacy.role === 'user' ? 'user' : 'model',
+						parts: [{ text: legacy.text }],
 					});
 				}
 				// Support our internal format with role and message
 				else if ('role' in entry && 'message' in entry) {
-					const msg = entry as any;
+					const legacy = entry as Content & { role: string; message: string };
 					contents.push({
-						role: msg.role === 'user' ? 'user' : 'model',
-						parts: [{ text: msg.message }],
+						role: legacy.role === 'user' ? 'user' : 'model',
+						parts: [{ text: legacy.message }],
 					});
 				}
 			}

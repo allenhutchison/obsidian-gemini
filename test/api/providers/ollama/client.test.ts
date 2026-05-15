@@ -363,7 +363,9 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'ok',
-				conversationHistory: [{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: null } }] }],
+				conversationHistory: [
+					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: null as any } }] },
+				],
 			});
 
 			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;
@@ -376,7 +378,7 @@ describe('OllamaClient', () => {
 				prompt: '',
 				userMessage: 'ok',
 				conversationHistory: [
-					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: 'raw result' } }] },
+					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: 'raw result' as any } }] },
 				],
 			});
 
@@ -453,7 +455,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'hi',
-				conversationHistory: [null, { role: 'user', parts: [{ text: 'hello' }] }],
+				conversationHistory: [null as any, { role: 'user', parts: [{ text: 'hello' }] }],
 			});
 
 			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;
@@ -465,7 +467,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
-				conversationHistory: [{ role: 'model', text: 'hello' }],
+				conversationHistory: [{ role: 'model', text: 'hello' } as any],
 			});
 
 			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;
@@ -477,7 +479,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
-				conversationHistory: [{ role: 'user', message: 'hey' }],
+				conversationHistory: [{ role: 'user', message: 'hey' } as any],
 			});
 
 			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;
@@ -489,7 +491,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
-				conversationHistory: [{ role: 'user', text: '  ' }],
+				conversationHistory: [{ role: 'user', text: '  ' } as any],
 			});
 
 			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;
@@ -503,7 +505,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
-				conversationHistory: [{ role: 'assistant', text: 'response' }],
+				conversationHistory: [{ role: 'assistant', text: 'response' } as any],
 			});
 
 			const msgs = ollamaCalls.chat.mock.calls[0][0].messages;

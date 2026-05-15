@@ -355,7 +355,7 @@ describe('ContextManager', () => {
 			expect(result.wasCompacted).toBe(true);
 			expect(result.summaryText).toBeTruthy();
 			expect(result.compactedHistory.length).toBeLessThan(history.length);
-			expect(result.compactedHistory[0].parts[0].text).toContain(CONTEXT_SUMMARY_MARKER);
+			expect(result.compactedHistory[0].parts![0].text).toContain(CONTEXT_SUMMARY_MARKER);
 			expect(result.compactedHistory[1].role).toBe('model');
 			// countTokens should be called once post-compaction to measure result size
 			expect(mockCountTokens).toHaveBeenCalledTimes(1);
@@ -432,8 +432,8 @@ describe('ContextManager', () => {
 
 			expect(result.wasCompacted).toBe(false);
 			// Phase 1 truncated the oldest tool result.
-			const oldToolResult = result.compactedHistory[2].parts[0].functionResponse.response;
-			expect(oldToolResult.truncated).toBe(true);
+			const oldToolResult = result.compactedHistory[2].parts![0].functionResponse!.response;
+			expect((oldToolResult as any).truncated).toBe(true);
 			// No summarization roundtrip — phase 1 alone was sufficient.
 			expect(mockCountTokens).not.toHaveBeenCalled();
 		});
@@ -470,9 +470,9 @@ describe('ContextManager', () => {
 			// Returns the input reference unchanged — cache prefix is not disturbed.
 			expect(result.compactedHistory).toBe(history);
 			// And specifically, the fat tool result is left whole.
-			const oldToolResult = result.compactedHistory[2].parts[0].functionResponse.response;
-			expect(oldToolResult.truncated).toBeUndefined();
-			expect(oldToolResult.content).toHaveLength(600_000);
+			const oldToolResult = result.compactedHistory[2].parts![0].functionResponse!.response;
+			expect((oldToolResult as any).truncated).toBeUndefined();
+			expect((oldToolResult as any).content).toHaveLength(600_000);
 		});
 
 		test('phase 2 (summarization) fires when truncation alone is insufficient', async () => {

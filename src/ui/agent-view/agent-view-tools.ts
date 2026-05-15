@@ -1,9 +1,11 @@
+import type { Content } from '@google/genai';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { IConfirmationProvider, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentLoop } from '../../agent/agent-loop';
+import type { ToolCall } from '../../api/interfaces/model-api';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
 import type { PerTurnContext } from './agent-view-tool-followup';
 
@@ -51,9 +53,9 @@ export class AgentViewTools {
 	 * wired to UI rendering, then persists/displays the final text response.
 	 */
 	public async handleToolCalls(
-		toolCalls: any[],
+		toolCalls: ToolCall[],
 		userMessage: string,
-		conversationHistory: any[],
+		conversationHistory: Content[],
 		_userEntry: GeminiConversationEntry,
 		customPrompt?: CustomPrompt,
 		perTurn?: PerTurnContext

@@ -3,6 +3,7 @@
  */
 
 import { CustomPrompt } from '../../prompts/types';
+import type { Content } from '@google/genai';
 
 /**
  * Represents a response from a model.
@@ -79,7 +80,7 @@ export type ImagePart = InlineDataPart;
  * @property imageAttachments - Deprecated alias for inlineAttachments
  */
 export interface ExtendedModelRequest extends BaseModelRequest {
-	conversationHistory: any[];
+	conversationHistory: Content[];
 	userMessage: string;
 	renderContent?: boolean;
 	customPrompt?: CustomPrompt;
