@@ -5,6 +5,21 @@ import { ToolExecutionContext } from '../../../src/tools/types';
 import { ToolCategory } from '../../../src/types/agent';
 import { ToolClassification } from '../../../src/types/tool-policy';
 
+/** Tool narrowed to include the optional methods these tests exercise. */
+type ToolWithOptionals = Tool & {
+	getProgressDescription: NonNullable<Tool['getProgressDescription']>;
+	confirmationMessage: NonNullable<Tool['confirmationMessage']>;
+};
+
+function getToolByName(name: string): ToolWithOptionals {
+	const tool = getExtendedVaultTools().find(
+		(t): t is ToolWithOptionals =>
+			t.name === name && typeof t.getProgressDescription === 'function' && typeof t.confirmationMessage === 'function'
+	);
+	if (!tool) throw new Error(`Tool not found: ${name}`);
+	return tool;
+}
+
 vi.mock('obsidian', async () => ({
 	...(await vi.importActual<any>('../../../__mocks__/obsidian.js')),
 }));
@@ -58,11 +73,11 @@ function makeTFile(path: string, extension = 'md'): TFile {
 // ─── UpdateFrontmatterTool ───────────────────────────────────────────────────
 
 describe('UpdateFrontmatterTool', () => {
-	let tool: Tool;
+	let tool: ToolWithOptionals;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		tool = getExtendedVaultTools().find((t) => t.name === 'update_frontmatter')!;
+		tool = getToolByName('update_frontmatter');
 	});
 
 	// ── Static properties ────────────────────────────────────────────────
@@ -281,11 +296,11 @@ describe('UpdateFrontmatterTool', () => {
 // ─── AppendContentTool ───────────────────────────────────────────────────────
 
 describe('AppendContentTool', () => {
-	let tool: Tool;
+	let tool: ToolWithOptionals;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		tool = getExtendedVaultTools().find((t) => t.name === 'append_content')!;
+		tool = getToolByName('append_content');
 	});
 
 	// ── Static properties ────────────────────────────────────────────────
