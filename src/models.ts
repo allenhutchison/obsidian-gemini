@@ -1,4 +1,3 @@
-// @ts-ignore — esbuild JSON loader
 import modelData from './data/models.json';
 
 export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite' | 'image';

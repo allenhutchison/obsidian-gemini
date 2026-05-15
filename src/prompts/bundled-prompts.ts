@@ -1,13 +1,8 @@
 // Import bundled prompt files
-// @ts-ignore - esbuild handles .md files as strings
 import explainSelectionMd from '../../prompts/bundled-prompts/explain-selection.md';
-// @ts-ignore
 import explainCodeMd from '../../prompts/bundled-prompts/explain-code.md';
-// @ts-ignore
 import summarizeSelectionMd from '../../prompts/bundled-prompts/summarize-selection.md';
-// @ts-ignore
 import fixGrammarMd from '../../prompts/bundled-prompts/fix-grammar.md';
-// @ts-ignore
 import convertToBulletsMd from '../../prompts/bundled-prompts/convert-to-bullets.md';
 
 interface BundledPrompt {

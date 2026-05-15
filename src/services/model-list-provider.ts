@@ -2,7 +2,6 @@ import { requestUrl } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { GeminiModel } from '../models';
 
-// @ts-ignore — esbuild JSON loader
 import bundledModelData from '../data/models.json';
 
 interface ModelListJson {

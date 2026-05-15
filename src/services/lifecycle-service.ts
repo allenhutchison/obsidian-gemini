@@ -34,7 +34,6 @@ import { BackgroundStatusBar } from './background-status-bar';
 import { ScheduledTaskManager } from './scheduled-task-manager';
 import { HookManager } from './hook-manager';
 
-// @ts-ignore
 import agentsMemoryTemplateContent from '../../prompts/agentsMemoryTemplate.hbs';
 
 /**
