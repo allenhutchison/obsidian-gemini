@@ -12,7 +12,7 @@ const SECRET_KEY_ENV_PREFIX = 'mcp-env-';
  * to the same segment — it is a key disambiguator, not a security boundary.
  */
 export function makeEnvSecretName(serverName: string): string {
-	const suffix = Math.random().toString(36).slice(2, 10);
+	const suffix = crypto.randomUUID().slice(0, 8);
 	return `${SECRET_KEY_ENV_PREFIX}${sanitizeKeySegment(serverName)}-${suffix}`;
 }
 
