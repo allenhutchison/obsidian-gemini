@@ -9,6 +9,12 @@
 
 const TERMINAL_EVENTS = new Set(['turnEnd', 'turnError']);
 
+/**
+ * Pause the polling loop between collector reads.
+ *
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
 function defaultSleep(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
