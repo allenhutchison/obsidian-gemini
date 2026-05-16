@@ -215,7 +215,7 @@ If you need to compare models, run them sequentially. A typical 21-run sweep tak
 
 ### CLI-bridge hangs (#776)
 
-`obsidian eval` child processes occasionally don't exit after their work completes — they sit in `S` state with 0 CPU. The next CLI call from the same harness queues behind them indefinitely. The harness's `execFile` `timeoutMs: 10_000` doesn't always fire.
+`obsidian eval` child processes have occasionally failed to exit after their work completed — they sat in `S` state with 0 CPU. The harness now avoids long-lived turn-driving CLI calls and uses a hard SIGTERM-to-SIGKILL timeout for every Obsidian CLI call, so these failures should settle as harness errors instead of wedging a sweep indefinitely.
 
 Symptoms in the log:
 
@@ -223,7 +223,7 @@ Symptoms in the log:
 - The harness's node process at near-zero CPU
 - A standalone `obsidian eval code="1+1"` from another shell **does** respond instantly (so the CLI itself is fine; the harness's specific child is wedged)
 
-Workaround until #776 is fixed:
+If a future run still appears stuck, check for stale children:
 
 ```bash
 # Find stuck children (zero CPU, alive for minutes)
@@ -233,7 +233,7 @@ ps aux | grep "obsidian eval" | grep -v grep
 kill -KILL <pid>
 ```
 
-The parent's `exec` promise will reject with `"Command failed"`, which `runTask`'s catch block records as **ERROR** and moves to the next run. **Do not bless** a baseline that includes a manual-kill ERROR — the verdict was caused by the harness, not the model. Rerun the whole sweep instead.
+The harness records CLI failures as **ERROR** and moves to the next run. **Do not bless** a baseline that includes a manual-kill ERROR — the verdict was caused by the harness, not the model. Rerun the whole sweep instead.
 
 ### Don't bless a corrupted run
 
@@ -265,7 +265,6 @@ If any of these show stale state, kill / clean before starting the new run. The 
 ### Model-specific caveats
 
 - **`*-latest` model pointers** (`gemini-flash-latest`, etc.) shift under us — Google may swap the underlying model on any given day. Don't bless a baseline against `-latest`; the comparison won't be stable. Use pinned IDs (`gemini-2.5-flash`, `gemini-2.5-pro`, etc.).
-- **`gemini-2.5-flash-lite`** reproducibly hangs the harness mid-sweep (#778). Skip it for now.
 
 ## Scoring
 
