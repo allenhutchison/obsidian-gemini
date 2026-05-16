@@ -35,6 +35,7 @@ import {
 } from './lib/obsidian-driver.mjs';
 import { installCollector, peekCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
+import { taskHasJudgeMatcher } from './lib/matchers.mjs';
 import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
 import { createJudge } from './lib/judge.mjs';
@@ -334,6 +335,8 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		return result;
 	} catch (err) {
 		const durationMs = Date.now() - startTime;
+		const judgeAttempted = taskHasJudgeMatcher(task);
+		const judgeAvailable = typeof judgeFn === 'function';
 		console.error(`  ERROR: ${err.message}`);
 		return {
 			id: task.id,
@@ -356,9 +359,9 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 				expected_tools_met: false,
 				forbidden_tools_clean: true,
 				matchers_pass: false,
-				judge_attempted: (task.outputMatchers || []).some((m) => m?.type === 'judge'),
-				judge_available: typeof judgeFn === 'function',
-				judge_skipped: (task.outputMatchers || []).some((m) => m?.type === 'judge') && typeof judgeFn !== 'function',
+				judge_attempted: judgeAttempted,
+				judge_available: judgeAvailable,
+				judge_skipped: judgeAttempted && !judgeAvailable,
 			},
 		};
 	} finally {
@@ -447,10 +450,10 @@ async function main() {
 		if (judgeFn) {
 			console.log(`Judge: ${judgeFn.modelId}`);
 		} else {
-			const usingJudge = tasks.some((t) => (t.outputMatchers || []).some((m) => m?.type === 'judge'));
+			const usingJudge = tasks.some(taskHasJudgeMatcher);
 			if (usingJudge) {
 				console.warn(
-					'⚠ Tasks reference `judge` matchers but no Gemini API key is reachable; those matchers will fail.'
+					'⚠ Tasks reference `judge` matchers but no Gemini API key is reachable; those matchers will fail (set EVAL_JUDGE_API_KEY or configure a plugin Gemini key).'
 				);
 			}
 		}

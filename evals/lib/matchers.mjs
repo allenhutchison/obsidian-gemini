@@ -71,6 +71,14 @@ function evaluateRegex(value, flags, response) {
 }
 
 /**
+ * Check whether a task rubric contains at least one LLM-as-judge matcher.
+ *
+ * @param {object} task - Eval task definition.
+ * @returns {boolean} True when any output matcher has `type: 'judge'`.
+ */
+export const taskHasJudgeMatcher = (task) => (task.outputMatchers || []).some((m) => m?.type === 'judge');
+
+/**
  * Evaluate every matcher against `responseText`. All matchers must pass for
  * the rubric to be satisfied — within a single matcher, an array `value` is
  * any-of (logical OR).

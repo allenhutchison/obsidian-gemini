@@ -4,7 +4,7 @@
  */
 
 import { calculateCost, providerSupportsCache } from './pricing.mjs';
-import { evaluateMatchers } from './matchers.mjs';
+import { evaluateMatchers, taskHasJudgeMatcher } from './matchers.mjs';
 
 /**
  * Score a single task run.
@@ -70,15 +70,22 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 	// Short-circuit when the run already failed: `solved` requires `passed`,
 	// so calling evaluateMatchers can't change the outcome — it would just
 	// burn a judge API call (and rate-limit budget) on every error/timeout.
+	const judgeAttempted = taskHasJudgeMatcher(task);
+	const judgeAvailable = typeof judgeFn === 'function';
 	const matcherEval = passed
 		? await evaluateMatchers(task.outputMatchers, { responseText, userMessage: task.userMessage }, judgeFn)
 		: {
 				pass: false,
-				judgeAttempted: (task.outputMatchers || []).some((m) => m?.type === 'judge'),
-				judgeAvailable: typeof judgeFn === 'function',
-				judgeSkipped: (task.outputMatchers || []).some((m) => m?.type === 'judge') && typeof judgeFn !== 'function',
+				judgeAttempted,
+				judgeAvailable,
+				judgeSkipped: judgeAttempted && !judgeAvailable,
 			};
-	const { pass: matchersPass, judgeAttempted, judgeAvailable, judgeSkipped } = matcherEval;
+	const {
+		pass: matchersPass,
+		judgeAttempted: matcherJudgeAttempted,
+		judgeAvailable: matcherJudgeAvailable,
+		judgeSkipped,
+	} = matcherEval;
 	const solved = passed && expectedToolsMet && forbiddenToolsClean && matchersPass;
 
 	return {
@@ -102,8 +109,8 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 			expected_tools_met: expectedToolsMet,
 			forbidden_tools_clean: forbiddenToolsClean,
 			matchers_pass: matchersPass,
-			judge_attempted: judgeAttempted,
-			judge_available: judgeAvailable,
+			judge_attempted: matcherJudgeAttempted,
+			judge_available: matcherJudgeAvailable,
 			judge_skipped: judgeSkipped,
 		},
 	};
