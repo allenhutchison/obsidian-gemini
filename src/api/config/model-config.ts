@@ -38,12 +38,3 @@ export interface ApiConfig {
 	retryConfig?: RetryConfig;
 	features?: ApiFeatures;
 }
-
-/**
- * Session-specific model configuration overrides
- */
-export interface SessionModelConfig {
-	model?: string;
-	temperature?: number;
-	topP?: number;
-}

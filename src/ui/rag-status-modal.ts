@@ -1,5 +1,5 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
-import type { RagIndexStatus, FailedFileEntry } from '../services/rag-indexing';
+import type { RagIndexStatus, FailedFileEntry } from '../services/rag-types';
 
 /**
  * Detailed status information for the modal

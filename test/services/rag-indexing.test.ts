@@ -16,7 +16,8 @@ vi.mock('obsidian', () => {
 	};
 });
 
-import { RagIndexingService, RagIndexCache } from '../../src/services/rag-indexing';
+import { RagIndexingService } from '../../src/services/rag-indexing';
+import type { RagIndexCache } from '../../src/services/rag-types';
 import { TFile } from 'obsidian';
 
 // Mock GoogleGenAI

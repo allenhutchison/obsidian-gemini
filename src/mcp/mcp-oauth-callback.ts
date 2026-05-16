@@ -18,6 +18,7 @@ const CALLBACK_TIMEOUT_MS = 120_000;
 /**
  * Result of an OAuth callback. Contains either a code or an error.
  */
+// knip:keep — Intentional public API structurally returned by startOAuthCallbackServer()
 export interface OAuthCallbackResult {
 	code: string;
 }
