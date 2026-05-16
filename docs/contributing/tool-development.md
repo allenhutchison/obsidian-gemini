@@ -18,15 +18,11 @@ All tools must implement the `Tool` interface:
 ```typescript
 interface Tool {
 	name: string; // Unique identifier (e.g., "read_file")
-	displayName: string; // Human-readable name
-	category: ToolCategory; // Permission category
+	displayName?: string; // Human-readable name (optional)
+	category: string; // UI grouping (ToolCategory value)
+	classification: ToolClassification; // Permission tier: READ / WRITE / DESTRUCTIVE / EXTERNAL
 	description: string; // What the tool does
-	parameters: {
-		// JSON Schema for parameters
-		type: 'object';
-		properties: Record<string, any>;
-		required?: string[];
-	};
+	parameters: ToolParameterSchema; // JSON Schema for parameters
 	execute(params: any, context: ToolExecutionContext): Promise<ToolResult>;
 }
 ```
@@ -37,11 +33,14 @@ Tools are grouped into categories for permission control:
 
 ```typescript
 enum ToolCategory {
-	READ_ONLY = 'read_only', // Reading files, searching
-	VAULT_OPERATIONS = 'vault_operations', // Creating, modifying, deleting
-	WEB_OPERATIONS = 'web_operations', // Web search, URL fetching
+	READ_ONLY = 'read_only', // Search, read files, analyze
+	VAULT_OPERATIONS = 'vault_ops', // Create, modify, delete notes
+	EXTERNAL_MCP = 'external_mcp', // MCP server integrations
+	SKILLS = 'skills', // Agent skill management
 }
 ```
+
+`ToolCategory` is a UI-only grouping. The security/permission boundary is `ToolClassification` (from `src/types/tool-policy.ts`): `READ`, `WRITE`, `DESTRUCTIVE`, `EXTERNAL`. Declare the right `classification` on your tool and the policy system handles filtering and confirmation.
 
 ## Creating a Simple Tool
 
@@ -50,11 +49,13 @@ Here's a basic example of a word count tool:
 ```typescript
 import { Tool, ToolResult, ToolExecutionContext } from '../tools/types';
 import { ToolCategory } from '../types/agent';
+import { ToolClassification } from '../types/tool-policy';
 
 export class WordCountTool implements Tool {
 	name = 'word_count';
 	displayName = 'Word Count';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description = 'Count words in a file';
 
 	parameters = {
@@ -196,6 +197,7 @@ export class BatchProcessorTool implements Tool {
 	name = 'batch_process';
 	displayName = 'Batch Process Files';
 	category = ToolCategory.READ_ONLY;
+	classification = ToolClassification.READ;
 	description = 'Process multiple files matching a pattern';
 
 	parameters = {
