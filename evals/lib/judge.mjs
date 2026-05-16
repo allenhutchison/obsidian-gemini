@@ -15,7 +15,9 @@
  *
  *   - No API key reachable → `createJudge` returns `null`. Callers treat
  *     this as "judge unavailable"; tasks with `judge` matchers will fail
- *     (loudly via the result detail) rather than silently pass.
+ *     (loudly via the result detail) rather than silently pass. Ollama-only
+ *     runs can set `EVAL_JUDGE_API_KEY` so the judge is independent of the
+ *     active plugin provider and credential state.
  *   - Model returns anything other than YES/NO → conservatively NO. We do
  *     not try to substring-search "yes" inside a longer reply, because models
  *     sometimes write "yes, the response covers most but not…" which should
@@ -97,6 +99,7 @@ async function readApiKey() {
  *     `gemini-2.5-flash`). Pinned by design — do **not** wire this to the
  *     `chatModelName` setting, since that's what we're benchmarking.
  *   - `apiKey`: explicit override; otherwise read from the running plugin.
+ *     `evals/run.mjs` wires this from `EVAL_JUDGE_API_KEY` when set.
  */
 export async function createJudge({ model, apiKey } = {}) {
 	const judgeModel = model || process.env.EVAL_JUDGE_MODEL || DEFAULT_JUDGE_MODEL;

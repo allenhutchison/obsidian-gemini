@@ -4,7 +4,7 @@ description: Run the eval harness against a real Obsidian instance, monitor for 
 metadata:
   author: obsidian-gemini
   version: '1.0'
-compatibility: Requires Obsidian desktop with the CLI enabled, the plugin installed in a vault, and a Gemini API key configured. The Obsidian CLI must be reachable on PATH.
+compatibility: Requires Obsidian desktop with the CLI enabled, the plugin installed in a vault, and a Gemini API key configured in the plugin or `EVAL_JUDGE_API_KEY` for judge-matcher tasks. The Obsidian CLI must be reachable on PATH.
 ---
 
 # Eval harness — run, monitor, bless
@@ -97,6 +97,16 @@ For a single-model run against the user's currently-configured chat model:
 ```bash
 npm run eval 2>&1 | tee /tmp/eval-run.log
 ```
+
+For Ollama-only sweeps that include `judge` output matchers, provide a Gemini key for the judge without changing the
+plugin provider:
+
+```bash
+EVAL_JUDGE_API_KEY=... npm run eval -- --task=multi-file-summary 2>&1 | tee /tmp/eval-ollama.log
+```
+
+If this is missing, judge-matcher tasks record `judge_skipped: true` and print `[judge unavailable]`; treat those as
+harness setup failures, not model-quality regressions.
 
 For a model sweep, the canonical pattern is one `npm run eval -- --model=<id>` per model, awaiting full completion of the previous before starting the next:
 

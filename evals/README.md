@@ -7,6 +7,9 @@ Measures agent-loop behavior across repeatable tasks. Produces scored results wi
 - Obsidian desktop running with the `gemini-scribe` plugin enabled
 - Agent view panel **visible** (the eval runner drives `sendMessageProgrammatically` on the agent view; if the pane is collapsed or behind another tab you won't see activity, but the run still drives the model — open the pane if you want a UI signal)
 - API key configured in plugin settings
+- For Ollama-only eval runs that include `judge` output matchers, set `EVAL_JUDGE_API_KEY` to a Gemini API
+  key. The judge always uses Gemini, even when the system under test is Ollama, and the plugin may not have a
+  Gemini key configured in Ollama-only setups.
 - `obsidian` CLI accessible from your terminal (`obsidian version` should work)
 - **Single-tenant Obsidian instance** — only one `npm run eval` may run at a time against a given Obsidian process. Concurrent runs fight for the same agent view session and produce stuck CLI children; see "Operational gotchas" below.
 
@@ -27,6 +30,9 @@ npm run eval -- --model=gemini-2.5-flash-lite
 
 # Keep scratch files and session history for debugging
 npm run eval -- --keep-artifacts
+
+# Run Ollama-backed tasks that need judge matchers
+EVAL_JUDGE_API_KEY=... npm run eval -- --task=multi-file-summary
 ```
 
 Results are written to `evals/results/<timestamp>.json` and a summary prints to stdout.
@@ -163,7 +169,7 @@ When adding a new task, prefer cloning the closest category's fixture pattern �
 - `{ "type": "contains", "value": "text" }` — final response includes the substring.
 - `{ "type": "contains", "value": ["form-A", "form-B", "form-C"] }` — any-of substring match. The matcher passes if the response contains **any** of the listed forms. Use this when an answer has multiple correct surface forms — e.g., `"Neural Networks"` vs `"[[neural-networks]]"`.
 - `{ "type": "regex", "value": "pattern", "flags": "i" }` — final response matches the regex. JS regex syntax does NOT support inline flags like `(?i)` — pass `flags` explicitly as a separate field (`"i"` for case-insensitive, `"s"` for dotall, etc.). `value` may also be an array of patterns (any-of). The field is optional; defaults to no flags.
-- `{ "type": "judge", "criteria": "..." }` — LLM-as-judge for prose-heavy rubrics where literal substrings would be too brittle. The judge is a separate, **pinned** Gemini model (default `gemini-2.5-flash`; override with `EVAL_JUDGE_MODEL` env var) called with `temperature: 0` and a strict YES/NO contract. The judge always uses Gemini even when the system under test is Ollama, so the verdict doesn't drift across model-swap experiments. Use sparingly — each judge matcher is one extra API call per task run, and `judge` matchers fail if no Gemini API key is reachable.
+- `{ "type": "judge", "criteria": "..." }` — LLM-as-judge for prose-heavy rubrics where literal substrings would be too brittle. The judge is a separate, **pinned** Gemini model (default `gemini-2.5-flash`; override with `EVAL_JUDGE_MODEL` env var) called with `temperature: 0` and a strict YES/NO contract. The judge always uses Gemini even when the system under test is Ollama, so the verdict doesn't drift across model-swap experiments. Use sparingly — each judge matcher is one extra API call per task run. `judge` matchers use `EVAL_JUDGE_API_KEY` when set, otherwise they fall back to the plugin's Gemini API key. If neither key is reachable, the matcher fails, the result records `judge_skipped: true`, and the console verdict includes `[judge unavailable]`.
 
 When mixing matcher types, every matcher must pass (logical AND); within a single matcher, an array `value` is logical OR.
 

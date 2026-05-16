@@ -58,10 +58,11 @@ function evaluateRegex(value, flags, response) {
  * matcher fails — callers can detect "no judge available" via the returned
  * `judgeAttempted` / `judgeAvailable` flags rather than silently passing.
  *
- * Returns `{ pass, judgeAttempted, judgeAvailable }`:
+ * Returns `{ pass, judgeAttempted, judgeAvailable, judgeSkipped }`:
  *   - `pass`: true iff every matcher matched.
  *   - `judgeAttempted`: true iff at least one matcher was a `judge`.
  *   - `judgeAvailable`: true iff a judgeFn was supplied (and could be invoked).
+ *   - `judgeSkipped`: true iff a `judge` matcher appeared but no judgeFn was supplied.
  */
 export async function evaluateMatchers(matchers, ctx, judgeFn) {
 	const list = matchers || [];
@@ -102,5 +103,5 @@ export async function evaluateMatchers(matchers, ctx, judgeFn) {
 		pass = false;
 	}
 
-	return { pass, judgeAttempted, judgeAvailable };
+	return { pass, judgeAttempted, judgeAvailable, judgeSkipped: judgeAttempted && !judgeAvailable };
 }

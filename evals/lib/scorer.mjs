@@ -76,8 +76,9 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 				pass: false,
 				judgeAttempted: (task.outputMatchers || []).some((m) => m?.type === 'judge'),
 				judgeAvailable: typeof judgeFn === 'function',
+				judgeSkipped: (task.outputMatchers || []).some((m) => m?.type === 'judge') && typeof judgeFn !== 'function',
 			};
-	const { pass: matchersPass, judgeAttempted, judgeAvailable } = matcherEval;
+	const { pass: matchersPass, judgeAttempted, judgeAvailable, judgeSkipped } = matcherEval;
 	const solved = passed && expectedToolsMet && forbiddenToolsClean && matchersPass;
 
 	return {
@@ -103,6 +104,7 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 			matchers_pass: matchersPass,
 			judge_attempted: judgeAttempted,
 			judge_available: judgeAvailable,
+			judge_skipped: judgeSkipped,
 		},
 	};
 }

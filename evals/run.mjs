@@ -317,7 +317,10 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		if (timedOut) result.timedOut = true;
 		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
 		const verdict = timedOut ? 'TIMEOUT' : result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED';
-		console.log(`  ${verdict} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`);
+		const judgeLabel = result.solve_details?.judge_skipped ? ' [judge unavailable]' : '';
+		console.log(
+			`  ${verdict}${judgeLabel} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`
+		);
 
 		return result;
 	} catch (err) {
@@ -340,7 +343,14 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 				tool_list: [],
 			},
 			errors: [err.message],
-			solve_details: { expected_tools_met: false, forbidden_tools_clean: true, matchers_pass: false },
+			solve_details: {
+				expected_tools_met: false,
+				forbidden_tools_clean: true,
+				matchers_pass: false,
+				judge_attempted: (task.outputMatchers || []).some((m) => m?.type === 'judge'),
+				judge_available: typeof judgeFn === 'function',
+				judge_skipped: (task.outputMatchers || []).some((m) => m?.type === 'judge') && typeof judgeFn !== 'function',
+			},
 		};
 	} finally {
 		// 7. Cleanup — must run even if session creation failed before sessionInfo
@@ -419,7 +429,8 @@ async function main() {
 		// pinned Gemini model (gemini-2.5-flash by default; `EVAL_JUDGE_MODEL`
 		// env override) — independent of the system under test, so an Ollama
 		// run still scores its prose tasks against a stable judge.
-		const judgeFn = await createJudge();
+		const judgeApiKey = process.env.EVAL_JUDGE_API_KEY?.trim() || undefined;
+		const judgeFn = await createJudge({ apiKey: judgeApiKey });
 		if (judgeFn) {
 			console.log(`Judge: ${judgeFn.modelId}`);
 		} else {
