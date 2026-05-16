@@ -267,6 +267,12 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		});
 
 		if (!waitResult.completed) {
+			const lateSendError = await readAndClearLastSendError();
+			if (lateSendError) {
+				await cancelAgent();
+				throw new Error(`sendMessageProgrammatically failed: ${lateSendError}`);
+			}
+
 			timedOut = true;
 			console.log(`  task exceeded ${Math.round(taskTimeoutMs / 1000)}s budget — cancelling agent.`);
 			await cancelAgent();
