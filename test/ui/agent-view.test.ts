@@ -370,23 +370,6 @@ describe('AgentView UI Tests', () => {
 			expect(messages[0].textContent).toContain('Hello, agent!');
 			expect(messages[1].textContent).toContain('Hello! How can I help?');
 		});
-
-		it.skip('should display tool calls in collapsible format', async () => {
-			await agentView.onOpen();
-			const session = await plugin.sessionManager.createAgentSession();
-			await agentView['loadSession'](session.id);
-
-			// Skip this test as displayToolCall doesn't exist
-			// The actual tool display is handled by showToolExecution and showToolResult
-
-			// Check collapsible tool call display
-			const toolCallEl = agentView.containerEl.querySelector('.tool-call');
-			expect(toolCallEl).toBeTruthy();
-
-			const details = toolCallEl?.querySelector('details');
-			expect(details).toBeTruthy();
-			expect(details?.querySelector('summary')?.textContent).toContain('read_file');
-		});
 	});
 
 	describe('Context File Management', () => {
