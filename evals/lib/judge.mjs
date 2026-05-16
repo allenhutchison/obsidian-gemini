@@ -108,6 +108,13 @@ export async function createJudge({ model, apiKey } = {}) {
 
 	const client = new GoogleGenAI({ apiKey: key });
 
+	/**
+	 * Ask the pinned Gemini judge whether a response satisfies one criterion.
+	 *
+	 * @param {string} criterion - Rubric criterion from a `judge` matcher.
+	 * @param {object} ctx - Eval context containing the user request and response text.
+	 * @returns {Promise<boolean>} True only when the judge returns exactly YES.
+	 */
 	async function judge(criterion, ctx) {
 		const prompt = buildPrompt(criterion, ctx);
 		const response = await client.models.generateContent({

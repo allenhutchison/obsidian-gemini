@@ -209,6 +209,15 @@ async function getProvider() {
 	return result.replace(/^["']|["']$/g, '');
 }
 
+/**
+ * Run one eval task against the live plugin and return its scored result.
+ *
+ * @param {object} task - Task definition loaded from evals/tasks.
+ * @param {boolean} keepArtifacts - Whether to leave scratch files and session history in the vault.
+ * @param {string} provider - Active provider id used for scoring and cost reporting.
+ * @param {Function | null} judgeFn - Optional judge function for `judge` output matchers.
+ * @returns {Promise<object>} Scored task result ready for aggregation.
+ */
 async function runTask(task, keepArtifacts, provider, judgeFn) {
 	const title = `[eval] ${task.id}`;
 	console.log(`  "${task.description}"`);
@@ -389,6 +398,10 @@ async function maybeCompareToBaseline(result) {
 	printRegressionSummary(comparison);
 }
 
+/**
+ * Execute a full eval harness run: validate prerequisites, run tasks, write
+ * aggregate results, and restore any temporary model override.
+ */
 async function main() {
 	const { taskFilter, keepArtifacts, repeat, model } = parseArgs();
 	console.log('=== Gemini Scribe Eval Harness ===');
