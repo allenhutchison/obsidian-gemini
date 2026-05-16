@@ -39,6 +39,7 @@ import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './li
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
 import { createJudge } from './lib/judge.mjs';
 import { summarizeProgress, formatProgressLine, progressChanged } from './lib/progress.mjs';
+import { waitForTurnCompletion } from './lib/turn-waiter.mjs';
 
 const EVALS_DIR = resolve(import.meta.dirname);
 
@@ -50,15 +51,6 @@ const DEFAULT_TASK_TIMEOUT_MS = 5 * 60 * 1000;
 // keeps the operator's "is this thing alive?" feedback loop short without
 // hammering the obsidian CLI bridge.
 const PROGRESS_POLL_INTERVAL_MS = 2_000;
-// Grace window we give the in-flight sendMessage to settle after a timeout
-// fires + cancelAgent runs, so the plugin's eval call returns instead of
-// dangling.
-const TIMEOUT_SETTLE_MS = 5_000;
-
-function sleep(ms) {
-	return new Promise((r) => setTimeout(r, ms));
-}
-
 function parseArgs() {
 	const args = process.argv.slice(2);
 	const repeatArg = args.find((a) => a.startsWith('--repeat='))?.split('=')[1];
@@ -246,68 +238,48 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		// 3. Install collector
 		await installCollector();
 
-		// 4. Send the user message and race against the per-task wall-clock
-		// budget. A polling loop reads events while sendMessage is in flight
-		// so the operator sees per-turn progress instead of a silent wait.
+		// 4. Dispatch the user message, then observe terminal state via the
+		// collector. `sendMessage` intentionally returns after dispatch instead
+		// of holding an `obsidian eval` child open for the whole model turn; long
+		// sweeps used to wedge when that CLI child got stuck after the plugin had
+		// already emitted `turnEnd` (#778).
 		console.log(`  Sending message... (budget ${Math.round(taskTimeoutMs / 1000)}s)`);
-		const sendPromise = sendMessage(task.userMessage);
-		// Capture (rather than swallow) any rejection. Without this, a
-		// sendMessage failure would let the race resolve as 'OK', score
-		// against an empty collector, and silently report FAILED with no
-		// reason — masking the real error from the outer try/catch.
-		// `sendError` is rethrown after the race resolves to a non-TIMEOUT
-		// winner so the existing error path (catch block below) handles it
-		// the same way it did before the timeout refactor.
-		let sendError = null;
-		const sendSafe = sendPromise.catch((err) => {
-			sendError = err;
+		await sendMessage(task.userMessage);
+		let lastSummary = null;
+		const waitResult = await waitForTurnCompletion({
+			peekEvents: peekCollector,
+			timeoutMs: taskTimeoutMs,
+			pollIntervalMs: PROGRESS_POLL_INTERVAL_MS,
+			onPoll: (events) => {
+				const summary = summarizeProgress(events, startTime, Date.now(), task.maxTurns);
+				if (progressChanged(lastSummary, summary)) {
+					console.log(formatProgressLine(summary));
+					lastSummary = summary;
+				}
+			},
 		});
 
-		let pollerActive = true;
-		let lastSummary = null;
-		const pollLoop = (async () => {
-			while (pollerActive) {
-				await sleep(PROGRESS_POLL_INTERVAL_MS);
-				if (!pollerActive) break;
-				try {
-					const peek = await peekCollector();
-					const summary = summarizeProgress(peek, startTime, Date.now(), task.maxTurns);
-					if (progressChanged(lastSummary, summary)) {
-						console.log(formatProgressLine(summary));
-						lastSummary = summary;
-					}
-				} catch {
-					// Transient eval failure (CLI hiccup mid-run); ignore and
-					// keep polling — the next tick will succeed.
-				}
-			}
-		})();
-
-		const timeoutPromise = sleep(taskTimeoutMs).then(() => 'TIMEOUT');
-		const winner = await Promise.race([sendSafe.then(() => 'OK'), timeoutPromise]);
-
-		pollerActive = false;
-		await pollLoop;
-
-		if (winner === 'TIMEOUT') {
+		if (!waitResult.completed) {
 			timedOut = true;
-			console.log(`  ⏱ task exceeded ${Math.round(taskTimeoutMs / 1000)}s budget — cancelling agent.`);
+			console.log(`  task exceeded ${Math.round(taskTimeoutMs / 1000)}s budget — cancelling agent.`);
 			await cancelAgent();
-			// Give the in-flight sendMessage a brief settle window so its
-			// obsidianEval child can exit cleanly. After that we proceed —
-			// the dangling promise is left to its own outer timeout.
-			await Promise.race([sendSafe, sleep(TIMEOUT_SETTLE_MS)]);
-		} else if (sendError) {
-			// sendMessage rejected before the timeout fired — propagate to the
-			// outer catch so the run is recorded as ERROR (with the message)
-			// rather than silently FAILED against an empty event stream.
-			throw sendError;
 		} else {
 			console.log(`  Turn completed.`);
 		}
 
-		// 5. Read events and model response
-		const events = await readAndClearCollector();
+		// 5. Read events and model response. Prefer the last snapshot from the
+		// wait loop if a final read hits a transient CLI hiccup; the collector is
+		// only an observability buffer, and scoring stale terminal events is
+		// better than converting a completed model turn into a harness ERROR.
+		let events;
+		try {
+			events = await readAndClearCollector();
+		} catch (err) {
+			if (!waitResult.completed) throw err;
+			console.warn(`  Collector read warning: ${err.message}`);
+			events = waitResult.events;
+		}
+
 		const modelResponse = timedOut ? '' : await getLastModelResponse();
 		const durationMs = Date.now() - startTime;
 

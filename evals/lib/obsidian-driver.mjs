@@ -190,7 +190,10 @@ export async function setupFixtures(files) {
 
 /**
  * Send a message to the agent via the programmatic API.
- * Returns immediately — use waitForTurnEnd() to wait.
+ * Returns after dispatch; the runner waits for `turnEnd` / `turnError` via
+ * the event collector. Do not await the full agent turn inside this eval call:
+ * keeping a CLI child open for the whole model request is what made sweeps
+ * vulnerable to mid-suite CLI bridge hangs (#778).
  */
 export async function sendMessage(text) {
 	// JSON.stringify produces a safely quoted/escaped JS string literal that can
@@ -199,10 +202,13 @@ export async function sendMessage(text) {
 	await obsidianEval(
 		`(async () => {
     const p = app.plugins.plugins['gemini-scribe'];
-    await p.agentView.sendMessageProgrammatically(${textLiteral});
+    const run = p.agentView.sendMessageProgrammatically(${textLiteral});
+    window.__evalInFlightSend = run.catch((err) => {
+      window.__evalLastSendError = err instanceof Error ? err.message : String(err);
+    });
     return '"sent"';
   })()`,
-		{ timeoutMs: 300_000 }
+		{ timeoutMs: 15_000 }
 	);
 }
 
