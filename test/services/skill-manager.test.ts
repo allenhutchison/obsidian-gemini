@@ -13,7 +13,7 @@ vi.mock('../../src/services/bundled-skills', () => ({
 			{ name: 'obsidian-bases', description: 'Create Obsidian Bases' },
 		]),
 		loadSkill: vi.fn().mockImplementation((name: string) => {
-			if (name === 'gemini-scribe-help') return '# Help\n\nInstructions';
+			if (name === 'gemini-scribe-help') return '# Help\n\nState folder: <!-- STATE_FOLDER -->\n\nInstructions';
 			if (name === 'obsidian-bases') return '# Bases\n\nSyntax guide';
 			return null;
 		}),
@@ -115,6 +115,8 @@ describe('SkillManager', () => {
 		mockVault.adapter.exists.mockReset().mockResolvedValue(false);
 		mockVault.adapter.read.mockReset().mockResolvedValue('');
 		mockPlugin.settings.fileLogging = false;
+		// Pin the default state folder so tests that mutate it don't leak.
+		mockPlugin.settings.historyFolder = 'gemini-scribe';
 		manager = new SkillManager(mockPlugin);
 	});
 
@@ -582,7 +584,20 @@ describe('SkillManager', () => {
 
 				const content = await manager.loadSkill('gemini-scribe-help');
 
-				expect(content).toBe('# Help\n\nInstructions');
+				// The help skill's <!-- STATE_FOLDER --> placeholder resolves to the
+				// configured state folder (default 'gemini-scribe').
+				expect(content).toBe('# Help\n\nState folder: gemini-scribe\n\nInstructions');
+				expect(content).not.toContain('<!-- STATE_FOLDER -->');
+			});
+
+			it('should resolve the help skill STATE_FOLDER placeholder to a custom state folder', async () => {
+				mockVault.getAbstractFileByPath.mockReturnValue(null);
+				mockPlugin.settings.historyFolder = 'Resources';
+
+				const content = await manager.loadSkill('gemini-scribe-help');
+
+				expect(content).toBe('# Help\n\nState folder: Resources\n\nInstructions');
+				expect(content).not.toContain('<!-- STATE_FOLDER -->');
 			});
 
 			it('should prefer vault skill over bundled skill', async () => {

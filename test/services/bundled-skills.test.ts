@@ -85,6 +85,14 @@ describe('BundledSkillRegistry', () => {
 			expect(content).toContain('references/settings.md');
 		});
 
+		it('should leave the STATE_FOLDER placeholder unresolved for runtime substitution', () => {
+			const content = BundledSkillRegistry.loadSkill('gemini-scribe-help');
+			expect(content).not.toBeNull();
+			// <!-- STATE_FOLDER --> is intentionally NOT replaced at module-load time;
+			// SkillManager.loadSkill() fills it with the configured folder at runtime.
+			expect(content).toContain('<!-- STATE_FOLDER -->');
+		});
+
 		it('should return body content for obsidian-bases', () => {
 			const content = BundledSkillRegistry.loadSkill('obsidian-bases');
 			expect(content).not.toBeNull();

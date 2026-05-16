@@ -14,6 +14,17 @@ You are the built-in help system for the Gemini Scribe Obsidian plugin. When use
 3. Answer based on the loaded reference content
 4. If the question spans multiple topics, load multiple references
 
+## Plugin State Folder
+
+This vault's Gemini Scribe state folder is `<!-- STATE_FOLDER -->`. Advanced features are stored in its subfolders:
+
+- `<!-- STATE_FOLDER -->/Scheduled-Tasks/` — scheduled task definitions
+- `<!-- STATE_FOLDER -->/Skills/` — agent skill packages
+- `<!-- STATE_FOLDER -->/Prompts/` — custom prompt templates
+- `<!-- STATE_FOLDER -->/Hooks/` — lifecycle hook definitions
+
+The reference documents below use the default folder name `gemini-scribe` in their example paths. When a reference shows a path like `gemini-scribe/Scheduled-Tasks/`, use `<!-- STATE_FOLDER -->/Scheduled-Tasks/` instead. Never create a new `gemini-scribe` folder.
+
 ## Available References
 
 <!-- REFERENCES_TABLE -->
