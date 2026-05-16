@@ -13,6 +13,22 @@ vi.mock('obsidian', () => {
 	};
 });
 
+vi.mock('../../src/utils/retry', async () => {
+	const actual = await vi.importActual<any>('../../src/utils/retry');
+	return {
+		...actual,
+		executeWithRetry: vi.fn().mockImplementation((operation, _config, options) => {
+			const zeroConfig = {
+				maxRetries: 0,
+				initialDelayMs: 1,
+				maxDelayMs: 1,
+				jitter: false,
+			};
+			return actual.executeWithRetry(operation, zeroConfig, options);
+		}),
+	};
+});
+
 // Mock GoogleGenAI
 vi.mock('@google/genai', () => ({
 	GoogleGenAI: vi.fn().mockImplementation(function () {
@@ -35,10 +51,10 @@ vi.mock('@allenhutchison/gemini-utils', () => ({
 	}),
 }));
 
-// Mock error-utils
 vi.mock('../../src/utils/error-utils', () => ({
 	getErrorMessage: vi.fn((err: any) => (err instanceof Error ? err.message : String(err))),
 	isQuotaExhausted: vi.fn().mockReturnValue(false),
+	extractStatusCode: vi.fn((err: any) => err?.status ?? null),
 }));
 
 // Mock rag-resume-modal (dynamic import in handleInterruptedIndexing)

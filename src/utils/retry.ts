@@ -89,7 +89,7 @@ export async function executeWithRetry<T>(
 	config: RetryConfig = DEFAULT_RETRY_CONFIG,
 	options: RetryOptions
 ): Promise<T> {
-	const { operationName, logger, isRetryable } = options;
+	const { operationName, logger, isRetryable = isRetryableApiError } = options;
 	let lastError: Error | undefined;
 
 	for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
@@ -98,8 +98,9 @@ export async function executeWithRetry<T>(
 		} catch (error) {
 			lastError = error as Error;
 
-			// Check if error is retryable (if filter provided)
-			if (isRetryable && !isRetryable(error)) {
+			// Check if error is retryable
+			if (!isRetryable(error)) {
+				logger?.error(`${operationName} failed with non-retryable error:`, error);
 				throw error;
 			}
 
@@ -109,11 +110,14 @@ export async function executeWithRetry<T>(
 				throw error;
 			}
 
-			const backoffDelay = calculateDelay(attempt, config);
+			// Use API-provided retry delay if available, otherwise exponential backoff
+			const apiDelay = parseRetryDelay(error);
+			const maxDelayCap = config.maxDelayMs ?? 60000;
+			const backoffDelay = apiDelay !== null ? Math.min(apiDelay, maxDelayCap) : calculateDelay(attempt, config);
 
 			logger?.warn(
 				`${operationName} failed (attempt ${attempt + 1}/${config.maxRetries + 1}). ` +
-					`Retrying in ${backoffDelay}ms...`,
+					`Retrying in ${backoffDelay}ms${apiDelay !== null ? ' (API-provided delay)' : ''}...`,
 				error
 			);
 

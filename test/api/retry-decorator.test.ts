@@ -141,16 +141,23 @@ describe('RetryDecorator', () => {
 				],
 			});
 			const api = createMockApi([error, successResponse]);
-			const sleepSpy = vi.spyOn(RetryDecorator.prototype as any, 'sleep');
 			const decorator = new RetryDecorator(api, createRetryConfig());
 
 			const promise = decorator.generateModelResponse(dummyRequest);
-			await vi.advanceTimersByTimeAsync(6000);
-			await promise;
 
-			// Should have used the API-provided 5000ms delay instead of the 10ms initial backoff
-			expect(sleepSpy).toHaveBeenCalledWith(5000);
-			sleepSpy.mockRestore();
+			// Verify that it hasn't resolved before the 5000ms delay has elapsed
+			let resolved = false;
+			promise.then(() => {
+				resolved = true;
+			});
+
+			await vi.advanceTimersByTimeAsync(4000);
+			expect(resolved).toBe(false);
+
+			// Advance past the remaining delay
+			await vi.advanceTimersByTimeAsync(1500);
+			await promise;
+			expect(resolved).toBe(true);
 		});
 	});
 
