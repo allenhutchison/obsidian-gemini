@@ -2,6 +2,7 @@ import { App, Modal, Setting, Notice } from 'obsidian';
 import { MCPServerConfig, MCP_TRANSPORT_STDIO, MCP_TRANSPORT_HTTP, MCPTransportType } from '../mcp/types';
 import { MCPManager } from '../mcp/mcp-manager';
 import { ObsidianOAuthClientProvider } from '../mcp/mcp-oauth-provider';
+import { resolveServerEnv, writeServerEnv } from '../mcp/mcp-secrets';
 
 /**
  * Modal for adding or editing an MCP server configuration.
@@ -10,6 +11,8 @@ import { ObsidianOAuthClientProvider } from '../mcp/mcp-oauth-provider';
  */
 export class MCPServerModal extends Modal {
 	private config: MCPServerConfig;
+	/** Working copy of the server's env vars. Persisted to SecretStorage on save. */
+	private env: Record<string, string> | undefined;
 	private mcpManager: MCPManager;
 	private onSave: (config: MCPServerConfig) => Promise<void> | void;
 	private isEdit: boolean;
@@ -37,7 +40,6 @@ export class MCPServerModal extends Modal {
 					args: [...config.args],
 					// Legacy field — kept for migration compatibility, no longer used in UI
 					trustedTools: config.trustedTools ? [...config.trustedTools] : [],
-					env: config.env ? { ...config.env } : undefined,
 				}
 			: {
 					name: '',
@@ -45,10 +47,13 @@ export class MCPServerModal extends Modal {
 					command: '',
 					args: [],
 					url: undefined,
-					env: undefined,
 					enabled: true,
 					trustedTools: [],
 				};
+
+		// Env values live in SecretStorage, not on the config object. Load them
+		// into a working copy; writeServerEnv() persists them back on save.
+		this.env = config ? resolveServerEnv(app, config) : undefined;
 
 		if (this.isEdit) {
 			// Pre-populate from the connected server's tool list if available.
@@ -166,12 +171,12 @@ export class MCPServerModal extends Modal {
 			// Environment variables
 			new Setting(contentEl)
 				.setName('Environment variables')
-				.setDesc('Optional KEY=VALUE pairs, one per line')
+				.setDesc('Optional KEY=VALUE pairs, one per line. Values are stored in your OS keychain, not in plaintext.')
 				.addTextArea((text) => {
 					text.inputEl.rows = 2;
 					text.inputEl.cols = 40;
-					const envStr = this.config.env
-						? Object.entries(this.config.env)
+					const envStr = this.env
+						? Object.entries(this.env)
 								.map(([k, v]) => `${k}=${v}`)
 								.join('\n')
 						: '';
@@ -187,7 +192,7 @@ export class MCPServerModal extends Modal {
 									const eqIndex = line.indexOf('=');
 									return [line.substring(0, eqIndex).trim(), line.substring(eqIndex + 1).trim()] as [string, string];
 								});
-							this.config.env = entries.length > 0 ? Object.fromEntries(entries) : undefined;
+							this.env = entries.length > 0 ? Object.fromEntries(entries) : undefined;
 						});
 				});
 		}
@@ -279,6 +284,8 @@ export class MCPServerModal extends Modal {
 								new Notice('Command is required for stdio transport');
 								return;
 							}
+							// Persist env vars to SecretStorage; sets config.envSecretName.
+							writeServerEnv(this.app, this.config, this.env);
 						}
 						await this.onSave(this.config);
 						this.close();

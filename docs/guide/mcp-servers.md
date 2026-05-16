@@ -113,7 +113,7 @@ The OAuth callback runs a temporary local server on port 8095. Ensure this port 
 
 Stdio servers can be configured with environment variables. These are useful for passing API keys, paths, or other configuration to the server process.
 
-When adding or editing a stdio server, click **Add Environment Variable** to define key-value pairs:
+When adding or editing a stdio server, enter `KEY=VALUE` pairs (one per line) in the **Environment variables** field:
 
 | Variable        | Example Use Case                               |
 | --------------- | ---------------------------------------------- |
@@ -121,8 +121,8 @@ When adding or editing a stdio server, click **Add Environment Variable** to def
 | `GITHUB_TOKEN`  | Personal access token for GitHub MCP server    |
 | `HOME`          | Override home directory for the server process |
 
-::: warning
-Environment variables may contain sensitive values like API keys. These are stored in your Obsidian plugin settings (`data.json`), not in SecretStorage. Avoid committing your vault's `.obsidian` folder to public repositories.
+::: tip
+Environment variable values often hold sensitive credentials. Gemini Scribe stores them in Obsidian's **SecretStorage** (your operating system's keychain), not in the plugin's `data.json`. Because the keychain is per-device, these values do **not** sync across machines — if you use the same vault on multiple devices, re-enter the environment variables on each one.
 :::
 
 ## Finding Servers

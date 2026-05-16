@@ -28,6 +28,7 @@ import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
 import { MCPServerConfig } from './mcp/types';
+import { migrateServerEnvToSecretStorage } from './mcp/mcp-secrets';
 import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
 import { FolderInitializer } from './services/folder-initializer';
@@ -908,6 +909,18 @@ export default class ObsidianGemini extends Plugin {
 				this.logger?.log('Migrated API key from settings to secure storage');
 			} else {
 				this.logger?.error('API key migration failed: verification mismatch, keeping key in settings');
+			}
+		}
+
+		// One-time migration: move MCP stdio server env vars out of data.json into
+		// SecretStorage. Desktop-only — env feeds stdio servers, which never run on
+		// mobile; migrating on a mobile device first would strip env from the synced
+		// data.json before any desktop copies it into its (non-syncing) keychain.
+		if (!(this.app as { isMobile?: boolean }).isMobile) {
+			const migrated = migrateServerEnvToSecretStorage(this.app, this.settings.mcpServers, this.logger);
+			if (migrated) {
+				await this.saveData(this.settings);
+				this.logger?.log('Migrated MCP server env vars to secure storage');
 			}
 		}
 

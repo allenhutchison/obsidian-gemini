@@ -424,16 +424,18 @@ MCP (Model Context Protocol) server support allows the agent to use tools from e
 
 Each server configuration includes:
 
-| Field          | Type     | Description                                                                |
-| -------------- | -------- | -------------------------------------------------------------------------- |
-| `name`         | String   | Unique server name                                                         |
-| `transport`    | String   | Transport type: `"stdio"` (local) or `"http"` (remote). Default: `"stdio"` |
-| `command`      | String   | Command to spawn the server (stdio only)                                   |
-| `args`         | String[] | Command arguments (stdio only)                                             |
-| `url`          | String   | Server URL (http only, e.g., `http://localhost:3000/mcp`)                  |
-| `env`          | Object   | Optional environment variables                                             |
-| `enabled`      | Boolean  | Connect on plugin load                                                     |
-| `trustedTools` | String[] | Tools that skip confirmation                                               |
+| Field           | Type     | Description                                                                                    |
+| --------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `name`          | String   | Unique server name                                                                             |
+| `transport`     | String   | Transport type: `"stdio"` (local) or `"http"` (remote). Default: `"stdio"`                     |
+| `command`       | String   | Command to spawn the server (stdio only)                                                       |
+| `args`          | String[] | Command arguments (stdio only)                                                                 |
+| `url`           | String   | Server URL (http only, e.g., `http://localhost:3000/mcp`)                                      |
+| `envSecretName` | String   | SecretStorage key for the server's env vars (stdio only; values are not stored in `data.json`) |
+| `enabled`       | Boolean  | Connect on plugin load                                                                         |
+| `trustedTools`  | String[] | Tools that skip confirmation                                                                   |
+
+Environment variable **values** are kept in Obsidian's SecretStorage (the OS keychain), not in `data.json`. The config only stores `envSecretName`, a pointer to the keychain entry.
 
 See the [MCP Servers Guide](/guide/mcp-servers) for setup instructions.
 

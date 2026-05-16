@@ -679,12 +679,11 @@ describe('MCPManager', () => {
 	});
 
 	describe('connectServer - env vars', () => {
-		it('should pass merged env to StdioClientTransport when env is provided', async () => {
+		it('should resolve env from SecretStorage and pass it to StdioClientTransport', async () => {
 			mockListTools.mockResolvedValueOnce({ tools: [] });
 
-			const config = createStdioConfig({
-				env: { MY_VAR: 'hello', ANOTHER: 'world' },
-			});
+			plugin.app.secretStorage.setSecret('mcp-env-test', JSON.stringify({ MY_VAR: 'hello', ANOTHER: 'world' }));
+			const config = createStdioConfig({ envSecretName: 'mcp-env-test' });
 
 			await manager.connectServer(config);
 
@@ -696,6 +695,14 @@ describe('MCPManager', () => {
 					}),
 				})
 			);
+		});
+
+		it('should pass env: undefined when the server has no envSecretName', async () => {
+			mockListTools.mockResolvedValueOnce({ tools: [] });
+
+			await manager.connectServer(createStdioConfig());
+
+			expect(MockStdioClientTransport).toHaveBeenCalledWith(expect.objectContaining({ env: undefined }));
 		});
 	});
 });
