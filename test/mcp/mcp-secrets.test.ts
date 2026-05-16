@@ -125,6 +125,16 @@ describe('writeServerEnv', () => {
 		writeServerEnv(app, config, env);
 		expect(resolveServerEnv(app, config)).toEqual(env);
 	});
+
+	it('throws when a non-empty write cannot be verified', () => {
+		const app = {
+			secretStorage: {
+				getSecret: vi.fn(() => null),
+				setSecret: vi.fn(), // write silently fails — read-back will not match
+			},
+		} as any;
+		expect(() => writeServerEnv(app, makeConfig(), { TOKEN: 'x' })).toThrow(/SecretStorage/);
+	});
 });
 
 describe('clearServerEnv', () => {

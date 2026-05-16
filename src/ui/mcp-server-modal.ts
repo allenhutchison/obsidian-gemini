@@ -285,7 +285,12 @@ export class MCPServerModal extends Modal {
 								return;
 							}
 							// Persist env vars to SecretStorage; sets config.envSecretName.
-							writeServerEnv(this.app, this.config, this.env);
+							try {
+								writeServerEnv(this.app, this.config, this.env);
+							} catch (error) {
+								new Notice(error instanceof Error ? error.message : 'Failed to store environment variables');
+								return;
+							}
 						}
 						await this.onSave(this.config);
 						this.close();

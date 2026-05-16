@@ -40,6 +40,8 @@ export function resolveServerEnv(app: App, config: MCPServerConfig): Record<stri
  * Persist a stdio MCP server's environment variables to SecretStorage, keeping
  * them out of data.json. Mutates `config.envSecretName`, generating a key on
  * first write. An empty or undefined env clears any previously stored secret.
+ * Throws if a non-empty write cannot be verified via read-back, so the caller
+ * never reports success on credentials that did not actually persist.
  */
 export function writeServerEnv(app: App, config: MCPServerConfig, env: Record<string, string> | undefined): void {
 	const hasEnv = !!env && Object.keys(env).length > 0;
@@ -52,7 +54,11 @@ export function writeServerEnv(app: App, config: MCPServerConfig, env: Record<st
 	if (!config.envSecretName) {
 		config.envSecretName = makeEnvSecretName(config.name);
 	}
-	app.secretStorage.setSecret(config.envSecretName, JSON.stringify(env));
+	const blob = JSON.stringify(env);
+	app.secretStorage.setSecret(config.envSecretName, blob);
+	if (app.secretStorage.getSecret(config.envSecretName) !== blob) {
+		throw new Error(`Failed to store environment variables for MCP server "${config.name}" in SecretStorage`);
+	}
 }
 
 /**
