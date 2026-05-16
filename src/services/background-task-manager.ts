@@ -3,6 +3,7 @@ import type ObsidianGemini from '../main';
 import type { AgentEventBus } from '../agent/agent-event-bus';
 import { getErrorMessage } from '../utils/error-utils';
 
+// knip:keep — Intentional public API structurally consumed by BackgroundTask.status
 export type BackgroundTaskStatus = 'pending' | 'running' | 'complete' | 'failed' | 'cancelled';
 
 export interface BackgroundTask {

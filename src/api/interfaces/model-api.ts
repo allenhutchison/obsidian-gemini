@@ -62,9 +62,6 @@ export interface InlineDataPart {
 	mimeType: string;
 }
 
-/** Backward-compatible alias */
-export type ImagePart = InlineDataPart;
-
 /**
  * Represents an extended model request with conversation history and a user message.
  *
@@ -119,6 +116,7 @@ export interface ToolDefinition {
 /**
  * Streaming chunk data passed to callback
  */
+// knip:keep — Intentional public API structurally consumed by StreamCallback
 export interface StreamChunk {
 	/** Text content chunk */
 	text: string;

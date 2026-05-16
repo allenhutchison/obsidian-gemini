@@ -19,18 +19,6 @@ import type {
 	ProgressListener,
 } from './rag-types';
 
-// Re-export all types for backwards compatibility
-export type {
-	IndexedFileEntry,
-	RagIndexCache,
-	IndexProgress,
-	IndexResult,
-	FailedFileEntry,
-	RagIndexStatus,
-	RagProgressInfo,
-	ProgressListener,
-} from './rag-types';
-
 /**
  * Service for managing RAG indexing of vault files to Google's File Search API.
  *

@@ -1,5 +1,5 @@
 import { App, Modal, Setting, setIcon } from 'obsidian';
-import type { RagProgressInfo, ProgressListener } from '../services/rag-indexing';
+import type { RagProgressInfo, ProgressListener } from '../services/rag-types';
 
 /**
  * Modal showing live progress during RAG indexing operations

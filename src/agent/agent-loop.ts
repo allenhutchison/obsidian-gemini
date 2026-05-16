@@ -18,6 +18,7 @@ import {
  * view, headless task runners) can render or react without the loop knowing
  * anything about its caller. All hooks are optional; an absent hook is a no-op.
  */
+// knip:keep — Intentional public API for UI and headless extension hooks
 export interface AgentLoopHooks {
 	/**
 	 * Fired once at the start of each tool-execution batch (every iteration of
