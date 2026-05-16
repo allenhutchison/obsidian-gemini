@@ -247,6 +247,9 @@ export class OllamaClient implements ModelApi {
 		if (request.userMessage && request.userMessage.trim()) {
 			userParts.push(request.userMessage);
 		}
+		if (request.perTurnContext && request.perTurnContext.trim()) {
+			userParts.push(request.perTurnContext);
+		}
 		const allAttachments: InlineDataPart[] = [
 			...(request.inlineAttachments || []),
 			...(request.imageAttachments || []),
@@ -312,7 +315,6 @@ export class OllamaClient implements ModelApi {
 			agentsMemory,
 			availableSkills,
 			request.projectInstructions,
-			request.perTurnContext ?? request.prompt,
 			request.sessionStartedAt
 		);
 	}

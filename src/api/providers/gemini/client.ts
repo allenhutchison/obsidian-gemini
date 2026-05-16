@@ -236,7 +236,6 @@ export class GeminiClient implements ModelApi {
 				agentsMemory,
 				availableSkills,
 				extReq.projectInstructions,
-				extReq.perTurnContext ?? extReq.prompt,
 				extReq.sessionStartedAt
 			);
 		} else {
@@ -352,6 +351,11 @@ export class GeminiClient implements ModelApi {
 		// Add text content if present
 		if (extReq.userMessage && extReq.userMessage.trim()) {
 			userParts.push({ text: extReq.userMessage });
+		}
+
+		// Add per-turn files and context if present
+		if (extReq.perTurnContext && extReq.perTurnContext.trim()) {
+			userParts.push({ text: extReq.perTurnContext });
 		}
 
 		// Add inline data attachments (images, audio, video, PDF)

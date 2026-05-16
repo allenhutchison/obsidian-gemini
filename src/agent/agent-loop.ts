@@ -236,6 +236,7 @@ export class AgentLoop {
 				const updatedHistory = buildToolHistoryTurns({
 					conversationHistory,
 					userMessage,
+					perTurnContext: perTurn?.perTurnContext,
 					toolCalls: currentToolCalls,
 					toolResults,
 				});
@@ -261,6 +262,7 @@ export class AgentLoop {
 			const updatedHistory = buildToolHistoryTurns({
 				conversationHistory,
 				userMessage,
+				perTurnContext: perTurn?.perTurnContext,
 				toolCalls: currentToolCalls,
 				toolResults,
 			});

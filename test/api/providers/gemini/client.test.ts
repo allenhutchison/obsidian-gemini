@@ -246,7 +246,7 @@ describe('GeminiClient', () => {
 			(mockPlugin as any).settings = { userName: 'Tester', ragIndexing: { enabled: false } };
 		});
 
-		test('embeds perTurnContext under "## Turn Context" in systemInstruction', async () => {
+		test('transmits perTurnContext directly as a user message content part', async () => {
 			const renderedContext =
 				'CONTEXT FILES: places.md\n\n==============================\nFile Label: Context File\nFile Name: places.md\n==============================\n\nMachu Picchu, Petra, the Great Wall.';
 
@@ -263,18 +263,24 @@ describe('GeminiClient', () => {
 
 			expect(generateContentMock).toHaveBeenCalledTimes(1);
 			const params = (generateContentMock as Mock).mock.calls[0][0];
+
+			// System instruction should be static (no perTurnContext!)
 			expect(params.config.systemInstruction).toBeTruthy();
-			expect(params.config.systemInstruction).toContain('## Turn Context');
-			expect(params.config.systemInstruction).toContain('Machu Picchu, Petra, the Great Wall.');
+			expect(params.config.systemInstruction).not.toContain('## Turn Context');
+			expect(params.config.systemInstruction).not.toContain('Machu Picchu, Petra, the Great Wall.');
 			expect(params.config.systemInstruction).toContain('always cite paths');
 			expect(params.config.systemInstruction).toContain('2026-05-09T10:00:00');
+
+			// User contents must contain perTurnContext as a part
+			expect(params.contents).toBeDefined();
+			const userTurn = params.contents.find((turn: any) => turn.role === 'user');
+			expect(userTurn).toBeDefined();
+			expect(userTurn.parts).toHaveLength(2); // Text query + context files
+			expect(userTurn.parts[0].text).toBe('list the places');
+			expect(userTurn.parts[1].text).toBe(renderedContext);
 		});
 
-		test('omits "## Turn Context" section when perTurnContext is empty', async () => {
-			// Without a per-turn context (e.g. a chat with no chip files), the
-			// section should not appear in the system instruction. This guards
-			// against accidentally always-injecting an empty heading that would
-			// shift the prefix bytes Gemini's implicit cache keys on.
+		test('omits perTurnContext when it is empty', async () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'just chat',
@@ -283,7 +289,12 @@ describe('GeminiClient', () => {
 
 			expect(generateContentMock).toHaveBeenCalledTimes(1);
 			const params = (generateContentMock as Mock).mock.calls[0][0];
-			expect(params.config.systemInstruction).not.toContain('## Turn Context');
+
+			// Should only have the userMessage text part
+			const userTurn = params.contents.find((turn: any) => turn.role === 'user');
+			expect(userTurn).toBeDefined();
+			expect(userTurn.parts).toHaveLength(1);
+			expect(userTurn.parts[0].text).toBe('just chat');
 		});
 	});
 

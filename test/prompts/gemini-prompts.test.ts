@@ -84,7 +84,6 @@ describe('GeminiPrompts', () => {
 			null, // agentsMemory
 			undefined, // availableSkills
 			undefined, // projectInstructions
-			undefined, // perTurnContext
 		] as const;
 
 		it('returns byte-identical output across calls with the same sessionStartedAt', () => {

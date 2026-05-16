@@ -158,10 +158,19 @@ export function buildFunctionResponseParts(toolResults: ToolCallResultPair[]): P
 export function buildToolHistoryTurns(args: {
 	conversationHistory: Content[];
 	userMessage: string;
+	perTurnContext?: string;
 	toolCalls: ToolCall[];
 	toolResults: ToolCallResultPair[];
 }): Content[] {
-	const { conversationHistory, userMessage, toolCalls, toolResults } = args;
+	const { conversationHistory, userMessage, perTurnContext, toolCalls, toolResults } = args;
+
+	const userParts: Part[] = [];
+	if (userMessage && userMessage.trim()) {
+		userParts.push({ text: userMessage });
+	}
+	if (perTurnContext && perTurnContext.trim()) {
+		userParts.push({ text: perTurnContext });
+	}
 
 	const updated: Content[] = [
 		...conversationHistory,
@@ -169,10 +178,10 @@ export function buildToolHistoryTurns(args: {
 		{ role: 'user', parts: buildFunctionResponseParts(toolResults) },
 	];
 
-	if (userMessage && userMessage.trim()) {
+	if (userParts.length > 0) {
 		updated.splice(conversationHistory.length, 0, {
 			role: 'user',
-			parts: [{ text: userMessage }],
+			parts: userParts,
 		});
 	}
 

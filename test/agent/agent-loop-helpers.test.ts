@@ -370,6 +370,42 @@ describe('buildToolHistoryTurns', () => {
 		expect(updated[4].role).toBe('user');
 	});
 
+	test('merges userMessage and perTurnContext into a single spliced user turn', () => {
+		const updated = buildToolHistoryTurns({
+			conversationHistory: sampleHistory,
+			userMessage: 'user query text',
+			perTurnContext: 'context files content...',
+			toolCalls: [sampleToolCall],
+			toolResults: [sampleResult],
+		});
+
+		expect(updated).toHaveLength(5); // 2 prior + user combined + model + user response
+		expect(updated[2]).toEqual({
+			role: 'user',
+			parts: [{ text: 'user query text' }, { text: 'context files content...' }],
+		});
+		expect(updated[3].role).toBe('model');
+		expect(updated[4].role).toBe('user');
+	});
+
+	test('splices user turn with only perTurnContext when userMessage is empty', () => {
+		const updated = buildToolHistoryTurns({
+			conversationHistory: sampleHistory,
+			userMessage: '',
+			perTurnContext: 'only context files...',
+			toolCalls: [sampleToolCall],
+			toolResults: [sampleResult],
+		});
+
+		expect(updated).toHaveLength(5);
+		expect(updated[2]).toEqual({
+			role: 'user',
+			parts: [{ text: 'only context files...' }],
+		});
+		expect(updated[3].role).toBe('model');
+		expect(updated[4].role).toBe('user');
+	});
+
 	test('treats whitespace-only userMessage as empty (no splice)', () => {
 		const updated = buildToolHistoryTurns({
 			conversationHistory: sampleHistory,
