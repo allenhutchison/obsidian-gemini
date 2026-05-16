@@ -1,6 +1,7 @@
 import type ObsidianGemini from '../main';
 import { App, Setting, Notice, setIcon } from 'obsidian';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
+import { clearServerEnv } from '../mcp/mcp-secrets';
 import { getErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
 import type { SettingsSectionContext } from './settings';
@@ -148,6 +149,8 @@ async function createMCPSettings(
 							if (mcpManager?.isConnected(server.name)) {
 								await mcpManager.disconnectServer(server.name);
 							}
+							// Remove the server's env vars from the keychain.
+							clearServerEnv(app, server);
 							plugin.settings.mcpServers = plugin.settings.mcpServers.filter((s) => s.name !== server.name);
 							await plugin.saveSettings();
 							context.redisplay();

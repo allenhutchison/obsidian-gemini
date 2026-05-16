@@ -5,6 +5,7 @@ import { MCPServerConfig, MCPConnectionStatus, MCPServerState, MCP_TRANSPORT_HTT
 import { MCPToolWrapper } from './mcp-tool-wrapper';
 import { ObsidianOAuthClientProvider, OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
 import { obsidianFetch } from './mcp-fetch';
+import { resolveServerEnv } from './mcp-secrets';
 import {
 	MCP_CLOSE_TIMEOUT_MS,
 	MCP_CONNECT_TIMEOUT_MS,
@@ -538,7 +539,7 @@ export class MCPManager {
 			transport = new StdioClientTransport({
 				command: config.command,
 				args: config.args,
-				env: buildEnv(config.env),
+				env: buildEnv(resolveServerEnv(this.plugin.app, config)),
 			});
 		}
 

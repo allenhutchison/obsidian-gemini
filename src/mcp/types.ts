@@ -24,8 +24,12 @@ export interface MCPServerConfig {
 	/** URL for HTTP transport (e.g., "http://localhost:3000/mcp") */
 	url?: string;
 
-	/** Optional environment variables */
-	env?: Record<string, string>;
+	/**
+	 * SecretStorage key holding this server's environment variables as a JSON
+	 * blob. The values live in the OS keychain, never in data.json. Absent when
+	 * the server has no environment variables configured.
+	 */
+	envSecretName?: string;
 
 	/** Whether to connect on startup */
 	enabled: boolean;
