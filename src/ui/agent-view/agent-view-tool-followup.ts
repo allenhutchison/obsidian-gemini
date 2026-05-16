@@ -1,3 +1,4 @@
+import type { Content } from '@google/genai';
 import type ObsidianGemini from '../../main';
 import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
@@ -13,7 +14,7 @@ export type { PerTurnContext };
 export interface FollowUpRequestParams extends PerTurnContext {
 	plugin: ObsidianGemini;
 	currentSession: ChatSession;
-	updatedHistory: any[];
+	updatedHistory: Content[];
 	customPrompt?: CustomPrompt;
 	projectRootPath?: string;
 	featureToolPolicy?: import('../../types/tool-policy').FeatureToolPolicy;
@@ -29,7 +30,7 @@ export interface FollowUpRequestParams extends PerTurnContext {
 export interface RetryRequestParams extends PerTurnContext {
 	plugin: ObsidianGemini;
 	currentSession: ChatSession;
-	updatedHistory: any[];
+	updatedHistory: Content[];
 	customPrompt?: CustomPrompt;
 }
 

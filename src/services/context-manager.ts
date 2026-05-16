@@ -9,7 +9,7 @@
  * - #328: Tool calling unreliability in long conversations
  * - #129: 429 errors from oversized context
  */
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Content, Part } from '@google/genai';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
 import { ModelClientFactory, ModelUseCase } from '../api';
@@ -37,7 +37,7 @@ const OLLAMA_DEFAULT_INPUT_TOKEN_LIMIT = 32_000;
  * endpoint (Ollama). Char/4 is the standard heuristic; drift vs. real tokens
  * is acceptable here because we only use it to decide whether to compact.
  */
-function estimateTokensFromContents(contents: any[]): number {
+function estimateTokensFromContents(contents: Content[]): number {
 	const json = JSON.stringify(contents ?? []);
 	return Math.ceil(json.length / 4);
 }
@@ -58,7 +58,7 @@ export interface CompactionResult {
 	/** The history array ready to send to the API. May be the original
 	 *  reference (no changes), the truncated form (phase 1), or a fully
 	 *  summarized form (phase 2). */
-	compactedHistory: any[];
+	compactedHistory: Content[];
 	/** True iff phase 2 summarization occurred — i.e. older turns were
 	 *  replaced with a generated summary entry. NOT set for phase 1
 	 *  truncation, which only sheds bytes from existing tool-result turns
@@ -214,43 +214,43 @@ export class ContextManager {
 	 * The countTokens API only accepts text parts, so we convert
 	 * functionCall, functionResponse, and inlineData parts to text descriptions.
 	 */
-	private sanitizeContentsForTokenCount(contents: any[]): any[] {
-		return contents
-			.map((entry) => {
-				if (!entry.parts || !Array.isArray(entry.parts)) {
-					// If there's a direct text or message field, convert it
-					if (entry.text) return { role: entry.role || 'user', parts: [{ text: entry.text }] };
-					if (entry.message) return { role: entry.role || 'user', parts: [{ text: entry.message }] };
-					return null;
+	private sanitizeContentsForTokenCount(contents: Content[]): Content[] {
+		const result: Content[] = [];
+		for (const entry of contents) {
+			if (!entry.parts || !Array.isArray(entry.parts)) {
+				// Legacy stored entries may have top-level text/message fields.
+				const legacy = entry as Content & { text?: string; message?: string };
+				if (legacy.text) {
+					result.push({ role: entry.role || 'user', parts: [{ text: legacy.text }] });
+				} else if (legacy.message) {
+					result.push({ role: entry.role || 'user', parts: [{ text: legacy.message }] });
 				}
+				continue;
+			}
 
-				const textParts = entry.parts
-					.map((part: any) => {
-						if (part.text) return { text: part.text };
-						if (part.functionCall) {
-							return {
-								text: `[Tool call: ${part.functionCall.name}(${JSON.stringify(part.functionCall.args || {}).substring(0, 500)})]`,
-							};
-						}
-						if (part.functionResponse) {
-							const responseText =
-								typeof part.functionResponse.response === 'string'
-									? part.functionResponse.response.substring(0, 1000)
-									: JSON.stringify(part.functionResponse.response || {}).substring(0, 1000);
-							return { text: `[Tool result from ${part.functionResponse.name}: ${responseText}]` };
-						}
-						if (part.inlineData) {
-							return { text: `[Inline attachment: ${part.inlineData.mimeType || 'unknown'}]` };
-						}
-						// Skip any other unknown part types
-						return null;
-					})
-					.filter(Boolean);
+			const textParts: Part[] = [];
+			for (const part of entry.parts) {
+				if (part.text) {
+					textParts.push({ text: part.text });
+				} else if (part.functionCall) {
+					textParts.push({
+						text: `[Tool call: ${part.functionCall.name}(${JSON.stringify(part.functionCall.args || {}).substring(0, 500)})]`,
+					});
+				} else if (part.functionResponse) {
+					const responseStr = JSON.stringify(part.functionResponse.response || {});
+					textParts.push({
+						text: `[Tool result from ${part.functionResponse.name}: ${responseStr.substring(0, 1000)}]`,
+					});
+				} else if (part.inlineData) {
+					textParts.push({ text: `[Inline attachment: ${part.inlineData.mimeType || 'unknown'}]` });
+				}
+			}
 
-				if (textParts.length === 0) return null;
-				return { role: entry.role, parts: textParts };
-			})
-			.filter(Boolean);
+			if (textParts.length > 0) {
+				result.push({ role: entry.role, parts: textParts });
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -260,7 +260,7 @@ export class ContextManager {
 	 * equivalent API) we fall back to a chars/4 estimate — compaction precision
 	 * is degraded but the trigger logic still works.
 	 */
-	async countTokens(modelName: string, contents: any[]): Promise<number> {
+	async countTokens(modelName: string, contents: Content[]): Promise<number> {
 		// Sanitize contents to only include text-compatible parts
 		const sanitizedContents = this.sanitizeContentsForTokenCount(contents);
 
@@ -296,7 +296,7 @@ export class ContextManager {
 	 * whether compaction is needed. countTokens() is only called after
 	 * compaction to measure the result size.
 	 */
-	async prepareHistory(conversationHistory: any[], modelName: string): Promise<CompactionResult> {
+	async prepareHistory(conversationHistory: Content[], modelName: string): Promise<CompactionResult> {
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
 
 		// Short-circuit for very short conversations
@@ -401,10 +401,10 @@ export class ContextManager {
 	 * and return the compacted history.
 	 */
 	private async compactHistory(
-		conversationHistory: any[],
+		conversationHistory: Content[],
 		modelName: string,
 		aggressive: boolean
-	): Promise<{ compactedHistory: any[]; summaryText: string }> {
+	): Promise<{ compactedHistory: Content[]; summaryText: string }> {
 		const totalTurns = conversationHistory.length;
 
 		// Determine how many recent turns to keep
@@ -419,7 +419,8 @@ export class ContextManager {
 		// History entries may use parts[].text (API format) or message (stored format)
 		while (splitIndex > 0 && splitIndex < totalTurns) {
 			const entry = conversationHistory[splitIndex];
-			if (entry.role === 'user' && (entry.parts?.[0]?.text || entry.message || entry.text)) {
+			const legacy = entry as Content & { message?: string; text?: string };
+			if (entry.role === 'user' && (entry.parts?.[0]?.text || legacy.message || legacy.text)) {
 				break;
 			}
 			splitIndex--;
@@ -467,7 +468,7 @@ export class ContextManager {
 	/**
 	 * Generate a summary of conversation turns using Gemini.
 	 */
-	private async summarizeConversation(turns: any[], modelName: string): Promise<string> {
+	private async summarizeConversation(turns: Content[], modelName: string): Promise<string> {
 		// Convert turns to readable text for summarization
 		const conversationText = turns
 			.map((turn) => {
@@ -476,7 +477,7 @@ export class ContextManager {
 
 				if (turn.parts && Array.isArray(turn.parts)) {
 					text = turn.parts
-						.map((part: any) => {
+						.map((part: Part) => {
 							if (part.text) return part.text;
 							if (part.functionCall) return `[Called tool: ${part.functionCall.name}]`;
 							if (part.functionResponse) return `[Tool result from: ${part.functionResponse.name}]`;
@@ -484,10 +485,14 @@ export class ContextManager {
 						})
 						.filter(Boolean)
 						.join('\n');
-				} else if (turn.text) {
-					text = turn.text;
-				} else if (turn.message) {
-					text = turn.message;
+				} else {
+					// Legacy stored format: top-level text or message fields
+					const legacy = turn as Content & { text?: string; message?: string };
+					if (legacy.text) {
+						text = legacy.text;
+					} else if (legacy.message) {
+						text = legacy.message;
+					}
 				}
 
 				if (!text.trim()) return '';

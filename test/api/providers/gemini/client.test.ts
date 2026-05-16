@@ -684,7 +684,7 @@ describe('GeminiClient', () => {
 				prompt: '',
 				userMessage: 'new msg',
 				conversationHistory: [{ role: 'user', text: 'old msg' }],
-			} as ExtendedModelRequest);
+			} as unknown as ExtendedModelRequest);
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			expect(params.contents).toEqual(
@@ -697,7 +697,7 @@ describe('GeminiClient', () => {
 				prompt: '',
 				userMessage: 'new msg',
 				conversationHistory: [{ role: 'assistant', message: 'I helped' }],
-			} as ExtendedModelRequest);
+			} as unknown as ExtendedModelRequest);
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			expect(params.contents).toEqual(
@@ -710,7 +710,7 @@ describe('GeminiClient', () => {
 				prompt: '',
 				userMessage: 'q',
 				conversationHistory: [{ role: 'model', text: 'answer' }],
-			} as ExtendedModelRequest);
+			} as unknown as ExtendedModelRequest);
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			expect(params.contents).toEqual(

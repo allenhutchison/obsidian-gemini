@@ -1,3 +1,4 @@
+import type { Content } from '@google/genai';
 import type ObsidianGemini from '../main';
 import type { ChatSession, PerTurnContext } from '../types/agent';
 import type { FeatureToolPolicy } from '../types/tool-policy';
@@ -105,7 +106,7 @@ export interface AgentLoopResult {
 	 */
 	markdown: string;
 	/** Final conversation history including all tool turns. */
-	history: any[];
+	history: Content[];
 	/** True if cancellation interrupted the loop. */
 	cancelled: boolean;
 	/** True if the empty-response retry was triggered. */
@@ -156,7 +157,7 @@ export class AgentLoop {
 	async run(args: {
 		initialResponse: ModelResponse;
 		initialUserMessage: string;
-		initialHistory: any[];
+		initialHistory: Content[];
 		options: AgentLoopOptions;
 	}): Promise<AgentLoopResult> {
 		const { initialResponse, initialUserMessage, initialHistory, options } = args;
@@ -413,7 +414,7 @@ export class AgentLoop {
 		}
 	}
 
-	private cancelledResult(history: any[], iterations: number): AgentLoopResult {
+	private cancelledResult(history: Content[], iterations: number): AgentLoopResult {
 		return {
 			markdown: '',
 			history,
@@ -426,7 +427,7 @@ export class AgentLoop {
 		};
 	}
 
-	private loopAbortedResult(history: any[], iterations: number, fireCount: number): AgentLoopResult {
+	private loopAbortedResult(history: Content[], iterations: number, fireCount: number): AgentLoopResult {
 		return {
 			markdown:
 				`The agent kept retrying the same tool call (loop detector fired ${fireCount} times). ` +

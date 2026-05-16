@@ -154,7 +154,7 @@ describe('buildFunctionCallParts', () => {
 
 		const parts = buildFunctionCallParts(calls);
 
-		expect(parts[0].functionCall.args).toEqual({});
+		expect(parts[0].functionCall!.args).toEqual({});
 	});
 
 	test('handles the Gemini 3 mixed-signature case (only first parallel call has signature)', () => {
@@ -182,7 +182,7 @@ describe('buildFunctionCallParts', () => {
 
 		const parts = buildFunctionCallParts(calls);
 
-		expect(parts[0].functionCall.args).toEqual({
+		expect(parts[0].functionCall!.args).toEqual({
 			nested: { key: 'value' },
 			list: [1, 2, 3],
 			flag: true,
@@ -232,8 +232,8 @@ describe('buildFunctionResponseParts', () => {
 		const parts = buildFunctionResponseParts(results);
 
 		expect(parts).toHaveLength(2);
-		expect(parts[0].functionResponse.response).not.toHaveProperty('inlineData');
-		expect(parts[0].functionResponse.response.data.path).toBe('photo.png');
+		expect(parts[0].functionResponse!.response).not.toHaveProperty('inlineData');
+		expect((parts[0].functionResponse!.response as any).data.path).toBe('photo.png');
 		expect(parts[1]).toEqual({ inlineData: { mimeType: 'image/png', data: 'iVBOR...' } });
 	});
 
@@ -256,8 +256,8 @@ describe('buildFunctionResponseParts', () => {
 		const parts = buildFunctionResponseParts(results);
 
 		expect(parts).toHaveLength(3);
-		expect(parts[1].inlineData.data).toBe('page1');
-		expect(parts[2].inlineData.data).toBe('page2');
+		expect(parts[1].inlineData!.data).toBe('page1');
+		expect(parts[2].inlineData!.data).toBe('page2');
 	});
 
 	test('handles empty inlineData array (still emits only the functionResponse)', () => {
@@ -286,7 +286,7 @@ describe('buildFunctionResponseParts', () => {
 
 		const parts = buildFunctionResponseParts(results);
 
-		expect(parts[0].functionResponse.response).toEqual({ success: false, error: 'File not found' });
+		expect(parts[0].functionResponse!.response).toEqual({ success: false, error: 'File not found' });
 	});
 
 	test('interleaves text-only and binary results in order', () => {
@@ -315,10 +315,10 @@ describe('buildFunctionResponseParts', () => {
 		const parts = buildFunctionResponseParts(results);
 
 		expect(parts).toHaveLength(4);
-		expect(parts[0].functionResponse.name).toBe('read_file');
-		expect(parts[1].functionResponse.name).toBe('read_file');
-		expect(parts[2].inlineData.mimeType).toBe('image/png');
-		expect(parts[3].functionResponse.name).toBe('list_files');
+		expect(parts[0].functionResponse!.name).toBe('read_file');
+		expect(parts[1].functionResponse!.name).toBe('read_file');
+		expect(parts[2].inlineData!.mimeType).toBe('image/png');
+		expect(parts[3].functionResponse!.name).toBe('list_files');
 	});
 
 	test('handles empty input', () => {
@@ -351,9 +351,9 @@ describe('buildToolHistoryTurns', () => {
 		expect(updated[0]).toEqual(sampleHistory[0]);
 		expect(updated[1]).toEqual(sampleHistory[1]);
 		expect(updated[2].role).toBe('model');
-		expect(updated[2].parts[0].functionCall.name).toBe('read_file');
+		expect(updated[2].parts![0].functionCall!.name).toBe('read_file');
 		expect(updated[3].role).toBe('user');
-		expect(updated[3].parts[0].functionResponse.name).toBe('read_file');
+		expect(updated[3].parts![0].functionResponse!.name).toBe('read_file');
 	});
 
 	test('splices userMessage between history and the new model turn (not at the end)', () => {
@@ -416,7 +416,7 @@ describe('buildToolHistoryTurns', () => {
 			toolResults: [sampleResult],
 		});
 
-		expect(updated[1].parts[0]).toHaveProperty('thoughtSignature', 'sig_xyz');
+		expect(updated[1].parts![0]).toHaveProperty('thoughtSignature', 'sig_xyz');
 	});
 
 	test('preserves inlineData injection through full composition', () => {
@@ -440,8 +440,8 @@ describe('buildToolHistoryTurns', () => {
 		// Last turn (user/functionResponse) should have 2 parts: functionResponse + inlineData
 		const userResponseTurn = updated[updated.length - 1];
 		expect(userResponseTurn.parts).toHaveLength(2);
-		expect(userResponseTurn.parts[0].functionResponse).toBeDefined();
-		expect(userResponseTurn.parts[1].inlineData).toEqual({ mimeType: 'image/png', data: 'imgbytes' });
+		expect(userResponseTurn.parts![0].functionResponse).toBeDefined();
+		expect(userResponseTurn.parts![1].inlineData).toEqual({ mimeType: 'image/png', data: 'imgbytes' });
 	});
 });
 
@@ -489,8 +489,8 @@ describe('truncateOldToolResults', () => {
 		];
 		const out = truncateOldToolResults(history, { keepRecent: 2 });
 		// First (oldest) tool-result turn should be truncated.
-		expect(out[1].parts[0].functionResponse.response.truncated).toBe(true);
-		expect(out[1].parts[0].functionResponse.response.success).toBe(true);
+		expect((out[1].parts![0].functionResponse!.response as any).truncated).toBe(true);
+		expect((out[1].parts![0].functionResponse!.response as any).success).toBe(true);
 		// The two most recent tool-result turns should be untouched.
 		expect(out[4]).toBe(history[4]);
 		expect(out[7]).toBe(history[7]);
@@ -506,7 +506,7 @@ describe('truncateOldToolResults', () => {
 		const out = truncateOldToolResults(history, { keepRecent: 1 });
 		// All three responses are well under the threshold — none should be marked truncated.
 		for (const turn of out) {
-			expect(turn.parts[0].functionResponse.response.truncated).toBeUndefined();
+			expect((turn.parts![0].functionResponse!.response as any).truncated).toBeUndefined();
 		}
 	});
 
@@ -516,10 +516,10 @@ describe('truncateOldToolResults', () => {
 			fnResponseTurn('read_file', big()),
 		];
 		const out = truncateOldToolResults(history, { keepRecent: 1 });
-		expect(out[0].parts[0].functionResponse.response.success).toBe(false);
-		expect(out[0].parts[0].functionResponse.response.truncated).toBe(true);
+		expect((out[0].parts![0].functionResponse!.response as any).success).toBe(false);
+		expect((out[0].parts![0].functionResponse!.response as any).truncated).toBe(true);
 		// truncatedFrom should be the serialized JSON length, which exceeds maxBytes.
-		expect(out[0].parts[0].functionResponse.response.truncatedFrom).toBeGreaterThan(
+		expect((out[0].parts![0].functionResponse!.response as any).truncatedFrom).toBeGreaterThan(
 			DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES
 		);
 	});
@@ -529,7 +529,7 @@ describe('truncateOldToolResults', () => {
 		const history = [original, fnResponseTurn('read_file', big())];
 		truncateOldToolResults(history, { keepRecent: 1 });
 		// The first turn was a candidate for truncation; the original object should be unchanged.
-		expect(original.parts[0].functionResponse.response.truncated).toBeUndefined();
+		expect((original.parts[0].functionResponse.response as any).truncated).toBeUndefined();
 	});
 
 	test('passes through inlineData and other non-functionResponse parts', () => {
@@ -545,9 +545,9 @@ describe('truncateOldToolResults', () => {
 		];
 		const out = truncateOldToolResults(history, { keepRecent: 1 });
 		// The functionResponse in the older turn was truncated...
-		expect(out[0].parts[0].functionResponse.response.truncated).toBe(true);
+		expect((out[0].parts![0].functionResponse!.response as any).truncated).toBe(true);
 		// ...but the inlineData sibling is preserved.
-		expect(out[0].parts[1].inlineData).toEqual({ mimeType: 'image/png', data: 'abc' });
+		expect(out[0].parts![1].inlineData).toEqual({ mimeType: 'image/png', data: 'abc' });
 	});
 
 	test('respects custom maxBytes / keepRecent options', () => {
@@ -556,7 +556,7 @@ describe('truncateOldToolResults', () => {
 			fnResponseTurn('read_file', { success: true, content: 'x'.repeat(20) }),
 		];
 		const out = truncateOldToolResults(history, { maxBytes: 10, keepRecent: 1 });
-		expect(out[0].parts[0].functionResponse.response.truncated).toBe(true);
+		expect((out[0].parts![0].functionResponse!.response as any).truncated).toBe(true);
 		// keepRecent=1 → most recent is intact.
 		expect(out[1]).toBe(history[1]);
 	});
@@ -564,5 +564,23 @@ describe('truncateOldToolResults', () => {
 	test('handles empty / undefined input', () => {
 		expect(truncateOldToolResults([])).toEqual([]);
 		expect(truncateOldToolResults(undefined as any)).toEqual([]);
+	});
+
+	test('preserves functionResponse.name when truncating (shape regression)', () => {
+		// When truncation replaced the response payload, an earlier any-typed
+		// version could have accidentally dropped the sibling `name` field.
+		// This test verifies the discriminated-union shape stays intact.
+		const history = [fnResponseTurn('important_tool', big()), fnResponseTurn('another_tool', big())];
+		const out = truncateOldToolResults(history, { keepRecent: 1 });
+		const truncatedPart = out[0].parts![0];
+
+		// The truncation marker must preserve the original functionResponse.name
+		expect(truncatedPart.functionResponse!.name).toBe('important_tool');
+		// And the response must have the truncation shape
+		const response = truncatedPart.functionResponse!.response as Record<string, unknown>;
+		expect(response).toHaveProperty('truncated', true);
+		expect(response).toHaveProperty('truncatedFrom');
+		expect(response).toHaveProperty('note');
+		expect(typeof response.note).toBe('string');
 	});
 });

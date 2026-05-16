@@ -1,3 +1,4 @@
+import type { Content, Part } from '@google/genai';
 import type { ToolCall } from '../api/interfaces/model-api';
 import type { ToolResult } from '../tools/types';
 
@@ -96,7 +97,7 @@ export function sortToolCallsByPriority<T extends { name: string }>(toolCalls: T
  * `thoughtSignature` here causes Gemini thinking models to reject the request
  * with `INVALID_ARGUMENT: Function call is missing a thought_signature`.
  */
-export function buildFunctionCallParts(toolCalls: ToolCall[]): any[] {
+export function buildFunctionCallParts(toolCalls: ToolCall[]): Part[] {
 	return toolCalls.map((tc) => ({
 		functionCall: {
 			name: tc.name,
@@ -116,10 +117,10 @@ export function buildFunctionCallParts(toolCalls: ToolCall[]): any[] {
  * and re-injected as sibling parts in the same user turn. This lets the
  * model see the binary content alongside the textual function response.
  */
-export function buildFunctionResponseParts(toolResults: ToolCallResultPair[]): any[] {
+export function buildFunctionResponseParts(toolResults: ToolCallResultPair[]): Part[] {
 	return toolResults.flatMap((tr) => {
-		const { inlineData, ...resultWithoutInlineData } = tr.result as any;
-		const parts: any[] = [
+		const { inlineData, ...resultWithoutInlineData } = tr.result;
+		const parts: Part[] = [
 			{
 				functionResponse: {
 					name: tr.toolName,
@@ -155,14 +156,14 @@ export function buildFunctionResponseParts(toolResults: ToolCallResultPair[]): a
  * same shape or the API will reject or misinterpret the request.
  */
 export function buildToolHistoryTurns(args: {
-	conversationHistory: any[];
+	conversationHistory: Content[];
 	userMessage: string;
 	toolCalls: ToolCall[];
 	toolResults: ToolCallResultPair[];
-}): any[] {
+}): Content[] {
 	const { conversationHistory, userMessage, toolCalls, toolResults } = args;
 
-	const updated: any[] = [
+	const updated: Content[] = [
 		...conversationHistory,
 		{ role: 'model', parts: buildFunctionCallParts(toolCalls) },
 		{ role: 'user', parts: buildFunctionResponseParts(toolResults) },
@@ -203,9 +204,12 @@ const DEFAULT_TOOL_RESPONSE_KEEP_RECENT = 2;
  * working, and tells the model to re-call the tool if it actually needs
  * the full content again.
  */
-function buildTruncatedResponse(originalResponse: any, originalBytes: number): any {
+function buildTruncatedResponse(
+	originalResponse: Record<string, unknown> | undefined,
+	originalBytes: number
+): { success: boolean; truncated: true; truncatedFrom: number; note: string } {
 	return {
-		success: originalResponse?.success ?? false,
+		success: !!(originalResponse?.success ?? false),
 		truncated: true,
 		truncatedFrom: originalBytes,
 		note: `Tool result truncated to save context (${originalBytes} bytes elided). Re-call the tool if you need the full output.`,
@@ -237,13 +241,16 @@ function buildTruncatedResponse(originalResponse: any, originalBytes: number): a
  *
  * Tracked under #763.
  */
-export function truncateOldToolResults(history: any[], opts?: { maxBytes?: number; keepRecent?: number }): any[] {
+export function truncateOldToolResults(
+	history: Content[],
+	opts?: { maxBytes?: number; keepRecent?: number }
+): Content[] {
 	const list = history || [];
 	const maxBytes = opts?.maxBytes ?? DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES;
 	const keepRecent = Math.max(0, opts?.keepRecent ?? DEFAULT_TOOL_RESPONSE_KEEP_RECENT);
 
-	const isToolResultTurn = (turn: any) =>
-		turn?.role === 'user' && Array.isArray(turn.parts) && turn.parts.some((p: any) => p?.functionResponse);
+	const isToolResultTurn = (turn: Content) =>
+		turn?.role === 'user' && Array.isArray(turn.parts) && turn.parts.some((p: Part) => p?.functionResponse);
 
 	const toolTurnIndices = list.reduce<number[]>((acc, turn, i) => {
 		if (isToolResultTurn(turn)) acc.push(i);
@@ -255,7 +262,7 @@ export function truncateOldToolResults(history: any[], opts?: { maxBytes?: numbe
 
 	return list.map((turn, i) => {
 		if (i >= cutoff || !isToolResultTurn(turn)) return turn;
-		const newParts = turn.parts.map((p: any) => {
+		const newParts = turn.parts!.map((p: Part) => {
 			if (!p?.functionResponse?.response) return p;
 			const serialized = JSON.stringify(p.functionResponse.response);
 			if (serialized.length <= maxBytes) return p;
