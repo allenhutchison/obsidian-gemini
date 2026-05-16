@@ -112,12 +112,12 @@ export async function executeWithRetry<T>(
 
 			// Use API-provided retry delay if available, otherwise exponential backoff
 			const apiDelay = parseRetryDelay(error);
-			const maxDelayCap = config.maxDelayMs || 60000;
-			const backoffDelay = apiDelay ? Math.min(apiDelay, maxDelayCap) : calculateDelay(attempt, config);
+			const maxDelayCap = config.maxDelayMs ?? 60000;
+			const backoffDelay = apiDelay !== null ? Math.min(apiDelay, maxDelayCap) : calculateDelay(attempt, config);
 
 			logger?.warn(
 				`${operationName} failed (attempt ${attempt + 1}/${config.maxRetries + 1}). ` +
-					`Retrying in ${backoffDelay}ms${apiDelay ? ' (API-provided delay)' : ''}...`,
+					`Retrying in ${backoffDelay}ms${apiDelay !== null ? ' (API-provided delay)' : ''}...`,
 				error
 			);
 

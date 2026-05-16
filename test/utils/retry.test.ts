@@ -354,6 +354,34 @@ describe('retry utilities', () => {
 			expect(op).toHaveBeenCalledTimes(2);
 		});
 
+		test('honors Google API-provided retryDelay when it is 0s (0ms)', async () => {
+			const errorWithDelay = {
+				status: 429,
+				message: 'RESOURCE_EXHAUSTED',
+				details: [
+					{
+						'@type': 'type.googleapis.com/google.rpc.RetryInfo',
+						retryDelay: '0s', // 0ms
+					},
+				],
+			};
+
+			const op = vi.fn().mockRejectedValueOnce(errorWithDelay).mockResolvedValue('ok');
+
+			const promise = executeWithRetry(
+				op,
+				{ maxRetries: 3, initialDelayMs: 1000, jitter: false },
+				{ operationName: 'test-api-delay-zero' }
+			);
+
+			// 0ms delay should execute immediately without needing to advance timers past 1000ms
+			await vi.advanceTimersByTimeAsync(5);
+
+			const result = await promise;
+			expect(result).toBe('ok');
+			expect(op).toHaveBeenCalledTimes(2);
+		});
+
 		test('caps Google API-provided retryDelay using maxDelayMs', async () => {
 			const errorWithDelay = {
 				status: 429,
