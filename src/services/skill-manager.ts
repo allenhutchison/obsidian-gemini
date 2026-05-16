@@ -205,9 +205,10 @@ export class SkillManager {
 			const bundled = BundledSkillRegistry.loadSkill(name);
 			if (bundled !== null && name === HELP_SKILL_NAME) {
 				// Resolve the runtime-only <!-- STATE_FOLDER --> placeholder so the
-				// help skill reflects the user's configured state folder. A function
-				// replacer keeps a `$` in the folder name from acting as a regex token.
-				return bundled.replace(/<!-- STATE_FOLDER -->/g, () => this.plugin.settings.historyFolder);
+				// help skill reflects the user's configured state folder. split/join
+				// replaces every occurrence without `$`-pattern substitution, so a
+				// folder name containing `$` is inserted verbatim.
+				return bundled.split('<!-- STATE_FOLDER -->').join(this.plugin.settings.historyFolder);
 			}
 			return bundled;
 		}
