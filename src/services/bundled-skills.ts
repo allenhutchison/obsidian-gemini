@@ -45,7 +45,9 @@ function parseDescription(md: string): string {
 
 const skills: Map<string, BundledSkill> = new Map();
 
-// Register gemini-scribe-help with auto-generated references table
+// Register gemini-scribe-help with auto-generated references table.
+// The <!-- STATE_FOLDER --> placeholder is intentionally left unresolved here —
+// SkillManager.loadSkill() fills it with the configured state folder at runtime.
 const helpContent = stripFrontmatter(helpSkillMd).replace('<!-- REFERENCES_TABLE -->', () => helpReferencesTable);
 
 skills.set('gemini-scribe-help', {
