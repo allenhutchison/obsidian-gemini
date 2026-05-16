@@ -105,8 +105,9 @@ plugin provider:
 EVAL_JUDGE_API_KEY=... npm run eval -- --task=multi-file-summary 2>&1 | tee /tmp/eval-ollama.log
 ```
 
-If this is missing, judge-matcher tasks record `judge_skipped: true` and print `[judge unavailable]`; treat those as
-harness setup failures, not model-quality regressions.
+If neither `EVAL_JUDGE_API_KEY` nor a plugin Gemini API key is available, judge-matcher tasks record
+`judge_skipped: true` and print `[judge unavailable]`; treat those as harness setup failures, not model-quality
+regressions.
 
 For a model sweep, the canonical pattern is one `npm run eval -- --model=<id>` per model, awaiting full completion of the previous before starting the next:
 
