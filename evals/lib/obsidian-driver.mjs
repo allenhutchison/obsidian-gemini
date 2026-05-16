@@ -202,10 +202,14 @@ export async function sendMessage(text) {
 	await obsidianEval(
 		`(async () => {
     const p = app.plugins.plugins['gemini-scribe'];
+    const sendToken = (window.__evalLastDispatchToken ?? 0) + 1;
+    window.__evalLastDispatchToken = sendToken;
     window.__evalLastSendError = null;
     const run = p.agentView.sendMessageProgrammatically(${textLiteral});
-    window.__evalInFlightSend = run.catch((err) => {
-      window.__evalLastSendError = err instanceof Error ? err.message : String(err);
+    run.catch((err) => {
+      if (window.__evalLastDispatchToken === sendToken) {
+        window.__evalLastSendError = err instanceof Error ? err.message : String(err);
+      }
     });
     return '"sent"';
   })()`,
