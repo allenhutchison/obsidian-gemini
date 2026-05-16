@@ -3,6 +3,7 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 import { requestUrlWithRetry } from '../utils/proxy-fetch';
+import { executeWithRetry } from '../utils/retry';
 import TurndownService from 'turndown';
 import { decodeHtmlEntities } from '../utils/html-entities';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
@@ -81,14 +82,19 @@ export class WebFetchTool implements Tool {
 
 			// Generate content with URL context using the genAI.models API
 			plugin.logger.log('Web fetch - sending prompt:', prompt);
-			const result = await genAI.models.generateContent({
-				model: modelToUse,
-				contents: prompt,
-				config: {
-					temperature: plugin.settings.temperature || 0.7,
-					tools: [{ urlContext: {} }],
-				},
-			});
+			const result = await executeWithRetry(
+				() =>
+					genAI.models.generateContent({
+						model: modelToUse,
+						contents: prompt,
+						config: {
+							temperature: plugin.settings.temperature || 0.7,
+							tools: [{ urlContext: {} }],
+						},
+					}),
+				undefined,
+				{ operationName: 'WebFetchTool.generateContent', logger: plugin.logger }
+			);
 			plugin.logger.log('Web fetch - received result:', result);
 
 			// Extract text from response
@@ -248,13 +254,18 @@ export class WebFetchTool implements Tool {
 			// Create a prompt with the content
 			const prompt = `Based on the following web page content from ${params.url}, ${params.query}\n\nWeb Page Title: ${title}\n\nContent:\n${content}`;
 
-			const result = await genAI.models.generateContent({
-				model: modelToUse,
-				contents: prompt,
-				config: {
-					temperature: plugin.settings.temperature || 0.7,
-				},
-			});
+			const result = await executeWithRetry(
+				() =>
+					genAI.models.generateContent({
+						model: modelToUse,
+						contents: prompt,
+						config: {
+							temperature: plugin.settings.temperature || 0.7,
+						},
+					}),
+				undefined,
+				{ operationName: 'WebFetchTool.fallbackGenerateContent', logger: plugin.logger }
+			);
 
 			// Extract text from response
 			let analysisText = '';

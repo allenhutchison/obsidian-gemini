@@ -13,6 +13,7 @@ import { GoogleGenAI, Content, Part } from '@google/genai';
 import { Logger } from '../utils/logger';
 import type ObsidianGemini from '../main';
 import { ModelClientFactory, ModelUseCase } from '../api';
+import { executeWithRetry } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 
@@ -272,11 +273,16 @@ export class ContextManager {
 
 		try {
 			const config: any = {};
-			const response = await this.ai.models.countTokens({
-				model: modelName,
-				contents: sanitizedContents,
-				config: Object.keys(config).length > 0 ? config : undefined,
-			});
+			const response = await executeWithRetry(
+				() =>
+					this.ai!.models.countTokens({
+						model: modelName,
+						contents: sanitizedContents,
+						config: Object.keys(config).length > 0 ? config : undefined,
+					}),
+				undefined,
+				{ operationName: 'ContextManager.countTokens', logger: this.logger }
+			);
 
 			const totalTokens = response.totalTokens ?? 0;
 			this.logger.log(`[ContextManager] countTokens result: ${totalTokens}`);
@@ -526,14 +532,19 @@ export class ContextManager {
 				return summary;
 			}
 
-			const response = await this.ai.models.generateContent({
-				model: modelName,
-				contents: fullPrompt,
-				config: {
-					temperature: 0.3, // Low temperature for factual summarization
-					maxOutputTokens: 4096,
-				},
-			});
+			const response = await executeWithRetry(
+				() =>
+					this.ai!.models.generateContent({
+						model: modelName,
+						contents: fullPrompt,
+						config: {
+							temperature: 0.3, // Low temperature for factual summarization
+							maxOutputTokens: 4096,
+						},
+					}),
+				undefined,
+				{ operationName: 'ContextManager.generateSummaryContent', logger: this.logger }
+			);
 
 			const summary = response.candidates?.[0]?.content?.parts
 				?.map((part) => ('text' in part && part.text ? part.text : ''))

@@ -325,5 +325,61 @@ describe('retry utilities', () => {
 			).rejects.toThrow('not retryable');
 			expect(op).toHaveBeenCalledTimes(1);
 		});
+
+		test('honors Google API-provided retryDelay from details', async () => {
+			const errorWithDelay = {
+				status: 429,
+				message: 'RESOURCE_EXHAUSTED',
+				details: [
+					{
+						'@type': 'type.googleapis.com/google.rpc.RetryInfo',
+						retryDelay: '0.5s', // 500ms
+					},
+				],
+			};
+
+			const op = vi.fn().mockRejectedValueOnce(errorWithDelay).mockResolvedValue('ok');
+
+			const promise = executeWithRetry(
+				op,
+				{ maxRetries: 3, initialDelayMs: 1000, jitter: false }, // standard initial delay is 1000ms
+				{ operationName: 'test-api-delay' }
+			);
+
+			// Advance timers past the parsed 500ms delay (but less than 1000ms standard backoff)
+			await vi.advanceTimersByTimeAsync(550);
+
+			const result = await promise;
+			expect(result).toBe('ok');
+			expect(op).toHaveBeenCalledTimes(2);
+		});
+
+		test('caps Google API-provided retryDelay using maxDelayMs', async () => {
+			const errorWithDelay = {
+				status: 429,
+				message: 'RESOURCE_EXHAUSTED',
+				details: [
+					{
+						'@type': 'type.googleapis.com/google.rpc.RetryInfo',
+						retryDelay: '10s', // 10000ms
+					},
+				],
+			};
+
+			const op = vi.fn().mockRejectedValueOnce(errorWithDelay).mockResolvedValue('ok');
+
+			const promise = executeWithRetry(
+				op,
+				{ maxRetries: 3, initialDelayMs: 1000, maxDelayMs: 2000, jitter: false }, // capped at 2000ms
+				{ operationName: 'test-api-delay-cap' }
+			);
+
+			// Verify it retried after the capped 2000ms, not the full 10s
+			await vi.advanceTimersByTimeAsync(2100);
+
+			const result = await promise;
+			expect(result).toBe('ok');
+			expect(op).toHaveBeenCalledTimes(2);
+		});
 	});
 });

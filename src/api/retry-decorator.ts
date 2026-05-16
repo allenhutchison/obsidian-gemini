@@ -13,7 +13,7 @@ import {
 	StreamingModelResponse,
 } from './interfaces/model-api';
 import { Logger } from '../utils/logger';
-import { isRetryableApiError, parseRetryDelay } from '../utils/retry';
+import { isRetryableApiError, parseRetryDelay, executeWithRetry } from '../utils/retry';
 
 export interface RetryConfig {
 	maxRetries: number;
@@ -46,50 +46,21 @@ export class RetryDecorator implements ModelApi {
 
 	/**
 	 * Execute a function with retry logic and exponential backoff.
-	 *
-	 * Non-retryable errors (4xx except 429, or 429 with quota exhaustion)
-	 * are thrown immediately without retry. API-provided retry delays
-	 * are respected when available, falling back to exponential backoff.
 	 */
 	private async executeWithRetry<T>(operation: () => Promise<T>, operationName: string): Promise<T> {
-		let lastError: Error | undefined;
-
-		for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
-			try {
-				return await operation();
-			} catch (error) {
-				lastError = error as Error;
-
-				// Skip retry for non-retryable errors (auth failures, quota exhaustion, etc.)
-				if (!isRetryableApiError(error)) {
-					this.logger?.error(`${operationName} failed with non-retryable error:`, error);
-					throw error;
-				}
-
-				// Don't retry if we've exhausted our attempts
-				if (attempt === this.config.maxRetries) {
-					this.logger?.error(`${operationName} failed after ${this.config.maxRetries + 1} attempts:`, error);
-					throw error;
-				}
-
-				// Use API-provided retry delay if available, otherwise exponential backoff
-				const apiDelay = parseRetryDelay(error);
-				const backoffDelay = apiDelay
-					? Math.min(apiDelay, RetryDecorator.MAX_API_DELAY_MS)
-					: this.config.initialBackoffDelay * Math.pow(2, attempt);
-
-				this.logger?.warn(
-					`${operationName} failed (attempt ${attempt + 1}/${this.config.maxRetries + 1}). ` +
-						`Retrying in ${backoffDelay}ms${apiDelay ? ' (API-provided delay)' : ''}...`,
-					error
-				);
-
-				await this.sleep(backoffDelay);
+		return executeWithRetry(
+			operation,
+			{
+				maxRetries: this.config.maxRetries,
+				initialDelayMs: this.config.initialBackoffDelay,
+				maxDelayMs: RetryDecorator.MAX_API_DELAY_MS,
+			},
+			{
+				operationName,
+				logger: this.logger,
+				isRetryable: isRetryableApiError,
 			}
-		}
-
-		// This should never be reached, but TypeScript needs it
-		throw lastError || new Error(`${operationName} failed after all retry attempts`);
+		);
 	}
 
 	/**

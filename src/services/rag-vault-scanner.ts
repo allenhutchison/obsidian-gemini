@@ -8,6 +8,7 @@ import type { RagRateLimiter } from './rag-rate-limiter';
 import { CACHE_VERSION } from './rag-types';
 import type { IndexProgress, IndexResult, FailedFileEntry, RagIndexStatus } from './rag-types';
 import { getErrorMessage, isQuotaExhausted } from '../utils/error-utils';
+import { executeWithRetry } from '../utils/retry';
 
 /**
  * Callbacks for the vault scanner to interact with the orchestrator.
@@ -124,7 +125,10 @@ export class RagVaultScanner {
 		if (existingStoreName) {
 			// Verify the store still exists
 			try {
-				await ai.fileSearchStores.get({ name: existingStoreName });
+				await executeWithRetry(() => ai.fileSearchStores.get({ name: existingStoreName }), undefined, {
+					operationName: 'RagVaultScanner.ensureFileSearchStore.get',
+					logger: this.plugin.logger,
+				});
 				this.plugin.logger.log(`RAG Indexing: Using existing store ${existingStoreName}`);
 				return;
 			} catch (error) {
@@ -148,9 +152,14 @@ export class RagVaultScanner {
 			const vaultName = this.plugin.app.vault.getName();
 			const displayName = `obsidian-${vaultName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
 
-			const store = await ai.fileSearchStores.create({
-				config: { displayName },
-			});
+			const store = await executeWithRetry(
+				() =>
+					ai.fileSearchStores.create({
+						config: { displayName },
+					}),
+				undefined,
+				{ operationName: 'RagVaultScanner.ensureFileSearchStore.create', logger: this.plugin.logger }
+			);
 
 			// Save the store name to settings
 			this.plugin.settings.ragIndexing.fileSearchStoreName = store.name ?? null;
@@ -179,10 +188,15 @@ export class RagVaultScanner {
 		if (!storeName) return;
 
 		try {
-			await ai.fileSearchStores.delete({
-				name: storeName,
-				config: { force: true },
-			});
+			await executeWithRetry(
+				() =>
+					ai.fileSearchStores.delete({
+						name: storeName,
+						config: { force: true },
+					}),
+				undefined,
+				{ operationName: 'RagVaultScanner.deleteFileSearchStore.delete', logger: this.plugin.logger }
+			);
 
 			// Clear settings and cache
 			this.plugin.settings.ragIndexing.fileSearchStoreName = null;
@@ -278,10 +292,15 @@ export class RagVaultScanner {
 			const ai = this.callbacks.getAi();
 			if (storeName && ai) {
 				try {
-					await ai.fileSearchStores.delete({
-						name: storeName,
-						config: { force: true },
-					});
+					await executeWithRetry(
+						() =>
+							ai.fileSearchStores.delete({
+								name: storeName,
+								config: { force: true },
+							}),
+						undefined,
+						{ operationName: 'RagVaultScanner.startFresh.delete', logger: this.plugin.logger }
+					);
 					this.plugin.logger.log(`RAG Indexing: Deleted store ${storeName}`);
 				} catch (deleteError) {
 					const errorMessage = deleteError instanceof Error ? deleteError.message : String(deleteError);

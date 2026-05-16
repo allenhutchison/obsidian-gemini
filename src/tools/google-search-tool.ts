@@ -4,6 +4,7 @@ import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
 import { getDefaultModelForRole } from '../models';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
+import { executeWithRetry } from '../utils/retry';
 
 /**
  * Google Search tool that uses a separate model instance with search grounding
@@ -62,11 +63,16 @@ export class GoogleSearchTool implements Tool {
 			const prompt = `Please search for the following and provide a comprehensive answer based on current web results: ${params.query}`;
 
 			// Generate response with search grounding using the same API as gemini-api-new.ts
-			const result = await genAI.models.generateContent({
-				model: modelToUse,
-				config: config,
-				contents: prompt,
-			});
+			const result = await executeWithRetry(
+				() =>
+					genAI.models.generateContent({
+						model: modelToUse,
+						config: config,
+						contents: prompt,
+					}),
+				undefined,
+				{ operationName: 'GoogleSearchTool.generateContent', logger: plugin.logger }
+			);
 
 			// Extract text from response
 			let text = '';

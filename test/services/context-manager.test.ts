@@ -20,6 +20,22 @@ vi.mock('@google/genai', () => ({
 	}),
 }));
 
+vi.mock('../../src/utils/retry', async () => {
+	const actual = await vi.importActual<any>('../../src/utils/retry');
+	return {
+		...actual,
+		executeWithRetry: vi.fn().mockImplementation((operation, _config, options) => {
+			const zeroConfig = {
+				maxRetries: 0,
+				initialDelayMs: 1,
+				maxDelayMs: 1,
+				jitter: false,
+			};
+			return actual.executeWithRetry(operation, zeroConfig, options);
+		}),
+	};
+});
+
 describe('ContextManager', () => {
 	let contextManager: ContextManager;
 	let mockPlugin: any;
