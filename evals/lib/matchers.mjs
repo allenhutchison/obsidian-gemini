@@ -25,16 +25,39 @@
  * pinned-model API call — see `judge.mjs` for the contract.
  */
 
+/**
+ * Normalize a scalar-or-array matcher value into an array for uniform checks.
+ *
+ * @param {unknown} value - Matcher value from task JSON.
+ * @returns {unknown[]} The original array, or a single-item array for scalars.
+ */
 function asArray(value) {
 	return Array.isArray(value) ? value : [value];
 }
 
+/**
+ * Evaluate a literal substring matcher against the model response.
+ *
+ * @param {unknown} value - String or string array accepted by the matcher.
+ * @param {string} response - Final model response text.
+ * @returns {boolean} True when any candidate string appears in the response.
+ */
 function evaluateContains(value, response) {
 	const candidates = asArray(value).filter((v) => typeof v === 'string');
 	if (candidates.length === 0) return false;
 	return candidates.some((c) => response.includes(c));
 }
 
+/**
+ * Evaluate a regex matcher against the model response.
+ *
+ * Invalid patterns fail closed so malformed task JSON cannot produce a solve.
+ *
+ * @param {unknown} value - Regex pattern string or array of pattern strings.
+ * @param {string | undefined} flags - JavaScript regex flags from task JSON.
+ * @param {string} response - Final model response text.
+ * @returns {boolean} True when any valid pattern matches the response.
+ */
 function evaluateRegex(value, flags, response) {
 	const patterns = asArray(value).filter((v) => typeof v === 'string');
 	if (patterns.length === 0) return false;
@@ -48,6 +71,14 @@ function evaluateRegex(value, flags, response) {
 }
 
 /**
+ * Check whether a task rubric contains at least one LLM-as-judge matcher.
+ *
+ * @param {object} task - Eval task definition.
+ * @returns {boolean} True when any output matcher has `type: 'judge'`.
+ */
+export const taskHasJudgeMatcher = (task) => (task.outputMatchers || []).some((m) => m?.type === 'judge');
+
+/**
  * Evaluate every matcher against `responseText`. All matchers must pass for
  * the rubric to be satisfied — within a single matcher, an array `value` is
  * any-of (logical OR).
@@ -58,10 +89,11 @@ function evaluateRegex(value, flags, response) {
  * matcher fails — callers can detect "no judge available" via the returned
  * `judgeAttempted` / `judgeAvailable` flags rather than silently passing.
  *
- * Returns `{ pass, judgeAttempted, judgeAvailable }`:
+ * Returns `{ pass, judgeAttempted, judgeAvailable, judgeSkipped }`:
  *   - `pass`: true iff every matcher matched.
  *   - `judgeAttempted`: true iff at least one matcher was a `judge`.
  *   - `judgeAvailable`: true iff a judgeFn was supplied (and could be invoked).
+ *   - `judgeSkipped`: true iff a `judge` matcher appeared but no judgeFn was supplied.
  */
 export async function evaluateMatchers(matchers, ctx, judgeFn) {
 	const list = matchers || [];
@@ -102,5 +134,5 @@ export async function evaluateMatchers(matchers, ctx, judgeFn) {
 		pass = false;
 	}
 
-	return { pass, judgeAttempted, judgeAvailable };
+	return { pass, judgeAttempted, judgeAvailable, judgeSkipped: judgeAttempted && !judgeAvailable };
 }

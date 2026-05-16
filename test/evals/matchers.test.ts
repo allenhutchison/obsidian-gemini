@@ -73,6 +73,7 @@ describe('evaluateMatchers — judge', () => {
 		expect(result.pass).toBe(true);
 		expect(result.judgeAttempted).toBe(true);
 		expect(result.judgeAvailable).toBe(true);
+		expect(result.judgeSkipped).toBe(false);
 		expect(judge).toHaveBeenCalledWith('is a haiku', expect.objectContaining({ userMessage: 'write a haiku' }));
 	});
 
@@ -93,6 +94,7 @@ describe('evaluateMatchers — judge', () => {
 		expect(result.pass).toBe(false);
 		expect(result.judgeAttempted).toBe(true);
 		expect(result.judgeAvailable).toBe(false);
+		expect(result.judgeSkipped).toBe(true);
 	});
 
 	it('does not invoke the judge for non-judge matchers', async () => {

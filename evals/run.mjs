@@ -36,6 +36,7 @@ import {
 } from './lib/obsidian-driver.mjs';
 import { installCollector, peekCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
+import { taskHasJudgeMatcher } from './lib/matchers.mjs';
 import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
 import { createJudge } from './lib/judge.mjs';
@@ -202,6 +203,15 @@ async function getProvider() {
 	return result.replace(/^["']|["']$/g, '');
 }
 
+/**
+ * Run one eval task against the live plugin and return its scored result.
+ *
+ * @param {object} task - Task definition loaded from evals/tasks.
+ * @param {boolean} keepArtifacts - Whether to leave scratch files and session history in the vault.
+ * @param {string} provider - Active provider id used for scoring and cost reporting.
+ * @param {Function | null} judgeFn - Optional judge function for `judge` output matchers.
+ * @returns {Promise<object>} Scored task result ready for aggregation.
+ */
 async function runTask(task, keepArtifacts, provider, judgeFn) {
 	const title = `[eval] ${task.id}`;
 	console.log(`  "${task.description}"`);
@@ -302,11 +312,16 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		if (timedOut) result.timedOut = true;
 		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
 		const verdict = timedOut ? 'TIMEOUT' : result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED';
-		console.log(`  ${verdict} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`);
+		const judgeLabel = result.solve_details?.judge_skipped ? ' [judge unavailable]' : '';
+		console.log(
+			`  ${verdict}${judgeLabel} — ${result.metrics.turns} turns, ${result.metrics.tool_calls} tool calls, ${costStr}`
+		);
 
 		return result;
 	} catch (err) {
 		const durationMs = Date.now() - startTime;
+		const judgeAttempted = taskHasJudgeMatcher(task);
+		const judgeAvailable = typeof judgeFn === 'function';
 		console.error(`  ERROR: ${err.message}`);
 		return {
 			id: task.id,
@@ -325,7 +340,14 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 				tool_list: [],
 			},
 			errors: [err.message],
-			solve_details: { expected_tools_met: false, forbidden_tools_clean: true, matchers_pass: false },
+			solve_details: {
+				expected_tools_met: false,
+				forbidden_tools_clean: true,
+				matchers_pass: false,
+				judge_attempted: judgeAttempted,
+				judge_available: judgeAvailable,
+				judge_skipped: judgeAttempted && !judgeAvailable,
+			},
 		};
 	} finally {
 		// 7. Cleanup — must run even if session creation failed before sessionInfo
@@ -364,6 +386,10 @@ async function maybeCompareToBaseline(result) {
 	printRegressionSummary(comparison);
 }
 
+/**
+ * Execute a full eval harness run: validate prerequisites, run tasks, write
+ * aggregate results, and restore any temporary model override.
+ */
 async function main() {
 	const { taskFilter, keepArtifacts, repeat, model } = parseArgs();
 	console.log('=== Gemini Scribe Eval Harness ===');
@@ -404,14 +430,15 @@ async function main() {
 		// pinned Gemini model (gemini-2.5-flash by default; `EVAL_JUDGE_MODEL`
 		// env override) — independent of the system under test, so an Ollama
 		// run still scores its prose tasks against a stable judge.
-		const judgeFn = await createJudge();
+		const judgeApiKey = process.env.EVAL_JUDGE_API_KEY?.trim() || undefined;
+		const judgeFn = await createJudge({ apiKey: judgeApiKey });
 		if (judgeFn) {
 			console.log(`Judge: ${judgeFn.modelId}`);
 		} else {
-			const usingJudge = tasks.some((t) => (t.outputMatchers || []).some((m) => m?.type === 'judge'));
+			const usingJudge = tasks.some(taskHasJudgeMatcher);
 			if (usingJudge) {
 				console.warn(
-					'⚠ Tasks reference `judge` matchers but no Gemini API key is reachable; those matchers will fail.'
+					'⚠ Tasks reference `judge` matchers but no Gemini API key is reachable; those matchers will fail (set EVAL_JUDGE_API_KEY or configure a plugin Gemini key).'
 				);
 			}
 		}

@@ -42,6 +42,7 @@ describe('scoreTask — judge short-circuit on failed runs', () => {
 		// judge — useful for reporting. `judgeAvailable` reflects the env.
 		expect(result.solve_details.judge_attempted).toBe(true);
 		expect(result.solve_details.judge_available).toBe(true);
+		expect(result.solve_details.judge_skipped).toBe(false);
 	});
 
 	it('does not invoke the judge when the run timed out (no turnEnd)', async () => {
@@ -75,5 +76,15 @@ describe('scoreTask — judge short-circuit on failed runs', () => {
 		expect(result.passed).toBe(true);
 		expect(judge).toHaveBeenCalledOnce();
 		expect(result.solved).toBe(true);
+	});
+
+	it('records judge_skipped when a clean run cannot create the judge', async () => {
+		const events = [apiResponse(), turnEnd()];
+		const result: any = await scoreTask(baseTask as any, events, 'response text', 'gemini-2.5-flash', 1234, 'ollama');
+		expect(result.passed).toBe(true);
+		expect(result.solved).toBe(false);
+		expect(result.solve_details.judge_attempted).toBe(true);
+		expect(result.solve_details.judge_available).toBe(false);
+		expect(result.solve_details.judge_skipped).toBe(true);
 	});
 });
