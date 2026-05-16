@@ -202,6 +202,7 @@ export async function sendMessage(text) {
 	await obsidianEval(
 		`(async () => {
     const p = app.plugins.plugins['gemini-scribe'];
+    window.__evalLastSendError = null;
     const run = p.agentView.sendMessageProgrammatically(${textLiteral});
     window.__evalInFlightSend = run.catch((err) => {
       window.__evalLastSendError = err instanceof Error ? err.message : String(err);
@@ -210,6 +211,21 @@ export async function sendMessage(text) {
   })()`,
 		{ timeoutMs: 15_000 }
 	);
+}
+
+/**
+ * Read and clear the last async send failure captured by sendMessage().
+ */
+export async function readAndClearLastSendError() {
+	const result = await obsidianEval(
+		`(() => {
+    const error = window.__evalLastSendError ?? null;
+    window.__evalLastSendError = null;
+    return JSON.stringify(error);
+  })()`,
+		{ timeoutMs: 2_000 }
+	);
+	return JSON.parse(result);
 }
 
 /**

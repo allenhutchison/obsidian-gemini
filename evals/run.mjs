@@ -26,6 +26,7 @@ import {
 	setupFixtures,
 	addContextFiles,
 	sendMessage,
+	readAndClearLastSendError,
 	cancelAgent,
 	cleanup,
 	getLastModelResponse,
@@ -245,6 +246,12 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		// already emitted `turnEnd` (#778).
 		console.log(`  Sending message... (budget ${Math.round(taskTimeoutMs / 1000)}s)`);
 		await sendMessage(task.userMessage);
+		const sendError = await readAndClearLastSendError();
+		if (sendError) {
+			await cancelAgent();
+			throw new Error(`sendMessageProgrammatically failed: ${sendError}`);
+		}
+
 		let lastSummary = null;
 		const waitResult = await waitForTurnCompletion({
 			peekEvents: peekCollector,
