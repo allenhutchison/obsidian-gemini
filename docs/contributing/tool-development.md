@@ -8,7 +8,7 @@ Tools are functions that the AI agent can call to interact with your vault and e
 
 - A unique name
 - Parameters it accepts
-- A category (for permissions)
+- A category (UI grouping) and a classification (permission boundary)
 - An execution function
 
 ## Tool Interface
