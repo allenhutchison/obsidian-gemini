@@ -24,7 +24,7 @@ This script copies the built artifacts (`main.js`, `manifest.json`, `styles.css`
 npm run install:test-vault
 ```
 
-By default it targets `~/Obsidian/Test Vault/.obsidian/plugins/gemini-scribe`. Override it with the `TEST_VAULT_PLUGIN_DIR` environment variable:
+By default it looks under `~/Obsidian/Test Vault/.obsidian/plugins/` and finds the destination by reading each `manifest.json` — it installs into whichever folder declares the plugin's `id`, regardless of how that folder is named. (If several folders declare the same `id`, all are updated and the duplicates are reported; on a fresh vault the canonical `<id>` folder is created.) Override the destination entirely with the `TEST_VAULT_PLUGIN_DIR` environment variable to point at an exact plugin directory:
 
 ```bash
 TEST_VAULT_PLUGIN_DIR=/path/to/vault/.obsidian/plugins/gemini-scribe npm run install:test-vault
