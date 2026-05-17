@@ -179,6 +179,11 @@ export class AgentLoop {
 		let currentToolCalls = initialResponse.toolCalls ?? [];
 		let conversationHistory = initialHistory;
 		let userMessage = initialUserMessage;
+		// `perTurnContext` is a first-iteration input, like `userMessage`:
+		// `buildToolHistoryTurns` splices it into the user turn once, after which
+		// it lives in `conversationHistory`. Re-passing it on later iterations
+		// would splice the (potentially large) context payload in again each time.
+		let perTurnContext = perTurn?.perTurnContext;
 		let iterations = 0;
 		// Turn-scoped count of tool-loop-detector fires. Incremented per blocked
 		// call (each `ToolResult` with `loopDetected: true`). Once it reaches
@@ -236,7 +241,7 @@ export class AgentLoop {
 				const updatedHistory = buildToolHistoryTurns({
 					conversationHistory,
 					userMessage,
-					perTurnContext: perTurn?.perTurnContext,
+					perTurnContext,
 					toolCalls: currentToolCalls,
 					toolResults,
 				});
@@ -262,7 +267,7 @@ export class AgentLoop {
 			const updatedHistory = buildToolHistoryTurns({
 				conversationHistory,
 				userMessage,
-				perTurnContext: perTurn?.perTurnContext,
+				perTurnContext,
 				toolCalls: currentToolCalls,
 				toolResults,
 			});
@@ -301,7 +306,10 @@ export class AgentLoop {
 				}
 				currentToolCalls = followUpResponse.toolCalls;
 				conversationHistory = updatedHistory;
+				// Both are now embedded in `updatedHistory`; clearing them stops the
+				// next iteration from splicing a duplicate user/context turn.
 				userMessage = ''; // Empty on follow-up — tool results are already in history
+				perTurnContext = undefined;
 				continue;
 			}
 

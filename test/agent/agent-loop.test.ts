@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { AgentLoop } from '../../src/agent/agent-loop';
 import type { ToolCall, ModelResponse, ModelApi } from '../../src/api/interfaces/model-api';
-import type { IConfirmationProvider, ToolResult } from '../../src/tools/types';
+import type { IConfirmationProvider } from '../../src/tools/types';
 
 // None of these tests exercise the confirmation UI branch (enabledTools/requireConfirmation
 // are empty, so no tool requires confirmation) — the loop only needs *some* provider to
@@ -738,15 +738,21 @@ describe('AgentLoop', () => {
 	});
 
 	describe('per-turn context propagation', () => {
-		// The system prompt is rebuilt on each model call inside the loop. Per-turn
-		// fields (perTurnContext, projectInstructions, projectSkills, sessionStartedAt)
-		// must be threaded onto every follow-up request so the system prompt stays
-		// byte-stable across initial + follow-ups. Without this:
-		//   1. Context-file content the user dragged in disappears once a tool fires,
-		//      forcing the model to re-read via tools.
-		//   2. Gemini implicit prefix cache misses on every follow-up because the
-		//      system-prompt prefix changes shape mid-turn.
-		test('follow-up request carries the same perTurn context the initial call had', async () => {
+		// Count text parts across a request's conversationHistory that exactly
+		// equal `text` — used to assert the per-turn context appears once, not
+		// duplicated.
+		const countContext = (history: any[], text: string): number =>
+			(history ?? []).flatMap((c: any) => c.parts ?? []).filter((p: any) => p?.text === text).length;
+
+		// `buildToolHistoryTurns` splices `perTurnContext` into the user turn of
+		// the history it builds, so it reaches the model via `conversationHistory`.
+		// It must NOT also ride on the follow-up/retry request: `buildContents`
+		// would then append a second copy, duplicating the (potentially large)
+		// context payload on every tool iteration — the opposite of the caching
+		// win this design exists for. Session-static fields (projectInstructions,
+		// projectSkills, sessionStartedAt) still thread onto every request because
+		// they feed the byte-stable system prompt.
+		test('follow-up request keeps per-turn context in history, not duplicated on the request', async () => {
 			const plugin = buildPlugin();
 			const session = buildSession();
 			const api = makeScriptedModelApi([textResponse('done')]);
@@ -773,13 +779,17 @@ describe('AgentLoop', () => {
 
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(1);
 			const followUpRequest = (api.generateModelResponse as Mock).mock.calls[0][0];
-			expect(followUpRequest.perTurnContext).toBe('CONTEXT FILES: foo.md\n<rendered contents>');
+			// Not on the request — otherwise buildContents appends a second copy.
+			expect(followUpRequest.perTurnContext).toBeUndefined();
+			// Still reaches the model, exactly once, via conversation history.
+			expect(countContext(followUpRequest.conversationHistory, 'CONTEXT FILES: foo.md\n<rendered contents>')).toBe(1);
+			// Session-static fields still thread through.
 			expect(followUpRequest.projectInstructions).toBe('be concise');
 			expect(followUpRequest.projectSkills).toEqual(['code-review']);
 			expect(followUpRequest.sessionStartedAt).toBe('2026-05-09T10:00:00');
 		});
 
-		test('retry request (empty-response path) also carries perTurn context', async () => {
+		test('retry request (empty-response path) keeps per-turn context in history, not on the request', async () => {
 			const plugin = buildPlugin();
 			const session = buildSession();
 			// First follow-up returns empty → triggers retry path.
@@ -806,11 +816,12 @@ describe('AgentLoop', () => {
 			expect(result.retried).toBe(true);
 			expect(api.generateModelResponse).toHaveBeenCalledTimes(2);
 			const retryRequest = (api.generateModelResponse as Mock).mock.calls[1][0];
-			expect(retryRequest.perTurnContext).toBe('CTX');
+			expect(retryRequest.perTurnContext).toBeUndefined();
+			expect(countContext(retryRequest.conversationHistory, 'CTX')).toBe(1);
 			expect(retryRequest.sessionStartedAt).toBe('2026-05-09T10:00:00');
 		});
 
-		test('multi-iteration: every follow-up carries perTurn context, not just the first', async () => {
+		test('multi-iteration: per-turn context stays in history exactly once across all follow-ups', async () => {
 			const plugin = buildPlugin();
 			const session = buildSession();
 			const api = makeScriptedModelApi([
@@ -835,8 +846,12 @@ describe('AgentLoop', () => {
 
 			const calls = (api.generateModelResponse as Mock).mock.calls;
 			expect(calls).toHaveLength(2);
-			expect(calls[0][0].perTurnContext).toBe('CTX');
-			expect(calls[1][0].perTurnContext).toBe('CTX');
+			// Never on the request, and never accumulating across iterations:
+			// exactly one copy lives in each follow-up's conversation history.
+			expect(calls[0][0].perTurnContext).toBeUndefined();
+			expect(calls[1][0].perTurnContext).toBeUndefined();
+			expect(countContext(calls[0][0].conversationHistory, 'CTX')).toBe(1);
+			expect(countContext(calls[1][0].conversationHistory, 'CTX')).toBe(1);
 		});
 	});
 
