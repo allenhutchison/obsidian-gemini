@@ -108,7 +108,7 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Setting**: `chatModelName`
 - **Type**: String
 - **Default**: `gemini-flash-latest`
-- **Description**: Model used for agent chat conversations
+- **Description**: Model used for agent chat conversations and the Rewrite text with AI command
 - **Available Models**:
   - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient, default for chat)
   - `gemini-2.5-pro` - Gemini 2.5 Pro (most capable, requires billing)
@@ -121,8 +121,8 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Setting**: `summaryModelName`
 - **Type**: String
 - **Default**: `gemini-flash-latest`
-- **Description**: Model used for document summarization and selection-based text rewriting
-- **Used by**: Summarize Active File command, Rewrite text with AI command
+- **Description**: Model used for document summarization
+- **Used by**: Summarize Active File command
 
 ### Completions Model
 
