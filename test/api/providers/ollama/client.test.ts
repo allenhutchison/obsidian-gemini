@@ -194,7 +194,7 @@ describe('OllamaClient', () => {
 		// dropped/@-mentioned files without a redundant `read_file` tool call.
 		// This test asserts the wiring on the initial request — see
 		// agent-loop.test.ts for the follow-up propagation guarantee.
-		it('embeds perTurnContext into the system message under "## Turn Context"', async () => {
+		it('transmits perTurnContext directly inside the user message', async () => {
 			ollamaCalls.chat.mockResolvedValue({
 				message: { role: 'assistant', content: 'ok' },
 				prompt_eval_count: 1,
@@ -215,12 +215,20 @@ describe('OllamaClient', () => {
 			});
 
 			const args = ollamaCalls.chat.mock.calls[0][0];
+
+			// System message should be static (no perTurnContext!)
 			const systemMessage = args.messages.find((m: any) => m.role === 'system');
 			expect(systemMessage).toBeDefined();
-			expect(systemMessage.content).toContain('## Turn Context');
-			expect(systemMessage.content).toContain('The quick brown fox jumps over the lazy dog.');
+			expect(systemMessage.content).not.toContain('## Turn Context');
+			expect(systemMessage.content).not.toContain('The quick brown fox jumps over the lazy dog.');
 			expect(systemMessage.content).toContain('always cite file paths');
 			expect(systemMessage.content).toContain('2026-05-09T10:00:00');
+
+			// User message must contain both query and perTurnContext joined
+			const userMessage = args.messages[args.messages.length - 1];
+			expect(userMessage.role).toBe('user');
+			expect(userMessage.content).toContain('what does the file say');
+			expect(userMessage.content).toContain(renderedContext);
 		});
 
 		it('rejects non-image attachments with a clear error', async () => {

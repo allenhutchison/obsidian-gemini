@@ -132,7 +132,6 @@ export class GeminiPrompts {
 		agentsMemory?: string | null,
 		availableSkills?: { name: string; description: string }[],
 		projectInstructions?: string,
-		perTurnContext?: string,
 		sessionStartedAt?: string
 	): string {
 		// If custom prompt with override is provided, return only that
@@ -175,7 +174,6 @@ export class GeminiPrompts {
 			agentRulesSection,
 			toolCatalogSection,
 			additionalInstructions,
-			perTurnContext: perTurnContext || '',
 		});
 	}
 }

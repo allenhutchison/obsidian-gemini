@@ -47,7 +47,6 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		projectRootPath,
 		featureToolPolicy,
 		headless,
-		perTurnContext,
 		projectInstructions,
 		projectSkills,
 		sessionStartedAt,
@@ -68,17 +67,20 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 
 	const modelConfig = currentSession?.modelConfig || {};
 
+	// `perTurnContext` is deliberately omitted: `buildToolHistoryTurns` already
+	// spliced it into the user turn of `updatedHistory`. Passing it here too
+	// would make `buildContents` append it a second time, duplicating the
+	// (potentially large) context payload on every tool iteration.
 	return {
 		userMessage: '', // Empty since tool results are already in conversation history
 		conversationHistory: updatedHistory,
 		model: modelConfig.model || plugin.settings.chatModelName,
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
 		customPrompt,
 		projectInstructions,
 		projectSkills,
-		perTurnContext,
 		sessionStartedAt,
 		renderContent: false,
 		availableTools, // Include tools so model can chain calls
@@ -90,29 +92,22 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
  * Does not include tools — just asks the model to summarize what it did.
  */
 export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequest {
-	const {
-		plugin,
-		currentSession,
-		updatedHistory,
-		customPrompt,
-		perTurnContext,
-		projectInstructions,
-		projectSkills,
-		sessionStartedAt,
-	} = params;
+	const { plugin, currentSession, updatedHistory, customPrompt, projectInstructions, projectSkills, sessionStartedAt } =
+		params;
 	const modelConfig = currentSession?.modelConfig || {};
 
+	// `perTurnContext` is deliberately omitted — see `buildFollowUpRequest`:
+	// it is already embedded in `updatedHistory` via `buildToolHistoryTurns`.
 	return {
 		userMessage: 'Please summarize what you just did with the tools.',
 		conversationHistory: updatedHistory,
 		model: modelConfig.model || plugin.settings.chatModelName,
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
-		prompt: '', // Unused in agent pipeline — perTurnContext carries context instead
+		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
 		customPrompt,
 		projectInstructions,
 		projectSkills,
-		perTurnContext,
 		sessionStartedAt,
 		renderContent: false,
 	};
