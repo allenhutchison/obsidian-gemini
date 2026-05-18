@@ -48,16 +48,17 @@ describe('computeAggregates — by_difficulty breakdown', () => {
 			aggregateTaskRuns({ id: 'c', difficulty: 'T3' }, [run(true, false), run(true, false)]),
 		];
 		const agg = computeAggregates(taskResults);
-		expect(agg.by_difficulty.T1.total_tasks).toBe(1);
-		expect(agg.by_difficulty.T1.solve_k_rate).toBe(100);
-		expect(agg.by_difficulty.T3.total_tasks).toBe(2);
-		expect(agg.by_difficulty.T3.solve_k_count).toBe(1);
-		expect(agg.by_difficulty.T3.solve_k_rate).toBe(50);
+		const byDiff = agg.by_difficulty as any;
+		expect(byDiff.T1.total_tasks).toBe(1);
+		expect(byDiff.T1.solve_k_rate).toBe(100);
+		expect(byDiff.T3.total_tasks).toBe(2);
+		expect(byDiff.T3.solve_k_count).toBe(1);
+		expect(byDiff.T3.solve_k_rate).toBe(50);
 	});
 
 	it('buckets untagged tasks under "untagged"', () => {
 		const agg = computeAggregates([aggregateTaskRuns('legacy', [run(true, true)])]);
-		expect(agg.by_difficulty.untagged.total_tasks).toBe(1);
+		expect((agg.by_difficulty as any).untagged.total_tasks).toBe(1);
 	});
 
 	it('returns an empty breakdown for no tasks', () => {

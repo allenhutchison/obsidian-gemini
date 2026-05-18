@@ -105,7 +105,7 @@ describe('scoreTask — vault assertions', () => {
 
 	it('solves when the vault assertion holds', async () => {
 		const events = [apiResponse(), toolComplete('write_file'), turnEnd()];
-		const result: any = await scoreTask(task as any, events, 'done', 'gemini-2.5-flash', 100, 'gemini', null, {
+		const result: any = await scoreTask(task as any, events, 'done', 'gemini-2.5-flash', 100, 'gemini', undefined, {
 			vaultState: { 'eval-scratch/out.md': { exists: true, content: '# Summary', frontmatter: null } },
 		});
 		expect(result.solved).toBe(true);
@@ -114,7 +114,7 @@ describe('scoreTask — vault assertions', () => {
 
 	it('does not solve when the file was never written, even if write_file was called', async () => {
 		const events = [apiResponse(), toolComplete('write_file'), turnEnd()];
-		const result: any = await scoreTask(task as any, events, 'done', 'gemini-2.5-flash', 100, 'gemini', null, {
+		const result: any = await scoreTask(task as any, events, 'done', 'gemini-2.5-flash', 100, 'gemini', undefined, {
 			vaultState: { 'eval-scratch/out.md': { exists: false, content: null, frontmatter: null } },
 		});
 		expect(result.passed).toBe(true);
