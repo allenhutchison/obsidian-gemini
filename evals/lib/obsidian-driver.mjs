@@ -221,8 +221,11 @@ export async function setupExtraFiles(entries) {
         }
         const existing = vault.getAbstractFileByPath(e.path);
         if (existing) {
-          let original = null;
-          try { original = await vault.read(existing); } catch { original = null; }
+          // Capture the original before overwriting. If the read fails we must
+          // NOT modify the file — we would be unable to restore it on cleanup.
+          // Letting the error propagate to the outer catch is fail-closed: the
+          // entry never reaches the manifest and the runner surfaces the error.
+          const original = await vault.read(existing);
           manifest.push({ path: e.path, preExisted: true, originalContent: original });
           await vault.modify(existing, e.content);
         } else {
