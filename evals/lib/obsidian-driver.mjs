@@ -189,6 +189,74 @@ export async function setupFixtures(files) {
 }
 
 /**
+ * Place files at arbitrary vault paths before a task runs.
+ *
+ * Unlike `setupFixtures` (which always targets `eval-scratch/`), this writes
+ * to caller-chosen paths so tasks can pre-seed plugin state that lives outside
+ * the scratch folder — e.g. `AGENTS.md` for memory tests, an `Agent-Sessions/`
+ * history file for recall tests, or a `Skills/<name>/SKILL.md` package.
+ *
+ * `entries` is an array of `{ path, content }`. Parent folders are created as
+ * needed. The runner is responsible for tracking these paths and removing them
+ * during cleanup.
+ */
+export async function setupExtraFiles(entries) {
+	if (!Array.isArray(entries) || entries.length === 0) return;
+	await obsidianEval(
+		`(async () => {
+    const vault = app.vault;
+    const entries = ${JSON.stringify(entries)};
+    for (const e of entries) {
+      const parts = e.path.split('/');
+      parts.pop();
+      let dir = '';
+      for (const part of parts) {
+        dir = dir ? dir + '/' + part : part;
+        if (!vault.getAbstractFileByPath(dir)) await vault.createFolder(dir);
+      }
+      const existing = vault.getAbstractFileByPath(e.path);
+      if (existing) await vault.modify(existing, e.content);
+      else await vault.create(e.path, e.content);
+    }
+    return '"setup ready"';
+  })()`,
+		{ timeoutMs: 15_000 }
+	);
+}
+
+/**
+ * Snapshot the post-run state of the given vault paths for `vaultAssertions`.
+ *
+ * Returns `{ [path]: { exists, content, frontmatter } }`. Missing files report
+ * `exists: false`. Frontmatter comes from `metadataCache`, which has settled by
+ * the time the harness reads it (several CLI round-trips happen after the turn
+ * ends). Pure assertion evaluation lives in `vault-assertions.mjs`.
+ */
+export async function readVaultState(paths) {
+	if (!Array.isArray(paths) || paths.length === 0) return {};
+	const pathsLiteral = JSON.stringify(paths);
+	const result = await obsidianEval(
+		`(async () => {
+    const out = {};
+    for (const path of ${pathsLiteral}) {
+      const file = app.vault.getAbstractFileByPath(path);
+      if (!file || !('extension' in file)) {
+        out[path] = { exists: false, content: null, frontmatter: null };
+        continue;
+      }
+      let content = null;
+      try { content = await app.vault.read(file); } catch { content = null; }
+      const cache = app.metadataCache.getFileCache(file);
+      out[path] = { exists: true, content, frontmatter: (cache && cache.frontmatter) || null };
+    }
+    return JSON.stringify(out);
+  })()`,
+		{ timeoutMs: 15_000 }
+	);
+	return JSON.parse(result);
+}
+
+/**
  * Send a message to the agent via the programmatic API.
  * Returns after dispatch; the runner waits for `turnEnd` / `turnError` via
  * the event collector. Do not await the full agent turn inside this eval call:
@@ -260,10 +328,14 @@ export async function cancelAgent() {
 }
 
 /**
- * Clean up eval artifacts: scratch folder and session history.
+ * Clean up eval artifacts: scratch folder, session history, and any files
+ * placed outside `eval-scratch/` by `setupExtraFiles` (passed via `extraPaths`
+ * so a memory / recall / skill task doesn't leak `AGENTS.md` or a seeded
+ * session into the user's vault).
  */
-export async function cleanup(sessionHistoryPath) {
+export async function cleanup(sessionHistoryPath, extraPaths = []) {
 	const pathLiteral = JSON.stringify(sessionHistoryPath || '');
+	const extraLiteral = JSON.stringify(Array.isArray(extraPaths) ? extraPaths : []);
 	await obsidianEval(
 		`(async () => {
     const vault = app.vault;
@@ -275,6 +347,11 @@ export async function cleanup(sessionHistoryPath) {
     if (histPath) {
       const hist = vault.getAbstractFileByPath(histPath);
       if (hist) await vault.delete(hist);
+    }
+    // Delete setup files placed outside eval-scratch.
+    for (const p of ${extraLiteral}) {
+      const f = vault.getAbstractFileByPath(p);
+      if (f) await vault.delete(f, true);
     }
     return '"cleaned"';
   })()`,

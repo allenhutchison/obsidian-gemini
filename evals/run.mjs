@@ -24,6 +24,8 @@ import {
 	verifyPlugin,
 	createSession,
 	setupFixtures,
+	setupExtraFiles,
+	readVaultState,
 	addContextFiles,
 	sendMessage,
 	readAndClearLastSendError,
@@ -36,6 +38,7 @@ import {
 } from './lib/obsidian-driver.mjs';
 import { installCollector, peekCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
+import { vaultAssertionPaths } from './lib/vault-assertions.mjs';
 import { taskHasJudgeMatcher } from './lib/matchers.mjs';
 import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
@@ -122,7 +125,7 @@ async function handleInterrupt(signal, exitCode) {
 				console.warn(`  cancel warning: ${err.message}`);
 			}
 			try {
-				await cleanup(inflight.sessionInfo?.historyPath);
+				await cleanup(inflight.sessionInfo?.historyPath, inflight.setupPaths);
 			} catch (err) {
 				console.warn(`  cleanup warning: ${err.message}`);
 			}
@@ -185,6 +188,31 @@ async function loadFixtureFiles(fixtureName) {
 	return result;
 }
 
+/**
+ * Resolve a task's `setup` entries into `{ path, content }` records ready for
+ * `setupExtraFiles`. Each entry is `{ path, from }` where `from` is a file
+ * path relative to `evals/fixtures/`. Lets memory / recall / skill tasks
+ * pre-seed plugin state that lives outside `eval-scratch/`.
+ */
+async function loadSetupFiles(setup) {
+	if (!Array.isArray(setup) || setup.length === 0) return [];
+	const entries = [];
+	for (const item of setup) {
+		if (!item || typeof item.path !== 'string' || typeof item.from !== 'string') {
+			throw new Error(`Invalid setup entry: ${JSON.stringify(item)} (expected { path, from })`);
+		}
+		const sourcePath = join(EVALS_DIR, 'fixtures', item.from);
+		let content;
+		try {
+			content = await readFile(sourcePath, 'utf8');
+		} catch (err) {
+			throw new Error(`Failed to read setup source "${sourcePath}": ${err.message}`);
+		}
+		entries.push({ path: item.path, content });
+	}
+	return entries;
+}
+
 function getGitSha() {
 	try {
 		return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
@@ -220,6 +248,8 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 	const startTime = Date.now();
 	const taskTimeoutMs = task.timeoutMs ?? DEFAULT_TASK_TIMEOUT_MS;
 	let timedOut = false;
+	const setupEntries = await loadSetupFiles(task.setup);
+	const setupPaths = setupEntries.map((e) => e.path);
 
 	try {
 		// 1. Setup fixtures
@@ -227,6 +257,16 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		if (fixtureFiles.length > 0) {
 			console.log(`  Setting up ${fixtureFiles.length} fixture files...`);
 			await setupFixtures(fixtureFiles);
+		}
+		// `fileUnchanged` assertions compare a post-run file against its
+		// original fixture content; key the fixtures by name for that lookup.
+		const fixtureMap = Object.fromEntries(fixtureFiles.map((f) => [f.name, f.content]));
+
+		// 1b. Setup files outside eval-scratch (memory / recall / skill tasks).
+		if (setupEntries.length > 0) {
+			console.log(`  Seeding ${setupEntries.length} setup file(s)...`);
+			await setupExtraFiles(setupEntries);
+			if (currentTaskInfo) currentTaskInfo.setupPaths = setupPaths;
 		}
 
 		// 2. Create session
@@ -306,9 +346,24 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		const modelResponse = timedOut ? '' : await getLastModelResponse();
 		const durationMs = Date.now() - startTime;
 
-		// 6. Score
+		// 6. Snapshot vault state for any `vaultAssertions`, then score.
+		// State-based verification — what the agent *did* to the vault, not
+		// just what it said (see vault-assertions.mjs).
+		let vaultState = {};
+		const assertionPaths = vaultAssertionPaths(task.vaultAssertions);
+		if (assertionPaths.length > 0) {
+			try {
+				vaultState = await readVaultState(assertionPaths);
+			} catch (err) {
+				console.warn(`  Vault state read warning: ${err.message}`);
+			}
+		}
+
 		const modelName = await getModelName();
-		const result = await scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn);
+		const result = await scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn, {
+			vaultState,
+			fixtureMap,
+		});
 		if (timedOut) result.timedOut = true;
 		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
 		const verdict = timedOut ? 'TIMEOUT' : result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED';
@@ -347,6 +402,9 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 				judge_attempted: judgeAttempted,
 				judge_available: judgeAvailable,
 				judge_skipped: judgeAttempted && !judgeAvailable,
+				vault_assertions_pass: false,
+				vault_assertion_details: [],
+				tool_budget_ok: true,
 			},
 		};
 	} finally {
@@ -355,7 +413,7 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		await removeCollector();
 		if (!keepArtifacts) {
 			try {
-				await cleanup(sessionInfo?.historyPath);
+				await cleanup(sessionInfo?.historyPath, setupPaths);
 			} catch (e) {
 				console.warn(`  Cleanup warning: ${e.message}`);
 			}
@@ -463,7 +521,7 @@ async function main() {
 					completedTaskCount += 1;
 				}
 			}
-			taskResults.push(aggregateTaskRuns(task.id, runs));
+			taskResults.push(aggregateTaskRuns(task, runs));
 		}
 
 		// Build result, write, print

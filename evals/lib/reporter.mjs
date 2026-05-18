@@ -28,8 +28,15 @@ function round(n, places) {
  * / `solve_k` are the τ-bench-style reliability signals (true iff every
  * one of the N runs passed/solved). `flaky` is the in-between case —
  * some but not all runs solved.
+ *
+ * `taskOrId` accepts either a bare task id (legacy / unit-test callers) or
+ * the full task object — when given the object, `difficulty` and `category`
+ * are carried onto the TaskResult so the reporter can break solve rate down
+ * by difficulty tier (the view that exposes model separation).
  */
-export function aggregateTaskRuns(taskId, runs) {
+export function aggregateTaskRuns(taskOrId, runs) {
+	const task = typeof taskOrId === 'string' ? { id: taskOrId } : taskOrId || {};
+	const taskId = task.id;
 	const n = runs.length;
 	const passedCount = runs.filter((r) => r.passed).length;
 	const solvedCount = runs.filter((r) => r.solved).length;
@@ -67,6 +74,8 @@ export function aggregateTaskRuns(taskId, runs) {
 
 	return {
 		id: taskId,
+		difficulty: task.difficulty ?? null,
+		category: task.category ?? null,
 		n_runs: n,
 		passed_count: passedCount,
 		solved_count: solvedCount,
@@ -98,6 +107,7 @@ export function computeAggregates(taskResults) {
 		mean_cost_usd: 0,
 		total_cost_usd: 0,
 		total_loop_fires: 0,
+		by_difficulty: {},
 	};
 	if (total === 0) return empty;
 
@@ -123,6 +133,23 @@ export function computeAggregates(taskResults) {
 	const meanCache = cacheRatios.length === 0 ? null : round(mean(cacheRatios), 3);
 	const loopFires = allRuns.reduce((a, r) => a + r.metrics.loop_fires, 0);
 
+	// Break solve^k down by difficulty tier — the view that shows whether the
+	// suite actually separates model classes (a tier where every model solves
+	// or no model solves is miscalibrated and worth revising).
+	const byDifficulty = {};
+	for (const t of taskResults) {
+		const tier = t.difficulty || 'untagged';
+		const bucket = (byDifficulty[tier] ||= { total_tasks: 0, solve_k_count: 0, solved_cells: 0, run_cells: 0 });
+		bucket.total_tasks += 1;
+		if (t.solve_k) bucket.solve_k_count += 1;
+		bucket.solved_cells += t.solved_count;
+		bucket.run_cells += t.n_runs ?? 1;
+	}
+	for (const bucket of Object.values(byDifficulty)) {
+		bucket.solve_k_rate = round((bucket.solve_k_count / bucket.total_tasks) * 100, 1);
+		bucket.mean_solve_rate = bucket.run_cells === 0 ? 0 : round((bucket.solved_cells / bucket.run_cells) * 100, 1);
+	}
+
 	return {
 		total_tasks: total,
 		n_runs: nRuns,
@@ -141,6 +168,7 @@ export function computeAggregates(taskResults) {
 			6
 		),
 		total_loop_fires: loopFires,
+		by_difficulty: byDifficulty,
 	};
 }
 
@@ -218,6 +246,20 @@ export function printSummary(result) {
 		console.log(`Flaky tasks:    ${a.flaky_task_count} (${flakyNames})`);
 	} else {
 		console.log(`Flaky tasks:    0`);
+	}
+	// Solve^k broken down by difficulty tier — sorted so T1..T4 read top-down.
+	const tiers = Object.keys(a.by_difficulty || {}).sort();
+	if (tiers.length > 0) {
+		console.log('');
+		console.log('Solve^k by difficulty:');
+		for (const tier of tiers) {
+			const d = a.by_difficulty[tier];
+			console.log(
+				`  ${tier.padEnd(10)} ${String(d.solve_k_count).padStart(2)}/${d.total_tasks} tasks  ` +
+					`(solve^${k} ${d.solve_k_rate}%, mean ${d.mean_solve_rate}%)`
+			);
+		}
+		console.log('');
 	}
 	console.log(`Mean turns:     ${a.mean_turns} (p95: ${a.p95_turns})`);
 	const meanCacheStr = a.mean_cache_ratio === null ? 'n/a' : `${Math.round(a.mean_cache_ratio * 100)}%`;
