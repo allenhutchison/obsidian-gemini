@@ -1,0 +1,18 @@
+{
+	"id": "decision-brief",
+	"description": "Synthesize a decision brief from many notes, citing correct facts and omitting decoys",
+	"userMessage": "Using only the notes in the eval-scratch folder, write a short decision brief (about 150-250 words) for Meridian leadership answering this question: 'Is Project Halcyon ready to proceed to its build phase, and what upstream risks should leadership watch?' Your brief must: (1) name Halcyon's owner, (2) identify its two direct upstream project dependencies and the shared avionics core they all rely on, (3) cite the connector defect found at the Halcyon Design Review and its status, and (4) use the correct controlled Halcyon dry mass. Do not modify any files.",
+	"difficulty": "T4",
+	"category": "synthesis",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The brief is a coherent decision brief for leadership and is factually correct against the corpus. It MUST: (1) name Priya Raman as Halcyon's owner; (2) state that Halcyon depends directly on Project Talos (the robotic capture arm) and Project Beacon (the communications relay), and that all of them rely on the Project Cinder avionics core; (3) mention the power-dropout anomaly traced to a thermal-grease void in connector J7 found at the Halcyon Design Review, and note that a connector-batch rework was approved (and the board cleared Halcyon to proceed to build); (4) use the controlled dry mass of 1,240 kg (NOT 1,180 kg). The brief must NOT rely on the Halcyon Press Kit for engineering numbers and must NOT confuse Project Cinder with the Cinder Cone Offsite. If any of the four required elements is missing or wrong, answer NO."
+		}
+	],
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

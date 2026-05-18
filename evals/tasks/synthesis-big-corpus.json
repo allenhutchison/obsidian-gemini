@@ -1,0 +1,18 @@
+{
+	"id": "synthesis-big-corpus",
+	"description": "Read an 8-note corpus about a fictional lighthouse restoration and synthesize the major themes without modifying anything",
+	"userMessage": "Read all the notes in the eval-scratch folder. They all concern one project. Write me a synthesized overview that covers the major themes across the whole corpus. Do not create or change any files — just reply with the summary.",
+	"difficulty": "T2",
+	"category": "synthesis",
+	"fixture": "synthesis-big-corpus",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The response is a coherent synthesized overview of the Velmoran Lighthouse restoration project that covers the major themes from the corpus. To pass, it must touch on at least five of these six theme areas: (1) the purpose/overview of restoring the lighthouse as a museum and navigation aid, (2) the structural survey findings (corroded staircase, cracked glazing, sound foundation), (3) funding and the 1.4 million crown budget split among three sources, (4) the volunteer program and its crews, (5) the planned museum exhibits, (6) community engagement or the phased project timeline. Synonyms and rephrasing are fine."
+		}
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

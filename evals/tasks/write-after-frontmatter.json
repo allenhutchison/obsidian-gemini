@@ -1,0 +1,29 @@
+{
+	"id": "write-after-frontmatter",
+	"description": "Add a Summary section to the body of a note without disturbing its YAML frontmatter",
+	"userMessage": "The note 'eval-scratch/quarterly-review.md' has a YAML frontmatter block at the top. Add a new '## Summary' section to the END of the note body with a one or two sentence recap. Do not change the frontmatter and do not remove any existing body text.",
+	"difficulty": "T3",
+	"category": "edit",
+	"fixture": "frontmatter-body",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [{ "type": "contains", "value": "Summary" }],
+	"vaultAssertions": [
+		{ "type": "frontmatterEquals", "path": "eval-scratch/quarterly-review.md", "key": "status", "value": "final" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/quarterly-review.md", "key": "owner", "value": "Priya Anand" },
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/quarterly-review.md",
+			"value": ["The biggest pain point was the billing escalation path", "self-service knowledge base"]
+		},
+		{
+			"type": "fileMatches",
+			"path": "eval-scratch/quarterly-review.md",
+			"value": "^---[\\s\\S]+^---[\\s\\S]+^##\\s+Summary\\s*$",
+			"flags": "m"
+		},
+		{ "type": "fileUnchanged", "path": "eval-scratch/sidebar.md", "fixture": "sidebar.md" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

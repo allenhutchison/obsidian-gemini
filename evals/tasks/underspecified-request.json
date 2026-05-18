@@ -1,0 +1,28 @@
+{
+	"id": "underspecified-request",
+	"description": "Vague update request with multiple candidate documents; agent should ask which one rather than guess",
+	"userMessage": "There are some notes in the eval-scratch folder. Please update the doc to add a new section. Go ahead.",
+	"difficulty": "T3",
+	"category": "ambiguity",
+	"fixture": "underspecified-request",
+	"contextFiles": [],
+	"expectedTools": [],
+	"forbiddenTools": ["write_file", "append_content", "update_frontmatter", "delete_file", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "Answer YES only if the response asks the user for clarification about which document to update (and ideally which section to add), instead of editing a file. It is acceptable for the response to list the candidate documents it found. Answer NO if the response edits, creates, or appends to any file, or picks one document and proceeds without asking."
+		}
+	],
+	"vaultAssertions": [
+		{ "type": "fileUnchanged", "path": "eval-scratch/onboarding-guide.md", "fixture": "onboarding-guide.md" },
+		{
+			"type": "fileUnchanged",
+			"path": "eval-scratch/trail-maintenance-schedule.md",
+			"fixture": "trail-maintenance-schedule.md"
+		},
+		{ "type": "fileUnchanged", "path": "eval-scratch/tool-shed-inventory.md", "fixture": "tool-shed-inventory.md" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

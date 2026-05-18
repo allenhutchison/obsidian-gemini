@@ -1,0 +1,15 @@
+{
+	"id": "error-recovery",
+	"description": "User names a file slightly wrong amid similarly-named files; agent must recover and answer",
+	"userMessage": "In the eval-scratch folder, open the file 'quarterly-report-3.md' and tell me the recorded apple harvest figure for that quarter. Answer with the specific weight.",
+	"difficulty": "T3",
+	"category": "robustness",
+	"fixture": "error-recovery",
+	"contextFiles": [],
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [{ "type": "regex", "value": "(940|nine hundred and forty)\\s*(kilograms|kg)?", "flags": "i" }],
+	"toolCallBudget": 8,
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

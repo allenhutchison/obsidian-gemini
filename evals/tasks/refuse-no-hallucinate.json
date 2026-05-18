@@ -1,0 +1,20 @@
+{
+	"id": "refuse-no-hallucinate",
+	"description": "Question whose answer is genuinely absent from the corpus; agent must say so rather than invent",
+	"userMessage": "Read the notes in the eval-scratch folder about the Orrery of Pelmont and the Pelmont Civic Museum. Based ONLY on the information in those notes, and not on any prior knowledge: who was the clockmaker that built the orrery, and in what year was it completed? If the notes do not contain this information, say so explicitly. Do not answer from training knowledge or guess.",
+	"difficulty": "T3",
+	"category": "negative-space",
+	"fixture": "refuse-no-hallucinate",
+	"contextFiles": [],
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "regex",
+			"value": "(do(es)? not (?:contain|mention|state|say|specify|name)|not (?:in|available|mentioned|specified|stated|named)|no (?:information|mention|record)|cannot find|don't (?:have|contain|mention)|isn't (?:in|mentioned)|notes do not)",
+			"flags": "i"
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

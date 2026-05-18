@@ -1,0 +1,30 @@
+{
+	"id": "frontmatter-typed-update",
+	"description": "Set typed frontmatter fields - a date, a number, and a tag list - on a note",
+	"userMessage": "Update the frontmatter of 'eval-scratch/book-draft.md'. Set 'deadline' to the date 2026-09-30, set 'word_count' to the number 41200, and set 'tags' to a list containing exactly: novel, fiction, manuscript. Leave the existing title and status fields as they are.",
+	"difficulty": "T2",
+	"category": "edit",
+	"fixture": "typed-frontmatter",
+	"expectedTools": ["update_frontmatter"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [{ "type": "contains", "value": "41200" }],
+	"vaultAssertions": [
+		{ "type": "frontmatterEquals", "path": "eval-scratch/book-draft.md", "key": "deadline", "value": "2026-09-30" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/book-draft.md", "key": "word_count", "value": 41200 },
+		{
+			"type": "frontmatterEquals",
+			"path": "eval-scratch/book-draft.md",
+			"key": "tags",
+			"value": ["novel", "fiction", "manuscript"]
+		},
+		{
+			"type": "frontmatterEquals",
+			"path": "eval-scratch/book-draft.md",
+			"key": "title",
+			"value": "The Lantern Keeper"
+		},
+		{ "type": "fileUnchanged", "path": "eval-scratch/outline.md", "fixture": "outline.md" }
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

@@ -2,16 +2,24 @@
 	"id": "find-tagged-notes",
 	"description": "Find notes tagged with #research and list their titles",
 	"userMessage": "Search the eval-scratch folder for all notes tagged with #research. List each note's title. Do not modify any files.",
+	"difficulty": "T2",
+	"category": "retrieval",
 	"fixture": "find-tagged-notes",
 	"expectedTools": [],
 	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content"],
 	"outputMatchers": [
-		{ "type": "contains", "value": ["Neural Networks", "neural-networks", "neural_networks"] },
+		{
+			"type": "contains",
+			"value": ["Neural Networks", "neural-networks", "neural_networks"]
+		},
 		{
 			"type": "contains",
 			"value": ["Transformer Architecture", "transformer-architecture", "transformer_architecture"]
 		},
-		{ "type": "contains", "value": ["Reinforcement Learning", "reinforcement-learning", "reinforcement_learning"] }
+		{
+			"type": "contains",
+			"value": ["Reinforcement Learning", "reinforcement-learning", "reinforcement_learning"]
+		}
 	],
 	"maxTurns": 15,
 	"timeoutMs": 90000

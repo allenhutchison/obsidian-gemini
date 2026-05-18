@@ -1,0 +1,40 @@
+{
+	"id": "rewrite-section-inplace",
+	"description": "Rewrite one overlong section of a note more concisely while leaving sibling sections untouched",
+	"userMessage": "The '## Equipment Pickup' section of 'eval-scratch/onboarding-guide.md' is one rambling run-on sentence. Rewrite just that section so it is clearer and more concise — break it into short sentences or bullet points and keep the key facts (gear cage location, see Marcy, items issued, barcode responsibility). Do not change any other section of the note.",
+	"difficulty": "T3",
+	"category": "edit",
+	"fixture": "rewrite-section",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The response indicates the Equipment Pickup section was rewritten to be shorter and clearer than the original run-on sentence, while preserving the key facts (gear cage, Marcy, items issued, barcode responsibility)."
+		}
+	],
+	"vaultAssertions": [
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/onboarding-guide.md",
+			"value": [
+				"## Safety Briefing",
+				"Before your first site visit you must complete the safety briefing with your",
+				"## First Week Checklist",
+				"- Shadow an experienced technician on at least two site visits.",
+				"## Overview"
+			]
+		},
+		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "(?i)gear cage" },
+		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "(?i)marcy" },
+		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "(?i)barcode" },
+		{
+			"type": "fileLacks",
+			"path": "eval-scratch/onboarding-guide.md",
+			"value": "you should make your way over to the gear"
+		},
+		{ "type": "fileUnchanged", "path": "eval-scratch/contacts.md", "fixture": "contacts.md" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

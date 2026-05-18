@@ -1,0 +1,19 @@
+{
+	"id": "sort-recent-projects",
+	"description": "List the five most recently updated project notes in order",
+	"userMessage": "Look at the project notes in the eval-scratch folder (titles starting with 'Project'). Each has an `updated` date in its YAML frontmatter. List the FIVE most recently updated projects, ordered from most recent to least recent. Give just the ordered list of project names. Do not modify any files.",
+	"difficulty": "T3",
+	"category": "aggregation",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{
+			"type": "regex",
+			"value": "Cinder[\\s\\S]*Talos[\\s\\S]*Halcyon[\\s\\S]*Quill[\\s\\S]*Beacon",
+			"flags": "i"
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

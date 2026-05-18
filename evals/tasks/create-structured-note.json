@@ -1,0 +1,24 @@
+{
+	"id": "create-structured-note",
+	"description": "Create a new note with required YAML frontmatter keys and specified section headings",
+	"userMessage": "Create a new note at 'eval-scratch/Kickoff Meeting.md'. It must have a YAML frontmatter block with type set to meeting, status set to draft, and attendees set to a list. Then in the body add three section headings: '## Agenda', '## Decisions', and '## Action Items'. You can leave the sections empty.",
+	"difficulty": "T2",
+	"category": "write",
+	"fixture": "structured-note",
+	"expectedTools": ["write_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [{ "type": "contains", "value": "Kickoff Meeting" }],
+	"vaultAssertions": [
+		{ "type": "fileExists", "path": "eval-scratch/Kickoff Meeting.md" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/Kickoff Meeting.md", "key": "type", "value": "meeting" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/Kickoff Meeting.md", "key": "status", "value": "draft" },
+		{
+			"type": "fileMatches",
+			"path": "eval-scratch/Kickoff Meeting.md",
+			"value": ["^##\\s+Agenda\\s*$", "^##\\s+Decisions\\s*$", "^##\\s+Action Items\\s*$"],
+			"flags": "m"
+		}
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

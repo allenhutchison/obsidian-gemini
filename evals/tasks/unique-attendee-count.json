@@ -1,0 +1,19 @@
+{
+	"id": "unique-attendee-count",
+	"description": "Count distinct attendees across all five meeting notes",
+	"userMessage": "The eval-scratch folder contains several meeting notes (notes whose frontmatter tag list includes `meeting`). Each meeting note lists its attendees. Count how many DISTINCT people attended at least one meeting across all of the meeting notes. The same person attending several meetings counts only once. Answer with just the number and the list of distinct names. Do not modify any files.",
+	"difficulty": "T3",
+	"category": "aggregation",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "regex", "value": "\\b6\\b|\\bsix\\b", "flags": "i" },
+		{
+			"type": "judge",
+			"criteria": "The distinct attendee set across all meeting notes is exactly these six people: Priya Raman, Marcus Feld, Dana Okoro, Helena Voss, Tomas Reyes, and Sofia Lindqvist. The final count must be 6. If the count is not 6, or the named set differs from these six, answer NO."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

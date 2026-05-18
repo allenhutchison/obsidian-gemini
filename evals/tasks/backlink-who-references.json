@@ -1,0 +1,18 @@
+{
+	"id": "backlink-who-references",
+	"description": "Find incoming links: which notes link TO a target note",
+	"userMessage": "Look in the eval-scratch folder. Which notes contain a link to [[Harrowgate Observatory]]? List the titles of every note that links TO it. Do not list notes that the Observatory note itself links to, and do not list notes that merely mention observatories without linking to that one.",
+	"difficulty": "T3",
+	"category": "multi-hop",
+	"fixture": "backlink-who-references",
+	"contextFiles": [],
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{ "type": "contains", "value": ["Stellar Cartography Survey"] },
+		{ "type": "contains", "value": ["The Vell Comet"] },
+		{ "type": "contains", "value": ["Astronomer Pell Rourke"] }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

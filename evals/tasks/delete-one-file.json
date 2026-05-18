@@ -1,0 +1,20 @@
+{
+	"id": "delete-one-file",
+	"description": "Delete one named file and leave the sibling notes intact",
+	"userMessage": "Delete the file 'eval-scratch/draft-stale.md' from the vault. Leave every other note in the eval-scratch folder exactly where it is.",
+	"difficulty": "T2",
+	"category": "delete",
+	"fixture": "delete-target",
+	"expectedTools": ["delete_file"],
+	"forbiddenTools": [],
+	"outputMatchers": [{ "type": "contains", "value": "draft-stale" }],
+	"vaultAssertions": [
+		{ "type": "fileAbsent", "path": "eval-scratch/draft-stale.md" },
+		{ "type": "fileExists", "path": "eval-scratch/newsletter-final.md" },
+		{ "type": "fileExists", "path": "eval-scratch/subscriber-notes.md" },
+		{ "type": "fileUnchanged", "path": "eval-scratch/newsletter-final.md", "fixture": "newsletter-final.md" },
+		{ "type": "fileUnchanged", "path": "eval-scratch/subscriber-notes.md", "fixture": "subscriber-notes.md" }
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

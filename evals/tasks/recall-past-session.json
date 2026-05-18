@@ -1,0 +1,30 @@
+{
+	"id": "recall-past-session",
+	"description": "A prior agent session is seeded; the user asks what was decided last time, requiring the agent to recall the past session and read its conversation",
+	"userMessage": "Last time we talked about the greenhouse irrigation planning, we settled on an approach. Remind me — what did we decide to use for watering the new greenhouse, and why was the other option rejected?",
+	"difficulty": "T3",
+	"category": "session-recall",
+	"fixture": "recall-past-session",
+	"setup": [
+		{
+			"path": "gemini-scribe/Agent-Sessions/greenhouse-irrigation-planning.md",
+			"from": "_seed/recall-past-session/prior-session.md"
+		}
+	],
+	"expectedTools": ["recall_sessions"],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "contains", "value": ["drip irrigation", "drip lines", "drip"] },
+		{
+			"type": "regex",
+			"value": "fungal|leaf rot|disease",
+			"flags": "i"
+		},
+		{
+			"type": "judge",
+			"criteria": "The response recalls the prior session's decision: the team chose drip irrigation lines for the new greenhouse, and overhead misters were rejected because they raised the risk of fungal leaf rot. If the decision is wrong, fabricated, or the rejection rationale is missing, answer NO. NOTE: the recall_sessions tool only returns session titles and paths; the agent is expected to also read the session file to retrieve the decision detail."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

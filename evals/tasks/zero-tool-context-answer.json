@@ -1,0 +1,18 @@
+{
+	"id": "zero-tool-context-answer",
+	"description": "A single note on the context shelf holds several facts; the agent should answer all of them directly from context without any read tools",
+	"userMessage": "Without using any tools, answer from the file already in my context: what is the name of the keeper of Marrow Point Light, in what year was the light first lit, how tall is the tower, and what is the name of the keeper's cat?",
+	"difficulty": "T2",
+	"category": "context-shelf",
+	"fixture": "zero-tool-context-answer",
+	"contextFiles": ["eval-scratch/lighthouse-keeper.md"],
+	"forbiddenTools": ["read_file", "find_files_by_name", "find_files_by_content", "list_files"],
+	"outputMatchers": [
+		{ "type": "contains", "value": ["Orsa Penhallow", "Penhallow"] },
+		{ "type": "contains", "value": "1864" },
+		{ "type": "contains", "value": "112" },
+		{ "type": "contains", "value": "Tuppence" }
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

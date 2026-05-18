@@ -1,0 +1,25 @@
+{
+	"id": "append-preserve",
+	"description": "Append a single line to a note while preserving existing content",
+	"userMessage": "Add a new entry to the bottom of the list in 'eval-scratch/changelog.md'. The new line should read exactly: '- 2024-04-08: Added a dry-run mode that previews changes without writing.' Append it — do not rewrite the file.",
+	"difficulty": "T2",
+	"category": "edit",
+	"fixture": "append-log",
+	"expectedTools": ["append_content"],
+	"forbiddenTools": ["write_file", "delete_file"],
+	"outputMatchers": [{ "type": "contains", "value": "dry-run" }],
+	"vaultAssertions": [
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/changelog.md",
+			"value": [
+				"2024-03-19: Fixed a crash when syncing folders with very long path names.",
+				"2024-01-12: Initial release with one-way folder sync.",
+				"- 2024-04-08: Added a dry-run mode that previews changes without writing."
+			]
+		},
+		{ "type": "fileUnchanged", "path": "eval-scratch/readme.md", "fixture": "readme.md" }
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

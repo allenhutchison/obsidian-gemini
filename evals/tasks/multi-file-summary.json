@@ -2,6 +2,8 @@
 	"id": "multi-file-summary",
 	"description": "Read multiple files and produce a synthesized summary",
 	"userMessage": "Read all the notes in the eval-scratch folder and write a brief summary of what topics they cover. Don't create any new files — just tell me.",
+	"difficulty": "T2",
+	"category": "synthesis",
 	"fixture": "multi-file-summary",
 	"expectedTools": ["read_file"],
 	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content"],

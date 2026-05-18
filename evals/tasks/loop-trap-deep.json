@@ -1,0 +1,21 @@
+{
+	"id": "loop-trap-deep",
+	"description": "Large cyclic-link corpus of eight notes; the asked fact is absent and the agent must bail cleanly without spinning",
+	"userMessage": "Read the notes in the eval-scratch folder about the eight houses of the Tinmarket Guild. Based ONLY on those notes and not on prior knowledge: which house holds the guild's Founders' Seal? If the notes do not contain this information, say so explicitly. Do not guess and do not keep re-reading the same notes.",
+	"difficulty": "T3",
+	"category": "robustness",
+	"fixture": "loop-trap-deep",
+	"contextFiles": [],
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "regex",
+			"value": "(do(es)? not (?:contain|mention|state|say|specify|name|identify)|not (?:in|available|mentioned|specified|stated|named)|no (?:information|mention|record)|cannot (?:find|determine)|don't (?:have|contain|mention)|isn't (?:in|mentioned)|notes do not|never (?:mention|state))",
+			"flags": "i"
+		}
+	],
+	"toolCallBudget": 14,
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

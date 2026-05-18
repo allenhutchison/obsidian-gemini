@@ -1,0 +1,19 @@
+{
+	"id": "filtered-sum",
+	"description": "Sum budgets only for active projects owned by Priya Raman",
+	"userMessage": "Look at the project notes in the eval-scratch folder. Find every project whose YAML frontmatter has BOTH `status: active` AND `owner: Priya Raman`. Add up the `budget` field for only those projects and tell me the total as a plain number. Do not count projects that are planned or archived, and do not count projects owned by anyone else. Do not modify any files.",
+	"difficulty": "T4",
+	"category": "aggregation",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "regex", "value": "6[,.]?800[,.]?000|6 ?800 ?000|\\$?6\\.8 ?(million|M)\\b", "flags": "i" },
+		{
+			"type": "judge",
+			"criteria": "The total is 6,800,000 (6.8 million), computed from exactly two projects: Project Halcyon (4,200,000) and Project Beacon (2,600,000). The response must NOT include Project Vesper (it is planned, not active) even though Priya Raman owns it. If the answer includes Vesper's budget or reaches a total of 12,200,000, answer NO."
+		}
+	],
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

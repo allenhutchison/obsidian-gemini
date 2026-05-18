@@ -1,0 +1,32 @@
+{
+	"id": "constrained-summary",
+	"description": "Summarize a dated expedition log under hard constraints: exactly 5 bullets, ordered by date, each short, excluding the wildlife topic",
+	"userMessage": "Read eval-scratch/expedition-log.md and summarize the expedition as a bulleted list. Follow these rules exactly: produce EXACTLY 5 bullet points; each bullet must be a single short line of 15 words or fewer; order the bullets chronologically by date earliest first; and completely exclude anything about wildlife or animal sightings. Reply with only the bullet list, no heading or extra commentary.",
+	"difficulty": "T3",
+	"category": "synthesis",
+	"fixture": "constrained-summary",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{
+			"type": "regex",
+			"value": "^\\s*(?:[-*]|\\d+\\.)\\s+.+(?:\\r?\\n\\s*(?:[-*]|\\d+\\.)\\s+.+){4}\\s*$",
+			"flags": "m"
+		},
+		{
+			"type": "regex",
+			"value": "^(?:(?!wildlife|snow hare|ptarmigan|animal).)*$",
+			"flags": "is"
+		},
+		{
+			"type": "regex",
+			"value": ["[Bb]ase camp", "[Dd]rill", "[Cc]revasse", "[Mm]eltwater|[Ss]ampl"]
+		},
+		{
+			"type": "judge",
+			"criteria": "The response is a list of exactly 5 bullet points summarizing the Thornwick Glacier expedition. The bullets appear in chronological order (base camp established, ice core drilling, crevasse survey, meltwater sampling, base camp decommissioned). Each bullet is concise. There is no mention of wildlife, snow hares, or ptarmigan. If any of these constraints is violated, answer NO."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

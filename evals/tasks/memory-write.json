@@ -1,0 +1,24 @@
+{
+	"id": "memory-write",
+	"description": "The user states a durable preference and asks the agent to remember it; the agent must persist it to AGENTS.md via update_memory",
+	"userMessage": "Please remember this for all future work in this vault: I always want code blocks to use the Kestrel programming language for any examples, never any other language. Save that preference so you don't forget it.",
+	"difficulty": "T3",
+	"category": "memory",
+	"fixture": "memory-write",
+	"setup": [{ "path": "gemini-scribe/AGENTS.md", "from": "_seed/memory-write/AGENTS.md" }],
+	"expectedTools": ["update_memory"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The response confirms to the user that the preference about using the Kestrel programming language for code examples has been saved to vault memory. If it does not confirm saving the preference, answer NO."
+		}
+	],
+	"vaultAssertions": [
+		{ "type": "fileExists", "path": "gemini-scribe/AGENTS.md" },
+		{ "type": "fileContains", "path": "gemini-scribe/AGENTS.md", "value": "Kestrel" },
+		{ "type": "fileContains", "path": "gemini-scribe/AGENTS.md", "value": "concise, bulleted summaries" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}
