@@ -118,6 +118,17 @@ describe('evaluateVaultAssertions — frontmatterEquals', () => {
 		});
 		expect(r.pass).toBe(false);
 	});
+
+	it('fails closed on a malformed assertion missing key or value', () => {
+		const noKey = evaluateVaultAssertions([{ type: 'frontmatterEquals', path: 'a.md', value: 'x' }] as any, {
+			'a.md': file('body', { status: 'archived' }),
+		});
+		expect(noKey.pass).toBe(false);
+		const noValue = evaluateVaultAssertions([{ type: 'frontmatterEquals', path: 'a.md', key: 'missing' }] as any, {
+			'a.md': file('body', { status: 'archived' }),
+		});
+		expect(noValue.pass).toBe(false);
+	});
 });
 
 describe('evaluateVaultAssertions — fileUnchanged', () => {

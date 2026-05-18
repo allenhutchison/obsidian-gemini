@@ -91,6 +91,12 @@ function evaluateOne(a, vaultState, fixtureMap) {
 		}
 
 		case 'frontmatterEquals': {
+			// Fail closed on a malformed assertion: without an explicit key and
+			// value, `deepEqual(undefined, undefined)` would be true and invent
+			// a free solve.
+			if (typeof a.key !== 'string' || a.key.length === 0 || !Object.prototype.hasOwnProperty.call(a, 'value')) {
+				return { ok: false, reason: 'malformed frontmatterEquals assertion: missing key or value' };
+			}
 			if (!state.exists) return { ok: false, reason: 'file missing' };
 			const fm = state.frontmatter ?? {};
 			const actual = fm[a.key];

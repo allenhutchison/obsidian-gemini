@@ -125,7 +125,7 @@ async function handleInterrupt(signal, exitCode) {
 				console.warn(`  cancel warning: ${err.message}`);
 			}
 			try {
-				await cleanup(inflight.sessionInfo?.historyPath, inflight.setupPaths);
+				await cleanup(inflight.sessionInfo?.historyPath, inflight.setupManifest);
 			} catch (err) {
 				console.warn(`  cleanup warning: ${err.message}`);
 			}
@@ -249,7 +249,9 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 	const taskTimeoutMs = task.timeoutMs ?? DEFAULT_TASK_TIMEOUT_MS;
 	let timedOut = false;
 	const setupEntries = await loadSetupFiles(task.setup);
-	const setupPaths = setupEntries.map((e) => e.path);
+	// Populated only after seeding actually runs — cleanup must never touch a
+	// path the harness didn't seed (it could be a pre-existing user file).
+	let setupManifest = [];
 
 	try {
 		// 1. Setup fixtures
@@ -265,8 +267,12 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		// 1b. Setup files outside eval-scratch (memory / recall / skill tasks).
 		if (setupEntries.length > 0) {
 			console.log(`  Seeding ${setupEntries.length} setup file(s)...`);
-			await setupExtraFiles(setupEntries);
-			if (currentTaskInfo) currentTaskInfo.setupPaths = setupPaths;
+			const setupResult = await setupExtraFiles(setupEntries);
+			// Record what was actually seeded *before* surfacing any error, so
+			// the finally-block cleanup can still undo a partial seed.
+			setupManifest = setupResult.manifest;
+			if (currentTaskInfo) currentTaskInfo.setupManifest = setupManifest;
+			if (setupResult.error) throw new Error(`setupExtraFiles failed: ${setupResult.error}`);
 		}
 
 		// 2. Create session
@@ -413,7 +419,7 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		await removeCollector();
 		if (!keepArtifacts) {
 			try {
-				await cleanup(sessionInfo?.historyPath, setupPaths);
+				await cleanup(sessionInfo?.historyPath, setupManifest);
 			} catch (e) {
 				console.warn(`  Cleanup warning: ${e.message}`);
 			}

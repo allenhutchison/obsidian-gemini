@@ -5,9 +5,14 @@
 	"difficulty": "T3",
 	"category": "memory",
 	"fixture": "memory-write",
-	"setup": [{ "path": "gemini-scribe/AGENTS.md", "from": "_seed/memory-write/AGENTS.md" }],
+	"setup": [
+		{
+			"path": "gemini-scribe/AGENTS.md",
+			"from": "_seed/memory-write/AGENTS.md"
+		}
+	],
 	"expectedTools": ["update_memory"],
-	"forbiddenTools": ["delete_file"],
+	"forbiddenTools": ["delete_file", "write_file", "append_content", "move_file", "update_frontmatter"],
 	"outputMatchers": [
 		{
 			"type": "judge",
@@ -15,9 +20,20 @@
 		}
 	],
 	"vaultAssertions": [
-		{ "type": "fileExists", "path": "gemini-scribe/AGENTS.md" },
-		{ "type": "fileContains", "path": "gemini-scribe/AGENTS.md", "value": "Kestrel" },
-		{ "type": "fileContains", "path": "gemini-scribe/AGENTS.md", "value": "concise, bulleted summaries" }
+		{
+			"type": "fileExists",
+			"path": "gemini-scribe/AGENTS.md"
+		},
+		{
+			"type": "fileContains",
+			"path": "gemini-scribe/AGENTS.md",
+			"value": "Kestrel"
+		},
+		{
+			"type": "fileContains",
+			"path": "gemini-scribe/AGENTS.md",
+			"value": "concise, bulleted summaries"
+		}
 	],
 	"maxTurns": 20,
 	"timeoutMs": 120000

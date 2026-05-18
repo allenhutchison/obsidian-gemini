@@ -6,7 +6,7 @@
 	"category": "retrieval",
 	"fixture": "smoke-list-files",
 	"expectedTools": ["find_files_by_name"],
-	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content"],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
 	"outputMatchers": [
 		{
 			"type": "contains",

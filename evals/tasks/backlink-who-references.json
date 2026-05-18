@@ -9,9 +9,22 @@
 	"expectedTools": [],
 	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
 	"outputMatchers": [
-		{ "type": "contains", "value": ["Stellar Cartography Survey"] },
-		{ "type": "contains", "value": ["The Vell Comet"] },
-		{ "type": "contains", "value": ["Astronomer Pell Rourke"] }
+		{
+			"type": "contains",
+			"value": ["Stellar Cartography Survey"]
+		},
+		{
+			"type": "contains",
+			"value": ["The Vell Comet"]
+		},
+		{
+			"type": "contains",
+			"value": ["Astronomer Pell Rourke"]
+		},
+		{
+			"type": "judge",
+			"criteria": "Answer YES only if the response names exactly these three notes as linking to Harrowgate Observatory: 'Stellar Cartography Survey', 'The Vell Comet', and 'Astronomer Pell Rourke'. Answer NO if it omits any of the three, or if it lists any additional note (such as Telescope Array Specifications, Dunmoor Radio Array, or Groundwell Planetarium) as linking to the Observatory."
+		}
 	],
 	"maxTurns": 20,
 	"timeoutMs": 120000

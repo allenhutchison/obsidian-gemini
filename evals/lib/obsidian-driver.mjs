@@ -197,31 +197,47 @@ export async function setupFixtures(files) {
  * history file for recall tests, or a `Skills/<name>/SKILL.md` package.
  *
  * `entries` is an array of `{ path, content }`. Parent folders are created as
- * needed. The runner is responsible for tracking these paths and removing them
- * during cleanup.
+ * needed. Returns `{ manifest, error }` where `manifest` records, per seeded
+ * path, whether the file pre-existed and (if so) its original content — so
+ * `cleanup` can restore an overwritten file instead of deleting a real user
+ * file. On partial failure the manifest still covers everything seeded so far
+ * and `error` carries the message; the caller cleans up, then surfaces it.
  */
 export async function setupExtraFiles(entries) {
-	if (!Array.isArray(entries) || entries.length === 0) return;
-	await obsidianEval(
+	if (!Array.isArray(entries) || entries.length === 0) return { manifest: [], error: null };
+	const result = await obsidianEval(
 		`(async () => {
     const vault = app.vault;
     const entries = ${JSON.stringify(entries)};
-    for (const e of entries) {
-      const parts = e.path.split('/');
-      parts.pop();
-      let dir = '';
-      for (const part of parts) {
-        dir = dir ? dir + '/' + part : part;
-        if (!vault.getAbstractFileByPath(dir)) await vault.createFolder(dir);
+    const manifest = [];
+    try {
+      for (const e of entries) {
+        const parts = e.path.split('/');
+        parts.pop();
+        let dir = '';
+        for (const part of parts) {
+          dir = dir ? dir + '/' + part : part;
+          if (!vault.getAbstractFileByPath(dir)) await vault.createFolder(dir);
+        }
+        const existing = vault.getAbstractFileByPath(e.path);
+        if (existing) {
+          let original = null;
+          try { original = await vault.read(existing); } catch { original = null; }
+          manifest.push({ path: e.path, preExisted: true, originalContent: original });
+          await vault.modify(existing, e.content);
+        } else {
+          manifest.push({ path: e.path, preExisted: false, originalContent: null });
+          await vault.create(e.path, e.content);
+        }
       }
-      const existing = vault.getAbstractFileByPath(e.path);
-      if (existing) await vault.modify(existing, e.content);
-      else await vault.create(e.path, e.content);
+      return JSON.stringify({ manifest, error: null });
+    } catch (err) {
+      return JSON.stringify({ manifest, error: err instanceof Error ? err.message : String(err) });
     }
-    return '"setup ready"';
   })()`,
 		{ timeoutMs: 15_000 }
 	);
+	return JSON.parse(result);
 }
 
 /**
@@ -329,13 +345,17 @@ export async function cancelAgent() {
 
 /**
  * Clean up eval artifacts: scratch folder, session history, and any files
- * placed outside `eval-scratch/` by `setupExtraFiles` (passed via `extraPaths`
- * so a memory / recall / skill task doesn't leak `AGENTS.md` or a seeded
- * session into the user's vault).
+ * placed outside `eval-scratch/` by `setupExtraFiles`.
+ *
+ * `setupManifest` is the array returned by `setupExtraFiles` —
+ * `{ path, preExisted, originalContent }` per seeded file. A path the seeding
+ * step *created* is deleted; a path that *pre-existed* is restored to its
+ * original content rather than deleted, so a memory / recall / skill task
+ * never destroys a real user file (e.g. an `AGENTS.md` already in the vault).
  */
-export async function cleanup(sessionHistoryPath, extraPaths = []) {
+export async function cleanup(sessionHistoryPath, setupManifest = []) {
 	const pathLiteral = JSON.stringify(sessionHistoryPath || '');
-	const extraLiteral = JSON.stringify(Array.isArray(extraPaths) ? extraPaths : []);
+	const manifestLiteral = JSON.stringify(Array.isArray(setupManifest) ? setupManifest : []);
 	await obsidianEval(
 		`(async () => {
     const vault = app.vault;
@@ -348,10 +368,16 @@ export async function cleanup(sessionHistoryPath, extraPaths = []) {
       const hist = vault.getAbstractFileByPath(histPath);
       if (hist) await vault.delete(hist);
     }
-    // Delete setup files placed outside eval-scratch.
-    for (const p of ${extraLiteral}) {
-      const f = vault.getAbstractFileByPath(p);
-      if (f) await vault.delete(f, true);
+    // Undo setup files placed outside eval-scratch: restore overwritten files,
+    // delete files the harness created.
+    for (const m of ${manifestLiteral}) {
+      const f = vault.getAbstractFileByPath(m.path);
+      if (!f) continue;
+      if (m.preExisted) {
+        if (typeof m.originalContent === 'string') await vault.modify(f, m.originalContent);
+      } else {
+        await vault.delete(f, true);
+      }
     }
     return '"cleaned"';
   })()`,

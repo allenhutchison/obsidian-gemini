@@ -6,7 +6,7 @@
 	"category": "synthesis",
 	"fixture": "timeline-build",
 	"expectedTools": ["read_file"],
-	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content"],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file"],
 	"outputMatchers": [
 		{
 			"type": "regex",

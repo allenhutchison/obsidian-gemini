@@ -12,6 +12,10 @@
 			"type": "regex",
 			"value": "Cinder[\\s\\S]*Talos[\\s\\S]*Halcyon[\\s\\S]*Quill[\\s\\S]*Beacon",
 			"flags": "i"
+		},
+		{
+			"type": "judge",
+			"criteria": "Answer YES only if the response lists exactly these five projects, in this order, as the five most recently updated: Cinder, Talos, Halcyon, Quill, Beacon. Answer NO if the order differs, a different project appears, or fewer/more than five are listed."
 		}
 	],
 	"maxTurns": 20,

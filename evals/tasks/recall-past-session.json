@@ -11,10 +11,13 @@
 			"from": "_seed/recall-past-session/prior-session.md"
 		}
 	],
-	"expectedTools": ["recall_sessions"],
+	"expectedTools": ["recall_sessions", "read_file"],
 	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content"],
 	"outputMatchers": [
-		{ "type": "contains", "value": ["drip irrigation", "drip lines", "drip"] },
+		{
+			"type": "contains",
+			"value": ["drip irrigation", "drip lines", "drip"]
+		},
 		{
 			"type": "regex",
 			"value": "fungal|leaf rot|disease",

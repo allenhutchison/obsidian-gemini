@@ -5,12 +5,26 @@
 	"difficulty": "T2",
 	"category": "memory",
 	"fixture": "memory-honor",
-	"setup": [{ "path": "gemini-scribe/AGENTS.md", "from": "_seed/memory-honor/AGENTS.md" }],
-	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file"],
+	"setup": [
+		{
+			"path": "gemini-scribe/AGENTS.md",
+			"from": "_seed/memory-honor/AGENTS.md"
+		}
+	],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file", "update_memory"],
 	"outputMatchers": [
-		{ "type": "contains", "value": ["Records/Meetings", "Records/Meetings/"] },
-		{ "type": "contains", "value": ["YYYY.MM.DD", "2031.07.04"] },
-		{ "type": "contains", "value": "MTG -" },
+		{
+			"type": "contains",
+			"value": ["Records/Meetings", "Records/Meetings/"]
+		},
+		{
+			"type": "contains",
+			"value": ["YYYY.MM.DD", "2031.07.04"]
+		},
+		{
+			"type": "contains",
+			"value": "MTG -"
+		},
 		{
 			"type": "judge",
 			"criteria": "The response correctly tells the user, based on the vault's stored conventions, that meeting notes go in the Records/Meetings/ folder, the date format is YYYY.MM.DD, and the title should be prefixed with 'MTG -'. If any of the three conventions is wrong or missing, answer NO."

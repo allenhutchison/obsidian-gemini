@@ -7,11 +7,35 @@
 	"fixture": "structured-note",
 	"expectedTools": ["write_file"],
 	"forbiddenTools": ["delete_file"],
-	"outputMatchers": [{ "type": "contains", "value": "Kickoff Meeting" }],
+	"outputMatchers": [
+		{
+			"type": "contains",
+			"value": "Kickoff Meeting"
+		}
+	],
 	"vaultAssertions": [
-		{ "type": "fileExists", "path": "eval-scratch/Kickoff Meeting.md" },
-		{ "type": "frontmatterEquals", "path": "eval-scratch/Kickoff Meeting.md", "key": "type", "value": "meeting" },
-		{ "type": "frontmatterEquals", "path": "eval-scratch/Kickoff Meeting.md", "key": "status", "value": "draft" },
+		{
+			"type": "fileExists",
+			"path": "eval-scratch/Kickoff Meeting.md"
+		},
+		{
+			"type": "frontmatterEquals",
+			"path": "eval-scratch/Kickoff Meeting.md",
+			"key": "type",
+			"value": "meeting"
+		},
+		{
+			"type": "frontmatterEquals",
+			"path": "eval-scratch/Kickoff Meeting.md",
+			"key": "status",
+			"value": "draft"
+		},
+		{
+			"type": "fileMatches",
+			"path": "eval-scratch/Kickoff Meeting.md",
+			"value": "^attendees\\s*:",
+			"flags": "m"
+		},
 		{
 			"type": "fileMatches",
 			"path": "eval-scratch/Kickoff Meeting.md",

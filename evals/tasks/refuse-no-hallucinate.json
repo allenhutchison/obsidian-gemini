@@ -13,6 +13,10 @@
 			"type": "regex",
 			"value": "(do(es)? not (?:contain|mention|state|say|specify|name)|not (?:in|available|mentioned|specified|stated|named)|no (?:information|mention|record)|cannot find|don't (?:have|contain|mention)|isn't (?:in|mentioned)|notes do not)",
 			"flags": "i"
+		},
+		{
+			"type": "judge",
+			"criteria": "Answer YES only if the response explicitly states the notes do not provide BOTH (a) the identity of the clockmaker who built the orrery and (b) the year it was completed. Answer NO if it invents a clockmaker name, supplies a specific completion year, or flags only one of the two facts as missing."
 		}
 	],
 	"maxTurns": 20,

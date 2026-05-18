@@ -8,7 +8,11 @@
 	"expectedTools": [],
 	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
 	"outputMatchers": [
-		{ "type": "regex", "value": "28[,.]?950[,.]?000|28 ?950 ?000|\\$?28\\.95 ?(million|M)\\b", "flags": "i" }
+		{
+			"type": "regex",
+			"value": "28[,.]?950[,.]?000|28 ?950 ?000",
+			"flags": "i"
+		}
 	],
 	"maxTurns": 20,
 	"timeoutMs": 120000
