@@ -232,8 +232,8 @@ Precisely rewrite any portion of your text with AI assistance. This feature prov
 
 1.  **Select Text:** Highlight the text you want to rewrite in any Markdown file.
 2.  **Access Rewrite Options:**
-    - **Right-click method:** Right-click the selected text and choose "Rewrite with Gemini"
-    - **Command method:** Use the command palette (Ctrl/Cmd + P) and search for "Rewrite selected text with AI"
+    - **Right-click method:** Right-click the selected text and choose "Gemini Scribe: Rewrite Text..."
+    - **Command method:** Use the command palette (Ctrl/Cmd + P) and search for "Rewrite text with AI"
 3.  **Provide Instructions:** A modal will appear showing your selected text. Enter instructions for how you'd like it rewritten (e.g., "Make this more concise", "Fix grammar", "Make it more formal").
 4.  **Review and Apply:** The AI will rewrite only your selected text based on your instructions, maintaining consistency with the surrounding content.
 
