@@ -267,28 +267,13 @@ export class LifecycleService {
 
 		// RAG uses Gemini's File Search Store cloud API — not available on Ollama in Phase 1.
 		if (plugin.settings.provider === 'ollama') {
-			if (plugin.ragIndexing) {
-				const { getRagTools } = await import('../tools/rag-search-tool');
-				for (const tool of getRagTools()) {
-					plugin.toolRegistry?.unregisterTool(tool.name);
-				}
-				await plugin.ragIndexing.destroy();
-				plugin.ragIndexing = null;
-			}
+			await this.disposeRagIndexing();
 			return;
 		}
 
 		if (plugin.settings.ragIndexing.enabled) {
 			// Clean up existing instance if re-initializing
-			if (plugin.ragIndexing) {
-				const { getRagTools } = await import('../tools/rag-search-tool');
-				const ragTools = getRagTools();
-				for (const tool of ragTools) {
-					plugin.toolRegistry?.unregisterTool(tool.name);
-				}
-				await plugin.ragIndexing.destroy();
-				plugin.ragIndexing = null;
-			}
+			await this.disposeRagIndexing();
 
 			try {
 				plugin.ragIndexing = new RagIndexingService(plugin);
@@ -347,14 +332,24 @@ export class LifecycleService {
 			}
 		} else if (plugin.ragIndexing) {
 			// RAG was disabled - clean up
-			const { getRagTools } = await import('../tools/rag-search-tool');
-			const ragTools = getRagTools();
-			for (const tool of ragTools) {
-				plugin.toolRegistry?.unregisterTool(tool.name);
-			}
-			await plugin.ragIndexing.destroy();
-			plugin.ragIndexing = null;
+			await this.disposeRagIndexing();
 		}
+	}
+
+	/**
+	 * Unregister RAG search tools and tear down the indexing service.
+	 * No-op when RAG indexing was never initialized.
+	 */
+	private async disposeRagIndexing(): Promise<void> {
+		const plugin = this.plugin;
+		if (!plugin.ragIndexing) return;
+
+		const { getRagTools } = await import('../tools/rag-search-tool');
+		for (const tool of getRagTools()) {
+			plugin.toolRegistry?.unregisterTool(tool.name);
+		}
+		await plugin.ragIndexing.destroy();
+		plugin.ragIndexing = null;
 	}
 
 	/**
