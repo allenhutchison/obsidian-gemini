@@ -15,7 +15,7 @@ import {
 import { withTimeout } from '../utils/timeout';
 import type ObsidianGemini from '../main';
 import { Logger } from '../utils/logger';
-import { Notice } from 'obsidian';
+import { Notice, Platform } from 'obsidian';
 
 /** Marker on MCPServerState.error so the online listener knows which servers to retry. */
 const OFFLINE_ERROR_PREFIX = 'Machine is offline';
@@ -229,7 +229,7 @@ export class MCPManager {
 		const useHttp = isHttpTransport(config);
 
 		// Stdio transport requires process spawning — desktop only
-		if (!useHttp && (this.plugin.app as any).isMobile) {
+		if (!useHttp && Platform.isMobile) {
 			this.logger.warn('MCP: Stdio server connections are not supported on mobile');
 			return;
 		}
@@ -436,7 +436,7 @@ export class MCPManager {
 		const useHttp = isHttpTransport(config);
 
 		// Stdio transport requires process spawning — desktop only
-		if (!useHttp && (this.plugin.app as any).isMobile) {
+		if (!useHttp && Platform.isMobile) {
 			throw new Error('Stdio MCP server connections are not supported on mobile');
 		}
 
@@ -523,7 +523,7 @@ export class MCPManager {
 			// Start the callback server BEFORE connect so it's already listening
 			// when the SDK opens the browser for OAuth authorization.
 			// Desktop-only: mobile won't have http.createServer.
-			if (!(this.plugin.app as any).isMobile) {
+			if (!Platform.isMobile) {
 				try {
 					const { startOAuthCallbackServer } = await import('./mcp-oauth-callback');
 					callbackHandle = await startOAuthCallbackServer();

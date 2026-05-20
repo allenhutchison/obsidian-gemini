@@ -1,3 +1,4 @@
+import { Platform } from 'obsidian';
 import { MCPServerConfig, MCPConnectionStatus, MCP_TRANSPORT_STDIO, MCP_TRANSPORT_HTTP } from '../../src/mcp/types';
 import { TimeoutError } from '../../src/utils/timeout';
 import { MCP_CONNECT_TIMEOUT_MS, MCP_LIST_TOOLS_TIMEOUT_MS } from '../../src/mcp/mcp-constants';
@@ -69,11 +70,10 @@ vi.mock('../../src/mcp/mcp-oauth-callback', () => ({
 import { MCPManager } from '../../src/mcp/mcp-manager';
 
 // Mock plugin
-function createMockPlugin(isMobile = false) {
+function createMockPlugin() {
 	const secrets = new Map<string, string>();
 	return {
 		app: {
-			isMobile,
 			secretStorage: {
 				getSecret: vi.fn((id: string) => secrets.get(id) ?? null),
 				setSecret: vi.fn((id: string, value: string) => secrets.set(id, value)),
@@ -177,26 +177,38 @@ describe('MCPManager', () => {
 		});
 
 		it('should block stdio on mobile', async () => {
-			const mobilePlugin = createMockPlugin(true);
-			const mobileManager = new MCPManager(mobilePlugin);
+			const originalIsMobile = Platform.isMobile;
+			try {
+				(Platform as any).isMobile = true;
+				const mobilePlugin = createMockPlugin();
+				const mobileManager = new MCPManager(mobilePlugin);
 
-			await mobileManager.connectServer(createStdioConfig());
+				await mobileManager.connectServer(createStdioConfig());
 
-			expect(MockStdioClientTransport).not.toHaveBeenCalled();
-			expect(mobilePlugin.logger.warn).toHaveBeenCalledWith(
-				expect.stringContaining('Stdio server connections are not supported on mobile')
-			);
+				expect(MockStdioClientTransport).not.toHaveBeenCalled();
+				expect(mobilePlugin.logger.warn).toHaveBeenCalledWith(
+					expect.stringContaining('Stdio server connections are not supported on mobile')
+				);
+			} finally {
+				(Platform as any).isMobile = originalIsMobile;
+			}
 		});
 
 		it('should allow HTTP on mobile', async () => {
-			const mobilePlugin = createMockPlugin(true);
-			const mobileManager = new MCPManager(mobilePlugin);
-			mockListTools.mockResolvedValueOnce({ tools: [] });
+			const originalIsMobile = Platform.isMobile;
+			try {
+				(Platform as any).isMobile = true;
+				const mobilePlugin = createMockPlugin();
+				const mobileManager = new MCPManager(mobilePlugin);
+				mockListTools.mockResolvedValueOnce({ tools: [] });
 
-			await mobileManager.connectServer(createHttpConfig());
+				await mobileManager.connectServer(createHttpConfig());
 
-			expect(MockStreamableHTTPClientTransport).toHaveBeenCalled();
-			expect(mockClientConnect).toHaveBeenCalled();
+				expect(MockStreamableHTTPClientTransport).toHaveBeenCalled();
+				expect(mockClientConnect).toHaveBeenCalled();
+			} finally {
+				(Platform as any).isMobile = originalIsMobile;
+			}
 		});
 
 		it('should register discovered tools', async () => {
@@ -249,23 +261,35 @@ describe('MCPManager', () => {
 		});
 
 		it('should throw for stdio on mobile', async () => {
-			const mobilePlugin = createMockPlugin(true);
-			const mobileManager = new MCPManager(mobilePlugin);
+			const originalIsMobile = Platform.isMobile;
+			try {
+				(Platform as any).isMobile = true;
+				const mobilePlugin = createMockPlugin();
+				const mobileManager = new MCPManager(mobilePlugin);
 
-			await expect(mobileManager.queryToolsForConfig(createStdioConfig())).rejects.toThrow(
-				'Stdio MCP server connections are not supported on mobile'
-			);
+				await expect(mobileManager.queryToolsForConfig(createStdioConfig())).rejects.toThrow(
+					'Stdio MCP server connections are not supported on mobile'
+				);
+			} finally {
+				(Platform as any).isMobile = originalIsMobile;
+			}
 		});
 
 		it('should allow HTTP queries on mobile', async () => {
-			const mobilePlugin = createMockPlugin(true);
-			const mobileManager = new MCPManager(mobilePlugin);
-			mockListTools.mockResolvedValueOnce({ tools: [{ name: 'remote_tool' }] });
+			const originalIsMobile = Platform.isMobile;
+			try {
+				(Platform as any).isMobile = true;
+				const mobilePlugin = createMockPlugin();
+				const mobileManager = new MCPManager(mobilePlugin);
+				mockListTools.mockResolvedValueOnce({ tools: [{ name: 'remote_tool' }] });
 
-			const tools = await mobileManager.queryToolsForConfig(createHttpConfig());
+				const tools = await mobileManager.queryToolsForConfig(createHttpConfig());
 
-			expect(tools).toEqual(['remote_tool']);
-			expect(MockStreamableHTTPClientTransport).toHaveBeenCalled();
+				expect(tools).toEqual(['remote_tool']);
+				expect(MockStreamableHTTPClientTransport).toHaveBeenCalled();
+			} finally {
+				(Platform as any).isMobile = originalIsMobile;
+			}
 		});
 
 		it('should throw when http config has no URL', async () => {
