@@ -189,6 +189,15 @@ export const Menu = vi.fn().mockImplementation(function () {
 	};
 });
 
+// Mutable Platform flags so individual tests can flip `isMobile` via
+// `(Platform as any).isMobile = true` (with try/finally to restore).
+export const Platform = {
+	isMobile: false,
+	isDesktop: true,
+	isMobileApp: false,
+	isDesktopApp: true,
+};
+
 export class AbstractInputSuggest {
 	constructor() {
 		this.inputEl = null;
