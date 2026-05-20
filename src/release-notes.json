@@ -1,12 +1,19 @@
 {
 	"4.9.0": {
-		"title": "🧱 Gemini Scribe 4.9 - Per-provider package layout",
+		"title": "🪝 Gemini Scribe 4.9 - Lifecycle Hooks, Stable Prefix Caching, Custom Endpoint",
 		"highlights": [
-			"🧱 Model provider code reorganized under src/api/providers/{gemini,ollama}/ so new providers can be added without piling siblings into a flat directory",
-			"🏷️ Public SDK rename: GeminiClientFactory → ModelClientFactory (breaking change for plugins that build on the Gemini Scribe SDK)",
-			"📦 OllamaClient and OllamaClientConfig are now exported from the public SDK barrel alongside the Gemini equivalents"
+			"🪝 Lifecycle hooks engine — define hooks that fire on Obsidian events and run summarize/rewrite/command/agent actions, with full management UI and a settings toggle",
+			"⚡ Prompt-prefix caching stabilized — the agent's system instruction is now byte-stable across turns and tool follow-ups, restoring Gemini's implicit prefix cache so long sessions stop reprocessing history each turn (closes #763)",
+			"🌐 Custom API endpoint — new setting to point Gemini Scribe at a proxy or alternate Gemini-compatible endpoint, covering all SDK call sites",
+			"📐 Collapsible settings sections — settings page reorganized into foldable sections (foundation for closing #430)",
+			"🎯 Agent sidebar actions as commands — new sidebar actions registered as Obsidian commands, keyboard-bindable (closes #785)",
+			"🔐 MCP hardening — stdio server env vars now live in Obsidian's encrypted SecretStorage; offline or unreachable MCP servers no longer block plugin load",
+			"🛡️ Unified tool-policy — Sessions, Projects, Scheduled Tasks, and Hooks now share one policy model so per-feature permissions behave consistently",
+			"📂 Two-phase context compaction — long conversations now truncate older turns first, summarize second, for cleaner handling near the token limit",
+			"🧱 Per-provider package layout — src/api/providers/{gemini,ollama}/; GeminiClientFactory → ModelClientFactory (breaking change for plugins building on the SDK; OllamaClient and OllamaClientConfig are now in the public barrel)",
+			"🧪 Eval-harness maturity — baseline-compare with auto-bless, richer rubric matchers plus LLM-as-judge fallback, per-task timeouts, clean interrupt handling, and an eval-harness skill"
 		],
-		"details": "Internal refactor that moves each model provider into its own package under src/api/providers/. The factory class was renamed from GeminiClientFactory to ModelClientFactory to match its actual responsibility (it dispatches to either provider based on the configured backend); the legacy name has been removed. Gemini-only services (image generation, deep research, Google Search, web fetch) are unchanged and continue to use the @google/genai SDK directly — a later refactor will introduce provider-agnostic interfaces for those capabilities."
+		"details": "This release introduces a lifecycle-hooks engine — define hooks that fire on Obsidian events (note modify, command palette, etc.) and run summarize/rewrite/command/agent actions with a dedicated management UI. Agent prompt-prefix caching has been stabilized (closes #763): the system instruction is now byte-stable across turns and tool follow-ups, restoring Gemini's implicit prefix cache so long chat or coding sessions no longer reprocess history each turn. A custom API endpoint setting lets you point Gemini Scribe at a proxy or alternate Gemini-compatible host. MCP servers are now resilient on offline machines and store stdio env vars in Obsidian's encrypted SecretStorage. Tool-policy is unified across Sessions, Projects, Scheduled Tasks, and Hooks. The settings UI gains collapsible sections, and new agent sidebar actions are registered as Obsidian commands. Under the hood: per-provider packages under src/api/providers/ (GeminiClientFactory → ModelClientFactory; breaking for SDK consumers, OllamaClient now in the public barrel), two-phase context compaction, tool-result payload truncation in older history, retry/backoff applied to non-chat direct SDK calls, and substantial eval-harness maturity work (baseline-compare, LLM-judge fallback, per-task timeouts, clean interrupt) plus broader test coverage."
 	},
 	"4.8.0": {
 		"title": "✨ Gemini Scribe 4.8 - Scheduled & Background Tasks, Ollama, Activity Modal",
