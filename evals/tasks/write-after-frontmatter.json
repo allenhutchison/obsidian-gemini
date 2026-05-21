@@ -19,7 +19,7 @@
 		{
 			"type": "fileMatches",
 			"path": "eval-scratch/quarterly-review.md",
-			"value": "^---[\\s\\S]+^---[\\s\\S]+^##\\s+Summary\\s*$",
+			"value": "^---[\\s\\S]+?^---[\\s\\S]+^##\\s+Summary\\s*$(?![\\s\\S]*^##\\s)",
 			"flags": "m"
 		},
 		{ "type": "fileUnchanged", "path": "eval-scratch/sidebar.md", "fixture": "sidebar.md" }
