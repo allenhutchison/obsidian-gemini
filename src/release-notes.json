@@ -1,4 +1,11 @@
 {
+	"4.9.1": {
+		"title": "🔧 Gemini Scribe 4.9.1 - Vault Context Fix",
+		"highlights": [
+			"🗂️ Fixed the \"Initialize Vault Context\" button — it sent a malformed model request and failed to generate AGENTS.md"
+		],
+		"details": "This patch fixes the \"Initialize Vault Context\" / \"Update Vault Context\" button in the agent view. The request sent to the model was shaped so that the analysis prompt was discarded, causing the model to return a conversational reply that failed to parse and never produced an AGENTS.md file. The request is now built correctly and the feature works again."
+	},
 	"4.9.0": {
 		"title": "🪝 Gemini Scribe 4.9 - Lifecycle Hooks, Stable Prefix Caching, Custom Endpoint",
 		"highlights": [
