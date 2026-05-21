@@ -77,9 +77,6 @@ export class VaultAnalyzer {
 			const response = await modelApi.generateModelResponse({
 				prompt: analysisPrompt,
 				model: this.plugin.settings.chatModelName,
-				userMessage: '',
-				conversationHistory: [],
-				renderContent: false,
 			});
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('analyze');
@@ -133,9 +130,6 @@ export class VaultAnalyzer {
 			const examplePromptsResponse = await modelApi.generateModelResponse({
 				prompt: examplePromptsPrompt,
 				model: this.plugin.settings.chatModelName,
-				userMessage: '',
-				conversationHistory: [],
-				renderContent: false,
 			});
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('examples');

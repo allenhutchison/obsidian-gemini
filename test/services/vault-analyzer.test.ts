@@ -585,6 +585,25 @@ describe('VaultAnalyzer', () => {
 			expect(mockPlugin.examplePrompts.write).toHaveBeenCalledWith([{ icon: '✨', text: 'Test prompt' }]);
 		});
 
+		it('should send pure BaseModelRequest (no userMessage/conversationHistory)', async () => {
+			// Regression: GeminiClient.buildGenerateContentParams discriminates on
+			// `'userMessage' in request`. Including an (even empty) userMessage or
+			// conversationHistory makes it an ExtendedModelRequest, which discards
+			// `prompt` and sends the chat identity system prompt instead — the model
+			// then replies with a greeting that fails JSON parsing.
+			setupModelMock('{"vaultOverview":"overview"}', '[{"icon":"✨","text":"Test prompt"}]');
+
+			await analyzer.initializeAgentsMemory();
+
+			for (const call of mockModelApi.generateModelResponse.mock.calls) {
+				const request = call[0];
+				expect(request).not.toHaveProperty('userMessage');
+				expect(request).not.toHaveProperty('conversationHistory');
+				expect(typeof request.prompt).toBe('string');
+				expect(request.prompt.length).toBeGreaterThan(0);
+			}
+		});
+
 		it('should set step failed and show Notice when parseAnalysisResponse returns null', async () => {
 			setupModelMock('totally not json!!!', '[{"icon":"✨","text":"Test prompt"}]');
 
