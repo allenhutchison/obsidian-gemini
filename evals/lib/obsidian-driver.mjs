@@ -9,30 +9,50 @@ const OBSIDIAN_BIN = 'obsidian';
 const EVAL_TIMEOUT_MS = 10_000;
 
 /**
+ * Completion predicate for `runWithTimeout`: true once stdout holds a
+ * complete `=> ` reply line.
+ *
+ * The obsidian CLI prints log noise, then a single line beginning with
+ * `=>` carrying the reply value. The child often produces that line and
+ * then hangs without exiting (#776). Every harness eval returns a
+ * single-line `JSON.stringify(...)` payload, so the reply is complete the
+ * moment its `=>` line is newline-terminated — at which point the harness
+ * no longer needs the (frequently wedged) child to exit.
+ */
+export function hasCompleteReply(stdout) {
+	const idx = stdout.search(/^=>/m);
+	return idx !== -1 && stdout.indexOf('\n', idx) !== -1;
+}
+
+/**
  * Run a JavaScript expression inside the live Obsidian process via CLI.
  * Returns the stringified result.
  *
  * The CLI may interleave log lines (e.g. `[Gemini Scribe] …`) before the
  * actual reply line, so we locate the line beginning with `=> ` and treat
- * everything from there to the end of stdout as the reply value. This
- * preserves multi-line reply support (when the returned value contains
- * real newlines) while filtering out plugin/console log noise.
+ * everything from there to the end of stdout as the reply value, filtering
+ * out plugin/console log noise.
  *
- * Uses `runWithTimeout` (not `execFile`) for the underlying spawn — the
- * default `execFile` timeout sends SIGTERM and waits for the child to
- * exit, but we observed during the multi-model baselines (#776) that
- * the obsidian CLI sometimes ignores SIGTERM and keeps the parent
- * blocked forever. `runWithTimeout` escalates to SIGKILL after a grace
- * window so the parent always settles within bounded time.
+ * Uses `runWithTimeout` (not `execFile`) for the underlying spawn, with a
+ * `readyWhen` predicate that settles the call the moment the `=>` reply is
+ * on stdout. The obsidian CLI child routinely produces its result and then
+ * hangs without exiting (#776); settling on output rather than process
+ * exit means a wedged child no longer burns the timeout or discards a
+ * reply the harness already received. `runWithTimeout` SIGKILLs the
+ * leftover child in the background.
  */
 export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
-	const result = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], { timeoutMs });
+	const result = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], {
+		timeoutMs,
+		readyWhen: hasCompleteReply,
+	});
 	// Surface CLI failures before parsing. A real failure (auth, plugin not
 	// loaded, malformed eval) tends to land on stderr with a non-zero exit;
 	// without this guard we'd fall through to the "=> reply" parser and
 	// throw a confusing "did not return a reply" error that obscures the
-	// actual cause.
-	if (result.code !== 0 || result.signal !== null) {
+	// actual cause. Skipped when we settled early on a complete reply — the
+	// process had not exited yet, so `code`/`signal` are null by design.
+	if (!result.readyEarly && (result.code !== 0 || result.signal !== null)) {
 		const stderrTail = result.stderr ? ` Stderr: ${result.stderr.slice(0, 300)}` : '';
 		throw new Error(`obsidian eval failed (exit=${result.code}, signal=${result.signal}).${stderrTail}`);
 	}

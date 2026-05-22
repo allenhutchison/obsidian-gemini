@@ -37,10 +37,17 @@ export const SIGKILL_GRACE_MS = 1_000;
 export const DEFAULT_MAX_OUTPUT_BYTES = 1024 * 1024;
 
 /**
- * Run `bin args` and resolve with `{ stdout, stderr, code, signal }` once
- * the child exits cleanly. On timeout, rejects with a descriptive Error
+ * Run `bin args` and resolve with `{ stdout, stderr, code, signal, readyEarly }`
+ * once the child exits cleanly. On timeout, rejects with a descriptive Error
  * after the SIGTERM → SIGKILL escalation. On output exceeding
  * `maxOutputBytes`, kills the child immediately with SIGKILL and rejects.
+ *
+ * When `readyWhen` is supplied, the call resolves as soon as that predicate
+ * accepts the accumulated stdout — without waiting for the child to exit —
+ * and the child is SIGKILLed in the background. This is the escape hatch for
+ * children that produce their full output and then hang without exiting
+ * (the obsidian CLI; see #776). Results from that path carry `readyEarly:
+ * true` and a null `code`/`signal`, since the process had not exited yet.
  *
  * @param {string} bin - Executable to spawn
  * @param {string[]} args - Arguments
@@ -48,12 +55,14 @@ export const DEFAULT_MAX_OUTPUT_BYTES = 1024 * 1024;
  * @param {number} [opts.timeoutMs=10000] - Hard deadline for child completion
  * @param {string|null} [opts.stdinData=null] - Optional bytes to write to stdin (then closed)
  * @param {number} [opts.maxOutputBytes=1048576] - Combined stdout+stderr ceiling
- * @returns {Promise<{ stdout: string, stderr: string, code: number|null, signal: string|null }>}
+ * @param {((stdout: string) => boolean)|null} [opts.readyWhen=null] - Optional
+ *   completion predicate; when it accepts the stdout-so-far, resolve early.
+ * @returns {Promise<{ stdout: string, stderr: string, code: number|null, signal: string|null, readyEarly: boolean }>}
  */
 export function runWithTimeout(
 	bin,
 	args,
-	{ timeoutMs = 10_000, stdinData = null, maxOutputBytes = DEFAULT_MAX_OUTPUT_BYTES } = {}
+	{ timeoutMs = 10_000, stdinData = null, maxOutputBytes = DEFAULT_MAX_OUTPUT_BYTES, readyWhen = null } = {}
 ) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(bin, args, {
@@ -76,7 +85,7 @@ export function runWithTimeout(
 		child.stderr.setEncoding('utf-8');
 
 		// Drop chunks once we've crossed maxOutputBytes; the kill is in flight,
-		// further accumulation just wastes memory while we wait for `close`.
+		// further accumulation just wastes memory while we wait for `exit`.
 		const accumulate = (which) => (chunk) => {
 			if (outputExceeded) return;
 			outputBytes += Buffer.byteLength(chunk, 'utf-8');
@@ -85,12 +94,28 @@ export function runWithTimeout(
 				try {
 					child.kill('SIGKILL');
 				} catch {
-					// Already gone; close event will fire shortly.
+					// Already gone; the exit event will fire shortly.
 				}
 				return;
 			}
 			if (which === 'stdout') stdout += chunk;
 			else stderr += chunk;
+
+			// Content-based completion. The obsidian CLI child can write its
+			// full reply to stdout and then hang without ever exiting (#776);
+			// waiting for `exit` then just burns the timeout and discards a
+			// reply we already have. Once `readyWhen` accepts the stdout so
+			// far, settle now and SIGKILL the wedged child in the background.
+			if (which === 'stdout' && readyWhen && !settled && readyWhen(stdout)) {
+				settle(() => {
+					try {
+						child.kill('SIGKILL');
+					} catch {
+						// Already gone.
+					}
+					resolve({ stdout, stderr, code: child.exitCode, signal: child.signalCode, readyEarly: true });
+				});
+			}
 		};
 		child.stdout.on('data', accumulate('stdout'));
 		child.stderr.on('data', accumulate('stderr'));
@@ -155,7 +180,7 @@ export function runWithTimeout(
 						new Error(`Command \`${bin} ${args.join(' ')}\` timed out after ${timeoutMs}ms${escalation}.${stderrTail}`)
 					);
 				}
-				resolve({ stdout, stderr, code, signal });
+				resolve({ stdout, stderr, code, signal, readyEarly: false });
 			});
 		});
 	});
