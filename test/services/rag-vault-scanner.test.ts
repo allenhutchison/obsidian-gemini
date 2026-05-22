@@ -362,6 +362,31 @@ describe('RagVaultScanner', () => {
 			expect(plugin.saveData).toHaveBeenCalled();
 		});
 
+		it('should create a new store when the saved store name is invalid (malformed)', async () => {
+			const mockAi = {
+				fileSearchStores: {
+					get: vi
+						.fn()
+						.mockRejectedValue(
+							new Error('400 INVALID_ARGUMENT: FileSearchStore name does not match expected format or is too long.')
+						),
+					create: vi.fn().mockResolvedValue({ name: 'fileSearchStores/auto-generated-id' }),
+				},
+			};
+			const callbacks = createMockCallbacks({ getAi: vi.fn().mockReturnValue(mockAi) });
+			const plugin = createMockPlugin();
+			// A custom name entered in an older plugin version that Google rejects as malformed.
+			plugin.settings.ragIndexing.fileSearchStoreName = 'Scribe-RAG-index';
+			const { scanner } = createScanner({ plugin, callbacks });
+
+			await scanner.ensureFileSearchStore();
+
+			// The bad name is discarded and a fresh, server-assigned store is created.
+			expect(mockAi.fileSearchStores.create).toHaveBeenCalled();
+			expect(plugin.settings.ragIndexing.fileSearchStoreName).toBe('fileSearchStores/auto-generated-id');
+			expect(plugin.saveData).toHaveBeenCalled();
+		});
+
 		it('should rethrow non-404 errors when verifying existing store', async () => {
 			const mockAi = {
 				fileSearchStores: {

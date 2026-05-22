@@ -136,9 +136,21 @@ export class RagVaultScanner {
 				const errorMessage = error instanceof Error ? error.message : String(error);
 				const isNotFound =
 					errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('NOT_FOUND');
+				// A saved store name can be structurally invalid — e.g. a custom name
+				// entered via an older plugin version that the File Search API rejects
+				// as malformed (the resource ID is server-assigned and cannot be chosen).
+				// Treat that like "not found": discard the bad name and create a fresh
+				// store instead of failing indexing permanently.
+				const isInvalidName =
+					errorMessage.includes('INVALID_ARGUMENT') || errorMessage.includes('does not match expected format');
 
 				if (isNotFound) {
 					this.plugin.logger.warn('RAG Indexing: Store no longer exists, creating new store');
+				} else if (isInvalidName) {
+					this.plugin.logger.warn(
+						`RAG Indexing: Saved search index name "${existingStoreName}" is invalid, creating a new store`
+					);
+					this.plugin.settings.ragIndexing.fileSearchStoreName = null;
 				} else {
 					// For other errors (network, auth, etc.), log and re-throw
 					this.plugin.logger.error('RAG Indexing: Failed to verify store', error);

@@ -16,19 +16,10 @@ export async function renderRAGSettings(
 	});
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
-	// The store-name field uses `pendingStoreNameMessage` to queue a confirmation
-	// notice that fires only after the save actually succeeds, so a failed save
-	// doesn't surface a misleading success toast.
-	let pendingStoreNameMessage: string | null = null;
 	const debouncedSave = debounce(
 		async () => {
-			const messageToShow = pendingStoreNameMessage;
-			pendingStoreNameMessage = null;
 			try {
 				await plugin.saveSettings();
-				if (messageToShow) {
-					new Notice(messageToShow);
-				}
 			} catch (error) {
 				plugin.logger.error('Failed to save RAG settings:', error);
 				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
@@ -157,18 +148,19 @@ export async function renderRAGSettings(
 					})
 			);
 
-		// Store name setting
+		// Store name display. The Google File Search API assigns the store's
+		// resource ID automatically — it cannot be chosen — so this is shown
+		// read-only, and only once a store actually exists.
 		const currentStoreName = plugin.settings.ragIndexing.fileSearchStoreName;
 		const storeNameSetting = new Setting(containerEl)
 			.setName('Search index name')
 			.setDesc(
 				currentStoreName
-					? `Current: ${currentStoreName}. To change, disable indexing and delete the store first.`
-					: 'Will be auto-generated on first index, or enter a custom name.'
+					? 'The Google File Search store identifier, assigned automatically. Delete the index to start over with a new one.'
+					: 'Assigned automatically by Google File Search when indexing starts.'
 			);
 
 		if (currentStoreName) {
-			// Store exists - show read-only with copy button
 			storeNameSetting
 				.addText((text) => {
 					text.inputEl.style.width = '30ch';
@@ -184,26 +176,6 @@ export async function renderRAGSettings(
 							new Notice('Store name copied to clipboard');
 						})
 				);
-		} else {
-			// No store yet - allow editing
-			storeNameSetting.addText((text) => {
-				text.inputEl.style.width = '30ch';
-				text
-					.setPlaceholder('Auto-generated if empty')
-					.setValue('')
-					.onChange((value) => {
-						const trimmedValue = value.trim();
-						const normalizedStoreName = trimmedValue.length > 0 ? trimmedValue : null;
-						plugin.settings.ragIndexing.fileSearchStoreName = normalizedStoreName;
-						// Queue the confirmation notice for the next save completion. Reusing
-						// the section-level debouncedSave keeps all RAG saves on a single 300 ms
-						// queue so rapid edits across fields collapse into one saveSettings call.
-						pendingStoreNameMessage = normalizedStoreName
-							? 'Store name set. Will be used when indexing starts.'
-							: 'Store name cleared.';
-						debouncedSave();
-					});
-			});
 		}
 
 		new Setting(containerEl)

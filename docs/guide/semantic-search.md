@@ -33,7 +33,7 @@ Initial indexing time depends on vault size. A vault with 1,000 notes typically 
 | Setting                   | Default        | Description                                                                                                                     |
 | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | **Enable vault indexing** | Off            | Master toggle for the feature                                                                                                   |
-| **Search index name**     | Auto-generated | Google File Search Store identifier (auto-set to `obsidian-{vault-name}`)                                                       |
+| **Search index name**     | Auto-generated | Read-only. The Google File Search store identifier, assigned automatically when indexing starts                                 |
 | **Auto-sync changes**     | On             | Automatically update the index when files change                                                                                |
 | **Include attachments**   | Off            | Index PDFs, Office documents, and other supported file types beyond markdown                                                    |
 | **Exclude folders**       | None           | Folders to skip during indexing (one per line). System folders like `.obsidian` and the plugin state folder are always excluded |
