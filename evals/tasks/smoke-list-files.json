@@ -2,10 +2,17 @@
 	"id": "smoke-list-files",
 	"description": "Trivial smoke test: find files in the eval-scratch folder",
 	"userMessage": "Use the find_files_by_name tool to list all markdown files in the eval-scratch folder. Report their names.",
+	"difficulty": "T1",
+	"category": "retrieval",
 	"fixture": "smoke-list-files",
 	"expectedTools": ["find_files_by_name"],
-	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content"],
-	"outputMatchers": [{ "type": "contains", "value": "hello-world" }],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "contains",
+			"value": "hello-world"
+		}
+	],
 	"maxTurns": 10,
 	"timeoutMs": 60000
 }

@@ -1,0 +1,22 @@
+{
+	"id": "timeline-build",
+	"description": "Events with dates are scattered across six notes; the agent builds a chronological timeline",
+	"userMessage": "The eval-scratch folder contains six notes about the history of the Greywater Press, each describing one event with a year. Read them all and reply with a chronological timeline, earliest year first. Format each line as the year followed by the event, like '1981 — ...'. Reply with only the timeline.",
+	"difficulty": "T3",
+	"category": "synthesis",
+	"fixture": "timeline-build",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "regex",
+			"value": "1981[\\s\\S]*1987[\\s\\S]*1994[\\s\\S]*2003[\\s\\S]*2011[\\s\\S]*2021"
+		},
+		{
+			"type": "judge",
+			"criteria": "The response is a chronological timeline of the Greywater Press with six entries in ascending year order. Each year is paired with the correct event: 1981 founding by Adela Quist; 1987 first bestseller 'Salt and Lantern'; 1994 warehouse fire; 2003 e-book imprint / digital shift; 2011 Adela Quist retires and sells to an employee cooperative; 2021 fortieth-anniversary reissue. If any year is paired with the wrong event or the order is wrong, answer NO."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

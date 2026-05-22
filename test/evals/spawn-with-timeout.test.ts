@@ -63,6 +63,44 @@ describe('runWithTimeout — timeout escalation', () => {
 	}, 10_000);
 });
 
+describe('runWithTimeout — readyWhen early settle', () => {
+	it('resolves as soon as readyWhen accepts stdout, without waiting for exit', async () => {
+		// The #776 shape: the child writes its full reply, then hangs forever
+		// ignoring SIGTERM. Without readyWhen this would burn the whole
+		// timeout; with it, we settle on the output we already have.
+		const [bin, args] = nodeScript(
+			`process.stdout.write("=> done\\n"); process.on("SIGTERM", () => {}); setInterval(() => {}, 1000);`
+		);
+		const start = Date.now();
+		const result = await runWithTimeout(bin, args, {
+			timeoutMs: 30_000,
+			readyWhen: (out) => /^=>/m.test(out) && out.includes('\n'),
+		});
+		const elapsed = Date.now() - start;
+		expect(result.stdout).toContain('=> done');
+		expect(result.readyEarly).toBe(true);
+		// Settled on output — not on the 30s timeout, not on process exit.
+		expect(elapsed).toBeLessThan(5_000);
+	}, 10_000);
+
+	it('marks readyEarly false when the child exits before readyWhen matches', async () => {
+		const [bin, args] = nodeScript(`process.stdout.write("=> ok\\n");`);
+		const result = await runWithTimeout(bin, args, {
+			timeoutMs: 5_000,
+			readyWhen: () => false, // never matches — must fall through to exit
+		});
+		expect(result.readyEarly).toBe(false);
+		expect(result.code).toBe(0);
+	});
+
+	it('omitting readyWhen preserves exit-based settlement', async () => {
+		const [bin, args] = nodeScript(`process.stdout.write("hello");`);
+		const result = await runWithTimeout(bin, args, { timeoutMs: 5_000 });
+		expect(result.readyEarly).toBe(false);
+		expect(result.stdout).toBe('hello');
+	});
+});
+
 describe('runWithTimeout — output ceiling', () => {
 	it('rejects when combined stdout+stderr exceeds maxOutputBytes', async () => {
 		// Write 200 KB of stdout — well above our 10 KB cap.

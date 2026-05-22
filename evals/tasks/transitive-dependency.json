@@ -1,0 +1,24 @@
+{
+	"id": "transitive-dependency",
+	"description": "Resolve the full set of projects depending on Project Cinder, directly or transitively",
+	"userMessage": "Using only the notes in the eval-scratch folder, work out the project dependency graph. Which projects depend on Project Cinder, either directly or transitively (a depends on Cinder if it depends on something that depends on Cinder)? List every such project. Do not include Cinder itself. Do not modify any files.",
+	"difficulty": "T4",
+	"category": "multi-hop",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "contains", "value": ["Talos"] },
+		{ "type": "contains", "value": ["Beacon"] },
+		{ "type": "contains", "value": ["Aster"] },
+		{ "type": "contains", "value": ["Halcyon"] },
+		{ "type": "contains", "value": ["Vesper"] },
+		{ "type": "contains", "value": ["Garnet"] },
+		{
+			"type": "judge",
+			"criteria": "The answer identifies exactly six projects that depend on Project Cinder directly or transitively: Talos, Beacon, and Aster (direct); Halcyon (via Talos and Beacon); Vesper (via Halcyon and Talos); and Garnet (via Aster). It must NOT list Quill, Drift, Onyx, or Cinder itself as depending on Cinder. If Quill, Drift, or Onyx is included, answer NO."
+		}
+	],
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

@@ -1,0 +1,20 @@
+{
+	"id": "lost-in-the-middle",
+	"description": "Single ~2500-word note; target fact buried in the middle",
+	"userMessage": "Read the note in the eval-scratch folder about the Tannhill Glassworks. According to that note, what specific defect caused the recall of the Aurora-line tumblers? Answer in one sentence with the specific defect.",
+	"difficulty": "T3",
+	"category": "long-context",
+	"fixture": "lost-in-the-middle",
+	"contextFiles": ["eval-scratch/tannhill-glassworks.md"],
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "regex",
+			"value": "(hairline (?:stress )?(?:fracture|crack)|stress (?:fracture|crack)).*(base|foot)|(base|foot).*(hairline (?:stress )?(?:fracture|crack)|stress (?:fracture|crack))",
+			"flags": "i"
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

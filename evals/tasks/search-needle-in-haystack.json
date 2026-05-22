@@ -1,0 +1,17 @@
+{
+	"id": "search-needle-in-haystack",
+	"description": "Locate a unique phrase planted in one note among a large corpus",
+	"userMessage": "Somewhere in the eval-scratch folder, one note describes the root cause of a power dropout found during qualification testing. The root cause was traced to a specific defect in a specific connector. What was the defect, and which connector was it in? Answer in one short sentence. Do not modify any files.",
+	"difficulty": "T3",
+	"category": "retrieval",
+	"fixture": "meridian-corpus",
+	"expectedTools": ["find_files_by_content"],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "regex", "value": "thermal[\\s-]*grease void", "flags": "i" },
+		{ "type": "regex", "value": "connector\\s+J7", "flags": "i" }
+	],
+	"toolCallBudget": 4,
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

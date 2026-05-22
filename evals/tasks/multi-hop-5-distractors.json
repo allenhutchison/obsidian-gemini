@@ -1,0 +1,19 @@
+{
+	"id": "multi-hop-5-distractors",
+	"description": "Five-hop fact chain with a decoy link at each hop",
+	"userMessage": "Answer this using only the notes in the eval-scratch folder. Start from the owner of Project Halcyon. Find that person's mentor at Meridian. Find the company that mentor worked at before joining Meridian. Find that company's flagship aircraft program. What was the call sign of that aircraft? Answer with just the call sign and a one-sentence trace of how you got there. Do not modify any files.",
+	"difficulty": "T4",
+	"category": "multi-hop",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "regex", "value": "Bluejay[\\s-]*7", "flags": "i" },
+		{
+			"type": "judge",
+			"criteria": "The answer is the call sign Bluejay-7. The trace must go: Project Halcyon's owner is Priya Raman -> her mentor is Helena Voss -> Voss previously worked at Northwind Dynamics -> that company's flagship aircraft was the Skylark Testbed -> its call sign was Bluejay-7. If the answer instead follows Northwind Robotics or the Skylark Relay decoys, or gives any call sign other than Bluejay-7, answer NO."
+		}
+	],
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

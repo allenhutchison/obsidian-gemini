@@ -1,0 +1,20 @@
+{
+	"id": "long-note-span",
+	"description": "Single long note; answer combines a fact near the start with one near the end",
+	"userMessage": "Read the note in the eval-scratch folder about the Korrin Expedition. The note states how many crew members departed at the start, and separately states how many were lost during the journey. Using only those two figures from the note, how many crew members completed the expedition? Show the subtraction and give the final number.",
+	"difficulty": "T4",
+	"category": "long-context",
+	"fixture": "long-note-span",
+	"contextFiles": ["eval-scratch/korrin-expedition.md"],
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{ "type": "regex", "value": "(41|forty[ -]one)", "flags": "i" },
+		{
+			"type": "judge",
+			"criteria": "Answer YES only if the response computes the number of crew who completed the expedition by subtracting losses from the departing count (47 minus 6) and arrives at 41. Answer NO if it uses different numbers, gets a different result, or does not show the subtraction."
+		}
+	],
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

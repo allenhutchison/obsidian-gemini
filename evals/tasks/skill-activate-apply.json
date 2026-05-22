@@ -1,0 +1,25 @@
+{
+	"id": "skill-activate-apply",
+	"description": "A seeded skill defines a non-guessable tracking-code format; the agent must activate the skill and apply its procedure",
+	"userMessage": "I need a Quill Shipping Company tracking code for a parcel that weighs 320 grams and is bound for the port of Dunley, whose three-letter port code is dly. Give me the tracking code in the company's official format.",
+	"difficulty": "T3",
+	"category": "skills",
+	"fixture": "skill-activate-apply",
+	"setup": [
+		{
+			"path": "gemini-scribe/Skills/shipping-code-formatter/SKILL.md",
+			"from": "_seed/skill-activate-apply/SKILL.md"
+		}
+	],
+	"expectedTools": ["activate_skill"],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "contains", "value": "QSC-DLY-0320-X9" },
+		{
+			"type": "judge",
+			"criteria": "The response provides the tracking code QSC-DLY-0320-X9, built by following the skill's procedure: fixed prefix QSC-, uppercase port code DLY, a hyphen, the zero-padded four-digit weight 0320, and the suffix -X9. If the code does not exactly match QSC-DLY-0320-X9, answer NO."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

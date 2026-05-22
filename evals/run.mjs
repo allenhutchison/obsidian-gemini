@@ -24,6 +24,8 @@ import {
 	verifyPlugin,
 	createSession,
 	setupFixtures,
+	setupExtraFiles,
+	readVaultState,
 	addContextFiles,
 	sendMessage,
 	readAndClearLastSendError,
@@ -36,6 +38,7 @@ import {
 } from './lib/obsidian-driver.mjs';
 import { installCollector, peekCollector, readAndClearCollector, removeCollector } from './lib/collector.mjs';
 import { scoreTask } from './lib/scorer.mjs';
+import { vaultAssertionPaths } from './lib/vault-assertions.mjs';
 import { taskHasJudgeMatcher } from './lib/matchers.mjs';
 import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
@@ -86,6 +89,8 @@ function parseArgs() {
 //     the run stopped.
 let originalChatModel = null;
 let modelWasOverridden = false;
+let originalChatHistory = null;
+let chatHistoryWasForced = false;
 let currentTaskInfo = null; // { taskId, sessionInfo, runIndex, repeat } when a task is mid-flight
 let completedTaskCount = 0;
 let totalPlannedTasks = 0;
@@ -99,6 +104,16 @@ async function restoreChatModel() {
 		console.error(`Failed to restore chatModelName: ${err.message}`);
 	}
 	modelWasOverridden = false;
+}
+
+async function restoreChatHistory() {
+	if (!chatHistoryWasForced) return;
+	try {
+		await setSetting('chatHistory', originalChatHistory);
+	} catch (err) {
+		console.error(`Failed to restore chatHistory: ${err.message}`);
+	}
+	chatHistoryWasForced = false;
 }
 
 async function handleInterrupt(signal, exitCode) {
@@ -122,7 +137,7 @@ async function handleInterrupt(signal, exitCode) {
 				console.warn(`  cancel warning: ${err.message}`);
 			}
 			try {
-				await cleanup(inflight.sessionInfo?.historyPath);
+				await cleanup(inflight.sessionInfo?.historyPath, inflight.setupManifest);
 			} catch (err) {
 				console.warn(`  cleanup warning: ${err.message}`);
 			}
@@ -141,6 +156,7 @@ async function handleInterrupt(signal, exitCode) {
 			console.warn(`  collector cleanup warning: ${err.message}`);
 		}
 		await restoreChatModel();
+		await restoreChatHistory();
 		process.exit(exitCode);
 	}
 }
@@ -185,6 +201,31 @@ async function loadFixtureFiles(fixtureName) {
 	return result;
 }
 
+/**
+ * Resolve a task's `setup` entries into `{ path, content }` records ready for
+ * `setupExtraFiles`. Each entry is `{ path, from }` where `from` is a file
+ * path relative to `evals/fixtures/`. Lets memory / recall / skill tasks
+ * pre-seed plugin state that lives outside `eval-scratch/`.
+ */
+async function loadSetupFiles(setup) {
+	if (!Array.isArray(setup) || setup.length === 0) return [];
+	const entries = [];
+	for (const item of setup) {
+		if (!item || typeof item.path !== 'string' || typeof item.from !== 'string') {
+			throw new Error(`Invalid setup entry: ${JSON.stringify(item)} (expected { path, from })`);
+		}
+		const sourcePath = join(EVALS_DIR, 'fixtures', item.from);
+		let content;
+		try {
+			content = await readFile(sourcePath, 'utf8');
+		} catch (err) {
+			throw new Error(`Failed to read setup source "${sourcePath}": ${err.message}`);
+		}
+		entries.push({ path: item.path, content });
+	}
+	return entries;
+}
+
 function getGitSha() {
 	try {
 		return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
@@ -220,6 +261,10 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 	const startTime = Date.now();
 	const taskTimeoutMs = task.timeoutMs ?? DEFAULT_TASK_TIMEOUT_MS;
 	let timedOut = false;
+	const setupEntries = await loadSetupFiles(task.setup);
+	// Populated only after seeding actually runs — cleanup must never touch a
+	// path the harness didn't seed (it could be a pre-existing user file).
+	let setupManifest = [];
 
 	try {
 		// 1. Setup fixtures
@@ -227,6 +272,20 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		if (fixtureFiles.length > 0) {
 			console.log(`  Setting up ${fixtureFiles.length} fixture files...`);
 			await setupFixtures(fixtureFiles);
+		}
+		// `fileUnchanged` assertions compare a post-run file against its
+		// original fixture content; key the fixtures by name for that lookup.
+		const fixtureMap = Object.fromEntries(fixtureFiles.map((f) => [f.name, f.content]));
+
+		// 1b. Setup files outside eval-scratch (memory / recall / skill tasks).
+		if (setupEntries.length > 0) {
+			console.log(`  Seeding ${setupEntries.length} setup file(s)...`);
+			const setupResult = await setupExtraFiles(setupEntries);
+			// Record what was actually seeded *before* surfacing any error, so
+			// the finally-block cleanup can still undo a partial seed.
+			setupManifest = setupResult.manifest;
+			if (currentTaskInfo) currentTaskInfo.setupManifest = setupManifest;
+			if (setupResult.error) throw new Error(`setupExtraFiles failed: ${setupResult.error}`);
 		}
 
 		// 2. Create session
@@ -306,9 +365,24 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 		const modelResponse = timedOut ? '' : await getLastModelResponse();
 		const durationMs = Date.now() - startTime;
 
-		// 6. Score
+		// 6. Snapshot vault state for any `vaultAssertions`, then score.
+		// State-based verification — what the agent *did* to the vault, not
+		// just what it said (see vault-assertions.mjs).
+		let vaultState = {};
+		const assertionPaths = vaultAssertionPaths(task.vaultAssertions);
+		if (assertionPaths.length > 0) {
+			try {
+				vaultState = await readVaultState(assertionPaths);
+			} catch (err) {
+				console.warn(`  Vault state read warning: ${err.message}`);
+			}
+		}
+
 		const modelName = await getModelName();
-		const result = await scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn);
+		const result = await scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn, {
+			vaultState,
+			fixtureMap,
+		});
 		if (timedOut) result.timedOut = true;
 		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
 		const verdict = timedOut ? 'TIMEOUT' : result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED';
@@ -347,15 +421,31 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 				judge_attempted: judgeAttempted,
 				judge_available: judgeAvailable,
 				judge_skipped: judgeAttempted && !judgeAvailable,
+				vault_assertions_pass: false,
+				vault_assertion_details: [],
+				tool_budget_ok: true,
 			},
 		};
 	} finally {
 		// 7. Cleanup — must run even if session creation failed before sessionInfo
 		// was assigned, otherwise eval-scratch leaks into subsequent runs.
-		await removeCollector();
+		// removeCollector() goes through the obsidian-eval CLI bridge, which can
+		// intermittently hang (#776). A between-task teardown hiccup must never
+		// abort the whole sweep — retry once, then continue. The next task's
+		// installCollector() reaps any collector/subscribers left behind.
+		try {
+			await removeCollector();
+		} catch (e) {
+			console.warn(`  Collector teardown warning: ${e.message} — retrying once.`);
+			try {
+				await removeCollector();
+			} catch (e2) {
+				console.warn(`  Collector teardown failed again: ${e2.message} — continuing.`);
+			}
+		}
 		if (!keepArtifacts) {
 			try {
-				await cleanup(sessionInfo?.historyPath);
+				await cleanup(sessionInfo?.historyPath, setupManifest);
 			} catch (e) {
 				console.warn(`  Cleanup warning: ${e.message}`);
 			}
@@ -413,6 +503,18 @@ async function main() {
 		console.log(`Overriding chatModelName: ${originalChatModel ?? '(unset)'} → ${model}`);
 	}
 
+	// The scorer reads the model's response out of the session history file
+	// (getLastModelResponse → getHistoryForSession). That file is only written
+	// when the `chatHistory` setting is on; with it off, every output matcher
+	// scores against an empty string and `solve` is uniformly 0. Force it on
+	// for the run and restore the operator's value on exit.
+	originalChatHistory = await getSetting('chatHistory');
+	if (originalChatHistory !== true) {
+		await setSetting('chatHistory', true);
+		chatHistoryWasForced = true;
+		console.log(`Forcing chatHistory: ${originalChatHistory ?? '(unset)'} → true (required for response scoring)`);
+	}
+
 	try {
 		// Load tasks
 		const tasks = await loadTasks(taskFilter);
@@ -463,7 +565,7 @@ async function main() {
 					completedTaskCount += 1;
 				}
 			}
-			taskResults.push(aggregateTaskRuns(task.id, runs));
+			taskResults.push(aggregateTaskRuns(task, runs));
 		}
 
 		// Build result, write, print
@@ -479,6 +581,7 @@ async function main() {
 		await maybeCompareToBaseline(result);
 	} finally {
 		await restoreChatModel();
+		await restoreChatHistory();
 	}
 }
 

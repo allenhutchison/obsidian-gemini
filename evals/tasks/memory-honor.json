@@ -1,0 +1,35 @@
+{
+	"id": "memory-honor",
+	"description": "AGENTS.md is seeded with vault preferences; the agent should honor them when answering, without being told them in the message",
+	"userMessage": "I'm about to write up a new meeting note. Before I do — which folder should it go in, what date format should I use, and how should the title be prefixed? Don't create any files, just tell me, and follow whatever conventions this vault already has.",
+	"difficulty": "T2",
+	"category": "memory",
+	"fixture": "memory-honor",
+	"setup": [
+		{
+			"path": "gemini-scribe/AGENTS.md",
+			"from": "_seed/memory-honor/AGENTS.md"
+		}
+	],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file", "update_memory"],
+	"outputMatchers": [
+		{
+			"type": "contains",
+			"value": ["Records/Meetings", "Records/Meetings/"]
+		},
+		{
+			"type": "contains",
+			"value": ["YYYY.MM.DD", "2031.07.04"]
+		},
+		{
+			"type": "contains",
+			"value": "MTG -"
+		},
+		{
+			"type": "judge",
+			"criteria": "The response correctly tells the user, based on the vault's stored conventions, that meeting notes go in the Records/Meetings/ folder, the date format is YYYY.MM.DD, and the title should be prefixed with 'MTG -'. If any of the three conventions is wrong or missing, answer NO."
+		}
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

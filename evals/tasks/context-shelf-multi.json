@@ -1,0 +1,25 @@
+{
+	"id": "context-shelf-multi",
+	"description": "Three notes on the context shelf each hold one fact; the agent must combine all three to answer without any tools",
+	"userMessage": "Using only the three files already in my context, answer in a single sentence: who leads the Halverston Observatory upgrade, what is the total approved budget, and on what date does the mirror assembly installation begin? Do not use any tools.",
+	"difficulty": "T3",
+	"category": "context-shelf",
+	"fixture": "context-shelf-multi",
+	"contextFiles": [
+		"eval-scratch/observatory-budget.md",
+		"eval-scratch/observatory-schedule.md",
+		"eval-scratch/observatory-staff.md"
+	],
+	"forbiddenTools": ["read_file", "find_files_by_name", "find_files_by_content", "list_files"],
+	"outputMatchers": [
+		{ "type": "contains", "value": ["Wynne Castellic", "Castellic"] },
+		{ "type": "contains", "value": "88,000" },
+		{ "type": "contains", "value": ["14th of Frostmonth", "Frostmonth"] },
+		{
+			"type": "judge",
+			"criteria": "The response correctly states all three facts in one answer: the upgrade is led by Doctor Wynne Castellic, the total approved budget is 88,000 marks, and the mirror assembly installation begins on the 14th of Frostmonth. If any fact is wrong or missing, answer NO."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

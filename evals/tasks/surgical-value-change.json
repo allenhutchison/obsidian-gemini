@@ -1,0 +1,30 @@
+{
+	"id": "surgical-value-change",
+	"description": "Change exactly one value in a config note and leave every other line identical",
+	"userMessage": "In 'eval-scratch/server-config.md', change the log_level value from 'info' to 'debug'. Change only that one line — every other setting must stay exactly the same.",
+	"difficulty": "T3",
+	"category": "edit",
+	"fixture": "surgical-edit",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [{ "type": "contains", "value": "debug" }],
+	"vaultAssertions": [
+		{ "type": "fileContains", "path": "eval-scratch/server-config.md", "value": "- log_level: debug" },
+		{ "type": "fileLacks", "path": "eval-scratch/server-config.md", "value": "- log_level: info" },
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/server-config.md",
+			"value": [
+				"- hostname: cinder-staging",
+				"- region: north-basin",
+				"- port: 8080",
+				"- max_connections: 200",
+				"- retry_limit: 5",
+				"- timeout_seconds: 30"
+			]
+		},
+		{ "type": "fileUnchanged", "path": "eval-scratch/notes.md", "fixture": "notes.md" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

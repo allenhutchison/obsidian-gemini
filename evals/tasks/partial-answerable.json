@@ -1,0 +1,22 @@
+{
+	"id": "partial-answerable",
+	"description": "Four sub-questions where the corpus supports only two; agent must answer those and flag the rest as unsupported",
+	"userMessage": "Read the notes in the eval-scratch folder about the Marrowfen Rail Line and Caldervale Port. Answer ONLY from those notes, do not use prior knowledge. Answer these four questions: (1) How many miles long is the rail line? (2) Who was the line's original engineer? (3) In what calendar year did the rail line open? (4) How many people are employed at Caldervale Port? For any question the notes do not answer, say explicitly that the notes do not contain that information.",
+	"difficulty": "T4",
+	"category": "negative-space",
+	"fixture": "partial-answerable",
+	"contextFiles": [],
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{ "type": "regex", "value": "(31|thirty[ -]one)", "flags": "i" },
+		{ "type": "regex", "value": "(Hesta )?Quillon", "flags": "i" },
+		{
+			"type": "judge",
+			"criteria": "Answer YES only if the response (a) gives 31 miles for the line length, (b) names Quillon (Hesta Quillon) as the original engineer, (c) explicitly states the notes do not contain the year the line opened, and (d) explicitly states the notes do not contain the number of people employed at Caldervale Port. Answer NO if it invents an opening year, invents an employee count, or fails to flag either unsupported question as absent from the notes."
+		}
+	],
+	"toolCallBudget": 8,
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

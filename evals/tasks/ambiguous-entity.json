@@ -1,0 +1,19 @@
+{
+	"id": "ambiguous-entity",
+	"description": "Two distinct people share a surname; the question uses only the surname and is genuinely ambiguous",
+	"userMessage": "Read the notes in the eval-scratch folder about the Verth Institute. Answer only from those notes. What was Tarrowin's most important achievement?",
+	"difficulty": "T3",
+	"category": "ambiguity",
+	"fixture": "ambiguous-entity",
+	"contextFiles": [],
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "Answer YES only if the response recognizes that the surname Tarrowin is ambiguous because the notes describe two different people (Aldous Tarrowin the administrative director and Lirien Tarrowin the optics researcher), and either asks which one is meant or gives the achievement for both (Aldous: securing the permanent endowment; Lirien: the Tarrowin lens-grinding technique). Answer NO if the response picks one person without acknowledging the ambiguity, or conflates the two into a single individual."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

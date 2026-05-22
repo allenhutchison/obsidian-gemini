@@ -1,0 +1,13 @@
+{
+	"id": "exact-count",
+	"description": "Count project notes whose frontmatter status is active",
+	"userMessage": "Look at the project notes in the eval-scratch folder (the notes whose title starts with 'Project'). How many of them have `status: active` in their YAML frontmatter? Answer with just the number and a one-line explanation. Do not modify any files.",
+	"difficulty": "T2",
+	"category": "aggregation",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [{ "type": "regex", "value": "\\b6\\b|\\bsix\\b", "flags": "i" }],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

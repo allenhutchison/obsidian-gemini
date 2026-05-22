@@ -9,30 +9,50 @@ const OBSIDIAN_BIN = 'obsidian';
 const EVAL_TIMEOUT_MS = 10_000;
 
 /**
+ * Completion predicate for `runWithTimeout`: true once stdout holds a
+ * complete `=> ` reply line.
+ *
+ * The obsidian CLI prints log noise, then a single line beginning with
+ * `=>` carrying the reply value. The child often produces that line and
+ * then hangs without exiting (#776). Every harness eval returns a
+ * single-line `JSON.stringify(...)` payload, so the reply is complete the
+ * moment its `=>` line is newline-terminated — at which point the harness
+ * no longer needs the (frequently wedged) child to exit.
+ */
+export function hasCompleteReply(stdout) {
+	const idx = stdout.search(/^=>/m);
+	return idx !== -1 && stdout.indexOf('\n', idx) !== -1;
+}
+
+/**
  * Run a JavaScript expression inside the live Obsidian process via CLI.
  * Returns the stringified result.
  *
  * The CLI may interleave log lines (e.g. `[Gemini Scribe] …`) before the
  * actual reply line, so we locate the line beginning with `=> ` and treat
- * everything from there to the end of stdout as the reply value. This
- * preserves multi-line reply support (when the returned value contains
- * real newlines) while filtering out plugin/console log noise.
+ * everything from there to the end of stdout as the reply value, filtering
+ * out plugin/console log noise.
  *
- * Uses `runWithTimeout` (not `execFile`) for the underlying spawn — the
- * default `execFile` timeout sends SIGTERM and waits for the child to
- * exit, but we observed during the multi-model baselines (#776) that
- * the obsidian CLI sometimes ignores SIGTERM and keeps the parent
- * blocked forever. `runWithTimeout` escalates to SIGKILL after a grace
- * window so the parent always settles within bounded time.
+ * Uses `runWithTimeout` (not `execFile`) for the underlying spawn, with a
+ * `readyWhen` predicate that settles the call the moment the `=>` reply is
+ * on stdout. The obsidian CLI child routinely produces its result and then
+ * hangs without exiting (#776); settling on output rather than process
+ * exit means a wedged child no longer burns the timeout or discards a
+ * reply the harness already received. `runWithTimeout` SIGKILLs the
+ * leftover child in the background.
  */
 export async function obsidianEval(code, { timeoutMs = EVAL_TIMEOUT_MS } = {}) {
-	const result = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], { timeoutMs });
+	const result = await runWithTimeout(OBSIDIAN_BIN, ['eval', `code=${code}`], {
+		timeoutMs,
+		readyWhen: hasCompleteReply,
+	});
 	// Surface CLI failures before parsing. A real failure (auth, plugin not
 	// loaded, malformed eval) tends to land on stderr with a non-zero exit;
 	// without this guard we'd fall through to the "=> reply" parser and
 	// throw a confusing "did not return a reply" error that obscures the
-	// actual cause.
-	if (result.code !== 0 || result.signal !== null) {
+	// actual cause. Skipped when we settled early on a complete reply — the
+	// process had not exited yet, so `code`/`signal` are null by design.
+	if (!result.readyEarly && (result.code !== 0 || result.signal !== null)) {
 		const stderrTail = result.stderr ? ` Stderr: ${result.stderr.slice(0, 300)}` : '';
 		throw new Error(`obsidian eval failed (exit=${result.code}, signal=${result.signal}).${stderrTail}`);
 	}
@@ -189,6 +209,93 @@ export async function setupFixtures(files) {
 }
 
 /**
+ * Place files at arbitrary vault paths before a task runs.
+ *
+ * Unlike `setupFixtures` (which always targets `eval-scratch/`), this writes
+ * to caller-chosen paths so tasks can pre-seed plugin state that lives outside
+ * the scratch folder — e.g. `AGENTS.md` for memory tests, an `Agent-Sessions/`
+ * history file for recall tests, or a `Skills/<name>/SKILL.md` package.
+ *
+ * `entries` is an array of `{ path, content }`. Parent folders are created as
+ * needed. Returns `{ manifest, error }` where `manifest` records, per seeded
+ * path, whether the file pre-existed and (if so) its original content — so
+ * `cleanup` can restore an overwritten file instead of deleting a real user
+ * file. On partial failure the manifest still covers everything seeded so far
+ * and `error` carries the message; the caller cleans up, then surfaces it.
+ */
+export async function setupExtraFiles(entries) {
+	if (!Array.isArray(entries) || entries.length === 0) return { manifest: [], error: null };
+	const result = await obsidianEval(
+		`(async () => {
+    const vault = app.vault;
+    const entries = ${JSON.stringify(entries)};
+    const manifest = [];
+    try {
+      for (const e of entries) {
+        const parts = e.path.split('/');
+        parts.pop();
+        let dir = '';
+        for (const part of parts) {
+          dir = dir ? dir + '/' + part : part;
+          if (!vault.getAbstractFileByPath(dir)) await vault.createFolder(dir);
+        }
+        const existing = vault.getAbstractFileByPath(e.path);
+        if (existing) {
+          // Capture the original before overwriting. If the read fails we must
+          // NOT modify the file — we would be unable to restore it on cleanup.
+          // Letting the error propagate to the outer catch is fail-closed: the
+          // entry never reaches the manifest and the runner surfaces the error.
+          const original = await vault.read(existing);
+          manifest.push({ path: e.path, preExisted: true, originalContent: original });
+          await vault.modify(existing, e.content);
+        } else {
+          manifest.push({ path: e.path, preExisted: false, originalContent: null });
+          await vault.create(e.path, e.content);
+        }
+      }
+      return JSON.stringify({ manifest, error: null });
+    } catch (err) {
+      return JSON.stringify({ manifest, error: err instanceof Error ? err.message : String(err) });
+    }
+  })()`,
+		{ timeoutMs: 15_000 }
+	);
+	return JSON.parse(result);
+}
+
+/**
+ * Snapshot the post-run state of the given vault paths for `vaultAssertions`.
+ *
+ * Returns `{ [path]: { exists, content, frontmatter } }`. Missing files report
+ * `exists: false`. Frontmatter comes from `metadataCache`, which has settled by
+ * the time the harness reads it (several CLI round-trips happen after the turn
+ * ends). Pure assertion evaluation lives in `vault-assertions.mjs`.
+ */
+export async function readVaultState(paths) {
+	if (!Array.isArray(paths) || paths.length === 0) return {};
+	const pathsLiteral = JSON.stringify(paths);
+	const result = await obsidianEval(
+		`(async () => {
+    const out = {};
+    for (const path of ${pathsLiteral}) {
+      const file = app.vault.getAbstractFileByPath(path);
+      if (!file || !('extension' in file)) {
+        out[path] = { exists: false, content: null, frontmatter: null };
+        continue;
+      }
+      let content = null;
+      try { content = await app.vault.read(file); } catch { content = null; }
+      const cache = app.metadataCache.getFileCache(file);
+      out[path] = { exists: true, content, frontmatter: (cache && cache.frontmatter) || null };
+    }
+    return JSON.stringify(out);
+  })()`,
+		{ timeoutMs: 15_000 }
+	);
+	return JSON.parse(result);
+}
+
+/**
  * Send a message to the agent via the programmatic API.
  * Returns after dispatch; the runner waits for `turnEnd` / `turnError` via
  * the event collector. Do not await the full agent turn inside this eval call:
@@ -260,10 +367,18 @@ export async function cancelAgent() {
 }
 
 /**
- * Clean up eval artifacts: scratch folder and session history.
+ * Clean up eval artifacts: scratch folder, session history, and any files
+ * placed outside `eval-scratch/` by `setupExtraFiles`.
+ *
+ * `setupManifest` is the array returned by `setupExtraFiles` —
+ * `{ path, preExisted, originalContent }` per seeded file. A path the seeding
+ * step *created* is deleted; a path that *pre-existed* is restored to its
+ * original content rather than deleted, so a memory / recall / skill task
+ * never destroys a real user file (e.g. an `AGENTS.md` already in the vault).
  */
-export async function cleanup(sessionHistoryPath) {
+export async function cleanup(sessionHistoryPath, setupManifest = []) {
 	const pathLiteral = JSON.stringify(sessionHistoryPath || '');
+	const manifestLiteral = JSON.stringify(Array.isArray(setupManifest) ? setupManifest : []);
 	await obsidianEval(
 		`(async () => {
     const vault = app.vault;
@@ -275,6 +390,17 @@ export async function cleanup(sessionHistoryPath) {
     if (histPath) {
       const hist = vault.getAbstractFileByPath(histPath);
       if (hist) await vault.delete(hist);
+    }
+    // Undo setup files placed outside eval-scratch: restore overwritten files,
+    // delete files the harness created.
+    for (const m of ${manifestLiteral}) {
+      const f = vault.getAbstractFileByPath(m.path);
+      if (!f) continue;
+      if (m.preExisted) {
+        if (typeof m.originalContent === 'string') await vault.modify(f, m.originalContent);
+      } else {
+        await vault.delete(f, true);
+      }
     }
     return '"cleaned"';
   })()`,

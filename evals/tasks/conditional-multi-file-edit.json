@@ -1,0 +1,23 @@
+{
+	"id": "conditional-multi-file-edit",
+	"description": "Set frontmatter status to archived only on project notes whose end_date is in the past",
+	"userMessage": "Look at every project note in the eval-scratch folder. Each has an 'end_date' in its frontmatter. For any note whose end_date is in the past relative to today, set its frontmatter 'status' to 'archived'. Leave notes whose end_date is in the future exactly as they are. Do not delete or rename anything.",
+	"difficulty": "T4",
+	"category": "edit",
+	"fixture": "conditional-archive-six",
+	"expectedTools": ["update_frontmatter"],
+	"forbiddenTools": ["delete_file", "move_file"],
+	"outputMatchers": [{ "type": "contains", "value": "archived" }],
+	"vaultAssertions": [
+		{ "type": "frontmatterEquals", "path": "eval-scratch/aspen-ledger.md", "key": "status", "value": "archived" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/cobalt-survey.md", "key": "status", "value": "archived" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/elm-archive.md", "key": "status", "value": "archived" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/birch-portal.md", "key": "status", "value": "active" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/dune-relay.md", "key": "status", "value": "active" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/fern-bridge.md", "key": "status", "value": "active" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/aspen-ledger.md", "key": "end_date", "value": "2021-04-30" },
+		{ "type": "frontmatterEquals", "path": "eval-scratch/birch-portal.md", "key": "end_date", "value": "2099-12-31" }
+	],
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

@@ -1,0 +1,18 @@
+{
+	"id": "compare-contrast",
+	"description": "Two notes describe two fictional flour-milling methods; the agent must accurately contrast them",
+	"userMessage": "The eval-scratch folder has two notes, each describing a different method of flour milling. Read both and give me a clear comparison: how do the Tidewheel and Emberforge methods differ, and what are the trade-offs of each? Just reply with the comparison.",
+	"difficulty": "T3",
+	"category": "synthesis",
+	"fixture": "compare-contrast",
+	"expectedTools": ["read_file"],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The response accurately contrasts the two milling methods. To pass it must correctly capture at least four of these distinctions: (1) Tidewheel is powered by the tide while Emberforge is coal/steam powered; (2) Tidewheel runs limited hours (about ten a day, tied to tides) while Emberforge can run around the clock; (3) Tidewheel needs no fuel and little upkeep while Emberforge consumes coal and needs seasonal boiler overhauls; (4) Tidewheel can be run by one miller while Emberforge needs a crew of four; (5) Tidewheel produces coarse wholemeal flour while Emberforge produces fine white flour; (6) Emberforge processes far more grain per day. Fabricated facts not present in the notes cause a NO."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

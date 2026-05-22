@@ -1,0 +1,19 @@
+{
+	"id": "conflict-recency-rule",
+	"description": "Resolve a conflicting fact by applying the recency rule from the policy note",
+	"userMessage": "Two notes in the eval-scratch folder state different values for the dry mass of Project Halcyon. The Conflict Resolution Policy note explains how to resolve disagreements between notes. Read the policy, apply it, and tell me the correct Halcyon dry mass in kilograms. Briefly explain which rule you applied and why. Do not modify any files.",
+	"difficulty": "T4",
+	"category": "conflict",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "regex", "value": "1[,.]?240\\s*(kg|kilograms)", "flags": "i" },
+		{
+			"type": "judge",
+			"criteria": "The answer gives 1,240 kilograms as the correct Halcyon dry mass. It must justify this by the recency rule: the Halcyon Mass Spec note has a more recent `updated` date (2026-05-14) than the Project Halcyon overview note (2026-04-22), so the Mass Spec value of 1,240 kg supersedes the 1,180 kg figure. If the answer concludes 1,180 kg, answer NO."
+		}
+	],
+	"maxTurns": 30,
+	"timeoutMs": 180000
+}

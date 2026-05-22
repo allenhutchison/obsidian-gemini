@@ -1,0 +1,24 @@
+{
+	"id": "move-note",
+	"description": "Move a finished report note into an Archive subfolder",
+	"userMessage": "Move the note 'eval-scratch/quarterly-report.md' into a subfolder named 'Archive' inside the eval-scratch folder, so its new path is 'eval-scratch/Archive/quarterly-report.md'. Do not change the note's contents and do not move any other file.",
+	"difficulty": "T3",
+	"category": "delete",
+	"fixture": "move-note",
+	"expectedTools": ["move_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [{ "type": "contains", "value": "Archive" }],
+	"vaultAssertions": [
+		{ "type": "fileExists", "path": "eval-scratch/Archive/quarterly-report.md" },
+		{ "type": "fileAbsent", "path": "eval-scratch/quarterly-report.md" },
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Archive/quarterly-report.md",
+			"value": ["# Quarterly Report — Harborview Logistics", "the new dock-loading"]
+		},
+		{ "type": "fileExists", "path": "eval-scratch/index.md" },
+		{ "type": "fileUnchanged", "path": "eval-scratch/index.md", "fixture": "index.md" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

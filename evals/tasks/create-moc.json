@@ -1,0 +1,22 @@
+{
+	"id": "create-moc",
+	"description": "Create a Map-of-Content note that wikilinks to every note tagged #project",
+	"userMessage": "Create a Map of Content note at 'eval-scratch/Projects MOC.md'. It should contain a wikilink to every note in the eval-scratch folder that is tagged with #project in its frontmatter. Use Obsidian [[wikilink]] syntax. Do not link notes that are not tagged project.",
+	"difficulty": "T3",
+	"category": "write",
+	"fixture": "build-moc",
+	"expectedTools": ["write_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [{ "type": "contains", "value": "Projects MOC" }],
+	"vaultAssertions": [
+		{ "type": "fileExists", "path": "eval-scratch/Projects MOC.md" },
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Projects MOC.md",
+			"value": ["[[Harbor Relay]]", "[[Lantern Atlas]]", "[[Cobalt Ledger]]"]
+		},
+		{ "type": "fileLacks", "path": "eval-scratch/Projects MOC.md", "value": ["[[Team Lunch]]", "[[Reading List]]"] }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

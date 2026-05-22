@@ -1,0 +1,14 @@
+{
+	"id": "multi-hop-3",
+	"description": "Three-hop retrieval across a fictional wikilinked corpus",
+	"userMessage": "Look in the eval-scratch folder. Start from the note about the Velmari Trade Compact. Follow the links: the Compact names a chief negotiator, that negotiator was born in a particular settlement, and that settlement is known for one signature export. What is that signature export? Answer in one sentence with the specific export.",
+	"difficulty": "T2",
+	"category": "multi-hop",
+	"fixture": "multi-hop-3",
+	"contextFiles": ["eval-scratch/velmari-trade-compact.md"],
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [{ "type": "regex", "value": "(sunglass kelp|sunglass-kelp|glasskelp)", "flags": "i" }],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

@@ -1,0 +1,20 @@
+{
+	"id": "tag-intersection",
+	"description": "List notes whose frontmatter tags include both 'project' and 'archived'",
+	"userMessage": "Look at the notes in the eval-scratch folder. List the title of every note whose YAML frontmatter `tags` list contains BOTH the tag `project` AND the tag `archived`. A note must have both tags to qualify. Give just the matching note titles. Do not modify any files.",
+	"difficulty": "T3",
+	"category": "retrieval",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{ "type": "contains", "value": ["Project Onyx", "project-onyx"] },
+		{ "type": "contains", "value": ["Project Drift", "project-drift"] },
+		{
+			"type": "judge",
+			"criteria": "The response lists exactly two notes as having both tags: Project Onyx and Project Drift. It must NOT claim any other note (such as Project Halcyon, Project Vesper, Project Garnet, Project Cinder, or any meeting note) has both tags. If it lists any note other than Onyx and Drift as a match, answer NO."
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

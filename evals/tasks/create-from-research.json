@@ -1,0 +1,28 @@
+{
+	"id": "create-from-research",
+	"description": "Search fixture notes about a topic and create a synthesized summary note",
+	"userMessage": "Search the eval-scratch folder for notes about composting. Read the relevant ones, then create a new note at 'eval-scratch/Composting Guide.md' that summarizes how composting works at the Mossfield garden — covering the greens and browns balance, turning the pile, and how to tell when compost is finished.",
+	"difficulty": "T3",
+	"category": "write",
+	"fixture": "research-corpus",
+	"expectedTools": ["write_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The response describes a composting summary note that was created and covers the three requested points: the balance of greens and browns, turning the pile for aeration, and signs that compost is finished. Rephrasing is fine."
+		}
+	],
+	"vaultAssertions": [
+		{ "type": "fileExists", "path": "eval-scratch/Composting Guide.md" },
+		{
+			"type": "fileMatches",
+			"path": "eval-scratch/Composting Guide.md",
+			"value": ["greens", "browns", "turn"],
+			"flags": "i"
+		},
+		{ "type": "fileMatches", "path": "eval-scratch/Composting Guide.md", "value": "finish", "flags": "i" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}

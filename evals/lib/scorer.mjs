@@ -5,6 +5,7 @@
 
 import { calculateCost, providerSupportsCache } from './pricing.mjs';
 import { evaluateMatchers, taskHasJudgeMatcher } from './matchers.mjs';
+import { evaluateVaultAssertions } from './vault-assertions.mjs';
 
 /**
  * Score a single task run.
@@ -16,9 +17,12 @@ import { evaluateMatchers, taskHasJudgeMatcher } from './matchers.mjs';
  * @param {number} durationMs - Wall-clock duration
  * @param {string} [provider] - Provider id ("gemini" or "ollama"); affects pricing and cache reporting
  * @param {Function} [judgeFn] - Optional async judge for `judge`-type matchers; see matchers.mjs / judge.mjs
+ * @param {object} [extras] - Post-run state for side-effect scoring.
+ * @param {object} [extras.vaultState] - Snapshot from `readVaultState` for `vaultAssertions`.
+ * @param {Record<string,string>} [extras.fixtureMap] - Fixture file contents by name (for `fileUnchanged`).
  * @returns {Promise<object>} TaskResult
  */
-export async function scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn) {
+export async function scoreTask(task, events, modelResponse, modelName, durationMs, provider, judgeFn, extras = {}) {
 	const apiEvents = events.filter((e) => e.event === 'apiResponseReceived');
 	const toolEvents = events.filter((e) => e.event === 'toolExecutionComplete');
 	const errorEvents = events.filter((e) => e.event === 'turnError');
@@ -86,7 +90,21 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 		judgeAvailable: matcherJudgeAvailable,
 		judgeSkipped,
 	} = matcherEval;
-	const solved = passed && expectedToolsMet && forbiddenToolsClean && matchersPass;
+
+	// Side-effect scoring: vault assertions verify what the agent did to the
+	// vault (created/edited/deleted files), not just what it said. A task with
+	// no `vaultAssertions` trivially passes this check.
+	const vaultEval = evaluateVaultAssertions(task.vaultAssertions, extras.vaultState, extras.fixtureMap);
+	const vaultAssertionsPass = vaultEval.pass;
+
+	// Efficiency gate: when a task declares `toolCallBudget`, solving requires
+	// staying at or under it. Catches "read every file in the vault" behavior
+	// that a content-search tool would have answered in one call.
+	const toolBudget = typeof task.toolCallBudget === 'number' ? task.toolCallBudget : null;
+	const toolBudgetOk = toolBudget === null || toolCalls <= toolBudget;
+
+	const solved =
+		passed && expectedToolsMet && forbiddenToolsClean && matchersPass && vaultAssertionsPass && toolBudgetOk;
 
 	return {
 		id: task.id,
@@ -112,6 +130,9 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 			judge_attempted: matcherJudgeAttempted,
 			judge_available: matcherJudgeAvailable,
 			judge_skipped: judgeSkipped,
+			vault_assertions_pass: vaultAssertionsPass,
+			vault_assertion_details: vaultEval.details,
+			tool_budget_ok: toolBudgetOk,
 		},
 	};
 }

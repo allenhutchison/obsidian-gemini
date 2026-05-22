@@ -1,0 +1,19 @@
+{
+	"id": "sum-budgets",
+	"description": "Sum the budget frontmatter field across all ten project notes",
+	"userMessage": "Each project note in the eval-scratch folder (titles starting with 'Project') has a `budget` field in its YAML frontmatter. Add up the budget across ALL ten project notes and tell me the total. Show the total as a plain number. Do not modify any files.",
+	"difficulty": "T3",
+	"category": "aggregation",
+	"fixture": "meridian-corpus",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "write_file", "move_file", "update_frontmatter", "append_content"],
+	"outputMatchers": [
+		{
+			"type": "regex",
+			"value": "28[,.]?950[,.]?000|28 ?950 ?000",
+			"flags": "i"
+		}
+	],
+	"maxTurns": 20,
+	"timeoutMs": 120000
+}
