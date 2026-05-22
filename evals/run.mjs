@@ -70,11 +70,21 @@ function parseArgs() {
 	if (model !== null && model.length === 0) {
 		throw new Error('--model requires a non-empty value');
 	}
+	// Optional `--provider=` override. Mirrors `--model=` and is required for
+	// hands-free cross-provider sweeps (e.g. an Ollama run from a Gemini-default
+	// setup); see #845. Validated against the two real providers — invalid
+	// values fail fast rather than silently routing to a missing client.
+	const providerArg = args.find((a) => a.startsWith('--provider='));
+	const providerOverride = providerArg ? providerArg.slice('--provider='.length) : null;
+	if (providerOverride !== null && providerOverride !== 'gemini' && providerOverride !== 'ollama') {
+		throw new Error(`--provider must be "gemini" or "ollama", got "${providerOverride}"`);
+	}
 	return {
 		taskFilter: args.find((a) => a.startsWith('--task='))?.split('=')[1] || null,
 		keepArtifacts: args.includes('--keep-artifacts'),
 		repeat,
 		model,
+		providerOverride,
 	};
 }
 
@@ -89,6 +99,8 @@ function parseArgs() {
 //     the run stopped.
 let originalChatModel = null;
 let modelWasOverridden = false;
+let originalProvider = null;
+let providerWasOverridden = false;
 let originalChatHistory = null;
 let chatHistoryWasForced = false;
 let currentTaskInfo = null; // { taskId, sessionInfo, runIndex, repeat } when a task is mid-flight
@@ -104,6 +116,16 @@ async function restoreChatModel() {
 		console.error(`Failed to restore chatModelName: ${err.message}`);
 	}
 	modelWasOverridden = false;
+}
+
+async function restoreProvider() {
+	if (!providerWasOverridden) return;
+	try {
+		await setSetting('provider', originalProvider);
+	} catch (err) {
+		console.error(`Failed to restore provider: ${err.message}`);
+	}
+	providerWasOverridden = false;
 }
 
 async function restoreChatHistory() {
@@ -156,6 +178,7 @@ async function handleInterrupt(signal, exitCode) {
 			console.warn(`  collector cleanup warning: ${err.message}`);
 		}
 		await restoreChatModel();
+		await restoreProvider();
 		await restoreChatHistory();
 		process.exit(exitCode);
 	}
@@ -518,7 +541,7 @@ async function maybeCompareToBaseline(result) {
  * aggregate results, and restore any temporary model override.
  */
 async function main() {
-	const { taskFilter, keepArtifacts, repeat, model } = parseArgs();
+	const { taskFilter, keepArtifacts, repeat, model, providerOverride } = parseArgs();
 	console.log('=== Gemini Scribe Eval Harness ===');
 
 	// Verify prerequisites
@@ -538,6 +561,17 @@ async function main() {
 		await setSetting('chatModelName', model);
 		modelWasOverridden = true;
 		console.log(`Overriding chatModelName: ${originalChatModel ?? '(unset)'} → ${model}`);
+	}
+
+	// Apply the provider override BEFORE getProvider() resolves below, so the
+	// resolved value (used for scoring + cost) reflects the override. Required
+	// for hands-free cross-provider sweeps; without it, an Ollama run from a
+	// Gemini-default setup needed a manual UI toggle (#845).
+	if (providerOverride) {
+		originalProvider = await getSetting('provider');
+		await setSetting('provider', providerOverride);
+		providerWasOverridden = true;
+		console.log(`Overriding provider: ${originalProvider ?? '(unset)'} → ${providerOverride}`);
 	}
 
 	// The scorer reads the model's response out of the session history file
@@ -628,6 +662,7 @@ async function main() {
 		await maybeCompareToBaseline(result);
 	} finally {
 		await restoreChatModel();
+		await restoreProvider();
 		await restoreChatHistory();
 	}
 }

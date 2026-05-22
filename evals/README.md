@@ -69,6 +69,16 @@ done
 
 Caveat: while the harness is running, the live agent view is using the override too. That's the same disruption already implied by the harness driving the agent — just don't try to use the agent view in another window mid-run.
 
+### Cross-provider runs
+
+`--model=` only sets `chatModelName`. To run against a different provider (e.g. an Ollama model from a Gemini-default setup), also pass `--provider=`:
+
+```bash
+npm run eval -- --model=gemma4:latest --provider=ollama
+```
+
+Valid values are `gemini` and `ollama`. The override mirrors `--model=`: it's applied to `plugin.settings.provider` in memory at the start of the run, restored on exit (including SIGINT/SIGTERM), and never persisted to disk. Without it, an Ollama sweep needs a manual **Settings → Gemini Scribe → provider** toggle in the UI — which blocks unattended automation. The judge (always Gemini) is independent; set `EVAL_JUDGE_API_KEY` if the plugin has no Gemini key configured.
+
 ## Comparing against a baseline
 
 `npm run eval` automatically compares each run against the blessed baseline for the active `(provider, model)` and prints a regressions-only summary at the end:
