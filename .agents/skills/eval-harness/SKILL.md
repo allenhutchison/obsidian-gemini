@@ -53,6 +53,20 @@ fi
 
 If the user wants a different test vault, take the name from them and use it as `EXPECTED`.
 
+## Build the plugin under test (mandatory preflight)
+
+The harness drives the plugin **already installed** in the test vault over the Obsidian CLI — `npm run eval` builds nothing. If you've changed plugin source (`src/`) and skip this step, the eval silently measures the _old_ code: the run looks clean, the numbers are just wrong. That's the worst failure mode for a baseline.
+
+Before any run that's meant to reflect current `src/`:
+
+```bash
+npm run build && npm run install:test-vault && obsidian plugin:reload id=gemini-scribe
+# plugin:reload reports success even if onload() threw — confirm a clean load:
+obsidian dev:errors
+```
+
+When you only changed harness files (`evals/`, baselines, fixtures) and not plugin source, skip this — those run in Node, not inside Obsidian, so no rebuild is needed. When in doubt, build: it's cheap, and a stale-plugin baseline is not.
+
 ## Pre-run cleanup
 
 State from a previous interrupted run can corrupt a new one (see "Operational gotchas" in `evals/README.md`, and #777). Always preflight:
