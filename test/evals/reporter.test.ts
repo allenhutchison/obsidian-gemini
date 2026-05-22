@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateTaskRuns, computeAggregates } from '../../evals/lib/reporter.mjs';
+import { aggregateTaskRuns, buildResult, computeAggregates } from '../../evals/lib/reporter.mjs';
 
 function run(passed: boolean, solved: boolean) {
 	return {
@@ -63,5 +63,18 @@ describe('computeAggregates — by_difficulty breakdown', () => {
 
 	it('returns an empty breakdown for no tasks', () => {
 		expect(computeAggregates([]).by_difficulty).toEqual({});
+	});
+});
+
+describe('buildResult — run id', () => {
+	it('uses the supplied run id so the result and transcript dir correlate', () => {
+		const result = buildResult([], 'abc123', 'gemini-2.5-flash', 'gemini', '2026-05-22T00:00:00.000Z');
+		expect(result.run_id).toBe('2026-05-22T00:00:00.000Z');
+	});
+
+	it('falls back to the current time when no run id is supplied', () => {
+		const result = buildResult([], 'abc123', 'gemini-2.5-flash', 'gemini');
+		expect(typeof result.run_id).toBe('string');
+		expect(Number.isNaN(Date.parse(result.run_id))).toBe(false);
 	});
 });

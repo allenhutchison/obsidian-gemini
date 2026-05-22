@@ -168,3 +168,46 @@ describe('scoreTask — tool-call budget', () => {
 		expect(result.solved).toBe(false);
 	});
 });
+
+describe('scoreTask — persisted judging evidence (#869)', () => {
+	const task = {
+		id: 'evidence-task',
+		userMessage: 'summarize it',
+		expectedTools: [],
+		forbiddenTools: [],
+		outputMatchers: [{ type: 'contains', value: 'Summary' }],
+	};
+
+	it('freezes the agent response text on the result', async () => {
+		const events = [apiResponse(), turnEnd()];
+		const result: any = await scoreTask(task as any, events, 'Here is the Summary', 'gemini-2.5-flash', 100, 'gemini');
+		expect(result.response_text).toBe('Here is the Summary');
+	});
+
+	it('itemizes matcher verdicts on a clean run', async () => {
+		const events = [apiResponse(), turnEnd()];
+		const result: any = await scoreTask(task as any, events, 'Here is the Summary', 'gemini-2.5-flash', 100, 'gemini');
+		expect(result.solve_details.matcher_details).toEqual([{ type: 'contains', value: 'Summary', verdict: true }]);
+	});
+
+	it('leaves matcher_details empty when the run failed before matchers ran', async () => {
+		const events = [apiResponse(), turnError('crashed')];
+		const result: any = await scoreTask(task as any, events, '', 'gemini-2.5-flash', 100, 'gemini');
+		expect(result.passed).toBe(false);
+		expect(result.solve_details.matchers_pass).toBe(false);
+		expect(result.solve_details.matcher_details).toEqual([]);
+	});
+
+	it('captures an empty response text without crashing', async () => {
+		const plain = { id: 't', userMessage: 'x', expectedTools: [], forbiddenTools: [], outputMatchers: [] };
+		const result: any = await scoreTask(
+			plain as any,
+			[apiResponse(), turnEnd()],
+			'',
+			'gemini-2.5-flash',
+			100,
+			'gemini'
+		);
+		expect(result.response_text).toBe('');
+	});
+});

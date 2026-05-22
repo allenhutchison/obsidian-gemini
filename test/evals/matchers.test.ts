@@ -120,3 +120,56 @@ describe('evaluateMatchers — empty / unknown', () => {
 		expect(result.pass).toBe(false);
 	});
 });
+
+describe('evaluateMatchers — itemized details (#869)', () => {
+	it('records one detail per matcher, in order', async () => {
+		const result = await evaluateMatchers(
+			[
+				{ type: 'contains', value: 'foo' },
+				{ type: 'regex', value: 'ba+r', flags: 'i' },
+			],
+			ctx('foo BAAR')
+		);
+		expect(result.details).toHaveLength(2);
+		expect(result.details[0]).toEqual({ type: 'contains', value: 'foo', verdict: true });
+		expect(result.details[1]).toEqual({ type: 'regex', value: 'ba+r', flags: 'i', verdict: true });
+	});
+
+	it('records the per-matcher verdict for a failed contains', async () => {
+		const result = await evaluateMatchers([{ type: 'contains', value: 'missing' }], ctx('xyz'));
+		expect(result.details[0]).toEqual({ type: 'contains', value: 'missing', verdict: false });
+	});
+
+	it('normalizes a missing regex flags field to null', async () => {
+		const result = await evaluateMatchers([{ type: 'regex', value: 'x' }], ctx('x'));
+		expect(result.details[0]).toEqual({ type: 'regex', value: 'x', flags: null, verdict: true });
+	});
+
+	it('captures the judge verdict and criterion', async () => {
+		const judge = vi.fn().mockResolvedValue(true);
+		const result = await evaluateMatchers([{ type: 'judge', criteria: 'is a haiku' }], ctx('poem'), judge);
+		expect(result.details[0]).toEqual({ type: 'judge', criteria: 'is a haiku', verdict: true });
+	});
+
+	it('records the judge error when the judge throws', async () => {
+		const judge = vi.fn().mockRejectedValue(new Error('429 rate limited'));
+		const result = await evaluateMatchers([{ type: 'judge', criteria: 'x' }], ctx('y'), judge);
+		expect(result.details[0]).toMatchObject({ type: 'judge', criteria: 'x', verdict: false });
+		expect(result.details[0].error).toContain('429');
+	});
+
+	it('records "no judge available" when a judge matcher runs without a judgeFn', async () => {
+		const result = await evaluateMatchers([{ type: 'judge', criteria: 'x' }], ctx('y'));
+		expect(result.details[0]).toEqual({
+			type: 'judge',
+			criteria: 'x',
+			verdict: false,
+			error: 'no judge available',
+		});
+	});
+
+	it('records an unknown matcher type as a failed detail', async () => {
+		const result = await evaluateMatchers([{ type: 'mystery' } as any], ctx('x'));
+		expect(result.details[0]).toEqual({ type: 'mystery', verdict: false, error: 'unknown matcher type' });
+	});
+});

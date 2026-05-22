@@ -7,8 +7,23 @@
 import { obsidianEval } from './obsidian-driver.mjs';
 
 /**
+ * Max characters of a tool result's `data` kept in a captured event. Tool
+ * results can be whole files or full vault listings; the `obsidian eval` CLI
+ * bridge caps total output at ~1 MB, so an untruncated result could overflow
+ * the bridge and break the run. Truncation happens here, inside Obsidian,
+ * before the data ever crosses the bridge.
+ */
+const TRANSCRIPT_DATA_LIMIT = 2048;
+
+/**
  * Install the event collector on the plugin's agent event bus.
  * Captured events are pushed to `window.__evalCollector`.
+ *
+ * Tool results are reduced to `{ success, error, data, inlineDataOmitted }`:
+ * `data` is stringified and truncated to `TRANSCRIPT_DATA_LIMIT`, and binary
+ * `inlineData` (base64 blobs, useless in a transcript) is dropped, leaving
+ * only its count. This keeps the captured stream — which #869 persists as the
+ * per-run transcript — both informative and bounded.
  */
 export async function installCollector() {
 	await obsidianEval(`(() => {
@@ -17,6 +32,27 @@ export async function installCollector() {
     // Clean up any previous collectors
     for (const unsub of window.__evalUnsubscribers) unsub();
     window.__evalUnsubscribers = [];
+
+    const LIMIT = ${TRANSCRIPT_DATA_LIMIT};
+    const sanitizeResult = (r) => {
+      if (!r || typeof r !== 'object') return r;
+      const out = { success: r.success, error: r.error || undefined };
+      if (r.data !== undefined) {
+        let s;
+        try { s = typeof r.data === 'string' ? r.data : JSON.stringify(r.data); }
+        catch (e) { s = '[unserializable]'; }
+        // JSON.stringify returns undefined (without throwing) for functions and
+        // symbols; coerce any non-string to the placeholder before reading .length.
+        if (typeof s !== 'string') s = '[unserializable]';
+        out.data = s.length > LIMIT
+          ? s.slice(0, LIMIT) + '... [+' + (s.length - LIMIT) + ' chars truncated]'
+          : s;
+      }
+      if (Array.isArray(r.inlineData) && r.inlineData.length > 0) {
+        out.inlineDataOmitted = r.inlineData.length;
+      }
+      return out;
+    };
 
     const bus = app.plugins.plugins['gemini-scribe'].agentEventBus;
     const events = [
@@ -32,7 +68,15 @@ export async function installCollector() {
           if (k === 'session') {
             serializable.sessionId = v.id;
           } else if (k === 'result' && v && typeof v === 'object') {
-            serializable.result = { success: v.success, error: v.error || undefined };
+            serializable.result = sanitizeResult(v);
+          } else if (k === 'toolResults' && Array.isArray(v)) {
+            // toolChainComplete carries a batch of results; sanitize each so a
+            // base64 inlineData blob can't overflow the CLI bridge.
+            serializable.toolResults = v.map((tr) => ({
+              toolName: tr.toolName,
+              toolArguments: tr.toolArguments,
+              result: sanitizeResult(tr.result)
+            }));
           } else if (k === 'error' && v instanceof Error) {
             serializable.error = v.message;
           } else {
