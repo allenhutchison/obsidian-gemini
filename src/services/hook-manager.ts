@@ -1,9 +1,15 @@
 import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
-import { findFrontmatterEndOffset } from './skill-manager';
-import { FeatureToolPolicy, parseToolPolicyFrontmatter } from '../types/tool-policy';
-import { formatToolPolicyYaml, migrateLegacyToolCategoryArray } from './feature-policy-yaml';
+import { FeatureToolPolicy } from '../types/tool-policy';
+import { formatToolPolicyYaml } from './feature-policy-yaml';
+import {
+	JsonSidecarStateStore,
+	extractMarkdownBody,
+	migrateLegacyEnabledTools,
+	purgeOrphanState,
+	resolveFeatureToolPolicy,
+} from './feature-definition';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -266,6 +272,7 @@ export function renderPrompt(template: string, vars: Record<string, string>): st
 export class HookManager {
 	private hooks = new Map<string, Hook>();
 	private state: HooksState = {};
+	private readonly stateStore: JsonSidecarStateStore<HooksState>;
 	private initialized = false;
 	/** Per-(hook, file) debounce timers, keyed by `${slug}::${filePath}`. */
 	private debounceTimers = new Map<string, number>();
@@ -274,7 +281,9 @@ export class HookManager {
 	/** Vault event handlers registered via plugin.registerEvent — kept for off(). */
 	private eventRefs: { off: () => void }[] = [];
 
-	constructor(private plugin: ObsidianGemini) {}
+	constructor(private plugin: ObsidianGemini) {
+		this.stateStore = new JsonSidecarStateStore<HooksState>(plugin, () => this.stateFilePath, '[HookManager]');
+	}
 
 	// ── Folder path helpers ──────────────────────────────────────────────────
 
@@ -871,11 +880,7 @@ export class HookManager {
 		}
 
 		// Drop state entries whose definition file is gone.
-		for (const slug of Object.keys(this.state)) {
-			if (!this.hooks.has(slug)) {
-				delete this.state[slug];
-			}
-		}
+		purgeOrphanState(this.state, (slug) => this.hooks.has(slug));
 		await this.saveState();
 	}
 
@@ -889,9 +894,7 @@ export class HookManager {
 		const action = this.parseAction(frontmatter.action);
 		if (!action) return null;
 
-		const content = await this.plugin.app.vault.read(file);
-		const offset = findFrontmatterEndOffset(content);
-		const prompt = offset !== undefined ? content.slice(offset).trim() : content.trim();
+		const prompt = extractMarkdownBody(await this.plugin.app.vault.read(file));
 
 		// agent-task and rewrite need a body to know what to do; summarize
 		// and command have their own dedicated paths and treat the body as
@@ -901,9 +904,6 @@ export class HookManager {
 		// to fire.
 		const commandId = typeof frontmatter.commandId === 'string' ? frontmatter.commandId : undefined;
 		if (action === 'command' && !commandId) return null;
-
-		const toolPolicy =
-			parseToolPolicyFrontmatter(frontmatter.toolPolicy) ?? migrateLegacyToolCategoryArray(frontmatter.enabledTools);
 
 		const hook: Hook = {
 			slug: file.basename,
@@ -917,7 +917,7 @@ export class HookManager {
 			maxRunsPerHour: typeof frontmatter.maxRunsPerHour === 'number' ? frontmatter.maxRunsPerHour : undefined,
 			cooldownMs: typeof frontmatter.cooldownMs === 'number' ? frontmatter.cooldownMs : DEFAULT_COOLDOWN_MS,
 			action,
-			toolPolicy,
+			toolPolicy: resolveFeatureToolPolicy(frontmatter),
 			enabledSkills: Array.isArray(frontmatter.enabledSkills) ? (frontmatter.enabledSkills as string[]) : [],
 			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
 			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : undefined,
@@ -931,13 +931,14 @@ export class HookManager {
 
 		// Auto-migrate the legacy on-disk shape so the next load reads the new
 		// canonical key without re-running the migration. Failures are non-fatal.
-		if (frontmatter.enabledTools !== undefined && frontmatter.toolPolicy === undefined) {
-			try {
-				await this.plugin.app.vault.modify(file, this.serializeHook(this.hookToParams(hook)));
-			} catch (err) {
-				this.plugin.logger.warn(`[HookManager] legacy enabledTools migration failed for ${file.path}:`, err);
-			}
-		}
+		const migration = migrateLegacyEnabledTools(
+			this.plugin,
+			file,
+			frontmatter,
+			() => this.serializeHook(this.hookToParams(hook)),
+			'[HookManager]'
+		);
+		if (migration) await migration;
 
 		return hook;
 	}
@@ -984,25 +985,10 @@ export class HookManager {
 	// ── State persistence ───────────────────────────────────────────────────
 
 	private async loadState(): Promise<void> {
-		try {
-			const exists = await this.plugin.app.vault.adapter.exists(this.stateFilePath);
-			if (!exists) {
-				this.state = {};
-				return;
-			}
-			const raw = await this.plugin.app.vault.adapter.read(this.stateFilePath);
-			this.state = JSON.parse(raw) as HooksState;
-		} catch (err) {
-			this.plugin.logger.warn('[HookManager] Failed to load state, starting fresh:', err);
-			this.state = {};
-		}
+		this.state = await this.stateStore.load();
 	}
 
 	private async saveState(): Promise<void> {
-		try {
-			await this.plugin.app.vault.adapter.write(this.stateFilePath, JSON.stringify(this.state, null, 2));
-		} catch (err) {
-			this.plugin.logger.error('[HookManager] Failed to save state:', err);
-		}
+		await this.stateStore.save(this.state);
 	}
 }
