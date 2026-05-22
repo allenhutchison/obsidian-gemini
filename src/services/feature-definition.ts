@@ -44,7 +44,14 @@ export class JsonSidecarStateStore<T extends object> {
 			const exists = await this.plugin.app.vault.adapter.exists(path);
 			if (!exists) return {} as T;
 			const raw = await this.plugin.app.vault.adapter.read(path);
-			return JSON.parse(raw) as T;
+			const parsed: unknown = JSON.parse(raw);
+			// Defensive: a hand-edited sidecar could contain a non-object JSON value
+			// (null, array, primitive). Treat any of those as corrupt rather than
+			// letting the slug-keyed callers explode on first access.
+			if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+				throw new Error('State file must contain a JSON object');
+			}
+			return parsed as T;
 		} catch (err) {
 			this.plugin.logger.warn(`${this.logPrefix} Failed to load state, starting fresh:`, err);
 			return {} as T;

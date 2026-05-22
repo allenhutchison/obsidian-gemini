@@ -58,6 +58,22 @@ describe('JsonSidecarStateStore', () => {
 			expect(await store.load()).toEqual({});
 			expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to load state'), expect.anything());
 		});
+
+		it('falls back to an empty map when the JSON parses to a non-object value', async () => {
+			const { plugin, files, logger } = makeStoreFixture();
+			const store = new JsonSidecarStateStore(plugin as any, () => 'state.json', '[Test]');
+
+			// null, array, and primitives are all valid JSON but unsafe to treat
+			// as slug-keyed state — load must catch them and fall back to {}.
+			files['state.json'] = JSON.stringify(null);
+			expect(await store.load()).toEqual({});
+			files['state.json'] = JSON.stringify([{ slug: 'oops' }]);
+			expect(await store.load()).toEqual({});
+			files['state.json'] = JSON.stringify(42);
+			expect(await store.load()).toEqual({});
+
+			expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to load state'), expect.anything());
+		});
 	});
 
 	describe('save', () => {
