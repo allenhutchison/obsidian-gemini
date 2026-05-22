@@ -1,9 +1,15 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
-import { findFrontmatterEndOffset } from './skill-manager';
-import { FeatureToolPolicy, parseToolPolicyFrontmatter } from '../types/tool-policy';
-import { migrateLegacyToolCategoryArray, formatToolPolicyYaml } from './feature-policy-yaml';
+import { FeatureToolPolicy } from '../types/tool-policy';
+import { formatToolPolicyYaml } from './feature-policy-yaml';
+import {
+	JsonSidecarStateStore,
+	extractMarkdownBody,
+	migrateLegacyEnabledTools,
+	purgeOrphanState,
+	resolveFeatureToolPolicy,
+} from './feature-definition';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -270,8 +276,15 @@ export class ScheduledTaskManager {
 	private pendingDefers = new Set<number>();
 	/** Slugs reserved for catch-up approval — tick skips these until approved or skipped. */
 	private catchUpPending = new Set<string>();
+	private readonly stateStore: JsonSidecarStateStore<ScheduledTasksState>;
 
-	constructor(private plugin: ObsidianGemini) {}
+	constructor(private plugin: ObsidianGemini) {
+		this.stateStore = new JsonSidecarStateStore<ScheduledTasksState>(
+			plugin,
+			() => this.stateFilePath,
+			'[ScheduledTaskManager]'
+		);
+	}
 
 	// ── Folder path helpers ──────────────────────────────────────────────────
 
@@ -818,13 +831,8 @@ export class ScheduledTaskManager {
 		// Drop state entries for slugs whose definition file is gone. The tick
 		// already tolerates orphan state, but stripping it on init keeps the
 		// JSON tidy and prevents stale lastError messages from accumulating.
-		for (const slug of Object.keys(this.state)) {
-			if (!this.tasks.has(slug)) {
-				delete this.state[slug];
-				this.plugin.logger.log(
-					`[ScheduledTaskManager] Purged orphan state entry for "${slug}" (no matching task file)`
-				);
-			}
+		for (const slug of purgeOrphanState(this.state, (s) => this.tasks.has(s))) {
+			this.plugin.logger.log(`[ScheduledTaskManager] Purged orphan state entry for "${slug}" (no matching task file)`);
 		}
 
 		await this.saveState();
@@ -834,24 +842,16 @@ export class ScheduledTaskManager {
 		const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
 		if (!frontmatter?.schedule) return null;
 
-		const content = await this.plugin.app.vault.read(file);
-		const offset = findFrontmatterEndOffset(content);
-		const prompt = offset !== undefined ? content.slice(offset).trim() : content.trim();
+		const prompt = extractMarkdownBody(await this.plugin.app.vault.read(file));
 		if (!prompt) return null;
 
 		const slug = file.basename;
 		const defaultOutputPath = `${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`;
 
-		// Prefer the new `toolPolicy:` block; fall back to the legacy
-		// `enabledTools:` array (which the bugged modal also populated with
-		// `read_write` / `destructive`, both handled here).
-		const toolPolicy =
-			parseToolPolicyFrontmatter(frontmatter.toolPolicy) ?? migrateLegacyToolCategoryArray(frontmatter.enabledTools);
-
 		const task: ScheduledTask = {
 			slug,
 			schedule: String(frontmatter.schedule),
-			toolPolicy,
+			toolPolicy: resolveFeatureToolPolicy(frontmatter),
 			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : defaultOutputPath,
 			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
 			enabled: frontmatter.enabled !== false,
@@ -862,13 +862,14 @@ export class ScheduledTaskManager {
 
 		// Auto-migrate the file in place when we read the legacy shape so the
 		// next read uses the canonical key. Failures are non-fatal.
-		if (frontmatter.enabledTools !== undefined && frontmatter.toolPolicy === undefined) {
-			try {
-				await this.plugin.app.vault.modify(file, this.serializeTask(task));
-			} catch (err) {
-				this.plugin.logger.warn(`[ScheduledTaskManager] legacy enabledTools migration failed for ${file.path}:`, err);
-			}
-		}
+		const migration = migrateLegacyEnabledTools(
+			this.plugin,
+			file,
+			frontmatter,
+			() => this.serializeTask(task),
+			'[ScheduledTaskManager]'
+		);
+		if (migration) await migration;
 
 		return task;
 	}
@@ -916,25 +917,10 @@ export class ScheduledTaskManager {
 	}
 
 	private async loadState(): Promise<void> {
-		try {
-			const exists = await this.plugin.app.vault.adapter.exists(this.stateFilePath);
-			if (!exists) {
-				this.state = {};
-				return;
-			}
-			const raw = await this.plugin.app.vault.adapter.read(this.stateFilePath);
-			this.state = JSON.parse(raw) as ScheduledTasksState;
-		} catch (error) {
-			this.plugin.logger.warn('[ScheduledTaskManager] Failed to load state, starting fresh:', error);
-			this.state = {};
-		}
+		this.state = await this.stateStore.load();
 	}
 
 	private async saveState(): Promise<void> {
-		try {
-			await this.plugin.app.vault.adapter.write(this.stateFilePath, JSON.stringify(this.state, null, 2));
-		} catch (error) {
-			this.plugin.logger.error('[ScheduledTaskManager] Failed to save state:', error);
-		}
+		await this.stateStore.save(this.state);
 	}
 }
