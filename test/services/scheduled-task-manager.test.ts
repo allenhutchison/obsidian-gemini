@@ -1379,10 +1379,21 @@ describe('ScheduledTaskManager', () => {
 		it('excludes tasks with no state entry', async () => {
 			const manager = await makeManagerWithMissedRuns(
 				[{ slug: 'no-state', schedule: 'daily', runIfMissed: true }],
-				{} // State was not seeded for this slug — but discoverTasks will add it.
-				// However, the seeded nextRunAt is 'now' which is not in the past, so it should not be missed.
+				{} // No persisted state — discoverTasks() seeds nextRunAt to "now" (due immediately).
 			);
-			expect(manager.detectMissedRuns()).toHaveLength(0);
+
+			// detectMissedRuns() uses a strict `<` comparison, so a task due exactly
+			// at `now` is not a missed run. Pin the clock to the discovery-seeded
+			// nextRunAt so wall-clock drift between discovery and detection can't
+			// flakily flip the result to 1.
+			const seededNextRunAt = manager.getState()['no-state'].nextRunAt;
+			vi.useFakeTimers();
+			vi.setSystemTime(new Date(seededNextRunAt));
+			try {
+				expect(manager.detectMissedRuns()).toHaveLength(0);
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 	});
 
