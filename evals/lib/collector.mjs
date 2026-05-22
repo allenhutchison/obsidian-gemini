@@ -41,6 +41,9 @@ export async function installCollector() {
         let s;
         try { s = typeof r.data === 'string' ? r.data : JSON.stringify(r.data); }
         catch (e) { s = '[unserializable]'; }
+        // JSON.stringify returns undefined (without throwing) for functions and
+        // symbols; coerce any non-string to the placeholder before reading .length.
+        if (typeof s !== 'string') s = '[unserializable]';
         out.data = s.length > LIMIT
           ? s.slice(0, LIMIT) + '... [+' + (s.length - LIMIT) + ' chars truncated]'
           : s;
