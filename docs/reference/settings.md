@@ -70,7 +70,6 @@ UI sections without a dedicated topic in this reference: _Automation_ (covered i
 - **Structure**:
   ```text
   gemini-scribe/
-  ├── History/          # Legacy chat history files (v3.x)
   ├── Prompts/          # Custom prompt templates
   ├── Skills/           # Custom agent skills (<skill-name>/SKILL.md)
   ├── Agent-Sessions/   # Agent mode sessions with conversation history

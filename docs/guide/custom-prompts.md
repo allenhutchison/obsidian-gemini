@@ -59,7 +59,7 @@ The plugin automatically creates this folder structure and adds an example promp
 
 - `gemini-scribe/` - Main plugin state folder
 - `gemini-scribe/Prompts/` - Custom prompt templates
-- `gemini-scribe/History/` - Chat history files (if chat history is enabled)
+- `gemini-scribe/Agent-Sessions/` - Agent session history files (if session history is enabled)
 
 ## Creating Custom Prompts
 
