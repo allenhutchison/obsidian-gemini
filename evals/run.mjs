@@ -89,6 +89,8 @@ function parseArgs() {
 //     the run stopped.
 let originalChatModel = null;
 let modelWasOverridden = false;
+let originalChatHistory = null;
+let chatHistoryWasForced = false;
 let currentTaskInfo = null; // { taskId, sessionInfo, runIndex, repeat } when a task is mid-flight
 let completedTaskCount = 0;
 let totalPlannedTasks = 0;
@@ -102,6 +104,16 @@ async function restoreChatModel() {
 		console.error(`Failed to restore chatModelName: ${err.message}`);
 	}
 	modelWasOverridden = false;
+}
+
+async function restoreChatHistory() {
+	if (!chatHistoryWasForced) return;
+	try {
+		await setSetting('chatHistory', originalChatHistory);
+	} catch (err) {
+		console.error(`Failed to restore chatHistory: ${err.message}`);
+	}
+	chatHistoryWasForced = false;
 }
 
 async function handleInterrupt(signal, exitCode) {
@@ -144,6 +156,7 @@ async function handleInterrupt(signal, exitCode) {
 			console.warn(`  collector cleanup warning: ${err.message}`);
 		}
 		await restoreChatModel();
+		await restoreChatHistory();
 		process.exit(exitCode);
 	}
 }
@@ -416,7 +429,20 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 	} finally {
 		// 7. Cleanup — must run even if session creation failed before sessionInfo
 		// was assigned, otherwise eval-scratch leaks into subsequent runs.
-		await removeCollector();
+		// removeCollector() goes through the obsidian-eval CLI bridge, which can
+		// intermittently hang (#776). A between-task teardown hiccup must never
+		// abort the whole sweep — retry once, then continue. The next task's
+		// installCollector() reaps any collector/subscribers left behind.
+		try {
+			await removeCollector();
+		} catch (e) {
+			console.warn(`  Collector teardown warning: ${e.message} — retrying once.`);
+			try {
+				await removeCollector();
+			} catch (e2) {
+				console.warn(`  Collector teardown failed again: ${e2.message} — continuing.`);
+			}
+		}
 		if (!keepArtifacts) {
 			try {
 				await cleanup(sessionInfo?.historyPath, setupManifest);
@@ -475,6 +501,18 @@ async function main() {
 		await setSetting('chatModelName', model);
 		modelWasOverridden = true;
 		console.log(`Overriding chatModelName: ${originalChatModel ?? '(unset)'} → ${model}`);
+	}
+
+	// The scorer reads the model's response out of the session history file
+	// (getLastModelResponse → getHistoryForSession). That file is only written
+	// when the `chatHistory` setting is on; with it off, every output matcher
+	// scores against an empty string and `solve` is uniformly 0. Force it on
+	// for the run and restore the operator's value on exit.
+	originalChatHistory = await getSetting('chatHistory');
+	if (originalChatHistory !== true) {
+		await setSetting('chatHistory', true);
+		chatHistoryWasForced = true;
+		console.log(`Forcing chatHistory: ${originalChatHistory ?? '(unset)'} → true (required for response scoring)`);
 	}
 
 	try {
@@ -543,6 +581,7 @@ async function main() {
 		await maybeCompareToBaseline(result);
 	} finally {
 		await restoreChatModel();
+		await restoreChatHistory();
 	}
 }
 
