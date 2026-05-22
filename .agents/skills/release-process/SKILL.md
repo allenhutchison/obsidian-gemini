@@ -76,7 +76,7 @@ files (produced by the `daily-changelog` skill).
 ### 4. Create the release branch and bump the version
 
 ```bash
-git checkout main && git pull origin main
+git checkout master && git pull origin master
 git checkout -b "auto/release-X.Y.Z"
 node version-bump.mjs X.Y.Z
 ```
@@ -105,7 +105,7 @@ git push -u origin "auto/release-X.Y.Z"
 
 ### 7. Open the "Release X.Y.Z" PR
 
-Open a pull request from `auto/release-X.Y.Z` into `main`, titled
+Open a pull request from `auto/release-X.Y.Z` into `master`, titled
 `Release X.Y.Z`, with the release notes in the body.
 
 - **Human run:** review the diff and merge the PR.
@@ -137,8 +137,8 @@ release — titled and described from `src/release-notes.json`, with `main.js`,
   `versions.json` — always use `node version-bump.mjs X.Y.Z`.
 - Do NOT use `npm version` for releases; it tags and pushes immediately.
 - Every release goes through an `auto/release-*` PR — there is no
-  direct-to-`main` release path.
-- Always branch from an up-to-date `main`.
+  direct-to-`master` release path.
+- Always branch from an up-to-date `master`.
 
 ## Build system context
 
@@ -151,7 +151,7 @@ release — titled and described from `src/release-notes.json`, with `main.js`,
 ## Manual release escape hatch
 
 If the PR flow is unavailable, a release can be triggered manually: bump the
-version on `main` with `node version-bump.mjs X.Y.Z` (with a matching
+version on `master` with `node version-bump.mjs X.Y.Z` (with a matching
 `src/release-notes.json` entry), then run the **Release Obsidian Gemini plugin**
 workflow via _workflow_dispatch_, supplying the version. It performs the same
 tag + build + draft-release steps.
