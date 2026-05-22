@@ -99,6 +99,16 @@ export function isRateLimitError(error: unknown): boolean {
 }
 
 /**
+ * Check if an error represents a "resource not found" failure (HTTP 404 /
+ * NOT_FOUND). Matches on message substrings so it works across the varying
+ * error shapes the Google File Search API and SDK return.
+ */
+export function isNotFoundError(error: unknown): boolean {
+	const message = error instanceof Error ? error.message : String(error);
+	return message.includes('404') || message.includes('not found') || message.includes('NOT_FOUND');
+}
+
+/**
  * Extract a user-friendly error message from various error types
  *
  * Handles errors from Google Gemini API, network errors, and generic errors.

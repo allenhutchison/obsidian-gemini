@@ -1,4 +1,10 @@
-import { getErrorMessage, getShortErrorMessage, isQuotaExhausted, isRateLimitError } from '../../src/utils/error-utils';
+import {
+	getErrorMessage,
+	getShortErrorMessage,
+	isNotFoundError,
+	isQuotaExhausted,
+	isRateLimitError,
+} from '../../src/utils/error-utils';
 
 describe('error-utils', () => {
 	describe('getErrorMessage', () => {
@@ -418,6 +424,30 @@ describe('error-utils', () => {
 		test('returns false for null/undefined', () => {
 			expect(isRateLimitError(null)).toBe(false);
 			expect(isRateLimitError(undefined)).toBe(false);
+		});
+	});
+
+	describe('isNotFoundError', () => {
+		test('detects 404 in message', () => {
+			expect(isNotFoundError(new Error('HTTP 404'))).toBe(true);
+		});
+
+		test('detects "not found" in message', () => {
+			expect(isNotFoundError(new Error('The store could not be located: not found'))).toBe(true);
+		});
+
+		test('detects NOT_FOUND in message', () => {
+			expect(isNotFoundError(new Error('Request failed: NOT_FOUND'))).toBe(true);
+		});
+
+		test('returns false for unrelated errors', () => {
+			expect(isNotFoundError(new Error('Internal server error'))).toBe(false);
+			expect(isNotFoundError(new Error('400 INVALID_ARGUMENT'))).toBe(false);
+		});
+
+		test('handles non-Error values via String()', () => {
+			expect(isNotFoundError('plain 404 string')).toBe(true);
+			expect(isNotFoundError(null)).toBe(false);
 		});
 	});
 
