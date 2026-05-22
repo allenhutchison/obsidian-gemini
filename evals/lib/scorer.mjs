@@ -80,12 +80,14 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 		? await evaluateMatchers(task.outputMatchers, { responseText, userMessage: task.userMessage }, judgeFn)
 		: {
 				pass: false,
+				details: [],
 				judgeAttempted,
 				judgeAvailable,
 				judgeSkipped: judgeAttempted && !judgeAvailable,
 			};
 	const {
 		pass: matchersPass,
+		details: matcherDetails,
 		judgeAttempted: matcherJudgeAttempted,
 		judgeAvailable: matcherJudgeAvailable,
 		judgeSkipped,
@@ -110,6 +112,10 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 		id: task.id,
 		passed,
 		solved,
+		// The agent's final response, frozen per run. Non-reproducible, so it
+		// must be captured here rather than re-derived later — it is the
+		// evidence a human (or a different judge) needs to re-score (#869).
+		response_text: responseText,
 		metrics: {
 			turns,
 			tool_calls: toolCalls,
@@ -127,6 +133,10 @@ export async function scoreTask(task, events, modelResponse, modelName, duration
 			expected_tools_met: expectedToolsMet,
 			forbidden_tools_clean: forbiddenToolsClean,
 			matchers_pass: matchersPass,
+			// Itemized per-matcher verdicts (type, criterion, verdict), mirroring
+			// `vault_assertion_details` — so a failed rubric shows *which* matcher
+			// failed, not just a rolled-up boolean (#869).
+			matcher_details: matcherDetails,
 			judge_attempted: matcherJudgeAttempted,
 			judge_available: matcherJudgeAvailable,
 			judge_skipped: judgeSkipped,

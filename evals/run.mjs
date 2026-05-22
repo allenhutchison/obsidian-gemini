@@ -17,7 +17,7 @@
  *   - API key configured
  */
 
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import {
@@ -245,15 +245,43 @@ async function getProvider() {
 }
 
 /**
+ * Persist a run's captured event stream as a per-run transcript sidecar file.
+ *
+ * Transcripts are written next to (not inside) the result JSON so the result —
+ * and the baseline `bless` copies from it — stays lean: one file per run under
+ * `evals/results/<run-id>/`, which is gitignored. The returned path is
+ * relative to `EVALS_DIR` so it stays valid if the repo moves (#869).
+ *
+ * @param {Array} events - Captured (and collector-sanitized) event stream.
+ * @param {string} taskId - Task id, used in the filename.
+ * @param {{transcriptDir: string, runIdSlug: string, runIndex: number}|null} runContext
+ * @returns {Promise<string|null>} Relative transcript path, or null if not written.
+ */
+async function writeTranscript(events, taskId, runContext) {
+	if (!runContext) return null;
+	const { transcriptDir, runIdSlug, runIndex } = runContext;
+	const fileName = `${taskId}-${runIndex}.json`;
+	try {
+		await writeFile(join(transcriptDir, fileName), JSON.stringify(events, null, 2));
+		return `results/${runIdSlug}/${fileName}`;
+	} catch (err) {
+		console.warn(`  Transcript write warning: ${err.message}`);
+		return null;
+	}
+}
+
+/**
  * Run one eval task against the live plugin and return its scored result.
  *
  * @param {object} task - Task definition loaded from evals/tasks.
  * @param {boolean} keepArtifacts - Whether to leave scratch files and session history in the vault.
  * @param {string} provider - Active provider id used for scoring and cost reporting.
  * @param {Function | null} judgeFn - Optional judge function for `judge` output matchers.
+ * @param {{transcriptDir: string, runIdSlug: string, runIndex: number}|null} [runContext]
+ *   Where (and under what run id / index) to write this run's transcript.
  * @returns {Promise<object>} Scored task result ready for aggregation.
  */
-async function runTask(task, keepArtifacts, provider, judgeFn) {
+async function runTask(task, keepArtifacts, provider, judgeFn, runContext = null) {
 	const title = `[eval] ${task.id}`;
 	console.log(`  "${task.description}"`);
 
@@ -384,6 +412,10 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 			fixtureMap,
 		});
 		if (timedOut) result.timedOut = true;
+
+		// Persist the full event stream as a transcript sidecar (#869). The
+		// collector has already truncated tool-result bodies, so this is bounded.
+		result.transcript_path = await writeTranscript(events, task.id, runContext);
 		const costStr = provider === 'ollama' ? 'free' : `$${result.metrics.cost_usd.toFixed(4)}`;
 		const verdict = timedOut ? 'TIMEOUT' : result.solved ? 'SOLVED' : result.passed ? 'PASSED (not solved)' : 'FAILED';
 		const judgeLabel = result.solve_details?.judge_skipped ? ' [judge unavailable]' : '';
@@ -401,6 +433,10 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 			id: task.id,
 			passed: false,
 			solved: false,
+			// Schema parity with a scored result — a harness ERROR has no
+			// response, no transcript, and no matcher evidence (#869).
+			response_text: '',
+			transcript_path: null,
 			metrics: {
 				turns: 0,
 				tool_calls: 0,
@@ -418,6 +454,7 @@ async function runTask(task, keepArtifacts, provider, judgeFn) {
 				expected_tools_met: false,
 				forbidden_tools_clean: true,
 				matchers_pass: false,
+				matcher_details: [],
 				judge_attempted: judgeAttempted,
 				judge_available: judgeAvailable,
 				judge_skipped: judgeAttempted && !judgeAvailable,
@@ -545,6 +582,14 @@ async function main() {
 			}
 		}
 
+		// One run id for the whole sweep, shared by the result file
+		// (`results/<slug>.json`) and the transcript directory
+		// (`results/<slug>/`) so they are trivially correlated on disk.
+		const runId = new Date().toISOString();
+		const runIdSlug = runId.replace(/[:.]/g, '-');
+		const transcriptDir = join(EVALS_DIR, 'results', runIdSlug);
+		await mkdir(transcriptDir, { recursive: true });
+
 		// Run tasks sequentially. Each task runs `repeat` times so we can report
 		// pass^k reliability on top of per-run pass/solve rates. Module-scoped
 		// task tracking lets the SIGINT handler print "N of M completed" and
@@ -559,7 +604,9 @@ async function main() {
 				console.log(`\n--- Running: ${task.id}${runLabel} ---`);
 				currentTaskInfo = { taskId: task.id, sessionInfo: null, runIndex: i, repeat };
 				try {
-					runs.push(await runTask(task, keepArtifacts, provider, judgeFn));
+					runs.push(
+						await runTask(task, keepArtifacts, provider, judgeFn, { transcriptDir, runIdSlug, runIndex: i + 1 })
+					);
 				} finally {
 					currentTaskInfo = null;
 					completedTaskCount += 1;
@@ -571,7 +618,7 @@ async function main() {
 		// Build result, write, print
 		const gitSha = getGitSha();
 		const modelName = await getModelName();
-		const result = buildResult(taskResults, gitSha, modelName, provider);
+		const result = buildResult(taskResults, gitSha, modelName, provider, runId);
 		const outPath = await writeResults(result, EVALS_DIR);
 		printSummary(result);
 		console.log(`Results written to: ${outPath}`);

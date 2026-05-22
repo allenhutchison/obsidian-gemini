@@ -396,6 +396,26 @@ The `by_difficulty` breakdown is also printed to stdout under "Solve^k by diffic
 
 The result file also records `provider` (e.g. `gemini`, `ollama`) at the top level so `compare` can flag cross-provider runs and skip metrics that aren't comparable.
 
+## Persisted evidence
+
+Beyond pass/solve verdicts, each run records the evidence behind the score so a
+result can be human-reviewed or re-judged later without re-running the task:
+
+| Field                           | Where                   | Contents                                                                                                                                                                |
+| ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `response_text`                 | per-run result          | The agent's final response, frozen at run time (non-reproducible).                                                                                                      |
+| `solve_details.matcher_details` | per-run `solve_details` | One entry per `outputMatcher`: its `type`, what it checked (`value`/`flags`/`criteria`), the `verdict`, and any `error`. Empty when the run failed before matchers ran. |
+| `transcript_path`               | per-run result          | Path (relative to `evals/`) to that run's transcript sidecar file, or `null`.                                                                                           |
+
+Transcripts are written to `evals/results/<run-id>/<task-id>-<n>.json` — the
+same `<run-id>` as the result file, so they correlate on disk. Each is the
+captured agent event stream (turn boundaries, tool calls with arguments,
+API responses). Tool-result bodies are stringified and truncated to 2 KB, and
+binary `inlineData` is dropped — both to keep the `obsidian eval` CLI bridge
+within its output ceiling. The `results/` directory is gitignored, so
+transcripts and raw results stay out of source control; only blessed baselines
+are committed.
+
 ## Architecture
 
 The harness drives Obsidian via the `obsidian eval` CLI command, installing a temporary event-bus subscriber to capture agent lifecycle events. It does NOT modify plugin internals — all observation is via the existing `agentEventBus` subscriptions.

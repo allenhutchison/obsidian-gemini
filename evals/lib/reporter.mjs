@@ -174,10 +174,14 @@ export function computeAggregates(taskResults) {
 
 /**
  * Build the full result object.
+ *
+ * `runId` is supplied by the runner so the result file and the transcript
+ * directory share one identifier; it falls back to the current time for
+ * standalone callers (e.g. unit tests).
  */
-export function buildResult(taskResults, gitSha, modelName, provider) {
+export function buildResult(taskResults, gitSha, modelName, provider, runId) {
 	return {
-		run_id: new Date().toISOString(),
+		run_id: runId || new Date().toISOString(),
 		git_sha: gitSha,
 		model: modelName,
 		provider: provider || 'gemini',
