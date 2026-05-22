@@ -7,7 +7,7 @@
 		"details": "This patch fixes the \"Initialize Vault Context\" / \"Update Vault Context\" button in the agent view. The request sent to the model was shaped so that the analysis prompt was discarded, causing the model to return a conversational reply that failed to parse and never produced an AGENTS.md file. The request is now built correctly and the feature works again."
 	},
 	"4.9.0": {
-		"title": "🪝 Gemini Scribe 4.9 - Lifecycle Hooks, Stable Prefix Caching, Custom Endpoint",
+		"title": "🪝 Gemini Scribe 4.9.0 - Lifecycle Hooks, Stable Prefix Caching, Custom Endpoint",
 		"highlights": [
 			"🪝 Lifecycle hooks engine — define hooks that fire on Obsidian events and run summarize/rewrite/command/agent actions, with full management UI and a settings toggle",
 			"⚡ Prompt-prefix caching stabilized — the agent's system instruction is now byte-stable across turns and tool follow-ups, restoring Gemini's implicit prefix cache so long sessions stop reprocessing history each turn (closes #763)",
@@ -23,7 +23,7 @@
 		"details": "This release introduces a lifecycle-hooks engine — define hooks that fire on Obsidian events (note modify, command palette, etc.) and run summarize/rewrite/command/agent actions with a dedicated management UI. Agent prompt-prefix caching has been stabilized (closes #763): the system instruction is now byte-stable across turns and tool follow-ups, restoring Gemini's implicit prefix cache so long chat or coding sessions no longer reprocess history each turn. A custom API endpoint setting lets you point Gemini Scribe at a proxy or alternate Gemini-compatible host. MCP servers are now resilient on offline machines and store stdio env vars in Obsidian's encrypted SecretStorage. Tool-policy is unified across Sessions, Projects, Scheduled Tasks, and Hooks. The settings UI gains collapsible sections, and new agent sidebar actions are registered as Obsidian commands. Under the hood: per-provider packages under src/api/providers/ (GeminiClientFactory → ModelClientFactory; breaking for SDK consumers, OllamaClient now in the public barrel), two-phase context compaction, tool-result payload truncation in older history, retry/backoff applied to non-chat direct SDK calls, and substantial eval-harness maturity work (baseline-compare, LLM-judge fallback, per-task timeouts, clean interrupt) plus broader test coverage."
 	},
 	"4.8.0": {
-		"title": "✨ Gemini Scribe 4.8 - Scheduled & Background Tasks, Ollama, Activity Modal",
+		"title": "✨ Gemini Scribe 4.8.0 - Scheduled & Background Tasks, Ollama, Activity Modal",
 		"highlights": [
 			"⏰ Scheduled tasks — run agent tasks on a cron, time-of-day, or day-of-week schedule with full management UI",
 			"🌙 Missed-run catch-up — tasks that should have run while Obsidian was closed surface on startup for review",
@@ -38,7 +38,7 @@
 		"details": "This release introduces scheduled tasks: define agent tasks with cron, time-of-day, or day-of-week schedules and manage them with a dedicated UI. If Obsidian was closed when a run was due, a catch-up modal surfaces missed runs on startup. Long-running operations like deep research and image generation now run as background tasks, with all their output consolidated under [state-folder]/Background-Tasks/, and a unified activity modal gives you a single place to monitor background work alongside RAG indexing status. Ollama joins as a provider option for fully local chat. The runaway-loop detector now escalates to a per-turn abort with a user-visible notice. Under the hood, AgentLoop has been extracted so scheduled and background runners share the same engine as the UI, and a new eval harness with multi-hop, loop-trap, and pass^k reliability checks helps verify agent-loop changes. Includes mobile fixes for iOS layout and the catch-up modal, plus a migration of the test runner from ts-jest to Vitest."
 	},
 	"4.7.0": {
-		"title": "✨ Gemini Scribe 4.7 - Projects, Session Memory & File Shelf",
+		"title": "✨ Gemini Scribe 4.7.0 - Projects, Session Memory & File Shelf",
 		"highlights": [
 			"📂 Projects — scope agent sessions to a folder with custom instructions and tool/skill overrides",
 			"🧠 Session recall — the agent can search past conversations for relevant context",
@@ -52,7 +52,7 @@
 		"details": "This release introduces Projects, letting you scope agent sessions to a folder with custom instructions, permission overrides, and skill filters. Session recall gives the agent memory across conversations — it can search past sessions for relevant context. The new file context shelf replaces the old context panel with a compact drag-and-drop bar that auto-expands folder contents. Write and edit tool calls now show a diff review view so you can inspect changes before they're applied. Bundled skills ship built-in help and Obsidian knowledge that are auto-generated from the docs site at build time. Agent tools can now read binary files (images, audio, PDFs) encountered during tool execution. The prompt system has been refactored into layered Handlebars templates for better maintainability. Under the hood, a new event bus architecture decouples lifecycle hooks, and strict TypeScript checks improve code reliability."
 	},
 	"4.6.0": {
-		"title": "✨ Gemini Scribe 4.6 - Context Management & Tool Permissions",
+		"title": "✨ Gemini Scribe 4.6.0 - Context Management & Tool Permissions",
 		"highlights": [
 			"🧠 Automatic context compaction — long conversations are summarized to stay within model limits",
 			"📊 Live token usage display with cached/uncached breakdown (opt-in in settings)",

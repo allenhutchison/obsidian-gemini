@@ -1,6 +1,20 @@
 import { readFileSync, writeFileSync } from 'fs';
 
-const targetVersion = process.env.npm_package_version;
+// Target version: CLI arg (PR-based release flow) or npm_package_version (`npm version`).
+const argVersion = process.argv[2];
+const targetVersion = argVersion ?? process.env.npm_package_version;
+
+if (!targetVersion) {
+	console.error('No target version. Usage: node version-bump.mjs <version>');
+	process.exit(1);
+}
+
+// With a CLI arg, npm has not bumped package.json — do it here.
+if (argVersion) {
+	const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+	pkg.version = targetVersion;
+	writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n');
+}
 
 // read minAppVersion from manifest.json and bump version to target version
 let manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));

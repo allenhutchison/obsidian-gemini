@@ -1,55 +1,107 @@
+# Releases the plugin when an `auto/release-*` PR is merged (see the
+# release-process skill), or via a manual workflow_dispatch. Creates the tag,
+# builds, and publishes a draft GitHub release titled from src/release-notes.json.
 name: Release Obsidian Gemini plugin
 
 on:
-  push:
-    tags:
-      - '*'
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 4.10.0 (version files on main must already be bumped)'
+        required: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  test:
+  release:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'auto/release-'))
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
-      - name: Use Node.js
-        uses: actions/setup-node@v6
         with:
-          node-version: '24.x'
-      - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm test
-
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v6
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref }}
 
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '24.x'
 
-      - name: Build plugin
+      - name: Resolve version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            version="$INPUT_VERSION"
+          else
+            version="$(node -p "require('./package.json').version")"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve release title
+        id: title
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          title="$(node -p "require('./src/release-notes.json')[process.env.VERSION]?.title || ''")"
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+
+      - name: Verify release title contains the full version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TITLE: ${{ steps.title.outputs.title }}
+        run: |
+          if [ -z "$TITLE" ]; then
+            echo "::error::No src/release-notes.json entry for version $VERSION"
+            exit 1
+          fi
+          case "$TITLE" in
+            *"$VERSION"*) echo "Release title OK: $TITLE" ;;
+            *) echo "::error::Release title '$TITLE' must contain the full version '$VERSION'"; exit 1 ;;
+          esac
+
+      - name: Install dependencies and test
         run: |
           npm install
-          npm run build
+          npm test
 
-      - name: Create release
+      - name: Build plugin
+        run: npm run build
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Write release notes body
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node -e "
+            const note = require('./src/release-notes.json')[process.env.VERSION];
+            const parts = [];
+            if (note.details) parts.push(note.details, '');
+            parts.push(...note.highlights.map((h) => '- ' + h));
+            require('fs').writeFileSync('RELEASE_BODY.md', parts.join('\n') + '\n');
+          "
+
+      - name: Create draft release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TITLE: ${{ steps.title.outputs.title }}
         run: |
-          tag="${GITHUB_REF#refs/tags/}"
-
-          gh release create "$tag" \
-            --title="$tag" \
+          gh release create "$VERSION" \
+            --title="$TITLE" \
+            --notes-file RELEASE_BODY.md \
             --draft \
             main.js manifest.json styles.css
