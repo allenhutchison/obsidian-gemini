@@ -7,7 +7,7 @@ import type { RagCache } from './rag-cache';
 import type { RagRateLimiter } from './rag-rate-limiter';
 import { CACHE_VERSION } from './rag-types';
 import type { IndexProgress, IndexResult, FailedFileEntry, RagIndexStatus } from './rag-types';
-import { getErrorMessage, isQuotaExhausted } from '../utils/error-utils';
+import { getErrorMessage, isNotFoundError, isQuotaExhausted } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
 
 /**
@@ -134,8 +134,7 @@ export class RagVaultScanner {
 			} catch (error) {
 				// Check if it's a 404/not found error vs other errors
 				const errorMessage = error instanceof Error ? error.message : String(error);
-				const isNotFound =
-					errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('NOT_FOUND');
+				const isNotFound = isNotFoundError(error);
 				// A saved store name can be structurally invalid — e.g. a custom name
 				// entered via an older plugin version that the File Search API rejects
 				// as malformed (the resource ID is server-assigned and cannot be chosen).
@@ -315,11 +314,7 @@ export class RagVaultScanner {
 					);
 					this.plugin.logger.log(`RAG Indexing: Deleted store ${storeName}`);
 				} catch (deleteError) {
-					const errorMessage = deleteError instanceof Error ? deleteError.message : String(deleteError);
-					const isNotFound =
-						errorMessage.includes('404') || errorMessage.includes('not found') || errorMessage.includes('NOT_FOUND');
-
-					if (isNotFound) {
+					if (isNotFoundError(deleteError)) {
 						this.plugin.logger.debug(
 							'RAG Indexing: Store no longer exists, proceeding with fresh creation',
 							deleteError
@@ -557,17 +552,7 @@ export class RagVaultScanner {
 				if (isQuotaExhausted(error)) {
 					this.plugin.logger.error('RAG Indexing: Permanent quota exhaustion detected, stopping');
 					this.rateLimiter.resetTracking();
-					this.callbacks.setStatus('error');
-					this.currentFile = undefined;
-					this.indexingStartTime = undefined;
-					if (this.ragCache.cache) {
-						this.ragCache.cache.indexingInProgress = false;
-						this.ragCache.cache.indexingStartedAt = undefined;
-						this.ragCache.cache.lastIndexedFile = undefined;
-						await this.ragCache.saveCache();
-					}
-					this.callbacks.onUpdateStatusBar();
-					this.callbacks.onNotifyListeners();
+					await this.resetIndexingState('error');
 					new Notice(getErrorMessage(error), 8000);
 					result.duration = Date.now() - startTime;
 					return result;
@@ -577,18 +562,7 @@ export class RagVaultScanner {
 				if (this.rateLimiter.consecutiveCount >= this.rateLimiter.maxRetries) {
 					this.plugin.logger.error(`RAG Indexing: Max rate limit retries (${this.rateLimiter.maxRetries}) exceeded`);
 					this.rateLimiter.resetTracking();
-					this.callbacks.setStatus('error');
-					this.currentFile = undefined;
-					this.indexingStartTime = undefined;
-					// Clear resume flags on explicit failure
-					if (this.ragCache.cache) {
-						this.ragCache.cache.indexingInProgress = false;
-						this.ragCache.cache.indexingStartedAt = undefined;
-						this.ragCache.cache.lastIndexedFile = undefined;
-						await this.ragCache.saveCache();
-					}
-					this.callbacks.onUpdateStatusBar();
-					this.callbacks.onNotifyListeners();
+					await this.resetIndexingState('error');
 					result.duration = Date.now() - startTime;
 					return result;
 				}
@@ -616,21 +590,9 @@ export class RagVaultScanner {
 				return result;
 			}
 
-			this.callbacks.setStatus(this.cancelRequested ? 'idle' : 'error');
-			this.currentFile = undefined;
-			this.indexingStartTime = undefined;
+			const newStatus: RagIndexStatus = this.cancelRequested ? 'idle' : 'error';
 			this.cancelRequested = false;
-
-			// Clear resume flags on cancellation or error.
-			if (this.ragCache.cache) {
-				this.ragCache.cache.indexingInProgress = false;
-				this.ragCache.cache.indexingStartedAt = undefined;
-				this.ragCache.cache.lastIndexedFile = undefined;
-				await this.ragCache.saveCache();
-			}
-
-			this.callbacks.onUpdateStatusBar();
-			this.callbacks.onNotifyListeners();
+			await this.resetIndexingState(newStatus);
 
 			// Don't re-throw if cancelled, just return partial results
 			if (error instanceof Error && error.message === 'Indexing cancelled by user') {
@@ -643,6 +605,25 @@ export class RagVaultScanner {
 
 		result.duration = Date.now() - startTime;
 		return result;
+	}
+
+	/**
+	 * Tear down indexing state on a failed or cancelled run: apply the status,
+	 * clear the in-memory progress fields, and reset the cache resume flags so the
+	 * next run starts clean rather than offering to resume a dead run.
+	 */
+	private async resetIndexingState(status: RagIndexStatus): Promise<void> {
+		this.callbacks.setStatus(status);
+		this.currentFile = undefined;
+		this.indexingStartTime = undefined;
+		if (this.ragCache.cache) {
+			this.ragCache.cache.indexingInProgress = false;
+			this.ragCache.cache.indexingStartedAt = undefined;
+			this.ragCache.cache.lastIndexedFile = undefined;
+			await this.ragCache.saveCache();
+		}
+		this.callbacks.onUpdateStatusBar();
+		this.callbacks.onNotifyListeners();
 	}
 
 	/**
