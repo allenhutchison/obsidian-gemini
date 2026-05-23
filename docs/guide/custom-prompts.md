@@ -40,15 +40,6 @@ If you're unsure whether you need a custom prompt or a [skill](/guide/agent-skil
 
 ## Getting Started
 
-### Enable Custom Prompts
-
-1. Open Obsidian Settings
-2. Navigate to Gemini Scribe settings
-3. Find the "Custom Prompts" section
-4. Toggle "Enable Custom Prompts" to ON
-
-**Note**: Custom prompts are disabled by default. You must enable them to use this feature.
-
 ### Locate the Prompts Folder
 
 Custom prompts are stored in: `[Your Plugin State Folder]/Prompts/`
