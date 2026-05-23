@@ -5,7 +5,14 @@
  * streamlined implementation powered by @google/genai.
  */
 import { createGoogleGenAI } from './google-genai-factory';
-import { GoogleGenAI, Content, Part, GenerateContentParameters, GenerateContentResponse } from '@google/genai';
+import {
+	GoogleGenAI,
+	Content,
+	Part,
+	GenerateContentParameters,
+	GenerateContentResponse,
+	GenerateContentResponseUsageMetadata,
+} from '@google/genai';
 import {
 	ModelApi,
 	BaseModelRequest,
@@ -79,7 +86,7 @@ export class GeminiClient implements ModelApi {
 		let accumulatedRendered = '';
 		let accumulatedThoughts = '';
 		let toolCalls: ToolCall[] | undefined;
-		let lastUsageMetadata: any = undefined;
+		let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined = undefined;
 
 		const complete = (async (): Promise<ModelResponse> => {
 			const params = await this.buildGenerateContentParams(request);
@@ -145,12 +152,11 @@ export class GeminiClient implements ModelApi {
 					// Capture usageMetadata from chunks (usually present in last chunk)
 					if (chunk.usageMetadata) {
 						lastUsageMetadata = chunk.usageMetadata;
-						const meta = chunk.usageMetadata as any;
 						this.plugin?.logger.debug(
 							`[GeminiClient] Captured usageMetadata from streaming chunk: ` +
-								`prompt=${meta.promptTokenCount}, ` +
-								`total=${meta.totalTokenCount}, ` +
-								`cached=${meta.cachedContentTokenCount ?? 0}`
+								`prompt=${chunk.usageMetadata.promptTokenCount}, ` +
+								`total=${chunk.usageMetadata.totalTokenCount}, ` +
+								`cached=${chunk.usageMetadata.cachedContentTokenCount ?? 0}`
 						);
 					}
 				}
@@ -419,10 +425,10 @@ export class GeminiClient implements ModelApi {
 			...(toolCalls && { toolCalls }),
 			...(response.usageMetadata && {
 				usageMetadata: {
-					promptTokenCount: (response.usageMetadata as any).promptTokenCount,
-					candidatesTokenCount: (response.usageMetadata as any).candidatesTokenCount,
-					totalTokenCount: (response.usageMetadata as any).totalTokenCount,
-					cachedContentTokenCount: (response.usageMetadata as any).cachedContentTokenCount,
+					promptTokenCount: response.usageMetadata.promptTokenCount,
+					candidatesTokenCount: response.usageMetadata.candidatesTokenCount,
+					totalTokenCount: response.usageMetadata.totalTokenCount,
+					cachedContentTokenCount: response.usageMetadata.cachedContentTokenCount,
 				},
 			}),
 		};
@@ -431,7 +437,7 @@ export class GeminiClient implements ModelApi {
 	/**
 	 * Extract text from streaming chunk
 	 */
-	private extractTextFromChunk(chunk: any): string {
+	private extractTextFromChunk(chunk: GenerateContentResponse): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
 			const text = chunk.candidates[0].content.parts
 				.filter((part: Part) => 'text' in part && part.text && !(part as PartWithThought).thought)
@@ -445,7 +451,7 @@ export class GeminiClient implements ModelApi {
 	/**
 	 * Extract thought/reasoning content from streaming chunk
 	 */
-	private extractThoughtFromChunk(chunk: any): string {
+	private extractThoughtFromChunk(chunk: GenerateContentResponse): string {
 		if (chunk.candidates?.[0]?.content?.parts) {
 			const parts = chunk.candidates[0].content.parts;
 			const thoughtParts = parts.filter(
@@ -515,8 +521,8 @@ export class GeminiClient implements ModelApi {
 	/**
 	 * Extract tool calls from streaming chunk
 	 */
-	private extractToolCallsFromChunk(chunk: any): ToolCall[] | undefined {
-		return this.extractToolCallsFromResponse(chunk as GenerateContentResponse);
+	private extractToolCallsFromChunk(chunk: GenerateContentResponse): ToolCall[] | undefined {
+		return this.extractToolCallsFromResponse(chunk);
 	}
 
 	/**
@@ -524,7 +530,7 @@ export class GeminiClient implements ModelApi {
 	 */
 	private extractRenderedFromResponse(response: GenerateContentResponse): string {
 		// Search grounding metadata is in groundingMetadata
-		const metadata = (response as any).candidates?.[0]?.groundingMetadata;
+		const metadata = response.candidates?.[0]?.groundingMetadata;
 		if (!metadata) return '';
 
 		// Extract and format grounding sources
@@ -552,8 +558,8 @@ export class GeminiClient implements ModelApi {
 	/**
 	 * Extract rendered content from streaming chunk
 	 */
-	private extractRenderedFromChunk(chunk: any): string {
-		return this.extractRenderedFromResponse(chunk as GenerateContentResponse);
+	private extractRenderedFromChunk(chunk: GenerateContentResponse): string {
+		return this.extractRenderedFromResponse(chunk);
 	}
 
 	/**
