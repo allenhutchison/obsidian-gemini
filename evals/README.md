@@ -428,7 +428,7 @@ are committed.
 
 ## Judge calibration
 
-The LLM-as-judge (default `gemini-2.5-flash`) decides pass/fail for prose-heavy tasks via a `judge` output matcher. To know how often it agrees with a human, the repo carries a **one-time human-labelled gold set** built from a representative sweep — `evals/calibration/judge-calibration.json`. Downstream tooling (judge-accuracy measurement, judge-model comparison) reads this file.
+The LLM-as-judge (default `gemini-3.5-flash`) decides pass/fail for prose-heavy tasks via a `judge` output matcher. To know how often it agrees with a human, the repo carries a **one-time human-labelled gold set** built from a representative sweep — `evals/calibration/judge-calibration.json`. Downstream tooling (judge-accuracy measurement, judge-model comparison) reads this file.
 
 ### Building the calibration set
 
