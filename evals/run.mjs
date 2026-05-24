@@ -600,7 +600,7 @@ async function main() {
 
 		// Initialize the LLM-as-judge once so prose-rubric tasks can opt in to
 		// `{ type: 'judge', criteria: '...' }` matchers. The judge always uses a
-		// pinned Gemini model (gemini-2.5-flash by default; `EVAL_JUDGE_MODEL`
+		// pinned Gemini model (gemini-3.5-flash by default; `EVAL_JUDGE_MODEL`
 		// env override) — independent of the system under test, so an Ollama
 		// run still scores its prose tasks against a stable judge.
 		const judgeApiKey = process.env.EVAL_JUDGE_API_KEY?.trim() || undefined;

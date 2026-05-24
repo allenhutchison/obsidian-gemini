@@ -6,8 +6,14 @@
  *   - It always uses Gemini, even when the system under test is Ollama,
  *     so the judgment itself doesn't change when we swap the agent's model.
  *   - The model id is **pinned** via `EVAL_JUDGE_MODEL` (default
- *     `gemini-2.5-flash`) per #687's reliability methodology — pinning means
+ *     `gemini-3.5-flash`) per #687's reliability methodology — pinning means
  *     a model-swap experiment doesn't make the verdict a moving target.
+ *     The current default was selected against the #870 calibration set
+ *     (PR #889 measurement, #871 decision): 94.4% agreement with human
+ *     ground truth, vs. 92.2% for the previous `gemini-2.5-flash`. The
+ *     win came from being non-brittle on cosmetic response formatting
+ *     and catching a fabrication case that flash-lite missed; the cost
+ *     is well below 1¢ per single-model sweep.
  *   - `temperature: 0` plus a strict YES/NO contract minimizes nondeterminism;
  *     the residual flake gets caught by `pass^k` repetition.
  *
@@ -27,7 +33,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { obsidianEval } from './obsidian-driver.mjs';
 
-const DEFAULT_JUDGE_MODEL = 'gemini-2.5-flash';
+const DEFAULT_JUDGE_MODEL = 'gemini-3.5-flash';
 
 const PROMPT_TEMPLATE = `You are evaluating whether an AI agent's response satisfies a quality criterion.
 
@@ -96,7 +102,7 @@ async function readApiKey() {
  *
  * Options:
  *   - `model`: judge model id (default from `EVAL_JUDGE_MODEL` env or
- *     `gemini-2.5-flash`). Pinned by design — do **not** wire this to the
+ *     `gemini-3.5-flash`). Pinned by design — do **not** wire this to the
  *     `chatModelName` setting, since that's what we're benchmarking.
  *   - `apiKey`: explicit override; otherwise read from the running plugin.
  *     `evals/run.mjs` wires this from `EVAL_JUDGE_API_KEY` when set.
