@@ -463,7 +463,7 @@ The extractor **refuses to overwrite** an existing `judge-calibration.json` by d
 
 ### Output location
 
-```
+```text
 evals/calibration/judge-calibration.json   ← committed to git once labelled
 ```
 
