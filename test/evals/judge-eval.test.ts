@@ -161,4 +161,14 @@ describe('evaluateJudgeAgainstCalibration — edge cases', () => {
 		);
 		expect(r.total).toBe(0);
 	});
+
+	it('treats a truthy non-array `tuples` as empty (does not throw on for…of)', async () => {
+		// A malformed calibration file could expose `tuples` as a string or an
+		// object — both are truthy but not iterable. Without the Array.isArray
+		// guard the runtime for…of would throw.
+		const judge = vi.fn(async () => true);
+		expect((await evaluateJudgeAgainstCalibration({ tuples: 'oops' } as any, judge)).total).toBe(0);
+		expect((await evaluateJudgeAgainstCalibration({ tuples: { 0: 'tuple' } } as any, judge)).total).toBe(0);
+		expect(judge).not.toHaveBeenCalled();
+	});
 });

@@ -46,7 +46,7 @@
  * @returns {Promise<JudgeEvalResult>}
  */
 export async function evaluateJudgeAgainstCalibration(calibration, judgeFn) {
-	const tuples = calibration?.tuples || [];
+	const tuples = Array.isArray(calibration?.tuples) ? calibration.tuples : [];
 	const result = {
 		total: tuples.length,
 		evaluated: 0,
