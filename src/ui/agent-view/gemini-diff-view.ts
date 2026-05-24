@@ -5,7 +5,8 @@ import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { unifiedMergeView } from '@codemirror/merge';
 import type ObsidianGemini from '../../main';
-import { VIEW_TYPE_DIFF } from '../../main';
+
+export const VIEW_TYPE_DIFF = 'gemini-diff-view';
 
 export interface DiffViewState {
 	filePath: string;

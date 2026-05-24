@@ -794,8 +794,7 @@ export class AgentViewMessages {
 		};
 
 		try {
-			const { GeminiDiffView } = await import('./gemini-diff-view');
-			const { VIEW_TYPE_DIFF } = await import('../../main');
+			const { GeminiDiffView, VIEW_TYPE_DIFF } = await import('./gemini-diff-view');
 			await leaf.setViewState({ type: VIEW_TYPE_DIFF, active: true });
 
 			const view = leaf.view;
