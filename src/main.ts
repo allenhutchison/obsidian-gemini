@@ -1,7 +1,7 @@
 import { Plugin, WorkspaceLeaf, Editor, MarkdownView, MarkdownFileInfo, Platform } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
-import { GeminiDiffView } from './ui/agent-view/gemini-diff-view';
+import { GeminiDiffView, VIEW_TYPE_DIFF } from './ui/agent-view/gemini-diff-view';
 import { GeminiSummary } from './summary';
 import { ImageGeneration } from './services/image-generation';
 import { ScribeFile } from './files';
@@ -167,8 +167,6 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 };
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
-
-export const VIEW_TYPE_DIFF = 'gemini-diff-view';
 
 export default class ObsidianGemini extends Plugin {
 	settings!: ObsidianGeminiSettings;
