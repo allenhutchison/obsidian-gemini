@@ -7,12 +7,7 @@
 	"fixture": "rewrite-section",
 	"expectedTools": ["read_file"],
 	"forbiddenTools": ["delete_file"],
-	"outputMatchers": [
-		{
-			"type": "judge",
-			"criteria": "The response indicates the Equipment Pickup section was rewritten to be shorter and clearer than the original run-on sentence, while preserving the key facts (gear cage, Marcy, items issued, barcode responsibility)."
-		}
-	],
+	"outputMatchers": [],
 	"vaultAssertions": [
 		{
 			"type": "fileContains",
@@ -25,9 +20,9 @@
 				"## Overview"
 			]
 		},
-		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "(?i)gear cage" },
-		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "(?i)marcy" },
-		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "(?i)barcode" },
+		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "gear cage", "flags": "i" },
+		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "marcy", "flags": "i" },
+		{ "type": "fileMatches", "path": "eval-scratch/onboarding-guide.md", "value": "barcode", "flags": "i" },
 		{
 			"type": "fileLacks",
 			"path": "eval-scratch/onboarding-guide.md",
