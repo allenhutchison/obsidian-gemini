@@ -426,6 +426,47 @@ within its output ceiling. The `results/` directory is gitignored, so
 transcripts and raw results stay out of source control; only blessed baselines
 are committed.
 
+## Judge calibration
+
+The LLM-as-judge (default `gemini-2.5-flash`) decides pass/fail for prose-heavy tasks via a `judge` output matcher. To know how often it agrees with a human, the repo carries a **one-time human-labelled gold set** built from a representative sweep — `evals/calibration/judge-calibration.json`. Downstream tooling (judge-accuracy measurement, judge-model comparison) reads this file.
+
+### Building the calibration set
+
+```bash
+npm run eval                                     # full sweep on a representative model
+npm run eval:calibrate-extract                   # extract judge tuples from the latest result
+# or:  npm run eval:calibrate-extract -- --from=evals/results/<slug>.json
+```
+
+`eval:calibrate-extract` walks the result's `solve_details.matcher_details`, picks out every `judge`-typed detail across every run of every task, and writes one tuple per `(task, run, judge-matcher)`:
+
+```json
+{
+	"id": "ambiguous-entity::1::0",
+	"task_id": "ambiguous-entity",
+	"user_message": "...",
+	"criteria": "covers X and Y",
+	"response": "<the agent's final reply for this run>",
+	"automated_verdict": true,
+	"judge_error": null,
+	"human_label": null
+}
+```
+
+`response` is the per-run `response_text` frozen by #869 — that's why a calibration sweep only makes sense on a post-#869 commit.
+
+### Labelling workflow
+
+A human reads each tuple's `criteria` and `response` and sets `human_label` to `"YES"` or `"NO"`. The automated verdict is shown alongside but should not anchor the human — the whole point is independent ground truth. Tuples with a non-null `judge_error` (judge unavailable / API error) should generally be left at `null` since there is no automated verdict to compare against.
+
+The extractor **refuses to overwrite** an existing `judge-calibration.json` by default (a fresh extract would wipe the labels). Pass `--force` only when intentionally rebuilding from a new sweep.
+
+### Output location
+
+```
+evals/calibration/judge-calibration.json   ← committed to git once labelled
+```
+
 ## Architecture
 
 The harness drives Obsidian via the `obsidian eval` CLI command, installing a temporary event-bus subscriber to capture agent lifecycle events. It does NOT modify plugin internals — all observation is via the existing `agentEventBus` subscriptions.
