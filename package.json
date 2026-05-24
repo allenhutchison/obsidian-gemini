@@ -29,6 +29,7 @@
 		"eval:compare": "node evals/lib/compare.mjs",
 		"eval:bless": "node evals/lib/bless.mjs",
 		"eval:calibrate-extract": "node evals/calibrate-extract.mjs",
+		"eval:calibrate-judge": "node evals/calibrate-judge.mjs",
 		"docs:dev": "vitepress dev docs",
 		"docs:build": "vitepress build docs",
 		"docs:preview": "vitepress preview docs"

@@ -467,6 +467,21 @@ The extractor **refuses to overwrite** an existing `judge-calibration.json` by d
 evals/calibration/judge-calibration.json   ← committed to git once labelled
 ```
 
+### Measuring a candidate judge against the gold set
+
+Once the calibration set is labelled, you can measure how well any judge model agrees with the human labels:
+
+```bash
+npm run eval:calibrate-judge                          # default judge (env or fallback)
+npm run eval:calibrate-judge -- --model=gemini-2.5-pro
+npm run eval:calibrate-judge -- --calibration=<path>  # use a different calibration file
+npm run eval:calibrate-judge -- --json                # machine-readable summary for diffing runs
+```
+
+For each tuple with a non-null `human_label` and a clean `judge_error`, the tool calls the candidate judge with the same `(criterion, { userMessage, responseText })` shape used at run time. It reports overall agreement, a confusion matrix (false positives = judge YES / human NO, false negatives = judge NO / human YES), and a per-tuple disagreement list with enough context to inspect _why_ the judge flipped.
+
+The candidate must reach the harness's standard judge surface (currently Gemini via `EVAL_JUDGE_API_KEY` or the running plugin's key). A cross-vendor judge needs the provider plumbing tracked in #872 before it can be measured by this tool.
+
 ## Architecture
 
 The harness drives Obsidian via the `obsidian eval` CLI command, installing a temporary event-bus subscriber to capture agent lifecycle events. It does NOT modify plugin internals — all observation is via the existing `agentEventBus` subscriptions.
