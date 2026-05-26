@@ -31,6 +31,7 @@ export class ProjectPickerModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass('gemini-session-modal');
+		this.modalEl.addClass('mod-gemini-session-modal');
 
 		contentEl.createEl('h2', { text: 'Switch Project' });
 

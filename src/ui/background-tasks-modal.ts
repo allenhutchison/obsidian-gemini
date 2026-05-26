@@ -105,6 +105,7 @@ export class BackgroundTasksModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass('gemini-activity-modal');
+		this.modalEl.addClass('mod-gemini-activity-modal');
 
 		// Outer tab bar
 		const tabBar = contentEl.createDiv({ cls: 'gemini-activity-tab-bar' });

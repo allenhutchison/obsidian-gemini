@@ -26,6 +26,7 @@ import refSelectionPrompts from '../../docs/guide/selection-prompts.md';
 import refSemanticSearch from '../../docs/guide/semantic-search.md';
 import refSummarization from '../../docs/guide/summarization.md';
 import refAdvancedSettings from '../../docs/reference/advanced-settings.md';
+import refEvals from '../../docs/reference/evals.md';
 import refLoopDetection from '../../docs/reference/loop-detection.md';
 import refSettings from '../../docs/reference/settings.md';
 
@@ -49,6 +50,7 @@ export const helpResources = new Map<string, string>([
 	['references/semantic-search.md', refSemanticSearch],
 	['references/summarization.md', refSummarization],
 	['references/advanced-settings.md', refAdvancedSettings],
+	['references/evals.md', refEvals],
 	['references/loop-detection.md', refLoopDetection],
 	['references/settings.md', refSettings],
 ]);
@@ -74,5 +76,6 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/semantic-search.md\` | Semantic Vault Search |
 | \`references/summarization.md\` | Document Summarization Guide |
 | \`references/advanced-settings.md\` | Advanced Settings Guide |
+| \`references/evals.md\` | Eval Suite |
 | \`references/loop-detection.md\` | Tool Loop Detection |
 | \`references/settings.md\` | Settings Reference |`;

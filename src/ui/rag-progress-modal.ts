@@ -59,6 +59,7 @@ export class RagProgressModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass('rag-progress-modal');
+		this.modalEl.addClass('mod-rag-progress-modal');
 
 		// Subscribe to progress updates
 		this.ragService.addProgressListener(this.progressListener);
