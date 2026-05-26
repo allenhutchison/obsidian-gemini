@@ -38,6 +38,7 @@ export class SessionListModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass('gemini-session-modal');
+		this.modalEl.addClass('mod-gemini-session-modal');
 
 		// Title
 		contentEl.createEl('h2', { text: 'Agent Sessions' });

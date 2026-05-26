@@ -50,6 +50,7 @@ export class RagStatusModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass('rag-status-modal');
+		this.modalEl.addClass('mod-rag-status-modal');
 
 		// Header with icon
 		const headerEl = contentEl.createDiv({ cls: 'rag-status-header' });

@@ -525,15 +525,6 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Tool Confirmation Modal - Enhanced */
-.gemini-tool-confirmation-modal {
-	max-width: 600px;
-}
-
-.modal.modal-container:has(.gemini-tool-confirmation-modal) {
-	width: 600px;
-	max-width: 90vw;
-}
-
 /* Modal Header */
 .gemini-tool-modal-header {
 	display: flex;
@@ -1467,7 +1458,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Session Modal Styles */
-.modal.modal-container:has(.gemini-session-modal) {
+.modal.mod-gemini-session-modal {
 	width: 600px;
 	max-width: 90vw;
 }
@@ -3614,7 +3605,7 @@ If your plugin does not need CSS, delete this file.
 
 /* ==================== RAG Status Modal Tabs ==================== */
 
-.modal.modal-container:has(.rag-status-modal) {
+.modal.mod-rag-status-modal {
 	width: 600px;
 	max-width: 90vw;
 }
@@ -3852,7 +3843,7 @@ If your plugin does not need CSS, delete this file.
 
 /* ==================== RAG Progress Modal ==================== */
 
-.modal.modal-container:has(.rag-progress-modal) {
+.modal.mod-rag-progress-modal {
 	width: 450px;
 	max-width: 90vw;
 }
@@ -4415,7 +4406,7 @@ If your plugin does not need CSS, delete this file.
 
 /* ── Unified Activity Modal (Background Tasks + RAG) ──────────────────────── */
 
-.modal.modal-container:has(.gemini-activity-modal) {
+.modal.mod-gemini-activity-modal {
 	width: 600px;
 	max-width: 90vw;
 }
