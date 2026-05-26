@@ -41,7 +41,12 @@ const context = await esbuild.context({
 	format: 'cjs',
 	target: 'es2018',
 	logLevel: 'info',
-	sourcemap: 'inline',
+	// Inline sourcemaps embed the full source of every dep as base64. In dev
+	// (watch mode) they're worth ~5–7× the binary size for the debugger; in
+	// prod the shipped artifact stays minified (line numbers map back to the
+	// repo source). Without this guard, main.js ships at ~11 MB and exceeds
+	// the Obsidian Sync Standard 5 MB threshold.
+	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
 	outfile: 'main.js',
 	minify: prod,
