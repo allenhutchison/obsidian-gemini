@@ -254,7 +254,7 @@ export class ToolExecutionEngine {
 	 * - edit_skill: originalContent = current SKILL.md body, proposedContent = parameters.content
 	 */
 	private async buildDiffContext(tool: Tool, parameters: any): Promise<DiffContext | undefined> {
-		const plugin = this.plugin as ObsidianGemini;
+		const plugin = this.plugin;
 
 		if (tool.name === 'write_file' && parameters.path && parameters.content !== undefined) {
 			const normalizedPath = normalizePath(parameters.path);
@@ -347,7 +347,7 @@ export class ToolExecutionEngine {
 	 * Used for diff context display only.
 	 */
 	private getSkillFilePath(skillName: string): string {
-		const plugin = this.plugin as ObsidianGemini;
+		const plugin = this.plugin;
 		if (plugin.skillManager) {
 			return normalizePath(`${plugin.skillManager.getSkillsFolderPath()}/${skillName}/SKILL.md`);
 		}
@@ -360,9 +360,9 @@ export class ToolExecutionEngine {
 	 */
 	private async safeReadFile(file: TFile): Promise<string> {
 		try {
-			return await (this.plugin as ObsidianGemini).app.vault.read(file);
+			return await this.plugin.app.vault.read(file);
 		} catch (error) {
-			(this.plugin as any).logger?.warn(`Failed to read file for diff context: ${file.path}`, error);
+			this.plugin.logger.warn(`Failed to read file for diff context: ${file.path}`, error);
 			return '';
 		}
 	}

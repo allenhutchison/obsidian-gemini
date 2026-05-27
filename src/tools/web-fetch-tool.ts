@@ -52,7 +52,7 @@ export class WebFetchTool implements Tool {
 	}
 
 	async execute(params: { url: string; query: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		if (!plugin.apiKey) {
 			return {

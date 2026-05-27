@@ -2,7 +2,6 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 
 /**
@@ -40,7 +39,7 @@ export class ListFilesTool implements Tool {
 	}
 
 	async execute(params: { path: string; recursive?: boolean }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			// Default to project root when no path specified and project is active.

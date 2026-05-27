@@ -2,7 +2,6 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
 
 /**
@@ -54,7 +53,7 @@ export class WriteFileTool implements Tool {
 		params: { path: string; content: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			const normalizedPath = normalizePath(params.path);

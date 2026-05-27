@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
-import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 
 /**
@@ -38,7 +37,7 @@ export class SearchFilesTool implements Tool {
 	}
 
 	async execute(params: { pattern: string; limit?: number }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			const allFiles = plugin.app.vault.getFiles();

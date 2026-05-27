@@ -124,13 +124,15 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
 - Blocked calls are flagged with `loopDetected: true` on `ToolResult` and emit a `toolLoopDetected` event on the agent bus
 - `AgentLoop` counts those fires per turn and aborts the turn after `AGENT_LOOP_ABORT_THRESHOLD` (currently 3) — the result comes back with `loopAborted: true` and a user-visible notice, which the UI displays but does not persist to session history
 
-11. **YAML Frontmatter**: Agent instructions include guidance for respecting YAML frontmatter when modifying files
+11. **Tool Implementation**: `ToolExecutionContext.plugin` is typed `ObsidianGemini`; no cast is needed in tool implementations — use `context.plugin` directly.
+
+12. **YAML Frontmatter**: Agent instructions include guidance for respecting YAML frontmatter when modifying files
 
 - The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentToolsPrompt.hbs`)
 - YAML frontmatter must start with `---` on line 1 and end with `---`
 - Content is only placed before frontmatter when explicitly instructed to modify frontmatter
 
-12. **Agent Skills** (`src/services/skill-manager.ts`, `src/tools/skill-tools.ts`): Extensible skill system following the [agentskills.io](https://agentskills.io) specification
+13. **Agent Skills** (`src/services/skill-manager.ts`, `src/tools/skill-tools.ts`): Extensible skill system following the [agentskills.io](https://agentskills.io) specification
 
 - Skills are self-contained packages stored in `[state-folder]/Skills/<skill-name>/SKILL.md`
 - `SkillManager` handles discovery, metadata parsing, content loading, resource reading, creation, and name validation

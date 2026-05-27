@@ -2,7 +2,6 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
 
 /**
@@ -63,7 +62,7 @@ class UpdateFrontmatterTool implements Tool {
 	}
 
 	async execute(params: { path: string; key: string; value: any }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 		const { path, key, value } = params;
 
 		try {
@@ -184,7 +183,7 @@ class AppendContentTool implements Tool {
 		params: { path: string; content: string; _replaceFullContent?: boolean; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 		const { path, content } = params;
 
 		try {

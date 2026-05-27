@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
 
 /**
  * Tool to generate images from text prompts using Gemini's image generation API
@@ -56,7 +55,7 @@ export class GenerateImageTool implements Tool {
 	}
 
 	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			// Get the image generation service

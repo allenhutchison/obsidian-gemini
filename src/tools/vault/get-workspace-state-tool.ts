@@ -2,7 +2,6 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { MarkdownView } from 'obsidian';
-import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 
 /** Maximum characters of selected text to include in workspace state */
@@ -31,7 +30,7 @@ export class GetWorkspaceStateTool implements Tool {
 	}
 
 	async execute(_params: any, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			const activeFile = plugin.app.workspace.getActiveFile();
