@@ -45,10 +45,10 @@ export function convertContentToMessages(contents: Content[]): OpenAiMessage[] {
 				toolCalls.push({
 					id: part.functionCall.id || `call_${Math.random().toString(36).slice(2)}`,
 					type: 'function',
-					function: {
-						name: part.functionCall.name,
-						arguments: JSON.stringify(part.functionCall.args || {}),
-					},
+				function: {
+					name: part.functionCall.name || '',
+					arguments: JSON.stringify(part.functionCall.args || {}),
+				},
 				});
 			} else if (part.functionResponse) {
 				toolResponses.push({
@@ -101,7 +101,7 @@ export function convertMessageToContent(message: OpenAiMessage): Content {
 			parts: [{
 				functionResponse: {
 					name: message.tool_call_id || 'unknown',
-					response: message.content || '',
+					response: (message.content || '') as unknown as Record<string, unknown>,
 					id: message.tool_call_id,
 				},
 			}],

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAiClient } from '../../../../src/api/providers/openai/client';
+import { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
 import { requestUrl } from 'obsidian';
 
 describe('OpenAiClient', () => {
@@ -95,7 +96,7 @@ describe('OpenAiClient', () => {
 				description: 'Read a file',
 				parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
 			}],
-		} as any);
+		} as ExtendedModelRequest);
 
 		expect(result.markdown).toBe('I will help');
 		expect(result.toolCalls).toHaveLength(1);

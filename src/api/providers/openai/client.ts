@@ -5,7 +5,6 @@ import {
 	ExtendedModelRequest,
 	ModelResponse,
 	ToolCall,
-	ToolDefinition,
 	StreamCallback,
 	StreamingModelResponse,
 } from '../../interfaces/model-api';
@@ -13,7 +12,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type ObsidianGemini from '../../../main';
 import type { OpenAiClientConfig } from './config';
 import { convertContentToMessages, OpenAiMessage } from './format-converter';
-import { parseSseStream, SseChunk } from './sse-parser';
+import { parseSseStream } from './sse-parser';
 
 interface OpenAiChatCompletionRequest {
 	model: string;
@@ -249,7 +248,10 @@ export class OpenAiClient implements ModelApi {
 			const message: OpenAiMessage = { role: 'user' };
 
 			if (allAttachments.length) {
-				const content: Array<{ type: string; [key: string]: any }> = [];
+				const content: Array<
+				| { type: 'text'; text: string }
+				| { type: 'image_url'; image_url: { url: string } }
+			> = [];
 				if (userParts.length) content.push({ type: 'text', text: userParts.join('\n\n') });
 
 				for (const att of allAttachments) {
@@ -323,7 +325,10 @@ export class OpenAiClient implements ModelApi {
 		);
 	}
 
-	private async makeRequest(endpoint: string, body: Record<string, any>): Promise<any> {
+	private async makeRequest(
+		endpoint: string,
+		body: OpenAiChatCompletionRequest
+	): Promise<{ status: number; json: OpenAiChatCompletionResponse; text?: string }> {
 		const baseUrl = this.config.baseUrl.replace(/\/$/, '');
 		const url = `${baseUrl}${endpoint}`;
 
@@ -385,14 +390,4 @@ export class OpenAiClient implements ModelApi {
 		};
 	}
 
-	private mergeArguments(existing: Record<string, any>, delta: string): Record<string, any> {
-		// For streaming tool calls, arguments come in chunks as JSON string fragments
-		// We need to accumulate and parse when complete
-		// This is a simplified approach — full implementation would buffer and parse
-		try {
-			return JSON.parse(delta);
-		} catch {
-			return existing;
-		}
-	}
 }
