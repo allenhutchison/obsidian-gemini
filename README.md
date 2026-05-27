@@ -2,10 +2,11 @@
 
 Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, providing powerful AI-driven assistance for note-taking, writing, and knowledge management directly within Obsidian. It leverages your notes as context for AI interactions, making it a highly personalized and integrated experience.
 
-> **Note:** Pick one of two setup paths in plugin settings → **Provider**:
+> **Note:** Pick one of three setup paths in plugin settings → **Provider**:
 >
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
+> - **OpenAI-compatible** — connect to any OpenAI-compatible API endpoint (OpenAI, Kimi Code, OpenRouter, local vLLM, etc.). Requires the endpoint's base URL and an API key.
 
 ## What's New in v4.9.0
 
@@ -25,6 +26,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 - **🌙 Missed-run catch-up** - Tasks that should have run while Obsidian was closed surface on startup for review.
 - **🛰️ Background tasks** - Deep research and image generation now run in the background with output consolidated under `[state-folder]/Background-Tasks/`. See the [Background Tasks guide](docs/guide/background-tasks.md).
 - **🦙 Ollama provider** - Point the plugin at a local Ollama server for offline, local-model chat. See the [Ollama Setup guide](docs/guide/ollama-setup.md).
+- **🔌 OpenAI-compatible provider** - Connect to any OpenAI-compatible API endpoint (OpenAI, Kimi Code, OpenRouter, local vLLM) with full support for chat, streaming, and tool calling.
 - **🛑 Runaway-loop abort** - Repeated tool-loop detections within a turn now abort the turn with a clear notice instead of churning.
 - **🛠️ Headless agent loop** - AgentLoop extracted from the agent view so scheduled and background runners share the same execution engine.
 
@@ -70,6 +72,8 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 **Prefer running models locally?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)". A few Gemini-built-in features (Google Search, URL Context, Deep Research, image generation, RAG) are unavailable on Ollama; see [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
 
+**Using a different AI provider?** Switch the **Provider** to "OpenAI-compatible" and enter your endpoint's base URL (e.g., `https://api.openai.com/v1`, `https://api.moonshot.cn/v1`) and API key. The plugin will discover available models automatically (if the endpoint supports `/v1/models`) or you can enter the model name manually. All chat, streaming, and tool-calling features work with OpenAI-compatible endpoints.
+
 ## Installation
 
 1.  **Community Plugins (Recommended):**
@@ -94,8 +98,8 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 2.  **Configure Plugin Settings:**
     - Open Obsidian Settings.
     - Go to "Gemini Scribe" under "Community plugins".
-    - **Provider:** Choose `Google Gemini (cloud)` (default) or `Ollama (local)`. The Ollama option exposes a base-URL field and refreshes the model list from `GET /api/tags`.
-    - **API Key:** (Gemini only) Paste your Gemini API key here. Your key is stored securely using Obsidian's SecretStorage.
+    - **Provider:** Choose `Google Gemini (cloud)` (default), `Ollama (local)`, or `OpenAI-compatible`. The Ollama option exposes a base-URL field and refreshes the model list from `GET /api/tags`. The OpenAI-compatible option lets you connect to any OpenAI-compatible endpoint (e.g., OpenAI, Kimi Code, OpenRouter).
+    - **API Key:** (Gemini and OpenAI-compatible) Paste your API key here. Gemini keys are stored securely using Obsidian's SecretStorage. OpenAI-compatible keys are stored in plugin settings.
     - **Chat Model:** Select the preferred Gemini model for chat interactions (default: `gemini-flash-latest`).
     - **Summary Model:** Select the preferred Gemini model for generating summaries (default: `gemini-flash-latest`).
     - **Completion Model:** Select the preferred model for IDE-style completions (default: `gemini-flash-lite-latest`).

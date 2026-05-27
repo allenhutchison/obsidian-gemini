@@ -32,10 +32,10 @@ UI sections without a dedicated topic in this reference: _Automation_ (covered i
 ### Provider
 
 - **Setting**: `provider`
-- **Type**: `'gemini' | 'ollama'`
+- **Type**: `'gemini' | 'ollama' | 'openai'`
 - **Default**: `'gemini'`
-- **Description**: Selects the model backend. `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon.
-- **Notes**: Switching providers re-initialises the plugin and resets stale model selections to the new provider's defaults. Provider-coupled features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are hidden when `ollama` is active. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
+- **Description**: Selects the model backend. `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon; `openai` calls any OpenAI-compatible API endpoint (e.g., OpenAI, Kimi Code, OpenRouter, local vLLM).
+- **Notes**: Switching providers re-initialises the plugin and resets stale model selections to the new provider's defaults. Provider-coupled features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are hidden when `ollama` or `openai` is active. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
 
 ### Ollama Base URL
 
@@ -45,14 +45,55 @@ UI sections without a dedicated topic in this reference: _Automation_ (covered i
 - **Required when provider is `ollama`**: Yes
 - **Description**: HTTP endpoint of your Ollama daemon. Update if Ollama runs on a different host or port.
 
+### OpenAI Base URL
+
+- **Setting**: `openaiBaseUrl`
+- **Type**: String
+- **Default**: `https://api.openai.com/v1`
+- **Required when provider is `openai`**: Yes
+- **Description**: Base URL for the OpenAI-compatible API endpoint. Change this to connect to alternative providers like Kimi Code, OpenRouter, or a local vLLM instance.
+- **Examples**:
+  - `https://api.openai.com/v1` — OpenAI official API
+  - `https://api.moonshot.cn/v1` — Kimi Code (Moonshot AI)
+  - `https://openrouter.ai/api/v1` — OpenRouter
+  - `http://localhost:8000/v1` — Local vLLM (requires "Allow insecure HTTP")
+
+### OpenAI API Key
+
+- **Setting**: `openaiApiKey`
+- **Type**: String
+- **Default**: `""` (empty)
+- **Required when provider is `openai`**: Yes
+- **Description**: API key for the OpenAI-compatible endpoint. Paste your key directly; it is stored in `data.json`.
+- **Security note**: Unlike the Gemini provider which uses Obsidian's SecretStorage, the OpenAI provider stores the key in plain text in `data.json`. This is a known limitation.
+
+### OpenAI Model Name
+
+- **Setting**: `openaiModelName`
+- **Type**: String
+- **Default**: `""` (empty)
+- **Required when provider is `openai`**: Yes
+- **Description**: Model identifier to use with the OpenAI-compatible endpoint. Enter the model name exactly as the endpoint expects it (e.g., `gpt-4`, `kimi-k2`, `anthropic/claude-3.5-sonnet` for OpenRouter).
+- **Model discovery**: Click "Refresh model list" in settings to fetch available models from the endpoint's `/v1/models` endpoint. If discovery fails, you can still enter the model name manually.
+
+### Allow Insecure HTTP
+
+- **Setting**: `openaiAllowInsecure`
+- **Type**: Boolean
+- **Default**: `false`
+- **Description**: Allow `http://` connections for OpenAI-compatible endpoints. Only enable for local development or trusted local networks.
+- **Security warning**: Disabling HTTPS exposes your API key and conversation data to network interception. Never enable this on public networks.
+
 ### API Key
 
 - **Type**: String
-- **Required**: Yes (when provider is `gemini`; ignored for `ollama`)
-- **Storage**: Stored securely using Obsidian's SecretStorage API (not saved in `data.json`)
-- **Description**: Your Google AI API key for accessing Gemini models
-- **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
-- **Migration**: If upgrading from a previous version, your API key is automatically migrated from `data.json` to secure storage on first load
+- **Required**: Yes (when provider is `gemini` or `openai`; ignored for `ollama`)
+- **Storage**: Stored securely using Obsidian's SecretStorage API for Gemini (not saved in `data.json`). For OpenAI-compatible providers, the API key is stored directly in `data.json`.
+- **Description**: Your API key for accessing the selected provider's models
+- **How to obtain**:
+  - **Gemini**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
+  - **OpenAI-compatible**: Obtain from your endpoint provider (e.g., OpenAI, Kimi Code, OpenRouter)
+- **Migration**: If upgrading from a previous version, your Gemini API key is automatically migrated from `data.json` to secure storage on first load
 
 ### Your Name
 
@@ -101,6 +142,7 @@ The active model list depends on the [`provider`](#provider) setting:
 
 - **Gemini (default)** — models are selected from the bundled Gemini list, refreshed from Google's API on startup so the latest models appear automatically. `imageModelName` is only available on this provider.
 - **Ollama** — the chat / summary / completion dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
+- **OpenAI-compatible** — models are discovered from `GET <openaiBaseUrl>/models` (if the endpoint supports it) or entered manually via `openaiModelName`. Click "Refresh model list" to re-query. Image generation and other Gemini-only features are unavailable in this mode.
 
 ### Chat Model
 
@@ -333,7 +375,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 
 ### Model Discovery
 
-Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from Google's API and falls back to the bundled list if the fetch fails. When using the Ollama provider, a **Refresh model list** button appears in Settings → General to re-query the Ollama daemon for newly pulled models. The remote model list is cached in `data.json` under `remoteModelCache` (managed internally; do not edit by hand).
+Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from Google's API and falls back to the bundled list if the fetch fails. When using the Ollama provider, a **Refresh model list** button appears in Settings → General to re-query the Ollama daemon for newly pulled models. When using the OpenAI-compatible provider, the same button re-queries the endpoint's `/v1/models` endpoint. The remote model list is cached in `data.json` under `remoteModelCache` (managed internally; do not edit by hand).
 
 ### Tool Execution
 
@@ -490,7 +532,8 @@ Available permission bypasses:
 1. Check API key is valid
 2. For Gemini: restart Obsidian — model discovery runs automatically on startup
 3. For Ollama: go to Settings → General and click **Refresh** in the **Refresh model list** row after pulling new models
-4. Check console for errors (with Debug Mode enabled)
+4. For OpenAI-compatible: verify the base URL is correct and the endpoint is reachable. Click **Refresh** to re-query `/v1/models`. If discovery fails, enter the model name manually in the "OpenAI Model Name" field.
+5. Check console for errors (with Debug Mode enabled)
 
 ### Tool execution issues
 
