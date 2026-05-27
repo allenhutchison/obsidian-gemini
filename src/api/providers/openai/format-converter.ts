@@ -1,8 +1,12 @@
 import { Content, Part } from '@google/genai';
 
+type OpenAiContentPart =
+	| { type: 'text'; text: string }
+	| { type: 'image_url'; image_url: { url: string } };
+
 export interface OpenAiMessage {
 	role: 'system' | 'user' | 'assistant' | 'tool';
-	content?: string | Array<{ type: string; [key: string]: any }>;
+	content?: string | OpenAiContentPart[];
 	tool_calls?: Array<{
 		id: string;
 		type: 'function';
@@ -11,6 +15,10 @@ export interface OpenAiMessage {
 	tool_call_id?: string;
 }
 
+/**
+ * Converts Gemini Content[] to OpenAI messages[] format.
+ * Handles text, inline images, function calls, and function responses.
+ */
 export function convertContentToMessages(contents: Content[]): OpenAiMessage[] {
 	const messages: OpenAiMessage[] = [];
 
@@ -24,7 +32,7 @@ export function convertContentToMessages(contents: Content[]): OpenAiMessage[] {
 		const toolResponses: Array<{ tool_call_id: string; content: string }> = [];
 
 		for (const part of parts) {
-			if ('text' in part && part.text) {
+			if ('text' in part && typeof part.text === 'string') {
 				textParts.push(part.text);
 			} else if (part.inlineData) {
 				imageParts.push({
@@ -44,7 +52,7 @@ export function convertContentToMessages(contents: Content[]): OpenAiMessage[] {
 				});
 			} else if (part.functionResponse) {
 				toolResponses.push({
-					tool_call_id: part.functionResponse.id || `call_${part.functionResponse.name}`,
+					tool_call_id: part.functionResponse.id || `call_${Math.random().toString(36).slice(2)}`,
 					content:
 						typeof part.functionResponse.response === 'string'
 							? part.functionResponse.response
@@ -81,7 +89,25 @@ export function convertContentToMessages(contents: Content[]): OpenAiMessage[] {
 	return messages;
 }
 
+/**
+ * Converts an OpenAI message back to Gemini Content.
+ * Note: image_url content parts are not converted back (one-way for history).
+ * Tool messages are converted to functionResponse parts.
+ */
 export function convertMessageToContent(message: OpenAiMessage): Content {
+	if (message.role === 'tool') {
+		return {
+			role: 'user',
+			parts: [{
+				functionResponse: {
+					name: message.tool_call_id || 'unknown',
+					response: message.content || '',
+					id: message.tool_call_id,
+				},
+			}],
+		};
+	}
+
 	const parts: Part[] = [];
 
 	if (typeof message.content === 'string' && message.content) {
@@ -106,7 +132,7 @@ export function convertMessageToContent(message: OpenAiMessage): Content {
 	}
 
 	return {
-		role: message.role === 'assistant' ? 'model' : 'user',
+		role: message.role === 'assistant' ? 'model' : message.role === 'system' ? 'system' : 'user',
 		parts,
 	};
 }
