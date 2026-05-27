@@ -30,4 +30,10 @@ describe('parseSseStream', () => {
 		expect(chunks).toHaveLength(1);
 		expect(chunks[0].choices[0].delta.content).toBe('ok');
 	});
+
+	it('parses finish_reason', () => {
+		const stream = `data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n`;
+		const chunks = parseSseStream(stream);
+		expect(chunks[0].choices[0].finish_reason).toBe('stop');
+	});
 });

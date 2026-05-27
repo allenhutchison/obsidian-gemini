@@ -1,4 +1,6 @@
 export interface SseChunk {
+	id?: string;
+	created?: number;
 	choices: Array<{
 		delta: {
 			content?: string;
@@ -9,6 +11,7 @@ export interface SseChunk {
 				function?: { name?: string; arguments?: string };
 			}>;
 		};
+		finish_reason?: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null;
 	}>;
 }
 
@@ -16,11 +19,13 @@ export function parseSseStream(streamText: string): SseChunk[] {
 	const chunks: SseChunk[] = [];
 	const lines = streamText.split('\n');
 
-	for (const line of lines) {
-		const trimmed = line.trim();
-		if (!trimmed.startsWith('data: ')) continue;
+	const DATA_PREFIX = 'data: ';
 
-		const data = trimmed.slice(6);
+	for (const line of lines) {
+		const trimmed = line.trimStart();
+		if (!trimmed.startsWith(DATA_PREFIX)) continue;
+
+		const data = trimmed.slice(DATA_PREFIX.length);
 		if (data === '[DONE]') continue;
 
 		try {
@@ -29,7 +34,7 @@ export function parseSseStream(streamText: string): SseChunk[] {
 				chunks.push(parsed);
 			}
 		} catch {
-			// Skip malformed lines
+			// Intentionally skip malformed lines — stream may contain non-JSON comments
 		}
 	}
 
