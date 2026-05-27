@@ -2,7 +2,7 @@ import modelData from './data/models.json';
 
 export type ModelRole = 'chat' | 'summary' | 'completions' | 'rewrite' | 'image';
 
-export type ModelProvider = 'gemini' | 'ollama';
+export type ModelProvider = 'gemini' | 'ollama' | 'openai';
 
 export interface GeminiModel {
 	value: string;

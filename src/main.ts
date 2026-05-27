@@ -58,6 +58,14 @@ export interface ObsidianGeminiSettings {
 	ollamaBaseUrl: string;
 	/** Optional custom base URL to override the default Google Gemini API endpoint. */
 	customBaseUrl: string;
+	/** Base URL for OpenAI-compatible API endpoint. Only used when provider === 'openai'. */
+	openaiBaseUrl: string;
+	/** API key for OpenAI-compatible endpoint. Only used when provider === 'openai'. */
+	openaiApiKey: string;
+	/** Model name for OpenAI-compatible endpoint (manual entry). Only used when provider === 'openai'. */
+	openaiModelName: string;
+	/** Allow insecure http:// connections for OpenAI-compatible endpoints. */
+	openaiAllowInsecure: boolean;
 	apiKeySecretName: string;
 	chatModelName: string;
 	summaryModelName: string;
@@ -112,6 +120,10 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	provider: 'gemini',
 	ollamaBaseUrl: 'http://localhost:11434',
 	customBaseUrl: '',
+	openaiBaseUrl: 'https://api.openai.com/v1',
+	openaiApiKey: '',
+	openaiModelName: '',
+	openaiAllowInsecure: false,
 	apiKeySecretName: '',
 	chatModelName: getDefaultModelForRole('chat'),
 	summaryModelName: getDefaultModelForRole('summary'),
