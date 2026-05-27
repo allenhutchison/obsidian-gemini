@@ -13,6 +13,11 @@ export interface SseChunk {
 		};
 		finish_reason?: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null;
 	}>;
+	usage?: {
+		prompt_tokens: number;
+		completion_tokens: number;
+		total_tokens: number;
+	};
 }
 
 export function parseSseStream(streamText: string): SseChunk[] {

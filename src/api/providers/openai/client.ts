@@ -15,6 +15,52 @@ import type { OpenAiClientConfig } from './config';
 import { convertContentToMessages, OpenAiMessage } from './format-converter';
 import { parseSseStream, SseChunk } from './sse-parser';
 
+interface OpenAiChatCompletionRequest {
+	model: string;
+	messages: OpenAiMessage[];
+	stream: boolean;
+	temperature?: number;
+	top_p?: number;
+	max_tokens?: number;
+	tools?: Array<{
+		type: 'function';
+		function: {
+			name: string;
+			description: string;
+			parameters: Record<string, unknown>;
+		};
+	}>;
+}
+
+interface OpenAiChatCompletionResponse {
+	choices: Array<{
+		message: {
+			role: string;
+			content?: string;
+			tool_calls?: Array<{
+				id: string;
+				type: string;
+				function: { name: string; arguments: string };
+			}>;
+		};
+		finish_reason?: string;
+	}>;
+	usage?: {
+		prompt_tokens: number;
+		completion_tokens: number;
+		total_tokens: number;
+	};
+}
+
+class OpenAiApiError extends Error {
+	status: number;
+	constructor(message: string, status: number) {
+		super(message);
+		this.status = status;
+		this.name = 'OpenAiApiError';
+	}
+}
+
 export class OpenAiClient implements ModelApi {
 	private config: OpenAiClientConfig;
 	private prompts: GeminiPrompts;
@@ -57,6 +103,7 @@ export class OpenAiClient implements ModelApi {
 		let accumulatedThoughts = '';
 		let toolCalls: ToolCall[] | undefined;
 		let usageMetadata: ModelResponse['usageMetadata'] | undefined;
+		const toolCallBuffers: Map<string, { name: string; argsBuffer: string }> = new Map();
 
 		const complete = (async (): Promise<ModelResponse> => {
 			if (!model) {
@@ -87,23 +134,47 @@ export class OpenAiClient implements ModelApi {
 
 					// Tool calls (accumulate across chunks)
 					if (delta.tool_calls) {
-						toolCalls = toolCalls || [];
 						for (const tc of delta.tool_calls) {
-							const existing = toolCalls.find((t) => t.id === tc.id);
-							if (existing) {
-								// Append arguments for streaming tool calls
-								if (tc.function?.arguments) {
-									existing.arguments = this.mergeArguments(existing.arguments, tc.function.arguments);
-								}
-							} else {
-								toolCalls.push({
-									name: tc.function?.name || '',
-									arguments: tc.function?.arguments ? JSON.parse(tc.function.arguments) : {},
-									id: tc.id || `call_${toolCalls.length}`,
-								});
+							const id = tc.id || `call_${tc.index}`;
+							if (!toolCallBuffers.has(id)) {
+								toolCallBuffers.set(id, { name: tc.function?.name || '', argsBuffer: '' });
+							}
+							const buffer = toolCallBuffers.get(id)!;
+							if (tc.function?.arguments) {
+								buffer.argsBuffer += tc.function.arguments;
 							}
 						}
 					}
+				}
+
+				// After the loop, convert buffers to ToolCall[]
+				if (toolCallBuffers.size > 0) {
+					toolCalls = [];
+					for (const [id, buffer] of toolCallBuffers) {
+						try {
+							toolCalls.push({
+								name: buffer.name,
+								arguments: JSON.parse(buffer.argsBuffer || '{}'),
+								id,
+							});
+						} catch {
+							toolCalls.push({
+								name: buffer.name,
+								arguments: {},
+								id,
+							});
+						}
+					}
+				}
+
+				// Check for usage in the last chunk
+				const lastChunk = chunks[chunks.length - 1];
+				if (lastChunk?.usage) {
+					usageMetadata = {
+						promptTokenCount: lastChunk.usage.prompt_tokens,
+						candidatesTokenCount: lastChunk.usage.completion_tokens,
+						totalTokenCount: lastChunk.usage.total_tokens,
+					};
 				}
 
 				return {
@@ -140,7 +211,7 @@ export class OpenAiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest,
 		model: string,
 		stream: boolean
-	): Promise<Record<string, any>> {
+	): Promise<OpenAiChatCompletionRequest> {
 		const isExtended = 'userMessage' in request;
 
 		if (!isExtended) {
@@ -195,7 +266,7 @@ export class OpenAiClient implements ModelApi {
 			messages.push(message);
 		}
 
-		const body: Record<string, any> = {
+		const body: OpenAiChatCompletionRequest = {
 			model,
 			messages,
 			stream,
@@ -211,7 +282,7 @@ export class OpenAiClient implements ModelApi {
 				function: {
 					name: tool.name,
 					description: tool.description,
-					parameters: tool.parameters,
+					parameters: tool.parameters as Record<string, unknown>,
 				},
 			}));
 		}
@@ -282,20 +353,18 @@ export class OpenAiClient implements ModelApi {
 
 		if (response.status !== 200) {
 			const errorText = typeof response.text === 'string' ? response.text : JSON.stringify(response.json);
-			const error = new Error(`OpenAI API error ${response.status}: ${errorText}`);
-			(error as any).status = response.status;
-			throw error;
+			throw new OpenAiApiError(`OpenAI API error ${response.status}: ${errorText}`, response.status);
 		}
 
 		return response;
 	}
 
-	private parseResponse(response: any): ModelResponse {
+	private parseResponse(response: { json: OpenAiChatCompletionResponse }): ModelResponse {
 		const data = response.json;
 		const message = data.choices?.[0]?.message;
 
 		const toolCalls: ToolCall[] | undefined = message?.tool_calls?.length
-			? message.tool_calls.map((tc: any) => ({
+			? message.tool_calls.map((tc) => ({
 					name: tc.function?.name || '',
 					arguments: tc.function?.arguments ? JSON.parse(tc.function.arguments) : {},
 					id: tc.id,
