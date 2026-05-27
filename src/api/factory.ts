@@ -10,6 +10,8 @@ import { GeminiClient } from './providers/gemini/client';
 import type { GeminiClientConfig } from './providers/gemini/config';
 import { OllamaClient } from './providers/ollama/client';
 import type { OllamaClientConfig } from './providers/ollama/config';
+import { OpenAiClient } from './providers/openai/client';
+import type { OpenAiClientConfig } from './providers/openai/config';
 import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
@@ -42,7 +44,7 @@ export class ModelClientFactory {
 	static createFromPlugin(
 		plugin: ObsidianGemini,
 		useCase: ModelUseCase,
-		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig>
+		overrides?: Partial<GeminiClientConfig> & Partial<OllamaClientConfig> & Partial<OpenAiClientConfig>
 	): ModelApi {
 		const settings = plugin.settings;
 		const provider = settings.provider ?? 'gemini';
@@ -66,6 +68,21 @@ export class ModelClientFactory {
 				...overrides,
 			};
 			const client = new OllamaClient(config, prompts, plugin);
+			return new RetryDecorator(client, retryConfig, plugin.logger);
+		}
+
+		if (provider === 'openai') {
+			const config: OpenAiClientConfig = {
+				baseUrl: settings.openaiBaseUrl || 'https://api.openai.com/v1',
+				apiKey: settings.openaiApiKey,
+				model: modelName,
+				temperature: settings.temperature ?? 0.7,
+				topP: settings.topP ?? 1,
+				streamingEnabled: settings.streamingEnabled ?? true,
+				allowInsecure: settings.openaiAllowInsecure ?? false,
+				...overrides,
+			};
+			const client = new OpenAiClient(config, prompts, plugin);
 			return new RetryDecorator(client, retryConfig, plugin.logger);
 		}
 

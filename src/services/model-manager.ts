@@ -3,6 +3,7 @@ import * as modelsModule from '../models';
 import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings, DEFAULT_GEMINI_MODELS } from '../models';
 import { ModelListProvider } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
+import { OpenAiModelsService } from './openai-models-service';
 import { ParameterValidationService, ParameterRanges } from './parameter-validation';
 
 export interface ModelUpdateOptions {
@@ -14,12 +15,14 @@ export class ModelManager {
 	private plugin: ObsidianGemini;
 	private listProvider: ModelListProvider;
 	private ollamaModelsService: OllamaModelsService;
+	private openAiModelsService: OpenAiModelsService;
 	private static staticModels: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
 		this.listProvider = new ModelListProvider(plugin);
 		this.ollamaModelsService = new OllamaModelsService(plugin);
+		this.openAiModelsService = new OpenAiModelsService(plugin);
 	}
 
 	/**
@@ -29,6 +32,17 @@ export class ModelManager {
 	async getAvailableModels(options: ModelUpdateOptions = {}): Promise<GeminiModel[]> {
 		if (this.plugin.settings.provider === 'ollama') {
 			return this.ollamaModelsService.getModels(options.forceRefresh);
+		}
+		if (this.plugin.settings.provider === 'openai') {
+			const discovered = await this.openAiModelsService.getModels(options.forceRefresh);
+			const manualModel = this.plugin.settings.openaiModelName;
+			if (manualModel && !discovered.some((m) => m.value === manualModel)) {
+				return [
+					{ value: manualModel, label: manualModel, provider: 'openai', supportsTools: true },
+					...discovered,
+				];
+			}
+			return discovered;
 		}
 		return this.listProvider.getTextModels();
 	}
@@ -49,14 +63,26 @@ export class ModelManager {
 		return this.ollamaModelsService;
 	}
 
+	getOpenAiModelsService(): OpenAiModelsService {
+		return this.openAiModelsService;
+	}
+
 	/**
 	 * Update the global GEMINI_MODELS list from the active provider and fix any stale settings.
 	 */
 	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult> {
-		const allModels =
-			this.plugin.settings.provider === 'ollama'
-				? await this.ollamaModelsService.getModels(options.forceRefresh)
-				: this.listProvider.getModels();
+		let allModels: GeminiModel[];
+		if (this.plugin.settings.provider === 'ollama') {
+			allModels = await this.ollamaModelsService.getModels(options.forceRefresh);
+		} else if (this.plugin.settings.provider === 'openai') {
+			allModels = await this.openAiModelsService.getModels(options.forceRefresh);
+			const manualModel = this.plugin.settings.openaiModelName;
+			if (manualModel && !allModels.some((m) => m.value === manualModel)) {
+				allModels.unshift({ value: manualModel, label: manualModel, provider: 'openai', supportsTools: true });
+			}
+		} else {
+			allModels = this.listProvider.getModels();
+		}
 		const previousModels = this.getCurrentGeminiModels();
 
 		const hasChanges = this.detectModelChanges(allModels, previousModels);
@@ -83,6 +109,13 @@ export class ModelManager {
 			// Populate GEMINI_MODELS with Ollama tags (best-effort; daemon may be down).
 			const ollamaModels = await this.ollamaModelsService.getModels();
 			this.updateGlobalModelsList(ollamaModels);
+		} else if (this.plugin.settings.provider === 'openai') {
+			const openAiModels = await this.openAiModelsService.getModels();
+			const manualModel = this.plugin.settings.openaiModelName;
+			if (manualModel && !openAiModels.some((m) => m.value === manualModel)) {
+				openAiModels.unshift({ value: manualModel, label: manualModel, provider: 'openai', supportsTools: true });
+			}
+			this.updateGlobalModelsList(openAiModels);
 		} else {
 			// Sync global GEMINI_MODELS with the bundled/remote Gemini list
 			const allModels = this.listProvider.getModels();
@@ -115,6 +148,9 @@ export class ModelManager {
 	private async getModelsForActiveProvider(): Promise<GeminiModel[]> {
 		if (this.plugin.settings.provider === 'ollama') {
 			return this.ollamaModelsService.getModels();
+		}
+		if (this.plugin.settings.provider === 'openai') {
+			return this.openAiModelsService.getModels();
 		}
 		return this.listProvider.getModels();
 	}

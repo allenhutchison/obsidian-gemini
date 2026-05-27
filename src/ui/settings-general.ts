@@ -66,9 +66,10 @@ async function renderGeneralSection(
 			dropdown
 				.addOption('gemini', 'Google Gemini (cloud)')
 				.addOption('ollama', 'Ollama (local)')
+				.addOption('openai', 'OpenAI-compatible')
 				.setValue(plugin.settings.provider)
 				.onChange(async (value) => {
-					plugin.settings.provider = value as 'gemini' | 'ollama';
+					plugin.settings.provider = value as 'gemini' | 'ollama' | 'openai';
 					await plugin.saveSettings();
 					// Re-render only the General section so provider-specific fields show/hide
 					// without tearing down sections rendered later in the settings tab.
@@ -113,6 +114,77 @@ async function renderGeneralSection(
 			.setName('Local-only feature notice')
 			.setDesc(
 				'Google Search, URL Context (web fetch), Deep Research, image generation, and RAG indexing are unavailable when using Ollama. They rely on Gemini built-in services.'
+			);
+	} else if (plugin.settings.provider === 'openai') {
+		new Setting(sectionEl)
+			.setName('OpenAI Base URL')
+			.setDesc('Base URL for the OpenAI-compatible API endpoint. Default is https://api.openai.com/v1')
+			.addText((text) =>
+				text
+					.setPlaceholder('https://api.openai.com/v1')
+					.setValue(plugin.settings.openaiBaseUrl)
+					.onChange((value) => {
+						plugin.settings.openaiBaseUrl = value.trim() || 'https://api.openai.com/v1';
+						debouncedSave();
+					})
+			);
+
+		new Setting(sectionEl)
+			.setName('OpenAI API Key')
+			.setDesc('API key for the OpenAI-compatible endpoint.')
+			.addText((text) => {
+				text.inputEl.type = 'password';
+				text.setValue(plugin.settings.openaiApiKey).onChange((value) => {
+					plugin.settings.openaiApiKey = value;
+					debouncedSave();
+				});
+			});
+
+		new Setting(sectionEl)
+			.setName('OpenAI Model Name')
+			.setDesc('Model name to use (e.g., gpt-4, kimi-k2). You can also fetch available models below.')
+			.addText((text) =>
+				text
+					.setPlaceholder('gpt-4')
+					.setValue(plugin.settings.openaiModelName)
+					.onChange((value) => {
+						plugin.settings.openaiModelName = value.trim();
+						debouncedSave();
+					})
+			);
+
+		new Setting(sectionEl)
+			.setName('Refresh model list')
+			.setDesc('Re-query the OpenAI-compatible endpoint for available models.')
+			.addButton((button) =>
+				button.setButtonText('Refresh').onClick(async () => {
+					try {
+						const manager = plugin.getModelManager();
+						manager.getOpenAiModelsService().invalidate();
+						const models = await manager.getAvailableModels({ forceRefresh: true });
+						new Notice(`Found ${models.length} model${models.length === 1 ? '' : 's'}.`);
+						sectionEl.empty();
+						await renderGeneralSection(sectionEl, plugin, app, context, debouncedSave);
+					} catch (error) {
+						new Notice(`Failed to refresh: ${getErrorMessage(error)}`);
+					}
+				})
+			);
+
+		new Setting(sectionEl)
+			.setName('Allow insecure HTTP')
+			.setDesc('Allow http:// connections (not recommended for production).')
+			.addToggle((toggle) =>
+				toggle.setValue(plugin.settings.openaiAllowInsecure).onChange((value) => {
+					plugin.settings.openaiAllowInsecure = value;
+					debouncedSave();
+				})
+			);
+
+		new Setting(sectionEl)
+			.setName('Feature notice')
+			.setDesc(
+				'Google Search, URL Context (web fetch), Deep Research, image generation, and RAG indexing are unavailable when using an OpenAI-compatible provider. They rely on Gemini built-in services.'
 			);
 	} else {
 		new Setting(sectionEl)

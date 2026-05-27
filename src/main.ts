@@ -186,6 +186,8 @@ export default class ObsidianGemini extends Plugin {
 	get apiKey(): string {
 		// Ollama runs locally with no auth, so no key is required.
 		if (this.settings?.provider === 'ollama') return '';
+		// OpenAI provider uses a direct API key setting
+		if (this.settings?.provider === 'openai') return this.settings.openaiApiKey;
 		const secretName = this.settings?.apiKeySecretName;
 		if (!secretName) return '';
 		return this.app.secretStorage.getSecret(secretName) ?? '';
