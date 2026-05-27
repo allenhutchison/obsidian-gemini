@@ -232,8 +232,8 @@ describe('RagSearchTool', () => {
 		});
 
 		it('should return error when RAG service is not ready', async () => {
-			mockContext.plugin.settings.ragIndexing.enabled = true;
-			mockContext.plugin.ragIndexing = {
+			(mockContext.plugin as any).settings.ragIndexing.enabled = true;
+			(mockContext.plugin as any).ragIndexing = {
 				isReady: () => false,
 				getStoreName: () => null,
 				getClient: () => null,
@@ -245,8 +245,8 @@ describe('RagSearchTool', () => {
 		});
 
 		it('should return error when no store is configured', async () => {
-			mockContext.plugin.settings.ragIndexing.enabled = true;
-			mockContext.plugin.ragIndexing = {
+			(mockContext.plugin as any).settings.ragIndexing.enabled = true;
+			(mockContext.plugin as any).ragIndexing = {
 				isReady: () => true,
 				getStoreName: () => null,
 				getClient: () => null,
@@ -258,8 +258,8 @@ describe('RagSearchTool', () => {
 		});
 
 		it('should return error when API client is not available', async () => {
-			mockContext.plugin.settings.ragIndexing.enabled = true;
-			mockContext.plugin.ragIndexing = {
+			(mockContext.plugin as any).settings.ragIndexing.enabled = true;
+			(mockContext.plugin as any).ragIndexing = {
 				isReady: () => true,
 				getStoreName: () => 'test-store',
 				getClient: () => null,
@@ -281,8 +281,8 @@ describe('RagSearchTool', () => {
 				},
 			};
 
-			mockContext.plugin.settings.ragIndexing.enabled = true;
-			mockContext.plugin.ragIndexing = {
+			(mockContext.plugin as any).settings.ragIndexing.enabled = true;
+			(mockContext.plugin as any).ragIndexing = {
 				isReady: () => true,
 				getStoreName: () => 'test-store',
 				getClient: () => mockAi,

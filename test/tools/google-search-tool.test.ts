@@ -168,7 +168,7 @@ describe('GoogleSearchTool', () => {
 		});
 
 		it('should return error when API key is missing', async () => {
-			mockContext.plugin.apiKey = '';
+			(mockContext.plugin as any).apiKey = '';
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
@@ -187,7 +187,7 @@ describe('GoogleSearchTool', () => {
 		});
 
 		it('should use default model when not specified', async () => {
-			mockContext.plugin.settings.chatModelName = undefined;
+			(mockContext.plugin as any).settings.chatModelName = undefined;
 
 			const mockResponse = {
 				candidates: [
