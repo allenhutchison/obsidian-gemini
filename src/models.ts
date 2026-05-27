@@ -57,10 +57,11 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 		return candidates[0].value;
 	}
 
-	// No models for this provider yet (e.g. Ollama before /api/tags returns).
+	// No models for this provider yet (e.g. Ollama before /api/tags returns,
+	// or OpenAI before custom models are configured).
 	// Returning an empty string lets callers handle the unconfigured state
 	// rather than throwing at module load.
-	if (provider === 'ollama') {
+	if (provider === 'ollama' || provider === 'openai') {
 		return '';
 	}
 
@@ -79,7 +80,7 @@ export interface ModelUpdateResult {
 }
 
 export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult {
-	const provider: ModelProvider = currentSettings?.provider === 'ollama' ? 'ollama' : 'gemini';
+	const provider: ModelProvider = currentSettings?.provider ?? 'gemini';
 	const availableModelValues = new Set(
 		GEMINI_MODELS.filter((m) => getModelProvider(m) === provider).map((m) => m.value)
 	);
@@ -95,7 +96,7 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	// indefinitely, since the empty value never re-triggers reconciliation).
 	const needsUpdate = (modelName: string) => {
 		if (!modelName) {
-			return provider !== 'ollama' || availableModelValues.size > 0;
+			return (provider !== 'ollama' && provider !== 'openai') || availableModelValues.size > 0;
 		}
 		return !availableModelValues.has(modelName);
 	};
