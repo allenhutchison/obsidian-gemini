@@ -1,58 +1,13 @@
 import type ObsidianGemini from '../main';
 import { ModelApi } from '../api/interfaces/model-api';
 import { ModelClientFactory } from '../api';
-import { SessionManager } from './session-manager';
-import { ToolExecutionEngine } from '../tools/execution-engine';
-import { ToolRegistry } from '../tools/tool-registry';
-import { ChatSession, SessionModelConfig } from '../types/agent';
-import { App } from 'obsidian';
-
-/**
- * Configuration for creating an agent
- */
-export interface AgentConfig {
-	session: ChatSession;
-	toolRegistry: ToolRegistry;
-	executionEngine: ToolExecutionEngine;
-	modelConfig?: SessionModelConfig;
-}
+import { ChatSession } from '../types/agent';
 
 /**
  * Factory for creating agent-related components
  * Centralizes the creation and configuration of agent mode
  */
 export class AgentFactory {
-	/**
-	 * Create a complete agent setup
-	 *
-	 * @param plugin The plugin instance
-	 * @param app The Obsidian app instance
-	 * @returns Agent components
-	 */
-	static createAgent(
-		plugin: ObsidianGemini,
-		_app: App
-	): {
-		sessionManager: SessionManager;
-		toolRegistry: ToolRegistry;
-		executionEngine: ToolExecutionEngine;
-	} {
-		// Create session manager
-		const sessionManager = new SessionManager(plugin);
-
-		// Create tool registry
-		const toolRegistry = new ToolRegistry(plugin);
-
-		// Create execution engine
-		const executionEngine = new ToolExecutionEngine(plugin, toolRegistry);
-
-		return {
-			sessionManager,
-			toolRegistry,
-			executionEngine,
-		};
-	}
-
 	/**
 	 * Create a model API for agent mode with session configuration
 	 *
@@ -61,42 +16,6 @@ export class AgentFactory {
 	 * @returns Configured ModelApi instance
 	 */
 	static createAgentModel(plugin: ObsidianGemini, session: ChatSession): ModelApi {
-		// Use session's model configuration if available
 		return ModelClientFactory.createChatModel(plugin, session.modelConfig);
-	}
-
-	/**
-	 * Create a model API for a specific agent task
-	 *
-	 * @param plugin The plugin instance
-	 * @param config Agent configuration
-	 * @param taskType Optional task type for specialized models
-	 * @returns Configured ModelApi instance
-	 */
-	static createAgentTaskModel(
-		plugin: ObsidianGemini,
-		config: AgentConfig,
-		_taskType?: 'summarize' | 'research' | 'code'
-	): ModelApi {
-		// For now, use the session's model config for all tasks
-		// In the future, we might want different models for different tasks
-		return this.createAgentModel(plugin, config.session);
-	}
-
-	/**
-	 * Initialize agent components for the plugin
-	 *
-	 * @param plugin The plugin instance
-	 */
-	static async initializeAgent(plugin: ObsidianGemini): Promise<void> {
-		// This would be called during plugin load to set up agent infrastructure
-		const { sessionManager, toolRegistry, executionEngine } = this.createAgent(plugin, plugin.app);
-
-		// Store references in the plugin
-		(plugin as any).sessionManager = sessionManager;
-		(plugin as any).toolRegistry = toolRegistry;
-		(plugin as any).executionEngine = executionEngine;
-
-		// Session manager doesn't need initialization
 	}
 }
