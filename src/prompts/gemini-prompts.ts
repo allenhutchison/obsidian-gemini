@@ -1,7 +1,7 @@
 import * as Handlebars from 'handlebars';
 import { getLanguage } from 'obsidian';
 import { CustomPrompt } from './types';
-import { ToolDefinition } from '../api/interfaces/model-api';
+import { ExtendedModelRequest, ToolDefinition } from '../api/interfaces/model-api';
 import type ObsidianGemini from '../main';
 
 import systemPromptContent from '../../prompts/systemPrompt.hbs';
@@ -175,5 +175,51 @@ export class GeminiPrompts {
 			toolCatalogSection,
 			additionalInstructions,
 		});
+	}
+
+	/**
+	 * Assemble the system instruction for an extended (agent-style) request.
+	 *
+	 * Loads AGENTS.md memory and skill summaries off the plugin, filters skills
+	 * to the project scope when active, and renders the layered system prompt
+	 * via `getSystemPromptWithCustom`. Errors loading memory or skills are
+	 * swallowed (logged via `plugin.logger.warn`) and the prompt continues with
+	 * an empty value — this preserves the contract that the system instruction
+	 * is always renderable.
+	 *
+	 * Provider clients call this once per request to keep the system-instruction
+	 * assembly identical across Gemini and Ollama (#901).
+	 */
+	async buildExtendedSystemInstruction(request: ExtendedModelRequest): Promise<string> {
+		let agentsMemory: string | null = null;
+		if (this.plugin?.agentsMemory) {
+			try {
+				agentsMemory = await this.plugin.agentsMemory.read();
+			} catch (error) {
+				this.plugin.logger.warn('Failed to load AGENTS.md:', error);
+			}
+		}
+
+		let availableSkills: { name: string; description: string }[] = [];
+		if (this.plugin?.skillManager) {
+			try {
+				availableSkills = await this.plugin.skillManager.getSkillSummaries();
+			} catch (error) {
+				this.plugin.logger.warn('Failed to load skill summaries:', error);
+			}
+		}
+
+		if (request.projectSkills && request.projectSkills.length > 0) {
+			availableSkills = availableSkills.filter((s) => request.projectSkills!.includes(s.name));
+		}
+
+		return this.getSystemPromptWithCustom(
+			request.availableTools,
+			request.customPrompt,
+			agentsMemory,
+			availableSkills,
+			request.projectInstructions,
+			request.sessionStartedAt
+		);
 	}
 }
