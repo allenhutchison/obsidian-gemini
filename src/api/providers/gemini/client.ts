@@ -207,43 +207,9 @@ export class GeminiClient implements ModelApi {
 		// Build system instruction
 		let systemInstruction = '';
 		if (isExtended) {
-			const extReq = request as ExtendedModelRequest;
-
-			// Load AGENTS.md memory if available
-			let agentsMemory: string | null = null;
-			if (this.plugin?.agentsMemory) {
-				try {
-					agentsMemory = await this.plugin.agentsMemory.read();
-				} catch (error) {
-					this.plugin.logger.warn('Failed to load AGENTS.md:', error);
-				}
-			}
-
-			// Load available skill summaries for system prompt injection
-			let availableSkills: { name: string; description: string }[] = [];
-			if (this.plugin?.skillManager) {
-				try {
-					availableSkills = await this.plugin.skillManager.getSkillSummaries();
-				} catch (error) {
-					this.plugin.logger.warn('Failed to load skill summaries:', error);
-				}
-			}
-
-			// Filter skills to project scope if active
-			if (extReq.projectSkills && extReq.projectSkills.length > 0) {
-				availableSkills = availableSkills.filter((s) => extReq.projectSkills!.includes(s.name));
-			}
-
 			// Build layered system prompt: identity → vault context → project →
 			// agent rules → tool catalog → custom instructions → per-turn context
-			systemInstruction = this.prompts.getSystemPromptWithCustom(
-				extReq.availableTools,
-				extReq.customPrompt,
-				agentsMemory,
-				availableSkills,
-				extReq.projectInstructions,
-				extReq.sessionStartedAt
-			);
+			systemInstruction = await this.prompts.buildExtendedSystemInstruction(request as ExtendedModelRequest);
 		} else {
 			// For BaseModelRequest, prompt is the full input
 			systemInstruction = request.prompt || '';

@@ -287,36 +287,7 @@ export class OllamaClient implements ModelApi {
 	}
 
 	private async buildSystemInstruction(request: ExtendedModelRequest): Promise<string> {
-		let agentsMemory: string | null = null;
-		if (this.plugin?.agentsMemory) {
-			try {
-				agentsMemory = await this.plugin.agentsMemory.read();
-			} catch (error) {
-				this.plugin.logger.warn('Failed to load AGENTS.md:', error);
-			}
-		}
-
-		let availableSkills: { name: string; description: string }[] = [];
-		if (this.plugin?.skillManager) {
-			try {
-				availableSkills = await this.plugin.skillManager.getSkillSummaries();
-			} catch (error) {
-				this.plugin.logger.warn('Failed to load skill summaries:', error);
-			}
-		}
-
-		if (request.projectSkills && request.projectSkills.length > 0) {
-			availableSkills = availableSkills.filter((s) => request.projectSkills!.includes(s.name));
-		}
-
-		return this.prompts.getSystemPromptWithCustom(
-			request.availableTools,
-			request.customPrompt,
-			agentsMemory,
-			availableSkills,
-			request.projectInstructions,
-			request.sessionStartedAt
-		);
+		return this.prompts.buildExtendedSystemInstruction(request);
 	}
 
 	private convertHistoryEntry(entry: any): Message[] | null {
