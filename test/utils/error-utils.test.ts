@@ -209,6 +209,27 @@ describe('error-utils', () => {
 				expect(getErrorMessage(error)).toBe('The model API is temporarily unavailable. Please try again later.');
 			});
 
+			test('SERVICE_DISABLED 403 is not reported as a temporary outage', () => {
+				// Regression for #861: the bare "service" substring used to map this
+				// configuration error onto the outage message. With a 403 status the
+				// HTTP path should surface the access-forbidden copy instead.
+				const error = {
+					status: 403,
+					message: 'SERVICE_DISABLED: Generative Language API has not been used in project xyz',
+				};
+				expect(getErrorMessage(error)).toBe(
+					'Access forbidden: The model provider denied access to this model or feature.'
+				);
+			});
+
+			test('Service-account error message is not reported as a temporary outage', () => {
+				// Another #861 regression — message contains "service" but is not an
+				// outage. Without an unavailable signal or HTTP status we should fall
+				// through to the generic message-prefixed copy.
+				const error = new Error('service account credentials are missing required scope');
+				expect(getErrorMessage(error)).toBe('API error: service account credentials are missing required scope');
+			});
+
 			test('Safety filter error', () => {
 				const error = new Error('Content blocked by safety filters');
 				expect(getErrorMessage(error)).toBe('Content was blocked by safety filters. Please rephrase your request.');
