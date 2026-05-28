@@ -65,8 +65,6 @@ export { ModelClientFactory, ModelUseCase } from './api/factory';
 
 export { AgentFactory } from './agent/agent-factory';
 
-export type { AgentConfig } from './agent/agent-factory';
-
 // API Configuration Types
 export type { ApiConfig, ModelConfig, RetryConfig, ApiFeatures } from './api/config/model-config';
 
