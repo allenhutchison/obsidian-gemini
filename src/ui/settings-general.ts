@@ -219,6 +219,7 @@ export async function refreshGeminiModelList(
 		const reasonMessage = result.skippedReason === 'offline' ? 'Skipped: offline' : 'Skipped: provider is not Gemini';
 		new Notice(reasonMessage);
 	} catch (error) {
+		plugin.logger.error('Failed to refresh Gemini model list:', error);
 		new Notice(`Failed to refresh model list: ${getErrorMessage(error)}`);
 	}
 }
