@@ -168,7 +168,7 @@ To remove a file from context:
 
 **Technical Limits:**
 
-- Maximum token limit per request (~2M tokens for Gemini 2.5+)
+- Maximum token limit per request (~1M tokens for current Gemini models)
 - Large files count against this limit
 - Agent may not see all content if limit exceeded
 
