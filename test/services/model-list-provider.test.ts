@@ -237,6 +237,93 @@ describe('ModelListProvider.getMaxTemperature', () => {
 	});
 });
 
+describe('ModelListProvider.refresh', () => {
+	let originalDescriptor: PropertyDescriptor | undefined;
+
+	beforeEach(() => {
+		mockedRequestUrl.mockReset();
+		originalDescriptor = Object.getOwnPropertyDescriptor(window.navigator, 'onLine');
+	});
+
+	afterEach(() => {
+		if (originalDescriptor) {
+			Object.defineProperty(window.navigator, 'onLine', originalDescriptor);
+		} else {
+			delete (window.navigator as { onLine?: boolean }).onLine;
+		}
+	});
+
+	const setOnline = (value: boolean) => {
+		Object.defineProperty(window.navigator, 'onLine', {
+			configurable: true,
+			get: () => value,
+		});
+	};
+
+	it('returns provider skip reason when active provider is not gemini', async () => {
+		const plugin = buildPlugin({ provider: 'ollama' });
+		setOnline(true);
+
+		const provider = new ModelListProvider(plugin);
+		const result = await provider.refresh();
+
+		expect(result.fetched).toBe(false);
+		expect(result.skippedReason).toBe('provider');
+		expect(result.modelCount).toBeGreaterThan(0);
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
+	});
+
+	it('returns offline skip reason when navigator reports offline', async () => {
+		const plugin = buildPlugin();
+		setOnline(false);
+
+		const provider = new ModelListProvider(plugin);
+		const result = await provider.refresh();
+
+		expect(result.fetched).toBe(false);
+		expect(result.skippedReason).toBe('offline');
+		expect(mockedRequestUrl).not.toHaveBeenCalled();
+	});
+
+	it('bypasses the 24h cache and fetches on success', async () => {
+		const plugin = buildPlugin();
+		setOnline(true);
+		plugin.settings.remoteModelCache = {
+			models: [{ value: 'stale-cached', label: 'Stale' }],
+			timestamp: Date.now(), // fresh cache that startRemoteFetch() would normally skip
+		};
+		mockedRequestUrl.mockResolvedValue({
+			status: 200,
+			json: {
+				version: 1,
+				lastUpdated: '2026-05-28',
+				models: [
+					{ value: 'fresh-1', label: 'Fresh 1' },
+					{ value: 'fresh-2', label: 'Fresh 2' },
+				],
+			},
+		});
+
+		const provider = new ModelListProvider(plugin);
+		provider.initialize();
+		const result = await provider.refresh();
+
+		expect(mockedRequestUrl).toHaveBeenCalledTimes(1);
+		expect(result.fetched).toBe(true);
+		expect(result.modelCount).toBe(2);
+		expect(provider.getModels().map((m) => m.value)).toEqual(['fresh-1', 'fresh-2']);
+	});
+
+	it('rejects when the network fetch fails so the caller can surface the error', async () => {
+		const plugin = buildPlugin();
+		setOnline(true);
+		mockedRequestUrl.mockResolvedValue({ status: 500, json: {} });
+
+		const provider = new ModelListProvider(plugin);
+		await expect(provider.refresh()).rejects.toThrow(/HTTP 500/);
+	});
+});
+
 describe('ModelListProvider.fetchRemoteModels error handling', () => {
 	let originalDescriptor: PropertyDescriptor | undefined;
 

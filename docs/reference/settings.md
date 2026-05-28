@@ -100,7 +100,7 @@ UI sections without a dedicated topic in this reference: _Vault Search Index_ (c
 
 The active model list depends on the [`provider`](#provider) setting:
 
-- **Gemini (default)** — models are selected from the bundled Gemini list, refreshed from Google's API on startup so the latest models appear automatically. `imageModelName` is only available on this provider.
+- **Gemini (default)** — models are loaded from the bundled list and auto-refreshed from GitHub on startup (cached for 24h). `imageModelName` is only available on this provider. Click **Refresh model list** in Settings → General — or run the **Gemini Scribe: Refresh model list** command — to fetch the latest list immediately (bypasses the cache).
 - **Ollama** — the chat / summary / completion dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
 
 ### Chat Model
@@ -338,7 +338,9 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 
 ### Model Discovery
 
-Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from Google's API and falls back to the bundled list if the fetch fails. When using the Ollama provider, a **Refresh model list** button appears in Settings → General to re-query the Ollama daemon for newly pulled models. The remote model list is cached in `data.json` under `remoteModelCache` (managed internally; do not edit by hand).
+Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from GitHub and falls back to the bundled list if the fetch fails. The remote list is cached in `data.json` under `remoteModelCache` for 24 hours; subsequent reloads within that window are no-ops.
+
+To pick up a newly-published model without waiting for the cache to expire, click **Refresh model list** in Settings → General, or run the **Gemini Scribe: Refresh model list** command (`gemini-scribe-refresh-model-list`). Both honor the same skip conditions as the auto-fetch — they no-op when the provider is Ollama or the host reports offline, and surface the outcome via a `Notice`. When the Ollama provider is active, the same row appears but re-queries the Ollama daemon for newly pulled models instead.
 
 ### Tool Execution
 
@@ -493,7 +495,7 @@ Available permission bypasses:
 ### Models not appearing
 
 1. Check API key is valid
-2. For Gemini: restart Obsidian — model discovery runs automatically on startup
+2. For Gemini: click **Refresh** in the **Refresh model list** row (Settings → General), or run the **Gemini Scribe: Refresh model list** command. The auto-fetch runs at most once every 24 hours, so a freshly published model won't appear until the cache expires unless you force a refresh.
 3. For Ollama: go to Settings → General and click **Refresh** in the **Refresh model list** row after pulling new models
 4. Check console for errors (with Debug Mode enabled)
 

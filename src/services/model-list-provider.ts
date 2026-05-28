@@ -13,6 +13,14 @@ interface ModelListJson {
 const REMOTE_URL = 'https://raw.githubusercontent.com/allenhutchison/obsidian-gemini/master/src/data/models.json';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
+export type RefreshSkippedReason = 'provider' | 'offline';
+
+export interface RefreshResult {
+	fetched: boolean;
+	modelCount: number;
+	skippedReason?: RefreshSkippedReason;
+}
+
 export class ModelListProvider {
 	private plugin: ObsidianGemini;
 	private bundledModels: GeminiModel[];
@@ -74,6 +82,31 @@ export class ModelListProvider {
 		this.fetchRemoteModels().catch((error) => {
 			this.plugin.logger.warn('[ModelListProvider] Remote fetch failed:', error);
 		});
+	}
+
+	/**
+	 * User-triggered refresh that bypasses the 24h cache. Resolves with a result
+	 * the caller can surface as a `Notice`. Honors the same provider/offline gates
+	 * as `startRemoteFetch()` — when those skip, the cache timestamp is left alone
+	 * (resetting it would force the next auto-fetch to run even though the user's
+	 * conditions blocked this one). Rejects on network/schema errors so the caller
+	 * can show the message.
+	 */
+	async refresh(): Promise<RefreshResult> {
+		const provider = this.plugin.settings?.provider ?? 'gemini';
+		if (provider !== 'gemini') {
+			this.plugin.logger.debug(`[ModelListProvider] refresh skipped (provider=${provider})`);
+			return { fetched: false, modelCount: this.getModels().length, skippedReason: 'provider' };
+		}
+
+		if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+			this.plugin.logger.debug('[ModelListProvider] refresh skipped (navigator reports offline)');
+			return { fetched: false, modelCount: this.getModels().length, skippedReason: 'offline' };
+		}
+
+		this.cacheTimestamp = 0;
+		await this.fetchRemoteModels();
+		return { fetched: true, modelCount: this.getModels().length };
 	}
 
 	/**
