@@ -21,11 +21,12 @@ The reference below groups settings by topic for lookup, which doesn't always ma
 - [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
 - [Custom Prompts](#custom-prompts) (UI: _Agent Config_ — advanced)
 - [UI Settings](#ui-settings) (UI: _User Experience_ — streaming, diff view, identity, frontmatter key, session history)
+- [Automation Settings](#automation-settings) (UI: _Automation_ — scheduled task catch-up, lifecycle hooks toggle)
 - [Context Management](#context-management) (UI: _Agent Config_ — advanced)
 - [Developer Settings](#developer-settings) (UI: split across _Agent Config_, _Tool Permissions_, _MCP Servers_, _Debug_)
 - [Session-Level Settings](#session-level-settings)
 
-UI sections without a dedicated topic in this reference: _Automation_ (covered in the [Scheduled Tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides) and _Vault Search Index_ (covered in [Semantic Search](/guide/semantic-search)).
+UI sections without a dedicated topic in this reference: _Vault Search Index_ (covered in [Semantic Search](/guide/semantic-search)). The _Automation_ section's task and hook management UI is covered in the [Scheduled Tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides; the two persistent settings (`autoRunCatchUp`, `hooksEnabled`) are documented in [Automation Settings](#automation-settings) below.
 
 ## Basic Settings
 
@@ -169,6 +170,18 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Description**: Enable streaming responses in the chat interface for a more interactive experience
 - **Note**: When disabled, full responses are displayed at once
 
+### Expanded Settings Sections
+
+- **Setting**: `expandedSettingsSections`
+- **Type**: `string[]`
+- **Default**: `[]`
+- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `tool-permissions`, `mcp-servers`, `agent-config`, `debug`. (General is always open; it has no id and ignores this setting.)
+- **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
+
+## Automation Settings
+
+These settings appear in the **Automation** section of the plugin settings (UI: _Automation_). Task and hook management controls (creating, editing, and running tasks/hooks) are covered in the [Scheduled Tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides.
+
 ### Auto-run missed scheduled tasks on startup
 
 - **Setting**: `autoRunCatchUp`
@@ -186,14 +199,6 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 - **Description**: Subscribe to vault events (file created/modified/deleted/renamed) and dispatch them to hook definitions in `[state-folder]/Hooks/`. Each matching event fires a headless agent run with debounce, rate-limit, and loop-prevention guards.
 - **Why opt-in**: Vault events fire continuously; an unintentionally-broad hook can drain API quota quickly. The default is off so users opt in deliberately.
 - **See also**: [Lifecycle Hooks](/guide/lifecycle-hooks)
-
-### Expanded Settings Sections
-
-- **Setting**: `expandedSettingsSections`
-- **Type**: `string[]`
-- **Default**: `[]`
-- **Description**: Internal list of section ids that are currently expanded in the settings tab. Updated automatically when you toggle a section. Known ids: `ui`, `automation`, `rag`, `tool-permissions`, `mcp-servers`, `agent-config`, `debug`. (General is always open; it has no id and ignores this setting.)
-- **Note**: Edit `data.json` directly to pre-expand sections (for example, on a new install) or restore a custom layout after migrating vaults.
 
 ## Context Management
 
