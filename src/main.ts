@@ -1,5 +1,6 @@
 import { Plugin, WorkspaceLeaf, Editor, MarkdownView, MarkdownFileInfo, Platform } from 'obsidian';
 import ObsidianGeminiSettingTab from './ui/settings';
+import { refreshGeminiModelList } from './ui/settings-general';
 import { AgentView, VIEW_TYPE_AGENT } from './ui/agent-view/agent-view';
 import { GeminiDiffView, VIEW_TYPE_DIFF } from './ui/agent-view/gemini-diff-view';
 import { GeminiSummary } from './summary';
@@ -355,6 +356,16 @@ export default class ObsidianGemini extends Plugin {
 			callback: () => {
 				if (!this.checkInitialized()) return;
 				this.activateAgentView();
+			},
+		});
+
+		// Refresh remote Gemini model list (bypass 24h cache)
+		this.addCommand({
+			id: 'gemini-scribe-refresh-model-list',
+			name: 'Refresh model list',
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await refreshGeminiModelList(this);
 			},
 		});
 

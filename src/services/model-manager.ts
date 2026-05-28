@@ -1,7 +1,7 @@
 import type ObsidianGemini from '../main';
 import * as modelsModule from '../models';
 import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings, DEFAULT_GEMINI_MODELS } from '../models';
-import { ModelListProvider } from './model-list-provider';
+import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
 import { ParameterValidationService, ParameterRanges } from './parameter-validation';
 
@@ -98,6 +98,20 @@ export class ModelManager {
 	 */
 	getListProvider(): ModelListProvider {
 		return this.listProvider;
+	}
+
+	/**
+	 * Force-refresh the remote Gemini model list (bypassing the 24h cache) and
+	 * sync the global model array so any open dropdowns see the new entries.
+	 * Provider/offline gates are enforced by `ModelListProvider.refresh()`; on a
+	 * skip we leave the global list untouched.
+	 */
+	async refreshRemoteModels(): Promise<RefreshResult> {
+		const result = await this.listProvider.refresh();
+		if (result.fetched) {
+			this.updateGlobalModelsList(this.listProvider.getModels());
+		}
+		return result;
 	}
 
 	/**

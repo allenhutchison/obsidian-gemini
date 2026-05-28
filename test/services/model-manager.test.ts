@@ -190,6 +190,43 @@ describe('ModelManager', () => {
 		});
 	});
 
+	describe('refreshRemoteModels', () => {
+		it('delegates to ModelListProvider.refresh and syncs global models on success', async () => {
+			const fetched = [
+				{ value: 'refreshed-1', label: 'Refreshed 1' },
+				{ value: 'refreshed-2', label: 'Refreshed 2' },
+			];
+			const listProvider = modelManager.getListProvider();
+			const refreshSpy = vi
+				.spyOn(listProvider, 'refresh')
+				.mockResolvedValue({ fetched: true, modelCount: fetched.length });
+			vi.spyOn(listProvider, 'getModels').mockReturnValue(fetched);
+			setGeminiModels([]);
+
+			const result = await modelManager.refreshRemoteModels();
+
+			expect(refreshSpy).toHaveBeenCalledTimes(1);
+			expect(result).toEqual({ fetched: true, modelCount: 2 });
+			expect(GEMINI_MODELS.map((m) => m.value)).toEqual(['refreshed-1', 'refreshed-2']);
+		});
+
+		it('does not update the global list when refresh is skipped', async () => {
+			const before = [{ value: 'before', label: 'Before' }];
+			setGeminiModels(before);
+			vi.spyOn(modelManager.getListProvider(), 'refresh').mockResolvedValue({
+				fetched: false,
+				modelCount: 0,
+				skippedReason: 'offline',
+			});
+
+			const result = await modelManager.refreshRemoteModels();
+
+			expect(result.fetched).toBe(false);
+			expect(result.skippedReason).toBe('offline');
+			expect(GEMINI_MODELS).toEqual(before);
+		});
+	});
+
 	describe('getParameterDisplayInfo', () => {
 		it('should return display strings and hasModelData flag', async () => {
 			const info = await modelManager.getParameterDisplayInfo();

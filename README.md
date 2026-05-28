@@ -111,7 +111,7 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
     - **Advanced Settings:** (Click "Show Advanced Settings" to reveal)
       - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
       - **Top P:** Control response diversity and focus (0-1.0).
-      - **Model Discovery:** Gemini models are automatically fetched on startup; Ollama users can click **Refresh model list** after pulling new models.
+      - **Model Discovery:** Gemini models are automatically fetched on startup (cached for 24h); click **Refresh model list** in General settings or run the "Gemini Scribe: Refresh model list" command to fetch a newly-published model immediately. Ollama users can click the same **Refresh model list** button after pulling new models.
       - **API Configuration:** Configure retry behavior and backoff delays.
       - **Tool Execution:** Control whether to stop agent execution on tool errors.
       - **Tool Loop Detection:** Prevent infinite tool execution loops.

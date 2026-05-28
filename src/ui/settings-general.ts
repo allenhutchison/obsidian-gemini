@@ -126,6 +126,20 @@ async function renderGeneralSection(
 					await plugin.saveSettings();
 				})
 			);
+
+		new Setting(sectionEl)
+			.setName('Refresh model list')
+			.setDesc(
+				'Fetch the latest Gemini model list from GitHub now, bypassing the 24h cache. Use this after a new model is published.'
+			)
+			.addButton((button) =>
+				button.setButtonText('Refresh').onClick(async () => {
+					await refreshGeminiModelList(plugin, async () => {
+						sectionEl.empty();
+						await renderGeneralSection(sectionEl, plugin, app, context, debouncedSave);
+					});
+				})
+			);
 	}
 
 	await selectModelSetting(
@@ -184,4 +198,27 @@ async function renderGeneralSection(
 				context.redisplay();
 			})
 		);
+}
+
+/**
+ * Trigger a Gemini model-list refresh and surface the outcome via `Notice`.
+ * Shared between the settings button and the command-palette entry so both
+ * paths report the same skip/error/success messages.
+ */
+export async function refreshGeminiModelList(
+	plugin: ObsidianGemini,
+	onSuccess?: () => void | Promise<void>
+): Promise<void> {
+	try {
+		const result = await plugin.getModelManager().refreshRemoteModels();
+		if (result.fetched) {
+			new Notice(`Model list updated: ${result.modelCount} model${result.modelCount === 1 ? '' : 's'}.`);
+			if (onSuccess) await onSuccess();
+			return;
+		}
+		const reasonMessage = result.skippedReason === 'offline' ? 'Skipped: offline' : 'Skipped: provider is not Gemini';
+		new Notice(reasonMessage);
+	} catch (error) {
+		new Notice(`Failed to refresh model list: ${getErrorMessage(error)}`);
+	}
 }
