@@ -1,5 +1,6 @@
 import { ChatSession } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
+import type ObsidianGemini from '../main';
 
 // Re-export ToolCall from its canonical definition in model-api
 export type { ToolCall } from '../api/interfaces/model-api';
@@ -27,7 +28,7 @@ export interface ToolResult {
  */
 export interface ToolExecutionContext {
 	session: ChatSession;
-	plugin: any; // Will be typed to ObsidianGemini
+	plugin: ObsidianGemini;
 	/** When set, discovery tools default their search scope to this directory */
 	projectRootPath?: string;
 	/**

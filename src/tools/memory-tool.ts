@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
 
 /**
  * Tool for updating the AGENTS.md memory file
@@ -38,7 +37,7 @@ export class UpdateMemoryTool implements Tool {
 	}
 
 	async execute(params: { content: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			// Validate content
@@ -100,7 +99,7 @@ export class ReadMemoryTool implements Tool {
 	}
 
 	async execute(_params: any, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			// Get the agents memory service

@@ -2,7 +2,6 @@ import { normalizePath } from 'obsidian';
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
 import { ResearchScope } from '../services/deep-research';
 import { formatLocalDate } from '../utils/format-utils';
 import { sanitizeFileName, ensureFolderExists } from '../utils/file-utils';
@@ -79,7 +78,7 @@ export class DeepResearchTool implements Tool {
 		params: { topic: string; scope?: ResearchScope; outputFile?: string; background?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			// Validate parameters

@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
 
 /**
  * Search result from RAG semantic search
@@ -139,7 +138,7 @@ export class RagSearchTool implements Tool {
 		params: { query: string; maxResults?: number; folder?: string; tags?: string[] },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			// Validate query

@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
-import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 
 /**
@@ -58,7 +57,7 @@ export class SearchFileContentsTool implements Tool {
 		},
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			const caseSensitive = params.caseSensitive ?? false;

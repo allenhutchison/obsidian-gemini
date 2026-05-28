@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
 
 /**
  * Tool for activating (loading) a skill's full instructions or resources
@@ -42,7 +41,7 @@ export class ActivateSkillTool implements Tool {
 	}
 
 	async execute(params: { name: string; resource_path?: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			if (!plugin.skillManager) {
@@ -167,7 +166,7 @@ export class CreateSkillTool implements Tool {
 		params: { name: string; description: string; content: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			if (!plugin.skillManager) {
@@ -280,7 +279,7 @@ export class EditSkillTool implements Tool {
 		params: { name: string; description?: string; content?: string; _userEdited?: boolean },
 		context: ToolExecutionContext
 	): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			if (!plugin.skillManager) {

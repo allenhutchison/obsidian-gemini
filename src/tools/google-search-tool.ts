@@ -1,7 +1,6 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
 import { getDefaultModelForRole } from '../models';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { executeWithRetry } from '../utils/retry';
@@ -38,7 +37,7 @@ export class GoogleSearchTool implements Tool {
 	}
 
 	async execute(params: { query: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			// Check if API key is available

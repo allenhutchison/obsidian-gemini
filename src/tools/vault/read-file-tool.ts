@@ -2,7 +2,6 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 import {
 	classifyFile,
@@ -44,7 +43,7 @@ export class ReadFileTool implements Tool {
 	}
 
 	async execute(params: { path: string }, context: ToolExecutionContext): Promise<ToolResult> {
-		const plugin = context.plugin as ObsidianGemini;
+		const plugin = context.plugin;
 
 		try {
 			const normalizedPath = normalizePath(params.path);
