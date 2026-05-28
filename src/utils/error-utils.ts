@@ -208,7 +208,12 @@ export function getErrorMessage(error: unknown): string {
 		}
 
 		// Service unavailable
-		if (messageLower.includes('unavailable') || messageLower.includes('service')) {
+		// Note: only match on "unavailable" — the bare substring "service" appears
+		// in non-outage errors like SERVICE_DISABLED (a configuration/permission
+		// problem) and would otherwise mislead users to chase a Google outage
+		// that isn't happening. Genuine 503s are still covered by the HTTP
+		// status-code path in getHttpErrorMessage.
+		if (messageLower.includes('unavailable')) {
 			return 'The model API is temporarily unavailable. Please try again later.';
 		}
 
