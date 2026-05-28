@@ -243,7 +243,14 @@ describe('GeminiPrompts', () => {
 			mockPlugin.skillManager = { getSkillSummaries: vi.fn().mockResolvedValue([]) };
 			const spy = vi.spyOn(geminiPrompts, 'getSystemPromptWithCustom');
 
-			const customPrompt = { content: 'custom', overrideSystemPrompt: false };
+			const customPrompt = {
+				name: 'custom',
+				description: 'test',
+				version: 1,
+				overrideSystemPrompt: false,
+				tags: [],
+				content: 'custom',
+			};
 			await geminiPrompts.buildExtendedSystemInstruction({
 				...baseRequest,
 				customPrompt,
