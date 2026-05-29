@@ -70,6 +70,7 @@ The user just saved {{filePath}}. Read it and write a one-paragraph summary high
 | `toolPolicy`        | No                     | _inherit global plugin policy_ | Per-fire tool policy (preset + per-tool overrides). Same shape used by projects and scheduled tasks — see [Tool Access](#tool-access) below.                                     |
 | `enabledSkills`     | No                     | `[]`                           | Skill slugs to pre-activate in the headless session.                                                                                                                             |
 | `model`             | No                     | Plugin chat model              | Override the model for this hook (e.g. `gemini-2.5-flash-lite`).                                                                                                                 |
+| `maxIterations`     | No                     | `20`                           | Cap on agent tool-call batches per fire (`agent-task` only). Raise it for long multi-step hooks that exhaust the default. See [Tool Iteration Limit](#tool-iteration-limit).     |
 | `outputPath`        | No                     | (no file written)              | Where to write the agent's final response. Supports `{slug}`, `{date}`, and `{fileName}` placeholders.                                                                           |
 | `enabled`           | No                     | `true`                         | Set to `false` to disable the hook without deleting it.                                                                                                                          |
 | `desktopOnly`       | No                     | `true`                         | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                                                                                     |
@@ -109,6 +110,28 @@ toolPolicy:
 - An omitted `toolPolicy` block means "inherit the global plugin tool policy entirely."
 
 > **Legacy note** — older hook files used `enabledTools: ['read_only', …]` instead of `toolPolicy`. They still load: the plugin maps the old category list onto the closest preset and rewrites the file to the new shape the first time it is read.
+
+### Tool Iteration Limit
+
+An `agent-task` fire drives an agent loop that calls tools, reads the results, and calls more tools until it produces a final response. To guard against runaway loops in unattended fires, that loop is capped at **20 tool-call batches** by default. A batch is one round of tool calls (which may run several tools in parallel), not a single tool call.
+
+When a fire exhausts the cap without producing a response, it fails with an error like:
+
+```
+Hook "<slug>" exhausted 20 tool iterations without producing a response
+```
+
+If a legitimately long hook keeps hitting this, raise the cap with the `maxIterations` frontmatter key (or the **Max tool iterations** field under **Advanced options** in the hook editor):
+
+```yaml
+---
+trigger: file-modified
+action: agent-task
+maxIterations: 50
+---
+```
+
+`maxIterations` must be a positive whole number; blank or invalid values fall back to the default of 20. It only affects `agent-task` hooks — the other actions don't drive the agent loop. This is the same limit (and the same default) used by [scheduled tasks](./scheduled-tasks.md#tool-iteration-limit); the interactive agent chat has no such cap.
 
 ### `summarize`
 

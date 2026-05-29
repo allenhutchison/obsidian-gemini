@@ -7,6 +7,7 @@ import {
 	JsonSidecarStateStore,
 	extractMarkdownBody,
 	migrateLegacyEnabledTools,
+	parseMaxIterations,
 	purgeOrphanState,
 	resolveFeatureToolPolicy,
 } from './feature-definition';
@@ -61,6 +62,13 @@ export interface ScheduledTask {
 	 * Defaults to the plugin's chat model when omitted.
 	 */
 	model?: string;
+	/**
+	 * Cap on agent tool-execution iterations for this run. Each iteration is one
+	 * tool-call batch, not a single tool call. Omitted means use
+	 * DEFAULT_HEADLESS_MAX_ITERATIONS. Raise this for long multi-step tasks that
+	 * legitimately need more than the default before producing a final response.
+	 */
+	maxIterations?: number;
 	/** When false the scheduler skips this task entirely. Default: true. */
 	enabled: boolean;
 	/**
@@ -501,6 +509,7 @@ export class ScheduledTaskManager {
 		toolPolicy?: FeatureToolPolicy;
 		outputPath?: string;
 		model?: string;
+		maxIterations?: number;
 		enabled?: boolean;
 		runIfMissed?: boolean;
 		prompt: string;
@@ -527,6 +536,7 @@ export class ScheduledTaskManager {
 			toolPolicy: params.toolPolicy,
 			outputPath: params.outputPath ?? defaultOutputPath,
 			model: params.model,
+			maxIterations: params.maxIterations,
 			enabled: params.enabled ?? true,
 			runIfMissed: params.runIfMissed ?? false,
 			prompt: params.prompt,
@@ -569,6 +579,7 @@ export class ScheduledTaskManager {
 			toolPolicy?: FeatureToolPolicy;
 			outputPath?: string;
 			model?: string;
+			maxIterations?: number;
 			enabled?: boolean;
 			runIfMissed?: boolean;
 			prompt?: string;
@@ -591,6 +602,9 @@ export class ScheduledTaskManager {
 			toolPolicy: 'toolPolicy' in params ? params.toolPolicy : task.toolPolicy,
 			outputPath: params.outputPath ?? task.outputPath,
 			model: params.model ?? task.model,
+			// Use the `in` check (not ??) so callers can clear back to the default
+			// by passing maxIterations: undefined explicitly.
+			maxIterations: 'maxIterations' in params ? params.maxIterations : task.maxIterations,
 			enabled: params.enabled ?? task.enabled,
 			runIfMissed: params.runIfMissed ?? task.runIfMissed,
 			prompt: params.prompt ?? task.prompt,
@@ -854,6 +868,7 @@ export class ScheduledTaskManager {
 			toolPolicy: resolveFeatureToolPolicy(frontmatter),
 			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : defaultOutputPath,
 			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
+			maxIterations: parseMaxIterations(frontmatter.maxIterations),
 			enabled: frontmatter.enabled !== false,
 			runIfMissed: frontmatter.runIfMissed === true,
 			prompt,
@@ -884,6 +899,7 @@ export class ScheduledTaskManager {
 		toolPolicy?: FeatureToolPolicy;
 		outputPath?: string;
 		model?: string;
+		maxIterations?: number;
 		enabled?: boolean;
 		runIfMissed?: boolean;
 		prompt: string;
@@ -904,6 +920,9 @@ export class ScheduledTaskManager {
 
 		if (params.model) {
 			lines.push(`model: '${params.model}'`);
+		}
+		if (params.maxIterations !== undefined) {
+			lines.push(`maxIterations: ${params.maxIterations}`);
 		}
 		if (params.enabled === false) {
 			lines.push('enabled: false');

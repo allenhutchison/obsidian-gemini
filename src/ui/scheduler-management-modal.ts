@@ -1,5 +1,6 @@
 import { Notice, Setting, setIcon } from 'obsidian';
 import type { ScheduledTask, TaskState, ScheduledTasksState } from '../services/scheduled-task-manager';
+import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
@@ -322,6 +323,20 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			);
 
 		new Setting(advDetails)
+			.setName('Max tool iterations')
+			.setDesc(
+				`Cap on agent tool-call batches per run. Raise this for long multi-step tasks that hit the limit. Leave blank for the default (${DEFAULT_HEADLESS_MAX_ITERATIONS}).`
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder(String(DEFAULT_HEADLESS_MAX_ITERATIONS))
+					.setValue(this.form.maxIterations)
+					.onChange((v) => {
+						this.form.maxIterations = v.trim();
+					})
+			);
+
+		new Setting(advDetails)
 			.setName('Run if missed')
 			.setDesc(
 				'When Obsidian was closed and this task was due, show it in the catch-up approval modal on next startup.'
@@ -365,6 +380,19 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			return;
 		}
 
+		// Blank means "use the default" (undefined). A non-blank value must be a
+		// positive integer — reject garbage rather than silently dropping it.
+		let maxIterations: number | undefined;
+		const rawMaxIterations = this.form.maxIterations.trim();
+		if (rawMaxIterations) {
+			const parsed = Number(rawMaxIterations);
+			if (!Number.isInteger(parsed) || parsed <= 0) {
+				new Notice('Max tool iterations must be a positive whole number, or blank for the default.');
+				return;
+			}
+			maxIterations = parsed;
+		}
+
 		const manager = this.plugin.scheduledTaskManager;
 		if (!manager) {
 			new Notice('Scheduled task manager not available.');
@@ -378,6 +406,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 					toolPolicy: this.form.toolPolicy,
 					outputPath: this.form.outputPath || undefined,
 					model: this.form.model || undefined,
+					maxIterations,
 					enabled: this.form.enabled,
 					runIfMissed: this.form.runIfMissed,
 					prompt: this.form.prompt,
@@ -390,6 +419,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 					toolPolicy: this.form.toolPolicy,
 					outputPath: this.form.outputPath || undefined,
 					model: this.form.model || undefined,
+					maxIterations,
 					enabled: this.form.enabled,
 					runIfMissed: this.form.runIfMissed,
 					prompt: this.form.prompt,
@@ -424,6 +454,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			toolPolicy: task.toolPolicy,
 			outputPath: task.outputPath,
 			model: task.model ?? '',
+			maxIterations: task.maxIterations !== undefined ? String(task.maxIterations) : '',
 			enabled: task.enabled,
 			runIfMissed: task.runIfMissed,
 			prompt: task.prompt,
@@ -465,6 +496,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			toolPolicy: undefined as FeatureToolPolicy | undefined,
 			outputPath: '',
 			model: '',
+			maxIterations: '',
 			enabled: true,
 			runIfMissed: false,
 			prompt: '',

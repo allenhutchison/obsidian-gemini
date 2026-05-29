@@ -79,6 +79,21 @@ export function extractMarkdownBody(content: string): string {
 }
 
 /**
+ * Coerce a raw frontmatter `maxIterations` value into a positive integer, or
+ * undefined when absent/invalid. Invalid values (non-numbers, zero, negatives,
+ * non-integers) fall back to undefined so the runner applies its default cap
+ * (DEFAULT_HEADLESS_MAX_ITERATIONS) rather than a nonsensical limit. Shared by
+ * scheduled tasks and lifecycle hooks, which expose the same frontmatter key.
+ */
+export function parseMaxIterations(raw: unknown): number | undefined {
+	const value = typeof raw === 'string' ? Number(raw) : raw;
+	if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+		return undefined;
+	}
+	return value;
+}
+
+/**
  * Resolve the tool policy for a feature definition from its frontmatter:
  * prefer the canonical `toolPolicy:` block, falling back to the legacy
  * `enabledTools:` category array. `undefined` means "inherit the global policy".

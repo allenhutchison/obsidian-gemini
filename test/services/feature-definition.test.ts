@@ -3,6 +3,7 @@ import {
 	JsonSidecarStateStore,
 	extractMarkdownBody,
 	migrateLegacyEnabledTools,
+	parseMaxIterations,
 	purgeOrphanState,
 	resolveFeatureToolPolicy,
 } from '../../src/services/feature-definition';
@@ -233,5 +234,25 @@ describe('purgeOrphanState', () => {
 
 	it('returns an empty array for an empty state map', () => {
 		expect(purgeOrphanState({}, () => false)).toEqual([]);
+	});
+});
+
+// ─── parseMaxIterations ──────────────────────────────────────────────────────
+
+describe('parseMaxIterations', () => {
+	it('accepts positive integers (number or numeric string)', () => {
+		expect(parseMaxIterations(50)).toBe(50);
+		expect(parseMaxIterations('30')).toBe(30);
+		expect(parseMaxIterations(1)).toBe(1);
+	});
+
+	it('rejects non-positive, non-integer, and non-numeric values', () => {
+		expect(parseMaxIterations(0)).toBeUndefined();
+		expect(parseMaxIterations(-5)).toBeUndefined();
+		expect(parseMaxIterations(2.5)).toBeUndefined();
+		expect(parseMaxIterations('abc')).toBeUndefined();
+		expect(parseMaxIterations(undefined)).toBeUndefined();
+		expect(parseMaxIterations(null)).toBeUndefined();
+		expect(parseMaxIterations('')).toBeUndefined();
 	});
 });

@@ -453,6 +453,36 @@ describe('ScheduledTaskManager', () => {
 			expect(manager.getTasks()[0].enabled).toBe(true);
 		});
 
+		it('parses maxIterations from frontmatter when set to a positive integer', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: 'gemini-scribe/Scheduled-Tasks/long-task.md', basename: 'long-task' },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily', maxIterations: 50 },
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('A long multi-step task.');
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			expect(manager.getTasks()[0].maxIterations).toBe(50);
+		});
+
+		it('maxIterations is undefined when omitted or invalid', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: 'gemini-scribe/Scheduled-Tasks/bad-iters.md', basename: 'bad-iters' },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily', maxIterations: 0 },
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Invalid cap.');
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			expect(manager.getTasks()[0].maxIterations).toBeUndefined();
+		});
+
 		it('toolPolicy is undefined when no toolPolicy or enabledTools frontmatter is present', async () => {
 			const plugin = createMockPlugin();
 			plugin.app.vault.getMarkdownFiles.mockReturnValue([
@@ -1004,8 +1034,26 @@ describe('ScheduledTaskManager', () => {
 
 			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 			expect(written).not.toContain('model:');
+			expect(written).not.toContain('maxIterations:');
 			expect(written).not.toContain('enabled: false');
 			expect(written).not.toContain('runIfMissed:');
+		});
+
+		it('serialized content includes maxIterations when set', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			await manager.createTask({
+				slug: 'long-task',
+				schedule: 'daily',
+				maxIterations: 50,
+				prompt: 'A long task.',
+			});
+
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
+			expect(written).toContain('maxIterations: 50');
 		});
 	});
 

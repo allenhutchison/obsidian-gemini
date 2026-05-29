@@ -7,6 +7,7 @@ import {
 	JsonSidecarStateStore,
 	extractMarkdownBody,
 	migrateLegacyEnabledTools,
+	parseMaxIterations,
 	purgeOrphanState,
 	resolveFeatureToolPolicy,
 } from './feature-definition';
@@ -80,6 +81,13 @@ export interface Hook {
 	enabledSkills: string[];
 	/** Optional model override; defaults to plugin chat model. */
 	model?: string;
+	/**
+	 * Cap on agent tool-execution iterations for an `agent-task` fire. Each
+	 * iteration is one tool-call batch, not a single tool call. Omitted means
+	 * use DEFAULT_HEADLESS_MAX_ITERATIONS. Ignored for non-`agent-task` actions,
+	 * which don't drive the agent loop.
+	 */
+	maxIterations?: number;
 	/**
 	 * Optional output path template for the agent run's final response.
 	 * Supports {slug}, {date}, and {fileName} placeholders. When omitted no
@@ -168,6 +176,7 @@ export interface HookCreateParams {
 	toolPolicy?: FeatureToolPolicy;
 	enabledSkills?: string[];
 	model?: string;
+	maxIterations?: number;
 	outputPath?: string;
 	enabled?: boolean;
 	desktopOnly?: boolean;
@@ -425,6 +434,9 @@ export class HookManager {
 			toolPolicy: 'toolPolicy' in params ? params.toolPolicy : hook.toolPolicy,
 			enabledSkills: params.enabledSkills ?? hook.enabledSkills,
 			model: params.model ?? hook.model ?? '',
+			// `in` check (not ??) so callers can clear back to the default by
+			// passing maxIterations: undefined explicitly.
+			maxIterations: 'maxIterations' in params ? params.maxIterations : hook.maxIterations,
 			outputPath: params.outputPath ?? hook.outputPath ?? '',
 			enabled: params.enabled ?? hook.enabled,
 			desktopOnly: params.desktopOnly ?? hook.desktopOnly,
@@ -482,6 +494,7 @@ export class HookManager {
 			toolPolicy: params.toolPolicy,
 			enabledSkills: params.enabledSkills ?? [],
 			model: params.model || undefined,
+			maxIterations: params.maxIterations,
 			outputPath: params.outputPath || undefined,
 			enabled: params.enabled ?? true,
 			desktopOnly: params.desktopOnly ?? true,
@@ -532,6 +545,7 @@ export class HookManager {
 		}
 
 		if (params.model) lines.push(`model: ${JSON.stringify(params.model)}`);
+		if (params.maxIterations !== undefined) lines.push(`maxIterations: ${params.maxIterations}`);
 		if (params.outputPath) lines.push(`outputPath: ${JSON.stringify(params.outputPath)}`);
 		if (params.commandId) lines.push(`commandId: ${JSON.stringify(params.commandId)}`);
 
@@ -920,6 +934,7 @@ export class HookManager {
 			toolPolicy: resolveFeatureToolPolicy(frontmatter),
 			enabledSkills: Array.isArray(frontmatter.enabledSkills) ? (frontmatter.enabledSkills as string[]) : [],
 			model: typeof frontmatter.model === 'string' ? frontmatter.model : undefined,
+			maxIterations: parseMaxIterations(frontmatter.maxIterations),
 			outputPath: typeof frontmatter.outputPath === 'string' ? frontmatter.outputPath : undefined,
 			commandId,
 			focusFile: frontmatter.focusFile === true ? true : undefined,
@@ -962,6 +977,7 @@ export class HookManager {
 			toolPolicy: hook.toolPolicy,
 			enabledSkills: hook.enabledSkills,
 			model: hook.model,
+			maxIterations: hook.maxIterations,
 			outputPath: hook.outputPath,
 			enabled: hook.enabled,
 			desktopOnly: hook.desktopOnly,
