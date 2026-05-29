@@ -63,6 +63,7 @@ vi.mock('../../src/agent/agent-loop', () => ({
 	AgentLoop: vi.fn().mockImplementation(function () {
 		return { run: mockAgentLoopRun };
 	}),
+	DEFAULT_HEADLESS_MAX_ITERATIONS: 20,
 }));
 
 import { ModelClientFactory } from '../../src/api';
@@ -668,6 +669,43 @@ describe('HookRunner agent-task: exhausted iterations', () => {
 		const runner = new HookRunner(plugin as any, makeContext(hook));
 
 		await expect(runner.run()).rejects.toThrow(/exhausted 20 tool iterations/);
+	});
+
+	it('forwards a per-hook maxIterations override to AgentLoop', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({
+			markdown: '',
+			toolCalls: [{ name: 'some_tool', arguments: {} }],
+		});
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		mockAgentLoopRun.mockResolvedValue(successfulLoopResult('Done.'));
+
+		const plugin = createMockPlugin();
+		const runner = new HookRunner(plugin as any, makeContext(makeHook({ maxIterations: 50 })));
+		await runner.run();
+
+		expect(mockAgentLoopRun).toHaveBeenCalledWith(
+			expect.objectContaining({
+				options: expect.objectContaining({ maxIterations: 50 }),
+			})
+		);
+	});
+
+	it('exhausted error message reflects the per-hook maxIterations', async () => {
+		const generateModelResponse = vi.fn().mockResolvedValue({
+			markdown: '',
+			toolCalls: [{ name: 'some_tool', arguments: {} }],
+		});
+		(ModelClientFactory.createChatModel as any).mockReturnValue({ generateModelResponse });
+		mockAgentLoopRun.mockResolvedValue({
+			...successfulLoopResult(),
+			exhausted: true,
+			markdown: '',
+		});
+
+		const plugin = createMockPlugin();
+		const runner = new HookRunner(plugin as any, makeContext(makeHook({ maxIterations: 50 })));
+
+		await expect(runner.run()).rejects.toThrow(/exhausted 50 tool iterations/);
 	});
 });
 

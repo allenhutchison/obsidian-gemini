@@ -42,14 +42,15 @@ Summarise the notes I created or modified today. List the key topics and any ope
 
 ### Frontmatter Fields
 
-| Field         | Required | Default                                                | Description                                                                                                                 |
-| ------------- | -------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `schedule`    | Yes      | —                                                      | When to run. See [Schedule Formats](#schedule-formats) below.                                                               |
-| `toolPolicy`  | No       | _inherit global plugin policy_                         | Per-run tool policy (preset + per-tool overrides). See [Tool Access](#tool-access).                                         |
-| `outputPath`  | No       | `[state-folder]/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                        |
-| `model`       | No       | Plugin chat model                                      | Override the model for this task (e.g. `gemini-flash-latest`).                                                              |
-| `enabled`     | No       | `true`                                                 | Set to `false` to disable the task without deleting it.                                                                     |
-| `runIfMissed` | No       | `false`                                                | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs). |
+| Field           | Required | Default                                                | Description                                                                                                                                             |
+| --------------- | -------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schedule`      | Yes      | —                                                      | When to run. See [Schedule Formats](#schedule-formats) below.                                                                                           |
+| `toolPolicy`    | No       | _inherit global plugin policy_                         | Per-run tool policy (preset + per-tool overrides). See [Tool Access](#tool-access).                                                                     |
+| `outputPath`    | No       | `[state-folder]/Scheduled-Tasks/Runs/<slug>/{date}.md` | Where to write results. Supports `{slug}` and `{date}` placeholders.                                                                                    |
+| `model`         | No       | Plugin chat model                                      | Override the model for this task (e.g. `gemini-flash-latest`).                                                                                          |
+| `maxIterations` | No       | `20`                                                   | Cap on agent tool-call batches per run. Raise it for long multi-step tasks that exhaust the default. See [Tool Iteration Limit](#tool-iteration-limit). |
+| `enabled`       | No       | `true`                                                 | Set to `false` to disable the task without deleting it.                                                                                                 |
+| `runIfMissed`   | No       | `false`                                                | When `true`, tasks missed while Obsidian was closed are caught up on the next startup. See [Catch-up Runs](#catch-up-runs).                             |
 
 ### Schedule Formats
 
@@ -99,6 +100,27 @@ toolPolicy:
 Omitting `toolPolicy` (or setting it to an empty object) means **inherit the global plugin tool policy**. The Scheduler UI exposes the same controls — picking a preset and adjusting per-tool overrides — so you usually don't need to author the YAML by hand.
 
 > **Legacy note** — older task files used `enabledTools: ['read_only', …]` instead of `toolPolicy`. They still load: the plugin maps the old category list onto the closest preset and rewrites the file to the new shape the first time it is read.
+
+## Tool Iteration Limit
+
+Each run drives an agent loop that calls tools, reads the results, and calls more tools until it produces a final response. To guard against runaway loops in unattended runs, that loop is capped at **20 tool-call batches** by default. A batch is one round of tool calls (which may run several tools in parallel), not a single tool call — so a task doing parallel work fits more real calls into 20 batches than a strictly sequential one.
+
+When a task exhausts the cap without producing a response, the run fails with an error like:
+
+```text
+Task "<slug>" exhausted 20 tool iterations without producing a response
+```
+
+If a legitimately long task keeps hitting this, raise the cap with the `maxIterations` frontmatter key (or the **Max tool iterations** field under **Advanced options** in the Scheduler):
+
+```yaml
+---
+schedule: 'daily@06:00'
+maxIterations: 50
+---
+```
+
+`maxIterations` must be a positive whole number; blank or invalid values fall back to the default of 20. The interactive agent chat has no such cap — this limit applies only to unattended runs (scheduled tasks and lifecycle hooks).
 
 ## Managing Tasks
 

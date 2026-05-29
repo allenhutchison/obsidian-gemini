@@ -140,6 +140,16 @@ export interface AgentLoopResult {
 const AGENT_LOOP_ABORT_THRESHOLD = 3;
 
 /**
+ * Default cap on tool-execution iterations for unattended (headless) runs —
+ * scheduled tasks and lifecycle hooks. Each iteration is one tool-call batch
+ * (which may contain several parallel calls), not a single tool call. Acts as a
+ * runaway-loop guard; callers can override it per run via
+ * `AgentLoopOptions.maxIterations` (exposed to users through the `maxIterations`
+ * frontmatter key on tasks and hooks). Interactive agent-view runs pass no cap.
+ */
+export const DEFAULT_HEADLESS_MAX_ITERATIONS = 20;
+
+/**
  * Drives the tool-execution loop after the initial model response. Iterates
  * until the model returns a text response (or cancellation / iteration cap /
  * empty-fallback fires). UI-agnostic — callers attach behavior via hooks.

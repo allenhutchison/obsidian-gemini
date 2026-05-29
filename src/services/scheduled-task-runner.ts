@@ -9,7 +9,7 @@ import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import { ensureFolderExists } from '../utils/file-utils';
 import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
 import { buildTurnPreamble } from '../utils/turn-preamble';
-import { AgentLoop } from '../agent/agent-loop';
+import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 
 /**
  * Auto-approve all tool confirmations for headless scheduled-task runs.
@@ -112,6 +112,8 @@ export class ScheduledTaskRunner {
 		let finalText: string;
 
 		if (initialResponse.toolCalls?.length) {
+			// Per-task override falls back to the shared default when unset.
+			const maxIterations = this.task.maxIterations ?? DEFAULT_HEADLESS_MAX_ITERATIONS;
 			// Hand off to AgentLoop — handles thoughtSignature propagation,
 			// history construction, follow-up requests, empty-response retry,
 			// and agentEventBus events without any UI coupling.
@@ -125,7 +127,7 @@ export class ScheduledTaskRunner {
 					session,
 					isCancelled,
 					confirmationProvider: new HeadlessConfirmationProvider(),
-					maxIterations: 20,
+					maxIterations,
 					featureToolPolicy: this.task.toolPolicy,
 					headless: true,
 				},
@@ -135,7 +137,7 @@ export class ScheduledTaskRunner {
 
 			if (result.exhausted) {
 				throw new Error(
-					`[ScheduledTaskRunner] Task "${this.task.slug}" exhausted 20 tool iterations without producing a response`
+					`[ScheduledTaskRunner] Task "${this.task.slug}" exhausted ${maxIterations} tool iterations without producing a response`
 				);
 			}
 

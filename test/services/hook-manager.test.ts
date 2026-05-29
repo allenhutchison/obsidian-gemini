@@ -281,6 +281,7 @@ describe('HookManager CRUD', () => {
 		// Defaults should NOT be serialised — keeps the file clean.
 		expect(content).not.toContain('debounceMs');
 		expect(content).not.toContain('cooldownMs');
+		expect(content).not.toContain('maxIterations');
 		expect(content).not.toContain('enabled:');
 		expect(content).not.toContain('desktopOnly:');
 	});
@@ -297,6 +298,7 @@ describe('HookManager CRUD', () => {
 			toolPolicy: { preset: PolicyPreset.READ_ONLY },
 			enabledSkills: ['index-files'],
 			model: 'gemini-2.5-flash-lite',
+			maxIterations: 50,
 			outputPath: 'Hooks/Runs/{slug}/{date}.md',
 			enabled: false,
 			desktopOnly: false,
@@ -307,6 +309,7 @@ describe('HookManager CRUD', () => {
 		expect(content).toContain('debounceMs: 7500');
 		expect(content).toContain('cooldownMs: 60000');
 		expect(content).toContain('maxRunsPerHour: 12');
+		expect(content).toContain('maxIterations: 50');
 		expect(content).toContain('toolPolicy:');
 		expect(content).toContain('preset: read_only');
 		// Regression guard: the serializer must not also emit the legacy
@@ -320,6 +323,18 @@ describe('HookManager CRUD', () => {
 		expect(content).toContain('outputPath: "Hooks/Runs/{slug}/{date}.md"');
 		expect(content).toContain('enabled: false');
 		expect(content).toContain('desktopOnly: false');
+	});
+
+	it('coerces an invalid createHook maxIterations to undefined (not persisted)', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+
+		// -5 is invalid — must not be serialized nor kept on the in-memory hook.
+		await manager.createHook({ ...baseCreateParams, slug: 'bad-iters', maxIterations: -5 });
+
+		const content = plugin.__files.get('gemini-scribe/Hooks/bad-iters.md');
+		expect(content).not.toContain('maxIterations');
+		expect(manager.getHooks().find((h) => h.slug === 'bad-iters')?.maxIterations).toBeUndefined();
 	});
 
 	it('serialises focusFile only when the user opts in (default false stays out of the file)', async () => {
@@ -1166,6 +1181,7 @@ describe('HookManager discoverHooks via initialize()', () => {
 					maxRunsPerHour: 10,
 					cooldownMs: 60000,
 					model: 'gemini-2.5-flash',
+					maxIterations: 50,
 					outputPath: 'Runs/{slug}/{date}.md',
 					enabled: true,
 					desktopOnly: false,
@@ -1191,6 +1207,7 @@ describe('HookManager discoverHooks via initialize()', () => {
 		expect(hook.maxRunsPerHour).toBe(10);
 		expect(hook.cooldownMs).toBe(60000);
 		expect(hook.model).toBe('gemini-2.5-flash');
+		expect(hook.maxIterations).toBe(50);
 		expect(hook.enabledSkills).toEqual(['index-files']);
 		expect(hook.frontmatterFilter).toEqual({ type: 'journal' });
 		expect(hook.desktopOnly).toBe(false);

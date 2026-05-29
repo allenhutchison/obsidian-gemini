@@ -8,7 +8,7 @@ import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import { ensureFolderExists } from '../utils/file-utils';
 import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
 import { buildTurnPreamble } from '../utils/turn-preamble';
-import { AgentLoop } from '../agent/agent-loop';
+import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { GeminiSummary } from '../summary';
 import { SelectionRewriter } from '../rewrite-selection';
 import { HookFireContext, renderPrompt } from './hook-manager';
@@ -129,6 +129,8 @@ export class HookRunner {
 
 		let finalText: string;
 		if (initialResponse.toolCalls?.length) {
+			// Per-hook override falls back to the shared headless default when unset.
+			const maxIterations = hook.maxIterations ?? DEFAULT_HEADLESS_MAX_ITERATIONS;
 			const loop = new AgentLoop();
 			const result = await loop.run({
 				initialResponse,
@@ -139,14 +141,16 @@ export class HookRunner {
 					session,
 					isCancelled,
 					confirmationProvider: new HeadlessConfirmationProvider(),
-					maxIterations: 20,
+					maxIterations,
 					featureToolPolicy: hook.toolPolicy,
 					headless: true,
 				},
 			});
 			if (result.cancelled) return undefined;
 			if (result.exhausted) {
-				throw new Error(`[HookRunner] Hook "${hook.slug}" exhausted 20 tool iterations without producing a response`);
+				throw new Error(
+					`[HookRunner] Hook "${hook.slug}" exhausted ${maxIterations} tool iterations without producing a response`
+				);
 			}
 			finalText = result.markdown;
 		} else {

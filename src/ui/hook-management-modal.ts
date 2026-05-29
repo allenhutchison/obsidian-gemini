@@ -1,6 +1,7 @@
 import { Notice, Setting, setIcon } from 'obsidian';
 import type { Hook, HookAction, HookState, HookTrigger, HooksState } from '../services/hook-manager';
 import type { FeatureToolPolicy } from '../types/tool-policy';
+import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
 
@@ -385,6 +386,20 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
+			.setName('Max tool iterations')
+			.setDesc(
+				`Cap on agent tool-call batches per fire (agent-task only). Raise it for long multi-step hooks that hit the limit. Leave blank for the default (${DEFAULT_HEADLESS_MAX_ITERATIONS}).`
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder(String(DEFAULT_HEADLESS_MAX_ITERATIONS))
+					.setValue(this.form.maxIterations)
+					.onChange((v) => {
+						this.form.maxIterations = v.trim();
+					})
+			);
+
+		new Setting(advDetails)
 			.setName('Output path (optional)')
 			.setDesc(
 				'Where to write the agent response. Supports {slug}, {date}, {fileName}. Leave blank to skip writing a file.'
@@ -440,6 +455,19 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			return;
 		}
 
+		// Blank means "use the default" (undefined). A non-blank value must be a
+		// positive integer — reject garbage rather than silently dropping it.
+		let maxIterations: number | undefined;
+		const rawMaxIterations = this.form.maxIterations.trim();
+		if (rawMaxIterations) {
+			const parsed = Number(rawMaxIterations);
+			if (!Number.isInteger(parsed) || parsed <= 0) {
+				new Notice('Max tool iterations must be a positive whole number, or blank for the default.');
+				return;
+			}
+			maxIterations = parsed;
+		}
+
 		const manager = this.plugin.hookManager;
 		if (!manager) {
 			new Notice('Hook manager not available.');
@@ -458,6 +486,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					toolPolicy: this.form.toolPolicy,
 					enabledSkills: this.form.enabledSkills,
 					model: this.form.model || undefined,
+					maxIterations,
 					outputPath: this.form.outputPath || undefined,
 					enabled: this.form.enabled,
 					desktopOnly: this.form.desktopOnly,
@@ -479,6 +508,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					toolPolicy: this.form.toolPolicy,
 					enabledSkills: this.form.enabledSkills,
 					model: this.form.model || undefined,
+					maxIterations,
 					outputPath: this.form.outputPath || undefined,
 					enabled: this.form.enabled,
 					desktopOnly: this.form.desktopOnly,
@@ -514,6 +544,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			toolPolicy: hook.toolPolicy,
 			enabledSkills: [...hook.enabledSkills],
 			model: hook.model ?? '',
+			maxIterations: hook.maxIterations !== undefined ? String(hook.maxIterations) : '',
 			outputPath: hook.outputPath ?? '',
 			enabled: hook.enabled,
 			desktopOnly: hook.desktopOnly,
@@ -543,6 +574,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			toolPolicy: undefined as FeatureToolPolicy | undefined,
 			enabledSkills: [] as string[],
 			model: '',
+			maxIterations: '',
 			outputPath: '',
 			enabled: true,
 			desktopOnly: true,
