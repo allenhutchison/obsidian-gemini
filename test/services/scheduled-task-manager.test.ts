@@ -1055,6 +1055,25 @@ describe('ScheduledTaskManager', () => {
 			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
 			expect(written).toContain('maxIterations: 50');
 		});
+
+		it('coerces an invalid createTask maxIterations to undefined (not persisted)', async () => {
+			const plugin = createMockPlugin();
+			plugin.app.vault.create = vi.fn().mockResolvedValue(undefined);
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+
+			// 0 is invalid — must not be serialized nor kept on the in-memory task.
+			await manager.createTask({
+				slug: 'bad-iters',
+				schedule: 'daily',
+				maxIterations: 0,
+				prompt: 'Invalid cap.',
+			});
+
+			const written = (plugin.app.vault.create as Mock).mock.calls[0][1] as string;
+			expect(written).not.toContain('maxIterations:');
+			expect(manager.getTasks().find((t) => t.slug === 'bad-iters')?.maxIterations).toBeUndefined();
+		});
 	});
 
 	// ── deleteTask ───────────────────────────────────────────────────────────

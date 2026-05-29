@@ -525,7 +525,11 @@ export class ScheduledTaskManager {
 
 		const filePath = normalizePath(`${this.scheduledTasksFolder}/${slug}.md`);
 		const defaultOutputPath = normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`);
-		const content = this.serializeTask({ ...params, slug });
+		// Normalize at the write boundary so an invalid value from a programmatic
+		// caller can't be persisted or held in memory — matches the read-path
+		// contract (parseTaskFile), where invalid values fall back to the default.
+		const maxIterations = parseMaxIterations(params.maxIterations);
+		const content = this.serializeTask({ ...params, slug, maxIterations });
 		await this.plugin.app.vault.create(filePath, content);
 
 		// Immediately reflect in the in-memory map — don't wait for the vault
@@ -536,7 +540,7 @@ export class ScheduledTaskManager {
 			toolPolicy: params.toolPolicy,
 			outputPath: params.outputPath ?? defaultOutputPath,
 			model: params.model,
-			maxIterations: params.maxIterations,
+			maxIterations,
 			enabled: params.enabled ?? true,
 			runIfMissed: params.runIfMissed ?? false,
 			prompt: params.prompt,
@@ -603,8 +607,9 @@ export class ScheduledTaskManager {
 			outputPath: params.outputPath ?? task.outputPath,
 			model: params.model ?? task.model,
 			// Use the `in` check (not ??) so callers can clear back to the default
-			// by passing maxIterations: undefined explicitly.
-			maxIterations: 'maxIterations' in params ? params.maxIterations : task.maxIterations,
+			// by passing maxIterations: undefined explicitly. Normalize incoming
+			// values so an invalid number can't be persisted (matches parseTaskFile).
+			maxIterations: 'maxIterations' in params ? parseMaxIterations(params.maxIterations) : task.maxIterations,
 			enabled: params.enabled ?? task.enabled,
 			runIfMissed: params.runIfMissed ?? task.runIfMissed,
 			prompt: params.prompt ?? task.prompt,

@@ -397,10 +397,14 @@ export class HookManager {
 		if (this.hooks.has(slug)) throw new Error(`A hook named "${slug}" already exists`);
 
 		const filePath = normalizePath(`${this.hooksFolder}/${slug}.md`);
-		const content = this.serializeHook({ ...params, slug });
+		// Normalize at the write boundary so an invalid value from a programmatic
+		// caller can't be persisted or held in memory — matches the read-path
+		// contract (parseHookFile), where invalid values fall back to the default.
+		const normalizedParams = { ...params, maxIterations: parseMaxIterations(params.maxIterations) };
+		const content = this.serializeHook({ ...normalizedParams, slug });
 		await this.plugin.app.vault.create(filePath, content);
 
-		const hook: Hook = this.toHook(slug, filePath, params);
+		const hook: Hook = this.toHook(slug, filePath, normalizedParams);
 		this.hooks.set(slug, hook);
 		if (!this.state[slug]) {
 			this.state[slug] = {};
@@ -435,8 +439,9 @@ export class HookManager {
 			enabledSkills: params.enabledSkills ?? hook.enabledSkills,
 			model: params.model ?? hook.model ?? '',
 			// `in` check (not ??) so callers can clear back to the default by
-			// passing maxIterations: undefined explicitly.
-			maxIterations: 'maxIterations' in params ? params.maxIterations : hook.maxIterations,
+			// passing maxIterations: undefined explicitly. Normalize incoming
+			// values so an invalid number can't be persisted (matches parseHookFile).
+			maxIterations: 'maxIterations' in params ? parseMaxIterations(params.maxIterations) : hook.maxIterations,
 			outputPath: params.outputPath ?? hook.outputPath ?? '',
 			enabled: params.enabled ?? hook.enabled,
 			desktopOnly: params.desktopOnly ?? hook.desktopOnly,

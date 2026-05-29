@@ -325,6 +325,18 @@ describe('HookManager CRUD', () => {
 		expect(content).toContain('desktopOnly: false');
 	});
 
+	it('coerces an invalid createHook maxIterations to undefined (not persisted)', async () => {
+		const plugin = createPluginWithVaultStore();
+		const manager = newManager(plugin);
+
+		// -5 is invalid — must not be serialized nor kept on the in-memory hook.
+		await manager.createHook({ ...baseCreateParams, slug: 'bad-iters', maxIterations: -5 });
+
+		const content = plugin.__files.get('gemini-scribe/Hooks/bad-iters.md');
+		expect(content).not.toContain('maxIterations');
+		expect(manager.getHooks().find((h) => h.slug === 'bad-iters')?.maxIterations).toBeUndefined();
+	});
+
 	it('serialises focusFile only when the user opts in (default false stays out of the file)', async () => {
 		const plugin = createPluginWithVaultStore();
 		const manager = newManager(plugin);
