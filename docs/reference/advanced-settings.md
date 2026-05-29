@@ -94,9 +94,12 @@ Configure how the plugin handles API failures:
 
 ## Model Discovery
 
-Model discovery is fully automatic — there are no user-configurable settings for it. On startup, the plugin fetches the latest available Gemini models from Google's API and updates the model dropdowns. If the API fetch fails, the bundled static model list is used as a fallback.
+Model discovery is automatic — no configuration is required. On startup, the plugin fetches the latest available Gemini models from GitHub and caches the result for 24 hours. If the fetch fails, the bundled static model list is used as a fallback.
 
-When using the **Ollama** provider, a **Refresh model list** button appears in Settings → General. Click it after pulling new models with `ollama pull <name>` to force a re-query of the Ollama daemon without restarting Obsidian.
+Both providers expose a **Refresh model list** button in Settings → General:
+
+- **Gemini** — bypasses the 24-hour cache and re-fetches the remote model list immediately. You can also trigger this from the command palette with **Gemini Scribe: Refresh model list** (`gemini-scribe-refresh-model-list`). Useful when a newly-published model doesn't appear yet.
+- **Ollama** — re-queries the Ollama daemon for any models you've pulled since the plugin loaded (`ollama pull <name>`). Use this instead of restarting Obsidian.
 
 ## Performance Optimization
 
@@ -161,7 +164,7 @@ In v4.0+, context is manually managed through session-based file selection:
 
 ### Model List
 
-1. **Restart Obsidian** to pick up newly published Gemini models — discovery runs automatically on startup
+1. **Use Refresh model list** in Settings → General (or run **Gemini Scribe: Refresh model list** from the command palette) to pick up newly published Gemini models without waiting for the 24-hour cache to expire
 2. **Use Refresh model list** (Ollama provider) after pulling new models with `ollama pull`
 3. **Check your API key** if the model list looks empty or stale
 
@@ -201,9 +204,9 @@ In v4.0+, context is manually managed through session-based file selection:
 
 **Models not appearing or stale:**
 
-- For Gemini: check API key validity and network connectivity; restart Obsidian to trigger a fresh fetch
+- For Gemini: click **Refresh model list** in Settings → General (or run the **Gemini Scribe: Refresh model list** command) to bypass the 24-hour cache; check API key validity and network connectivity if it still fails
 - For Ollama: click **Refresh model list** in Settings → General after pulling new models
-- If the list still looks wrong, restart Obsidian to clear the cached model list
+- If the list still looks wrong after refreshing, restart Obsidian
 
 ## Security Considerations
 
