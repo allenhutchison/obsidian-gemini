@@ -117,7 +117,7 @@ An `agent-task` fire drives an agent loop that calls tools, reads the results, a
 
 When a fire exhausts the cap without producing a response, it fails with an error like:
 
-```
+```text
 Hook "<slug>" exhausted 20 tool iterations without producing a response
 ```
 

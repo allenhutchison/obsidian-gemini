@@ -107,7 +107,7 @@ Each run drives an agent loop that calls tools, reads the results, and calls mor
 
 When a task exhausts the cap without producing a response, the run fails with an error like:
 
-```
+```text
 Task "<slug>" exhausted 20 tool iterations without producing a response
 ```
 
