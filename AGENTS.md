@@ -137,7 +137,7 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
 - Skills are self-contained packages stored in `[state-folder]/Skills/<skill-name>/SKILL.md`
 - `SkillManager` handles discovery, metadata parsing, content loading, resource reading, creation, and name validation
 - Uses progressive disclosure: skill summaries (name + description) are injected into the agent system prompt; full instructions are loaded on-demand via `activate_skill`
-- Two tools: `activate_skill` (read-only, loads instructions or resources) and `create_skill` (creates new skill directories with valid SKILL.md)
+- Three tools: `activate_skill` (read-only, loads instructions or resources), `create_skill` (creates new skill directories with valid SKILL.md), and `edit_skill` (updates an existing skill's description or instruction body, with diff-review confirmation)
 - Skill names must be lowercase alphanumeric with hyphens, 1-64 chars, no consecutive/leading/trailing hyphens
 - Frontmatter parsing uses Obsidian's native `metadataCache` API
 - `scripts/` directories are treated as read-only reference material (no execution in Obsidian)
