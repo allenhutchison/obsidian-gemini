@@ -93,7 +93,7 @@ function getExtensionFromMimeType(mimeType: string): string {
  */
 function getAttachmentFolder(app: App): string {
 	// Access Obsidian's internal config for attachment location
-	// @ts-ignore - accessing internal Obsidian config
+	// @ts-expect-error - accessing internal Obsidian config
 	const attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
 
 	// If not set or empty, default to vault root
