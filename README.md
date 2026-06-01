@@ -7,7 +7,13 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
-## What's New in v4.9.0
+## What's New in v4.9.1
+
+**🔧 Gemini Scribe 4.9.1 - Vault Context Fix**
+
+- **🗂️ Initialize Vault Context fix** - Fixed the "Initialize Vault Context" / "Update Vault Context" button, which was sending a malformed model request and failing to generate AGENTS.md. The feature now works correctly.
+
+**Previous Updates (v4.9.0):**
 
 **🪝 Gemini Scribe 4.9 - Lifecycle Hooks, Stable Prefix Caching, Custom Endpoint**
 
