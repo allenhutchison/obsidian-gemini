@@ -1,4 +1,4 @@
-import { SkillSummary } from './skill-manager';
+import type { SkillSummary } from './skill-manager';
 
 // Import bundled skill SKILL.md files
 import helpSkillMd from '../../prompts/bundled-skills/gemini-scribe-help/SKILL.md';
