@@ -16,6 +16,12 @@
 	"vaultAssertions": [
 		{ "type": "fileExists", "path": "eval-scratch/Reading List Draft.md" },
 		{
+			"type": "fileMatches",
+			"path": "eval-scratch/Reading List Draft.md",
+			"flags": "i",
+			"value": "^(?:(?!\\bfascinat(?:e|ed|ing)\\b)[\\s\\S])*(?:\\bfascinat(?:e|ed|ing)\\b(?:(?!\\bfascinat(?:e|ed|ing)\\b)[\\s\\S])*)?$"
+		},
+		{
 			"type": "fileContains",
 			"path": "eval-scratch/Reading List Draft.md",
 			"value": "A Backyard Telescope That Photographs Quasars"
