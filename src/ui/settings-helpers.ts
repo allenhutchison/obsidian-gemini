@@ -1,6 +1,6 @@
 import { Setting } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { ObsidianGeminiSettings } from '../main';
+import type { ObsidianGeminiSettings } from '../main';
 import { GEMINI_MODELS } from '../models';
 
 export interface CollapsibleSectionOptions {
