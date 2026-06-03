@@ -1,0 +1,3 @@
+The storm arrived three days later, exactly as Edith had warned. The sea rose black and furious against the headland and the wind tore at the tower until the stones themselves seemed to groan. Mara climbed the stairs once more, this time with purpose, and stood before the great lamp with both journals in her arms.
+
+She understood now that the choice was hers alone. She could keep the light dark and let the old debt finally close, or she could wake the lamp and break the bargain that had cursed the village for a century. The water churned below and something vast turned beneath its surface. Mara reached for the mechanism and made her decision.

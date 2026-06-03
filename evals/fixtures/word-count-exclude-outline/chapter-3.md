@@ -1,0 +1,3 @@
+Morning came grey and slow. Mara had slept against the cold wall and woke with the journal still open on her knees. A passage she had not noticed before caught her eye. It described a hidden compartment beneath the third stair, where the first keeper had kept his most important records.
+
+She found the stair easily enough. The wood was loose and gave way to a shallow box wrapped in oilcloth. Inside lay a second journal, older than the first, its ink faded almost to nothing. Mara carried it to the light and bent close. The first line she could read sent a chill through her that the wind alone could not explain.

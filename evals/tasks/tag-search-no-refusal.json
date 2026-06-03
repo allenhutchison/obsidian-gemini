@@ -1,0 +1,21 @@
+{
+	"id": "tag-search-no-refusal",
+	"description": "Agent must actually search note contents for a tag instead of refusing or punting to Obsidian's built-in search",
+	"userMessage": "Look in the eval-scratch folder and list the title of every note tagged #important. Do not modify any files.",
+	"difficulty": "T2",
+	"category": "retrieval",
+	"fixture": "tag-search-no-refusal",
+	"expectedTools": [],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{ "type": "contains", "value": ["Roof Repair Estimate", "Roof Repair"] },
+		{ "type": "contains", "value": ["Tax Filing Deadline", "Tax Filing"] },
+		{ "type": "contains", "value": "Passport Renewal" },
+		{
+			"type": "judge",
+			"criteria": "The response lists the notes tagged #important (Roof Repair Estimate, Tax Filing Deadline, Passport Renewal) and does NOT claim it is unable to search for tags or tell the user to use Obsidian's built-in search instead. It must NOT present the notes tagged #important-soon (Garden Mulch Order, Library Book Return) as matches for #important. Answer NO if the agent refuses, punts the task, or counts the #important-soon notes as #important."
+		}
+	],
+	"maxTurns": 15,
+	"timeoutMs": 90000
+}

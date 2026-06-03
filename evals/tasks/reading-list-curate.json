@@ -1,0 +1,58 @@
+{
+	"id": "reading-list-curate",
+	"description": "Curate a reading-list edition: 14-day recency window + has a personal Document Note + not already in the index, then draft it and write the picks back to the index",
+	"userMessage": "Today is 2026-06-01. I'm assembling the next edition of my reading-list post. Look in the eval-scratch folder. From the article notes there (files whose names start with 'article-'), select only the articles for which ALL THREE of these are true: (a) I saved it in the last 14 days — its frontmatter `synced` date is on or after 2026-05-18; (b) the note has a non-empty 'Document Note:' line (my personal reaction); and (c) the article's title is NOT already listed in 'eval-scratch/Reading List Index.md'. Then create 'eval-scratch/Reading List Draft.md' that lists exactly those qualifying articles — each with its title and my Document Note — and append those same titles to 'eval-scratch/Reading List Index.md' so they are not reused next time. Do not include any article that fails any of the three tests.",
+	"difficulty": "T4",
+	"category": "synthesis",
+	"fixture": "reading-list-curate",
+	"expectedTools": ["write_file"],
+	"forbiddenTools": ["delete_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The agent selected exactly three articles — 'A Backyard Telescope That Photographs Quasars', 'Instant Postgres Sandboxes With Zero Migration', and 'The Case Against Token Maxxing' — and excluded all others. It must have excluded 'A Car Dashboard Built From One Giant OLED' and 'A Quiet Week in Open Source' (no Document Note), 'Revisiting the Netbook Era' (synced 2026-04-10, outside the 14-day window), and 'Designing Long-Term Memory for Agents' (already listed in the index). Answer NO if it included any excluded article or dropped any of the three correct ones."
+		}
+	],
+	"vaultAssertions": [
+		{ "type": "fileExists", "path": "eval-scratch/Reading List Draft.md" },
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Draft.md",
+			"value": "A Backyard Telescope That Photographs Quasars"
+		},
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Draft.md",
+			"value": "Instant Postgres Sandboxes With Zero Migration"
+		},
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Draft.md", "value": "The Case Against Token Maxxing" },
+		{
+			"type": "fileLacks",
+			"path": "eval-scratch/Reading List Draft.md",
+			"value": [
+				"A Car Dashboard Built From One Giant OLED",
+				"A Quiet Week in Open Source",
+				"Revisiting the Netbook Era",
+				"Designing Long-Term Memory for Agents"
+			]
+		},
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Index.md",
+			"value": "A Backyard Telescope That Photographs Quasars"
+		},
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Index.md",
+			"value": "Instant Postgres Sandboxes With Zero Migration"
+		},
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Index.md", "value": "The Case Against Token Maxxing" },
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Index.md",
+			"value": "Designing Long-Term Memory for Agents"
+		}
+	],
+	"maxTurns": 25,
+	"timeoutMs": 180000
+}

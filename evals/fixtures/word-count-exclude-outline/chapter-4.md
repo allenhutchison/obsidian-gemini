@@ -1,0 +1,3 @@
+The older journal told a different story than the one Mara had been raised on. The first keeper had not been a hero at all. He had bargained with something in the water, trading the light of the lamp for safe passage of his own boats. The villagers had drowned by the dozen while he prospered.
+
+Mara read until her eyes ached. Each entry pulled the old legend further out of shape. She thought of her grandfather, who had spoken of the keeper with such reverence, and wondered how much he had known. The tower around her seemed to lean inward, listening, waiting to learn what she would do with the truth.

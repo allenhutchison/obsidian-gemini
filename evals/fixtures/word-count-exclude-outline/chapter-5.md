@@ -1,0 +1,3 @@
+She did not light the lamp that night. Instead she walked down to the village and knocked on the door of the oldest woman there. The woman, whose name was Edith, had buried two brothers in the year of the great drownings. She listened to Mara without surprise, as if she had waited her whole life for someone to bring her the second journal.
+
+They sat together until the fire burned to embers. Edith spoke of names the village had chosen to forget and of a debt that had never truly been paid. When Mara finally rose to leave, the old woman caught her wrist and told her that the thing in the water remembered too, and that it would come again for the light.

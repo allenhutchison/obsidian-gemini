@@ -1,0 +1,3 @@
+The lighthouse had been dark for thirty years when Mara first climbed its stairs. Salt had eaten through the railings and the wind moved freely through the broken windows. She carried a lantern in one hand and her grandfather's journal in the other. Every page of that journal spoke of a light that never failed and a keeper who never slept.
+
+At the top she found the great lamp shrouded in canvas and dust. The mechanism beneath it was rusted but whole. Mara set down her lantern and began to read aloud from the journal, as if the words alone could wake the old machine. Outside the gulls wheeled and cried against a sky the color of cold iron.
