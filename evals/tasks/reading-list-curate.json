@@ -51,7 +51,9 @@
 			"type": "fileContains",
 			"path": "eval-scratch/Reading List Index.md",
 			"value": "Designing Long-Term Memory for Agents"
-		}
+		},
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Index.md", "value": "The Shape of Tools to Come" },
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Index.md", "value": "Why Local-First Software Wins" }
 	],
 	"maxTurns": 25,
 	"timeoutMs": 180000
