@@ -18,7 +18,7 @@ The agent has access to this as the `vault_semantic_search` tool. You don't need
 ### Enable Vault Indexing
 
 1. Open Settings → Gemini Scribe
-2. Scroll to **Vault Indexing (Experimental)**
+2. Scroll to **Vault Search Index**
 3. Toggle **Enable vault indexing** to ON
 4. The initial indexing starts automatically with a progress modal
 
