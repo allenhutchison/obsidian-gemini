@@ -2,7 +2,7 @@ import { App, Menu, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
-import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { sanitizeFileName, shouldExcludePathForPlugin } from '../../utils/file-utils';
 import {
 	InlineAttachment,
 	generateAttachmentId,
@@ -163,7 +163,7 @@ export class AgentViewUI {
 
 					// Rename file if it exists
 					const oldPath = editingSession.historyPath;
-					const sanitizedTitle = (this.plugin.sessionManager as any).sanitizeFileName(newTitle);
+					const sanitizedTitle = sanitizeFileName(newTitle);
 					const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + sanitizedTitle + '.md';
 					const oldFile = this.plugin.app.vault.getAbstractFileByPath(oldPath);
 					if (oldFile) {
