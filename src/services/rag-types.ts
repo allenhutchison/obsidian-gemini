@@ -87,6 +87,17 @@ export interface RagProgressInfo {
  */
 export type ProgressListener = (progress: RagProgressInfo) => void;
 
+/**
+ * Shape required by RagProgressModal to observe and control an ongoing indexing run.
+ * Implemented by RagIndexingService (and used by RagVaultScanner when invoking the modal).
+ */
+export interface RagProgressProvider {
+	addProgressListener: (listener: ProgressListener) => void;
+	removeProgressListener: (listener: ProgressListener) => void;
+	getProgressInfo: () => RagProgressInfo;
+	cancelIndexing: () => void;
+}
+
 export const CACHE_VERSION = '1.0';
 export const DEBOUNCE_MS = 2000;
 
