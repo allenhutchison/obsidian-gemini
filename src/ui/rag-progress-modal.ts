@@ -1,16 +1,11 @@
 import { App, Modal, Setting, setIcon } from 'obsidian';
-import type { RagProgressInfo, ProgressListener } from '../services/rag-types';
+import type { RagProgressInfo, ProgressListener, RagProgressProvider } from '../services/rag-types';
 
 /**
  * Modal showing live progress during RAG indexing operations
  */
 export class RagProgressModal extends Modal {
-	private ragService: {
-		addProgressListener: (listener: ProgressListener) => void;
-		removeProgressListener: (listener: ProgressListener) => void;
-		getProgressInfo: () => RagProgressInfo;
-		cancelIndexing: () => void;
-	};
+	private ragService: RagProgressProvider;
 	private onComplete?: (result: { indexed: number; skipped: number; failed: number }) => void;
 	private progressListener: ProgressListener;
 	private progressInfo: RagProgressInfo;
@@ -30,12 +25,7 @@ export class RagProgressModal extends Modal {
 
 	constructor(
 		app: App,
-		ragService: {
-			addProgressListener: (listener: ProgressListener) => void;
-			removeProgressListener: (listener: ProgressListener) => void;
-			getProgressInfo: () => RagProgressInfo;
-			cancelIndexing: () => void;
-		},
+		ragService: RagProgressProvider,
 		onComplete?: (result: { indexed: number; skipped: number; failed: number }) => void
 	) {
 		super(app);

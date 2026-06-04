@@ -6,7 +6,7 @@ import type { ObsidianVaultAdapter } from './obsidian-file-adapter';
 import type { RagCache } from './rag-cache';
 import type { RagRateLimiter } from './rag-rate-limiter';
 import { CACHE_VERSION } from './rag-types';
-import type { IndexProgress, IndexResult, FailedFileEntry, RagIndexStatus } from './rag-types';
+import type { IndexProgress, IndexResult, FailedFileEntry, RagIndexStatus, RagProgressProvider } from './rag-types';
 import { getErrorMessage, isNotFoundError, isQuotaExhausted } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
 
@@ -235,7 +235,7 @@ export class RagVaultScanner {
 	 * Handle interrupted indexing by prompting user to resume or start fresh.
 	 * @param progressProvider - The object to pass to the progress modal (typically the orchestrator)
 	 */
-	async handleInterruptedIndexing(progressProvider: any): Promise<void> {
+	async handleInterruptedIndexing(progressProvider: RagProgressProvider): Promise<void> {
 		if (!this.ragCache.cache) return;
 
 		const resumeInfo = {
@@ -268,7 +268,7 @@ export class RagVaultScanner {
 	 * Start resume indexing with progress modal.
 	 * @param progressProvider - The object to pass to the progress modal (typically the orchestrator)
 	 */
-	startResumeIndexing(progressProvider: any): void {
+	startResumeIndexing(progressProvider: RagProgressProvider): void {
 		import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
 			const progressModal = new RagProgressModal(this.plugin.app, progressProvider, (result) => {
 				new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
@@ -286,7 +286,7 @@ export class RagVaultScanner {
 	/**
 	 * Clear cache and store, then start fresh indexing
 	 */
-	private async startFresh(progressProvider: any): Promise<void> {
+	private async startFresh(progressProvider: RagProgressProvider): Promise<void> {
 		try {
 			// Clear local cache
 			this.ragCache.cache = {

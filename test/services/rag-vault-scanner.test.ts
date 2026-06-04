@@ -1033,7 +1033,7 @@ describe('RagVaultScanner', () => {
 			ragCache.cache = null;
 			const { scanner } = createScanner({ ragCache });
 
-			await scanner.handleInterruptedIndexing({});
+			await scanner.handleInterruptedIndexing({} as any);
 
 			// Should not throw or do anything
 		});
@@ -1064,7 +1064,7 @@ describe('RagVaultScanner', () => {
 			// Mock startResumeIndexing to avoid side effects
 			const spy = vi.spyOn(scanner, 'startResumeIndexing').mockImplementation(() => {});
 
-			const progressProvider = { foo: 'bar' };
+			const progressProvider = { foo: 'bar' } as any;
 			await scanner.handleInterruptedIndexing(progressProvider);
 
 			expect(spy).toHaveBeenCalledWith(progressProvider);
@@ -1102,7 +1102,7 @@ describe('RagVaultScanner', () => {
 			// Mock startResumeIndexing to prevent actual indexing
 			vi.spyOn(scanner, 'startResumeIndexing').mockImplementation(() => {});
 
-			await scanner.handleInterruptedIndexing({});
+			await scanner.handleInterruptedIndexing({} as any);
 
 			// startFresh should have cleared cache and deleted store
 			expect(ragCache.saveCache).toHaveBeenCalled();
@@ -1128,7 +1128,7 @@ describe('RagVaultScanner', () => {
 				this.open = vi.fn();
 			});
 
-			scanner.startResumeIndexing({});
+			scanner.startResumeIndexing({} as any);
 
 			// Use deterministic polling instead of a fixed setTimeout delay
 			await vi.waitFor(() => {
