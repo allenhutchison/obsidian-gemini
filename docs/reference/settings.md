@@ -109,12 +109,15 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Type**: String
 - **Default**: `gemini-flash-latest`
 - **Description**: Model used for agent chat conversations and the Rewrite text with AI command
-- **Available Models**:
-  - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient, default for chat)
-  - `gemini-2.5-pro` - Gemini 2.5 Pro (most capable, requires billing)
-  - `gemini-flash-lite-latest` - Gemini Flash Lite Latest (lightweight)
-  - `gemini-3.1-pro-preview` - Gemini 3.1 Pro Preview (experimental)
-- **Note**: Model discovery automatically fetches the latest available models from Google's API
+- **Available Models** (representative sample — the full list is auto-refreshed; see [Model Discovery](#model-discovery)):
+  - `gemini-flash-latest` - Gemini Flash Latest (fast and efficient, default for chat/summary/rewrite)
+  - `gemini-flash-lite-latest` - Gemini Flash Lite Latest (lightweight, default for completions)
+  - `gemini-2.5-flash` - Gemini 2.5 Flash
+  - `gemini-2.5-pro` - Gemini 2.5 Pro
+  - `gemini-3-flash-preview` - Gemini 3 Flash Preview
+  - `gemini-3.1-pro-preview` - Gemini 3.1 Pro Preview
+  - `gemini-3.5-flash` - Gemini 3.5 Flash
+- **Note**: The full model list is loaded from the bundled `models.json` and auto-refreshed from GitHub on startup (cached 24h). Click **Refresh model list** in Settings → General for an immediate refresh.
 
 ### Summary Model
 
