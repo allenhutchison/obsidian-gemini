@@ -2,6 +2,7 @@ import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice } from '
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
+import type { Tool, ToolResult } from '../../tools/types';
 import { HandlerPriority } from '../../types/agent-events';
 
 // Import all component modules
@@ -663,7 +664,7 @@ export class AgentView extends ItemView {
 	 * Returns Promise that resolves when user clicks a button
 	 */
 	public async showConfirmationInChat(
-		tool: any,
+		tool: Tool,
 		parameters: any,
 		executionId: string,
 		diffContext?: import('../../tools/types').DiffContext
@@ -750,7 +751,7 @@ export class AgentView extends ItemView {
 	 * Public method to show tool result (delegates to tools component)
 	 * Used by tests and external components
 	 */
-	async showToolResult(toolName: string, result: any, executionId?: string): Promise<void> {
+	async showToolResult(toolName: string, result: ToolResult, executionId?: string): Promise<void> {
 		// Lazy initialization for tests that don't call onOpen()
 		if (!this.tools) {
 			this.ensureToolsInitialized();
