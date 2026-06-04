@@ -15,7 +15,7 @@ import { AgentViewTools } from './agent-view-tools';
 import { AgentViewSession } from './agent-view-session';
 import { AgentViewShelf } from './agent-view-shelf';
 import type ObsidianGemini from '../../main';
-import type { ConfirmationResult, DiffContext } from '../../tools/types';
+import type { ConfirmationResult, DiffContext, Tool } from '../../tools/types';
 
 /**
  * Context interface for the send module.
@@ -38,7 +38,7 @@ export interface SendContext {
 	isToolAllowedWithoutConfirmation: (toolName: string) => boolean;
 	allowToolWithoutConfirmation: (toolName: string) => void;
 	showConfirmationInChat: (
-		tool: any,
+		tool: Tool,
 		parameters: any,
 		executionId: string,
 		diffContext?: DiffContext
