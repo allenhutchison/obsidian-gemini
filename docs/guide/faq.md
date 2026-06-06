@@ -61,7 +61,7 @@ The plugin has built-in retry logic with exponential backoff (3 attempts by defa
 
 ### A model I selected shows "model not found"
 
-Google regularly retires preview model versions. Enable **Model Discovery** under Advanced Settings to dynamically fetch available models from the API instead of relying on the built-in static list. ([#223](https://github.com/allenhutchison/obsidian-gemini/issues/223))
+Google regularly retires preview model versions. The plugin automatically fetches the latest model list from GitHub on startup (cached 24 hours). Click **Refresh model list** in Settings → General to pick up the current list immediately, without waiting for the cache to expire. ([#223](https://github.com/allenhutchison/obsidian-gemini/issues/223))
 
 ### Where are the Temperature and Top-P settings?
 
