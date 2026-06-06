@@ -62,18 +62,6 @@
 			"maxTemperature": 2
 		},
 		{
-			"value": "gemini-3-pro-image-preview",
-			"label": "Nano Banana Pro",
-			"supportsImageGeneration": true,
-			"maxTemperature": 1
-		},
-		{
-			"value": "gemini-3.1-flash-image-preview",
-			"label": "Nano Banana 2",
-			"supportsImageGeneration": true,
-			"maxTemperature": 1
-		},
-		{
 			"value": "gemini-3-pro-preview",
 			"label": "Gemini 3 Pro Preview",
 			"maxTemperature": 2
