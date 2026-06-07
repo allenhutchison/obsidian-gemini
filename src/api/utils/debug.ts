@@ -1,4 +1,5 @@
 import { Logger } from '../../utils/logger';
+import type { BaseModelRequest, ExtendedModelRequest } from '../interfaces/model-api';
 
 /**
  * Utility for logging debug info for Gemini APIs.
@@ -95,20 +96,22 @@ export function redactLinkedFileSections(prompt: string): string {
 }
 
 // Helper to detect BaseModelRequest
-export function isBaseModelRequest(obj: any): boolean {
-	return !!(obj && typeof obj === 'object' && typeof obj.prompt === 'string');
+export function isBaseModelRequest(obj: unknown): obj is BaseModelRequest {
+	return !!(obj && typeof obj === 'object' && typeof (obj as { prompt?: unknown }).prompt === 'string');
 }
 
 // Helper to detect ExtendedModelRequest
-export function isExtendedModelRequest(obj: any): boolean {
-	return isBaseModelRequest(obj) && Array.isArray(obj.conversationHistory) && typeof obj.userMessage === 'string';
+export function isExtendedModelRequest(obj: unknown): obj is ExtendedModelRequest {
+	if (!isBaseModelRequest(obj)) return false;
+	const extended = obj as ExtendedModelRequest;
+	return Array.isArray(extended.conversationHistory) && typeof extended.userMessage === 'string';
 }
 
-export function formatBaseModelRequest(req: any): string {
+export function formatBaseModelRequest(req: BaseModelRequest): string {
 	return [`Model: ${req.model ?? '[default]'}\n`, `Prompt: ${JSON.stringify(req.prompt, null, 2)}\n`].join('');
 }
 
-export function formatExtendedModelRequest(req: any): string {
+export function formatExtendedModelRequest(req: ExtendedModelRequest): string {
 	return [
 		`Model: ${req.model ?? '[default]'}\n`,
 		`Prompt: ${JSON.stringify(req.prompt, null, 2)}\n`,
