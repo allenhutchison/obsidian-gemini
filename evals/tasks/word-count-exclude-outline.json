@@ -1,0 +1,18 @@
+{
+	"id": "word-count-exclude-outline",
+	"description": "Sum word counts across chapter files, excluding a non-narrative outline section in the final chapter",
+	"userMessage": "The eval-scratch folder contains chapter-1.md through chapter-7.md of a short story. How many words is the story in total? Note that chapter-7.md ends with a '## Outline' section that is planning notes, not part of the story — do not count any words in or after that Outline heading. Give me the total word count for the story prose.",
+	"difficulty": "T3",
+	"category": "aggregation",
+	"fixture": "word-count-exclude-outline",
+	"expectedTools": [],
+	"forbiddenTools": ["write_file", "delete_file", "update_frontmatter", "append_content", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The correct total word count for the story is 823 words — chapters 1 through 6 in full plus only the prose of chapter 7 that comes before its '## Outline' section. Accept the answer if it commits to a total within 15 words of 823 (between 808 and 838) AND it excluded the outline section. Answer NO if it reports a total near 891 (which means it counted the outline notes), gives a vague or non-numeric estimate, or does not commit to a specific number."
+		}
+	],
+	"maxTurns": 15,
+	"timeoutMs": 120000
+}

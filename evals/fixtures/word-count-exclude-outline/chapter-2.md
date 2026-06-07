@@ -1,0 +1,3 @@
+The villagers below watched the lighthouse with old suspicion. They remembered the storm that had taken the last keeper and the strange lights that some claimed to have seen since. Mara had grown up on those stories and had never quite believed them. Now, alone on the headland, she was less certain.
+
+She worked through the night to free the lamp of its canvas. Her hands grew raw and her lantern burned low. When at last the great lens stood clear, it caught the weak glow and threw it across the walls in rings of pale fire. Mara stepped back and felt, for the first time, that the tower was watching her in return.

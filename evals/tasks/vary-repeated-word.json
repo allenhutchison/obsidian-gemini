@@ -1,0 +1,48 @@
+{
+	"id": "vary-repeated-word",
+	"description": "Rewrite a draft to remove an overused word while preserving titles, links, structure, and meaning (and not creating unrequested artifacts)",
+	"userMessage": "The draft at 'eval-scratch/Reading List Draft.md' overuses the word 'fascinate' — it appears five times in my commentary. Rewrite the commentary so that word (in any form: fascinate, fascinated, fascinating) appears at most once across the whole draft, varying the wording while preserving the meaning of each comment. Keep every article title, every link, and the overall structure exactly as they are. Edit the draft in place. Do not generate any images.",
+	"difficulty": "T3",
+	"category": "edit",
+	"fixture": "vary-repeated-word",
+	"expectedTools": [],
+	"forbiddenTools": ["delete_file", "generate_image"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "In the rewritten draft, a form of the word 'fascinate' (fascinate/fascinated/fascinating) now appears at most once in total, down from five. Each article's original opinion is preserved in meaning, and the four article titles and their links are unchanged. Answer NO if 'fascinate' still appears two or more times, if any comment's meaning was lost, or if titles or links were altered."
+		}
+	],
+	"vaultAssertions": [
+		{ "type": "fileExists", "path": "eval-scratch/Reading List Draft.md" },
+		{
+			"type": "fileMatches",
+			"path": "eval-scratch/Reading List Draft.md",
+			"flags": "i",
+			"value": "^(?:(?!\\bfascinat(?:e|ed|ing)\\b)[\\s\\S])*(?:\\bfascinat(?:e|ed|ing)\\b(?:(?!\\bfascinat(?:e|ed|ing)\\b)[\\s\\S])*)?$"
+		},
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Draft.md",
+			"value": "A Backyard Telescope That Photographs Quasars"
+		},
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Draft.md",
+			"value": "Instant Postgres Sandboxes With Zero Migration"
+		},
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Draft.md", "value": "The Case Against Token Maxxing" },
+		{
+			"type": "fileContains",
+			"path": "eval-scratch/Reading List Draft.md",
+			"value": "A Car Dashboard Built From One Giant OLED"
+		},
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Draft.md", "value": "https://example.com/quasar" },
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Draft.md", "value": "https://example.com/postgres" },
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Draft.md", "value": "https://example.com/tokens" },
+		{ "type": "fileContains", "path": "eval-scratch/Reading List Draft.md", "value": "https://example.com/oled" },
+		{ "type": "fileUnchanged", "path": "eval-scratch/Reading List Index.md", "fixture": "Reading List Index.md" }
+	],
+	"maxTurns": 20,
+	"timeoutMs": 150000
+}

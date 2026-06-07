@@ -1,0 +1,21 @@
+{
+	"id": "recency-sync-vs-age",
+	"description": "Distinguish genuinely recent reading from a bulk backfill that carries a recent sync date but years-old publish dates",
+	"userMessage": "Today is 2026-06-01. Look in the eval-scratch folder. I want to feature three genuinely recent articles in my reading-list post — things actually published and read in the last couple of weeks. Heads up: a one-time bulk import recently dumped a pile of old archived articles into my library with a recent sync date (see 'eval-scratch/Readwise Syncs.md'); those are not recent reading and should not be featured. Recommend the three best genuinely recent articles and name them.",
+	"difficulty": "T4",
+	"category": "conflict",
+	"fixture": "recency-sync-vs-age",
+	"expectedTools": [],
+	"forbiddenTools": ["write_file", "delete_file", "append_content", "update_frontmatter", "move_file"],
+	"outputMatchers": [
+		{
+			"type": "judge",
+			"criteria": "The response recommends the three genuinely recent articles — the Vaonis smart telescope, the Postgres sandboxes piece, and the Flipper networking gadget — all published in 2026. It must NOT recommend any of the bulk-imported archival articles (the 2009 netbook buying guide, the 2011 Flash tutorial, or the Roman Forum travel essay), which carry a 2026-05-29 sync date but were published years ago. Answer NO if any old backfill article is featured or if the agent treats sync date alone as recency."
+		},
+		{ "type": "regex", "value": "(telescope|Vaonis|Vespera)", "flags": "i" },
+		{ "type": "regex", "value": "(Postgres|sandbox)", "flags": "i" },
+		{ "type": "regex", "value": "Flipper", "flags": "i" }
+	],
+	"maxTurns": 15,
+	"timeoutMs": 120000
+}
