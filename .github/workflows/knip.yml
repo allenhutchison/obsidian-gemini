@@ -1,0 +1,33 @@
+name: Knip
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  knip:
+    name: Dead-code & unused-deps report
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Non-blocking: surfaces a report without failing the PR while the allowlist
+      # settles. Drop `continue-on-error: true` in a follow-up to make it blocking.
+      - name: Run knip
+        run: npm run knip
+        continue-on-error: true

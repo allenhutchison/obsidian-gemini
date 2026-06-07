@@ -24,6 +24,7 @@ npm run format       # Format code with Prettier
 npm run format-check # Check formatting without changes
 npm run lint         # Lint with ESLint (eslint-plugin-obsidianmd recommended preset)
 npm run lint:fix     # Auto-fix ESLint violations where possible
+npm run knip         # Detect unused files, exports, types, and dependencies (configured in knip.json)
 npm run install:test-vault # Copy built artifacts into test vault (override path with TEST_VAULT_PLUGIN_DIR)
 ```
 
