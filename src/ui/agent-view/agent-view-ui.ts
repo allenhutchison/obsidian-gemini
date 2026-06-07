@@ -3,6 +3,7 @@ import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
 import { sanitizeFileName, shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { collectFilesFromFolder } from '../../utils/folder-walk';
 import {
 	InlineAttachment,
 	generateAttachmentId,
@@ -562,12 +563,16 @@ export class AgentViewUI {
 					return;
 				}
 
-				// Expand folders → collect all child TFiles recursively
+				// Expand folders → collect all child TFiles recursively, pruning
+				// any subtree that lives inside the plugin state folder or `.obsidian`.
 				const allTFiles: TFile[] = [];
 				for (const file of filteredFiles) {
 					if (file instanceof TFolder) {
-						const children = this.collectFilesFromFolder(file);
-						allTFiles.push(...children.filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin)));
+						allTFiles.push(
+							...collectFilesFromFolder(file, {
+								prune: (item) => shouldExcludePathForPlugin(item.path, this.plugin),
+							})
+						);
 					} else if (file instanceof TFile) {
 						allTFiles.push(file);
 					}
@@ -875,20 +880,5 @@ export class AgentViewUI {
 			nameSpan.textContent = ' No Project';
 			setTooltip(badge, 'Click to link a project');
 		}
-	}
-
-	/**
-	 * Recursively collect all TFile children from a folder
-	 */
-	private collectFilesFromFolder(folder: TFolder): TFile[] {
-		const files: TFile[] = [];
-		for (const child of folder.children) {
-			if (child instanceof TFile) {
-				files.push(child);
-			} else if (child instanceof TFolder) {
-				files.push(...this.collectFilesFromFolder(child));
-			}
-		}
-		return files;
 	}
 }

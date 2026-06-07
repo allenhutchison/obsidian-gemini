@@ -3,6 +3,7 @@ import type ObsidianGemini from '../main';
 import { ModelClientFactory } from '../api';
 import { AgentsMemoryData } from './agents-memory';
 import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
+import { collectFilesFromFolder } from '../utils/folder-walk';
 
 /**
  * Simple cache entry for vault information
@@ -274,20 +275,7 @@ export class VaultAnalyzer {
 	 * Count markdown files in a folder (including subfolders)
 	 */
 	private countMarkdownFilesInFolder(folder: TFolder): number {
-		let count = 0;
-
-		const countRecursive = (f: TFolder) => {
-			f.children.forEach((child) => {
-				if (child instanceof TFile && child.extension === 'md') {
-					count++;
-				} else if (child instanceof TFolder) {
-					countRecursive(child);
-				}
-			});
-		};
-
-		countRecursive(folder);
-		return count;
+		return collectFilesFromFolder(folder, { filter: (f) => f.extension === 'md' }).length;
 	}
 
 	/**
