@@ -6,6 +6,7 @@ import {
 	AgentContext,
 	DEFAULT_CONTEXTS,
 	SessionModelConfig,
+	DestructiveAction,
 } from '../types/agent';
 import type ObsidianGemini from '../main';
 import { sanitizeFileName } from '../utils/file-utils';
@@ -49,7 +50,7 @@ function migrateLegacyEnabledTools(value: unknown): FeatureToolPolicy | undefine
  * falls back to the supplied default.
  */
 function parseSessionToolPolicy(
-	frontmatter: any,
+	frontmatter: Record<string, unknown> | undefined,
 	fallback: FeatureToolPolicy | undefined
 ): FeatureToolPolicy | undefined {
 	const fromNewShape = parseToolPolicyFrontmatter(frontmatter?.tool_policy);
@@ -397,15 +398,16 @@ export class SessionManager {
 	/**
 	 * Parse agent context from frontmatter
 	 */
-	private parseContextFromFrontmatter(frontmatter: any): AgentContext {
+	private parseContextFromFrontmatter(frontmatter: Record<string, unknown> | undefined): AgentContext {
 		if (!frontmatter) {
 			return DEFAULT_CONTEXTS.NOTE_CHAT as AgentContext;
 		}
 
 		// Convert file links back to TFile objects
 		const contextFiles: TFile[] = [];
-		if (frontmatter.context_files) {
-			for (const fileRef of frontmatter.context_files) {
+		const rawContextFiles = frontmatter.context_files;
+		if (Array.isArray(rawContextFiles)) {
+			for (const fileRef of rawContextFiles) {
 				let file: TFile | null = null;
 
 				// Handle both old path format and new wikilink format
@@ -430,22 +432,27 @@ export class SessionManager {
 			}
 		}
 
+		const rawRequireConfirmation = frontmatter.require_confirmation;
+		const requireConfirmation: DestructiveAction[] = Array.isArray(rawRequireConfirmation)
+			? rawRequireConfirmation.filter((v): v is DestructiveAction => typeof v === 'string')
+			: [];
+
 		return {
 			contextFiles,
 			toolPolicy: parseSessionToolPolicy(frontmatter, DEFAULT_CONTEXTS.NOTE_CHAT.toolPolicy),
-			requireConfirmation: frontmatter.require_confirmation || [],
-			maxContextChars: frontmatter.max_context_chars,
-			maxCharsPerFile: frontmatter.max_chars_per_file,
+			requireConfirmation,
+			maxContextChars: typeof frontmatter.max_context_chars === 'number' ? frontmatter.max_context_chars : undefined,
+			maxCharsPerFile: typeof frontmatter.max_chars_per_file === 'number' ? frontmatter.max_chars_per_file : undefined,
 		};
 	}
 
 	/**
 	 * Parse model config from frontmatter
 	 */
-	private parseProjectPath(frontmatter: any): string | undefined {
-		if (!frontmatter?.project) return undefined;
-		const ref = frontmatter.project;
-		if (typeof ref === 'string' && ref.startsWith('[[') && ref.endsWith(']]')) {
+	private parseProjectPath(frontmatter: Record<string, unknown> | undefined): string | undefined {
+		const ref = frontmatter?.project;
+		if (typeof ref !== 'string' || ref === '') return undefined;
+		if (ref.startsWith('[[') && ref.endsWith(']]')) {
 			// Strip [[ ]], then remove alias (|...) and anchor (#...)
 			const inner = ref.slice(2, -2).split('|')[0].split('#')[0].trim();
 			const resolved = this.plugin.app.metadataCache.getFirstLinkpathDest(inner, '');
@@ -454,13 +461,15 @@ export class SessionManager {
 			}
 		}
 		// Also accept raw path strings
-		if (typeof ref === 'string' && !ref.startsWith('[[')) {
+		if (!ref.startsWith('[[')) {
 			return ref;
 		}
 		return undefined;
 	}
 
-	private parseModelConfigFromFrontmatter(frontmatter: any): SessionModelConfig | undefined {
+	private parseModelConfigFromFrontmatter(
+		frontmatter: Record<string, unknown> | undefined
+	): SessionModelConfig | undefined {
 		if (!frontmatter) {
 			return undefined;
 		}
@@ -468,7 +477,7 @@ export class SessionManager {
 		const config: SessionModelConfig = {};
 		let hasConfig = false;
 
-		if (frontmatter.model) {
+		if (typeof frontmatter.model === 'string' && frontmatter.model !== '') {
 			config.model = frontmatter.model;
 			hasConfig = true;
 		}
@@ -480,7 +489,7 @@ export class SessionManager {
 			config.topP = Number(frontmatter.top_p);
 			hasConfig = true;
 		}
-		if (frontmatter.prompt_template) {
+		if (typeof frontmatter.prompt_template === 'string' && frontmatter.prompt_template !== '') {
 			config.promptTemplate = frontmatter.prompt_template;
 			hasConfig = true;
 		}

@@ -349,10 +349,10 @@ Add your project instructions here. This text will be injected into the agent's 
 		return false;
 	}
 
-	private parseConfig(frontmatter: any, defaultName: string): ProjectConfig {
+	private parseConfig(frontmatter: Record<string, unknown>, defaultName: string): ProjectConfig {
 		const name = typeof frontmatter.name === 'string' ? frontmatter.name : defaultName;
-		const skills = Array.isArray(frontmatter.skills)
-			? frontmatter.skills.filter((s: any) => typeof s === 'string')
+		const skills: string[] = Array.isArray(frontmatter.skills)
+			? frontmatter.skills.filter((s): s is string => typeof s === 'string')
 			: [];
 		const toolPolicy = this.parseToolPolicy(frontmatter);
 
@@ -369,7 +369,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 * stale `permissions:` overrides that the user thought they migrated away
 	 * from.
 	 */
-	private parseToolPolicy(frontmatter: any): FeatureToolPolicy | undefined {
+	private parseToolPolicy(frontmatter: Record<string, unknown>): FeatureToolPolicy | undefined {
 		if (Object.prototype.hasOwnProperty.call(frontmatter, 'toolPolicy')) {
 			return parseToolPolicyFrontmatter(frontmatter.toolPolicy);
 		}
