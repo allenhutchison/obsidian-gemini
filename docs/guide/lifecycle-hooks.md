@@ -102,7 +102,7 @@ The `toolPolicy` block uses the same shape every other policy-bearing feature us
 toolPolicy:
   preset: read_only # one of: read_only, cautious, edit_mode, yolo
   overrides:
-    web_fetch: deny
+    fetch_url: deny
 ```
 
 - `preset` chooses the baseline permission for every tool by classification. Omit to inherit the global plugin preset.
