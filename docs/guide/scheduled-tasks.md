@@ -86,7 +86,7 @@ The `toolPolicy` block controls what the agent can do during a run. It uses the 
 toolPolicy:
   preset: read_only # one of: read_only, cautious, edit_mode, yolo
   overrides: # optional per-tool overrides
-    web_fetch: deny
+    fetch_url: deny
     write_file: allow
 ```
 
