@@ -37,12 +37,15 @@ In v4.0+, the agent is always available and can:
 
 ### 3. Configure Permissions
 
-Choose which operations require confirmation in Settings → Gemini Scribe:
+Choose which operations require confirmation in **Settings → Gemini Scribe → Tool Permissions**:
 
-- Create files
-- Modify files
-- Delete files
-- Move/rename files
+- **write_file**: Creating or modifying files
+- **delete_file**: Removing files
+- **move_file**: Moving or renaming files
+- **append_content**: Adding text to the end of files
+- **update_frontmatter**: Modifying note properties (frontmatter)
+- **create_skill**: Creating new skill packages
+- **edit_skill**: Updating existing skill instructions
 
 When the agent needs to perform these operations, an **in-chat confirmation request** appears with interactive buttons. You can also use "Don't ask again this session" for trusted workflows. See [Tool Confirmations](#tool-confirmations) for details.
 
