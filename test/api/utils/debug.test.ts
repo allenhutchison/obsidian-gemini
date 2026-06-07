@@ -186,7 +186,7 @@ describe('formatExtendedModelRequest', () => {
 		model: 'gemini-1.5-pro',
 		prompt: 'System prompt here',
 		userMessage: 'User says hi',
-		conversationHistory: [{ role: 'user', parts: 'Past message' }],
+		conversationHistory: [{ role: 'user', parts: [{ text: 'Past message' }] }],
 		renderContent: true,
 	};
 
@@ -196,7 +196,7 @@ describe('formatExtendedModelRequest', () => {
 		expect(result).toContain('Prompt: "System prompt here"');
 		expect(result).toContain('User Message: "User says hi"');
 		expect(result).toContain('Conversation History:');
-		expect(result).toContain(JSON.stringify([{ role: 'user', parts: 'Past message' }], null, 2));
+		expect(result).toContain(JSON.stringify([{ role: 'user', parts: [{ text: 'Past message' }] }], null, 2));
 		expect(result).toContain('Render Content: true');
 	});
 
