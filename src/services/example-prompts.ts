@@ -36,13 +36,11 @@ export class ExamplePromptsManager {
 	 * @param prompt - The prompt to validate
 	 * @returns True if valid, false otherwise
 	 */
-	private isValidPrompt(prompt: any): prompt is ExamplePrompt {
+	private isValidPrompt(prompt: unknown): prompt is ExamplePrompt {
+		if (typeof prompt !== 'object' || prompt === null) return false;
+		const p = prompt as Partial<ExamplePrompt>;
 		return (
-			typeof prompt === 'object' &&
-			typeof prompt.icon === 'string' &&
-			typeof prompt.text === 'string' &&
-			prompt.icon.trim().length > 0 &&
-			prompt.text.trim().length > 0
+			typeof p.icon === 'string' && typeof p.text === 'string' && p.icon.trim().length > 0 && p.text.trim().length > 0
 		);
 	}
 
@@ -51,7 +49,7 @@ export class ExamplePromptsManager {
 	 * @param prompts - The prompts array to validate
 	 * @returns True if valid array of prompts, false otherwise
 	 */
-	private isValidPromptsArray(prompts: any): prompts is ExamplePrompt[] {
+	private isValidPromptsArray(prompts: unknown): prompts is ExamplePrompt[] {
 		return Array.isArray(prompts) && prompts.every((p) => this.isValidPrompt(p));
 	}
 
