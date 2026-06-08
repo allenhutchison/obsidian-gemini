@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"lastUpdated": "2026-06-01T13:25:09.710Z",
+	"lastUpdated": "2026-06-08T12:19:54.728Z",
 	"models": [
 		{
 			"value": "gemini-pro-latest",
@@ -84,6 +84,18 @@
 		},
 		{
 			"value": "gemini-3.1-flash-image",
+			"label": "Nano Banana 2",
+			"supportsImageGeneration": true,
+			"maxTemperature": 1
+		},
+		{
+			"value": "gemini-3-pro-image-preview",
+			"label": "Nano Banana Pro",
+			"supportsImageGeneration": true,
+			"maxTemperature": 1
+		},
+		{
+			"value": "gemini-3.1-flash-image-preview",
 			"label": "Nano Banana 2",
 			"supportsImageGeneration": true,
 			"maxTemperature": 1
