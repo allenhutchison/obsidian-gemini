@@ -31,6 +31,7 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 		app: {
 			vault: {
 				getAbstractFileByPath: vi.fn().mockReturnValue(null),
+				getFiles: vi.fn().mockReturnValue([]),
 				modify: vi.fn().mockResolvedValue(undefined),
 				read: vi.fn().mockResolvedValue(''),
 				append: vi.fn().mockResolvedValue(undefined),
@@ -155,16 +156,36 @@ describe('UpdateFrontmatterTool', () => {
 
 	it('rejects paths inside the history folder', async () => {
 		const plugin = createMockPlugin();
+		// Even if the file exists at that path, the resolver returns null for excluded paths
+		const file = makeTFile('gemini-scribe/some.md');
+		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
 		const result = await tool.execute({ path: 'gemini-scribe/some.md', key: 'k', value: 'v' }, makeContext(plugin));
 		expect(result.success).toBe(false);
-		expect(result.error).toContain('system folder');
+		expect(result.error).toContain('not found');
+		expect(plugin.app.fileManager.processFrontMatter).not.toHaveBeenCalled();
 	});
 
 	it('rejects .obsidian paths', async () => {
 		const plugin = createMockPlugin();
-		const result = await tool.execute({ path: '.obsidian/config.json', key: 'k', value: 'v' }, makeContext(plugin));
+		const file = makeTFile('.obsidian/config.md');
+		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
+		const result = await tool.execute({ path: '.obsidian/config.md', key: 'k', value: 'v' }, makeContext(plugin));
 		expect(result.success).toBe(false);
-		expect(result.error).toContain('system folder');
+		expect(result.error).toContain('not found');
+		expect(plugin.app.fileManager.processFrontMatter).not.toHaveBeenCalled();
+	});
+
+	it('rejects wikilink that resolves to a file inside the history folder', async () => {
+		// Regression for issue #910: a bare wikilink like "Foo" could resolve via
+		// metadataCache.getFirstLinkpathDest() to a file inside gemini-scribe/Skills/,
+		// and the prior inline resolver skipped the exclusion check on the resolved path.
+		const plugin = createMockPlugin();
+		const skillFile = makeTFile('gemini-scribe/Skills/Foo/SKILL.md');
+		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(skillFile);
+		const result = await tool.execute({ path: 'Foo', key: 'k', value: 'v' }, makeContext(plugin));
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('not found');
+		expect(plugin.app.fileManager.processFrontMatter).not.toHaveBeenCalled();
 	});
 
 	// ── File not found ───────────────────────────────────────────────────
@@ -439,9 +460,28 @@ describe('AppendContentTool', () => {
 
 	it('rejects paths inside the history folder', async () => {
 		const plugin = createMockPlugin();
+		const file = makeTFile('gemini-scribe/some.md');
+		plugin.app.vault.getAbstractFileByPath.mockReturnValue(file);
 		const result = await tool.execute({ path: 'gemini-scribe/some.md', content: 'x' }, makeContext(plugin));
 		expect(result.success).toBe(false);
-		expect(result.error).toContain('system folder');
+		expect(result.error).toContain('File not found');
+		expect(plugin.app.vault.append).not.toHaveBeenCalled();
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('rejects wikilink that resolves to a file inside the history folder', async () => {
+		// Regression for issue #910: a bare wikilink like "Foo" could resolve via
+		// metadataCache.getFirstLinkpathDest() to a file inside gemini-scribe/Skills/,
+		// and the prior inline resolver skipped the exclusion check on the resolved path,
+		// letting vault.append() write into the plugin's state folder.
+		const plugin = createMockPlugin();
+		const skillFile = makeTFile('gemini-scribe/Skills/Foo/SKILL.md');
+		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(skillFile);
+		const result = await tool.execute({ path: 'Foo', content: 'appended' }, makeContext(plugin));
+		expect(result.success).toBe(false);
+		expect(result.error).toContain('File not found');
+		expect(plugin.app.vault.append).not.toHaveBeenCalled();
+		expect(plugin.app.vault.modify).not.toHaveBeenCalled();
 	});
 
 	// ── File not found ───────────────────────────────────────────────────

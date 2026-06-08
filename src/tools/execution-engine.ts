@@ -13,6 +13,7 @@ import { ToolLoopDetector } from './loop-detector';
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { shouldExcludePath } from '../utils/file-utils';
+import { resolvePathToFile } from './vault/utils';
 
 /**
  * Handles execution of tools with permission checks and UI feedback
@@ -271,22 +272,11 @@ export class ToolExecutionEngine {
 		}
 
 		if (tool.name === 'append_content' && parameters.path && parameters.content !== undefined) {
-			const normalizedPath = normalizePath(parameters.path);
-			if (shouldExcludePath(normalizedPath, plugin.settings.historyFolder)) return undefined;
-
-			// Resolve the file the same way AppendContentTool does so the diff
-			// matches what will actually be written: direct path, then .md suffix,
-			// then wikilink resolution via the metadata cache.
-			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-			if (!file && !normalizedPath.endsWith('.md')) {
-				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
-			}
-			if (!file) {
-				const linkPath = parameters.path.replace(/^\[\[/, '').replace(/\]\]$/, '').replace(/\.md$/, '');
-				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
-				if (resolved) file = resolved;
-			}
-			if (!(file instanceof TFile)) return undefined; // Tool will return its own error
+			// Use the canonical resolver, same as AppendContentTool — applies
+			// system-folder exclusion at every resolution strategy (including
+			// the wikilink path), so the diff matches what will actually be written.
+			const { file } = resolvePathToFile(parameters.path, plugin);
+			if (!file) return undefined; // Tool will return its own error
 
 			const originalContent = await this.safeReadFile(file);
 			// Mirror the newline-insertion logic from AppendContentTool.execute()
