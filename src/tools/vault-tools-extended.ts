@@ -1,8 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import { TFile, normalizePath } from 'obsidian';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../utils/file-utils';
+import { resolvePathToFile } from './vault/utils';
 
 /**
  * Tool to safely update YAML frontmatter without touching content
@@ -66,32 +65,8 @@ class UpdateFrontmatterTool implements Tool {
 		const { path, key, value } = params;
 
 		try {
-			const normalizedPath = normalizePath(path);
-
-			// Check if path is excluded
-			if (shouldExcludePath(normalizedPath, plugin)) {
-				return {
-					success: false,
-					error: `Cannot modify files in system folder: ${path}`,
-				};
-			}
-
-			// Try direct path lookup, then with .md extension
-			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-			if (!file && !normalizedPath.endsWith('.md')) {
-				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
-			}
-
-			// Try wikilink resolution
-			if (!file) {
-				const linkPath = path.replace(/^\[\[/, '').replace(/\]\]$/, '').replace(/\.md$/, '');
-				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
-				if (resolved) {
-					file = resolved;
-				}
-			}
-
-			if (!file || !(file instanceof TFile) || file.extension !== 'md') {
+			const { file } = resolvePathToFile(path, plugin);
+			if (!file || file.extension !== 'md') {
 				return {
 					success: false,
 					error: `File not found or is not a markdown file: ${path}`,
@@ -187,32 +162,8 @@ class AppendContentTool implements Tool {
 		const { path, content } = params;
 
 		try {
-			const normalizedPath = normalizePath(path);
-
-			// Check if path is excluded
-			if (shouldExcludePath(normalizedPath, plugin)) {
-				return {
-					success: false,
-					error: `Cannot modify files in system folder: ${path}`,
-				};
-			}
-
-			// Try direct path lookup, then with .md extension
-			let file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
-			if (!file && !normalizedPath.endsWith('.md')) {
-				file = plugin.app.vault.getAbstractFileByPath(normalizedPath + '.md');
-			}
-
-			// Try wikilink resolution
+			const { file } = resolvePathToFile(path, plugin);
 			if (!file) {
-				const linkPath = path.replace(/^\[\[/, '').replace(/\]\]$/, '').replace(/\.md$/, '');
-				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(linkPath, '');
-				if (resolved) {
-					file = resolved;
-				}
-			}
-
-			if (!file || !(file instanceof TFile)) {
 				return {
 					success: false,
 					error: `File not found: ${path}`,

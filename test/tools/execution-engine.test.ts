@@ -810,6 +810,24 @@ describe('ToolExecutionEngine - buildDiffContext for append_content', () => {
 
 		expect(diff).toBeUndefined();
 	});
+
+	it('returns undefined when wikilink resolves to a file inside the history folder', async () => {
+		// Regression for issue #910: the prior inline resolver only checked
+		// shouldExcludePath on the user-supplied input string, so a bare wikilink
+		// like "Foo" could resolve via metadataCache to gemini-scribe/Skills/Foo/SKILL.md
+		// and produce a diff preview for a file the tool would actually be blocked from writing.
+		const skillFile = new TFile();
+		(skillFile as any).path = 'gemini-scribe/Skills/Foo/SKILL.md';
+		plugin.app.vault.getAbstractFileByPath.mockReturnValue(null);
+		plugin.app.metadataCache.getFirstLinkpathDest.mockReturnValue(skillFile);
+
+		const tool = { name: 'append_content' } as any;
+		const params = { path: 'Foo', content: 'text' };
+
+		const diff = await (engine as any).buildDiffContext(tool, params);
+
+		expect(diff).toBeUndefined();
+	});
 });
 
 describe('ToolExecutionEngine - buildDiffContext for create_skill', () => {
