@@ -4,7 +4,7 @@ import type { ChatSession, PerTurnContext } from '../types/agent';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi } from '../api/interfaces/model-api';
 import type { CustomPrompt } from '../prompts/types';
-import type { IConfirmationProvider, ToolExecutionContext, ToolResult } from '../tools/types';
+import type { IConfirmationProvider, IToolHostView, ToolExecutionContext, ToolResult } from '../tools/types';
 import { generateToolDescription } from '../utils/text-generation';
 import { sortToolCallsByPriority, buildToolHistoryTurns, type ToolCallResultPair } from './agent-loop-helpers';
 import {
@@ -90,6 +90,12 @@ export interface AgentLoopOptions {
 	 * sets these once when the user submits the turn.
 	 */
 	perTurn?: PerTurnContext;
+	/**
+	 * View-owned side effects (shelf updates, header refresh) for tools that need
+	 * them. UI callers (AgentViewTools) pass the owning agent view; headless
+	 * callers leave it unset, so those tool calls become no-ops.
+	 */
+	viewActions?: IToolHostView;
 	hooks?: AgentLoopHooks;
 	/**
 	 * Factory for the model API used for follow-up and retry requests.
@@ -172,8 +178,18 @@ export class AgentLoop {
 		options: AgentLoopOptions;
 	}): Promise<AgentLoopResult> {
 		const { initialResponse, initialUserMessage, initialHistory, options } = args;
-		const { plugin, session, isCancelled, hooks, customPrompt, projectRootPath, featureToolPolicy, perTurn, headless } =
-			options;
+		const {
+			plugin,
+			session,
+			isCancelled,
+			hooks,
+			customPrompt,
+			projectRootPath,
+			featureToolPolicy,
+			perTurn,
+			headless,
+			viewActions,
+		} = options;
 		const maxIterations = options.maxIterations;
 
 		const toolContext: ToolExecutionContext = {
@@ -181,6 +197,7 @@ export class AgentLoop {
 			session,
 			projectRootPath,
 			featureToolPolicy,
+			viewActions,
 		};
 
 		// `currentToolCalls` is what we execute on the next iteration. Seed it

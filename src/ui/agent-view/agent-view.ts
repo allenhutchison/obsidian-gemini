@@ -732,6 +732,14 @@ export class AgentView extends ItemView {
 			},
 			// AgentView implements IConfirmationProvider directly (see methods below).
 			confirmationProvider: this,
+			// View side effects tools can trigger. Wrapped in closures so the
+			// private header/metadata methods stay private to AgentView.
+			viewActions: {
+				getCurrentSessionForToolExecution: () => this.getCurrentSessionForToolExecution(),
+				addContextFileToShelf: (file: TFile) => this.addContextFileToShelf(file),
+				updateSessionHeader: () => this.updateSessionHeader(),
+				updateSessionMetadata: () => this.updateSessionMetadata(),
+			},
 		};
 	}
 

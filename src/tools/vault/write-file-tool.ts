@@ -91,23 +91,18 @@ export class WriteFileTool implements Tool {
 				file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			}
 
-			// Add the file to session context if it's a new file and we have a session
+			// Add the file to session context if it's a new file and we have a session.
+			// The owning agent view (when one drives this turn) is injected as
+			// context.viewActions; headless callers leave it unset, making this a no-op.
 			if (file instanceof TFile && context.session && isNewFile) {
-				const agentView = plugin.app.workspace.getLeavesOfType('gemini-agent-view')[0]?.view;
-				if (agentView && 'getCurrentSessionForToolExecution' in agentView) {
-					const session = (agentView as any).getCurrentSessionForToolExecution();
-					if (session && !session.context.contextFiles.includes(file)) {
-						session.context.contextFiles.push(file);
-						// Sync the shelf (which is the source of truth for context files)
-						if ('addContextFileToShelf' in agentView) {
-							(agentView as any).addContextFileToShelf(file);
-						}
-						// Update UI if agent view is active
-						if ('updateSessionHeader' in agentView) {
-							(agentView as any).updateSessionHeader();
-							(agentView as any).updateSessionMetadata();
-						}
-					}
+				const viewActions = context.viewActions;
+				const session = viewActions?.getCurrentSessionForToolExecution();
+				if (viewActions && session && !session.context.contextFiles.includes(file)) {
+					session.context.contextFiles.push(file);
+					// Sync the shelf (the source of truth for context files), then refresh the UI.
+					viewActions.addContextFileToShelf(file);
+					viewActions.updateSessionHeader();
+					void viewActions.updateSessionMetadata();
 				}
 			}
 
