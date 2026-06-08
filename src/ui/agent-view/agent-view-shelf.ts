@@ -1,6 +1,7 @@
 import { App, TFile, TFolder, setIcon, setTooltip } from 'obsidian';
 import { InlineAttachment } from './inline-attachment';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
+import { collectFilesFromFolder } from '../../utils/folder-walk';
 
 /**
  * Recursively collects all supported text files from a folder,
@@ -9,23 +10,10 @@ import { classifyFile, FileCategory } from '../../utils/file-classification';
  * @param isExcluded Predicate that returns true for paths to skip
  */
 export function getTextFilesFromFolder(folder: TFolder, isExcluded?: (path: string) => boolean): TFile[] {
-	const files: TFile[] = [];
-	const collect = (f: TFolder) => {
-		for (const child of f.children) {
-			if (child instanceof TFile) {
-				if (isExcluded?.(child.path)) continue;
-				const result = classifyFile(child.extension);
-				if (result.category === FileCategory.TEXT) {
-					files.push(child);
-				}
-			} else if (child instanceof TFolder) {
-				if (isExcluded?.(child.path)) continue;
-				collect(child);
-			}
-		}
-	};
-	collect(folder);
-	return files;
+	return collectFilesFromFolder(folder, {
+		prune: isExcluded ? (item) => isExcluded(item.path) : undefined,
+		filter: (file) => classifyFile(file.extension).category === FileCategory.TEXT,
+	});
 }
 
 /**

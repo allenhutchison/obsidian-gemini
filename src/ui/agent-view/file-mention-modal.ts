@@ -1,6 +1,7 @@
 import { FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
+import { collectFoldersFromFolder } from '../../utils/folder-walk';
 import type ObsidianGemini from '../../main';
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
@@ -27,21 +28,11 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 		items.push(...filteredFiles);
 
 		// Add all folders except system and plugin folders
-		const addFolders = (folder: TFolder) => {
-			if (shouldExcludePathForPlugin(folder.path, this.plugin)) return;
-
-			if (folder.path) {
-				items.push(folder);
-			}
-
-			for (const child of folder.children) {
-				if (child instanceof TFolder) {
-					addFolders(child);
-				}
-			}
-		};
-
-		addFolders(this.app.vault.getRoot());
+		items.push(
+			...collectFoldersFromFolder(this.app.vault.getRoot(), {
+				prune: (folder) => shouldExcludePathForPlugin(folder.path, this.plugin),
+			})
+		);
 
 		return items;
 	}

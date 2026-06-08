@@ -1,5 +1,6 @@
 import { App, prepareFuzzySearch, setIcon, SuggestModal, TAbstractFile, TFile, TFolder } from 'obsidian';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { collectFoldersFromFolder } from '../../utils/folder-walk';
 import type ObsidianGemini from '../../main';
 
 /** Undocumented internal SuggestModal API for programmatic highlight control. */
@@ -31,15 +32,9 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 
 		const files = this.app.vault.getMarkdownFiles().filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin));
 
-		const folders: TFolder[] = [];
-		const collectFolders = (folder: TFolder) => {
-			if (shouldExcludePathForPlugin(folder.path, this.plugin)) return;
-			if (folder.path) folders.push(folder); // skip root
-			for (const child of folder.children) {
-				if (child instanceof TFolder) collectFolders(child);
-			}
-		};
-		collectFolders(this.app.vault.getRoot());
+		const folders = collectFoldersFromFolder(this.app.vault.getRoot(), {
+			prune: (folder) => shouldExcludePathForPlugin(folder.path, this.plugin),
+		});
 
 		// Only include folders that contain at least one markdown file
 		const nonEmptyFolders = folders.filter((folder) => files.some((file) => file.path.startsWith(folder.path + '/')));
