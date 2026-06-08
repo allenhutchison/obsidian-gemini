@@ -9,6 +9,7 @@
 import { TAbstractFile, TFolder, Vault, normalizePath, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { Logger } from './logger';
+import { getRawErrorMessage } from './error-utils';
 
 /**
  * Check if a file or folder path should be excluded from selection or operations.
@@ -100,7 +101,7 @@ export async function ensureFolderExists(
 	try {
 		await vault.createFolder(normalized);
 	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
+		const message = getRawErrorMessage(error);
 
 		// Race condition: another process created it between our check and createFolder
 		if (await vault.adapter.exists(normalized)) {

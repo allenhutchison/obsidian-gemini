@@ -1,5 +1,6 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type { RagIndexStatus, FailedFileEntry } from '../services/rag-types';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Detailed status information for the modal
@@ -184,7 +185,7 @@ export class RagStatusModal extends Modal {
 							await this.onSyncNow();
 							this.close();
 						} catch (error) {
-							const message = error instanceof Error ? error.message : String(error);
+							const message = getRawErrorMessage(error);
 							new Notice(`Sync failed: ${message}`);
 							btn.setButtonText('Sync Now');
 							btn.setDisabled(false);

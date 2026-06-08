@@ -4,6 +4,7 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { MCP_CALL_TOOL_TIMEOUT_MS } from './mcp-constants';
 import { withTimeout } from '../utils/timeout';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * MCP tool definition as returned by client.listTools()
@@ -79,7 +80,7 @@ export class MCPToolWrapper implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `MCP tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
+				error: `MCP tool execution failed: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}

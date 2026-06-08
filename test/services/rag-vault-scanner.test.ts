@@ -53,6 +53,7 @@ vi.mock('@allenhutchison/gemini-utils', () => ({
 
 vi.mock('../../src/utils/error-utils', () => ({
 	getErrorMessage: vi.fn((err: any) => (err instanceof Error ? err.message : String(err))),
+	getRawErrorMessage: vi.fn((err: any) => (err instanceof Error ? err.message : String(err))),
 	isQuotaExhausted: vi.fn().mockReturnValue(false),
 	isNotFoundError: vi.fn((err: any) => {
 		const msg = err instanceof Error ? err.message : String(err);

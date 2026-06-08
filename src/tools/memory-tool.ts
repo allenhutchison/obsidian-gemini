@@ -1,6 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Tool for updating the AGENTS.md memory file
@@ -71,7 +72,7 @@ export class UpdateMemoryTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to update memory: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Failed to update memory: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}
@@ -137,7 +138,7 @@ export class ReadMemoryTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to read memory: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Failed to read memory: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}

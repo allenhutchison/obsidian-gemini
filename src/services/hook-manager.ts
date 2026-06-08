@@ -1,6 +1,7 @@
 import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
+import { getRawErrorMessage } from '../utils/error-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import {
@@ -784,7 +785,7 @@ export class HookManager {
 		const pausedDueToErrors = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
 		this.state[slug] = {
 			...prev,
-			lastError: error instanceof Error ? error.message : String(error),
+			lastError: getRawErrorMessage(error),
 			consecutiveFailures,
 			pausedDueToErrors,
 		};

@@ -42,7 +42,7 @@ import { BackgroundTaskManager } from './services/background-task-manager';
 import { BackgroundStatusBar } from './services/background-status-bar';
 import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
-import { getErrorMessage } from './utils/error-utils';
+import { getErrorMessage, getRawErrorMessage } from './utils/error-utils';
 
 export interface RagIndexingSettings {
 	enabled: boolean;
@@ -266,7 +266,7 @@ export default class ObsidianGemini extends Plugin {
 			this.previousHooksEnabled = this.settings.hooksEnabled;
 		} catch (error) {
 			this.logger.error('Failed to initialize Gemini Scribe:', error);
-			this.lastInitError = error instanceof Error ? error.message : String(error);
+			this.lastInitError = getRawErrorMessage(error);
 			new Notice(this.getInitErrorMessage(error));
 			this.isGeminiInitialized = false;
 		}
@@ -329,7 +329,7 @@ export default class ObsidianGemini extends Plugin {
 		if (error instanceof Error && error.message.includes('API key')) {
 			return this.getApiKeyErrorMessage();
 		}
-		const detail = error instanceof Error ? error.message : String(error);
+		const detail = getRawErrorMessage(error);
 		return `Gemini Scribe failed to initialize: ${detail}. Check the console for details.`;
 	}
 
@@ -993,7 +993,7 @@ export default class ObsidianGemini extends Plugin {
 				}
 			} catch (error) {
 				this.logger.error('Failed to re-initialize after settings change:', error);
-				this.lastInitError = error instanceof Error ? error.message : String(error);
+				this.lastInitError = getRawErrorMessage(error);
 				this.isGeminiInitialized = false;
 			}
 		}

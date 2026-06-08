@@ -3,6 +3,7 @@ import { MCPServerConfig, MCP_TRANSPORT_STDIO, MCP_TRANSPORT_HTTP, MCPTransportT
 import { MCPManager } from '../mcp/mcp-manager';
 import { ObsidianOAuthClientProvider } from '../mcp/mcp-oauth-provider';
 import { resolveServerEnv, writeServerEnv } from '../mcp/mcp-secrets';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Modal for adding or editing an MCP server configuration.
@@ -236,7 +237,7 @@ export class MCPServerModal extends Modal {
 					testSetting.setDesc(`Connected successfully! Found ${tools.length} tool(s).`);
 					this.renderDiscoveredTools();
 				} catch (error) {
-					const msg = error instanceof Error ? error.message : String(error);
+					const msg = getRawErrorMessage(error);
 					testSetting.setDesc(`Connection failed: ${msg}`);
 				} finally {
 					button.setButtonText('Test Connection');

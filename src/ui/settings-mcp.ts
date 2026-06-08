@@ -2,7 +2,7 @@ import type ObsidianGemini from '../main';
 import { App, Setting, Notice, setIcon } from 'obsidian';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 import { clearServerEnv } from '../mcp/mcp-secrets';
-import { getErrorMessage } from '../utils/error-utils';
+import { getErrorMessage, getRawErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
 import type { SettingsSectionContext } from './settings';
 
@@ -15,10 +15,8 @@ export async function renderMCPSettings(
 	try {
 		await createMCPSettings(containerEl, plugin, app, context);
 	} catch (error) {
-		plugin.logger.error('MCP settings rendering error:', error instanceof Error ? error.message : String(error));
-		new Setting(containerEl)
-			.setName('MCP Servers')
-			.setDesc(`Error loading MCP settings: ${error instanceof Error ? error.message : String(error)}`);
+		plugin.logger.error('MCP settings rendering error:', getRawErrorMessage(error));
+		new Setting(containerEl).setName('MCP Servers').setDesc(`Error loading MCP settings: ${getRawErrorMessage(error)}`);
 	}
 }
 
