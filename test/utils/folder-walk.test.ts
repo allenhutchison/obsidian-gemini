@@ -2,17 +2,13 @@ import { TAbstractFile, TFile, TFolder } from 'obsidian';
 import { collectFilesFromFolder, collectFoldersFromFolder } from '../../src/utils/folder-walk';
 
 function makeFile(path: string): TFile {
-	const file = new TFile(path);
-	// __mocks__/obsidian's TFile only sets `path`; add the extension the way Obsidian does.
 	const dot = path.lastIndexOf('.');
-	(file as any).extension = dot >= 0 ? path.slice(dot + 1) : '';
-	return file;
+	const extension = dot >= 0 ? path.slice(dot + 1) : '';
+	return Object.assign(new TFile(), { path, extension });
 }
 
 function makeFolder(path: string, children: TAbstractFile[] = []): TFolder {
-	const folder = new TFolder(path);
-	folder.children = children;
-	return folder;
+	return Object.assign(new TFolder(), { path, children });
 }
 
 describe('folder-walk', () => {
