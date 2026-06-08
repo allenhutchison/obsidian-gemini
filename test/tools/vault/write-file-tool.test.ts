@@ -158,6 +158,47 @@ describe('WriteFileTool', () => {
 		expect(mockVault.create).toHaveBeenCalledWith('new.md', 'new content');
 	});
 
+	it('should add a newly-created file to the session shelf via context.viewActions', async () => {
+		mockVault.getAbstractFileByPath.mockReturnValueOnce(null).mockReturnValueOnce(mockFile);
+		mockVault.create.mockResolvedValue(mockFile);
+
+		const hostSession = { context: { contextFiles: [] as any[] } };
+		const viewActions = {
+			getCurrentSessionForToolExecution: vi.fn().mockReturnValue(hostSession),
+			addContextFileToShelf: vi.fn(),
+			updateSessionHeader: vi.fn(),
+			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),
+		};
+
+		const result = await tool.execute({ path: 'shelf-me.md', content: 'content' }, {
+			...mockContext,
+			viewActions,
+		} as any);
+
+		expect(result.success).toBe(true);
+		expect(hostSession.context.contextFiles).toContain(mockFile);
+		expect(viewActions.addContextFileToShelf).toHaveBeenCalledWith(mockFile);
+		expect(viewActions.updateSessionHeader).toHaveBeenCalled();
+		expect(viewActions.updateSessionMetadata).toHaveBeenCalled();
+	});
+
+	it('should not touch the shelf for a modified (non-new) file', async () => {
+		mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+		mockVault.modify.mockResolvedValue(undefined);
+
+		const viewActions = {
+			getCurrentSessionForToolExecution: vi.fn().mockReturnValue({ context: { contextFiles: [] } }),
+			addContextFileToShelf: vi.fn(),
+			updateSessionHeader: vi.fn(),
+			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),
+		};
+
+		const result = await tool.execute({ path: 'test.md', content: 'updated' }, { ...mockContext, viewActions } as any);
+
+		expect(result.success).toBe(true);
+		expect(viewActions.addContextFileToShelf).not.toHaveBeenCalled();
+	});
+
 	it('should create parent directories when creating file in non-existent folder', async () => {
 		// ensureFolderExists calls getAbstractFileByPath twice per folder:
 		// once to check existence (null), once to verify after creation (TFolder)

@@ -1,6 +1,7 @@
 import { ChatSession } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import type ObsidianGemini from '../main';
+import type { TFile } from 'obsidian';
 
 // Re-export ToolCall from its canonical definition in model-api
 export type { ToolCall } from '../api/interfaces/model-api';
@@ -24,6 +25,23 @@ export interface ToolResult {
 }
 
 /**
+ * Side effects a tool may trigger on the agent view that owns its session.
+ *
+ * Implemented by `AgentView` and injected into {@link ToolExecutionContext} by
+ * the UI layer, so a tool in `src/tools/` can request view updates without
+ * importing `AgentView` (which would create a tools→ui layering edge) or
+ * reaching for the active workspace leaf. Currently used by `write_file` to add
+ * a newly-created file to the session shelf and refresh the header. Headless
+ * callers leave it unset, so these calls become no-ops.
+ */
+export interface IToolHostView {
+	getCurrentSessionForToolExecution(): ChatSession | null;
+	addContextFileToShelf(file: TFile): void;
+	updateSessionHeader(): void;
+	updateSessionMetadata(): Promise<void>;
+}
+
+/**
  * Context provided to tools during execution
  */
 export interface ToolExecutionContext {
@@ -31,6 +49,12 @@ export interface ToolExecutionContext {
 	plugin: ObsidianGemini;
 	/** When set, discovery tools default their search scope to this directory */
 	projectRootPath?: string;
+	/**
+	 * Side effects on the agent view that owns this session (shelf updates, header
+	 * refresh). Set by the UI when an agent view drives the turn; unset for headless
+	 * callers, where the tool simply skips the view updates.
+	 */
+	viewActions?: IToolHostView;
 	/**
 	 * Feature-level tool policy applied on top of the global plugin policy.
 	 * Used by Projects, Scheduled Tasks, Hooks, and Sessions to narrow or open

@@ -2,7 +2,7 @@ import type { Content } from '@google/genai';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
-import { IConfirmationProvider, ToolResult } from '../../tools/types';
+import { IConfirmationProvider, IToolHostView, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentLoop } from '../../agent/agent-loop';
 import type { ToolCall } from '../../api/interfaces/model-api';
@@ -21,6 +21,8 @@ export interface AgentViewContext {
 	incrementToolCallCount?(count: number): void;
 	/** Who approves tool calls that require confirmation — AgentView implements this. */
 	confirmationProvider: IConfirmationProvider;
+	/** View side effects tools can trigger (shelf updates, header refresh). */
+	viewActions: IToolHostView;
 }
 
 /**
@@ -81,6 +83,7 @@ export class AgentViewTools {
 					customPrompt,
 					projectRootPath: activeProject?.rootPath,
 					featureToolPolicy: activeProject?.config.toolPolicy,
+					viewActions: this.context.viewActions,
 					perTurn,
 					hooks: {
 						onToolBatchStart: (batch) => {
