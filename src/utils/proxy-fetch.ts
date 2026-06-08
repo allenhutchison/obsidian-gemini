@@ -30,11 +30,15 @@ class RetryableHttpError extends Error {
 }
 
 /**
- * Check if an HTTP request error or response is retryable
+ * Check if an error thrown during a request is retryable.
+ *
+ * `RetryableHttpError` carries the HTTP status (429/5xx) so we can retry it
+ * without `(error as any).status` casts; anything else is only retried when it
+ * looks like a transient network failure.
  */
-function isRetryableHttpError(error: unknown, status?: number): boolean {
-	if (status !== undefined) {
-		return isRetryableHttpStatus(status);
+function isRetryableHttpError(error: unknown): boolean {
+	if (error instanceof RetryableHttpError) {
+		return isRetryableHttpStatus(error.status);
 	}
 	return isTransientNetworkError(error);
 }
