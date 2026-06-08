@@ -17,7 +17,7 @@ const IDEMPOTENT_METHODS = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'];
  * Exposes the status and full response so callers (and the retry/error utilities) can
  * inspect them without resorting to `(error as any).status` casts.
  */
-export class RetryableHttpError extends Error {
+class RetryableHttpError extends Error {
 	readonly status: number;
 	readonly response: RequestUrlResponse;
 
