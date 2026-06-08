@@ -103,14 +103,15 @@ export class ToolLoopDetector {
 	/**
 	 * Sort object keys for consistent stringification
 	 */
-	private sortObject(obj: any): any {
+	private sortObject(obj: unknown): unknown {
 		if (obj === null || typeof obj !== 'object') return obj;
 		if (Array.isArray(obj)) return obj.map((item) => this.sortObject(item));
 
-		return Object.keys(obj)
+		const record = obj as Record<string, unknown>;
+		return Object.keys(record)
 			.sort()
-			.reduce((sorted: any, key) => {
-				sorted[key] = this.sortObject(obj[key]);
+			.reduce<Record<string, unknown>>((sorted, key) => {
+				sorted[key] = this.sortObject(record[key]);
 				return sorted;
 			}, {});
 	}
