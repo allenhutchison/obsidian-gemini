@@ -94,6 +94,19 @@ function inferImageSupport(modelId) {
 	return modelId.includes('image');
 }
 
+function isPreviewModel(modelId) {
+	return modelId.includes('-preview');
+}
+
+// The GA (stable) equivalent of a preview model id. Per Google's naming
+// convention, preview models are `<base>-preview` optionally followed by a
+// date suffix (e.g. `gemini-2.5-flash-preview-09-2025` -> `gemini-2.5-flash`,
+// `gemini-3-pro-image-preview` -> `gemini-3-pro-image`). Strip `-preview` and
+// everything after it to recover the base id.
+function gaModelId(modelId) {
+	return modelId.replace(/-preview.*$/, '');
+}
+
 function main() {
 	const apiKey = process.env.GOOGLE_API_KEY;
 	if (!apiKey) {
@@ -109,10 +122,22 @@ function main() {
 		// Filter and map API models
 		const candidateModels = apiModels.filter(shouldIncludeModel);
 
-		const newModels = [];
+		let newModels = [];
+		// Existing preview entries that a newly-arrived GA model supersedes;
+		// keyed by preview value -> the new GA entry that replaces it.
+		const retiredPreviews = new Map();
 		for (const model of candidateModels) {
 			const modelId = extractModelId(model.name);
 			if (existingIds.has(modelId)) continue;
+
+			// Skip preview models once we've adopted the GA (stable) version
+			// of the same model. Google keeps listing the preview aliases
+			// indefinitely, but offering both shows duplicate options (often
+			// with identical labels) in the model dropdowns.
+			if (isPreviewModel(modelId) && existingIds.has(gaModelId(modelId))) {
+				console.log(`Skipping ${modelId}: superseded by adopted GA model ${gaModelId(modelId)}`);
+				continue;
+			}
 
 			const entry = {
 				value: modelId,
@@ -130,8 +155,34 @@ function main() {
 				entry.maxTemperature = 2;
 			}
 
+			// When a new GA (stable) model arrives, retire any existing preview
+			// entries it supersedes so the GA "replaces" rather than duplicates
+			// them. Carry over curated default-role assignments to the GA entry
+			// so we don't silently drop a configured default.
+			if (!isPreviewModel(modelId)) {
+				for (const existing of modelsFile.models) {
+					if (isPreviewModel(existing.value) && gaModelId(existing.value) === modelId) {
+						retiredPreviews.set(existing.value, entry);
+						if (existing.defaultForRoles && !entry.defaultForRoles) {
+							entry.defaultForRoles = existing.defaultForRoles;
+						}
+					}
+				}
+			}
+
 			newModels.push(entry);
 		}
+
+		// Same-run guard: if both a preview and its GA arrived in this batch,
+		// keep only the GA — mirroring the already-adopted-GA skip above.
+		const newGaIds = new Set(newModels.filter((m) => !isPreviewModel(m.value)).map((m) => m.value));
+		newModels = newModels.filter((m) => {
+			if (isPreviewModel(m.value) && newGaIds.has(gaModelId(m.value))) {
+				console.log(`Skipping ${m.value}: superseded by new GA model ${gaModelId(m.value)}`);
+				return false;
+			}
+			return true;
+		});
 
 		if (newModels.length === 0) {
 			console.log('No new models found.');
@@ -143,7 +194,13 @@ function main() {
 			console.log(`  - ${model.value} (${model.label})${model.supportsImageGeneration ? ' [image]' : ''}`);
 		}
 
-		// Append new models and update metadata
+		// Retire superseded preview entries, then append the new models.
+		if (retiredPreviews.size > 0) {
+			for (const [previewId, gaEntry] of retiredPreviews) {
+				console.log(`Retiring ${previewId}: superseded by new GA model ${gaEntry.value}`);
+			}
+			modelsFile.models = modelsFile.models.filter((m) => !retiredPreviews.has(m.value));
+		}
 		modelsFile.models.push(...newModels);
 		modelsFile.lastUpdated = new Date().toISOString();
 
