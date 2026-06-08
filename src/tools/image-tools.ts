@@ -1,6 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Tool to generate images from text prompts using Gemini's image generation API
@@ -91,7 +92,7 @@ export class GenerateImageTool implements Tool {
 				} catch (error) {
 					return {
 						success: false,
-						error: `Failed to resolve image output path: ${error instanceof Error ? error.message : String(error)}`,
+						error: `Failed to resolve image output path: ${getRawErrorMessage(error)}`,
 					};
 				}
 
@@ -124,7 +125,7 @@ export class GenerateImageTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to generate image: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Failed to generate image: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}

@@ -13,6 +13,7 @@ import {
 	MCP_OAUTH_WAIT_TIMEOUT_MS,
 } from './mcp-constants';
 import { withTimeout } from '../utils/timeout';
+import { getRawErrorMessage } from '../utils/error-utils';
 import type ObsidianGemini from '../main';
 import { Logger } from '../utils/logger';
 import { Notice, Platform } from 'obsidian';
@@ -308,7 +309,7 @@ export class MCPManager {
 				}
 			}
 
-			const errorMsg = error instanceof Error ? error.message : String(error);
+			const errorMsg = getRawErrorMessage(error);
 			const errorStack = error instanceof Error ? error.stack : undefined;
 			this.logger.error(`MCP: Connection failed for "${config.name}": ${errorMsg}`);
 			if (errorStack) {
@@ -471,7 +472,7 @@ export class MCPManager {
 			await withTimeout(transport.close(), MCP_CLOSE_TIMEOUT_MS, 'MCP transport close (test)');
 			return toolNames;
 		} catch (error) {
-			const errorMsg = error instanceof Error ? error.message : String(error);
+			const errorMsg = getRawErrorMessage(error);
 			const errorStack = error instanceof Error ? error.stack : undefined;
 			this.logger.error(`MCP: Test connection failed: ${errorMsg}`);
 			if (errorStack) {

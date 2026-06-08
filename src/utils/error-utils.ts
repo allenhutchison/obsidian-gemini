@@ -1,5 +1,8 @@
 /**
- * Utility functions for extracting user-friendly error messages from API errors
+ * Utility functions for extracting error messages from API errors.
+ *
+ * Raw extraction (no translation): `getRawErrorMessage`.
+ * User-facing translation (maps provider quirks to friendly guidance): `getErrorMessage`.
  */
 
 /**
@@ -104,8 +107,22 @@ export function isRateLimitError(error: unknown): boolean {
  * error shapes the Google File Search API and SDK return.
  */
 export function isNotFoundError(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : String(error);
+	const message = getRawErrorMessage(error);
 	return message.includes('404') || message.includes('not found') || message.includes('NOT_FOUND');
+}
+
+/**
+ * Extract the raw string from an `unknown` error value without any translation.
+ *
+ * Returns `error.message` for `Error` instances and `String(error)` for everything
+ * else. Use this for logging, sidecar `lastError` fields, and tool error returns
+ * where the underlying message should pass through untouched. For user-facing
+ * surfaces that benefit from provider-specific guidance (Ollama 404 → "ollama pull X",
+ * quota → Studio billing, etc.), use `getErrorMessage` instead.
+ */
+export function getRawErrorMessage(error: unknown): string {
+	if (error instanceof Error) return error.message;
+	return String(error);
 }
 
 /**

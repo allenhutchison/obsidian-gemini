@@ -1,5 +1,6 @@
 import {
 	getErrorMessage,
+	getRawErrorMessage,
 	getShortErrorMessage,
 	isNotFoundError,
 	isQuotaExhausted,
@@ -7,6 +8,46 @@ import {
 } from '../../src/utils/error-utils';
 
 describe('error-utils', () => {
+	describe('getRawErrorMessage', () => {
+		test('returns Error.message for Error instances', () => {
+			expect(getRawErrorMessage(new Error('boom'))).toBe('boom');
+		});
+
+		test('preserves message on Error subclasses', () => {
+			expect(getRawErrorMessage(new TypeError('bad type'))).toBe('bad type');
+		});
+
+		test('returns the string unchanged for string inputs', () => {
+			expect(getRawErrorMessage('plain string')).toBe('plain string');
+		});
+
+		test('coerces null to "null"', () => {
+			expect(getRawErrorMessage(null)).toBe('null');
+		});
+
+		test('coerces undefined to "undefined"', () => {
+			expect(getRawErrorMessage(undefined)).toBe('undefined');
+		});
+
+		test('uses toString() on objects that define it', () => {
+			const obj = {
+				toString() {
+					return 'custom-stringified';
+				},
+			};
+			expect(getRawErrorMessage(obj)).toBe('custom-stringified');
+		});
+
+		test('coerces numbers via String()', () => {
+			expect(getRawErrorMessage(42)).toBe('42');
+		});
+
+		test('does not translate raw messages (unlike getErrorMessage)', () => {
+			// getErrorMessage maps "api key" to friendly guidance; getRawErrorMessage must not.
+			expect(getRawErrorMessage(new Error('Invalid api key supplied'))).toBe('Invalid api key supplied');
+		});
+	});
+
 	describe('getErrorMessage', () => {
 		describe('HTTP status code errors', () => {
 			test('400 Bad Request', () => {

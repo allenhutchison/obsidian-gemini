@@ -1,6 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Tool for activating (loading) a skill's full instructions or resources
@@ -110,7 +111,7 @@ export class ActivateSkillTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to activate skill: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Failed to activate skill: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}
@@ -218,7 +219,7 @@ export class CreateSkillTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to create skill: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Failed to create skill: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}
@@ -324,7 +325,7 @@ export class EditSkillTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to edit skill: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Failed to edit skill: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}

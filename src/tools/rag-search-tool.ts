@@ -1,6 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Search result from RAG semantic search
@@ -254,7 +255,7 @@ export class RagSearchTool implements Tool {
 			plugin.logger.error('RAG Search failed:', error);
 			return {
 				success: false,
-				error: `Search failed: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Search failed: ${getRawErrorMessage(error)}`,
 			};
 		}
 	}

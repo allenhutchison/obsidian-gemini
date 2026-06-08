@@ -1,5 +1,6 @@
 import { requestUrl } from 'obsidian';
 import { MCP_FETCH_TIMEOUT_MS } from './mcp-constants';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * A fetch-compatible wrapper around Obsidian's `requestUrl`.
@@ -106,7 +107,7 @@ export async function obsidianFetch(url: string | URL, init?: RequestInit): Prom
 		if (error instanceof TypeError) {
 			throw error;
 		}
-		throw new TypeError(`Network request failed: ${error instanceof Error ? error.message : String(error)}`);
+		throw new TypeError(`Network request failed: ${getRawErrorMessage(error)}`);
 	} finally {
 		if (timer !== undefined) {
 			window.clearTimeout(timer);

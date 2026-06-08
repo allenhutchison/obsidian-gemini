@@ -7,7 +7,7 @@ import type { RagCache } from './rag-cache';
 import type { RagRateLimiter } from './rag-rate-limiter';
 import { CACHE_VERSION } from './rag-types';
 import type { IndexProgress, IndexResult, FailedFileEntry, RagIndexStatus, RagProgressProvider } from './rag-types';
-import { getErrorMessage, isNotFoundError, isQuotaExhausted } from '../utils/error-utils';
+import { getErrorMessage, getRawErrorMessage, isNotFoundError, isQuotaExhausted } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
 
 /**
@@ -133,7 +133,7 @@ export class RagVaultScanner {
 				return;
 			} catch (error) {
 				// Check if it's a 404/not found error vs other errors
-				const errorMessage = error instanceof Error ? error.message : String(error);
+				const errorMessage = getRawErrorMessage(error);
 				const isNotFound = isNotFoundError(error);
 				// A saved store name can be structurally invalid — e.g. a custom name
 				// entered via an older plugin version that the File Search API rejects

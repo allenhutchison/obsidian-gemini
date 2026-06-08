@@ -1,6 +1,7 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
+import { getRawErrorMessage } from '../utils/error-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import {
@@ -786,7 +787,7 @@ export class ScheduledTaskManager {
 			}
 			return outputPath;
 		} catch (error) {
-			const msg = error instanceof Error ? error.message : String(error);
+			const msg = getRawErrorMessage(error);
 			const prev = this.state[task.slug];
 			const consecutiveFailures = (prev?.consecutiveFailures ?? 0) + 1;
 			const pausedDueToErrors = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
