@@ -13,11 +13,32 @@ import {
 const IDEMPOTENT_METHODS = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE'];
 
 /**
- * Check if an HTTP request error or response is retryable
+ * Error thrown by requestUrlWithRetry when an HTTP response has a retryable status code.
+ * Exposes the status and full response so callers (and the retry/error utilities) can
+ * inspect them without resorting to `(error as any).status` casts.
  */
-function isRetryableHttpError(error: unknown, status?: number): boolean {
-	if (status !== undefined) {
-		return isRetryableHttpStatus(status);
+class RetryableHttpError extends Error {
+	readonly status: number;
+	readonly response: RequestUrlResponse;
+
+	constructor(status: number, response: RequestUrlResponse) {
+		super(`HTTP ${status}`);
+		this.name = 'RetryableHttpError';
+		this.status = status;
+		this.response = response;
+	}
+}
+
+/**
+ * Check if an error thrown during a request is retryable.
+ *
+ * `RetryableHttpError` carries the HTTP status (429/5xx) so we can retry it
+ * without `(error as any).status` casts; anything else is only retried when it
+ * looks like a transient network failure.
+ */
+function isRetryableHttpError(error: unknown): boolean {
+	if (error instanceof RetryableHttpError) {
+		return isRetryableHttpStatus(error.status);
 	}
 	return isTransientNetworkError(error);
 }
@@ -45,10 +66,7 @@ export async function requestUrlWithRetry(
 
 			// Throw on retryable status codes so the retry logic can handle them
 			if (isRetryableHttpStatus(response.status)) {
-				const error = new Error(`HTTP ${response.status}`);
-				(error as any).status = response.status;
-				(error as any).response = response;
-				throw error;
+				throw new RetryableHttpError(response.status, response);
 			}
 
 			return response;

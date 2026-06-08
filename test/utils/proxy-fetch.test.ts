@@ -386,18 +386,26 @@ describe('proxyFetch', () => {
 			expect(mockRequestUrl).toHaveBeenCalledTimes(1);
 		});
 
-		it('should throw on retryable HTTP status codes (429) since isRetryable does not extract status', async () => {
-			// requestUrlWithRetry throws on 429 internally, but the isRetryable callback
-			// doesn't extract the status from the error object, so the error propagates
-			// as a non-retryable error through proxyFetch.
-			mockRequestUrl.mockResolvedValue({
-				status: 429,
-				headers: {},
-				arrayBuffer: new ArrayBuffer(0),
-			});
+		it('should retry on retryable HTTP status codes (429) for GET requests', async () => {
+			// requestUrlWithRetry throws a typed RetryableHttpError on 429, and the
+			// isRetryable predicate now recognizes it, so the request enters backoff
+			// and succeeds on the retry instead of short-circuiting.
+			mockRequestUrl
+				.mockResolvedValueOnce({
+					status: 429,
+					headers: {},
+					arrayBuffer: new ArrayBuffer(0),
+				})
+				.mockResolvedValueOnce({
+					status: 200,
+					headers: {},
+					arrayBuffer: new ArrayBuffer(0),
+				});
 
-			await expect(proxyFetch('https://api.example.com/data')).rejects.toThrow(TypeError);
-			await expect(proxyFetch('https://api.example.com/data')).rejects.toThrow('HTTP 429');
+			const response = await proxyFetch('https://api.example.com/data');
+
+			expect(response.status).toBe(200);
+			expect(mockRequestUrl).toHaveBeenCalledTimes(2);
 		});
 	});
 
