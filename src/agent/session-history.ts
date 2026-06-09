@@ -210,11 +210,10 @@ export class SessionHistory {
 		for (const section of contentSections) {
 			if (!section.trim()) continue;
 
-			// Look for role header — ## Assistant/Model for AI, or any other name for user
-			// The callout type (> [!user]+ or > [!assistant]+) determines the actual role
-			const roleMatch = section.match(/^## (.+?)\s*$/m);
-			if (!roleMatch) continue;
-
+			// An entry is identified by its callout, not a `## ` header: user and
+			// assistant turns carry a header + metadata, but streamlined
+			// reasoning-only turns are just a `> [!reasoning]-` callout. The role
+			// is derived from the callout type below.
 			const lines = section.split('\n');
 
 			// Extract the message from the `> [!user]+` / `> [!assistant]+` callout.

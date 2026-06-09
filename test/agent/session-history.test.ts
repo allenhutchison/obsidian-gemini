@@ -1089,6 +1089,46 @@ describe('SessionHistory', () => {
 			expect(result[0].thoughts).toBe('I should read the file before editing it.');
 		});
 
+		it('writes reasoning-only turns without a header or metadata block (streamlined)', async () => {
+			const file = wireRoundTripFile();
+			const session = createMockSession();
+
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: '',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:00Z'),
+				model: 'gemini-3.5-flash',
+				thoughts: 'Pre-tool reasoning.',
+			});
+
+			const raw = file.read();
+			expect(raw).toContain('> [!reasoning]- Reasoning');
+			// No heavy `## Model` header / Message Info table for a bare reasoning step.
+			expect(raw).not.toContain('## Model');
+			expect(raw).not.toContain('Message Info');
+		});
+
+		it('keeps the header + metadata for model turns that have an answer', async () => {
+			const file = wireRoundTripFile();
+			const session = createMockSession();
+
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: 'Here is the answer.',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:00Z'),
+				model: 'gemini-3.5-flash',
+				thoughts: 'Reasoning behind it.',
+			});
+
+			const raw = file.read();
+			expect(raw).toContain('## Model');
+			expect(raw).toContain('Message Info');
+			expect(raw).toContain('> [!assistant]+');
+			expect(raw).toContain('> [!reasoning]- Reasoning');
+		});
+
 		it('does not let the reasoning callout leak into the message body', async () => {
 			wireRoundTripFile();
 			const session = createMockSession();

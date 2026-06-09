@@ -6,6 +6,7 @@
 ---
 
 {{/if}}
+{{#if hasMessage}}
 ## {{displayName}}
 
 > [!metadata]- Message Info
@@ -28,7 +29,6 @@
 > | Context | {{context}} |
 {{/if}}
 
-{{#if hasMessage}}
 {{#if (eq role "User")}}
 > [!user]+
 {{else}}
@@ -46,4 +46,4 @@
 {{/each}}
 
 {{/if}}
---- 
+---
