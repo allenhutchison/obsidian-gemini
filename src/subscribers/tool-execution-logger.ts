@@ -18,6 +18,7 @@ const KEY_PARAM_MAP: Record<string, string | undefined> = {
 	find_files_by_content: 'query',
 	get_workspace_state: undefined,
 	google_search: 'query',
+	google_maps: 'query',
 	fetch_url: 'url',
 	vault_semantic_search: 'query',
 	deep_research: 'topic',
