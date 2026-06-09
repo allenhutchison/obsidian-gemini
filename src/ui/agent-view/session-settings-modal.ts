@@ -1,5 +1,6 @@
-import { Modal, Setting, DropdownComponent, SliderComponent, TFile, TFolder } from 'obsidian';
+import { App, Modal, Setting, DropdownComponent, SliderComponent, TFile, TFolder } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
+import { GeminiModel } from '../../models';
 import type ObsidianGemini from '../../main';
 
 export class SessionSettingsModal extends Modal {
@@ -10,7 +11,7 @@ export class SessionSettingsModal extends Modal {
 	private topPSlider: SliderComponent | null = null;
 
 	constructor(
-		app: any,
+		app: App,
 		plugin: ObsidianGemini,
 		session: ChatSession,
 		onSave: (config: SessionModelConfig) => Promise<void>
@@ -43,7 +44,7 @@ export class SessionSettingsModal extends Modal {
 				dropdown.addOption('__default__', 'Use default');
 
 				// Add available models
-				models.forEach((model: any) => {
+				models.forEach((model: GeminiModel) => {
 					dropdown.addOption(model.value, model.label);
 				});
 
