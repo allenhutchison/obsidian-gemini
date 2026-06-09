@@ -727,6 +727,8 @@ export class AgentView extends ItemView {
 				this.progress.update(statusText, state),
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
+			renderReasoning: (container: HTMLElement, thoughts: string, sourcePath: string) =>
+				this.messages.renderReasoningInto(container, thoughts, sourcePath),
 			incrementToolCallCount: (count: number) => {
 				this.send?.incrementToolCallCount(count);
 			},

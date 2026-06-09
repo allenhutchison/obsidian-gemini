@@ -2102,10 +2102,18 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Model reasoning ("thinking") — a single collapsible line that reuses the
-   tool-row structure but stands on its own (no group box). */
+   tool-row structure. Standalone (below an answer / on reload) it stands on its
+   own; inside a tool group it sits flush with the tool rows. */
 .gemini-reasoning-row {
 	border-bottom: none;
 	margin: var(--size-2-2) 0;
+}
+
+/* Inside the tool group, interleave flush with tool rows (border separators,
+   no extra margin) so reasoning and tool calls read as one activity stream. */
+.gemini-tool-group-body .gemini-reasoning-row {
+	margin: 0;
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .gemini-reasoning-row .gemini-tool-row-icon {

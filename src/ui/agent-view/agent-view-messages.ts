@@ -248,6 +248,15 @@ export class AgentViewMessages {
 	}
 
 	/**
+	 * Public entry point to render a reasoning line into an arbitrary container —
+	 * e.g. the tool group body, so reasoning interleaves with tool rows. Shares
+	 * the single row renderer so live and reload reasoning look identical.
+	 */
+	async renderReasoningInto(container: HTMLElement, thoughts: string, sourcePath: string): Promise<void> {
+		await this.renderReasoningSection(container, thoughts, sourcePath);
+	}
+
+	/**
 	 * Render model reasoning ("thinking") as a single collapsible line that
 	 * mirrors a tool-execution row — a 🧠 header that toggles open — but without
 	 * the surrounding group box. Shared by the live-stream finalizer, the

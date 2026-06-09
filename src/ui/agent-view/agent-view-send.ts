@@ -431,7 +431,8 @@ To reference an attachment in your response, use the path shown above.`;
 							// User message already saved early in sendMessage()
 
 							// If there was any streamed text before tool calls, finalize it
-							if (modelMessageContainer && accumulatedMarkdown.trim()) {
+							const hadPartialText = !!(modelMessageContainer && accumulatedMarkdown.trim());
+							if (hadPartialText) {
 								const aiEntry: GeminiConversationEntry = {
 									role: 'model',
 									message: accumulatedMarkdown,
@@ -441,7 +442,7 @@ To reference an attachment in your response, use the path shown above.`;
 									...(turnThoughts ? { thoughts: turnThoughts } : {}),
 								};
 								await this.ctx.messages.finalizeStreamingMessage(
-									modelMessageContainer,
+									modelMessageContainer!,
 									accumulatedMarkdown,
 									aiEntry,
 									currentSession
@@ -449,30 +450,19 @@ To reference an attachment in your response, use the path shown above.`;
 
 								// Save partial response to history before executing tools
 								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-							} else if (turnThoughts) {
-								// Reasoning-only turn: the model thought before deciding to
-								// call tools but produced no text. Persist it so the
-								// pre-tool reasoning isn't lost from the session record.
-								const reasoningEntry: GeminiConversationEntry = {
-									role: 'model',
-									message: '',
-									notePath: '',
-									created_at: new Date(),
-									model: modelName,
-									thoughts: turnThoughts,
-								};
-								await this.ctx.messages.displayMessage(reasoningEntry, currentSession);
-								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
 							}
 
-							// Execute tools and handle results
+							// Pre-tool reasoning with no accompanying text is handed to the
+							// tool handler, which renders it as the first row of the tool
+							// group (interleaved with the tools) and persists it.
 							await this.ctx.tools.handleToolCalls(
 								response.toolCalls,
 								message,
 								compactionResult.compactedHistory,
 								userEntry,
 								customPrompt,
-								perTurn
+								perTurn,
+								hadPartialText ? undefined : turnThoughts
 							);
 						} else {
 							// Normal response without tool calls
@@ -561,28 +551,16 @@ To reference an attachment in your response, use the path shown above.`;
 
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
-						// Persist any pre-tool reasoning before executing tools.
-						if (turnThoughts) {
-							const reasoningEntry: GeminiConversationEntry = {
-								role: 'model',
-								message: '',
-								notePath: '',
-								created_at: new Date(),
-								model: modelName,
-								thoughts: turnThoughts,
-							};
-							await this.ctx.displayMessage(reasoningEntry);
-							await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
-						}
-
-						// Execute tools and handle results
+						// Pre-tool reasoning is handed to the tool handler, which renders
+						// it as the first row of the tool group and persists it.
 						await this.ctx.tools.handleToolCalls(
 							response.toolCalls,
 							message,
 							compactionResult.compactedHistory,
 							userEntry,
 							customPrompt,
-							perTurn
+							perTurn,
+							turnThoughts
 						);
 					} else {
 						// Normal response without tool calls

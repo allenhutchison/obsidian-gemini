@@ -18,6 +18,8 @@ export interface AgentViewContext {
 	updateProgress(statusText: string, state?: 'thinking' | 'tool' | 'waiting' | 'streaming'): void;
 	hideProgress(): void;
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
+	/** Render a reasoning line into an arbitrary container (e.g. the tool group body). */
+	renderReasoning(container: HTMLElement, thoughts: string, sourcePath: string): Promise<void>;
 	incrementToolCallCount?(count: number): void;
 	/** Who approves tool calls that require confirmation — AgentView implements this. */
 	confirmationProvider: IConfirmationProvider;
@@ -41,6 +43,8 @@ export class AgentViewTools {
 	private lastCompletedTool: string | null = null;
 	private currentGroupContainer: HTMLElement | null = null;
 	private display: AgentViewToolDisplay;
+	/** Reasoning produced before the first tool batch, rendered into the group once it exists. */
+	private pendingReasoning: string | null = null;
 
 	constructor(
 		chatContainer: HTMLElement,
@@ -60,10 +64,25 @@ export class AgentViewTools {
 		conversationHistory: Content[],
 		_userEntry: GeminiConversationEntry,
 		customPrompt?: CustomPrompt,
-		perTurn?: PerTurnContext
+		perTurn?: PerTurnContext,
+		precedingThoughts?: string
 	) {
 		const currentSession = this.context.getCurrentSession();
 		if (!currentSession) return;
+
+		// Reasoning the model produced before this first tool batch. Render it as
+		// the first row of the tool group (once the group exists) and persist it.
+		this.pendingReasoning = precedingThoughts?.trim() ? precedingThoughts : null;
+		if (this.pendingReasoning) {
+			await this.plugin.sessionHistory.addEntryToSession(currentSession, {
+				role: 'model',
+				message: '',
+				notePath: '',
+				created_at: new Date(),
+				model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+				thoughts: this.pendingReasoning,
+			});
+		}
 
 		const activeProject = currentSession.projectPath
 			? await this.plugin.projectManager?.getProject(currentSession.projectPath)
@@ -86,8 +105,13 @@ export class AgentViewTools {
 					viewActions: this.context.viewActions,
 					perTurn,
 					hooks: {
-						onToolBatchStart: (batch) => {
+						onToolBatchStart: async (batch) => {
 							this.ensureGroupContainer(batch.length);
+							// Flush any pre-tool reasoning as the first row of the group.
+							if (this.pendingReasoning) {
+								await this.renderReasoningInGroup(this.pendingReasoning);
+								this.pendingReasoning = null;
+							}
 						},
 						onToolCallStart: async (toolCall, executionId, description) => {
 							this.context.updateProgress(description, 'tool');
@@ -112,18 +136,17 @@ export class AgentViewTools {
 						},
 						onModelReasoning: async (thoughts) => {
 							// Reasoning the model produced before deciding to call the
-							// next tool batch — persist it as a reasoning-only model turn
-							// and render it so the full session is captured.
-							const reasoningEntry: GeminiConversationEntry = {
+							// next tool batch — render it as a row inside the current tool
+							// group (interleaved with the tool calls) and persist it.
+							await this.renderReasoningInGroup(thoughts);
+							await this.plugin.sessionHistory.addEntryToSession(currentSession, {
 								role: 'model',
 								message: '',
 								notePath: '',
 								created_at: new Date(),
 								model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
 								thoughts,
-							};
-							await this.context.displayMessage(reasoningEntry);
-							await this.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
+							});
 						},
 					},
 				},
@@ -168,6 +191,18 @@ export class AgentViewTools {
 			this.currentGroupContainer = null;
 			this.context.hideProgress();
 		}
+	}
+
+	/**
+	 * Render a reasoning line into the current tool group's body so it interleaves
+	 * with the tool rows in execution order. No-op if there's no active group.
+	 */
+	private async renderReasoningInGroup(thoughts: string): Promise<void> {
+		if (!this.currentGroupContainer) return;
+		const body = this.currentGroupContainer.querySelector('.gemini-tool-group-body') as HTMLElement | null;
+		if (!body) return;
+		const sourcePath = this.context.getCurrentSession()?.historyPath || '';
+		await this.context.renderReasoning(body, thoughts, sourcePath);
 	}
 
 	/**
