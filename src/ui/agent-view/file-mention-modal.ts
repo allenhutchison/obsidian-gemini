@@ -1,4 +1,4 @@
-import { FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian';
+import { App, FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
 import { collectFoldersFromFolder } from '../../utils/folder-walk';
@@ -8,7 +8,7 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	private onSelect: (file: TAbstractFile) => void;
 	private plugin: ObsidianGemini;
 
-	constructor(app: any, onSelect: (file: TAbstractFile) => void, plugin: ObsidianGemini) {
+	constructor(app: App, onSelect: (file: TAbstractFile) => void, plugin: ObsidianGemini) {
 		super(app);
 		this.onSelect = onSelect;
 		this.plugin = plugin;
