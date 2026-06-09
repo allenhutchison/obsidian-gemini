@@ -107,6 +107,7 @@ describe('SelectionRewriter', () => {
 			expect(mockRewriteModel.generateModelResponse).toHaveBeenCalledWith({
 				prompt: '',
 				perTurnContext: 'rendered selection prompt',
+				kind: 'extended',
 				conversationHistory: [],
 				userMessage: 'instructions',
 			});

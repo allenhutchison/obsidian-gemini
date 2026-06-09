@@ -341,6 +341,7 @@ To reference an attachment in your response, use the path shown above.`;
 				};
 
 				const request: ExtendedModelRequest = {
+					kind: 'extended',
 					userMessage: message,
 					conversationHistory: compactionResult.compactedHistory,
 					model: modelName,

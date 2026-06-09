@@ -139,6 +139,7 @@ describe('GeminiCompletions', () => {
 
 			expect(result).toBe('next line');
 			expect(mockCompletionsModel.generateModelResponse).toHaveBeenCalledWith({
+				kind: 'base',
 				prompt: 'rendered prompt text',
 			});
 		});

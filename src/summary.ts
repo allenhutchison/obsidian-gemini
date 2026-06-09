@@ -55,6 +55,7 @@ export class GeminiSummary {
 
 		const modelApi = ModelClientFactory.createSummaryModel(this.plugin);
 		const request: BaseModelRequest = {
+			kind: 'base',
 			prompt: this.prompts.summaryPrompt({ content: fileContent }),
 		};
 		const summary = await modelApi.generateModelResponse(request);

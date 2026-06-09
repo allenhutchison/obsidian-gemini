@@ -233,6 +233,7 @@ Assistant: ${modelSummary}`;
 			// Generate title using the model
 			const modelApi = ModelClientFactory.createChatModel(this.plugin);
 			const response = await modelApi.generateModelResponse({
+				kind: 'extended',
 				userMessage: titlePrompt,
 				conversationHistory: [],
 				model: this.plugin.settings.chatModelName,

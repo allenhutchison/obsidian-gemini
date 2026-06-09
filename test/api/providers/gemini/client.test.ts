@@ -253,6 +253,7 @@ describe('GeminiClient', () => {
 			const request: ExtendedModelRequest = {
 				prompt: '',
 				userMessage: 'list the places',
+				kind: 'extended',
 				conversationHistory: [],
 				perTurnContext: renderedContext,
 				projectInstructions: 'always cite paths',
@@ -284,6 +285,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'just chat',
+				kind: 'extended',
 				conversationHistory: [],
 			});
 
@@ -680,6 +682,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'follow up',
+				kind: 'extended',
 				conversationHistory: [historyEntry],
 			} as ExtendedModelRequest);
 
@@ -694,6 +697,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'new msg',
+				kind: 'extended',
 				conversationHistory: [{ role: 'user', text: 'old msg' }],
 			} as unknown as ExtendedModelRequest);
 
@@ -707,6 +711,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'new msg',
+				kind: 'extended',
 				conversationHistory: [{ role: 'assistant', message: 'I helped' }],
 			} as unknown as ExtendedModelRequest);
 
@@ -720,6 +725,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'q',
+				kind: 'extended',
 				conversationHistory: [{ role: 'model', text: 'answer' }],
 			} as unknown as ExtendedModelRequest);
 
@@ -733,6 +739,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'look at this',
+				kind: 'extended',
 				conversationHistory: [],
 				inlineAttachments: [{ base64: 'abc123', mimeType: 'image/png' }],
 			} as ExtendedModelRequest);
@@ -749,6 +756,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'see these',
+				kind: 'extended',
 				conversationHistory: [],
 				inlineAttachments: [{ base64: 'inline1', mimeType: 'image/jpeg' }],
 				imageAttachments: [{ base64: 'img1', mimeType: 'image/gif' }],
@@ -765,6 +773,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: '',
+				kind: 'extended',
 				conversationHistory: [],
 			} as ExtendedModelRequest);
 
@@ -855,6 +864,7 @@ describe('GeminiClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'read that file',
+				kind: 'extended',
 				conversationHistory: [],
 				availableTools: tools,
 			} as ExtendedModelRequest);
@@ -889,6 +899,7 @@ describe('GeminiClient', () => {
 			await clientWithTokens.generateModelResponse({
 				prompt: '',
 				userMessage: 'hello',
+				kind: 'extended',
 				conversationHistory: [],
 			} as ExtendedModelRequest);
 

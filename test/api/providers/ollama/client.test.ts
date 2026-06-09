@@ -108,6 +108,7 @@ describe('OllamaClient', () => {
 			const request: ExtendedModelRequest = {
 				prompt: '',
 				userMessage: 'what is up',
+				kind: 'extended',
 				conversationHistory: [
 					{ role: 'user', parts: [{ text: 'previous user turn' }] },
 					{ role: 'model', parts: [{ text: 'previous assistant turn' }] },
@@ -144,6 +145,7 @@ describe('OllamaClient', () => {
 			const response = await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'read foo',
+				kind: 'extended',
 				conversationHistory: [],
 				availableTools: [
 					{
@@ -178,6 +180,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'what is in this picture',
+				kind: 'extended',
 				conversationHistory: [],
 				inlineAttachments: [{ mimeType: 'image/png', base64: 'b64data' }],
 			});
@@ -208,6 +211,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'what does the file say',
+				kind: 'extended',
 				conversationHistory: [],
 				perTurnContext: renderedContext,
 				projectInstructions: 'always cite file paths',
@@ -236,6 +240,7 @@ describe('OllamaClient', () => {
 				client.generateModelResponse({
 					prompt: '',
 					userMessage: 'read this',
+					kind: 'extended',
 					conversationHistory: [],
 					inlineAttachments: [{ mimeType: 'application/pdf', base64: 'b64data' }],
 				})
@@ -261,7 +266,7 @@ describe('OllamaClient', () => {
 
 			const chunks: string[] = [];
 			const streaming = client.generateStreamingResponse(
-				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				(chunk) => chunks.push(chunk.text)
 			);
 			const result = await streaming.complete;
@@ -286,7 +291,7 @@ describe('OllamaClient', () => {
 			ollamaCalls.chat.mockResolvedValue(stream);
 
 			const streaming = client.generateStreamingResponse(
-				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				() => {}
 			);
 			// Allow the first chunk to be consumed
@@ -310,7 +315,7 @@ describe('OllamaClient', () => {
 			ollamaCalls.chat.mockResolvedValue(stream);
 
 			const streaming = client.generateStreamingResponse(
-				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				() => {}
 			);
 			await new Promise((r) => window.setTimeout(r, 0));
@@ -336,6 +341,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'do it',
+				kind: 'extended',
 				conversationHistory: [
 					{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: { path: 'test.md' } } }] },
 				],
@@ -352,6 +358,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'ok',
+				kind: 'extended',
 				conversationHistory: [
 					{
 						role: 'user',
@@ -371,6 +378,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'ok',
+				kind: 'extended',
 				conversationHistory: [
 					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: null as any } }] },
 				],
@@ -385,6 +393,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'ok',
+				kind: 'extended',
 				conversationHistory: [
 					{ role: 'user', parts: [{ functionResponse: { name: 'tool1', response: 'raw result' as any } }] },
 				],
@@ -399,6 +408,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
+				kind: 'extended',
 				conversationHistory: [
 					{
 						role: 'model',
@@ -418,6 +428,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'describe it',
+				kind: 'extended',
 				conversationHistory: [
 					{
 						role: 'user',
@@ -438,6 +449,7 @@ describe('OllamaClient', () => {
 				client.generateModelResponse({
 					prompt: '',
 					userMessage: 'read it',
+					kind: 'extended',
 					conversationHistory: [
 						{ role: 'user', parts: [{ inlineData: { mimeType: 'application/pdf', data: 'abc' } }] },
 					],
@@ -449,6 +461,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'hi',
+				kind: 'extended',
 				conversationHistory: [{ role: 'system', parts: [{ text: 'system instruction' }] }],
 			});
 
@@ -463,6 +476,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'hi',
+				kind: 'extended',
 				conversationHistory: [null as any, { role: 'user', parts: [{ text: 'hello' }] }],
 			});
 
@@ -475,6 +489,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
+				kind: 'extended',
 				conversationHistory: [{ role: 'model', text: 'hello' } as any],
 			});
 
@@ -487,6 +502,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
+				kind: 'extended',
 				conversationHistory: [{ role: 'user', message: 'hey' } as any],
 			});
 
@@ -499,6 +515,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
+				kind: 'extended',
 				conversationHistory: [{ role: 'user', text: '  ' } as any],
 			});
 
@@ -513,6 +530,7 @@ describe('OllamaClient', () => {
 			await client.generateModelResponse({
 				prompt: '',
 				userMessage: 'go',
+				kind: 'extended',
 				conversationHistory: [{ role: 'assistant', text: 'response' } as any],
 			});
 
@@ -637,7 +655,7 @@ describe('OllamaClient', () => {
 			ollamaCalls.chat.mockResolvedValue(stream);
 
 			const streaming = client.generateStreamingResponse(
-				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				() => {}
 			);
 			const result = await streaming.complete;
@@ -656,7 +674,7 @@ describe('OllamaClient', () => {
 
 			const thoughts: string[] = [];
 			const streaming = client.generateStreamingResponse(
-				{ prompt: '', userMessage: 'think', conversationHistory: [] },
+				{ prompt: '', userMessage: 'think', kind: 'extended', conversationHistory: [] },
 				(chunk) => {
 					if (chunk.thought) thoughts.push(chunk.thought);
 				}
@@ -678,7 +696,7 @@ describe('OllamaClient', () => {
 		it('streaming throws when no model configured', async () => {
 			const c = new OllamaClient({ baseUrl: 'http://localhost:11434' }, undefined, buildPlugin());
 			const streaming = c.generateStreamingResponse(
-				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				() => {}
 			);
 			await expect(streaming.complete).rejects.toThrow('No Ollama model selected');
@@ -690,7 +708,7 @@ describe('OllamaClient', () => {
 			ollamaCalls.chat.mockRejectedValue(new Error('connection refused'));
 
 			const streaming = client.generateStreamingResponse(
-				{ prompt: '', userMessage: 'hi', conversationHistory: [] },
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
 				() => {}
 			);
 

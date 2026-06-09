@@ -72,6 +72,7 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 	// would make `buildContents` append it a second time, duplicating the
 	// (potentially large) context payload on every tool iteration.
 	return {
+		kind: 'extended',
 		userMessage: '', // Empty since tool results are already in conversation history
 		conversationHistory: updatedHistory,
 		model: modelConfig.model || plugin.settings.chatModelName,
@@ -99,6 +100,7 @@ export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequ
 	// `perTurnContext` is deliberately omitted — see `buildFollowUpRequest`:
 	// it is already embedded in `updatedHistory` via `buildToolHistoryTurns`.
 	return {
+		kind: 'extended',
 		userMessage: 'Please summarize what you just did with the tools.',
 		conversationHistory: updatedHistory,
 		model: modelConfig.model || plugin.settings.chatModelName,

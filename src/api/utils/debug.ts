@@ -95,7 +95,8 @@ export function redactLinkedFileSections(prompt: string): string {
 	return result;
 }
 
-// Helper to detect BaseModelRequest
+// Helper to detect BaseModelRequest. Structural (not `kind`-based) on purpose:
+// this logs arbitrary debug payloads that may predate or omit the discriminant.
 export function isBaseModelRequest(obj: unknown): obj is BaseModelRequest {
 	return !!(obj && typeof obj === 'object' && typeof (obj as { prompt?: unknown }).prompt === 'string');
 }
@@ -103,7 +104,7 @@ export function isBaseModelRequest(obj: unknown): obj is BaseModelRequest {
 // Helper to detect ExtendedModelRequest
 export function isExtendedModelRequest(obj: unknown): obj is ExtendedModelRequest {
 	if (!isBaseModelRequest(obj)) return false;
-	const extended = obj as ExtendedModelRequest;
+	const extended = obj as { conversationHistory?: unknown; userMessage?: unknown };
 	return Array.isArray(extended.conversationHistory) && typeof extended.userMessage === 'string';
 }
 

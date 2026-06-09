@@ -50,6 +50,7 @@ export class GeminiCompletions {
 		const modelApi = ModelClientFactory.createCompletionsModel(this.plugin);
 
 		let request: BaseModelRequest = {
+			kind: 'base',
 			prompt: this.prompts.completionsPrompt({
 				contentBeforeCursor: contentBeforeCursor,
 				contentAfterCursor: contentAfterCursor,

@@ -55,6 +55,7 @@ export class SelectionRewriter {
 		// Send request without conversation history
 		// The file context will be added automatically by the API layer
 		const request: ExtendedModelRequest = {
+			kind: 'extended',
 			prompt: '', // Unused in ExtendedModelRequest path
 			perTurnContext: prompt, // The rewrite template is per-turn context
 			conversationHistory: [], // Empty history for rewrite operations
@@ -106,6 +107,7 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 		});
 
 		const request: ExtendedModelRequest = {
+			kind: 'extended',
 			prompt: '', // Unused in ExtendedModelRequest path
 			perTurnContext: prompt, // Full-file rewrite template as per-turn context
 			conversationHistory: [],
@@ -158,6 +160,7 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 		});
 
 		const request: ExtendedModelRequest = {
+			kind: 'extended',
 			prompt: '',
 			perTurnContext: prompt,
 			conversationHistory: [],
