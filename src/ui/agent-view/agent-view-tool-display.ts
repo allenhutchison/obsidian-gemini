@@ -31,6 +31,48 @@ export class AgentViewToolDisplay {
 	) {}
 
 	/**
+	 * Render a tool-detail section header (title + a copy-to-clipboard button).
+	 * The button copies the full, untruncated value so users can grab parameters
+	 * or results for debugging even when the inline display is truncated (#731).
+	 */
+	private createSectionHeader(section: HTMLElement, title: string, getCopyText: () => string): void {
+		const header = section.createDiv({ cls: 'gemini-agent-tool-section-header' });
+		header.createEl('h4', { text: title });
+
+		const copyBtn = header.createEl('button', {
+			cls: 'gemini-agent-tool-copy-section',
+			attr: { 'aria-label': `Copy ${title.toLowerCase()}`, type: 'button' },
+		});
+		setIcon(copyBtn, 'copy');
+		copyBtn.addEventListener('click', (e) => {
+			// Sections live inside the expandable details; don't let the click
+			// bubble up and collapse the row.
+			e.stopPropagation();
+			navigator.clipboard.writeText(getCopyText()).then(
+				() => {
+					setIcon(copyBtn, 'check');
+					window.setTimeout(() => setIcon(copyBtn, 'copy'), 1500);
+				},
+				(err) => this.plugin.logger.error('Failed to copy tool detail to clipboard:', err)
+			);
+		});
+	}
+
+	/**
+	 * The full, untruncated text to copy for a tool result: the error message on
+	 * failure, the raw string for string data, otherwise pretty-printed JSON.
+	 */
+	private getResultCopyText(result: ToolResult): string {
+		if (result.success === false || result.success === undefined) {
+			return result.error || TOOL_EXECUTION_FAILED_DEFAULT_MSG;
+		}
+		if (result.data === undefined || result.data === null) {
+			return OPERATION_COMPLETED_SUCCESSFULLY_MSG;
+		}
+		return typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
+	}
+
+	/**
 	 * Get a brief parameter summary for a tool row (e.g. file path or query)
 	 */
 	public getToolParamSummary(_toolName: string, parameters: any): string {
@@ -243,7 +285,7 @@ export class AgentViewToolDisplay {
 		// Parameters section inside details
 		if (parameters && Object.keys(parameters).length > 0) {
 			const paramsSection = rowDetails.createDiv({ cls: 'gemini-agent-tool-section' });
-			paramsSection.createEl('h4', { text: 'Parameters' });
+			this.createSectionHeader(paramsSection, 'Parameters', () => JSON.stringify(parameters, null, 2));
 
 			const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-tool-params-list' });
 			for (const [key, value] of Object.entries(parameters)) {
@@ -340,7 +382,7 @@ export class AgentViewToolDisplay {
 		const details = toolRow.querySelector('.gemini-tool-row-details');
 		if (details) {
 			const resultSection = details.createDiv({ cls: 'gemini-agent-tool-section' });
-			resultSection.createEl('h4', { text: 'Result' });
+			this.createSectionHeader(resultSection, 'Result', () => this.getResultCopyText(result));
 
 			if (result.success === false || result.success === undefined) {
 				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
