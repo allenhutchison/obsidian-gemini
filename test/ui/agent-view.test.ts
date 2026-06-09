@@ -698,6 +698,43 @@ describe('AgentView UI Tests', () => {
 			const errorMessage = errorContent?.querySelector('.gemini-agent-tool-error-message');
 			expect(errorMessage?.textContent).toBe('Something went wrong');
 		});
+
+		it('copies the full, untruncated parameters via the Parameters copy button (#731)', async () => {
+			const writeText = vi.fn().mockResolvedValue(undefined);
+			Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+
+			// Value longer than the 100-char inline truncation limit.
+			const longContent = 'x'.repeat(250);
+			await agentView.showToolExecution('write_file', { path: 'a.md', content: longContent }, 'exec-copy-1');
+
+			const chatContainer = (agentView as any).chatContainer as HTMLElement;
+			const copyBtn = chatContainer.querySelector('.gemini-agent-tool-copy-section') as HTMLButtonElement | null;
+			expect(copyBtn).toBeTruthy();
+
+			copyBtn!.click();
+
+			expect(writeText).toHaveBeenCalledWith(JSON.stringify({ path: 'a.md', content: longContent }, null, 2));
+		});
+
+		it('copies the full result data via the Result copy button (#731)', async () => {
+			const writeText = vi.fn().mockResolvedValue(undefined);
+			Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+
+			await agentView.showToolExecution('read_file', { path: 'a.md' }, 'exec-copy-2');
+			const data = { path: 'a.md', size: 1, extra: 'y'.repeat(250) };
+			await agentView.showToolResult('read_file', { success: true, data }, 'exec-copy-2');
+
+			const chatContainer = (agentView as any).chatContainer as HTMLElement;
+			const resultSection = Array.from(chatContainer.querySelectorAll('.gemini-agent-tool-section')).find(
+				(s) => s.querySelector('h4')?.textContent === 'Result'
+			);
+			const copyBtn = resultSection?.querySelector('.gemini-agent-tool-copy-section') as HTMLButtonElement | null;
+			expect(copyBtn).toBeTruthy();
+
+			copyBtn!.click();
+
+			expect(writeText).toHaveBeenCalledWith(JSON.stringify(data, null, 2));
+		});
 	});
 
 	describe('Grouped Tool Activity Bar', () => {

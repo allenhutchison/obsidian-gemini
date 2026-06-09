@@ -68,6 +68,8 @@ Agent: I'll help you find and summarize your meeting notes. Let me:
 [Executes write_file tool to create summary]
 ```
 
+Each tool call in the chat is collapsible — click a tool row to expand its details. When present, the **Parameters** and **Result** sections each include a copy button in the header that copies the full, untruncated value to the clipboard (handy for debugging, since long values are abbreviated in the inline display).
+
 ### File Attachments & Drag-and-Drop
 
 You can include images, audio, video, PDFs, and text files in your chat. Files are automatically classified and routed:
