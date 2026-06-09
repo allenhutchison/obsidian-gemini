@@ -28,6 +28,7 @@
 > | Context | {{context}} |
 {{/if}}
 
+{{#if hasMessage}}
 {{#if (eq role "User")}}
 > [!user]+
 {{else}}
@@ -37,4 +38,12 @@
 > {{{this}}}
 {{/each}}
 
+{{/if}}
+{{#if thoughtLines}}
+> [!reasoning]- Reasoning
+{{#each thoughtLines}}
+> {{{this}}}
+{{/each}}
+
+{{/if}}
 --- 

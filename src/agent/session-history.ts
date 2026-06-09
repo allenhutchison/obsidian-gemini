@@ -90,7 +90,12 @@ export class SessionHistory {
 
 		// Generate the new entry content
 		const role = entry.role.charAt(0).toUpperCase() + entry.role.slice(1);
-		const messageLines = entry.message.split('\n');
+		const hasMessage = entry.message.trim().length > 0;
+		const messageLines = hasMessage ? entry.message.split('\n') : [];
+		// Model reasoning, when present, is serialized as a collapsed
+		// `[!reasoning]` callout. A model entry may carry thoughts with no
+		// message (reasoning produced before the model decided to call tools).
+		const thoughtLines = entry.thoughts?.trim() ? entry.thoughts.split('\n') : null;
 
 		// Use configured user name for user entries, capitalized role for model
 		const userDisplayName = (this.plugin.settings.userName ?? '').trim();
@@ -102,7 +107,9 @@ export class SessionHistory {
 		const entryContent = this.entryTemplate({
 			role: role,
 			displayName: displayName,
+			hasMessage: hasMessage,
 			messageLines: messageLines,
+			thoughtLines: thoughtLines,
 			timestamp: formatLocalTimestamp(entryTimestamp),
 			pluginVersion: this.plugin.manifest.version,
 			model: entry.model,
@@ -208,79 +215,102 @@ export class SessionHistory {
 			const roleMatch = section.match(/^## (.+?)\s*$/m);
 			if (!roleMatch) continue;
 
-			// Extract message content from callout blocks
-			// Look for > [!user]+ or > [!assistant]+ blocks
+			const lines = section.split('\n');
+
+			// Extract the message from the `> [!user]+` / `> [!assistant]+` callout.
 			const calloutRegex = /^> \[!(user|assistant)\]\+\s*$/m;
 			const calloutMatch = section.match(calloutRegex);
-
+			let role: 'user' | 'model' | null = null;
+			let message = '';
 			if (calloutMatch) {
-				const role = calloutMatch[1] === 'user' ? 'user' : 'model';
-
-				// Extract lines after the callout marker
-				const lines = section.split('\n');
+				role = calloutMatch[1] === 'user' ? 'user' : 'model';
 				const calloutIndex = lines.findIndex((line) => calloutRegex.test(line));
-
 				if (calloutIndex !== -1) {
-					const messageLines: string[] = [];
-					let inMessage = false;
-
-					for (let i = calloutIndex + 1; i < lines.length; i++) {
-						const line = lines[i];
-
-						// Stop at metadata blocks or empty lines after content
-						if (line.startsWith('> [!metadata]') || (messageLines.length > 0 && !line.startsWith('>'))) {
-							break;
-						}
-
-						// Extract content from quoted lines
-						if (line.startsWith('> ')) {
-							messageLines.push(line.substring(2));
-							inMessage = true;
-						} else if (inMessage) {
-							// Stop if we hit a non-quoted line after starting
-							break;
-						}
-					}
-
-					const message = messageLines.join('\n').trim();
-
-					if (message) {
-						// Extract timestamp from metadata if available
-						const timeMatch = section.match(/\| Time \| ([^|]+) \|/);
-						const timestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
-
-						// Extract model info if available
-						const modelMatch = section.match(/\| Model \| ([^|]+) \|/);
-						const model = modelMatch ? modelMatch[1].trim() : undefined;
-
-						// Check for tool execution info
-						const toolNameMatch = section.match(/\*\*Tool:\*\* `([^`]+)`/);
-						const toolStatusMatch = section.match(/\*\*Status:\*\* (Success|Error)/);
-
-						const entry: GeminiConversationEntry = {
-							role,
-							message,
-							notePath: '',
-							created_at: timestamp,
-							model,
-						};
-
-						// Add tool execution info if found
-						if (toolNameMatch) {
-							entry.metadata = {
-								...entry.metadata,
-								toolName: toolNameMatch[1],
-								toolStatus: toolStatusMatch ? toolStatusMatch[1].toLowerCase() : undefined,
-							};
-						}
-
-						entries.push(entry);
-					}
+					message = this.extractCalloutBody(lines, calloutIndex).join('\n').trim();
 				}
+			}
+
+			// Extract model reasoning from the optional `> [!reasoning]-` callout.
+			// A section with reasoning but no message callout is a "reasoning-only"
+			// model turn (thoughts the model produced before calling tools).
+			const reasoningIndex = lines.findIndex((line) => /^> \[!reasoning\]-/.test(line));
+			let thoughts: string | undefined;
+			if (reasoningIndex !== -1) {
+				const body = this.extractCalloutBody(lines, reasoningIndex).join('\n').trim();
+				if (body) {
+					thoughts = body;
+					if (!role) role = 'model';
+				}
+			}
+
+			if (role && (message || thoughts)) {
+				// Extract timestamp from metadata if available
+				const timeMatch = section.match(/\| Time \| ([^|]+) \|/);
+				const timestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
+
+				// Extract model info if available
+				const modelMatch = section.match(/\| Model \| ([^|]+) \|/);
+				const model = modelMatch ? modelMatch[1].trim() : undefined;
+
+				// Check for tool execution info
+				const toolNameMatch = section.match(/\*\*Tool:\*\* `([^`]+)`/);
+				const toolStatusMatch = section.match(/\*\*Status:\*\* (Success|Error)/);
+
+				const entry: GeminiConversationEntry = {
+					role,
+					message,
+					notePath: '',
+					created_at: timestamp,
+					model,
+				};
+
+				if (thoughts) {
+					entry.thoughts = thoughts;
+				}
+
+				// Add tool execution info if found
+				if (toolNameMatch) {
+					entry.metadata = {
+						...entry.metadata,
+						toolName: toolNameMatch[1],
+						toolStatus: toolStatusMatch ? toolStatusMatch[1].toLowerCase() : undefined,
+					};
+				}
+
+				entries.push(entry);
 			}
 		}
 
 		return entries;
+	}
+
+	/**
+	 * Collect the de-quoted body lines of a callout. `startIndex` is the index
+	 * of the callout marker line (e.g. `> [!assistant]+`). Stops at the next
+	 * callout marker (`> [!...]`), or at the first non-quoted line once content
+	 * has started. Bare `>` lines are preserved as blank body lines so
+	 * multi-paragraph messages and reasoning round-trip intact.
+	 */
+	private extractCalloutBody(lines: string[], startIndex: number): string[] {
+		const body: string[] = [];
+		let started = false;
+		for (let i = startIndex + 1; i < lines.length; i++) {
+			const line = lines[i];
+			// Stop at the next callout (metadata, reasoning, user, assistant, …).
+			if (/^> \[!/.test(line)) break;
+			if (line.startsWith('> ')) {
+				body.push(line.substring(2));
+				started = true;
+			} else if (line === '>') {
+				body.push('');
+				started = true;
+			} else if (started) {
+				// A non-quoted line after content ends the callout.
+				break;
+			}
+			// Leading blank/non-quoted lines before content are skipped.
+		}
+		return body;
 	}
 
 	/**

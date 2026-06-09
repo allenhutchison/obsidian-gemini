@@ -2101,6 +2101,52 @@ If your plugin does not need CSS, delete this file.
 	color: white;
 }
 
+/* Model reasoning ("thinking") — collapsible section below a model message. */
+.gemini-agent-reasoning {
+	margin-top: var(--size-4-2);
+	border-left: 2px solid var(--background-modifier-border);
+	padding-left: var(--size-4-2);
+}
+
+.gemini-agent-reasoning-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	cursor: pointer;
+	user-select: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.gemini-agent-reasoning-header:hover {
+	color: var(--text-normal);
+}
+
+.gemini-agent-reasoning-icon {
+	display: flex;
+	align-items: center;
+}
+
+.gemini-agent-reasoning-icon svg {
+	width: 14px;
+	height: 14px;
+}
+
+.gemini-agent-reasoning-label {
+	font-weight: 500;
+	font-style: italic;
+}
+
+.gemini-agent-reasoning-content {
+	margin-top: var(--size-2-2);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.gemini-agent-reasoning-content.is-collapsed {
+	display: none;
+}
+
 @keyframes pulse {
 	0% {
 		opacity: 1;

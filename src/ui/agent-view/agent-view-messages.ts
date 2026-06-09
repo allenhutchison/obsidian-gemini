@@ -199,14 +199,19 @@ export class AgentViewMessages {
 			await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
 		}
 
+		// Render model reasoning as a collapsible section below the message.
+		if (entry.role === 'model' && entry.thoughts?.trim()) {
+			await this.renderReasoningSection(content, entry.thoughts, sourcePath);
+		}
+
 		// Scroll to bottom after displaying message
 		this.scrollToBottom();
 
 		// Setup image click handlers
 		this.setupImageClickHandlers(content, sourcePath);
 
-		// Add a copy button for both user and model messages
-		if (entry.role === 'model' || entry.role === 'user') {
+		// Add a copy button for messages with visible text (skip reasoning-only turns).
+		if ((entry.role === 'model' || entry.role === 'user') && renderMessage.trim()) {
 			const copyButton = content.createEl('button', {
 				cls: 'gemini-agent-copy-button',
 			});
@@ -228,6 +233,29 @@ export class AgentViewMessages {
 
 		// Auto-scroll to bottom
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+	}
+
+	/**
+	 * Render model reasoning ("thinking") as a collapsed, expandable section.
+	 * Shared by the live-stream finalizer and history re-rendering so reasoning
+	 * looks the same whether it just arrived or was loaded from a session file.
+	 */
+	private async renderReasoningSection(parent: HTMLElement, thoughts: string, sourcePath: string): Promise<void> {
+		const section = parent.createDiv({ cls: 'gemini-agent-reasoning' });
+
+		const header = section.createDiv({ cls: 'gemini-agent-reasoning-header' });
+		const icon = header.createEl('span', { cls: 'gemini-agent-reasoning-icon' });
+		setIcon(icon, 'chevron-right');
+		header.createEl('span', { text: 'Reasoning', cls: 'gemini-agent-reasoning-label' });
+
+		const body = section.createDiv({ cls: 'gemini-agent-reasoning-content is-collapsed' });
+		await MarkdownRenderer.render(this.app, formatModelMessage(thoughts), body, sourcePath, this.viewContext);
+
+		header.addEventListener('click', () => {
+			const collapsed = body.hasClass('is-collapsed');
+			body.toggleClass('is-collapsed', !collapsed);
+			setIcon(icon, collapsed ? 'chevron-down' : 'chevron-right');
+		});
 	}
 
 	/**
@@ -294,6 +322,11 @@ export class AgentViewMessages {
 
 			const sourcePath = currentSession?.historyPath || '';
 			await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
+
+			// Render model reasoning as a collapsible section below the message.
+			if (entry.role === 'model' && entry.thoughts?.trim()) {
+				await this.renderReasoningSection(messageDiv, entry.thoughts, sourcePath);
+			}
 
 			// Add a copy button for model messages
 			if (entry.role === 'model') {

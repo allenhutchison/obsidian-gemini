@@ -110,6 +110,21 @@ export class AgentViewTools {
 						onFollowUpRequestStart: () => {
 							this.context.updateProgress('Thinking...', 'thinking');
 						},
+						onModelReasoning: async (thoughts) => {
+							// Reasoning the model produced before deciding to call the
+							// next tool batch — persist it as a reasoning-only model turn
+							// and render it so the full session is captured.
+							const reasoningEntry: GeminiConversationEntry = {
+								role: 'model',
+								message: '',
+								notePath: '',
+								created_at: new Date(),
+								model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+								thoughts,
+							};
+							await this.context.displayMessage(reasoningEntry);
+							await this.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
+						},
 					},
 				},
 			});
@@ -135,6 +150,7 @@ export class AgentViewTools {
 				notePath: '',
 				created_at: new Date(),
 				model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+				...(result.thoughts ? { thoughts: result.thoughts } : {}),
 			};
 
 			await this.context.displayMessage(aiEntry);

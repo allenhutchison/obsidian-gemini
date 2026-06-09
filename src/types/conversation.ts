@@ -11,4 +11,13 @@ export interface GeminiConversationEntry extends BasicGeminiConversationEntry {
 	notePath: string;
 	created_at: Date;
 	metadata?: Record<string, any>;
+	/**
+	 * Model reasoning ("thinking") captured for this turn, when the model is a
+	 * thinking model and emitted thought summaries. Persisted to session history
+	 * as a collapsed `[!reasoning]` callout and rendered as a collapsible section
+	 * below the message. A model entry may carry `thoughts` with an empty
+	 * `message` — that represents reasoning the model produced before deciding to
+	 * call tools (a "reasoning-only" turn).
+	 */
+	thoughts?: string;
 }

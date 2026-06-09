@@ -47,6 +47,15 @@ export interface AgentLoopHooks {
 	onFollowUpRequestStart?(): void | Promise<void>;
 	/** Fired when the loop falls into the empty-response retry path. */
 	onEmptyResponseRetry?(): void | Promise<void>;
+	/**
+	 * Fired when an intermediate follow-up response carries model reasoning but
+	 * continues to another tool batch (i.e. the model "thought" before deciding
+	 * to call more tools). UI/headless callers use this to persist a
+	 * reasoning-only model turn so the full session — user → reasoning → tools →
+	 * reasoning → answer — is captured. The terminal response's reasoning is
+	 * returned on `AgentLoopResult.thoughts` instead, not via this hook.
+	 */
+	onModelReasoning?(thoughts: string): void | Promise<void>;
 }
 
 export interface AgentLoopOptions {
@@ -112,6 +121,14 @@ export interface AgentLoopResult {
 	 * (which the caller may display but should not save to session history).
 	 */
 	markdown: string;
+	/**
+	 * Model reasoning ("thinking") from the terminal follow-up response that
+	 * produced `markdown`. Undefined when the model emitted no thoughts or the
+	 * turn ended without a text response. The caller attaches this to the final
+	 * model history entry. Intermediate reasoning (before further tool batches)
+	 * is surfaced via the `onModelReasoning` hook instead, not here.
+	 */
+	thoughts?: string;
 	/** Final conversation history including all tool turns. */
 	history: Content[];
 	/** True if cancellation interrupted the loop. */
@@ -327,6 +344,13 @@ export class AgentLoop {
 			}
 
 			if (followUpResponse.toolCalls && followUpResponse.toolCalls.length > 0) {
+				// Surface intermediate reasoning (the "why I'm calling these tools"
+				// thinking) so the caller can persist a reasoning-only turn before
+				// the next tool batch runs.
+				if (followUpResponse.thoughts?.trim()) {
+					await this.safeHook('onModelReasoning', plugin, () => hooks?.onModelReasoning?.(followUpResponse.thoughts!));
+				}
+
 				// Continue iterating with the new tool calls.
 				if (isCancelled()) {
 					return this.cancelledResult(updatedHistory, iterations);
@@ -344,6 +368,7 @@ export class AgentLoop {
 			if (followUpResponse.markdown && followUpResponse.markdown.trim()) {
 				return {
 					markdown: followUpResponse.markdown,
+					thoughts: followUpResponse.thoughts?.trim() ? followUpResponse.thoughts : undefined,
 					history: updatedHistory,
 					cancelled: false,
 					retried: false,
@@ -383,6 +408,7 @@ export class AgentLoop {
 			if (retryResponse.markdown && retryResponse.markdown.trim()) {
 				return {
 					markdown: retryResponse.markdown,
+					thoughts: retryResponse.thoughts?.trim() ? retryResponse.thoughts : undefined,
 					history: updatedHistory,
 					cancelled: false,
 					retried: true,

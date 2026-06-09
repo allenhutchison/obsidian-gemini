@@ -185,6 +185,15 @@ For detailed information about context files and advanced usage, see the [Contex
 - All files the agent reads or writes during a session are tracked in `accessed_files` frontmatter for auditing and session recall
 - Tool execution summaries are logged to session history as collapsible callout blocks (controlled by the `logToolExecution` setting)
 
+### Model Reasoning
+
+When you use a thinking model (e.g. Gemini 2.5 Pro), the agent captures the model's reasoning ("thinking") for each turn and keeps it after the response completes:
+
+- A collapsed **Reasoning** section appears below each model message — expand it to see how the model worked through the request. It stays collapsed by default so it doesn't clutter the conversation.
+- Reasoning the model produces _before_ deciding to call tools is preserved too, as its own reasoning-only entry — so a session reads as the full arc: your request → the model's reasoning → the tools it ran → its answer (and the reasoning behind it).
+- Reasoning is persisted to the session history file as a collapsed `[!reasoning]` callout, so it round-trips when you reopen a past session. This makes session files a faithful, self-contained record of the whole interaction.
+- Sessions created before this feature simply have no reasoning sections — nothing changes for them.
+
 ## Available Tools
 
 ### Read-Only Tools

@@ -1032,4 +1032,161 @@ describe('SessionHistory', () => {
 			);
 		});
 	});
+
+	describe('model reasoning (thoughts) round-trip', () => {
+		let mockFile: TFile;
+
+		// Wire a real write→read round-trip: addEntryToSession appends via
+		// vault.modify; getHistoryForSession reads the accumulated buffer back.
+		function wireRoundTripFile(initial = ''): { read: () => string } {
+			let fileContent = initial;
+			mockFile = makeTFile('gemini-scribe/Agent-Sessions/Test.md');
+			(mockFile as any).extension = 'md';
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
+			mockPlugin.app.vault.read.mockImplementation(async () => fileContent);
+			mockPlugin.app.vault.modify.mockImplementation(async (_f: TFile, content: string) => {
+				fileContent = content;
+			});
+			return { read: () => fileContent };
+		}
+
+		it('round-trips a model entry that has both a message and thoughts', async () => {
+			wireRoundTripFile();
+			const session = createMockSession();
+
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: 'The answer is 42.',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:00Z'),
+				thoughts: 'The user asked about the meaning of life.\nConsidering the references...',
+			});
+
+			const result = await sessionHistory.getHistoryForSession(session);
+			expect(result).toHaveLength(1);
+			expect(result[0].role).toBe('model');
+			expect(result[0].message).toBe('The answer is 42.');
+			expect(result[0].thoughts).toBe('The user asked about the meaning of life.\nConsidering the references...');
+		});
+
+		it('round-trips a reasoning-only model turn (thoughts, empty message)', async () => {
+			wireRoundTripFile();
+			const session = createMockSession();
+
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: '',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:00Z'),
+				thoughts: 'I should read the file before editing it.',
+			});
+
+			const result = await sessionHistory.getHistoryForSession(session);
+			expect(result).toHaveLength(1);
+			expect(result[0].role).toBe('model');
+			expect(result[0].message).toBe('');
+			expect(result[0].thoughts).toBe('I should read the file before editing it.');
+		});
+
+		it('does not let the reasoning callout leak into the message body', async () => {
+			wireRoundTripFile();
+			const session = createMockSession();
+
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: 'Final answer.',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:00Z'),
+				thoughts: 'Reasoning text here.',
+			});
+
+			const result = await sessionHistory.getHistoryForSession(session);
+			expect(result[0].message).toBe('Final answer.');
+			expect(result[0].message).not.toContain('reasoning');
+			expect(result[0].message).not.toContain('Reasoning');
+		});
+
+		it('preserves multi-paragraph thoughts with blank lines', async () => {
+			wireRoundTripFile();
+			const session = createMockSession();
+			const thoughts = 'First paragraph of reasoning.\n\nSecond paragraph after a blank line.';
+
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: 'Done.',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:00Z'),
+				thoughts,
+			});
+
+			const result = await sessionHistory.getHistoryForSession(session);
+			expect(result[0].thoughts).toBe(thoughts);
+		});
+
+		it('round-trips a full user → reasoning-only → answer sequence', async () => {
+			wireRoundTripFile();
+			const session = createMockSession();
+
+			await sessionHistory.addEntryToSession(session, {
+				role: 'user',
+				message: 'Refactor my note.',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:00Z'),
+			});
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: '',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:01Z'),
+				thoughts: 'I need to read the note first.',
+			});
+			await sessionHistory.addEntryToSession(session, {
+				role: 'model',
+				message: 'Done — I tidied the headings.',
+				notePath: '',
+				created_at: new Date('2026-01-01T00:00:02Z'),
+				thoughts: 'The headings were inconsistent, so I normalized them.',
+			});
+
+			const result = await sessionHistory.getHistoryForSession(session);
+			expect(result).toHaveLength(3);
+			expect(result[0]).toMatchObject({ role: 'user', message: 'Refactor my note.' });
+			expect(result[0].thoughts).toBeUndefined();
+			expect(result[1]).toMatchObject({ role: 'model', message: '' });
+			expect(result[1].thoughts).toBe('I need to read the note first.');
+			expect(result[2]).toMatchObject({ role: 'model', message: 'Done — I tidied the headings.' });
+			expect(result[2].thoughts).toBe('The headings were inconsistent, so I normalized them.');
+		});
+
+		it('leaves thoughts undefined for legacy entries without a reasoning callout', async () => {
+			mockFile = makeTFile('gemini-scribe/Agent-Sessions/Test.md');
+			(mockFile as any).extension = 'md';
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
+
+			// Pre-reasoning history format — message callout only, no reasoning.
+			const legacy = [
+				'## Model',
+				'',
+				'> [!assistant]+',
+				'> Here is the legacy answer.',
+				'',
+				'> [!metadata]- Message Info',
+				'> | Property | Value |',
+				'> | -------- | ----- |',
+				'> | Time | 2026-01-01T00:00:00Z |',
+				'',
+				'---',
+			].join('\n');
+			mockPlugin.app.vault.read.mockResolvedValue(legacy);
+
+			const session = createMockSession();
+			const result = await sessionHistory.getHistoryForSession(session);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].message).toBe('Here is the legacy answer.');
+			expect(result[0].thoughts).toBeUndefined();
+		});
+	});
 });

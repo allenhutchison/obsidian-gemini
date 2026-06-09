@@ -420,6 +420,12 @@ To reference an attachment in your response, use the path shown above.`;
 							this.ctx.plugin.logger.debug('[AgentView] Streaming response had no usageMetadata');
 						}
 
+						// Model reasoning for this turn — prefer the completed response's
+						// thoughts; fall back to whatever streamed into the progress bar.
+						const turnThoughts = response.thoughts?.trim()
+							? response.thoughts
+							: accumulatedThoughts.trim() || undefined;
+
 						// Check if the model requested tool calls
 						if (response.toolCalls && response.toolCalls.length > 0) {
 							// User message already saved early in sendMessage()
@@ -432,6 +438,7 @@ To reference an attachment in your response, use the path shown above.`;
 									notePath: '',
 									created_at: new Date(),
 									model: modelName,
+									...(turnThoughts ? { thoughts: turnThoughts } : {}),
 								};
 								await this.ctx.messages.finalizeStreamingMessage(
 									modelMessageContainer,
@@ -442,6 +449,20 @@ To reference an attachment in your response, use the path shown above.`;
 
 								// Save partial response to history before executing tools
 								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
+							} else if (turnThoughts) {
+								// Reasoning-only turn: the model thought before deciding to
+								// call tools but produced no text. Persist it so the
+								// pre-tool reasoning isn't lost from the session record.
+								const reasoningEntry: GeminiConversationEntry = {
+									role: 'model',
+									message: '',
+									notePath: '',
+									created_at: new Date(),
+									model: modelName,
+									thoughts: turnThoughts,
+								};
+								await this.ctx.messages.displayMessage(reasoningEntry, currentSession);
+								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
 							}
 
 							// Execute tools and handle results
@@ -463,6 +484,7 @@ To reference an attachment in your response, use the path shown above.`;
 									notePath: '',
 									created_at: new Date(),
 									model: modelName,
+									...(turnThoughts ? { thoughts: turnThoughts } : {}),
 								};
 
 								// Finalize the streaming message with proper rendering
@@ -482,6 +504,21 @@ To reference an attachment in your response, use the path shown above.`;
 								this.ctx.messages.scrollToBottom();
 
 								// Hide progress bar after successful response
+								this.ctx.progress.hide();
+							} else if (turnThoughts) {
+								// No answer text, but the model did reason — show and persist
+								// the reasoning instead of a bare "empty response" notice.
+								const reasoningEntry: GeminiConversationEntry = {
+									role: 'model',
+									message: '',
+									notePath: '',
+									created_at: new Date(),
+									model: modelName,
+									thoughts: turnThoughts,
+								};
+								await this.ctx.messages.displayMessage(reasoningEntry, currentSession);
+								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
+								this.ctx.messages.scrollToBottom();
 								this.ctx.progress.hide();
 							} else {
 								// Empty response - might be thinking tokens
@@ -519,8 +556,25 @@ To reference an attachment in your response, use the path shown above.`;
 					// Update progress to show response received
 					this.ctx.progress.update('Processing response...', 'waiting');
 
+					// Model reasoning for this turn (non-streaming exposes it directly).
+					const turnThoughts = response.thoughts?.trim() ? response.thoughts : undefined;
+
 					// Check if the model requested tool calls
 					if (response.toolCalls && response.toolCalls.length > 0) {
+						// Persist any pre-tool reasoning before executing tools.
+						if (turnThoughts) {
+							const reasoningEntry: GeminiConversationEntry = {
+								role: 'model',
+								message: '',
+								notePath: '',
+								created_at: new Date(),
+								model: modelName,
+								thoughts: turnThoughts,
+							};
+							await this.ctx.displayMessage(reasoningEntry);
+							await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
+						}
+
 						// Execute tools and handle results
 						await this.ctx.tools.handleToolCalls(
 							response.toolCalls,
@@ -541,6 +595,7 @@ To reference an attachment in your response, use the path shown above.`;
 								notePath: '',
 								created_at: new Date(),
 								model: modelName,
+								...(turnThoughts ? { thoughts: turnThoughts } : {}),
 							};
 							await this.ctx.displayMessage(aiEntry);
 
@@ -548,6 +603,19 @@ To reference an attachment in your response, use the path shown above.`;
 							await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
 
 							// Hide progress bar after successful response
+							this.ctx.progress.hide();
+						} else if (turnThoughts) {
+							// No answer text, but the model reasoned — show and persist it.
+							const reasoningEntry: GeminiConversationEntry = {
+								role: 'model',
+								message: '',
+								notePath: '',
+								created_at: new Date(),
+								model: modelName,
+								thoughts: turnThoughts,
+							};
+							await this.ctx.displayMessage(reasoningEntry);
+							await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
 							this.ctx.progress.hide();
 						} else {
 							// Empty response - might be thinking tokens
