@@ -50,6 +50,7 @@ const TOOL_PRIORITY: Record<string, number> = {
 	google_search: 20,
 	fetch_url: 21,
 	deep_research: 22,
+	google_maps: 23,
 	// ── WRITES (30–39) ──────────────────────────────────────────────────────
 	write_file: 30,
 	create_folder: 31,

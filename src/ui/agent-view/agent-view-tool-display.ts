@@ -17,6 +17,7 @@ const TOOL_ICONS: Record<string, string> = {
 	move_file: 'file-symlink',
 	find_files_by_name: 'search',
 	google_search: 'globe',
+	google_maps: 'map-pin',
 	fetch_url: 'link',
 	generate_image: 'image',
 };
@@ -438,8 +439,12 @@ export class AgentViewToolDisplay {
 					this.plugin.logger.log('Tool result is object for:', toolName);
 					this.plugin.logger.log('Result data keys:', Object.keys(result.data));
 
-					if (result.data.answer && result.data.citations && toolName === 'google_search') {
-						this.plugin.logger.log('Handling google_search result with citations');
+					if (
+						result.data.answer &&
+						result.data.citations &&
+						(toolName === 'google_search' || toolName === 'google_maps')
+					) {
+						this.plugin.logger.log(`Handling ${toolName} result with citations`);
 						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
 						answerDiv.createEl('h5', { text: 'Answer:' });
 

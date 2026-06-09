@@ -332,6 +332,16 @@ Search for the latest Obsidian plugin development docs
 Find recent research on productivity methods
 ```
 
+#### google_maps
+
+Look up real-world places and location information grounded in Google Maps — businesses, points of interest, addresses, opening hours, ratings/reviews, and "near me" style questions. Returns an answer with inline citations and links to the places referenced. Include the location in your request for the best results. Available on the Gemini provider only.
+
+```text
+Find highly-rated ramen near Union Square, San Francisco
+What are the opening hours for the British Museum?
+Coffee shops within walking distance of the Ferry Building
+```
+
 #### fetch_url
 
 Retrieve and analyze web page content:
