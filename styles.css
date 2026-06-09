@@ -2116,6 +2116,21 @@ If your plugin does not need CSS, delete this file.
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
+/* "Permission granted" acknowledgment row — sits in the tool stack next to the
+   tool it authorized. Non-collapsible (no chevron); a muted info line. */
+.gemini-permission-row .gemini-tool-row-header {
+	cursor: default;
+}
+
+.gemini-permission-row .gemini-tool-row-name {
+	font-weight: 400;
+	color: var(--text-muted);
+}
+
+.gemini-permission-row-icon {
+	color: var(--color-green);
+}
+
 .gemini-reasoning-row .gemini-tool-row-icon {
 	font-size: 13px;
 	line-height: 1;

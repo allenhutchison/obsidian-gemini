@@ -669,8 +669,14 @@ export class AgentView extends ItemView {
 		executionId: string,
 		diffContext?: import('../../tools/types').DiffContext
 	): Promise<import('../../tools/types').ConfirmationResult> {
-		// Delegate to messages component
-		return this.messages.displayConfirmationRequest(tool, parameters, executionId, diffContext);
+		// Delegate to messages component for the request card (main flow).
+		const result = await this.messages.displayConfirmationRequest(tool, parameters, executionId, diffContext);
+		// On grant, record the acknowledgment in the tool stack rather than the
+		// main flow, next to the tool it authorized.
+		if (result.confirmed) {
+			this.tools?.showPermissionGranted(tool.displayName || tool.name);
+		}
+		return result;
 	}
 
 	/**

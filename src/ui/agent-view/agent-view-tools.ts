@@ -194,6 +194,16 @@ export class AgentViewTools {
 	}
 
 	/**
+	 * Render a "permission granted" acknowledgment into the current tool group,
+	 * interleaved with the tool rows. Called by the view after the user approves
+	 * a confirmation, so the acknowledgment sits in the activity stack instead of
+	 * stacking up in the main conversation flow.
+	 */
+	public showPermissionGranted(toolName: string): void {
+		this.display.showPermissionGranted(toolName, this.currentGroupContainer);
+	}
+
+	/**
 	 * Render a reasoning line into the current tool group's body so it interleaves
 	 * with the tool rows in execution order. No-op if there's no active group.
 	 */

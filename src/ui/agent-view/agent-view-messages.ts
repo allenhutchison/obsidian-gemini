@@ -782,8 +782,15 @@ export class AgentViewMessages {
 				allowBtn.removeEventListener('click', allowHandler);
 				cancelBtn.removeEventListener('click', cancelHandler);
 
-				// Update message to show result
-				this.updateConfirmationResult(messageDiv, confirmed, tool.displayName || tool.name);
+				// On grant, drop the request card from the main flow — the caller
+				// renders a "permission granted" row into the tool stack instead, so
+				// the acknowledgment lives next to the tool it authorized. Denials
+				// stay in the main flow as a visible interruption.
+				if (confirmed) {
+					messageDiv.remove();
+				} else {
+					this.updateConfirmationResult(messageDiv, confirmed, tool.displayName || tool.name);
+				}
 
 				// Resolve Promise
 				resolve({
