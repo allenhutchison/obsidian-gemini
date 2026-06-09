@@ -30,7 +30,7 @@ defaults) rather than maxing out at 100% on every model.
 
 ## Task catalog and difficulty tiers
 
-The suite currently has **54 tasks** across four tiers:
+The suite currently has **59 tasks** across four tiers:
 
 | Tier   | Intent                                                                            |
 | ------ | --------------------------------------------------------------------------------- |
@@ -146,7 +146,7 @@ signal.
 
 ## Published results
 
-Every model that's been blessed against the current 54-task suite. Rows are
+Every model that's been blessed against the current 59-task suite. Rows are
 sorted by `solve^k` (the headline reliability number) descending. The
 **Commit** column links to the SHA the harness was built from when the sweep
 ran; the **Date** column is the sweep's ISO timestamp (UTC).
