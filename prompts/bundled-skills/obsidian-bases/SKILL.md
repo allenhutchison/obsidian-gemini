@@ -282,3 +282,54 @@ views:
 - Embed bases in daily notes using `this` to create context-aware views
 - Export views as CSV for spreadsheet use
 - Properties edited in table view update the note's frontmatter directly
+
+## Troubleshooting
+
+### YAML syntax errors
+
+**Unquoted special characters.** Strings containing any of `: { } [ ] , & * # ? | - < > = ! % @ `` ` `` ` must be quoted.
+
+```yaml
+# WRONG
+displayName: Status: Active
+# CORRECT
+displayName: 'Status: Active'
+```
+
+**Mismatched quotes in formulas.** When a formula contains double quotes, wrap the whole value in single quotes.
+
+```yaml
+# WRONG
+formulas:
+  label: "if(done, "Yes", "No")"
+# CORRECT
+formulas:
+  label: 'if(done, "Yes", "No")'
+```
+
+### Common formula errors
+
+**Duration math without a field accessor.** Subtracting two dates returns a duration, not a number — access `.days`, `.hours`, etc. (Subtracting raw datetimes yields milliseconds, so divide if you skip the accessor.)
+
+```yaml
+# WRONG
+'(now() - file.ctime).round(0)'
+# CORRECT
+'(now() - file.ctime).days.round(0)'
+```
+
+**Missing null checks.** Guard properties that may be absent with `if()`, or the formula errors on notes that lack them.
+
+```yaml
+# WRONG
+'(date(due_date) - today()).days'
+# CORRECT
+'if(due_date, (date(due_date) - today()).days, "")'
+```
+
+**Referencing an undefined formula.** Every `formula.X` used in `order` or `properties` must have a matching entry under `formulas`.
+
+### Rendering
+
+- Embedded `base` code blocks only render in Reading view or Live Preview — they show as raw YAML in Source mode.
+- Map view requires the Maps plugin (Obsidian 1.10+); without it, a `map` view won't render.

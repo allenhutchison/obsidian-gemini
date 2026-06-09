@@ -32,7 +32,9 @@ For the design rationale behind bundled skills — why they exist, how progressi
 Gemini Scribe ships with built-in skills that are always available:
 
 - **gemini-scribe-help** — The agent can answer questions about the plugin itself by loading the relevant documentation on demand. Ask things like "How do I set up completions?" or "What settings are available?"
+- **obsidian-markdown** — Guides the agent through Obsidian Flavored Markdown: wikilinks, embeds, callouts, block references, tags, comments, highlights, and math.
 - **obsidian-bases** — Guides the agent through creating and configuring Obsidian Bases, including filters, formulas, views, and common patterns like task trackers and project dashboards.
+- **json-canvas** — Guides the agent through creating and editing Obsidian Canvas (`.canvas`) files — text, file, link, and group nodes plus the edges between them.
 - **obsidian-properties** — Helps the agent work with Obsidian note properties (frontmatter), including creating, editing, and querying properties.
 - **audio-transcription** — Guides the agent through transcribing audio and video files into structured notes with timestamps, speaker labels, and summaries.
 - **deep-research** — Guides the agent to use deep research for comprehensive, multi-source investigation and report generation, with clear guidance on when to use it vs a quick Google search.

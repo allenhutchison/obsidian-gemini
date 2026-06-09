@@ -18,11 +18,25 @@ describe('BundledSkillRegistry', () => {
 			expect(help!.description).toBeTruthy();
 		});
 
+		it('should include obsidian-markdown skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const md = summaries.find((s) => s.name === 'obsidian-markdown');
+			expect(md).toBeDefined();
+			expect(md!.description).toBeTruthy();
+		});
+
 		it('should include obsidian-bases skill', () => {
 			const summaries = BundledSkillRegistry.getSummaries();
 			const bases = summaries.find((s) => s.name === 'obsidian-bases');
 			expect(bases).toBeDefined();
 			expect(bases!.description).toBeTruthy();
+		});
+
+		it('should include json-canvas skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const canvas = summaries.find((s) => s.name === 'json-canvas');
+			expect(canvas).toBeDefined();
+			expect(canvas!.description).toBeTruthy();
 		});
 
 		it('should include obsidian-properties skill', () => {
@@ -93,10 +107,22 @@ describe('BundledSkillRegistry', () => {
 			expect(content).toContain('<!-- STATE_FOLDER -->');
 		});
 
+		it('should return body content for obsidian-markdown', () => {
+			const content = BundledSkillRegistry.loadSkill('obsidian-markdown');
+			expect(content).not.toBeNull();
+			expect(content).toContain('wikilink');
+		});
+
 		it('should return body content for obsidian-bases', () => {
 			const content = BundledSkillRegistry.loadSkill('obsidian-bases');
 			expect(content).not.toBeNull();
 			expect(content).toContain('Bases');
+		});
+
+		it('should return body content for json-canvas', () => {
+			const content = BundledSkillRegistry.loadSkill('json-canvas');
+			expect(content).not.toBeNull();
+			expect(content).toContain('JSON Canvas');
 		});
 
 		it('should return body content for obsidian-properties', () => {
