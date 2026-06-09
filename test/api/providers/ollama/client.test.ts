@@ -75,6 +75,7 @@ describe('OllamaClient', () => {
 			});
 
 			const response = await client.generateModelResponse({
+				kind: 'base',
 				prompt: 'say hi',
 				temperature: 0.2,
 			});
@@ -554,7 +555,7 @@ describe('OllamaClient', () => {
 				done: true,
 			});
 
-			await c.generateModelResponse({ prompt: 'test' });
+			await c.generateModelResponse({ kind: 'base', prompt: 'test' });
 
 			expect(ollamaCalls.generate.mock.calls[0][0].options.num_predict).toBe(1024);
 		});
@@ -625,7 +626,9 @@ describe('OllamaClient', () => {
 			ollamaCalls.generate.mockResolvedValue(stream);
 
 			const chunks: string[] = [];
-			const streaming = client.generateStreamingResponse({ prompt: 'hello' }, (chunk) => chunks.push(chunk.text));
+			const streaming = client.generateStreamingResponse({ kind: 'base', prompt: 'hello' }, (chunk) =>
+				chunks.push(chunk.text)
+			);
 			const result = await streaming.complete;
 
 			expect(chunks.join('')).toBe('hello!');
@@ -690,7 +693,9 @@ describe('OllamaClient', () => {
 	describe('no model error', () => {
 		it('generateModelResponse throws when no model configured', async () => {
 			const c = new OllamaClient({ baseUrl: 'http://localhost:11434' }, undefined, buildPlugin());
-			await expect(c.generateModelResponse({ prompt: 'test' })).rejects.toThrow('No Ollama model selected');
+			await expect(c.generateModelResponse({ kind: 'base', prompt: 'test' })).rejects.toThrow(
+				'No Ollama model selected'
+			);
 		});
 
 		it('streaming throws when no model configured', async () => {

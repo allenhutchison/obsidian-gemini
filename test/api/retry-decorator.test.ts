@@ -34,7 +34,7 @@ function createRetryConfig(overrides?: Partial<RetryConfig>): RetryConfig {
 }
 
 const successResponse: ModelResponse = { markdown: 'Hello', rendered: '' };
-const dummyRequest: BaseModelRequest = { prompt: 'test' };
+const dummyRequest: BaseModelRequest = { kind: 'base', prompt: 'test' };
 
 describe('RetryDecorator', () => {
 	beforeEach(() => {
