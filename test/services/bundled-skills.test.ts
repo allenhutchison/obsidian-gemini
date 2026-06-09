@@ -107,10 +107,22 @@ describe('BundledSkillRegistry', () => {
 			expect(content).toContain('<!-- STATE_FOLDER -->');
 		});
 
+		it('should return body content for obsidian-markdown', () => {
+			const content = BundledSkillRegistry.loadSkill('obsidian-markdown');
+			expect(content).not.toBeNull();
+			expect(content).toContain('wikilink');
+		});
+
 		it('should return body content for obsidian-bases', () => {
 			const content = BundledSkillRegistry.loadSkill('obsidian-bases');
 			expect(content).not.toBeNull();
 			expect(content).toContain('Bases');
+		});
+
+		it('should return body content for json-canvas', () => {
+			const content = BundledSkillRegistry.loadSkill('json-canvas');
+			expect(content).not.toBeNull();
+			expect(content).toContain('JSON Canvas');
 		});
 
 		it('should return body content for obsidian-properties', () => {
