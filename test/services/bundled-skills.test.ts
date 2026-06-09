@@ -18,11 +18,25 @@ describe('BundledSkillRegistry', () => {
 			expect(help!.description).toBeTruthy();
 		});
 
+		it('should include obsidian-markdown skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const md = summaries.find((s) => s.name === 'obsidian-markdown');
+			expect(md).toBeDefined();
+			expect(md!.description).toBeTruthy();
+		});
+
 		it('should include obsidian-bases skill', () => {
 			const summaries = BundledSkillRegistry.getSummaries();
 			const bases = summaries.find((s) => s.name === 'obsidian-bases');
 			expect(bases).toBeDefined();
 			expect(bases!.description).toBeTruthy();
+		});
+
+		it('should include json-canvas skill', () => {
+			const summaries = BundledSkillRegistry.getSummaries();
+			const canvas = summaries.find((s) => s.name === 'json-canvas');
+			expect(canvas).toBeDefined();
+			expect(canvas!.description).toBeTruthy();
 		});
 
 		it('should include obsidian-properties skill', () => {

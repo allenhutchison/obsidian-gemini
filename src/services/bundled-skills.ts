@@ -2,7 +2,9 @@ import type { SkillSummary } from './skill-manager';
 
 // Import bundled skill SKILL.md files
 import helpSkillMd from '../../prompts/bundled-skills/gemini-scribe-help/SKILL.md';
+import markdownSkillMd from '../../prompts/bundled-skills/obsidian-markdown/SKILL.md';
 import basesSkillMd from '../../prompts/bundled-skills/obsidian-bases/SKILL.md';
+import canvasSkillMd from '../../prompts/bundled-skills/json-canvas/SKILL.md';
 import propertiesSkillMd from '../../prompts/bundled-skills/obsidian-properties/SKILL.md';
 import audioTranscriptionSkillMd from '../../prompts/bundled-skills/audio-transcription/SKILL.md';
 import deepResearchSkillMd from '../../prompts/bundled-skills/deep-research/SKILL.md';
@@ -57,11 +59,27 @@ skills.set('gemini-scribe-help', {
 	resources: helpResources,
 });
 
+// Register obsidian-markdown
+skills.set('obsidian-markdown', {
+	name: 'obsidian-markdown',
+	description: parseDescription(markdownSkillMd),
+	content: stripFrontmatter(markdownSkillMd),
+	resources: new Map(),
+});
+
 // Register obsidian-bases
 skills.set('obsidian-bases', {
 	name: 'obsidian-bases',
 	description: parseDescription(basesSkillMd),
 	content: stripFrontmatter(basesSkillMd),
+	resources: new Map(),
+});
+
+// Register json-canvas
+skills.set('json-canvas', {
+	name: 'json-canvas',
+	description: parseDescription(canvasSkillMd),
+	content: stripFrontmatter(canvasSkillMd),
 	resources: new Map(),
 });
 
