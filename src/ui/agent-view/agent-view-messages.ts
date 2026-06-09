@@ -236,25 +236,48 @@ export class AgentViewMessages {
 	}
 
 	/**
-	 * Render model reasoning ("thinking") as a collapsed, expandable section.
-	 * Shared by the live-stream finalizer and history re-rendering so reasoning
-	 * looks the same whether it just arrived or was loaded from a session file.
+	 * Render model reasoning ("thinking") as a collapsed, expandable block that
+	 * mirrors the tool-execution rows — a bordered box with a 🧠 header that
+	 * toggles open. Shared by the live-stream finalizer and history re-rendering
+	 * so reasoning looks the same whether it just arrived or was loaded from a
+	 * session file.
 	 */
 	private async renderReasoningSection(parent: HTMLElement, thoughts: string, sourcePath: string): Promise<void> {
-		const section = parent.createDiv({ cls: 'gemini-agent-reasoning' });
+		// Reuse the tool-group/tool-row structure and styling so reasoning reads
+		// as the same kind of collapsible element as a tool call.
+		const block = parent.createDiv({ cls: 'gemini-tool-group gemini-reasoning-block' });
+		const row = block.createDiv({ cls: 'gemini-tool-row gemini-reasoning-row' });
 
-		const header = section.createDiv({ cls: 'gemini-agent-reasoning-header' });
-		const icon = header.createEl('span', { cls: 'gemini-agent-reasoning-icon' });
-		setIcon(icon, 'chevron-right');
-		header.createEl('span', { text: 'Reasoning', cls: 'gemini-agent-reasoning-label' });
+		const header = row.createDiv({ cls: 'gemini-tool-row-header' });
+		header.setAttribute('role', 'button');
+		header.setAttribute('tabindex', '0');
+		header.setAttribute('aria-expanded', 'false');
 
-		const body = section.createDiv({ cls: 'gemini-agent-reasoning-content is-collapsed' });
-		await MarkdownRenderer.render(this.app, formatModelMessage(thoughts), body, sourcePath, this.viewContext);
+		const icon = header.createSpan({ cls: 'gemini-tool-row-icon gemini-reasoning-row-icon' });
+		icon.setText('🧠');
 
-		header.addEventListener('click', () => {
-			const collapsed = body.hasClass('is-collapsed');
-			body.toggleClass('is-collapsed', !collapsed);
-			setIcon(icon, collapsed ? 'chevron-down' : 'chevron-right');
+		header.createSpan({ text: 'Reasoning', cls: 'gemini-tool-row-name' });
+
+		const chevron = header.createSpan({ cls: 'gemini-tool-row-chevron' });
+		setIcon(chevron, 'chevron-right');
+
+		const details = row.createDiv({ cls: 'gemini-tool-row-details gemini-reasoning-row-details' });
+		details.style.display = 'none';
+		await MarkdownRenderer.render(this.app, formatModelMessage(thoughts), details, sourcePath, this.viewContext);
+
+		const toggle = () => {
+			const nowExpanded = header.getAttribute('aria-expanded') !== 'true';
+			details.style.display = nowExpanded ? 'block' : 'none';
+			setIcon(chevron, nowExpanded ? 'chevron-down' : 'chevron-right');
+			row.toggleClass('gemini-tool-row-expanded', nowExpanded);
+			header.setAttribute('aria-expanded', String(nowExpanded));
+		};
+		header.addEventListener('click', toggle);
+		header.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				toggle();
+			}
 		});
 	}
 
