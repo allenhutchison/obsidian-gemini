@@ -225,7 +225,7 @@ function tierRate(row, tier) {
 A few patterns worth calling out from the current rows:
 
 - **The "lite" label is misleading.** `gemini-3.1-flash-lite` (74.1% solve^5)
-  materially beats `gemini-2.5-flash` (57.4%) on the same 54-task suite and
+  materially beats `gemini-2.5-flash` (57.4%) on the same 54-task suite (these baselines predate the June-7 expansion to 59 tasks) and
   the same judge — a ~17pp gap. The newer flash-lite is the more capable
   agentic model despite the name.
 - **The T1 → T4 gradient is doing real work.** Compare `gemma4:e4b`
