@@ -44,17 +44,20 @@ export class AgentViewToolDisplay {
 			attr: { 'aria-label': `Copy ${title.toLowerCase()}`, type: 'button' },
 		});
 		setIcon(copyBtn, 'copy');
-		copyBtn.addEventListener('click', (e) => {
+		copyBtn.addEventListener('click', async (e) => {
 			// Sections live inside the expandable details; don't let the click
 			// bubble up and collapse the row.
 			e.stopPropagation();
-			navigator.clipboard.writeText(getCopyText()).then(
-				() => {
-					setIcon(copyBtn, 'check');
-					window.setTimeout(() => setIcon(copyBtn, 'copy'), 1500);
-				},
-				(err) => this.plugin.logger.error('Failed to copy tool detail to clipboard:', err)
-			);
+			// getCopyText() can throw synchronously (e.g. JSON.stringify on
+			// circular data), so keep it inside the try with the clipboard write.
+			try {
+				const text = getCopyText();
+				await navigator.clipboard.writeText(text);
+				setIcon(copyBtn, 'check');
+				window.setTimeout(() => setIcon(copyBtn, 'copy'), 1500);
+			} catch (err) {
+				this.plugin.logger.error('Failed to copy tool detail to clipboard:', err);
+			}
 		});
 	}
 
