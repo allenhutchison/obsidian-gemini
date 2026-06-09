@@ -2101,8 +2101,13 @@ If your plugin does not need CSS, delete this file.
 	color: white;
 }
 
-/* Model reasoning ("thinking") — reuses the tool-group/row structure so it
-   reads as the same kind of collapsible element as a tool call. */
+/* Model reasoning ("thinking") — a single collapsible line that reuses the
+   tool-row structure but stands on its own (no group box). */
+.gemini-reasoning-row {
+	border-bottom: none;
+	margin: var(--size-2-2) 0;
+}
+
 .gemini-reasoning-row .gemini-tool-row-icon {
 	font-size: 13px;
 	line-height: 1;

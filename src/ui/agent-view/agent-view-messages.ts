@@ -84,6 +84,18 @@ export class AgentViewMessages {
 			emptyState.remove();
 		}
 
+		// Reasoning-only turn (the model thought but produced no text — e.g. before
+		// calling tools). Render it as a bare collapsible line in the conversation
+		// flow, with no "Agent" message header, so reasoning steps don't each spawn
+		// a new attribution.
+		if (entry.role === 'model' && !entry.message.trim() && entry.thoughts?.trim()) {
+			const sourcePath = currentSession?.historyPath || '';
+			await this.renderReasoningSection(this.chatContainer, entry.thoughts, sourcePath);
+			this.scrollToBottom();
+			this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+			return;
+		}
+
 		const messageDiv = this.chatContainer.createDiv({
 			cls: `gemini-agent-message gemini-agent-message-${entry.role}`,
 		});
@@ -236,17 +248,16 @@ export class AgentViewMessages {
 	}
 
 	/**
-	 * Render model reasoning ("thinking") as a collapsed, expandable block that
-	 * mirrors the tool-execution rows — a bordered box with a 🧠 header that
-	 * toggles open. Shared by the live-stream finalizer and history re-rendering
-	 * so reasoning looks the same whether it just arrived or was loaded from a
-	 * session file.
+	 * Render model reasoning ("thinking") as a single collapsible line that
+	 * mirrors a tool-execution row — a 🧠 header that toggles open — but without
+	 * the surrounding group box. Shared by the live-stream finalizer, the
+	 * reasoning-only renderer, and history re-rendering so reasoning looks the
+	 * same whether it just arrived or was loaded from a session file.
 	 */
 	private async renderReasoningSection(parent: HTMLElement, thoughts: string, sourcePath: string): Promise<void> {
-		// Reuse the tool-group/tool-row structure and styling so reasoning reads
-		// as the same kind of collapsible element as a tool call.
-		const block = parent.createDiv({ cls: 'gemini-tool-group gemini-reasoning-block' });
-		const row = block.createDiv({ cls: 'gemini-tool-row gemini-reasoning-row' });
+		// Reuse the tool-row structure/styling (no group wrapper) so reasoning
+		// reads as the same kind of collapsible line as a tool call.
+		const row = parent.createDiv({ cls: 'gemini-tool-row gemini-reasoning-row' });
 
 		const header = row.createDiv({ cls: 'gemini-tool-row-header' });
 		header.setAttribute('role', 'button');
