@@ -107,6 +107,7 @@ export class HookRunner {
 		const model = hook.model ?? this.plugin.settings.chatModelName;
 
 		const initialRequest: ExtendedModelRequest = {
+			kind: 'extended',
 			userMessage,
 			conversationHistory: [],
 			model,

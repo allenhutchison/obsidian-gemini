@@ -117,6 +117,7 @@ describe('GeminiPrompts', () => {
 
 	describe('buildExtendedSystemInstruction', () => {
 		const baseRequest: ExtendedModelRequest = {
+			kind: 'extended',
 			model: 'gemini-test',
 			prompt: '',
 			conversationHistory: [],

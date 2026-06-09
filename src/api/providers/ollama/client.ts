@@ -29,6 +29,7 @@ import {
 	StreamCallback,
 	StreamingModelResponse,
 	InlineDataPart,
+	isExtendedRequest,
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type ObsidianGemini from '../../../main';
@@ -53,7 +54,7 @@ export class OllamaClient implements ModelApi {
 	}
 
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
-		const isExtended = 'userMessage' in request;
+		const isExtended = isExtendedRequest(request);
 		// The factory (`ModelClientFactory.resolveModelName`) is the single
 		// source of role-aware model resolution and always populates
 		// `config.model` per use case (chat / summary / completions / rewrite).
@@ -80,7 +81,7 @@ export class OllamaClient implements ModelApi {
 				};
 			}
 
-			const chatRequest = await this.buildChatRequest(request as ExtendedModelRequest, model, false);
+			const chatRequest = await this.buildChatRequest(request, model, false);
 			const response = await this.client.chat(chatRequest as ChatRequest & { stream: false });
 			return this.toModelResponse(response);
 		} catch (error) {
@@ -93,7 +94,7 @@ export class OllamaClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
-		const isExtended = 'userMessage' in request;
+		const isExtended = isExtendedRequest(request);
 		// See note in generateModelResponse — the factory provides the
 		// role-correct model; no chat-default fallback here.
 		const model = request.model || this.config.model;
@@ -139,7 +140,7 @@ export class OllamaClient implements ModelApi {
 						}
 					}
 				} else {
-					const chatRequest = await this.buildChatRequest(request as ExtendedModelRequest, model, true);
+					const chatRequest = await this.buildChatRequest(request, model, true);
 					const stream = await this.client.chat(chatRequest as ChatRequest & { stream: true });
 					activeStream = stream;
 					if (cancelled) {
@@ -210,7 +211,7 @@ export class OllamaClient implements ModelApi {
 		};
 	}
 
-	private buildOptions(request: BaseModelRequest): Record<string, unknown> {
+	private buildOptions(request: BaseModelRequest | ExtendedModelRequest): Record<string, unknown> {
 		const options: Record<string, unknown> = {};
 		const temperature = request.temperature ?? this.config.temperature;
 		const topP = request.topP ?? this.config.topP;

@@ -76,6 +76,7 @@ export class VaultAnalyzer {
 			modal.updateStatus(`Generating vault context with ${modelName}...`);
 			const modelApi = ModelClientFactory.createChatModel(this.plugin);
 			const response = await modelApi.generateModelResponse({
+				kind: 'base',
 				prompt: analysisPrompt,
 				model: this.plugin.settings.chatModelName,
 			});
@@ -129,6 +130,7 @@ export class VaultAnalyzer {
 
 			const examplePromptsPrompt = this.plugin.prompts.examplePromptsPrompt(vaultInfo, existingPromptsString);
 			const examplePromptsResponse = await modelApi.generateModelResponse({
+				kind: 'base',
 				prompt: examplePromptsPrompt,
 				model: this.plugin.settings.chatModelName,
 			});

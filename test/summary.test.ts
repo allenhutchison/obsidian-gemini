@@ -131,6 +131,7 @@ describe('GeminiSummary', () => {
 			expect(result).toBe('model generated summary');
 			expect(mockPlugin.app.vault.read).toHaveBeenCalledWith(mockFile);
 			expect(mockSummaryModel.generateModelResponse).toHaveBeenCalledWith({
+				kind: 'base',
 				prompt: 'rendered summary prompt text',
 			});
 

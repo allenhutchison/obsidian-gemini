@@ -94,6 +94,7 @@ export class ScheduledTaskRunner {
 		const model = this.task.model ?? this.plugin.settings.chatModelName;
 
 		const initialRequest: ExtendedModelRequest = {
+			kind: 'extended',
 			userMessage,
 			conversationHistory: [],
 			model,

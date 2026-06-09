@@ -521,6 +521,7 @@ export class ContextManager {
 				// instead of the user's configured `summaryModelName`.
 				const summaryClient = ModelClientFactory.createFromPlugin(this.plugin, ModelUseCase.SUMMARY);
 				const response = await summaryClient.generateModelResponse({
+					kind: 'base',
 					prompt: fullPrompt,
 					temperature: 0.3,
 				});

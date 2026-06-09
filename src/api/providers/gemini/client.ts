@@ -21,6 +21,7 @@ import {
 	ToolCall,
 	StreamCallback,
 	StreamingModelResponse,
+	isExtendedRequest,
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type ObsidianGemini from '../../../main';
@@ -201,7 +202,7 @@ export class GeminiClient implements ModelApi {
 	private async buildGenerateContentParams(
 		request: BaseModelRequest | ExtendedModelRequest
 	): Promise<GenerateContentParameters> {
-		const isExtended = 'userMessage' in request;
+		const isExtended = isExtendedRequest(request);
 		const model = request.model || this.config.model || getDefaultModelForRole('chat');
 
 		// Build system instruction
@@ -209,7 +210,7 @@ export class GeminiClient implements ModelApi {
 		if (isExtended) {
 			// Build layered system prompt: identity → vault context → project →
 			// agent rules → tool catalog → custom instructions → per-turn context
-			systemInstruction = await this.prompts.buildExtendedSystemInstruction(request as ExtendedModelRequest);
+			systemInstruction = await this.prompts.buildExtendedSystemInstruction(request);
 		} else {
 			// For BaseModelRequest, prompt is the full input
 			systemInstruction = request.prompt || '';
@@ -235,9 +236,9 @@ export class GeminiClient implements ModelApi {
 		}
 
 		// Add function calling tools
-		const hasTools = isExtended && (request as ExtendedModelRequest).availableTools?.length;
+		const hasTools = isExtended && request.availableTools?.length;
 		if (hasTools) {
-			const tools = (request as ExtendedModelRequest).availableTools!;
+			const tools = request.availableTools!;
 			const functionDeclarations = tools.map((tool) => ({
 				name: tool.name,
 				description: tool.description,
@@ -258,10 +259,9 @@ export class GeminiClient implements ModelApi {
 		if (contents.length === 0 && !isExtended) {
 			// For BaseModelRequest with no conversation, just pass the prompt as string
 			finalContents = request.prompt || '';
-		} else if (contents.length === 0) {
+		} else if (contents.length === 0 && isExtendedRequest(request)) {
 			// For ExtendedModelRequest with no history, create a simple user message
-			const extReq = request as ExtendedModelRequest;
-			finalContents = extReq.userMessage || '';
+			finalContents = request.userMessage || '';
 		}
 
 		const params: GenerateContentParameters = {
@@ -277,7 +277,7 @@ export class GeminiClient implements ModelApi {
 	 * Build Content[] array from request
 	 */
 	private buildContents(request: BaseModelRequest | ExtendedModelRequest): Content[] {
-		if (!('userMessage' in request)) {
+		if (!isExtendedRequest(request)) {
 			// BaseModelRequest - just send the prompt as user message
 			if (!request.prompt) return [];
 			return [
@@ -288,7 +288,7 @@ export class GeminiClient implements ModelApi {
 			];
 		}
 
-		const extReq = request as ExtendedModelRequest;
+		const extReq = request;
 		const contents: Content[] = [];
 
 		// Add conversation history

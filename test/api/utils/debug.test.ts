@@ -55,6 +55,7 @@ describe('logDebugInfo', () => {
 
 	it('should log formatted ExtendedModelRequest if data is an ExtendedModelRequest', () => {
 		const extendedReq = {
+			kind: 'extended' as const,
 			prompt: 'system prompt',
 			conversationHistory: [],
 			userMessage: 'hello',
@@ -70,6 +71,7 @@ describe('logDebugInfo', () => {
 
 	it('should log formatted BaseModelRequest if data is a BaseModelRequest (and not Extended)', () => {
 		const baseReq = {
+			kind: 'base' as const,
 			prompt: 'simple prompt',
 			model: 'gemini-pro-base',
 		};
@@ -167,7 +169,7 @@ describe('isExtendedModelRequest', () => {
 
 describe('formatBaseModelRequest', () => {
 	it('should format a basic request correctly', () => {
-		const req = { prompt: 'Hello\nWorld' };
+		const req = { kind: 'base' as const, prompt: 'Hello\nWorld' };
 		// Using stringContaining because JSON.stringify might have OS-dependent newline for prompt
 		// and the order of properties in the stringified prompt object isn't guaranteed.
 		expect(formatBaseModelRequest(req)).toContain('Model: [default]');
@@ -175,7 +177,7 @@ describe('formatBaseModelRequest', () => {
 	});
 
 	it('should include model name if provided', () => {
-		const req = { model: 'gemini-pro', prompt: 'test' };
+		const req = { kind: 'base' as const, model: 'gemini-pro', prompt: 'test' };
 		expect(formatBaseModelRequest(req)).toContain('Model: gemini-pro');
 		expect(formatBaseModelRequest(req)).toContain('Prompt: "test"');
 	});
@@ -183,6 +185,7 @@ describe('formatBaseModelRequest', () => {
 
 describe('formatExtendedModelRequest', () => {
 	const req = {
+		kind: 'extended' as const,
 		model: 'gemini-1.5-pro',
 		prompt: 'System prompt here',
 		userMessage: 'User says hi',

@@ -495,6 +495,7 @@ describe('ImageGeneration.suggestPromptFromPage', () => {
 
 		expect(ModelClientFactory.createSummaryModel).toHaveBeenCalledWith(mockPlugin);
 		expect(mockModelApi.generateModelResponse).toHaveBeenCalledWith({
+			kind: 'base',
 			prompt: 'generated prompt text',
 		});
 		expect(result).toBe('A beautiful cat sitting on a table');

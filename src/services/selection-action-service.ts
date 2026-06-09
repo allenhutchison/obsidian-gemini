@@ -136,6 +136,7 @@ export class SelectionActionService {
 			// Add timeout protection (60 seconds) to prevent indefinite hanging
 			const timeoutMs = 60000;
 			const responsePromise = modelApi.generateModelResponse({
+				kind: 'extended',
 				userMessage: userMessage,
 				conversationHistory: [],
 				model: this.plugin.settings.chatModelName,

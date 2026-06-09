@@ -180,6 +180,7 @@ export class ImageGeneration {
 		const modelApi = ModelClientFactory.createSummaryModel(this.plugin);
 
 		const request: BaseModelRequest = {
+			kind: 'base',
 			prompt: this.prompts.imagePromptGenerator({ content: fileContent }),
 		};
 

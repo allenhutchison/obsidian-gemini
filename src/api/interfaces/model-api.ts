@@ -44,10 +44,16 @@ export interface ToolCall {
 /**
  * Represents a basic request to a model.
  *
+ * @property kind - Discriminant for the request union. `'base'` marks a one-shot
+ *   prompt request whose full input lives in `prompt`. Required so TypeScript
+ *   flags a base request that accidentally carries extended-only fields (e.g. a
+ *   stray `userMessage`) instead of the union silently misrouting it at runtime
+ *   (see #859).
  * @property model - Optional model identifier. If not provided, the default model will be used.
  * @property prompt - The prompt or input text for the model. Should be fully processed.
  */
 export interface BaseModelRequest {
+	kind: 'base';
 	model?: string;
 	prompt: string;
 	temperature?: number;
@@ -76,7 +82,9 @@ export interface InlineDataPart {
  * @property inlineAttachments - Optional array of inline data attachments for multimodal input
  * @property imageAttachments - Deprecated alias for inlineAttachments
  */
-export interface ExtendedModelRequest extends BaseModelRequest {
+export interface ExtendedModelRequest extends Omit<BaseModelRequest, 'kind'> {
+	/** Discriminant for the request union. `'extended'` marks a chat-style request. */
+	kind: 'extended';
 	conversationHistory: Content[];
 	userMessage: string;
 	renderContent?: boolean;
@@ -140,6 +148,16 @@ export type StreamCallback = (chunk: StreamChunk) => void;
 export interface StreamingModelResponse {
 	complete: Promise<ModelResponse>;
 	cancel: () => void;
+}
+
+/**
+ * Canonical discriminator for the `BaseModelRequest | ExtendedModelRequest`
+ * union. Narrows on the required `kind` field. Prefer this over ad-hoc
+ * `'userMessage' in request` checks, which silently misclassify a base request
+ * that happens to carry a stray `userMessage` (see #859).
+ */
+export function isExtendedRequest(request: BaseModelRequest | ExtendedModelRequest): request is ExtendedModelRequest {
+	return request.kind === 'extended';
 }
 
 /**
