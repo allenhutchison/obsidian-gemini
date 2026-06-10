@@ -669,8 +669,14 @@ export class AgentView extends ItemView {
 		executionId: string,
 		diffContext?: import('../../tools/types').DiffContext
 	): Promise<import('../../tools/types').ConfirmationResult> {
-		// Delegate to messages component
-		return this.messages.displayConfirmationRequest(tool, parameters, executionId, diffContext);
+		// Delegate to messages component for the request card (main flow).
+		const result = await this.messages.displayConfirmationRequest(tool, parameters, executionId, diffContext);
+		// On grant, record the acknowledgment in the tool stack rather than the
+		// main flow, next to the tool it authorized.
+		if (result.confirmed) {
+			this.tools?.showPermissionGranted(tool.displayName || tool.name);
+		}
+		return result;
 	}
 
 	/**
@@ -727,6 +733,8 @@ export class AgentView extends ItemView {
 				this.progress.update(statusText, state),
 			hideProgress: () => this.progress.hide(),
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
+			renderReasoning: (container: HTMLElement, thoughts: string, sourcePath: string) =>
+				this.messages.renderReasoningInto(container, thoughts, sourcePath),
 			incrementToolCallCount: (count: number) => {
 				this.send?.incrementToolCallCount(count);
 			},

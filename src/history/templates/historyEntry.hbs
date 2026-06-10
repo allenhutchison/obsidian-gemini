@@ -6,6 +6,7 @@
 ---
 
 {{/if}}
+{{#if hasMessage}}
 ## {{displayName}}
 
 > [!metadata]- Message Info
@@ -37,4 +38,14 @@
 > {{{this}}}
 {{/each}}
 
---- 
+{{/if}}
+{{#if thoughtLines}}
+> [!reasoning]- Reasoning
+{{#each thoughtLines}}
+> {{{this}}}
+{{/each}}
+
+{{/if}}
+{{#if hasMessage}}
+---
+{{/if}}

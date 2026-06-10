@@ -84,6 +84,18 @@ export class AgentViewMessages {
 			emptyState.remove();
 		}
 
+		// Reasoning-only turn (the model thought but produced no text — e.g. before
+		// calling tools). Render it as a bare collapsible line in the conversation
+		// flow, with no "Agent" message header, so reasoning steps don't each spawn
+		// a new attribution.
+		if (entry.role === 'model' && !entry.message.trim() && entry.thoughts?.trim()) {
+			const sourcePath = currentSession?.historyPath || '';
+			await this.renderReasoningSection(this.chatContainer, entry.thoughts, sourcePath);
+			this.scrollToBottom();
+			this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+			return;
+		}
+
 		const messageDiv = this.chatContainer.createDiv({
 			cls: `gemini-agent-message gemini-agent-message-${entry.role}`,
 		});
@@ -199,14 +211,19 @@ export class AgentViewMessages {
 			await MarkdownRenderer.render(this.app, formattedMessage, content, sourcePath, this.viewContext);
 		}
 
+		// Render model reasoning as a collapsible section below the message.
+		if (entry.role === 'model' && entry.thoughts?.trim()) {
+			await this.renderReasoningSection(content, entry.thoughts, sourcePath);
+		}
+
 		// Scroll to bottom after displaying message
 		this.scrollToBottom();
 
 		// Setup image click handlers
 		this.setupImageClickHandlers(content, sourcePath);
 
-		// Add a copy button for both user and model messages
-		if (entry.role === 'model' || entry.role === 'user') {
+		// Add a copy button for messages with visible text (skip reasoning-only turns).
+		if ((entry.role === 'model' || entry.role === 'user') && renderMessage.trim()) {
 			const copyButton = content.createEl('button', {
 				cls: 'gemini-agent-copy-button',
 			});
@@ -228,6 +245,60 @@ export class AgentViewMessages {
 
 		// Auto-scroll to bottom
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+	}
+
+	/**
+	 * Public entry point to render a reasoning line into an arbitrary container —
+	 * e.g. the tool group body, so reasoning interleaves with tool rows. Shares
+	 * the single row renderer so live and reload reasoning look identical.
+	 */
+	async renderReasoningInto(container: HTMLElement, thoughts: string, sourcePath: string): Promise<void> {
+		await this.renderReasoningSection(container, thoughts, sourcePath);
+	}
+
+	/**
+	 * Render model reasoning ("thinking") as a single collapsible line that
+	 * mirrors a tool-execution row — a 🧠 header that toggles open — but without
+	 * the surrounding group box. Shared by the live-stream finalizer, the
+	 * reasoning-only renderer, and history re-rendering so reasoning looks the
+	 * same whether it just arrived or was loaded from a session file.
+	 */
+	private async renderReasoningSection(parent: HTMLElement, thoughts: string, sourcePath: string): Promise<void> {
+		// Reuse the tool-row structure/styling (no group wrapper) so reasoning
+		// reads as the same kind of collapsible line as a tool call.
+		const row = parent.createDiv({ cls: 'gemini-tool-row gemini-reasoning-row' });
+
+		const header = row.createDiv({ cls: 'gemini-tool-row-header' });
+		header.setAttribute('role', 'button');
+		header.setAttribute('tabindex', '0');
+		header.setAttribute('aria-expanded', 'false');
+
+		const icon = header.createSpan({ cls: 'gemini-tool-row-icon gemini-reasoning-row-icon' });
+		icon.setText('🧠');
+
+		header.createSpan({ text: 'Reasoning', cls: 'gemini-tool-row-name' });
+
+		const chevron = header.createSpan({ cls: 'gemini-tool-row-chevron' });
+		setIcon(chevron, 'chevron-right');
+
+		const details = row.createDiv({ cls: 'gemini-tool-row-details gemini-reasoning-row-details' });
+		details.style.display = 'none';
+		await MarkdownRenderer.render(this.app, formatModelMessage(thoughts), details, sourcePath, this.viewContext);
+
+		const toggle = () => {
+			const nowExpanded = header.getAttribute('aria-expanded') !== 'true';
+			details.style.display = nowExpanded ? 'block' : 'none';
+			setIcon(chevron, nowExpanded ? 'chevron-down' : 'chevron-right');
+			row.toggleClass('gemini-tool-row-expanded', nowExpanded);
+			header.setAttribute('aria-expanded', String(nowExpanded));
+		};
+		header.addEventListener('click', toggle);
+		header.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				toggle();
+			}
+		});
 	}
 
 	/**
@@ -295,8 +366,14 @@ export class AgentViewMessages {
 			const sourcePath = currentSession?.historyPath || '';
 			await MarkdownRenderer.render(this.app, formattedMessage, messageDiv, sourcePath, this.viewContext);
 
-			// Add a copy button for model messages
-			if (entry.role === 'model') {
+			// Render model reasoning as a collapsible section below the message.
+			if (entry.role === 'model' && entry.thoughts?.trim()) {
+				await this.renderReasoningSection(messageDiv, entry.thoughts, sourcePath);
+			}
+
+			// Add a copy button only when there's visible message text — mirrors the
+			// reasoning-only suppression in displayMessage.
+			if (entry.role === 'model' && fullMarkdown.trim()) {
 				const copyButton = messageDiv.createEl('button', {
 					cls: 'gemini-agent-copy-button',
 				});
@@ -706,8 +783,15 @@ export class AgentViewMessages {
 				allowBtn.removeEventListener('click', allowHandler);
 				cancelBtn.removeEventListener('click', cancelHandler);
 
-				// Update message to show result
-				this.updateConfirmationResult(messageDiv, confirmed, tool.displayName || tool.name);
+				// On grant, drop the request card from the main flow — the caller
+				// renders a "permission granted" row into the tool stack instead, so
+				// the acknowledgment lives next to the tool it authorized. Denials
+				// stay in the main flow as a visible interruption.
+				if (confirmed) {
+					messageDiv.remove();
+				} else {
+					this.updateConfirmationResult(messageDiv, confirmed, tool.displayName || tool.name);
+				}
 
 				// Resolve Promise
 				resolve({

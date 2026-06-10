@@ -2101,6 +2101,51 @@ If your plugin does not need CSS, delete this file.
 	color: white;
 }
 
+/* Model reasoning ("thinking") — a single collapsible line that reuses the
+   tool-row structure. Standalone (below an answer / on reload) it stands on its
+   own; inside a tool group it sits flush with the tool rows. */
+.gemini-reasoning-row {
+	border-bottom: none;
+	margin: var(--size-2-2) 0;
+}
+
+/* Inside the tool group, interleave flush with tool rows (border separators,
+   no extra margin) so reasoning and tool calls read as one activity stream. */
+.gemini-tool-group-body .gemini-reasoning-row {
+	margin: 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* "Permission granted" acknowledgment row — sits in the tool stack next to the
+   tool it authorized. Non-collapsible (no chevron); a muted info line. */
+.gemini-permission-row .gemini-tool-row-header {
+	cursor: default;
+}
+
+.gemini-permission-row .gemini-tool-row-name {
+	font-weight: 400;
+	color: var(--text-muted);
+}
+
+.gemini-permission-row-icon {
+	color: var(--color-green);
+}
+
+.gemini-reasoning-row .gemini-tool-row-icon {
+	font-size: 13px;
+	line-height: 1;
+}
+
+/* No status badge on a reasoning row, so push the chevron to the right edge. */
+.gemini-reasoning-row .gemini-tool-row-chevron {
+	margin-left: auto;
+}
+
+.gemini-reasoning-row-details {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
 @keyframes pulse {
 	0% {
 		opacity: 1;

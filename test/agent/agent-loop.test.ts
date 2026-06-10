@@ -148,6 +148,98 @@ describe('AgentLoop', () => {
 		});
 	});
 
+	describe('model reasoning (thoughts)', () => {
+		test('terminal text response surfaces its thoughts on the result', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([
+				{ markdown: 'the final answer', rendered: '', thoughts: 'I reasoned about it' },
+			]);
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(result.markdown).toBe('the final answer');
+			expect(result.thoughts).toBe('I reasoned about it');
+		});
+
+		test('intermediate reasoning fires onModelReasoning before the next tool batch', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			// First follow-up: reasoning + more tools. Second follow-up: terminal text.
+			const api = makeScriptedModelApi([
+				{
+					markdown: '',
+					rendered: '',
+					toolCalls: [tc('write_file', { path: 'b.md', content: 'x' })],
+					thoughts: 'why I call write_file',
+				},
+				{ markdown: 'done', rendered: '', thoughts: 'final reasoning' },
+			]);
+
+			const reasoning: string[] = [];
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onModelReasoning: (t) => {
+							reasoning.push(t);
+						},
+					},
+				},
+			});
+
+			// The intermediate (tools-continuing) reasoning goes through the hook;
+			// the terminal reasoning comes back on the result.
+			expect(reasoning).toEqual(['why I call write_file']);
+			expect(result.thoughts).toBe('final reasoning');
+		});
+
+		test('does not fire onModelReasoning when intermediate response has no thoughts', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([
+				toolResponse([tc('write_file', { path: 'b.md', content: 'x' })]),
+				textResponse('done'),
+			]);
+
+			const reasoning: string[] = [];
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onModelReasoning: (t) => {
+							reasoning.push(t);
+						},
+					},
+				},
+			});
+
+			expect(reasoning).toEqual([]);
+		});
+	});
+
 	describe('tool sorting', () => {
 		test('reads execute before writes within a batch', async () => {
 			const plugin = buildPlugin();

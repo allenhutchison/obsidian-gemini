@@ -224,6 +224,26 @@ export class AgentViewToolDisplay {
 	 * Show tool execution in the UI as a compact row inside a group container.
 	 * If no group container is active, creates a standalone fallback.
 	 */
+	/**
+	 * Render a compact "permission granted" row into the tool group, next to the
+	 * tool it authorized. Falls back to the main flow only if no group is active.
+	 */
+	public showPermissionGranted(toolName: string, groupContainer?: HTMLElement | null): void {
+		const body = groupContainer?.querySelector('.gemini-tool-group-body') as HTMLElement | null;
+		const target = body || this.chatContainer;
+
+		const row = target.createDiv({ cls: 'gemini-tool-row gemini-permission-row' });
+		const header = row.createDiv({ cls: 'gemini-tool-row-header' });
+
+		const icon = header.createSpan({ cls: 'gemini-tool-row-icon gemini-permission-row-icon' });
+		setIcon(icon, 'shield-check');
+
+		header.createSpan({
+			text: `Permission granted: ${toolName}`,
+			cls: 'gemini-tool-row-name',
+		});
+	}
+
 	public async showToolExecution(
 		toolName: string,
 		parameters: any,
