@@ -371,8 +371,9 @@ export class AgentViewMessages {
 				await this.renderReasoningSection(messageDiv, entry.thoughts, sourcePath);
 			}
 
-			// Add a copy button for model messages
-			if (entry.role === 'model') {
+			// Add a copy button only when there's visible message text — mirrors the
+			// reasoning-only suppression in displayMessage.
+			if (entry.role === 'model' && fullMarkdown.trim()) {
 				const copyButton = messageDiv.createEl('button', {
 					cls: 'gemini-agent-copy-button',
 				});
