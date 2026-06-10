@@ -210,73 +210,72 @@ export class SessionHistory {
 		for (const section of contentSections) {
 			if (!section.trim()) continue;
 
-			// An entry is identified by its callout, not a `## ` header: user and
-			// assistant turns carry a header + metadata, but streamlined
-			// reasoning-only turns are just a `> [!reasoning]-` callout. The role
-			// is derived from the callout type below.
+			// A section can hold more than one entry: a streamlined activity run
+			// is several `> [!reasoning]-` callouts (and `> [!tools]-` logs) with no
+			// `---` between them, and the final-answer section is an
+			// `> [!assistant]+` message followed by its reasoning. Walk every callout
+			// in order rather than assuming one entry per section.
 			const lines = section.split('\n');
 
-			// Extract the message from the `> [!user]+` / `> [!assistant]+` callout.
-			const calloutRegex = /^> \[!(user|assistant)\]\+\s*$/m;
-			const calloutMatch = section.match(calloutRegex);
-			let role: 'user' | 'model' | null = null;
-			let message = '';
-			if (calloutMatch) {
-				role = calloutMatch[1] === 'user' ? 'user' : 'model';
-				const calloutIndex = lines.findIndex((line) => calloutRegex.test(line));
-				if (calloutIndex !== -1) {
-					message = this.extractCalloutBody(lines, calloutIndex).join('\n').trim();
-				}
-			}
+			// Section-level metadata (timestamp / model) lives in the `## ` header's
+			// Message Info table and applies to the message entry in the section.
+			const timeMatch = section.match(/\| Time \| ([^|]+) \|/);
+			const sectionTimestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
+			const modelMatch = section.match(/\| Model \| ([^|]+) \|/);
+			const sectionModel = modelMatch ? modelMatch[1].trim() : undefined;
+			const toolNameMatch = section.match(/\*\*Tool:\*\* `([^`]+)`/);
+			const toolStatusMatch = section.match(/\*\*Status:\*\* (Success|Error)/);
 
-			// Extract model reasoning from the optional `> [!reasoning]-` callout.
-			// A section with reasoning but no message callout is a "reasoning-only"
-			// model turn (thoughts the model produced before calling tools).
-			const reasoningIndex = lines.findIndex((line) => /^> \[!reasoning\]-/.test(line));
-			let thoughts: string | undefined;
-			if (reasoningIndex !== -1) {
-				const body = this.extractCalloutBody(lines, reasoningIndex).join('\n').trim();
-				if (body) {
-					thoughts = body;
-					if (!role) role = 'model';
-				}
-			}
+			// The most recent entry created in this section — a reasoning callout that
+			// immediately follows an answer attaches to it as `thoughts`; otherwise
+			// it's a standalone reasoning-only turn.
+			let lastInSection: GeminiConversationEntry | null = null;
 
-			if (role && (message || thoughts)) {
-				// Extract timestamp from metadata if available
-				const timeMatch = section.match(/\| Time \| ([^|]+) \|/);
-				const timestamp = timeMatch ? new Date(timeMatch[1].trim()) : new Date();
+			for (let i = 0; i < lines.length; i++) {
+				const messageMatch = lines[i].match(/^> \[!(user|assistant)\]\+\s*$/);
+				if (messageMatch) {
+					const role = messageMatch[1] === 'user' ? 'user' : 'model';
+					const message = this.extractCalloutBody(lines, i).join('\n').trim();
+					if (!message) continue;
 
-				// Extract model info if available
-				const modelMatch = section.match(/\| Model \| ([^|]+) \|/);
-				const model = modelMatch ? modelMatch[1].trim() : undefined;
-
-				// Check for tool execution info
-				const toolNameMatch = section.match(/\*\*Tool:\*\* `([^`]+)`/);
-				const toolStatusMatch = section.match(/\*\*Status:\*\* (Success|Error)/);
-
-				const entry: GeminiConversationEntry = {
-					role,
-					message,
-					notePath: '',
-					created_at: timestamp,
-					model,
-				};
-
-				if (thoughts) {
-					entry.thoughts = thoughts;
-				}
-
-				// Add tool execution info if found
-				if (toolNameMatch) {
-					entry.metadata = {
-						...entry.metadata,
-						toolName: toolNameMatch[1],
-						toolStatus: toolStatusMatch ? toolStatusMatch[1].toLowerCase() : undefined,
+					const entry: GeminiConversationEntry = {
+						role,
+						message,
+						notePath: '',
+						created_at: sectionTimestamp,
+						model: sectionModel,
 					};
+					if (toolNameMatch) {
+						entry.metadata = {
+							toolName: toolNameMatch[1],
+							toolStatus: toolStatusMatch ? toolStatusMatch[1].toLowerCase() : undefined,
+						};
+					}
+					entries.push(entry);
+					lastInSection = entry;
+					continue;
 				}
 
-				entries.push(entry);
+				if (/^> \[!reasoning\]-/.test(lines[i])) {
+					const body = this.extractCalloutBody(lines, i).join('\n').trim();
+					if (!body) continue;
+
+					if (lastInSection && lastInSection.role === 'model' && lastInSection.message && !lastInSection.thoughts) {
+						// Reasoning that follows an answer is that answer's thinking.
+						lastInSection.thoughts = body;
+					} else {
+						const entry: GeminiConversationEntry = {
+							role: 'model',
+							message: '',
+							notePath: '',
+							created_at: sectionTimestamp,
+							model: sectionModel,
+							thoughts: body,
+						};
+						entries.push(entry);
+						lastInSection = entry;
+					}
+				}
 			}
 		}
 

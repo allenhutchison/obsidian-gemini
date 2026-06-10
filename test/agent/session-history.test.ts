@@ -1199,6 +1199,70 @@ describe('SessionHistory', () => {
 			expect(result[2].thoughts).toBe('The headings were inconsistent, so I normalized them.');
 		});
 
+		it('parses an interleaved activity run (reasoning + tool callouts, no --- between)', async () => {
+			const mockFile = makeTFile('gemini-scribe/Agent-Sessions/Test.md');
+			(mockFile as any).extension = 'md';
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
+
+			// Mirrors the streamlined on-disk shape: the activity stream is reasoning
+			// and tool callouts flowing together with no horizontal rules; only the
+			// user message and the final answer are `---`-separated sections.
+			const content = [
+				'## Allen',
+				'',
+				'> [!metadata]- Message Info',
+				'> | Property | Value |',
+				'> | -------- | ----- |',
+				'> | Time | 2026-01-01T00:00:00Z |',
+				'',
+				'> [!user]+',
+				'> Find live jazz near my hotel.',
+				'',
+				'---',
+				'',
+				'> [!reasoning]- Reasoning',
+				'> The vault has nothing; I should search.',
+				'',
+				'> [!tools]- Tool Execution',
+				'> 🔧 `vault_semantic_search` query="jazz" → success (10ms)',
+				'',
+				'> [!reasoning]- Reasoning',
+				'> Now confirm distances.',
+				'',
+				'> [!tools]- Tool Execution',
+				'> 🔧 `google_search` query="jazz hotel" → success (20ms)',
+				'',
+				'## Model',
+				'',
+				'> [!metadata]- Message Info',
+				'> | Property | Value |',
+				'> | -------- | ----- |',
+				'> | Time | 2026-01-01T00:01:00Z |',
+				'> | Model | gemini-3.5-flash |',
+				'',
+				'> [!assistant]+',
+				'> Here are two options.',
+				'',
+				'> [!reasoning]- Reasoning',
+				'> Organize by proximity.',
+				'',
+				'---',
+			].join('\n');
+			mockPlugin.app.vault.read.mockResolvedValue(content);
+
+			const result = await sessionHistory.getHistoryForSession(createMockSession());
+
+			expect(result).toHaveLength(4);
+			expect(result[0]).toMatchObject({ role: 'user', message: 'Find live jazz near my hotel.' });
+			expect(result[1]).toMatchObject({ role: 'model', message: '' });
+			expect(result[1].thoughts).toBe('The vault has nothing; I should search.');
+			expect(result[2]).toMatchObject({ role: 'model', message: '' });
+			expect(result[2].thoughts).toBe('Now confirm distances.');
+			expect(result[3]).toMatchObject({ role: 'model', message: 'Here are two options.' });
+			expect(result[3].thoughts).toBe('Organize by proximity.');
+		});
+
 		it('leaves thoughts undefined for legacy entries without a reasoning callout', async () => {
 			mockFile = makeTFile('gemini-scribe/Agent-Sessions/Test.md');
 			(mockFile as any).extension = 'md';
