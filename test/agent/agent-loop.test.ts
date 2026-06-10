@@ -194,7 +194,11 @@ describe('AgentLoop', () => {
 					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
-					hooks: { onModelReasoning: (t) => reasoning.push(t) },
+					hooks: {
+						onModelReasoning: (t) => {
+							reasoning.push(t);
+						},
+					},
 				},
 			});
 
@@ -224,7 +228,11 @@ describe('AgentLoop', () => {
 					confirmationProvider,
 					isCancelled: () => false,
 					createModelApi: () => api,
-					hooks: { onModelReasoning: (t) => reasoning.push(t) },
+					hooks: {
+						onModelReasoning: (t) => {
+							reasoning.push(t);
+						},
+					},
 				},
 			});
 
