@@ -196,6 +196,7 @@ Use the appropriate checklist based on what your change affects. All changes sho
 - [ ] `npm run format-check` passes
 - [ ] `npm run build` succeeds
 - [ ] `npm test` passes
+- [ ] `npm run typecheck:test` passes (if test files were changed — CI runs this separately)
 - [ ] Plugin loads without console errors
 - [ ] Plugin unloads and reloads cleanly
 
@@ -233,17 +234,21 @@ Use the appropriate checklist based on what your change affects. All changes sho
 
 The project enforces quality gates through git hooks and CI:
 
-| Check      | Command                | When it runs    |
-| ---------- | ---------------------- | --------------- |
-| Formatting | `npm run format-check` | Pre-commit hook |
-| Build      | `npm run build`        | Pre-push hook   |
-| Tests      | `npm test`             | Pre-push hook   |
+| Check          | Command                  | When it runs    |
+| -------------- | ------------------------ | --------------- |
+| Formatting     | `npm run format-check`   | Pre-commit hook |
+| Build          | `npm run build`          | Pre-push hook   |
+| Tests          | `npm test`               | Pre-push hook   |
+| Lint           | `npm run lint`           | CI only         |
+| Test typecheck | `npm run typecheck:test` | CI only         |
 
-All three must pass before a PR will be reviewed. Run them locally before pushing:
+The last two run only in CI — no local hook covers them. Run all five locally before pushing to avoid a CI-only failure:
 
 ```bash
-npm run format-check && npm run build && npm test
+npm run format-check && npm run build && npm test && npm run lint && npm run typecheck:test
 ```
+
+> **Watch out for `typecheck:test`**: `npm run build` uses `tsc -skipLibCheck` and excludes `test/`, so a green build does **not** guarantee this check passes. Expression-bodied arrows like `(t) => arr.push(t)` return `number` rather than `void` and are caught only here.
 
 ### Integration Test Scripts
 
