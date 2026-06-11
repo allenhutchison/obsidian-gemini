@@ -172,7 +172,11 @@ async function translateEntries(client, model, language, entries) {
 				if (!source) continue;
 				const translation = typeof item.translation === 'string' ? item.translation.trim() : '';
 				if (translation === '') continue;
-				if (!placeholders(source.message).every((ph) => translation.includes(ph))) continue;
+				// The translation must carry exactly the source's placeholders — a missing one
+				// would lose data at render time, an invented one would surface literally in the UI.
+				const expected = new Set(placeholders(source.message));
+				const actual = new Set(placeholders(translation));
+				if (expected.size !== actual.size || ![...expected].every((ph) => actual.has(ph))) continue;
 				results.set(item.key, translation);
 			}
 			chunk = chunk.filter(([key]) => !results.has(key));
