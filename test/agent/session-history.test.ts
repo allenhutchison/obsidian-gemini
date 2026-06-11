@@ -1,5 +1,5 @@
 import { SessionHistory } from '../../src/agent/session-history';
-import { TFile } from 'obsidian';
+import { TFile, TFolder } from 'obsidian';
 import type { GeminiConversationEntry } from '../../src/types/conversation';
 import type { ChatSession } from '../../src/types/agent';
 import { SessionType } from '../../src/types/agent';
@@ -932,7 +932,7 @@ describe('SessionHistory', () => {
 			expect(result).toEqual([]);
 		});
 
-		it('should return empty array when folder has no children property', async () => {
+		it('should return empty array when path resolves to a non-folder', async () => {
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue({ path: 'some-path' });
 
 			const result = await sessionHistory.getAllAgentSessions();
@@ -950,9 +950,9 @@ describe('SessionHistory', () => {
 				extension: 'txt',
 				stat: { ctime: now, mtime: now },
 			});
-			const folder = {
+			const folder = Object.assign(new TFolder(), {
 				children: [mdFile, txtFile, { path: 'not-a-tfile' }],
-			};
+			});
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(folder);
 
 			const result = await sessionHistory.getAllAgentSessions();
@@ -971,9 +971,9 @@ describe('SessionHistory', () => {
 				extension: 'md',
 				stat: { ctime: now - 1000, mtime: now - 1000 },
 			});
-			const folder = {
+			const folder = Object.assign(new TFolder(), {
 				children: [olderFile, newerFile],
-			};
+			});
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(folder);
 
 			const result = await sessionHistory.getAllAgentSessions();
