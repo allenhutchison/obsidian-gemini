@@ -296,6 +296,12 @@ Create reusable AI instruction templates that customize how the AI behaves for s
 
 **Tip:** See the comprehensive [Custom Prompts Guide](docs/guide/custom-prompts.md) for examples and best practices.
 
+## Localization
+
+The plugin UI follows **Obsidian's interface language** (Settings → About → Language) — there is no separate plugin language setting. AI responses are already generated in your Obsidian language; localized UI text is being rolled out panel by panel, starting with the Agent panel.
+
+**Non-English UI text is AI-translated** (bootstrapped with Gemini) and shipped in 20 languages: Czech, Danish, German, Spanish, French, Indonesian, Italian, Japanese, Korean, Dutch, Norwegian, Polish, Portuguese (European and Brazilian), Russian, Turkish, Ukrainian, Vietnamese, and Chinese (Simplified and Traditional). Native speakers: refinement PRs are very welcome — just edit the strings in [`src/i18n/<language>.ts`](src/i18n/). Hand-refined translations are preserved when translations are regenerated; a string is only re-translated when its English source changes.
+
 ## Troubleshooting
 
 - **API Key Errors:** Ensure your API key is correct and has the necessary permissions. Get a new key at [Google AI Studio](https://aistudio.google.com/apikey).
