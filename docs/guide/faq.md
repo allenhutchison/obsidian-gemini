@@ -93,11 +93,11 @@ No. Gemini Scribe is built around the Gemini API and its SDK — swapping in a l
 
 Gemini Scribe does not have its own language setting. Instead, it reads **Obsidian's own UI language preference** and tells the model to reply in that language.
 
-Technically, the plugin reads `window.localStorage.getItem('language')` on startup — this is the key Obsidian itself uses to persist the interface language you picked in Obsidian's **Settings → About → Language** dropdown. If no value is set, the plugin falls back to `"en"`. The detected code is then injected into every prompt (chat, summaries, completions, rewrites, vault analysis, etc.) via [`prompts/languageInstruction.hbs`](https://github.com/allenhutchison/obsidian-gemini/blob/master/prompts/languageInstruction.hbs), which tells the model:
+Technically, the plugin calls Obsidian's native `getLanguage()` API, which returns the interface language you picked in Obsidian's **Settings → About → Language** dropdown. If no value is set, the plugin falls back to `"en"`. The detected code is then injected into every prompt (chat, summaries, completions, rewrites, vault analysis, etc.) via [`prompts/languageInstruction.hbs`](https://github.com/allenhutchison/obsidian-gemini/blob/master/prompts/languageInstruction.hbs), which tells the model:
 
 > "My user interface is set to the language code: `{code}`. Respond in that language unless I write to you in a different one. Keep file paths, tool parameters, and `[[WikiLinks]]` in their original language regardless of response language."
 
-So the plugin does not call `navigator.language`, `process.env.LANG`, or any system locale API — it only reads Obsidian's own stored preference from localStorage.
+So the plugin does not call `navigator.language`, `process.env.LANG`, or any system locale API — it only reads Obsidian's own language preference.
 
 ### I want responses in a language different from my Obsidian UI — how?
 
@@ -118,6 +118,12 @@ The answer depends on which feature you're trying to influence. Each feature has
 ### Is there a dedicated language setting in the plugin?
 
 Not today. The auto-detection above covers most users well, and the "respond in whatever language you're written to" fallback handles the mixed-language chat case. A dedicated override may be added in the future if there's demand from users who need non-chat features (summaries, rewrites, completions) in a language that differs from their Obsidian UI.
+
+### Is the plugin's own interface translated?
+
+Yes — progressively. Static UI text (panel labels, buttons, notices) follows your Obsidian interface language and is being localized panel by panel, starting with the Agent panel's start screen. Translations ship in 20 languages: cs, da, de, es, fr, id, it, ja, ko, nl, no, pl, pt, pt-BR, ru, tr, uk, vi, zh, and zh-TW. If your Obsidian language isn't in that list, the plugin UI falls back to English (AI responses are unaffected — they always follow your language per the question above).
+
+These translations are **AI-generated** (bootstrapped with Gemini) rather than hand-written, so phrasing may occasionally be awkward. Native speakers can refine them by editing the corresponding file in [`src/i18n/`](https://github.com/allenhutchison/obsidian-gemini/tree/master/src/i18n) and opening a pull request — hand-refined strings are preserved across regenerations, since a string is only re-translated when its English source changes. When the UI is displayed in a non-English language, a small notice on the Agent panel's start screen discloses that the translation is AI-generated. ([#754](https://github.com/allenhutchison/obsidian-gemini/issues/754))
 
 ## Cost & Billing
 

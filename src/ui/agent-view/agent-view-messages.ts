@@ -5,16 +5,17 @@ import type ObsidianGemini from '../../main';
 import { formatModelMessage } from '../../utils/markdown-formatting';
 import { stripTurnPreamble } from '../../utils/turn-preamble';
 import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
+import { t, getResolvedLocale } from '../../i18n';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://allenhutchison.github.io/obsidian-gemini';
 const AGENT_MODE_GUIDE_URL = `${DOCS_BASE_URL}/guide/agent-mode`;
 
 const AGENT_CAPABILITIES = [
-	{ icon: 'search', text: 'Search and read files in your vault' },
-	{ icon: 'file-edit', text: 'Create, modify, and organize notes' },
-	{ icon: 'globe', text: 'Search the web and fetch information' },
-	{ icon: 'workflow', text: 'Execute multi-step tasks autonomously' },
+	{ icon: 'search', key: 'agent.empty.capability.search' },
+	{ icon: 'file-edit', key: 'agent.empty.capability.organize' },
+	{ icon: 'globe', key: 'agent.empty.capability.web' },
+	{ icon: 'workflow', key: 'agent.empty.capability.multiStep' },
 ] as const;
 
 const DEFAULT_EXAMPLE_PROMPTS = [
@@ -465,12 +466,12 @@ export class AgentViewMessages {
 			setIcon(icon, 'sparkles');
 
 			emptyState.createEl('h3', {
-				text: 'Start a conversation',
+				text: t('agent.empty.title'),
 				cls: 'gemini-agent-empty-title',
 			});
 
 			emptyState.createEl('p', {
-				text: 'Your AI assistant that can actively work with your vault.',
+				text: t('agent.empty.description'),
 				cls: 'gemini-agent-empty-desc',
 			});
 
@@ -478,7 +479,7 @@ export class AgentViewMessages {
 			const capabilities = emptyState.createDiv({ cls: 'gemini-agent-capabilities' });
 
 			capabilities.createEl('h4', {
-				text: 'What can the Agent do?',
+				text: t('agent.empty.capabilitiesTitle'),
 				cls: 'gemini-agent-capabilities-title',
 			});
 
@@ -488,17 +489,17 @@ export class AgentViewMessages {
 				const li = capList.createEl('li', { cls: 'gemini-agent-capability-item' });
 				const iconEl = li.createSpan({ cls: 'gemini-agent-capability-icon' });
 				setIcon(iconEl, item.icon);
-				li.createSpan({ text: item.text, cls: 'gemini-agent-capability-text' });
+				li.createSpan({ text: t(item.key), cls: 'gemini-agent-capability-text' });
 			});
 
 			// Documentation link
 			const docsLink = capabilities.createDiv({ cls: 'gemini-agent-docs-link' });
 			const linkEl = docsLink.createEl('a', {
-				text: '📖 Learn more about Agent Mode',
+				text: t('agent.empty.docsLink'),
 				cls: 'gemini-agent-docs-link-text',
 			});
 			linkEl.href = AGENT_MODE_GUIDE_URL;
-			linkEl.setAttribute('aria-label', 'Open Agent Mode documentation in new tab');
+			linkEl.setAttribute('aria-label', t('agent.empty.docsLinkAria'));
 			linkEl.addEventListener('click', (e) => {
 				e.preventDefault();
 				// Validate URL before opening
@@ -507,7 +508,7 @@ export class AgentViewMessages {
 						window.open(linkEl.href, '_blank');
 					} catch (error) {
 						this.plugin.logger.error('Failed to open documentation link:', error);
-						new Notice('Failed to open documentation. Please check your browser settings.');
+						new Notice(t('agent.empty.docsOpenFailed'));
 					}
 				} else {
 					this.plugin.logger.error('Invalid documentation URL');
@@ -529,15 +530,15 @@ export class AgentViewMessages {
 			const buttonText = initButton.createDiv({ cls: 'gemini-agent-init-text' });
 
 			if (agentsMemoryExists) {
-				buttonText.createEl('strong', { text: 'Update Vault Context' });
+				buttonText.createEl('strong', { text: t('agent.empty.updateContext') });
 				buttonText.createEl('span', {
-					text: 'Refresh my understanding of your vault',
+					text: t('agent.empty.updateContextDesc'),
 					cls: 'gemini-agent-init-desc',
 				});
 			} else {
-				buttonText.createEl('strong', { text: 'Initialize Vault Context' });
+				buttonText.createEl('strong', { text: t('agent.empty.initContext') });
 				buttonText.createEl('span', {
-					text: 'Help me understand your vault structure and organization',
+					text: t('agent.empty.initContextDesc'),
 					cls: 'gemini-agent-init-desc',
 				});
 			}
@@ -561,7 +562,7 @@ export class AgentViewMessages {
 			if (recentSessions.length > 0) {
 				// Show recent sessions
 				emptyState.createEl('p', {
-					text: 'Recent sessions:',
+					text: t('agent.empty.recentSessions'),
 					cls: 'gemini-agent-suggestions-header',
 				});
 
@@ -592,7 +593,7 @@ export class AgentViewMessages {
 			const examplePrompts = await this.loadExamplePrompts();
 
 			emptyState.createEl('p', {
-				text: 'Try these examples:',
+				text: t('agent.empty.examplesHeader'),
 				cls: 'gemini-agent-suggestions-header',
 			});
 
@@ -616,6 +617,13 @@ export class AgentViewMessages {
 					await onSendMessage();
 				});
 			});
+
+			if (getResolvedLocale() !== 'en') {
+				emptyState.createEl('p', {
+					text: t('i18n.aiTranslatedNotice'),
+					cls: 'gemini-agent-i18n-notice',
+				});
+			}
 		}
 	}
 
