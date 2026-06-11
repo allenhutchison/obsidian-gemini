@@ -1,4 +1,4 @@
-import { TFile, normalizePath } from 'obsidian';
+import { TFile, TFolder, normalizePath } from 'obsidian';
 import { ChatSession } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
 import type ObsidianGemini from '../main';
@@ -178,11 +178,11 @@ export class SessionHistory {
 
 		try {
 			const folder = this.plugin.app.vault.getAbstractFileByPath(agentSessionsPath);
-			if (!folder || !('children' in folder)) return [];
+			if (!(folder instanceof TFolder)) return [];
 
-			return (folder as any).children
-				.filter((file: any): file is TFile => file instanceof TFile && file.extension === 'md')
-				.sort((a: TFile, b: TFile) => b.stat.mtime - a.stat.mtime); // Most recent first
+			return folder.children
+				.filter((file): file is TFile => file instanceof TFile && file.extension === 'md')
+				.sort((a, b) => b.stat.mtime - a.stat.mtime); // Most recent first
 		} catch (error) {
 			this.plugin.logger.error(`Error listing agent sessions:`, error);
 			return [];
