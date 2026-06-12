@@ -933,4 +933,13 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': '总结当前文件',
 	'command.toggleCompletions': '切换补全功能',
 	'command.createCustomPrompt': '创建新的自定义提示词',
+	'notice.rewrite.rewritingSelection': '正在重写所选文本...',
+	'notice.rewrite.selectionDone': '文本重写成功',
+	'notice.rewrite.rewritingFile': '正在重写整个文件...',
+	'notice.rewrite.fileDone': '文件重写成功',
+	'validation.temperature.notANumber': '温度值 {value} 不是有效的数字。已调整为 {adjusted}。',
+	'validation.temperature.exceedsModelLimit': '温度值 {value} 超过了 {model} 的限制值 {max}。已调整为 {max}。',
+	'validation.temperature.outOfRange': '温度值 {value} 超出有效范围 [{min}, {max}]。已调整为 {adjusted}。',
+	'validation.topP.notANumber': 'Top P 值 {value} 不是有效的数字。已调整为 {adjusted}。',
+	'validation.topP.outOfRange': 'Top P 值 {value} 超出有效范围 [{min}, {max}]。已调整为 {adjusted}。',
 };

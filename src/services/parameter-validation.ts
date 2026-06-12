@@ -1,4 +1,5 @@
 import { GeminiModel } from '../models';
+import { t } from '../i18n';
 
 export interface ParameterRanges {
 	temperature: {
@@ -74,7 +75,7 @@ export class ParameterValidationService {
 			return {
 				isValid: false,
 				adjustedValue: this.DEFAULT_RANGES.temperature.min,
-				warning: `Temperature ${value} is not a valid number. Adjusted to ${this.DEFAULT_RANGES.temperature.min}.`,
+				warning: t('validation.temperature.notANumber', { value, adjusted: this.DEFAULT_RANGES.temperature.min }),
 			};
 		}
 
@@ -84,7 +85,11 @@ export class ParameterValidationService {
 				return {
 					isValid: false,
 					adjustedValue: modelInfo.maxTemperature,
-					warning: `Temperature ${value} exceeds ${modelName} limit of ${modelInfo.maxTemperature}. Adjusted to ${modelInfo.maxTemperature}.`,
+					warning: t('validation.temperature.exceedsModelLimit', {
+						value,
+						model: modelName,
+						max: modelInfo.maxTemperature,
+					}),
 				};
 			}
 		}
@@ -96,7 +101,12 @@ export class ParameterValidationService {
 			return {
 				isValid: false,
 				adjustedValue,
-				warning: `Temperature ${value} is outside valid range [${ranges.temperature.min}, ${ranges.temperature.max}]. Adjusted to ${adjustedValue}.`,
+				warning: t('validation.temperature.outOfRange', {
+					value,
+					min: ranges.temperature.min,
+					max: ranges.temperature.max,
+					adjusted: adjustedValue,
+				}),
 			};
 		}
 
@@ -119,7 +129,7 @@ export class ParameterValidationService {
 			return {
 				isValid: false,
 				adjustedValue: this.DEFAULT_RANGES.topP.min,
-				warning: `Top P ${value} is not a valid number. Adjusted to ${this.DEFAULT_RANGES.topP.min}.`,
+				warning: t('validation.topP.notANumber', { value, adjusted: this.DEFAULT_RANGES.topP.min }),
 			};
 		}
 
@@ -130,7 +140,12 @@ export class ParameterValidationService {
 			return {
 				isValid: false,
 				adjustedValue,
-				warning: `Top P ${value} is outside valid range [${ranges.topP.min}, ${ranges.topP.max}]. Adjusted to ${adjustedValue}.`,
+				warning: t('validation.topP.outOfRange', {
+					value,
+					min: ranges.topP.min,
+					max: ranges.topP.max,
+					adjusted: adjustedValue,
+				}),
 			};
 		}
 

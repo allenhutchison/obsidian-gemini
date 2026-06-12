@@ -995,4 +995,16 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Підсумувати активний файл',
 	'command.toggleCompletions': 'Увімкнути/вимкнути автодоповнення',
 	'command.createCustomPrompt': 'Створити новий власний промпт',
+	'notice.rewrite.rewritingSelection': 'Переписування виділеного тексту...',
+	'notice.rewrite.selectionDone': 'Текст успішно переписано',
+	'notice.rewrite.rewritingFile': 'Переписування всього файлу...',
+	'notice.rewrite.fileDone': 'Файл успішно переписано',
+	'validation.temperature.notANumber': 'Температура {value} не є дійсним числом. Скориговано до {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Температура {value} перевищує ліміт моделі {model}, який становить {max}. Скориговано до {max}.',
+	'validation.temperature.outOfRange':
+		'Температура {value} знаходиться поза межами допустимого діапазону [{min}, {max}]. Скориговано до {adjusted}.',
+	'validation.topP.notANumber': 'Top P {value} не є дійсним числом. Скориговано до {adjusted}.',
+	'validation.topP.outOfRange':
+		'Top P {value} знаходиться поза межами допустимого діапазону [{min}, {max}]. Скориговано до {adjusted}.',
 };

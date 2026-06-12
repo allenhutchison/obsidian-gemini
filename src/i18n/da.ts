@@ -988,4 +988,16 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Opsummer aktiv fil',
 	'command.toggleCompletions': 'Slå fuldførelser til/fra',
 	'command.createCustomPrompt': 'Opret ny brugerdefineret prompt',
+	'notice.rewrite.rewritingSelection': 'Omskriver markeret tekst...',
+	'notice.rewrite.selectionDone': 'Teksten blev omskrevet',
+	'notice.rewrite.rewritingFile': 'Omskriver hele filen...',
+	'notice.rewrite.fileDone': 'Filen blev omskrevet',
+	'validation.temperature.notANumber': 'Temperatur {value} er ikke et gyldigt tal. Justeret til {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Temperatur {value} overskrider grænsen for {model} på {max}. Justeret til {max}.',
+	'validation.temperature.outOfRange':
+		'Temperatur {value} er uden for det gyldige interval [{min}, {max}]. Justeret til {adjusted}.',
+	'validation.topP.notANumber': 'Top P {value} er ikke et gyldigt tal. Justeret til {adjusted}.',
+	'validation.topP.outOfRange':
+		'Top P {value} er uden for det gyldige interval [{min}, {max}]. Justeret til {adjusted}.',
 };

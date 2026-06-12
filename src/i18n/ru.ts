@@ -1003,4 +1003,17 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Создать резюме активного файла',
 	'command.toggleCompletions': 'Переключить автодополнение',
 	'command.createCustomPrompt': 'Создать новый пользовательский промпт',
+	'notice.rewrite.rewritingSelection': 'Перезапись выделенного текста...',
+	'notice.rewrite.selectionDone': 'Текст успешно перезаписан',
+	'notice.rewrite.rewritingFile': 'Перезапись всего файла...',
+	'notice.rewrite.fileDone': 'Файл успешно перезаписан',
+	'validation.temperature.notANumber':
+		'Температура {value} не является допустимым числом. Скорректировано на {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Температура {value} превышает лимит {model}, равный {max}. Скорректировано на {max}.',
+	'validation.temperature.outOfRange':
+		'Температура {value} находится вне допустимого диапазона [{min}, {max}]. Скорректировано на {adjusted}.',
+	'validation.topP.notANumber': 'Параметр Top P {value} не является допустимым числом. Скорректировано на {adjusted}.',
+	'validation.topP.outOfRange':
+		'Параметр Top P {value} находится вне допустимого диапазона [{min}, {max}]. Скорректировано на {adjusted}.',
 };

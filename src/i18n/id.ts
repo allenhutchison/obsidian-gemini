@@ -986,4 +986,16 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Ringkas berkas aktif',
 	'command.toggleCompletions': 'Alihkan penyelesaian',
 	'command.createCustomPrompt': 'Buat prompt kustom baru',
+	'notice.rewrite.rewritingSelection': 'Menulis ulang teks terpilih...',
+	'notice.rewrite.selectionDone': 'Teks berhasil ditulis ulang',
+	'notice.rewrite.rewritingFile': 'Menulis ulang seluruh file...',
+	'notice.rewrite.fileDone': 'File berhasil ditulis ulang',
+	'validation.temperature.notANumber': 'Temperatur {value} bukan angka yang valid. Disesuaikan menjadi {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Temperatur {value} melebihi batas {model} yaitu {max}. Disesuaikan menjadi {max}.',
+	'validation.temperature.outOfRange':
+		'Temperatur {value} berada di luar rentang valid [{min}, {max}]. Disesuaikan menjadi {adjusted}.',
+	'validation.topP.notANumber': 'Top P {value} bukan angka yang valid. Disesuaikan menjadi {adjusted}.',
+	'validation.topP.outOfRange':
+		'Top P {value} berada di luar rentang valid [{min}, {max}]. Disesuaikan menjadi {adjusted}.',
 };

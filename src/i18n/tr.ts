@@ -998,4 +998,16 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Aktif dosyayı özetle',
 	'command.toggleCompletions': 'Tamamlamaları aç/kapat',
 	'command.createCustomPrompt': 'Yeni özel prompt oluştur',
+	'notice.rewrite.rewritingSelection': 'Seçilen metin yeniden yazılıyor...',
+	'notice.rewrite.selectionDone': 'Metin başarıyla yeniden yazıldı',
+	'notice.rewrite.rewritingFile': 'Tüm dosya yeniden yazılıyor...',
+	'notice.rewrite.fileDone': 'Dosya başarıyla yeniden yazıldı',
+	'validation.temperature.notANumber': 'Sıcaklık {value} geçerli bir sayı değil. {adjusted} olarak ayarlandı.',
+	'validation.temperature.exceedsModelLimit':
+		'Sıcaklık {value}, {model} için belirlenen {max} sınırını aşıyor. {max} olarak ayarlandı.',
+	'validation.temperature.outOfRange':
+		'Sıcaklık {value}, geçerli [{min}, {max}] aralığının dışında. {adjusted} olarak ayarlandı.',
+	'validation.topP.notANumber': 'Top P {value} geçerli bir sayı değil. {adjusted} olarak ayarlandı.',
+	'validation.topP.outOfRange':
+		'Top P {value}, geçerli [{min}, {max}] aralığının dışında. {adjusted} olarak ayarlandı.',
 };

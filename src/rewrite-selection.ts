@@ -1,4 +1,5 @@
 import type ObsidianGemini from './main';
+import { t } from './i18n';
 import { Editor, Notice, TFile } from 'obsidian';
 import { ExtendedModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
@@ -64,7 +65,7 @@ export class SelectionRewriter {
 
 		try {
 			// Show loading notice
-			new Notice('Rewriting selected text...');
+			new Notice(t('notice.rewrite.rewritingSelection'));
 
 			// Create a rewrite-specific model API
 			const modelApi = ModelClientFactory.createRewriteModel(this.plugin);
@@ -74,7 +75,7 @@ export class SelectionRewriter {
 			// Replace the selected text with the result
 			editor.replaceSelection(result.markdown.trim());
 
-			new Notice('Text rewritten successfully');
+			new Notice(t('notice.rewrite.selectionDone'));
 		} catch (error) {
 			this.plugin.logger.error('Failed to rewrite text:', error);
 			const errorMessage = getErrorMessage(error);
@@ -116,7 +117,7 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 
 		try {
 			// Show loading notice
-			new Notice('Rewriting entire file...');
+			new Notice(t('notice.rewrite.rewritingFile'));
 
 			// Create a rewrite-specific model API
 			const modelApi = ModelClientFactory.createRewriteModel(this.plugin);
@@ -126,7 +127,7 @@ Rewrite the entire document according to the user's instructions. Maintain the m
 			// Replace the entire file content with the result
 			editor.setValue(result.markdown.trim());
 
-			new Notice('File rewritten successfully');
+			new Notice(t('notice.rewrite.fileDone'));
 		} catch (error) {
 			this.plugin.logger.error('Failed to rewrite file:', error);
 			const errorMessage = getErrorMessage(error);

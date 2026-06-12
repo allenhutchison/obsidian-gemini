@@ -994,4 +994,16 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Resumir arquivo ativo',
 	'command.toggleCompletions': 'Alternar autocompletar',
 	'command.createCustomPrompt': 'Criar novo prompt personalizado',
+	'notice.rewrite.rewritingSelection': 'Reescrevendo o texto selecionado...',
+	'notice.rewrite.selectionDone': 'Texto reescrito com sucesso',
+	'notice.rewrite.rewritingFile': 'Reescrevendo o arquivo inteiro...',
+	'notice.rewrite.fileDone': 'Arquivo reescrito com sucesso',
+	'validation.temperature.notANumber': 'A temperatura {value} não é um número válido. Ajustada para {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'A temperatura {value} excede o limite do {model} de {max}. Ajustada para {max}.',
+	'validation.temperature.outOfRange':
+		'A temperatura {value} está fora do intervalo válido [{min}, {max}]. Ajustada para {adjusted}.',
+	'validation.topP.notANumber': 'O Top P {value} não é um número válido. Ajustado para {adjusted}.',
+	'validation.topP.outOfRange':
+		'O Top P {value} está fora do intervalo válido [{min}, {max}]. Ajustado para {adjusted}.',
 };
