@@ -300,6 +300,25 @@ Example: See issue #90 for the custom prompt system implementation plan.
 
 This keeps technical planning centralized and accessible for all contributors.
 
+### Autonomous issue pipeline (auto-dev)
+
+The **auto-dev** skill (`.agents/skills/auto-dev/SKILL.md`) runs one tick of an unattended issue-to-PR pipeline: it triages open issues for readiness (asking clarifying questions where needed), posts implementation plans for maintainer approval, builds the oldest approved issue into a PR, and addresses CodeRabbit/human review feedback on the open automated PR. It **never merges** — merging is always the maintainer's act — and at most one automated PR is in flight at a time.
+
+- State lives in the `auto:*` GitHub labels (`auto:needs-info`, `auto:planned`, `auto:ready`, `auto:in-progress`, `auto:skip`). Add `auto:skip` to any issue the pipeline should never touch; add `auto:ready` to approve a posted plan directly (an approving reply on the plan comment also works).
+- Comments posted by the pipeline run under the maintainer's own GitHub account and are identified by a hidden `<!-- auto-dev -->` marker — that marker, not authorship, distinguishes automated comments from human ones.
+- Scheduled runs go through `scripts/auto-dev.sh` (cron/launchd every 15–30 min), which operates in a **dedicated clone** (default `~/src/obsidian-gemini-autodev`) so it never disturbs interactive checkouts, holds a lockfile so ticks can't overlap, caps per-tick spend (`--max-budget-usd`) and wall-clock time, and runs headless Claude Code against the curated permissions allowlist in `scripts/auto-dev-settings.json` (which hard-denies `gh pr merge`, force pushes, direct pushes to master, and releases). Logs land in `~/.local/state/auto-dev/`.
+
+#### Driving the maintainer side from a Claude Code session
+
+The maintainer's half of the pipeline (reviewing plans, approving, answering questions) is usually done through an interactive Claude Code session. When asked to "review the pipeline", "check what auto-dev is waiting on", "approve the plan on #N", or similar:
+
+- **See the pipeline state**: `gh issue list --label "auto:planned"` (plans awaiting approval), `--label "auto:needs-info"` (questions awaiting answers), `--label "auto:ready"` (build queue), `--label "auto:in-progress"` (being built), plus `gh pr list --state open` filtered to `auto/` branches for the PR in flight. Pipeline comments are the ones starting with the hidden `<!-- auto-dev -->` marker; third-party bot comments (`coderabbitai`, `dependabot`, …) are ignored for state decisions; everything else is human input.
+- **Approve a plan**: reply on the issue with an explicit approval ("Approved.", optionally with amendments — "Approved, but use X instead of Y" counts and the pipeline incorporates the change), or add the `auto:ready` label directly. **Request changes**: reply with the changes; the next tick revises the plan. **Answer questions** on `auto:needs-info` issues with an ordinary comment; the next tick incorporates it.
+- **Never include the `<!-- auto-dev -->` marker in comments posted on the maintainer's behalf.** The pipeline classifies marker comments as its own output — a marked reply would be invisible to it as human input. Don't imitate the pipeline's comment templates either.
+- **Taking an issue over manually**: before implementing an issue yourself that carries `auto:planned`/`auto:ready` (or answering its plan with "I'll do this one"), add `auto:skip` (or at minimum remove `auto:ready`) so a scheduled tick doesn't build it concurrently. Remove `auto:skip` later to hand it back.
+- **Reviewing the automated PR** works like any PR review: comment on the PR; the next tick addresses the feedback and replies. Merging is always the human's call — the pipeline never merges, and a merge is what unblocks the next build.
+- **Testing / manual ticks**: `/auto-dev dry-run` prints what a tick would do with zero side effects; `/auto-dev` runs one live tick interactively under normal permission prompts.
+
 ## Commit & Pull Request Guidelines
 
 For creating pull requests, use the **create-pr** skill which enforces the PR template and runs all pre-flight checks.
