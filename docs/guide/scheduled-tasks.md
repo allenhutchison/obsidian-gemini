@@ -37,7 +37,7 @@ toolPolicy:
   preset: read_only
 ---
 
-Summarise the notes I created or modified today. List the key topics and any open questions.
+Summarize the notes I created or modified today. List the key topics and any open questions.
 ```
 
 ### Frontmatter Fields
@@ -75,7 +75,7 @@ toolPolicy:
   preset: read_only
 ---
 
-Summarise the notes I created or modified today.
+Summarize the notes I created or modified today.
 ```
 
 ### Tool Access

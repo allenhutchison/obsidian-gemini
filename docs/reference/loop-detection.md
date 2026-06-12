@@ -12,7 +12,7 @@ The Tool loop detection feature prevents the AI agent from getting stuck in infi
 
 ## Configuration
 
-Loop detection can be configured in Settings → Gemini Scribe → Agent config → Tool loop detection:
+Loop detection can be configured in Settings → Gemini Scribe → Agent config → Tool loop detection (enable **Show advanced settings** first to reveal this section):
 
 - **Enable loop detection**: Toggle the feature on/off
 - **Loop threshold**: Number of identical calls before considering it a loop (default: 3)

@@ -72,7 +72,7 @@ New-Item -ItemType SymbolicLink -Path "C:\path\to\test-vault\.obsidian\plugins\g
 
 ### Enabling Debug mode
 
-Turn on **Debug mode** in the plugin settings (**Settings → Gemini Scribe → Debug mode**). This enables verbose logging through the Logger service, prefixed with `[Gemini Scribe]`.
+Turn on **Debug mode** in the plugin settings (**Settings → Gemini Scribe → Debug mode**; enable **Show advanced settings** first to reveal the Debug section). This enables verbose logging through the Logger service, prefixed with `[Gemini Scribe]`.
 
 ### Checking Console Output
 

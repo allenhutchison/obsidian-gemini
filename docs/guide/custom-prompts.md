@@ -42,7 +42,7 @@ If you're unsure whether you need a custom prompt or a [skill](/guide/agent-skil
 
 ### Locate the Prompts Folder
 
-Custom prompts are stored in: `[Your Plugin state folder]/Prompts/`
+Custom prompts are stored in: `[state-folder]/Prompts/`
 
 For example, if your plugin state folder is `gemini-scribe`, prompts will be in `gemini-scribe/Prompts/`.
 
@@ -318,7 +318,7 @@ Always maintain academic objectivity and cite sources appropriately.
 
 2. **Confirm settings**
    - "Enable Custom Prompts" is ON
-   - Prompt file exists in the `[Plugin state folder]/Prompts/` folder
+   - Prompt file exists in the `[state-folder]/Prompts/` folder
 
 3. **Check session settings**
    - Open the session settings (gear icon) and verify the prompt is selected

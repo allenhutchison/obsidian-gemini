@@ -37,7 +37,7 @@ In v4.0+, the agent is always available and can:
 
 ### 3. Configure Permissions
 
-Choose which operations require confirmation in **Settings → Gemini Scribe → Tool permissions**:
+Choose which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (enable **Show advanced settings** first):
 
 - **write_file**: Creating or modifying files
 - **delete_file**: Removing files
@@ -579,7 +579,7 @@ By default, these operations require confirmation:
 - **create_skill**: Creating new skill packages
 - **edit_skill**: Updating existing skill instructions
 
-You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (under Advanced Settings).
+You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (enable **Show advanced settings** first).
 
 ### Session-Level Permissions
 
@@ -769,9 +769,8 @@ Prevents infinite execution loops:
 
 ### Agent Not Responding
 
-1. Check agent mode is enabled
-2. Verify API key supports function calling
-3. Ensure selected model supports tools (all current Gemini models do)
+1. Verify API key supports function calling
+2. Ensure selected model supports tools (all current Gemini models do)
 
 ### Tools Not Available
 
