@@ -1003,4 +1003,15 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Riassumi file attivo',
 	'command.toggleCompletions': 'Attiva/disattiva completamenti',
 	'command.createCustomPrompt': 'Crea nuovo prompt personalizzato',
+	'notice.rewrite.rewritingSelection': 'Riscrittura del testo selezionato...',
+	'notice.rewrite.selectionDone': 'Testo riscritto con successo',
+	'notice.rewrite.rewritingFile': "Riscrittura dell'intero file...",
+	'notice.rewrite.fileDone': 'File riscritto con successo',
+	'validation.temperature.notANumber': 'La temperatura {value} non è un numero valido. Regolata a {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'La temperatura {value} supera il limite di {max} del modello {model}. Regolata a {max}.',
+	'validation.temperature.outOfRange':
+		"La temperatura {value} è fuori dall'intervallo valido [{min}, {max}]. Regolata a {adjusted}.",
+	'validation.topP.notANumber': 'Top P {value} non è un numero valido. Regolato a {adjusted}.',
+	'validation.topP.outOfRange': "Top P {value} è fuori dall'intervallo valido [{min}, {max}]. Regolato a {adjusted}.",
 };

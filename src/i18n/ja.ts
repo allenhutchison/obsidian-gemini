@@ -990,4 +990,16 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'アクティブなファイルを要約',
 	'command.toggleCompletions': '補完の切り替え',
 	'command.createCustomPrompt': '新規カスタムプロンプトを作成',
+	'notice.rewrite.rewritingSelection': '選択されたテキストを書き換え中...',
+	'notice.rewrite.selectionDone': 'テキストの書き換えが完了しました',
+	'notice.rewrite.rewritingFile': 'ファイル全体を書き換え中...',
+	'notice.rewrite.fileDone': 'ファイルの書き換えが完了しました',
+	'validation.temperature.notANumber': '温度 {value} は有効な数値ではありません。{adjusted} に調整されました。',
+	'validation.temperature.exceedsModelLimit':
+		'温度 {value} は {model} の上限値 {max} を超えています。{max} に調整されました。',
+	'validation.temperature.outOfRange':
+		'温度 {value} は有効な範囲 [{min}, {max}] の外にあります。{adjusted} に調整されました。',
+	'validation.topP.notANumber': 'Top P {value} は有効な数値ではありません。{adjusted} に調整されました。',
+	'validation.topP.outOfRange':
+		'Top P {value} は有効な範囲 [{min}, {max}] の外にあります。{adjusted} に調整されました。',
 };

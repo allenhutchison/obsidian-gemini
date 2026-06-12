@@ -985,4 +985,14 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Shrnout aktivní soubor',
 	'command.toggleCompletions': 'Přepnout doplňování',
 	'command.createCustomPrompt': 'Vytvořit nový vlastní prompt',
+	'notice.rewrite.rewritingSelection': 'Přepisování vybraného textu...',
+	'notice.rewrite.selectionDone': 'Text byl úspěšně přepsán',
+	'notice.rewrite.rewritingFile': 'Přepisování celého souboru...',
+	'notice.rewrite.fileDone': 'Soubor byl úspěšně přepsán',
+	'validation.temperature.notANumber': 'Teplota {value} není platné číslo. Upraveno na {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Teplota {value} překračuje limit modelu {model}, který je {max}. Upraveno na {max}.',
+	'validation.temperature.outOfRange': 'Teplota {value} je mimo platný rozsah [{min}, {max}]. Upraveno na {adjusted}.',
+	'validation.topP.notANumber': 'Top P {value} není platné číslo. Upraveno na {adjusted}.',
+	'validation.topP.outOfRange': 'Top P {value} je mimo platný rozsah [{min}, {max}]. Upraveno na {adjusted}.',
 };

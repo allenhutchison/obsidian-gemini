@@ -988,4 +988,16 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Tóm tắt tệp đang hoạt động',
 	'command.toggleCompletions': 'Bật/tắt tự động hoàn thành',
 	'command.createCustomPrompt': 'Tạo prompt tùy chỉnh mới',
+	'notice.rewrite.rewritingSelection': 'Đang viết lại văn bản được chọn...',
+	'notice.rewrite.selectionDone': 'Đã viết lại văn bản thành công',
+	'notice.rewrite.rewritingFile': 'Đang viết lại toàn bộ tập tin...',
+	'notice.rewrite.fileDone': 'Đã viết lại tập tin thành công',
+	'validation.temperature.notANumber': 'Nhiệt độ {value} không phải là một số hợp lệ. Đã điều chỉnh thành {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Nhiệt độ {value} vượt quá giới hạn {max} của {model}. Đã điều chỉnh thành {max}.',
+	'validation.temperature.outOfRange':
+		'Nhiệt độ {value} nằm ngoài phạm vi hợp lệ [{min}, {max}]. Đã điều chỉnh thành {adjusted}.',
+	'validation.topP.notANumber': 'Top P {value} không phải là một số hợp lệ. Đã điều chỉnh thành {adjusted}.',
+	'validation.topP.outOfRange':
+		'Top P {value} nằm ngoài phạm vi hợp lệ [{min}, {max}]. Đã điều chỉnh thành {adjusted}.',
 };

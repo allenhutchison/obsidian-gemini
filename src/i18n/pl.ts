@@ -1003,4 +1003,16 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Podsumuj aktywny plik',
 	'command.toggleCompletions': 'Przełącz uzupełnianie',
 	'command.createCustomPrompt': 'Utwórz nowy własny prompt',
+	'notice.rewrite.rewritingSelection': 'Przepisywanie zaznaczonego tekstu...',
+	'notice.rewrite.selectionDone': 'Tekst został pomyślnie przepisany',
+	'notice.rewrite.rewritingFile': 'Przepisywanie całego pliku...',
+	'notice.rewrite.fileDone': 'Plik został pomyślnie przepisany',
+	'validation.temperature.notANumber': 'Temperatura {value} nie jest prawidłową liczbą. Skorygowano do {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Temperatura {value} przekracza limit modelu {model} wynoszący {max}. Skorygowano do {max}.',
+	'validation.temperature.outOfRange':
+		'Temperatura {value} wykracza poza prawidłowy zakres [{min}, {max}]. Skorygowano do {adjusted}.',
+	'validation.topP.notANumber': 'Top P {value} nie jest prawidłową liczbą. Skorygowano do {adjusted}.',
+	'validation.topP.outOfRange':
+		'Top P {value} wykracza poza prawidłowy zakres [{min}, {max}]. Skorygowano do {adjusted}.',
 };

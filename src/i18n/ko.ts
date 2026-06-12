@@ -973,4 +973,16 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': '현재 파일 요약',
 	'command.toggleCompletions': '자동 완성 토글',
 	'command.createCustomPrompt': '새 사용자 지정 프롬프트 생성',
+	'notice.rewrite.rewritingSelection': '선택한 텍스트를 다시 작성하는 중...',
+	'notice.rewrite.selectionDone': '텍스트를 성공적으로 다시 작성했습니다',
+	'notice.rewrite.rewritingFile': '전체 파일을 다시 작성하는 중...',
+	'notice.rewrite.fileDone': '파일을 성공적으로 다시 작성했습니다',
+	'validation.temperature.notANumber': '온도 {value}은(는) 유효한 숫자가 아닙니다. {adjusted}(으)로 조정되었습니다.',
+	'validation.temperature.exceedsModelLimit':
+		'온도 {value}이(가) {model}의 제한인 {max}을(를) 초과합니다. {max}(으)로 조정되었습니다.',
+	'validation.temperature.outOfRange':
+		'온도 {value}이(가) 유효한 범위 [{min}, {max}]를 벗어났습니다. {adjusted}(으)로 조정되었습니다.',
+	'validation.topP.notANumber': 'Top P {value}은(는) 유효한 숫자가 아닙니다. {adjusted}(으)로 조정되었습니다.',
+	'validation.topP.outOfRange':
+		'Top P {value}이(가) 유효한 범위 [{min}, {max}]를 벗어났습니다. {adjusted}(으)로 조정되었습니다.',
 };

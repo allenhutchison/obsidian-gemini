@@ -995,4 +995,16 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': 'Actief bestand samenvatten',
 	'command.toggleCompletions': 'Aanvullingen in-/uitschakelen',
 	'command.createCustomPrompt': 'Nieuwe aangepaste prompt maken',
+	'notice.rewrite.rewritingSelection': 'Geselecteerde tekst herschrijven...',
+	'notice.rewrite.selectionDone': 'Tekst succesvol herschreven',
+	'notice.rewrite.rewritingFile': 'Volledig bestand herschrijven...',
+	'notice.rewrite.fileDone': 'Bestand succesvol herschreven',
+	'validation.temperature.notANumber': 'Temperatuur {value} is geen geldig getal. Aangepast naar {adjusted}.',
+	'validation.temperature.exceedsModelLimit':
+		'Temperatuur {value} overschrijdt de {model}-limiet van {max}. Aangepast naar {max}.',
+	'validation.temperature.outOfRange':
+		'Temperatuur {value} valt buiten het geldige bereik [{min}, {max}]. Aangepast naar {adjusted}.',
+	'validation.topP.notANumber': 'Top P {value} is geen geldig getal. Aangepast naar {adjusted}.',
+	'validation.topP.outOfRange':
+		'Top P {value} valt buiten het geldige bereik [{min}, {max}]. Aangepast naar {adjusted}.',
 };

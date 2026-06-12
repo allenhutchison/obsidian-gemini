@@ -931,4 +931,13 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'command.summarizeActiveFile': '摘要目前檔案',
 	'command.toggleCompletions': '切換自動補全',
 	'command.createCustomPrompt': '建立新的自訂提示詞',
+	'notice.rewrite.rewritingSelection': '正在重寫選取的文字...',
+	'notice.rewrite.selectionDone': '文字重寫成功',
+	'notice.rewrite.rewritingFile': '正在重寫整個檔案...',
+	'notice.rewrite.fileDone': '檔案重寫成功',
+	'validation.temperature.notANumber': '溫度 {value} 不是有效的數字。已調整為 {adjusted}。',
+	'validation.temperature.exceedsModelLimit': '溫度 {value} 超過 {model} 的限制 {max}。已調整為 {max}。',
+	'validation.temperature.outOfRange': '溫度 {value} 超出有效範圍 [{min}, {max}]。已調整為 {adjusted}。',
+	'validation.topP.notANumber': 'Top P {value} 不是有效的數字。已調整為 {adjusted}。',
+	'validation.topP.outOfRange': 'Top P {value} 超出有效範圍 [{min}, {max}]。已調整為 {adjusted}。',
 };

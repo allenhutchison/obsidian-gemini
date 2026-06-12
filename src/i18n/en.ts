@@ -3524,6 +3524,43 @@ export const en = {
 		message: 'Create new custom prompt',
 		context: 'Command palette entry that creates a new reusable custom prompt template.',
 	},
+	'notice.rewrite.rewritingSelection': {
+		message: 'Rewriting selected text...',
+		context: 'Toast notification while the AI rewrites the selected text.',
+	},
+	'notice.rewrite.selectionDone': {
+		message: 'Text rewritten successfully',
+		context: 'Toast notification when the AI finishes rewriting the selected text.',
+	},
+	'notice.rewrite.rewritingFile': {
+		message: 'Rewriting entire file...',
+		context: 'Toast notification while the AI rewrites the whole file.',
+	},
+	'notice.rewrite.fileDone': {
+		message: 'File rewritten successfully',
+		context: 'Toast notification when the AI finishes rewriting the whole file.',
+	},
+	'validation.temperature.notANumber': {
+		message: 'Temperature {value} is not a valid number. Adjusted to {adjusted}.',
+		context: 'Warning notice in settings when the temperature sampling parameter is not a number.',
+	},
+	'validation.temperature.exceedsModelLimit': {
+		message: 'Temperature {value} exceeds {model} limit of {max}. Adjusted to {max}.',
+		context:
+			"Warning notice in settings when temperature is above the selected model's maximum. {model} is a model name.",
+	},
+	'validation.temperature.outOfRange': {
+		message: 'Temperature {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
+		context: 'Warning notice in settings when temperature is outside the allowed range.',
+	},
+	'validation.topP.notANumber': {
+		message: 'Top P {value} is not a valid number. Adjusted to {adjusted}.',
+		context: 'Warning notice in settings when the Top P sampling parameter is not a number.',
+	},
+	'validation.topP.outOfRange': {
+		message: 'Top P {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
+		context: 'Warning notice in settings when Top P is outside the allowed range.',
+	},
 } as const satisfies Record<string, SourceString>;
 
 export type TranslationKey = keyof typeof en;
