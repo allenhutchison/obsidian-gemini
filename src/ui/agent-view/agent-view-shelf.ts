@@ -2,6 +2,7 @@ import { App, TFile, TFolder, setIcon, setTooltip } from 'obsidian';
 import { InlineAttachment } from './inline-attachment';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
 import { collectFilesFromFolder } from '../../utils/folder-walk';
+import { t } from '../../i18n';
 
 /**
  * Recursively collects all supported text files from a folder,
@@ -128,7 +129,7 @@ export class AgentViewShelf {
 		const item: ShelfItem = {
 			id: attachment.id,
 			type: 'binary',
-			name: attachment.fileName || 'Attachment',
+			name: attachment.fileName || t('agent.shelf.attachmentFallback'),
 			attachment,
 		};
 		this.items.push(item);
@@ -292,14 +293,14 @@ export class AgentViewShelf {
 			if (item.type === 'text' || item.type === 'folder') {
 				const badge = el.createSpan({ cls: 'gemini-shelf-badge' });
 				setIcon(badge, 'pin');
-				badge.setAttribute('aria-label', 'Included in every message');
+				badge.setAttribute('aria-label', t('agent.shelf.pinnedAria'));
 			}
 
 			// Remove button (tabindex=-1 so keyboard nav stays on shelf items; use Delete key instead)
 			const removeBtn = el.createEl('button', {
 				text: '×',
 				cls: 'gemini-shelf-remove',
-				attr: { title: 'Remove', 'aria-label': 'Remove', tabindex: '-1' },
+				attr: { title: t('agent.shelf.removeAria'), 'aria-label': t('agent.shelf.removeAria'), tabindex: '-1' },
 			});
 			removeBtn.addEventListener('click', () => this.handleRemove(item));
 		}

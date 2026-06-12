@@ -1,6 +1,7 @@
 import { Modal, App, setIcon } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ProjectSummary } from '../../types/project';
+import { t } from '../../i18n';
 
 interface ProjectPickerCallbacks {
 	onSelect: (project: ProjectSummary | null) => void;
@@ -33,7 +34,7 @@ export class ProjectPickerModal extends Modal {
 		contentEl.addClass('gemini-session-modal');
 		this.modalEl.addClass('mod-gemini-session-modal');
 
-		contentEl.createEl('h2', { text: 'Switch Project' });
+		contentEl.createEl('h2', { text: t('agent.projectPicker.title') });
 
 		const projects = this.plugin.projectManager?.discoverProjects() ?? [];
 
@@ -44,8 +45,8 @@ export class ProjectPickerModal extends Modal {
 			cls: `gemini-session-item ${!this.currentProjectPath ? 'gemini-session-item-active' : ''}`,
 		});
 		const noProjectInfo = noProjectItem.createDiv({ cls: 'gemini-session-info' });
-		noProjectInfo.createDiv({ text: 'No Project', cls: 'gemini-session-title' });
-		noProjectInfo.createDiv({ text: 'Use default vault-wide scope', cls: 'gemini-session-meta' });
+		noProjectInfo.createDiv({ text: t('agent.project.none'), cls: 'gemini-session-title' });
+		noProjectInfo.createDiv({ text: t('agent.projectPicker.noProjectDesc'), cls: 'gemini-session-meta' });
 		noProjectItem.addEventListener('click', () => {
 			this.callbacks.onSelect(null);
 			this.close();
@@ -53,7 +54,7 @@ export class ProjectPickerModal extends Modal {
 
 		if (projects.length === 0) {
 			listContainer.createEl('p', {
-				text: 'No projects found. Create a note with the gemini-scribe/project tag to get started.',
+				text: t('agent.projectPicker.empty'),
 				cls: 'gemini-agent-empty-state',
 			});
 		} else {
@@ -71,7 +72,7 @@ export class ProjectPickerModal extends Modal {
 				titleDiv.createSpan({ text: ' ' + project.name });
 
 				infoDiv.createDiv({
-					text: project.rootPath || '(vault root)',
+					text: project.rootPath || t('agent.projectPicker.vaultRoot'),
 					cls: 'gemini-session-meta',
 				});
 

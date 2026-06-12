@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { resolvePathToFile } from './vault/utils';
+import { t } from '../i18n';
 
 /**
  * Tool to safely update YAML frontmatter without touching content
@@ -50,7 +51,7 @@ class UpdateFrontmatterTool implements Tool {
 	};
 
 	confirmationMessage = (params: { path: string; key: string; value: any }) => {
-		return `Update frontmatter in ${params.path}: set "${params.key}" to "${params.value}"`;
+		return t('tool.confirm.updateFrontmatter', { path: params.path, key: params.key, value: String(params.value) });
 	};
 
 	getProgressDescription(params: { path: string; key: string }): string {
@@ -144,7 +145,8 @@ class AppendContentTool implements Tool {
 	};
 
 	confirmationMessage = (params: { path: string; content: string }) => {
-		return `Append content to file: ${params.path}\n\nContent preview:\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		const preview = `${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		return t('tool.confirm.appendFile', { path: params.path, preview });
 	};
 
 	getProgressDescription(params: { path: string }): string {

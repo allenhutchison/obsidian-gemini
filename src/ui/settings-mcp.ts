@@ -4,6 +4,7 @@ import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 import { clearServerEnv } from '../mcp/mcp-secrets';
 import { getErrorMessage, getRawErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
+import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderMCPSettings(
@@ -16,7 +17,9 @@ export async function renderMCPSettings(
 		await createMCPSettings(containerEl, plugin, app, context);
 	} catch (error) {
 		plugin.logger.error('MCP settings rendering error:', getRawErrorMessage(error));
-		new Setting(containerEl).setName('MCP Servers').setDesc(`Error loading MCP settings: ${getRawErrorMessage(error)}`);
+		new Setting(containerEl)
+			.setName(t('settings.mcp.sectionTitle'))
+			.setDesc(t('settings.mcp.loadErrorDesc', { error: getRawErrorMessage(error) }));
 	}
 }
 
@@ -26,16 +29,20 @@ async function createMCPSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'MCP Servers', 'mcp-servers', {
-		description: 'Connect external Model Context Protocol servers to extend the agent with additional tools.',
-		advanced: true,
-	});
+	const containerEl = createCollapsibleSection(
+		plugin,
+		outerContainerEl,
+		t('settings.mcp.sectionTitle'),
+		'mcp-servers',
+		{
+			description: t('settings.mcp.sectionDesc'),
+			advanced: true,
+		}
+	);
 
 	new Setting(containerEl)
-		.setName('Enable MCP servers')
-		.setDesc(
-			'Connect to Model Context Protocol servers to extend the agent with external tools. Supports local (stdio) and remote (HTTP) servers.'
-		)
+		.setName(t('settings.mcp.enableName'))
+		.setDesc(t('settings.mcp.enableDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.mcpEnabled).onChange(async (value) => {
 				plugin.settings.mcpEnabled = value;
@@ -57,7 +64,7 @@ async function createMCPSettings(
 
 	if (servers.length === 0) {
 		containerEl.createEl('p', {
-			text: 'No MCP servers configured. Click "Add Server" to get started.',
+			text: t('settings.mcp.noServers'),
 			cls: 'setting-item-description',
 		});
 	} else {
@@ -77,11 +84,11 @@ async function createMCPSettings(
 
 			const descParts: string[] = [];
 			if (server.transport === 'http' && server.url) {
-				descParts.push(`HTTP: ${server.url}`);
+				descParts.push(t('settings.mcp.httpUrl', { url: server.url }));
 				// Show OAuth status from SecretStorage
 				const oauthKey = `mcp-oauth-tokens-${sanitizeKeySegment(server.name)}`;
 				if (app.secretStorage.getSecret(oauthKey)) {
-					descParts.push('Authorized ✓');
+					descParts.push(t('settings.mcp.authorized'));
 				}
 			} else {
 				descParts.push(`${server.command} ${server.args.join(' ')}`);
@@ -95,7 +102,7 @@ async function createMCPSettings(
 
 			setting
 				.addButton((btn) =>
-					btn.setButtonText('Edit').onClick(async () => {
+					btn.setButtonText(t('settings.mcp.editButton')).onClick(async () => {
 						if (!mcpManager) return;
 						try {
 							const { MCPServerModal } = await import('./mcp-server-modal');
@@ -105,7 +112,7 @@ async function createMCPSettings(
 
 								// Reject duplicate names (allow keeping the same name)
 								if (updated.name !== oldName && plugin.settings.mcpServers.some((s) => s.name === updated.name)) {
-									new Notice(`A server named "${updated.name}" already exists`);
+									new Notice(t('settings.mcp.duplicateServerName', { name: updated.name }));
 									return;
 								}
 
@@ -123,7 +130,10 @@ async function createMCPSettings(
 											await mcpManager.connectServer(updated);
 										} catch (error) {
 											new Notice(
-												`Failed to reconnect "${updated.name}": ${error instanceof Error ? error.message : error}`
+												t('settings.mcp.reconnectFailed', {
+													name: updated.name,
+													error: error instanceof Error ? error.message : String(error),
+												})
 											);
 										}
 									}
@@ -134,13 +144,13 @@ async function createMCPSettings(
 							modal.open();
 						} catch (error) {
 							plugin.logger.error('Failed to load MCP server modal:', error);
-							new Notice(`Failed to open server editor: ${getErrorMessage(error)}`);
+							new Notice(t('settings.mcp.openEditorFailed', { error: getErrorMessage(error) }));
 						}
 					})
 				)
 				.addButton((btn) =>
 					btn
-						.setButtonText('Delete')
+						.setButtonText(t('settings.mcp.deleteButton'))
 						.setWarning()
 						.onClick(async () => {
 							// Disconnect first if connected
@@ -159,7 +169,7 @@ async function createMCPSettings(
 
 	new Setting(containerEl).addButton((btn) =>
 		btn
-			.setButtonText('Add Server')
+			.setButtonText(t('settings.mcp.addServerButton'))
 			.setCta()
 			.onClick(async () => {
 				if (!plugin.mcpManager) return;
@@ -169,7 +179,7 @@ async function createMCPSettings(
 						plugin.settings.mcpServers = plugin.settings.mcpServers || [];
 						// Check for duplicate name
 						if (plugin.settings.mcpServers.some((s) => s.name === config.name)) {
-							new Notice(`A server named "${config.name}" already exists`);
+							new Notice(t('settings.mcp.duplicateServerName', { name: config.name }));
 							return;
 						}
 						plugin.settings.mcpServers.push(config);
@@ -180,7 +190,7 @@ async function createMCPSettings(
 							try {
 								await plugin.mcpManager.connectServer(config);
 							} catch (error) {
-								new Notice(`Server saved but failed to connect: ${getErrorMessage(error)}`);
+								new Notice(t('settings.mcp.savedButConnectFailed', { error: getErrorMessage(error) }));
 							}
 						}
 
@@ -189,7 +199,7 @@ async function createMCPSettings(
 					modal.open();
 				} catch (error) {
 					plugin.logger.error('Failed to load MCP server modal:', error);
-					new Notice(`Failed to open Add Server dialog: ${getErrorMessage(error)}`);
+					new Notice(t('settings.mcp.openAddDialogFailed', { error: getErrorMessage(error) }));
 				}
 			})
 	);

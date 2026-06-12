@@ -2,6 +2,7 @@ import { Notice, setIcon, setTooltip } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { RagIndexStatus, RagProgressInfo, IndexResult, ProgressListener } from './rag-types';
 import { getErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 /**
  * Interface for the status bar to query service state without direct coupling.
@@ -56,7 +57,7 @@ export class RagStatusBar {
 				if (this.provider.getStatus() === 'indexing') {
 					const { RagProgressModal } = await import('../ui/rag-progress-modal');
 					const modal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
-						new Notice(`RAG Indexing: ${result.indexed} indexed, ${result.skipped} unchanged`);
+						new Notice(t('notice.rag.indexingSummary', { indexed: result.indexed, skipped: result.skipped }));
 					});
 					modal.open();
 				} else {
@@ -75,20 +76,20 @@ export class RagStatusBar {
 							// Open progress modal and start reindexing
 							const { RagProgressModal } = await import('../ui/rag-progress-modal');
 							const progressModal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
-								new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+								new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
 							});
 							progressModal.open();
 
 							// Trigger reindex (don't await - modal handles progress)
 							this.provider.indexVault().catch((error) => {
-								new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
+								new Notice(t('notice.rag.indexingFailed', { error: getErrorMessage(error) }));
 							});
 						},
 						async () => {
 							// Sync pending changes immediately
 							const synced = await this.provider.syncPendingChanges();
 							if (synced) {
-								new Notice('RAG Index: Syncing pending changes...');
+								new Notice(t('notice.rag.syncingPending'));
 							}
 							return synced;
 						}
@@ -97,7 +98,7 @@ export class RagStatusBar {
 				}
 			} catch (error) {
 				this.plugin.logger.error('RAG Indexing: Failed to open status UI', error);
-				new Notice(`RAG Indexing UI error: ${getErrorMessage(error)}`);
+				new Notice(t('notice.rag.uiError', { error: getErrorMessage(error) }));
 			}
 		});
 	}
@@ -129,7 +130,7 @@ export class RagStatusBar {
 				this.statusBarItem.style.display = '';
 				setIcon(iconEl, 'database');
 				textEl.setText(`${indexedCount}`);
-				tooltip = `RAG Index: ${indexedCount} files indexed`;
+				tooltip = t('statusbar.rag.indexed', { count: indexedCount });
 				break;
 			case 'indexing':
 				this.statusBarItem.style.display = '';
@@ -138,30 +139,30 @@ export class RagStatusBar {
 				if (indexingProgress.total > 0) {
 					const pct = Math.round((indexingProgress.current / indexingProgress.total) * 100);
 					textEl.setText(`${pct}%`);
-					tooltip = `RAG Index: Uploading ${indexingProgress.current}/${indexingProgress.total}...`;
+					tooltip = t('statusbar.rag.uploading', { current: indexingProgress.current, total: indexingProgress.total });
 				} else {
 					textEl.setText('...');
-					tooltip = 'RAG Index: Indexing...';
+					tooltip = t('statusbar.rag.indexing');
 				}
 				break;
 			case 'error':
 				this.statusBarItem.style.display = '';
 				setIcon(iconEl, 'alert-triangle');
 				textEl.setText('');
-				tooltip = 'RAG Index: Error - click for details';
+				tooltip = t('statusbar.rag.error');
 				break;
 			case 'paused':
 				this.statusBarItem.style.display = '';
 				setIcon(iconEl, 'pause-circle');
 				textEl.setText('');
-				tooltip = 'RAG Index: Paused';
+				tooltip = t('statusbar.rag.paused');
 				break;
 			case 'rate_limited': {
 				this.statusBarItem.style.display = '';
 				setIcon(iconEl, 'clock');
 				const remaining = this.provider.getRateLimitRemainingSeconds();
 				textEl.setText(`${remaining}s`);
-				tooltip = `RAG Index: Rate limited - waiting ${remaining}s`;
+				tooltip = t('statusbar.rag.rateLimited', { seconds: remaining });
 				break;
 			}
 		}

@@ -1,4 +1,4 @@
-# Agent Mode Guide
+# Agent mode Guide
 
 Gemini Scribe v4.0 is **agent-first** - every conversation is powered by an AI assistant that can actively work with your vault through tool calling. This guide covers everything you need to know about using the agent effectively and safely.
 
@@ -19,25 +19,25 @@ In v4.0+, the agent is always available and can:
 
 ### 1. Open Agent Chat
 
-- Use Command Palette: "Gemini Scribe: Open Gemini Chat"
+- Use Command Palette: "Gemini Scribe: Open Gemini chat"
 - Or click the sparkles icon (⭐) in the ribbon
 - Or use your configured hotkey
 - You can also manage sessions directly from the command palette with:
-  - "New Agent Session"
-  - "Browse Agent Sessions"
-  - "Link Project to Agent Session"
-  - "Agent Session Settings"
+  - "New agent session"
+  - "Browse agent sessions"
+  - "Link project to agent session"
+  - "Agent session settings"
 
-### 2. Initialize Vault Context (Recommended)
+### 2. Initialize vault context (Recommended)
 
-1. In an empty agent session, click "Initialize Vault Context"
+1. In an empty agent session, click "Initialize vault context"
 2. The agent will analyze your vault structure and create AGENTS.md
 3. This helps the agent understand your vault organization
 4. Update periodically as your vault grows
 
 ### 3. Configure Permissions
 
-Choose which operations require confirmation in **Settings → Gemini Scribe → Tool Permissions**:
+Choose which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (enable **Show advanced settings** first):
 
 - **write_file**: Creating or modifying files
 - **delete_file**: Removing files
@@ -265,7 +265,7 @@ What do I have selected?
 
 The agent uses this to understand your workspace context without needing files to be manually added to the session. Use `read_file` to get the actual content of specific files the agent identifies.
 
-### Vault Operations
+### Vault operations
 
 #### write_file
 
@@ -329,7 +329,7 @@ Remember that I keep all meeting notes under "Meetings/" by quarter
 What do you remember about my vault?
 ```
 
-`update_memory` requires confirmation; `read_memory` is read-only. The "Initialize Vault Context" button is the seed that creates AGENTS.md in the first place.
+`update_memory` requires confirmation; `read_memory` is read-only. The "Initialize vault context" button is the seed that creates AGENTS.md in the first place.
 
 ### Web & Research Operations
 
@@ -508,10 +508,10 @@ When the agent needs to perform operations that require your approval (like crea
 Instead of popup modals, confirmation requests appear as interactive messages in the chat:
 
 ```text
-🔒 Permission Required
+🔒 Permission required
 
 📝 Write File
-Vault Operation • Requires Confirmation
+Vault operation • Requires Confirmation
 
 Create or update a file in the vault
 
@@ -557,9 +557,9 @@ or
 ✗ Permission denied: Write File was cancelled
 ```
 
-### Diff View for File Changes
+### Diff view for File Changes
 
-When the agent proposes file changes (via `write_file`, `append_content`, `create_skill`, or `edit_skill`), the confirmation card includes a **View Changes** button that opens a side-by-side diff view. This lets you:
+When the agent proposes file changes (via `write_file`, `append_content`, `create_skill`, or `edit_skill`), the confirmation card includes a **View changes** button that opens a side-by-side diff view. This lets you:
 
 - See exactly what will change before approving
 - **Edit the proposed content** directly in the diff view before clicking Allow
@@ -579,7 +579,7 @@ By default, these operations require confirmation:
 - **create_skill**: Creating new skill packages
 - **edit_skill**: Updating existing skill instructions
 
-You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool Permissions** (under Advanced Settings).
+You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (enable **Show advanced settings** first).
 
 ### Session-Level Permissions
 
@@ -599,7 +599,7 @@ When you check "Don't ask again this session" and click Allow:
 User: Organize my daily notes into monthly folders
 
 [Agent requests permission to move first file]
-🔒 Permission Required - Move File
+🔒 Permission required - Move File
 [You check "Don't ask again this session" and click Allow]
 
 [Agent proceeds to move all remaining files without additional prompts]
@@ -616,10 +616,10 @@ Before clicking Allow, always review:
    **Example - Be careful with destructive operations:**
 
 ```text
-🔒 Permission Required
+🔒 Permission required
 
 🗑️ Delete File
-Vault Operation • Requires Confirmation
+Vault operation • Requires Confirmation
 
 Delete a file from the vault
 
@@ -769,9 +769,8 @@ Prevents infinite execution loops:
 
 ### Agent Not Responding
 
-1. Check agent mode is enabled
-2. Verify API key supports function calling
-3. Ensure selected model supports tools (all current Gemini models do)
+1. Verify API key supports function calling
+2. Ensure selected model supports tools (all current Gemini models do)
 
 ### Tools Not Available
 
@@ -851,6 +850,6 @@ Remember: The agent is a powerful tool, but you remain in control. Use it to aug
 
 ## Further Reading
 
-- [What I Did On My Summer Vacation](https://allen.hutchison.org/2025/09/24/what-i-did-on-my-summer-vacation/) — The story behind Agent Mode's development
+- [What I Did On My Summer Vacation](https://allen.hutchison.org/2025/09/24/what-i-did-on-my-summer-vacation/) — The story behind Agent mode's development
 - [Everything Becomes an Agent](https://allen.hutchison.org/2026/01/15/everything-becomes-an-agent/) — How every AI project evolves into an agent, and the patterns behind tools, memory, and autonomy
 - [Gemini Scribe: From Agent to Platform](https://allen.hutchison.org/2026/04/01/gemini-scribe-from-agent-to-platform/) — The evolution from chat plugin to AI platform, covering projects, skills, MCP, and the philosophy of seamless AI integration

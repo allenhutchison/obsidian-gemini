@@ -17,6 +17,7 @@ import { getRawErrorMessage } from '../utils/error-utils';
 import type ObsidianGemini from '../main';
 import { Logger } from '../utils/logger';
 import { Notice, Platform } from 'obsidian';
+import { t } from '../i18n';
 
 /** Marker on MCPServerState.error so the online listener knows which servers to retry. */
 const OFFLINE_ERROR_PREFIX = 'Machine is offline';
@@ -554,7 +555,7 @@ export class MCPManager {
 		} catch (connectError) {
 			if (connectError instanceof UnauthorizedError && useHttp && transport instanceof StreamableHTTPClientTransport) {
 				this.logger.log(`MCP: OAuth required for "${config.name}", waiting for authorization...`);
-				new Notice(`MCP: Authorizing "${config.name}" — check your browser`);
+				new Notice(t('notice.mcp.authorizing', { name: config.name }));
 
 				if (!callbackHandle) {
 					throw new Error('OAuth required but callback server is not available (mobile or port conflict)');

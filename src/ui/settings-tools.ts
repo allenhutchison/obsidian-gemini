@@ -12,6 +12,7 @@ import {
 } from '../types/tool-policy';
 import { getErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
+import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderToolSettings(
@@ -20,10 +21,16 @@ export async function renderToolSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const permissionsEl = createCollapsibleSection(plugin, containerEl, 'Tool Permissions', 'tool-permissions', {
-		description: 'Control which agent tools require confirmation, run automatically, or are blocked entirely.',
-		advanced: true,
-	});
+	const permissionsEl = createCollapsibleSection(
+		plugin,
+		containerEl,
+		t('settings.tools.sectionTitle'),
+		'tool-permissions',
+		{
+			description: t('settings.tools.sectionDesc'),
+			advanced: true,
+		}
+	);
 	await createToolPermissionsSettings(permissionsEl, plugin, app, context);
 }
 
@@ -43,19 +50,17 @@ async function createToolPermissionsSettings(
 
 	// If no tools are registered yet, show a message
 	if (allTools.length === 0) {
-		new Setting(containerEl)
-			.setName('No tools registered')
-			.setDesc('Tool permissions will appear here once tools are loaded.');
+		new Setting(containerEl).setName(t('settings.tools.noToolsName')).setDesc(t('settings.tools.noToolsDesc'));
 		return;
 	}
 
 	// --- Preset dropdown ---
 	new Setting(containerEl)
-		.setName('Permission preset')
-		.setDesc('Choose a preset that determines default permissions for all tools.')
+		.setName(t('settings.tools.presetName'))
+		.setDesc(t('settings.tools.presetDesc'))
 		.addDropdown((dropdown) => {
 			for (const preset of Object.values(PolicyPreset)) {
-				dropdown.addOption(preset, PRESET_LABELS[preset]);
+				dropdown.addOption(preset, t(PRESET_LABELS[preset]));
 			}
 			dropdown.setValue(policy.activePreset);
 			dropdown.onChange(async (value) => {
@@ -68,7 +73,7 @@ async function createToolPermissionsSettings(
 						confirmed = await showYoloConfirmation(app);
 					} catch (error) {
 						plugin.logger.error('Failed to load YOLO confirmation modal:', error);
-						new Notice(`Failed to open YOLO confirmation: ${getErrorMessage(error)}`);
+						new Notice(t('settings.tools.yoloConfirmFailed', { error: getErrorMessage(error) }));
 					}
 					if (!confirmed) {
 						dropdown.setValue(policy.activePreset);
@@ -108,7 +113,7 @@ async function createToolPermissionsSettings(
 
 		if (toolsInGroup.length === 0) continue;
 
-		const group = new SettingGroup(containerEl).setHeading(CLASSIFICATION_LABELS[classification]);
+		const group = new SettingGroup(containerEl).setHeading(t(CLASSIFICATION_LABELS[classification]));
 
 		for (const tool of toolsInGroup) {
 			group.addSetting((setting) => {
@@ -120,7 +125,7 @@ async function createToolPermissionsSettings(
 
 				setting.addDropdown((dropdown) => {
 					for (const perm of Object.values(ToolPermission)) {
-						dropdown.addOption(perm, PERMISSION_LABELS[perm]);
+						dropdown.addOption(perm, t(PERMISSION_LABELS[perm]));
 					}
 					dropdown.setValue(effectivePermission);
 					dropdown.onChange(async (value) => {

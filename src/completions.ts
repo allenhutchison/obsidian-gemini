@@ -4,6 +4,7 @@ import { forceableInlineSuggestion, Suggestion } from 'codemirror-companion-exte
 import { BaseModelRequest } from './api/index';
 import { GeminiPrompts } from './prompts';
 import { ModelClientFactory } from './api';
+import { t } from './i18n';
 
 export class GeminiCompletions {
 	private plugin: ObsidianGemini;
@@ -73,11 +74,11 @@ export class GeminiCompletions {
 		try {
 			this.plugin.addCommand({
 				id: 'gemini-scribe-toggle-completions', // Add plugin prefix
-				name: 'Toggle completions',
+				name: t('command.toggleCompletions'),
 				callback: () => {
 					// Use callback instead of editorCallback
 					this.completionsOn = !this.completionsOn;
-					new Notice(`Gemini Scribe Completions are now ${this.completionsOn ? 'enabled' : 'disabled'}.`);
+					new Notice(this.completionsOn ? t('notice.completions.enabled') : t('notice.completions.disabled'));
 					if (this.completionsOn) {
 						this.force_fetch();
 					}

@@ -1,6 +1,6 @@
-# Scheduled Tasks
+# Scheduled tasks
 
-Scheduled Tasks let you automate recurring AI prompts — daily summaries, weekly reports, periodic vault maintenance — without any manual intervention. Each task runs as a headless agent session and writes its output to a file in your vault.
+Scheduled tasks let you automate recurring AI prompts — daily summaries, weekly reports, periodic vault maintenance — without any manual intervention. Each task runs as a headless agent session and writes its output to a file in your vault.
 
 ## Overview
 
@@ -19,7 +19,7 @@ gemini-scribe/Scheduled-Tasks/
 
 The easiest way to create a task is through the **Scheduler** UI:
 
-1. Open the command palette and run **Open Scheduler** (or go to Settings → Gemini Scribe → Automation → **Open Scheduler**)
+1. Open the command palette and run **Open scheduler** (or go to Settings → Gemini Scribe → Automation → **Open scheduler**)
 2. Click **New task**
 3. Fill in the slug, schedule, tool access, and prompt
 4. Click **Create task**
@@ -37,7 +37,7 @@ toolPolicy:
   preset: read_only
 ---
 
-Summarise the notes I created or modified today. List the key topics and any open questions.
+Summarize the notes I created or modified today. List the key topics and any open questions.
 ```
 
 ### Frontmatter Fields
@@ -75,7 +75,7 @@ toolPolicy:
   preset: read_only
 ---
 
-Summarise the notes I created or modified today.
+Summarize the notes I created or modified today.
 ```
 
 ### Tool Access
@@ -124,12 +124,12 @@ maxIterations: 50
 
 ## Managing Tasks
 
-### Open Scheduler
+### Open scheduler
 
 The **Scheduler** modal is the primary way to manage your tasks. Open it from:
 
-- Command palette → **Open Scheduler**
-- Settings → Gemini Scribe → Automation → **Open Scheduler**
+- Command palette → **Open scheduler**
+- Settings → Gemini Scribe → Automation → **Open scheduler**
 
 From the Scheduler you can:
 
@@ -145,11 +145,11 @@ From the Scheduler you can:
 
 ### Create a New Task via Command
 
-You can also open the create form directly: **Command Palette → New Scheduled Task**.
+You can also open the create form directly: **Command Palette → New scheduled task**.
 
 ### Read-Only Status View
 
-For a lightweight read-only summary, use **Command Palette → View Scheduled Tasks**. This panel shows the same task list without edit controls.
+For a lightweight read-only summary, use **Command Palette → View scheduled tasks**. This panel shows the same task list without edit controls.
 
 ## Output Files
 
@@ -172,7 +172,7 @@ If a task fails **3 consecutive times**, the scheduler automatically pauses it t
 
 To resume a paused task:
 
-1. Open **Command Palette → Open Scheduler**
+1. Open **Command Palette → Open scheduler**
 2. Fix the underlying issue (e.g. invalid prompt, missing API key)
 3. Click **Reset** next to the paused task
 
@@ -180,7 +180,7 @@ To resume a paused task:
 
 When Obsidian is closed, scheduled tasks cannot run. Set `runIfMissed: true` in a task's frontmatter to have it caught up automatically the next time Obsidian starts.
 
-On startup, the plugin compares each task's `nextRunAt` against the current time. Any task with `runIfMissed: true` that is overdue (and not paused) is treated as a missed run. By default, a red `!` badge appears on the background-tasks status bar item — click it to open the **Missed Scheduled Runs** modal, which lists each missed task with **Run** and **Skip** buttons. On mobile (where the status bar is hidden), the modal opens automatically on startup instead of waiting for a badge click.
+On startup, the plugin compares each task's `nextRunAt` against the current time. Any task with `runIfMissed: true` that is overdue (and not paused) is treated as a missed run. By default, a red `!` badge appears on the background-tasks status bar item — click it to open the **Missed scheduled runs** modal, which lists each missed task with **Run** and **Skip** buttons. On mobile (where the status bar is hidden), the modal opens automatically on startup instead of waiting for a badge click.
 
 - **Run** — submits the task immediately as a background task
 - **Skip** — advances the schedule without running

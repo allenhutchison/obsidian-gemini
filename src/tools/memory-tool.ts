@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 /**
  * Tool for updating the AGENTS.md memory file
@@ -30,7 +31,8 @@ export class UpdateMemoryTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: { content: string }) => {
-		return `Add the following to AGENTS.md memory:\n\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		const preview = `${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		return t('tool.confirm.addMemory', { preview });
 	};
 
 	getProgressDescription(_params: any): string {

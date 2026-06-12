@@ -2,6 +2,7 @@ import { App, prepareFuzzySearch, setIcon, SuggestModal, TAbstractFile, TFile, T
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { collectFoldersFromFolder } from '../../utils/folder-walk';
 import type ObsidianGemini from '../../main';
+import { t } from '../../i18n';
 
 /** Undocumented internal SuggestModal API for programmatic highlight control. */
 interface SuggestModalChooser {
@@ -24,10 +25,10 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 		this.onSelect = onSelect;
 		this.plugin = plugin;
 		this.selectedFiles = new Set(initialSelection);
-		this.setPlaceholder('Search files to add as context...');
+		this.setPlaceholder(t('agent.filePicker.placeholder'));
 		this.setInstructions([
-			{ command: '↵', purpose: 'toggle selection' },
-			{ command: 'esc', purpose: 'confirm and close' },
+			{ command: '↵', purpose: t('agent.filePicker.toggleInstruction') },
+			{ command: 'esc', purpose: t('agent.filePicker.confirmInstruction') },
 		]);
 
 		const files = this.app.vault.getMarkdownFiles().filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin));

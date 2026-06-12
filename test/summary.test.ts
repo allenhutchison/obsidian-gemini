@@ -151,7 +151,7 @@ describe('GeminiSummary', () => {
 			expect(mockPlugin.addCommand).toHaveBeenCalledWith(
 				expect.objectContaining({
 					id: 'gemini-scribe-summarize-active-file',
-					name: 'Summarize Active File',
+					name: 'Summarize active file',
 					callback: expect.any(Function),
 				})
 			);

@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+import { t } from '../i18n';
 
 /**
  * Confirmation modal shown when user selects YOLO Mode.
@@ -21,27 +22,27 @@ export class YoloConfirmationModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Enable YOLO Mode?' });
+		contentEl.createEl('h2', { text: t('yolo.title') });
 
 		const container = contentEl.createEl('div');
 
 		container.createEl('p', {
-			text: 'YOLO Mode allows the AI agent to execute all tools without any confirmation — including creating, editing, deleting, and moving files, as well as external API calls.',
+			text: t('yolo.description'),
 		});
 
 		const warningEl = container.createEl('p', {
-			text: '⚠️ This grants the AI full, unsupervised access to your vault and external services. There is no undo for destructive operations.',
+			text: t('yolo.warning'),
 		});
 		warningEl.style.color = 'var(--text-warning)';
 		warningEl.style.fontWeight = 'bold';
 
 		container.createEl('p', {
-			text: 'Only enable this if you fully trust the AI model and understand the potential consequences.',
+			text: t('yolo.trustNote'),
 		});
 
 		new Setting(contentEl)
 			.addButton((btn) =>
-				btn.setButtonText('Cancel').onClick(() => {
+				btn.setButtonText(t('yolo.cancelButton')).onClick(() => {
 					this.resolved = true;
 					this.close();
 					this.onConfirm(false);
@@ -49,7 +50,7 @@ export class YoloConfirmationModal extends Modal {
 			)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Enable YOLO Mode')
+					.setButtonText(t('yolo.enableButton'))
 					.setWarning()
 					.onClick(() => {
 						this.resolved = true;

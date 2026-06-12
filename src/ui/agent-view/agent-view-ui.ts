@@ -18,6 +18,7 @@ import {
 	detectWebmMimeType,
 	GEMINI_INLINE_DATA_LIMIT,
 } from '../../utils/file-classification';
+import { t } from '../../i18n';
 
 /**
  * Callbacks interface for UI interactions
@@ -222,8 +223,8 @@ export class AgentViewUI {
 			});
 			const iconSpan = badge.createSpan();
 			setIcon(iconSpan, 'folder-open');
-			const nameSpan = badge.createSpan({ text: ' Loading...' });
-			setTooltip(badge, 'Loading project...');
+			const nameSpan = badge.createSpan({ text: ' ' + t('agent.header.loading') });
+			setTooltip(badge, t('agent.header.loadingProjectTooltip'));
 
 			void this.updateProjectBadge(badge, nameSpan, currentSession.projectPath);
 
@@ -246,17 +247,17 @@ export class AgentViewUI {
 				const tooltipParts: string[] = [];
 
 				if (currentSession.modelConfig.model) {
-					tooltipParts.push(`Model: ${currentSession.modelConfig.model}`);
+					tooltipParts.push(t('agent.header.tooltipModel', { value: currentSession.modelConfig.model }));
 				}
 				if (currentSession.modelConfig.temperature !== undefined) {
-					tooltipParts.push(`Temperature: ${currentSession.modelConfig.temperature}`);
+					tooltipParts.push(t('agent.header.tooltipTemperature', { value: currentSession.modelConfig.temperature }));
 				}
 				if (currentSession.modelConfig.topP !== undefined) {
-					tooltipParts.push(`Top-P: ${currentSession.modelConfig.topP}`);
+					tooltipParts.push(t('agent.header.tooltipTopP', { value: currentSession.modelConfig.topP }));
 				}
 				if (currentSession.modelConfig.promptTemplate) {
 					const promptName = currentSession.modelConfig.promptTemplate.split('/').pop()?.replace('.md', '') || 'custom';
-					tooltipParts.push(`Prompt: ${promptName}`);
+					tooltipParts.push(t('agent.header.tooltipPrompt', { value: promptName }));
 				}
 
 				// Show just the prompt template name if present, otherwise show icon
@@ -287,7 +288,7 @@ export class AgentViewUI {
 
 		const menuBtn = rightSection.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-icon',
-			attr: { 'aria-label': 'Session menu' },
+			attr: { 'aria-label': t('agent.header.menuAria') },
 		});
 		setIcon(menuBtn, 'menu');
 
@@ -297,13 +298,13 @@ export class AgentViewUI {
 
 			menu.addItem((item) => {
 				item
-					.setTitle('New Session')
+					.setTitle(t('agent.menu.newSession'))
 					.setIcon('plus')
 					.onClick(() => callbacks.createNewSession());
 			});
 			menu.addItem((item) => {
 				item
-					.setTitle('Browse Sessions')
+					.setTitle(t('agent.menu.browseSessions'))
 					.setIcon('list')
 					.onClick(() => callbacks.showSessionList());
 			});
@@ -311,14 +312,14 @@ export class AgentViewUI {
 			if (this.plugin.projectManager) {
 				menu.addItem((item) => {
 					item
-						.setTitle(currentSession?.projectPath ? 'Switch Project' : 'Link Project')
+						.setTitle(currentSession?.projectPath ? t('agent.menu.switchProject') : t('agent.menu.linkProject'))
 						.setIcon('folder-open')
 						.onClick(() => callbacks.switchProject());
 				});
 			}
 			menu.addItem((item) => {
 				item
-					.setTitle('Session Settings')
+					.setTitle(t('agent.menu.sessionSettings'))
 					.setIcon('settings')
 					.onClick(() => callbacks.showSessionSettings());
 			});
@@ -352,13 +353,13 @@ export class AgentViewUI {
 			cls: 'gemini-agent-input gemini-agent-input-rich',
 			attr: {
 				contenteditable: 'true',
-				'data-placeholder': 'Message the agent... (@ files, / skills)',
+				'data-placeholder': t('agent.input.placeholder'),
 			},
 		}) as HTMLDivElement;
 
 		const sendButton = inputRow.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
-			attr: { 'aria-label': 'Send message to agent' },
+			attr: { 'aria-label': t('agent.input.sendAria') },
 		});
 		setIcon(sendButton, 'play');
 
@@ -558,7 +559,7 @@ export class AgentViewUI {
 
 				if (filteredFiles.length === 0) {
 					if (uniqueFiles.length > 0) {
-						new Notice('Dropped files were excluded (system or plugin files)', 3000);
+						new Notice(t('agent.attachments.droppedExcluded'), 3000);
 					}
 					return;
 				}
@@ -638,17 +639,25 @@ export class AgentViewUI {
 						binaryCount++;
 					} catch (err) {
 						this.plugin.logger.error(`Failed to read binary file ${file.path}:`, err);
-						new Notice(`Failed to attach ${file.name}`);
+						new Notice(t('agent.attachments.attachFailed', { name: file.name }));
 					}
 				}
 
 				// Show notices
 				const parts: string[] = [];
 				if (textFiles.length > 0) {
-					parts.push(`${textFiles.length} text file${textFiles.length === 1 ? '' : 's'} added to context`);
+					parts.push(
+						textFiles.length === 1
+							? t('agent.attachments.textFileAddedOne')
+							: t('agent.attachments.textFilesAdded', { count: textFiles.length })
+					);
 				}
 				if (binaryCount > 0) {
-					parts.push(`${binaryCount} file${binaryCount === 1 ? '' : 's'} attached`);
+					parts.push(
+						binaryCount === 1
+							? t('agent.attachments.fileAttachedOne')
+							: t('agent.attachments.filesAttached', { count: binaryCount })
+					);
 				}
 				if (parts.length > 0) {
 					new Notice(parts.join(', '), 3000);
@@ -656,7 +665,12 @@ export class AgentViewUI {
 
 				if (sizeLimitExceeded.length > 0) {
 					new Notice(
-						`Skipped ${sizeLimitExceeded.length} file${sizeLimitExceeded.length === 1 ? '' : 's'} (exceeds 20MB cumulative limit): ${sizeLimitExceeded.join(', ')}`,
+						sizeLimitExceeded.length === 1
+							? t('agent.attachments.skippedSizeOne', { files: sizeLimitExceeded.join(', ') })
+							: t('agent.attachments.skippedSize', {
+									count: sizeLimitExceeded.length,
+									files: sizeLimitExceeded.join(', '),
+								}),
 						5000
 					);
 				}
@@ -664,7 +678,9 @@ export class AgentViewUI {
 				if (unsupportedExts.length > 0) {
 					const uniqueExts = [...new Set(unsupportedExts)];
 					new Notice(
-						`Skipped unsupported file type${uniqueExts.length === 1 ? '' : 's'}: ${uniqueExts.join(', ')}`,
+						uniqueExts.length === 1
+							? t('agent.attachments.skippedUnsupportedOne', { exts: uniqueExts.join(', ') })
+							: t('agent.attachments.skippedUnsupported', { exts: uniqueExts.join(', ') }),
 						4000
 					);
 				}
@@ -684,7 +700,7 @@ export class AgentViewUI {
 					(file) => file.type?.startsWith('image/') && !isSupportedImageType(file.type)
 				);
 				if (unsupportedImages.length > 0) {
-					new Notice('Unsupported image format. Please use PNG, JPEG, GIF, or WebP.');
+					new Notice(t('agent.attachments.unsupportedImageFormat'));
 				}
 				return;
 			}
@@ -699,7 +715,7 @@ export class AgentViewUI {
 			for (const file of fileArray) {
 				if (isSupportedImageType(file.type)) {
 					if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-						new Notice('Attachment size limit (20 MB) reached. Some images were skipped.');
+						new Notice(t('agent.attachments.sizeLimitReached'));
 						break;
 					}
 					try {
@@ -714,7 +730,7 @@ export class AgentViewUI {
 						imagesProcessed++;
 					} catch (err) {
 						this.plugin.logger.error('Failed to process dropped image:', err);
-						new Notice('Failed to attach image');
+						new Notice(t('agent.attachments.imageAttachFailed'));
 					}
 				} else if (file.type.startsWith('image/')) {
 					unsupportedCount++;
@@ -722,10 +738,14 @@ export class AgentViewUI {
 			}
 
 			if (imagesProcessed > 0) {
-				new Notice(imagesProcessed === 1 ? 'Image attached' : `${imagesProcessed} images attached`);
+				new Notice(
+					imagesProcessed === 1
+						? t('agent.attachments.imageAttachedOne')
+						: t('agent.attachments.imagesAttached', { count: imagesProcessed })
+				);
 			}
 			if (unsupportedCount > 0) {
-				new Notice(`${unsupportedCount} image(s) skipped: unsupported format. Use PNG, JPEG, GIF, or WebP.`);
+				new Notice(t('agent.attachments.imagesSkippedUnsupportedHint', { count: unsupportedCount }));
 			}
 		});
 
@@ -739,7 +759,7 @@ export class AgentViewUI {
 				for (const file of Array.from(e.clipboardData.files)) {
 					if (isSupportedImageType(file.type)) {
 						if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-							new Notice('Attachment size limit (20 MB) reached. Some images were skipped.');
+							new Notice(t('agent.attachments.sizeLimitReached'));
 							break;
 						}
 						// Prevent default once when we find the first image
@@ -758,7 +778,7 @@ export class AgentViewUI {
 							imagesProcessed++;
 						} catch (err) {
 							this.plugin.logger.error('Failed to process pasted image:', err);
-							new Notice('Failed to attach image');
+							new Notice(t('agent.attachments.imageAttachFailed'));
 						}
 					} else if (file.type.startsWith('image/')) {
 						unsupportedCount++;
@@ -768,14 +788,18 @@ export class AgentViewUI {
 
 			// Notify about unsupported formats
 			if (unsupportedCount > 0 && imagesProcessed === 0) {
-				new Notice('Unsupported image format. Please use PNG, JPEG, GIF, or WebP.');
+				new Notice(t('agent.attachments.unsupportedImageFormat'));
 			} else if (unsupportedCount > 0) {
-				new Notice(`${unsupportedCount} image(s) skipped: unsupported format.`);
+				new Notice(t('agent.attachments.imagesSkippedUnsupported', { count: unsupportedCount }));
 			}
 
 			// If images were processed, show notice and skip text handling
 			if (imagesProcessed > 0) {
-				new Notice(imagesProcessed === 1 ? 'Image attached' : `${imagesProcessed} images attached`);
+				new Notice(
+					imagesProcessed === 1
+						? t('agent.attachments.imageAttachedOne')
+						: t('agent.attachments.imagesAttached', { count: imagesProcessed })
+				);
 				return;
 			}
 
@@ -828,7 +852,7 @@ export class AgentViewUI {
 					} catch (execErr) {
 						this.plugin.logger.warn('All paste methods failed:', execErr);
 						// If all else fails, we can't paste
-						new Notice('Unable to paste in popout window. Try pasting in the main window.');
+						new Notice(t('agent.input.pasteFailed'));
 						return;
 					}
 				}
@@ -872,13 +896,13 @@ export class AgentViewUI {
 			if (!badge.isConnected) return;
 			const projectName = project?.config.name || projectPath;
 			nameSpan.textContent = ` ${projectName}`;
-			setTooltip(badge, `Project: ${projectName}\n${projectPath}`);
+			setTooltip(badge, t('agent.header.projectTooltip', { name: projectName, path: projectPath }));
 		} catch (error) {
 			// Never leave the badge stuck on "Loading..." if resolution fails.
 			this.plugin.logger.warn('Failed to load project for badge:', error);
 			if (!badge.isConnected) return;
-			nameSpan.textContent = ' No Project';
-			setTooltip(badge, 'Click to link a project');
+			nameSpan.textContent = ' ' + t('agent.project.none');
+			setTooltip(badge, t('agent.header.linkProjectTooltip'));
 		}
 	}
 }

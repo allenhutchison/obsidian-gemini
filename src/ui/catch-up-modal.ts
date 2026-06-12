@@ -1,6 +1,7 @@
 import { App, Modal, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { PendingCatchUp } from '../services/scheduled-task-manager';
+import { t } from '../i18n';
 
 /**
  * Modal shown on startup when scheduled tasks were missed while the plugin
@@ -27,9 +28,9 @@ export class CatchUpModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('gemini-catchup-modal');
 
-		contentEl.createEl('h2', { text: 'Missed Scheduled Runs' });
+		contentEl.createEl('h2', { text: t('catchUp.title') });
 		contentEl.createEl('p', {
-			text: 'The following tasks were scheduled to run while Obsidian was closed. Choose which ones to run now.',
+			text: t('catchUp.description'),
 			cls: 'gemini-catchup-description',
 		});
 
@@ -40,7 +41,7 @@ export class CatchUpModal extends Modal {
 		const actions = contentEl.createDiv({ cls: 'gemini-catchup-actions' });
 
 		const runAllBtn = actions.createEl('button', {
-			text: 'Run all',
+			text: t('catchUp.runAllButton'),
 			cls: 'mod-cta',
 			attr: { type: 'button' },
 		});
@@ -53,14 +54,14 @@ export class CatchUpModal extends Modal {
 				this.close();
 			} catch (err) {
 				this.plugin.logger.error('[CatchUpModal] Run all failed:', err);
-				new Notice('Some tasks failed to run — check logs for details.');
+				new Notice(t('catchUp.runAllFailed'));
 				runAllBtn.disabled = false;
 				skipAllBtn.disabled = false;
 			}
 		});
 
 		const skipAllBtn = actions.createEl('button', {
-			text: 'Skip all',
+			text: t('catchUp.skipAllButton'),
 			attr: { type: 'button' },
 		});
 		skipAllBtn.addEventListener('click', async () => {
@@ -72,7 +73,7 @@ export class CatchUpModal extends Modal {
 				this.close();
 			} catch (err) {
 				this.plugin.logger.error('[CatchUpModal] Skip all failed:', err);
-				new Notice('Some tasks failed to skip — check logs for details.');
+				new Notice(t('catchUp.skipAllFailed'));
 				runAllBtn.disabled = false;
 				skipAllBtn.disabled = false;
 			}
@@ -94,7 +95,7 @@ export class CatchUpModal extends Modal {
 		list.empty();
 
 		if (this.pending.length === 0) {
-			list.createEl('li', { text: 'No pending runs.', cls: 'gemini-catchup-empty' });
+			list.createEl('li', { text: t('catchUp.empty'), cls: 'gemini-catchup-empty' });
 			return;
 		}
 
@@ -107,13 +108,13 @@ export class CatchUpModal extends Modal {
 			info.createSpan({ cls: 'gemini-catchup-item-slug', text: entry.task.slug });
 			info.createSpan({
 				cls: 'gemini-catchup-item-age',
-				text: `missed ${this.formatAge(entry.missedAt)}`,
+				text: t('catchUp.missedAge', { age: this.formatAge(entry.missedAt) }),
 			});
 
 			const btns = li.createDiv({ cls: 'gemini-catchup-item-btns' });
 
 			const approveBtn = btns.createEl('button', {
-				text: 'Run',
+				text: t('catchUp.runButton'),
 				cls: 'mod-cta gemini-catchup-approve',
 				attr: { type: 'button' },
 			});
@@ -130,14 +131,14 @@ export class CatchUpModal extends Modal {
 					}
 				} catch (err) {
 					this.plugin.logger.error(`[CatchUpModal] Failed to run "${entry.task.slug}":`, err);
-					new Notice(`Failed to run "${entry.task.slug}" — check logs for details.`);
+					new Notice(t('catchUp.runFailed', { slug: entry.task.slug }));
 					approveBtn.disabled = false;
 					skipBtn.disabled = false;
 				}
 			});
 
 			const skipBtn = btns.createEl('button', {
-				text: 'Skip',
+				text: t('catchUp.skipButton'),
 				attr: { type: 'button' },
 			});
 			skipBtn.addEventListener('click', async () => {
@@ -153,7 +154,7 @@ export class CatchUpModal extends Modal {
 					}
 				} catch (err) {
 					this.plugin.logger.error(`[CatchUpModal] Failed to skip "${entry.task.slug}":`, err);
-					new Notice(`Failed to skip "${entry.task.slug}" — check logs for details.`);
+					new Notice(t('catchUp.skipFailed', { slug: entry.task.slug }));
 					approveBtn.disabled = false;
 					skipBtn.disabled = false;
 				}
@@ -189,10 +190,10 @@ export class CatchUpModal extends Modal {
 	private formatAge(date: Date): string {
 		const diffMs = Date.now() - date.getTime();
 		const mins = Math.floor(diffMs / 60_000);
-		if (mins < 60) return `${mins}m ago`;
+		if (mins < 60) return t('catchUp.minutesAgo', { count: mins });
 		const hours = Math.floor(mins / 60);
-		if (hours < 24) return `${hours}h ago`;
+		if (hours < 24) return t('catchUp.hoursAgo', { count: hours });
 		const days = Math.floor(hours / 24);
-		return `${days}d ago`;
+		return t('catchUp.daysAgo', { count: days });
 	}
 }

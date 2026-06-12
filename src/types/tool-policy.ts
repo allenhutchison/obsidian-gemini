@@ -1,3 +1,4 @@
+import type { TranslationKey } from '../i18n/en';
 /**
  * Tool permission and policy system.
  *
@@ -102,33 +103,33 @@ export const PRESET_PERMISSIONS: Record<PolicyPreset, Record<ToolClassification,
 };
 
 /**
- * Human-friendly labels for presets (for settings UI).
+ * Translation keys for preset labels (render with t() in settings UI).
  */
-export const PRESET_LABELS: Record<PolicyPreset, string> = {
-	[PolicyPreset.READ_ONLY]: 'Read Only',
-	[PolicyPreset.CAUTIOUS]: 'Cautious (Default)',
-	[PolicyPreset.EDIT_MODE]: 'Edit Mode',
-	[PolicyPreset.YOLO]: 'YOLO Mode',
-	[PolicyPreset.CUSTOM]: 'Custom',
+export const PRESET_LABELS: Record<PolicyPreset, TranslationKey> = {
+	[PolicyPreset.READ_ONLY]: 'toolPolicy.preset.readOnly',
+	[PolicyPreset.CAUTIOUS]: 'toolPolicy.preset.cautious',
+	[PolicyPreset.EDIT_MODE]: 'toolPolicy.preset.editMode',
+	[PolicyPreset.YOLO]: 'toolPolicy.preset.yolo',
+	[PolicyPreset.CUSTOM]: 'toolPolicy.preset.custom',
 };
 
 /**
- * Human-friendly labels for permissions (for settings UI dropdowns).
+ * Translation keys for permission labels (render with t() in settings UI dropdowns).
  */
-export const PERMISSION_LABELS: Record<ToolPermission, string> = {
-	[ToolPermission.DENY]: 'Deny',
-	[ToolPermission.ASK_USER]: 'Ask User',
-	[ToolPermission.APPROVE]: 'Approve',
+export const PERMISSION_LABELS: Record<ToolPermission, TranslationKey> = {
+	[ToolPermission.DENY]: 'toolPolicy.permission.deny',
+	[ToolPermission.ASK_USER]: 'toolPolicy.permission.askUser',
+	[ToolPermission.APPROVE]: 'toolPolicy.permission.approve',
 };
 
 /**
- * Human-friendly labels for classifications (for settings UI section headers).
+ * Translation keys for classification labels (render with t() in settings UI section headers).
  */
-export const CLASSIFICATION_LABELS: Record<ToolClassification, string> = {
-	[ToolClassification.READ]: 'Read Tools',
-	[ToolClassification.WRITE]: 'Write Tools',
-	[ToolClassification.DESTRUCTIVE]: 'Destructive Tools',
-	[ToolClassification.EXTERNAL]: 'External Tools',
+export const CLASSIFICATION_LABELS: Record<ToolClassification, TranslationKey> = {
+	[ToolClassification.READ]: 'toolPolicy.classification.read',
+	[ToolClassification.WRITE]: 'toolPolicy.classification.write',
+	[ToolClassification.DESTRUCTIVE]: 'toolPolicy.classification.destructive',
+	[ToolClassification.EXTERNAL]: 'toolPolicy.classification.external',
 };
 
 /**

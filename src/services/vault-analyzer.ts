@@ -4,6 +4,7 @@ import { ModelClientFactory } from '../api';
 import { AgentsMemoryData } from './agents-memory';
 import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
 import { collectFilesFromFolder } from '../utils/folder-walk';
+import { t } from '../i18n';
 
 /**
  * Simple cache entry for vault information
@@ -47,19 +48,19 @@ export class VaultAnalyzer {
 		const modelName = this.plugin.settings.chatModelName;
 
 		// Define steps
-		modal.addStep('collect', 'Collecting vault information');
-		modal.addStep('analyze', `Analyzing with ${modelName}`);
-		modal.addStep('parse', 'Processing results');
-		modal.addStep('render', 'Rendering template');
-		modal.addStep('write', 'Writing AGENTS.md');
-		modal.addStep('examples', `Generating example prompts`);
-		modal.addStep('save-examples', 'Saving example prompts');
+		modal.addStep('collect', t('modal.vaultAnalysis.stepCollect'));
+		modal.addStep('analyze', t('modal.vaultAnalysis.stepAnalyze', { model: modelName }));
+		modal.addStep('parse', t('modal.vaultAnalysis.stepParse'));
+		modal.addStep('render', t('modal.vaultAnalysis.stepRender'));
+		modal.addStep('write', t('modal.vaultAnalysis.stepWrite'));
+		modal.addStep('examples', t('modal.vaultAnalysis.stepExamples'));
+		modal.addStep('save-examples', t('modal.vaultAnalysis.stepSaveExamples'));
 
 		try {
 			// Step 1: Collect vault information
 			let stepStart = Date.now();
 			modal.setStepInProgress('collect');
-			modal.updateStatus('Analyzing vault structure...');
+			modal.updateStatus(t('modal.vaultAnalysis.statusAnalyzing'));
 			const vaultInfo = this.collectVaultInformation();
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('collect');
@@ -73,7 +74,7 @@ export class VaultAnalyzer {
 			// Step 2: Call model
 			stepStart = Date.now();
 			modal.setStepInProgress('analyze');
-			modal.updateStatus(`Generating vault context with ${modelName}...`);
+			modal.updateStatus(t('modal.vaultAnalysis.statusGenerating', { model: modelName }));
 			const modelApi = ModelClientFactory.createChatModel(this.plugin);
 			const response = await modelApi.generateModelResponse({
 				kind: 'base',
@@ -86,13 +87,13 @@ export class VaultAnalyzer {
 			// Step 3: Parse response
 			stepStart = Date.now();
 			modal.setStepInProgress('parse');
-			modal.updateStatus('Processing response...');
+			modal.updateStatus(t('modal.vaultAnalysis.statusProcessing'));
 			const generatedData = this.parseAnalysisResponse(response.markdown);
 
 			if (!generatedData) {
-				modal.setStepFailed('parse', 'Failed to parse AI response');
+				modal.setStepFailed('parse', t('modal.vaultAnalysis.parseFailedStep'));
 				this.plugin.logger.error('Failed to parse analysis response:', response.markdown);
-				new Notice('Failed to parse AI response. Check console for details.');
+				new Notice(t('notice.vaultAnalysis.parseFailed'));
 				window.setTimeout(() => modal.close(), 3000);
 				return;
 			}
@@ -103,7 +104,7 @@ export class VaultAnalyzer {
 			// Step 4: Render template
 			stepStart = Date.now();
 			modal.setStepInProgress('render');
-			modal.updateStatus('Rendering content...');
+			modal.updateStatus(t('modal.vaultAnalysis.statusRendering'));
 			const renderedContent = this.plugin.agentsMemory.render(generatedData);
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('render');
@@ -111,7 +112,7 @@ export class VaultAnalyzer {
 			// Step 5: Write to file
 			stepStart = Date.now();
 			modal.setStepInProgress('write');
-			modal.updateStatus('Writing AGENTS.md...');
+			modal.updateStatus(t('modal.vaultAnalysis.statusWriting'));
 			await this.plugin.agentsMemory.write(renderedContent);
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('write');
@@ -119,7 +120,7 @@ export class VaultAnalyzer {
 			// Step 6: Generate example prompts
 			stepStart = Date.now();
 			modal.setStepInProgress('examples');
-			modal.updateStatus(`Generating example prompts with ${modelName}...`);
+			modal.updateStatus(t('modal.vaultAnalysis.statusExamples', { model: modelName }));
 
 			// Read existing prompts to help generate new, different ones
 			let existingPromptsString: string | undefined;
@@ -140,7 +141,7 @@ export class VaultAnalyzer {
 			// Step 7: Save example prompts
 			stepStart = Date.now();
 			modal.setStepInProgress('save-examples');
-			modal.updateStatus('Saving example prompts...');
+			modal.updateStatus(t('modal.vaultAnalysis.statusSavingExamples'));
 			const examplePrompts = this.parseExamplePromptsResponse(examplePromptsResponse.markdown);
 			if (examplePrompts && examplePrompts.length > 0) {
 				await this.plugin.examplePrompts.write(examplePrompts);
@@ -151,9 +152,9 @@ export class VaultAnalyzer {
 			modal.setStepComplete('save-examples');
 
 			// Success!
-			const action = existingContent ? 'updated' : 'created';
-			modal.setComplete(`Vault context ${action} successfully!`);
-			new Notice(`Vault context ${action} successfully!`);
+			const successMessage = existingContent ? t('notice.vaultAnalysis.updated') : t('notice.vaultAnalysis.created');
+			modal.setComplete(successMessage);
+			new Notice(successMessage);
 
 			// Open the file for review
 			const memoryPath = this.plugin.agentsMemory.getMemoryFilePath();
@@ -163,8 +164,11 @@ export class VaultAnalyzer {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to initialize AGENTS.md:', error);
-			modal.setStepFailed(modal.currentStep, error instanceof Error ? error.message : 'Unknown error');
-			new Notice('Failed to initialize AGENTS.md. Check console for details.');
+			modal.setStepFailed(
+				modal.currentStep,
+				error instanceof Error ? error.message : t('modal.vaultAnalysis.unknownError')
+			);
+			new Notice(t('notice.vaultAnalysis.initFailed'));
 			window.setTimeout(() => modal.close(), 3000);
 		}
 	}

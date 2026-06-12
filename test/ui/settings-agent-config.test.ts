@@ -100,6 +100,7 @@ vi.mock('obsidian', () => {
 	}
 
 	return {
+		getLanguage: () => 'en',
 		Setting,
 		Notice: mockNotice,
 		debounce,

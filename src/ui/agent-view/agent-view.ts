@@ -25,6 +25,7 @@ import { SessionListModal } from './session-list-modal';
 import { SkillMentionModal } from './skill-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
 import { moveCursorToEnd } from '../../utils/dom-context';
+import { t } from '../../i18n';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
 
@@ -74,7 +75,7 @@ export class AgentView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return 'Agent Mode';
+		return t('agent.view.displayName');
 	}
 
 	getIcon(): string {
@@ -488,7 +489,7 @@ export class AgentView extends ItemView {
 	private async showSkillPicker() {
 		const summaries = await this.plugin.skillManager.getSkillSummaries();
 		if (summaries.length === 0) {
-			new Notice('No skills available');
+			new Notice(t('agent.view.noSkills'));
 			return;
 		}
 		const modal = new SkillMentionModal(
@@ -533,7 +534,7 @@ export class AgentView extends ItemView {
 	 */
 	async showSessionSettings() {
 		if (!this.currentSession) {
-			new Notice('No active session');
+			new Notice(t('agent.view.noActiveSession'));
 			return;
 		}
 
@@ -831,15 +832,19 @@ export class AgentView extends ItemView {
 			this.tokenUsageContainer.empty();
 
 			const tokenText = this.tokenUsageContainer.createSpan({ cls: 'gemini-agent-token-text' });
-			const base = `Tokens: ~${usage.estimatedTokens.toLocaleString()} / ${usage.inputTokenLimit.toLocaleString()} (${usage.percentUsed}%)`;
+			const usageVars = {
+				used: usage.estimatedTokens.toLocaleString(),
+				limit: usage.inputTokenLimit.toLocaleString(),
+				percent: usage.percentUsed,
+			};
 			if (usage.cachedTokens > 0 && usage.estimatedTokens > 0) {
 				// Cached ratio reflects how much of the current prompt was served
 				// from Gemini's implicit/explicit cache — a positive signal that
 				// rewards stable prefixes (system prompt, pinned history).
 				const cachedPercent = Math.round((usage.cachedTokens / usage.estimatedTokens) * 100);
-				tokenText.textContent = `${base} · ${cachedPercent}% cached`;
+				tokenText.textContent = t('agent.tokens.usageCached', { ...usageVars, cached: cachedPercent });
 			} else {
-				tokenText.textContent = base;
+				tokenText.textContent = t('agent.tokens.usage', usageVars);
 			}
 
 			// Add warning class if approaching threshold

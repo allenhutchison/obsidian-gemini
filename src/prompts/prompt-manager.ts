@@ -2,6 +2,7 @@ import { Vault, TFile, TFolder, normalizePath, Notice, Modal, App } from 'obsidi
 import type ObsidianGemini from '../main';
 import { CustomPrompt, PromptInfo } from './types';
 import { BundledPromptRegistry } from './bundled-prompts';
+import { t } from '../i18n';
 
 export class PromptManager {
 	constructor(
@@ -188,7 +189,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 	setupPromptCommands(): void {
 		this.plugin.addCommand({
 			id: 'gemini-scribe-create-custom-prompt',
-			name: 'Create New Custom Prompt',
+			name: t('command.createCustomPrompt'),
 			callback: () => this.createNewCustomPrompt(),
 		});
 	}
@@ -199,7 +200,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 			// Open input modal for prompt name
 			const modal = new PromptNameModal(this.plugin.app, async (promptName: string) => {
 				if (!promptName || promptName.trim() === '') {
-					new Notice('Prompt name cannot be empty');
+					new Notice(t('notice.prompt.nameEmpty'));
 					return;
 				}
 
@@ -209,7 +210,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 					.replace(/[^\w\s-]/g, '')
 					.replace(/\s+/g, '-');
 				if (!sanitizedName) {
-					new Notice('Invalid prompt name. Please use alphanumeric characters, spaces, hyphens, or underscores.');
+					new Notice(t('notice.prompt.nameInvalid'));
 					return;
 				}
 
@@ -220,7 +221,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 				// Check if file already exists
 				const existingFile = this.vault.getAbstractFileByPath(filePath);
 				if (existingFile) {
-					new Notice(`A prompt file named "${fileName}" already exists.`);
+					new Notice(t('notice.prompt.alreadyExists', { fileName }));
 					return;
 				}
 
@@ -252,17 +253,17 @@ This prompt will be applied to sessions and will supplement the default system p
 					// Open the file for editing
 					await this.plugin.app.workspace.openLinkText(newFile.path, '', true);
 
-					new Notice(`Created new custom prompt: ${promptName}`);
+					new Notice(t('notice.prompt.created', { name: promptName }));
 				} catch (error) {
 					this.plugin.logger.error('Error creating prompt file:', error);
-					new Notice('Failed to create prompt file');
+					new Notice(t('notice.prompt.createFileFailed'));
 				}
 			});
 
 			modal.open();
 		} catch (error) {
 			this.plugin.logger.error('Error creating new custom prompt:', error);
-			new Notice('Failed to create new custom prompt');
+			new Notice(t('notice.prompt.createFailed'));
 		}
 	}
 }
@@ -280,14 +281,14 @@ class PromptNameModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Create New Custom Prompt' });
+		contentEl.createEl('h2', { text: t('modal.promptName.title') });
 
 		const inputContainer = contentEl.createDiv({ cls: 'prompt-input-container' });
-		inputContainer.createEl('label', { text: 'Prompt Name:' });
+		inputContainer.createEl('label', { text: t('modal.promptName.label') });
 
 		this.inputEl = inputContainer.createEl('input', {
 			type: 'text',
-			placeholder: 'Enter a name for your custom prompt...',
+			placeholder: t('modal.promptName.placeholder'),
 		});
 
 		this.inputEl.style.width = '100%';
@@ -312,11 +313,11 @@ class PromptNameModal extends Modal {
 		buttonContainer.style.gap = '8px';
 		buttonContainer.style.justifyContent = 'flex-end';
 
-		const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
+		const cancelButton = buttonContainer.createEl('button', { text: t('modal.promptName.cancel') });
 		cancelButton.style.padding = '8px 16px';
 		cancelButton.addEventListener('click', () => this.close());
 
-		const createButton = buttonContainer.createEl('button', { text: 'Create' });
+		const createButton = buttonContainer.createEl('button', { text: t('modal.promptName.create') });
 		createButton.style.padding = '8px 16px';
 		createButton.style.backgroundColor = 'var(--interactive-accent)';
 		createButton.style.color = 'var(--text-on-accent)';

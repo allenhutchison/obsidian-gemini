@@ -234,4 +234,4 @@ description: >-
 
 - [Bundled Skills in Gemini Scribe](https://allen.hutchison.org/2026/04/11/bundled-skills-in-gemini-scribe/) — Blog post on why bundled skills exist, the progressive disclosure pattern, and a tour of several built-in skills
 - [agentskills.io Specification](https://agentskills.io) — The open standard for agent skills
-- [Agent Mode Guide](/guide/agent-mode) — Full agent documentation including skill tools
+- [Agent mode Guide](/guide/agent-mode) — Full agent documentation including skill tools

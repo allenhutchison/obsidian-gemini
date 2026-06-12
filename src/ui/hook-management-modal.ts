@@ -4,24 +4,21 @@ import type { FeatureToolPolicy } from '../types/tool-policy';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
+import { t } from '../i18n';
 
-const TRIGGER_OPTIONS: { value: HookTrigger; label: string; hint: string }[] = [
-	{ value: 'file-modified', label: 'File modified (save)', hint: 'Fires when a file is saved.' },
-	{ value: 'file-created', label: 'File created', hint: 'Fires when a new file appears.' },
-	{ value: 'file-deleted', label: 'File deleted', hint: 'Fires after a file is removed.' },
-	{ value: 'file-renamed', label: 'File renamed/moved', hint: 'Fires when a path changes.' },
-];
+const TRIGGER_OPTIONS = [
+	{ value: 'file-modified', labelKey: 'hooks.triggerFileModified' },
+	{ value: 'file-created', labelKey: 'hooks.triggerFileCreated' },
+	{ value: 'file-deleted', labelKey: 'hooks.triggerFileDeleted' },
+	{ value: 'file-renamed', labelKey: 'hooks.triggerFileRenamed' },
+] as const;
 
-const ACTION_OPTIONS: { value: HookAction; label: string; hint: string }[] = [
-	{ value: 'agent-task', label: 'Agent task', hint: 'Run a headless agent session with the prompt body.' },
-	{ value: 'summarize', label: 'Summarise file', hint: 'Run the summary feature against the triggering file.' },
-	{
-		value: 'rewrite',
-		label: 'Rewrite file',
-		hint: 'Rewrite the entire triggering file using the prompt body as the instruction.',
-	},
-	{ value: 'command', label: 'Run command', hint: 'Execute a registered command palette command by id.' },
-];
+const ACTION_OPTIONS = [
+	{ value: 'agent-task', labelKey: 'hooks.actionAgentTask' },
+	{ value: 'summarize', labelKey: 'hooks.actionSummarize' },
+	{ value: 'rewrite', labelKey: 'hooks.actionRewrite' },
+	{ value: 'command', labelKey: 'hooks.actionCommand' },
+] as const;
 
 const DEFAULT_DEBOUNCE_MS = 5000;
 const DEFAULT_COOLDOWN_MS = 30_000;
@@ -37,16 +34,15 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 	// ── Configuration ────────────────────────────────────────────────────────
 
-	protected readonly entityLabel = 'hook';
-	protected readonly entityLabelPlural = 'Lifecycle Hooks';
+	protected readonly entityLabel = t('hooks.entityLabel');
+	protected readonly entityLabelPlural = t('hooks.entityLabelPlural');
 	protected readonly entityIcon = 'webhook';
-	protected readonly newButtonText = 'New hook';
-	protected readonly emptyText = 'No hooks yet.';
-	protected readonly emptyHint =
-		'Hooks run an AI agent in response to vault events — file saves, creates, deletes, renames. Create your first hook to summarise on save, index new attachments, or run a skill on certain notes.';
-	protected readonly deleteTitle = 'Delete Hook';
-	protected readonly deleteHint = 'Output files in Hooks/Runs/ are not deleted.';
-	protected readonly slugPlaceholder = 'e.g. summarise-on-save';
+	protected readonly newButtonText = t('hooks.newHookButton');
+	protected readonly emptyText = t('hooks.emptyText');
+	protected readonly emptyHint = t('hooks.emptyHint');
+	protected readonly deleteTitle = t('hooks.deleteTitle');
+	protected readonly deleteHint = t('hooks.deleteHint');
+	protected readonly slugPlaceholder = t('hooks.slugPlaceholder');
 
 	protected getCssClasses(): string[] {
 		// Reuse the scheduler modal's CSS class so the two share a visual
@@ -57,7 +53,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 	}
 
 	protected getFormTitle(isEdit: boolean): string {
-		return isEdit ? `Edit hook: ${this.editingSlug}` : 'New hook';
+		return isEdit ? t('hooks.formTitleEdit', { slug: this.editingSlug ?? '' }) : t('hooks.formTitleNew');
 	}
 
 	// ── Data access ──────────────────────────────────────────────────────────
@@ -85,9 +81,9 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			const banner = contentEl.createDiv({ cls: 'gemini-scheduler-empty' });
 			const iconEl = banner.createDiv({ cls: 'gemini-scheduler-empty-icon' });
 			setIcon(iconEl, 'pause-circle');
-			banner.createEl('p', { text: 'Lifecycle hooks are disabled.' });
+			banner.createEl('p', { text: t('hooks.disabledBannerTitle') });
 			banner.createEl('p', {
-				text: 'Enable "Lifecycle hooks" in plugin settings before any hook can fire. You can still create definitions here while disabled — they will not run until you turn the feature on.',
+				text: t('hooks.disabledBannerHint'),
 				cls: 'gemini-scheduler-empty-hint',
 			});
 		}
@@ -115,21 +111,27 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		const info = li.createDiv({ cls: 'gemini-scheduler-item-info' });
 		info.createDiv({ text: hook.slug, cls: 'gemini-scheduler-item-slug' });
 
-		const triggerLabel = TRIGGER_OPTIONS.find((t) => t.value === hook.trigger)?.label ?? hook.trigger;
-		const actionLabel = ACTION_OPTIONS.find((a) => a.value === hook.action)?.label ?? hook.action;
+		const triggerKey = TRIGGER_OPTIONS.find((o) => o.value === hook.trigger)?.labelKey;
+		const actionKey = ACTION_OPTIONS.find((o) => o.value === hook.action)?.labelKey;
+		const triggerLabel = triggerKey ? t(triggerKey) : hook.trigger;
+		const actionLabel = actionKey ? t(actionKey) : hook.action;
 		const baseBadge = `${triggerLabel} → ${actionLabel}`;
-		const badge = isDisabled ? `${baseBadge} · disabled` : isPaused ? `${baseBadge} · paused` : baseBadge;
+		const badge = isDisabled
+			? t('hooks.badgeDisabled', { badge: baseBadge })
+			: isPaused
+				? t('hooks.badgePaused', { badge: baseBadge })
+				: baseBadge;
 		info.createSpan({ text: badge, cls: 'gemini-scheduler-item-badge' });
 
 		if (hook.pathGlob) {
-			info.createDiv({ text: `Glob: ${hook.pathGlob}`, cls: 'gemini-scheduler-item-meta' });
+			info.createDiv({ text: t('hooks.globMeta', { glob: hook.pathGlob }), cls: 'gemini-scheduler-item-meta' });
 		}
 
 		const lastFires = hookState?.recentFires ?? [];
 		if (lastFires.length > 0) {
 			const lastFire = new Date(lastFires[lastFires.length - 1]);
 			info.createDiv({
-				text: `Last fired: ${this.formatDate(lastFire)}`,
+				text: t('hooks.lastFired', { time: this.formatDate(lastFire) }),
 				cls: 'gemini-scheduler-item-meta',
 			});
 		}
@@ -146,7 +148,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		const actions = li.createDiv({ cls: 'gemini-scheduler-item-actions' });
 
 		const toggleBtn = actions.createEl('button', {
-			text: isDisabled ? 'Enable' : 'Disable',
+			text: isDisabled ? t('hooks.enableButton') : t('hooks.disableButton'),
 			cls: 'gemini-scheduler-action',
 			attr: { type: 'button' },
 		});
@@ -158,17 +160,17 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 				this.render();
 			} catch (err) {
 				this.plugin.logger.error(`[HookManagementModal] Toggle failed for "${hook.slug}":`, err);
-				new Notice(`Failed to toggle "${hook.slug}"`);
-				toggleBtn.setText(isDisabled ? 'Enable' : 'Disable');
+				new Notice(t('hooks.toggleFailed', { slug: hook.slug }));
+				toggleBtn.setText(isDisabled ? t('hooks.enableButton') : t('hooks.disableButton'));
 				toggleBtn.disabled = false;
 			}
 		});
 
 		if (isPaused) {
 			const resetBtn = actions.createEl('button', {
-				text: 'Reset',
+				text: t('hooks.resetButton'),
 				cls: 'gemini-scheduler-action',
-				attr: { type: 'button', title: 'Clear pause state' },
+				attr: { type: 'button', title: t('hooks.resetTooltip') },
 			});
 			resetBtn.addEventListener('click', async () => {
 				resetBtn.disabled = true;
@@ -178,14 +180,14 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		}
 
 		const editBtn = actions.createEl('button', {
-			text: 'Edit',
+			text: t('hooks.editButton'),
 			cls: 'gemini-scheduler-action',
 			attr: { type: 'button' },
 		});
 		editBtn.addEventListener('click', () => this.openEdit(hook));
 
 		const deleteBtn = actions.createEl('button', {
-			text: 'Delete',
+			text: t('hooks.deleteButton'),
 			cls: 'gemini-scheduler-action gemini-scheduler-action--delete',
 			attr: { type: 'button' },
 		});
@@ -197,10 +199,10 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 	protected renderFormBody(formEl: HTMLElement, _isEdit: boolean): void {
 		// Trigger
 		new Setting(formEl)
-			.setName('Trigger')
-			.setDesc('The vault event that fires this hook.')
+			.setName(t('hooks.triggerSetting'))
+			.setDesc(t('hooks.triggerDesc'))
 			.addDropdown((dd) => {
-				for (const opt of TRIGGER_OPTIONS) dd.addOption(opt.value, opt.label);
+				for (const opt of TRIGGER_OPTIONS) dd.addOption(opt.value, t(opt.labelKey));
 				dd.setValue(this.form.trigger).onChange((v) => {
 					this.form.trigger = v as HookTrigger;
 				});
@@ -210,10 +212,10 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		// are visible (tools/prompt for agent-task and rewrite, commandId for
 		// command, none for summarize).
 		new Setting(formEl)
-			.setName('Action')
-			.setDesc('What this hook does on each fire.')
+			.setName(t('hooks.actionSetting'))
+			.setDesc(t('hooks.actionDesc'))
 			.addDropdown((dd) => {
-				for (const opt of ACTION_OPTIONS) dd.addOption(opt.value, opt.label);
+				for (const opt of ACTION_OPTIONS) dd.addOption(opt.value, t(opt.labelKey));
 				dd.setValue(this.form.action).onChange((v) => {
 					this.form.action = v as HookAction;
 					updateActionVisibility();
@@ -222,10 +224,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 		// Path glob
 		new Setting(formEl)
-			.setName('Path glob (optional)')
-			.setDesc(
-				'Limit fires to paths matching this glob. Examples: Daily/**/*.md, Notes/*.md. Leave blank for any path.'
-			)
+			.setName(t('hooks.pathGlobSetting'))
+			.setDesc(t('hooks.pathGlobDesc'))
 			.addText((text) =>
 				text
 					.setPlaceholder('Daily/**/*.md')
@@ -237,10 +237,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 		// Command id — only shown when action=command.
 		const commandIdSetting = new Setting(formEl)
-			.setName('Command id')
-			.setDesc(
-				'Command palette id to fire. Examples: editor:save-file, gemini-scribe-summarize-active-file. View Command IDs via Settings → Hotkeys (open the developer console with Ctrl+Shift+I to inspect ids).'
-			)
+			.setName(t('hooks.commandIdSetting'))
+			.setDesc(t('hooks.commandIdDesc'))
 			.addText((text) =>
 				text
 					.setPlaceholder('plugin-id:command-name')
@@ -256,10 +254,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		// open the trigger file before dispatching so commands like
 		// `editor:save-file` target the right note.
 		const focusFileSetting = new Setting(formEl)
-			.setName('Focus trigger file before dispatch')
-			.setDesc(
-				'When on, the triggering file is opened in the workspace before the command runs — useful for editor-scoped commands. When off, the command runs against whatever file is currently active. Default off.'
-			)
+			.setName(t('hooks.focusFileSetting'))
+			.setDesc(t('hooks.focusFileDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(this.form.focusFile).onChange((v) => {
 					this.form.focusFile = v;
@@ -273,8 +269,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		const toolsContainer = formEl.createDiv({ cls: 'gemini-scheduler-tools' });
 		this.disposeToolPolicyEditor();
 		this.toolPolicyEditor = new ToolPolicyEditor(this.plugin, toolsContainer, {
-			title: 'Tool access',
-			description: 'When inherited, this hook uses the plugin\u2019s global tool policy.',
+			title: t('hooks.toolAccessTitle'),
+			description: t('hooks.toolAccessDesc'),
 			value: this.form.toolPolicy,
 			onChange: (next) => {
 				this.form.toolPolicy = next;
@@ -284,14 +280,10 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		const toolsSetting = { settingEl: toolsContainer } as { settingEl: HTMLElement };
 
 		// Prompt — required for agent-task and rewrite, ignored for the rest.
-		const promptSetting = new Setting(formEl)
-			.setName('Prompt')
-			.setDesc(
-				'Instruction sent to the AI on each fire. Available variables: {{filePath}}, {{fileName}}, {{trigger}}, {{oldPath}}.'
-			);
+		const promptSetting = new Setting(formEl).setName(t('hooks.promptSetting')).setDesc(t('hooks.promptDesc'));
 		const promptArea = formEl.createEl('textarea', {
 			cls: 'gemini-scheduler-prompt',
-			attr: { rows: '8', placeholder: 'e.g. Summarise the changes in {{filePath}}.' },
+			attr: { rows: '8', placeholder: t('hooks.promptPlaceholder') },
 		});
 		promptArea.value = this.form.prompt;
 		promptArea.addEventListener('input', () => {
@@ -315,11 +307,11 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 		// Advanced
 		const advDetails = formEl.createEl('details', { cls: 'gemini-scheduler-advanced' });
-		advDetails.createEl('summary', { text: 'Advanced options' });
+		advDetails.createEl('summary', { text: t('hooks.advancedOptions') });
 
 		new Setting(advDetails)
-			.setName('Debounce (ms)')
-			.setDesc(`Coalesce rapid events for the same file. Default ${DEFAULT_DEBOUNCE_MS}.`)
+			.setName(t('hooks.debounceSetting'))
+			.setDesc(t('hooks.debounceDesc', { default: DEFAULT_DEBOUNCE_MS }))
 			.addText((text) =>
 				text
 					.setValue(String(this.form.debounceMs))
@@ -331,10 +323,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Cooldown (ms)')
-			.setDesc(
-				`After a fire completes, suppress further events on the same (hook, file) for this window. Default ${DEFAULT_COOLDOWN_MS}.`
-			)
+			.setName(t('hooks.cooldownSetting'))
+			.setDesc(t('hooks.cooldownDesc', { default: DEFAULT_COOLDOWN_MS }))
 			.addText((text) =>
 				text
 					.setValue(String(this.form.cooldownMs))
@@ -346,8 +336,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Max runs per hour')
-			.setDesc('Sliding-window cap across all files. 0 (default) means unlimited.')
+			.setName(t('hooks.maxRunsSetting'))
+			.setDesc(t('hooks.maxRunsDesc'))
 			.addText((text) =>
 				text
 					.setValue(String(this.form.maxRunsPerHour))
@@ -359,11 +349,11 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Skills (comma-separated)')
-			.setDesc('Slugs of skills to pre-activate. Empty = inherit all available skills.')
+			.setName(t('hooks.skillsSetting'))
+			.setDesc(t('hooks.skillsDesc'))
 			.addText((text) =>
 				text
-					.setPlaceholder('summarise, index-files')
+					.setPlaceholder('summarize, index-files')
 					.setValue(this.form.enabledSkills.join(', '))
 					.onChange((v) => {
 						this.form.enabledSkills = v
@@ -374,8 +364,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Model override')
-			.setDesc('Override the plugin chat model for this hook. Leave blank to use the default.')
+			.setName(t('hooks.modelOverrideSetting'))
+			.setDesc(t('hooks.modelOverrideDesc'))
 			.addText((text) =>
 				text
 					.setPlaceholder('gemini-2.5-flash-lite')
@@ -386,10 +376,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Max tool iterations')
-			.setDesc(
-				`Cap on agent tool-call batches per fire (agent-task only). Raise it for long multi-step hooks that hit the limit. Leave blank for the default (${DEFAULT_HEADLESS_MAX_ITERATIONS}).`
-			)
+			.setName(t('hooks.maxIterationsSetting'))
+			.setDesc(t('hooks.maxIterationsDesc', { default: DEFAULT_HEADLESS_MAX_ITERATIONS }))
 			.addText((text) =>
 				text
 					.setPlaceholder(String(DEFAULT_HEADLESS_MAX_ITERATIONS))
@@ -400,10 +388,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Output path (optional)')
-			.setDesc(
-				'Where to write the agent response. Supports {slug}, {date}, {fileName}. Leave blank to skip writing a file.'
-			)
+			.setName(t('hooks.outputPathSetting'))
+			.setDesc(t('hooks.outputPathDesc'))
 			.addText((text) =>
 				text
 					.setPlaceholder('Hooks/Runs/{slug}/{date}.md')
@@ -414,8 +400,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Desktop only')
-			.setDesc('Skip this hook on mobile platforms. Headless agent runs can be heavy on phones.')
+			.setName(t('hooks.desktopOnlySetting'))
+			.setDesc(t('hooks.desktopOnlyDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(this.form.desktopOnly).onChange((v) => {
 					this.form.desktopOnly = v;
@@ -423,8 +409,8 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			);
 
 		new Setting(advDetails)
-			.setName('Enabled')
-			.setDesc('Disable to pause the hook without deleting it.')
+			.setName(t('hooks.enabledSetting'))
+			.setDesc(t('hooks.enabledDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(this.form.enabled).onChange((v) => {
 					this.form.enabled = v;
@@ -443,15 +429,15 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		const promptRequired = action === 'agent-task' || action === 'rewrite';
 
 		if (promptRequired && !this.form.prompt.trim()) {
-			new Notice('Prompt cannot be empty for this action.');
+			new Notice(t('hooks.emptyPrompt'));
 			return;
 		}
 		if (action === 'command' && !this.form.commandId.trim()) {
-			new Notice('Command id cannot be empty for the "command" action.');
+			new Notice(t('hooks.emptyCommandId'));
 			return;
 		}
 		if (!isEdit && !this.form.slug.trim()) {
-			new Notice('Hook name cannot be empty.');
+			new Notice(t('hooks.emptySlug'));
 			return;
 		}
 
@@ -462,7 +448,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		if (rawMaxIterations) {
 			const parsed = Number(rawMaxIterations);
 			if (!Number.isInteger(parsed) || parsed <= 0) {
-				new Notice('Max tool iterations must be a positive whole number, or blank for the default.');
+				new Notice(t('hooks.invalidMaxIterations'));
 				return;
 			}
 			maxIterations = parsed;
@@ -470,7 +456,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 
 		const manager = this.plugin.hookManager;
 		if (!manager) {
-			new Notice('Hook manager not available.');
+			new Notice(t('hooks.managerUnavailable'));
 			return;
 		}
 
@@ -494,7 +480,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					commandId: this.form.commandId || undefined,
 					focusFile: this.form.focusFile === true ? true : undefined,
 				});
-				new Notice(`Hook "${this.editingSlug}" updated`);
+				new Notice(t('hooks.hookUpdated', { slug: this.editingSlug }));
 			} else {
 				await manager.createHook({
 					slug: this.form.slug,
@@ -515,14 +501,14 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 					commandId: this.form.commandId || undefined,
 					focusFile: this.form.focusFile === true ? true : undefined,
 				});
-				new Notice(`Hook "${this.form.slug}" created`);
+				new Notice(t('hooks.hookCreated', { slug: this.form.slug }));
 			}
 			this.view = 'list';
 			this.render();
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			this.plugin.logger.error('[HookManagementModal] Save failed:', err);
-			new Notice(`Failed to save hook: ${msg}`);
+			new Notice(t('hooks.saveFailed', { message: msg }));
 		}
 	}
 

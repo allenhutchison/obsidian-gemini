@@ -45,6 +45,7 @@ const { noticeInstances, NoticeMock } = vi.hoisted(() => {
 });
 
 vi.mock('obsidian', () => ({
+	getLanguage: () => 'en',
 	Notice: NoticeMock,
 }));
 

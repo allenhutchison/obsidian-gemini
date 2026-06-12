@@ -18,7 +18,7 @@ The agent has access to this as the `vault_semantic_search` tool. You don't need
 ### Enable Vault Indexing
 
 1. Open Settings → Gemini Scribe
-2. Scroll to **Vault Search Index**
+2. Scroll to **Vault search index**
 3. Toggle **Enable vault indexing** to ON
 4. The initial indexing starts automatically with a progress modal
 
@@ -42,8 +42,8 @@ Initial indexing time depends on vault size. A vault with 1,000 notes typically 
 
 In the settings panel you'll find two action buttons:
 
-- **Reindex Vault** — Performs a full re-index. Smart sync skips files that haven't changed, so this is safe to run anytime.
-- **Delete Index** — Permanently removes your data from Google Cloud. Use this if you want a fresh start or are done with the feature.
+- **Reindex vault** — Performs a full re-index. Smart sync skips files that haven't changed, so this is safe to run anytime.
+- **Delete index** — Permanently removes your data from Google Cloud. Use this if you want a fresh start or are done with the feature.
 
 ## Commands
 
@@ -51,9 +51,9 @@ Access these from the command palette (Ctrl/Cmd + P):
 
 | Command             | Description                                                              |
 | ------------------- | ------------------------------------------------------------------------ |
-| **Pause RAG Sync**  | Pauses auto-sync. File changes still queue up but aren't sent to Google. |
-| **Resume RAG Sync** | Resumes auto-sync and processes any queued changes.                      |
-| **Show RAG Status** | Opens a detailed status modal with indexed files, failures, and actions. |
+| **Pause RAG sync**  | Pauses auto-sync. File changes still queue up but aren't sent to Google. |
+| **Resume RAG sync** | Resumes auto-sync and processes any queued changes.                      |
+| **Show RAG status** | Opens a detailed status modal with indexed files, failures, and actions. |
 
 ## Status Tracking
 
@@ -74,7 +74,7 @@ Click the status bar icon anytime to open the full status modal.
 
 The status modal has three tabs:
 
-- **Overview** — Current status, file counts, pending changes, last sync time, and action buttons (Sync Now, Reindex All)
+- **Overview** — Current status, file counts, pending changes, last sync time, and action buttons (Sync now, Reindex all)
 - **Files** — Searchable list of all indexed files with timestamps
 - **Failures** — Any files that failed to index with error details
 
@@ -157,13 +157,13 @@ When you disable vault indexing, a cleanup dialog asks whether to:
 - **Keep data** — Faster if you re-enable later
 - **Delete from Google Cloud** — Permanently removes the File Search Store
 
-You can also use **Delete Index** in settings at any time.
+You can also use **Delete index** in settings at any time.
 
-> **Note:** If you uninstall the plugin without deleting the index first, the data persists in Google Cloud. You can clean it up by re-enabling the plugin and using Delete Index, or by managing stores directly in [Google AI Studio](https://aistudio.google.com).
+> **Note:** If you uninstall the plugin without deleting the index first, the data persists in Google Cloud. You can clean it up by re-enabling the plugin and using Delete index, or by managing stores directly in [Google AI Studio](https://aistudio.google.com).
 
 ## Known Limitations
 
-- **No individual file deletion from the index** — When you delete a vault file, it may remain as an orphan in Google Cloud. Use **Reindex Vault** or **Delete Index** for a clean state.
+- **No individual file deletion from the index** — When you delete a vault file, it may remain as an orphan in Google Cloud. Use **Reindex vault** or **Delete index** for a clean state.
 - **Search results don't include file paths** — The Google API returns text excerpts but not source file paths. The agent may not always be able to link results back to specific files.
 - **Rate limits during indexing** — Large vaults may hit API rate limits. The plugin handles this automatically with exponential backoff (30s base, up to 5 minutes). The status bar shows a countdown.
 - **Concurrent upload limit** — Files are uploaded 5 at a time to balance speed with rate limit avoidance.
@@ -184,7 +184,7 @@ This was fixed in v4.2+. Update to the latest version. The fix includes deferred
 
 - Verify the file is actually indexed — open the status modal (Files tab) and search for it
 - Check that the file's folder isn't in the exclude list
-- If you recently enabled **Include attachments**, run **Reindex Vault** to pick up non-markdown files
+- If you recently enabled **Include attachments**, run **Reindex vault** to pick up non-markdown files
 - Try increasing `maxResults` by asking the agent: "Search for X with more results"
 
 ### Status shows errors
@@ -195,7 +195,7 @@ Click the status bar icon to see the Failures tab. Common causes:
 - **Invalid API key** — Verify your key in [Google AI Studio](https://aistudio.google.com)
 - **Network issues** — Check your internet connection
 
-For persistent issues, try **Delete Index** followed by **Reindex Vault** for a clean start.
+For persistent issues, try **Delete index** followed by **Reindex vault** for a clean start.
 
 ## Further Reading
 

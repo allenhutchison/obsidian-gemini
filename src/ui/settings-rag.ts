@@ -2,6 +2,7 @@ import type ObsidianGemini from '../main';
 import { App, Setting, Notice, debounce } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
+import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderRAGSettings(
@@ -10,9 +11,8 @@ export async function renderRAGSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const containerEl = createCollapsibleSection(plugin, outerContainerEl, 'Vault Search Index', 'rag', {
-		description:
-			'Semantic search across your vault using Google File Search. Powers retrieval-augmented agent responses. Privacy: indexed files are uploaded to Google Cloud.',
+	const containerEl = createCollapsibleSection(plugin, outerContainerEl, t('settings.rag.sectionTitle'), 'rag', {
+		description: t('settings.rag.sectionDesc'),
 	});
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
@@ -22,7 +22,7 @@ export async function renderRAGSettings(
 				await plugin.saveSettings();
 			} catch (error) {
 				plugin.logger.error('Failed to save RAG settings:', error);
-				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
 			}
 		},
 		300,
@@ -33,16 +33,14 @@ export async function renderRAGSettings(
 	const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });
 	privacyWarning.createEl('div', {
 		cls: 'setting-item-description',
-		text:
-			'⚠️ Privacy Notice: Enabling this feature uploads your vault files to Google Cloud for semantic search. ' +
-			'Files are processed and stored by Google. Consider excluding folders with sensitive information.',
+		text: t('settings.rag.privacyNotice'),
 	});
 	privacyWarning.style.marginBottom = '1em';
 	privacyWarning.style.color = 'var(--text-warning)';
 
 	new Setting(containerEl)
-		.setName('Enable vault indexing')
-		.setDesc('Index your vault files for semantic search using Google File Search.')
+		.setName(t('settings.rag.enableName'))
+		.setDesc(t('settings.rag.enableDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.ragIndexing.enabled).onChange(async (value) => {
 				if (!value && plugin.settings.ragIndexing.fileSearchStoreName) {
@@ -63,7 +61,7 @@ export async function renderRAGSettings(
 						modal.open();
 					} catch (error) {
 						plugin.logger.error('Failed to load RAG cleanup modal:', error);
-						new Notice(`Failed to open cleanup dialog: ${getErrorMessage(error)}`);
+						new Notice(t('settings.rag.openCleanupFailed', { error: getErrorMessage(error) }));
 						// Toggle was already reverted to `true` above and settings.enabled
 						// was never changed, so UI and settings remain consistent.
 					}
@@ -79,20 +77,20 @@ export async function renderRAGSettings(
 		// Index status
 		const indexCount = plugin.ragIndexing?.getIndexedFileCount() ?? 0;
 		const statusText = plugin.settings.ragIndexing.fileSearchStoreName
-			? `${indexCount} files indexed`
-			: 'Not yet indexed';
+			? t('settings.rag.filesIndexed', { count: indexCount })
+			: t('settings.rag.notYetIndexed');
 
 		new Setting(containerEl)
-			.setName('Index status')
+			.setName(t('settings.rag.indexStatusName'))
 			.setDesc(statusText)
 			.addButton((button) =>
-				button.setButtonText('Reindex Vault').onClick(async () => {
+				button.setButtonText(t('settings.rag.reindexButton')).onClick(async () => {
 					if (!plugin.ragIndexing) {
-						new Notice('RAG indexing service not initialized');
+						new Notice(t('settings.rag.serviceNotInitialized'));
 						return;
 					}
 
-					button.setButtonText('Indexing...');
+					button.setButtonText(t('settings.rag.indexingButton'));
 					button.setDisabled(true);
 
 					try {
@@ -100,23 +98,29 @@ export async function renderRAGSettings(
 							button.setButtonText(`${progress.current}/${progress.total}`);
 						});
 
-						new Notice(`Indexed ${result.indexed} files (${result.skipped} skipped, ${result.failed} failed)`);
+						new Notice(
+							t('settings.rag.indexResult', {
+								indexed: result.indexed,
+								skipped: result.skipped,
+								failed: result.failed,
+							})
+						);
 						context.redisplay();
 					} catch (error) {
-						new Notice(`Indexing failed: ${getErrorMessage(error)}`);
+						new Notice(t('settings.rag.indexingFailed', { error: getErrorMessage(error) }));
 					} finally {
-						button.setButtonText('Reindex Vault');
+						button.setButtonText(t('settings.rag.reindexButton'));
 						button.setDisabled(false);
 					}
 				})
 			)
 			.addButton((button) =>
 				button
-					.setButtonText('Delete Index')
+					.setButtonText(t('settings.rag.deleteIndexButton'))
 					.setWarning()
 					.onClick(async () => {
 						if (!plugin.ragIndexing) {
-							new Notice('RAG indexing service not initialized');
+							new Notice(t('settings.rag.serviceNotInitialized'));
 							return;
 						}
 
@@ -125,17 +129,17 @@ export async function renderRAGSettings(
 							const { RagCleanupModal } = await import('./rag-cleanup-modal');
 							const modal = new RagCleanupModal(app, async (deleteData) => {
 								if (deleteData && plugin.ragIndexing) {
-									button.setButtonText('Deleting...');
+									button.setButtonText(t('settings.rag.deletingButton'));
 									button.setDisabled(true);
 
 									try {
 										await plugin.ragIndexing.deleteFileSearchStore();
-										new Notice('Index deleted. Use "Reindex Vault" to rebuild.');
+										new Notice(t('settings.rag.indexDeletedNotice'));
 										context.redisplay();
 									} catch (error) {
-										new Notice(`Failed to delete index: ${getErrorMessage(error)}`);
+										new Notice(t('settings.rag.deleteIndexFailed', { error: getErrorMessage(error) }));
 									} finally {
-										button.setButtonText('Delete Index');
+										button.setButtonText(t('settings.rag.deleteIndexButton'));
 										button.setDisabled(false);
 									}
 								}
@@ -143,7 +147,7 @@ export async function renderRAGSettings(
 							modal.open();
 						} catch (error) {
 							plugin.logger.error('Failed to load RAG cleanup modal:', error);
-							new Notice(`Failed to open delete confirmation: ${getErrorMessage(error)}`);
+							new Notice(t('settings.rag.openDeleteConfirmFailed', { error: getErrorMessage(error) }));
 						}
 					})
 			);
@@ -153,12 +157,8 @@ export async function renderRAGSettings(
 		// read-only, and only once a store actually exists.
 		const currentStoreName = plugin.settings.ragIndexing.fileSearchStoreName;
 		const storeNameSetting = new Setting(containerEl)
-			.setName('Search index name')
-			.setDesc(
-				currentStoreName
-					? 'The Google File Search store identifier, assigned automatically. Delete the index to start over with a new one.'
-					: 'Assigned automatically by Google File Search when indexing starts.'
-			);
+			.setName(t('settings.rag.storeNameName'))
+			.setDesc(currentStoreName ? t('settings.rag.storeNameDescAssigned') : t('settings.rag.storeNameDescPending'));
 
 		if (currentStoreName) {
 			storeNameSetting
@@ -169,18 +169,18 @@ export async function renderRAGSettings(
 				})
 				.addButton((button) =>
 					button
-						.setButtonText('Copy')
-						.setTooltip('Copy store name to clipboard')
+						.setButtonText(t('settings.rag.copyButton'))
+						.setTooltip(t('settings.rag.copyTooltip'))
 						.onClick(async () => {
 							await navigator.clipboard.writeText(currentStoreName);
-							new Notice('Store name copied to clipboard');
+							new Notice(t('settings.rag.storeNameCopiedNotice'));
 						})
 				);
 		}
 
 		new Setting(containerEl)
-			.setName('Auto-sync changes')
-			.setDesc('Automatically update the index when files are created, modified, or deleted.')
+			.setName(t('settings.rag.autoSyncName'))
+			.setDesc(t('settings.rag.autoSyncDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(plugin.settings.ragIndexing.autoSync).onChange(async (value) => {
 					plugin.settings.ragIndexing.autoSync = value;
@@ -189,13 +189,13 @@ export async function renderRAGSettings(
 			);
 
 		new Setting(containerEl)
-			.setName('Include attachments')
-			.setDesc('Index PDFs and other supported file types in addition to markdown notes. Requires reindexing.')
+			.setName(t('settings.rag.includeAttachmentsName'))
+			.setDesc(t('settings.rag.includeAttachmentsDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(plugin.settings.ragIndexing.includeAttachments).onChange(async (value) => {
 					plugin.settings.ragIndexing.includeAttachments = value;
 					await plugin.saveSettings();
-					new Notice('Attachment setting changed. Reindex vault to apply changes.');
+					new Notice(t('settings.rag.attachmentSettingChangedNotice'));
 				})
 			);
 
@@ -204,13 +204,13 @@ export async function renderRAGSettings(
 		const userFolders = plugin.settings.ragIndexing.excludeFolders.filter((f) => !systemFolders.includes(f)); // Remove duplicates with system folders
 
 		new Setting(containerEl)
-			.setName('Exclude folders')
-			.setDesc(`Always excluded: ${systemFolders.join(', ')}. Add additional folders below (one per line).`)
+			.setName(t('settings.rag.excludeFoldersName'))
+			.setDesc(t('settings.rag.excludeFoldersDesc', { folders: systemFolders.join(', ') }))
 			.addTextArea((text) => {
 				text.inputEl.rows = 4;
 				text.inputEl.cols = 30;
 				text
-					.setPlaceholder('Additional folders to exclude...')
+					.setPlaceholder(t('settings.rag.excludeFoldersPlaceholder'))
 					.setValue(userFolders.join('\n'))
 					.onChange((value) => {
 						// Filter out system folders to prevent confusion

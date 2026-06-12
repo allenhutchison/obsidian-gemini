@@ -3,6 +3,7 @@ import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFolder, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
+import { t } from '../../i18n';
 
 /**
  * Create a new folder
@@ -28,7 +29,7 @@ export class CreateFolderTool implements Tool {
 	};
 
 	confirmationMessage = (params: { path: string }) => {
-		return `Create folder: ${params.path}`;
+		return t('tool.confirm.createFolder', { path: params.path });
 	};
 
 	getProgressDescription(params: { path: string }): string {

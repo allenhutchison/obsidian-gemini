@@ -6,12 +6,12 @@ The settings tab is organised into a permanently-open **General** section at the
 
 The order of sections is:
 
-1. **General** (always open) — provider, API key, models, plugin state folder, Show Advanced Settings toggle.
-2. **User Experience** — your name, frontmatter key, streaming, diff view, session history toggle, tool execution logging.
+1. **General** (always open) — provider, API key, models, plugin state folder, Show advanced settings toggle.
+2. **User experience** — your name, frontmatter key, streaming, diff view, session history toggle, tool execution logging.
 3. **Automation** — scheduled tasks, scheduler catch-up, and lifecycle hooks combined.
-4. **Vault Search Index** — semantic search over your vault using Google File Search.
+4. **Vault search index** — semantic search over your vault using Google File Search.
 
-Advanced sections — Tool Permissions, MCP Servers, Agent Config, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show Advanced Settings** at the bottom of General. **Agent Config** bundles four related sub-areas (Custom Prompts, API Configuration, Context Management, Tool Loop Detection) under one collapsible since they all tune how the agent talks to the model.
+Advanced sections — Tool permissions, MCP servers, Agent config, Debug — are tagged with an **ADVANCED** pill and only appear after toggling **Show advanced settings** at the bottom of General. **Agent config** bundles four related sub-areas (Custom Prompts, API configuration, Context management, Tool loop detection) under one collapsible since they all tune how the agent talks to the model.
 
 ## Table of Contents
 
@@ -19,14 +19,14 @@ The reference below groups settings by topic for lookup, which doesn't always ma
 
 - [Basic Settings](#basic-settings) (UI: _General_ — provider, API key, models, plugin state folder)
 - [Model Configuration](#model-configuration) (UI: _General_ — chat/summary/completion/image model selection)
-- [Custom Prompts](#custom-prompts) (UI: _Agent Config_ — advanced)
-- [UI Settings](#ui-settings) (UI: _User Experience_ — streaming, diff view, identity, frontmatter key, session history)
+- [Custom Prompts](#custom-prompts) (UI: _Agent config_ — advanced)
+- [UI Settings](#ui-settings) (UI: _User experience_ — streaming, diff view, identity, frontmatter key, session history)
 - [Automation Settings](#automation-settings) (UI: _Automation_ — scheduled task catch-up, lifecycle hooks toggle)
-- [Context Management](#context-management) (UI: _Agent Config_ — advanced)
-- [Developer Settings](#developer-settings) (UI: split across _Agent Config_, _Tool Permissions_, _MCP Servers_, _Debug_)
+- [Context management](#context-management) (UI: _Agent config_ — advanced)
+- [Developer Settings](#developer-settings) (UI: split across _Agent config_, _Tool permissions_, _MCP servers_, _Debug_)
 - [Session-Level Settings](#session-level-settings)
 
-UI sections without a dedicated topic in this reference: _Vault Search Index_ (covered in [Semantic Search](/guide/semantic-search)). The _Automation_ section's task and hook management UI is covered in the [Scheduled Tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides; the two persistent settings (`autoRunCatchUp`, `hooksEnabled`) are documented in [Automation Settings](#automation-settings) below.
+UI sections without a dedicated topic in this reference: _Vault search index_ (covered in [Semantic Search](/guide/semantic-search)). The _Automation_ section's task and hook management UI is covered in the [Scheduled tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides; the two persistent settings (`autoRunCatchUp`, `hooksEnabled`) are documented in [Automation Settings](#automation-settings) below.
 
 ## Basic Settings
 
@@ -38,7 +38,7 @@ UI sections without a dedicated topic in this reference: _Vault Search Index_ (c
 - **Description**: Selects the model backend. `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon.
 - **Notes**: Switching providers re-initialises the plugin and resets stale model selections to the new provider's defaults. Provider-coupled features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are hidden when `ollama` is active. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
 
-### Ollama Base URL
+### Ollama base URL
 
 - **Setting**: `ollamaBaseUrl`
 - **Type**: String
@@ -55,14 +55,14 @@ UI sections without a dedicated topic in this reference: _Vault Search Index_ (c
 - **How to obtain**: Visit [Google AI Studio](https://aistudio.google.com/apikey)
 - **Migration**: If upgrading from a previous version, your API key is automatically migrated from `data.json` to secure storage on first load
 
-### Your Name
+### Your name
 
 - **Setting**: `userName`
 - **Type**: String
 - **Default**: `"User"`
 - **Description**: Name used by the AI when addressing you in responses
 
-### Plugin State Folder
+### Plugin state folder
 
 - **Setting**: `historyFolder`
 - **Type**: String
@@ -81,7 +81,7 @@ UI sections without a dedicated topic in this reference: _Vault Search Index_ (c
   └── debug.log.old     # Previous rotated log file
   ```
 
-### Enable Session History
+### Enable session history
 
 - **Setting**: `chatHistory`
 - **Type**: Boolean
@@ -89,7 +89,7 @@ UI sections without a dedicated topic in this reference: _Vault Search Index_ (c
 - **Description**: Store agent session history as markdown files in your vault
 - **Note**: Sessions are saved in the Agent-Sessions subfolder with auto-generated titles
 
-### Summary Frontmatter Key
+### Summary frontmatter key
 
 - **Setting**: `summaryFrontmatterKey`
 - **Type**: String
@@ -103,7 +103,7 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Gemini (default)** — models are loaded from the bundled list and auto-refreshed from GitHub on startup (cached for 24h). `imageModelName` is only available on this provider. Click **Refresh model list** in Settings → General — or run the **Gemini Scribe: Refresh model list** command — to fetch the latest list immediately (bypasses the cache).
 - **Ollama** — the chat / summary / completion dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
 
-### Chat Model
+### Chat model
 
 - **Setting**: `chatModelName`
 - **Type**: String
@@ -119,13 +119,13 @@ The active model list depends on the [`provider`](#provider) setting:
   - `gemini-3.5-flash` - Gemini 3.5 Flash
 - **Note**: The full model list is loaded from the bundled `models.json` and auto-refreshed from GitHub on startup (cached 24h). Click **Refresh model list** in Settings → General for an immediate refresh.
 
-### Summary Model
+### Summary model
 
 - **Setting**: `summaryModelName`
 - **Type**: String
 - **Default**: `gemini-flash-latest`
 - **Description**: Model used for document summarization
-- **Used by**: Summarize Active File command
+- **Used by**: Summarize active file command
 
 ### Completions Model
 
@@ -135,13 +135,13 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Description**: Model used for IDE-style auto-completions
 - **Note**: Completions must be enabled via command palette
 
-### Image Model
+### Image model
 
 - **Setting**: `imageModelName`
 - **Type**: String
 - **Default**: `gemini-2.5-flash-image`
 - **Only available when**: Provider is `gemini`
-- **Description**: Model used for image generation via the `generate_image` tool and the **Generate Image** command. Only models with image-generation capability appear in this dropdown.
+- **Description**: Model used for image generation via the `generate_image` tool and the **Generate image** command. Only models with image-generation capability appear in this dropdown.
 
 ## Custom Prompts
 
@@ -157,7 +157,7 @@ Custom prompts allow you to create reusable AI instruction templates that modify
 
 ### Creating Custom Prompts
 
-1. Create a markdown file in `[Plugin State Folder]/Prompts/`
+1. Create a markdown file in `[Plugin state folder]/Prompts/`
 2. Write your custom instructions in the file
 3. Select it in the session settings modal (gear icon in the agent panel)
 
@@ -165,7 +165,7 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 
 ## UI Settings
 
-### Enable Streaming
+### Enable streaming
 
 - **Setting**: `streamingEnabled`
 - **Type**: Boolean
@@ -183,7 +183,7 @@ See the [Custom Prompts Guide](/guide/custom-prompts) for detailed instructions.
 
 ## Automation Settings
 
-These settings appear in the **Automation** section of the plugin settings (UI: _Automation_). Task and hook management controls (creating, editing, and running tasks/hooks) are covered in the [Scheduled Tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides.
+These settings appear in the **Automation** section of the plugin settings (UI: _Automation_). Task and hook management controls (creating, editing, and running tasks/hooks) are covered in the [Scheduled tasks](/guide/scheduled-tasks) and [Lifecycle Hooks](/guide/lifecycle-hooks) guides.
 
 ### Auto-run missed scheduled tasks on startup
 
@@ -191,7 +191,7 @@ These settings appear in the **Automation** section of the plugin settings (UI: 
 - **Type**: Boolean
 - **Default**: `false`
 - **Description**: When enabled, tasks with `runIfMissed: true` that were missed while Obsidian was closed are submitted silently as background tasks on startup, without showing the approval modal.
-- **When disabled**: The "Missed Scheduled Runs" modal appears on startup so you can choose Run or Skip per task. A red `!` badge on the status bar persists if the modal is dismissed without acting.
+- **When disabled**: The "Missed scheduled runs" modal appears on startup so you can choose Run or Skip per task. A red `!` badge on the status bar persists if the modal is dismissed without acting.
 - **See also**: [Catch-up Runs](/guide/scheduled-tasks#catch-up-runs)
 
 ### Enable lifecycle hooks
@@ -203,7 +203,7 @@ These settings appear in the **Automation** section of the plugin settings (UI: 
 - **Why opt-in**: Vault events fire continuously; an unintentionally-broad hook can drain API quota quickly. The default is off so users opt in deliberately.
 - **See also**: [Lifecycle Hooks](/guide/lifecycle-hooks)
 
-## Context Management
+## Context management
 
 Context management automatically monitors and controls conversation size to prevent exceeding model token limits.
 
@@ -250,21 +250,21 @@ Re-issuing a tool call brings the full output back if the agent needs it. The be
 - **Format**: Collapsible callout blocks showing tool name, key parameters, status, and duration
 - **Note**: Requires plugin reload to take effect when toggled
 
-### Always Show Diff View for File Writes
+### Always Show Diff view for File Writes
 
 - **Setting**: `alwaysShowDiffView`
 - **Type**: Boolean
 - **Default**: `false`
 - **Description**: Automatically open a diff view when the agent proposes file changes, instead of requiring a button click
-- **When off**: The confirmation card shows a summary and a "View Changes" button. Click it to open the diff view
+- **When off**: The confirmation card shows a summary and a "View changes" button. Click it to open the diff view
 - **When on**: The diff view opens automatically alongside the confirmation card
 - **Note**: The diff view lets you edit the proposed content before approving. If you modify content, the tool result reports `userEdited: true` so the agent knows
 
 ## Developer Settings
 
-Advanced settings for developers and power users. Access by clicking "Show Advanced Settings" in the plugin settings.
+Advanced settings for developers and power users. Access by clicking "Show advanced settings" in the plugin settings.
 
-### Debug Mode
+### Debug mode
 
 - **Setting**: `debugMode`
 - **Type**: Boolean
@@ -280,13 +280,13 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 - **Description**: Write log entries to a file (`debug.log`) in the plugin state folder
 - **Behavior**:
   - Errors and warnings are always written to the log file when enabled
-  - Debug-level entries (`log()`, `debug()`) are only written when Debug Mode is also enabled
+  - Debug-level entries (`log()`, `debug()`) are only written when Debug mode is also enabled
   - Log files are automatically rotated at 1 MB (previous log kept as `debug.log.old`)
   - Writes are batched and debounced to minimize I/O impact
 - **Use case**: Sharing diagnostic information in bug reports, or letting the agent self-diagnose issues via the bundled `gemini-scribe-help` skill (which exposes `debug.log` and `debug.log.old` as activatable resources only when this setting is on)
 - **Note**: Log files are stored in the plugin state folder and are automatically excluded from RAG indexing. The standard `read_file` tool blocks the state folder; the help skill is the supported path for the agent to read these logs.
 
-### API Configuration
+### API configuration
 
 #### Custom API Endpoint
 
@@ -300,7 +300,7 @@ Advanced settings for developers and power users. Access by clicking "Show Advan
 - **Note**: Leave blank to use the official Google endpoint. Invalid URLs will show a warning and be cleared automatically.
 - **Security note**: Requests routed through this proxy will include your Google API key in the `x-goog-api-key` header.
 
-#### Maximum Retries
+#### Maximum retries
 
 - **Setting**: `maxRetries`
 - **Type**: Number
@@ -356,7 +356,7 @@ To pick up a newly-published model without waiting for the cache to expire, clic
 - **When enabled**: Agent stops immediately if any tool fails
 - **When disabled**: Agent continues executing subsequent tools despite failures
 
-### Tool Loop Detection
+### Tool loop detection
 
 Prevents the AI agent from executing identical tools repeatedly, which can cause infinite loops.
 
@@ -384,9 +384,9 @@ Prevents the AI agent from executing identical tools repeatedly, which can cause
 - **Description**: Time window for detecting repeated calls
 - **Example**: If threshold is 3 and window is 30s, calling the same tool 3+ times within 30 seconds triggers detection
 
-### Tool Permissions
+### Tool permissions
 
-Controls which agent tools execute automatically, which require user confirmation before each run, and which are blocked entirely. Access via Settings → Gemini Scribe → Show Advanced Settings → Tool Permissions.
+Controls which agent tools execute automatically, which require user confirmation before each run, and which are blocked entirely. Access via Settings → Gemini Scribe → Show advanced settings → Tool permissions.
 
 #### Permission Preset
 
@@ -397,13 +397,13 @@ Controls which agent tools execute automatically, which require user confirmatio
 
 | Preset      | Label              | Read tools         | Write tools        | Destructive tools  | External tools     |
 | ----------- | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ |
-| `read_only` | Read Only          | Auto               | Blocked            | Blocked            | Blocked            |
-| `cautious`  | Cautious (Default) | Auto               | Ask                | Ask                | Ask                |
-| `edit_mode` | Edit Mode          | Auto               | Auto               | Ask                | Ask                |
-| `yolo`      | YOLO Mode          | Auto               | Auto               | Auto               | Auto               |
+| `read_only` | Read only          | Auto               | Blocked            | Blocked            | Blocked            |
+| `cautious`  | Cautious (default) | Auto               | Ask                | Ask                | Ask                |
+| `edit_mode` | Edit mode          | Auto               | Auto               | Ask                | Ask                |
+| `yolo`      | YOLO mode          | Auto               | Auto               | Auto               | Auto               |
 | `custom`    | Custom             | Per-tool overrides | Per-tool overrides | Per-tool overrides | Per-tool overrides |
 
-- **YOLO Mode warning**: Selecting YOLO Mode requires explicit confirmation in a modal. All operations execute without prompts — use only in trusted, well-understood workflows.
+- **YOLO mode warning**: Selecting YOLO mode requires explicit confirmation in a modal. All operations execute without prompts — use only in trusted, well-understood workflows.
 - **Custom preset**: Automatically activated when you override any individual tool's permission. Selecting a named preset resets all per-tool overrides.
 
 #### Per-Tool Overrides
@@ -413,11 +413,11 @@ Controls which agent tools execute automatically, which require user confirmatio
 - **Default**: `{}` (empty — preset governs all tools)
 - **Description**: Each registered tool can be individually set to `deny` (blocked), `ask_user` (confirmation required), or `approve` (runs automatically). Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`.
 
-### MCP Servers
+### MCP servers
 
 MCP (Model Context Protocol) server support allows the agent to use tools from external MCP servers. Supports both local (stdio) and remote (HTTP) servers.
 
-#### Enable MCP Servers
+#### Enable MCP servers
 
 - **Setting**: `mcpEnabled`
 - **Type**: Boolean
@@ -446,7 +446,7 @@ Each server configuration includes:
 
 Environment variable **values** are kept in Obsidian's SecretStorage (the OS keychain), not in `data.json`. The config only stores `envSecretName`, a pointer to the keychain entry.
 
-See the [MCP Servers Guide](/guide/mcp-servers) for setup instructions.
+See the [MCP servers Guide](/guide/mcp-servers) for setup instructions.
 
 ## Session-Level Settings
 
@@ -490,7 +490,7 @@ Available permission bypasses:
 
 1. **API Key**: Your API key is stored securely via Obsidian's SecretStorage and is not written to `data.json`. Never share your API key or commit it to version control
 2. **System Folders**: Plugin automatically protects `.obsidian` and plugin state folders from tool operations
-3. **Tool Permissions**: Review tool operations before approving (when confirmations are enabled)
+3. **Tool permissions**: Review tool operations before approving (when confirmations are enabled)
 4. **System Prompt Override**: Use with caution; can break expected functionality
 
 ## Troubleshooting
@@ -500,19 +500,19 @@ Available permission bypasses:
 1. Check API key is valid
 2. For Gemini: click **Refresh** in the **Refresh model list** row (Settings → General), or run the **Gemini Scribe: Refresh model list** command. The auto-fetch runs at most once every 24 hours, so a freshly published model won't appear until the cache expires unless you force a refresh.
 3. For Ollama: go to Settings → General and click **Refresh** in the **Refresh model list** row after pulling new models
-4. Check console for errors (with Debug Mode enabled)
+4. Check console for errors (with Debug mode enabled)
 
 ### Tool execution issues
 
-1. Enable Debug Mode and Log to File
+1. Enable Debug mode and Log to File
 2. Check Loop Detection settings
 3. Review Stop on Tool Error setting
 4. Examine console logs or `debug.log` in the plugin state folder for specific errors
 
 ### Chat history not saving
 
-1. Verify "Enable Session History" is toggled on
-2. Check Plugin State Folder path is valid
+1. Verify "Enable session history" is toggled on
+2. Check Plugin state folder path is valid
 3. Ensure you have write permissions to vault
 
 For more help, see the [Getting Started Guide](/guide/getting-started) or [open an issue](https://github.com/allenhutchison/obsidian-gemini/issues).

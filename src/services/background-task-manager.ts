@@ -2,6 +2,7 @@ import { Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { AgentEventBus } from '../agent/agent-event-bus';
 import { getErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 // knip:keep — Intentional public API structurally consumed by BackgroundTask.status
 export type BackgroundTaskStatus = 'pending' | 'running' | 'complete' | 'failed' | 'cancelled';
@@ -202,7 +203,7 @@ export class BackgroundTaskManager {
 				error: task.error,
 			});
 
-			new Notice(`Background task failed: ${task.label}\n${task.error}`, 8000);
+			new Notice(t('notice.backgroundTask.failed', { label: task.label, error: task.error ?? '' }), 8000);
 		} finally {
 			this.runPromises.delete(id);
 			this.cancellationFlags.delete(id);
@@ -215,15 +216,15 @@ export class BackgroundTaskManager {
 		if (task.outputPath) {
 			const notice = new Notice(``, 8000);
 			const fragment = notice.noticeEl;
-			fragment.createSpan({ text: `✓ ${task.label} complete. ` });
-			const link = fragment.createEl('a', { text: 'Open result', href: '#' });
+			fragment.createSpan({ text: `${t('notice.backgroundTask.complete', { label: task.label })} ` });
+			const link = fragment.createEl('a', { text: t('notice.backgroundTask.openResult'), href: '#' });
 			link.addEventListener('click', (e) => {
 				e.preventDefault();
 				this.plugin.app.workspace.openLinkText(task.outputPath!, '', false);
 				notice.hide();
 			});
 		} else {
-			new Notice(`✓ ${task.label} complete.`, 5000);
+			new Notice(t('notice.backgroundTask.complete', { label: task.label }), 5000);
 		}
 	}
 

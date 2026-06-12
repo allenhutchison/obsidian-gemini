@@ -10,6 +10,7 @@ import {
 	ToolPermission,
 	clonePolicy,
 } from '../../types/tool-policy';
+import { t } from '../../i18n';
 
 /**
  * Sentinel used in the preset dropdown to mean "no preset set on this feature
@@ -110,7 +111,7 @@ export class ToolPolicyEditor {
 	private render(): void {
 		this.container.empty();
 
-		const title = this.options.title ?? 'Tool access';
+		const title = this.options.title ?? t('component.toolPolicyEditor.title');
 		if (title) {
 			this.container.createEl('h4', { text: title, cls: 'gemini-tool-policy-editor-title' });
 		}
@@ -133,7 +134,7 @@ export class ToolPolicyEditor {
 		}) as HTMLInputElement;
 		inheritCb.checked = this.state === undefined;
 		inheritRow.createEl('label', {
-			text: ' Inherit global plugin tool policy',
+			text: ` ${t('component.toolPolicyEditor.inheritGlobal')}`,
 			attr: { for: inheritId },
 		});
 		inheritCb.addEventListener('change', () => {
@@ -158,20 +159,20 @@ export class ToolPolicyEditor {
 
 	private renderPresetRow(): void {
 		const row = this.bodyEl.createDiv({ cls: 'gemini-tool-policy-editor-preset-row' });
-		row.createEl('label', { text: 'Preset:' });
+		row.createEl('label', { text: t('component.toolPolicyEditor.presetLabel') });
 		const select = row.createEl('select') as HTMLSelectElement;
 
 		// "(no preset)" means: use the preset from the global policy, only
 		// honour any explicit overrides on this feature. Distinct from
 		// "inherit global policy" — that hides this entire body.
-		select.add(new Option('(no preset — use global preset)', INHERIT_PRESET));
+		select.add(new Option(t('component.toolPolicyEditor.noPreset'), INHERIT_PRESET));
 
 		// Skip CUSTOM in the picker — it's the implicit value when the user
 		// has only set overrides and no preset; the resolver treats CUSTOM as
 		// "no preset-driven contribution" already.
 		for (const preset of Object.values(PolicyPreset)) {
 			if (preset === PolicyPreset.CUSTOM) continue;
-			select.add(new Option(PRESET_LABELS[preset], preset));
+			select.add(new Option(t(PRESET_LABELS[preset]), preset));
 		}
 
 		select.value = this.state?.preset ?? INHERIT_PRESET;
@@ -188,11 +189,11 @@ export class ToolPolicyEditor {
 
 	private renderOverridesTable(): void {
 		const wrapper = this.bodyEl.createDiv({ cls: 'gemini-tool-policy-editor-overrides' });
-		wrapper.createEl('h5', { text: 'Per-tool overrides' });
+		wrapper.createEl('h5', { text: t('component.toolPolicyEditor.perToolOverrides') });
 
 		const tools = this.plugin.toolRegistry?.getAllTools() ?? [];
 		if (tools.length === 0) {
-			wrapper.createEl('p', { text: 'No tools registered.' });
+			wrapper.createEl('p', { text: t('component.toolPolicyEditor.noToolsRegistered') });
 			return;
 		}
 
@@ -209,7 +210,7 @@ export class ToolPolicyEditor {
 			if (!list || list.length === 0) continue;
 
 			wrapper.createEl('h6', {
-				text: CLASSIFICATION_LABELS[classification],
+				text: t(CLASSIFICATION_LABELS[classification]),
 				cls: 'gemini-tool-policy-editor-class-heading',
 			});
 
@@ -221,9 +222,9 @@ export class ToolPolicyEditor {
 				});
 
 				const select = row.createEl('select') as HTMLSelectElement;
-				select.add(new Option('(inherit)', INHERIT_OVERRIDE));
+				select.add(new Option(t('component.toolPolicyEditor.inheritOption'), INHERIT_OVERRIDE));
 				for (const perm of Object.values(ToolPermission)) {
-					select.add(new Option(PERMISSION_LABELS[perm], perm));
+					select.add(new Option(t(PERMISSION_LABELS[perm]), perm));
 				}
 				select.value = this.state?.overrides?.[tool.name] ?? INHERIT_OVERRIDE;
 				select.addEventListener('change', () => {

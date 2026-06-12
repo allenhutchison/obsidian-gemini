@@ -25,8 +25,8 @@ Welcome to Gemini Scribe, an Obsidian plugin that integrates Google's Gemini AI 
 
 1. **Get an API Key** — Get your free key from [Google AI Studio](https://aistudio.google.com/apikey)
 2. **Configure** — Add your API key in Settings → Gemini Scribe
-3. **Initialize Context** — Click "Initialize Vault Context" to help the agent understand your vault
-4. **Start Chatting** — Open Gemini Chat with the ribbon icon or command palette and start giving the AI tasks!
+3. **Initialize Context** — Click "Initialize vault context" to help the agent understand your vault
+4. **Start Chatting** — Open Gemini chat with the ribbon icon or command palette and start giving the AI tasks!
 
 ### Prefer running models locally?
 
@@ -34,7 +34,7 @@ Gemini Scribe also supports [Ollama](https://ollama.com) as a provider so you ca
 
 ## Feature Overview
 
-### Agent Mode (Core Feature)
+### Agent mode (Core Feature)
 
 An AI assistant that can actively work with your vault through tool calling.
 
@@ -50,7 +50,7 @@ An AI assistant that can actively work with your vault through tool calling.
 - "Research quantum computing and create a new note with your findings"
 - "Organize my meeting notes from this week into a weekly summary"
 
-[Full Agent Mode Guide →](/guide/agent-mode)
+[Full Agent mode Guide →](/guide/agent-mode)
 
 ### Custom Prompts
 
@@ -85,7 +85,7 @@ Add specific notes as persistent context for your agent sessions using @ mention
 ## Best Practices
 
 1. **Start with the Agent** — The agent is your primary interface. Be specific about what you want it to do and let it break down complex tasks into steps.
-2. **Initialize Vault Context** — Use "Initialize Vault Context" to help the agent understand your vault. Update it periodically as your vault grows.
+2. **Initialize vault context** — Use "Initialize vault context" to help the agent understand your vault. Update it periodically as your vault grows.
 3. **Use Context Files** — Add relevant notes as context with @ mentions for focused sessions.
 4. **Set Appropriate Permissions** — Configure which operations require confirmation. Balance convenience with safety.
 5. **Leverage Persistent Sessions** — Continue conversations across Obsidian restarts and build on previous work.

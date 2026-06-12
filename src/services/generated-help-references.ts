@@ -57,10 +57,10 @@ export const helpResources = new Map<string, string>([
 
 export const helpReferencesTable = `| Reference | Topic |
 | --------- | ----- |
-| \`references/agent-mode.md\` | Agent Mode Guide |
+| \`references/agent-mode.md\` | Agent mode Guide |
 | \`references/agent-skills.md\` | Agent Skills |
 | \`references/ai-writing.md\` | Selection-Based AI Features Guide |
-| \`references/background-tasks.md\` | Background Tasks |
+| \`references/background-tasks.md\` | Background tasks |
 | \`references/completions.md\` | IDE-Style Completions Guide |
 | \`references/context-system.md\` | Context System Guide |
 | \`references/custom-prompts.md\` | Custom Prompts Guide |
@@ -68,14 +68,14 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/faq.md\` | Frequently Asked Questions |
 | \`references/getting-started.md\` | Getting Started |
 | \`references/lifecycle-hooks.md\` | Lifecycle Hooks |
-| \`references/mcp-servers.md\` | MCP Servers |
+| \`references/mcp-servers.md\` | MCP servers |
 | \`references/ollama-setup.md\` | Ollama (Local Models) |
 | \`references/projects.md\` | Projects |
-| \`references/scheduled-tasks.md\` | Scheduled Tasks |
+| \`references/scheduled-tasks.md\` | Scheduled tasks |
 | \`references/selection-prompts.md\` | Selection Prompts |
 | \`references/semantic-search.md\` | Semantic Vault Search |
 | \`references/summarization.md\` | Document Summarization Guide |
 | \`references/advanced-settings.md\` | Advanced Settings Guide |
 | \`references/evals.md\` | Eval Suite |
-| \`references/loop-detection.md\` | Tool Loop Detection |
+| \`references/loop-detection.md\` | Tool loop detection |
 | \`references/settings.md\` | Settings Reference |`;

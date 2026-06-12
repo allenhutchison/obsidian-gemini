@@ -14,7 +14,7 @@ Gemini Scribe can route chat, summary, completions, rewrite, and agent tool-call
 3. **Switch the provider in Gemini Scribe** — Open Settings → Gemini Scribe → Provider and choose **Ollama (local)**.
 4. **Pick a model** — The Chat / Summary / Completion dropdowns now list whatever you have pulled. In Settings → General, click **Refresh** in the **Refresh model list** row if a new pull doesn't show up.
 
-If the daemon runs on a different host or port, edit the **Ollama Base URL** field (e.g. `http://10.0.0.5:11434`).
+If the daemon runs on a different host or port, edit the **Ollama base URL** field (e.g. `http://10.0.0.5:11434`).
 
 ## What works
 
@@ -41,6 +41,6 @@ Switching back to Gemini at any time restores all features — settings persist 
 ## Tips
 
 - **Tool calling** — Most modern instruct models support function calling; older or very small models may not. If the agent loop stalls, try a different model (Llama 3.2, Qwen 2.5, Mistral 0.3 are good starting points).
-- **Context window** — Local models often have smaller context than Gemini. Compaction triggers at the percentage set by `Context Compaction Threshold` (default `20`%) of an estimated 32k-token window; long sessions will summarise older turns earlier than they do on Gemini.
+- **Context window** — Local models often have smaller context than Gemini. Compaction triggers at the percentage set by `Context Compaction Threshold` (default `20`%) of an estimated 32k-token window; long sessions will summarize older turns earlier than they do on Gemini.
 - **Token counts** — Ollama does not expose a `countTokens` endpoint, so the plugin estimates tokens from character length (chars ÷ 4). The token-usage indicator is approximate.
 - **Daemon down?** — If the daemon stops, agent calls will surface a "Could not connect to the Ollama daemon" notice. Restart with `ollama serve` and click **Refresh model list**.

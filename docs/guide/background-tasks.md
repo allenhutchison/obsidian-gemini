@@ -1,4 +1,4 @@
-# Background Tasks
+# Background tasks
 
 Long-running operations — deep research and image generation — run in the background so they never block your editing session. Results are saved to your vault automatically and you're notified when they're ready.
 
@@ -13,11 +13,11 @@ The status bar shows a single indicator for all background work. It reflects bot
 | Upload-cloud icon + percentage | RAG indexing in progress                         |
 | Pause-circle icon              | RAG indexing paused                              |
 
-Click the indicator at any time to open the **Background Tasks** panel.
+Click the indicator at any time to open the **Background tasks** panel.
 
-## Background Tasks Panel
+## Background tasks Panel
 
-The panel (also available via **Command Palette → View Background Tasks**) shows:
+The panel (also available via **Command Palette → View background tasks**) shows:
 
 - **Running** — tasks currently in progress, with a Cancel button for each
 - **Recent** — the last 20 completed, failed, or cancelled tasks
@@ -29,7 +29,7 @@ Completed tasks with output files show an **Open result** link that opens the fi
 Background tasks are created automatically when you trigger long-running operations:
 
 - **Deep Research** — starts a research task; result saved to `[state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md` by default (you can specify a custom path via the `outputFile` parameter)
-- **Image Generation** — generates and saves an image; result path shown in the completion notice. The **Generate Image** command palette entry also routes through the background system: it returns control immediately and inserts the wikilink at your captured cursor position when the task completes (or shows a Notice with the wikilink to copy if you've moved on from the source note).
+- **Image Generation** — generates and saves an image; result path shown in the completion notice. The **Generate image** command palette entry also routes through the background system: it returns control immediately and inserts the wikilink at your captured cursor position when the task completes (or shows a Notice with the wikilink to copy if you've moved on from the source note).
 
 Both operations fire a completion notice with a clickable vault link when done. If a task fails, a notice explains the error.
 
@@ -47,7 +47,7 @@ When a task completes you'll see a notice in the bottom-right corner with an **O
 ## Troubleshooting
 
 **Task shows as failed**
-Check the error shown in the Background Tasks panel. Common causes:
+Check the error shown in the Background tasks panel. Common causes:
 
 - API key not configured or expired
 - Network timeout on long-running research queries

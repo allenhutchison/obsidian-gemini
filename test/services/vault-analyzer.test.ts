@@ -27,6 +27,7 @@ vi.mock('obsidian', () => {
 	}
 
 	return {
+		getLanguage: () => 'en',
 		TFile: MockTFile,
 		TFolder: MockTFolder,
 		Notice: vi.fn(),

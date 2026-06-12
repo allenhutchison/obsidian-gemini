@@ -1,4 +1,4 @@
-# MCP Servers
+# MCP servers
 
 Gemini Scribe has experimental support for the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for connecting to external tool servers. This allows the AI agent to use tools provided by MCP servers alongside the built-in vault tools.
 
@@ -34,13 +34,13 @@ When you connect an MCP server to Gemini Scribe, its tools appear alongside the 
 
 1. Open Obsidian Settings
 2. Navigate to **Gemini Scribe** settings
-3. Scroll to the **MCP Servers** section
+3. Scroll to the **MCP servers** section
 4. Toggle **Enable MCP servers** on
-5. Click **Add Server**
+5. Click **Add server**
 6. Select the **Transport** type:
    - **Stdio (local process)**: Enter the command, arguments, and optional environment variables
    - **HTTP (remote server)**: Enter the server URL
-7. Click **Test Connection** to verify and discover available tools
+7. Click **Test connection** to verify and discover available tools
 8. Configure tool trust settings (see below)
 9. Click **Save**
 
@@ -51,7 +51,7 @@ Each tool from an MCP server can be marked as **trusted** or **untrusted**:
 - **Trusted tools** execute without confirmation — useful for read-only operations you use frequently
 - **Untrusted tools** require approval before each execution — recommended for tools that modify data
 
-You can configure trust per tool when adding/editing a server, after clicking **Test Connection** to discover available tools.
+You can configure trust per tool when adding/editing a server, after clicking **Test connection** to discover available tools.
 
 ## Examples
 
@@ -95,7 +95,7 @@ Some MCP servers require OAuth authentication. Gemini Scribe handles the full OA
    - **Transport**: HTTP (remote server)
    - **Name**: `my-oauth-server`
    - **URL**: `https://example.com/mcp`
-2. Click **Test Connection**
+2. Click **Test connection**
 3. If the server requires OAuth, your browser will open to the authorization page
 4. Sign in and authorize the application
 5. You'll be redirected back to Obsidian automatically
@@ -153,18 +153,18 @@ When an MCP server is connected:
 - Check that the arguments are correct
 - Ensure you're on a desktop platform (stdio requires process spawning)
 - Try running the command manually in a terminal to verify it works
-- Enable Debug Mode in settings for detailed MCP logs
+- Enable Debug mode in settings for detailed MCP logs
 
 **Server won't connect (HTTP)**
 
 - Verify the server is running and the URL is correct
 - Check that there are no firewall or network issues blocking the connection
 - Ensure the URL includes the correct path (e.g., `/mcp`)
-- Enable Debug Mode in settings for detailed error messages
+- Enable Debug mode in settings for detailed error messages
 
 **No tools show up**
 
-- Click **Test Connection** in the server settings to re-discover tools
+- Click **Test connection** in the server settings to re-discover tools
 - Verify **Enable MCP servers** is toggled on
 - Check that the server's tools are compatible (MCP v1 tools)
 
@@ -172,7 +172,7 @@ When an MCP server is connected:
 
 - Check that the tool hasn't been removed from the server
 - Try disconnecting and reconnecting the server
-- Enable Debug Mode for detailed error logs
+- Enable Debug mode for detailed error logs
 - Tool calls have a 60-second timeout; a tool that takes longer will return a timeout error
 
 ## Timeouts and offline behavior
@@ -182,7 +182,7 @@ To prevent a slow or unreachable MCP server from hanging Obsidian, the plugin en
 | Operation                                 | Timeout    |
 | ----------------------------------------- | ---------- |
 | Connect + first tool listing (per server) | 10 seconds |
-| Tool list refresh / **Test Connection**   | 10 seconds |
+| Tool list refresh / **Test connection**   | 10 seconds |
 | Tool invocation by the agent              | 60 seconds |
 | Underlying HTTP request                   | 15 seconds |
 | OAuth authorization wait                  | 2 minutes  |

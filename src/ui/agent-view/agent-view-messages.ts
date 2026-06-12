@@ -19,10 +19,10 @@ const AGENT_CAPABILITIES = [
 ] as const;
 
 const DEFAULT_EXAMPLE_PROMPTS = [
-	{ icon: 'search', text: 'Find all notes tagged with #important' },
-	{ icon: 'file-plus', text: 'Create a weekly summary of my meeting notes' },
-	{ icon: 'globe', text: 'Research productivity methods and create notes' },
-	{ icon: 'folder-tree', text: 'Organize my research notes by topic' },
+	{ icon: 'search', key: 'agent.empty.example.findTagged' },
+	{ icon: 'file-plus', key: 'agent.empty.example.weeklySummary' },
+	{ icon: 'globe', key: 'agent.empty.example.research' },
+	{ icon: 'folder-tree', key: 'agent.empty.example.organize' },
 ] as const;
 
 /**
@@ -68,10 +68,10 @@ export class AgentViewMessages {
 			}
 
 			// Fall back to defaults if no prompts or empty array
-			return [...DEFAULT_EXAMPLE_PROMPTS];
+			return DEFAULT_EXAMPLE_PROMPTS.map((p) => ({ icon: p.icon, text: t(p.key) }));
 		} catch (error) {
 			this.plugin.logger.warn('Failed to load example prompts, using defaults:', error);
-			return [...DEFAULT_EXAMPLE_PROMPTS];
+			return DEFAULT_EXAMPLE_PROMPTS.map((p) => ({ icon: p.icon, text: t(p.key) }));
 		}
 	}
 
@@ -103,7 +103,12 @@ export class AgentViewMessages {
 
 		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
 		header.createEl('span', {
-			text: entry.role === 'user' ? 'You' : entry.role === 'system' ? 'System' : 'Agent',
+			text:
+				entry.role === 'user'
+					? t('agent.message.roleUser')
+					: entry.role === 'system'
+						? t('agent.message.roleSystem')
+						: t('agent.message.roleAgent'),
 			cls: 'gemini-agent-message-role',
 		});
 		header.createEl('span', {
@@ -165,19 +170,19 @@ export class AgentViewMessages {
 
 						// Tool name
 						toolHeader.createEl('span', {
-							text: `Tool: ${toolName}`,
+							text: t('agent.message.toolPrefix', { name: toolName }),
 							cls: 'gemini-agent-tool-name',
 						});
 
 						// Tool status (if available)
 						if (toolContent.includes('✅')) {
 							toolHeader.createEl('span', {
-								text: 'Success',
+								text: t('agent.message.toolSuccess'),
 								cls: 'gemini-agent-tool-status gemini-agent-tool-status-success',
 							});
 						} else if (toolContent.includes('❌')) {
 							toolHeader.createEl('span', {
-								text: 'Failed',
+								text: t('agent.message.toolFailed'),
 								cls: 'gemini-agent-tool-status gemini-agent-tool-status-error',
 							});
 						}
@@ -235,10 +240,10 @@ export class AgentViewMessages {
 				navigator.clipboard
 					.writeText(renderMessage)
 					.then(() => {
-						new Notice('Message copied to clipboard.');
+						new Notice(t('agent.message.copied'));
 					})
 					.catch((err) => {
-						new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
+						new Notice(t('agent.message.copyFailed'));
 						this.plugin.logger.error(err);
 					});
 			});
@@ -277,7 +282,7 @@ export class AgentViewMessages {
 		const icon = header.createSpan({ cls: 'gemini-tool-row-icon gemini-reasoning-row-icon' });
 		icon.setText('🧠');
 
-		header.createSpan({ text: 'Reasoning', cls: 'gemini-tool-row-name' });
+		header.createSpan({ text: t('agent.message.reasoning'), cls: 'gemini-tool-row-name' });
 
 		const chevron = header.createSpan({ cls: 'gemini-tool-row-chevron' });
 		setIcon(chevron, 'chevron-right');
@@ -318,7 +323,12 @@ export class AgentViewMessages {
 
 		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
 		header.createEl('span', {
-			text: role === 'user' ? 'You' : role === 'system' ? 'System' : 'Agent',
+			text:
+				role === 'user'
+					? t('agent.message.roleUser')
+					: role === 'system'
+						? t('agent.message.roleSystem')
+						: t('agent.message.roleAgent'),
 			cls: 'gemini-agent-message-role',
 		});
 		header.createEl('span', {
@@ -385,10 +395,10 @@ export class AgentViewMessages {
 					navigator.clipboard
 						.writeText(entry.message)
 						.then(() => {
-							new Notice('Message copied to clipboard.');
+							new Notice(t('agent.message.copied'));
 						})
 						.catch((err) => {
-							new Notice('Could not copy message to clipboard. Try selecting and copying manually.');
+							new Notice(t('agent.message.copyFailed'));
 							this.plugin.logger.error('Failed to copy to clipboard', err);
 						});
 				});
@@ -659,7 +669,7 @@ export class AgentViewMessages {
 
 			// Add header
 			const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
-			header.createEl('span', { text: 'Permission Required', cls: 'gemini-agent-message-role' });
+			header.createEl('span', { text: t('agent.confirm.title'), cls: 'gemini-agent-message-role' });
 			header.createEl('span', {
 				text: new Date().toLocaleTimeString(),
 				cls: 'gemini-agent-message-time',
@@ -694,7 +704,7 @@ export class AgentViewMessages {
 			// Parameters section
 			if (parameters && Object.keys(parameters).length > 0) {
 				const paramsSection = card.createDiv({ cls: 'gemini-agent-params-section' });
-				paramsSection.createEl('div', { text: 'Parameters:', cls: 'gemini-agent-params-header' });
+				paramsSection.createEl('div', { text: t('agent.confirm.parameters'), cls: 'gemini-agent-params-header' });
 
 				const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-params-list' });
 				for (const [key, value] of Object.entries(parameters)) {
@@ -726,7 +736,7 @@ export class AgentViewMessages {
 			});
 			const allowIcon = allowBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
 			setIcon(allowIcon, 'check');
-			allowBtn.createSpan({ text: 'Allow' });
+			allowBtn.createSpan({ text: t('agent.confirm.allow') });
 
 			// Cancel button
 			const cancelBtn = buttonsContainer.createEl('button', {
@@ -734,7 +744,7 @@ export class AgentViewMessages {
 			});
 			const cancelIcon = cancelBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
 			setIcon(cancelIcon, 'x');
-			cancelBtn.createSpan({ text: 'Cancel' });
+			cancelBtn.createSpan({ text: t('agent.confirm.cancel') });
 
 			// "Don't ask again" checkbox
 			const checkboxContainer = buttonsContainer.createDiv({
@@ -747,7 +757,7 @@ export class AgentViewMessages {
 				attr: { id: checkboxId },
 			});
 			checkboxContainer.createEl('label', {
-				text: "Don't ask again this session",
+				text: t('agent.confirm.dontAskAgain'),
 				cls: 'gemini-agent-checkbox-label',
 				attr: { for: checkboxId },
 			});
@@ -759,7 +769,9 @@ export class AgentViewMessages {
 				});
 				const diffIcon = viewChangesBtn.createSpan({ cls: 'gemini-agent-confirmation-btn-icon' });
 				setIcon(diffIcon, diffContext.isNewFile ? 'file-text' : 'file-diff');
-				viewChangesBtn.createSpan({ text: diffContext.isNewFile ? 'Preview File' : 'View Changes' });
+				viewChangesBtn.createSpan({
+					text: diffContext.isNewFile ? t('agent.confirm.previewFile') : t('agent.confirm.viewChanges'),
+				});
 
 				viewChangesBtn.addEventListener('click', async () => {
 					await this.openDiffView(
@@ -937,7 +949,7 @@ export class AgentViewMessages {
 		setIcon(icon, confirmed ? 'check-circle' : 'x-circle');
 
 		result.createSpan({
-			text: confirmed ? `Permission granted: ${toolName} was allowed` : `Permission denied: ${toolName} was cancelled`,
+			text: confirmed ? t('agent.confirm.granted', { name: toolName }) : t('agent.confirm.denied', { name: toolName }),
 			cls: 'gemini-agent-result-text',
 		});
 	}
@@ -982,12 +994,12 @@ export class AgentViewMessages {
 	 */
 	private getCategoryLabel(category: string): string {
 		const labels: Record<string, string> = {
-			'read-only': 'Read Only',
-			'vault-operations': 'Vault Operation',
-			external: 'External',
-			web: 'Web Access',
-			memory: 'Memory',
-			'deep-research': 'Deep Research',
+			'read-only': t('agent.toolCategory.readOnly'),
+			'vault-operations': t('agent.toolCategory.vaultOperations'),
+			external: t('agent.toolCategory.external'),
+			web: t('agent.toolCategory.web'),
+			memory: t('agent.toolCategory.memory'),
+			'deep-research': t('agent.toolCategory.deepResearch'),
 		};
 		return labels[category] || category;
 	}

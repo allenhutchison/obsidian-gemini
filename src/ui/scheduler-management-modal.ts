@@ -4,25 +4,26 @@ import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
+import { t } from '../i18n';
 
 const SCHEDULE_PRESETS = [
-	{ label: 'Once', value: 'once' },
-	{ label: 'Daily (every 24h)', value: 'daily' },
-	{ label: 'Daily at time', value: 'daily-at' },
-	{ label: 'Weekly (every 7d)', value: 'weekly' },
-	{ label: 'Weekly on days at time', value: 'weekly-days' },
-	{ label: 'Custom interval', value: 'custom' },
+	{ labelKey: 'scheduler.presetOnce', value: 'once' },
+	{ labelKey: 'scheduler.presetDaily', value: 'daily' },
+	{ labelKey: 'scheduler.presetDailyAt', value: 'daily-at' },
+	{ labelKey: 'scheduler.presetWeekly', value: 'weekly' },
+	{ labelKey: 'scheduler.presetWeeklyDays', value: 'weekly-days' },
+	{ labelKey: 'scheduler.presetCustom', value: 'custom' },
 ] as const;
 
 // Order matches JS Date.getDay(); shown left-to-right in the day picker.
 const WEEKDAY_OPTIONS = [
-	{ code: 'sun', label: 'Sun' },
-	{ code: 'mon', label: 'Mon' },
-	{ code: 'tue', label: 'Tue' },
-	{ code: 'wed', label: 'Wed' },
-	{ code: 'thu', label: 'Thu' },
-	{ code: 'fri', label: 'Fri' },
-	{ code: 'sat', label: 'Sat' },
+	{ code: 'sun', labelKey: 'scheduler.daySun' },
+	{ code: 'mon', labelKey: 'scheduler.dayMon' },
+	{ code: 'tue', labelKey: 'scheduler.dayTue' },
+	{ code: 'wed', labelKey: 'scheduler.dayWed' },
+	{ code: 'thu', labelKey: 'scheduler.dayThu' },
+	{ code: 'fri', labelKey: 'scheduler.dayFri' },
+	{ code: 'sat', labelKey: 'scheduler.daySat' },
 ] as const;
 
 /**
@@ -36,23 +37,22 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 	// ── Configuration ────────────────────────────────────────────────────────
 
-	protected readonly entityLabel = 'task';
-	protected readonly entityLabelPlural = 'Scheduled Tasks';
+	protected readonly entityLabel = t('scheduler.entityLabel');
+	protected readonly entityLabelPlural = t('scheduler.entityLabelPlural');
 	protected readonly entityIcon = 'calendar-clock';
-	protected readonly newButtonText = 'New task';
-	protected readonly emptyText = 'No scheduled tasks yet.';
-	protected readonly emptyHint =
-		'Create your first task to automate recurring AI prompts — daily summaries, weekly reports, and more.';
-	protected readonly deleteTitle = 'Delete Task';
-	protected readonly deleteHint = 'Run output files in Scheduled-Tasks/Runs/ are not deleted.';
-	protected readonly slugPlaceholder = 'e.g. daily-summary';
+	protected readonly newButtonText = t('scheduler.newTaskButton');
+	protected readonly emptyText = t('scheduler.emptyText');
+	protected readonly emptyHint = t('scheduler.emptyHint');
+	protected readonly deleteTitle = t('scheduler.deleteTitle');
+	protected readonly deleteHint = t('scheduler.deleteHint');
+	protected readonly slugPlaceholder = t('scheduler.slugPlaceholder');
 
 	protected getCssClasses(): string[] {
 		return ['gemini-scheduler-modal'];
 	}
 
 	protected getFormTitle(isEdit: boolean): string {
-		return isEdit ? `Edit: ${this.editingSlug}` : 'New Scheduled Task';
+		return isEdit ? t('scheduler.formTitleEdit', { slug: this.editingSlug ?? '' }) : t('scheduler.formTitleNew');
 	}
 
 	// ── Data access ──────────────────────────────────────────────────────────
@@ -98,20 +98,21 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		info.createDiv({ text: task.slug, cls: 'gemini-scheduler-item-slug' });
 
 		const badgeText = isDisabled
-			? `${task.schedule} · disabled`
+			? t('scheduler.badgeDisabled', { schedule: task.schedule })
 			: isPaused
-				? `${task.schedule} · paused`
+				? t('scheduler.badgePaused', { schedule: task.schedule })
 				: task.schedule;
 		info.createSpan({ text: badgeText, cls: 'gemini-scheduler-item-badge' });
 
 		if (taskState && !isPaused) {
 			const nextRun = new Date(taskState.nextRunAt);
-			const nextLabel = nextRun.getTime() >= 8_639_000_000_000_000 ? 'Once — complete' : this.formatDate(nextRun);
-			info.createDiv({ text: `Next: ${nextLabel}`, cls: 'gemini-scheduler-item-meta' });
+			const nextLabel =
+				nextRun.getTime() >= 8_639_000_000_000_000 ? t('scheduler.onceComplete') : this.formatDate(nextRun);
+			info.createDiv({ text: t('scheduler.nextRun', { time: nextLabel }), cls: 'gemini-scheduler-item-meta' });
 		}
 		if (taskState?.lastRunAt) {
 			info.createDiv({
-				text: `Last: ${this.formatDate(new Date(taskState.lastRunAt))}`,
+				text: t('scheduler.lastRun', { time: this.formatDate(new Date(taskState.lastRunAt)) }),
 				cls: 'gemini-scheduler-item-meta',
 			});
 		}
@@ -128,9 +129,9 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		// Toggle (enable/disable)
 		const toggleBtn = actions.createEl('button', {
-			text: isDisabled ? 'Enable' : 'Disable',
+			text: isDisabled ? t('scheduler.enableButton') : t('scheduler.disableButton'),
 			cls: 'gemini-scheduler-action',
-			attr: { type: 'button', title: isDisabled ? 'Enable this task' : 'Disable this task' },
+			attr: { type: 'button', title: isDisabled ? t('scheduler.enableTooltip') : t('scheduler.disableTooltip') },
 		});
 		toggleBtn.addEventListener('click', async () => {
 			toggleBtn.disabled = true;
@@ -140,17 +141,17 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 				this.render();
 			} catch (err) {
 				this.plugin.logger.error(`[SchedulerManagementModal] Toggle failed for "${task.slug}":`, err);
-				new Notice(`Failed to toggle "${task.slug}"`);
-				toggleBtn.setText(isDisabled ? 'Enable' : 'Disable');
+				new Notice(t('scheduler.toggleFailed', { slug: task.slug }));
+				toggleBtn.setText(isDisabled ? t('scheduler.enableButton') : t('scheduler.disableButton'));
 				toggleBtn.disabled = false;
 			}
 		});
 
 		if (isPaused) {
 			const resetBtn = actions.createEl('button', {
-				text: 'Reset',
+				text: t('scheduler.resetButton'),
 				cls: 'gemini-scheduler-action',
-				attr: { type: 'button', title: 'Clear error state and re-enable' },
+				attr: { type: 'button', title: t('scheduler.resetTooltip') },
 			});
 			resetBtn.addEventListener('click', async () => {
 				resetBtn.disabled = true;
@@ -161,28 +162,28 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		// Run now
 		const runBtn = actions.createEl('button', {
-			text: 'Run now',
+			text: t('scheduler.runNowButton'),
 			cls: 'gemini-scheduler-action',
 			attr: { type: 'button' },
 		});
 		if (isPaused || isDisabled) runBtn.disabled = true;
 		runBtn.addEventListener('click', async () => {
 			runBtn.disabled = true;
-			runBtn.setText('Running…');
+			runBtn.setText(t('scheduler.running'));
 			try {
 				await this.plugin.scheduledTaskManager?.runNow(task.slug);
-				runBtn.setText('Submitted');
+				runBtn.setText(t('scheduler.submitted'));
 			} catch (err) {
 				this.plugin.logger.error(`[SchedulerManagementModal] runNow failed for "${task.slug}":`, err);
-				new Notice(`Failed to run "${task.slug}"`);
+				new Notice(t('scheduler.runFailed', { slug: task.slug }));
 				runBtn.disabled = false;
-				runBtn.setText('Run now');
+				runBtn.setText(t('scheduler.runNowButton'));
 			}
 		});
 
 		// Edit
 		const editBtn = actions.createEl('button', {
-			text: 'Edit',
+			text: t('scheduler.editButton'),
 			cls: 'gemini-scheduler-action',
 			attr: { type: 'button' },
 		});
@@ -190,7 +191,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		// Delete
 		const deleteBtn = actions.createEl('button', {
-			text: 'Delete',
+			text: t('scheduler.deleteButton'),
 			cls: 'gemini-scheduler-action gemini-scheduler-action--delete',
 			attr: { type: 'button' },
 		});
@@ -201,12 +202,12 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 	protected renderFormBody(formEl: HTMLElement, _isEdit: boolean): void {
 		// Schedule
-		new Setting(formEl).setName('Schedule').setDesc('How often the task should run.');
+		new Setting(formEl).setName(t('scheduler.scheduleSetting')).setDesc(t('scheduler.scheduleDesc'));
 
 		const scheduleRow = formEl.createDiv({ cls: 'gemini-scheduler-schedule-row' });
 		const presetSelect = scheduleRow.createEl('select', { cls: 'gemini-scheduler-select' });
 		for (const preset of SCHEDULE_PRESETS) {
-			const opt = presetSelect.createEl('option', { value: preset.value, text: preset.label });
+			const opt = presetSelect.createEl('option', { value: preset.value, text: t(preset.labelKey) });
 			if (this.form.schedulePreset === preset.value) opt.selected = true;
 		}
 
@@ -214,7 +215,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			cls: 'gemini-scheduler-custom-interval',
 			attr: {
 				type: 'text',
-				placeholder: 'e.g. 30m or 2h',
+				placeholder: t('scheduler.customIntervalPlaceholder'),
 				value: this.form.scheduleCustom,
 			},
 		});
@@ -243,7 +244,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 					this.form.scheduleDays = this.form.scheduleDays.filter((d) => d !== day.code);
 				}
 			});
-			label.appendText(` ${day.label}`);
+			label.appendText(` ${t(day.labelKey)}`);
 			dayCheckboxes.push(cb);
 		}
 
@@ -272,8 +273,8 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		const toolsContainer = formEl.createDiv({ cls: 'gemini-scheduler-tools' });
 		this.disposeToolPolicyEditor();
 		this.toolPolicyEditor = new ToolPolicyEditor(this.plugin, toolsContainer, {
-			title: 'Tool access',
-			description: 'When inherited, this task uses the plugin\u2019s global tool policy.',
+			title: t('scheduler.toolAccessTitle'),
+			description: t('scheduler.toolAccessDesc'),
 			value: this.form.toolPolicy,
 			onChange: (next) => {
 				this.form.toolPolicy = next;
@@ -281,14 +282,10 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		});
 
 		// Prompt
-		new Setting(formEl)
-			.setName('Prompt')
-			.setDesc(
-				'The instruction sent to the AI on each run. Supports the same markdown you would use in the agent chat.'
-			);
+		new Setting(formEl).setName(t('scheduler.promptSetting')).setDesc(t('scheduler.promptDesc'));
 		const promptArea = formEl.createEl('textarea', {
 			cls: 'gemini-scheduler-prompt',
-			attr: { rows: '8', placeholder: 'Write your prompt here…' },
+			attr: { rows: '8', placeholder: t('scheduler.promptPlaceholder') },
 		});
 		promptArea.value = this.form.prompt;
 		promptArea.addEventListener('input', () => {
@@ -297,11 +294,11 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		// Advanced section (collapsible)
 		const advDetails = formEl.createEl('details', { cls: 'gemini-scheduler-advanced' });
-		advDetails.createEl('summary', { text: 'Advanced options' });
+		advDetails.createEl('summary', { text: t('scheduler.advancedOptions') });
 
 		new Setting(advDetails)
-			.setName('Model override')
-			.setDesc('Override the plugin chat model for this task (e.g. gemini-2.0-flash). Leave blank to use the default.')
+			.setName(t('scheduler.modelOverrideSetting'))
+			.setDesc(t('scheduler.modelOverrideDesc'))
 			.addText((text) =>
 				text
 					.setPlaceholder('gemini-2.0-flash')
@@ -312,9 +309,11 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			);
 
 		new Setting(advDetails)
-			.setName('Output path')
+			.setName(t('scheduler.outputPathSetting'))
 			.setDesc(
-				`Where to write results. Supports {slug} and {date} placeholders. Default: ${this.plugin.scheduledTaskManager?.scheduledTasksFolder ?? '<state-folder>'}/Runs/<slug>/{date}.md`
+				t('scheduler.outputPathDesc', {
+					defaultPath: `${this.plugin.scheduledTaskManager?.scheduledTasksFolder ?? '<state-folder>'}/Runs/<slug>/{date}.md`,
+				})
 			)
 			.addText((text) =>
 				text.setValue(this.form.outputPath).onChange((v) => {
@@ -323,10 +322,8 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			);
 
 		new Setting(advDetails)
-			.setName('Max tool iterations')
-			.setDesc(
-				`Cap on agent tool-call batches per run. Raise this for long multi-step tasks that hit the limit. Leave blank for the default (${DEFAULT_HEADLESS_MAX_ITERATIONS}).`
-			)
+			.setName(t('scheduler.maxIterationsSetting'))
+			.setDesc(t('scheduler.maxIterationsDesc', { default: DEFAULT_HEADLESS_MAX_ITERATIONS }))
 			.addText((text) =>
 				text
 					.setPlaceholder(String(DEFAULT_HEADLESS_MAX_ITERATIONS))
@@ -337,10 +334,8 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			);
 
 		new Setting(advDetails)
-			.setName('Run if missed')
-			.setDesc(
-				'When Obsidian was closed and this task was due, show it in the catch-up approval modal on next startup.'
-			)
+			.setName(t('scheduler.runIfMissedSetting'))
+			.setDesc(t('scheduler.runIfMissedDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(this.form.runIfMissed).onChange((v) => {
 					this.form.runIfMissed = v;
@@ -348,8 +343,8 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			);
 
 		new Setting(advDetails)
-			.setName('Enabled')
-			.setDesc('Disable to pause the task without deleting it.')
+			.setName(t('scheduler.enabledSetting'))
+			.setDesc(t('scheduler.enabledDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(this.form.enabled).onChange((v) => {
 					this.form.enabled = v;
@@ -366,17 +361,15 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 	protected async handleSave(isEdit: boolean): Promise<void> {
 		const schedule = this.resolvedSchedule();
 		if (!schedule) {
-			new Notice(
-				'Please enter a valid schedule. Custom interval expects 30m or 2h. Daily at time and Weekly on days at time both need a valid HH:MM (and Weekly needs at least one day).'
-			);
+			new Notice(t('scheduler.invalidSchedule'));
 			return;
 		}
 		if (!this.form.prompt.trim()) {
-			new Notice('Prompt cannot be empty.');
+			new Notice(t('scheduler.emptyPrompt'));
 			return;
 		}
 		if (!isEdit && !this.form.slug.trim()) {
-			new Notice('Task name cannot be empty.');
+			new Notice(t('scheduler.emptySlug'));
 			return;
 		}
 
@@ -387,7 +380,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		if (rawMaxIterations) {
 			const parsed = Number(rawMaxIterations);
 			if (!Number.isInteger(parsed) || parsed <= 0) {
-				new Notice('Max tool iterations must be a positive whole number, or blank for the default.');
+				new Notice(t('scheduler.invalidMaxIterations'));
 				return;
 			}
 			maxIterations = parsed;
@@ -395,7 +388,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 
 		const manager = this.plugin.scheduledTaskManager;
 		if (!manager) {
-			new Notice('Scheduled task manager not available.');
+			new Notice(t('scheduler.managerUnavailable'));
 			return;
 		}
 
@@ -411,7 +404,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 					runIfMissed: this.form.runIfMissed,
 					prompt: this.form.prompt,
 				});
-				new Notice(`Task "${this.editingSlug}" updated`);
+				new Notice(t('scheduler.taskUpdated', { slug: this.editingSlug }));
 			} else {
 				await manager.createTask({
 					slug: this.form.slug,
@@ -424,14 +417,14 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 					runIfMissed: this.form.runIfMissed,
 					prompt: this.form.prompt,
 				});
-				new Notice(`Task "${this.form.slug}" created`);
+				new Notice(t('scheduler.taskCreated', { slug: this.form.slug }));
 			}
 			this.view = 'list';
 			this.render();
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			this.plugin.logger.error('[SchedulerManagementModal] Save failed:', err);
-			new Notice(`Failed to save task: ${msg}`);
+			new Notice(t('scheduler.saveFailed', { message: msg }));
 		}
 	}
 

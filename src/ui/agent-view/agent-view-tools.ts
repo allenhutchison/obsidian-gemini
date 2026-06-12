@@ -8,6 +8,7 @@ import { AgentLoop } from '../../agent/agent-loop';
 import type { ToolCall } from '../../api/interfaces/model-api';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
 import type { PerTurnContext } from './agent-view-tool-followup';
+import { t } from '../../i18n';
 
 /**
  * Callbacks and state access that AgentViewTools needs from AgentView
@@ -132,7 +133,7 @@ export class AgentViewTools {
 							this.context.incrementToolCallCount?.(1);
 						},
 						onFollowUpRequestStart: () => {
-							this.context.updateProgress('Thinking...', 'thinking');
+							this.context.updateProgress(t('agent.progress.thinking'), 'thinking');
 						},
 						onModelReasoning: async (thoughts) => {
 							// Reasoning the model produced before deciding to call the

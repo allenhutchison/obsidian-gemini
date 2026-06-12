@@ -1,4 +1,5 @@
 import { Modal, App } from 'obsidian';
+import { t } from '../i18n';
 
 export class RewriteInstructionsModal extends Modal {
 	private instructionsEl!: HTMLTextAreaElement;
@@ -18,12 +19,12 @@ export class RewriteInstructionsModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: this.isFullFile ? 'Rewrite Entire File' : 'Rewrite Selected Text' });
+		contentEl.createEl('h2', { text: this.isFullFile ? t('rewrite.titleFile') : t('rewrite.titleSelection') });
 
 		// Show preview of selected text or file info
 		const previewSection = contentEl.createDiv({ cls: 'gemini-scribe-section' });
 		previewSection.createEl('label', {
-			text: this.isFullFile ? 'File content:' : 'Selected text:',
+			text: this.isFullFile ? t('rewrite.fileContentLabel') : t('rewrite.selectedTextLabel'),
 			cls: 'gemini-scribe-label',
 		});
 
@@ -34,13 +35,11 @@ export class RewriteInstructionsModal extends Modal {
 		// Instructions input
 		const instructionsSection = contentEl.createDiv({ cls: 'gemini-scribe-section' });
 		instructionsSection.createEl('label', {
-			text: 'Instructions:',
+			text: t('rewrite.instructionsLabel'),
 			cls: 'gemini-scribe-label',
 		});
 
-		const placeholder = this.isFullFile
-			? 'How would you like to rewrite this file?\n\nExamples:\n• Make it more concise\n• Fix grammar and spelling throughout\n• Convert to a different format\n• Reorganize the structure\n• Improve clarity and readability'
-			: 'How would you like to rewrite this text?\n\nExamples:\n• Make it more concise\n• Fix grammar and spelling\n• Make it more formal/casual\n• Expand with more detail\n• Simplify the language';
+		const placeholder = this.isFullFile ? t('rewrite.placeholderFile') : t('rewrite.placeholderSelection');
 
 		this.instructionsEl = instructionsSection.createEl('textarea', {
 			placeholder,
@@ -49,7 +48,7 @@ export class RewriteInstructionsModal extends Modal {
 
 		// Submit button - full width
 		const submitBtn = contentEl.createEl('button', {
-			text: 'Rewrite',
+			text: t('rewrite.submitButton'),
 			cls: 'gemini-scribe-submit-button mod-cta',
 		});
 

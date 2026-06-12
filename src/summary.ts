@@ -4,6 +4,7 @@ import { BaseModelRequest } from './api/index';
 import { ModelClientFactory } from './api';
 import { Notice, TFile } from 'obsidian';
 import { getErrorMessage } from './utils/error-utils';
+import { t } from './i18n';
 
 export class GeminiSummary {
 	private plugin: ObsidianGemini;
@@ -27,14 +28,14 @@ export class GeminiSummary {
 	async summarizeActiveFile() {
 		const activeFile = this.plugin.gfile.getActiveFile();
 		if (!activeFile) {
-			this.showError('No active file to summarize. Please open a markdown file first.');
+			this.showError(t('notice.summary.noActiveFile'));
 			return;
 		}
 		try {
 			await this.summarizeFile(activeFile);
-			new Notice('Summary added to frontmatter successfully!');
+			new Notice(t('notice.summary.success'));
 		} catch (error) {
-			this.showError(`Failed to generate summary: ${getErrorMessage(error)}`, error);
+			this.showError(t('notice.summary.failed', { error: getErrorMessage(error) }), error);
 		}
 	}
 
@@ -70,7 +71,7 @@ export class GeminiSummary {
 	async setupSummarizationCommand() {
 		this.plugin.addCommand({
 			id: 'gemini-scribe-summarize-active-file',
-			name: 'Summarize Active File',
+			name: t('command.summarizeActiveFile'),
 			callback: () => this.summarizeActiveFile(),
 		});
 	}

@@ -10,6 +10,7 @@ import { TAbstractFile, TFolder, Vault, normalizePath, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { Logger } from './logger';
 import { getRawErrorMessage } from './error-utils';
+import { t } from '../i18n';
 
 /**
  * Check if a file or folder path should be excluded from selection or operations.
@@ -110,7 +111,7 @@ export async function ensureFolderExists(
 
 		const label = context ? ` (${context})` : '';
 		logger?.error(`Failed to create folder "${normalized}"${label}: ${message}`, error);
-		new Notice(`Gemini Scribe: Failed to create folder "${normalized}"${label}: ${message}`);
+		new Notice(t('notice.fileUtils.createFolderFailed', { path: normalized, label, message }));
 		throw new Error(`Failed to create folder "${normalized}"${label}: ${message}`);
 	}
 

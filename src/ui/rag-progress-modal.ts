@@ -1,5 +1,6 @@
 import { App, Modal, Setting, setIcon } from 'obsidian';
 import type { RagProgressInfo, ProgressListener, RagProgressProvider } from '../services/rag-types';
+import { t } from '../i18n';
 
 /**
  * Modal showing live progress during RAG indexing operations
@@ -58,7 +59,7 @@ export class RagProgressModal extends Modal {
 		const headerEl = contentEl.createDiv({ cls: 'rag-progress-header' });
 		const iconEl = headerEl.createSpan({ cls: 'rag-progress-header-icon' });
 		setIcon(iconEl, 'upload-cloud');
-		headerEl.createEl('h2', { text: 'Indexing Vault' });
+		headerEl.createEl('h2', { text: t('ragProgress.title') });
 
 		// Progress bar container
 		const progressContainer = contentEl.createDiv({ cls: 'rag-progress-bar-container' });
@@ -68,19 +69,19 @@ export class RagProgressModal extends Modal {
 
 		// Current file section
 		const currentFileSection = contentEl.createDiv({ cls: 'rag-progress-section' });
-		currentFileSection.createDiv({ cls: 'rag-progress-label', text: 'Currently processing:' });
+		currentFileSection.createDiv({ cls: 'rag-progress-label', text: t('ragProgress.currentFileLabel') });
 		this.currentFileEl = currentFileSection.createDiv({ cls: 'rag-progress-current-file' });
 
 		// Time section
 		const timeSection = contentEl.createDiv({ cls: 'rag-progress-time-section' });
 		const elapsedContainer = timeSection.createSpan({ cls: 'rag-progress-time-item' });
-		elapsedContainer.createSpan({ text: 'Elapsed: ' });
+		elapsedContainer.createSpan({ text: t('ragProgress.elapsedLabel') });
 		this.elapsedTimeEl = elapsedContainer.createSpan({ cls: 'rag-progress-time-value' });
 
 		timeSection.createSpan({ cls: 'rag-progress-time-separator', text: ' | ' });
 
 		const estimatedContainer = timeSection.createSpan({ cls: 'rag-progress-time-item' });
-		estimatedContainer.createSpan({ text: 'Estimated: ' });
+		estimatedContainer.createSpan({ text: t('ragProgress.estimatedLabel') });
 		this.estimatedTimeEl = estimatedContainer.createSpan({ cls: 'rag-progress-time-value' });
 
 		// Stats section
@@ -105,19 +106,19 @@ export class RagProgressModal extends Modal {
 		const buttonSetting = new Setting(contentEl);
 		buttonSetting.addButton((btn) => {
 			this.backgroundBtn = btn.buttonEl;
-			btn.setButtonText('Run in Background').onClick(() => {
+			btn.setButtonText(t('ragProgress.backgroundButton')).onClick(() => {
 				this.close();
 			});
 		});
 		buttonSetting.addButton((btn) => {
 			this.cancelBtn = btn.buttonEl;
 			btn
-				.setButtonText('Cancel')
+				.setButtonText(t('ragProgress.cancelButton'))
 				.setWarning()
 				.onClick(() => {
 					this.ragService.cancelIndexing();
 					btn.setDisabled(true);
-					btn.setButtonText('Cancelling...');
+					btn.setButtonText(t('ragProgress.cancelling'));
 				});
 		});
 
@@ -161,7 +162,7 @@ export class RagProgressModal extends Modal {
 				this.currentFileEl.setText(progressInfo.currentFile);
 				this.currentFileEl.style.display = '';
 			} else if (progressInfo.status === 'indexing') {
-				this.currentFileEl.setText('Scanning vault...');
+				this.currentFileEl.setText(t('ragProgress.scanning'));
 				this.currentFileEl.style.display = '';
 			} else {
 				this.currentFileEl.style.display = 'none';
@@ -170,14 +171,14 @@ export class RagProgressModal extends Modal {
 
 		// Update stats
 		if (this.indexedCountEl) {
-			this.indexedCountEl.setText(`${progressInfo.indexedCount} files indexed`);
+			this.indexedCountEl.setText(t('ragProgress.filesIndexed', { count: progressInfo.indexedCount }));
 		}
 		if (this.skippedCountEl) {
-			this.skippedCountEl.setText(`${progressInfo.skippedCount} files skipped (unchanged)`);
+			this.skippedCountEl.setText(t('ragProgress.filesSkipped', { count: progressInfo.skippedCount }));
 		}
 		if (this.failedCountEl) {
 			if (progressInfo.failedCount > 0) {
-				this.failedCountEl.setText(`${progressInfo.failedCount} files failed`);
+				this.failedCountEl.setText(t('ragProgress.filesFailed', { count: progressInfo.failedCount }));
 				this.failedCountEl.parentElement?.classList.remove('rag-stat-hidden');
 			} else {
 				this.failedCountEl.parentElement?.classList.add('rag-stat-hidden');
@@ -204,9 +205,9 @@ export class RagProgressModal extends Modal {
 				const elapsed = Date.now() - progressInfo.startTime;
 				const rate = current / elapsed;
 				const remaining = (progressInfo.totalCount - current) / rate;
-				this.estimatedTimeEl.setText(`${this.formatDuration(remaining)} remaining`);
+				this.estimatedTimeEl.setText(t('ragProgress.remaining', { duration: this.formatDuration(remaining) }));
 			} else {
-				this.estimatedTimeEl.setText('Calculating...');
+				this.estimatedTimeEl.setText(t('ragProgress.calculating'));
 			}
 		}
 	}
@@ -218,11 +219,11 @@ export class RagProgressModal extends Modal {
 		const seconds = totalSeconds % 60;
 
 		if (hours > 0) {
-			return `${hours}h ${minutes}m ${seconds}s`;
+			return t('ragProgress.durationHours', { hours, minutes, seconds });
 		} else if (minutes > 0) {
-			return `${minutes}m ${seconds}s`;
+			return t('ragProgress.durationMinutes', { minutes, seconds });
 		} else {
-			return `${seconds}s`;
+			return t('ragProgress.durationSeconds', { seconds });
 		}
 	}
 
@@ -246,7 +247,9 @@ export class RagProgressModal extends Modal {
 		const headerEl = this.contentEl.querySelector('.rag-progress-header h2');
 		const iconEl = this.contentEl.querySelector('.rag-progress-header-icon');
 		if (headerEl) {
-			headerEl.setText(this.progressInfo.status === 'error' ? 'Indexing Failed' : 'Indexing Complete');
+			headerEl.setText(
+				this.progressInfo.status === 'error' ? t('ragProgress.titleFailed') : t('ragProgress.titleComplete')
+			);
 		}
 		if (iconEl) {
 			setIcon(iconEl as HTMLElement, this.progressInfo.status === 'error' ? 'alert-triangle' : 'check-circle');
@@ -263,7 +266,7 @@ export class RagProgressModal extends Modal {
 			this.cancelBtn.style.display = 'none';
 		}
 		if (this.backgroundBtn) {
-			this.backgroundBtn.setText('Close');
+			this.backgroundBtn.setText(t('ragProgress.closeButton'));
 		}
 
 		// Callback

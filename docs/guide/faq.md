@@ -47,7 +47,7 @@ This is usually caused by an invalid/expired API key or an unavailable model.
 **Steps to debug:**
 
 1. Verify your API key is valid in [Google AI Studio](https://aistudio.google.com)
-2. Enable **Debug Mode** in plugin settings
+2. Enable **Debug mode** in plugin settings
 3. Open the developer console (Ctrl/Cmd + Shift + I) for detailed error messages
 4. Try switching to a different model
 
@@ -65,7 +65,7 @@ Google regularly retires preview model versions. The plugin automatically fetche
 
 ### Where are the Temperature and Top-P settings?
 
-These are available under **Advanced Settings** in the plugin settings. Click "Show Advanced Settings" to reveal them. Temperature ranges are automatically adjusted based on the selected model's capabilities. ([#105](https://github.com/allenhutchison/obsidian-gemini/issues/105))
+These are available under **Advanced Settings** in the plugin settings. Click "Show advanced settings" to reveal them. Temperature ranges are automatically adjusted based on the selected model's capabilities. ([#105](https://github.com/allenhutchison/obsidian-gemini/issues/105))
 
 ## Other Models & Providers
 
@@ -121,7 +121,7 @@ Not today. The auto-detection above covers most users well, and the "respond in 
 
 ### Is the plugin's own interface translated?
 
-Yes — progressively. Static UI text (panel labels, buttons, notices) follows your Obsidian interface language and is being localized panel by panel, starting with the Agent panel's start screen. Translations ship in 20 languages: cs, da, de, es, fr, id, it, ja, ko, nl, no, pl, pt, pt-BR, ru, tr, uk, vi, zh, and zh-TW. If your Obsidian language isn't in that list, the plugin UI falls back to English (AI responses are unaffected — they always follow your language per the question above).
+Yes. Static UI text — settings tabs, modals, the agent panel, command palette entries, buttons, and notices — follows your Obsidian interface language. Translations ship in 20 languages: cs, da, de, es, fr, id, it, ja, ko, nl, no, pl, pt, pt-BR, ru, tr, uk, vi, zh, and zh-TW. If your Obsidian language isn't in that list, the plugin UI falls back to English (AI responses are unaffected — they always follow your language per the question above).
 
 These translations are **AI-generated** (bootstrapped with Gemini) rather than hand-written, so phrasing may occasionally be awkward. Native speakers can refine them by editing the corresponding file in [`src/i18n/`](https://github.com/allenhutchison/obsidian-gemini/tree/master/src/i18n) and opening a pull request — hand-refined strings are preserved across regenerations, since a string is only re-translated when its English source changes. When the UI is displayed in a non-English language, a small notice on the Agent panel's start screen discloses that the translation is AI-generated. ([#754](https://github.com/allenhutchison/obsidian-gemini/issues/754))
 
@@ -159,9 +159,9 @@ The free tier has no cap but is subject to rate limits. Full details: [Gemini AP
 - **Watch the session token counter** in the agent UI to spot runaway conversations
 - **Reset long sessions** periodically — agent sessions accumulate context, and longer sessions cost more per turn
 
-## Agent Mode
+## Agent mode
 
-### What happened to the separate "Classic Chat" and "Agent Mode"?
+### What happened to the separate "Classic Chat" and "Agent mode"?
 
 In v4.0, the plugin was unified into a single agent-first interface. There is now only one chat mode with full agent capabilities. The old classic chat mode was removed. ([#123](https://github.com/allenhutchison/obsidian-gemini/discussions/123))
 
@@ -173,7 +173,7 @@ In v4.0, the plugin was unified into a single agent-first interface. There is no
 
 Make sure you're on v4.0 or later — earlier versions had a bug where context files were not properly read from the vault. If you still see issues, verify the file is added with @ and appears in the file shelf above the input area. ([#159](https://github.com/allenhutchison/obsidian-gemini/discussions/159), [#180](https://github.com/allenhutchison/obsidian-gemini/issues/180))
 
-### "Summarize Active File" isn't working
+### "Summarize active file" isn't working
 
 This command requires: (1) a markdown file actively open in the editor, and (2) context sending to be enabled. If no file is open, you'll see "Failed to get file content for summary." ([#134](https://github.com/allenhutchison/obsidian-gemini/issues/134))
 
@@ -181,7 +181,7 @@ This command requires: (1) a markdown file actively open in the editor, and (2) 
 
 ### What does the Vault Index feature do? Is my data private?
 
-The vault index uses Google's File Search API to enable semantic (meaning-based) search of your vault. Files are stored in an index private to your GCP project, tied to your API key. Your data is not shared or used for model training. The feature is configured under the **Vault Search Index** section in the plugin settings. ([#297](https://github.com/allenhutchison/obsidian-gemini/discussions/297))
+The vault index uses Google's File Search API to enable semantic (meaning-based) search of your vault. Files are stored in an index private to your GCP project, tied to your API key. Your data is not shared or used for model training. The feature is configured under the **Vault search index** section in the plugin settings. ([#297](https://github.com/allenhutchison/obsidian-gemini/discussions/297))
 
 ## Plugin Conflicts
 
@@ -195,11 +195,11 @@ This is caused by a conflict with the **Folder Notes** plugin, not Gemini Scribe
 
 ### What happened to the "Context Depth" setting?
 
-The depth traversal setting was removed in v4.0 when Agent Mode became the default. The agent now automatically searches your vault for relevant documents using tools instead of following a fixed link-depth hierarchy. Use @ mentions to explicitly add context files. ([#267](https://github.com/allenhutchison/obsidian-gemini/issues/267))
+The depth traversal setting was removed in v4.0 when Agent mode became the default. The agent now automatically searches your vault for relevant documents using tools instead of following a fixed link-depth hierarchy. Use @ mentions to explicitly add context files. ([#267](https://github.com/allenhutchison/obsidian-gemini/issues/267))
 
 ### My custom prompt template isn't being applied
 
-If the agent is ignoring your custom prompt, check that your model's rate limits haven't been exceeded — rate limit errors can appear as generic "failed" messages. Also verify: (1) the prompt file exists in `[Plugin State Folder]/Prompts/`, and (2) the frontmatter reference uses correct wikilink syntax `[[Prompt Name]]`. ([#330](https://github.com/allenhutchison/obsidian-gemini/discussions/330))
+If the agent is ignoring your custom prompt, check that your model's rate limits haven't been exceeded — rate limit errors can appear as generic "failed" messages. Also verify: (1) the prompt file exists in `[Plugin state folder]/Prompts/`, and (2) the frontmatter reference uses correct wikilink syntax `[[Prompt Name]]`. ([#330](https://github.com/allenhutchison/obsidian-gemini/discussions/330))
 
 ### How do I reuse prompts in Agent mode?
 
@@ -207,7 +207,7 @@ Custom prompts are applied per-session, not executed as commands. To reuse a pro
 
 1. Open the agent panel and start or load a session
 2. Click the **gear icon** (session settings) in the session header
-3. Select your prompt from the **Prompt Template** dropdown
+3. Select your prompt from the **Prompt template** dropdown
 4. The prompt is now active for that session — all messages will use it
 
 To apply the same prompt to different files, add the files as context (drag them in or use `@` to mention them) while the prompt is active.

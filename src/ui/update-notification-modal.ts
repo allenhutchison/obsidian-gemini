@@ -4,6 +4,7 @@
 
 import { App, Modal } from 'obsidian';
 import releaseNotesData from '../release-notes.json';
+import { t } from '../i18n';
 
 // Repository configuration
 const REPOSITORY_URL = 'https://github.com/allenhutchison/obsidian-gemini';
@@ -63,14 +64,14 @@ export class UpdateNotificationModal extends Modal {
 
 		// Version info
 		contentEl.createEl('p', {
-			text: `You've been updated to version ${this.newVersion}`,
+			text: t('updateNotice.versionInfo', { version: this.newVersion }),
 			cls: 'gemini-update-version',
 		});
 
 		// Highlights
 		if (releaseNotes.highlights.length > 0) {
 			const highlightsDiv = contentEl.createDiv({ cls: 'gemini-update-highlights' });
-			highlightsDiv.createEl('h3', { text: "What's New:" });
+			highlightsDiv.createEl('h3', { text: t('updateNotice.whatsNew') });
 			const list = highlightsDiv.createEl('ul');
 			releaseNotes.highlights.forEach((highlight) => {
 				list.createEl('li', { text: highlight });
@@ -92,20 +93,20 @@ export class UpdateNotificationModal extends Modal {
 
 		// Header
 		contentEl.createEl('h2', {
-			text: `🎉 Gemini Scribe Updated!`,
+			text: t('updateNotice.genericTitle'),
 			cls: 'gemini-update-header',
 		});
 
 		// Version info
 		contentEl.createEl('p', {
-			text: `You've been updated to version ${this.newVersion}`,
+			text: t('updateNotice.versionInfo', { version: this.newVersion }),
 			cls: 'gemini-update-version',
 		});
 
 		// Generic message
 		const message = contentEl.createDiv({ cls: 'gemini-update-message' });
 		message.createEl('p', {
-			text: 'Thank you for using Gemini Scribe! This update includes improvements and bug fixes.',
+			text: t('updateNotice.genericMessage'),
 		});
 
 		// Action buttons
@@ -120,7 +121,7 @@ export class UpdateNotificationModal extends Modal {
 
 		// Close button
 		const closeButton = buttonContainer.createEl('button', {
-			text: 'Get Started',
+			text: t('updateNotice.getStartedButton'),
 			cls: 'mod-cta',
 		});
 		closeButton.addEventListener('click', () => {
@@ -130,7 +131,7 @@ export class UpdateNotificationModal extends Modal {
 		// View release notes link (if available)
 		const releaseNotesLink = contentEl.createDiv({ cls: 'gemini-update-links' });
 		const link = releaseNotesLink.createEl('a', {
-			text: '📖 View Full Release Notes',
+			text: t('updateNotice.releaseNotesLink'),
 			href: `${REPOSITORY_URL}/releases/tag/${this.newVersion}`,
 		});
 		link.addEventListener('click', (e) => {

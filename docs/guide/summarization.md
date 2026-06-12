@@ -51,7 +51,7 @@ The Document Summarization feature uses AI to generate concise, one-sentence sum
 
 1. Open the note you want to summarize
 2. Open command palette (`Ctrl/Cmd + P`)
-3. Search for "Gemini Scribe: Summarize Active File"
+3. Search for "Gemini Scribe: Summarize active file"
 4. Press Enter
 
 ### What Happens
@@ -91,11 +91,11 @@ Discussed timeline changes, budget concerns, and new feature requests...
 
 In Settings → Gemini Scribe:
 
-1. **Summary Model**: Choose the AI model for summarization
+1. **Summary model**: Choose the AI model for summarization
    - Flash models (recommended for speed)
    - Pro models (highest quality, slower)
 
-2. **Summary Frontmatter Key**: Customize the metadata field
+2. **Summary frontmatter key**: Customize the metadata field
    - Default: `summary`
    - Change to: `description`, `abstract`, `brief`, etc.
 

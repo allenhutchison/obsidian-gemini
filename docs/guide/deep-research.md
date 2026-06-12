@@ -117,11 +117,11 @@ Because Deep Research takes several minutes, the agent can run it as a backgroun
 Run deep research on quantum error correction in the background and save it to Research/quantum.md
 ```
 
-When the task starts, the agent returns immediately with a task ID. A notification appears in the bottom-right corner when the research completes, with an **Open result** link. You can track progress (or cancel) from the **Background Tasks** panel (Command Palette → **View Background Tasks**).
+When the task starts, the agent returns immediately with a task ID. A notification appears in the bottom-right corner when the research completes, with an **Open result** link. You can track progress (or cancel) from the **Background tasks** panel (Command Palette → **View background tasks**).
 
 If you don't specify an output file, results land in `[state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md` by default.
 
-See [Background Tasks](/guide/background-tasks) for more on the status bar indicator, the task panel, and cancellation.
+See [Background tasks](/guide/background-tasks) for more on the status bar indicator, the task panel, and cancellation.
 
 ## Limitations
 
@@ -150,7 +150,7 @@ You requested vault-only research but Semantic Vault Search isn't configured. Ei
 
 ### Research takes very long or seems stuck
 
-Deep Research is inherently slow — it's performing thorough multi-source investigation. If it takes more than 10 minutes, there may be an API issue. Check the developer console (Ctrl/Cmd + Shift + I) with Debug Mode enabled for details.
+Deep Research is inherently slow — it's performing thorough multi-source investigation. If it takes more than 10 minutes, there may be an API issue. Check the developer console (Ctrl/Cmd + Shift + I) with Debug mode enabled for details.
 
 ### Report was generated but file wasn't saved
 

@@ -7,6 +7,7 @@ import { FileMentionModal } from './file-mention-modal';
 import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import type ObsidianGemini from '../../main';
+import { t } from '../../i18n';
 
 /**
  * Context interface for the attachments module.
@@ -76,7 +77,7 @@ export class AgentViewAttachments {
 							existing.reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0) + buffer.byteLength;
 
 						if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
-							new Notice(`File too large: ${fileOrFolder.name} exceeds 20MB cumulative attachment limit`, 5000);
+							new Notice(t('agent.attachments.fileTooLarge', { name: fileOrFolder.name }), 5000);
 							return;
 						}
 
@@ -92,10 +93,10 @@ export class AgentViewAttachments {
 							fileName: fileOrFolder.name,
 						};
 						this.addAttachment(attachment);
-						new Notice(`Attached ${fileOrFolder.name}`, 2000);
+						new Notice(t('agent.attachments.attached', { name: fileOrFolder.name }), 2000);
 					} catch (err) {
 						this.ctx.plugin.logger.error(`Failed to attach ${fileOrFolder.path}:`, err);
-						new Notice(`Failed to attach ${fileOrFolder.name}`);
+						new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
 					}
 				}
 			},

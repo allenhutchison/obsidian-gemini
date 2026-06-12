@@ -9,6 +9,7 @@ import { CACHE_VERSION } from './rag-types';
 import type { IndexProgress, IndexResult, FailedFileEntry, RagIndexStatus, RagProgressProvider } from './rag-types';
 import { getErrorMessage, getRawErrorMessage, isNotFoundError, isQuotaExhausted } from '../utils/error-utils';
 import { executeWithRetry } from '../utils/retry';
+import { t } from '../i18n';
 
 /**
  * Callbacks for the vault scanner to interact with the orchestrator.
@@ -251,11 +252,11 @@ export class RagVaultScanner {
 			const modal = new RagResumeModal(this.plugin.app, resumeInfo, async (resume: boolean) => {
 				if (resume) {
 					// Resume: just start indexing - smart sync will skip already-indexed files
-					new Notice('RAG Indexing: Resuming interrupted indexing...');
+					new Notice(t('notice.rag.resuming'));
 					this.startResumeIndexing(progressProvider);
 				} else {
 					// Start fresh: clear cache and store, then reindex
-					new Notice('RAG Indexing: Starting fresh...');
+					new Notice(t('notice.rag.startingFresh'));
 					await this.startFresh(progressProvider);
 				}
 				resolve();
@@ -271,7 +272,7 @@ export class RagVaultScanner {
 	startResumeIndexing(progressProvider: RagProgressProvider): void {
 		import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
 			const progressModal = new RagProgressModal(this.plugin.app, progressProvider, (result) => {
-				new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+				new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
 			});
 			progressModal.open();
 		});
@@ -279,7 +280,7 @@ export class RagVaultScanner {
 		// Run indexing in background (don't await - modal handles display)
 		this.indexVault().catch((error) => {
 			this.plugin.logger.error('RAG Indexing: Resume indexing failed', error);
-			new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
+			new Notice(t('notice.rag.indexingFailed', { error: getErrorMessage(error) }));
 		});
 	}
 
@@ -336,7 +337,7 @@ export class RagVaultScanner {
 			this.startResumeIndexing(progressProvider); // Reuses same logic for starting indexing with modal
 		} catch (error) {
 			this.plugin.logger.error('RAG Indexing: Failed to start fresh', error);
-			new Notice(`RAG Indexing: Failed to start fresh: ${(error as Error).message}`);
+			new Notice(t('notice.rag.startFreshFailed', { error: (error as Error).message }));
 		}
 	}
 

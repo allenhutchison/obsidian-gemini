@@ -1,6 +1,7 @@
 import { App, Modal, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask, TaskState } from '../services/scheduled-task-manager';
+import { t } from '../i18n';
 
 /**
  * Modal that lists all known scheduled tasks with their next-run time and last-run status.
@@ -19,11 +20,11 @@ export class ScheduledTasksModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('gemini-scheduled-tasks-modal');
 
-		contentEl.createEl('h2', { text: 'Scheduled Tasks' });
+		contentEl.createEl('h2', { text: t('scheduledTasks.title') });
 
 		const manager = this.plugin.scheduledTaskManager;
 		if (!manager) {
-			contentEl.createEl('p', { text: 'Scheduled task manager not available.' });
+			contentEl.createEl('p', { text: t('scheduledTasks.managerUnavailable') });
 			return;
 		}
 
@@ -32,7 +33,7 @@ export class ScheduledTasksModal extends Modal {
 
 		if (tasks.length === 0) {
 			contentEl.createEl('p', {
-				text: 'No scheduled tasks found. Create a markdown file in the Scheduled-Tasks folder to get started.',
+				text: t('scheduledTasks.empty'),
 				cls: 'gemini-scheduled-tasks-empty',
 			});
 			return;
@@ -67,9 +68,9 @@ export class ScheduledTasksModal extends Modal {
 
 		// Schedule badge
 		const badgeText = isDisabled
-			? `${task.schedule} · disabled`
+			? t('scheduledTasks.badgeDisabled', { schedule: task.schedule })
 			: isPaused
-				? `${task.schedule} · paused`
+				? t('scheduledTasks.badgePaused', { schedule: task.schedule })
 				: task.schedule;
 		info.createSpan({ text: badgeText, cls: 'gemini-scheduled-task-badge' });
 
@@ -77,13 +78,14 @@ export class ScheduledTasksModal extends Modal {
 		if (taskState) {
 			if (!isPaused) {
 				const nextRun = new Date(taskState.nextRunAt);
-				const nextLabel = nextRun.getTime() >= 8_639_000_000_000_000 ? 'Once — complete' : this.formatDate(nextRun);
-				info.createDiv({ text: `Next: ${nextLabel}`, cls: 'gemini-scheduled-task-meta' });
+				const nextLabel =
+					nextRun.getTime() >= 8_639_000_000_000_000 ? t('scheduledTasks.onceComplete') : this.formatDate(nextRun);
+				info.createDiv({ text: t('scheduledTasks.nextRun', { time: nextLabel }), cls: 'gemini-scheduled-task-meta' });
 			}
 
 			if (taskState.lastRunAt) {
 				info.createDiv({
-					text: `Last: ${this.formatDate(new Date(taskState.lastRunAt))}`,
+					text: t('scheduledTasks.lastRun', { time: this.formatDate(new Date(taskState.lastRunAt)) }),
 					cls: 'gemini-scheduled-task-meta',
 				});
 			}
@@ -101,10 +103,13 @@ export class ScheduledTasksModal extends Modal {
 
 		if (isPaused) {
 			// "Reset" button re-enables a paused task
-			const resetBtn = actions.createEl('button', { text: 'Reset', cls: 'gemini-scheduled-task-reset' });
+			const resetBtn = actions.createEl('button', {
+				text: t('scheduledTasks.resetButton'),
+				cls: 'gemini-scheduled-task-reset',
+			});
 			resetBtn.addEventListener('click', async () => {
 				resetBtn.disabled = true;
-				resetBtn.setText('Resetting…');
+				resetBtn.setText(t('scheduledTasks.resetting'));
 				await this.plugin.scheduledTaskManager?.resetTask(task.slug);
 				this.onOpen(); // re-render
 			});
@@ -112,19 +117,19 @@ export class ScheduledTasksModal extends Modal {
 
 		// "Run now" button — disabled while paused
 		const runBtn = actions.createEl('button', {
-			text: 'Run now',
+			text: t('scheduledTasks.runNowButton'),
 			cls: 'gemini-scheduled-task-run',
 		});
 		if (isPaused || isDisabled) runBtn.disabled = true;
 
 		runBtn.addEventListener('click', async () => {
 			runBtn.disabled = true;
-			runBtn.setText('Running…');
+			runBtn.setText(t('scheduledTasks.running'));
 			try {
 				await this.plugin.scheduledTaskManager?.runNow(task.slug);
-				runBtn.setText('Submitted');
+				runBtn.setText(t('scheduledTasks.submitted'));
 			} catch (error) {
-				runBtn.setText('Error');
+				runBtn.setText(t('scheduledTasks.runError'));
 				this.plugin.logger.error(`[ScheduledTasksModal] runNow failed for "${task.slug}":`, error);
 			}
 		});

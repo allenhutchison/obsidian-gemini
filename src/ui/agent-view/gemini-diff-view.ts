@@ -5,6 +5,7 @@ import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { unifiedMergeView } from '@codemirror/merge';
 import type ObsidianGemini from '../../main';
+import { t } from '../../i18n';
 
 export const VIEW_TYPE_DIFF = 'gemini-diff-view';
 
@@ -35,10 +36,11 @@ export class GeminiDiffView extends ItemView {
 
 	getDisplayText(): string {
 		if (this.state) {
-			const action = this.state.isNewFile ? 'Preview' : 'Review Changes';
-			return `${action}: ${this.state.filePath}`;
+			return this.state.isNewFile
+				? t('agent.diff.previewTitle', { path: this.state.filePath })
+				: t('agent.diff.reviewTitle', { path: this.state.filePath });
 		}
-		return 'Diff View';
+		return t('agent.diff.displayName');
 	}
 
 	getIcon(): string {
@@ -80,7 +82,7 @@ export class GeminiDiffView extends ItemView {
 		});
 
 		if (this.state.isNewFile) {
-			fileInfo.createSpan({ text: '(new file)', cls: 'gemini-diff-new-badge' });
+			fileInfo.createSpan({ text: t('agent.diff.newFileBadge'), cls: 'gemini-diff-new-badge' });
 		}
 
 		const actionButtons = actionBar.createDiv({ cls: 'gemini-diff-actions' });
@@ -90,7 +92,7 @@ export class GeminiDiffView extends ItemView {
 		});
 		const approveIcon = approveBtn.createSpan({ cls: 'gemini-diff-btn-icon' });
 		setIcon(approveIcon, 'check');
-		approveBtn.createSpan({ text: 'Approve' });
+		approveBtn.createSpan({ text: t('agent.diff.approve') });
 		approveBtn.addEventListener('click', () => this.resolve(true));
 
 		const cancelBtn = actionButtons.createEl('button', {
@@ -98,7 +100,7 @@ export class GeminiDiffView extends ItemView {
 		});
 		const cancelIcon = cancelBtn.createSpan({ cls: 'gemini-diff-btn-icon' });
 		setIcon(cancelIcon, 'x');
-		cancelBtn.createSpan({ text: 'Cancel' });
+		cancelBtn.createSpan({ text: t('agent.diff.cancel') });
 		cancelBtn.addEventListener('click', () => this.resolve(false));
 
 		// Editor container

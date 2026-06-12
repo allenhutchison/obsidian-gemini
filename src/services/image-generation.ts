@@ -4,6 +4,7 @@ import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
 import { ensureFolderExists } from '../utils/file-utils';
+import { t } from '../i18n';
 
 export class ImageGeneration {
 	private plugin: ObsidianGemini;
@@ -46,7 +47,7 @@ export class ImageGeneration {
 	async generateAndInsertImage(prompt: string): Promise<void> {
 		const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!activeView || !activeView.file) {
-			new Notice('No active note. Please open a note first.');
+			new Notice(t('notice.image.noActiveNote'));
 			return;
 		}
 
@@ -73,7 +74,7 @@ export class ImageGeneration {
 			return imagePath;
 		});
 
-		new Notice('Image generation submitted — you can keep working.', 3000);
+		new Notice(t('notice.image.submitted'), 3000);
 	}
 
 	/**
@@ -86,13 +87,13 @@ export class ImageGeneration {
 		cursor: { line: number; ch: number }
 	): Promise<void> {
 		try {
-			new Notice('Generating image...');
+			new Notice(t('notice.image.generating'));
 			const base64Data = await this.client.generateImage(prompt, this.plugin.settings.imageModelName);
 			const imagePath = await this.saveImageToVault(base64Data, prompt);
 			activeView.editor.replaceRange(`![[${imagePath}]]`, cursor);
-			new Notice('Image generated and inserted successfully!');
+			new Notice(t('notice.image.inserted'));
 		} catch (error) {
-			const errorMsg = `Failed to generate image: ${getErrorMessage(error)}`;
+			const errorMsg = t('notice.image.generateFailed', { error: getErrorMessage(error) });
 			this.plugin.logger.error(errorMsg, error);
 			new Notice(errorMsg);
 		}
@@ -127,13 +128,13 @@ export class ImageGeneration {
 		});
 
 		if (!editorView) {
-			this.notifyManualInsertion(wikilink, 'note is no longer open');
+			this.notifyManualInsertion(wikilink, t('notice.image.reasonNoteClosed'));
 			return;
 		}
 
 		const editor = (editorView as MarkdownView).editor;
 		if (cursor.line >= editor.lineCount()) {
-			this.notifyManualInsertion(wikilink, 'cursor position is no longer valid');
+			this.notifyManualInsertion(wikilink, t('notice.image.reasonCursorInvalid'));
 			return;
 		}
 		const lineLength = editor.getLine(cursor.line).length;
@@ -142,7 +143,7 @@ export class ImageGeneration {
 	}
 
 	private notifyManualInsertion(wikilink: string, reason: string): void {
-		new Notice(`Image saved (${reason}). Wikilink: ${wikilink}`, 10000);
+		new Notice(t('notice.image.savedManualInsert', { reason, wikilink }), 10000);
 	}
 
 	/**
@@ -384,15 +385,15 @@ class ImagePromptModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Generate Image' });
+		contentEl.createEl('h2', { text: t('modal.generateImage.title') });
 
 		new Setting(contentEl)
-			.setName('Image description')
-			.setDesc('Describe the image you want to generate')
+			.setName(t('modal.generateImage.descriptionName'))
+			.setDesc(t('modal.generateImage.descriptionDesc'))
 			.addTextArea((text) => {
 				this.textArea = text;
 				text
-					.setPlaceholder('A serene landscape with mountains and a lake...')
+					.setPlaceholder(t('modal.generateImage.placeholder'))
 					.setValue(this.prompt)
 					.onChange((value) => {
 						this.prompt = value;
@@ -405,11 +406,11 @@ class ImagePromptModal extends Modal {
 
 		// Add "Generate from Page" button
 		new Setting(contentEl)
-			.setName('Generate prompt from current page')
-			.setDesc("Let AI suggest an image prompt based on this page's content")
+			.setName(t('modal.generateImage.suggestName'))
+			.setDesc(t('modal.generateImage.suggestDesc'))
 			.addButton((btn) =>
 				btn
-					.setButtonText('Generate Prompt from Page')
+					.setButtonText(t('modal.generateImage.suggestButton'))
 					.setIcon('sparkles')
 					.onClick(async () => {
 						await this.handleGenerateFromPage(btn.buttonEl);
@@ -419,7 +420,7 @@ class ImagePromptModal extends Modal {
 		new Setting(contentEl)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Generate Image')
+					.setButtonText(t('modal.generateImage.generateButton'))
 					.setCta()
 					.onClick(() => {
 						if (this.prompt.trim()) {
@@ -429,7 +430,7 @@ class ImagePromptModal extends Modal {
 					})
 			)
 			.addButton((btn) =>
-				btn.setButtonText('Cancel').onClick(() => {
+				btn.setButtonText(t('modal.generateImage.cancelButton')).onClick(() => {
 					this.close();
 					this.onSubmit('');
 				})
@@ -440,7 +441,7 @@ class ImagePromptModal extends Modal {
 		const originalText = buttonEl.textContent;
 		try {
 			// Show loading state
-			buttonEl.textContent = 'Generating...';
+			buttonEl.textContent = t('modal.generateImage.generatingButton');
 			buttonEl.setAttribute('disabled', 'true');
 
 			// Generate suggested prompt
@@ -452,9 +453,9 @@ class ImagePromptModal extends Modal {
 				this.prompt = suggestedPrompt;
 			}
 
-			new Notice('Prompt generated! Feel free to edit it before generating the image.');
+			new Notice(t('notice.image.promptGenerated'));
 		} catch (error) {
-			const errorMsg = `Failed to generate prompt: ${getErrorMessage(error)}`;
+			const errorMsg = t('notice.image.promptFailed', { error: getErrorMessage(error) });
 			this.plugin.logger.error(errorMsg, error);
 			new Notice(errorMsg);
 		} finally {
