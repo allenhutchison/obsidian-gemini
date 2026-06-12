@@ -311,6 +311,9 @@ async function main() {
 			}
 		}
 		state[language.code] = sortedObject(langState);
+		// Persist the manifest after every language so an interrupted run
+		// (timeout, ctrl-C) keeps the completed languages' progress.
+		writeFileSync(STATE_PATH, JSON.stringify(sortedObject(state), null, '\t') + '\n', 'utf-8');
 	}
 
 	// Prune manifest entries for languages no longer shipped.
