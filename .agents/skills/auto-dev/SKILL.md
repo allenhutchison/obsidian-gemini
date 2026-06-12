@@ -75,7 +75,11 @@ For issues labeled `auto:in-progress`:
 
 ### Step 2 — Advance the open automated PR
 
-If an automated PR is open, this tick belongs to it. Follow the `coderabbit-review` skill's loop if it is available; the essentials:
+If an automated PR is open, this tick belongs to it.
+
+**Draft PR** (a yielded partial build from step 4): resume the implementation first — finish the plan, run the full pre-flight, push, and mark it ready with `gh pr ready`. Only then does the review loop below apply.
+
+**Ready PR**: run one round of the review loop. The maintainer's user-level `coderabbit-review` skill describes the same loop in more depth — follow it when it is available (it is not part of this repo, so scheduled runs may not have it); the essentials below stand alone:
 
 1. Fetch all four feedback surfaces: PR metadata + CI rollup, review summaries, inline review comments, and issue-style comments (`gh pr view`, `gh api .../pulls/N/reviews`, `.../pulls/N/comments`, `.../issues/N/comments`).
 2. **CI red?** Fix CI first — check out the `auto/` branch, fix, run the repo pre-flight (`npm run format-check`, `npm run build`, `npm test`, `npm run typecheck:test`), push.
@@ -113,7 +117,7 @@ Take the **oldest** `auto:ready` issue (or a step-1 orphan). Then:
 6. Create the PR with the **create-pr** skill (template, checklist, AI-disclosure section). The body must include `Fixes #<N>`, the marker line, and a note that this PR was produced by the auto-dev pipeline from the approved plan.
 7. Comment on the issue (marker) linking the PR.
 
-If the build cannot complete inside this tick's budget, push the branch with WIP commits and exit reporting partial progress — the next tick's step 1/2 will find the branch. Do **not** open a PR that fails pre-flight checks.
+If the build cannot complete inside this tick's budget, push the WIP commits and open a **draft** PR (`gh pr create --draft`) before exiting — a bare pushed branch is invisible to the next tick, whose discovery queries only look at PRs and issues. The draft body still carries `Fixes #<N>` and the marker, plus a note that the build is incomplete and will be resumed. Never mark a PR ready for review (`gh pr ready`) while pre-flight checks fail.
 
 ### Step 5 — Nothing to do
 
