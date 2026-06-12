@@ -27,8 +27,9 @@ jobs:
         run: |
           echo "Checking for prohibited console.* usage..."
 
-          # Count current console.* violations (excluding logger.ts)
-          CURRENT_COUNT=$(grep -r --include="*.ts" --exclude-dir=node_modules "console\." . | grep -v "src/utils/logger.ts" | wc -l)
+          # Count current console.* violations (excluding logger.ts and the i18n
+          # translation tables, whose string content can mention "console.")
+          CURRENT_COUNT=$(grep -r --include="*.ts" --exclude-dir=node_modules --exclude-dir=i18n "console\." . | grep -v "src/utils/logger.ts" | wc -l)
           BASELINE_COUNT=$(cat .console-baseline)
 
           echo "Current violations: $CURRENT_COUNT"
