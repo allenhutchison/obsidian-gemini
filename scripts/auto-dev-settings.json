@@ -35,6 +35,12 @@
 		],
 		"deny": [
 			"Bash(gh pr merge*)",
+			"Bash(gh pr close*)",
+			"Bash(gh issue close*)",
+			"Bash(gh issue delete*)",
+			"Bash(gh label create*)",
+			"Bash(gh label delete*)",
+			"Bash(gh label edit*)",
 			"Bash(gh release *)",
 			"Bash(gh repo delete*)",
 			"Bash(gh api -X DELETE*)",
