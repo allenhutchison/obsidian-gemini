@@ -7,7 +7,7 @@ hero:
   tagline: Integrate Google's Gemini AI models for intelligent note-taking, writing, and knowledge management.
   actions:
     - theme: brand
-      text: Get Started
+      text: Get started
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
@@ -17,7 +17,7 @@ hero:
       link: https://allen.hutchison.org/gemini-scribe/
 
 features:
-  - title: Agent Mode
+  - title: Agent mode
     details: An AI agent that can search files, create notes, edit content, research topics, and execute multi-step tasks in your vault.
     link: /guide/agent-mode
   - title: Custom Prompts
@@ -35,7 +35,7 @@ features:
   - title: Context System
     details: Add specific notes as persistent context for agent sessions using @ mentions.
     link: /guide/context-system
-  - title: MCP Servers
+  - title: MCP servers
     details: Connect external tool servers via the Model Context Protocol. Supports stdio and HTTP transports with OAuth.
     link: /guide/mcp-servers
   - title: Agent Skills

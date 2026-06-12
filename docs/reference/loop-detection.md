@@ -1,8 +1,8 @@
-# Tool Loop Detection
+# Tool loop detection
 
 ## Overview
 
-The Tool Loop Detection feature prevents the AI agent from getting stuck in infinite loops where it repeatedly calls the same tool with identical parameters. This can happen when the AI misinterprets results or gets confused about the task at hand.
+The Tool loop detection feature prevents the AI agent from getting stuck in infinite loops where it repeatedly calls the same tool with identical parameters. This can happen when the AI misinterprets results or gets confused about the task at hand.
 
 ## How It Works
 
@@ -12,7 +12,7 @@ The Tool Loop Detection feature prevents the AI agent from getting stuck in infi
 
 ## Configuration
 
-Loop detection can be configured in Settings → Gemini Scribe → Agent Config → Tool Loop Detection:
+Loop detection can be configured in Settings → Gemini Scribe → Agent config → Tool loop detection:
 
 - **Enable loop detection**: Toggle the feature on/off
 - **Loop threshold**: Number of identical calls before considering it a loop (default: 3)

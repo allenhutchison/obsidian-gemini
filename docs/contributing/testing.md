@@ -70,7 +70,7 @@ New-Item -ItemType SymbolicLink -Path "C:\path\to\test-vault\.obsidian\plugins\g
    - Restarting Obsidian
    - Using the Obsidian CLI: `obsidian plugin:reload id=gemini-scribe`
 
-### Enabling Debug Mode
+### Enabling Debug mode
 
 Turn on **Debug mode** in the plugin settings (**Settings → Gemini Scribe → Debug mode**). This enables verbose logging through the Logger service, prefixed with `[Gemini Scribe]`.
 

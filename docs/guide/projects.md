@@ -15,7 +15,7 @@ The file body contains instructions that are injected into the agent's system pr
 ### From the Command Palette
 
 1. Open the command palette (`Ctrl/Cmd + P`)
-2. Search for **"Create Project"**
+2. Search for **"Create project"**
 3. A new project file is created in the current folder with template frontmatter
 4. Edit the file to customize your project
 
@@ -23,7 +23,7 @@ The file body contains instructions that are injected into the agent's system pr
 
 1. Open the note you want to convert
 2. Open the command palette
-3. Search for **"Convert Note to Project"**
+3. Search for **"Convert note to project"**
 4. The `gemini-scribe/project` tag is added to the note's frontmatter
 
 ### Manual Creation
@@ -111,7 +111,7 @@ Use third-person limited POV from the protagonist's perspective.
 
 ### Project is a Property of the Session
 
-Once a session is linked to a project, that linkage is **stable for the lifetime of the session**. Moving between files in your workspace, opening notes outside the project folder, or navigating to unrelated files does **not** change which project the session is using. In normal use, the project only changes when you explicitly switch it via the "Switch Project" action in the agent view header menu or the command palette.
+Once a session is linked to a project, that linkage is **stable for the lifetime of the session**. Moving between files in your workspace, opening notes outside the project folder, or navigating to unrelated files does **not** change which project the session is using. In normal use, the project only changes when you explicitly switch it via the "Switch project" action in the agent view header menu or the command palette.
 
 This means:
 
@@ -119,7 +119,7 @@ This means:
 - You can reference files from anywhere in your vault while keeping the project's instructions and scope active
 - If you want a different project, create a new session or explicitly switch projects — the plugin won't silently change contexts on you as you navigate
 
-**Exception: deleted project files.** When a session is loaded, the plugin verifies that its linked project file still exists. If the project file has been deleted or moved since the session was last used, the session is automatically unlinked so it falls back to vault-wide scope. You can re-link it via "Switch Project" once you recreate or locate the project file.
+**Exception: deleted project files.** When a session is loaded, the plugin verifies that its linked project file still exists. If the project file has been deleted or moved since the session was last used, the session is automatically unlinked so it falls back to vault-wide scope. You can re-link it via "Switch project" once you recreate or locate the project file.
 
 ### Auto-Detection
 
@@ -140,27 +140,27 @@ When you create a **new** agent session, the plugin inspects the session's initi
 1. Project `toolPolicy.overrides[toolName]`
 2. Global per-tool override (`Settings → Tool Policy → Custom`)
 3. Project `toolPolicy.preset` (if set)
-4. Global preset default (Cautious, Edit Mode, etc.)
+4. Global preset default (Cautious, Edit mode, etc.)
 
 ## Managing Projects
 
 ### Switching Projects
 
-Click the **project badge** in the agent session header to open the project picker. You can also use the **"Switch Project"** command from the command palette.
+Click the **project badge** in the agent session header to open the project picker. You can also use the **"Switch project"** command from the command palette.
 
-Select **"No Project"** to unlink the session from any project and return to vault-wide scope.
+Select **"No project"** to unlink the session from any project and return to vault-wide scope.
 
 ### Opening Project Settings
 
-Use the **"Open Project Settings"** command to open the project file for editing. If you have multiple projects, a picker is shown.
+Use the **"Open project settings"** command to open the project file for editing. If you have multiple projects, a picker is shown.
 
 ### Resuming a Project Session
 
-Use the **"Resume Project Session"** command to pick a project and load its most recent agent session.
+Use the **"Resume project session"** command to pick a project and load its most recent agent session.
 
 ### Removing a Project
 
-Open the project file and use the **"Remove Project"** command to strip the `gemini-scribe/project` tag. The file remains in your vault — only its project status is removed.
+Open the project file and use the **"Remove project"** command to strip the `gemini-scribe/project` tag. The file remains in your vault — only its project status is removed.
 
 ## Tips
 

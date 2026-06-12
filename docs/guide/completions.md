@@ -121,7 +121,7 @@ Suggestions trigger when:
 
 In Settings → Gemini Scribe:
 
-**Completion Model**
+**Completion model**
 
 - Gemini Flash Lite Latest (fastest, default)
 - Gemini Flash Latest (balanced)

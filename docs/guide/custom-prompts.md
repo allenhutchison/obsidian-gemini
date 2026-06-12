@@ -42,7 +42,7 @@ If you're unsure whether you need a custom prompt or a [skill](/guide/agent-skil
 
 ### Locate the Prompts Folder
 
-Custom prompts are stored in: `[Your Plugin State Folder]/Prompts/`
+Custom prompts are stored in: `[Your Plugin state folder]/Prompts/`
 
 For example, if your plugin state folder is `gemini-scribe`, prompts will be in `gemini-scribe/Prompts/`.
 
@@ -59,7 +59,7 @@ The plugin automatically creates this folder structure and adds an example promp
 The easiest way to create a new custom prompt:
 
 1. Open the command palette (Ctrl/Cmd + P)
-2. Search for "Gemini Scribe: Create New Custom Prompt"
+2. Search for "Gemini Scribe: Create new custom prompt"
 3. Enter a name for your prompt
 4. Edit the generated template to suit your needs
 
@@ -90,7 +90,7 @@ tags: ['category', 'use-case'] # Optional: For organization
 
 | Tag                              | Purpose                                                                                                                                                                                                                        |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `gemini-scribe/selection-prompt` | Makes the prompt available in the right-click "Explain Selection" / "Ask about Selection" menu. See [Selection Prompts](/guide/selection-prompts) and the [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
+| `gemini-scribe/selection-prompt` | Makes the prompt available in the right-click "Explain Selection" / "Ask about selection" menu. See [Selection Prompts](/guide/selection-prompts) and the [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
 
 ### Example: Technical Documentation Assistant
 
@@ -133,9 +133,9 @@ Always aim for documentation that is both comprehensive and accessible to reader
 
 ### Command Palette Commands
 
-#### Create New Custom Prompt
+#### Create new custom prompt
 
-- **Command**: "Gemini Scribe: Create New Custom Prompt"
+- **Command**: "Gemini Scribe: Create new custom prompt"
 - **Purpose**: Creates a new custom prompt file with a proper template
 - **How it works**:
   1. Opens a modal to enter the prompt name
@@ -149,7 +149,7 @@ Custom prompts are applied at the session level via the session settings (gear i
 
 1. Open the agent panel
 2. Click the gear icon in the session header
-3. Select a prompt from the "Prompt Template" dropdown
+3. Select a prompt from the "Prompt template" dropdown
 4. The prompt applies to all messages in that session
 
 ### Visual Indicator
@@ -168,7 +168,7 @@ For advanced users who want complete control:
 
 **Warning:** Use with caution as this removes built-in safety features and Obsidian-specific knowledge.
 
-### Prompt Templates for Different Use Cases
+### Prompt templates for Different Use Cases
 
 Create specialized prompts for:
 
@@ -318,7 +318,7 @@ Always maintain academic objectivity and cite sources appropriately.
 
 2. **Confirm settings**
    - "Enable Custom Prompts" is ON
-   - Prompt file exists in the `[Plugin State Folder]/Prompts/` folder
+   - Prompt file exists in the `[Plugin state folder]/Prompts/` folder
 
 3. **Check session settings**
    - Open the session settings (gear icon) and verify the prompt is selected

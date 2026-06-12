@@ -70,7 +70,7 @@ AGENTS.md is a special file that provides the agent with an overview of your ent
 **How to create it:**
 
 1. Open Agent Chat
-2. Click "Initialize Vault Context" button
+2. Click "Initialize vault context" button
 3. Agent analyzes your vault and creates AGENTS.md
 4. Update periodically as your vault evolves
 
@@ -503,6 +503,6 @@ The v4.0+ context system gives you precise control over what the AI agent can se
 
 For more information, see:
 
-- [Agent Mode Guide](/guide/agent-mode) - Tool usage and capabilities
+- [Agent mode Guide](/guide/agent-mode) - Tool usage and capabilities
 - [Settings Reference](/reference/settings) - Configuration options
 - [Custom Prompts Guide](/guide/custom-prompts) - Behavior customization

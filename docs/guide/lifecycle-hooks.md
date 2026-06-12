@@ -1,6 +1,6 @@
 # Lifecycle Hooks
 
-Lifecycle Hooks let you trigger an AI agent run in response to Obsidian vault events — file created, modified, deleted, or renamed. Each hook runs as a headless agent session, the same execution model used by Scheduled Tasks. A hook can summarise notes on save, run a skill when a file is created, or perform any other agent task without manual intervention.
+Lifecycle Hooks let you trigger an AI agent run in response to Obsidian vault events — file created, modified, deleted, or renamed. Each hook runs as a headless agent session, the same execution model used by Scheduled tasks. A hook can summarize notes on save, run a skill when a file is created, or perform any other agent task without manual intervention.
 
 ::: warning Opt-in
 Hooks are disabled by default. Set **Enable lifecycle hooks** in plugin settings before any hook will fire. The default is off because vault events fire continuously and an unintentionally-broad hook can drain API quota quickly.
@@ -12,9 +12,9 @@ A hook is a markdown file stored in `[state-folder]/Hooks/`. The file's frontmat
 
 ```text
 gemini-scribe/Hooks/
-├── summarise-on-save.md     ← hook definition (you create and edit this)
+├── summarize-on-save.md     ← hook definition (you create and edit this)
 ├── Runs/
-│   └── summarise-on-save/
+│   └── summarize-on-save/
 │       └── 2026-05-04.md    ← output from each fire (when outputPath is set)
 └── hooks-state.json         ← runtime state (managed automatically)
 ```
@@ -30,14 +30,14 @@ When the toggle is on the plugin creates the `Hooks/` folder, subscribes to vaul
 
 The fastest path is the **Hook Manager** modal. Two ways to open it:
 
-- Settings → Gemini Scribe → Automation → **Open Hook Manager**
-- Command palette → **Gemini Scribe: Open Hook Manager** (or **New Lifecycle Hook** to skip straight to the create form)
+- Settings → Gemini Scribe → Automation → **Open hook manager**
+- Command palette → **Gemini Scribe: Open hook manager** (or **New lifecycle hook** to skip straight to the create form)
 
 The modal has a list view (toggle / edit / delete / reset on each row) and a create/edit form covering trigger, path glob, tool access, prompt, plus an Advanced section for debounce, cooldown, rate limit, model override, output path, and the desktop-only flag.
 
 You can also create hooks by hand-editing markdown files inside `[state-folder]/Hooks/`. The filename (without `.md`) becomes the hook's **slug**.
 
-**Minimal example** — `gemini-scribe/Hooks/summarise-on-save.md`:
+**Minimal example** — `gemini-scribe/Hooks/summarize-on-save.md`:
 
 ```markdown
 ---
@@ -48,7 +48,7 @@ maxRunsPerHour: 12
 action: agent-task
 toolPolicy:
   preset: read_only
-outputPath: 'Hooks/Runs/summarise-on-save/{date}.md'
+outputPath: 'Hooks/Runs/summarize-on-save/{date}.md'
 ---
 
 The user just saved {{filePath}}. Read it and write a one-paragraph summary highlighting any open questions or action items.
@@ -75,7 +75,7 @@ The user just saved {{filePath}}. Read it and write a one-paragraph summary high
 | `enabled`           | No                     | `true`                         | Set to `false` to disable the hook without deleting it.                                                                                                                          |
 | `desktopOnly`       | No                     | `true`                         | When `true` the hook is skipped on mobile. Headless agent runs can be heavyweight on phones.                                                                                     |
 
-### Prompt Template Variables
+### Prompt template Variables
 
 The body of the hook file is a prompt template. The following placeholders are substituted before the prompt is sent to the model:
 
@@ -135,7 +135,7 @@ maxIterations: 50
 
 ### `summarize`
 
-Run the existing **Summarize Active File** feature against the triggering file, but without needing it to be active. The summary is written into the file's frontmatter under the `summary` key (configurable via `summaryFrontmatterKey` in plugin settings). The prompt body is ignored. Non-markdown triggers are silently skipped so a broad `pathGlob` that catches images doesn't pollute the failure counter.
+Run the existing **Summarize active file** feature against the triggering file, but without needing it to be active. The summary is written into the file's frontmatter under the `summary` key (configurable via `summaryFrontmatterKey` in plugin settings). The prompt body is ignored. Non-markdown triggers are silently skipped so a broad `pathGlob` that catches images doesn't pollute the failure counter.
 
 ### `rewrite`
 
@@ -193,7 +193,7 @@ After three consecutive errors, a hook is auto-paused. Inspect `[state-folder]/H
 
 ## Examples
 
-### Summarise daily notes on save
+### Summarize daily notes on save
 
 ```markdown
 ---
@@ -279,7 +279,7 @@ focusFile: true
 ---
 ```
 
-When a new file lands in `Inbox/`, focus it in the workspace and run the **Summarize Active File** command against it. `focusFile: true` is the bit that ensures the command targets the trigger file rather than whatever the user happens to be looking at.
+When a new file lands in `Inbox/`, focus it in the workspace and run the **Summarize active file** command against it. `focusFile: true` is the bit that ensures the command targets the trigger file rather than whatever the user happens to be looking at.
 
 ## Limitations
 
@@ -290,6 +290,6 @@ When a new file lands in `Inbox/`, focus it in the workspace and run the **Summa
 
 ## Related
 
-- [Scheduled Tasks](/guide/scheduled-tasks) — for time-based automation
-- [Background Tasks](/guide/background-tasks) — runtime model for long-running operations
+- [Scheduled tasks](/guide/scheduled-tasks) — for time-based automation
+- [Background tasks](/guide/background-tasks) — runtime model for long-running operations
 - [Agent Skills](/guide/agent-skills) — skills that hooks can pre-activate

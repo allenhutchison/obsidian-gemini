@@ -8,7 +8,7 @@ Advanced settings are hidden by default to keep the interface clean. To access t
 
 1. Open Obsidian Settings
 2. Navigate to **Gemini Scribe** under Community plugins
-3. In the **General** section, scroll to the bottom and click **Show Advanced Settings**
+3. In the **General** section, scroll to the bottom and click **Show advanced settings**
 
 ## Model Parameter Controls
 
@@ -51,7 +51,7 @@ Gemini Scribe automatically discovers the parameter limits for your available mo
 - **Real-time validation** adjusts values that exceed model capabilities
 - **Informational displays** show the actual ranges and default values
 
-## API Configuration
+## API configuration
 
 ### Custom API Endpoint
 
@@ -70,7 +70,7 @@ Route all Google API requests through a proxy or gateway instead of hitting the 
 
 Configure how the plugin handles API failures:
 
-**Maximum Retries**
+**Maximum retries**
 
 - **Default**: 3 attempts
 - **Range**: 0-10 retries
@@ -103,7 +103,7 @@ Both providers expose a **Refresh model list** button in Settings → General:
 
 ## Performance Optimization
 
-### Context Management
+### Context management
 
 In v4.0+, context is manually managed through session-based file selection:
 
@@ -116,7 +116,7 @@ In v4.0+, context is manually managed through session-based file selection:
 
 **AGENTS.md - Vault Context:**
 
-- Create AGENTS.md via "Initialize Vault Context" button
+- Create AGENTS.md via "Initialize vault context" button
 - Provides AI with overview of your vault structure
 - Enables better file discovery without adding every file as context
 - Update periodically as your vault evolves

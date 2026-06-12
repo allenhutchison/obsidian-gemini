@@ -14,7 +14,7 @@ This guide covers all selection-based AI features in Gemini Scribe, allowing you
   - [How to Use](#how-to-use-explain)
   - [Default Prompts](#default-prompts)
   - [Creating Custom Prompts](#creating-custom-explain-prompts)
-- [Ask about Selection](#ask-about-selection)
+- [Ask about selection](#ask-about-selection)
   - [How to Use](#how-to-use-ask)
   - [Example Questions](#example-questions)
 - [Best Practices](#best-practices)
@@ -71,7 +71,7 @@ Selection-Based Text Rewriting allows you to:
 ### Basic Workflow
 
 1. **Select text** you want to improve
-2. **Right-click** and choose "Gemini Scribe: Rewrite Text..." (or run "Gemini Scribe: Rewrite text with AI" from the command palette)
+2. **Right-click** and choose "Gemini Scribe: Rewrite text..." (or run "Gemini Scribe: Rewrite text with AI" from the command palette)
 3. **Enter instructions** in the modal dialog
 4. **Review** the rewritten text
 5. **Accept** the changes automatically applied to your selection
@@ -217,11 +217,11 @@ The Explain Selection feature lets you get AI-powered explanations of any select
 ## How to Use Explain {#how-to-use-explain}
 
 1. **Select text** in your document
-2. **Right-click** and choose "Gemini Scribe: Apply Prompt..."
+2. **Right-click** and choose "Gemini Scribe: Apply prompt..."
 3. **Pick a prompt** from the selection modal (prompts tagged with `gemini-scribe/selection-prompt`)
 4. **View the response** in a modal window
 5. **Choose an action**:
-   - **Insert as Callout**: Adds the explanation as a callout block after your selection
+   - **Insert as callout**: Adds the explanation as a callout block after your selection
    - **Copy**: Copies the explanation to clipboard
    - **Close**: Dismiss the modal
 
@@ -300,18 +300,18 @@ Help me study this content:
 
 ---
 
-# Ask about Selection
+# Ask about selection
 
-The Ask about Selection feature lets you ask any question about selected text. The AI will analyze the selection and answer your specific question.
+The Ask about selection feature lets you ask any question about selected text. The AI will analyze the selection and answer your specific question.
 
 ## How to Use Ask {#how-to-use-ask}
 
 1. **Select text** in your document
-2. **Right-click** and choose "Gemini Scribe: Ask Question..."
+2. **Right-click** and choose "Gemini Scribe: Ask question..."
 3. **Type your question** in the modal
 4. **Press Enter** or click "Ask"
 5. **View the response** and choose an action:
-   - **Insert as Callout**: Adds the Q&A as a callout block
+   - **Insert as callout**: Adds the Q&A as a callout block
    - **Copy**: Copies the response to clipboard
    - **Close**: Dismiss the modal
 
