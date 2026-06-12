@@ -4,6 +4,7 @@ import { ExplainPromptSelectionModal } from '../ui/explain-prompt-modal';
 import { SelectionResponseModal, AskQuestionModal } from '../ui/selection-response-modal';
 import { CustomPrompt } from '../prompts/types';
 import { ModelClientFactory } from '../api';
+import { t } from '../i18n';
 
 /**
  * Service to coordinate selection-based actions.
@@ -22,7 +23,7 @@ export class SelectionActionService {
 	async handleExplainSelection(editor: Editor, sourceFile: TFile | null): Promise<void> {
 		const selection = editor.getSelection();
 		if (!selection || selection.trim().length === 0) {
-			new Notice('Please select some text first');
+			new Notice(t('notice.selection.noSelection'));
 			return;
 		}
 
@@ -33,7 +34,7 @@ export class SelectionActionService {
 		const prompts = await this.plugin.promptManager.listSelectionPrompts();
 
 		if (prompts.length === 0) {
-			new Notice('No selection action prompts found. Create prompts with the "gemini-scribe/selection-prompt" tag.');
+			new Notice(t('notice.selection.noPrompts'));
 			return;
 		}
 
@@ -56,7 +57,7 @@ export class SelectionActionService {
 	async handleSelectionPrompt(editor: Editor, sourceFile: TFile | null, prompt: CustomPrompt): Promise<void> {
 		const selection = editor.getSelection();
 		if (!selection || selection.trim().length === 0) {
-			new Notice('Please select some text first');
+			new Notice(t('notice.selection.noSelection'));
 			return;
 		}
 		const selectionEnd = editor.getCursor('to');
@@ -73,7 +74,7 @@ export class SelectionActionService {
 	async handleAskAboutSelection(editor: Editor, sourceFile: TFile | null): Promise<void> {
 		const selection = editor.getSelection();
 		if (!selection || selection.trim().length === 0) {
-			new Notice('Please select some text first');
+			new Notice(t('notice.selection.noSelection'));
 			return;
 		}
 

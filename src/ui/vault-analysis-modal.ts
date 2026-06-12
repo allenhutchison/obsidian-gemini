@@ -4,6 +4,7 @@
  */
 
 import { App, Modal } from 'obsidian';
+import { t } from '../i18n';
 
 export class VaultAnalysisModal extends Modal {
 	private statusEl!: HTMLElement;
@@ -25,14 +26,14 @@ export class VaultAnalysisModal extends Modal {
 
 		// Header
 		contentEl.createEl('h2', {
-			text: '🔍 Analyzing Vault',
+			text: t('vaultAnalysis.title'),
 			cls: 'gemini-vault-analysis-header',
 		});
 
 		// Description
 		const description = contentEl.createDiv({ cls: 'gemini-vault-analysis-description' });
 		description.createEl('p', {
-			text: 'Generating context for AGENTS.md...',
+			text: t('vaultAnalysis.description'),
 		});
 
 		// Current status with spinner
@@ -47,7 +48,7 @@ export class VaultAnalysisModal extends Modal {
 		`;
 
 		this.statusEl = statusContainer.createDiv({ cls: 'gemini-vault-analysis-status-text' });
-		this.statusEl.setText('Initializing...');
+		this.statusEl.setText(t('vaultAnalysis.initializing'));
 
 		// Steps list
 		this.stepsEl = contentEl.createDiv({ cls: 'gemini-vault-analysis-steps' });
@@ -130,7 +131,7 @@ export class VaultAnalysisModal extends Modal {
 	/**
 	 * Mark the process as complete
 	 */
-	setComplete(message: string = 'Analysis complete!'): void {
+	setComplete(message: string = t('vaultAnalysis.complete')): void {
 		this.updateStatus(message);
 
 		// Hide spinner

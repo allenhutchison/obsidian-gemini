@@ -8,6 +8,7 @@ vi.mock('obsidian', () => {
 		}
 	};
 	return {
+		getLanguage: () => 'en',
 		TFile: MockTFile,
 		normalizePath: (path: string) => path,
 		Notice: vi.fn(),

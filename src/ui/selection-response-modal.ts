@@ -1,5 +1,6 @@
 import { App, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { t } from '../i18n';
 
 /**
  * Normalize newlines in AI responses for proper Markdown rendering.
@@ -109,12 +110,12 @@ export class SelectionResponseModal extends Modal {
 		contentEl.empty();
 
 		// Header
-		contentEl.createEl('h2', { text: 'AI Response' });
+		contentEl.createEl('h2', { text: t('selectionResponse.title') });
 
 		// Selection preview (collapsed)
 		const previewSection = contentEl.createDiv({ cls: 'gemini-scribe-selection-preview' });
 		const previewHeader = previewSection.createDiv({ cls: 'gemini-scribe-preview-header' });
-		previewHeader.createSpan({ text: 'Selected text', cls: 'gemini-scribe-preview-label' });
+		previewHeader.createSpan({ text: t('selectionResponse.selectedTextLabel'), cls: 'gemini-scribe-preview-label' });
 
 		const previewContent = previewSection.createDiv({ cls: 'gemini-scribe-preview-content' });
 		previewContent.setText(this.selectedText);
@@ -123,7 +124,7 @@ export class SelectionResponseModal extends Modal {
 		this.loadingEl = contentEl.createDiv({ cls: 'gemini-scribe-loading' });
 		const spinner = this.loadingEl.createDiv({ cls: 'gemini-scribe-spinner' });
 		setIcon(spinner, 'loader-2');
-		this.loadingEl.createSpan({ text: 'Generating response...' });
+		this.loadingEl.createSpan({ text: t('selectionResponse.generating') });
 
 		// Response container (hidden initially)
 		this.responseContainer = contentEl.createDiv({ cls: 'gemini-scribe-response-container' });
@@ -134,18 +135,18 @@ export class SelectionResponseModal extends Modal {
 		this.actionsContainer.style.display = 'none';
 
 		const insertBtn = this.actionsContainer.createEl('button', {
-			text: 'Insert as Callout',
+			text: t('selectionResponse.insertButton'),
 			cls: 'mod-cta',
 		});
 		insertBtn.onclick = () => this.insertAsCallout();
 
 		const copyBtn = this.actionsContainer.createEl('button', {
-			text: 'Copy',
+			text: t('selectionResponse.copyButton'),
 		});
 		copyBtn.onclick = () => this.copyResponse();
 
 		const closeBtn = this.actionsContainer.createEl('button', {
-			text: 'Close',
+			text: t('selectionResponse.closeButton'),
 		});
 		closeBtn.onclick = () => this.close();
 	}
@@ -180,7 +181,7 @@ export class SelectionResponseModal extends Modal {
 
 		this.responseContainer.empty();
 		const errorEl = this.responseContainer.createDiv({ cls: 'gemini-scribe-error' });
-		errorEl.setText(`Error: ${error}`);
+		errorEl.setText(t('selectionResponse.errorPrefix', { error }));
 	}
 
 	/**
@@ -204,7 +205,7 @@ export class SelectionResponseModal extends Modal {
 
 		this.editor.replaceRange(callout, insertPos);
 
-		new Notice('Response inserted as callout');
+		new Notice(t('selectionResponse.insertedNotice'));
 		this.close();
 	}
 
@@ -215,17 +216,17 @@ export class SelectionResponseModal extends Modal {
 		if (!this.response) return;
 
 		if (!navigator.clipboard) {
-			new Notice('Clipboard not available');
+			new Notice(t('selectionResponse.clipboardUnavailable'));
 			return;
 		}
 
 		try {
 			await navigator.clipboard.writeText(this.response);
-			new Notice('Response copied to clipboard');
+			new Notice(t('selectionResponse.copiedNotice'));
 		} catch (error) {
 			this.plugin.logger.error('Failed to copy to clipboard:', error);
-			const message = error instanceof Error ? error.message : 'Unknown error';
-			new Notice(`Failed to copy: ${message}`);
+			const message = error instanceof Error ? error.message : t('selectionResponse.unknownError');
+			new Notice(t('selectionResponse.copyFailed', { message }));
 		}
 	}
 
@@ -254,27 +255,30 @@ export class AskQuestionModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Ask about Selection' });
+		contentEl.createEl('h2', { text: t('selectionResponse.askTitle') });
 
 		// Selection preview
 		const previewSection = contentEl.createDiv({ cls: 'gemini-scribe-selection-preview' });
-		previewSection.createSpan({ text: 'Selected text:', cls: 'gemini-scribe-preview-label' });
+		previewSection.createSpan({
+			text: t('selectionResponse.askSelectedTextLabel'),
+			cls: 'gemini-scribe-preview-label',
+		});
 
 		const previewContent = previewSection.createDiv({ cls: 'gemini-scribe-preview-content' });
 		previewContent.setText(this.selectedText);
 
 		// Question input
 		const inputSection = contentEl.createDiv({ cls: 'gemini-scribe-question-section' });
-		inputSection.createEl('label', { text: 'Your question:', cls: 'gemini-scribe-label' });
+		inputSection.createEl('label', { text: t('selectionResponse.questionLabel'), cls: 'gemini-scribe-label' });
 
 		this.questionInput = inputSection.createEl('textarea', {
-			placeholder: 'What would you like to know about this text?',
+			placeholder: t('selectionResponse.questionPlaceholder'),
 			cls: 'gemini-scribe-question-input',
 		});
 
 		// Submit button
 		const submitBtn = contentEl.createEl('button', {
-			text: 'Ask',
+			text: t('selectionResponse.askButton'),
 			cls: 'gemini-scribe-submit-button mod-cta',
 		});
 		submitBtn.onclick = () => this.submit();

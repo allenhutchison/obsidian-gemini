@@ -4,6 +4,7 @@ import { FileUploader } from '@allenhutchison/gemini-utils';
 import type ObsidianGemini from '../main';
 import { ObsidianVaultAdapter } from './obsidian-file-adapter';
 import { getErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 import { RagCache } from './rag-cache';
 import { RagRateLimiter } from './rag-rate-limiter';
 import { RagStatusBar } from './rag-status-bar';
@@ -150,12 +151,12 @@ export class RagIndexingService {
 
 			// If this is first time (no indexed files), start initial indexing
 			if (this.ragCache.indexedCount === 0) {
-				new Notice('RAG Indexing: Starting initial vault indexing...');
+				new Notice(t('notice.rag.startingInitial'));
 
 				// Open progress modal for initial indexing
 				import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
 					const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
-						new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+						new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
 					});
 					progressModal.open();
 				});
@@ -163,7 +164,7 @@ export class RagIndexingService {
 				// Run indexing in background (don't await - modal handles display)
 				this.indexVault().catch((error) => {
 					this.plugin.logger.error('RAG Indexing: Initial indexing failed', error);
-					new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
+					new Notice(t('notice.rag.indexingFailed', { error: getErrorMessage(error) }));
 				});
 			}
 		} catch (error) {

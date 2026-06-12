@@ -1,5 +1,6 @@
 // Mock obsidian module
 vi.mock('obsidian', () => ({
+	getLanguage: () => 'en',
 	TFile: class {
 		path: string;
 		constructor(path: string = 'test.md') {

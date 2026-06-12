@@ -53,6 +53,7 @@ vi.mock('obsidian', () => {
 	}
 
 	return {
+		getLanguage: () => 'en',
 		Vault: vi.fn(),
 		TFile: TFile,
 		TFolder: TFolder,
@@ -597,7 +598,7 @@ Content`;
 			expect(mockPlugin.addCommand).toHaveBeenCalledWith(
 				expect.objectContaining({
 					id: 'gemini-scribe-create-custom-prompt',
-					name: 'Create New Custom Prompt',
+					name: 'Create new custom prompt',
 				})
 			);
 		});

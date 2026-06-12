@@ -4,6 +4,7 @@ import { ToolClassification } from '../../types/tool-policy';
 import { normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
 import { resolvePathToFileOrFolder } from './utils';
+import { t } from '../../i18n';
 
 /**
  * Move or rename a file or folder
@@ -33,7 +34,7 @@ export class MoveFileTool implements Tool {
 	};
 
 	confirmationMessage = (params: { sourcePath: string; targetPath: string }) => {
-		return `Move file or folder from: ${params.sourcePath}\nTo: ${params.targetPath}`;
+		return t('tool.confirm.moveFile', { source: params.sourcePath, target: params.targetPath });
 	};
 
 	getProgressDescription(params: { sourcePath: string; targetPath: string }): string {

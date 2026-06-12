@@ -4,6 +4,7 @@ import { MCPManager } from '../mcp/mcp-manager';
 import { ObsidianOAuthClientProvider } from '../mcp/mcp-oauth-provider';
 import { resolveServerEnv, writeServerEnv } from '../mcp/mcp-secrets';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 /**
  * Modal for adding or editing an MCP server configuration.
@@ -68,15 +69,15 @@ export class MCPServerModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('mcp-server-modal');
 
-		contentEl.createEl('h2', { text: this.isEdit ? 'Edit MCP Server' : 'Add MCP Server' });
+		contentEl.createEl('h2', { text: this.isEdit ? t('mcpServer.titleEdit') : t('mcpServer.titleAdd') });
 
 		// Server name
 		new Setting(contentEl)
-			.setName('Server name')
-			.setDesc('A unique, friendly name for this server')
+			.setName(t('mcpServer.nameSetting'))
+			.setDesc(t('mcpServer.nameDesc'))
 			.addText((text) =>
 				text
-					.setPlaceholder('e.g., filesystem')
+					.setPlaceholder(t('mcpServer.namePlaceholder'))
 					.setValue(this.config.name)
 					.onChange((value) => {
 						this.config.name = value.trim();
@@ -85,12 +86,12 @@ export class MCPServerModal extends Modal {
 
 		// Transport type selector
 		new Setting(contentEl)
-			.setName('Transport')
-			.setDesc('How to connect to the server: local process (stdio) or remote URL (HTTP)')
+			.setName(t('mcpServer.transportSetting'))
+			.setDesc(t('mcpServer.transportDesc'))
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption(MCP_TRANSPORT_STDIO, 'Stdio (local process)')
-					.addOption(MCP_TRANSPORT_HTTP, 'HTTP (remote server)')
+					.addOption(MCP_TRANSPORT_STDIO, t('mcpServer.transportStdio'))
+					.addOption(MCP_TRANSPORT_HTTP, t('mcpServer.transportHttp'))
 					.setValue(this.config.transport ?? MCP_TRANSPORT_STDIO)
 					.onChange((value) => {
 						this.config.transport = value as MCPTransportType;
@@ -105,12 +106,12 @@ export class MCPServerModal extends Modal {
 		if (isHttp) {
 			// HTTP transport: URL field
 			new Setting(contentEl)
-				.setName('Server URL')
-				.setDesc('The HTTP endpoint of the MCP server')
+				.setName(t('mcpServer.urlSetting'))
+				.setDesc(t('mcpServer.urlDesc'))
 				.addText((text) => {
 					text.inputEl.style.width = '30ch';
 					text
-						.setPlaceholder('e.g., http://localhost:3000/mcp')
+						.setPlaceholder(t('mcpServer.urlPlaceholder'))
 						.setValue(this.config.url || '')
 						.onChange((value) => {
 							this.config.url = value.trim() || undefined;
@@ -121,15 +122,15 @@ export class MCPServerModal extends Modal {
 			const oauthProvider = new ObsidianOAuthClientProvider(this.app, this.originalServerName);
 			if (oauthProvider.hasTokens()) {
 				new Setting(contentEl)
-					.setName('OAuth credentials')
-					.setDesc('Server has stored OAuth tokens')
+					.setName(t('mcpServer.oauthSetting'))
+					.setDesc(t('mcpServer.oauthDesc'))
 					.addButton((btn) =>
 						btn
-							.setButtonText('Clear credentials')
+							.setButtonText(t('mcpServer.oauthClearButton'))
 							.setWarning()
 							.onClick(() => {
 								oauthProvider.clearAll();
-								new Notice('OAuth credentials cleared. You will need to re-authorize.');
+								new Notice(t('mcpServer.oauthClearedNotice'));
 								this.onOpen(); // Re-render to hide the button
 							})
 					);
@@ -139,12 +140,12 @@ export class MCPServerModal extends Modal {
 
 			// Command
 			new Setting(contentEl)
-				.setName('Command')
-				.setDesc('The command to spawn the MCP server process')
+				.setName(t('mcpServer.commandSetting'))
+				.setDesc(t('mcpServer.commandDesc'))
 				.addText((text) => {
 					text.inputEl.style.width = '30ch';
 					text
-						.setPlaceholder('e.g., npx, python, /usr/local/bin/mcp-server')
+						.setPlaceholder(t('mcpServer.commandPlaceholder'))
 						.setValue(this.config.command)
 						.onChange((value) => {
 							this.config.command = value.trim();
@@ -153,13 +154,13 @@ export class MCPServerModal extends Modal {
 
 			// Arguments
 			new Setting(contentEl)
-				.setName('Arguments')
-				.setDesc('Command arguments, one per line')
+				.setName(t('mcpServer.argsSetting'))
+				.setDesc(t('mcpServer.argsDesc'))
 				.addTextArea((text) => {
 					text.inputEl.rows = 3;
 					text.inputEl.cols = 40;
 					text
-						.setPlaceholder('e.g.,\n-y\n@modelcontextprotocol/server-filesystem\n/path/to/folder')
+						.setPlaceholder(t('mcpServer.argsPlaceholder'))
 						.setValue(this.config.args.join('\n'))
 						.onChange((value) => {
 							this.config.args = value
@@ -171,8 +172,8 @@ export class MCPServerModal extends Modal {
 
 			// Environment variables
 			new Setting(contentEl)
-				.setName('Environment variables')
-				.setDesc('Optional KEY=VALUE pairs, one per line. Values are stored in your OS keychain, not in plaintext.')
+				.setName(t('mcpServer.envSetting'))
+				.setDesc(t('mcpServer.envDesc'))
 				.addTextArea((text) => {
 					text.inputEl.rows = 2;
 					text.inputEl.cols = 40;
@@ -182,7 +183,7 @@ export class MCPServerModal extends Modal {
 								.join('\n')
 						: '';
 					text
-						.setPlaceholder('e.g., API_KEY=abc123')
+						.setPlaceholder(t('mcpServer.envPlaceholder'))
 						.setValue(envStr)
 						.onChange((value) => {
 							const entries = value
@@ -200,8 +201,8 @@ export class MCPServerModal extends Modal {
 
 		// Enabled toggle
 		new Setting(contentEl)
-			.setName('Enabled')
-			.setDesc('Connect to this server when the plugin loads')
+			.setName(t('mcpServer.enabledSetting'))
+			.setDesc(t('mcpServer.enabledDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(this.config.enabled).onChange((value) => {
 					this.config.enabled = value;
@@ -209,38 +210,36 @@ export class MCPServerModal extends Modal {
 			);
 
 		// Test connection button
-		const testSetting = new Setting(contentEl)
-			.setName('Test connection')
-			.setDesc('Connect temporarily to discover available tools');
+		const testSetting = new Setting(contentEl).setName(t('mcpServer.testSetting')).setDesc(t('mcpServer.testDesc'));
 
 		testSetting.addButton((button) =>
-			button.setButtonText('Test Connection').onClick(async () => {
+			button.setButtonText(t('mcpServer.testButton')).onClick(async () => {
 				if (isHttp) {
 					if (!this.config.url) {
-						new Notice('Please enter a URL first');
+						new Notice(t('mcpServer.urlRequiredFirst'));
 						return;
 					}
 				} else {
 					if (!this.config.command) {
-						new Notice('Please enter a command first');
+						new Notice(t('mcpServer.commandRequiredFirst'));
 						return;
 					}
 				}
 
-				button.setButtonText('Connecting...');
+				button.setButtonText(t('mcpServer.connecting'));
 				button.setDisabled(true);
-				testSetting.setDesc('Connecting to server...');
+				testSetting.setDesc(t('mcpServer.connectingDesc'));
 
 				try {
 					const tools = await this.mcpManager.queryToolsForConfig(this.config);
 					this.discoveredTools = tools;
-					testSetting.setDesc(`Connected successfully! Found ${tools.length} tool(s).`);
+					testSetting.setDesc(t('mcpServer.connectedDesc', { count: tools.length }));
 					this.renderDiscoveredTools();
 				} catch (error) {
 					const msg = getRawErrorMessage(error);
-					testSetting.setDesc(`Connection failed: ${msg}`);
+					testSetting.setDesc(t('mcpServer.connectionFailedDesc', { message: msg }));
 				} finally {
-					button.setButtonText('Test Connection');
+					button.setButtonText(t('mcpServer.testButton'));
 					button.setDisabled(false);
 				}
 			})
@@ -255,41 +254,41 @@ export class MCPServerModal extends Modal {
 		// Action buttons
 		new Setting(contentEl)
 			.addButton((btn) =>
-				btn.setButtonText('Cancel').onClick(() => {
+				btn.setButtonText(t('mcpServer.cancelButton')).onClick(() => {
 					this.close();
 				})
 			)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Save')
+					.setButtonText(t('mcpServer.saveButton'))
 					.setCta()
 					.onClick(async () => {
 						if (!this.config.name) {
-							new Notice('Server name is required');
+							new Notice(t('mcpServer.nameRequired'));
 							return;
 						}
 						if (isHttp) {
 							if (!this.config.url) {
-								new Notice('Server URL is required for HTTP transport');
+								new Notice(t('mcpServer.urlRequired'));
 								return;
 							}
 							// Validate URL
 							try {
 								new URL(this.config.url);
 							} catch {
-								new Notice('Invalid URL format');
+								new Notice(t('mcpServer.invalidUrl'));
 								return;
 							}
 						} else {
 							if (!this.config.command) {
-								new Notice('Command is required for stdio transport');
+								new Notice(t('mcpServer.commandRequired'));
 								return;
 							}
 							// Persist env vars to SecretStorage; sets config.envSecretName.
 							try {
 								writeServerEnv(this.app, this.config, this.env);
 							} catch (error) {
-								new Notice(error instanceof Error ? error.message : 'Failed to store environment variables');
+								new Notice(error instanceof Error ? error.message : t('mcpServer.envStoreFailed'));
 								return;
 							}
 						}
@@ -305,9 +304,9 @@ export class MCPServerModal extends Modal {
 
 		if (this.discoveredTools.length === 0) return;
 
-		this.discoveredToolsContainer.createEl('h3', { text: 'Discovered Tools' });
+		this.discoveredToolsContainer.createEl('h3', { text: t('mcpServer.discoveredToolsTitle') });
 		const desc = this.discoveredToolsContainer.createEl('p', {
-			text: 'These tools were discovered on the server. Manage their permissions in the Tool Permissions settings.',
+			text: t('mcpServer.discoveredToolsDesc'),
 			cls: 'setting-item-description',
 		});
 		desc.style.marginBottom = '0.5em';

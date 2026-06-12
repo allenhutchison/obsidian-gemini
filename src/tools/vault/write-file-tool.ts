@@ -3,6 +3,7 @@ import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
+import { t } from '../../i18n';
 
 /**
  * Write file content
@@ -37,9 +38,10 @@ export class WriteFileTool implements Tool {
 
 	confirmationMessage = (params: { path: string; content: string; summary?: string }) => {
 		if (params.summary) {
-			return `Write to file: ${params.path}\n\n${params.summary}`;
+			return t('tool.confirm.writeFileSummary', { path: params.path, summary: params.summary });
 		}
-		return `Write content to file: ${params.path}\n\nContent preview:\n${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		const preview = `${params.content.substring(0, 200)}${params.content.length > 200 ? '...' : ''}`;
+		return t('tool.confirm.writeFile', { path: params.path, preview });
 	};
 
 	getProgressDescription(params: { path: string }): string {

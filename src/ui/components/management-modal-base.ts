@@ -1,6 +1,7 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ToolPolicyEditor } from './tool-policy-editor';
+import { t } from '../../i18n';
 
 /**
  * View state for management modals: list all entities, create a new one,
@@ -112,7 +113,9 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 
 		const manager = this.getManager();
 		if (!manager) {
-			contentEl.createEl('p', { text: `${this.entityLabel} manager not available.` });
+			contentEl.createEl('p', {
+				text: t('component.managementModalBase.managerUnavailable', { label: this.entityLabel }),
+			});
 			return;
 		}
 
@@ -149,7 +152,7 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 
 		contentEl.createEl('h2', { text: this.deleteTitle });
 		contentEl.createEl('p', {
-			text: `Delete "${slug}"? This removes the ${this.entityLabel} definition file permanently.`,
+			text: t('component.managementModalBase.deleteConfirm', { slug, label: this.entityLabel }),
 		});
 		contentEl.createEl('p', {
 			text: this.deleteHint,
@@ -157,24 +160,27 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 		});
 
 		const btns = contentEl.createDiv({ cls: 'gemini-scheduler-confirm-btns' });
-		const cancelBtn = btns.createEl('button', { text: 'Cancel', attr: { type: 'button' } });
+		const cancelBtn = btns.createEl('button', {
+			text: t('component.managementModalBase.cancel'),
+			attr: { type: 'button' },
+		});
 		cancelBtn.addEventListener('click', () => this.render());
 
 		const confirmBtn = btns.createEl('button', {
-			text: 'Delete',
+			text: t('component.managementModalBase.delete'),
 			cls: 'gemini-scheduler-confirm-delete',
 			attr: { type: 'button' },
 		});
 		confirmBtn.addEventListener('click', async () => {
 			confirmBtn.disabled = true;
-			confirmBtn.setText('Deleting…');
+			confirmBtn.setText(t('component.managementModalBase.deleting'));
 			try {
 				await this.deleteEntity(slug);
-				new Notice(`${this.capitalizedEntityLabel} "${slug}" deleted`);
+				new Notice(t('component.managementModalBase.deleted', { label: this.capitalizedEntityLabel, slug }));
 				this.render();
 			} catch (err) {
 				this.plugin.logger.error(`[${this.constructor.name}] Delete failed for "${slug}":`, err);
-				new Notice(`Failed to delete "${slug}"`);
+				new Notice(t('component.managementModalBase.deleteFailed', { slug }));
 				this.render();
 			}
 		});
@@ -200,7 +206,7 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 		const { contentEl } = this;
 
 		const back = contentEl.createEl('button', {
-			text: '← Back to list',
+			text: t('component.managementModalBase.backToList'),
 			cls: 'gemini-scheduler-back',
 			attr: { type: 'button' },
 		});
@@ -217,8 +223,8 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 		// Slug (create only) — identical across all management modals.
 		if (!isEdit) {
 			new Setting(form)
-				.setName(`${this.capitalizedEntityLabel} name (slug)`)
-				.setDesc('Lowercase identifier used as the filename and in output paths. Cannot be changed after creation.')
+				.setName(t('component.managementModalBase.slugName', { label: this.capitalizedEntityLabel }))
+				.setDesc(t('component.managementModalBase.slugDesc'))
 				.addText((text) =>
 					text
 						.setPlaceholder(this.slugPlaceholder)
@@ -238,13 +244,18 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 		const footer = form.createDiv({ cls: 'gemini-scheduler-footer' });
 
 		const saveBtn = footer.createEl('button', {
-			text: isEdit ? 'Save changes' : `Create ${this.entityLabel}`,
+			text: isEdit
+				? t('component.managementModalBase.saveChanges')
+				: t('component.managementModalBase.createEntity', { label: this.entityLabel }),
 			cls: 'mod-cta',
 			attr: { type: 'button' },
 		});
 		saveBtn.addEventListener('click', () => this.handleSave(isEdit));
 
-		const cancelBtn = footer.createEl('button', { text: 'Cancel', attr: { type: 'button' } });
+		const cancelBtn = footer.createEl('button', {
+			text: t('component.managementModalBase.cancel'),
+			attr: { type: 'button' },
+		});
 		cancelBtn.addEventListener('click', () => {
 			this.view = 'list';
 			this.render();

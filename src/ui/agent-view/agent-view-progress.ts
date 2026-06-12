@@ -1,5 +1,6 @@
 import { App, MarkdownRenderer, Component } from 'obsidian';
 import { ChatTimer } from '../../utils/timer-utils';
+import { t } from '../../i18n';
 
 export type ProgressState = 'thinking' | 'tool' | 'waiting' | 'streaming';
 
@@ -77,7 +78,7 @@ export class AgentViewProgress {
 			cls: 'gemini-agent-progress-timer',
 			attr: {
 				'aria-live': 'polite',
-				'aria-label': 'Elapsed time',
+				'aria-label': t('agent.progress.elapsedAria'),
 			},
 		});
 

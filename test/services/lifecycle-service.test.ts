@@ -22,6 +22,7 @@ const { mockPlatform, mockCatchUpModal, MockCatchUpModalClass, mockUpdateModal, 
 );
 
 vi.mock('obsidian', () => ({
+	getLanguage: () => 'en',
 	TFile: class TFile {},
 	Notice: vi.fn(),
 	normalizePath: (p: string) => p,

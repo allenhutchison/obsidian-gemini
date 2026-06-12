@@ -5,6 +5,7 @@ import type { RagDetailedStatus } from './rag-status-modal';
 import type { ProgressListener } from '../services/rag-types';
 import type { RagIndexingService } from '../services/rag-indexing';
 import { getErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 type ModalTab = 'tasks' | 'rag';
 type RagInnerTab = 'overview' | 'files' | 'failures';
@@ -120,8 +121,8 @@ export class BackgroundTasksModal extends Modal {
 		tabBar.empty();
 
 		const tabs: Array<{ id: ModalTab; label: string; icon: string }> = [
-			{ id: 'tasks', label: 'Background Tasks', icon: 'loader' },
-			{ id: 'rag', label: 'RAG', icon: 'database' },
+			{ id: 'tasks', label: t('backgroundTasks.tabTasks'), icon: 'loader' },
+			{ id: 'rag', label: t('backgroundTasks.tabRag'), icon: 'database' },
 		];
 
 		for (const { id, label, icon } of tabs) {
@@ -186,7 +187,7 @@ export class BackgroundTasksModal extends Modal {
 	private renderTasksTab(container: HTMLElement): void {
 		const manager = this.plugin.backgroundTaskManager;
 		if (!manager) {
-			container.createEl('p', { text: 'Background task manager not available.' });
+			container.createEl('p', { text: t('backgroundTasks.managerUnavailable') });
 			return;
 		}
 
@@ -195,14 +196,17 @@ export class BackgroundTasksModal extends Modal {
 
 		if (active.length === 0 && recent.length === 0) {
 			container.createEl('p', {
-				text: 'No background tasks yet. Long-running operations like deep research and image generation will appear here.',
+				text: t('backgroundTasks.empty'),
 				cls: 'gemini-bg-tasks-empty',
 			});
 			return;
 		}
 
 		if (active.length > 0) {
-			const label = active.length > 10 ? `Running (${active.length})` : 'Running';
+			const label =
+				active.length > 10
+					? t('backgroundTasks.runningHeaderCount', { count: active.length })
+					: t('backgroundTasks.runningHeader');
 			container.createEl('h3', { text: label });
 			const scrollWrap = container.createDiv({ cls: 'gemini-bg-tasks-scroll' });
 			const list = scrollWrap.createEl('ul', { cls: 'gemini-bg-tasks-list' });
@@ -211,7 +215,7 @@ export class BackgroundTasksModal extends Modal {
 			}
 			if (active.length > 10) {
 				scrollWrap.createEl('p', {
-					text: `+ ${active.length - 10} more running tasks`,
+					text: t('backgroundTasks.moreRunning', { count: active.length - 10 }),
 					cls: 'gemini-bg-tasks-overflow',
 				});
 			}
@@ -219,9 +223,9 @@ export class BackgroundTasksModal extends Modal {
 
 		if (recent.length > 0) {
 			const recentHeader = container.createDiv({ cls: 'gemini-bg-tasks-recent-header' });
-			recentHeader.createEl('h3', { text: 'Recent' });
+			recentHeader.createEl('h3', { text: t('backgroundTasks.recentHeader') });
 			const clearBtn = recentHeader.createEl('button', {
-				text: 'Clear',
+				text: t('backgroundTasks.clearButton'),
 				cls: 'gemini-bg-tasks-clear',
 				attr: { type: 'button' },
 			});
@@ -263,7 +267,7 @@ export class BackgroundTasksModal extends Modal {
 		info.createDiv({ text: this.formatTaskMeta(task), cls: 'gemini-bg-task-meta' });
 
 		if (task.outputPath && task.status === 'complete') {
-			const link = info.createEl('a', { text: 'Open result', href: '#', cls: 'gemini-bg-task-link' });
+			const link = info.createEl('a', { text: t('backgroundTasks.openResult'), href: '#', cls: 'gemini-bg-task-link' });
 			link.addEventListener('click', (e) => {
 				e.preventDefault();
 				this.plugin.app.workspace.openLinkText(task.outputPath!, '', false);
@@ -278,7 +282,7 @@ export class BackgroundTasksModal extends Modal {
 
 		if (canCancel) {
 			const btn = li.createEl('button', {
-				text: 'Cancel',
+				text: t('backgroundTasks.cancelButton'),
 				cls: 'gemini-bg-task-cancel mod-warning',
 				attr: { type: 'button' },
 			});
@@ -294,10 +298,12 @@ export class BackgroundTasksModal extends Modal {
 		if (task.completedAt) {
 			const durationMs = task.completedAt.getTime() - task.startedAt.getTime();
 			const durationLabel =
-				durationMs < 60_000 ? `${Math.round(durationMs / 1000)}s` : `${Math.round(durationMs / 60_000)}m`;
-			return `Started ${started} · ${durationLabel}`;
+				durationMs < 60_000
+					? t('backgroundTasks.durationSeconds', { count: Math.round(durationMs / 1000) })
+					: t('backgroundTasks.durationMinutes', { count: Math.round(durationMs / 60_000) });
+			return t('backgroundTasks.startedWithDuration', { time: started, duration: durationLabel });
 		}
-		return `Started ${started}`;
+		return t('backgroundTasks.started', { time: started });
 	}
 
 	/** Return the first meaningful line of an error, capped at 120 chars. */
@@ -319,7 +325,7 @@ export class BackgroundTasksModal extends Modal {
 		const rag = this.plugin.ragIndexing;
 		if (!rag) {
 			container.createEl('p', {
-				text: 'RAG indexing is not enabled. Enable it in Settings → Gemini Scribe.',
+				text: t('backgroundTasks.ragDisabled'),
 				cls: 'gemini-bg-tasks-empty',
 			});
 			return;
@@ -362,10 +368,10 @@ export class BackgroundTasksModal extends Modal {
 			});
 		};
 
-		createTab('overview', 'Overview');
-		createTab('files', `Files (${status.indexedCount.toLocaleString()})`);
+		createTab('overview', t('ragStatus.tabOverview'));
+		createTab('files', t('ragStatus.tabFiles', { count: status.indexedCount.toLocaleString() }));
 		if (status.failedCount > 0) {
-			createTab('failures', `Failures (${status.failedCount})`);
+			createTab('failures', t('ragStatus.tabFailures', { count: status.failedCount }));
 		}
 	}
 
@@ -388,44 +394,50 @@ export class BackgroundTasksModal extends Modal {
 
 		// Status row
 		const statusRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		statusRow.createSpan({ cls: 'rag-status-label', text: 'Status' });
+		statusRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.statusLabel') });
 		const statusValue = statusRow.createSpan({ cls: `rag-status-value ${this.ragStatusClass(status.status)}` });
 		statusValue.setText(this.ragStatusText(status.status));
 
 		// Files indexed
 		const filesRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		filesRow.createSpan({ cls: 'rag-status-label', text: 'Files indexed' });
+		filesRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.filesIndexedLabel') });
 		filesRow.createSpan({ cls: 'rag-status-value', text: status.indexedCount.toLocaleString() });
 
 		// Pending changes
 		const pendingRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		pendingRow.createSpan({ cls: 'rag-status-label', text: 'Pending' });
+		pendingRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.pendingLabel') });
 		pendingRow.createSpan({
 			cls: 'rag-status-value',
-			text: `${status.pendingCount} change${status.pendingCount !== 1 ? 's' : ''}`,
+			text:
+				status.pendingCount === 1
+					? t('ragStatus.changeSingular', { count: status.pendingCount })
+					: t('ragStatus.changePlural', { count: status.pendingCount }),
 		});
 
 		// Failures (if any)
 		if (status.failedCount > 0) {
 			const failedRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			failedRow.createSpan({ cls: 'rag-status-label', text: 'Failed' });
+			failedRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.failedLabel') });
 			failedRow.createSpan({
 				cls: 'rag-status-value rag-status-error',
-				text: `${status.failedCount} file${status.failedCount !== 1 ? 's' : ''}`,
+				text:
+					status.failedCount === 1
+						? t('ragStatus.fileSingular', { count: status.failedCount })
+						: t('ragStatus.filePlural', { count: status.failedCount }),
 			});
 		}
 
 		// Last sync
 		if (status.lastSync) {
 			const syncRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			syncRow.createSpan({ cls: 'rag-status-label', text: 'Last sync' });
+			syncRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.lastSyncLabel') });
 			syncRow.createSpan({ cls: 'rag-status-value', text: this.formatRagDate(status.lastSync) });
 		}
 
 		// Store name
 		if (status.storeName) {
 			const storeRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			storeRow.createSpan({ cls: 'rag-status-label', text: 'Store' });
+			storeRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.storeLabel') });
 			storeRow.createSpan({ cls: 'rag-status-value rag-status-store', text: status.storeName });
 		}
 
@@ -436,42 +448,42 @@ export class BackgroundTasksModal extends Modal {
 		new Setting(container)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Sync Now')
+					.setButtonText(t('ragStatus.syncNowButton'))
 					.setDisabled(isIndexing || !hasPending)
-					.setTooltip(hasPending ? 'Process pending changes now' : 'No pending changes')
+					.setTooltip(hasPending ? t('ragStatus.syncTooltipPending') : t('ragStatus.syncTooltipNone'))
 					.onClick(async () => {
 						btn.setDisabled(true);
-						btn.setButtonText('Syncing...');
+						btn.setButtonText(t('ragStatus.syncing'));
 						try {
 							await rag.syncPendingChanges();
-							btn.setButtonText('Sync Now');
+							btn.setButtonText(t('ragStatus.syncNowButton'));
 							this.renderTabContent();
 						} catch (error) {
-							new Notice(`Sync failed: ${getErrorMessage(error)}`);
-							btn.setButtonText('Sync Now');
+							new Notice(t('ragStatus.syncFailed', { message: getErrorMessage(error) }));
+							btn.setButtonText(t('ragStatus.syncNowButton'));
 							btn.setDisabled(false);
 						}
 					})
 			)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Reindex All')
+					.setButtonText(t('ragStatus.reindexButton'))
 					.setDisabled(isIndexing)
 					.onClick(async () => {
 						this.close();
 						const { RagProgressModal } = await import('./rag-progress-modal');
 						const progressModal = new RagProgressModal(this.plugin.app, rag, (result) => {
-							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+							new Notice(t('backgroundTasks.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
 						});
 						progressModal.open();
 						rag.indexVault().catch((error: unknown) => {
-							new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
+							new Notice(t('backgroundTasks.indexingFailed', { message: getErrorMessage(error) }));
 						});
 					})
 			)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Settings')
+					.setButtonText(t('ragStatus.settingsButton'))
 					.setCta()
 					.onClick(() => {
 						this.close();
@@ -487,7 +499,7 @@ export class BackgroundTasksModal extends Modal {
 		const searchContainer = container.createDiv({ cls: 'rag-status-search-container' });
 		const searchInput = searchContainer.createEl('input', {
 			cls: 'rag-status-search',
-			attr: { type: 'text', placeholder: 'Search files...', value: this.ragSearchQuery },
+			attr: { type: 'text', placeholder: t('ragStatus.searchPlaceholder'), value: this.ragSearchQuery },
 		});
 
 		const listContainer = container.createDiv({ cls: 'rag-status-file-list' });
@@ -513,7 +525,7 @@ export class BackgroundTasksModal extends Modal {
 		container.empty();
 
 		if (status.indexedFiles.length === 0) {
-			container.createDiv({ cls: 'rag-status-empty', text: 'No files indexed yet' });
+			container.createDiv({ cls: 'rag-status-empty', text: t('ragStatus.noFilesIndexed') });
 			return;
 		}
 
@@ -524,7 +536,7 @@ export class BackgroundTasksModal extends Modal {
 		}
 
 		if (filtered.length === 0) {
-			container.createDiv({ cls: 'rag-status-empty', text: 'No files match your search' });
+			container.createDiv({ cls: 'rag-status-empty', text: t('ragStatus.noSearchMatches') });
 			return;
 		}
 
@@ -534,7 +546,7 @@ export class BackgroundTasksModal extends Modal {
 		for (const file of display) {
 			const item = container.createEl('button', {
 				cls: 'rag-status-file-item rag-status-file-item--clickable',
-				attr: { type: 'button', 'aria-label': `Open ${file.path}` },
+				attr: { type: 'button', 'aria-label': t('backgroundTasks.openFileAria', { path: file.path }) },
 			});
 			const pathEl = item.createSpan({ cls: 'rag-status-file-path' });
 			pathEl.setText(file.path);
@@ -548,7 +560,7 @@ export class BackgroundTasksModal extends Modal {
 
 		if (!this.ragShowAllFiles && total > this.RAG_MAX_FILES_INITIAL) {
 			const more = container.createDiv({ cls: 'rag-status-show-more' });
-			more.setText(`Show all ${total.toLocaleString()} files`);
+			more.setText(t('ragStatus.showAllFiles', { count: total.toLocaleString() }));
 			more.addEventListener('click', () => {
 				this.ragShowAllFiles = true;
 				this.renderRagFileList(container, status);
@@ -558,7 +570,7 @@ export class BackgroundTasksModal extends Modal {
 
 	private renderRagFailures(container: HTMLElement, status: RagDetailedStatus): void {
 		if (status.failedFiles.length === 0) {
-			container.createDiv({ cls: 'rag-status-empty', text: 'No failures recorded' });
+			container.createDiv({ cls: 'rag-status-empty', text: t('ragStatus.noFailures') });
 			return;
 		}
 
@@ -582,14 +594,14 @@ export class BackgroundTasksModal extends Modal {
 
 	private ragStatusText(status: string): string {
 		const map: Record<string, string> = {
-			idle: 'Ready',
-			indexing: 'Indexing...',
-			error: 'Error',
-			paused: 'Paused',
-			disabled: 'Disabled',
-			rate_limited: 'Rate Limited',
+			idle: t('ragStatus.statusReady'),
+			indexing: t('ragStatus.statusIndexing'),
+			error: t('ragStatus.statusError'),
+			paused: t('ragStatus.statusPaused'),
+			disabled: t('ragStatus.statusDisabled'),
+			rate_limited: t('ragStatus.statusRateLimited'),
 		};
-		return map[status] ?? 'Unknown';
+		return map[status] ?? t('ragStatus.statusUnknown');
 	}
 
 	private ragStatusClass(status: string): string {
@@ -611,10 +623,19 @@ export class BackgroundTasksModal extends Modal {
 		const diffHours = Math.floor(diffMs / 3600000);
 		const diffDays = Math.floor(diffMs / 86400000);
 
-		if (diffMins < 1) return 'Just now';
-		if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
-		if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
-		if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+		if (diffMins < 1) return t('ragStatus.justNow');
+		if (diffMins < 60)
+			return diffMins === 1
+				? t('ragStatus.minuteAgoSingular', { count: diffMins })
+				: t('ragStatus.minutesAgoPlural', { count: diffMins });
+		if (diffHours < 24)
+			return diffHours === 1
+				? t('ragStatus.hourAgoSingular', { count: diffHours })
+				: t('ragStatus.hoursAgoPlural', { count: diffHours });
+		if (diffDays < 7)
+			return diffDays === 1
+				? t('ragStatus.dayAgoSingular', { count: diffDays })
+				: t('ragStatus.daysAgoPlural', { count: diffDays });
 		return date.toLocaleDateString();
 	}
 }

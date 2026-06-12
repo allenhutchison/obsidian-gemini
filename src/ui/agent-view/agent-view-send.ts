@@ -16,6 +16,7 @@ import { AgentViewSession } from './agent-view-session';
 import { AgentViewShelf } from './agent-view-shelf';
 import type ObsidianGemini from '../../main';
 import type { ConfirmationResult, DiffContext, Tool } from '../../tools/types';
+import { t } from '../../i18n';
 
 /**
  * Context interface for the send module.
@@ -64,7 +65,7 @@ export class AgentViewSend {
 	async sendMessage(): Promise<void> {
 		const currentSession = this.ctx.getCurrentSession();
 		if (!currentSession) {
-			new Notice('No active session');
+			new Notice(t('agent.view.noActiveSession'));
 			return;
 		}
 		// Snapshot session so all hook emissions use the same reference
@@ -121,8 +122,9 @@ export class AgentViewSend {
 		if (failedSaves.length > 0) {
 			const failedList = failedSaves.join(', ');
 			new Notice(
-				`Failed to save ${failedSaves.length === 1 ? 'attachment' : 'attachments'} #${failedList} to vault. ` +
-					`${failedSaves.length === 1 ? 'It' : 'They'} will still be sent to the AI but won't be stored locally.`,
+				failedSaves.length === 1
+					? t('agent.attachments.saveFailedOne', { nums: failedList })
+					: t('agent.attachments.saveFailed', { nums: failedList }),
 				5000
 			);
 		}
@@ -137,7 +139,7 @@ export class AgentViewSend {
 		setIcon(sendButton, 'square');
 		sendButton.addClass('gemini-agent-stop-btn');
 		sendButton.disabled = false; // Re-enable so user can click stop
-		sendButton.setAttribute('aria-label', 'Stop agent execution');
+		sendButton.setAttribute('aria-label', t('agent.input.stopAria'));
 		this.turnToolCallCount = 0;
 
 		// Emit turnStart hook
@@ -147,7 +149,7 @@ export class AgentViewSend {
 		});
 
 		// Show progress bar
-		this.ctx.progress.show('Thinking...', 'thinking');
+		this.ctx.progress.show(t('agent.progress.thinking'), 'thinking');
 
 		// Build message with attachment previews for display
 		let displayMessage = formattedMessage;
@@ -386,7 +388,7 @@ To reference an attachment in your response, use the path shown above.`;
 
 							// Update progress to streaming state when first text chunk arrives
 							if (!progressUpdated) {
-								this.ctx.progress.update('Generating response...', 'streaming');
+								this.ctx.progress.update(t('agent.progress.generating'), 'streaming');
 								progressUpdated = true;
 							}
 
@@ -513,9 +515,7 @@ To reference an attachment in your response, use the path shown above.`;
 							} else {
 								// Empty response - might be thinking tokens
 								this.ctx.plugin.logger.warn('Model returned empty response');
-								new Notice(
-									'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.'
-								);
+								new Notice(t('agent.send.emptyResponse'));
 
 								// Hide progress bar
 								this.ctx.progress.hide();
@@ -544,7 +544,7 @@ To reference an attachment in your response, use the path shown above.`;
 					}
 
 					// Update progress to show response received
-					this.ctx.progress.update('Processing response...', 'waiting');
+					this.ctx.progress.update(t('agent.progress.processing'), 'waiting');
 
 					// Model reasoning for this turn (non-streaming exposes it directly).
 					const turnThoughts = response.thoughts?.trim() ? response.thoughts : undefined;
@@ -667,7 +667,7 @@ To reference an attachment in your response, use the path shown above.`;
 		this.ctx.progress.hide();
 
 		// Show cancellation notice
-		new Notice('Agent execution cancelled');
+		new Notice(t('agent.send.cancelled'));
 	}
 
 	/**
@@ -683,7 +683,7 @@ To reference an attachment in your response, use the path shown above.`;
 		sendButton.empty();
 		setIcon(sendButton, 'play');
 		sendButton.removeClass('gemini-agent-stop-btn');
-		sendButton.setAttribute('aria-label', 'Send message to agent');
+		sendButton.setAttribute('aria-label', t('agent.input.sendAria'));
 	}
 
 	// Public getters for state the orchestrator needs to read

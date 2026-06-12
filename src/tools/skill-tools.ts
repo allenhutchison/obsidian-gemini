@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 /**
  * Tool for activating (loading) a skill's full instructions or resources
@@ -156,7 +157,8 @@ export class CreateSkillTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: { name: string; description: string }) => {
-		return `Create new skill "${params.name}":\n\n${params.description.substring(0, 200)}${params.description.length > 200 ? '...' : ''}`;
+		const preview = `${params.description.substring(0, 200)}${params.description.length > 200 ? '...' : ''}`;
+		return t('tool.confirm.createSkill', { name: params.name, description: preview });
 	};
 
 	getProgressDescription(params: { name: string }): string {
@@ -263,13 +265,17 @@ export class EditSkillTool implements Tool {
 
 	confirmationMessage = (params: { name: string; description?: string; content?: string }) => {
 		const normalizedName = params.name.trim();
-		const parts: string[] = [];
-		if (params.description?.trim()) parts.push('description');
-		if (params.content?.trim()) parts.push('content');
-		if (parts.length === 0) {
-			return `Edit skill "${normalizedName}": no valid fields provided`;
+		const hasDescription = Boolean(params.description?.trim());
+		const hasContent = Boolean(params.content?.trim());
+		if (!hasDescription && !hasContent) {
+			return t('tool.confirm.editSkillNoFields', { name: normalizedName });
 		}
-		return `Edit skill "${normalizedName}": updating ${parts.join(' and ')}`;
+		if (hasDescription && hasContent) {
+			return t('tool.confirm.editSkillBoth', { name: normalizedName });
+		}
+		return hasDescription
+			? t('tool.confirm.editSkillDescription', { name: normalizedName })
+			: t('tool.confirm.editSkillContent', { name: normalizedName });
 	};
 
 	getProgressDescription(params: { name: string }): string {

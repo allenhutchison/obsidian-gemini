@@ -1,21 +1,19 @@
 import type ObsidianGemini from '../main';
 import { App, Setting } from 'obsidian';
 import { createCollapsibleSection } from './settings-helpers';
+import { t } from '../i18n';
 
 export function renderAutomationSettings(containerEl: HTMLElement, plugin: ObsidianGemini, app: App): void {
-	const sectionEl = createCollapsibleSection(plugin, containerEl, 'Automation', 'automation', {
-		description:
-			'Run AI agent tasks automatically — on a schedule, or in response to vault events (file created/modified/deleted/renamed).',
+	const sectionEl = createCollapsibleSection(plugin, containerEl, t('settings.automation.sectionTitle'), 'automation', {
+		description: t('settings.automation.sectionDesc'),
 	});
 
 	new Setting(sectionEl)
-		.setName('Manage scheduled tasks')
-		.setDesc(
-			'Create, edit, enable/disable, and delete scheduled AI tasks. Tasks run automatically in the background while Obsidian is open.'
-		)
+		.setName(t('settings.automation.manageScheduledTasksName'))
+		.setDesc(t('settings.automation.manageScheduledTasksDesc'))
 		.addButton((button) =>
 			button
-				.setButtonText('Open Scheduler')
+				.setButtonText(t('settings.automation.openSchedulerButton'))
 				.setCta()
 				.onClick(async () => {
 					const { SchedulerManagementModal } = await import('./scheduler-management-modal');
@@ -23,17 +21,15 @@ export function renderAutomationSettings(containerEl: HTMLElement, plugin: Obsid
 				})
 		)
 		.addButton((button) =>
-			button.setButtonText('New task').onClick(async () => {
+			button.setButtonText(t('settings.automation.newTaskButton')).onClick(async () => {
 				const { SchedulerManagementModal } = await import('./scheduler-management-modal');
 				new SchedulerManagementModal(app, plugin, 'create').open();
 			})
 		);
 
 	new Setting(sectionEl)
-		.setName('Auto-run missed scheduled tasks on startup')
-		.setDesc(
-			'When enabled, tasks that were missed while Obsidian was closed (and have "Run if missed" set) are submitted automatically on startup without showing the approval modal.'
-		)
+		.setName(t('settings.automation.autoRunCatchUpName'))
+		.setDesc(t('settings.automation.autoRunCatchUpDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.autoRunCatchUp).onChange(async (value) => {
 				plugin.settings.autoRunCatchUp = value;
@@ -42,10 +38,8 @@ export function renderAutomationSettings(containerEl: HTMLElement, plugin: Obsid
 		);
 
 	new Setting(sectionEl)
-		.setName('Enable lifecycle hooks')
-		.setDesc(
-			'Subscribe to vault events and run AI agent tasks in response. Off by default — vault events fire continuously, and a broadly-scoped hook can drain API quota quickly.'
-		)
+		.setName(t('settings.automation.enableHooksName'))
+		.setDesc(t('settings.automation.enableHooksDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.hooksEnabled).onChange(async (value) => {
 				plugin.settings.hooksEnabled = value;
@@ -54,13 +48,11 @@ export function renderAutomationSettings(containerEl: HTMLElement, plugin: Obsid
 		);
 
 	new Setting(sectionEl)
-		.setName('Manage lifecycle hooks')
-		.setDesc(
-			'Create, edit, enable/disable, and delete hooks. Each hook fires when a matching vault event occurs and runs as a headless agent session.'
-		)
+		.setName(t('settings.automation.manageHooksName'))
+		.setDesc(t('settings.automation.manageHooksDesc'))
 		.addButton((button) =>
 			button
-				.setButtonText('Open Hook Manager')
+				.setButtonText(t('settings.automation.openHookManagerButton'))
 				.setCta()
 				.onClick(async () => {
 					const { HookManagementModal } = await import('./hook-management-modal');
@@ -68,7 +60,7 @@ export function renderAutomationSettings(containerEl: HTMLElement, plugin: Obsid
 				})
 		)
 		.addButton((button) =>
-			button.setButtonText('New hook').onClick(async () => {
+			button.setButtonText(t('settings.automation.newHookButton')).onClick(async () => {
 				const { HookManagementModal } = await import('./hook-management-modal');
 				new HookManagementModal(app, plugin, 'create').open();
 			})

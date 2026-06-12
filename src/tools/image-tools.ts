@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 /**
  * Tool to generate images from text prompts using Gemini's image generation API
@@ -40,9 +41,9 @@ export class GenerateImageTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: any) => {
-		let message = `Generate an image with prompt: "${params.prompt}"?\n\nThis will create a new image file in your vault.`;
+		let message = t('tool.confirm.generateImage', { prompt: params.prompt });
 		if (params.output_path) {
-			message += `\n\nDestination: ${params.output_path}`;
+			message += `\n\n${t('tool.confirm.generateImageDestination', { path: params.output_path })}`;
 		}
 		return message;
 	};

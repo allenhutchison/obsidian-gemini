@@ -1,6 +1,7 @@
 import { Modal, App, TFile, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import type ObsidianGemini from '../../main';
+import { t } from '../../i18n';
 
 /** Filter value representing all sessions regardless of project. */
 const FILTER_ALL = 'all';
@@ -41,7 +42,7 @@ export class SessionListModal extends Modal {
 		this.modalEl.addClass('mod-gemini-session-modal');
 
 		// Title
-		contentEl.createEl('h2', { text: 'Agent Sessions' });
+		contentEl.createEl('h2', { text: t('agent.sessionList.title') });
 
 		// Load sessions and build project map
 		await this.loadSessions();
@@ -59,7 +60,7 @@ export class SessionListModal extends Modal {
 
 		if (this.sessions.length === 0) {
 			listContainer.createEl('p', {
-				text: 'No agent sessions found',
+				text: t('agent.sessionList.empty'),
 				cls: 'gemini-agent-empty-state',
 			});
 		} else {
@@ -69,7 +70,7 @@ export class SessionListModal extends Modal {
 		// Add create new session button at the bottom
 		const footer = contentEl.createDiv({ cls: 'modal-button-container' });
 		const newSessionBtn = footer.createEl('button', {
-			text: 'New Session',
+			text: t('agent.menu.newSession'),
 			cls: 'mod-cta',
 		});
 		newSessionBtn.addEventListener('click', async () => {
@@ -116,7 +117,7 @@ export class SessionListModal extends Modal {
 			});
 		} catch (error) {
 			this.plugin.logger.error('Failed to load sessions:', error);
-			new Notice('Failed to load agent sessions');
+			new Notice(t('agent.sessionList.loadFailed'));
 		}
 	}
 
@@ -130,16 +131,16 @@ export class SessionListModal extends Modal {
 
 	private renderFilterBar(container: HTMLElement) {
 		const bar = container.createDiv({ cls: 'gemini-session-filter-bar' });
-		const label = bar.createEl('label', { text: 'Project: ' });
+		const label = bar.createEl('label', { text: t('agent.sessionList.filterLabel') + ' ' });
 		label.setAttribute('for', 'gemini-session-project-filter');
 
 		const select = bar.createEl('select', { cls: 'dropdown' });
 		select.id = 'gemini-session-project-filter';
 
 		// "All Projects" option
-		select.createEl('option', { text: 'All Projects', value: FILTER_ALL });
+		select.createEl('option', { text: t('agent.sessionList.filterAll'), value: FILTER_ALL });
 		// "No Project" option
-		select.createEl('option', { text: 'No Project', value: FILTER_NONE });
+		select.createEl('option', { text: t('agent.project.none'), value: FILTER_NONE });
 
 		// One option per project that has at least one session
 		const projectPathsInSessions = new Set(this.sessions.map((s) => s.projectPath).filter(Boolean) as string[]);
@@ -173,7 +174,7 @@ export class SessionListModal extends Modal {
 
 		if (filtered.length === 0) {
 			container.createEl('p', {
-				text: 'No sessions match the selected filter',
+				text: t('agent.sessionList.noFilterMatch'),
 				cls: 'gemini-agent-empty-state',
 			});
 			return;
@@ -204,7 +205,8 @@ export class SessionListModal extends Modal {
 
 			// Show file count and last modified
 			const fileCount = session.context.contextFiles.length;
-			const fileText = fileCount === 1 ? '1 file' : `${fileCount} files`;
+			const fileText =
+				fileCount === 1 ? t('agent.sessionList.fileCountOne') : t('agent.sessionList.fileCount', { count: fileCount });
 
 			const file = this.app.vault.getAbstractFileByPath(session.historyPath);
 			if (file && file instanceof TFile) {
@@ -222,7 +224,7 @@ export class SessionListModal extends Modal {
 			// Open button
 			const openBtn = actionsDiv.createEl('button', {
 				cls: 'gemini-session-action-btn',
-				title: 'Open session',
+				title: t('agent.sessionList.openTooltip'),
 			});
 			setIcon(openBtn, 'arrow-right');
 
@@ -230,14 +232,14 @@ export class SessionListModal extends Modal {
 			if (this.callbacks.onDelete) {
 				const deleteBtn = actionsDiv.createEl('button', {
 					cls: 'gemini-session-action-btn delete',
-					title: 'Delete session',
+					title: t('agent.sessionList.deleteTooltip'),
 				});
 				setIcon(deleteBtn, 'trash-2');
 
 				deleteBtn.addEventListener('click', async (e) => {
 					e.stopPropagation();
 					// eslint-disable-next-line no-alert -- TODO: replace with Obsidian confirmation Modal
-					if (confirm(`Delete session "${session.title}"?`)) {
+					if (confirm(t('agent.sessionList.deleteConfirm', { title: session.title }))) {
 						await this.deleteSession(session);
 					}
 				});
@@ -256,7 +258,7 @@ export class SessionListModal extends Modal {
 			const file = this.app.vault.getAbstractFileByPath(session.historyPath);
 			if (file) {
 				await this.app.vault.delete(file);
-				new Notice(`Session "${session.title}" deleted`);
+				new Notice(t('agent.sessionList.deleted', { title: session.title }));
 
 				// Reload the list and refresh filter state
 				const { contentEl } = this;
@@ -294,7 +296,7 @@ export class SessionListModal extends Modal {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to delete session:', error);
-			new Notice('Failed to delete session');
+			new Notice(t('agent.sessionList.deleteFailed'));
 		}
 	}
 

@@ -1,6 +1,7 @@
 import { App, SuggestModal } from 'obsidian';
 import { PromptInfo, CustomPrompt } from '../prompts/types';
 import type ObsidianGemini from '../main';
+import { t } from '../i18n';
 
 /**
  * Modal for selecting an explain prompt from available selection-action prompts.
@@ -16,7 +17,7 @@ export class ExplainPromptSelectionModal extends SuggestModal<PromptInfo> {
 		this.plugin = plugin;
 		this.prompts = prompts;
 		this.onSelect = onSelect;
-		this.setPlaceholder('Select a prompt to explain the selection...');
+		this.setPlaceholder(t('explainPrompt.placeholder'));
 	}
 
 	getSuggestions(query: string): PromptInfo[] {

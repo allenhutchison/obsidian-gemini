@@ -2,6 +2,7 @@ import { setIcon, setTooltip } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { BackgroundTaskManager } from './background-task-manager';
 import type { RagStatusProvider } from './rag-status-bar';
+import { t } from '../i18n';
 
 /**
  * A single coordinated status bar item that reflects both RAG indexing state
@@ -112,8 +113,16 @@ export class BackgroundStatusBar {
 			// Background tasks take visual priority
 			this.statusBarItem.addClass('gemini-bg-active');
 			setIcon(iconEl, 'loader');
-			textEl.setText(runningCount > 1 ? `${runningCount} tasks` : '1 task');
-			tooltipParts.push(`${runningCount} background task${runningCount > 1 ? 's' : ''} running — click to view`);
+			textEl.setText(
+				runningCount > 1
+					? t('statusbar.background.taskCount', { count: runningCount })
+					: t('statusbar.background.oneTask')
+			);
+			tooltipParts.push(
+				runningCount > 1
+					? t('statusbar.background.runningMany', { count: runningCount })
+					: t('statusbar.background.runningOne')
+			);
 		} else if (ragStatus === 'disabled' && this._pendingCatchUpCount > 0) {
 			// Catch-up only — no tasks running and RAG disabled, but pending approvals.
 			// Use a clock icon so the badge isn't sitting next to an unrelated database icon.
@@ -138,7 +147,9 @@ export class BackgroundStatusBar {
 
 		if (this._pendingCatchUpCount > 0) {
 			tooltipParts.push(
-				`${this._pendingCatchUpCount} missed scheduled run${this._pendingCatchUpCount > 1 ? 's' : ''} — click to review`
+				this._pendingCatchUpCount > 1
+					? t('statusbar.background.missedMany', { count: this._pendingCatchUpCount })
+					: t('statusbar.background.missedOne')
 			);
 		}
 
@@ -146,14 +157,14 @@ export class BackgroundStatusBar {
 		if (ragStatus === 'indexing') {
 			const p = this.ragProvider!.getIndexingProgress();
 			const pctLabel = p.total > 0 ? ` (${p.current}/${p.total})` : '';
-			tooltipParts.push(`RAG: indexing${pctLabel}`);
+			tooltipParts.push(t('statusbar.background.ragIndexing', { progress: pctLabel }));
 		} else if (ragStatus === 'paused') {
-			tooltipParts.push(`RAG: paused (${this.ragProvider!.getIndexedFileCount()} files indexed)`);
+			tooltipParts.push(t('statusbar.background.ragPaused', { count: this.ragProvider!.getIndexedFileCount() }));
 		} else if (ragStatus === 'error') {
-			tooltipParts.push('RAG: error — check settings');
+			tooltipParts.push(t('statusbar.background.ragError'));
 		} else if (ragStatus === 'rate_limited') {
 			const secs = this.ragProvider!.getRateLimitRemainingSeconds();
-			tooltipParts.push(`RAG: rate limited (${secs}s)`);
+			tooltipParts.push(t('statusbar.background.ragRateLimited', { seconds: secs }));
 		}
 
 		setTooltip(this.statusBarItem, tooltipParts.join(' · '), { placement: 'top' });

@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+import { t } from '../i18n';
 
 export interface ResumeInfo {
 	filesIndexed: number;
@@ -23,26 +24,26 @@ export class RagResumeModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Resume Indexing?' });
+		contentEl.createEl('h2', { text: t('ragResume.title') });
 
 		contentEl.createEl('p', {
-			text: 'A previous indexing operation was interrupted. Would you like to resume or start fresh?',
+			text: t('ragResume.body'),
 		});
 
 		// Stats section
 		const statsEl = contentEl.createEl('div', { cls: 'rag-resume-stats' });
 
 		const filesRow = statsEl.createDiv({ cls: 'rag-resume-stat-row' });
-		filesRow.createSpan({ cls: 'rag-resume-stat-label', text: 'Files indexed:' });
+		filesRow.createSpan({ cls: 'rag-resume-stat-label', text: t('ragResume.filesIndexedLabel') });
 		filesRow.createSpan({ cls: 'rag-resume-stat-value', text: `${this.resumeInfo.filesIndexed}` });
 
 		const timeRow = statsEl.createDiv({ cls: 'rag-resume-stat-row' });
-		timeRow.createSpan({ cls: 'rag-resume-stat-label', text: 'Interrupted:' });
+		timeRow.createSpan({ cls: 'rag-resume-stat-label', text: t('ragResume.interruptedLabel') });
 		timeRow.createSpan({ cls: 'rag-resume-stat-value', text: this.formatDate(this.resumeInfo.interruptedAt) });
 
 		if (this.resumeInfo.lastFile) {
 			const fileRow = statsEl.createDiv({ cls: 'rag-resume-stat-row' });
-			fileRow.createSpan({ cls: 'rag-resume-stat-label', text: 'Last file:' });
+			fileRow.createSpan({ cls: 'rag-resume-stat-label', text: t('ragResume.lastFileLabel') });
 			const fileValue = fileRow.createSpan({ cls: 'rag-resume-stat-value rag-resume-file' });
 			fileValue.setText(this.resumeInfo.lastFile);
 		}
@@ -50,7 +51,7 @@ export class RagResumeModal extends Modal {
 		// Info about resume behavior
 		const noteEl = contentEl.createEl('div', { cls: 'rag-resume-note' });
 		noteEl.createEl('p', {
-			text: 'Resume will continue from where you left off, skipping already-indexed files.',
+			text: t('ragResume.resumeNote'),
 			cls: 'setting-item-description',
 		});
 
@@ -58,7 +59,7 @@ export class RagResumeModal extends Modal {
 		new Setting(contentEl)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Resume')
+					.setButtonText(t('ragResume.resumeButton'))
 					.setCta()
 					.onClick(() => {
 						this.close();
@@ -67,7 +68,7 @@ export class RagResumeModal extends Modal {
 			)
 			.addButton((btn) =>
 				btn
-					.setButtonText('Start Fresh')
+					.setButtonText(t('ragResume.startFreshButton'))
 					.setWarning()
 					.onClick(() => {
 						this.close();
@@ -85,13 +86,19 @@ export class RagResumeModal extends Modal {
 		const diffDays = Math.floor(diffMs / 86400000);
 
 		if (diffMins < 1) {
-			return 'Just now';
+			return t('ragResume.justNow');
 		} else if (diffMins < 60) {
-			return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+			return diffMins === 1
+				? t('ragResume.minuteAgoSingular', { count: diffMins })
+				: t('ragResume.minutesAgoPlural', { count: diffMins });
 		} else if (diffHours < 24) {
-			return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+			return diffHours === 1
+				? t('ragResume.hourAgoSingular', { count: diffHours })
+				: t('ragResume.hoursAgoPlural', { count: diffHours });
 		} else if (diffDays < 7) {
-			return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+			return diffDays === 1
+				? t('ragResume.dayAgoSingular', { count: diffDays })
+				: t('ragResume.daysAgoPlural', { count: diffDays });
 		} else {
 			return date.toLocaleDateString();
 		}

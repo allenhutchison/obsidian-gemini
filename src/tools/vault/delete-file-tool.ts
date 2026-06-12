@@ -4,6 +4,7 @@ import { ToolClassification } from '../../types/tool-policy';
 import { normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 import { resolvePathToFileOrFolder } from './utils';
+import { t } from '../../i18n';
 
 /**
  * Delete a file or folder
@@ -29,7 +30,7 @@ export class DeleteFileTool implements Tool {
 	};
 
 	confirmationMessage = (params: { path: string }) => {
-		return `Delete file or folder: ${params.path}\n\nThis action cannot be undone.`;
+		return t('tool.confirm.deleteFile', { path: params.path });
 	};
 
 	getProgressDescription(params: { path: string }): string {

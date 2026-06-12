@@ -39,6 +39,7 @@ vi.mock('obsidian', () => {
 	};
 
 	return {
+		getLanguage: () => 'en',
 		Modal: class Modal {
 			app: any;
 			contentEl: any;
@@ -137,7 +138,7 @@ describe('UpdateNotificationModal', () => {
 
 			const button = modal.contentEl.querySelector('button.mod-cta');
 			expect(button).toBeDefined();
-			expect(button?.textContent).toContain('Get Started');
+			expect(button?.textContent).toContain('Get started');
 		});
 	});
 
@@ -155,7 +156,7 @@ describe('UpdateNotificationModal', () => {
 
 			const header = modal.contentEl.querySelector('h2');
 			expect(header).toBeDefined();
-			expect(header?.textContent).toContain('Gemini Scribe Updated');
+			expect(header?.textContent).toContain('Gemini Scribe updated');
 		});
 
 		it('should display correct version number', () => {
@@ -248,7 +249,7 @@ describe('UpdateNotificationModal', () => {
 
 			// Should fall back to generic message
 			const header = modal.contentEl.querySelector('h2');
-			expect(header?.textContent).toContain('Gemini Scribe Updated');
+			expect(header?.textContent).toContain('Gemini Scribe updated');
 		});
 
 		it('should handle version with v prefix', () => {

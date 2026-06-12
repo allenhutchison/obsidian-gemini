@@ -2,6 +2,7 @@ import { App, Modal, Setting, DropdownComponent, SliderComponent, TFile, TFolder
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiModel } from '../../models';
 import type ObsidianGemini from '../../main';
+import { t } from '../../i18n';
 
 export class SessionSettingsModal extends Modal {
 	private plugin: ObsidianGemini;
@@ -27,13 +28,15 @@ export class SessionSettingsModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Session Settings' });
+		contentEl.createEl('h2', { text: t('agent.menu.sessionSettings') });
 
 		// Get available models first
 		const models = await this.plugin.getModelManager().getAvailableModels();
 
 		// Model selection
-		const modelSetting = new Setting(contentEl).setName('Model').setDesc('Select the AI model for this session');
+		const modelSetting = new Setting(contentEl)
+			.setName(t('agent.sessionSettings.model'))
+			.setDesc(t('agent.sessionSettings.modelDesc'));
 
 		let modelDropdown: DropdownComponent;
 		modelSetting
@@ -41,7 +44,7 @@ export class SessionSettingsModal extends Modal {
 				modelDropdown = dropdown;
 
 				// Add default option with a special value
-				dropdown.addOption('__default__', 'Use default');
+				dropdown.addOption('__default__', t('agent.sessionSettings.useDefault'));
 
 				// Add available models
 				models.forEach((model: GeminiModel) => {
@@ -64,7 +67,7 @@ export class SessionSettingsModal extends Modal {
 			.addExtraButton((button) => {
 				button
 					.setIcon('reset')
-					.setTooltip('Reset to default')
+					.setTooltip(t('agent.sessionSettings.resetToDefault'))
 					.onClick(async () => {
 						if (modelDropdown) {
 							// Update the dropdown value
@@ -78,8 +81,8 @@ export class SessionSettingsModal extends Modal {
 
 		// Temperature slider
 		new Setting(contentEl)
-			.setName('Temperature')
-			.setDesc('Controls randomness (0 = deterministic, 2 = very creative)')
+			.setName(t('agent.sessionSettings.temperature'))
+			.setDesc(t('agent.sessionSettings.temperatureDesc'))
 			.addSlider((slider: SliderComponent) => {
 				this.tempSlider = slider;
 				const defaultTemp = this.plugin.settings.temperature;
@@ -111,7 +114,7 @@ export class SessionSettingsModal extends Modal {
 			.addExtraButton((button) => {
 				button
 					.setIcon('reset')
-					.setTooltip('Reset to default')
+					.setTooltip(t('agent.sessionSettings.resetToDefault'))
 					.onClick(async () => {
 						if (this.tempSlider) {
 							// Set to default value - this will trigger onChange
@@ -126,8 +129,8 @@ export class SessionSettingsModal extends Modal {
 
 		// Top-P slider
 		new Setting(contentEl)
-			.setName('Top-P')
-			.setDesc('Nucleus sampling threshold (0 = only top token, 1 = all tokens)')
+			.setName(t('agent.sessionSettings.topP'))
+			.setDesc(t('agent.sessionSettings.topPDesc'))
 			.addSlider((slider: SliderComponent) => {
 				this.topPSlider = slider;
 				const defaultTopP = this.plugin.settings.topP;
@@ -159,7 +162,7 @@ export class SessionSettingsModal extends Modal {
 			.addExtraButton((button) => {
 				button
 					.setIcon('reset')
-					.setTooltip('Reset to default')
+					.setTooltip(t('agent.sessionSettings.resetToDefault'))
 					.onClick(async () => {
 						if (this.topPSlider) {
 							// Set to default value - this will trigger onChange
@@ -174,8 +177,8 @@ export class SessionSettingsModal extends Modal {
 
 		// Prompt template selection
 		const promptSetting = new Setting(contentEl)
-			.setName('Prompt Template')
-			.setDesc('Select a custom prompt template for this session');
+			.setName(t('agent.sessionSettings.promptTemplate'))
+			.setDesc(t('agent.sessionSettings.promptTemplateDesc'));
 
 		let promptDropdown: DropdownComponent;
 		promptSetting
@@ -183,7 +186,7 @@ export class SessionSettingsModal extends Modal {
 				promptDropdown = dropdown;
 
 				// Add default option with special value
-				dropdown.addOption('__default__', 'Use default prompt');
+				dropdown.addOption('__default__', t('agent.sessionSettings.useDefaultPrompt'));
 
 				// Get prompt files
 				const promptsFolder = `${this.plugin.settings.historyFolder}/Prompts`;
@@ -216,7 +219,7 @@ export class SessionSettingsModal extends Modal {
 			.addExtraButton((button) => {
 				button
 					.setIcon('reset')
-					.setTooltip('Reset to default')
+					.setTooltip(t('agent.sessionSettings.resetToDefault'))
 					.onClick(async () => {
 						if (promptDropdown) {
 							// Update the dropdown value
@@ -230,7 +233,7 @@ export class SessionSettingsModal extends Modal {
 
 		// Info section
 		contentEl.createDiv({
-			text: 'These settings override the global defaults for this session only. Changes are saved automatically.',
+			text: t('agent.sessionSettings.info'),
 			cls: 'setting-item-description',
 		});
 	}

@@ -1,5 +1,6 @@
 import { App, FuzzySuggestModal } from 'obsidian';
 import type { SkillSummary } from '../../services/skill-manager';
+import { t } from '../../i18n';
 
 export class SkillMentionModal extends FuzzySuggestModal<SkillSummary> {
 	private onSelect: (skill: SkillSummary) => void;
@@ -9,7 +10,7 @@ export class SkillMentionModal extends FuzzySuggestModal<SkillSummary> {
 		super(app);
 		this.onSelect = onSelect;
 		this.skills = skills;
-		this.setPlaceholder('Select a skill to activate...');
+		this.setPlaceholder(t('agent.skillMention.placeholder'));
 	}
 
 	getItems(): SkillSummary[] {

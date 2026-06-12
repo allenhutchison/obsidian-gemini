@@ -1,5 +1,6 @@
 import { TFile, Platform, Notice } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { t } from '../i18n';
 import { AgentEventBus } from '../agent/agent-event-bus';
 import { ContextTrackingSubscriber } from '../subscribers/context-tracking-subscriber';
 import { AccessedFilesSubscriber } from '../subscribers/accessed-files-subscriber';
@@ -323,7 +324,7 @@ export class LifecycleService {
 				}
 			} catch (error) {
 				plugin.logger.error('Failed to initialize RAG indexing:', error);
-				new Notice('Failed to initialize vault search index. Check console for details.');
+				new Notice(t('notice.rag.initFailed'));
 
 				if (plugin.ragIndexing) {
 					await plugin.ragIndexing.destroy().catch(() => {});

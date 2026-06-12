@@ -5,6 +5,7 @@ import { ToolClassification } from '../types/tool-policy';
 import { ResearchScope } from '../services/deep-research';
 import { formatLocalDate } from '../utils/format-utils';
 import { sanitizeFileName, ensureFolderExists } from '../utils/file-utils';
+import { t } from '../i18n';
 
 /**
  * Deep Research Tool that conducts comprehensive research using Google's Deep Research API
@@ -56,13 +57,13 @@ export class DeepResearchTool implements Tool {
 	};
 
 	confirmationMessage = (params: { topic: string; scope?: ResearchScope }) => {
-		const scopeText =
-			params.scope === 'vault_only'
-				? ' using vault notes only'
-				: params.scope === 'web_only'
-					? ' using web search only'
-					: ' using vault and web';
-		return `Conduct deep research on: "${params.topic}"${scopeText}`;
+		if (params.scope === 'vault_only') {
+			return t('tool.confirm.deepResearchVaultOnly', { topic: params.topic });
+		}
+		if (params.scope === 'web_only') {
+			return t('tool.confirm.deepResearchWebOnly', { topic: params.topic });
+		}
+		return t('tool.confirm.deepResearchVaultAndWeb', { topic: params.topic });
 	};
 
 	getProgressDescription(params: { topic: string; scope?: ResearchScope }): string {

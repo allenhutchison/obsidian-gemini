@@ -43,6 +43,7 @@ import { BackgroundStatusBar } from './services/background-status-bar';
 import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
 import { getErrorMessage, getRawErrorMessage } from './utils/error-utils';
+import { t } from './i18n';
 
 export interface RagIndexingSettings {
 	enabled: boolean;
@@ -302,23 +303,14 @@ export default class ObsidianGemini extends Plugin {
 			// time the user invokes a guarded command, so reuse the error here
 			// instead of always defaulting to "make sure the daemon is running".
 			if (this.lastInitError) {
-				return `Gemini Scribe failed to initialize: ${this.lastInitError}. Open Settings \u2192 Gemini Scribe to fix.`;
+				return t('notice.main.initFailedFix', { error: this.lastInitError });
 			}
-			return (
-				`Could not reach Ollama at ${this.settings.ollamaBaseUrl}. ` +
-				'Make sure the Ollama daemon is running and the base URL is correct in Settings \u2192 Gemini Scribe.'
-			);
+			return t('notice.main.ollamaUnreachable', { url: this.settings.ollamaBaseUrl });
 		}
 		if (!this.settings.apiKeySecretName) {
-			return (
-				'No Gemini API key configured. Open Settings \u2192 Gemini Scribe to add one. ' +
-				'Get a free key at aistudio.google.com/apikey'
-			);
+			return t('notice.main.noApiKey');
 		}
-		return (
-			'Could not retrieve your API key from secure storage. ' +
-			'Try re-entering it in Settings \u2192 Gemini Scribe \u2192 API Key.'
-		);
+		return t('notice.main.apiKeyRetrieveFailed');
 	}
 
 	/**
@@ -330,7 +322,7 @@ export default class ObsidianGemini extends Plugin {
 			return this.getApiKeyErrorMessage();
 		}
 		const detail = getRawErrorMessage(error);
-		return `Gemini Scribe failed to initialize: ${detail}. Check the console for details.`;
+		return t('notice.main.initFailedConsole', { error: detail });
 	}
 
 	/**
@@ -339,7 +331,7 @@ export default class ObsidianGemini extends Plugin {
 	 */
 	private registerUIAndCommands() {
 		// Add ribbon icon
-		this.ribbonIcon = this.addRibbonIcon('sparkles', 'Gemini Scribe: Agent Mode', () => {
+		this.ribbonIcon = this.addRibbonIcon('sparkles', t('ribbon.agentMode'), () => {
 			if (!this.checkInitialized()) return;
 			this.activateAgentView();
 		});
@@ -352,7 +344,7 @@ export default class ObsidianGemini extends Plugin {
 		// Add command
 		this.addCommand({
 			id: 'gemini-scribe-open-agent-view',
-			name: 'Open Gemini Chat',
+			name: t('command.openAgentView'),
 			callback: () => {
 				if (!this.checkInitialized()) return;
 				this.activateAgentView();
@@ -362,7 +354,7 @@ export default class ObsidianGemini extends Plugin {
 		// Refresh remote Gemini model list (bypass 24h cache)
 		this.addCommand({
 			id: 'gemini-scribe-refresh-model-list',
-			name: 'Refresh model list',
+			name: t('command.refreshModelList'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				await refreshGeminiModelList(this);
@@ -372,7 +364,7 @@ export default class ObsidianGemini extends Plugin {
 		// View background tasks
 		this.addCommand({
 			id: 'gemini-scribe-view-background-tasks',
-			name: 'View Background Tasks',
+			name: t('command.viewBackgroundTasks'),
 			callback: async () => {
 				const { BackgroundTasksModal } = await import('./ui/background-tasks-modal');
 				// Command name is unambiguous, so always land on the Tasks tab.
@@ -384,7 +376,7 @@ export default class ObsidianGemini extends Plugin {
 		// Open scheduler management modal
 		this.addCommand({
 			id: 'gemini-scribe-open-scheduler',
-			name: 'Open Scheduler',
+			name: t('command.openScheduler'),
 			callback: async () => {
 				const { SchedulerManagementModal } = await import('./ui/scheduler-management-modal');
 				new SchedulerManagementModal(this.app, this, 'list').open();
@@ -394,7 +386,7 @@ export default class ObsidianGemini extends Plugin {
 		// New scheduled task — jump straight to create form
 		this.addCommand({
 			id: 'gemini-scribe-new-scheduled-task',
-			name: 'New Scheduled Task',
+			name: t('command.newScheduledTask'),
 			callback: async () => {
 				const { SchedulerManagementModal } = await import('./ui/scheduler-management-modal');
 				new SchedulerManagementModal(this.app, this, 'create').open();
@@ -404,7 +396,7 @@ export default class ObsidianGemini extends Plugin {
 		// Open lifecycle hook management modal
 		this.addCommand({
 			id: 'gemini-scribe-open-hook-manager',
-			name: 'Open Hook Manager',
+			name: t('command.openHookManager'),
 			callback: async () => {
 				const { HookManagementModal } = await import('./ui/hook-management-modal');
 				new HookManagementModal(this.app, this, 'list').open();
@@ -414,7 +406,7 @@ export default class ObsidianGemini extends Plugin {
 		// New lifecycle hook — jump straight to create form
 		this.addCommand({
 			id: 'gemini-scribe-new-hook',
-			name: 'New Lifecycle Hook',
+			name: t('command.newHook'),
 			callback: async () => {
 				const { HookManagementModal } = await import('./ui/hook-management-modal');
 				new HookManagementModal(this.app, this, 'create').open();
@@ -424,7 +416,7 @@ export default class ObsidianGemini extends Plugin {
 		// View scheduled tasks (read-only legacy — kept for backwards compatibility)
 		this.addCommand({
 			id: 'gemini-scribe-view-scheduled-tasks',
-			name: 'View Scheduled Tasks',
+			name: t('command.viewScheduledTasks'),
 			callback: async () => {
 				const { ScheduledTasksModal } = await import('./ui/scheduled-tasks-modal');
 				new ScheduledTasksModal(this.app, this).open();
@@ -434,7 +426,7 @@ export default class ObsidianGemini extends Plugin {
 		// Switch project for the current agent session
 		this.addCommand({
 			id: 'gemini-scribe-switch-project',
-			name: 'Switch Project',
+			name: t('command.switchProject'),
 			callback: () => {
 				if (!this.checkInitialized()) return;
 				this.activateAgentView();
@@ -446,7 +438,7 @@ export default class ObsidianGemini extends Plugin {
 		// Create a new project
 		this.addCommand({
 			id: 'gemini-scribe-create-project',
-			name: 'Create Project',
+			name: t('command.createProject'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				const folder = this.app.workspace.getActiveFile()?.parent?.path || '';
@@ -454,10 +446,10 @@ export default class ObsidianGemini extends Plugin {
 				try {
 					const file = await this.projectManager.createProject(folder, name);
 					await this.app.workspace.openLinkText(file.path, '', true);
-					new Notice(`Created project: ${file.path}`);
+					new Notice(t('notice.main.projectCreated', { path: file.path }));
 				} catch (error) {
 					this.logger.error('Failed to create project:', error);
-					new Notice('Failed to create project');
+					new Notice(t('notice.main.projectCreateFailed'));
 				}
 			},
 		});
@@ -465,16 +457,16 @@ export default class ObsidianGemini extends Plugin {
 		// Convert current note to a project
 		this.addCommand({
 			id: 'gemini-scribe-convert-to-project',
-			name: 'Convert Note to Project',
+			name: t('command.convertToProject'),
 			editorCallback: async (_editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				if (!view.file) return;
 				try {
 					await this.projectManager.convertNoteToProject(view.file);
-					new Notice(`Converted to project: ${view.file.basename}`);
+					new Notice(t('notice.main.convertedToProject', { name: view.file.basename }));
 				} catch (error) {
 					this.logger.error('Failed to convert note to project:', error);
-					new Notice('Failed to convert note to project');
+					new Notice(t('notice.main.convertToProjectFailed'));
 				}
 			},
 		});
@@ -482,12 +474,12 @@ export default class ObsidianGemini extends Plugin {
 		// Open project settings (the project file itself)
 		this.addCommand({
 			id: 'gemini-scribe-open-project-settings',
-			name: 'Open Project Settings',
+			name: t('command.openProjectSettings'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				const projects = this.projectManager?.discoverProjects() ?? [];
 				if (projects.length === 0) {
-					new Notice('No projects found');
+					new Notice(t('notice.main.noProjectsFound'));
 					return;
 				}
 				// If only one project, open it directly
@@ -511,12 +503,12 @@ export default class ObsidianGemini extends Plugin {
 		// Resume the most recent session for a project
 		this.addCommand({
 			id: 'gemini-scribe-resume-project-session',
-			name: 'Resume Project Session',
+			name: t('command.resumeProjectSession'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				const projects = this.projectManager?.discoverProjects() ?? [];
 				if (projects.length === 0) {
-					new Notice('No projects found');
+					new Notice(t('notice.main.noProjectsFound'));
 					return;
 				}
 				const { ProjectPickerModal } = await import('./ui/agent-view/project-picker-modal');
@@ -533,7 +525,7 @@ export default class ObsidianGemini extends Plugin {
 								await this.agentView.loadSession(projectSession);
 							}
 						} else {
-							new Notice(`No sessions found for project: ${project.name}`);
+							new Notice(t('notice.main.noSessionsForProject', { name: project.name }));
 						}
 					},
 				});
@@ -544,16 +536,16 @@ export default class ObsidianGemini extends Plugin {
 		// Remove project status from a file
 		this.addCommand({
 			id: 'gemini-scribe-remove-project',
-			name: 'Remove Project',
+			name: t('command.removeProject'),
 			editorCallback: async (_editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				if (!view.file) return;
 				try {
 					await this.projectManager.removeProject(view.file);
-					new Notice(`Removed project status from: ${view.file.basename}`);
+					new Notice(t('notice.main.projectRemoved', { name: view.file.basename }));
 				} catch (error) {
 					this.logger.error('Failed to remove project:', error);
-					new Notice('Failed to remove project status');
+					new Notice(t('notice.main.projectRemoveFailed'));
 				}
 			},
 		});
@@ -561,13 +553,13 @@ export default class ObsidianGemini extends Plugin {
 		// Add rewrite command (works with selection or full file)
 		this.addCommand({
 			id: 'gemini-scribe-rewrite-selection',
-			name: 'Rewrite text with AI',
+			name: t('command.rewriteSelection'),
 			editorCallback: (editor: Editor, _view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				const selection = editor.getSelection();
 
 				if (!selection || selection.trim().length === 0) {
-					new Notice('Please select some text first');
+					new Notice(t('notice.main.selectTextFirst'));
 					return;
 				}
 
@@ -595,7 +587,7 @@ export default class ObsidianGemini extends Plugin {
 		// Add explain selection command
 		this.addCommand({
 			id: 'gemini-scribe-explain-selection',
-			name: 'Explain selection with AI',
+			name: t('command.explainSelection'),
 			editorCallback: async (editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				await this.selectionActionService.handleExplainSelection(editor, view.file);
@@ -605,7 +597,7 @@ export default class ObsidianGemini extends Plugin {
 		// Add ask about selection command
 		this.addCommand({
 			id: 'gemini-scribe-ask-selection',
-			name: 'Ask about selection',
+			name: t('command.askSelection'),
 			editorCallback: async (editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				if (!this.checkInitialized()) return;
 				await this.selectionActionService.handleAskAboutSelection(editor, view.file);
@@ -620,13 +612,13 @@ export default class ObsidianGemini extends Plugin {
 					// Rewrite with Gemini
 					menu.addItem((item) => {
 						item
-							.setTitle('Gemini Scribe: Rewrite Text...')
+							.setTitle(t('menu.main.rewriteText'))
 							.setIcon('bot-message-square')
 							.onClick(() => {
 								if (!this.checkInitialized()) return;
 
 								if (!selection || selection.trim().length === 0) {
-									new Notice('Please select some text first');
+									new Notice(t('notice.main.selectTextFirst'));
 									return;
 								}
 
@@ -646,7 +638,7 @@ export default class ObsidianGemini extends Plugin {
 					// Ask Question
 					menu.addItem((item) => {
 						item
-							.setTitle('Gemini Scribe: Ask Question...')
+							.setTitle(t('menu.main.askQuestion'))
 							.setIcon('message-circle')
 							.onClick(async () => {
 								if (!this.checkInitialized()) return;
@@ -658,7 +650,7 @@ export default class ObsidianGemini extends Plugin {
 					// Apply Prompt
 					menu.addItem((item) => {
 						item
-							.setTitle('Gemini Scribe: Apply Prompt...')
+							.setTitle(t('menu.main.applyPrompt'))
 							.setIcon('help-circle')
 							.onClick(async () => {
 								if (!this.checkInitialized()) return;
@@ -673,7 +665,7 @@ export default class ObsidianGemini extends Plugin {
 		// Add command to view release notes
 		this.addCommand({
 			id: 'gemini-scribe-view-release-notes',
-			name: 'View Release Notes',
+			name: t('command.viewReleaseNotes'),
 			callback: () => {
 				const modal = new UpdateNotificationModal(this.app, this.manifest.version);
 				modal.open();
@@ -686,15 +678,15 @@ export default class ObsidianGemini extends Plugin {
 		// `imageGeneration` service.
 		this.addCommand({
 			id: 'gemini-scribe-generate-image',
-			name: 'Generate Image',
+			name: t('command.generateImage'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				if (this.settings.provider === 'ollama') {
-					new Notice('Image generation is not available with the Ollama provider.');
+					new Notice(t('notice.main.imageGenOllama'));
 					return;
 				}
 				if (!this.imageGeneration) {
-					new Notice('Image generation is not available.');
+					new Notice(t('notice.main.imageGenUnavailable'));
 					return;
 				}
 				const prompt = await this.imageGeneration.promptForImageDescription();
@@ -710,60 +702,60 @@ export default class ObsidianGemini extends Plugin {
 		// Ollama path (RAG depends on Gemini's File Search Store in Phase 1).
 		this.addCommand({
 			id: 'gemini-scribe-rag-pause',
-			name: 'Pause RAG Sync',
+			name: t('command.ragPause'),
 			callback: () => {
 				if (this.settings.provider === 'ollama') {
-					new Notice('RAG sync is not available with the Ollama provider in Phase 1.');
+					new Notice(t('notice.main.ragOllamaUnavailable'));
 					return;
 				}
 				if (!this.ragIndexing) {
-					new Notice('RAG indexing is not enabled');
+					new Notice(t('notice.main.ragNotEnabled'));
 					return;
 				}
 				if (this.ragIndexing.isPaused()) {
-					new Notice('RAG sync is already paused');
+					new Notice(t('notice.main.ragAlreadyPaused'));
 					return;
 				}
 				if (this.ragIndexing.isIndexing()) {
-					new Notice('Cannot pause while indexing is in progress');
+					new Notice(t('notice.main.ragCannotPauseWhileIndexing'));
 					return;
 				}
 				this.ragIndexing.pause();
-				new Notice('RAG sync paused');
+				new Notice(t('notice.main.ragPaused'));
 			},
 		});
 
 		this.addCommand({
 			id: 'gemini-scribe-rag-resume',
-			name: 'Resume RAG Sync',
+			name: t('command.ragResume'),
 			callback: () => {
 				if (this.settings.provider === 'ollama') {
-					new Notice('RAG sync is not available with the Ollama provider in Phase 1.');
+					new Notice(t('notice.main.ragOllamaUnavailable'));
 					return;
 				}
 				if (!this.ragIndexing) {
-					new Notice('RAG indexing is not enabled');
+					new Notice(t('notice.main.ragNotEnabled'));
 					return;
 				}
 				if (!this.ragIndexing.isPaused()) {
-					new Notice('RAG sync is not paused');
+					new Notice(t('notice.main.ragNotPaused'));
 					return;
 				}
 				this.ragIndexing.resume();
-				new Notice('RAG sync resumed');
+				new Notice(t('notice.main.ragResumed'));
 			},
 		});
 
 		this.addCommand({
 			id: 'gemini-scribe-rag-status',
-			name: 'Show RAG Status',
+			name: t('command.ragStatus'),
 			callback: async () => {
 				if (this.settings.provider === 'ollama') {
-					new Notice('RAG sync is not available with the Ollama provider in Phase 1.');
+					new Notice(t('notice.main.ragOllamaUnavailable'));
 					return;
 				}
 				if (!this.ragIndexing) {
-					new Notice('RAG indexing is not enabled');
+					new Notice(t('notice.main.ragNotEnabled'));
 					return;
 				}
 				// Trigger the same modal as clicking the status bar
@@ -782,18 +774,18 @@ export default class ObsidianGemini extends Plugin {
 						// Reindex
 						const { RagProgressModal } = await import('./ui/rag-progress-modal');
 						const progressModal = new RagProgressModal(this.app, this.ragIndexing!, (result) => {
-							new Notice(`RAG Indexing complete: ${result.indexed} indexed, ${result.skipped} unchanged`);
+							new Notice(t('notice.main.ragIndexComplete', { indexed: result.indexed, skipped: result.skipped }));
 						});
 						progressModal.open();
 						this.ragIndexing!.indexVault().catch((error: unknown) => {
-							new Notice(`RAG Indexing failed: ${getErrorMessage(error)}`);
+							new Notice(t('notice.main.ragIndexFailed', { error: getErrorMessage(error) }));
 						});
 					},
 					async () => {
 						// Sync now
 						const synced = await this.ragIndexing!.syncPendingChanges();
 						if (synced) {
-							new Notice('RAG Index: Syncing pending changes...');
+							new Notice(t('notice.main.ragSyncingPending'));
 						}
 						return synced;
 					}
@@ -805,7 +797,7 @@ export default class ObsidianGemini extends Plugin {
 		// Agent session management commands
 		this.addCommand({
 			id: 'gemini-scribe-new-session',
-			name: 'New Agent Session',
+			name: t('command.newSession'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				// Check if the agent view already exists before activating it.
@@ -822,7 +814,7 @@ export default class ObsidianGemini extends Plugin {
 
 		this.addCommand({
 			id: 'gemini-scribe-browse-sessions',
-			name: 'Browse Agent Sessions',
+			name: t('command.browseSessions'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				await this.activateAgentView();
@@ -834,7 +826,7 @@ export default class ObsidianGemini extends Plugin {
 
 		this.addCommand({
 			id: 'gemini-scribe-link-project',
-			name: 'Link Project to Agent Session',
+			name: t('command.linkProject'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				await this.activateAgentView();
@@ -846,7 +838,7 @@ export default class ObsidianGemini extends Plugin {
 
 		this.addCommand({
 			id: 'gemini-scribe-session-settings',
-			name: 'Agent Session Settings',
+			name: t('command.sessionSettings'),
 			callback: async () => {
 				if (!this.checkInitialized()) return;
 				await this.activateAgentView();
@@ -989,7 +981,7 @@ export default class ObsidianGemini extends Plugin {
 				// If this is the first successful initialization, we may need to
 				// re-register UI components to make them functional
 				if (needsInit && !apiKeyChanged && !providerChanged) {
-					new Notice('Gemini Scribe is now ready to use!');
+					new Notice(t('notice.main.readyToUse'));
 				}
 			} catch (error) {
 				this.logger.error('Failed to re-initialize after settings change:', error);

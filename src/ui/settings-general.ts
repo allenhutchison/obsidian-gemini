@@ -3,6 +3,7 @@ import { App, Notice, Setting, SecretComponent, debounce } from 'obsidian';
 import { createAlwaysOpenSection, selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { getErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings';
 
 export async function renderGeneralSettings(
@@ -21,7 +22,7 @@ export async function renderGeneralSettings(
 				await plugin.saveSettings();
 			} catch (error) {
 				plugin.logger.error('Failed to save settings:', error);
-				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
 			}
 		},
 		300,
@@ -30,8 +31,8 @@ export async function renderGeneralSettings(
 
 	const generalEl = createAlwaysOpenSection(
 		containerEl,
-		'General',
-		'Set up your provider, API key, and the models the plugin uses. Required for the plugin to work.'
+		t('settings.general.sectionTitle'),
+		t('settings.general.sectionDesc')
 	);
 	await renderGeneralSection(generalEl, plugin, app, context, debouncedSave);
 }
@@ -49,23 +50,21 @@ async function renderGeneralSection(
 	debouncedSave: () => void
 ): Promise<void> {
 	new Setting(sectionEl)
-		.setName('Documentation')
-		.setDesc('View the complete plugin documentation and guides')
+		.setName(t('settings.general.documentationName'))
+		.setDesc(t('settings.general.documentationDesc'))
 		.addButton((button) =>
-			button.setButtonText('View Documentation').onClick(() => {
+			button.setButtonText(t('settings.general.viewDocumentationButton')).onClick(() => {
 				window.open('https://allenhutchison.github.io/obsidian-gemini/', '_blank');
 			})
 		);
 
 	new Setting(sectionEl)
-		.setName('Provider')
-		.setDesc(
-			'Choose the model provider. Gemini uses the Google cloud API. Ollama runs models locally on your machine; install from https://ollama.com and pull a model with `ollama pull <name>`.'
-		)
+		.setName(t('settings.general.providerName'))
+		.setDesc(t('settings.general.providerDesc'))
 		.addDropdown((dropdown) =>
 			dropdown
-				.addOption('gemini', 'Google Gemini (cloud)')
-				.addOption('ollama', 'Ollama (local)')
+				.addOption('gemini', t('settings.general.providerOptionGemini'))
+				.addOption('ollama', t('settings.general.providerOptionOllama'))
 				.setValue(plugin.settings.provider)
 				.onChange(async (value) => {
 					plugin.settings.provider = value as 'gemini' | 'ollama';
@@ -79,8 +78,8 @@ async function renderGeneralSection(
 
 	if (plugin.settings.provider === 'ollama') {
 		new Setting(sectionEl)
-			.setName('Ollama Base URL')
-			.setDesc('HTTP endpoint of your local Ollama daemon. Default is http://localhost:11434.')
+			.setName(t('settings.general.ollamaBaseUrlName'))
+			.setDesc(t('settings.general.ollamaBaseUrlDesc'))
 			.addText((text) =>
 				text
 					.setPlaceholder('http://localhost:11434')
@@ -92,34 +91,34 @@ async function renderGeneralSection(
 			);
 
 		new Setting(sectionEl)
-			.setName('Refresh model list')
-			.setDesc('Re-query the Ollama daemon for available models.')
+			.setName(t('settings.general.refreshModelListName'))
+			.setDesc(t('settings.general.refreshModelListOllamaDesc'))
 			.addButton((button) =>
-				button.setButtonText('Refresh').onClick(async () => {
+				button.setButtonText(t('settings.general.refreshButton')).onClick(async () => {
 					try {
 						const manager = plugin.getModelManager();
 						manager.getOllamaModelsService().invalidate();
 						const models = await manager.getAvailableModels({ forceRefresh: true });
-						new Notice(`Found ${models.length} Ollama model${models.length === 1 ? '' : 's'}.`);
+						new Notice(
+							models.length === 1
+								? t('settings.general.ollamaModelsFoundSingular', { count: models.length })
+								: t('settings.general.ollamaModelsFound', { count: models.length })
+						);
 						sectionEl.empty();
 						await renderGeneralSection(sectionEl, plugin, app, context, debouncedSave);
 					} catch (error) {
-						new Notice(`Failed to refresh: ${getErrorMessage(error)}`);
+						new Notice(t('settings.general.refreshFailedNotice', { error: getErrorMessage(error) }));
 					}
 				})
 			);
 
 		new Setting(sectionEl)
-			.setName('Local-only feature notice')
-			.setDesc(
-				'Google Search, URL Context (web fetch), Deep Research, image generation, and RAG indexing are unavailable when using Ollama. They rely on Gemini built-in services.'
-			);
+			.setName(t('settings.general.localOnlyNoticeName'))
+			.setDesc(t('settings.general.localOnlyNoticeDesc'));
 	} else {
 		new Setting(sectionEl)
-			.setName('API Key')
-			.setDesc(
-				'Link your Google Gemini API key. Click "Link..." and Obsidian will ask for a Secret Name (this is just a label — use any name like "gemini-api") and a Secret Value (paste your API key here). Get a key free at https://aistudio.google.com/apikey'
-			)
+			.setName(t('settings.general.apiKeyName'))
+			.setDesc(t('settings.general.apiKeyDesc'))
 			.addComponent((el) =>
 				new SecretComponent(app, el).setValue(plugin.settings.apiKeySecretName).onChange(async (secretName) => {
 					plugin.settings.apiKeySecretName = secretName;
@@ -128,12 +127,10 @@ async function renderGeneralSection(
 			);
 
 		new Setting(sectionEl)
-			.setName('Refresh model list')
-			.setDesc(
-				'Fetch the latest Gemini model list from GitHub now, bypassing the 24h cache. Use this after a new model is published.'
-			)
+			.setName(t('settings.general.refreshModelListName'))
+			.setDesc(t('settings.general.refreshModelListGeminiDesc'))
 			.addButton((button) =>
-				button.setButtonText('Refresh').onClick(async () => {
+				button.setButtonText(t('settings.general.refreshButton')).onClick(async () => {
 					await refreshGeminiModelList(plugin, async () => {
 						sectionEl.empty();
 						await renderGeneralSection(sectionEl, plugin, app, context, debouncedSave);
@@ -146,39 +143,37 @@ async function renderGeneralSection(
 		sectionEl,
 		plugin,
 		'chatModelName',
-		'Chat Model',
-		'Model used for agent chat sessions, selection rewriting, and web search tools.'
+		t('settings.general.chatModelName'),
+		t('settings.general.chatModelDesc')
 	);
 	await selectModelSetting(
 		sectionEl,
 		plugin,
 		'summaryModelName',
-		'Summary Model',
-		'Model used for the "Summarize Active File" command that adds summaries to frontmatter.'
+		t('settings.general.summaryModelName'),
+		t('settings.general.summaryModelDesc')
 	);
 	await selectModelSetting(
 		sectionEl,
 		plugin,
 		'completionsModelName',
-		'Completion Model',
-		'Model used for IDE-style inline completions as you type in notes.'
+		t('settings.general.completionModelName'),
+		t('settings.general.completionModelDesc')
 	);
 	if (plugin.settings.provider === 'gemini') {
 		await selectModelSetting(
 			sectionEl,
 			plugin,
 			'imageModelName',
-			'Image Model',
-			'Model used for image generation.',
+			t('settings.general.imageModelName'),
+			t('settings.general.imageModelDesc'),
 			'image'
 		);
 	}
 
 	new Setting(sectionEl)
-		.setName('Plugin State Folder')
-		.setDesc(
-			'Folder where plugin data is stored. Agent sessions live under Agent-Sessions/, custom prompts under Prompts/, hooks under Hooks/, scheduled task state under Scheduled-Tasks/.'
-		)
+		.setName(t('settings.general.stateFolderName'))
+		.setDesc(t('settings.general.stateFolderDesc'))
 		.addText((text) => {
 			new FolderSuggest(app, text.inputEl, (folder) => {
 				plugin.settings.historyFolder = folder;
@@ -188,10 +183,8 @@ async function renderGeneralSection(
 		});
 
 	new Setting(sectionEl)
-		.setName('Show Advanced Settings')
-		.setDesc(
-			'Reveal advanced sections (Custom Prompts, API Configuration, Tool Permissions, Tool Loop Detection, MCP Servers, Debug) for power users.'
-		)
+		.setName(t('settings.general.showAdvancedName'))
+		.setDesc(t('settings.general.showAdvancedDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(context.showDeveloperSettings).onChange((value) => {
 				context.setShowDeveloperSettings(value);
@@ -212,14 +205,21 @@ export async function refreshGeminiModelList(
 	try {
 		const result = await plugin.getModelManager().refreshRemoteModels();
 		if (result.fetched) {
-			new Notice(`Model list updated: ${result.modelCount} model${result.modelCount === 1 ? '' : 's'}.`);
+			new Notice(
+				result.modelCount === 1
+					? t('settings.general.modelListUpdatedSingular', { count: result.modelCount })
+					: t('settings.general.modelListUpdated', { count: result.modelCount })
+			);
 			if (onSuccess) await onSuccess();
 			return;
 		}
-		const reasonMessage = result.skippedReason === 'offline' ? 'Skipped: offline' : 'Skipped: provider is not Gemini';
+		const reasonMessage =
+			result.skippedReason === 'offline'
+				? t('settings.general.refreshSkippedOffline')
+				: t('settings.general.refreshSkippedNotGemini');
 		new Notice(reasonMessage);
 	} catch (error) {
 		plugin.logger.error('Failed to refresh Gemini model list:', error);
-		new Notice(`Failed to refresh model list: ${getErrorMessage(error)}`);
+		new Notice(t('settings.general.refreshModelListFailed', { error: getErrorMessage(error) }));
 	}
 }

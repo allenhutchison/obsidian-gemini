@@ -3,6 +3,7 @@ import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
 import { collectFoldersFromFolder } from '../../utils/folder-walk';
 import type ObsidianGemini from '../../main';
+import { t } from '../../i18n';
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 	private onSelect: (file: TAbstractFile) => void;
@@ -12,7 +13,7 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 		super(app);
 		this.onSelect = onSelect;
 		this.plugin = plugin;
-		this.setPlaceholder('Select a file or folder to mention...');
+		this.setPlaceholder(t('agent.fileMention.placeholder'));
 	}
 
 	getItems(): TAbstractFile[] {

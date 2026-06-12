@@ -6,6 +6,7 @@ import { ModelClientFactory } from '../../api';
 import { HandlerPriority } from '../../types/agent-events';
 import { sanitizeFileName } from '../../utils/file-utils';
 import { formatLocalDate } from '../../utils/format-utils';
+import { t } from '../../i18n';
 
 /**
  * Callbacks for UI operations that the session manager needs to trigger
@@ -116,7 +117,7 @@ export class AgentViewSession {
 			this.uiCallbacks.focusInput();
 		} catch (error) {
 			this.plugin.logger.error('Failed to create agent session:', error);
-			new Notice('Failed to create agent session');
+			new Notice(t('agent.session.createFailed'));
 		}
 	}
 
@@ -184,7 +185,7 @@ export class AgentViewSession {
 			this.uiCallbacks.updateContextPanel();
 		} catch (error) {
 			this.plugin.logger.error('Failed to load session:', error);
-			new Notice('Failed to load session');
+			new Notice(t('agent.session.loadFailed'));
 		}
 	}
 

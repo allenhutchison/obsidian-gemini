@@ -2,6 +2,7 @@ import { Setting } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ObsidianGeminiSettings } from '../main';
 import { GEMINI_MODELS } from '../models';
+import { t } from '../i18n';
 
 export interface CollapsibleSectionOptions {
 	/** Description shown under the title; visible whether the section is open or closed. */
@@ -63,7 +64,7 @@ export function createCollapsibleSection(
 	if (options.advanced) {
 		const badge = document.createElement('span');
 		badge.classList.add('gemini-settings-section-badge');
-		badge.textContent = 'Advanced';
+		badge.textContent = t('settings.common.advancedBadge');
 		titleRow.appendChild(badge);
 	}
 	header.appendChild(titleRow);

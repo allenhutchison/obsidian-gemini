@@ -2,11 +2,11 @@ import type ObsidianGemini from '../main';
 import { Setting, ToggleComponent, debounce, Notice } from 'obsidian';
 import { createCollapsibleSection } from './settings-helpers';
 import { getErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 
 export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemini): void {
-	const sectionEl = createCollapsibleSection(plugin, containerEl, 'User Experience', 'ui', {
-		description:
-			'Streaming, diff view, scheduler catch-up, and personalization options that affect how you interact with the plugin.',
+	const sectionEl = createCollapsibleSection(plugin, containerEl, t('settings.ui.sectionTitle'), 'ui', {
+		description: t('settings.ui.sectionDesc'),
 	});
 
 	const debouncedSave = debounce(
@@ -15,7 +15,7 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 				await plugin.saveSettings();
 			} catch (error) {
 				plugin.logger.error('Failed to save settings:', error);
-				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
 			}
 		},
 		300,
@@ -23,11 +23,11 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 	);
 
 	new Setting(sectionEl)
-		.setName('Your Name')
-		.setDesc('Your name used in system instructions so the AI can address you personally in conversations.')
+		.setName(t('settings.ui.userNameName'))
+		.setDesc(t('settings.ui.userNameDesc'))
 		.addText((text) =>
 			text
-				.setPlaceholder('Enter your name')
+				.setPlaceholder(t('settings.ui.userNamePlaceholder'))
 				.setValue(plugin.settings.userName)
 				.onChange((value) => {
 					plugin.settings.userName = value;
@@ -36,8 +36,8 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 		);
 
 	new Setting(sectionEl)
-		.setName('Summary Frontmatter Key')
-		.setDesc('Frontmatter property name where summaries are stored when using "Summarize Active File" command.')
+		.setName(t('settings.ui.summaryFrontmatterKeyName'))
+		.setDesc(t('settings.ui.summaryFrontmatterKeyDesc'))
 		.addText((text) =>
 			text
 				.setPlaceholder('summary')
@@ -49,8 +49,8 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 		);
 
 	new Setting(sectionEl)
-		.setName('Enable Streaming')
-		.setDesc('Stream AI responses word-by-word as they are generated for a more interactive chat experience.')
+		.setName(t('settings.ui.enableStreamingName'))
+		.setDesc(t('settings.ui.enableStreamingDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.streamingEnabled).onChange(async (value) => {
 				plugin.settings.streamingEnabled = value;
@@ -59,10 +59,8 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 		);
 
 	new Setting(sectionEl)
-		.setName('Always show diff view for file writes')
-		.setDesc(
-			'Automatically open a diff view when the agent proposes file changes, instead of requiring a button click.'
-		)
+		.setName(t('settings.ui.alwaysShowDiffViewName'))
+		.setDesc(t('settings.ui.alwaysShowDiffViewDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.alwaysShowDiffView).onChange(async (value) => {
 				plugin.settings.alwaysShowDiffView = value;
@@ -76,10 +74,8 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 	let logToolExecutionToggle: ToggleComponent | null = null;
 
 	new Setting(sectionEl)
-		.setName('Enable Session History')
-		.setDesc(
-			'Persist agent chat sessions as markdown files in your vault. Sessions are saved under Agent-Sessions/ with auto-generated titles.'
-		)
+		.setName(t('settings.ui.sessionHistoryName'))
+		.setDesc(t('settings.ui.sessionHistoryDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.chatHistory).onChange(async (value) => {
 				plugin.settings.chatHistory = value;
@@ -89,10 +85,8 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 		);
 
 	new Setting(sectionEl)
-		.setName('Log tool execution to session history')
-		.setDesc(
-			'Append a summary of each tool execution to the session history file for auditing. Requires Session History to be enabled. Requires plugin reload to take effect.'
-		)
+		.setName(t('settings.ui.logToolExecutionName'))
+		.setDesc(t('settings.ui.logToolExecutionDesc'))
 		.addToggle((toggle) => {
 			toggle
 				.setValue(plugin.settings.logToolExecution)

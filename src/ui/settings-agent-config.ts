@@ -2,6 +2,7 @@ import type ObsidianGemini from '../main';
 import { Setting, Notice, debounce } from 'obsidian';
 import { createCollapsibleSection } from './settings-helpers';
 import { getErrorMessage } from '../utils/error-utils';
+import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings';
 
 let temperatureDebounceTimer: number | null = null;
@@ -19,11 +20,16 @@ export async function renderAgentConfigSettings(
 	plugin: ObsidianGemini,
 	context: SettingsSectionContext
 ): Promise<void> {
-	const sectionEl = createCollapsibleSection(plugin, containerEl, 'Agent Config', 'agent-config', {
-		description:
-			'Tune how the agent talks to the model: custom prompts, retry/generation parameters, conversation summarization, and loop guards.',
-		advanced: true,
-	});
+	const sectionEl = createCollapsibleSection(
+		plugin,
+		containerEl,
+		t('settings.agentConfig.sectionTitle'),
+		'agent-config',
+		{
+			description: t('settings.agentConfig.sectionDesc'),
+			advanced: true,
+		}
+	);
 
 	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
 	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
@@ -33,7 +39,7 @@ export async function renderAgentConfigSettings(
 				await plugin.saveSettings();
 			} catch (error) {
 				plugin.logger.error('Failed to save settings:', error);
-				new Notice(`Failed to save settings: ${getErrorMessage(error)}`);
+				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
 			}
 		},
 		300,
@@ -41,13 +47,11 @@ export async function renderAgentConfigSettings(
 	);
 
 	// --- Custom Prompts ---
-	new Setting(sectionEl).setName('Custom Prompts').setHeading();
+	new Setting(sectionEl).setName(t('settings.agentConfig.customPromptsHeading')).setHeading();
 
 	new Setting(sectionEl)
-		.setName('Allow system prompt override')
-		.setDesc(
-			'WARNING: Allows custom prompts to completely replace the system prompt. This may break expected functionality.'
-		)
+		.setName(t('settings.agentConfig.systemPromptOverrideName'))
+		.setDesc(t('settings.agentConfig.systemPromptOverrideDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.allowSystemPromptOverride ?? false).onChange(async (value) => {
 				plugin.settings.allowSystemPromptOverride = value;
@@ -56,15 +60,11 @@ export async function renderAgentConfigSettings(
 		);
 
 	// --- API Configuration ---
-	new Setting(sectionEl).setName('API Configuration').setHeading();
+	new Setting(sectionEl).setName(t('settings.agentConfig.apiConfigurationHeading')).setHeading();
 
 	new Setting(sectionEl)
-		.setName('Log to file')
-		.setDesc(
-			'Write log entries to a file in the plugin state folder. ' +
-				'Errors and warnings are always logged; debug entries require Debug Mode. ' +
-				'Log files are automatically rotated at 1 MB.'
-		)
+		.setName(t('settings.agentConfig.logToFileName'))
+		.setDesc(t('settings.agentConfig.logToFileDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.fileLogging).onChange(async (value) => {
 				plugin.settings.fileLogging = value;
@@ -77,10 +77,8 @@ export async function renderAgentConfigSettings(
 	// on Ollama so users don't type a URL that silently does nothing.
 	if (plugin.settings.provider === 'gemini') {
 		new Setting(sectionEl)
-			.setName('Custom API endpoint')
-			.setDesc(
-				'Override the default Google API base URL (e.g. for a corporate proxy or local gateway). Leave blank to use the official endpoint.'
-			)
+			.setName(t('settings.agentConfig.customEndpointName'))
+			.setDesc(t('settings.agentConfig.customEndpointDesc'))
 			.addText((text) => {
 				text
 					.setPlaceholder('https://my-proxy.example.com')
@@ -95,7 +93,7 @@ export async function renderAgentConfigSettings(
 					try {
 						new URL(trimmed);
 					} catch {
-						new Notice('Custom API endpoint is not a valid URL — clearing.');
+						new Notice(t('settings.agentConfig.customEndpointInvalidNotice'));
 						plugin.settings.customBaseUrl = '';
 						text.setValue('');
 						debouncedSave();
@@ -106,11 +104,11 @@ export async function renderAgentConfigSettings(
 	}
 
 	new Setting(sectionEl)
-		.setName('Maximum Retries')
-		.setDesc('Maximum number of retries when a model request fails.')
+		.setName(t('settings.agentConfig.maxRetriesName'))
+		.setDesc(t('settings.agentConfig.maxRetriesDesc'))
 		.addText((text) =>
 			text
-				.setPlaceholder('e.g., 3')
+				.setPlaceholder(t('settings.agentConfig.maxRetriesPlaceholder'))
 				.setValue(plugin.settings.maxRetries.toString())
 				.onChange((value) => {
 					const parsed = parseInt(value, 10);
@@ -122,11 +120,11 @@ export async function renderAgentConfigSettings(
 		);
 
 	new Setting(sectionEl)
-		.setName('Initial Backoff Delay (ms)')
-		.setDesc('Initial delay in milliseconds before the first retry. Subsequent retries will use exponential backoff.')
+		.setName(t('settings.agentConfig.initialBackoffName'))
+		.setDesc(t('settings.agentConfig.initialBackoffDesc'))
 		.addText((text) =>
 			text
-				.setPlaceholder('e.g., 1000')
+				.setPlaceholder(t('settings.agentConfig.initialBackoffPlaceholder'))
 				.setValue(plugin.settings.initialBackoffDelay.toString())
 				.onChange((value) => {
 					const parsed = parseInt(value, 10);
@@ -141,12 +139,12 @@ export async function renderAgentConfigSettings(
 	await createTopPSetting(sectionEl, plugin);
 
 	// --- Context Management ---
-	new Setting(sectionEl).setName('Context Management').setHeading();
+	new Setting(sectionEl).setName(t('settings.agentConfig.contextManagementHeading')).setHeading();
 
 	const thresholdSetting = new Setting(sectionEl)
-		.setName('Context compaction threshold')
+		.setName(t('settings.agentConfig.compactionThresholdName'))
 		.setDesc(
-			`Automatically summarize older conversation turns when token usage exceeds this percentage of the model context window. Current: ${plugin.settings.contextCompactionThreshold}%`
+			t('settings.agentConfig.compactionThresholdDesc', { percent: plugin.settings.contextCompactionThreshold })
 		);
 
 	thresholdSetting.addSlider((slider) =>
@@ -156,19 +154,17 @@ export async function renderAgentConfigSettings(
 			.setDynamicTooltip()
 			.onChange(async (value) => {
 				plugin.settings.contextCompactionThreshold = value;
-				thresholdSetting.setDesc(
-					`Automatically summarize older conversation turns when token usage exceeds this percentage of the model context window. Current: ${value}%`
-				);
+				thresholdSetting.setDesc(t('settings.agentConfig.compactionThresholdDesc', { percent: value }));
 				await plugin.saveSettings();
 			})
 	);
 
 	// --- Tool Loop Detection ---
-	new Setting(sectionEl).setName('Tool Loop Detection').setHeading();
+	new Setting(sectionEl).setName(t('settings.agentConfig.loopDetectionHeading')).setHeading();
 
 	new Setting(sectionEl)
-		.setName('Enable loop detection')
-		.setDesc('Prevent the AI from repeatedly calling the same tool with identical parameters.')
+		.setName(t('settings.agentConfig.loopDetectionName'))
+		.setDesc(t('settings.agentConfig.loopDetectionDesc'))
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.loopDetectionEnabled).onChange(async (value) => {
 				plugin.settings.loopDetectionEnabled = value;
@@ -179,8 +175,8 @@ export async function renderAgentConfigSettings(
 
 	if (plugin.settings.loopDetectionEnabled) {
 		new Setting(sectionEl)
-			.setName('Loop threshold')
-			.setDesc('Number of identical tool calls before considering it a loop (default: 3).')
+			.setName(t('settings.agentConfig.loopThresholdName'))
+			.setDesc(t('settings.agentConfig.loopThresholdDesc'))
 			.addSlider((slider) =>
 				slider
 					.setLimits(2, 10, 1)
@@ -193,8 +189,8 @@ export async function renderAgentConfigSettings(
 			);
 
 		new Setting(sectionEl)
-			.setName('Time window (seconds)')
-			.setDesc('Time window to check for repeated calls (default: 30 seconds).')
+			.setName(t('settings.agentConfig.timeWindowName'))
+			.setDesc(t('settings.agentConfig.timeWindowDesc'))
 			.addSlider((slider) =>
 				slider
 					.setLimits(10, 120, 5)
@@ -214,11 +210,11 @@ async function createTemperatureSetting(containerEl: HTMLElement, plugin: Obsidi
 	const displayInfo = await modelManager.getParameterDisplayInfo();
 
 	const desc = displayInfo.hasModelData
-		? `Controls randomness. Lower values are more deterministic. ${displayInfo.temperature}`
-		: 'Controls randomness. Lower values are more deterministic. (Default: 0.7)';
+		? t('settings.agentConfig.temperatureDescWithInfo', { info: displayInfo.temperature })
+		: t('settings.agentConfig.temperatureDescDefault');
 
 	new Setting(containerEl)
-		.setName('Temperature')
+		.setName(t('settings.agentConfig.temperatureName'))
 		.setDesc(desc)
 		.addSlider((slider) =>
 			slider
@@ -266,7 +262,7 @@ async function createTemperatureSetting(containerEl: HTMLElement, plugin: Obsidi
 								return;
 							}
 							plugin.logger.error('Failed to validate/save temperature setting:', error);
-							new Notice('Failed to save temperature setting. See console for details.');
+							new Notice(t('settings.agentConfig.temperatureSaveFailedNotice'));
 						}
 					}, 300);
 				})
@@ -279,11 +275,11 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemin
 	const displayInfo = await modelManager.getParameterDisplayInfo();
 
 	const desc = displayInfo.hasModelData
-		? `Controls diversity. Lower values are more focused. ${displayInfo.topP}`
-		: 'Controls diversity. Lower values are more focused. (Default: 1)';
+		? t('settings.agentConfig.topPDescWithInfo', { info: displayInfo.topP })
+		: t('settings.agentConfig.topPDescDefault');
 
 	new Setting(containerEl)
-		.setName('Top P')
+		.setName(t('settings.agentConfig.topPName'))
 		.setDesc(desc)
 		.addSlider((slider) =>
 			slider
@@ -324,7 +320,7 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemin
 								return;
 							}
 							plugin.logger.error('Failed to validate/save topP setting:', error);
-							new Notice('Failed to save Top P setting. See console for details.');
+							new Notice(t('settings.agentConfig.topPSaveFailedNotice'));
 						}
 					}, 300);
 				})

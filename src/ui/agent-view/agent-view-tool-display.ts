@@ -2,10 +2,7 @@ import { setIcon, TFile } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { ToolResult } from '../../tools/types';
 import { formatFileSize } from '../../utils/format-utils';
-
-// Tool execution result messages
-const TOOL_EXECUTION_FAILED_DEFAULT_MSG = 'Tool execution failed (no error message provided)';
-const OPERATION_COMPLETED_SUCCESSFULLY_MSG = 'Operation completed successfully';
+import { t } from '../../i18n';
 
 // Shared tool icon mapping
 const TOOL_ICONS: Record<string, string> = {
@@ -42,7 +39,7 @@ export class AgentViewToolDisplay {
 
 		const copyBtn = header.createEl('button', {
 			cls: 'gemini-agent-tool-copy-section',
-			attr: { 'aria-label': `Copy ${title.toLowerCase()}`, type: 'button' },
+			attr: { 'aria-label': t('agent.tools.copySectionAria', { section: title }), type: 'button' },
 		});
 		setIcon(copyBtn, 'copy');
 		copyBtn.addEventListener('click', async (e) => {
@@ -68,10 +65,10 @@ export class AgentViewToolDisplay {
 	 */
 	private getResultCopyText(result: ToolResult): string {
 		if (result.success === false || result.success === undefined) {
-			return result.error || TOOL_EXECUTION_FAILED_DEFAULT_MSG;
+			return result.error || t('agent.tools.failedDefault');
 		}
 		if (result.data === undefined || result.data === null) {
-			return OPERATION_COMPLETED_SUCCESSFULLY_MSG;
+			return t('agent.tools.completedDefault');
 		}
 		return typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
 	}
@@ -119,12 +116,12 @@ export class AgentViewToolDisplay {
 		setIcon(summaryIcon, 'wrench');
 
 		summary.createSpan({
-			text: `Running tools... (0 of ${totalToolCount})`,
+			text: t('agent.tools.running', { done: 0, total: totalToolCount }),
 			cls: 'gemini-tool-group-text',
 		});
 
 		summary.createSpan({
-			text: 'Running',
+			text: t('agent.tools.runningBadge'),
 			cls: 'gemini-tool-group-status gemini-tool-group-status-running',
 		});
 
@@ -173,14 +170,17 @@ export class AgentViewToolDisplay {
 		const textEl = group.querySelector('.gemini-tool-group-text') as HTMLElement;
 		if (textEl) {
 			if (allDone) {
-				const toolWord = total === 1 ? 'tool' : 'tools';
 				if (failed > 0) {
-					textEl.textContent = `${total} ${toolWord} completed — ${failed} failed`;
+					textEl.textContent =
+						total === 1
+							? t('agent.tools.completedOneFailed', { failed })
+							: t('agent.tools.completedManyFailed', { count: total, failed });
 				} else {
-					textEl.textContent = `${total} ${toolWord} completed`;
+					textEl.textContent =
+						total === 1 ? t('agent.tools.completedOne') : t('agent.tools.completedMany', { count: total });
 				}
 			} else {
-				textEl.textContent = `Running tools... (${completed + failed} of ${total})`;
+				textEl.textContent = t('agent.tools.running', { done: completed + failed, total });
 			}
 		}
 
@@ -201,7 +201,7 @@ export class AgentViewToolDisplay {
 					statusEl.classList.add('gemini-tool-group-status-success');
 				}
 			} else {
-				statusEl.textContent = 'Running';
+				statusEl.textContent = t('agent.tools.runningBadge');
 				statusEl.classList.add('gemini-tool-group-status-running');
 			}
 		}
@@ -239,7 +239,7 @@ export class AgentViewToolDisplay {
 		setIcon(icon, 'shield-check');
 
 		header.createSpan({
-			text: `Permission granted: ${toolName}`,
+			text: t('agent.tools.permissionGranted', { name: toolName }),
 			cls: 'gemini-tool-row-name',
 		});
 	}
@@ -295,7 +295,7 @@ export class AgentViewToolDisplay {
 		}
 
 		rowHeader.createSpan({
-			text: 'Running...',
+			text: t('agent.tools.runningStatus'),
 			cls: 'gemini-tool-row-status gemini-tool-row-status-running',
 		});
 
@@ -309,7 +309,9 @@ export class AgentViewToolDisplay {
 		// Parameters section inside details
 		if (parameters && Object.keys(parameters).length > 0) {
 			const paramsSection = rowDetails.createDiv({ cls: 'gemini-agent-tool-section' });
-			this.createSectionHeader(paramsSection, 'Parameters', () => JSON.stringify(parameters, null, 2));
+			this.createSectionHeader(paramsSection, t('agent.tools.parametersHeader'), () =>
+				JSON.stringify(parameters, null, 2)
+			);
 
 			const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-tool-params-list' });
 			for (const [key, value] of Object.entries(parameters)) {
@@ -391,7 +393,7 @@ export class AgentViewToolDisplay {
 		// Update row status badge
 		const statusEl = toolRow.querySelector('.gemini-tool-row-status') as HTMLElement;
 		if (statusEl) {
-			statusEl.textContent = result.success ? 'Completed' : 'Failed';
+			statusEl.textContent = result.success ? t('agent.tools.completedStatus') : t('agent.tools.failedStatus');
 			statusEl.classList.remove('gemini-tool-row-status-running');
 			statusEl.classList.add(result.success ? 'gemini-tool-row-status-success' : 'gemini-tool-row-status-error');
 		}
@@ -406,11 +408,11 @@ export class AgentViewToolDisplay {
 		const details = toolRow.querySelector('.gemini-tool-row-details');
 		if (details) {
 			const resultSection = details.createDiv({ cls: 'gemini-agent-tool-section' });
-			this.createSectionHeader(resultSection, 'Result', () => this.getResultCopyText(result));
+			this.createSectionHeader(resultSection, t('agent.tools.resultHeader'), () => this.getResultCopyText(result));
 
 			if (result.success === false || result.success === undefined) {
 				const errorContent = resultSection.createDiv({ cls: 'gemini-agent-tool-error-content' });
-				const errorMessage = result.error || TOOL_EXECUTION_FAILED_DEFAULT_MSG;
+				const errorMessage = result.error || t('agent.tools.failedDefault');
 				errorContent.createEl('p', {
 					text: errorMessage,
 					cls: 'gemini-agent-tool-error-message',
@@ -422,10 +424,10 @@ export class AgentViewToolDisplay {
 					if (result.data.length > 500) {
 						const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
 						const code = codeBlock.createEl('code');
-						code.textContent = result.data.substring(0, 500) + '\n\n... (truncated)';
+						code.textContent = result.data.substring(0, 500) + '\n\n' + t('agent.tools.truncatedSuffix');
 
 						const expandBtn = resultContent.createEl('button', {
-							text: 'Show full content',
+							text: t('agent.tools.showFullContent'),
 							cls: 'gemini-agent-tool-expand-content',
 						});
 						expandBtn.addEventListener('click', () => {
@@ -440,7 +442,7 @@ export class AgentViewToolDisplay {
 				} else if (Array.isArray(result.data)) {
 					if (result.data.length === 0) {
 						resultContent.createEl('p', {
-							text: 'No results found',
+							text: t('agent.tools.noResults'),
 							cls: 'gemini-agent-tool-empty-result',
 						});
 					} else {
@@ -450,7 +452,7 @@ export class AgentViewToolDisplay {
 						});
 						if (result.data.length > 10) {
 							resultContent.createEl('p', {
-								text: `... and ${result.data.length - 10} more`,
+								text: t('agent.tools.moreItems', { count: result.data.length - 10 }),
 								cls: 'gemini-agent-tool-more-items',
 							});
 						}
@@ -466,7 +468,7 @@ export class AgentViewToolDisplay {
 					) {
 						this.plugin.logger.log(`Handling ${toolName} result with citations`);
 						const answerDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-search-answer' });
-						answerDiv.createEl('h5', { text: 'Answer:' });
+						answerDiv.createEl('h5', { text: t('agent.tools.answerHeader') });
 
 						const answerPara = answerDiv.createEl('p');
 						const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
@@ -490,7 +492,7 @@ export class AgentViewToolDisplay {
 
 						if (result.data.citations.length > 0) {
 							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
-							citationsDiv.createEl('h5', { text: 'Sources:' });
+							citationsDiv.createEl('h5', { text: t('agent.tools.sourcesHeader') });
 							const citationsList = citationsDiv.createEl('ul', {
 								cls: 'gemini-agent-tool-citations-list',
 							});
@@ -512,7 +514,7 @@ export class AgentViewToolDisplay {
 						}
 					} else if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
 						const imageDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-image-result' });
-						imageDiv.createEl('h5', { text: 'Generated Image:' });
+						imageDiv.createEl('h5', { text: t('agent.tools.generatedImageHeader') });
 
 						const imageFile = this.plugin.app.vault.getAbstractFileByPath(result.data.path);
 						if (imageFile instanceof TFile) {
@@ -525,49 +527,49 @@ export class AgentViewToolDisplay {
 								img.style.display = 'none';
 								imgContainer.removeClass('loading');
 								imgContainer.createEl('p', {
-									text: 'Failed to load image preview',
+									text: t('agent.tools.imagePreviewFailed'),
 									cls: 'gemini-agent-tool-image-error',
 								});
 							};
 
 							try {
 								img.src = this.plugin.app.vault.getResourcePath(imageFile);
-								img.alt = result.data.prompt || 'Generated image';
+								img.alt = result.data.prompt || t('agent.tools.generatedImageAlt');
 							} catch (error) {
 								this.plugin.logger.error('Failed to get resource path for image:', error);
 								img.onerror?.(new Event('error'));
 							}
 
 							const imageInfo = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-info' });
-							imageInfo.createEl('strong', { text: 'Path: ' });
+							imageInfo.createEl('strong', { text: t('agent.tools.pathLabel') + ' ' });
 							imageInfo.createSpan({ text: result.data.path });
 							imageInfo.createEl('br');
-							imageInfo.createEl('strong', { text: 'Wikilink: ' });
+							imageInfo.createEl('strong', { text: t('agent.tools.wikilinkLabel') + ' ' });
 							imageInfo.createEl('code', {
 								text: result.data.wikilink,
 								cls: 'gemini-agent-tool-wikilink',
 							});
 							const copyBtn = imageInfo.createEl('button', {
-								text: 'Copy',
+								text: t('agent.tools.copyButton'),
 								cls: 'gemini-agent-tool-copy-wikilink',
 							});
 							copyBtn.addEventListener('click', () => {
 								navigator.clipboard.writeText(result.data.wikilink).then(() => {
-									copyBtn.textContent = 'Copied!';
+									copyBtn.textContent = t('agent.tools.copiedButton');
 									window.setTimeout(() => {
-										copyBtn.textContent = 'Copy';
+										copyBtn.textContent = t('agent.tools.copyButton');
 									}, 2000);
 								});
 							});
 						} else {
 							imageDiv.createEl('p', {
-								text: `Image saved to: ${result.data.path}`,
+								text: t('agent.tools.imageSavedTo', { path: result.data.path }),
 								cls: 'gemini-agent-tool-image-path',
 							});
 						}
 					} else if (result.data.content && result.data.path) {
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
-						fileInfo.createEl('strong', { text: 'File: ' });
+						fileInfo.createEl('strong', { text: t('agent.tools.fileLabel') + ' ' });
 						fileInfo.createSpan({ text: result.data.path });
 
 						if (result.data.size) {
@@ -583,9 +585,9 @@ export class AgentViewToolDisplay {
 								cls: 'gemini-agent-tool-code-result',
 							});
 							const code = codeBlock.createEl('code');
-							code.textContent = content.substring(0, 500) + '\n\n... (truncated)';
+							code.textContent = content.substring(0, 500) + '\n\n' + t('agent.tools.truncatedSuffix');
 							const expandBtn = resultContent.createEl('button', {
-								text: 'Show full content',
+								text: t('agent.tools.showFullContent'),
 								cls: 'gemini-agent-tool-expand-content',
 							});
 							expandBtn.addEventListener('click', () => {
@@ -616,7 +618,7 @@ export class AgentViewToolDisplay {
 			} else {
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
 				resultContent.createEl('p', {
-					text: `${toolName}: ${OPERATION_COMPLETED_SUCCESSFULLY_MSG}`,
+					text: `${toolName}: ${t('agent.tools.completedDefault')}`,
 					cls: 'gemini-agent-tool-success-message',
 				});
 			}
