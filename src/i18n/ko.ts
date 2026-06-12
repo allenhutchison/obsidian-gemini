@@ -54,8 +54,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.chatModelName': '채팅 모델',
 	'settings.general.chatModelDesc': '에이전트 채팅 세션, 선택 영역 다시 쓰기, 웹 검색 도구에 사용되는 모델입니다.',
 	'settings.general.summaryModelName': '요약 모델',
-	'settings.general.summaryModelDesc':
-		'프런트매터에 요약을 추가하는 "Summarize active file" 명령에 사용되는 모델입니다.',
+	'settings.general.summaryModelDesc': '프런트매터에 요약을 추가하는 "현재 파일 요약" 명령에 사용되는 모델입니다.',
 	'settings.general.completionModelName': '완성 모델',
 	'settings.general.completionModelDesc':
 		'노트에 입력할 때 IDE 스타일의 인라인 자동 완성을 제공하는 데 사용되는 모델입니다.',
@@ -80,7 +79,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': '이름을 입력하세요',
 	'settings.ui.summaryFrontmatterKeyName': '요약 프런트매터 키',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'"Summarize active file" 명령을 사용할 때 요약이 저장되는 프런트매터 속성 이름입니다.',
+		'"현재 파일 요약" 명령을 사용할 때 요약이 저장되는 프런트매터 속성 이름입니다.',
 	'settings.ui.enableStreamingName': '스트리밍 활성화',
 	'settings.ui.enableStreamingDesc': '더 대화형인 채팅 경험을 위해 AI 응답이 생성되는 대로 단어 단위로 스트리밍합니다.',
 	'settings.ui.alwaysShowDiffViewName': '파일 쓰기 시 항상 diff 뷰 표시',

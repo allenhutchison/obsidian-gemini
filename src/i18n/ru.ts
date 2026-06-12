@@ -56,7 +56,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Модель, используемая для сессий чата с агентом, переписывания выделенного текста и инструментов веб-поиска.',
 	'settings.general.summaryModelName': 'Модель резюмирования',
 	'settings.general.summaryModelDesc':
-		'Модель, используемая для команды «Summarize active file», которая добавляет краткое содержание в frontmatter.',
+		'Модель, используемая для команды «Создать резюме активного файла», которая добавляет краткое содержание в frontmatter.',
 	'settings.general.completionModelName': 'Модель автодополнения',
 	'settings.general.completionModelDesc':
 		'Модель, используемая для встроенного автодополнения в стиле IDE при вводе текста в заметках.',
@@ -82,7 +82,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': 'Введите ваше имя',
 	'settings.ui.summaryFrontmatterKeyName': 'Ключ frontmatter для резюме',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Имя свойства frontmatter, в котором сохраняется краткое содержание при использовании команды «Summarize active file».',
+		'Имя свойства frontmatter, в котором сохраняется краткое содержание при использовании команды «Создать резюме активного файла».',
 	'settings.ui.enableStreamingName': 'Включить потоковую передачу',
 	'settings.ui.enableStreamingDesc':
 		'Выводить ответы ИИ слово за словом по мере их генерации для более интерактивного общения.',
@@ -876,7 +876,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'component.toolPolicyEditor.perToolOverrides': 'Переопределения для каждого инструмента',
 	'component.toolPolicyEditor.noToolsRegistered': 'Нет зарегистрированных инструментов.',
 	'component.toolPolicyEditor.inheritOption': '(наследовать)',
-	'notice.backgroundTask.failed': 'Сбой фоновой задачи: {label}\\n{error}',
+	'notice.backgroundTask.failed': 'Сбой фоновой задачи: {label}\n{error}',
 	'notice.backgroundTask.complete': '✓ {label} завершено.',
 	'notice.backgroundTask.openResult': 'Открыть результат',
 	'notice.rag.resuming': 'Индексирование RAG: возобновление прерванного индексирования...',
@@ -920,7 +920,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'notice.summary.failed': 'Не удалось сгенерировать сводку: {error}',
 	'notice.completions.enabled': 'Автодополнение Gemini Scribe включено.',
 	'notice.completions.disabled': 'Автодополнение Gemini Scribe выключено.',
-	'tool.confirm.createSkill': 'Создать новый навык «{name}»:\\n\\n{description}',
+	'tool.confirm.createSkill': 'Создать новый навык «{name}»:\n\n{description}',
 	'tool.confirm.editSkillNoFields': 'Редактирование навыка «{name}»: не указаны допустимые поля',
 	'tool.confirm.editSkillDescription': 'Редактирование навыка «{name}»: обновление описания',
 	'tool.confirm.editSkillContent': 'Редактирование навыка "{name}": обновление содержимого',

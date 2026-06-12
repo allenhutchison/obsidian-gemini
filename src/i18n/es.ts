@@ -267,9 +267,9 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'rewrite.selectedTextLabel': 'Texto seleccionado:',
 	'rewrite.instructionsLabel': 'Instrucciones:',
 	'rewrite.placeholderFile':
-		'¿Cómo le gustaría reescribir este archivo?\\n\\nEjemplos:\\n• Hacerlo más conciso\\n• Corregir la gramática y la ortografía en todo el documento\\n• Convertirlo a un formato diferente\\n• Reorganizar la estructura\\n• Mejorar la claridad y la legibilidad',
+		'¿Cómo le gustaría reescribir este archivo?\n\nEjemplos:\n• Hacerlo más conciso\n• Corregir la gramática y la ortografía en todo el documento\n• Convertirlo a un formato diferente\n• Reorganizar la estructura\n• Mejorar la claridad y la legibilidad',
 	'rewrite.placeholderSelection':
-		'¿Cómo le gustaría reescribir este texto?\\n\\nEjemplos:\\n• Hacerlo más conciso\\n• Corregir la gramática y la ortografía\\n• Hacerlo más formal/informal\\n• Ampliar con más detalles\\n• Simplificar el lenguaje',
+		'¿Cómo le gustaría reescribir este texto?\n\nEjemplos:\n• Hacerlo más conciso\n• Corregir la gramática y la ortografía\n• Hacerlo más formal/informal\n• Ampliar con más detalles\n• Simplificar el lenguaje',
 	'rewrite.submitButton': 'Reescribir',
 	'catchUp.title': 'Ejecuciones programadas perdidas',
 	'catchUp.description':
@@ -674,7 +674,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.header.tooltipTopP': 'Top-P: {value}',
 	'agent.header.tooltipPrompt': 'Prompt: {value}',
 	'agent.header.menuAria': 'Menú de sesión',
-	'agent.header.projectTooltip': 'Proyecto: {name}\\n{path}',
+	'agent.header.projectTooltip': 'Proyecto: {name}\n{path}',
 	'agent.header.linkProjectTooltip': 'Haz clic para vincular un proyecto',
 	'agent.project.none': 'Sin proyecto',
 	'agent.menu.newSession': 'Nueva sesión',

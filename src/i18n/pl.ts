@@ -919,7 +919,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'notice.summary.success': 'Podsumowanie zostało pomyślnie dodane do frontmatter!',
 	'notice.summary.failed': 'Nie udało się wygenerować podsumowania: {error}',
 	'notice.completions.enabled': 'Uzupełnianie Gemini Scribe jest teraz włączone.',
-	'notice.completions.disabled': 'Uzupełnianie Gemini Scribe jest now wyłączone.',
+	'notice.completions.disabled': 'Uzupełnianie Gemini Scribe jest teraz wyłączone.',
 	'tool.confirm.createSkill': 'Utwórz nową umiejętność "{name}":\n\n{description}',
 	'tool.confirm.editSkillNoFields': 'Edytuj umiejętność "{name}": nie podano prawidłowych pól',
 	'tool.confirm.editSkillDescription': 'Edytuj umiejętność "{name}": aktualizowanie opisu',

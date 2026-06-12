@@ -57,7 +57,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'エージェントのチャットセッション、選択範囲の書き換え、およびウェブ検索ツールに使用されるモデル。',
 	'settings.general.summaryModelName': '要約モデル',
 	'settings.general.summaryModelDesc':
-		'フロントマターに要約を追加する「Summarize active file」コマンドに使用されるモデル。',
+		'フロントマターに要約を追加する「アクティブなファイルを要約」コマンドに使用されるモデル。',
 	'settings.general.completionModelName': '補完モデル',
 	'settings.general.completionModelDesc': 'ノートに入力する際のIDEスタイルのインライン補完に使用されるモデル。',
 	'settings.general.imageModelName': '画像モデル',
@@ -82,7 +82,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': '名前を入力してください',
 	'settings.ui.summaryFrontmatterKeyName': '要約のフロントマターキー',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'「Summarize active file」コマンドの使用時に要約を保存するフロントマターのプロパティ名。',
+		'「アクティブなファイルを要約」コマンドの使用時に要約を保存するフロントマターのプロパティ名。',
 	'settings.ui.enableStreamingName': 'ストリーミングを有効にする',
 	'settings.ui.enableStreamingDesc':
 		'よりインタラクティブなチャット体験のために、AIの応答が生成されるにつれて一語一語ストリーミングします。',
@@ -370,7 +370,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.commandPlaceholder': '例: npx, python, /usr/local/bin/mcp-server',
 	'mcpServer.argsSetting': '引数',
 	'mcpServer.argsDesc': 'コマンドの引数（1行に1つ）',
-	'mcpServer.argsPlaceholder': '例:\\n-y\\n@modelcontextprotocol/server-filesystem\\n/path/to/folder',
+	'mcpServer.argsPlaceholder': '例:\n-y\n@modelcontextprotocol/server-filesystem\n/path/to/folder',
 	'mcpServer.envSetting': '環境変数',
 	'mcpServer.envDesc':
 		'任意の KEY=VALUE ペア（1行に1つ）。値はプレーンテキストではなく、OSのキーチェーンに保存されます。',
@@ -676,7 +676,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.attachFailed': '{name} の添付に失敗しました',
 	'agent.attachments.textFileAddedOne': '1個のテキストファイルがコンテキストに追加されました',
 	'agent.attachments.textFilesAdded': '{count}個のテキストファイルがコンテキストに追加されました',
-	'agent.attachments.fileAttachedOne': '1個 of ファイルが添付されました',
+	'agent.attachments.fileAttachedOne': '1個のファイルが添付されました',
 	'agent.attachments.filesAttached': '{count}個のファイルが添付されました',
 	'agent.attachments.skippedSizeOne': '1個のファイルがスキップされました（累計20MBの制限を超過）: {files}',
 	'agent.attachments.skippedSize': '{count}個のファイルがスキップされました（累計20MBの制限を超過）: {files}',

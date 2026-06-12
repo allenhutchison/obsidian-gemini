@@ -268,9 +268,9 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'rewrite.selectedTextLabel': 'Texte sélectionné :',
 	'rewrite.instructionsLabel': 'Instructions :',
 	'rewrite.placeholderFile':
-		"Comment souhaitez-vous réécrire ce fichier ?\\n\\nExemples :\\n• Le rendre plus concis\\n• Corriger la grammaire et l'orthographe partout\\n• Le convertir dans un autre format\\n• Réorganiser la structure\\n• Améliorer la clarté et la lisibilité",
+		"Comment souhaitez-vous réécrire ce fichier ?\n\nExemples :\n• Le rendre plus concis\n• Corriger la grammaire et l'orthographe partout\n• Le convertir dans un autre format\n• Réorganiser la structure\n• Améliorer la clarté et la lisibilité",
 	'rewrite.placeholderSelection':
-		"Comment souhaitez-vous réécrire ce texte ?\\n\\nExemples :\\n• Le rendre plus concis\\n• Corriger la grammaire et l'orthographe\\n• Le rendre plus formel/familier\\n• Développer avec plus de détails\\n• Simplifier le langage",
+		"Comment souhaitez-vous réécrire ce texte ?\n\nExemples :\n• Le rendre plus concis\n• Corriger la grammaire et l'orthographe\n• Le rendre plus formel/familier\n• Développer avec plus de détails\n• Simplifier le langage",
 	'rewrite.submitButton': 'Réécrire',
 	'catchUp.title': 'Exécutions planifiées manquées',
 	'catchUp.description':

@@ -57,7 +57,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Modelo utilizado para sessões de chat do agente, reescrita de seleção e ferramentas de pesquisa web.',
 	'settings.general.summaryModelName': 'Modelo de resumo',
 	'settings.general.summaryModelDesc':
-		'Modelo utilizado para o comando "Summarize active file" que adiciona resumos ao frontmatter.',
+		'Modelo utilizado para o comando "Resumir ficheiro ativo" que adiciona resumos ao frontmatter.',
 	'settings.general.completionModelName': 'Modelo de conclusão',
 	'settings.general.completionModelDesc':
 		'Modelo utilizado para conclusões em linha ao estilo de IDE enquanto escreve nas notas.',
@@ -83,7 +83,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': 'Introduza o seu nome',
 	'settings.ui.summaryFrontmatterKeyName': 'Chave de frontmatter do resumo',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Nome da propriedade de frontmatter onde os resumos são guardados ao utilizar o comando "Summarize active file".',
+		'Nome da propriedade de frontmatter onde os resumos são guardados ao utilizar o comando "Resumir ficheiro ativo".',
 	'settings.ui.enableStreamingName': 'Ativar streaming',
 	'settings.ui.enableStreamingDesc':
 		'Transmitir as respostas da IA palavra por palavra à medida que são geradas para uma experiência de chat mais interativa.',
@@ -265,9 +265,9 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'rewrite.selectedTextLabel': 'Texto selecionado:',
 	'rewrite.instructionsLabel': 'Instruções:',
 	'rewrite.placeholderFile':
-		'Como gostaria de reescrever este ficheiro?\\n\\nExemplos:\\n• Torná-lo mais conciso\\n• Corrigir a gramática e a ortografia em todo o documento\\n• Converter para um formato diferente\\n• Reorganizar a estrutura\\n• Melhorar a clareza e a legibilidade',
+		'Como gostaria de reescrever este ficheiro?\n\nExemplos:\n• Torná-lo mais conciso\n• Corrigir a gramática e a ortografia em todo o documento\n• Converter para um formato diferente\n• Reorganizar a estrutura\n• Melhorar a clareza e a legibilidade',
 	'rewrite.placeholderSelection':
-		'Como gostaria de reescrever este texto?\\n\\nExemplos:\\n• Torná-lo mais conciso\\n• Corrigir a gramática e a ortografia\\n• Torná-lo mais formal/informal\\n• Expandir com mais detalhes\\n• Simplificar a linguagem',
+		'Como gostaria de reescrever este texto?\n\nExemplos:\n• Torná-lo mais conciso\n• Corrigir a gramática e a ortografia\n• Torná-lo mais formal/informal\n• Expandir com mais detalhes\n• Simplificar a linguagem',
 	'rewrite.submitButton': 'Reescrever',
 	'catchUp.title': 'Execuções agendadas perdidas',
 	'catchUp.description':

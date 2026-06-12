@@ -56,7 +56,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Model používaný pro chatovací relace agentů, přepisování výběru a nástroje pro vyhledávání na webu.',
 	'settings.general.summaryModelName': 'Model pro shrnutí',
 	'settings.general.summaryModelDesc':
-		'Model používaný pro příkaz "Summarize active file", který přidává shrnutí do frontmatteru.',
+		'Model používaný pro příkaz "Shrnout aktivní soubor", který přidává shrnutí do frontmatteru.',
 	'settings.general.completionModelName': 'Model pro doplňování',
 	'settings.general.completionModelDesc':
 		'Model používaný pro řádkové doplňování (ve stylu IDE) během psaní v poznámkách.',
@@ -82,7 +82,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': 'Zadejte své jméno',
 	'settings.ui.summaryFrontmatterKeyName': 'Klíč frontmatteru pro shrnutí',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Název vlastnosti frontmatteru, kam se ukládají shrnutí při použití příkazu "Summarize active file".',
+		'Název vlastnosti frontmatteru, kam se ukládají shrnutí při použití příkazu "Shrnout aktivní soubor".',
 	'settings.ui.enableStreamingName': 'Povolit streamování',
 	'settings.ui.enableStreamingDesc':
 		'Streamovat odpovědi AI slovo po slově tak, jak jsou generovány, pro interaktivnější zážitek z chatu.',

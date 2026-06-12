@@ -56,7 +56,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Модель, що використовується для сесій чату з агентом, переписування виділеного тексту та інструментів веб-пошуку.',
 	'settings.general.summaryModelName': 'Модель резюмування',
 	'settings.general.summaryModelDesc':
-		'Модель, що використовується для команди «Summarize active file» (Підсумувати активний файл), яка додає резюме до frontmatter.',
+		'Модель, що використовується для команди «Підсумувати активний файл», яка додає резюме до frontmatter.',
 	'settings.general.completionModelName': 'Модель автодоповнення',
 	'settings.general.completionModelDesc':
 		'Модель, що використовується для вбудованого автодоповнення в стилі IDE під час введення тексту в нотатках.',
@@ -82,7 +82,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': "Введіть ваше ім'я",
 	'settings.ui.summaryFrontmatterKeyName': 'Ключ frontmatter для резюме',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Назва властивості frontmatter, де зберігаються резюме при використанні команди «Summarize active file».',
+		'Назва властивості frontmatter, де зберігаються резюме при використанні команди «Підсумувати активний файл».',
 	'settings.ui.enableStreamingName': 'Увімкнути потокову передачу',
 	'settings.ui.enableStreamingDesc':
 		'Передавати відповіді ШІ потоком слово за словом у міру їх генерації для більш інтерактивного спілкування.',

@@ -56,7 +56,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Model, der bruges til agentsamtaler, omskrivning af markeringer og websøgeværktøjer.',
 	'settings.general.summaryModelName': 'Resumémodel',
 	'settings.general.summaryModelDesc':
-		'Model, der bruges til kommandoen "Summarize active file", som tilføjer resuméer til frontmatter.',
+		'Model, der bruges til kommandoen "Opsummer aktiv fil", som tilføjer resuméer til frontmatter.',
 	'settings.general.completionModelName': 'Fuldførelsesmodel',
 	'settings.general.completionModelDesc':
 		'Model, der bruges til inline-fuldførelser i IDE-stil, mens du skriver i noter.',
@@ -82,7 +82,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': 'Indtast dit navn',
 	'settings.ui.summaryFrontmatterKeyName': 'Frontmatter-nøgle til resumé',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Navn på frontmatter-egenskab, hvor resuméer gemmes, når kommandoen "Summarize active file" bruges.',
+		'Navn på frontmatter-egenskab, hvor resuméer gemmes, når kommandoen "Opsummer aktiv fil" bruges.',
 	'settings.ui.enableStreamingName': 'Aktiver streaming',
 	'settings.ui.enableStreamingDesc':
 		'Stream AI-svar ord for ord, efterhånden som de genereres, for en mere interaktiv chatoplevelse.',

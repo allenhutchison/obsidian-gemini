@@ -372,7 +372,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'mcpServer.commandPlaceholder': 'bijv. npx, python, /usr/local/bin/mcp-server',
 	'mcpServer.argsSetting': 'Argumenten',
 	'mcpServer.argsDesc': 'Commando-argumenten, één per regel',
-	'mcpServer.argsPlaceholder': 'bijv.\\n-y\\n@modelcontextprotocol/server-filesystem\\n/path/to/folder',
+	'mcpServer.argsPlaceholder': 'bijv.\n-y\n@modelcontextprotocol/server-filesystem\n/path/to/folder',
 	'mcpServer.envSetting': 'Omgevingsvariabelen',
 	'mcpServer.envDesc':
 		'Optionele KEY=VALUE-paren, één per regel. Waarden worden opgeslagen in de sleutelhanger van je besturingssysteem, niet in platte tekst.',

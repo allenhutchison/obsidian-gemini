@@ -57,7 +57,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Modell som brukes til agentsamtaler, omskriving av markert tekst og verktøy for nettsøk.',
 	'settings.general.summaryModelName': 'Sammendragsmodell',
 	'settings.general.summaryModelDesc':
-		'Modell som brukes for kommandoen "Summarize active file" som legger til sammendrag i frontmatter.',
+		'Modell som brukes for kommandoen "Oppsummer aktiv fil" som legger til sammendrag i frontmatter.',
 	'settings.general.completionModelName': 'Fullføringsmodell',
 	'settings.general.completionModelDesc':
 		'Modell som brukes til innebygde fullføringer i IDE-stil mens du skriver i notater.',
@@ -83,7 +83,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': 'Skriv inn navnet ditt',
 	'settings.ui.summaryFrontmatterKeyName': 'Frontmatter-nøkkel for sammendrag',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Navn på frontmatter-egenskap der sammendrag lagres når du bruker kommandoen "Summarize active file".',
+		'Navn på frontmatter-egenskap der sammendrag lagres når du bruker kommandoen "Oppsummer aktiv fil".',
 	'settings.ui.enableStreamingName': 'Aktiver strømming',
 	'settings.ui.enableStreamingDesc':
 		'Strøm AI-svar ord for ord etter hvert som de genereres for en mer interaktiv chat-opplevelse.',

@@ -170,8 +170,11 @@ async function translateEntries(client, model, language, entries) {
 			for (const item of Array.isArray(items) ? items : []) {
 				const source = requested.get(item?.key);
 				if (!source) continue;
-				const translation = typeof item.translation === 'string' ? item.translation.trim() : '';
+				let translation = typeof item.translation === 'string' ? item.translation.trim() : '';
 				if (translation === '') continue;
+				// Models sometimes echo the prompt's JSON escapes as literal backslash-n;
+				// normalize to real newlines so the UI doesn't render "\n".
+				translation = translation.replace(/\\n/g, '\n');
 				// The translation must carry exactly the source's placeholders — a missing one
 				// would lose data at render time, an invented one would surface literally in the UI.
 				const expected = new Set(placeholders(source.message));

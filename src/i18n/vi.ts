@@ -57,7 +57,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Mô hình được sử dụng cho các phiên trò chuyện của agent, viết lại vùng chọn và các công cụ tìm kiếm web.',
 	'settings.general.summaryModelName': 'Mô hình tóm tắt',
 	'settings.general.summaryModelDesc':
-		'Mô hình được sử dụng cho lệnh "Summarize active file" để thêm tóm tắt vào frontmatter.',
+		'Mô hình được sử dụng cho lệnh "Tóm tắt tệp đang hoạt động" để thêm tóm tắt vào frontmatter.',
 	'settings.general.completionModelName': 'Mô hình hoàn thành',
 	'settings.general.completionModelDesc':
 		'Mô hình được sử dụng để tự động hoàn thành nội dung trực tiếp (inline) kiểu IDE khi bạn nhập trong ghi chú.',
@@ -83,7 +83,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': 'Nhập tên của bạn',
 	'settings.ui.summaryFrontmatterKeyName': 'Khóa frontmatter tóm tắt',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Tên thuộc tính frontmatter nơi lưu trữ các tóm tắt khi sử dụng lệnh "Summarize active file".',
+		'Tên thuộc tính frontmatter nơi lưu trữ các tóm tắt khi sử dụng lệnh "Tóm tắt tệp đang hoạt động".',
 	'settings.ui.enableStreamingName': 'Bật truyền phát',
 	'settings.ui.enableStreamingDesc':
 		'Truyền phát câu trả lời của AI theo từng từ khi chúng được tạo ra để có trải nghiệm trò chuyện tương tác tốt hơn.',

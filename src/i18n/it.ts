@@ -57,7 +57,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 		"Modello utilizzato per le sessioni di chat dell'agente, la riscrittura della selezione e gli strumenti di ricerca web.",
 	'settings.general.summaryModelName': 'Modello di riassunto',
 	'settings.general.summaryModelDesc':
-		'Modello utilizzato per il comando "Summarize active file" che aggiunge riassunti al frontmatter.',
+		'Modello utilizzato per il comando "Riassumi file attivo" che aggiunge riassunti al frontmatter.',
 	'settings.general.completionModelName': 'Modello di completamento',
 	'settings.general.completionModelDesc':
 		'Modello utilizzato per i completamenti in linea in stile IDE mentre digiti nelle note.',
@@ -83,7 +83,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.ui.userNamePlaceholder': 'Inserisci il tuo nome',
 	'settings.ui.summaryFrontmatterKeyName': 'Chiave frontmatter del riassunto',
 	'settings.ui.summaryFrontmatterKeyDesc':
-		'Nome della proprietà frontmatter in cui vengono memorizzati i riassunti quando si utilizza il comando "Summarize active file".',
+		'Nome della proprietà frontmatter in cui vengono memorizzati i riassunti quando si utilizza il comando "Riassumi file attivo".',
 	'settings.ui.enableStreamingName': 'Abilita streaming',
 	'settings.ui.enableStreamingDesc':
 		"Trasmetti le risposte dell'IA parola per parola mentre vengono generate per un'esperienza di chat più interattiva.",
