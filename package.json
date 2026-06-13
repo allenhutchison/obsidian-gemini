@@ -49,7 +49,7 @@
 		"@vitest/ui": "^4.1.5",
 		"builtin-modules": "5.2.0",
 		"codemirror-companion-extension": "^0.0.11",
-		"esbuild": "0.28.0",
+		"esbuild": "0.28.1",
 		"esbuild-plugin-alias": "^0.2.1",
 		"eslint": "^10.4.1",
 		"eslint-plugin-obsidianmd": "^0.3.0",
@@ -78,6 +78,6 @@
 		"*.ts": "eslint --fix"
 	},
 	"overrides": {
-		"esbuild": "0.28.0"
+		"esbuild": "0.28.1"
 	}
 }
