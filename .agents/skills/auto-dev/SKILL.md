@@ -24,15 +24,15 @@ This skill automates the path from open issue to reviewed PR while keeping the m
 
 ## Label state machine
 
-| Label               | Meaning                                                                                                                       | Who sets it                                           |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| (no `auto:*` label) | Not yet triaged by auto-dev                                                                                                   | —                                                     |
-| `auto:needs-info`   | Skill asked a clarifying question; waiting on a human reply                                                                   | skill                                                 |
-| `auto:planned`      | Skill posted an implementation plan; waiting on approval                                                                      | skill                                                 |
-| `auto:ready`        | Plan approved; eligible to build                                                                                              | skill (on detected approval) or human (directly)      |
-| `auto:in-progress`  | Being built / has an open automated PR                                                                                        | skill                                                 |
-| `auto:parked`       | Assessed; the maintainer chose to hold it. Skill does not re-triage until the label is removed or a new human comment appears | human (directly), or skill on a human "park it" reply |
-| `auto:skip`         | Opt-out — auto-dev never touches this issue                                                                                   | human                                                 |
+| Label               | Meaning                                                                                                                                     | Who sets it                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| (no `auto:*` label) | Not yet triaged by auto-dev                                                                                                                 | —                                                     |
+| `auto:needs-info`   | Skill asked a clarifying question; waiting on a human reply                                                                                 | skill                                                 |
+| `auto:planned`      | Skill posted an implementation plan; waiting on approval                                                                                    | skill                                                 |
+| `auto:ready`        | Plan approved; eligible to build                                                                                                            | skill (on detected approval) or human (directly)      |
+| `auto:in-progress`  | Being built / has an open automated PR                                                                                                      | skill                                                 |
+| `auto:parked`       | Assessed; the maintainer chose to hold it. Skill does not re-triage until the label is removed or a human comment is added _after_ the park | human (directly), or skill on a human "park it" reply |
+| `auto:skip`         | Opt-out — auto-dev never touches this issue                                                                                                 | human                                                 |
 
 **Eligibility:** all open issues, oldest first, EXCEPT issues labeled `auto:skip`, `epic`, `question`, `wontfix`, `duplicate`, or `invalid`. Pull requests are never triaged as issues.
 
@@ -109,7 +109,7 @@ If the build cannot complete inside this tick's budget, push the WIP commits and
 
 ### Step 4 — Triage pass (bounded)
 
-Walk eligible open issues oldest→newest. Act on at most **5** issues per tick (count only issues where you actually post/relabel; skipped issues are free). To stay cheap on idle ticks, only deep-read an issue's thread when it might have changed: an `auto:*`-labelled issue whose `updatedAt` is no newer than the skill's own last marker comment on it has nothing new — skip it without re-reading. For each issue that needs a look, read the full thread, then branch on its current `auto:*` state:
+Walk eligible open issues oldest→newest. Act on at most **5** issues per tick (count only issues where you actually post/relabel; skipped issues are free). To stay cheap on idle ticks, only deep-read an issue's thread when it might have changed: an `auto:*`-labelled issue whose `updatedAt` is no newer than the skill's own last marker comment on it has nothing new — skip it without re-reading (for `auto:parked`, the baseline is the park-time label event, not a marker comment). For each issue that needs a look, read the full thread, then branch on its current `auto:*` state:
 
 - **No `auto:*` label** — assess whether the issue contains enough to plan from (clear problem, scoped outcome, no unresolved design fork):
   - _Plannable_ → draft an implementation plan (format below), post it as a comment, add `auto:planned`.
@@ -126,10 +126,18 @@ Walk eligible open issues oldest→newest. Act on at most **5** issues per tick 
   - _A request to park_ ("not now", "let's hold this") → swap label to `auto:parked`.
   - _No reply_ → skip silently.
   - The human adding `auto:ready` directly is always approval, reply or not.
-- **`auto:parked`** — the maintainer chose to hold this; it rests until they re-engage. Two unblock signals:
-  - _A new human comment since the skill's last marker comment_ (the maintainer added detail or direction) → unblocked: remove `auto:parked` and re-triage it this tick as if freshly labelled (plan if now plannable, otherwise ask / re-propose).
+- **`auto:parked`** — the maintainer chose to hold this; it rests until they re-engage. The unblock baseline is **when `auto:parked` was applied**, _not_ the skill's last marker comment — so a rationale the maintainer records _at park time_ doesn't bounce the issue straight back out. Read the park time from the most recent `auto:parked` `labeled` event on the issue timeline:
+
+  ```bash
+  gh api "repos/{owner}/{repo}/issues/<N>/timeline" --paginate \
+    | jq -r '[.[] | select(.event=="labeled" and .label.name=="auto:parked")] | last | .created_at'
+  ```
+
+  Two unblock signals:
+  - _A human comment (no marker, not a third-party bot) newer than the park time_ (the maintainer came back with detail or direction) → unblocked: remove `auto:parked` and re-triage it this tick as if freshly labelled (plan if now plannable, otherwise ask / re-propose).
   - _The human removed the label_ → it reappears with no `auto:*` label and re-enters triage through the no-label branch; nothing special to do.
-  - _Otherwise_ (still parked, no new human comment) → skip silently. **Never re-propose parking, re-ask, or re-plan a parked issue.**
+  - _Otherwise_ (still parked, no human comment after the park) → skip silently. **Never re-propose parking, re-ask, or re-plan a parked issue.**
+
 - **`auto:ready` / `auto:in-progress`** — leave for steps 1 and 3.
 
 ### Step 5 — Nothing to do
@@ -190,7 +198,7 @@ This isn't blocked on missing detail — it's waiting on a call that's yours to 
 Want me to **park** it for now? Reply "park it" (or add the `auto:parked` label) and I'll leave it untouched until you remove the label or add more detail to the issue. If you'd rather move it forward, here's what would unblock it: <the specific decision or input needed>.
 ```
 
-A parked issue is durable rest, not abandonment: the skill picks it back up the moment the maintainer removes `auto:parked` or adds a new comment.
+A parked issue is durable rest, not abandonment: the skill picks it back up the moment the maintainer removes `auto:parked` or adds a comment _after_ the park (a rationale left at park time is recorded but does not re-activate it — see the `auto:parked` triage branch).
 
 ## Exit report
 
@@ -218,7 +226,7 @@ errors: <none | details>
 - Don't start a second build while an automated PR is open.
 - Don't post a second question/plan when the previous one is still unanswered.
 - Don't park an issue on your own initiative — only _propose_ parking; the maintainer parks by replying "park it" or adding the label. (`auto:parked` is set by the skill solely on a human park reply, or by the human directly.)
-- Don't re-propose parking, re-ask, or re-plan an `auto:parked` issue — it rests until the maintainer removes the label or adds a new comment. Don't remove `auto:parked` yourself except when re-triaging it because the maintainer just commented.
+- Don't re-propose parking, re-ask, or re-plan an `auto:parked` issue — it rests until the maintainer removes the label or adds a comment _after_ the park. Don't remove `auto:parked` yourself except when re-triaging it because the maintainer commented after parking.
 - Don't touch `auto:skip`, `epic`, `question`, `wontfix`, `duplicate`, or `invalid` issues, and don't remove `auto:skip` ever.
 - Don't apply or change non-`auto:*` labels — categorization belongs to the `triage-issues` skill.
 - Don't close issues, edit issue bodies, or modify human comments.
