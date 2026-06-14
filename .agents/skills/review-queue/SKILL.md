@@ -92,13 +92,13 @@ When drained or dismissed, print a short session summary: what you decided, what
 - **Approve** ("approved", "lgtm", "go", "ship it") → add `auto:ready`. The oldest `auto:ready` builds on the next tick with no PR in flight.
 - **Approve with a tweak** ("approved, but use X") → post your tweak as a plain comment, then add `auto:ready` (the build adapts to the latest comment). If the change is large enough to reshape the plan, instead post the change and leave `auto:planned` so the next tick re-plans — ask which you want if it's unclear.
 - **Request changes** → post your feedback as a comment; leave `auto:planned` (next tick revises the plan).
-- **Not now** → `auto:parked` (hold, revisit later) or `auto:skip` (opt out entirely), per your words.
+- **Not now** → `auto:parked` (hold, revisit later) or `auto:skip` (opt out entirely), per your words. If you give a reason, record it the park-safe way (below).
 - **I'll do this one** → `auto:skip` (so a tick won't build it concurrently); you implement it normally and remove `auto:skip` later to hand it back, or close it via your PR.
 
 **A question or park proposal (`auto:needs-info`):**
 
 - **Answer it** → post your answer as a comment; the next tick incorporates it (plans, or asks a follow-up).
-- **Park it** → add `auto:parked` (it rests until you remove the label or add a new comment).
+- **Park it** → add `auto:parked` (it rests until you remove the label or add a comment _after_ the park). If you give a reason, record it the park-safe way (below).
 - **Skip** → `auto:skip`.
 
 **A parked issue (`auto:parked`):**
@@ -106,6 +106,8 @@ When drained or dismissed, print a short session summary: what you decided, what
 - **Unpark with direction** → remove `auto:parked` and post the new detail/decision as a comment; it re-enters triage with your input.
 - **Decide the design** → post your decision; either remove `auto:parked` to let the bot re-plan, or, if you've fully specced it, write the plan yourself and set the label you want (`auto:planned` for the bot to confirm, or straight to `auto:ready`).
 - **Keep holding** → leave it; move on.
+
+> **Parking with a reason — order matters.** auto-dev keys a parked issue's unblock off **when `auto:parked` was applied** (the label event on the timeline). So when you park _with_ a rationale, post the reason as a plain comment **first, then apply the label** — the comment ends up older than the park event, so it's recorded without bouncing the issue back into triage. Apply the label first and comment after, and the next tick reads that comment as "the maintainer came back" and un-parks it. (Unparking later is exactly this: a comment _after_ the park, or removing the label.)
 
 **A new / untriaged issue:**
 
