@@ -68,7 +68,7 @@
 	},
 	"dependencies": {
 		"@allenhutchison/gemini-utils": "^1.0.0",
-		"@codemirror/merge": "^6.12.1",
+		"@codemirror/merge": "^6.12.2",
 		"@types/turndown": "^5.0.6",
 		"ollama": "^0.6.3",
 		"turndown": "^7.2.4"
