@@ -13,6 +13,7 @@ import {
 	GenerateContentResponse,
 	GenerateContentResponseUsageMetadata,
 } from '@google/genai';
+import type { ThinkingLevel } from '@google/genai';
 import {
 	ModelApi,
 	BaseModelRequest,
@@ -28,6 +29,34 @@ import type ObsidianGemini from '../../../main';
 import { getDefaultModelForRole } from '../../../models';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
 import type { GeminiClientConfig } from './config';
+import { ModelUseCase } from '../../model-use-case';
+
+/**
+ * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`,
+ * replacing the legacy global `thinkingBudget: -1`. These are starting points
+ * (see #621; tune against the eval suite in #619): latency-sensitive paths
+ * think the least, while CHAT — which is the agent loop — thinks the most.
+ *
+ * | Use case    | level    | why                                            |
+ * | ----------- | -------- | ---------------------------------------------- |
+ * | Completions | MINIMAL  | latency-sensitive, simple next-token output    |
+ * | Summary     | LOW      | bounded, templated output                      |
+ * | Rewrite     | LOW      | short, focused edits                           |
+ * | Search      | MEDIUM   | query understanding + synthesis                |
+ * | Chat        | HIGH     | agent mode: multi-step tool use, benefits most |
+ */
+// The literal strings are the `ThinkingLevel` enum's own runtime values, used
+// directly (with a single cast) instead of the imported enum members so this
+// module never touches the SDK's runtime namespace — keeping it load-safe under
+// tests that mock `@google/genai`. The per-use-case values are covered by unit
+// tests, which catch any typo here.
+const THINKING_LEVEL_BY_USE_CASE: Record<ModelUseCase, ThinkingLevel> = {
+	[ModelUseCase.COMPLETIONS]: 'MINIMAL',
+	[ModelUseCase.SUMMARY]: 'LOW',
+	[ModelUseCase.REWRITE]: 'LOW',
+	[ModelUseCase.SEARCH]: 'MEDIUM',
+	[ModelUseCase.CHAT]: 'HIGH',
+} as Record<ModelUseCase, ThinkingLevel>;
 
 /**
  * Extends Part to include the optional thought property
@@ -227,11 +256,14 @@ export class GeminiClient implements ModelApi {
 			...(systemInstruction && { systemInstruction }),
 		};
 
-		// Add thinking config if model supports it
+		// Add thinking config if model supports it. We steer reasoning depth with
+		// `thinkingLevel` (Gemini 3.x) per use case — never the legacy
+		// `thinkingBudget`, and never both knobs in one request. `includeThoughts`
+		// stays true so reasoning persistence (#965) keeps receiving thought parts.
 		if (this.supportsThinking(model)) {
 			config.thinkingConfig = {
 				includeThoughts: true,
-				thinkingBudget: -1, // -1 = automatic budget
+				thinkingLevel: THINKING_LEVEL_BY_USE_CASE[this.config.useCase ?? ModelUseCase.CHAT],
 			};
 		}
 

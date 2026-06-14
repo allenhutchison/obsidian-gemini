@@ -4,6 +4,7 @@ import { GeminiClient } from '../../../../src/api/providers/gemini/client';
 import type { GeminiClientConfig } from '../../../../src/api/providers/gemini/config';
 import { GeminiPrompts } from '../../../../src/prompts';
 import type { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
+import { ModelUseCase } from '../../../../src/api/model-use-case';
 
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
@@ -297,6 +298,67 @@ describe('GeminiClient', () => {
 			expect(userTurn).toBeDefined();
 			expect(userTurn.parts).toHaveLength(1);
 			expect(userTurn.parts[0].text).toBe('just chat');
+		});
+	});
+
+	// Per-use-case thinkingLevel (#621): the client maps the ModelUseCase it was
+	// created for to a thinkingConfig.thinkingLevel, replacing the old global
+	// thinkingBudget. Reasoning persistence (#965) relies on includeThoughts, and
+	// the API rejects sending both knobs — so assert exactly one is present.
+	describe('per-use-case thinkingLevel', () => {
+		const THINKING_MODEL = 'gemini-3-pro';
+
+		beforeEach(() => {
+			generateContentMock.mockReset();
+			generateContentMock.mockResolvedValue({
+				candidates: [{ content: { parts: [{ text: 'ok' }] } }],
+				usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+			});
+		});
+
+		// Captures the thinkingConfig the SDK is handed for a client created with
+		// the given use case against a thinking-capable model.
+		const thinkingConfigFor = async (useCase?: ModelUseCase): Promise<any> => {
+			const client = new GeminiClient(
+				{ apiKey: 'test-api-key', model: THINKING_MODEL, useCase },
+				new GeminiPrompts(mockPlugin),
+				mockPlugin
+			);
+			await client.generateModelResponse({ kind: 'base', prompt: 'hi' });
+			const params = (generateContentMock as Mock).mock.calls[0][0];
+			return params.config.thinkingConfig;
+		};
+
+		test.each([
+			[ModelUseCase.COMPLETIONS, 'MINIMAL'],
+			[ModelUseCase.SUMMARY, 'LOW'],
+			[ModelUseCase.REWRITE, 'LOW'],
+			[ModelUseCase.SEARCH, 'MEDIUM'],
+			[ModelUseCase.CHAT, 'HIGH'],
+		])('%s maps to thinkingLevel %s', async (useCase, expectedLevel) => {
+			const thinkingConfig = await thinkingConfigFor(useCase as ModelUseCase);
+			expect(thinkingConfig.thinkingLevel).toBe(expectedLevel);
+			expect(thinkingConfig.includeThoughts).toBe(true);
+			// Never send both knobs — thinkingLevel only.
+			expect(thinkingConfig.thinkingBudget).toBeUndefined();
+		});
+
+		test('defaults to HIGH when no use case is set (e.g. createCustom callers)', async () => {
+			const thinkingConfig = await thinkingConfigFor(undefined);
+			expect(thinkingConfig.thinkingLevel).toBe('HIGH');
+			expect(thinkingConfig.includeThoughts).toBe(true);
+			expect(thinkingConfig.thinkingBudget).toBeUndefined();
+		});
+
+		test('omits thinkingConfig entirely for non-thinking models', async () => {
+			const client = new GeminiClient(
+				{ apiKey: 'test-api-key', model: 'gemini-pro', useCase: ModelUseCase.CHAT },
+				new GeminiPrompts(mockPlugin),
+				mockPlugin
+			);
+			await client.generateModelResponse({ kind: 'base', prompt: 'hi' });
+			const params = (generateContentMock as Mock).mock.calls[0][0];
+			expect(params.config.thinkingConfig).toBeUndefined();
 		});
 	});
 

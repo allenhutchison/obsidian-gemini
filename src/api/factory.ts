@@ -15,17 +15,11 @@ import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
 import { getDefaultModelForRole } from '../models';
 import type ObsidianGemini from '../main';
+import { ModelUseCase } from './model-use-case';
 
-/**
- * Model use cases for the plugin
- */
-export enum ModelUseCase {
-	CHAT = 'chat',
-	SUMMARY = 'summary',
-	COMPLETIONS = 'completions',
-	REWRITE = 'rewrite',
-	SEARCH = 'search',
-}
+// Re-exported so existing `import { ModelUseCase } from '.../api/factory'` call
+// sites keep working after the enum moved to its own (import-free) module.
+export { ModelUseCase } from './model-use-case';
 
 /**
  * Factory for creating provider-appropriate ModelApi clients.
@@ -72,6 +66,7 @@ export class ModelClientFactory {
 		const config: GeminiClientConfig = {
 			apiKey: plugin.apiKey,
 			model: modelName,
+			useCase,
 			temperature: settings.temperature ?? 1.0,
 			topP: settings.topP ?? 0.95,
 			streamingEnabled: settings.streamingEnabled ?? true,
