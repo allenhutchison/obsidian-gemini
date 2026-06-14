@@ -411,7 +411,7 @@ Controls which agent tools execute automatically, which require user confirmatio
 - **Setting**: `toolPolicy.toolPermissions`
 - **Type**: Object (tool name → permission)
 - **Default**: `{}` (empty — preset governs all tools)
-- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask_user` (confirmation required), or `approve` (runs automatically). Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`.
+- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask` (confirmation required), or `allow` (runs automatically). Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`. Legacy aliases `ask_user` and `approve` still parse correctly but `ask` and `allow` are the canonical forms.
 
 ### MCP servers
 

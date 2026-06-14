@@ -147,6 +147,7 @@ Let the AI actively work with your vault through tool calling capabilities.
 - **Create Folders:** Organize your vault with new folder structures
 - **List Files:** Browse vault directories and their contents
 - **Web Search:** Search Google for current information (if enabled)
+- **Google Maps:** Look up real-world places, addresses, opening hours, and ratings grounded in Google Maps (Gemini provider only)
 - **Fetch URLs:** Retrieve and analyze web content
 - **Deep Research:** Conduct comprehensive multi-source research with citations
 - **Agent Skills:** Activate specialized skill packages for domain-specific tasks
