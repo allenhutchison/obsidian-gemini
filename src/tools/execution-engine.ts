@@ -161,10 +161,6 @@ export class ToolExecutionEngine {
 			}
 		}
 
-		// Show execution notification (disabled - now shown in chat UI)
-		// const executionNotice = new Notice(`Executing ${tool.name}...`, 0);
-		const executionNotice = { hide: () => {} }; // Dummy object for compatibility
-
 		try {
 			// Record the execution attempt
 			this.loopDetector.recordExecution(context.session.id, toolCall);
@@ -183,24 +179,13 @@ export class ToolExecutionEngine {
 
 			this.addToHistory(context.session.id, execution);
 
-			// Update UI with result
-			executionNotice.hide();
-
-			// Tool execution results are now shown in the chat UI
-			// No need for separate notices
-
 			return result;
 		} catch (error) {
-			executionNotice.hide();
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-			// Error is shown in chat UI, no need for notice
-
-			const errorResult = {
+			return {
 				success: false,
 				error: errorMessage,
 			};
-
-			return errorResult;
 		}
 	}
 
