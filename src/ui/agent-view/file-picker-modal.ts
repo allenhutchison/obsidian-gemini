@@ -65,8 +65,10 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 		const search = prepareFuzzySearch(trimmed);
 		this.lastSuggestions = this.allItems
 			.map((item) => ({ item, result: search(item.path) }))
-			.filter(({ result }) => result !== null)
-			.sort((a, b) => b.result!.score - a.result!.score)
+			.filter(
+				(entry): entry is { item: TAbstractFile; result: NonNullable<typeof entry.result> } => entry.result !== null
+			)
+			.sort((a, b) => b.result.score - a.result.score)
 			.map(({ item }) => item);
 		return this.lastSuggestions;
 	}
