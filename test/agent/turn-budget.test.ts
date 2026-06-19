@@ -65,6 +65,14 @@ describe('TurnBudget', () => {
 			expect(budget.grantExtension()).toBe(5);
 			expect(budget.limit).toBe(15);
 		});
+
+		test('a zero-turn extension is never grantable', () => {
+			const budget = new TurnBudget(10, { extensionTurns: 0 });
+			expect(budget.canExtend()).toBe(false);
+			expect(budget.grantExtension()).toBe(0);
+			expect(budget.wasExtended).toBe(false);
+			expect(budget.limit).toBe(10);
+		});
 	});
 
 	describe('unlimited budget', () => {

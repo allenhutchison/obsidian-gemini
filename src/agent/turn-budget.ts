@@ -105,9 +105,14 @@ export class TurnBudget {
 		return left > 0 && left <= this.remindAt;
 	}
 
-	/** True when a one-shot extension is still available to grant. */
+	/**
+	 * True when a one-shot extension is still available to grant. A
+	 * zero-turn extension (`extensionTurns: 0`) is never grantable — otherwise
+	 * the budget would be marked extended and an extension notice emitted
+	 * without actually adding any turns.
+	 */
 	canExtend(): boolean {
-		return this.currentLimit !== undefined && !this.extensionGranted;
+		return this.currentLimit !== undefined && !this.extensionGranted && this.extensionTurns > 0;
 	}
 
 	/**
