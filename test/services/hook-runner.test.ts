@@ -668,7 +668,7 @@ describe('HookRunner agent-task: exhausted iterations', () => {
 		const hook = makeHook();
 		const runner = new HookRunner(plugin as any, makeContext(hook));
 
-		await expect(runner.run()).rejects.toThrow(/exhausted its tool-iteration budget \(cap 20/);
+		await expect(runner.run()).rejects.toThrow(/exhausted its tool-iteration budget \(cap 20, ran \d+\)/);
 	});
 
 	it('forwards a per-hook maxIterations override to AgentLoop', async () => {
@@ -705,7 +705,7 @@ describe('HookRunner agent-task: exhausted iterations', () => {
 		const plugin = createMockPlugin();
 		const runner = new HookRunner(plugin as any, makeContext(makeHook({ maxIterations: 50 })));
 
-		await expect(runner.run()).rejects.toThrow(/exhausted its tool-iteration budget \(cap 50/);
+		await expect(runner.run()).rejects.toThrow(/exhausted its tool-iteration budget \(cap 50, ran \d+\)/);
 	});
 });
 
