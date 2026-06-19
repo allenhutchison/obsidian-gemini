@@ -105,10 +105,10 @@ Omitting `toolPolicy` (or setting it to an empty object) means **inherit the glo
 
 Each run drives an agent loop that calls tools, reads the results, and calls more tools until it produces a final response. To guard against runaway loops in unattended runs, that loop is capped at **20 tool-call batches** by default. A batch is one round of tool calls (which may run several tools in parallel), not a single tool call — so a task doing parallel work fits more real calls into 20 batches than a strictly sequential one.
 
-When a task exhausts the cap without producing a response, the run fails with an error like:
+The cap is a **soft budget**, not a hard cliff. As the run nears its limit, the agent is told how many turns it has left so it can wrap up cleanly instead of being cut off mid-thought. And if it runs out while still mid-task, it's granted a **one-time extension** (half the original budget, rounded up) with a nudge to finish — so a task that needs "just a couple more" turns isn't killed at the cap. Only when that extension is also spent does the run fail:
 
 ```text
-Task "<slug>" exhausted 20 tool iterations without producing a response
+Task "<slug>" exhausted its tool-iteration budget (cap 20, ran 30) without producing a response
 ```
 
 If a legitimately long task keeps hitting this, raise the cap with the `maxIterations` frontmatter key (or the **Max tool iterations** field under **Advanced options** in the Scheduler):
@@ -120,7 +120,7 @@ maxIterations: 50
 ---
 ```
 
-`maxIterations` must be a positive whole number; blank or invalid values fall back to the default of 20. The interactive agent chat has no such cap — this limit applies only to unattended runs (scheduled tasks and lifecycle hooks).
+`maxIterations` must be a positive whole number; blank or invalid values fall back to the default of 20. The interactive agent chat applies the same soft-budget machinery with a much higher default (50 batches), so the reminder and one-time extension also protect long interactive turns from runaway loops without getting in the way of normal multi-step work.
 
 ## Managing Tasks
 

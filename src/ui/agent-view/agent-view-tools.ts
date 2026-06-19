@@ -4,7 +4,8 @@ import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { IConfirmationProvider, IToolHostView, ToolResult } from '../../tools/types';
 import { CustomPrompt } from '../../prompts/types';
-import { AgentLoop } from '../../agent/agent-loop';
+import { AgentLoop, DEFAULT_INTERACTIVE_MAX_ITERATIONS } from '../../agent/agent-loop';
+import { DEFAULT_TURN_BUDGET_REMIND_AT } from '../../agent/turn-budget';
 import type { ToolCall } from '../../api/interfaces/model-api';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
 import type { PerTurnContext } from './agent-view-tool-followup';
@@ -46,6 +47,12 @@ export class AgentViewTools {
 	private display: AgentViewToolDisplay;
 	/** Reasoning produced before the first tool batch, rendered into the group once it exists. */
 	private pendingReasoning: string | null = null;
+	/**
+	 * Latest remaining turns from the soft budget (via `onBudgetUpdate`), used to
+	 * surface a small counter in the "Thinking…" progress label as the budget
+	 * runs low. `Infinity` (or undefined) means no finite budget — no counter.
+	 */
+	private budgetRemaining: number | undefined;
 
 	constructor(
 		chatContainer: HTMLElement,
@@ -70,6 +77,9 @@ export class AgentViewTools {
 	) {
 		const currentSession = this.context.getCurrentSession();
 		if (!currentSession) return;
+
+		// Fresh budget counter per user turn (this instance is reused across turns).
+		this.budgetRemaining = undefined;
 
 		// Reasoning the model produced before this first tool batch. Render it as
 		// the first row of the tool group (once the group exists) and persist it.
@@ -100,6 +110,10 @@ export class AgentViewTools {
 					session: currentSession,
 					isCancelled: () => this.context.isCancellationRequested(),
 					confirmationProvider: this.context.confirmationProvider,
+					// Give interactive sessions a high soft budget so the reminder +
+					// one-shot extension machinery applies here too, bounding runaway
+					// loops on the path users watch without capping normal work.
+					maxIterations: DEFAULT_INTERACTIVE_MAX_ITERATIONS,
 					customPrompt,
 					projectRootPath: activeProject?.rootPath,
 					featureToolPolicy: activeProject?.config.toolPolicy,
@@ -132,8 +146,13 @@ export class AgentViewTools {
 						onToolCounted: () => {
 							this.context.incrementToolCallCount?.(1);
 						},
+						onBudgetUpdate: ({ remaining }) => {
+							// Remember the latest count so the next "Thinking…" label can
+							// surface it once the budget runs low.
+							this.budgetRemaining = remaining;
+						},
 						onFollowUpRequestStart: () => {
-							this.context.updateProgress(t('agent.progress.thinking'), 'thinking');
+							this.context.updateProgress(this.thinkingLabel(), 'thinking');
 						},
 						onModelReasoning: async (thoughts) => {
 							// Reasoning the model produced before deciding to call the
@@ -192,6 +211,22 @@ export class AgentViewTools {
 			this.currentGroupContainer = null;
 			this.context.hideProgress();
 		}
+	}
+
+	/**
+	 * The "Thinking…" progress label, suffixed with a small remaining-turns
+	 * counter once the soft budget runs low (≤ the reminder threshold). A
+	 * non-finite or absent budget shows the plain label.
+	 */
+	private thinkingLabel(): string {
+		const remaining = this.budgetRemaining;
+		if (remaining !== undefined && Number.isFinite(remaining) && remaining <= DEFAULT_TURN_BUDGET_REMIND_AT) {
+			return t('agent.progress.thinkingWithBudget', {
+				thinking: t('agent.progress.thinking'),
+				remaining,
+			});
+		}
+		return t('agent.progress.thinking');
 	}
 
 	/**

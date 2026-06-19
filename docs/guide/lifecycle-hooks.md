@@ -115,10 +115,10 @@ toolPolicy:
 
 An `agent-task` fire drives an agent loop that calls tools, reads the results, and calls more tools until it produces a final response. To guard against runaway loops in unattended fires, that loop is capped at **20 tool-call batches** by default. A batch is one round of tool calls (which may run several tools in parallel), not a single tool call.
 
-When a fire exhausts the cap without producing a response, it fails with an error like:
+The cap is a **soft budget**: the agent is warned as it nears the limit, and granted a **one-time extension** (half the original budget, rounded up) if it runs out mid-task, so it can wrap up instead of being cut off. Only when that extension is also spent does the fire fail:
 
 ```text
-Hook "<slug>" exhausted 20 tool iterations without producing a response
+Hook "<slug>" exhausted its tool-iteration budget (cap 20, ran 30) without producing a response
 ```
 
 If a legitimately long hook keeps hitting this, raise the cap with the `maxIterations` frontmatter key (or the **Max tool iterations** field under **Advanced options** in the hook editor):
@@ -131,7 +131,7 @@ maxIterations: 50
 ---
 ```
 
-`maxIterations` must be a positive whole number; blank or invalid values fall back to the default of 20. It only affects `agent-task` hooks — the other actions don't drive the agent loop. This is the same limit (and the same default) used by [scheduled tasks](./scheduled-tasks.md#tool-iteration-limit); the interactive agent chat has no such cap.
+`maxIterations` must be a positive whole number; blank or invalid values fall back to the default of 20. It only affects `agent-task` hooks — the other actions don't drive the agent loop. This is the same soft budget (and the same default) used by [scheduled tasks](./scheduled-tasks.md#tool-iteration-limit); the interactive agent chat applies it too, with a higher default of 50.
 
 ### `summarize`
 

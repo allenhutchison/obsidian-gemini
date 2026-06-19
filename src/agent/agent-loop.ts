@@ -6,7 +6,14 @@ import type { ToolCall, ModelResponse, ModelApi } from '../api/interfaces/model-
 import type { CustomPrompt } from '../prompts/types';
 import type { IConfirmationProvider, IToolHostView, ToolExecutionContext, ToolResult } from '../tools/types';
 import { generateToolDescription } from '../utils/text-generation';
-import { sortToolCallsByPriority, buildToolHistoryTurns, type ToolCallResultPair } from './agent-loop-helpers';
+import {
+	sortToolCallsByPriority,
+	buildToolHistoryTurns,
+	formatBudgetReminder,
+	formatBudgetExtension,
+	type ToolCallResultPair,
+} from './agent-loop-helpers';
+import { TurnBudget } from './turn-budget';
 import {
 	buildFollowUpRequest,
 	buildRetryRequest,
@@ -56,6 +63,14 @@ export interface AgentLoopHooks {
 	 * returned on `AgentLoopResult.thoughts` instead, not via this hook.
 	 */
 	onModelReasoning?(thoughts: string): void | Promise<void>;
+	/**
+	 * Fired once per iteration after a tool batch runs, with the soft turn
+	 * budget's state. `remaining` is `Infinity` for an unlimited (no-cap)
+	 * budget; `limit` is `undefined` in that case. `extended` is true once the
+	 * one-shot extension has been granted. UI uses this to render a small
+	 * remaining-turns counter as the budget runs low.
+	 */
+	onBudgetUpdate?(state: { remaining: number; limit: number | undefined; extended: boolean }): void | Promise<void>;
 }
 
 export interface AgentLoopOptions {
@@ -173,6 +188,18 @@ const AGENT_LOOP_ABORT_THRESHOLD = 3;
 export const DEFAULT_HEADLESS_MAX_ITERATIONS = 20;
 
 /**
+ * Default soft turn budget for interactive agent-view sessions. Unlike the
+ * headless cap this is deliberately high — it exists so the soft-budget
+ * machinery (reminder + one-shot extension) applies to the path users actually
+ * watch, bounding genuinely runaway loops without getting in the way of normal
+ * multi-step work. Per the cache-aware framing on #622, a long focused loop is
+ * relatively cheap once the prefix cache is warm, so the right interactive cap
+ * is higher than the paper's cost-tuned numbers suggest. `AgentViewTools`
+ * passes this as `maxIterations`; tune against the eval suite (#619).
+ */
+export const DEFAULT_INTERACTIVE_MAX_ITERATIONS = 50;
+
+/**
  * Drives the tool-execution loop after the initial model response. Iterates
  * until the model returns a text response (or cancellation / iteration cap /
  * empty-fallback fires). UI-agnostic — callers attach behavior via hooks.
@@ -236,6 +263,13 @@ export class AgentLoop {
 		// rest of the iteration budget.
 		let loopFireCount = 0;
 
+		// Soft turn budget layered on the hard `maxIterations` cap. An undefined
+		// cap yields an unlimited (inert) budget, preserving the no-cap default.
+		// `pendingBudgetNotice` carries an extension-grant string from the top of
+		// one iteration to the tool-response turn built later in the same pass.
+		const budget = new TurnBudget(maxIterations);
+		let pendingBudgetNotice: string | undefined;
+
 		// Lazily resolve the model API factory once — same instance is reused
 		// for every follow-up and retry request in this loop.
 		const createModel =
@@ -251,17 +285,31 @@ export class AgentLoop {
 				return this.cancelledResult(conversationHistory, iterations);
 			}
 
-			if (maxIterations !== undefined && iterations >= maxIterations) {
-				return {
-					markdown: '',
-					history: conversationHistory,
-					cancelled: false,
-					retried: false,
-					fellBack: false,
-					exhausted: true,
-					loopAborted: false,
-					iterations,
-				};
+			// Budget gate. We only reach here with pending tool calls, so an
+			// exhausted budget means the model is out of turns but not done. Grant
+			// the one-shot extension if it's still available — the grant text is
+			// injected into this batch's tool-response turn so the model sees it
+			// and can wrap up. A second exhaustion (extension already spent) falls
+			// through to the hard-stop `exhausted` path.
+			if (budget.isExhausted(iterations)) {
+				if (budget.canExtend()) {
+					const granted = budget.grantExtension();
+					plugin.logger.log(
+						`[AgentLoop] Turn budget spent at ${iterations} iterations; granting one-time extension of ${granted} turns`
+					);
+					pendingBudgetNotice = formatBudgetExtension(granted);
+				} else {
+					return {
+						markdown: '',
+						history: conversationHistory,
+						cancelled: false,
+						retried: false,
+						fellBack: false,
+						exhausted: true,
+						loopAborted: false,
+						iterations,
+					};
+				}
 			}
 
 			// Sort and execute this batch
@@ -308,12 +356,30 @@ export class AgentLoop {
 					`${currentToolCalls.filter((tc) => tc.thoughtSignature).length} with signatures`
 			);
 
+			// Resolve the soft-budget notice for this tool-response turn. An
+			// extension grant (set above) takes priority; otherwise inject the
+			// low-turns reminder when the threshold is crossed. The model sees
+			// whichever applies on its next follow-up.
+			let budgetNotice = pendingBudgetNotice;
+			pendingBudgetNotice = undefined;
+			if (!budgetNotice && budget.shouldRemind(iterations)) {
+				budgetNotice = formatBudgetReminder(budget.remaining(iterations));
+			}
+			await this.safeHook('onBudgetUpdate', plugin, () =>
+				hooks?.onBudgetUpdate?.({
+					remaining: budget.remaining(iterations),
+					limit: budget.limit,
+					extended: budget.wasExtended,
+				})
+			);
+
 			const updatedHistory = buildToolHistoryTurns({
 				conversationHistory,
 				userMessage,
 				perTurnContext,
 				toolCalls: currentToolCalls,
 				toolResults,
+				appendText: budgetNotice,
 			});
 
 			if (isCancelled()) {

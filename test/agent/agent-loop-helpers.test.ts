@@ -4,6 +4,8 @@ import {
 	buildFunctionResponseParts,
 	buildToolHistoryTurns,
 	truncateOldToolResults,
+	formatBudgetReminder,
+	formatBudgetExtension,
 	DEFAULT_TOOL_RESPONSE_TRUNCATE_BYTES,
 	ToolCallResultPair,
 } from '../../src/agent/agent-loop-helpers';
@@ -478,6 +480,52 @@ describe('buildToolHistoryTurns', () => {
 		expect(userResponseTurn.parts).toHaveLength(2);
 		expect(userResponseTurn.parts![0].functionResponse).toBeDefined();
 		expect(userResponseTurn.parts![1].inlineData).toEqual({ mimeType: 'image/png', data: 'imgbytes' });
+	});
+
+	test('appends appendText as a trailing text part on the tool-response turn', () => {
+		const updated = buildToolHistoryTurns({
+			conversationHistory: [],
+			userMessage: 'q',
+			toolCalls: [sampleToolCall],
+			toolResults: [sampleResult],
+			appendText: 'ENVIRONMENT REMINDER: You have 2 turns remaining.',
+		});
+
+		const userResponseTurn = updated[updated.length - 1];
+		expect(userResponseTurn.role).toBe('user');
+		expect(userResponseTurn.parts).toHaveLength(2); // functionResponse + appended text
+		expect(userResponseTurn.parts![0].functionResponse).toBeDefined();
+		expect(userResponseTurn.parts![1]).toEqual({ text: 'ENVIRONMENT REMINDER: You have 2 turns remaining.' });
+	});
+
+	test('omits the trailing text part when appendText is empty or whitespace', () => {
+		const updated = buildToolHistoryTurns({
+			conversationHistory: [],
+			userMessage: 'q',
+			toolCalls: [sampleToolCall],
+			toolResults: [sampleResult],
+			appendText: '   ',
+		});
+
+		const userResponseTurn = updated[updated.length - 1];
+		expect(userResponseTurn.parts).toHaveLength(1);
+		expect(userResponseTurn.parts![0].functionResponse).toBeDefined();
+	});
+});
+
+describe('formatBudgetReminder', () => {
+	test('includes the remaining count and pluralizes correctly', () => {
+		expect(formatBudgetReminder(3)).toContain('You have 3 turns remaining');
+		expect(formatBudgetReminder(1)).toContain('You have 1 turn remaining');
+		expect(formatBudgetReminder(2)).toMatch(/^ENVIRONMENT REMINDER:/);
+	});
+});
+
+describe('formatBudgetExtension', () => {
+	test('states the granted turns and pluralizes correctly', () => {
+		expect(formatBudgetExtension(5)).toContain('granted 5 more turns');
+		expect(formatBudgetExtension(1)).toContain('granted 1 more turn');
+		expect(formatBudgetExtension(2)).toMatch(/^ENVIRONMENT REMINDER:/);
 	});
 });
 
