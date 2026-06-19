@@ -1,7 +1,6 @@
 import { App, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { DestructiveAction } from '../types/agent';
-import type { ConfirmationResult, DiffContext, IConfirmationProvider, Tool } from '../tools/types';
 import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
@@ -12,32 +11,7 @@ import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop'
 import { GeminiSummary } from '../summary';
 import { SelectionRewriter } from '../rewrite-selection';
 import { HookFireContext, renderPrompt } from './hook-manager';
-
-/**
- * Auto-approve all tool confirmations for headless hook fires. The user
- * authored the hook definition with an explicit `enabledTools` allowlist —
- * there is no UI surface during a vault-event-triggered run on which to
- * surface a mid-run confirmation.
- */
-class HeadlessConfirmationProvider implements IConfirmationProvider {
-	async showConfirmationInChat(
-		_tool: Tool,
-		_parameters: unknown,
-		_executionId: string,
-		_diffContext?: DiffContext
-	): Promise<ConfirmationResult> {
-		return { confirmed: true, allowWithoutConfirmation: false };
-	}
-	isToolAllowedWithoutConfirmation(_toolName: string): boolean {
-		return true;
-	}
-	allowToolWithoutConfirmation(_toolName: string): void {
-		/* no-op */
-	}
-	updateProgress(_message: string, _status: string): void {
-		/* no-op */
-	}
-}
+import { HeadlessConfirmationProvider } from './headless-confirmation-provider';
 
 /**
  * Runs a single hook fire headlessly:
