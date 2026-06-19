@@ -2341,9 +2341,9 @@ export const en = {
 		context: 'Progress-bar status while the AI model is processing a request.',
 	},
 	'agent.progress.thinkingWithBudget': {
-		message: '{thinking} ({remaining} turns left)',
+		message: '{thinking} ({remaining} remaining)',
 		context:
-			'Progress-bar status while the AI model is processing, shown when the agent is running low on its turn budget. {thinking} is the localized "Thinking..." label; {remaining} is the number of tool-execution turns remaining.',
+			'Progress-bar status while the AI model is processing, shown when the agent is running low on its turn budget. {thinking} is the localized "Thinking..." label; {remaining} is the number of tool-execution turns remaining. Plural-neutral wording ("remaining") so it reads correctly for a count of 1.',
 	},
 	'agent.progress.generating': {
 		message: 'Generating response...',
