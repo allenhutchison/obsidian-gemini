@@ -85,7 +85,17 @@ If privacy is the concern, the paid AI Studio tier's no-training terms are the i
 
 ### Can I use a local LLM via Ollama or llama.cpp?
 
-No. Gemini Scribe is built around the Gemini API and its SDK — swapping in a local inference server would be a full rewrite, not a configuration change, and many of the plugin's features (Deep Research, semantic vault search, Google Search grounding, URL Context) have no local equivalent. If local-first inference is your priority, another plugin will serve you better. ([#576](https://github.com/allenhutchison/obsidian-gemini/discussions/576))
+**Ollama is supported.** Switch the provider to **Ollama** in Settings → Gemini Scribe → Provider, point the base URL at your Ollama instance, and enter the model name you have pulled. See the [Ollama Setup guide](./ollama-setup.md) for a step-by-step walkthrough.
+
+A few Gemini-specific features are unavailable on Ollama — these all depend on Google's cloud APIs and have no local equivalent:
+
+- **Deep Research** (requires Google Search grounding)
+- **Semantic vault search / RAG** (requires the Gemini File Search API)
+- **Google Search grounding** in agent mode
+- **URL Context** web-fetch tool
+- **Image generation** (Imagen API)
+
+Agent mode, tool calling, scheduled tasks, lifecycle hooks, custom prompts, completions, summarization, and rewriting all work with Ollama. ([#576](https://github.com/allenhutchison/obsidian-gemini/discussions/576))
 
 ## Language & Localization
 
