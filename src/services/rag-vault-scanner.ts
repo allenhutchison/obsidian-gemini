@@ -503,8 +503,7 @@ export class RagVaultScanner {
 
 						// Track failed file with error details
 						if (event.currentFile) {
-							const errorMessage =
-								event.error instanceof Error ? event.error.message : String(event.error || 'Unknown error');
+							const errorMessage = event.error ? getRawErrorMessage(event.error) : 'Unknown error';
 							this.failedFiles.push({
 								path: event.currentFile,
 								error: errorMessage,

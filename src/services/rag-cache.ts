@@ -2,6 +2,7 @@ import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { CACHE_VERSION, CACHE_SAVE_INTERVAL } from './rag-types';
 import type { RagIndexCache } from './rag-types';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Manages the local cache of indexed files for the RAG indexing service.
@@ -126,7 +127,7 @@ export class RagCache {
 				} catch (createError) {
 					// Handle race condition where file exists on disk but not in metadata cache
 					// This can happen on Linux or during startup
-					const errorMessage = createError instanceof Error ? createError.message : String(createError);
+					const errorMessage = getRawErrorMessage(createError);
 					if (errorMessage.includes('File already exists')) {
 						// Fall back to direct adapter write
 						this.plugin.logger.debug(`RAG Indexing: Cache file exists but not in metadata cache, using adapter.write`, {

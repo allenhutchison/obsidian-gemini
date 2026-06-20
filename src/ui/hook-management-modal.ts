@@ -4,6 +4,7 @@ import type { FeatureToolPolicy } from '../types/tool-policy';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
+import { getRawErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
 
 const TRIGGER_OPTIONS = [
@@ -506,7 +507,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			this.view = 'list';
 			this.render();
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : String(err);
+			const msg = getRawErrorMessage(err);
 			this.plugin.logger.error('[HookManagementModal] Save failed:', err);
 			new Notice(t('hooks.saveFailed', { message: msg }));
 		}

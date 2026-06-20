@@ -5,6 +5,7 @@ import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
 import { ensureFolderExists } from '../utils/file-utils';
+import { getRawErrorMessage } from '../utils/error-utils';
 import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
 import { buildTurnPreamble } from '../utils/turn-preamble';
 import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
@@ -307,8 +308,8 @@ export class HookRunner {
 		try {
 			await this.plugin.app.vault.create(fallback, fullContent);
 		} catch (err) {
-			const inner = err instanceof Error ? err.message : String(err);
-			const prior = lastError instanceof Error ? lastError.message : String(lastError);
+			const inner = getRawErrorMessage(err);
+			const prior = getRawErrorMessage(lastError);
 			throw new Error(
 				`[HookRunner] Failed to write hook output after ${CREATE_RETRY_LIMIT + 1} attempts: ${inner} (prior: ${prior})`
 			);
