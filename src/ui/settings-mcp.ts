@@ -132,7 +132,7 @@ async function createMCPSettings(
 											new Notice(
 												t('settings.mcp.reconnectFailed', {
 													name: updated.name,
-													error: error instanceof Error ? error.message : String(error),
+													error: getRawErrorMessage(error),
 												})
 											);
 										}

@@ -4,6 +4,7 @@ import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import { ManagementModalBase } from './components/management-modal-base';
 import { ToolPolicyEditor } from './components/tool-policy-editor';
+import { getRawErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
 
 const SCHEDULE_PRESETS = [
@@ -422,7 +423,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			this.view = 'list';
 			this.render();
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : String(err);
+			const msg = getRawErrorMessage(err);
 			this.plugin.logger.error('[SchedulerManagementModal] Save failed:', err);
 			new Notice(t('scheduler.saveFailed', { message: msg }));
 		}
