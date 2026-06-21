@@ -405,7 +405,7 @@ describe('AgentLoop', () => {
 	});
 
 	describe('iteration cap', () => {
-		test('exhausts when maxIterations is reached without terminal text', async () => {
+		test('exhausts after the one-shot extension when the model never produces text', async () => {
 			const plugin = buildPlugin();
 			const session = buildSession();
 			// Model always returns more tool calls — would loop forever without a cap
@@ -428,10 +428,12 @@ describe('AgentLoop', () => {
 				},
 			});
 
+			// Hard cap 3 + one-shot extension of ceil(3/2)=2 = 5 total iterations
+			// before the budget finally hard-stops.
 			expect(result.exhausted).toBe(true);
-			expect(result.iterations).toBe(3);
+			expect(result.iterations).toBe(5);
 			expect(result.markdown).toBe('');
-			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(3);
+			expect(plugin.toolExecutionEngine.executeTool).toHaveBeenCalledTimes(5);
 		});
 
 		test('no cap by default — runs until model produces text', async () => {
@@ -457,6 +459,183 @@ describe('AgentLoop', () => {
 			expect(result.markdown).toBe('finally done');
 			expect(result.iterations).toBe(6);
 			expect(result.exhausted).toBe(false);
+		});
+	});
+
+	describe('soft turn budget', () => {
+		// Collect every text part across the history (tool-response turns carry the
+		// injected budget reminder/extension strings as trailing text parts).
+		const allText = (history: any[]): string[] =>
+			history.flatMap((turn) => (turn.parts || []).map((p: any) => p.text).filter((t: any): t is string => !!t));
+
+		test('injects a reminder once ≤3 turns remain, with the live remaining count', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			// limit 5 → reminder fires at remaining 3 and 2, then the model finishes.
+			const api = makeScriptedModelApi([
+				toolResponse([tc('read_file')]),
+				toolResponse([tc('read_file')]),
+				textResponse('done'),
+			]);
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file')]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					maxIterations: 5,
+					createModelApi: () => api,
+				},
+			});
+
+			expect(result.exhausted).toBe(false);
+			expect(result.markdown).toBe('done');
+			const texts = allText(result.history);
+			expect(texts.some((t) => t.includes('You have 3 turns remaining'))).toBe(true);
+			expect(texts.some((t) => t.includes('You have 2 turns remaining'))).toBe(true);
+			// No reminder while the budget was still comfortable (4 remaining).
+			expect(texts.some((t) => t.includes('You have 4 turns remaining'))).toBe(false);
+		});
+
+		test('grants exactly one extension when the budget expires mid-tool-call, then lets the model finish', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			// limit 2 (+1 extension) → model keeps calling tools until the grant,
+			// then wraps up on the extra turn.
+			const api = makeScriptedModelApi([
+				toolResponse([tc('read_file')]),
+				toolResponse([tc('read_file')]),
+				textResponse('wrapped up'),
+			]);
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file')]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					maxIterations: 2,
+					createModelApi: () => api,
+				},
+			});
+
+			expect(result.exhausted).toBe(false);
+			expect(result.markdown).toBe('wrapped up');
+			expect(result.iterations).toBe(3); // 2 + one-shot extension of ceil(2/2)=1
+			const texts = allText(result.history);
+			const grants = texts.filter((t) => t.includes('granted'));
+			expect(grants).toHaveLength(1);
+			expect(grants[0]).toContain('1 more turn');
+		});
+
+		test('fires onBudgetUpdate each iteration with the remaining count', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([toolResponse([tc('read_file')]), textResponse('done')]);
+
+			const updates: Array<{ remaining: number; limit: number | undefined; extended: boolean }> = [];
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file')]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					maxIterations: 5,
+					createModelApi: () => api,
+					hooks: {
+						onBudgetUpdate: (state) => {
+							updates.push(state);
+						},
+					},
+				},
+			});
+
+			expect(updates).toEqual([
+				{ remaining: 4, limit: 5, extended: false },
+				{ remaining: 3, limit: 5, extended: false },
+			]);
+		});
+
+		test('an unlimited budget (no maxIterations) never reminds or extends', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeScriptedModelApi([
+				toolResponse([tc('read_file')]),
+				toolResponse([tc('read_file')]),
+				textResponse('done'),
+			]);
+
+			const updates: Array<{ remaining: number }> = [];
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file')]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onBudgetUpdate: (s) => {
+							updates.push(s);
+						},
+					},
+				},
+			});
+
+			expect(result.exhausted).toBe(false);
+			expect(allText(result.history).some((t) => t.includes('ENVIRONMENT REMINDER'))).toBe(false);
+			expect(updates.every((u) => u.remaining === Infinity)).toBe(true);
+		});
+
+		test('loop-abort still preempts the budget when both would fire', async () => {
+			const plugin = buildPlugin();
+			plugin.toolExecutionEngine.executeTool = vi
+				.fn()
+				.mockResolvedValue({ success: false, loopDetected: true, error: 'Execution loop detected' });
+
+			const session = buildSession();
+			// Three blocked calls per batch trip the loop-abort threshold (3) within
+			// the very first batch — before the budget gate (checked at the top of
+			// the next iteration) ever gets the chance to exhaust.
+			const batch = [tc('read_file', { path: 'a' }), tc('read_file', { path: 'b' }), tc('read_file', { path: 'c' })];
+			const api = {
+				generateModelResponse: vi.fn().mockResolvedValue(toolResponse(batch)),
+			} as any;
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse(batch),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					maxIterations: 1,
+					createModelApi: () => api,
+				},
+			});
+
+			expect(result.loopAborted).toBe(true);
+			expect(result.exhausted).toBe(false);
+			expect(result.iterations).toBe(1);
 		});
 	});
 

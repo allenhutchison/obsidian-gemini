@@ -251,7 +251,7 @@ describe('ScheduledTaskRunner', () => {
 		const plugin = createMockPlugin();
 		const runner = new ScheduledTaskRunner(plugin, makeTask({ maxIterations: 50 }));
 
-		await expect(runner.run(() => false)).rejects.toThrow('exhausted 50 tool iterations');
+		await expect(runner.run(() => false)).rejects.toThrow(/exhausted its tool-iteration budget \(cap 50, ran \d+\)/);
 	});
 
 	it('returns undefined when AgentLoop reports cancellation', async () => {

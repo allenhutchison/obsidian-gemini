@@ -162,8 +162,15 @@ export function buildToolHistoryTurns(args: {
 	perTurnContext?: string;
 	toolCalls: ToolCall[];
 	toolResults: ToolCallResultPair[];
+	/**
+	 * Optional text appended to the tool-response (user) turn as a trailing
+	 * text part — used by the soft turn budget to inject the budget reminder or
+	 * extension grant alongside the tool results, so the model sees it on its
+	 * next follow-up without a separate history entry.
+	 */
+	appendText?: string;
 }): Content[] {
-	const { conversationHistory, userMessage, perTurnContext, toolCalls, toolResults } = args;
+	const { conversationHistory, userMessage, perTurnContext, toolCalls, toolResults, appendText } = args;
 
 	const userParts: Part[] = [];
 	if (userMessage && userMessage.trim()) {
@@ -173,10 +180,15 @@ export function buildToolHistoryTurns(args: {
 		userParts.push({ text: perTurnContext });
 	}
 
+	const responseParts = buildFunctionResponseParts(toolResults);
+	if (appendText && appendText.trim()) {
+		responseParts.push({ text: appendText });
+	}
+
 	const updated: Content[] = [
 		...conversationHistory,
 		{ role: 'model', parts: buildFunctionCallParts(toolCalls) },
-		{ role: 'user', parts: buildFunctionResponseParts(toolResults) },
+		{ role: 'user', parts: responseParts },
 	];
 
 	if (userParts.length > 0) {
@@ -286,4 +298,29 @@ export function truncateOldToolResults(
 		});
 		return { ...turn, parts: newParts };
 	});
+}
+
+/**
+ * Format the soft-budget reminder injected into the tool-response turn when the
+ * agent has only a few turns left. Model-facing (stays English; not localized).
+ * Pluralizes "turn"/"turns" so the single-turn case reads naturally.
+ */
+export function formatBudgetReminder(remaining: number): string {
+	const turns = `${remaining} ${remaining === 1 ? 'turn' : 'turns'}`;
+	return (
+		`ENVIRONMENT REMINDER: You have ${turns} remaining in this task. ` +
+		`Wrap up your work and give your final answer before the budget runs out.`
+	);
+}
+
+/**
+ * Format the one-shot extension grant injected when the budget is spent but the
+ * agent still wants to call tools. Model-facing (stays English; not localized).
+ */
+export function formatBudgetExtension(granted: number): string {
+	const turns = `${granted} more ${granted === 1 ? 'turn' : 'turns'}`;
+	return (
+		`ENVIRONMENT REMINDER: You have used your initial turn budget. You are granted ${turns} — ` +
+		`wrap up your work now, or explain what you still need to finish.`
+	);
 }

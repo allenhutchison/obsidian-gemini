@@ -123,8 +123,12 @@ export class HookRunner {
 			});
 			if (result.cancelled) return undefined;
 			if (result.exhausted) {
+				// Exhaustion now fires only after the soft budget's one-shot
+				// extension was also spent, so the actual iteration count exceeds
+				// the configured cap — report both.
 				throw new Error(
-					`[HookRunner] Hook "${hook.slug}" exhausted ${maxIterations} tool iterations without producing a response`
+					`[HookRunner] Hook "${hook.slug}" exhausted its tool-iteration budget ` +
+						`(cap ${maxIterations}, ran ${result.iterations}) without producing a response`
 				);
 			}
 			finalText = result.markdown;

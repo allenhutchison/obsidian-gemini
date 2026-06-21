@@ -108,8 +108,12 @@ export class ScheduledTaskRunner {
 			if (result.cancelled) return undefined;
 
 			if (result.exhausted) {
+				// Exhaustion now fires only after the soft budget's one-shot
+				// extension was also spent, so the actual iteration count exceeds
+				// the configured cap — report both.
 				throw new Error(
-					`[ScheduledTaskRunner] Task "${this.task.slug}" exhausted ${maxIterations} tool iterations without producing a response`
+					`[ScheduledTaskRunner] Task "${this.task.slug}" exhausted its tool-iteration budget ` +
+						`(cap ${maxIterations}, ran ${result.iterations}) without producing a response`
 				);
 			}
 
