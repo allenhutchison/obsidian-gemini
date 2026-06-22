@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const ja: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} 日前',
+	'time.dayAgoSingular': '{count} 日前',
+	'time.hoursAgoPlural': '{count} 時間前',
+	'time.hourAgoSingular': '{count} 時間前',
+	'time.minutesAgoPlural': '{count} 分前',
+	'time.minuteAgoSingular': '{count} 分前',
+	'time.justNow': 'たった今',
 	'agent.empty.title': '会話を開始する',
 	'agent.empty.description': '保管庫と連携して能動的に動作するAIアシスタント。',
 	'agent.empty.capabilitiesTitle': 'エージェントにできること',
@@ -283,13 +289,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': '再開すると、すでにインデックス作成されたファイルをスキップし、中断した場所から続行します。',
 	'ragResume.resumeButton': '再開',
 	'ragResume.startFreshButton': '最初からやり直す',
-	'ragResume.justNow': 'たった今',
-	'ragResume.minuteAgoSingular': '{count}分前',
-	'ragResume.minutesAgoPlural': '{count}分前',
-	'ragResume.hourAgoSingular': '{count}時間前',
-	'ragResume.hoursAgoPlural': '{count}時間前',
-	'ragResume.dayAgoSingular': '{count}日前',
-	'ragResume.daysAgoPlural': '{count}日前',
 	'scheduledTasks.title': 'スケジュールタスク',
 	'scheduledTasks.managerUnavailable': 'スケジュールタスクマネージャーを利用できません。',
 	'scheduledTasks.empty':
@@ -428,13 +427,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': '無効',
 	'ragStatus.statusRateLimited': 'レート制限中',
 	'ragStatus.statusUnknown': '不明',
-	'ragStatus.justNow': 'たった今',
-	'ragStatus.minuteAgoSingular': '{count} 分前',
-	'ragStatus.minutesAgoPlural': '{count} 分前',
-	'ragStatus.hourAgoSingular': '{count} 時間前',
-	'ragStatus.hoursAgoPlural': '{count} 時間前',
-	'ragStatus.dayAgoSingular': '{count} 日前',
-	'ragStatus.daysAgoPlural': '{count} 日前',
 	'scheduler.presetOnce': '1回のみ',
 	'scheduler.presetDaily': '毎日 (24時間ごと)',
 	'scheduler.presetDailyAt': '毎日指定時刻',

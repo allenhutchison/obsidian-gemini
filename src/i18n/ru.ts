@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const ru: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} дн. назад',
+	'time.dayAgoSingular': '{count} день назад',
+	'time.hoursAgoPlural': '{count} ч. назад',
+	'time.hourAgoSingular': '{count} час назад',
+	'time.minutesAgoPlural': '{count} мин. назад',
+	'time.minuteAgoSingular': '{count} минуту назад',
+	'time.justNow': 'Только что',
 	'agent.empty.title': 'Начать беседу',
 	'agent.empty.description': 'Ваш ИИ-ассистент, который может активно работать с вашим хранилищем.',
 	'agent.empty.capabilitiesTitle': 'Что умеет агент?',
@@ -293,13 +299,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'При возобновлении процесс продолжится с места прерывания, пропуская уже проиндексированные файлы.',
 	'ragResume.resumeButton': 'Возобновить',
 	'ragResume.startFreshButton': 'Начать заново',
-	'ragResume.justNow': 'Только что',
-	'ragResume.minuteAgoSingular': '{count} минуту назад',
-	'ragResume.minutesAgoPlural': '{count} мин. назад',
-	'ragResume.hourAgoSingular': '{count} час назад',
-	'ragResume.hoursAgoPlural': '{count} ч. назад',
-	'ragResume.dayAgoSingular': '{count} день назад',
-	'ragResume.daysAgoPlural': '{count} дн. назад',
 	'scheduledTasks.title': 'Запланированные задачи',
 	'scheduledTasks.managerUnavailable': 'Диспетчер запланированных задач недоступен.',
 	'scheduledTasks.empty':
@@ -439,13 +438,6 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Отключено',
 	'ragStatus.statusRateLimited': 'Ограничение частоты запросов',
 	'ragStatus.statusUnknown': 'Неизвестно',
-	'ragStatus.justNow': 'Только что',
-	'ragStatus.minuteAgoSingular': '{count} минуту назад',
-	'ragStatus.minutesAgoPlural': '{count} мин. назад',
-	'ragStatus.hourAgoSingular': '{count} час назад',
-	'ragStatus.hoursAgoPlural': '{count} ч. назад',
-	'ragStatus.dayAgoSingular': '{count} день назад',
-	'ragStatus.daysAgoPlural': '{count} дн. назад',
 	'scheduler.presetOnce': 'Однократно',
 	'scheduler.presetDaily': 'Ежедневно (каждые 24 ч)',
 	'scheduler.presetDailyAt': 'Ежедневно в указанное время',

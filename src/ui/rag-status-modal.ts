@@ -1,6 +1,7 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import type { RagIndexStatus, FailedFileEntry } from '../services/rag-types';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { formatRelativeTime } from '../utils/format-relative-time';
 import { t } from '../i18n';
 
 /**
@@ -164,7 +165,7 @@ export class RagStatusModal extends Modal {
 			syncRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.lastSyncLabel') });
 			syncRow.createSpan({
 				cls: 'rag-status-value',
-				text: this.formatDate(this.statusInfo.lastSync),
+				text: formatRelativeTime(this.statusInfo.lastSync),
 			});
 		}
 
@@ -286,7 +287,7 @@ export class RagStatusModal extends Modal {
 			pathEl.setAttribute('title', file.path);
 
 			const timeEl = item.createSpan({ cls: 'rag-status-file-time' });
-			timeEl.setText(this.formatDate(file.lastIndexed));
+			timeEl.setText(formatRelativeTime(file.lastIndexed));
 		}
 
 		// Show "load more" button if there are more files
@@ -323,7 +324,7 @@ export class RagStatusModal extends Modal {
 			pathEl.setAttribute('title', failure.path);
 
 			const timeEl = headerRow.createSpan({ cls: 'rag-status-failure-time' });
-			timeEl.setText(this.formatDate(failure.timestamp));
+			timeEl.setText(formatRelativeTime(failure.timestamp));
 
 			const errorEl = item.createDiv({ cls: 'rag-status-failure-error' });
 			errorEl.setText(failure.error);
@@ -421,33 +422,6 @@ export class RagStatusModal extends Modal {
 				return 'rag-status-rate-limited';
 			default:
 				return '';
-		}
-	}
-
-	private formatDate(timestamp: number): string {
-		const date = new Date(timestamp);
-		const now = new Date();
-		const diffMs = now.getTime() - date.getTime();
-		const diffMins = Math.floor(diffMs / 60000);
-		const diffHours = Math.floor(diffMs / 3600000);
-		const diffDays = Math.floor(diffMs / 86400000);
-
-		if (diffMins < 1) {
-			return t('ragStatus.justNow');
-		} else if (diffMins < 60) {
-			return diffMins === 1
-				? t('ragStatus.minuteAgoSingular', { count: diffMins })
-				: t('ragStatus.minutesAgoPlural', { count: diffMins });
-		} else if (diffHours < 24) {
-			return diffHours === 1
-				? t('ragStatus.hourAgoSingular', { count: diffHours })
-				: t('ragStatus.hoursAgoPlural', { count: diffHours });
-		} else if (diffDays < 7) {
-			return diffDays === 1
-				? t('ragStatus.dayAgoSingular', { count: diffDays })
-				: t('ragStatus.daysAgoPlural', { count: diffDays });
-		} else {
-			return date.toLocaleDateString();
 		}
 	}
 }

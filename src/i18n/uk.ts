@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const uk: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} дн. тому',
+	'time.dayAgoSingular': '{count} день тому',
+	'time.hoursAgoPlural': '{count} год тому',
+	'time.hourAgoSingular': '{count} годину тому',
+	'time.minutesAgoPlural': '{count} хв тому',
+	'time.minuteAgoSingular': '{count} хвилину тому',
+	'time.justNow': 'Щойно',
 	'agent.empty.title': 'Почати розмову',
 	'agent.empty.description': 'Ваш AI-помічник, який може активно працювати з вашим сховищем.',
 	'agent.empty.capabilitiesTitle': 'Що вміє агент?',
@@ -287,13 +293,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'Відновлення продовжиться з місця зупинки, пропускаючи вже проіндексовані файли.',
 	'ragResume.resumeButton': 'Відновити',
 	'ragResume.startFreshButton': 'Почати заново',
-	'ragResume.justNow': 'Щойно',
-	'ragResume.minuteAgoSingular': '{count} хвилину тому',
-	'ragResume.minutesAgoPlural': '{count} хв тому',
-	'ragResume.hourAgoSingular': '{count} годину тому',
-	'ragResume.hoursAgoPlural': '{count} год тому',
-	'ragResume.dayAgoSingular': '{count} день тому',
-	'ragResume.daysAgoPlural': '{count} дн. тому',
 	'scheduledTasks.title': 'Заплановані завдання',
 	'scheduledTasks.managerUnavailable': 'Менеджер запланованих завдань недоступний.',
 	'scheduledTasks.empty':
@@ -433,13 +432,6 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Вимкнено',
 	'ragStatus.statusRateLimited': 'Обмежено лімітом запитів',
 	'ragStatus.statusUnknown': 'Невідомо',
-	'ragStatus.justNow': 'Щойно',
-	'ragStatus.minuteAgoSingular': '{count} хвилину тому',
-	'ragStatus.minutesAgoPlural': '{count} хв тому',
-	'ragStatus.hourAgoSingular': '{count} годину тому',
-	'ragStatus.hoursAgoPlural': '{count} год тому',
-	'ragStatus.dayAgoSingular': '{count} день тому',
-	'ragStatus.daysAgoPlural': '{count} дн. тому',
 	'scheduler.presetOnce': 'Один раз',
 	'scheduler.presetDaily': 'Щодня (кожні 24 год)',
 	'scheduler.presetDailyAt': 'Щодня в заданий час',

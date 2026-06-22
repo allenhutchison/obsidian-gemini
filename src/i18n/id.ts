@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const id: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} hari yang lalu',
+	'time.dayAgoSingular': '{count} hari yang lalu',
+	'time.hoursAgoPlural': '{count} jam yang lalu',
+	'time.hourAgoSingular': '{count} jam yang lalu',
+	'time.minutesAgoPlural': '{count} menit yang lalu',
+	'time.minuteAgoSingular': '{count} menit yang lalu',
+	'time.justNow': 'Baru saja',
 	'agent.empty.title': 'Mulai percakapan',
 	'agent.empty.description': 'Asisten AI Anda yang dapat bekerja secara aktif dengan vault Anda.',
 	'agent.empty.capabilitiesTitle': 'Apa yang bisa dilakukan agen?',
@@ -286,13 +292,6 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Melanjutkan akan meneruskan dari bagian terakhir Anda berhenti, melewati berkas yang sudah terindeks.',
 	'ragResume.resumeButton': 'Lanjutkan',
 	'ragResume.startFreshButton': 'Mulai dari awal',
-	'ragResume.justNow': 'Baru saja',
-	'ragResume.minuteAgoSingular': '{count} menit yang lalu',
-	'ragResume.minutesAgoPlural': '{count} menit yang lalu',
-	'ragResume.hourAgoSingular': '{count} jam yang lalu',
-	'ragResume.hoursAgoPlural': '{count} jam yang lalu',
-	'ragResume.dayAgoSingular': '{count} hari yang lalu',
-	'ragResume.daysAgoPlural': '{count} hari yang lalu',
 	'scheduledTasks.title': 'Tugas terjadwal',
 	'scheduledTasks.managerUnavailable': 'Pengelola tugas terjadwal tidak tersedia.',
 	'scheduledTasks.empty':
@@ -431,13 +430,6 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Dinonaktifkan',
 	'ragStatus.statusRateLimited': 'Dibatasi laju',
 	'ragStatus.statusUnknown': 'Tidak Diketahui',
-	'ragStatus.justNow': 'Baru saja',
-	'ragStatus.minuteAgoSingular': '{count} menit yang lalu',
-	'ragStatus.minutesAgoPlural': '{count} menit yang lalu',
-	'ragStatus.hourAgoSingular': '{count} jam yang lalu',
-	'ragStatus.hoursAgoPlural': '{count} jam yang lalu',
-	'ragStatus.dayAgoSingular': '{count} hari yang lalu',
-	'ragStatus.daysAgoPlural': '{count} hari yang lalu',
 	'scheduler.presetOnce': 'Sekali',
 	'scheduler.presetDaily': 'Harian (setiap 24 jam)',
 	'scheduler.presetDailyAt': 'Harian pada waktu tertentu',

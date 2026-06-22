@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const da: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': 'For {count} dage siden',
+	'time.dayAgoSingular': 'For {count} dag siden',
+	'time.hoursAgoPlural': 'For {count} timer siden',
+	'time.hourAgoSingular': 'For {count} time siden',
+	'time.minutesAgoPlural': 'For {count} minutter siden',
+	'time.minuteAgoSingular': 'For {count} minut siden',
+	'time.justNow': 'Lige nu',
 	'agent.empty.title': 'Start en samtale',
 	'agent.empty.description': 'Din AI-assistent, der kan arbejde aktivt med din vault.',
 	'agent.empty.capabilitiesTitle': 'Hvad kan agenten gøre?',
@@ -283,13 +289,6 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'Genoptagelse vil fortsætte, hvor du slap, og springe allerede indekserede filer over.',
 	'ragResume.resumeButton': 'Genoptag',
 	'ragResume.startFreshButton': 'Start forfra',
-	'ragResume.justNow': 'Lige nu',
-	'ragResume.minuteAgoSingular': '{count} minut siden',
-	'ragResume.minutesAgoPlural': '{count} minutter siden',
-	'ragResume.hourAgoSingular': '{count} time siden',
-	'ragResume.hoursAgoPlural': '{count} timer siden',
-	'ragResume.dayAgoSingular': '{count} dag siden',
-	'ragResume.daysAgoPlural': '{count} dage siden',
 	'scheduledTasks.title': 'Planlagte opgaver',
 	'scheduledTasks.managerUnavailable': 'Planlagt opgavestyring er ikke tilgængelig.',
 	'scheduledTasks.empty':
@@ -429,13 +428,6 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Deaktiveret',
 	'ragStatus.statusRateLimited': 'Hastighedsbegrænset',
 	'ragStatus.statusUnknown': 'Ukendt',
-	'ragStatus.justNow': 'Lige nu',
-	'ragStatus.minuteAgoSingular': 'For {count} minut siden',
-	'ragStatus.minutesAgoPlural': 'For {count} minutter siden',
-	'ragStatus.hourAgoSingular': 'For {count} time siden',
-	'ragStatus.hoursAgoPlural': 'For {count} timer siden',
-	'ragStatus.dayAgoSingular': 'For {count} dag siden',
-	'ragStatus.daysAgoPlural': 'For {count} dage siden',
 	'scheduler.presetOnce': 'Én gang',
 	'scheduler.presetDaily': 'Dagligt (hver 24. time)',
 	'scheduler.presetDailyAt': 'Dagligt på tidspunkt',

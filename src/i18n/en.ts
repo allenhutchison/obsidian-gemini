@@ -987,25 +987,6 @@ export const en = {
 		message: 'Start fresh',
 		context: 'Warning-styled button in the resume-indexing modal that restarts indexing from scratch.',
 	},
-	'ragResume.justNow': {
-		message: 'Just now',
-		context: 'Relative timestamp in the resume-indexing modal for under a minute ago.',
-	},
-	'ragResume.minuteAgoSingular': {
-		message: '{count} minute ago',
-		context: 'Relative timestamp, singular minute. {count} is always 1.',
-	},
-	'ragResume.minutesAgoPlural': { message: '{count} minutes ago', context: 'Relative timestamp, plural minutes.' },
-	'ragResume.hourAgoSingular': {
-		message: '{count} hour ago',
-		context: 'Relative timestamp, singular hour. {count} is always 1.',
-	},
-	'ragResume.hoursAgoPlural': { message: '{count} hours ago', context: 'Relative timestamp, plural hours.' },
-	'ragResume.dayAgoSingular': {
-		message: '{count} day ago',
-		context: 'Relative timestamp, singular day. {count} is always 1.',
-	},
-	'ragResume.daysAgoPlural': { message: '{count} days ago', context: 'Relative timestamp, plural days.' },
 	'scheduledTasks.title': {
 		message: 'Scheduled tasks',
 		context: 'Heading of the modal listing scheduled agent tasks with their next-run time and status.',
@@ -1468,22 +1449,22 @@ export const en = {
 		context: 'Index status value: API rate limit hit; waiting.',
 	},
 	'ragStatus.statusUnknown': { message: 'Unknown', context: 'Index status value when the status is unrecognized.' },
-	'ragStatus.justNow': { message: 'Just now', context: 'Relative timestamp for under a minute ago.' },
-	'ragStatus.minuteAgoSingular': {
+	'time.justNow': { message: 'Just now', context: 'Relative timestamp for under a minute ago.' },
+	'time.minuteAgoSingular': {
 		message: '{count} minute ago',
 		context: 'Relative timestamp, singular minute. {count} is always 1.',
 	},
-	'ragStatus.minutesAgoPlural': { message: '{count} minutes ago', context: 'Relative timestamp, plural minutes.' },
-	'ragStatus.hourAgoSingular': {
+	'time.minutesAgoPlural': { message: '{count} minutes ago', context: 'Relative timestamp, plural minutes.' },
+	'time.hourAgoSingular': {
 		message: '{count} hour ago',
 		context: 'Relative timestamp, singular hour. {count} is always 1.',
 	},
-	'ragStatus.hoursAgoPlural': { message: '{count} hours ago', context: 'Relative timestamp, plural hours.' },
-	'ragStatus.dayAgoSingular': {
+	'time.hoursAgoPlural': { message: '{count} hours ago', context: 'Relative timestamp, plural hours.' },
+	'time.dayAgoSingular': {
 		message: '{count} day ago',
 		context: 'Relative timestamp, singular day. {count} is always 1.',
 	},
-	'ragStatus.daysAgoPlural': { message: '{count} days ago', context: 'Relative timestamp, plural days.' },
+	'time.daysAgoPlural': { message: '{count} days ago', context: 'Relative timestamp, plural days.' },
 	'scheduler.presetOnce': { message: 'Once', context: 'Schedule preset option: run the task a single time.' },
 	'scheduler.presetDaily': { message: 'Daily (every 24h)', context: 'Schedule preset option: run every 24 hours.' },
 	'scheduler.presetDailyAt': {

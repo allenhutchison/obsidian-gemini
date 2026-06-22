@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const cs: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': 'Před {count} dny',
+	'time.dayAgoSingular': 'Před {count} dnem',
+	'time.hoursAgoPlural': 'Před {count} hodinami',
+	'time.hourAgoSingular': 'Před {count} hodinou',
+	'time.minutesAgoPlural': 'Před {count} minutami',
+	'time.minuteAgoSingular': 'Před {count} minutou',
+	'time.justNow': 'Právě teď',
 	'agent.empty.title': 'Zahájit konverzaci',
 	'agent.empty.description': 'Váš AI asistent, který dokáže aktivně pracovat s vaším vaultem.',
 	'agent.empty.capabilitiesTitle': 'Co agent dokáže?',
@@ -280,13 +286,6 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'Pokračování bude navazovat tam, kde jste skončili, a přeskočí již indexované soubory.',
 	'ragResume.resumeButton': 'Pokračovat',
 	'ragResume.startFreshButton': 'Začít znovu',
-	'ragResume.justNow': 'Právě teď',
-	'ragResume.minuteAgoSingular': 'před {count} minutou',
-	'ragResume.minutesAgoPlural': 'před {count} minutami',
-	'ragResume.hourAgoSingular': 'před {count} hodinou',
-	'ragResume.hoursAgoPlural': 'před {count} hodinami',
-	'ragResume.dayAgoSingular': 'před {count} dnem',
-	'ragResume.daysAgoPlural': 'před {count} dny',
 	'scheduledTasks.title': 'Naplánované úkoly',
 	'scheduledTasks.managerUnavailable': 'Správce plánovaných úloh není dostupný.',
 	'scheduledTasks.empty':
@@ -426,13 +425,6 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Zakázáno',
 	'ragStatus.statusRateLimited': 'Omezeno limitem',
 	'ragStatus.statusUnknown': 'Neznámý',
-	'ragStatus.justNow': 'Právě teď',
-	'ragStatus.minuteAgoSingular': 'Před {count} minutou',
-	'ragStatus.minutesAgoPlural': 'Před {count} minutami',
-	'ragStatus.hourAgoSingular': 'Před {count} hodinou',
-	'ragStatus.hoursAgoPlural': 'Před {count} hodinami',
-	'ragStatus.dayAgoSingular': 'Před {count} dnem',
-	'ragStatus.daysAgoPlural': 'Před {count} dny',
 	'scheduler.presetOnce': 'Jednou',
 	'scheduler.presetDaily': 'Denně (každých 24 h)',
 	'scheduler.presetDailyAt': 'Denně v určený čas',

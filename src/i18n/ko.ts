@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const ko: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count}일 전',
+	'time.dayAgoSingular': '{count}일 전',
+	'time.hoursAgoPlural': '{count}시간 전',
+	'time.hourAgoSingular': '{count}시간 전',
+	'time.minutesAgoPlural': '{count}분 전',
+	'time.minuteAgoSingular': '{count}분 전',
+	'time.justNow': '방금 전',
 	'agent.empty.title': '대화 시작하기',
 	'agent.empty.description': '보관소에서 능동적으로 작업할 수 있는 AI 비서입니다.',
 	'agent.empty.capabilitiesTitle': '에이전트가 무엇을 할 수 있나요?',
@@ -275,13 +281,6 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': '재개하면 이미 인덱싱된 파일을 건너뛰고 중단된 부분부터 계속합니다.',
 	'ragResume.resumeButton': '재개',
 	'ragResume.startFreshButton': '처음부터 다시 시작',
-	'ragResume.justNow': '방금 전',
-	'ragResume.minuteAgoSingular': '{count}분 전',
-	'ragResume.minutesAgoPlural': '{count}분 전',
-	'ragResume.hourAgoSingular': '{count}시간 전',
-	'ragResume.hoursAgoPlural': '{count}시간 전',
-	'ragResume.dayAgoSingular': '{count}일 전',
-	'ragResume.daysAgoPlural': '{count}일 전',
 	'scheduledTasks.title': '예약된 작업',
 	'scheduledTasks.managerUnavailable': '예약된 작업 관리자를 사용할 수 없습니다.',
 	'scheduledTasks.empty': '예약된 작업이 없습니다. 시작하려면 Scheduled-Tasks 폴더에 마크다운 파일을 생성하세요.',
@@ -419,13 +418,6 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': '비활성화됨',
 	'ragStatus.statusRateLimited': '요청 제한됨',
 	'ragStatus.statusUnknown': '알 수 없음',
-	'ragStatus.justNow': '방금 전',
-	'ragStatus.minuteAgoSingular': '{count}분 전',
-	'ragStatus.minutesAgoPlural': '{count}분 전',
-	'ragStatus.hourAgoSingular': '{count}시간 전',
-	'ragStatus.hoursAgoPlural': '{count}시간 전',
-	'ragStatus.dayAgoSingular': '{count}일 전',
-	'ragStatus.daysAgoPlural': '{count}일 전',
 	'scheduler.presetOnce': '한 번',
 	'scheduler.presetDaily': '매일 (24시간마다)',
 	'scheduler.presetDailyAt': '매일 특정 시간에',

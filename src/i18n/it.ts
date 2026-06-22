@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const it: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} giorni fa',
+	'time.dayAgoSingular': '{count} giorno fa',
+	'time.hoursAgoPlural': '{count} ore fa',
+	'time.hourAgoSingular': '{count} ora fa',
+	'time.minutesAgoPlural': '{count} minuti fa',
+	'time.minuteAgoSingular': '{count} minuto fa',
+	'time.justNow': 'Poco fa',
 	'agent.empty.title': 'Inizia una conversazione',
 	'agent.empty.description': 'Il tuo assistente IA in grado di lavorare attivamente con il tuo vault.',
 	'agent.empty.capabilitiesTitle': "Cosa può fare l'agente?",
@@ -293,13 +299,6 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'La ripresa continuerà da dove avevi interrotto, saltando i file già indicizzati.',
 	'ragResume.resumeButton': 'Riprendi',
 	'ragResume.startFreshButton': 'Ricomincia da capo',
-	'ragResume.justNow': 'Proprio ora',
-	'ragResume.minuteAgoSingular': '{count} minuto fa',
-	'ragResume.minutesAgoPlural': '{count} minuti fa',
-	'ragResume.hourAgoSingular': '{count} ora fa',
-	'ragResume.hoursAgoPlural': '{count} ore fa',
-	'ragResume.dayAgoSingular': '{count} giorno fa',
-	'ragResume.daysAgoPlural': '{count} giorni fa',
 	'scheduledTasks.title': 'Attività pianificate',
 	'scheduledTasks.managerUnavailable': 'Gestore delle attività pianificate non disponibile.',
 	'scheduledTasks.empty':
@@ -439,13 +438,6 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Disattivato',
 	'ragStatus.statusRateLimited': 'Limite di frequenza raggiunto',
 	'ragStatus.statusUnknown': 'Sconosciuto',
-	'ragStatus.justNow': 'Poco fa',
-	'ragStatus.minuteAgoSingular': '{count} minuto fa',
-	'ragStatus.minutesAgoPlural': '{count} minuti fa',
-	'ragStatus.hourAgoSingular': '{count} ora fa',
-	'ragStatus.hoursAgoPlural': '{count} ore fa',
-	'ragStatus.dayAgoSingular': '{count} giorno fa',
-	'ragStatus.daysAgoPlural': '{count} giorni fa',
 	'scheduler.presetOnce': 'Una volta',
 	'scheduler.presetDaily': 'Giornaliero (ogni 24h)',
 	'scheduler.presetDailyAt': "Giornaliero a un'ora specifica",

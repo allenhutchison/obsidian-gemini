@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const fr: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': 'Il y a {count} jours',
+	'time.dayAgoSingular': 'Il y a {count} jour',
+	'time.hoursAgoPlural': 'Il y a {count} heures',
+	'time.hourAgoSingular': 'Il y a {count} heure',
+	'time.minutesAgoPlural': 'Il y a {count} minutes',
+	'time.minuteAgoSingular': 'Il y a {count} minute',
+	'time.justNow': "À l'instant",
 	'agent.empty.title': 'Démarrer une conversation',
 	'agent.empty.description': 'Votre assistant IA qui peut travailler activement avec votre coffre.',
 	'agent.empty.capabilitiesTitle': "Que peut faire l'agent ?",
@@ -297,13 +303,6 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'La reprise continuera là où vous vous étiez arrêté, en ignorant les fichiers déjà indexés.',
 	'ragResume.resumeButton': 'Reprendre',
 	'ragResume.startFreshButton': 'Recommencer à zéro',
-	'ragResume.justNow': "À l'instant",
-	'ragResume.minuteAgoSingular': 'Il y a {count} minute',
-	'ragResume.minutesAgoPlural': 'Il y a {count} minutes',
-	'ragResume.hourAgoSingular': 'Il y a {count} heure',
-	'ragResume.hoursAgoPlural': 'Il y a {count} heures',
-	'ragResume.dayAgoSingular': 'Il y a {count} jour',
-	'ragResume.daysAgoPlural': 'Il y a {count} jours',
 	'scheduledTasks.title': 'Tâches planifiées',
 	'scheduledTasks.managerUnavailable': "Le gestionnaire de tâches planifiées n'est pas disponible.",
 	'scheduledTasks.empty':
@@ -443,13 +442,6 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Désactivé',
 	'ragStatus.statusRateLimited': 'Limite de débit atteinte',
 	'ragStatus.statusUnknown': 'Inconnu',
-	'ragStatus.justNow': "À l'instant",
-	'ragStatus.minuteAgoSingular': 'Il y a {count} minute',
-	'ragStatus.minutesAgoPlural': 'Il y a {count} minutes',
-	'ragStatus.hourAgoSingular': 'Il y a {count} heure',
-	'ragStatus.hoursAgoPlural': 'Il y a {count} heures',
-	'ragStatus.dayAgoSingular': 'Il y a {count} jour',
-	'ragStatus.daysAgoPlural': 'Il y a {count} jours',
 	'scheduler.presetOnce': 'Une fois',
 	'scheduler.presetDaily': 'Quotidien (toutes les 24h)',
 	'scheduler.presetDailyAt': 'Tous les jours à une heure précise',
