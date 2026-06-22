@@ -3,6 +3,7 @@ import {
 	FailurePauseTracker,
 	MAX_CONSECUTIVE_FAILURES,
 	type FailurePauseState,
+	type EntityPatch,
 } from '../../src/services/failure-pause-tracker';
 import type { Logger } from '../../src/utils/logger';
 
@@ -43,8 +44,10 @@ describe('FailurePauseTracker', () => {
 	});
 
 	describe('recordFailure ladder', () => {
+		// The ladder builds on an existing record (seeded by the manager before the run),
+		// so these cases start from an empty-but-present entry rather than a fresh slug.
 		it('first failure sets counter to 1 without pausing', async () => {
-			const { tracker, store, logger } = makeTracker();
+			const { tracker, store, logger } = makeTracker({}, { a: {} });
 			const outcome = await tracker.recordFailure('a', new Error('boom'));
 			expect(outcome).toEqual({ consecutiveFailures: 1, pausedDueToErrors: false });
 			expect(store.a).toMatchObject({
@@ -56,7 +59,7 @@ describe('FailurePauseTracker', () => {
 		});
 
 		it('accumulates consecutive failures across calls', async () => {
-			const { tracker, store } = makeTracker();
+			const { tracker, store } = makeTracker({}, { a: {} });
 			await tracker.recordFailure('a', new Error('1'));
 			const second = await tracker.recordFailure('a', new Error('2'));
 			expect(second.consecutiveFailures).toBe(2);
@@ -65,7 +68,7 @@ describe('FailurePauseTracker', () => {
 		});
 
 		it('pauses and warns once the threshold is reached', async () => {
-			const { tracker, store, logger } = makeTracker();
+			const { tracker, store, logger } = makeTracker({}, { a: {} });
 			await tracker.recordFailure('a', new Error('1'));
 			await tracker.recordFailure('a', new Error('2'));
 			const outcome = await tracker.recordFailure('a', new Error('3'));
@@ -75,27 +78,35 @@ describe('FailurePauseTracker', () => {
 		});
 
 		it('respects a custom maxFailures threshold', async () => {
-			const { tracker } = makeTracker({ maxFailures: 1 });
+			const { tracker } = makeTracker({ maxFailures: 1 }, { a: {} });
 			const outcome = await tracker.recordFailure('a', new Error('boom'));
 			expect(outcome.pausedDueToErrors).toBe(true);
 		});
 
 		it('only error-logs non-pausing failures when logFailures is true', async () => {
-			const { tracker: quiet, logger: quietLog } = makeTracker();
+			const { tracker: quiet, logger: quietLog } = makeTracker({}, { a: {} });
 			await quiet.recordFailure('a', new Error('boom'));
 			expect(quietLog.error).not.toHaveBeenCalled();
 
-			const { tracker: loud, logger: loudLog } = makeTracker({ logFailures: true });
+			const { tracker: loud, logger: loudLog } = makeTracker({ logFailures: true }, { a: {} });
 			const err = new Error('boom');
 			await loud.recordFailure('a', err);
 			expect(loudLog.error).toHaveBeenCalledWith('[TestManager] Thing "a" failed:', err);
 		});
 
 		it('merges an entity-specific patch into the failed state', async () => {
-			const { tracker, store } = makeTracker();
+			const { tracker, store } = makeTracker({}, { a: {} });
 			await tracker.recordFailure('a', new Error('boom'), { nextRunAt: 'later' });
 			expect(store.a.nextRunAt).toBe('later');
 			expect(store.a.consecutiveFailures).toBe(1);
+		});
+
+		it('throws (rather than fabricating a record) for an unknown slug', async () => {
+			const { tracker, setState } = makeTracker();
+			await expect(tracker.recordFailure('missing', new Error('boom'))).rejects.toThrow(
+				'[TestManager] cannot record a failure for unknown Thing "missing"'
+			);
+			expect(setState).not.toHaveBeenCalled();
 		});
 	});
 
@@ -129,10 +140,21 @@ describe('FailurePauseTracker', () => {
 		});
 
 		it('does not let a patch override the success invariants', async () => {
-			const { tracker, store } = makeTracker();
-			await tracker.recordSuccess('a', { pausedDueToErrors: true, consecutiveFailures: 9 } as Partial<TestState>);
+			const { tracker, store } = makeTracker({}, { a: { consecutiveFailures: 1 } });
+			// EntityPatch excludes the tracker-owned fields at compile time; the cast forces
+			// them through to prove the runtime re-derivation also wins as a belt-and-suspenders.
+			await tracker.recordSuccess('a', {
+				pausedDueToErrors: true,
+				consecutiveFailures: 9,
+			} as unknown as EntityPatch<TestState>);
 			expect(store.a.pausedDueToErrors).toBe(false);
 			expect(store.a.consecutiveFailures).toBe(0);
+		});
+
+		it('is a no-op for an unknown slug (nothing to clear)', async () => {
+			const { tracker, setState } = makeTracker();
+			await tracker.recordSuccess('missing', { lastRunAt: 'now' });
+			expect(setState).not.toHaveBeenCalled();
 		});
 	});
 
@@ -189,7 +211,7 @@ describe('FailurePauseTracker', () => {
 			order.push('saved');
 		});
 		const tracker = new FailurePauseTracker<TestState>({
-			getState: () => undefined,
+			getState: () => ({}),
 			setState,
 			logger: makeLogger(),
 			label: '[TestManager]',

@@ -32,6 +32,14 @@ export interface FailureOutcome {
 	pausedDueToErrors: boolean;
 }
 
+/**
+ * Entity-specific fields a caller may merge into the state on success/failure/reset
+ * (e.g. `lastRunAt`, `nextRunAt`). The fields the ladder owns — the {@link FailureOutcome}
+ * counters and `lastError` — are excluded so a patch can't even express an override the
+ * tracker would silently discard (it always re-derives those after spreading the patch).
+ */
+export type EntityPatch<TState extends FailurePauseState> = Partial<Omit<TState, keyof FailureOutcome | 'lastError'>>;
+
 export interface FailurePauseTrackerOptions<TState extends FailurePauseState> {
 	/** Read the current in-memory record for a slug (undefined if none yet). */
 	getState: (slug: string) => TState | undefined;
@@ -77,10 +85,17 @@ export class FailurePauseTracker<TState extends FailurePauseState> {
 	}
 
 	/** Clear the failure counters after a successful run. `patch` carries entity-specific fields. */
-	async recordSuccess(slug: string, patch?: Partial<TState>): Promise<void> {
+	async recordSuccess(slug: string, patch?: EntityPatch<TState>): Promise<void> {
 		const prev = this.options.getState(slug);
+		// Precondition: a record already exists for this slug. The ladder only ever
+		// clears/derives the failure fields on top of state the manager has already
+		// seeded (advanceState for tasks, recordFire for hooks). Fabricating a record
+		// for an unknown slug would cast away required fields the patch doesn't supply
+		// (e.g. TaskState.nextRunAt) and persist `undefined`, so no-op instead — mirroring
+		// `reset`. A missing record on success is harmless (nothing to clear) so it's silent.
+		if (!prev) return;
 		const next = {
-			...(prev ?? {}),
+			...prev,
 			...patch,
 			lastError: undefined,
 			consecutiveFailures: 0,
@@ -93,12 +108,19 @@ export class FailurePauseTracker<TState extends FailurePauseState> {
 	 * Record a failed run: bump the counter, pause once it reaches the threshold, persist,
 	 * and warn when newly paused. `patch` carries entity-specific fields.
 	 */
-	async recordFailure(slug: string, error: unknown, patch?: Partial<TState>): Promise<FailureOutcome> {
+	async recordFailure(slug: string, error: unknown, patch?: EntityPatch<TState>): Promise<FailureOutcome> {
 		const prev = this.options.getState(slug);
-		const consecutiveFailures = (prev?.consecutiveFailures ?? 0) + 1;
+		// See recordSuccess: the failure ladder builds on an existing record. Unlike
+		// success, a missing record here is a wiring bug (the manager should have seeded
+		// state before the run), so fail loudly rather than persist a record with required
+		// fields cast away. The caller re-throws into the background runner regardless.
+		if (!prev) {
+			throw new Error(`${this.options.label} cannot record a failure for unknown ${this.options.entityNoun} "${slug}"`);
+		}
+		const consecutiveFailures = (prev.consecutiveFailures ?? 0) + 1;
 		const pausedDueToErrors = consecutiveFailures >= this.maxFailures;
 		const next = {
-			...(prev ?? {}),
+			...prev,
 			...patch,
 			lastError: getRawErrorMessage(error),
 			consecutiveFailures,
@@ -120,7 +142,7 @@ export class FailurePauseTracker<TState extends FailurePauseState> {
 	 * Manually clear the failure/pause state so a paused entity can run again. No-op when no
 	 * record exists. `patch` carries entity-specific fields (e.g. a fresh `nextRunAt`).
 	 */
-	async reset(slug: string, patch?: Partial<TState>): Promise<void> {
+	async reset(slug: string, patch?: EntityPatch<TState>): Promise<void> {
 		const prev = this.options.getState(slug);
 		if (!prev) return;
 		const next = {

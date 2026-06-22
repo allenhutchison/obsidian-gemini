@@ -1,7 +1,17 @@
 import type { Mock } from 'vitest';
 import { TFile as MockTFile } from 'obsidian';
 import { ScheduledTaskManager, computeNextRunAt, ScheduledTask } from '../../src/services/scheduled-task-manager';
+import { MAX_CONSECUTIVE_FAILURES } from '../../src/services/failure-pause-tracker';
 import { PolicyPreset, ToolPermission } from '../../src/types/tool-policy';
+
+// executeTask dynamically imports ScheduledTaskRunner; stub it with a controllable
+// run() so the wiring tests can drive resolve (success) and reject (failure) paths.
+const { runnerRun } = vi.hoisted(() => ({ runnerRun: vi.fn() }));
+vi.mock('../../src/services/scheduled-task-runner', () => ({
+	ScheduledTaskRunner: class {
+		run = runnerRun;
+	},
+}));
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -806,6 +816,106 @@ describe('ScheduledTaskManager', () => {
 			const nextRunAt = new Date(state['advance-test'].nextRunAt);
 			// Should now be ~24 h in the future, not in the past
 			expect(nextRunAt.getTime()).toBeGreaterThan(Date.now());
+		});
+	});
+
+	// ── executeTask wiring (success / failure through the manager) ─────────────
+	//
+	// The tick tests above stop at submit(): the default backgroundTaskManager.submit
+	// mock returns an ID without ever invoking the work callback, so executeTask —
+	// where the FailurePauseTracker is wired — never runs. These tests make submit
+	// actually invoke the captured work function so the recordSuccess/recordFailure
+	// plumbing (getState/setState closures, the lastRunAt patch, the re-throw contract)
+	// is exercised at the manager level, not just the tracker in isolation.
+
+	describe('executeTask failure/success wiring', () => {
+		async function makeRunnableManager(slug: string) {
+			const plugin = createMockPlugin();
+			plugin.app.vault.getMarkdownFiles.mockReturnValue([
+				{ path: `gemini-scribe/Scheduled-Tasks/${slug}.md`, basename: slug },
+			]);
+			plugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatter: { schedule: 'daily', enabled: true },
+			});
+			plugin.app.vault.read = vi.fn().mockResolvedValue('Do work');
+			// Seed a due (past) state entry so tick() submits.
+			plugin.app.vault.adapter.exists.mockResolvedValue(true);
+			plugin.app.vault.adapter.read.mockResolvedValue(
+				JSON.stringify({ [slug]: { nextRunAt: new Date(Date.now() - 60_000).toISOString() } })
+			);
+
+			// Capture the work callback instead of running it fire-and-forget so the
+			// test can await executeTask and inspect the resulting state.
+			let capturedWork: ((isCancelled: () => boolean) => Promise<unknown>) | undefined;
+			plugin.backgroundTaskManager.submit = vi.fn((_type: string, _label: string, work: any) => {
+				capturedWork = work;
+				return 'bg-task-1';
+			});
+
+			const manager = new ScheduledTaskManager(plugin);
+			await manager.initialize();
+			return {
+				manager,
+				plugin,
+				runWork: () => {
+					if (!capturedWork) throw new Error('submit was never called');
+					return capturedWork(() => false);
+				},
+			};
+		}
+
+		it('records success and clears failure counters when the runner resolves an output path', async () => {
+			const { manager, runWork } = await makeRunnableManager('ok-task');
+			const outputPath = 'gemini-scribe/Scheduled-Tasks/Runs/ok-task/2026-04-17.md';
+			runnerRun.mockResolvedValue(outputPath);
+
+			await manager.tick();
+			const result = await runWork();
+
+			expect(result).toBe(outputPath);
+			const state = manager.getState()['ok-task'];
+			expect(state.lastRunAt).toBeDefined();
+			expect(Number.isNaN(new Date(state.lastRunAt as string).getTime())).toBe(false);
+			expect(state.consecutiveFailures).toBe(0);
+			expect(state.pausedDueToErrors).toBe(false);
+			expect(state.lastError).toBeUndefined();
+		});
+
+		it('bumps the failure counter, pauses at the threshold, and re-throws when the runner rejects', async () => {
+			const { manager, runWork } = await makeRunnableManager('fail-task');
+			runnerRun.mockRejectedValue(new Error('runner exploded'));
+
+			const snapshots: Array<{ consecutiveFailures?: number; lastError?: string; pausedDueToErrors?: boolean }> = [];
+			for (let i = 0; i < MAX_CONSECUTIVE_FAILURES; i++) {
+				// runNow ignores the due-time check, so each iteration re-submits the
+				// same slug (advanceState pushes nextRunAt into the future after run 1).
+				await manager.runNow('fail-task');
+				// The error must propagate out of the work callback (the bg manager relies
+				// on it to emit backgroundTaskFailed) rather than being swallowed.
+				await expect(runWork()).rejects.toThrow('runner exploded');
+				snapshots.push({ ...manager.getState()['fail-task'] });
+			}
+
+			// First failure: counter bumped to 1, error captured, not yet paused.
+			expect(snapshots[0].consecutiveFailures).toBe(1);
+			expect(snapshots[0].lastError).toBe('runner exploded');
+			expect(snapshots[0].pausedDueToErrors).toBe(false);
+
+			// Threshold reached on the third consecutive failure.
+			expect(snapshots[MAX_CONSECUTIVE_FAILURES - 1].consecutiveFailures).toBe(MAX_CONSECUTIVE_FAILURES);
+			expect(snapshots[MAX_CONSECUTIVE_FAILURES - 1].pausedDueToErrors).toBe(true);
+		});
+
+		it('does not record success when the runner returns undefined (cancelled run)', async () => {
+			const { manager, runWork } = await makeRunnableManager('cancel-task');
+			runnerRun.mockResolvedValue(undefined);
+
+			await manager.tick();
+			const result = await runWork();
+
+			expect(result).toBeUndefined();
+			// lastRunAt only reflects genuine completions — a cancelled run leaves it unset.
+			expect(manager.getState()['cancel-task'].lastRunAt).toBeUndefined();
 		});
 	});
 
