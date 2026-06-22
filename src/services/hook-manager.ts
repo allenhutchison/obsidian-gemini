@@ -1,7 +1,6 @@
 import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
-import { getRawErrorMessage } from '../utils/error-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import {
@@ -12,6 +11,7 @@ import {
 	purgeOrphanState,
 	resolveFeatureToolPolicy,
 } from './feature-definition';
+import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -32,9 +32,6 @@ const DEFAULT_COOLDOWN_MS = 30_000;
 /** Hard loop ceiling: max fires per (hook, file) inside the loop window. */
 const HARD_LOOP_LIMIT = 5;
 const HARD_LOOP_WINDOW_MS = 60_000;
-
-/** Pause the hook after this many consecutive failures. */
-const MAX_CONSECUTIVE_FAILURES = 3;
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -290,9 +287,22 @@ export class HookManager {
 	private inflight = new Set<string>();
 	/** Vault event handlers registered via plugin.registerEvent — kept for off(). */
 	private eventRefs: { off: () => void }[] = [];
+	/** Shared auto-pause-after-N-failures ladder over the per-hook sidecar state. */
+	private readonly failureTracker: FailurePauseTracker<HookState>;
 
 	constructor(private plugin: ObsidianGemini) {
 		this.stateStore = new JsonSidecarStateStore<HooksState>(plugin, () => this.stateFilePath, '[HookManager]');
+		this.failureTracker = new FailurePauseTracker<HookState>({
+			getState: (slug) => this.state[slug],
+			setState: (slug, next) => {
+				this.state[slug] = next;
+				return this.saveState();
+			},
+			logger: this.plugin.logger,
+			label: '[HookManager]',
+			entityNoun: 'Hook',
+			logFailures: true,
+		});
 	}
 
 	// ── Folder path helpers ──────────────────────────────────────────────────
@@ -375,15 +385,7 @@ export class HookManager {
 	 * Manually clear `pausedDueToErrors` so a paused hook can fire again.
 	 */
 	async resetHook(slug: string): Promise<void> {
-		const entry = this.state[slug];
-		if (!entry) return;
-		this.state[slug] = {
-			...entry,
-			lastError: undefined,
-			consecutiveFailures: 0,
-			pausedDueToErrors: false,
-		};
-		await this.saveState();
+		await this.failureTracker.reset(slug);
 	}
 
 	// ── CRUD operations ─────────────────────────────────────────────────────
@@ -769,34 +771,11 @@ export class HookManager {
 	}
 
 	private async recordSuccess(slug: string): Promise<void> {
-		const prev = this.state[slug] ?? {};
-		this.state[slug] = {
-			...prev,
-			lastError: undefined,
-			consecutiveFailures: 0,
-			pausedDueToErrors: false,
-		};
-		await this.saveState();
+		await this.failureTracker.recordSuccess(slug);
 	}
 
 	private async recordFailure(slug: string, error: unknown): Promise<void> {
-		const prev = this.state[slug] ?? {};
-		const consecutiveFailures = (prev.consecutiveFailures ?? 0) + 1;
-		const pausedDueToErrors = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
-		this.state[slug] = {
-			...prev,
-			lastError: getRawErrorMessage(error),
-			consecutiveFailures,
-			pausedDueToErrors,
-		};
-		await this.saveState();
-		if (pausedDueToErrors) {
-			this.plugin.logger.warn(
-				`[HookManager] Hook "${slug}" paused after ${MAX_CONSECUTIVE_FAILURES} consecutive failures`
-			);
-		} else {
-			this.plugin.logger.error(`[HookManager] Hook "${slug}" failed:`, error);
-		}
+		await this.failureTracker.recordFailure(slug, error);
 	}
 
 	private async recordPausedDueToLoop(slug: string): Promise<void> {

@@ -1,7 +1,6 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { ensureFolderExists } from '../utils/file-utils';
-import { getRawErrorMessage } from '../utils/error-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import {
@@ -12,6 +11,7 @@ import {
 	purgeOrphanState,
 	resolveFeatureToolPolicy,
 } from './feature-definition';
+import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -21,9 +21,6 @@ const STATE_FILE = 'scheduled-tasks-state.json';
 
 /** Milliseconds between scheduler ticks (60 s). Same cadence as ChatTimer. */
 const TICK_INTERVAL_MS = 60_000;
-
-/** Pause the task after this many consecutive failures. */
-const MAX_CONSECUTIVE_FAILURES = 3;
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -286,6 +283,8 @@ export class ScheduledTaskManager {
 	/** Slugs reserved for catch-up approval — tick skips these until approved or skipped. */
 	private catchUpPending = new Set<string>();
 	private readonly stateStore: JsonSidecarStateStore<ScheduledTasksState>;
+	/** Shared auto-pause-after-N-failures ladder over the per-task sidecar state. */
+	private readonly failureTracker: FailurePauseTracker<TaskState>;
 
 	constructor(private plugin: ObsidianGemini) {
 		this.stateStore = new JsonSidecarStateStore<ScheduledTasksState>(
@@ -293,6 +292,16 @@ export class ScheduledTaskManager {
 			() => this.stateFilePath,
 			'[ScheduledTaskManager]'
 		);
+		this.failureTracker = new FailurePauseTracker<TaskState>({
+			getState: (slug) => this.state[slug],
+			setState: (slug, next) => {
+				this.state[slug] = next;
+				return this.saveState();
+			},
+			logger: this.plugin.logger,
+			label: '[ScheduledTaskManager]',
+			entityNoun: 'Task',
+		});
 	}
 
 	// ── Folder path helpers ──────────────────────────────────────────────────
@@ -629,15 +638,7 @@ export class ScheduledTaskManager {
 	 * Called from the UI "Reset" button after a user fixes the underlying problem.
 	 */
 	async resetTask(slug: string): Promise<void> {
-		if (!this.state[slug]) return;
-		this.state[slug] = {
-			...this.state[slug],
-			nextRunAt: new Date().toISOString(),
-			lastError: undefined,
-			consecutiveFailures: 0,
-			pausedDueToErrors: false,
-		};
-		await this.saveState();
+		await this.failureTracker.reset(slug, { nextRunAt: new Date().toISOString() });
 	}
 
 	/**
@@ -776,35 +777,11 @@ export class ScheduledTaskManager {
 			// undefined means the run was cancelled — don't record as a successful
 			// completion so lastRunAt only reflects genuine completions.
 			if (outputPath !== undefined) {
-				this.state[task.slug] = {
-					...this.state[task.slug],
-					lastRunAt: new Date().toISOString(),
-					lastError: undefined,
-					consecutiveFailures: 0,
-					pausedDueToErrors: false,
-				};
-				await this.saveState();
+				await this.failureTracker.recordSuccess(task.slug, { lastRunAt: new Date().toISOString() });
 			}
 			return outputPath;
 		} catch (error) {
-			const msg = getRawErrorMessage(error);
-			const prev = this.state[task.slug];
-			const consecutiveFailures = (prev?.consecutiveFailures ?? 0) + 1;
-			const pausedDueToErrors = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
-
-			if (pausedDueToErrors) {
-				this.plugin.logger.warn(
-					`[ScheduledTaskManager] Task "${task.slug}" paused after ${MAX_CONSECUTIVE_FAILURES} consecutive failures`
-				);
-			}
-
-			this.state[task.slug] = {
-				...prev,
-				lastError: msg,
-				consecutiveFailures,
-				pausedDueToErrors,
-			};
-			await this.saveState();
+			await this.failureTracker.recordFailure(task.slug, error);
 			throw error;
 		}
 	}
