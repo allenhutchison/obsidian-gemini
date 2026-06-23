@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const zh: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} 天前',
+	'time.dayAgoSingular': '{count} 天前',
+	'time.hoursAgoPlural': '{count} 小时前',
+	'time.hourAgoSingular': '{count} 小时前',
+	'time.minutesAgoPlural': '{count} 分钟前',
+	'time.minuteAgoSingular': '{count} 分钟前',
+	'time.justNow': '刚刚',
 	'agent.empty.title': '开始对话',
 	'agent.empty.description': '可以主动在您的 vault 中工作的 AI 助手。',
 	'agent.empty.capabilitiesTitle': '智能体可以做什么？',
@@ -258,13 +264,6 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': '恢复将从您上次中断的地方继续，跳过已索引的文件。',
 	'ragResume.resumeButton': '恢复',
 	'ragResume.startFreshButton': '重新开始',
-	'ragResume.justNow': '刚刚',
-	'ragResume.minuteAgoSingular': '{count} 分钟前',
-	'ragResume.minutesAgoPlural': '{count} 分钟前',
-	'ragResume.hourAgoSingular': '{count} 小时前',
-	'ragResume.hoursAgoPlural': '{count} 小时前',
-	'ragResume.dayAgoSingular': '{count} 天前',
-	'ragResume.daysAgoPlural': '{count} 天前',
 	'scheduledTasks.title': '定时任务',
 	'scheduledTasks.managerUnavailable': '计划任务管理器不可用。',
 	'scheduledTasks.empty': '未找到计划任务。在 Scheduled-Tasks 文件夹中创建一个 Markdown 文件以开始。',
@@ -400,13 +399,6 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': '已禁用',
 	'ragStatus.statusRateLimited': '已达到速率限制',
 	'ragStatus.statusUnknown': '未知',
-	'ragStatus.justNow': '刚刚',
-	'ragStatus.minuteAgoSingular': '{count} 分钟前',
-	'ragStatus.minutesAgoPlural': '{count} 分钟前',
-	'ragStatus.hourAgoSingular': '{count} 小时前',
-	'ragStatus.hoursAgoPlural': '{count} 小时前',
-	'ragStatus.dayAgoSingular': '{count} 天前',
-	'ragStatus.daysAgoPlural': '{count} 天前',
 	'scheduler.presetOnce': '仅一次',
 	'scheduler.presetDaily': '每日（每 24 小时）',
 	'scheduler.presetDailyAt': '每日定时',

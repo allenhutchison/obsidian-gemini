@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const tr: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} gün önce',
+	'time.dayAgoSingular': '{count} gün önce',
+	'time.hoursAgoPlural': '{count} saat önce',
+	'time.hourAgoSingular': '{count} saat önce',
+	'time.minutesAgoPlural': '{count} dakika önce',
+	'time.minuteAgoSingular': '{count} dakika önce',
+	'time.justNow': 'Az önce',
 	'agent.empty.title': 'Bir sohbet başlatın',
 	'agent.empty.description': 'Kasanızla aktif olarak çalışabilen yapay zeka asistanınız.',
 	'agent.empty.capabilitiesTitle': 'Ajan ne yapabilir?',
@@ -292,13 +298,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'Devam et seçeneği, zaten dizine eklenmiş dosyaları atlayarak kaldığınız yerden devam eder.',
 	'ragResume.resumeButton': 'Devam Et',
 	'ragResume.startFreshButton': 'Yeniden başla',
-	'ragResume.justNow': 'Az önce',
-	'ragResume.minuteAgoSingular': '{count} dakika önce',
-	'ragResume.minutesAgoPlural': '{count} dakika önce',
-	'ragResume.hourAgoSingular': '{count} saat önce',
-	'ragResume.hoursAgoPlural': '{count} saat önce',
-	'ragResume.dayAgoSingular': '{count} gün önce',
-	'ragResume.daysAgoPlural': '{count} gün önce',
 	'scheduledTasks.title': 'Planlanmış görevler',
 	'scheduledTasks.managerUnavailable': 'Zamanlanmış görev yöneticisi mevcut değil.',
 	'scheduledTasks.empty':
@@ -438,13 +437,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Devre Dışı',
 	'ragStatus.statusRateLimited': 'Hız sınırına ulaşıldı',
 	'ragStatus.statusUnknown': 'Bilinmiyor',
-	'ragStatus.justNow': 'Az önce',
-	'ragStatus.minuteAgoSingular': '{count} dakika önce',
-	'ragStatus.minutesAgoPlural': '{count} dakika önce',
-	'ragStatus.hourAgoSingular': '{count} saat önce',
-	'ragStatus.hoursAgoPlural': '{count} saat önce',
-	'ragStatus.dayAgoSingular': '{count} gün önce',
-	'ragStatus.daysAgoPlural': '{count} gün önce',
 	'scheduler.presetOnce': 'Bir kez',
 	'scheduler.presetDaily': 'Günlük (her 24 saatte bir)',
 	'scheduler.presetDailyAt': 'Her gün belirli bir saatte',

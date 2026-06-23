@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const vi: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} ngày trước',
+	'time.dayAgoSingular': '{count} ngày trước',
+	'time.hoursAgoPlural': '{count} giờ trước',
+	'time.hourAgoSingular': '{count} giờ trước',
+	'time.minutesAgoPlural': '{count} phút trước',
+	'time.minuteAgoSingular': '{count} phút trước',
+	'time.justNow': 'Vừa xong',
 	'agent.empty.title': 'Bắt đầu cuộc trò chuyện',
 	'agent.empty.description': 'Trợ lý AI có thể chủ động làm việc với vault của bạn.',
 	'agent.empty.capabilitiesTitle': 'Agent có thể làm gì?',
@@ -285,13 +291,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'Tiếp tục sẽ bắt đầu từ nơi bạn đã dừng lại, bỏ qua các tập tin đã được lập chỉ mục.',
 	'ragResume.resumeButton': 'Tiếp tục',
 	'ragResume.startFreshButton': 'Bắt đầu lại từ đầu',
-	'ragResume.justNow': 'Vừa xong',
-	'ragResume.minuteAgoSingular': '{count} phút trước',
-	'ragResume.minutesAgoPlural': '{count} phút trước',
-	'ragResume.hourAgoSingular': '{count} giờ trước',
-	'ragResume.hoursAgoPlural': '{count} giờ trước',
-	'ragResume.dayAgoSingular': '{count} ngày trước',
-	'ragResume.daysAgoPlural': '{count} ngày trước',
 	'scheduledTasks.title': 'Nhiệm vụ đã lên lịch',
 	'scheduledTasks.managerUnavailable': 'Trình quản lý nhiệm vụ đã lên lịch không khả dụng.',
 	'scheduledTasks.empty':
@@ -431,13 +430,6 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Đã tắt',
 	'ragStatus.statusRateLimited': 'Bị giới hạn tần suất',
 	'ragStatus.statusUnknown': 'Không xác định',
-	'ragStatus.justNow': 'Vừa xong',
-	'ragStatus.minuteAgoSingular': '{count} phút trước',
-	'ragStatus.minutesAgoPlural': '{count} phút trước',
-	'ragStatus.hourAgoSingular': '{count} giờ trước',
-	'ragStatus.hoursAgoPlural': '{count} giờ trước',
-	'ragStatus.dayAgoSingular': '{count} ngày trước',
-	'ragStatus.daysAgoPlural': '{count} ngày trước',
 	'scheduler.presetOnce': 'Một lần',
 	'scheduler.presetDaily': 'Hàng ngày (mỗi 24h)',
 	'scheduler.presetDailyAt': 'Hàng ngày vào lúc',

@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const pt: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': 'Há {count} dias',
+	'time.dayAgoSingular': 'Há {count} dia',
+	'time.hoursAgoPlural': 'Há {count} horas',
+	'time.hourAgoSingular': 'Há {count} hora',
+	'time.minutesAgoPlural': 'Há {count} minutos',
+	'time.minuteAgoSingular': 'Há {count} minuto',
+	'time.justNow': 'Ainda agora',
 	'agent.empty.title': 'Iniciar uma conversa',
 	'agent.empty.description': 'O seu assistente de IA que pode trabalhar ativamente com o seu vault.',
 	'agent.empty.capabilitiesTitle': 'O que pode o agente fazer?',
@@ -293,13 +299,6 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'Retomar continuará a partir de onde parou, ignorando os ficheiros já indexados.',
 	'ragResume.resumeButton': 'Retomar',
 	'ragResume.startFreshButton': 'Começar do zero',
-	'ragResume.justNow': 'Ainda agora',
-	'ragResume.minuteAgoSingular': 'há {count} minuto',
-	'ragResume.minutesAgoPlural': 'há {count} minutos',
-	'ragResume.hourAgoSingular': 'há {count} hora',
-	'ragResume.hoursAgoPlural': 'há {count} horas',
-	'ragResume.dayAgoSingular': 'há {count} dia',
-	'ragResume.daysAgoPlural': 'há {count} dias',
 	'scheduledTasks.title': 'Tarefas agendadas',
 	'scheduledTasks.managerUnavailable': 'O gestor de tarefas agendadas não está disponível.',
 	'scheduledTasks.empty':
@@ -439,13 +438,6 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Desativado',
 	'ragStatus.statusRateLimited': 'Limite de taxa atingido',
 	'ragStatus.statusUnknown': 'Desconhecido',
-	'ragStatus.justNow': 'Ainda agora',
-	'ragStatus.minuteAgoSingular': 'Há {count} minuto',
-	'ragStatus.minutesAgoPlural': 'Há {count} minutos',
-	'ragStatus.hourAgoSingular': 'Há {count} hora',
-	'ragStatus.hoursAgoPlural': 'Há {count} horas',
-	'ragStatus.dayAgoSingular': 'Há {count} dia',
-	'ragStatus.daysAgoPlural': 'Há {count} dias',
 	'scheduler.presetOnce': 'Uma vez',
 	'scheduler.presetDaily': 'Diariamente (a cada 24h)',
 	'scheduler.presetDailyAt': 'Diariamente à hora',

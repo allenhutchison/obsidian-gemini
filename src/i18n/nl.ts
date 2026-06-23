@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const nl: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} dagen geleden',
+	'time.dayAgoSingular': '{count} dag geleden',
+	'time.hoursAgoPlural': '{count} uur geleden',
+	'time.hourAgoSingular': '{count} uur geleden',
+	'time.minutesAgoPlural': '{count} minuten geleden',
+	'time.minuteAgoSingular': '{count} minuut geleden',
+	'time.justNow': 'Zojuist',
 	'agent.empty.title': 'Start een gesprek',
 	'agent.empty.description': 'Je AI-assistent die actief met je vault kan werken.',
 	'agent.empty.capabilitiesTitle': 'Wat kan de agent doen?',
@@ -285,13 +291,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'ragResume.resumeNote': 'Hervatten gaat verder waar je bent gebleven en slaat reeds geïndexeerde bestanden over.',
 	'ragResume.resumeButton': 'Hervatten',
 	'ragResume.startFreshButton': 'Opnieuw beginnen',
-	'ragResume.justNow': 'Zojuist',
-	'ragResume.minuteAgoSingular': '{count} minuut geleden',
-	'ragResume.minutesAgoPlural': '{count} minuten geleden',
-	'ragResume.hourAgoSingular': '{count} uur geleden',
-	'ragResume.hoursAgoPlural': '{count} uur geleden',
-	'ragResume.dayAgoSingular': '{count} dag geleden',
-	'ragResume.daysAgoPlural': '{count} dagen geleden',
 	'scheduledTasks.title': 'Geplande taken',
 	'scheduledTasks.managerUnavailable': 'Geplande takenbeheerder niet beschikbaar.',
 	'scheduledTasks.empty':
@@ -431,13 +430,6 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Uitgeschakeld',
 	'ragStatus.statusRateLimited': 'Snelheidslimiet bereikt',
 	'ragStatus.statusUnknown': 'Onbekend',
-	'ragStatus.justNow': 'Zojuist',
-	'ragStatus.minuteAgoSingular': '{count} minuut geleden',
-	'ragStatus.minutesAgoPlural': '{count} minuten geleden',
-	'ragStatus.hourAgoSingular': '{count} uur geleden',
-	'ragStatus.hoursAgoPlural': '{count} uur geleden',
-	'ragStatus.dayAgoSingular': '{count} dag geleden',
-	'ragStatus.daysAgoPlural': '{count} dagen geleden',
 	'scheduler.presetOnce': 'Eenmalig',
 	'scheduler.presetDaily': 'Dagelijks (elke 24u)',
 	'scheduler.presetDailyAt': 'Dagelijks op tijdstip',

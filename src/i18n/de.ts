@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const de: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': 'Vor {count} Tagen',
+	'time.dayAgoSingular': 'Vor {count} Tag',
+	'time.hoursAgoPlural': 'Vor {count} Stunden',
+	'time.hourAgoSingular': 'Vor {count} Stunde',
+	'time.minutesAgoPlural': 'Vor {count} Minuten',
+	'time.minuteAgoSingular': 'Vor {count} Minute',
+	'time.justNow': 'Gerade eben',
 	'agent.empty.title': 'Unterhaltung starten',
 	'agent.empty.description': 'Dein KI-Assistent, der aktiv mit deinem Vault arbeiten kann.',
 	'agent.empty.capabilitiesTitle': 'Was kann der Agent tun?',
@@ -297,13 +303,6 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Beim Fortsetzen wird dort weitergemacht, wo Sie aufgehört haben, und bereits indizierte Dateien werden übersprungen.',
 	'ragResume.resumeButton': 'Fortsetzen',
 	'ragResume.startFreshButton': 'Neu starten',
-	'ragResume.justNow': 'Gerade eben',
-	'ragResume.minuteAgoSingular': 'vor {count} Minute',
-	'ragResume.minutesAgoPlural': 'vor {count} Minuten',
-	'ragResume.hourAgoSingular': 'vor {count} Stunde',
-	'ragResume.hoursAgoPlural': 'vor {count} Stunden',
-	'ragResume.dayAgoSingular': 'vor {count} Tag',
-	'ragResume.daysAgoPlural': 'vor {count} Tagen',
 	'scheduledTasks.title': 'Geplante Aufgaben',
 	'scheduledTasks.managerUnavailable': 'Manager für geplante Aufgaben nicht verfügbar.',
 	'scheduledTasks.empty':
@@ -443,13 +442,6 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Deaktiviert',
 	'ragStatus.statusRateLimited': 'Rate-Limit erreicht',
 	'ragStatus.statusUnknown': 'Unbekannt',
-	'ragStatus.justNow': 'Gerade eben',
-	'ragStatus.minuteAgoSingular': 'Vor {count} Minute',
-	'ragStatus.minutesAgoPlural': 'Vor {count} Minuten',
-	'ragStatus.hourAgoSingular': 'Vor {count} Stunde',
-	'ragStatus.hoursAgoPlural': 'Vor {count} Stunden',
-	'ragStatus.dayAgoSingular': 'Vor {count} Tag',
-	'ragStatus.daysAgoPlural': 'Vor {count} Tagen',
 	'scheduler.presetOnce': 'Einmalig',
 	'scheduler.presetDaily': 'Täglich (alle 24 Std.)',
 	'scheduler.presetDailyAt': 'Täglich um Uhrzeit',

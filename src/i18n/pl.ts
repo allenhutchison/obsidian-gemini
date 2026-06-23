@@ -2,8 +2,14 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
-
 export const pl: Partial<Record<TranslationKey, string>> = {
+	'time.daysAgoPlural': '{count} dni temu',
+	'time.dayAgoSingular': '{count} dzień temu',
+	'time.hoursAgoPlural': '{count} godz. temu',
+	'time.hourAgoSingular': '{count} godzinę temu',
+	'time.minutesAgoPlural': '{count} min temu',
+	'time.minuteAgoSingular': '{count} minutę temu',
+	'time.justNow': 'Przed chwilą',
 	'agent.empty.title': 'Rozpocznij konwersację',
 	'agent.empty.description': 'Twój asystent AI, który może aktywnie pracować z Twoim skarbcem.',
 	'agent.empty.capabilitiesTitle': 'Co potrafi agent?',
@@ -293,13 +299,6 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Wznowienie spowoduje kontynuację od miejsca przerwania i pominięcie już zaindeksowanych plików.',
 	'ragResume.resumeButton': 'Wznów',
 	'ragResume.startFreshButton': 'Zacznij od nowa',
-	'ragResume.justNow': 'Przed chwilą',
-	'ragResume.minuteAgoSingular': '{count} minutę temu',
-	'ragResume.minutesAgoPlural': '{count} min. temu',
-	'ragResume.hourAgoSingular': '{count} godzinę temu',
-	'ragResume.hoursAgoPlural': '{count} godz. temu',
-	'ragResume.dayAgoSingular': '{count} dzień temu',
-	'ragResume.daysAgoPlural': '{count} dni temu',
 	'scheduledTasks.title': 'Zaplanowane zadania',
 	'scheduledTasks.managerUnavailable': 'Menedżer zaplanowanych zadań jest niedostępny.',
 	'scheduledTasks.empty':
@@ -440,13 +439,6 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Wyłączone',
 	'ragStatus.statusRateLimited': 'Ograniczenie liczby żądań',
 	'ragStatus.statusUnknown': 'Nieznany',
-	'ragStatus.justNow': 'Przed chwilą',
-	'ragStatus.minuteAgoSingular': '{count} minutę temu',
-	'ragStatus.minutesAgoPlural': '{count} min temu',
-	'ragStatus.hourAgoSingular': '{count} godzinę temu',
-	'ragStatus.hoursAgoPlural': '{count} godz. temu',
-	'ragStatus.dayAgoSingular': '{count} dzień temu',
-	'ragStatus.daysAgoPlural': '{count} dni temu',
 	'scheduler.presetOnce': 'Jednorazowo',
 	'scheduler.presetDaily': 'Codziennie (co 24h)',
 	'scheduler.presetDailyAt': 'Codziennie o określonej godzinie',

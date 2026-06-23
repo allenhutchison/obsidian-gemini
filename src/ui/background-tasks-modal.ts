@@ -5,6 +5,7 @@ import type { RagDetailedStatus } from './rag-status-modal';
 import type { ProgressListener } from '../services/rag-types';
 import type { RagIndexingService } from '../services/rag-indexing';
 import { getErrorMessage } from '../utils/error-utils';
+import { formatRelativeTime } from '../utils/format-relative-time';
 import { t } from '../i18n';
 
 type ModalTab = 'tasks' | 'rag';
@@ -431,7 +432,7 @@ export class BackgroundTasksModal extends Modal {
 		if (status.lastSync) {
 			const syncRow = infoEl.createDiv({ cls: 'rag-status-row' });
 			syncRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.lastSyncLabel') });
-			syncRow.createSpan({ cls: 'rag-status-value', text: this.formatRagDate(status.lastSync) });
+			syncRow.createSpan({ cls: 'rag-status-value', text: formatRelativeTime(status.lastSync) });
 		}
 
 		// Store name
@@ -551,7 +552,7 @@ export class BackgroundTasksModal extends Modal {
 			const pathEl = item.createSpan({ cls: 'rag-status-file-path' });
 			pathEl.setText(file.path);
 			pathEl.setAttribute('title', file.path);
-			item.createSpan({ cls: 'rag-status-file-time', text: this.formatRagDate(file.lastIndexed) });
+			item.createSpan({ cls: 'rag-status-file-time', text: formatRelativeTime(file.lastIndexed) });
 			item.addEventListener('click', () => {
 				this.close();
 				this.plugin.app.workspace.openLinkText(file.path, '', false);
@@ -583,7 +584,7 @@ export class BackgroundTasksModal extends Modal {
 			const pathEl = headerRow.createSpan({ cls: 'rag-status-failure-path' });
 			pathEl.setText(failure.path);
 			pathEl.setAttribute('title', failure.path);
-			headerRow.createSpan({ cls: 'rag-status-failure-time', text: this.formatRagDate(failure.timestamp) });
+			headerRow.createSpan({ cls: 'rag-status-failure-time', text: formatRelativeTime(failure.timestamp) });
 			item.createDiv({ cls: 'rag-status-failure-error', text: failure.error });
 		}
 	}
@@ -613,29 +614,5 @@ export class BackgroundTasksModal extends Modal {
 			rate_limited: 'rag-status-rate-limited',
 		};
 		return map[status] ?? '';
-	}
-
-	private formatRagDate(timestamp: number): string {
-		const date = new Date(timestamp);
-		const now = new Date();
-		const diffMs = now.getTime() - date.getTime();
-		const diffMins = Math.floor(diffMs / 60000);
-		const diffHours = Math.floor(diffMs / 3600000);
-		const diffDays = Math.floor(diffMs / 86400000);
-
-		if (diffMins < 1) return t('ragStatus.justNow');
-		if (diffMins < 60)
-			return diffMins === 1
-				? t('ragStatus.minuteAgoSingular', { count: diffMins })
-				: t('ragStatus.minutesAgoPlural', { count: diffMins });
-		if (diffHours < 24)
-			return diffHours === 1
-				? t('ragStatus.hourAgoSingular', { count: diffHours })
-				: t('ragStatus.hoursAgoPlural', { count: diffHours });
-		if (diffDays < 7)
-			return diffDays === 1
-				? t('ragStatus.dayAgoSingular', { count: diffDays })
-				: t('ragStatus.daysAgoPlural', { count: diffDays });
-		return date.toLocaleDateString();
 	}
 }

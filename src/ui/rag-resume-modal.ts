@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+import { formatRelativeTime } from '../utils/format-relative-time';
 import { t } from '../i18n';
 
 export interface ResumeInfo {
@@ -39,7 +40,7 @@ export class RagResumeModal extends Modal {
 
 		const timeRow = statsEl.createDiv({ cls: 'rag-resume-stat-row' });
 		timeRow.createSpan({ cls: 'rag-resume-stat-label', text: t('ragResume.interruptedLabel') });
-		timeRow.createSpan({ cls: 'rag-resume-stat-value', text: this.formatDate(this.resumeInfo.interruptedAt) });
+		timeRow.createSpan({ cls: 'rag-resume-stat-value', text: formatRelativeTime(this.resumeInfo.interruptedAt) });
 
 		if (this.resumeInfo.lastFile) {
 			const fileRow = statsEl.createDiv({ cls: 'rag-resume-stat-row' });
@@ -75,32 +76,5 @@ export class RagResumeModal extends Modal {
 						this.onChoice(false);
 					})
 			);
-	}
-
-	private formatDate(timestamp: number): string {
-		const date = new Date(timestamp);
-		const now = new Date();
-		const diffMs = now.getTime() - date.getTime();
-		const diffMins = Math.floor(diffMs / 60000);
-		const diffHours = Math.floor(diffMs / 3600000);
-		const diffDays = Math.floor(diffMs / 86400000);
-
-		if (diffMins < 1) {
-			return t('ragResume.justNow');
-		} else if (diffMins < 60) {
-			return diffMins === 1
-				? t('ragResume.minuteAgoSingular', { count: diffMins })
-				: t('ragResume.minutesAgoPlural', { count: diffMins });
-		} else if (diffHours < 24) {
-			return diffHours === 1
-				? t('ragResume.hourAgoSingular', { count: diffHours })
-				: t('ragResume.hoursAgoPlural', { count: diffHours });
-		} else if (diffDays < 7) {
-			return diffDays === 1
-				? t('ragResume.dayAgoSingular', { count: diffDays })
-				: t('ragResume.daysAgoPlural', { count: diffDays });
-		} else {
-			return date.toLocaleDateString();
-		}
 	}
 }
