@@ -53,6 +53,16 @@ Gemini Scribe automatically discovers the parameter limits for your available mo
 
 ## API configuration
 
+### Use Interactions API
+
+Route Gemini requests through Google's newer [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API. Google has made the Interactions API generally available and is steering new development toward it.
+
+- **Setting name**: Use Interactions API
+- **Default**: off (uses `generateContent`)
+- **Scope**: Gemini provider only — the toggle is hidden when the provider is Ollama.
+- **Privacy**: The plugin runs the Interactions API **statelessly** (`store: false`). Your conversation history stays on your device and is replayed with each request; nothing is retained on Google's servers between turns.
+- **Status**: Experimental while the SDK surface settles. If you hit problems, turn it off to fall back to the proven `generateContent` path. When enabled, responses are currently delivered non-streaming (incremental streaming for this transport is planned).
+
 ### Custom API Endpoint
 
 Route all Google API requests through a proxy or gateway instead of hitting the public endpoint directly.

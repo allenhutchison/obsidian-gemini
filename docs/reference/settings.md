@@ -288,6 +288,16 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 
 ### API configuration
 
+#### Use Interactions API
+
+- **Setting**: `useInteractionsApi`
+- **Type**: Boolean
+- **Default**: `false`
+- **Only applies when**: Provider is `gemini`
+- **Description**: Routes Gemini requests through Google's GA [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API.
+- **Privacy**: Runs statelessly (`store: false`) — conversation history stays on your device and is replayed each turn; nothing is retained server-side between turns.
+- **Status**: Experimental. Responses are non-streaming for now; turn it off to fall back to `generateContent` if you hit issues.
+
 #### Custom API Endpoint
 
 - **Setting**: `customBaseUrl`

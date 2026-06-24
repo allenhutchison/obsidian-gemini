@@ -16,4 +16,10 @@ export interface GeminiClientConfig {
 	topP?: number;
 	maxOutputTokens?: number;
 	streamingEnabled?: boolean;
+	/**
+	 * Route requests through the GA Interactions API (`interactions.create`)
+	 * instead of the legacy `generateContent`. Stateless (`store: false`) — the
+	 * plugin still owns and replays conversation history. Opt-in; see epic #1013.
+	 */
+	useInteractionsApi?: boolean;
 }

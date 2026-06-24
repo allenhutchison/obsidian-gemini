@@ -9,8 +9,9 @@ import { ModelUseCase } from '../../../../src/api/model-use-case';
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
 // us share the spy with the factory while keeping vitest's mock-hoisting safe.
-const { generateContentMock } = vi.hoisted(() => ({
+const { generateContentMock, interactionsCreateMock } = vi.hoisted(() => ({
 	generateContentMock: vi.fn(),
+	interactionsCreateMock: vi.fn(),
 }));
 
 vi.mock('@google/genai', () => ({
@@ -20,6 +21,9 @@ vi.mock('@google/genai', () => ({
 			models: {
 				generateContent: generateContentMock,
 				generateContentStream: vi.fn(),
+			},
+			interactions: {
+				create: interactionsCreateMock,
 			},
 		};
 	}),
@@ -967,6 +971,193 @@ describe('GeminiClient', () => {
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			expect(params.config.maxOutputTokens).toBe(4096);
+		});
+	});
+
+	describe('Interactions API transport (useInteractionsApi)', () => {
+		const makeInteractionsClient = (extra: Partial<GeminiClientConfig> = {}) =>
+			new GeminiClient(
+				{ apiKey: 'test-api-key', model: 'gemini-3-flash', useInteractionsApi: true, ...extra },
+				new GeminiPrompts(mockPlugin),
+				mockPlugin
+			);
+
+		beforeEach(() => {
+			interactionsCreateMock.mockReset();
+			interactionsCreateMock.mockResolvedValue({
+				id: 'int_1',
+				status: 'completed',
+				output_text: 'Hello from interactions',
+				steps: [{ type: 'model_output', content: [{ type: 'text', text: 'Hello from interactions' }] }],
+				usage: { total_input_tokens: 10, total_output_tokens: 5, total_tokens: 15, total_cached_tokens: 2 },
+			});
+
+			// Stub the plugin surface buildExtendedSystemInstruction depends on.
+			(mockPlugin as any).agentsMemory = { read: vi.fn().mockResolvedValue('') };
+			(mockPlugin as any).skillManager = { getSkillSummaries: vi.fn().mockResolvedValue([]) };
+			(mockPlugin as any).settings = { userName: 'Tester', ragIndexing: { enabled: false } };
+		});
+
+		test('routes generateModelResponse to interactions.create, not generateContent', async () => {
+			const client = makeInteractionsClient();
+			const response = await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'hi',
+				kind: 'extended',
+				conversationHistory: [],
+			} as ExtendedModelRequest);
+
+			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
+			expect(generateContentMock).not.toHaveBeenCalled();
+			expect(response.markdown).toBe('Hello from interactions');
+		});
+
+		test('sends stateless params: store=false and snake_case generation_config', async () => {
+			const client = makeInteractionsClient();
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'hi',
+				kind: 'extended',
+				conversationHistory: [],
+				temperature: 0.4,
+				topP: 0.8,
+			} as ExtendedModelRequest);
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			expect(params.store).toBe(false);
+			expect(params.previous_interaction_id).toBeUndefined();
+			expect(params.generation_config.temperature).toBe(0.4);
+			expect(params.generation_config.top_p).toBe(0.8);
+			// gemini-3-flash supports thinking → lowercase thinking_level for CHAT use case
+			expect(params.generation_config.thinking_level).toBe('high');
+		});
+
+		test('maps tools to flat function declarations', async () => {
+			const client = makeInteractionsClient();
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'use a tool',
+				kind: 'extended',
+				conversationHistory: [],
+				availableTools: [
+					{
+						name: 'read_file',
+						description: 'Read a file',
+						parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
+					},
+				],
+			} as ExtendedModelRequest);
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			expect(params.tools).toEqual([
+				{
+					type: 'function',
+					name: 'read_file',
+					description: 'Read a file',
+					parameters: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
+				},
+			]);
+		});
+
+		test('replays history as typed steps incl. function call/result round-trip', async () => {
+			const client = makeInteractionsClient();
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'and now?',
+				kind: 'extended',
+				conversationHistory: [
+					{ role: 'user', parts: [{ text: 'read foo.md' }] },
+					{ role: 'model', parts: [{ functionCall: { id: 'c1', name: 'read_file', args: { path: 'foo.md' } } }] },
+					{ role: 'user', parts: [{ functionResponse: { id: 'c1', name: 'read_file', response: { content: 'hi' } } }] },
+					{ role: 'model', parts: [{ text: 'foo.md says hi' }] },
+				] as any,
+			} as ExtendedModelRequest);
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			expect(params.input).toEqual([
+				{ type: 'user_input', content: [{ type: 'text', text: 'read foo.md' }] },
+				{ type: 'function_call', id: 'c1', name: 'read_file', arguments: { path: 'foo.md' } },
+				{
+					type: 'function_result',
+					call_id: 'c1',
+					name: 'read_file',
+					result: [{ type: 'text', text: JSON.stringify({ content: 'hi' }) }],
+				},
+				{ type: 'model_output', content: [{ type: 'text', text: 'foo.md says hi' }] },
+				{ type: 'user_input', content: [{ type: 'text', text: 'and now?' }] },
+			]);
+		});
+
+		test('maps inline image attachments to image content items', async () => {
+			const client = makeInteractionsClient();
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'what is this?',
+				kind: 'extended',
+				conversationHistory: [],
+				inlineAttachments: [{ base64: 'AAAA', mimeType: 'image/png' }],
+			} as ExtendedModelRequest);
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			const lastStep = params.input[params.input.length - 1];
+			expect(lastStep.content).toEqual([
+				{ type: 'text', text: 'what is this?' },
+				{ type: 'image', data: 'AAAA', mime_type: 'image/png' },
+			]);
+		});
+
+		test('extracts tool calls, thoughts, and usage from the interaction', async () => {
+			interactionsCreateMock.mockResolvedValue({
+				id: 'int_2',
+				status: 'requires_action',
+				output_text: '',
+				steps: [
+					{ type: 'thought', summary: [{ type: 'text', text: 'thinking...' }] },
+					{ type: 'function_call', id: 'c9', name: 'list_files', arguments: { dir: '.' }, signature: 'sig9' },
+				],
+				usage: { total_input_tokens: 7, total_output_tokens: 3, total_tokens: 10 },
+			});
+			const client = makeInteractionsClient();
+			const response = await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'list files',
+				kind: 'extended',
+				conversationHistory: [],
+			} as ExtendedModelRequest);
+
+			expect(response.thoughts).toBe('thinking...');
+			expect(response.toolCalls).toEqual([
+				{ name: 'list_files', arguments: { dir: '.' }, id: 'c9', thoughtSignature: 'sig9' },
+			]);
+			expect(response.usageMetadata).toEqual({
+				promptTokenCount: 7,
+				candidatesTokenCount: 3,
+				totalTokenCount: 10,
+				cachedContentTokenCount: undefined,
+			});
+		});
+
+		test('streaming falls back to a single chunk via the non-streaming path', async () => {
+			const client = makeInteractionsClient();
+			const chunks: Array<{ text: string; thought?: string }> = [];
+			const stream = client.generateStreamingResponse!(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] } as ExtendedModelRequest,
+				(chunk) => chunks.push(chunk)
+			);
+			const result = await stream.complete;
+
+			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
+			expect(result.markdown).toBe('Hello from interactions');
+			expect(chunks.some((c) => c.text === 'Hello from interactions')).toBe(true);
+		});
+
+		test('one-shot base requests pass the prompt as input', async () => {
+			const client = makeInteractionsClient();
+			await client.generateModelResponse({ prompt: 'just answer', kind: 'base' } as any);
+
+			const params = interactionsCreateMock.mock.calls[0][0];
+			expect(params.input).toBe('just answer');
+			expect(params.system_instruction).toBeUndefined();
 		});
 	});
 });

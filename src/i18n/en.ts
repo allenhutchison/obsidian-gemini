@@ -458,6 +458,16 @@ export const en = {
 		context:
 			'Settings toggle description for file logging. "Debug Mode" refers to the setting named by settings.debug.debugModeName; translate consistently.',
 	},
+	'settings.agentConfig.useInteractionsApiName': {
+		message: 'Use Interactions API',
+		context: 'Settings toggle name for routing Gemini requests through the GA Interactions API.',
+	},
+	'settings.agentConfig.useInteractionsApiDesc': {
+		message:
+			'Route Gemini requests through Google’s newer Interactions API instead of the legacy generateContent API. Conversation history stays on your device. Experimental — leave off if you hit issues.',
+		context:
+			'Settings toggle description for the Interactions API. "Interactions API" and "generateContent" are Google API names; keep them in English.',
+	},
 	'settings.agentConfig.customEndpointName': {
 		message: 'Custom API endpoint',
 		context: 'Settings field name for overriding the Google API base URL.',

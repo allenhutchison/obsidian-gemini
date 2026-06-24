@@ -72,6 +72,20 @@ export async function renderAgentConfigSettings(
 			})
 		);
 
+	// The Interactions API is a Gemini-only transport; hide the toggle entirely
+	// on Ollama, which has no equivalent.
+	if (plugin.settings.provider === 'gemini') {
+		new Setting(sectionEl)
+			.setName(t('settings.agentConfig.useInteractionsApiName'))
+			.setDesc(t('settings.agentConfig.useInteractionsApiDesc'))
+			.addToggle((toggle) =>
+				toggle.setValue(plugin.settings.useInteractionsApi).onChange(async (value) => {
+					plugin.settings.useInteractionsApi = value;
+					await plugin.saveSettings();
+				})
+			);
+	}
+
 	// Only the Gemini provider honours customBaseUrl — the Ollama path has its
 	// own ollamaBaseUrl setting and ignores this value. Hide the row entirely
 	// on Ollama so users don't type a URL that silently does nothing.
