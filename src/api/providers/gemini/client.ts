@@ -229,13 +229,14 @@ export class GeminiClient implements ModelApi {
 		// full response as a single chunk. Real step-based streaming is #1015.
 		if (this.useInteractions) {
 			let cancelledNonStream = false;
-			const complete = this.generateViaInteractions(request).then((response) => {
+			const complete = (async (): Promise<ModelResponse> => {
+				const response = await this.generateViaInteractions(request);
 				if (!cancelledNonStream) {
 					if (response.thoughts) onChunk({ text: '', thought: response.thoughts });
 					if (response.markdown) onChunk({ text: response.markdown });
 				}
 				return response;
-			});
+			})();
 			return {
 				complete,
 				cancel: () => {
