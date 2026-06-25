@@ -60,7 +60,7 @@ Route Gemini requests through Google's newer [Interactions API](https://ai.googl
 - **Setting name**: Use Interactions API
 - **Default**: off (uses `generateContent`)
 - **Scope**: Gemini provider only — the toggle is hidden when the provider is Ollama.
-- **Privacy**: The plugin runs the Interactions API **statelessly** (`store: false`). Your conversation history stays on your device and is replayed with each request; nothing is retained on Google's servers between turns.
+- **Privacy**: The plugin runs the Interactions API **statelessly** (`store: false`). Conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
 - **Status**: Experimental while the SDK surface settles. If you hit problems, turn it off to fall back to the proven `generateContent` path. When enabled, responses are currently delivered non-streaming (incremental streaming for this transport is planned).
 
 ### Custom API Endpoint

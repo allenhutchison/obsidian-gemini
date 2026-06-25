@@ -464,7 +464,7 @@ export const en = {
 	},
 	'settings.agentConfig.useInteractionsApiDesc': {
 		message:
-			'Route Gemini requests through Google’s newer Interactions API instead of the legacy generateContent API. Conversation history stays on your device. Experimental — leave off if you hit issues.',
+			'Route Gemini requests through Google’s newer Interactions API instead of the legacy generateContent API. Runs statelessly — conversation history is replayed each turn and not persisted on Google’s side between turns. Experimental — leave off if you hit issues.',
 		context:
 			'Settings toggle description for the Interactions API. "Interactions API" and "generateContent" are Google API names; keep them in English.',
 	},
