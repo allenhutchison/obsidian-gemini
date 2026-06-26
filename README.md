@@ -7,20 +7,29 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
-## What's New in v4.10.1
+## What's New in v4.10.2
 
-**🌍 Gemini Scribe 4.10.1 - Multilingual UI, Reasoning Display & Interactions API**
+**🛠️ Gemini Scribe 4.10.2 - Interactions API transport fix & recoverable deletes**
 
-_4.10.1 is a notes-only patch that completes the 4.10.0 release notes — no functional changes. The full 4.10 feature set:_
+_4.10.2 is a hotfix for the 4.10 line — two fixes on top of the full 4.10 feature set:_
+
+- **🧪 Interactions API transport fixed** - With **Use Interactions API** enabled, every request failed with a CORS error ("Failed to fetch") after the Gemini SDK update to `@google/genai` 2.10.0, breaking chat and summarization for anyone who had the opt-in transport on. Requests now route through Obsidian's `requestUrl` again, so the Interactions path (streaming text/reasoning, tool calls, grounded sources) works. The transport remains off by default. (#1045)
+- **🗑️ Safer file deletion** - When the agent deletes a file or folder it now follows your Obsidian "Deleted files" setting (system trash or the vault's `.trash` folder) instead of permanently removing it, so deletions are recoverable; includes minor correctness fixes. (#1030)
+
+_The full 4.10 feature set is unchanged:_
 
 - **🌍 Localized UI in 20 languages** - The entire plugin interface (settings, modals, agent view, commands, notices) is now translated, auto-selected from your Obsidian language with graceful fallback to English.
-- **🧠 Model reasoning display** - The agent now shows the model's thinking inline in the tool activity block and persists it in session history, so you can follow how it reached an answer.
+- **🧠 Model reasoning display** - The agent shows the model's thinking inline in the tool activity block and persists it in session history, so you can follow how it reached an answer.
 - **🧪 Interactions API transport (experimental, opt-in)** - New **Use Interactions API** setting routes Gemini chat through Google's newer Interactions API, with full streaming of text, reasoning, tool calls, and grounded sources. Off by default and runs statelessly (your conversation history stays on your device); enable it under **Settings → Agent config → API configuration**, or leave it off to keep using the proven `generateContent` path.
 - **🗺️ Google Maps grounding tool** - The agent can ground answers in Google Maps data for place and location questions.
 - **🧠 Per-use-case thinking depth** - Reasoning effort is now tuned per task (completions think the least, agent chat the most) instead of one global setting, balancing latency and quality.
 - **⏳ Soft agent turn budget** - Long agent runs get a gentle reminder as they approach the turn limit, plus a one-shot extension, instead of stopping abruptly.
 - **📋 Copy buttons for tool calls** - Quickly copy tool-call parameters and results from the agent view.
 - **🔄 In-app model-list refresh** - Refresh the available Gemini model list without restarting.
+
+**Previous Updates (v4.10.1):**
+
+- **📝 Notes-only patch** - Completed the 4.10.0 release notes (which omitted several of the features above); no functional changes.
 
 **Previous Updates (v4.9.1):**
 
