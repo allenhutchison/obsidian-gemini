@@ -711,6 +711,26 @@ Add relevant files as context for better results:
 
 ## Advanced Usage
 
+### Plan Mode
+
+Plan mode lets you review what the agent intends to do before any tools are executed. This is useful for high-stakes workflows where you want to understand and approve the approach before the agent starts making changes.
+
+**How to use Plan Mode:**
+
+1. Click the **Plan** button (map icon) in the input toolbar to toggle plan mode on. The button highlights when active.
+2. Type your request and send it as normal.
+3. The agent responds with a plan describing the steps it will take — but does not execute anything yet.
+4. Review the plan. Click **Approve & Execute** to proceed with full tool access, or **Reject** to cancel without changes.
+5. After approval, the agent executes the plan automatically. Plan mode turns off after each request.
+
+**When to use Plan Mode:**
+
+- Before bulk operations (renaming, reorganizing, or deleting many files)
+- When trying a new complex workflow for the first time
+- Whenever you want to verify the agent's interpretation before it acts
+
+Plan entries are saved to session history with a distinct purple border so you can review approved plans later.
+
 ### Multi-Step Workflows
 
 The agent excels at complex, multi-step tasks:

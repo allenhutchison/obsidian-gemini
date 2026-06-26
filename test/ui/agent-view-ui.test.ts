@@ -87,6 +87,7 @@ describe('AgentViewUI', () => {
 			createNewSession: vi.fn().mockResolvedValue(undefined),
 			sendMessage: vi.fn().mockResolvedValue(undefined),
 			stopAgentLoop: vi.fn(),
+			togglePlanMode: vi.fn(),
 			removeContextFile: vi.fn(),
 			updateSessionHeader: vi.fn(),
 			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),

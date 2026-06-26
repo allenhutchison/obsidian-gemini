@@ -1113,6 +1113,76 @@ describe('SessionHistory', () => {
 		});
 	});
 
+	describe('plan entry round-trip', () => {
+		it('serializes a plan entry with [!plan]+ callout and parses entryType back', async () => {
+			const mockFile = makeTFile('test.md');
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.vault.read.mockResolvedValue('');
+
+			const session = createMockSession();
+			const planEntry: GeminiConversationEntry = {
+				role: 'model',
+				message: '1. First step\n2. Second step',
+				notePath: '',
+				created_at: new Date(),
+				metadata: { entryType: 'plan' },
+			};
+
+			await sessionHistory.addEntryToSession(session, planEntry);
+			const raw: string = mockPlugin.app.vault.modify.mock.calls[0][1];
+
+			// Serialization: must use [!plan]+ callout, not [!assistant]+
+			expect(raw).toContain('> [!plan]+');
+			expect(raw).not.toContain('> [!assistant]+');
+
+			// Parse the serialized content back
+			mockPlugin.app.vault.read.mockResolvedValue(raw);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
+			const parsed = await sessionHistory.getHistoryForSession(session);
+
+			expect(parsed).toHaveLength(1);
+			expect(parsed[0].role).toBe('model');
+			expect(parsed[0].message).toContain('First step');
+			expect(parsed[0].metadata?.entryType).toBe('plan');
+		});
+
+		it('parses a plan callout from a stored history fixture', async () => {
+			const fixture = [
+				'---',
+				'session_id: s1',
+				'---',
+				'',
+				'## Agent (Plan)',
+				'',
+				'> [!metadata]- Message Info',
+				'> | Property | Value |',
+				'> | -------- | ----- |',
+				'> | Time | 2026-01-01T00:00:00.000Z |',
+				'',
+				'> [!plan]+',
+				'> Step one',
+				'> Step two',
+				'',
+				'---',
+			].join('\n');
+
+			const mockFile = makeTFile('test.md');
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.vault.read.mockResolvedValue(fixture);
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue({
+				frontmatterPosition: { end: { offset: fixture.indexOf('\n---\n', 4) + 5 } },
+			});
+
+			const session = createMockSession();
+			const result = await sessionHistory.getHistoryForSession(session);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].role).toBe('model');
+			expect(result[0].message).toContain('Step one');
+			expect(result[0].metadata?.entryType).toBe('plan');
+		});
+	});
+
 	describe('model reasoning (thoughts) round-trip', () => {
 		let mockFile: TFile;
 

@@ -33,6 +33,7 @@ export interface UICallbacks {
 	sendMessage: () => Promise<void>;
 	stopAgentLoop: () => void;
 	removeContextFile: (file: TFile) => void;
+	togglePlanMode: () => void;
 
 	updateSessionHeader: () => void;
 	updateSessionMetadata: () => Promise<void>;
@@ -367,11 +368,10 @@ export class AgentViewUI {
 		}) as HTMLDivElement;
 
 		const planModeButton = inputRow.createEl('button', {
-			cls: 'gemini-agent-btn gemini-agent-btn-icon gemini-agent-plan-mode-btn',
+			cls: 'gemini-agent-btn gemini-agent-btn-secondary gemini-agent-plan-btn',
 			attr: { 'aria-label': t('agent.planMode.toggleAria') },
 		});
-		setIcon(planModeButton, 'clipboard-list');
-		setTooltip(planModeButton, t('agent.planMode.toggleAria'));
+		setIcon(planModeButton, 'map');
 
 		planModeButton.addEventListener('click', () => {
 			callbacks.togglePlanMode();

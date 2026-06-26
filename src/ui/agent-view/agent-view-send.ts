@@ -1,4 +1,5 @@
 import { Notice, setIcon, App } from 'obsidian';
+import type { Content } from '@google/genai';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { ToolExecutionContext } from '../../tools/types';
@@ -29,6 +30,7 @@ export interface SendContext {
 	getShelf: () => AgentViewShelf;
 	getUserInput: () => HTMLDivElement;
 	getSendButton: () => HTMLButtonElement;
+	getPlanModeButton: () => HTMLButtonElement;
 	getChatContainer: () => HTMLElement;
 	progress: AgentViewProgress;
 	messages: AgentViewMessages;
@@ -38,8 +40,6 @@ export interface SendContext {
 	updateTokenUsage: () => Promise<void>;
 	isToolAllowedWithoutConfirmation: (toolName: string) => boolean;
 	allowToolWithoutConfirmation: (toolName: string) => void;
-	isPlanModeActive: () => boolean;
-	deactivatePlanMode: () => void;
 	showConfirmationInChat: (
 		tool: Tool,
 		parameters: any,
@@ -58,8 +58,103 @@ export class AgentViewSend {
 	private isExecuting = false;
 	private turnToolCallCount = 0;
 	private cancellationRequested = false;
+	private isPlanModeActive = false;
 
 	constructor(private ctx: SendContext) {}
+
+	/**
+	 * Toggle plan mode on/off. When active, the next send will ask the model to
+	 * produce a plan first; the user approves or rejects before tools run.
+	 */
+	public togglePlanMode(): void {
+		this.isPlanModeActive = !this.isPlanModeActive;
+		const btn = this.ctx.getPlanModeButton();
+		btn.toggleClass('gemini-agent-plan-btn-active', this.isPlanModeActive);
+		btn.setAttribute('aria-label', t('agent.planMode.toggleAria'));
+	}
+
+	/**
+	 * Run the plan-only phase: call the model without tools, show approval UI,
+	 * and on approval save the plan + proceed entries and return the augmented
+	 * history so the caller can continue with a tool-enabled execute call.
+	 *
+	 * Returns null when the plan was rejected or could not be produced (caller
+	 * should abort the turn). Returns the proceed message + updated history on
+	 * approval so the caller can build the execute-phase request.
+	 */
+	private async conductPlanApproval(
+		modelApi: any,
+		baseRequest: ExtendedModelRequest,
+		currentSession: ChatSession,
+		compactedHistory: Content[]
+	): Promise<{ proceedMessage: string; updatedHistory: Content[] } | null> {
+		const planRequest: ExtendedModelRequest = {
+			...baseRequest,
+			availableTools: [],
+			perTurnContext:
+				(baseRequest.perTurnContext || '') +
+				'\n\nIMPORTANT: Before taking any actions, describe the steps you plan to take. Do not execute any actions in this response — only produce the plan.',
+		};
+
+		this.ctx.progress.update(t('agent.progress.thinking'), 'thinking');
+
+		let planText = '';
+
+		// Accumulate plan text without a streaming UI container — showPlanApproval
+		// renders the final text with proper formatting and approval buttons.
+		if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {
+			let accumulated = '';
+			const stream = modelApi.generateStreamingResponse(planRequest, (chunk: any) => {
+				if (chunk.text) {
+					accumulated += chunk.text;
+				}
+			});
+			this.currentStreamingResponse = stream;
+			const response = await stream.complete;
+			this.currentStreamingResponse = null;
+			planText = response.markdown || accumulated;
+		} else {
+			const response = await modelApi.generateModelResponse(planRequest);
+			planText = response.markdown || '';
+		}
+
+		this.ctx.progress.hide();
+
+		if (!planText.trim()) {
+			new Notice(t('agent.send.emptyResponse'));
+			return null;
+		}
+
+		const approved = await this.ctx.messages.showPlanApproval(planText);
+		if (!approved) {
+			new Notice(t('agent.planMode.rejectedNotice'));
+			return null;
+		}
+
+		const planEntry: GeminiConversationEntry = {
+			role: 'model',
+			message: planText,
+			notePath: '',
+			created_at: new Date(),
+			metadata: { entryType: 'plan' },
+		};
+		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, planEntry);
+
+		const proceedMessage = t('agent.planMode.proceedMessage');
+		const proceedEntry: GeminiConversationEntry = {
+			role: 'user',
+			message: proceedMessage,
+			notePath: '',
+			created_at: new Date(),
+		};
+		await this.ctx.messages.displayMessage(proceedEntry, currentSession);
+		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, proceedEntry);
+
+		return {
+			proceedMessage,
+			updatedHistory: [...compactedHistory, planEntry as unknown as Content, proceedEntry as unknown as Content],
+		};
+	}
 
 	/**
 	 * Main orchestration method for sending messages and handling tool calls
@@ -344,7 +439,7 @@ To reference an attachment in your response, use the path shown above.`;
 					sessionStartedAt: formatLocalTimestamp(currentSession.created),
 				};
 
-				const request: ExtendedModelRequest = {
+				let request: ExtendedModelRequest = {
 					kind: 'extended',
 					userMessage: message,
 					conversationHistory: compactionResult.compactedHistory,
@@ -365,140 +460,24 @@ To reference an attachment in your response, use the path shown above.`;
 				// Create model API for this session
 				const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession!);
 
-				// Plan mode: ask model to produce a plan (no tools), await user approval,
-				// then run a follow-up execution request with full tools.
-				if (this.ctx.isPlanModeActive()) {
-					const PLAN_MODE_INSTRUCTION =
-						'\n\n## Plan Mode\n' +
-						'You are in Plan Mode. The user wants you to plan before acting. ' +
-						'Produce a detailed, step-by-step implementation plan for this task. ' +
-						'Do NOT call any tools — just outline what you would do. ' +
-						'The user will review and approve (or reject) the plan before you execute.';
-
-					const planRequest: ExtendedModelRequest = {
-						...request,
-						availableTools: [],
-						perTurnContext: (perTurn.perTurnContext || '') + PLAN_MODE_INSTRUCTION,
-					};
-
-					const planResponse = await modelApi.generateModelResponse(planRequest);
-
-					if (this.isCancellationRequested()) return;
-
-					if (planResponse.usageMetadata) {
-						await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
-							usageMetadata: planResponse.usageMetadata,
-						});
-					}
-
-					this.ctx.progress.hide();
-
-					if (!planResponse.markdown?.trim()) {
-						new Notice(t('agent.send.emptyResponse'));
+				// Plan mode: ask for a plan first, await user approval, then execute with tools
+				let messageToSend = message;
+				let historyToSend = compactionResult.compactedHistory;
+				if (this.isPlanModeActive) {
+					const planResult = await this.conductPlanApproval(
+						modelApi,
+						request,
+						currentSession,
+						compactionResult.compactedHistory
+					);
+					if (!planResult) {
+						// Plan rejected or empty — abort this turn
+						this.ctx.progress.hide();
 						return;
 					}
-
-					const planEntry: GeminiConversationEntry = {
-						role: 'model',
-						message: planResponse.markdown,
-						notePath: '',
-						created_at: new Date(),
-						model: modelName,
-						isPlan: true,
-						...(planResponse.thoughts?.trim() ? { thoughts: planResponse.thoughts } : {}),
-					};
-
-					const decision = await this.ctx.messages.displayPlanMessage(planEntry, currentSession);
-
-					if (this.isCancellationRequested()) return;
-
-					if (decision === 'reject') {
-						new Notice(t('agent.planMode.rejectNotice'));
-						this.ctx.deactivatePlanMode();
-						return;
-					}
-
-					// Approved — persist plan, deactivate plan mode, execute
-					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, planEntry);
-					new Notice(t('agent.planMode.approveNotice'));
-					this.ctx.deactivatePlanMode();
-
-					const executePrompt = t('agent.planMode.executePrompt');
-					const approvalEntry: GeminiConversationEntry = {
-						role: 'user',
-						message: executePrompt,
-						notePath: '',
-						created_at: new Date(),
-					};
-					await this.ctx.displayMessage(approvalEntry);
-					// Snapshot history BEFORE persisting approvalEntry so it becomes the current-turn
-					// userMessage rather than appearing twice in conversationHistory.
-					const execHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
-					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, approvalEntry);
-
-					this.ctx.progress.show(t('agent.progress.thinking'), 'thinking');
-
-					const execCompaction = await this.ctx.plugin.contextManager.prepareHistory(execHistory, modelName);
-
-					const execRequest: ExtendedModelRequest = {
-						...request,
-						userMessage: executePrompt,
-						conversationHistory: execCompaction.compactedHistory,
-					};
-
-					const execResponse = await modelApi.generateModelResponse(execRequest);
-
-					if (execResponse.usageMetadata) {
-						await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
-							usageMetadata: execResponse.usageMetadata,
-						});
-					}
-
-					this.ctx.progress.update(t('agent.progress.processing'), 'waiting');
-
-					const execThoughts = execResponse.thoughts?.trim() ? execResponse.thoughts : undefined;
-
-					if (execResponse.toolCalls && execResponse.toolCalls.length > 0) {
-						await this.ctx.tools.handleToolCalls(
-							execResponse.toolCalls,
-							executePrompt,
-							execCompaction.compactedHistory,
-							approvalEntry,
-							customPrompt,
-							perTurn,
-							execThoughts
-						);
-					} else if (execResponse.markdown?.trim()) {
-						const execEntry: GeminiConversationEntry = {
-							role: 'model',
-							message: execResponse.markdown,
-							notePath: '',
-							created_at: new Date(),
-							model: modelName,
-							...(execThoughts ? { thoughts: execThoughts } : {}),
-						};
-						await this.ctx.displayMessage(execEntry);
-						await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, execEntry);
-						this.ctx.progress.hide();
-					} else if (execThoughts) {
-						const reasoningEntry: GeminiConversationEntry = {
-							role: 'model',
-							message: '',
-							notePath: '',
-							created_at: new Date(),
-							model: modelName,
-							thoughts: execThoughts,
-						};
-						await this.ctx.displayMessage(reasoningEntry);
-						await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
-						this.ctx.progress.hide();
-					} else {
-						this.ctx.plugin.logger.warn('Execution model returned empty response in plan mode');
-						new Notice(t('agent.send.emptyResponse'));
-						this.ctx.progress.hide();
-					}
-
-					return;
+					messageToSend = planResult.proceedMessage;
+					historyToSend = planResult.updatedHistory;
+					request = { ...request, userMessage: messageToSend, conversationHistory: historyToSend };
 				}
 
 				// Check if streaming is supported and enabled
@@ -597,8 +576,8 @@ To reference an attachment in your response, use the path shown above.`;
 							// group (interleaved with the tools) and persists it.
 							await this.ctx.tools.handleToolCalls(
 								response.toolCalls,
-								message,
-								compactionResult.compactedHistory,
+								messageToSend,
+								historyToSend,
 								userEntry,
 								customPrompt,
 								perTurn,
@@ -693,8 +672,8 @@ To reference an attachment in your response, use the path shown above.`;
 						// it as the first row of the tool group and persists it.
 						await this.ctx.tools.handleToolCalls(
 							response.toolCalls,
-							message,
-							compactionResult.compactedHistory,
+							messageToSend,
+							historyToSend,
 							userEntry,
 							customPrompt,
 							perTurn,

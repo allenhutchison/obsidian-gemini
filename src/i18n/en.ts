@@ -3606,6 +3606,35 @@ export const en = {
 		message: 'Top P {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
 		context: 'Warning notice in settings when Top P is outside the allowed range.',
 	},
+	'agent.planMode.toggleAria': {
+		message: 'Toggle Plan Mode — review a plan before the agent executes',
+		context: 'Accessibility label for the Plan Mode toggle button in the agent send bar.',
+	},
+	'agent.planMode.headerLabel': {
+		message: 'Agent (Plan)',
+		context: 'Role label on a plan message in the agent chat. Distinguishes the plan from a regular agent reply.',
+	},
+	'agent.planMode.approveBtn': {
+		message: 'Approve & Execute',
+		context: 'Button that accepts the agent-generated plan and starts tool execution.',
+	},
+	'agent.planMode.rejectBtn': {
+		message: 'Reject',
+		context: 'Button that dismisses the agent-generated plan without executing anything.',
+	},
+	'agent.planMode.rejectedNotice': {
+		message: 'Plan rejected.',
+		context: 'Brief notice shown after the user clicks Reject on an agent plan.',
+	},
+	'agent.planMode.proceedMessage': {
+		message: 'Proceed with the approved plan.',
+		context:
+			'Synthetic user message automatically sent after the user approves a plan, triggering the agent execution loop. Not user-typed.',
+	},
+	'agent.planMode.planLabel': {
+		message: 'Plan',
+		context: 'Short label shown in the role header of a plan entry when reloaded from session history.',
+	},
 } as const satisfies Record<string, SourceString>;
 
 export type TranslationKey = keyof typeof en;

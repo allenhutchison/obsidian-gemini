@@ -124,6 +124,7 @@ export class SessionHistory {
 			temperature: entry.metadata?.temperature,
 			topP: entry.metadata?.topP,
 			customPrompt: entry.metadata?.customPrompt,
+			entryType: entry.metadata?.entryType,
 			toolsUsed: [], // TODO: Add tool support later
 			isDefined: (value: any) => value !== undefined,
 		});
@@ -243,25 +244,25 @@ export class SessionHistory {
 				const messageMatch = lines[i].match(/^> \[!(user|assistant|plan)\]\+\s*$/);
 				if (messageMatch) {
 					const calloutType = messageMatch[1];
-					const isPlan = calloutType === 'plan';
 					const role = calloutType === 'user' ? 'user' : 'model';
 					const message = this.extractCalloutBody(lines, i).join('\n').trim();
 					if (!message) continue;
 
+					const metadata: Record<string, any> = {};
+					if (calloutType === 'plan') {
+						metadata.entryType = 'plan';
+					} else if (toolNameMatch) {
+						metadata.toolName = toolNameMatch[1];
+						if (toolStatusMatch) metadata.toolStatus = toolStatusMatch[1].toLowerCase();
+					}
 					const entry: GeminiConversationEntry = {
 						role,
 						message,
 						notePath: '',
 						created_at: sectionTimestamp,
 						model: sectionModel,
-						...(isPlan ? { isPlan: true } : {}),
+						...(Object.keys(metadata).length > 0 ? { metadata } : {}),
 					};
-					if (toolNameMatch) {
-						entry.metadata = {
-							toolName: toolNameMatch[1],
-							toolStatus: toolStatusMatch ? toolStatusMatch[1].toLowerCase() : undefined,
-						};
-					}
 					entries.push(entry);
 					lastInSection = entry;
 					continue;

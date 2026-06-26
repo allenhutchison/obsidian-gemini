@@ -1444,22 +1444,6 @@ If your plugin does not need CSS, delete this file.
 	cursor: not-allowed;
 }
 
-/* Plan mode button */
-.gemini-agent-plan-mode-btn {
-	color: var(--text-muted);
-	transition: color 0.15s ease;
-}
-
-.gemini-agent-plan-mode-btn:hover {
-	color: var(--text-normal);
-}
-
-.gemini-agent-plan-mode-active {
-	color: var(--interactive-accent) !important;
-	background-color: var(--background-modifier-active-hover);
-	border-radius: var(--radius-s);
-}
-
 /* Plan message bubble */
 .gemini-agent-message-plan .gemini-agent-message-content {
 	background-color: var(--background-secondary);
@@ -5264,4 +5248,52 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-settings-section-content {
 	padding-bottom: 0.5em;
+}
+
+/* Plan mode toggle button */
+.gemini-agent-plan-btn {
+	align-self: stretch;
+	padding: var(--size-4-2);
+	min-width: 38px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0.7;
+	transition:
+		opacity 0.15s,
+		background-color 0.15s;
+}
+
+.gemini-agent-plan-btn:hover {
+	opacity: 1;
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active {
+	opacity: 1;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active svg {
+	color: var(--text-on-accent);
+}
+
+/* Plan message bubble */
+.gemini-agent-plan-message {
+	border-left: 3px solid var(--color-purple, #8b5cf6);
+	background-color: color-mix(in srgb, var(--color-purple, #8b5cf6) 8%, var(--background-secondary));
+}
+
+.gemini-agent-plan-role {
+	color: var(--color-purple, #8b5cf6);
+	font-weight: 600;
+}
+
+/* Plan approval button row */
+.gemini-agent-plan-buttons {
+	display: flex;
+	gap: var(--size-4-2);
+	margin-top: var(--size-4-3);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
 }

@@ -50,6 +50,7 @@ export class AgentView extends ItemView {
 	private chatContainer!: HTMLElement;
 	private userInput!: HTMLDivElement;
 	private sendButton!: HTMLButtonElement;
+	private planModeButton!: HTMLButtonElement;
 	private sessionHeader!: HTMLElement;
 
 	// State
@@ -59,8 +60,7 @@ export class AgentView extends ItemView {
 	private shelf!: AgentViewShelf;
 	private tokenUsageContainer!: HTMLElement;
 	private skipNextFocusSelectionCapture = false;
-	private planModeActive = false;
-	private planModeButton: HTMLButtonElement | null = null;
+	private planModeButton!: HTMLButtonElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -323,6 +323,7 @@ export class AgentView extends ItemView {
 			getShelf: () => this.shelf,
 			getUserInput: () => this.userInput,
 			getSendButton: () => this.sendButton,
+			getPlanModeButton: () => this.planModeButton,
 			getChatContainer: () => this.chatContainer,
 			progress: this.progress,
 			messages: this.messages,
@@ -332,8 +333,6 @@ export class AgentView extends ItemView {
 			updateTokenUsage: () => this.updateTokenUsage(),
 			isToolAllowedWithoutConfirmation: (toolName: string) => this.isToolAllowedWithoutConfirmation(toolName),
 			allowToolWithoutConfirmation: (toolName: string) => this.allowToolWithoutConfirmation(toolName),
-			isPlanModeActive: () => this.planModeActive,
-			deactivatePlanMode: () => this.deactivatePlanMode(),
 			showConfirmationInChat: (tool, parameters, executionId, diffContext) =>
 				this.showConfirmationInChat(tool, parameters, executionId, diffContext),
 		});
@@ -714,6 +713,7 @@ export class AgentView extends ItemView {
 			createNewSession: () => this.createNewSession(),
 			sendMessage: () => this.send.sendMessage(),
 			stopAgentLoop: () => this.send.stopAgentLoop(),
+			togglePlanMode: () => this.send.togglePlanMode(),
 			removeContextFile: (file: TFile) => this.removeContextFile(file),
 			updateSessionHeader: () => this.updateSessionHeader(),
 			updateSessionMetadata: () => this.updateSessionMetadata(),
@@ -724,29 +724,11 @@ export class AgentView extends ItemView {
 			getAttachments: () => this.shelf?.getPendingAttachments() || [],
 			handleDroppedFiles: (files: TFile[]) => this.attachments.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
-			togglePlanMode: () => this.togglePlanMode(),
-			isPlanModeActive: () => this.planModeActive,
 		};
 	}
 
-	togglePlanMode(): void {
-		this.planModeActive = !this.planModeActive;
-		this.updatePlanModeButton();
-	}
-
-	private deactivatePlanMode(): void {
-		this.planModeActive = false;
-		this.updatePlanModeButton();
-	}
-
-	private updatePlanModeButton(): void {
-		if (this.planModeButton) {
-			this.planModeButton.toggleClass('gemini-agent-plan-mode-active', this.planModeActive);
-			setTooltip(
-				this.planModeButton,
-				this.planModeActive ? t('agent.planMode.activeTooltip') : t('agent.planMode.toggleAria')
-			);
-		}
+	public togglePlanMode(): void {
+		this.send?.togglePlanMode();
 	}
 
 	/**

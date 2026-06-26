@@ -105,8 +105,12 @@ export class AgentViewMessages {
 			return;
 		}
 
+		// Plan entries from history render with a distinct header — no approval buttons
+		// (the plan is already approved; we're just replaying history).
+		const isPlanEntry = entry.metadata?.entryType === 'plan';
+
 		const messageDiv = this.chatContainer.createDiv({
-			cls: `gemini-agent-message gemini-agent-message-${entry.role}`,
+			cls: `gemini-agent-message gemini-agent-message-${entry.role}${isPlanEntry ? ' gemini-agent-plan-message' : ''}`,
 		});
 
 		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
@@ -114,10 +118,12 @@ export class AgentViewMessages {
 			text:
 				entry.role === 'user'
 					? t('agent.message.roleUser')
-					: entry.role === 'system'
-						? t('agent.message.roleSystem')
-						: t('agent.message.roleAgent'),
-			cls: 'gemini-agent-message-role',
+					: isPlanEntry
+						? t('agent.planMode.headerLabel')
+						: entry.role === 'system'
+							? t('agent.message.roleSystem')
+							: t('agent.message.roleAgent'),
+			cls: `gemini-agent-message-role${isPlanEntry ? ' gemini-agent-plan-role' : ''}`,
 		});
 		header.createEl('span', {
 			text: entry.created_at.toLocaleTimeString(),
@@ -768,6 +774,59 @@ export class AgentViewMessages {
 	private isCurrentSession(session: ChatSession, currentSession: ChatSession | null): boolean {
 		if (!currentSession) return false;
 		return session.id === currentSession.id || session.historyPath === currentSession.historyPath;
+	}
+
+	/**
+	 * Display a plan from the model with Approve / Reject buttons.
+	 * Resolves true when the user approves, false when they reject.
+	 */
+	public async showPlanApproval(planText: string): Promise<boolean> {
+		return new Promise((resolve) => {
+			let resolved = false;
+
+			const messageDiv = this.chatContainer.createDiv({
+				cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
+			});
+
+			const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+			header.createEl('span', {
+				text: t('agent.planMode.headerLabel'),
+				cls: 'gemini-agent-message-role gemini-agent-plan-role',
+			});
+			header.createEl('span', {
+				text: new Date().toLocaleTimeString(),
+				cls: 'gemini-agent-message-time',
+			});
+
+			const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+			MarkdownRenderer.render(this.app, formatModelMessage(planText), content, '', this.viewContext);
+
+			const buttonsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-buttons' });
+
+			const approveBtn = buttonsDiv.createEl('button', {
+				cls: 'gemini-agent-btn gemini-agent-btn-primary',
+				text: t('agent.planMode.approveBtn'),
+			});
+			const rejectBtn = buttonsDiv.createEl('button', {
+				cls: 'gemini-agent-btn gemini-agent-btn-secondary',
+				text: t('agent.planMode.rejectBtn'),
+			});
+
+			const done = (approved: boolean) => {
+				if (resolved) return;
+				resolved = true;
+				approveBtn.disabled = true;
+				rejectBtn.disabled = true;
+				buttonsDiv.remove();
+				resolve(approved);
+				this.debouncedScrollToBottom();
+			};
+
+			approveBtn.addEventListener('click', () => done(true));
+			rejectBtn.addEventListener('click', () => done(false));
+
+			this.debouncedScrollToBottom();
+		});
 	}
 
 	/**
