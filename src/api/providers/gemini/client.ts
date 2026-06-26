@@ -167,7 +167,20 @@ export class GeminiClient implements ModelApi {
 		onChunk: StreamCallback
 	): StreamingModelResponse {
 		let cancelled = false;
+		// The SDK's Stream exposes an AbortController; aborting it actively
+		// interrupts an in-flight SSE read so cancel() doesn't have to wait for the
+		// next frame (or the server) to unblock the `for await`.
+		let activeStream: { controller?: AbortController } | undefined;
 		const accumulator = new InteractionStreamAccumulator();
+
+		const cancel = () => {
+			cancelled = true;
+			try {
+				activeStream?.controller?.abort();
+			} catch {
+				// Best-effort: an SDK stream without a controller still stops via the flag.
+			}
+		};
 
 		const complete = (async (): Promise<ModelResponse> => {
 			const params = await this.buildInteractionParams(request);
@@ -176,6 +189,12 @@ export class GeminiClient implements ModelApi {
 
 			try {
 				const stream = await (this.ai as any).interactions.create(params);
+				activeStream = stream;
+				// Cancelled during request setup, before iteration began.
+				if (cancelled) {
+					cancel();
+					return accumulator.finalize();
+				}
 				for await (const event of stream) {
 					if (cancelled) break;
 					const chunk = accumulator.handleEvent(event);
@@ -195,9 +214,7 @@ export class GeminiClient implements ModelApi {
 
 		return {
 			complete,
-			cancel: () => {
-				cancelled = true;
-			},
+			cancel,
 		};
 	}
 

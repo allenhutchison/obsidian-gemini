@@ -1211,6 +1211,36 @@ describe('GeminiClient', () => {
 			expect(result.markdown).not.toContain('MORE');
 		});
 
+		test('cancel() aborts a stalled SSE read (does not wait for the next frame)', async () => {
+			// A Stream that yields one frame, then blocks on the next read until its
+			// AbortController fires — modelling a server that has gone quiet. Without
+			// aborting the controller, `complete` would hang here.
+			interactionsCreateMock.mockImplementation(async () => {
+				const controller = new AbortController();
+				return {
+					controller,
+					async *[Symbol.asyncIterator]() {
+						yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'partial' } };
+						await new Promise((_resolve, reject) => {
+							if (controller.signal.aborted) return reject(new Error('aborted'));
+							controller.signal.addEventListener('abort', () => reject(new Error('aborted')));
+						});
+						yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: ' NEVER' } };
+					},
+				};
+			});
+
+			const client = makeInteractionsClient();
+			const stream = client.generateStreamingResponse!(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] } as ExtendedModelRequest,
+				() => stream.cancel() // cancel mid-read, while the second read is blocked
+			);
+			const result = await stream.complete; // resolves only because cancel() aborts the read
+
+			expect(result.markdown).toBe('partial');
+			expect(result.markdown).not.toContain('NEVER');
+		});
+
 		test('one-shot base requests pass the prompt as input', async () => {
 			const client = makeInteractionsClient();
 			await client.generateModelResponse({ prompt: 'just answer', kind: 'base' } as any);
