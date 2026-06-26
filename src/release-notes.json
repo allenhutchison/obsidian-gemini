@@ -1,4 +1,14 @@
 {
+	"4.10.0": {
+		"title": "🧪 Gemini Scribe 4.10 - Interactions API (opt-in), Per-Use-Case Thinking",
+		"highlights": [
+			"🧪 Interactions API transport (experimental, opt-in) — a new \"Use Interactions API\" setting routes Gemini chat through Google's newer Interactions API, with full step-based streaming of text, reasoning, tool calls, and grounded sources. Off by default and runs statelessly (your conversation history stays on your device); turn it on under Settings → Agent config → API configuration to try it, or leave it off to keep using the proven generateContent path",
+			"🧠 Per-use-case thinking depth — reasoning effort is now tuned per task (completions think the least, agent chat the most) instead of one global setting, balancing latency and quality (#986)",
+			"⏳ Soft agent turn budget — long agent runs get a gentle reminder as they approach the turn limit, plus a one-shot extension, instead of stopping abruptly (#996)",
+			"⬆️ Dependency refresh — @google/genai 2.10.0 and @allenhutchison/gemini-utils 1.1.0"
+		],
+		"details": "This release adds an experimental, opt-in Interactions API transport for Gemini. Google has made its Interactions API generally available and is steering new development toward it; this setting lets you route chat through it while keeping the existing generateContent path as the default. The transport is stateless — the plugin continues to own and replay your conversation history locally rather than storing it server-side — and supports the full experience: incremental streaming of text and reasoning, tool calls, and grounded Google Search sources. It's behind a default-off \"Use Interactions API\" toggle (Settings → Agent config → API configuration) because the underlying SDK surface is still marked experimental; nothing changes for you unless you turn it on. Also in this release: reasoning depth is now set per use case (latency-sensitive completions think minimally while the agent loop thinks the most) instead of a single global control, and long agent turns surface a soft budget reminder with a one-shot extension rather than cutting off. Under the hood, dependencies were refreshed including the Gemini SDK (@google/genai 2.10.0) and the shared gemini-utils package (1.1.0)."
+	},
 	"4.9.1": {
 		"title": "🔧 Gemini Scribe 4.9.1 - Vault Context Fix",
 		"highlights": [
