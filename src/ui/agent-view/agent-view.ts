@@ -1,4 +1,4 @@
-import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice, setTooltip } from 'obsidian';
+import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -60,7 +60,6 @@ export class AgentView extends ItemView {
 	private shelf!: AgentViewShelf;
 	private tokenUsageContainer!: HTMLElement;
 	private skipNextFocusSelectionCapture = false;
-	private planModeButton!: HTMLButtonElement;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);

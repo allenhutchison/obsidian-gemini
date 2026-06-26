@@ -136,6 +136,7 @@ export class AgentViewSend {
 			message: planText,
 			notePath: '',
 			created_at: new Date(),
+			isPlan: true,
 			metadata: { entryType: 'plan' },
 		};
 		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, planEntry);

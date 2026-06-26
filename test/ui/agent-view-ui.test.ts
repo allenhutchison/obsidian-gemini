@@ -98,8 +98,6 @@ describe('AgentViewUI', () => {
 			getAttachments: vi.fn().mockReturnValue([]),
 			handleDroppedFiles: vi.fn(),
 			switchProject: vi.fn(),
-			togglePlanMode: vi.fn(),
-			isPlanModeActive: vi.fn().mockReturnValue(false),
 		};
 
 		// Instantiate AgentViewUI

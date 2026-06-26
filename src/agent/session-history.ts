@@ -249,7 +249,8 @@ export class SessionHistory {
 					if (!message) continue;
 
 					const metadata: Record<string, any> = {};
-					if (calloutType === 'plan') {
+					const isPlanCallout = calloutType === 'plan';
+					if (isPlanCallout) {
 						metadata.entryType = 'plan';
 					} else if (toolNameMatch) {
 						metadata.toolName = toolNameMatch[1];
@@ -261,6 +262,7 @@ export class SessionHistory {
 						notePath: '',
 						created_at: sectionTimestamp,
 						model: sectionModel,
+						...(isPlanCallout ? { isPlan: true } : {}),
 						...(Object.keys(metadata).length > 0 ? { metadata } : {}),
 					};
 					entries.push(entry);

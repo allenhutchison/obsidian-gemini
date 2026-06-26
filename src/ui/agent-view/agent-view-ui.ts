@@ -44,8 +44,6 @@ export interface UICallbacks {
 	getAttachments: () => InlineAttachment[];
 	handleDroppedFiles: (files: TFile[]) => void;
 	switchProject: () => void;
-	togglePlanMode: () => void;
-	isPlanModeActive: () => boolean;
 }
 
 /**
