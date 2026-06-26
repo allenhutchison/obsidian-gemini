@@ -37,6 +37,7 @@ import {
 	toolsToInteractionTools,
 	type InteractionStep,
 } from './interactions-mapper';
+import { installObsidianFetch } from './obsidian-fetch';
 
 /**
  * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`,
@@ -129,6 +130,15 @@ export class GeminiClient implements ModelApi {
 	 */
 	private async generateViaInteractions(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
 		const params = await this.buildInteractionParams(request);
+
+		// Route the Interactions (Next-Gen) client through Obsidian's requestUrl
+		// so its requests bypass renderer CORS — the SDK otherwise uses the global
+		// fetch, whose preflight to the Interactions endpoint fails in Obsidian.
+		if (!installObsidianFetch(this.ai)) {
+			this.plugin?.logger.warn(
+				'[GeminiClient] Could not route Interactions client through Obsidian requestUrl; requests may fail due to CORS.'
+			);
+		}
 
 		try {
 			const interaction = await (this.ai as any).interactions.create(params);

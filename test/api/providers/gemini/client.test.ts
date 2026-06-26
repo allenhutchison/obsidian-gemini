@@ -9,15 +9,19 @@ import { ModelUseCase } from '../../../../src/api/model-use-case';
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
 // us share the spy with the factory while keeping vitest's mock-hoisting safe.
-const { generateContentMock, interactionsCreateMock } = vi.hoisted(() => ({
+const { generateContentMock, interactionsCreateMock, nextGenClient } = vi.hoisted(() => ({
 	generateContentMock: vi.fn(),
 	interactionsCreateMock: vi.fn(),
+	// Stands in for the SDK's internal Next-Gen client so installObsidianFetch
+	// has a `getNextGenClient()` + patchable `.fetch` to bind to.
+	nextGenClient: { fetch: undefined as unknown },
 }));
 
 vi.mock('@google/genai', () => ({
 	GoogleGenAI: vi.fn().mockImplementation(function () {
 		return {
 			getModel: vi.fn(),
+			getNextGenClient: () => nextGenClient,
 			models: {
 				generateContent: generateContentMock,
 				generateContentStream: vi.fn(),
@@ -1010,6 +1014,9 @@ describe('GeminiClient', () => {
 			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
 			expect(generateContentMock).not.toHaveBeenCalled();
 			expect(response.markdown).toBe('Hello from interactions');
+			// Next-Gen client routed through Obsidian's requestUrl (CORS bypass).
+			expect(typeof nextGenClient.fetch).toBe('function');
+			expect((nextGenClient as any).__obsidianFetch).toBe(true);
 		});
 
 		test('sends stateless params: store=false and snake_case generation_config', async () => {
