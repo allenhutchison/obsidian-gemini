@@ -30,6 +30,14 @@ import { getDefaultModelForRole } from '../../../models';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
 import type { GeminiClientConfig } from './config';
 import { ModelUseCase } from '../../model-use-case';
+import {
+	buildUserInputStep,
+	contentToSteps,
+	extractModelResponseFromInteraction,
+	toolsToInteractionTools,
+	type InteractionStep,
+} from './interactions-mapper';
+import { installObsidianFetch } from './obsidian-fetch';
 
 /**
  * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`,
@@ -90,9 +98,22 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
+	 * Whether this client routes through the GA Interactions API. Reads the
+	 * per-client config first (set by the factory), falling back to live plugin
+	 * settings for `createCustom` callers that don't thread the flag through.
+	 */
+	private get useInteractions(): boolean {
+		return this.config.useInteractionsApi ?? this.plugin?.settings?.useInteractionsApi ?? false;
+	}
+
+	/**
 	 * Generate a non-streaming response
 	 */
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
+		if (this.useInteractions) {
+			return this.generateViaInteractions(request);
+		}
+
 		const params = await this.buildGenerateContentParams(request);
 
 		try {
@@ -105,12 +126,135 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
+	 * Non-streaming generation via the Interactions API (stateless transport).
+	 */
+	private async generateViaInteractions(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
+		const params = await this.buildInteractionParams(request);
+
+		// Route the Interactions (Next-Gen) client through Obsidian's requestUrl
+		// so its requests bypass renderer CORS — the SDK otherwise uses the global
+		// fetch, whose preflight to the Interactions endpoint fails in Obsidian.
+		if (!installObsidianFetch(this.ai)) {
+			this.plugin?.logger.warn(
+				'[GeminiClient] Could not route Interactions client through Obsidian requestUrl; requests may fail due to CORS.'
+			);
+		}
+
+		try {
+			const interaction = await (this.ai as any).interactions.create(params);
+			return extractModelResponseFromInteraction(interaction);
+		} catch (error) {
+			this.plugin?.logger.error('[GeminiClient] Error creating interaction:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Build Interactions `create` params from our request format, mirroring
+	 * `buildGenerateContentParams` but emitting the snake_case Interactions
+	 * surface. Stateless: full history is replayed in `input` and `store` is
+	 * false, so no `previous_interaction_id` is used.
+	 */
+	private async buildInteractionParams(
+		request: BaseModelRequest | ExtendedModelRequest
+	): Promise<Record<string, unknown>> {
+		const isExtended = isExtendedRequest(request);
+		const model = request.model || this.config.model || getDefaultModelForRole('chat');
+
+		const generationConfig: Record<string, unknown> = {
+			temperature: request.temperature ?? this.config.temperature,
+			top_p: request.topP ?? this.config.topP,
+			...(this.config.maxOutputTokens && { max_output_tokens: this.config.maxOutputTokens }),
+		};
+		// Interactions uses lowercase thinking levels; reuse the per-use-case map.
+		if (this.supportsThinking(model)) {
+			generationConfig.thinking_level =
+				THINKING_LEVEL_BY_USE_CASE[this.config.useCase ?? ModelUseCase.CHAT].toLowerCase();
+			generationConfig.thinking_summaries = 'auto';
+		}
+
+		const params: Record<string, unknown> = {
+			model,
+			store: false,
+			generation_config: generationConfig,
+		};
+
+		if (!isExtended) {
+			// One-shot request: the prompt is the entire input.
+			params.input = request.prompt || '';
+			return params;
+		}
+
+		const systemInstruction = await this.prompts.buildExtendedSystemInstruction(request);
+		if (systemInstruction) params.system_instruction = systemInstruction;
+
+		if (request.availableTools?.length) {
+			params.tools = toolsToInteractionTools(request.availableTools);
+		}
+
+		const input = this.buildInteractionInput(request);
+		params.input = input.length > 0 ? input : request.userMessage || '';
+		return params;
+	}
+
+	/**
+	 * Build the Interactions `input` step array: replayed history followed by the
+	 * current user turn (message + per-turn context + inline attachments).
+	 */
+	private buildInteractionInput(request: ExtendedModelRequest): InteractionStep[] {
+		const steps: InteractionStep[] = [];
+
+		for (const entry of request.conversationHistory ?? []) {
+			if ('role' in entry && 'parts' in entry) {
+				steps.push(...contentToSteps(entry as Content));
+			} else if ('role' in entry && 'text' in entry) {
+				const legacy = entry as Content & { text: string };
+				steps.push(
+					...contentToSteps({ role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.text }] })
+				);
+			} else if ('role' in entry && 'message' in entry) {
+				const legacy = entry as Content & { role: string; message: string };
+				steps.push(
+					...contentToSteps({ role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.message }] })
+				);
+			}
+		}
+
+		const attachments = [...(request.inlineAttachments || []), ...(request.imageAttachments || [])];
+		const userStep = buildUserInputStep(request.userMessage, request.perTurnContext, attachments);
+		if (userStep) steps.push(userStep);
+
+		return steps;
+	}
+
+	/**
 	 * Generate a streaming response
 	 */
 	generateStreamingResponse(
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
+		// Phase 1: the Interactions transport is non-streaming only. Honour the
+		// ModelApi fallback contract — run the non-streaming path and emit the
+		// full response as a single chunk. Real step-based streaming is #1015.
+		if (this.useInteractions) {
+			let cancelledNonStream = false;
+			const complete = (async (): Promise<ModelResponse> => {
+				const response = await this.generateViaInteractions(request);
+				if (!cancelledNonStream) {
+					if (response.thoughts) onChunk({ text: '', thought: response.thoughts });
+					if (response.markdown) onChunk({ text: response.markdown });
+				}
+				return response;
+			})();
+			return {
+				complete,
+				cancel: () => {
+					cancelledNonStream = true;
+				},
+			};
+		}
+
 		let cancelled = false;
 		let accumulatedText = '';
 		let accumulatedRendered = '';

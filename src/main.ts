@@ -74,6 +74,13 @@ export interface ObsidianGeminiSettings {
 	maxRetries: number;
 	initialBackoffDelay: number;
 	streamingEnabled: boolean;
+	/**
+	 * Use Google's GA Interactions API (`client.interactions.create`) as the
+	 * Gemini transport instead of the legacy `generateContent`. Runs stateless
+	 * (`store: false`); we still own and replay conversation history. Opt-in
+	 * while the SDK surface settles — see epic #1013.
+	 */
+	useInteractionsApi: boolean;
 	allowSystemPromptOverride: boolean;
 	temperature: number;
 	topP: number;
@@ -128,6 +135,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	maxRetries: 3,
 	initialBackoffDelay: 1000,
 	streamingEnabled: true,
+	useInteractionsApi: false,
 	allowSystemPromptOverride: false,
 	temperature: 0.7,
 	topP: 1,

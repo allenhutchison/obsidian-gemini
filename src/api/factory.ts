@@ -70,6 +70,7 @@ export class ModelClientFactory {
 			temperature: settings.temperature ?? 1.0,
 			topP: settings.topP ?? 0.95,
 			streamingEnabled: settings.streamingEnabled ?? true,
+			useInteractionsApi: settings.useInteractionsApi ?? false,
 			...overrides,
 		};
 		const client = new GeminiClient(config, prompts, plugin);
