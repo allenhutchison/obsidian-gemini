@@ -296,7 +296,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Only applies when**: Provider is `gemini`
 - **Description**: Routes Gemini requests through Google's GA [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API.
 - **Privacy**: Runs statelessly (`store: false`) — conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
-- **Status**: Experimental. Responses are non-streaming for now; turn it off to fall back to `generateContent` if you hit issues.
+- **Status**: Experimental. Responses stream incrementally (text, reasoning, and tool calls); turn it off to fall back to `generateContent` if you hit issues.
 
 #### Custom API Endpoint
 
