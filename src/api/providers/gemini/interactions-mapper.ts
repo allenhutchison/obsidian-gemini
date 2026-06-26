@@ -181,20 +181,177 @@ export function extractModelResponseFromInteraction(interaction: Record<string, 
 
 	markdown = decodeHtmlEntities(markdown);
 
-	const usage = interaction.usage as Record<string, number> | undefined;
 	const response: ModelResponse = {
 		markdown,
 		rendered: '', // search grounding is Phase 3 (#1016)
 	};
 	if (thoughts) response.thoughts = thoughts;
 	if (toolCalls.length > 0) response.toolCalls = toolCalls;
-	if (usage) {
-		response.usageMetadata = {
-			promptTokenCount: usage.total_input_tokens,
-			candidatesTokenCount: usage.total_output_tokens,
-			totalTokenCount: usage.total_tokens,
-			cachedContentTokenCount: usage.total_cached_tokens,
-		};
-	}
+	const usageMetadata = mapInteractionUsage(interaction.usage);
+	if (usageMetadata) response.usageMetadata = usageMetadata;
 	return response;
+}
+
+/** Map an Interactions `usage` object to our `ModelResponse.usageMetadata` shape. */
+function mapInteractionUsage(usage: unknown): ModelResponse['usageMetadata'] | undefined {
+	if (!usage || typeof usage !== 'object') return undefined;
+	const u = usage as Record<string, number>;
+	return {
+		promptTokenCount: u.total_input_tokens,
+		candidatesTokenCount: u.total_output_tokens,
+		totalTokenCount: u.total_tokens,
+		cachedContentTokenCount: u.total_cached_tokens,
+	};
+}
+
+/** A streamed Interactions SSE event (loosely typed; see `StepDelta`/`InteractionCompletedEvent`). */
+export type InteractionStreamEvent = Record<string, unknown>;
+
+/** A chunk to surface to the streaming callback (mirrors `StreamChunk`). */
+export interface InteractionStreamChunk {
+	text: string;
+	thought?: string;
+}
+
+/** In-flight function-call step being assembled from `step.start` + `arguments_delta` fragments. */
+interface PendingToolCall {
+	id?: string;
+	name: string;
+	signature?: string;
+	/** Concatenated `arguments_delta` fragments (a JSON string once complete). */
+	argsBuffer: string;
+	/** Whole arguments object from `step.start`, used when no `arguments_delta` arrives. */
+	seedArgs?: Record<string, unknown>;
+}
+
+/**
+ * Accumulates Interactions streaming events into a final `ModelResponse`.
+ *
+ * The step-based stream interleaves: `step.start` (carries the full `Step`, so a
+ * `function_call` step's id/name/signature land here), `step.delta` (incremental
+ * `text`, `thought_summary`, or `arguments_delta`), `step.stop` (finalizes a
+ * step), and `interaction.completed` (final `usage`). Function-call arguments
+ * arrive as `arguments_delta` string fragments keyed by step `index` and are
+ * JSON-parsed once the step stops.
+ *
+ * Kept free of SDK/DOM dependencies so it is unit-testable with plain event
+ * objects. `handleEvent` returns the chunk to emit (or null); `finalize` builds
+ * the response once the stream ends.
+ */
+export class InteractionStreamAccumulator {
+	private text = '';
+	private thoughts = '';
+	private usage: ModelResponse['usageMetadata'] | undefined;
+	private readonly pending = new Map<number, PendingToolCall>();
+	private readonly toolCalls: ToolCall[] = [];
+
+	/** Process one streamed event; returns a chunk to emit, or null if nothing to surface. */
+	handleEvent(event: InteractionStreamEvent): InteractionStreamChunk | null {
+		const eventType = event.event_type as string | undefined;
+
+		if (eventType === 'step.start') {
+			const step = event.step as Record<string, unknown> | undefined;
+			if (step?.type === 'function_call') {
+				const index = event.index as number;
+				this.pending.set(index, {
+					id: typeof step.id === 'string' ? step.id : undefined,
+					name: String(step.name ?? ''),
+					signature: typeof step.signature === 'string' ? step.signature : undefined,
+					argsBuffer: '',
+					seedArgs:
+						step.arguments && typeof step.arguments === 'object'
+							? (step.arguments as Record<string, unknown>)
+							: undefined,
+				});
+			}
+			return null;
+		}
+
+		if (eventType === 'step.delta') {
+			return this.handleDelta(event);
+		}
+
+		if (eventType === 'step.stop') {
+			this.finalizeStep(event.index as number);
+			return null;
+		}
+
+		if (eventType === 'interaction.completed') {
+			const interaction = event.interaction as Record<string, unknown> | undefined;
+			const usage = mapInteractionUsage(interaction?.usage);
+			if (usage) this.usage = usage;
+			return null;
+		}
+
+		return null;
+	}
+
+	private handleDelta(event: InteractionStreamEvent): InteractionStreamChunk | null {
+		const delta = event.delta as Record<string, unknown> | undefined;
+		if (!delta) return null;
+
+		switch (delta.type) {
+			case 'text': {
+				const text = decodeHtmlEntities(String(delta.text ?? ''));
+				if (!text) return null;
+				this.text += text;
+				return { text };
+			}
+			case 'thought_summary': {
+				const content = delta.content as { text?: string } | undefined;
+				const thought = content?.text ?? '';
+				if (!thought) return null;
+				this.thoughts += thought;
+				return { text: '', thought };
+			}
+			case 'arguments_delta': {
+				const pending = this.pending.get(event.index as number);
+				if (pending && typeof delta.arguments === 'string') {
+					pending.argsBuffer += delta.arguments;
+				}
+				return null;
+			}
+			default:
+				return null;
+		}
+	}
+
+	/** Finalize a function-call step into a `ToolCall` when its step stops. */
+	private finalizeStep(index: number): void {
+		const pending = this.pending.get(index);
+		if (!pending) return;
+		this.pending.delete(index);
+
+		let args: Record<string, unknown> = pending.seedArgs ?? {};
+		if (pending.argsBuffer) {
+			try {
+				args = JSON.parse(pending.argsBuffer);
+			} catch {
+				// Keep the seed args (or empty) if the streamed fragments aren't valid JSON.
+			}
+		}
+
+		this.toolCalls.push({
+			name: pending.name,
+			arguments: args,
+			id: pending.id,
+			thoughtSignature: pending.signature,
+		});
+	}
+
+	/** Build the final response once the stream is exhausted (flushing any unstopped steps). */
+	finalize(): ModelResponse {
+		for (const index of [...this.pending.keys()]) {
+			this.finalizeStep(index);
+		}
+
+		const response: ModelResponse = {
+			markdown: this.text,
+			rendered: '', // search grounding is Phase 3 (#1016)
+		};
+		if (this.thoughts) response.thoughts = this.thoughts;
+		if (this.toolCalls.length > 0) response.toolCalls = this.toolCalls;
+		if (this.usage) response.usageMetadata = this.usage;
+		return response;
+	}
 }

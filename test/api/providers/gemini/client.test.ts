@@ -1144,18 +1144,101 @@ describe('GeminiClient', () => {
 			});
 		});
 
-		test('streaming falls back to a single chunk via the non-streaming path', async () => {
+		test('streams step-based events: text chunks, tool call, and usage', async () => {
+			const events = [
+				{ event_type: 'interaction.created', interaction: { id: 'int_s' } },
+				{ event_type: 'step.start', index: 0, step: { type: 'model_output' } },
+				{ event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'Read' } },
+				{ event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'ing…' } },
+				{ event_type: 'step.stop', index: 0 },
+				{ event_type: 'step.start', index: 1, step: { type: 'function_call', id: 'c1', name: 'read_file' } },
+				{ event_type: 'step.delta', index: 1, delta: { type: 'arguments_delta', arguments: '{"path":"a.md"}' } },
+				{ event_type: 'step.stop', index: 1 },
+				{
+					event_type: 'interaction.completed',
+					interaction: { usage: { total_input_tokens: 9, total_output_tokens: 3, total_tokens: 12 } },
+				},
+			];
+			interactionsCreateMock.mockImplementation(async () => {
+				return (async function* () {
+					for (const event of events) yield event;
+				})();
+			});
+
 			const client = makeInteractionsClient();
 			const chunks: Array<{ text: string; thought?: string }> = [];
 			const stream = client.generateStreamingResponse!(
-				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] } as ExtendedModelRequest,
+				{ prompt: '', userMessage: 'read a.md', kind: 'extended', conversationHistory: [] } as ExtendedModelRequest,
 				(chunk) => chunks.push(chunk)
 			);
 			const result = await stream.complete;
 
-			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
-			expect(result.markdown).toBe('Hello from interactions');
-			expect(chunks.some((c) => c.text === 'Hello from interactions')).toBe(true);
+			// stream: true was requested
+			expect(interactionsCreateMock.mock.calls[0][0].stream).toBe(true);
+			// text streamed incrementally
+			expect(chunks).toEqual([{ text: 'Read' }, { text: 'ing…' }]);
+			expect(result.markdown).toBe('Reading…');
+			// tool call assembled from start + arguments_delta
+			expect(result.toolCalls).toEqual([
+				{ name: 'read_file', arguments: { path: 'a.md' }, id: 'c1', thoughtSignature: undefined },
+			]);
+			expect(result.usageMetadata?.totalTokenCount).toBe(12);
+		});
+
+		test('cancel() stops processing and returns the partial response', async () => {
+			interactionsCreateMock.mockImplementation(async () => {
+				return (async function* () {
+					yield { event_type: 'step.start', index: 0, step: { type: 'model_output' } };
+					yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'partial' } };
+					yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: ' MORE' } };
+				})();
+			});
+
+			const client = makeInteractionsClient();
+			const chunks: Array<{ text: string }> = [];
+			const stream = client.generateStreamingResponse!(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] } as ExtendedModelRequest,
+				(chunk) => {
+					chunks.push(chunk as { text: string });
+					stream.cancel(); // cancel after the first emitted chunk
+				}
+			);
+			const result = await stream.complete;
+
+			// Only the pre-cancel chunk is emitted and processed; later events are ignored.
+			expect(chunks).toEqual([{ text: 'partial' }]);
+			expect(result.markdown).toBe('partial');
+			expect(result.markdown).not.toContain('MORE');
+		});
+
+		test('cancel() aborts a stalled SSE read (does not wait for the next frame)', async () => {
+			// A Stream that yields one frame, then blocks on the next read until its
+			// AbortController fires — modelling a server that has gone quiet. Without
+			// aborting the controller, `complete` would hang here.
+			interactionsCreateMock.mockImplementation(async () => {
+				const controller = new AbortController();
+				return {
+					controller,
+					async *[Symbol.asyncIterator]() {
+						yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'partial' } };
+						await new Promise((_resolve, reject) => {
+							if (controller.signal.aborted) return reject(new Error('aborted'));
+							controller.signal.addEventListener('abort', () => reject(new Error('aborted')));
+						});
+						yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: ' NEVER' } };
+					},
+				};
+			});
+
+			const client = makeInteractionsClient();
+			const stream = client.generateStreamingResponse!(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] } as ExtendedModelRequest,
+				() => stream.cancel() // cancel mid-read, while the second read is blocked
+			);
+			const result = await stream.complete; // resolves only because cancel() aborts the read
+
+			expect(result.markdown).toBe('partial');
+			expect(result.markdown).not.toContain('NEVER');
 		});
 
 		test('one-shot base requests pass the prompt as input', async () => {

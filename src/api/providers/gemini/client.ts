@@ -35,6 +35,7 @@ import {
 	contentToSteps,
 	extractModelResponseFromInteraction,
 	toolsToInteractionTools,
+	InteractionStreamAccumulator,
 	type InteractionStep,
 } from './interactions-mapper';
 import { installObsidianFetch } from './obsidian-fetch';
@@ -126,19 +127,24 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Non-streaming generation via the Interactions API (stateless transport).
+	 * Route the Interactions (Next-Gen) client through Obsidian's requestUrl so its
+	 * requests bypass renderer CORS — the SDK otherwise uses the global fetch,
+	 * whose preflight to the Interactions endpoint fails in Obsidian (see #1023).
 	 */
-	private async generateViaInteractions(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
-		const params = await this.buildInteractionParams(request);
-
-		// Route the Interactions (Next-Gen) client through Obsidian's requestUrl
-		// so its requests bypass renderer CORS — the SDK otherwise uses the global
-		// fetch, whose preflight to the Interactions endpoint fails in Obsidian.
+	private ensureInteractionsFetch(): void {
 		if (!installObsidianFetch(this.ai)) {
 			this.plugin?.logger.warn(
 				'[GeminiClient] Could not route Interactions client through Obsidian requestUrl; requests may fail due to CORS.'
 			);
 		}
+	}
+
+	/**
+	 * Non-streaming generation via the Interactions API (stateless transport).
+	 */
+	private async generateViaInteractions(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
+		const params = await this.buildInteractionParams(request);
+		this.ensureInteractionsFetch();
 
 		try {
 			const interaction = await (this.ai as any).interactions.create(params);
@@ -147,6 +153,69 @@ export class GeminiClient implements ModelApi {
 			this.plugin?.logger.error('[GeminiClient] Error creating interaction:', error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Streaming generation via the Interactions API. Consumes the step-based SSE
+	 * stream (`stream: true`) through an InteractionStreamAccumulator, emitting
+	 * text/reasoning chunks as they arrive and returning the assembled response
+	 * (text, thoughts, tool calls, usage) on completion. Cancellation stops
+	 * consuming and returns whatever has accumulated so far.
+	 */
+	private streamViaInteractions(
+		request: BaseModelRequest | ExtendedModelRequest,
+		onChunk: StreamCallback
+	): StreamingModelResponse {
+		let cancelled = false;
+		// The SDK's Stream exposes an AbortController; aborting it actively
+		// interrupts an in-flight SSE read so cancel() doesn't have to wait for the
+		// next frame (or the server) to unblock the `for await`.
+		let activeStream: { controller?: AbortController } | undefined;
+		const accumulator = new InteractionStreamAccumulator();
+
+		const cancel = () => {
+			cancelled = true;
+			try {
+				activeStream?.controller?.abort();
+			} catch {
+				// Best-effort: an SDK stream without a controller still stops via the flag.
+			}
+		};
+
+		const complete = (async (): Promise<ModelResponse> => {
+			const params = await this.buildInteractionParams(request);
+			params.stream = true;
+			this.ensureInteractionsFetch();
+
+			try {
+				const stream = await (this.ai as any).interactions.create(params);
+				activeStream = stream;
+				// Cancelled during request setup, before iteration began.
+				if (cancelled) {
+					cancel();
+					return accumulator.finalize();
+				}
+				for await (const event of stream) {
+					if (cancelled) break;
+					const chunk = accumulator.handleEvent(event);
+					if (chunk && (chunk.text || chunk.thought)) {
+						onChunk(chunk);
+					}
+				}
+				return accumulator.finalize();
+			} catch (error) {
+				if (cancelled) {
+					return accumulator.finalize();
+				}
+				this.plugin?.logger.error('[GeminiClient] Error streaming interaction:', error);
+				throw error;
+			}
+		})();
+
+		return {
+			complete,
+			cancel,
+		};
 	}
 
 	/**
@@ -234,25 +303,8 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
-		// Phase 1: the Interactions transport is non-streaming only. Honour the
-		// ModelApi fallback contract — run the non-streaming path and emit the
-		// full response as a single chunk. Real step-based streaming is #1015.
 		if (this.useInteractions) {
-			let cancelledNonStream = false;
-			const complete = (async (): Promise<ModelResponse> => {
-				const response = await this.generateViaInteractions(request);
-				if (!cancelledNonStream) {
-					if (response.thoughts) onChunk({ text: '', thought: response.thoughts });
-					if (response.markdown) onChunk({ text: response.markdown });
-				}
-				return response;
-			})();
-			return {
-				complete,
-				cancel: () => {
-					cancelledNonStream = true;
-				},
-			};
+			return this.streamViaInteractions(request, onChunk);
 		}
 
 		let cancelled = false;
