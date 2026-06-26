@@ -156,17 +156,90 @@ function textFromContentArray(content: unknown): string {
  * to scanning trailing `model_output` steps. Thought summaries, tool calls, and
  * token usage are read directly off the `steps`/`usage` surface.
  */
+/** A grounding source surfaced as an inline `url_citation` annotation. */
+interface GroundingSource {
+	url: string;
+	title?: string;
+}
+
+/** Collect deduped `url_citation` annotations into `into` (keyed by URL, first title wins). */
+function collectUrlCitations(annotations: unknown, into: Map<string, GroundingSource>): void {
+	if (!Array.isArray(annotations)) return;
+	for (const annotation of annotations) {
+		const a = annotation as { type?: string; url?: string; title?: string };
+		if (a.type === 'url_citation' && typeof a.url === 'string' && a.url && !into.has(a.url)) {
+			into.set(a.url, { url: a.url, title: a.title });
+		}
+	}
+}
+
+/** Collect `url_citation` annotations from the text items of a step's `content` array. */
+function collectCitationsFromContent(content: unknown, into: Map<string, GroundingSource>): void {
+	if (!Array.isArray(content)) return;
+	for (const item of content) {
+		const i = item as { type?: string; annotations?: unknown };
+		if (i.type === 'text') collectUrlCitations(i.annotations, into);
+	}
+}
+
+/** Escape a string for safe interpolation into HTML text/attribute context. */
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
+/** Return `value` only if it's an http(s) URL, else '#' — blocks javascript:/data: hrefs. */
+function safeExternalUrl(value: string): string {
+	try {
+		const parsed = new URL(value);
+		// Return the original (not parsed.toString(), which normalizes/adds a
+		// trailing slash) so the link stays faithful to the cited URL.
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? value : '#';
+	} catch {
+		return '#';
+	}
+}
+
+/**
+ * Render grounding sources as the same `<div class="search-grounding">` block the
+ * generateContent path emits, so the agent view renders Interactions grounding
+ * identically. Returns '' when there are no sources.
+ *
+ * Citation `url`/`title` come from model/provider annotations (untrusted), so the
+ * href is restricted to http(s) and both the href and label are HTML-escaped to
+ * keep `ModelResponse.rendered` injection-safe. Links get `rel="noopener noreferrer"`.
+ */
+function renderGroundingSources(sources: GroundingSource[]): string {
+	if (sources.length === 0) return '';
+	const items = sources
+		.map((s) => {
+			const href = escapeHtml(safeExternalUrl(s.url));
+			const label = escapeHtml(s.title || s.url);
+			return `<li><a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
+		})
+		.join('');
+	return `<div class="search-grounding"><h4>Sources:</h4><ul>${items}</ul></div>`;
+}
+
 export function extractModelResponseFromInteraction(interaction: Record<string, unknown>): ModelResponse {
 	const steps = Array.isArray(interaction.steps) ? (interaction.steps as InteractionStep[]) : [];
 
 	let markdown = typeof interaction.output_text === 'string' ? interaction.output_text : '';
 	let thoughts = '';
 	const toolCalls: ToolCall[] = [];
+	const sources = new Map<string, GroundingSource>();
 
 	for (const step of steps) {
 		const type = step.type as string;
-		if (type === 'model_output' && !markdown) {
-			markdown += textFromContentArray(step.content);
+		if (type === 'model_output') {
+			if (!markdown) markdown += textFromContentArray(step.content);
+			// Grounding sources arrive as inline url_citation annotations on the
+			// model output text, not as a separate chunks list (see #1016).
+			collectCitationsFromContent(step.content, sources);
 		} else if (type === 'thought') {
 			thoughts += textFromContentArray(step.summary);
 		} else if (type === 'function_call') {
@@ -183,7 +256,7 @@ export function extractModelResponseFromInteraction(interaction: Record<string, 
 
 	const response: ModelResponse = {
 		markdown,
-		rendered: '', // search grounding is Phase 3 (#1016)
+		rendered: renderGroundingSources([...sources.values()]),
 	};
 	if (thoughts) response.thoughts = thoughts;
 	if (toolCalls.length > 0) response.toolCalls = toolCalls;
@@ -244,6 +317,7 @@ export class InteractionStreamAccumulator {
 	private usage: ModelResponse['usageMetadata'] | undefined;
 	private readonly pending = new Map<number, PendingToolCall>();
 	private readonly toolCalls: ToolCall[] = [];
+	private readonly sources = new Map<string, GroundingSource>();
 
 	/** Process one streamed event; returns a chunk to emit, or null if nothing to surface. */
 	handleEvent(event: InteractionStreamEvent): InteractionStreamChunk | null {
@@ -311,6 +385,11 @@ export class InteractionStreamAccumulator {
 				}
 				return null;
 			}
+			case 'text_annotation_delta': {
+				// Grounding sources stream as url_citation annotations (#1016).
+				collectUrlCitations(delta.annotations, this.sources);
+				return null;
+			}
 			default:
 				return null;
 		}
@@ -347,7 +426,7 @@ export class InteractionStreamAccumulator {
 
 		const response: ModelResponse = {
 			markdown: this.text,
-			rendered: '', // search grounding is Phase 3 (#1016)
+			rendered: renderGroundingSources([...this.sources.values()]),
 		};
 		if (this.thoughts) response.thoughts = this.thoughts;
 		if (this.toolCalls.length > 0) response.toolCalls = this.toolCalls;

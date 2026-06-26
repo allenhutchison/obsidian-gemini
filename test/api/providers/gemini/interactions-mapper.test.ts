@@ -1,5 +1,11 @@
 import { describe, test, expect } from 'vitest';
-import { InteractionStreamAccumulator } from '../../../../src/api/providers/gemini/interactions-mapper';
+import {
+	InteractionStreamAccumulator,
+	extractModelResponseFromInteraction,
+	contentToSteps,
+	buildUserInputStep,
+} from '../../../../src/api/providers/gemini/interactions-mapper';
+import type { Content } from '@google/genai';
 
 /** Feed a list of events through the accumulator, collecting emitted chunks. */
 function run(events: Array<Record<string, unknown>>) {
@@ -134,6 +140,147 @@ describe('InteractionStreamAccumulator', () => {
 		expect(response.toolCalls).toEqual([
 			{ name: 'read_file', arguments: { path: 'x' }, id: 'a', thoughtSignature: undefined },
 			{ name: 'list_files', arguments: { dir: '.' }, id: 'b', thoughtSignature: undefined },
+		]);
+	});
+});
+
+describe('grounding sources (rendered)', () => {
+	test('non-streaming: url_citation annotations on model_output → deduped sources block', () => {
+		const response = extractModelResponseFromInteraction({
+			output_text: 'Paris is the capital of France.',
+			steps: [
+				{
+					type: 'model_output',
+					content: [
+						{
+							type: 'text',
+							text: 'Paris is the capital of France.',
+							annotations: [
+								{ type: 'url_citation', url: 'https://a.example/paris', title: 'Paris' },
+								{ type: 'url_citation', url: 'https://b.example/france', title: 'France' },
+								{ type: 'url_citation', url: 'https://a.example/paris', title: 'dup (ignored)' },
+							],
+						},
+					],
+				},
+			],
+		});
+
+		expect(response.rendered).toContain('<div class="search-grounding">');
+		expect(response.rendered).toContain(
+			'<a href="https://a.example/paris" target="_blank" rel="noopener noreferrer">Paris</a>'
+		);
+		expect(response.rendered).toContain(
+			'<a href="https://b.example/france" target="_blank" rel="noopener noreferrer">France</a>'
+		);
+		// Deduped by URL — only two <li> entries.
+		expect(response.rendered.match(/<li>/g)).toHaveLength(2);
+	});
+
+	test('non-streaming: no annotations → empty rendered', () => {
+		const response = extractModelResponseFromInteraction({
+			output_text: 'hi',
+			steps: [{ type: 'model_output', content: [{ type: 'text', text: 'hi' }] }],
+		});
+		expect(response.rendered).toBe('');
+	});
+
+	test('streaming: text_annotation_delta events accumulate into the sources block', () => {
+		const { response } = run([
+			{ event_type: 'step.start', index: 0, step: { type: 'model_output' } },
+			{ event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'Answer' } },
+			{
+				event_type: 'step.delta',
+				index: 0,
+				delta: {
+					type: 'text_annotation_delta',
+					annotations: [{ type: 'url_citation', url: 'https://src.example', title: 'Source' }],
+				},
+			},
+			{ event_type: 'step.stop', index: 0 },
+		]);
+
+		expect(response.markdown).toBe('Answer');
+		expect(response.rendered).toContain(
+			'<a href="https://src.example" target="_blank" rel="noopener noreferrer">Source</a>'
+		);
+	});
+
+	test('falls back to the URL when a citation has no title', () => {
+		const response = extractModelResponseFromInteraction({
+			steps: [
+				{
+					type: 'model_output',
+					content: [
+						{ type: 'text', text: 'x', annotations: [{ type: 'url_citation', url: 'https://no-title.example' }] },
+					],
+				},
+			],
+		});
+		expect(response.rendered).toContain(
+			'<a href="https://no-title.example" target="_blank" rel="noopener noreferrer">https://no-title.example</a>'
+		);
+	});
+
+	test('sanitizes malicious citation url/title (no HTML injection, no javascript: href)', () => {
+		const response = extractModelResponseFromInteraction({
+			steps: [
+				{
+					type: 'model_output',
+					content: [
+						{
+							type: 'text',
+							text: 'x',
+							annotations: [
+								{ type: 'url_citation', url: 'javascript:alert(1)', title: '<img src=x onerror=alert(1)>' },
+							],
+						},
+					],
+				},
+			],
+		});
+
+		// Disallowed scheme is neutralized to '#'.
+		expect(response.rendered).toContain('href="#"');
+		expect(response.rendered).not.toContain('javascript:');
+		// Title is HTML-escaped, so no raw tag survives.
+		expect(response.rendered).not.toContain('<img');
+		expect(response.rendered).toContain('&lt;img src=x onerror=alert(1)&gt;');
+		expect(response.rendered).toContain('rel="noopener noreferrer"');
+	});
+});
+
+describe('inline attachments (all media classes)', () => {
+	const att = (mimeType: string) => ({ base64: 'AAAA', mimeType });
+
+	test('buildUserInputStep classifies image/audio/video/pdf as first-class media', () => {
+		const step = buildUserInputStep('look', undefined, [
+			att('image/png'),
+			att('audio/mp3'),
+			att('video/mp4'),
+			att('application/pdf'),
+		]);
+		expect(step?.content).toEqual([
+			{ type: 'text', text: 'look' },
+			{ type: 'image', data: 'AAAA', mime_type: 'image/png' },
+			{ type: 'audio', data: 'AAAA', mime_type: 'audio/mp3' },
+			{ type: 'video', data: 'AAAA', mime_type: 'video/mp4' },
+			{ type: 'document', data: 'AAAA', mime_type: 'application/pdf' },
+		]);
+	});
+
+	test('unsupported mime degrades to a text note rather than dropping silently', () => {
+		const step = buildUserInputStep(undefined, undefined, [att('application/zip')]);
+		expect(step?.content).toEqual([{ type: 'text', text: '[attachment: application/zip]' }]);
+	});
+
+	test('contentToSteps maps a history inlineData PDF part to a document content item', () => {
+		const content: Content = {
+			role: 'user',
+			parts: [{ inlineData: { mimeType: 'application/pdf', data: 'BBBB' } }],
+		};
+		expect(contentToSteps(content)).toEqual([
+			{ type: 'user_input', content: [{ type: 'document', data: 'BBBB', mime_type: 'application/pdf' }] },
 		]);
 	});
 });
