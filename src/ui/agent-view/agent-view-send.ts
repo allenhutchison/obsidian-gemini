@@ -3,7 +3,7 @@ import type { Content } from '@google/genai';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { ToolExecutionContext } from '../../tools/types';
-import { ExtendedModelRequest } from '../../api/interfaces/model-api';
+import { ExtendedModelRequest, ModelApi, StreamChunk } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { getErrorMessage } from '../../utils/error-utils';
@@ -88,7 +88,7 @@ export class AgentViewSend {
 	 * approval so the caller can build the execute-phase request.
 	 */
 	private async conductPlanApproval(
-		modelApi: any,
+		modelApi: ModelApi,
 		baseRequest: ExtendedModelRequest,
 		currentSession: ChatSession,
 		compactedHistory: Content[]
@@ -109,7 +109,7 @@ export class AgentViewSend {
 		// renders the final text with proper formatting and approval buttons.
 		if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {
 			let accumulated = '';
-			const stream = modelApi.generateStreamingResponse(planRequest, (chunk: any) => {
+			const stream = modelApi.generateStreamingResponse!(planRequest, (chunk: StreamChunk) => {
 				if (chunk.text) {
 					accumulated += chunk.text;
 				}
@@ -162,9 +162,17 @@ export class AgentViewSend {
 		await this.ctx.messages.displayMessage(proceedEntry, currentSession);
 		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, proceedEntry);
 
+		const originalUserContent: Content = {
+			role: 'user',
+			parts: [{ text: baseRequest.userMessage }],
+		};
+		const planContent: Content = {
+			role: 'model',
+			parts: [{ text: planText }],
+		};
 		return {
 			proceedMessage,
-			updatedHistory: [...compactedHistory, planEntry as unknown as Content, proceedEntry as unknown as Content],
+			updatedHistory: [...compactedHistory, originalUserContent, planContent],
 		};
 	}
 
