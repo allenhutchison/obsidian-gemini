@@ -9,18 +9,23 @@
 // `hot-reload` community plugin (an empty `.hotreload` file in the plugin
 // directory) for live reloads on rebuild.
 //
-// Target resolution (no TEST_VAULT_PLUGIN_DIR override):
-//   The plugin folder is found by scanning <vault>/.obsidian/plugins/* for a
-//   manifest.json whose `id` matches this plugin — NOT by assuming a folder
-//   name. Obsidian keys plugins by manifest id, and a vault folder may be named
-//   anything (e.g. `obsidian-gemini`). Installing into a hardcoded `gemini-scribe`
-//   folder silently misses a differently-named folder Obsidian actually loads.
-//   If several folders declare the id, all are updated (Obsidian loads only one
-//   and which is not knowable from outside it) and the duplicates are reported.
-//   If none exist yet (fresh vault), the canonical `<id>` folder is created.
+// Target resolution (highest precedence first):
+//   1. TEST_VAULT_PLUGIN_DIR — an exact plugin folder. Escape hatch; bypasses
+//      scanning. Validated against the plugin id (see below) so a typo or a
+//      stale path can't silently install into a folder Obsidian never loads.
+//   2. TEST_VAULT_DIR — a vault ROOT (the folder that contains `.obsidian/`).
+//      Preferred when your test vault lives somewhere other than the default:
+//      it scans `<root>/.obsidian/plugins` the same robust way as the default,
+//      so duplicate/renamed folders are still handled and reported.
+//   3. Default — `~/Obsidian/Test Vault`.
 //
-// Override the destination with TEST_VAULT_PLUGIN_DIR (an exact plugin dir) if
-// your test vault is elsewhere — that bypasses the scan.
+// Vault scanning (options 2 and 3): the plugin folder is found by reading every
+// `<vault>/.obsidian/plugins/*/manifest.json` and matching on `id`, NOT on
+// folder name — Obsidian keys plugins by manifest id and a vault folder may be
+// named anything (e.g. `obsidian-gemini`). If several folders declare the id,
+// ALL are updated (Obsidian loads only one and which is not knowable from
+// outside it) and the duplicates are reported. If none exist yet (fresh vault),
+// the canonical `<id>` folder is created.
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -61,28 +66,29 @@ for (const dest of destinations) {
 
 console.log('\nReload the plugin in Obsidian (or use the hot-reload plugin) to pick up changes.');
 
-/**
- * Resolve which plugin folder(s) to install into.
- * - TEST_VAULT_PLUGIN_DIR, if set, is used verbatim (no scanning).
- * - Otherwise scan the test vault's plugins directory for folders whose
- *   manifest.json declares `id`, falling back to the canonical `<id>` folder
- *   on a fresh vault.
- */
-function resolveDestinations(id) {
-	const override = process.env.TEST_VAULT_PLUGIN_DIR;
-	if (override) {
-		if (!existsSync(dirname(override))) {
-			console.error(`Parent directory not found: ${dirname(override)}. Check TEST_VAULT_PLUGIN_DIR.`);
-			process.exit(1);
-		}
-		return [override];
+/** Read a plugin folder's manifest id, or null if absent/unreadable. */
+function manifestId(pluginDir) {
+	const manifestPath = join(pluginDir, 'manifest.json');
+	if (!existsSync(manifestPath)) return null;
+	try {
+		return JSON.parse(readFileSync(manifestPath, 'utf8')).id ?? null;
+	} catch {
+		return null;
 	}
+}
 
-	const pluginsDir = join(homedir(), 'Obsidian', 'Test Vault', '.obsidian', 'plugins');
+/**
+ * Scan a vault root's plugins directory for folders whose manifest declares
+ * `id`. Returns matching plugin-dir paths (possibly several), or the canonical
+ * `<id>` folder on a fresh vault. Exits if the vault/plugins dir is missing.
+ */
+function scanVault(vaultRoot, id, { sourceLabel }) {
+	const pluginsDir = join(vaultRoot, '.obsidian', 'plugins');
 	if (!existsSync(pluginsDir)) {
 		console.error(
-			`Test vault plugins directory not found: ${pluginsDir}.\n` +
-				`Set TEST_VAULT_PLUGIN_DIR, or open the test vault in Obsidian at least once.`
+			`Test vault plugins directory not found: ${pluginsDir}\n` +
+				`(resolved from ${sourceLabel}). Open the vault in Obsidian at least once, ` +
+				`or set TEST_VAULT_DIR / TEST_VAULT_PLUGIN_DIR.`
 		);
 		process.exit(1);
 	}
@@ -90,20 +96,13 @@ function resolveDestinations(id) {
 	const matches = [];
 	for (const entry of readdirSync(pluginsDir, { withFileTypes: true })) {
 		if (!entry.isDirectory()) continue;
-		const manifestPath = join(pluginsDir, entry.name, 'manifest.json');
-		if (!existsSync(manifestPath)) continue;
-		try {
-			if (JSON.parse(readFileSync(manifestPath, 'utf8')).id === id) {
-				matches.push(join(pluginsDir, entry.name));
-			}
-		} catch {
-			// A folder with an unreadable manifest isn't ours — skip it.
-		}
+		const dir = join(pluginsDir, entry.name);
+		if (manifestId(dir) === id) matches.push(dir);
 	}
 
 	if (matches.length === 0) {
-		// Fresh vault — the plugin has never been installed. Create the
-		// canonical `<id>` folder.
+		// Fresh vault — the plugin has never been installed. Create the canonical
+		// `<id>` folder.
 		return [join(pluginsDir, id)];
 	}
 
@@ -117,4 +116,45 @@ function resolveDestinations(id) {
 	}
 
 	return matches;
+}
+
+/**
+ * Resolve which plugin folder(s) to install into. See the precedence list in the
+ * header comment.
+ */
+function resolveDestinations(id) {
+	const pluginDirOverride = process.env.TEST_VAULT_PLUGIN_DIR;
+	if (pluginDirOverride) {
+		if (!existsSync(dirname(pluginDirOverride))) {
+			console.error(`Parent directory not found: ${dirname(pluginDirOverride)}. Check TEST_VAULT_PLUGIN_DIR.`);
+			process.exit(1);
+		}
+		// Guard against pointing at the wrong place: if the target already holds a
+		// different plugin, that's a typo/stale path, not our install dir. A target
+		// with no manifest yet (fresh folder) is allowed but called out, since the
+		// most common mistake is aiming at a vault Obsidian doesn't actually load.
+		const existingId = manifestId(pluginDirOverride);
+		if (existingId && existingId !== id) {
+			console.error(
+				`TEST_VAULT_PLUGIN_DIR points at a folder for a different plugin ` +
+					`(found id "${existingId}", expected "${id}"): ${pluginDirOverride}`
+			);
+			process.exit(1);
+		}
+		if (existingId === null) {
+			console.warn(
+				`Warning: TEST_VAULT_PLUGIN_DIR has no existing ${id} manifest: ${pluginDirOverride}\n` +
+					`Installing anyway. If Obsidian isn't picking up changes, confirm this is the ` +
+					`folder the OPEN vault loads (prefer TEST_VAULT_DIR to scan a vault root by id).\n`
+			);
+		}
+		return [pluginDirOverride];
+	}
+
+	const vaultDirOverride = process.env.TEST_VAULT_DIR;
+	if (vaultDirOverride) {
+		return scanVault(vaultDirOverride, id, { sourceLabel: 'TEST_VAULT_DIR' });
+	}
+
+	return scanVault(join(homedir(), 'Obsidian', 'Test Vault'), id, { sourceLabel: 'the default ~/Obsidian/Test Vault' });
 }

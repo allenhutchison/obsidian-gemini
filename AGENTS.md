@@ -25,7 +25,7 @@ npm run format-check # Check formatting without changes
 npm run lint         # Lint with ESLint (eslint-plugin-obsidianmd recommended preset)
 npm run lint:fix     # Auto-fix ESLint violations where possible
 npm run knip         # Detect unused files, exports, types, and dependencies (configured in knip.json)
-npm run install:test-vault # Copy built artifacts into test vault (override path with TEST_VAULT_PLUGIN_DIR)
+npm run install:test-vault # Copy built artifacts into test vault (default ~/Obsidian/Test Vault; point elsewhere with TEST_VAULT_DIR=<vault root>, or an exact plugin folder with TEST_VAULT_PLUGIN_DIR)
 npm run translate    # Regenerate AI translations in src/i18n/ (manual maintenance; needs GOOGLE_API_KEY — never runs in build/CI)
 ```
 
