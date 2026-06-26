@@ -9,11 +9,16 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 
 ## What's New in v4.10.0
 
-**🧪 Gemini Scribe 4.10 - Interactions API (opt-in), Per-Use-Case Thinking**
+**🌍 Gemini Scribe 4.10 - Multilingual UI, Reasoning Display & Interactions API**
 
+- **🌍 Localized UI in 20 languages** - The entire plugin interface (settings, modals, agent view, commands, notices) is now translated, auto-selected from your Obsidian language with graceful fallback to English.
+- **🧠 Model reasoning display** - The agent now shows the model's thinking inline in the tool activity block and persists it in session history, so you can follow how it reached an answer.
 - **🧪 Interactions API transport (experimental, opt-in)** - New **Use Interactions API** setting routes Gemini chat through Google's newer Interactions API, with full streaming of text, reasoning, tool calls, and grounded sources. Off by default and runs statelessly (your conversation history stays on your device); enable it under **Settings → Agent config → API configuration**, or leave it off to keep using the proven `generateContent` path.
+- **🗺️ Google Maps grounding tool** - The agent can ground answers in Google Maps data for place and location questions.
 - **🧠 Per-use-case thinking depth** - Reasoning effort is now tuned per task (completions think the least, agent chat the most) instead of one global setting, balancing latency and quality.
 - **⏳ Soft agent turn budget** - Long agent runs get a gentle reminder as they approach the turn limit, plus a one-shot extension, instead of stopping abruptly.
+- **📋 Copy buttons for tool calls** - Quickly copy tool-call parameters and results from the agent view.
+- **🔄 In-app model-list refresh** - Refresh the available Gemini model list without restarting.
 
 **Previous Updates (v4.9.1):**
 
