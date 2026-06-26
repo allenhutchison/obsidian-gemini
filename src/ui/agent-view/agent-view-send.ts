@@ -383,6 +383,8 @@ To reference an attachment in your response, use the path shown above.`;
 
 					const planResponse = await modelApi.generateModelResponse(planRequest);
 
+					if (this.isCancellationRequested()) return;
+
 					if (planResponse.usageMetadata) {
 						await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
 							usageMetadata: planResponse.usageMetadata,
@@ -408,6 +410,8 @@ To reference an attachment in your response, use the path shown above.`;
 
 					const decision = await this.ctx.messages.displayPlanMessage(planEntry, currentSession);
 
+					if (this.isCancellationRequested()) return;
+
 					if (decision === 'reject') {
 						new Notice(t('agent.planMode.rejectNotice'));
 						this.ctx.deactivatePlanMode();
@@ -427,12 +431,14 @@ To reference an attachment in your response, use the path shown above.`;
 						created_at: new Date(),
 					};
 					await this.ctx.displayMessage(approvalEntry);
+					// Snapshot history BEFORE persisting approvalEntry so it becomes the current-turn
+					// userMessage rather than appearing twice in conversationHistory.
+					const execHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
 					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, approvalEntry);
 
 					this.ctx.progress.show(t('agent.progress.thinking'), 'thinking');
 
-					const execHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
-					const execCompaction = await this.ctx.plugin.contextManager.prepareHistory(execHistory as any, modelName);
+					const execCompaction = await this.ctx.plugin.contextManager.prepareHistory(execHistory, modelName);
 
 					const execRequest: ExtendedModelRequest = {
 						...request,

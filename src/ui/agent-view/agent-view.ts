@@ -1,4 +1,4 @@
-import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice } from 'obsidian';
+import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice, setTooltip } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -731,15 +731,21 @@ export class AgentView extends ItemView {
 
 	togglePlanMode(): void {
 		this.planModeActive = !this.planModeActive;
-		if (this.planModeButton) {
-			this.planModeButton.toggleClass('gemini-agent-plan-mode-active', this.planModeActive);
-		}
+		this.updatePlanModeButton();
 	}
 
 	private deactivatePlanMode(): void {
 		this.planModeActive = false;
+		this.updatePlanModeButton();
+	}
+
+	private updatePlanModeButton(): void {
 		if (this.planModeButton) {
-			this.planModeButton.removeClass('gemini-agent-plan-mode-active');
+			this.planModeButton.toggleClass('gemini-agent-plan-mode-active', this.planModeActive);
+			setTooltip(
+				this.planModeButton,
+				this.planModeActive ? t('agent.planMode.activeTooltip') : t('agent.planMode.toggleAria')
+			);
 		}
 	}
 

@@ -41,6 +41,7 @@ export class AgentViewMessages {
 	private scrollTimeout: number | null = null;
 	private autoOpenDiffTimeout: number | null = null;
 	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
+	private pendingPlanDecision: ((decision: 'approve' | 'reject') => void) | null = null;
 	private viewContext: any; // For MarkdownRenderer context
 
 	constructor(
@@ -83,6 +84,13 @@ export class AgentViewMessages {
 		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
 		if (emptyState) {
 			emptyState.remove();
+		}
+
+		// Plan entries (isPlan: true) are already-decided — render with plan styling
+		// but no interactive buttons (they were approved; approval label is shown instead).
+		if (entry.isPlan) {
+			await this.displayDecidedPlanMessage(entry, currentSession);
+			return;
 		}
 
 		// Reasoning-only turn (the model thought but produced no text — e.g. before
@@ -254,6 +262,45 @@ export class AgentViewMessages {
 	}
 
 	/**
+	 * Render a persisted plan entry from session history without interactive buttons.
+	 * Used when reloading history — the plan was already approved; we show the content
+	 * with the plan card styling and an "approved" decision label.
+	 */
+	private async displayDecidedPlanMessage(
+		entry: GeminiConversationEntry,
+		currentSession: ChatSession | null
+	): Promise<void> {
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) emptyState.remove();
+
+		const messageDiv = this.chatContainer.createDiv({
+			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-message-plan',
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: t('agent.planMode.planLabel'),
+			cls: 'gemini-agent-message-role',
+		});
+		header.createEl('span', {
+			text: entry.created_at.toLocaleTimeString(),
+			cls: 'gemini-agent-message-time',
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+		const sourcePath = currentSession?.historyPath || '';
+		await MarkdownRenderer.render(this.app, formatModelMessage(entry.message), content, sourcePath, this.viewContext);
+
+		const actionsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-actions' });
+		actionsDiv.createEl('span', {
+			text: t('agent.planMode.approve'),
+			cls: 'gemini-agent-plan-decision gemini-agent-plan-decision-approve',
+		});
+
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+	}
+
+	/**
 	 * Display an agent-generated plan and await user approval or rejection.
 	 * Returns 'approve' if the user clicks "Approve & Execute", 'reject' otherwise.
 	 */
@@ -306,6 +353,7 @@ export class AgentViewMessages {
 			const handleDecision = (decision: 'approve' | 'reject') => {
 				if (resolved) return;
 				resolved = true;
+				this.pendingPlanDecision = null;
 				approveBtn.disabled = true;
 				rejectBtn.disabled = true;
 				actionsDiv.empty();
@@ -315,6 +363,7 @@ export class AgentViewMessages {
 				});
 				resolve(decision);
 			};
+			this.pendingPlanDecision = (decision) => handleDecision(decision);
 			approveBtn.addEventListener('click', () => handleDecision('approve'));
 			rejectBtn.addEventListener('click', () => handleDecision('reject'));
 		});
@@ -1106,5 +1155,11 @@ export class AgentViewMessages {
 			resolve({ confirmed: false, allowWithoutConfirmation: false, userEdited: false });
 		}
 		this.pendingConfirmations.clear();
+
+		// Settle any pending plan-approval promise so sendMessage doesn't leak
+		if (this.pendingPlanDecision) {
+			this.pendingPlanDecision('reject');
+			this.pendingPlanDecision = null;
+		}
 	}
 }

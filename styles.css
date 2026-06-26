@@ -1513,7 +1513,7 @@ If your plugin does not need CSS, delete this file.
 	color: var(--color-green, #10b981);
 }
 
-.gemini-agent-plan-decision-rejected {
+.gemini-agent-plan-decision-reject {
 	color: var(--text-faint);
 }
 

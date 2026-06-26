@@ -375,9 +375,6 @@ export class AgentViewUI {
 
 		planModeButton.addEventListener('click', () => {
 			callbacks.togglePlanMode();
-			const active = callbacks.isPlanModeActive();
-			planModeButton.toggleClass('gemini-agent-plan-mode-active', active);
-			setTooltip(planModeButton, active ? t('agent.planMode.activeTooltip') : t('agent.planMode.toggleAria'));
 		});
 
 		const sendButton = inputRow.createEl('button', {
