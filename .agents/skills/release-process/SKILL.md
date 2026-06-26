@@ -59,12 +59,31 @@ This is a required, easy-to-forget step:
 - Demote the previous version's block to a `**Previous Updates (vX.Y.Z):**` entry
 - Keep the README's feature/configuration/localization sections in sync if the release changed them
 
-### 4. Run Tests and Build
+### 4. Run Tests, Build, and the Live Transport Smoke Gate
 
 ```bash
 npm test        # Ensure all tests pass
 npm run build   # Verify production build succeeds
 ```
+
+**🚨 Live transport smoke gate — run this LAST, after EVERY code and dependency change is final.**
+
+`npm test` / `npm run build` run in Node and **cannot catch renderer-only failures** — CORS, the Obsidian `requestUrl` fetch shim, and anything that depends on the Electron renderer environment. A green build is **not** proof the plugin works in Obsidian.
+
+Before bumping the version, install the exact bytes you're about to ship into the test vault and exercise the real API paths:
+
+```bash
+npm run install:test-vault
+# In Obsidian (or via `obsidian dev:debug on` + eval): with the CURRENT settings,
+#   1. Summarize a note  (generateContent path)
+#   2. Send an agent chat message that streams
+#   3. Toggle "Use Interactions API" ON and repeat 1–2, plus a grounded google_search
+# Confirm no console errors and real model output for each.
+```
+
+**If `@google/genai` changed at all — even a semver-minor or -patch bump — the Interactions smoke test (flag ON) is MANDATORY and non-negotiable.** The CORS workaround (`installObsidianFetch` / `obsidian-fetch.ts`) reaches into the SDK's next-gen client internals, which minor releases have restructured before (2.9.0→2.10.0 silently broke it and shipped in 4.10.1 — see #1044). Instrument `window.fetch` to confirm Interactions requests route through `requestUrl`, not the renderer global `fetch`.
+
+**Ordering rule: the smoke gate is the FINAL pre-bump step.** If you update any dependency (or any code) _after_ smoke-testing, you have invalidated the smoke test — re-run it. Never bump deps after the gate. (This is exactly how 4.10.1 broke: the smoke test passed on 2.9.0, deps were then bumped to 2.10.0, and the release was cut without re-testing because the updates "looked minor.")
 
 ### 5. Commit Release Notes
 
@@ -113,6 +132,7 @@ A GitHub Actions runner automatically creates a draft release when a tag is push
 - Build the notes from ALL changes since the previous tag (Step 1), not just the current session's work.
 - Update the README "What's New" section as part of every release (Step 3).
 - The GitHub release **name must include the full `X.Y.Z` version** from `manifest.json`, or Obsidian's developer dashboard warns (Step 7).
+- **Run the live transport smoke gate LAST, in the test vault, after all code AND dependency changes (Step 4).** `npm test`/`build` can't see renderer CORS failures. Any `@google/genai` change — even minor/patch — makes the Interactions smoke test (flag ON) mandatory. Never bump a dependency after smoke-testing without re-running it.
 - Ensure you're on the master branch and it's up to date before releasing.
 
 ## Build system context

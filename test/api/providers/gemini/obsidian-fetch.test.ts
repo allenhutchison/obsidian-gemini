@@ -4,9 +4,25 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 const { requestUrlMock } = vi.hoisted(() => ({ requestUrlMock: vi.fn() }));
 vi.mock('obsidian', () => ({ requestUrl: requestUrlMock }));
 
-import { obsidianFetch, installObsidianFetch } from '../../../../src/api/providers/gemini/obsidian-fetch';
+import { obsidianFetcher, installObsidianFetch } from '../../../../src/api/providers/gemini/obsidian-fetch';
 
-describe('obsidianFetch', () => {
+/**
+ * Build a minimal `fetcher`-shaped request. The Next-Gen `HTTPClient` calls its
+ * fetcher with a WHATWG `Request`; we only touch `url`, `method`, `headers`, and
+ * `arrayBuffer()`, so a duck-typed object keeps the test independent of the
+ * jsdom `Request` body implementation.
+ */
+function fakeRequest(url: string, method: string, headers: Record<string, string>, body?: string): Request {
+	const buffer = body !== undefined ? new TextEncoder().encode(body).buffer : new ArrayBuffer(0);
+	return {
+		url,
+		method,
+		headers: new Headers(headers),
+		arrayBuffer: async () => buffer,
+	} as unknown as Request;
+}
+
+describe('obsidianFetcher', () => {
 	beforeEach(() => {
 		requestUrlMock.mockReset();
 		requestUrlMock.mockResolvedValue({
@@ -16,19 +32,18 @@ describe('obsidianFetch', () => {
 		});
 	});
 
-	test('proxies a POST through requestUrl and returns a real Response', async () => {
-		const res = await obsidianFetch('https://example.com/v1beta/interactions', {
-			method: 'post',
-			headers: { 'x-goog-api-key': 'k', 'content-type': 'application/json' },
-			body: JSON.stringify({ model: 'gemini-3.5-flash' }),
-		});
+	test('proxies a POST Request through requestUrl and returns a real Response', async () => {
+		const body = JSON.stringify({ model: 'gemini-3.5-flash' });
+		const res = await obsidianFetcher(
+			fakeRequest('https://example.com/v1beta/interactions', 'POST', { 'x-goog-api-key': 'k' }, body)
+		);
 
 		expect(requestUrlMock).toHaveBeenCalledTimes(1);
 		const param = requestUrlMock.mock.calls[0][0];
 		expect(param.url).toBe('https://example.com/v1beta/interactions');
-		expect(param.method).toBe('POST'); // upper-cased
+		expect(param.method).toBe('POST');
 		expect(param.headers['x-goog-api-key']).toBe('k');
-		expect(param.body).toBe(JSON.stringify({ model: 'gemini-3.5-flash' }));
+		expect(new TextDecoder().decode(param.body)).toBe(body);
 		expect(param.throw).toBe(false); // let the SDK map HTTP errors itself
 
 		expect(res).toBeInstanceOf(Response);
@@ -36,14 +51,21 @@ describe('obsidianFetch', () => {
 		await expect(res.json()).resolves.toEqual({ ok: true });
 	});
 
-	test('normalizes a Headers instance into a plain record', async () => {
-		const headers = new Headers();
-		headers.set('authorization', 'Bearer t');
-		await obsidianFetch(new URL('https://example.com/x'), { headers });
+	test('omits the body for GET requests (does not read arrayBuffer)', async () => {
+		const arrayBuffer = vi.fn();
+		const req = {
+			url: 'https://example.com/x',
+			method: 'GET',
+			headers: new Headers({ authorization: 'Bearer t' }),
+			arrayBuffer,
+		} as unknown as Request;
+
+		await obsidianFetcher(req);
 
 		const param = requestUrlMock.mock.calls[0][0];
 		expect(param.headers.authorization).toBe('Bearer t');
-		expect(param.url).toBe('https://example.com/x');
+		expect(param.body).toBeUndefined();
+		expect(arrayBuffer).not.toHaveBeenCalled();
 	});
 
 	test('non-2xx responses are returned (not thrown) for the SDK to handle', async () => {
@@ -52,38 +74,65 @@ describe('obsidianFetch', () => {
 			headers: {},
 			arrayBuffer: new TextEncoder().encode('rate limited').buffer,
 		});
-		const res = await obsidianFetch('https://example.com/x', { method: 'GET' });
+		const res = await obsidianFetcher(fakeRequest('https://example.com/x', 'GET', {}));
 		expect(res.status).toBe(429);
 		expect(res.ok).toBe(false);
 	});
 });
 
 describe('installObsidianFetch', () => {
-	test('patches the Next-Gen client fetch and is idempotent', () => {
-		const client: { fetch?: unknown; __obsidianFetch?: boolean } = { fetch: window.fetch };
-		const ai = { getNextGenClient: () => client };
+	function makeAi(initialFetcher: unknown) {
+		// Each getClient call rebuilds a sub-client, mirroring the real SDK where
+		// `interactions.getClient(api_version)` returns a fresh client per call.
+		const built: Array<{ _httpClient: { fetcher: unknown } }> = [];
+		const getClient = vi.fn(() => {
+			const subClient = { _httpClient: { fetcher: initialFetcher } };
+			built.push(subClient);
+			return subClient;
+		});
+		return { ai: { interactions: { getClient } }, getClient, built };
+	}
+
+	test('wraps getClient so each sub-client uses obsidianFetcher; idempotent', () => {
+		const original = () => Promise.resolve(new Response());
+		const { ai, built } = makeAi(original);
 
 		expect(installObsidianFetch(ai)).toBe(true);
-		expect(client.fetch).toBe(obsidianFetch);
-		expect(client.__obsidianFetch).toBe(true);
 
-		// Second call is a no-op that still reports success.
-		const prev = client.fetch;
+		// The fetcher is swapped when getClient runs (per-call rebuild).
+		const sub1 = ai.interactions.getClient();
+		expect(sub1._httpClient.fetcher).toBe(obsidianFetcher);
+
+		const sub2 = ai.interactions.getClient();
+		expect(sub2._httpClient.fetcher).toBe(obsidianFetcher);
+		expect(built).toHaveLength(2); // genuinely rebuilt each call
+
+		// Second install is a no-op that still reports success and keeps wrapping.
 		expect(installObsidianFetch(ai)).toBe(true);
-		expect(client.fetch).toBe(prev);
+		const sub3 = ai.interactions.getClient();
+		expect(sub3._httpClient.fetcher).toBe(obsidianFetcher);
 	});
 
-	test('returns false when the SDK lacks getNextGenClient', () => {
+	test('returns false when the SDK lacks an interactions.getClient', () => {
 		expect(installObsidianFetch({})).toBe(false);
 		expect(installObsidianFetch(null)).toBe(false);
+		expect(installObsidianFetch({ interactions: {} })).toBe(false);
 	});
 
-	test('returns false (no throw) when getNextGenClient throws', () => {
+	test('returns false (no throw) when the interactions getter throws', () => {
 		const ai = {
-			getNextGenClient: () => {
+			get interactions(): unknown {
 				throw new Error('internal');
 			},
 		};
 		expect(installObsidianFetch(ai)).toBe(false);
+	});
+
+	test('leaves the default fetcher in place if a sub-client lacks _httpClient', () => {
+		const getClient = vi.fn(() => ({}) as Record<string, unknown>);
+		const ai = { interactions: { getClient } };
+		expect(installObsidianFetch(ai)).toBe(true);
+		// Should not throw when the expected internal shape is missing.
+		expect(() => ai.interactions.getClient()).not.toThrow();
 	});
 });

@@ -1,6 +1,7 @@
 import type { Mock } from 'vitest';
 import { GoogleGenAI } from '@google/genai';
 import { GeminiClient } from '../../../../src/api/providers/gemini/client';
+import { obsidianFetcher } from '../../../../src/api/providers/gemini/obsidian-fetch';
 import type { GeminiClientConfig } from '../../../../src/api/providers/gemini/config';
 import { GeminiPrompts } from '../../../../src/prompts';
 import type { ExtendedModelRequest } from '../../../../src/api/interfaces/model-api';
@@ -9,26 +10,32 @@ import { ModelUseCase } from '../../../../src/api/model-use-case';
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
 // us share the spy with the factory while keeping vitest's mock-hoisting safe.
-const { generateContentMock, interactionsCreateMock, nextGenClient } = vi.hoisted(() => ({
-	generateContentMock: vi.fn(),
-	interactionsCreateMock: vi.fn(),
-	// Stands in for the SDK's internal Next-Gen client so installObsidianFetch
-	// has a `getNextGenClient()` + patchable `.fetch` to bind to.
-	nextGenClient: { fetch: undefined as unknown },
-}));
+const { generateContentMock, interactionsCreateMock, interactionsService } = vi.hoisted(() => {
+	return {
+		generateContentMock: vi.fn(),
+		interactionsCreateMock: vi.fn(),
+		// Shared so the test can observe the getClient wrap installObsidianFetch applies.
+		// getClient returns a FRESH sub-client per call (each with its own `_httpClient`),
+		// mirroring the real 2.10.0 SDK — so the assertion only passes if installObsidianFetch
+		// wraps the getter, not if it mutates a single prebuilt client one time.
+		interactionsService: {
+			create: vi.fn(),
+			getClient: vi.fn(() => ({ _httpClient: { fetcher: 'default-fetcher' as unknown } })),
+		},
+	};
+});
+// Keep the create spy name the existing tests use.
+interactionsService.create = interactionsCreateMock;
 
 vi.mock('@google/genai', () => ({
 	GoogleGenAI: vi.fn().mockImplementation(function () {
 		return {
 			getModel: vi.fn(),
-			getNextGenClient: () => nextGenClient,
 			models: {
 				generateContent: generateContentMock,
 				generateContentStream: vi.fn(),
 			},
-			interactions: {
-				create: interactionsCreateMock,
-			},
+			interactions: interactionsService,
 		};
 	}),
 }));
@@ -1014,9 +1021,11 @@ describe('GeminiClient', () => {
 			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
 			expect(generateContentMock).not.toHaveBeenCalled();
 			expect(response.markdown).toBe('Hello from interactions');
-			// Next-Gen client routed through Obsidian's requestUrl (CORS bypass).
-			expect(typeof nextGenClient.fetch).toBe('function');
-			expect((nextGenClient as any).__obsidianFetch).toBe(true);
+			// Next-Gen requests routed through Obsidian's requestUrl (CORS bypass):
+			// installObsidianFetch wrapped interactions.getClient, so the sub-client
+			// it builds carries the requestUrl-backed fetcher.
+			const subClient = interactionsService.getClient() as { _httpClient: { fetcher: unknown } };
+			expect(subClient._httpClient.fetcher).toBe(obsidianFetcher);
 		});
 
 		test('sends stateless params: store=false and snake_case generation_config', async () => {
