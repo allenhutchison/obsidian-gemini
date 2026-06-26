@@ -79,6 +79,7 @@ function createMockPlugin(overrides: Record<string, any> = {}) {
 		// to exercise the bg-manager path inject one explicitly.
 		backgroundTaskManager: undefined as any,
 		app: {
+			fileManager: { trashFile: vi.fn().mockResolvedValue(undefined) },
 			vault: {
 				getMarkdownFiles: vi.fn().mockReturnValue([]),
 				getAbstractFileByPath: vi.fn().mockReturnValue(null),
@@ -223,7 +224,7 @@ describe('HookManager CRUD', () => {
 		plugin.app.vault.modify = vi.fn().mockImplementation(async (file: any, content: string) => {
 			files.set(file.path, content);
 		});
-		plugin.app.vault.delete = vi.fn().mockImplementation(async (file: any) => {
+		plugin.app.fileManager.trashFile = vi.fn().mockImplementation(async (file: any) => {
 			files.delete(file.path);
 		});
 		plugin.app.vault.getAbstractFileByPath = vi
@@ -774,7 +775,7 @@ describe('HookManager serializeHook – edge cases via createHook', () => {
 		plugin.app.vault.modify = vi.fn().mockImplementation(async (file: any, content: string) => {
 			files.set(file.path, content);
 		});
-		plugin.app.vault.delete = vi.fn().mockImplementation(async (file: any) => {
+		plugin.app.fileManager.trashFile = vi.fn().mockImplementation(async (file: any) => {
 			files.delete(file.path);
 		});
 		plugin.app.vault.getAbstractFileByPath = vi
@@ -1094,7 +1095,7 @@ describe('HookManager deleteHook – file already deleted from vault', () => {
 		expect(manager.getHooks().find((h) => h.slug === 'gone')).toBeUndefined();
 		expect(manager.getStateSnapshot()['gone']).toBeUndefined();
 		// vault.delete should NOT have been called since getAbstractFileByPath returned null.
-		expect(plugin.app.vault.delete).not.toHaveBeenCalled();
+		expect(plugin.app.fileManager.trashFile).not.toHaveBeenCalled();
 	});
 });
 

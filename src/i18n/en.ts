@@ -3247,7 +3247,7 @@ export const en = {
 			'Confirmation prompt shown before the AI writes a file, with a truncated preview of the new content. {path} is the file path.',
 	},
 	'tool.confirm.deleteFile': {
-		message: 'Delete file or folder: {path}\n\nThis action cannot be undone.',
+		message: 'Delete file or folder: {path}\n\nThis moves it to your system trash, where it can be restored.',
 		context: 'Confirmation prompt shown before the AI deletes a file or folder. {path} is the vault path.',
 	},
 	'tool.confirm.createFolder': {

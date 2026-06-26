@@ -86,6 +86,7 @@ const mockPlugin = {
 		metadataCache: mockMetadataCache,
 		fileManager: {
 			renameFile: vi.fn().mockResolvedValue(undefined),
+			trashFile: vi.fn().mockResolvedValue(undefined),
 		},
 		workspace: {
 			getLeavesOfType: vi.fn().mockReturnValue([]),
@@ -131,7 +132,7 @@ describe('DeleteFileTool', () => {
 
 	it('should delete a file successfully', async () => {
 		mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
-		mockVault.delete.mockResolvedValue(undefined);
+		mockPlugin.app.fileManager.trashFile.mockResolvedValue(undefined);
 
 		const result = await tool.execute({ path: 'test.md' }, mockContext);
 
@@ -141,12 +142,12 @@ describe('DeleteFileTool', () => {
 			type: 'file',
 			action: 'deleted',
 		});
-		expect(mockVault.delete).toHaveBeenCalledWith(mockFile);
+		expect(mockPlugin.app.fileManager.trashFile).toHaveBeenCalledWith(mockFile);
 	});
 
 	it('should delete a folder successfully', async () => {
 		mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
-		mockVault.delete.mockResolvedValue(undefined);
+		mockPlugin.app.fileManager.trashFile.mockResolvedValue(undefined);
 
 		const result = await tool.execute({ path: 'folder' }, mockContext);
 
@@ -156,7 +157,7 @@ describe('DeleteFileTool', () => {
 			type: 'folder',
 			action: 'deleted',
 		});
-		expect(mockVault.delete).toHaveBeenCalledWith(mockFolder);
+		expect(mockPlugin.app.fileManager.trashFile).toHaveBeenCalledWith(mockFolder);
 	});
 
 	it('should return error for non-existent file or folder', async () => {
@@ -173,7 +174,7 @@ describe('DeleteFileTool', () => {
 	it('should have confirmation message', () => {
 		const message = tool.confirmationMessage!({ path: 'test.md' });
 		expect(message).toContain('Delete file or folder: test.md');
-		expect(message).toContain('cannot be undone');
+		expect(message).toContain('system trash');
 	});
 
 	// --- Gap coverage tests ---
@@ -183,7 +184,7 @@ describe('DeleteFileTool', () => {
 
 		expect(result.success).toBe(false);
 		expect(result.error).toContain('Cannot delete system folder');
-		expect(mockVault.delete).not.toHaveBeenCalled();
+		expect(mockPlugin.app.fileManager.trashFile).not.toHaveBeenCalled();
 	});
 
 	it('should block deleting from history folder', async () => {
@@ -191,12 +192,12 @@ describe('DeleteFileTool', () => {
 
 		expect(result.success).toBe(false);
 		expect(result.error).toContain('Cannot delete system folder');
-		expect(mockVault.delete).not.toHaveBeenCalled();
+		expect(mockPlugin.app.fileManager.trashFile).not.toHaveBeenCalled();
 	});
 
-	it('should return error when vault.delete() throws', async () => {
+	it('should return error when trashFile() throws', async () => {
 		mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
-		mockVault.delete.mockRejectedValue(new Error('File is locked'));
+		mockPlugin.app.fileManager.trashFile.mockRejectedValue(new Error('File is locked'));
 
 		const result = await tool.execute({ path: 'test.md' }, mockContext);
 

@@ -50,9 +50,9 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// 28 violations: command IDs include the plugin ID (e.g. `gemini-scribe-foo`).
 	// Removing the prefix would break user hotkey bindings — needs a migration.
 	'obsidianmd/commands/no-plugin-id-in-command-id': 'off',
-	// 6 violations: `vault.delete`/`vault.trash` should use `fileManager.trashFile`.
-	// The replacement is async with ripple effects in callers.
-	'obsidianmd/prefer-file-manager-trash-file': 'off',
+	// `obsidianmd/prefer-file-manager-trash-file` was here (6 violations) — now
+	// fixed: all deletions go through `fileManager.trashFile`, so the rule is
+	// enforced again (left at the preset default).
 };
 
 const NODE_GLOBALS = {

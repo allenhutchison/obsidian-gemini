@@ -257,7 +257,7 @@ export class SessionListModal extends Modal {
 		try {
 			const file = this.app.vault.getAbstractFileByPath(session.historyPath);
 			if (file) {
-				await this.app.vault.delete(file);
+				await this.app.fileManager.trashFile(file);
 				new Notice(t('agent.sessionList.deleted', { title: session.title }));
 
 				// Reload the list and refresh filter state

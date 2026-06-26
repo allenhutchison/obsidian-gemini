@@ -120,6 +120,7 @@ function createMockRateLimiter(): any {
 function createMockPlugin(overrides: Record<string, any> = {}): any {
 	return {
 		app: {
+			fileManager: { trashFile: vi.fn().mockResolvedValue(undefined) },
 			vault: {
 				getAbstractFileByPath: vi.fn().mockReturnValue(null),
 				delete: vi.fn().mockResolvedValue(undefined),
@@ -495,7 +496,7 @@ describe('RagVaultScanner', () => {
 
 			await scanner.deleteFileSearchStore();
 
-			expect(plugin.app.vault.delete).toHaveBeenCalledWith(mockCacheFile);
+			expect(plugin.app.fileManager.trashFile).toHaveBeenCalledWith(mockCacheFile);
 		});
 	});
 

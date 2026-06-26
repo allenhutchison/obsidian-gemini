@@ -468,7 +468,7 @@ export class HookManager {
 
 		const file = this.plugin.app.vault.getAbstractFileByPath(hook.filePath);
 		if (file) {
-			await this.plugin.app.vault.delete(file);
+			await this.plugin.app.fileManager.trashFile(file);
 		}
 
 		this.hooks.delete(slug);
