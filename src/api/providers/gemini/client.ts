@@ -757,7 +757,15 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Generate an image from a text prompt
+	 * Generate an image from a text prompt.
+	 *
+	 * Intentionally stays on `generateContent` even when `useInteractionsApi` is
+	 * on (see #1016): image generation is a distinct one-shot capability on a
+	 * dedicated image model — not the conversational transport the flag governs —
+	 * and the existing path is proven across image-tools and scheduled tasks.
+	 * Migrating it to the Interactions image-output surface is deferred until
+	 * there's a concrete reason to (no user-facing benefit today).
+	 *
 	 * @param prompt - Text description of the image to generate
 	 * @param model - Image generation model (defaults to gemini-2.5-flash-image-preview)
 	 * @returns Base64 encoded image data
