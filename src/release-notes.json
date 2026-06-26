@@ -1,6 +1,23 @@
 {
+	"4.10.1": {
+		"title": "🌍 Gemini Scribe 4.10.1 - Multilingual UI, Reasoning Display & Interactions API",
+		"highlights": [
+			"🔧 Notes-only patch — 4.10.1 completes the 4.10.0 release notes (which omitted several of the features below). No functional changes; this is the full 4.10 feature set:",
+			"🌍 Localized UI in 20 languages — the entire plugin interface (settings, modals, agent view, commands, notices) is now translated, auto-selected from your Obsidian language with graceful fallback to English",
+			"🧠 Model reasoning display — the agent now shows the model's thinking inline in the tool activity block and persists it in session history, so you can follow how it reached an answer (#965)",
+			"🧪 Interactions API transport (experimental, opt-in) — a new \"Use Interactions API\" setting routes Gemini chat through Google's newer Interactions API, with full streaming of text, reasoning, tool calls, and grounded sources. Off by default and runs statelessly (your conversation history stays on your device); turn it on under Settings → Agent config → API configuration, or leave it off to keep using the proven generateContent path",
+			"🗺️ Google Maps grounding tool — the agent can ground answers in Google Maps data for place and location questions (#964)",
+			"🧠 Per-use-case thinking depth — reasoning effort is now tuned per task (completions think the least, agent chat the most) instead of one global setting, balancing latency and quality (#986)",
+			"⏳ Soft agent turn budget — long agent runs get a gentle reminder as they approach the turn limit, plus a one-shot extension, instead of stopping abruptly (#996)",
+			"📋 Copy buttons for tool calls — quickly copy tool-call parameters and results from the agent view (#960)",
+			"🔄 In-app model-list refresh — refresh the available Gemini model list without restarting (#908)",
+			"📦 More bundled skills — obsidian-markdown and json-canvas skills ship built in, with richer obsidian-bases knowledge (#963)",
+			"⬆️ Dependency refresh — @google/genai 2.10.0 and @allenhutchison/gemini-utils 1.1.0"
+		],
+		"details": "4.10.1 is a notes-only patch that completes the 4.10.0 release notes — there are no functional changes from 4.10.0. The original 4.10.0 notes covered only the Interactions API work and omitted several user-facing features that also shipped in this line. The full 4.10 feature set: the first fully localized UI (the entire plugin interface — settings, modals, the agent view, command names, and notices — is now translated into 20 languages, selected automatically from your Obsidian language with a graceful fallback to English); the agent now surfaces the model's reasoning inline in the tool activity block and persists it in session history; an experimental, opt-in Interactions API transport for Gemini behind a default-off \"Use Interactions API\" setting (Settings → Agent config → API configuration) that streams text, reasoning, tool calls, and grounded Google Search sources statelessly while keeping the proven generateContent path as the default; a Google Maps grounding tool for location questions; per-use-case reasoning depth; a soft agent turn budget with a one-shot extension; copy buttons for tool-call parameters and results; in-app refresh of the Gemini model list; and additional bundled skills (obsidian-markdown, json-canvas). Dependencies were refreshed including the Gemini SDK (@google/genai 2.10.0) and the shared gemini-utils package (1.1.0)."
+	},
 	"4.10.0": {
-		"title": "🌍 Gemini Scribe 4.10 - Multilingual UI, Reasoning Display & Interactions API",
+		"title": "🌍 Gemini Scribe 4.10.0 - Multilingual UI, Reasoning Display & Interactions API",
 		"highlights": [
 			"🌍 Localized UI in 20 languages — the entire plugin interface (settings, modals, agent view, commands, notices) is now translated, auto-selected from your Obsidian language with graceful fallback to English",
 			"🧠 Model reasoning display — the agent now shows the model's thinking inline in the tool activity block and persists it in session history, so you can follow how it reached an answer (#965)",

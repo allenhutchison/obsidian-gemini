@@ -7,9 +7,11 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
-## What's New in v4.10.0
+## What's New in v4.10.1
 
-**🌍 Gemini Scribe 4.10 - Multilingual UI, Reasoning Display & Interactions API**
+**🌍 Gemini Scribe 4.10.1 - Multilingual UI, Reasoning Display & Interactions API**
+
+_4.10.1 is a notes-only patch that completes the 4.10.0 release notes — no functional changes. The full 4.10 feature set:_
 
 - **🌍 Localized UI in 20 languages** - The entire plugin interface (settings, modals, agent view, commands, notices) is now translated, auto-selected from your Obsidian language with graceful fallback to English.
 - **🧠 Model reasoning display** - The agent now shows the model's thinking inline in the tool activity block and persists it in session history, so you can follow how it reached an answer.
