@@ -11,16 +11,17 @@ import { ModelUseCase } from '../../../../src/api/model-use-case';
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
 // us share the spy with the factory while keeping vitest's mock-hoisting safe.
 const { generateContentMock, interactionsCreateMock, interactionsService } = vi.hoisted(() => {
-	// Stands in for the Next-Gen sub-client `interactions.getClient()` returns,
-	// whose `_httpClient.fetcher` installObsidianFetch swaps for the requestUrl
-	// adapter. Starts with a sentinel default so the test can assert the swap.
-	const interactionsSubClient = { _httpClient: { fetcher: 'default-fetcher' as unknown } };
 	return {
 		generateContentMock: vi.fn(),
 		interactionsCreateMock: vi.fn(),
-		interactionsSubClient,
 		// Shared so the test can observe the getClient wrap installObsidianFetch applies.
-		interactionsService: { create: vi.fn(), getClient: () => interactionsSubClient },
+		// getClient returns a FRESH sub-client per call (each with its own `_httpClient`),
+		// mirroring the real 2.10.0 SDK — so the assertion only passes if installObsidianFetch
+		// wraps the getter, not if it mutates a single prebuilt client one time.
+		interactionsService: {
+			create: vi.fn(),
+			getClient: vi.fn(() => ({ _httpClient: { fetcher: 'default-fetcher' as unknown } })),
+		},
 	};
 });
 // Keep the create spy name the existing tests use.
