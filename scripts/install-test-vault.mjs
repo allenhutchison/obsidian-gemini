@@ -33,6 +33,13 @@ import { dirname, join } from 'node:path';
 
 const files = ['main.js', 'manifest.json', 'styles.css'];
 
+// Sentinels distinguishing "no manifest.json at all" from "manifest present but
+// unreadable/malformed". The exact-dir override must fail closed on the latter
+// (a corrupt manifest must not be mistaken for a fresh folder and overwritten),
+// while the vault scan stays tolerant of unrelated plugins' broken manifests.
+const MANIFEST_ABSENT = Symbol('manifest-absent');
+const MANIFEST_INVALID = Symbol('manifest-invalid');
+
 // Verify build artifacts exist in the current worktree.
 const missing = files.filter((f) => !existsSync(f));
 if (missing.length > 0) {
@@ -66,14 +73,19 @@ for (const dest of destinations) {
 
 console.log('\nReload the plugin in Obsidian (or use the hot-reload plugin) to pick up changes.');
 
-/** Read a plugin folder's manifest id, or null if absent/unreadable. */
-function manifestId(pluginDir) {
+/**
+ * Read a plugin folder's manifest id. Returns the id string, or a sentinel:
+ * MANIFEST_ABSENT (no manifest.json) / MANIFEST_INVALID (present but unparseable
+ * or missing a non-empty `id`).
+ */
+function readManifestId(pluginDir) {
 	const manifestPath = join(pluginDir, 'manifest.json');
-	if (!existsSync(manifestPath)) return null;
+	if (!existsSync(manifestPath)) return MANIFEST_ABSENT;
 	try {
-		return JSON.parse(readFileSync(manifestPath, 'utf8')).id ?? null;
+		const id = JSON.parse(readFileSync(manifestPath, 'utf8')).id;
+		return typeof id === 'string' && id ? id : MANIFEST_INVALID;
 	} catch {
-		return null;
+		return MANIFEST_INVALID;
 	}
 }
 
@@ -97,7 +109,9 @@ function scanVault(vaultRoot, id, { sourceLabel }) {
 	for (const entry of readdirSync(pluginsDir, { withFileTypes: true })) {
 		if (!entry.isDirectory()) continue;
 		const dir = join(pluginsDir, entry.name);
-		if (manifestId(dir) === id) matches.push(dir);
+		// Sentinels never equal the id string, so absent/invalid manifests are
+		// simply skipped here — a broken unrelated plugin won't abort the scan.
+		if (readManifestId(dir) === id) matches.push(dir);
 	}
 
 	if (matches.length === 0) {
@@ -129,19 +143,28 @@ function resolveDestinations(id) {
 			console.error(`Parent directory not found: ${dirname(pluginDirOverride)}. Check TEST_VAULT_PLUGIN_DIR.`);
 			process.exit(1);
 		}
-		// Guard against pointing at the wrong place: if the target already holds a
-		// different plugin, that's a typo/stale path, not our install dir. A target
-		// with no manifest yet (fresh folder) is allowed but called out, since the
+		// Guard against pointing at the wrong place. Fail closed when the target
+		// holds a different plugin (typo/stale path) OR an unreadable manifest (we
+		// can't verify it's ours, so we won't overwrite it). A target with no
+		// manifest yet (genuinely fresh folder) is allowed but called out, since the
 		// most common mistake is aiming at a vault Obsidian doesn't actually load.
-		const existingId = manifestId(pluginDirOverride);
-		if (existingId && existingId !== id) {
+		const existing = readManifestId(pluginDirOverride);
+		if (existing === MANIFEST_INVALID) {
 			console.error(
-				`TEST_VAULT_PLUGIN_DIR points at a folder for a different plugin ` +
-					`(found id "${existingId}", expected "${id}"): ${pluginDirOverride}`
+				`TEST_VAULT_PLUGIN_DIR has an unreadable/invalid manifest.json: ${pluginDirOverride}\n` +
+					`Refusing to overwrite — can't confirm it's the ${id} plugin. Fix or remove the ` +
+					`manifest, or point at the correct folder.`
 			);
 			process.exit(1);
 		}
-		if (existingId === null) {
+		if (typeof existing === 'string' && existing !== id) {
+			console.error(
+				`TEST_VAULT_PLUGIN_DIR points at a folder for a different plugin ` +
+					`(found id "${existing}", expected "${id}"): ${pluginDirOverride}`
+			);
+			process.exit(1);
+		}
+		if (existing === MANIFEST_ABSENT) {
 			console.warn(
 				`Warning: TEST_VAULT_PLUGIN_DIR has no existing ${id} manifest: ${pluginDirOverride}\n` +
 					`Installing anyway. If Obsidian isn't picking up changes, confirm this is the ` +
