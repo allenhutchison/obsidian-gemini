@@ -167,8 +167,12 @@ describe('grounding sources (rendered)', () => {
 		});
 
 		expect(response.rendered).toContain('<div class="search-grounding">');
-		expect(response.rendered).toContain('<a href="https://a.example/paris" target="_blank">Paris</a>');
-		expect(response.rendered).toContain('<a href="https://b.example/france" target="_blank">France</a>');
+		expect(response.rendered).toContain(
+			'<a href="https://a.example/paris" target="_blank" rel="noopener noreferrer">Paris</a>'
+		);
+		expect(response.rendered).toContain(
+			'<a href="https://b.example/france" target="_blank" rel="noopener noreferrer">France</a>'
+		);
 		// Deduped by URL — only two <li> entries.
 		expect(response.rendered.match(/<li>/g)).toHaveLength(2);
 	});
@@ -197,7 +201,9 @@ describe('grounding sources (rendered)', () => {
 		]);
 
 		expect(response.markdown).toBe('Answer');
-		expect(response.rendered).toContain('<a href="https://src.example" target="_blank">Source</a>');
+		expect(response.rendered).toContain(
+			'<a href="https://src.example" target="_blank" rel="noopener noreferrer">Source</a>'
+		);
 	});
 
 	test('falls back to the URL when a citation has no title', () => {
@@ -212,8 +218,35 @@ describe('grounding sources (rendered)', () => {
 			],
 		});
 		expect(response.rendered).toContain(
-			'<a href="https://no-title.example" target="_blank">https://no-title.example</a>'
+			'<a href="https://no-title.example" target="_blank" rel="noopener noreferrer">https://no-title.example</a>'
 		);
+	});
+
+	test('sanitizes malicious citation url/title (no HTML injection, no javascript: href)', () => {
+		const response = extractModelResponseFromInteraction({
+			steps: [
+				{
+					type: 'model_output',
+					content: [
+						{
+							type: 'text',
+							text: 'x',
+							annotations: [
+								{ type: 'url_citation', url: 'javascript:alert(1)', title: '<img src=x onerror=alert(1)>' },
+							],
+						},
+					],
+				},
+			],
+		});
+
+		// Disallowed scheme is neutralized to '#'.
+		expect(response.rendered).toContain('href="#"');
+		expect(response.rendered).not.toContain('javascript:');
+		// Title is HTML-escaped, so no raw tag survives.
+		expect(response.rendered).not.toContain('<img');
+		expect(response.rendered).toContain('&lt;img src=x onerror=alert(1)&gt;');
+		expect(response.rendered).toContain('rel="noopener noreferrer"');
 	});
 });
 

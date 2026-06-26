@@ -182,14 +182,46 @@ function collectCitationsFromContent(content: unknown, into: Map<string, Groundi
 	}
 }
 
+/** Escape a string for safe interpolation into HTML text/attribute context. */
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
+/** Return `value` only if it's an http(s) URL, else '#' — blocks javascript:/data: hrefs. */
+function safeExternalUrl(value: string): string {
+	try {
+		const parsed = new URL(value);
+		// Return the original (not parsed.toString(), which normalizes/adds a
+		// trailing slash) so the link stays faithful to the cited URL.
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? value : '#';
+	} catch {
+		return '#';
+	}
+}
+
 /**
  * Render grounding sources as the same `<div class="search-grounding">` block the
  * generateContent path emits, so the agent view renders Interactions grounding
  * identically. Returns '' when there are no sources.
+ *
+ * Citation `url`/`title` come from model/provider annotations (untrusted), so the
+ * href is restricted to http(s) and both the href and label are HTML-escaped to
+ * keep `ModelResponse.rendered` injection-safe. Links get `rel="noopener noreferrer"`.
  */
-export function renderGroundingSources(sources: GroundingSource[]): string {
+function renderGroundingSources(sources: GroundingSource[]): string {
 	if (sources.length === 0) return '';
-	const items = sources.map((s) => `<li><a href="${s.url}" target="_blank">${s.title || s.url}</a></li>`).join('');
+	const items = sources
+		.map((s) => {
+			const href = escapeHtml(safeExternalUrl(s.url));
+			const label = escapeHtml(s.title || s.url);
+			return `<li><a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a></li>`;
+		})
+		.join('');
 	return `<div class="search-grounding"><h4>Sources:</h4><ul>${items}</ul></div>`;
 }
 
