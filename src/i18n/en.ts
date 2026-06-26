@@ -2375,6 +2375,14 @@ export const en = {
 		message: 'Reject',
 		context: 'Button label to reject a generated plan without executing it.',
 	},
+	'agent.planMode.approved': {
+		message: 'Approved',
+		context: 'Non-interactive state badge shown on a plan message after the user approved the plan.',
+	},
+	'agent.planMode.rejected': {
+		message: 'Rejected',
+		context: 'Non-interactive state badge shown on a plan message after the user rejected the plan.',
+	},
 	'agent.planMode.planLabel': {
 		message: 'Plan',
 		context: 'Role label shown in the header of a plan message bubble in the agent chat.',

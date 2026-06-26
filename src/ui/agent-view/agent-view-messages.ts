@@ -290,10 +290,14 @@ export class AgentViewMessages {
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 		const sourcePath = currentSession?.historyPath || '';
 		await MarkdownRenderer.render(this.app, formatModelMessage(entry.message), content, sourcePath, this.viewContext);
+		if (entry.thoughts?.trim()) {
+			await this.renderReasoningSection(content, entry.thoughts, sourcePath);
+		}
+		this.setupImageClickHandlers(content, sourcePath);
 
 		const actionsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-actions' });
 		actionsDiv.createEl('span', {
-			text: t('agent.planMode.approve'),
+			text: t('agent.planMode.approved'),
 			cls: 'gemini-agent-plan-decision gemini-agent-plan-decision-approve',
 		});
 
@@ -328,6 +332,10 @@ export class AgentViewMessages {
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 		const sourcePath = currentSession?.historyPath || '';
 		await MarkdownRenderer.render(this.app, formatModelMessage(entry.message), content, sourcePath, this.viewContext);
+		if (entry.thoughts?.trim()) {
+			await this.renderReasoningSection(content, entry.thoughts, sourcePath);
+		}
+		this.setupImageClickHandlers(content, sourcePath);
 
 		const actionsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-actions' });
 
@@ -358,7 +366,7 @@ export class AgentViewMessages {
 				rejectBtn.disabled = true;
 				actionsDiv.empty();
 				actionsDiv.createEl('span', {
-					text: decision === 'approve' ? t('agent.planMode.approve') : t('agent.planMode.reject'),
+					text: decision === 'approve' ? t('agent.planMode.approved') : t('agent.planMode.rejected'),
 					cls: `gemini-agent-plan-decision gemini-agent-plan-decision-${decision}`,
 				});
 				resolve(decision);
