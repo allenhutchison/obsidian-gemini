@@ -275,7 +275,9 @@ export class AgentLoop {
 		const createModel =
 			options.createModelApi ??
 			(() => {
-				// Avoid a top-level import cycle: AgentFactory → tools → AgentLoop
+				// Deliberate lazy require to break the AgentFactory → tools → AgentLoop
+				// import cycle (see AGENTS.md). A top-level import here would be circular.
+				 
 				const { AgentFactory } = require('./agent-factory');
 				return AgentFactory.createAgentModel(plugin, session) as ModelApi;
 			});
