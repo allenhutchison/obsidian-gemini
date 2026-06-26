@@ -2357,6 +2357,41 @@ export const en = {
 		message: 'Agent execution canceled',
 		context: 'Notice after the user clicks the stop button to cancel the running agent.',
 	},
+	'agent.planMode.toggleAria': {
+		message: 'Toggle Plan Mode',
+		context:
+			'Aria label for the Plan Mode toggle button in the agent input bar. Plan Mode makes the agent produce a plan instead of immediately executing actions.',
+	},
+	'agent.planMode.activeTooltip': {
+		message: 'Plan Mode ON — agent will plan before acting',
+		context:
+			'Tooltip shown on the Plan Mode toggle button when Plan Mode is active. Reassures the user the agent will ask for approval before doing anything.',
+	},
+	'agent.planMode.approve': {
+		message: 'Approve & Execute',
+		context: 'Button label to approve a generated plan and begin execution.',
+	},
+	'agent.planMode.reject': {
+		message: 'Reject',
+		context: 'Button label to reject a generated plan without executing it.',
+	},
+	'agent.planMode.planLabel': {
+		message: 'Plan',
+		context: 'Role label shown in the header of a plan message bubble in the agent chat.',
+	},
+	'agent.planMode.approveNotice': {
+		message: 'Plan approved. Executing…',
+		context: 'Notice shown after the user approves an agent plan and execution begins.',
+	},
+	'agent.planMode.rejectNotice': {
+		message: 'Plan rejected.',
+		context: 'Notice shown after the user rejects an agent plan.',
+	},
+	'agent.planMode.executePrompt': {
+		message: 'I approve the plan. Please execute it now.',
+		context:
+			'Synthetic user message sent automatically after the user approves a plan in Plan Mode, prompting the agent to begin execution.',
+	},
 	'agent.session.createFailed': {
 		message: 'Failed to create agent session',
 		context: 'Error notice when creating a new chat session fails.',
@@ -2767,6 +2802,11 @@ export const en = {
 	'command.sessionSettings': {
 		message: 'Agent session settings',
 		context: 'Command palette entry that opens the settings panel for the current agent session.',
+	},
+	'command.togglePlanMode': {
+		message: 'Toggle Plan Mode',
+		context:
+			'Command palette entry that toggles Plan Mode in the agent view. In Plan Mode the agent produces a structured plan for approval before executing any actions.',
 	},
 	'ribbon.agentMode': {
 		message: 'Gemini Scribe: Agent mode',

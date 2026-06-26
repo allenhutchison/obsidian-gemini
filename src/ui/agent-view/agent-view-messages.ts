@@ -254,6 +254,73 @@ export class AgentViewMessages {
 	}
 
 	/**
+	 * Display an agent-generated plan and await user approval or rejection.
+	 * Returns 'approve' if the user clicks "Approve & Execute", 'reject' otherwise.
+	 */
+	async displayPlanMessage(
+		entry: GeminiConversationEntry,
+		currentSession: ChatSession | null
+	): Promise<'approve' | 'reject'> {
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) emptyState.remove();
+
+		const messageDiv = this.chatContainer.createDiv({
+			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-message-plan',
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: t('agent.planMode.planLabel'),
+			cls: 'gemini-agent-message-role',
+		});
+		header.createEl('span', {
+			text: entry.created_at.toLocaleTimeString(),
+			cls: 'gemini-agent-message-time',
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+		const sourcePath = currentSession?.historyPath || '';
+		await MarkdownRenderer.render(this.app, formatModelMessage(entry.message), content, sourcePath, this.viewContext);
+
+		const actionsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-actions' });
+
+		const approveBtn = actionsDiv.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-plan-approve-btn',
+		});
+		const approveIcon = approveBtn.createSpan();
+		setIcon(approveIcon, 'check');
+		approveBtn.createSpan({ text: t('agent.planMode.approve') });
+
+		const rejectBtn = actionsDiv.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-plan-reject-btn',
+		});
+		const rejectIcon = rejectBtn.createSpan();
+		setIcon(rejectIcon, 'x');
+		rejectBtn.createSpan({ text: t('agent.planMode.reject') });
+
+		this.scrollToBottom();
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+
+		return new Promise<'approve' | 'reject'>((resolve) => {
+			let resolved = false;
+			const handleDecision = (decision: 'approve' | 'reject') => {
+				if (resolved) return;
+				resolved = true;
+				approveBtn.disabled = true;
+				rejectBtn.disabled = true;
+				actionsDiv.empty();
+				actionsDiv.createEl('span', {
+					text: decision === 'approve' ? t('agent.planMode.approve') : t('agent.planMode.reject'),
+					cls: `gemini-agent-plan-decision gemini-agent-plan-decision-${decision}`,
+				});
+				resolve(decision);
+			};
+			approveBtn.addEventListener('click', () => handleDecision('approve'));
+			rejectBtn.addEventListener('click', () => handleDecision('reject'));
+		});
+	}
+
+	/**
 	 * Public entry point to render a reasoning line into an arbitrary container —
 	 * e.g. the tool group body, so reasoning interleaves with tool rows. Shares
 	 * the single row renderer so live and reload reasoning look identical.

@@ -43,6 +43,8 @@ export interface UICallbacks {
 	getAttachments: () => InlineAttachment[];
 	handleDroppedFiles: (files: TFile[]) => void;
 	switchProject: () => void;
+	togglePlanMode: () => void;
+	isPlanModeActive: () => boolean;
 }
 
 /**
@@ -53,6 +55,7 @@ export interface AgentUIElements {
 	chatContainer: HTMLElement;
 	userInput: HTMLDivElement;
 	sendButton: HTMLButtonElement;
+	planModeButton: HTMLButtonElement;
 	imagePreviewContainer: HTMLElement;
 	progressContainer: HTMLElement;
 	tokenUsageContainer: HTMLElement;
@@ -95,13 +98,14 @@ export class AgentViewUI {
 		const tokenUsageContainer = inputArea.createDiv({ cls: 'gemini-agent-token-usage' });
 		tokenUsageContainer.style.display = 'none';
 
-		const { userInput, sendButton, imagePreviewContainer } = this.createInputArea(inputArea, callbacks);
+		const { userInput, sendButton, planModeButton, imagePreviewContainer } = this.createInputArea(inputArea, callbacks);
 
 		return {
 			sessionHeader,
 			chatContainer,
 			userInput,
 			sendButton,
+			planModeButton,
 			imagePreviewContainer,
 			progressContainer,
 			tokenUsageContainer,
@@ -341,7 +345,12 @@ export class AgentViewUI {
 	createInputArea(
 		container: HTMLElement,
 		callbacks: UICallbacks
-	): { userInput: HTMLDivElement; sendButton: HTMLButtonElement; imagePreviewContainer: HTMLElement } {
+	): {
+		userInput: HTMLDivElement;
+		sendButton: HTMLButtonElement;
+		planModeButton: HTMLButtonElement;
+		imagePreviewContainer: HTMLElement;
+	} {
 		// Image preview container (shows thumbnails of attached images)
 		const imagePreviewContainer = container.createDiv({ cls: 'gemini-agent-image-preview' });
 
@@ -356,6 +365,20 @@ export class AgentViewUI {
 				'data-placeholder': t('agent.input.placeholder'),
 			},
 		}) as HTMLDivElement;
+
+		const planModeButton = inputRow.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-icon gemini-agent-plan-mode-btn',
+			attr: { 'aria-label': t('agent.planMode.toggleAria') },
+		});
+		setIcon(planModeButton, 'clipboard-list');
+		setTooltip(planModeButton, t('agent.planMode.toggleAria'));
+
+		planModeButton.addEventListener('click', () => {
+			callbacks.togglePlanMode();
+			const active = callbacks.isPlanModeActive();
+			planModeButton.toggleClass('gemini-agent-plan-mode-active', active);
+			setTooltip(planModeButton, active ? t('agent.planMode.activeTooltip') : t('agent.planMode.toggleAria'));
+		});
 
 		const sendButton = inputRow.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
@@ -872,7 +895,7 @@ export class AgentViewUI {
 			}
 		});
 
-		return { userInput, sendButton, imagePreviewContainer };
+		return { userInput, sendButton, planModeButton, imagePreviewContainer };
 	}
 
 	/**

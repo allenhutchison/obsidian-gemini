@@ -434,6 +434,63 @@ describe('SessionHistory', () => {
 			// No message content to extract, so entry is skipped
 			expect(result).toEqual([]);
 		});
+
+		it('should parse plan callouts with isPlan: true and role: model', async () => {
+			const content = [
+				'## Plan',
+				'',
+				'> [!plan]+',
+				'> Step 1: Do the thing.',
+				'> Step 2: Verify it worked.',
+				'',
+				'---',
+			].join('\n');
+
+			mockPlugin.app.vault.read.mockResolvedValue(content);
+
+			const session = createMockSession();
+			const result = await sessionHistory.getHistoryForSession(session);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].role).toBe('model');
+			expect(result[0].isPlan).toBe(true);
+			expect(result[0].message).toContain('Step 1: Do the thing.');
+		});
+
+		it('should round-trip plan entries via addEntryToSession then getHistoryForSession', async () => {
+			let storedContent = '';
+			const mockFile = makeTFile('gemini-scribe/Agent-Sessions/Test.md');
+			(mockFile as any).extension = 'md';
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.vault.read.mockImplementation(async () => storedContent);
+			mockPlugin.app.vault.modify.mockImplementation(async (_file: any, content: string) => {
+				storedContent = content;
+			});
+			mockPlugin.app.metadataCache.getFileCache.mockReturnValue(null);
+
+			const session = createMockSession();
+			const planEntry: GeminiConversationEntry = {
+				role: 'model',
+				message: '1. Analyze the request.\n2. Write the code.',
+				notePath: '',
+				created_at: new Date(),
+				isPlan: true,
+			};
+
+			await sessionHistory.addEntryToSession(session, planEntry);
+
+			// Verify persisted content uses [!plan]+ callout
+			expect(storedContent).toContain('> [!plan]+');
+			expect(storedContent).toContain('## Plan');
+
+			// Verify re-parsed entry preserves isPlan
+			const parsed = await sessionHistory.getHistoryForSession(session);
+			expect(parsed.length).toBeGreaterThanOrEqual(1);
+			const plan = parsed.find((e) => e.isPlan);
+			expect(plan).toBeDefined();
+			expect(plan!.role).toBe('model');
+			expect(plan!.isPlan).toBe(true);
+		});
 	});
 
 	describe('addEntryToSession', () => {
@@ -593,6 +650,28 @@ describe('SessionHistory', () => {
 			await sessionHistory.addEntryToSession(session, entry);
 
 			expect(session.lastActive.getTime()).toBeGreaterThanOrEqual(originalLastActive.getTime());
+		});
+
+		it('should use "Plan" as displayName for plan entries', async () => {
+			const mockFile = makeTFile('test.md');
+			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			mockPlugin.app.vault.read.mockResolvedValue('');
+
+			const session = createMockSession();
+			const entry: GeminiConversationEntry = {
+				role: 'model',
+				message: 'Step 1: Do something.\nStep 2: Done.',
+				notePath: '',
+				created_at: new Date(),
+				isPlan: true,
+			};
+
+			await sessionHistory.addEntryToSession(session, entry);
+
+			const modifyCall = mockPlugin.app.vault.modify.mock.calls[0];
+			const writtenContent = modifyCall[1] as string;
+			expect(writtenContent).toContain('## Plan');
+			expect(writtenContent).toContain('> [!plan]+');
 		});
 
 		it('should throw and log error when reading existing content fails', async () => {

@@ -38,6 +38,8 @@ export interface SendContext {
 	updateTokenUsage: () => Promise<void>;
 	isToolAllowedWithoutConfirmation: (toolName: string) => boolean;
 	allowToolWithoutConfirmation: (toolName: string) => void;
+	isPlanModeActive: () => boolean;
+	deactivatePlanMode: () => void;
 	showConfirmationInChat: (
 		tool: Tool,
 		parameters: any,
@@ -362,6 +364,136 @@ To reference an attachment in your response, use the path shown above.`;
 
 				// Create model API for this session
 				const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession!);
+
+				// Plan mode: ask model to produce a plan (no tools), await user approval,
+				// then run a follow-up execution request with full tools.
+				if (this.ctx.isPlanModeActive()) {
+					const PLAN_MODE_INSTRUCTION =
+						'\n\n## Plan Mode\n' +
+						'You are in Plan Mode. The user wants you to plan before acting. ' +
+						'Produce a detailed, step-by-step implementation plan for this task. ' +
+						'Do NOT call any tools — just outline what you would do. ' +
+						'The user will review and approve (or reject) the plan before you execute.';
+
+					const planRequest: ExtendedModelRequest = {
+						...request,
+						availableTools: [],
+						perTurnContext: (perTurn.perTurnContext || '') + PLAN_MODE_INSTRUCTION,
+					};
+
+					const planResponse = await modelApi.generateModelResponse(planRequest);
+
+					if (planResponse.usageMetadata) {
+						await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
+							usageMetadata: planResponse.usageMetadata,
+						});
+					}
+
+					this.ctx.progress.hide();
+
+					if (!planResponse.markdown?.trim()) {
+						new Notice(t('agent.send.emptyResponse'));
+						return;
+					}
+
+					const planEntry: GeminiConversationEntry = {
+						role: 'model',
+						message: planResponse.markdown,
+						notePath: '',
+						created_at: new Date(),
+						model: modelName,
+						isPlan: true,
+						...(planResponse.thoughts?.trim() ? { thoughts: planResponse.thoughts } : {}),
+					};
+
+					const decision = await this.ctx.messages.displayPlanMessage(planEntry, currentSession);
+
+					if (decision === 'reject') {
+						new Notice(t('agent.planMode.rejectNotice'));
+						this.ctx.deactivatePlanMode();
+						return;
+					}
+
+					// Approved — persist plan, deactivate plan mode, execute
+					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, planEntry);
+					new Notice(t('agent.planMode.approveNotice'));
+					this.ctx.deactivatePlanMode();
+
+					const executePrompt = t('agent.planMode.executePrompt');
+					const approvalEntry: GeminiConversationEntry = {
+						role: 'user',
+						message: executePrompt,
+						notePath: '',
+						created_at: new Date(),
+					};
+					await this.ctx.displayMessage(approvalEntry);
+					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, approvalEntry);
+
+					this.ctx.progress.show(t('agent.progress.thinking'), 'thinking');
+
+					const execHistory = await this.ctx.plugin.sessionHistory.getHistoryForSession(currentSession);
+					const execCompaction = await this.ctx.plugin.contextManager.prepareHistory(execHistory as any, modelName);
+
+					const execRequest: ExtendedModelRequest = {
+						...request,
+						userMessage: executePrompt,
+						conversationHistory: execCompaction.compactedHistory,
+					};
+
+					const execResponse = await modelApi.generateModelResponse(execRequest);
+
+					if (execResponse.usageMetadata) {
+						await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
+							usageMetadata: execResponse.usageMetadata,
+						});
+					}
+
+					this.ctx.progress.update(t('agent.progress.processing'), 'waiting');
+
+					const execThoughts = execResponse.thoughts?.trim() ? execResponse.thoughts : undefined;
+
+					if (execResponse.toolCalls && execResponse.toolCalls.length > 0) {
+						await this.ctx.tools.handleToolCalls(
+							execResponse.toolCalls,
+							executePrompt,
+							execCompaction.compactedHistory,
+							approvalEntry,
+							customPrompt,
+							perTurn,
+							execThoughts
+						);
+					} else if (execResponse.markdown?.trim()) {
+						const execEntry: GeminiConversationEntry = {
+							role: 'model',
+							message: execResponse.markdown,
+							notePath: '',
+							created_at: new Date(),
+							model: modelName,
+							...(execThoughts ? { thoughts: execThoughts } : {}),
+						};
+						await this.ctx.displayMessage(execEntry);
+						await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, execEntry);
+						this.ctx.progress.hide();
+					} else if (execThoughts) {
+						const reasoningEntry: GeminiConversationEntry = {
+							role: 'model',
+							message: '',
+							notePath: '',
+							created_at: new Date(),
+							model: modelName,
+							thoughts: execThoughts,
+						};
+						await this.ctx.displayMessage(reasoningEntry);
+						await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
+						this.ctx.progress.hide();
+					} else {
+						this.ctx.plugin.logger.warn('Execution model returned empty response in plan mode');
+						new Notice(t('agent.send.emptyResponse'));
+						this.ctx.progress.hide();
+					}
+
+					return;
+				}
 
 				// Check if streaming is supported and enabled
 				if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {

@@ -59,6 +59,8 @@ export class AgentView extends ItemView {
 	private shelf!: AgentViewShelf;
 	private tokenUsageContainer!: HTMLElement;
 	private skipNextFocusSelectionCapture = false;
+	private planModeActive = false;
+	private planModeButton: HTMLButtonElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ObsidianGemini) {
 		super(leaf);
@@ -217,6 +219,7 @@ export class AgentView extends ItemView {
 		this.chatContainer = elements.chatContainer;
 		this.userInput = elements.userInput;
 		this.sendButton = elements.sendButton;
+		this.planModeButton = elements.planModeButton;
 		this.tokenUsageContainer = elements.tokenUsageContainer;
 
 		// Snapshot the editor selection before/after focus transfers to the agent
@@ -329,6 +332,8 @@ export class AgentView extends ItemView {
 			updateTokenUsage: () => this.updateTokenUsage(),
 			isToolAllowedWithoutConfirmation: (toolName: string) => this.isToolAllowedWithoutConfirmation(toolName),
 			allowToolWithoutConfirmation: (toolName: string) => this.allowToolWithoutConfirmation(toolName),
+			isPlanModeActive: () => this.planModeActive,
+			deactivatePlanMode: () => this.deactivatePlanMode(),
 			showConfirmationInChat: (tool, parameters, executionId, diffContext) =>
 				this.showConfirmationInChat(tool, parameters, executionId, diffContext),
 		});
@@ -719,7 +724,23 @@ export class AgentView extends ItemView {
 			getAttachments: () => this.shelf?.getPendingAttachments() || [],
 			handleDroppedFiles: (files: TFile[]) => this.attachments.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
+			togglePlanMode: () => this.togglePlanMode(),
+			isPlanModeActive: () => this.planModeActive,
 		};
+	}
+
+	togglePlanMode(): void {
+		this.planModeActive = !this.planModeActive;
+		if (this.planModeButton) {
+			this.planModeButton.toggleClass('gemini-agent-plan-mode-active', this.planModeActive);
+		}
+	}
+
+	private deactivatePlanMode(): void {
+		this.planModeActive = false;
+		if (this.planModeButton) {
+			this.planModeButton.removeClass('gemini-agent-plan-mode-active');
+		}
 	}
 
 	/**

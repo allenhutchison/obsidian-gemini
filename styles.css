@@ -1444,6 +1444,79 @@ If your plugin does not need CSS, delete this file.
 	cursor: not-allowed;
 }
 
+/* Plan mode button */
+.gemini-agent-plan-mode-btn {
+	color: var(--text-muted);
+	transition: color 0.15s ease;
+}
+
+.gemini-agent-plan-mode-btn:hover {
+	color: var(--text-normal);
+}
+
+.gemini-agent-plan-mode-active {
+	color: var(--interactive-accent) !important;
+	background-color: var(--background-modifier-active-hover);
+	border-radius: var(--radius-s);
+}
+
+/* Plan message bubble */
+.gemini-agent-message-plan .gemini-agent-message-content {
+	background-color: var(--background-secondary);
+	margin-right: var(--size-4-8);
+	border-bottom-left-radius: var(--radius-s);
+	border: 2px solid var(--interactive-accent);
+}
+
+.gemini-agent-message-plan .gemini-agent-message-role {
+	color: var(--interactive-accent);
+}
+
+/* Plan action buttons row */
+.gemini-agent-plan-actions {
+	display: flex;
+	gap: var(--size-2-2);
+	padding: var(--size-2-2) var(--size-2-2) 0;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.gemini-agent-plan-approve-btn {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+}
+
+.gemini-agent-plan-reject-btn {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	background-color: transparent;
+	color: var(--text-muted);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-plan-reject-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+/* Decision label shown after button click */
+.gemini-agent-plan-decision {
+	font-size: var(--font-smallest);
+	font-style: italic;
+	color: var(--text-muted);
+	padding: var(--size-2-1) 0;
+}
+
+.gemini-agent-plan-decision-approve {
+	color: var(--color-green, #10b981);
+}
+
+.gemini-agent-plan-decision-rejected {
+	color: var(--text-faint);
+}
+
 /* Stop button styling - red/warning color scheme
  * Uses Obsidian's --color-red variable which adapts to light/dark themes
  * Fallback colors provided for custom themes that may not define these variables

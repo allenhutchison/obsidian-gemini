@@ -29,7 +29,9 @@
 > | Context | {{context}} |
 {{/if}}
 
-{{#if (eq role "User")}}
+{{#if isPlan}}
+> [!plan]+
+{{else if (eq role "User")}}
 > [!user]+
 {{else}}
 > [!assistant]+

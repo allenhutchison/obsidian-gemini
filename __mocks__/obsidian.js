@@ -115,6 +115,7 @@ export const MarkdownRenderer = {
 };
 
 export const setIcon = vi.fn();
+export const setTooltip = vi.fn();
 export const Notice = vi.fn();
 export const requestUrl = vi.fn();
 export const getLanguage = vi.fn(() => 'en');
