@@ -162,7 +162,7 @@ export class SessionHistory {
 
 		if (historyFile instanceof TFile) {
 			try {
-				await this.plugin.app.vault.delete(historyFile);
+				await this.plugin.app.fileManager.trashFile(historyFile);
 			} catch (error) {
 				this.plugin.logger.error(`Error deleting session history ${historyPath}:`, error);
 				throw error;

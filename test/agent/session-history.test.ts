@@ -62,6 +62,7 @@ function createMockPlugin(overrides: any = {}): any {
 					const frontmatter: any = {};
 					callback(frontmatter);
 				}),
+				trashFile: vi.fn().mockResolvedValue(undefined),
 			},
 		},
 		settings: {
@@ -1006,7 +1007,7 @@ describe('SessionHistory', () => {
 			const session = createMockSession();
 			await sessionHistory.deleteSessionHistory(session);
 
-			expect(mockPlugin.app.vault.delete).toHaveBeenCalledWith(mockFile);
+			expect(mockPlugin.app.fileManager.trashFile).toHaveBeenCalledWith(mockFile);
 		});
 
 		it('should be a no-op when file does not exist', async () => {
@@ -1015,13 +1016,13 @@ describe('SessionHistory', () => {
 			const session = createMockSession();
 			await sessionHistory.deleteSessionHistory(session);
 
-			expect(mockPlugin.app.vault.delete).not.toHaveBeenCalled();
+			expect(mockPlugin.app.fileManager.trashFile).not.toHaveBeenCalled();
 		});
 
 		it('should throw and log error on delete failure', async () => {
 			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
-			mockPlugin.app.vault.delete.mockRejectedValue(new Error('delete failed'));
+			mockPlugin.app.fileManager.trashFile.mockRejectedValue(new Error('delete failed'));
 
 			const session = createMockSession();
 

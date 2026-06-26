@@ -34,6 +34,7 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 			submit: vi.fn().mockReturnValue('bg-task-1'),
 		},
 		app: {
+			fileManager: { trashFile: vi.fn().mockResolvedValue(undefined) },
 			vault: {
 				getMarkdownFiles: vi.fn().mockReturnValue([]),
 				on: vi.fn(),
@@ -1196,7 +1197,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
 			plugin.app.vault.read = vi.fn().mockResolvedValue('Delete me.');
 			plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValue(fakeFile);
-			plugin.app.vault.delete = vi.fn().mockResolvedValue(undefined);
+			plugin.app.fileManager.trashFile = vi.fn().mockResolvedValue(undefined);
 
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
@@ -1223,7 +1224,7 @@ describe('ScheduledTaskManager', () => {
 			const { manager, plugin } = await makeManagerWithTask();
 			await manager.deleteTask('to-delete');
 
-			expect(plugin.app.vault.delete).toHaveBeenCalled();
+			expect(plugin.app.fileManager.trashFile).toHaveBeenCalled();
 		});
 
 		it('throws when the slug is not found', async () => {
@@ -1820,7 +1821,7 @@ describe('ScheduledTaskManager', () => {
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
 			plugin.app.vault.read = vi.fn().mockResolvedValue('Prompt.');
 			plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValue(null); // file already gone
-			plugin.app.vault.delete = vi.fn().mockResolvedValue(undefined);
+			plugin.app.fileManager.trashFile = vi.fn().mockResolvedValue(undefined);
 
 			const manager = new ScheduledTaskManager(plugin);
 			await manager.initialize();
@@ -1828,7 +1829,7 @@ describe('ScheduledTaskManager', () => {
 			await manager.deleteTask('gone');
 
 			expect(manager.getTasks()).toHaveLength(0);
-			expect(plugin.app.vault.delete).not.toHaveBeenCalled(); // no file to delete
+			expect(plugin.app.fileManager.trashFile).not.toHaveBeenCalled(); // no file to delete
 		});
 	});
 });

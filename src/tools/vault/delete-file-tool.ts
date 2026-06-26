@@ -15,7 +15,7 @@ export class DeleteFileTool implements Tool {
 	category = ToolCategory.VAULT_OPERATIONS;
 	classification = ToolClassification.DESTRUCTIVE;
 	description =
-		'Permanently delete a file or folder from the vault. WARNING: This action cannot be undone! When deleting a folder, all contents are removed recursively. Returns the path and type (file/folder) that was deleted. Path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Always confirm with the user before executing this destructive operation.';
+		'Delete a file or folder from the vault. The file is removed according to the user\'s Obsidian "Deleted files" setting — moved to the system trash, moved to the vault\'s .trash folder, or (if the user configured it) permanently deleted — so recoverability is not guaranteed. When deleting a folder, all contents are removed recursively. Returns the path and type (file/folder) that was deleted. Path can be a full path, filename, or wikilink (e.g., "[[My Note]]") - wikilinks will be automatically resolved. Always confirm with the user before executing this destructive operation.';
 	requiresConfirmation = true;
 
 	parameters = {
@@ -64,7 +64,7 @@ export class DeleteFileTool implements Tool {
 				};
 			}
 
-			await plugin.app.vault.delete(item);
+			await plugin.app.fileManager.trashFile(item);
 
 			return {
 				success: true,

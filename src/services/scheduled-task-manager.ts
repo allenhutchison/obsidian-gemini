@@ -574,7 +574,7 @@ export class ScheduledTaskManager {
 
 		const file = this.plugin.app.vault.getAbstractFileByPath(task.filePath);
 		if (file) {
-			await this.plugin.app.vault.delete(file);
+			await this.plugin.app.fileManager.trashFile(file);
 		}
 
 		this.tasks.delete(slug);

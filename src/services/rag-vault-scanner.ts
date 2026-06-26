@@ -217,7 +217,7 @@ export class RagVaultScanner {
 			// Delete cache file
 			const file = this.plugin.app.vault.getAbstractFileByPath(this.ragCache.cachePath);
 			if (file instanceof TFile) {
-				await this.plugin.app.vault.delete(file);
+				await this.plugin.app.fileManager.trashFile(file);
 			}
 
 			this.ragCache.cache = null;

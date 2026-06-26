@@ -3247,7 +3247,8 @@ export const en = {
 			'Confirmation prompt shown before the AI writes a file, with a truncated preview of the new content. {path} is the file path.',
 	},
 	'tool.confirm.deleteFile': {
-		message: 'Delete file or folder: {path}\n\nThis action cannot be undone.',
+		message:
+			'Delete file or folder: {path}\n\nThis follows your Obsidian "Deleted files" setting (move to system trash, the vault\'s .trash folder, or permanent deletion).',
 		context: 'Confirmation prompt shown before the AI deletes a file or folder. {path} is the vault path.',
 	},
 	'tool.confirm.createFolder': {

@@ -221,7 +221,7 @@ export class ToolExecutionEngine {
 		confirmationProvider: IConfirmationProvider
 	): Promise<ConfirmationResult> {
 		// Generate unique execution ID for tracking
-		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+		const executionId = `tool-confirm-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
 		// Build diff context based on the tool's shape
 		const diffContext = await this.buildDiffContext(tool, parameters);
