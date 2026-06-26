@@ -67,9 +67,14 @@ export class AgentViewSend {
 	 * produce a plan first; the user approves or rejects before tools run.
 	 */
 	public togglePlanMode(): void {
-		this.isPlanModeActive = !this.isPlanModeActive;
+		this.setPlanModeActive(!this.isPlanModeActive);
+	}
+
+	private setPlanModeActive(active: boolean): void {
+		this.isPlanModeActive = active;
 		const btn = this.ctx.getPlanModeButton();
 		btn.toggleClass('gemini-agent-plan-btn-active', this.isPlanModeActive);
+		btn.setAttribute('aria-pressed', String(this.isPlanModeActive));
 		btn.setAttribute('aria-label', t('agent.planMode.toggleAria'));
 	}
 
@@ -118,6 +123,11 @@ export class AgentViewSend {
 			planText = response.markdown || '';
 		}
 
+		if (this.isCancellationRequested()) {
+			this.ctx.progress.hide();
+			return null;
+		}
+
 		this.ctx.progress.hide();
 
 		if (!planText.trim()) {
@@ -126,6 +136,7 @@ export class AgentViewSend {
 		}
 
 		const approved = await this.ctx.messages.showPlanApproval(planText);
+		if (this.isCancellationRequested()) return null;
 		if (!approved) {
 			new Notice(t('agent.planMode.rejectedNotice'));
 			return null;
@@ -465,12 +476,17 @@ To reference an attachment in your response, use the path shown above.`;
 				let messageToSend = message;
 				let historyToSend = compactionResult.compactedHistory;
 				if (this.isPlanModeActive) {
-					const planResult = await this.conductPlanApproval(
-						modelApi,
-						request,
-						currentSession,
-						compactionResult.compactedHistory
-					);
+					let planResult: { proceedMessage: string; updatedHistory: Content[] } | null = null;
+					try {
+						planResult = await this.conductPlanApproval(
+							modelApi,
+							request,
+							currentSession,
+							compactionResult.compactedHistory
+						);
+					} finally {
+						this.setPlanModeActive(false);
+					}
 					if (!planResult) {
 						// Plan rejected or empty — abort this turn
 						this.ctx.progress.hide();

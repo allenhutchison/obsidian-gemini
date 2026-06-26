@@ -201,7 +201,7 @@ Plan Mode lets you review exactly what the agent intends to do before it acts. W
 
 **Enabling Plan Mode:**
 
-- Click the **clipboard-list icon** in the input toolbar (next to the send button) to toggle Plan Mode on/off. The icon turns blue when active.
+- Click the **map icon** in the input toolbar (next to the send button) to toggle Plan Mode on/off. The icon turns blue when active.
 - Or use the Command Palette: **"Gemini Scribe: Toggle Plan Mode"**.
 
 **How it works:**

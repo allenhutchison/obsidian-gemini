@@ -781,36 +781,38 @@ export class AgentViewMessages {
 	 * Resolves true when the user approves, false when they reject.
 	 */
 	public async showPlanApproval(planText: string): Promise<boolean> {
+		const messageDiv = this.chatContainer.createDiv({
+			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: t('agent.planMode.headerLabel'),
+			cls: 'gemini-agent-message-role gemini-agent-plan-role',
+		});
+		header.createEl('span', {
+			text: new Date().toLocaleTimeString(),
+			cls: 'gemini-agent-message-time',
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+		await MarkdownRenderer.render(this.app, formatModelMessage(planText), content, '', this.viewContext);
+
+		const buttonsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-buttons' });
+
+		const approveBtn = buttonsDiv.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-primary',
+			text: t('agent.planMode.approveBtn'),
+		});
+		const rejectBtn = buttonsDiv.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-secondary',
+			text: t('agent.planMode.rejectBtn'),
+		});
+
+		this.debouncedScrollToBottom();
+
 		return new Promise((resolve) => {
 			let resolved = false;
-
-			const messageDiv = this.chatContainer.createDiv({
-				cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
-			});
-
-			const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
-			header.createEl('span', {
-				text: t('agent.planMode.headerLabel'),
-				cls: 'gemini-agent-message-role gemini-agent-plan-role',
-			});
-			header.createEl('span', {
-				text: new Date().toLocaleTimeString(),
-				cls: 'gemini-agent-message-time',
-			});
-
-			const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
-			MarkdownRenderer.render(this.app, formatModelMessage(planText), content, '', this.viewContext);
-
-			const buttonsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-buttons' });
-
-			const approveBtn = buttonsDiv.createEl('button', {
-				cls: 'gemini-agent-btn gemini-agent-btn-primary',
-				text: t('agent.planMode.approveBtn'),
-			});
-			const rejectBtn = buttonsDiv.createEl('button', {
-				cls: 'gemini-agent-btn gemini-agent-btn-secondary',
-				text: t('agent.planMode.rejectBtn'),
-			});
 
 			const done = (approved: boolean) => {
 				if (resolved) return;
@@ -824,8 +826,6 @@ export class AgentViewMessages {
 
 			approveBtn.addEventListener('click', () => done(true));
 			rejectBtn.addEventListener('click', () => done(false));
-
-			this.debouncedScrollToBottom();
 		});
 	}
 

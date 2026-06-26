@@ -1144,6 +1144,7 @@ describe('SessionHistory', () => {
 			expect(parsed[0].role).toBe('model');
 			expect(parsed[0].message).toContain('First step');
 			expect(parsed[0].metadata?.entryType).toBe('plan');
+			expect(parsed[0].isPlan).toBe(true);
 		});
 
 		it('parses a plan callout from a stored history fixture', async () => {
@@ -1180,6 +1181,7 @@ describe('SessionHistory', () => {
 			expect(result[0].role).toBe('model');
 			expect(result[0].message).toContain('Step one');
 			expect(result[0].metadata?.entryType).toBe('plan');
+			expect(result[0].isPlan).toBe(true);
 		});
 	});
 
