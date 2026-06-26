@@ -7,9 +7,15 @@ Gemini Scribe is an Obsidian plugin that integrates Google's Gemini AI models, p
 > - **Google Gemini (cloud)** — requires a Gemini API key (free tier available at [Google AI Studio](https://aistudio.google.com/apikey)).
 > - **Ollama (local)** — runs locally with no API key; install [Ollama](https://ollama.com), pull a model, and select it in settings. See [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for the feature-parity table.
 
-## What's New in v4.9.1
+## What's New in v4.10.0
 
-**🔧 Gemini Scribe 4.9.1 - Vault Context Fix**
+**🧪 Gemini Scribe 4.10 - Interactions API (opt-in), Per-Use-Case Thinking**
+
+- **🧪 Interactions API transport (experimental, opt-in)** - New **Use Interactions API** setting routes Gemini chat through Google's newer Interactions API, with full streaming of text, reasoning, tool calls, and grounded sources. Off by default and runs statelessly (your conversation history stays on your device); enable it under **Settings → Agent config → API configuration**, or leave it off to keep using the proven `generateContent` path.
+- **🧠 Per-use-case thinking depth** - Reasoning effort is now tuned per task (completions think the least, agent chat the most) instead of one global setting, balancing latency and quality.
+- **⏳ Soft agent turn budget** - Long agent runs get a gentle reminder as they approach the turn limit, plus a one-shot extension, instead of stopping abruptly.
+
+**Previous Updates (v4.9.1):**
 
 - **🗂️ Initialize vault context fix** - Fixed the "Initialize vault context" / "Update vault context" button, which was sending a malformed model request and failing to generate AGENTS.md. The feature now works correctly.
 
