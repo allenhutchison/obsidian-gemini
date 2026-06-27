@@ -97,9 +97,16 @@ export class SessionHistory {
 		// message (reasoning produced before the model decided to call tools).
 		const thoughtLines = entry.thoughts?.trim() ? entry.thoughts.split('\n') : null;
 
-		// Use configured user name for user entries, capitalized role for model
+		// Use configured user name for user entries, "Plan" for plan entries, capitalized role for model
 		const userDisplayName = (this.plugin.settings.userName ?? '').trim();
-		const displayName = entry.role === 'user' ? userDisplayName || 'User' : role;
+		let displayName: string;
+		if (entry.isPlan) {
+			displayName = 'Plan';
+		} else if (entry.role === 'user') {
+			displayName = userDisplayName || 'User';
+		} else {
+			displayName = role;
+		}
 
 		const entryTimestamp = explicitTimestamp ?? new Date();
 		entry.created_at = entryTimestamp;
@@ -110,6 +117,7 @@ export class SessionHistory {
 			hasMessage: hasMessage,
 			messageLines: messageLines,
 			thoughtLines: thoughtLines,
+			isPlan: entry.isPlan ?? false,
 			timestamp: formatLocalTimestamp(entryTimestamp),
 			pluginVersion: this.plugin.manifest.version,
 			model: entry.model,
@@ -232,25 +240,28 @@ export class SessionHistory {
 			let lastInSection: GeminiConversationEntry | null = null;
 
 			for (let i = 0; i < lines.length; i++) {
-				const messageMatch = lines[i].match(/^> \[!(user|assistant)\]\+\s*$/);
+				const messageMatch = lines[i].match(/^> \[!(user|assistant|plan)\]\+\s*$/);
 				if (messageMatch) {
-					const role = messageMatch[1] === 'user' ? 'user' : 'model';
+					const calloutType = messageMatch[1];
+					const role = calloutType === 'user' ? 'user' : 'model';
 					const message = this.extractCalloutBody(lines, i).join('\n').trim();
 					if (!message) continue;
 
+					const metadata: Record<string, any> = {};
+					const isPlanCallout = calloutType === 'plan';
+					if (!isPlanCallout && toolNameMatch) {
+						metadata.toolName = toolNameMatch[1];
+						if (toolStatusMatch) metadata.toolStatus = toolStatusMatch[1].toLowerCase();
+					}
 					const entry: GeminiConversationEntry = {
 						role,
 						message,
 						notePath: '',
 						created_at: sectionTimestamp,
 						model: sectionModel,
+						...(isPlanCallout ? { isPlan: true } : {}),
+						...(Object.keys(metadata).length > 0 ? { metadata } : {}),
 					};
-					if (toolNameMatch) {
-						entry.metadata = {
-							toolName: toolNameMatch[1],
-							toolStatus: toolStatusMatch ? toolStatusMatch[1].toLowerCase() : undefined,
-						};
-					}
 					entries.push(entry);
 					lastInSection = entry;
 					continue;

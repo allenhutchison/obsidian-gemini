@@ -33,6 +33,7 @@ export interface UICallbacks {
 	sendMessage: () => Promise<void>;
 	stopAgentLoop: () => void;
 	removeContextFile: (file: TFile) => void;
+	togglePlanMode: () => void;
 
 	updateSessionHeader: () => void;
 	updateSessionMetadata: () => Promise<void>;
@@ -53,6 +54,7 @@ export interface AgentUIElements {
 	chatContainer: HTMLElement;
 	userInput: HTMLDivElement;
 	sendButton: HTMLButtonElement;
+	planModeButton: HTMLButtonElement;
 	imagePreviewContainer: HTMLElement;
 	progressContainer: HTMLElement;
 	tokenUsageContainer: HTMLElement;
@@ -95,13 +97,14 @@ export class AgentViewUI {
 		const tokenUsageContainer = inputArea.createDiv({ cls: 'gemini-agent-token-usage' });
 		tokenUsageContainer.style.display = 'none';
 
-		const { userInput, sendButton, imagePreviewContainer } = this.createInputArea(inputArea, callbacks);
+		const { userInput, sendButton, planModeButton, imagePreviewContainer } = this.createInputArea(inputArea, callbacks);
 
 		return {
 			sessionHeader,
 			chatContainer,
 			userInput,
 			sendButton,
+			planModeButton,
 			imagePreviewContainer,
 			progressContainer,
 			tokenUsageContainer,
@@ -341,7 +344,12 @@ export class AgentViewUI {
 	createInputArea(
 		container: HTMLElement,
 		callbacks: UICallbacks
-	): { userInput: HTMLDivElement; sendButton: HTMLButtonElement; imagePreviewContainer: HTMLElement } {
+	): {
+		userInput: HTMLDivElement;
+		sendButton: HTMLButtonElement;
+		planModeButton: HTMLButtonElement;
+		imagePreviewContainer: HTMLElement;
+	} {
 		// Image preview container (shows thumbnails of attached images)
 		const imagePreviewContainer = container.createDiv({ cls: 'gemini-agent-image-preview' });
 
@@ -356,6 +364,21 @@ export class AgentViewUI {
 				'data-placeholder': t('agent.input.placeholder'),
 			},
 		}) as HTMLDivElement;
+
+		// Quiet-when-off, loud-when-armed: at rest this is a borderless icon; when
+		// active it becomes an accent pill that reveals the "Plan" label (the label
+		// is hidden via CSS until then, so it costs no horizontal space at rest).
+		const planModeButton = inputRow.createEl('button', {
+			cls: 'clickable-icon gemini-agent-plan-btn',
+			attr: { 'aria-label': t('agent.planMode.toggleAria') },
+		});
+		const planIcon = planModeButton.createSpan({ cls: 'gemini-agent-plan-btn-icon' });
+		setIcon(planIcon, 'list-checks');
+		planModeButton.createSpan({ cls: 'gemini-agent-plan-btn-label', text: t('agent.planMode.label') });
+
+		planModeButton.addEventListener('click', () => {
+			callbacks.togglePlanMode();
+		});
 
 		const sendButton = inputRow.createEl('button', {
 			cls: 'gemini-agent-btn gemini-agent-btn-primary gemini-agent-send-btn',
@@ -872,7 +895,7 @@ export class AgentViewUI {
 			}
 		});
 
-		return { userInput, sendButton, imagePreviewContainer };
+		return { userInput, sendButton, planModeButton, imagePreviewContainer };
 	}
 
 	/**

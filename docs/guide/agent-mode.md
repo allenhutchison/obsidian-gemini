@@ -195,6 +195,32 @@ When you use a thinking model (e.g. Gemini 2.5 Pro), the agent captures the mode
 - Reasoning is persisted to the session history file as a collapsed `[!reasoning]` callout, so it round-trips when you reopen a past session — making session files a faithful, self-contained record of the whole interaction: your request → reasoning → tools → answer.
 - Sessions created before this feature simply have no reasoning lines — nothing changes for them.
 
+### Plan Mode
+
+Plan Mode lets you review exactly what the agent intends to do before it acts. When active, the agent first produces a step-by-step implementation plan (with no tool calls) for you to approve or reject — only after approval does it proceed with full tool access.
+
+**Enabling Plan Mode:**
+
+- Click the **checklist icon** in the input toolbar (next to the send button) to toggle Plan Mode on/off. When active, it becomes an accent-colored **Plan** pill.
+- Or use the Command Palette: **"Gemini Scribe: Toggle Plan Mode"**.
+
+**How it works:**
+
+1. With Plan Mode active, type your request and send it as normal.
+2. The agent generates a plan in response — it cannot call any tools yet.
+3. The plan appears in the chat with **Approve & Execute** and **Reject** buttons.
+4. **Approve & Execute**: The plan is saved to session history and the agent proceeds with the full request (tools enabled). The original plan remains visible in the session as context.
+5. **Reject**: The request is cancelled and Plan Mode is automatically turned off.
+
+**When to use Plan Mode:**
+
+- Before bulk vault operations (moving files, rewriting notes) where you want to preview the agent's approach
+- When working with sensitive or important files
+- For complex multi-step workflows where you want to verify the agent's understanding before it acts
+- Any time you want to preview and potentially redirect the agent's strategy
+
+Plan Mode is purely opt-in and per-message — you can toggle it on for a single complex request and turn it off for routine follow-ups.
+
 ## Available Tools
 
 ### Read-Only Tools
@@ -684,6 +710,26 @@ Add relevant files as context for better results:
 - Review session history for insights
 
 ## Advanced Usage
+
+### Plan Mode
+
+Plan mode lets you review what the agent intends to do before any tools are executed. This is useful for high-stakes workflows where you want to understand and approve the approach before the agent starts making changes.
+
+**How to use Plan Mode:**
+
+1. Click the **checklist icon** in the input toolbar to toggle plan mode on. When active it becomes an accent-colored **Plan** pill.
+2. Type your request and send it as normal.
+3. The agent responds with a plan describing the steps it will take — but does not execute anything yet.
+4. Review the plan. Click **Approve & Execute** to proceed with full tool access, or **Reject** to cancel without changes.
+5. After approval, the agent executes the plan automatically. Plan mode turns off after each request.
+
+**When to use Plan Mode:**
+
+- Before bulk operations (renaming, reorganizing, or deleting many files)
+- When trying a new complex workflow for the first time
+- Whenever you want to verify the agent's interpretation before it acts
+
+Plan entries are saved to session history with a distinct purple border so you can review approved plans later.
 
 ### Multi-Step Workflows
 

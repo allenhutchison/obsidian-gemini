@@ -50,6 +50,7 @@ export class AgentView extends ItemView {
 	private chatContainer!: HTMLElement;
 	private userInput!: HTMLDivElement;
 	private sendButton!: HTMLButtonElement;
+	private planModeButton!: HTMLButtonElement;
 	private sessionHeader!: HTMLElement;
 
 	// State
@@ -217,6 +218,7 @@ export class AgentView extends ItemView {
 		this.chatContainer = elements.chatContainer;
 		this.userInput = elements.userInput;
 		this.sendButton = elements.sendButton;
+		this.planModeButton = elements.planModeButton;
 		this.tokenUsageContainer = elements.tokenUsageContainer;
 
 		// Snapshot the editor selection before/after focus transfers to the agent
@@ -320,6 +322,7 @@ export class AgentView extends ItemView {
 			getShelf: () => this.shelf,
 			getUserInput: () => this.userInput,
 			getSendButton: () => this.sendButton,
+			getPlanModeButton: () => this.planModeButton,
 			getChatContainer: () => this.chatContainer,
 			progress: this.progress,
 			messages: this.messages,
@@ -709,6 +712,7 @@ export class AgentView extends ItemView {
 			createNewSession: () => this.createNewSession(),
 			sendMessage: () => this.send.sendMessage(),
 			stopAgentLoop: () => this.send.stopAgentLoop(),
+			togglePlanMode: () => this.send.togglePlanMode(),
 			removeContextFile: (file: TFile) => this.removeContextFile(file),
 			updateSessionHeader: () => this.updateSessionHeader(),
 			updateSessionMetadata: () => this.updateSessionMetadata(),
@@ -720,6 +724,10 @@ export class AgentView extends ItemView {
 			handleDroppedFiles: (files: TFile[]) => this.attachments.handleDroppedFiles(files),
 			switchProject: () => this.switchProject(),
 		};
+	}
+
+	public togglePlanMode(): void {
+		this.send?.togglePlanMode();
 	}
 
 	/**

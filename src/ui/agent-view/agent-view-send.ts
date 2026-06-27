@@ -1,14 +1,16 @@
 import { Notice, setIcon, App } from 'obsidian';
+import type { Content } from '@google/genai';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { ToolExecutionContext } from '../../tools/types';
-import { ExtendedModelRequest } from '../../api/interfaces/model-api';
+import { ExtendedModelRequest, ModelApi, StreamChunk } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { getErrorMessage } from '../../utils/error-utils';
 import { formatLocalTimestamp } from '../../utils/format-utils';
 import { buildTurnPreamble } from '../../utils/turn-preamble';
 import { InlineAttachment } from './inline-attachment';
+import planModeInstructionContent from '../../../prompts/planModeInstruction.hbs';
 import { AgentViewProgress } from './agent-view-progress';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewTools } from './agent-view-tools';
@@ -29,6 +31,7 @@ export interface SendContext {
 	getShelf: () => AgentViewShelf;
 	getUserInput: () => HTMLDivElement;
 	getSendButton: () => HTMLButtonElement;
+	getPlanModeButton: () => HTMLButtonElement;
 	getChatContainer: () => HTMLElement;
 	progress: AgentViewProgress;
 	messages: AgentViewMessages;
@@ -56,8 +59,120 @@ export class AgentViewSend {
 	private isExecuting = false;
 	private turnToolCallCount = 0;
 	private cancellationRequested = false;
+	private isPlanModeActive = false;
 
 	constructor(private ctx: SendContext) {}
+
+	/**
+	 * Toggle plan mode on/off. When active, the next send will ask the model to
+	 * produce a plan first; the user approves or rejects before tools run.
+	 */
+	public togglePlanMode(): void {
+		this.setPlanModeActive(!this.isPlanModeActive);
+	}
+
+	private setPlanModeActive(active: boolean): void {
+		this.isPlanModeActive = active;
+		const btn = this.ctx.getPlanModeButton();
+		btn.toggleClass('gemini-agent-plan-btn-active', this.isPlanModeActive);
+		btn.setAttribute('aria-pressed', String(this.isPlanModeActive));
+		btn.setAttribute('aria-label', t('agent.planMode.toggleAria'));
+	}
+
+	/**
+	 * Run the plan-only phase: call the model without tools, show approval UI,
+	 * and on approval save the plan + proceed entries and return the augmented
+	 * history so the caller can continue with a tool-enabled execute call.
+	 *
+	 * Returns null when the plan was rejected or could not be produced (caller
+	 * should abort the turn). Returns the proceed message + updated history on
+	 * approval so the caller can build the execute-phase request.
+	 */
+	private async conductPlanApproval(
+		modelApi: ModelApi,
+		baseRequest: ExtendedModelRequest,
+		currentSession: ChatSession,
+		compactedHistory: Content[]
+	): Promise<{ proceedMessage: string; updatedHistory: Content[] } | null> {
+		const planRequest: ExtendedModelRequest = {
+			...baseRequest,
+			availableTools: [],
+			perTurnContext: (baseRequest.perTurnContext || '') + '\n\n' + planModeInstructionContent,
+		};
+
+		this.ctx.progress.update(t('agent.progress.thinking'), 'thinking');
+
+		let planText = '';
+
+		// Accumulate plan text without a streaming UI container — showPlanApproval
+		// renders the final text with proper formatting and approval buttons.
+		if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {
+			let accumulated = '';
+			const stream = modelApi.generateStreamingResponse!(planRequest, (chunk: StreamChunk) => {
+				if (chunk.text) {
+					accumulated += chunk.text;
+				}
+			});
+			this.currentStreamingResponse = stream;
+			const response = await stream.complete;
+			this.currentStreamingResponse = null;
+			planText = response.markdown || accumulated;
+		} else {
+			const response = await modelApi.generateModelResponse(planRequest);
+			planText = response.markdown || '';
+		}
+
+		if (this.isCancellationRequested()) {
+			this.ctx.progress.hide();
+			return null;
+		}
+
+		this.ctx.progress.hide();
+
+		if (!planText.trim()) {
+			new Notice(t('agent.send.emptyResponse'));
+			return null;
+		}
+
+		const approved = await this.ctx.messages.showPlanApproval(planText);
+		if (this.isCancellationRequested()) return null;
+		if (!approved) {
+			new Notice(t('agent.planMode.rejectedNotice'));
+			return null;
+		}
+
+		const planEntry: GeminiConversationEntry = {
+			role: 'model',
+			message: planText,
+			notePath: '',
+			created_at: new Date(),
+			isPlan: true,
+		};
+		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, planEntry);
+
+		const proceedMessage = t('agent.planMode.proceedMessage');
+		const proceedEntry: GeminiConversationEntry = {
+			role: 'user',
+			message: proceedMessage,
+			notePath: '',
+			created_at: new Date(),
+		};
+		await this.ctx.messages.displayMessage(proceedEntry, currentSession);
+		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, proceedEntry);
+
+		const originalUserContent: Content = {
+			role: 'user',
+			parts: [{ text: baseRequest.userMessage }],
+		};
+		const planContent: Content = {
+			role: 'model',
+			parts: [{ text: planText }],
+		};
+		return {
+			proceedMessage,
+			updatedHistory: [...compactedHistory, originalUserContent, planContent],
+		};
+	}
 
 	/**
 	 * Main orchestration method for sending messages and handling tool calls
@@ -342,7 +457,7 @@ To reference an attachment in your response, use the path shown above.`;
 					sessionStartedAt: formatLocalTimestamp(currentSession.created),
 				};
 
-				const request: ExtendedModelRequest = {
+				let request: ExtendedModelRequest = {
 					kind: 'extended',
 					userMessage: message,
 					conversationHistory: compactionResult.compactedHistory,
@@ -362,6 +477,31 @@ To reference an attachment in your response, use the path shown above.`;
 
 				// Create model API for this session
 				const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession!);
+
+				// Plan mode: ask for a plan first, await user approval, then execute with tools
+				let messageToSend = message;
+				let historyToSend = compactionResult.compactedHistory;
+				if (this.isPlanModeActive) {
+					let planResult: { proceedMessage: string; updatedHistory: Content[] } | null = null;
+					try {
+						planResult = await this.conductPlanApproval(
+							modelApi,
+							request,
+							currentSession,
+							compactionResult.compactedHistory
+						);
+					} finally {
+						this.setPlanModeActive(false);
+					}
+					if (!planResult) {
+						// Plan rejected or empty — abort this turn
+						this.ctx.progress.hide();
+						return;
+					}
+					messageToSend = planResult.proceedMessage;
+					historyToSend = planResult.updatedHistory;
+					request = { ...request, userMessage: messageToSend, conversationHistory: historyToSend };
+				}
 
 				// Check if streaming is supported and enabled
 				if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {
@@ -459,8 +599,8 @@ To reference an attachment in your response, use the path shown above.`;
 							// group (interleaved with the tools) and persists it.
 							await this.ctx.tools.handleToolCalls(
 								response.toolCalls,
-								message,
-								compactionResult.compactedHistory,
+								messageToSend,
+								historyToSend,
 								userEntry,
 								customPrompt,
 								perTurn,
@@ -555,8 +695,8 @@ To reference an attachment in your response, use the path shown above.`;
 						// it as the first row of the tool group and persists it.
 						await this.ctx.tools.handleToolCalls(
 							response.toolCalls,
-							message,
-							compactionResult.compactedHistory,
+							messageToSend,
+							historyToSend,
 							userEntry,
 							customPrompt,
 							perTurn,
@@ -659,6 +799,10 @@ To reference an attachment in your response, use the path shown above.`;
 			this.currentStreamingResponse.cancel();
 			this.currentStreamingResponse = null;
 		}
+
+		// Settle a pending plan approval so conductPlanApproval doesn't hang waiting
+		// on the approval buttons after the user pressed Stop.
+		this.ctx.messages.settlePendingPlanApproval(false);
 
 		// Update UI immediately
 		this.resetExecutionUiState();

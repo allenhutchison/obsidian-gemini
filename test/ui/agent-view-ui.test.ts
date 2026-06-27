@@ -87,6 +87,7 @@ describe('AgentViewUI', () => {
 			createNewSession: vi.fn().mockResolvedValue(undefined),
 			sendMessage: vi.fn().mockResolvedValue(undefined),
 			stopAgentLoop: vi.fn(),
+			togglePlanMode: vi.fn(),
 			removeContextFile: vi.fn(),
 			updateSessionHeader: vi.fn(),
 			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),
@@ -116,6 +117,9 @@ describe('AgentViewUI', () => {
 				});
 			}
 			if (options?.text) el.textContent = options.text;
+			// Created elements (e.g. the plan-mode button) need the Obsidian DOM
+			// helpers too, so callers can chain createSpan/createDiv on them.
+			setupMockElement(el);
 			return el;
 		});
 

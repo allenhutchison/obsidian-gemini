@@ -1444,6 +1444,27 @@ If your plugin does not need CSS, delete this file.
 	cursor: not-allowed;
 }
 
+/* Plan card — decision row shown after approval and on history reload.
+ * The card panel itself is styled alongside the toggle button further down. */
+.gemini-agent-plan-actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: var(--size-4-3);
+}
+
+/* "Approved" badge replacing the buttons once a plan has been decided */
+.gemini-agent-plan-decision {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	font-size: var(--font-smaller);
+	font-weight: 600;
+}
+
+.gemini-agent-plan-decision-approve {
+	color: var(--color-green, #10b981);
+}
+
 /* Stop button styling - red/warning color scheme
  * Uses Obsidian's --color-red variable which adapts to light/dark themes
  * Fallback colors provided for custom themes that may not define these variables
@@ -5191,4 +5212,127 @@ If your plugin does not need CSS, delete this file.
 
 .gemini-settings-section-content {
 	padding-bottom: 0.5em;
+}
+
+/* Plan mode toggle — quiet borderless icon at rest, accent pill when armed.
+ * Off state stays minimal so it doesn't compete with Send for bar width; the
+ * "Plan" label only appears (and only then takes space) once the mode is on. */
+.gemini-agent-plan-btn {
+	align-self: center;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-1);
+	min-width: 0;
+	width: auto;
+	padding: var(--size-2-2);
+	border: none;
+	border-radius: var(--radius-s);
+	background-color: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+	transition:
+		background-color 0.12s ease,
+		color 0.12s ease;
+}
+
+.gemini-agent-plan-btn-icon {
+	display: inline-flex;
+}
+
+.gemini-agent-plan-btn-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Hidden at rest — revealed only when the mode is active */
+.gemini-agent-plan-btn-label {
+	display: none;
+	font-size: var(--font-smaller);
+	font-weight: 600;
+	line-height: 1;
+}
+
+.gemini-agent-plan-btn:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active {
+	padding: var(--size-2-2) var(--size-2-3);
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active:hover {
+	background-color: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active .gemini-agent-plan-btn-label {
+	display: inline;
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active svg {
+	color: var(--text-on-accent);
+}
+
+/* Plan card — one cohesive accent panel. Used by both the pending-approval
+ * card and the approved/reloaded card so they read identically. */
+.gemini-agent-plan-message {
+	border: 1px solid var(--interactive-accent);
+	border-left-width: 3px;
+	border-radius: var(--radius-m);
+	background-color: color-mix(in srgb, var(--interactive-accent) 6%, var(--background-primary));
+	padding: var(--size-4-3) var(--size-4-4);
+	margin-right: var(--size-4-6);
+}
+
+/* The plan content flows directly on the panel — drop the nested message
+ * bubble (background, border, shadow, rounding) the base styles give it. */
+.gemini-agent-message.gemini-agent-plan-message .gemini-agent-message-content {
+	background-color: transparent;
+	border: none;
+	box-shadow: none;
+	border-radius: 0;
+	margin: 0;
+	padding: 0;
+}
+
+.gemini-agent-plan-message .gemini-agent-message-header {
+	margin-bottom: var(--size-2-3);
+}
+
+.gemini-agent-plan-role {
+	color: var(--interactive-accent);
+	font-weight: 600;
+}
+
+/* Approval button row — anchored bottom-right inside the card */
+.gemini-agent-plan-buttons {
+	display: flex;
+	gap: var(--size-2-3);
+	margin-top: var(--size-4-3);
+	justify-content: flex-end;
+}
+
+/* Primary = filled accent; reject = quiet ghost outline */
+.gemini-agent-plan-buttons .gemini-agent-btn-primary {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-weight: 600;
+}
+
+.gemini-agent-plan-buttons .gemini-agent-btn-primary:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+.gemini-agent-plan-buttons .gemini-agent-btn-secondary {
+	background-color: transparent;
+	color: var(--text-muted);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.gemini-agent-plan-buttons .gemini-agent-btn-secondary:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
 }

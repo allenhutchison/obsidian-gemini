@@ -2357,6 +2357,10 @@ export const en = {
 		message: 'Agent execution canceled',
 		context: 'Notice after the user clicks the stop button to cancel the running agent.',
 	},
+	'agent.planMode.approved': {
+		message: 'Approved',
+		context: 'Non-interactive state badge shown on a plan message after the user approved the plan.',
+	},
 	'agent.session.createFailed': {
 		message: 'Failed to create agent session',
 		context: 'Error notice when creating a new chat session fails.',
@@ -2767,6 +2771,11 @@ export const en = {
 	'command.sessionSettings': {
 		message: 'Agent session settings',
 		context: 'Command palette entry that opens the settings panel for the current agent session.',
+	},
+	'command.togglePlanMode': {
+		message: 'Toggle Plan Mode',
+		context:
+			'Command palette entry that toggles Plan Mode in the agent view. In Plan Mode the agent produces a structured plan for approval before executing any actions.',
 	},
 	'ribbon.agentMode': {
 		message: 'Gemini Scribe: Agent mode',
@@ -3557,6 +3566,36 @@ export const en = {
 	'validation.topP.outOfRange': {
 		message: 'Top P {value} is outside valid range [{min}, {max}]. Adjusted to {adjusted}.',
 		context: 'Warning notice in settings when Top P is outside the allowed range.',
+	},
+	'agent.planMode.toggleAria': {
+		message: 'Toggle Plan Mode — review a plan before the agent executes',
+		context: 'Accessibility label for the Plan Mode toggle button in the agent send bar.',
+	},
+	'agent.planMode.label': {
+		message: 'Plan',
+		context:
+			'Short label revealed on the Plan Mode toggle button when the mode is active. Sits next to a checklist icon in the agent send bar.',
+	},
+	'agent.planMode.headerLabel': {
+		message: 'Agent (Plan)',
+		context: 'Role label on a plan message in the agent chat. Distinguishes the plan from a regular agent reply.',
+	},
+	'agent.planMode.approveBtn': {
+		message: 'Approve & Execute',
+		context: 'Button that accepts the agent-generated plan and starts tool execution.',
+	},
+	'agent.planMode.rejectBtn': {
+		message: 'Reject',
+		context: 'Button that dismisses the agent-generated plan without executing anything.',
+	},
+	'agent.planMode.rejectedNotice': {
+		message: 'Plan rejected.',
+		context: 'Brief notice shown after the user clicks Reject on an agent plan.',
+	},
+	'agent.planMode.proceedMessage': {
+		message: 'Proceed with the approved plan.',
+		context:
+			'Synthetic user message automatically sent after the user approves a plan, triggering the agent execution loop. Not user-typed.',
 	},
 } as const satisfies Record<string, SourceString>;
 

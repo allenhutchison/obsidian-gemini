@@ -20,4 +20,11 @@ export interface GeminiConversationEntry extends BasicGeminiConversationEntry {
 	 * call tools (a "reasoning-only" turn).
 	 */
 	thoughts?: string;
+	/**
+	 * When true, this entry is an agent-generated implementation plan awaiting
+	 * approval. Plan entries use a `[!plan]+` callout in history and render
+	 * distinctly in the UI. The plan is persisted to history before the execution
+	 * loop starts so it participates in Gemini's implicit prefix cache.
+	 */
+	isPlan?: boolean;
 }

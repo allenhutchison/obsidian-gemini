@@ -855,6 +855,18 @@ export default class ObsidianGemini extends Plugin {
 				}
 			},
 		});
+
+		this.addCommand({
+			id: 'gemini-scribe-toggle-plan-mode',
+			name: t('command.togglePlanMode'),
+			callback: async () => {
+				if (!this.checkInitialized()) return;
+				await this.activateAgentView();
+				if (this.agentView) {
+					this.agentView.togglePlanMode();
+				}
+			},
+		});
 	}
 
 	async activateAgentView() {

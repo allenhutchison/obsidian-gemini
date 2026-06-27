@@ -41,6 +41,7 @@ export class AgentViewMessages {
 	private scrollTimeout: number | null = null;
 	private autoOpenDiffTimeout: number | null = null;
 	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
+	private pendingPlanApproval: ((approved: boolean) => void) | null = null;
 	private viewContext: any; // For MarkdownRenderer context
 
 	constructor(
@@ -83,6 +84,13 @@ export class AgentViewMessages {
 		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
 		if (emptyState) {
 			emptyState.remove();
+		}
+
+		// Plan entries (isPlan: true) are already-decided — render with plan styling
+		// but no interactive buttons (they were approved; approval label is shown instead).
+		if (entry.isPlan) {
+			await this.displayDecidedPlanMessage(entry, currentSession);
+			return;
 		}
 
 		// Reasoning-only turn (the model thought but produced no text — e.g. before
@@ -250,6 +258,49 @@ export class AgentViewMessages {
 		}
 
 		// Auto-scroll to bottom
+		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+	}
+
+	/**
+	 * Render a persisted plan entry from session history without interactive buttons.
+	 * Used when reloading history — the plan was already approved; we show the content
+	 * with the plan card styling and an "approved" decision label.
+	 */
+	private async displayDecidedPlanMessage(
+		entry: GeminiConversationEntry,
+		currentSession: ChatSession | null
+	): Promise<void> {
+		const emptyState = this.chatContainer.querySelector('.gemini-agent-empty-chat');
+		if (emptyState) emptyState.remove();
+
+		const messageDiv = this.chatContainer.createDiv({
+			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: t('agent.planMode.headerLabel'),
+			cls: 'gemini-agent-message-role gemini-agent-plan-role',
+		});
+		header.createEl('span', {
+			text: entry.created_at.toLocaleTimeString(),
+			cls: 'gemini-agent-message-time',
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+		const sourcePath = currentSession?.historyPath || '';
+		await MarkdownRenderer.render(this.app, formatModelMessage(entry.message), content, sourcePath, this.viewContext);
+		if (entry.thoughts?.trim()) {
+			await this.renderReasoningSection(content, entry.thoughts, sourcePath);
+		}
+		this.setupImageClickHandlers(content, sourcePath);
+
+		const actionsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-actions' });
+		actionsDiv.createEl('span', {
+			text: t('agent.planMode.approved'),
+			cls: 'gemini-agent-plan-decision gemini-agent-plan-decision-approve',
+		});
+
 		this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
 	}
 
@@ -647,6 +698,63 @@ export class AgentViewMessages {
 	}
 
 	/**
+	 * Display a plan from the model with Approve / Reject buttons.
+	 * Resolves true when the user approves, false when they reject.
+	 */
+	public async showPlanApproval(planText: string): Promise<boolean> {
+		const messageDiv = this.chatContainer.createDiv({
+			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
+		});
+
+		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: t('agent.planMode.headerLabel'),
+			cls: 'gemini-agent-message-role gemini-agent-plan-role',
+		});
+		header.createEl('span', {
+			text: new Date().toLocaleTimeString(),
+			cls: 'gemini-agent-message-time',
+		});
+
+		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
+		await MarkdownRenderer.render(this.app, formatModelMessage(planText), content, '', this.viewContext);
+
+		const buttonsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-buttons' });
+
+		const approveBtn = buttonsDiv.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-primary',
+			text: t('agent.planMode.approveBtn'),
+		});
+		const rejectBtn = buttonsDiv.createEl('button', {
+			cls: 'gemini-agent-btn gemini-agent-btn-secondary',
+			text: t('agent.planMode.rejectBtn'),
+		});
+
+		this.debouncedScrollToBottom();
+
+		return new Promise((resolve) => {
+			let resolved = false;
+
+			const done = (approved: boolean) => {
+				if (resolved) return;
+				resolved = true;
+				this.pendingPlanApproval = null;
+				approveBtn.disabled = true;
+				rejectBtn.disabled = true;
+				buttonsDiv.remove();
+				resolve(approved);
+				this.debouncedScrollToBottom();
+			};
+
+			// Allow the Stop button / view teardown to settle this promise via
+			// settlePendingPlanApproval, so a cancelled turn doesn't hang here.
+			this.pendingPlanApproval = done;
+			approveBtn.addEventListener('click', () => done(true));
+			rejectBtn.addEventListener('click', () => done(false));
+		});
+	}
+
+	/**
 	 * Display a confirmation request message with interactive buttons
 	 * Returns a Promise that resolves when user clicks a button
 	 */
@@ -1039,5 +1147,21 @@ export class AgentViewMessages {
 			resolve({ confirmed: false, allowWithoutConfirmation: false, userEdited: false });
 		}
 		this.pendingConfirmations.clear();
+
+		// Settle a pending plan approval (view closed while the approval card is
+		// showing) so conductPlanApproval doesn't hang awaiting a button click.
+		this.settlePendingPlanApproval(false);
+	}
+
+	/**
+	 * Resolve a pending plan-approval promise from outside the approval card —
+	 * e.g. the Stop button (stopAgentLoop) or view teardown (cleanup). No-op when
+	 * no approval is in flight.
+	 */
+	public settlePendingPlanApproval(approved: boolean): void {
+		if (this.pendingPlanApproval) {
+			this.pendingPlanApproval(approved);
+			this.pendingPlanApproval = null;
+		}
 	}
 }
