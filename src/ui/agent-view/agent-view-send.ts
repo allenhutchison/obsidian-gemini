@@ -10,6 +10,7 @@ import { getErrorMessage } from '../../utils/error-utils';
 import { formatLocalTimestamp } from '../../utils/format-utils';
 import { buildTurnPreamble } from '../../utils/turn-preamble';
 import { InlineAttachment } from './inline-attachment';
+import planModeInstructionContent from '../../../prompts/planModeInstruction.hbs';
 import { AgentViewProgress } from './agent-view-progress';
 import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewTools } from './agent-view-tools';
@@ -96,9 +97,7 @@ export class AgentViewSend {
 		const planRequest: ExtendedModelRequest = {
 			...baseRequest,
 			availableTools: [],
-			perTurnContext:
-				(baseRequest.perTurnContext || '') +
-				'\n\nIMPORTANT: Before taking any actions, describe the steps you plan to take. Do not execute any actions in this response — only produce the plan.',
+			perTurnContext: (baseRequest.perTurnContext || '') + '\n\n' + planModeInstructionContent,
 		};
 
 		this.ctx.progress.update(t('agent.progress.thinking'), 'thinking');
