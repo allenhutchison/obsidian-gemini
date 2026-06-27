@@ -148,7 +148,6 @@ export class AgentViewSend {
 			notePath: '',
 			created_at: new Date(),
 			isPlan: true,
-			metadata: { entryType: 'plan' },
 		};
 		await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, planEntry);
 
@@ -801,6 +800,10 @@ To reference an attachment in your response, use the path shown above.`;
 			this.currentStreamingResponse.cancel();
 			this.currentStreamingResponse = null;
 		}
+
+		// Settle a pending plan approval so conductPlanApproval doesn't hang waiting
+		// on the approval buttons after the user pressed Stop.
+		this.ctx.messages.settlePendingPlanApproval(false);
 
 		// Update UI immediately
 		this.resetExecutionUiState();

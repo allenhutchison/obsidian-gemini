@@ -1114,7 +1114,7 @@ describe('SessionHistory', () => {
 	});
 
 	describe('plan entry round-trip', () => {
-		it('serializes a plan entry with [!plan]+ callout and parses entryType back', async () => {
+		it('serializes a plan entry with [!plan]+ callout and parses isPlan back', async () => {
 			const mockFile = makeTFile('test.md');
 			mockPlugin.app.vault.getAbstractFileByPath.mockReturnValue(mockFile);
 			mockPlugin.app.vault.read.mockResolvedValue('');
@@ -1125,7 +1125,7 @@ describe('SessionHistory', () => {
 				message: '1. First step\n2. Second step',
 				notePath: '',
 				created_at: new Date(),
-				metadata: { entryType: 'plan' },
+				isPlan: true,
 			};
 
 			await sessionHistory.addEntryToSession(session, planEntry);
@@ -1143,7 +1143,6 @@ describe('SessionHistory', () => {
 			expect(parsed).toHaveLength(1);
 			expect(parsed[0].role).toBe('model');
 			expect(parsed[0].message).toContain('First step');
-			expect(parsed[0].metadata?.entryType).toBe('plan');
 			expect(parsed[0].isPlan).toBe(true);
 		});
 
@@ -1180,8 +1179,9 @@ describe('SessionHistory', () => {
 			expect(result).toHaveLength(1);
 			expect(result[0].role).toBe('model');
 			expect(result[0].message).toContain('Step one');
-			expect(result[0].metadata?.entryType).toBe('plan');
 			expect(result[0].isPlan).toBe(true);
+			// Plan entries carry no leftover plan-typed metadata — isPlan is the signal.
+			expect(result[0].metadata?.entryType).toBeUndefined();
 		});
 	});
 

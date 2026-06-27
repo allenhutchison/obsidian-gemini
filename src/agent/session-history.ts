@@ -124,7 +124,6 @@ export class SessionHistory {
 			temperature: entry.metadata?.temperature,
 			topP: entry.metadata?.topP,
 			customPrompt: entry.metadata?.customPrompt,
-			entryType: entry.metadata?.entryType,
 			toolsUsed: [], // TODO: Add tool support later
 			isDefined: (value: any) => value !== undefined,
 		});
@@ -250,9 +249,7 @@ export class SessionHistory {
 
 					const metadata: Record<string, any> = {};
 					const isPlanCallout = calloutType === 'plan';
-					if (isPlanCallout) {
-						metadata.entryType = 'plan';
-					} else if (toolNameMatch) {
+					if (!isPlanCallout && toolNameMatch) {
 						metadata.toolName = toolNameMatch[1];
 						if (toolStatusMatch) metadata.toolStatus = toolStatusMatch[1].toLowerCase();
 					}
