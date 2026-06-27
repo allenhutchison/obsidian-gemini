@@ -1,0 +1,81 @@
+name: Update UI translations
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/i18n/en.ts'
+      - 'scripts/translate.mjs'
+  schedule:
+    - cron: '0 8 * * 1' # Weekly on Monday at 8 AM UTC (safety net)
+  workflow_dispatch:
+    inputs:
+      langs:
+        description: 'Comma-separated locale codes to translate (blank = all)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # create-pull-request uses its own token, so the checkout token does
+          # not need to persist in git config where npm ci / translate could read it.
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update translations
+        id: translate
+        continue-on-error: true
+        run: |
+          if [ -n "${LANGS}" ]; then
+            npm run translate -- --langs "${LANGS}"
+          else
+            npm run translate
+          fi
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          LANGS: ${{ github.event.inputs.langs }}
+
+      # Run even when translate exits non-zero: it writes locale files and the
+      # translation-state manifest incrementally, so a partial run (some
+      # languages failed) still has progress worth committing. create-pull-request
+      # is a no-op when there's no diff, so a total failure produces no PR.
+      - name: Format translation files
+        if: always() && steps.translate.outcome != 'cancelled'
+        run: npx prettier --write src/i18n
+
+      - name: Create PR if translations changed
+        if: always() && steps.translate.outcome != 'cancelled'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: 'chore(i18n): update AI translations'
+          title: 'chore(i18n): Update UI translations'
+          body: |
+            Automated translation update. Regenerated `src/i18n/` from the current
+            English source strings in `src/i18n/en.ts`.
+
+            Only keys whose English message/context changed are retranslated —
+            hand-refined translations are preserved as long as their English source
+            is unchanged, and keys removed from `en.ts` are pruned from every language.
+
+            **Please review for accuracy before merging**, especially for languages
+            you read.
+          branch: auto/i18n-translations
+          labels: i18n,automated
+          delete-branch: true
+          add-paths: src/i18n
