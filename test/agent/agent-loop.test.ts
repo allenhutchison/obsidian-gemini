@@ -1,6 +1,12 @@
 import type { Mock } from 'vitest';
 import { AgentLoop } from '../../src/agent/agent-loop';
-import type { ToolCall, ModelResponse, ModelApi } from '../../src/api/interfaces/model-api';
+import type {
+	ToolCall,
+	ModelResponse,
+	ModelApi,
+	StreamChunk,
+	StreamCallback,
+} from '../../src/api/interfaces/model-api';
 import type { IConfirmationProvider } from '../../src/tools/types';
 
 // None of these tests exercise the confirmation UI branch (enabledTools/requireConfirmation
@@ -1005,6 +1011,177 @@ describe('AgentLoop', () => {
 			expect(result.iterations).toBe(0);
 			expect(result.markdown).toBe('');
 			expect(plugin.toolExecutionEngine.executeTool).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('streaming follow-up (onFollowUpChunk)', () => {
+		// Build a streaming-capable mock model API. `chunks` are fired via the
+		// StreamCallback when the complete promise resolves; `finalResponse` is
+		// what the complete promise resolves to.
+		function makeStreamingApi(chunks: StreamChunk[], finalResponse: ModelResponse) {
+			let streamCalls = 0;
+			let nonStreamCalls = 0;
+			const api = {
+				get streamCalls() {
+					return streamCalls;
+				},
+				get nonStreamCalls() {
+					return nonStreamCalls;
+				},
+				generateModelResponse: vi.fn().mockImplementation(() => {
+					nonStreamCalls++;
+					return Promise.resolve(finalResponse);
+				}),
+				generateStreamingResponse: vi.fn().mockImplementation((_req: any, onChunk: StreamCallback) => {
+					streamCalls++;
+					const complete = Promise.resolve().then(() => {
+						for (const chunk of chunks) {
+							onChunk(chunk);
+						}
+						return finalResponse;
+					});
+					return { complete, cancel: vi.fn() };
+				}),
+			} as any;
+			return api;
+		}
+
+		test('uses generateStreamingResponse and fires onFollowUpChunk per text chunk', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const received: StreamChunk[] = [];
+			const api = makeStreamingApi([{ text: 'Hello' }, { text: ', world' }], textResponse('Hello, world'));
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onFollowUpChunk: (chunk) => {
+							received.push(chunk);
+						},
+					},
+				},
+			});
+
+			expect(result.markdown).toBe('Hello, world');
+			expect(api.streamCalls).toBe(1);
+			expect(api.nonStreamCalls).toBe(0);
+			// Hook receives only the text field, not thought
+			expect(received).toEqual([{ text: 'Hello' }, { text: ', world' }]);
+		});
+
+		test('falls back to generateModelResponse when onFollowUpChunk is absent', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const api = makeStreamingApi([], textResponse('done'));
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					// No onFollowUpChunk — non-streaming path must be used
+				},
+			});
+
+			expect(api.nonStreamCalls).toBe(1);
+			expect(api.streamCalls).toBe(0);
+		});
+
+		test('does not forward thought-only chunks to onFollowUpChunk', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const received: StreamChunk[] = [];
+			// First chunk is thought-only (empty text), second carries text
+			const api = makeStreamingApi([{ text: '', thought: 'reasoning...' }, { text: 'answer' }], textResponse('answer'));
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onFollowUpChunk: (chunk) => {
+							received.push(chunk);
+						},
+					},
+				},
+			});
+
+			expect(result.markdown).toBe('answer');
+			// Thought-only chunks (empty text) must not reach the hook
+			expect(received).toEqual([{ text: 'answer' }]);
+		});
+
+		test('multi-iteration: streaming fires per follow-up, result text accumulates correctly', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+			const chunksPerCall: StreamChunk[][] = [];
+
+			// First follow-up returns more tool calls; second returns text
+			let call = 0;
+			const responses: Array<{ chunks: StreamChunk[]; response: ModelResponse }> = [
+				{ chunks: [], response: { markdown: '', rendered: '', toolCalls: [tc('write_file', { path: 'b.md' })] } },
+				{ chunks: [{ text: 'final' }], response: textResponse('final') },
+			];
+
+			const api = {
+				streamCalls: 0,
+				generateModelResponse: vi.fn(),
+				generateStreamingResponse: vi.fn().mockImplementation((_req: any, onChunk: StreamCallback) => {
+					const entry = responses[call++];
+					(api as any).streamCalls++;
+					const chunks: StreamChunk[] = [];
+					const complete = Promise.resolve().then(() => {
+						for (const chunk of entry.chunks) {
+							onChunk(chunk);
+							chunks.push(chunk);
+						}
+						chunksPerCall.push(chunks);
+						return entry.response;
+					});
+					return { complete, cancel: vi.fn() };
+				}),
+			} as any;
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: { onFollowUpChunk: vi.fn() },
+				},
+			});
+
+			expect(result.markdown).toBe('final');
+			expect(result.iterations).toBe(2);
+			expect(api.streamCalls).toBe(2);
 		});
 	});
 

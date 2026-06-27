@@ -2,7 +2,7 @@ import type { Content } from '@google/genai';
 import type ObsidianGemini from '../main';
 import type { ChatSession, PerTurnContext } from '../types/agent';
 import type { FeatureToolPolicy } from '../types/tool-policy';
-import type { ToolCall, ModelResponse, ModelApi } from '../api/interfaces/model-api';
+import type { ToolCall, ModelResponse, ModelApi, StreamChunk } from '../api/interfaces/model-api';
 import type { CustomPrompt } from '../prompts/types';
 import type { IConfirmationProvider, IToolHostView, ToolExecutionContext, ToolResult } from '../tools/types';
 import { generateToolDescription } from '../utils/text-generation';
@@ -71,6 +71,14 @@ export interface AgentLoopHooks {
 	 * remaining-turns counter as the budget runs low.
 	 */
 	onBudgetUpdate?(state: { remaining: number; limit: number | undefined; extended: boolean }): void | Promise<void>;
+	/**
+	 * Fired per text chunk when the follow-up model call uses the streaming API.
+	 * Only present on the UI path — headless callers leave it unset and follow-ups
+	 * use the non-streaming path unchanged. Thought/reasoning chunks are not
+	 * forwarded here; they are returned on `AgentLoopResult.thoughts` at the end
+	 * of the turn.
+	 */
+	onFollowUpChunk?(chunk: StreamChunk): void | Promise<void>;
 }
 
 export interface AgentLoopOptions {
@@ -403,7 +411,34 @@ export class AgentLoop {
 			});
 
 			const modelApi = createModel();
-			const followUpResponse = await modelApi.generateModelResponse(followUpRequest);
+			let followUpResponse: ModelResponse;
+
+			if (hooks?.onFollowUpChunk && modelApi.generateStreamingResponse) {
+				// Streaming follow-up: fire hook per text chunk so the UI can render
+				// tokens as they arrive instead of showing a progress bar then a dump.
+				// Only create the live container when there is actual text to show —
+				// an intermediate tool-continuation turn may produce no text at all.
+				let accText = '';
+				let accThoughts = '';
+				const stream = modelApi.generateStreamingResponse(followUpRequest, (chunk: StreamChunk) => {
+					if (chunk.thought) accThoughts += chunk.thought;
+					if (chunk.text) {
+						accText += chunk.text;
+						void this.safeHook('onFollowUpChunk', plugin, () => hooks?.onFollowUpChunk?.({ text: chunk.text }));
+					}
+				});
+				followUpResponse = await stream.complete;
+				// Prefer the completed response's text; fall back to the accumulated
+				// streaming text when the response object arrives empty.
+				if (!followUpResponse.markdown?.trim() && accText.trim()) {
+					followUpResponse = { ...followUpResponse, markdown: accText };
+				}
+				if (!followUpResponse.thoughts?.trim() && accThoughts.trim()) {
+					followUpResponse = { ...followUpResponse, thoughts: accThoughts };
+				}
+			} else {
+				followUpResponse = await modelApi.generateModelResponse(followUpRequest);
+			}
 
 			if (followUpResponse.usageMetadata) {
 				await this.safeEmit(plugin, 'apiResponseReceived', {

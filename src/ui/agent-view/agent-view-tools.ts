@@ -6,7 +6,7 @@ import { IConfirmationProvider, IToolHostView, ToolResult } from '../../tools/ty
 import { CustomPrompt } from '../../prompts/types';
 import { AgentLoop, DEFAULT_INTERACTIVE_MAX_ITERATIONS } from '../../agent/agent-loop';
 import { DEFAULT_TURN_BUDGET_REMIND_AT } from '../../agent/turn-budget';
-import type { ToolCall } from '../../api/interfaces/model-api';
+import type { ToolCall, StreamChunk } from '../../api/interfaces/model-api';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
 import type { PerTurnContext } from './agent-view-tool-followup';
 import { t } from '../../i18n';
@@ -27,6 +27,18 @@ export interface AgentViewContext {
 	confirmationProvider: IConfirmationProvider;
 	/** View side effects tools can trigger (shelf updates, header refresh). */
 	viewActions: IToolHostView;
+	/**
+	 * Create an empty live streaming container for follow-up response text.
+	 * Returns undefined when the view can't create one (e.g. in tests that don't
+	 * implement this method).
+	 */
+	createFollowUpStream?(): HTMLElement;
+	/**
+	 * Finalize the live streaming container with full markdown rendering and
+	 * scroll the view to the bottom. Called in place of `displayMessage` when
+	 * a follow-up was streamed.
+	 */
+	finalizeFollowUpStream?(container: HTMLElement, entry: GeminiConversationEntry): Promise<void>;
 }
 
 /**
@@ -44,6 +56,8 @@ export class AgentViewTools {
 	private currentExecutingTool: string | null = null;
 	private lastCompletedTool: string | null = null;
 	private currentGroupContainer: HTMLElement | null = null;
+	/** Live streaming container for the follow-up text response, set on first text chunk. */
+	private streamingFollowUpContainer: HTMLElement | null = null;
 	private display: AgentViewToolDisplay;
 	/** Reasoning produced before the first tool batch, rendered into the group once it exists. */
 	private pendingReasoning: string | null = null;
@@ -154,6 +168,24 @@ export class AgentViewTools {
 						onFollowUpRequestStart: () => {
 							this.context.updateProgress(this.thinkingLabel(), 'thinking');
 						},
+						onFollowUpChunk: (chunk: StreamChunk) => {
+							if (!chunk.text) return;
+							if (!this.streamingFollowUpContainer) {
+								// Only create a container once there's actual (non-whitespace) text
+								// to show — intermediate tool-continuation turns that produce no
+								// text must not spawn an empty streaming bubble.
+								if (!chunk.text.trim()) return;
+								this.streamingFollowUpContainer = this.context.createFollowUpStream?.() ?? null;
+								this.context.updateProgress(t('agent.progress.generating'), 'streaming');
+							}
+							if (!this.streamingFollowUpContainer) return;
+							const contentDiv = this.streamingFollowUpContainer.querySelector(
+								'.gemini-agent-message-content'
+							) as HTMLElement | null;
+							if (contentDiv) {
+								contentDiv.appendChild(document.createTextNode(chunk.text));
+							}
+						},
 						onModelReasoning: async (thoughts) => {
 							// Reasoning the model produced before deciding to call the
 							// next tool batch — render it as a row inside the current tool
@@ -196,7 +228,21 @@ export class AgentViewTools {
 				...(result.thoughts ? { thoughts: result.thoughts } : {}),
 			};
 
-			await this.context.displayMessage(aiEntry);
+			const streamingContainer = this.streamingFollowUpContainer;
+			this.streamingFollowUpContainer = null;
+
+			if (streamingContainer && this.context.finalizeFollowUpStream) {
+				// Follow-up was streamed into a live container — finalize it with
+				// proper markdown rendering rather than creating a duplicate message.
+				await this.context.finalizeFollowUpStream(streamingContainer, aiEntry);
+			} else {
+				if (streamingContainer) {
+					// View doesn't support finalization — remove the partial container
+					// so displayMessage can render the full markdown cleanly.
+					streamingContainer.remove();
+				}
+				await this.context.displayMessage(aiEntry);
+			}
 
 			// `fellBack` (empty-response courtesy) and `loopAborted` (loop-detector
 			// escalation) both produce UI-only notices — don't pollute session
@@ -209,6 +255,7 @@ export class AgentViewTools {
 		} catch (error) {
 			this.plugin.logger.error('[AgentViewTools] Failed to process tool results:', error);
 			this.currentGroupContainer = null;
+			this.streamingFollowUpContainer = null;
 			this.context.hideProgress();
 		}
 	}
