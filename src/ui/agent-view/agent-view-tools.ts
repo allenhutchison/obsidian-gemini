@@ -208,6 +208,8 @@ export class AgentViewTools {
 			this.currentGroupContainer = null;
 
 			if (result.cancelled) {
+				this.streamingFollowUpContainer?.remove();
+				this.streamingFollowUpContainer = null;
 				this.context.hideProgress();
 				return;
 			}
@@ -215,6 +217,8 @@ export class AgentViewTools {
 			if (!result.markdown) {
 				// Loop ran but produced nothing actionable (cancelled mid-stream or
 				// exhausted iterations without a text response). Just hide progress.
+				this.streamingFollowUpContainer?.remove();
+				this.streamingFollowUpContainer = null;
 				this.context.hideProgress();
 				return;
 			}
@@ -255,6 +259,7 @@ export class AgentViewTools {
 		} catch (error) {
 			this.plugin.logger.error('[AgentViewTools] Failed to process tool results:', error);
 			this.currentGroupContainer = null;
+			this.streamingFollowUpContainer?.remove();
 			this.streamingFollowUpContainer = null;
 			this.context.hideProgress();
 		}
