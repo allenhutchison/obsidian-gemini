@@ -1,11 +1,11 @@
 ---
 name: auto-dev
-description: Execute one tick of the autonomous issue-to-PR pipeline — triage open issues for readiness, draft implementation plans for maintainer approval, build the oldest approved issue into a PR, and address review feedback on the open automated PR. Designed for unattended scheduled runs (`scripts/auto-dev.sh`); also invocable interactively as "/auto-dev" or "run an auto-dev tick", and as "/auto-dev dry-run" for a read-only report of what a tick would do. Never merges PRs. State lives in `auto:*` GitHub labels.
+description: Execute one tick of the autonomous issue-to-PR pipeline — triage open issues for readiness, draft implementation plans for maintainer approval, build the oldest approved issue into a PR, and address review feedback on the open automated PR. Designed to run as a recurring scheduled task that invokes this skill directly each tick in a full-toolchain sandbox; also invocable interactively as "/auto-dev" or "run an auto-dev tick", and as "/auto-dev dry-run" for a read-only report of what a tick would do. Never merges PRs. State lives in `auto:*` GitHub labels.
 ---
 
 # Auto-dev: one tick of the issue-to-PR pipeline
 
-This skill automates the path from open issue to reviewed PR while keeping the maintainer in control of two gates: **plan approval** (nothing is built without an approved plan) and **merge** (the skill never merges — ever). It is designed to run unattended every 15–30 minutes; each invocation is **one tick of a state machine**, does the single highest-priority piece of work, and exits. "Waiting" (for a reply, an approval, a review, a merge) is simply what happens between ticks.
+This skill automates the path from open issue to reviewed PR while keeping the maintainer in control of two gates: **plan approval** (nothing is built without an approved plan) and **merge** (the skill never merges — ever). It is designed to run unattended on a regular cadence (spaced comfortably longer than one build tick — see **Overlap & isolation**); each invocation is **one tick of a state machine**, does the single highest-priority piece of work, and exits. "Waiting" (for a reply, an approval, a review, a merge) is simply what happens between ticks.
 
 ## Invariants — read these first
 
@@ -13,14 +13,16 @@ This skill automates the path from open issue to reviewed PR while keeping the m
 2. **At most one automated PR in flight.** While any auto-dev PR is open, no new issue gets built. Ticks spent in that state only advance the open PR.
 3. **All runs happen under the maintainer's own GitHub identity**, so authorship cannot distinguish this pipeline from the human. Every comment this skill posts MUST begin with the marker line `<!-- auto-dev -->` (invisible in rendered Markdown). Classify comments into three buckets: **pipeline** (has the marker), **third-party bot** (author login ends in `[bot]` or `app/` — e.g. `coderabbitai`, `dependabot`; CodeRabbit posts auto-enrichment boilerplate on issues), and **human** (everything else). Only _human_ comments count as replies, answers, or approvals; third-party bot comments never satisfy "the human replied" and never gate-keep anything — read them for technical signal at most.
 4. **Labels are the cross-run memory, and humans always win.** If a human has changed an `auto:*` label since the last tick (e.g. removed `auto:ready`, added `auto:skip`), respect the label as found — never "correct" it back.
-5. **Never force-push**, never push to `master` directly, never run the release process, never create or delete labels, never close issues, never edit or delete human comments.
+5. **Self-enforced hard prohibitions.** There is no external permission allowlist anymore — this skill is the only guardrail, so treat the following as absolute and, if a tick ever seems to need one, stop and report it instead of doing it: never merge, close, or reopen any PR or issue; never force-push, and never push to `master`/`main` directly; never run the release process (`npm version`, `npm publish`, `gh release …`); never create, delete, or edit labels (only **apply or remove the `auto:*` labels** named below); never edit or delete human comments; never delete the repo, issues, or `gh api -X DELETE` anything; never run destructive or privileged shell (`rm -rf` outside the throwaway build sandbox, `sudo`, or `curl`/`wget` to exfiltrate). Working-tree resets are allowed **only** in the disposable scheduled sandbox (Step 0), never in an interactive checkout.
 6. **Stay inside the repo's own conventions**: pre-flight checks, documentation policy, and the PR template all come from the `create-pr` skill and AGENTS.md, exactly as for human-driven work.
 
 ## Invocation modes
 
-- **Scheduled** (`scripts/auto-dev.sh`): headless, in the dedicated clone, against the curated allowlist. The runner guarantees a clean tree on fresh master.
-- **Interactive** (`/auto-dev` in a Claude Code session): identical behavior, but under normal permission prompts and possibly in the maintainer's working checkout. A dirty working tree or non-master branch does NOT block the GitHub-only steps (1-reconcile, 4-triage) — it only blocks steps that touch the working tree (2's CI/feedback fixes, 3-build). If a working-tree step is what the tick needs and the tree is dirty, report that and stop rather than stashing or resetting anything.
+- **Scheduled (the primary mode):** a recurring scheduled task (e.g. a Claude scheduled task running in the cloud) fires `/auto-dev` on a cadence, in a fresh full-toolchain sandbox — git, Node, and `gh` authenticated as the maintainer. **There is no external runner script** and no permission allowlist: the skill owns its own setup (Step 0 establishes a clean `master` baseline and installs deps) and the exit report is the run's summary output. Because the sandbox is disposable, Step 0 may hard-reset it to a clean `master` — that is the one place a reset is allowed.
+- **Interactive** (`/auto-dev` in a Claude Code session): identical decision logic, but under normal permission prompts and possibly in the maintainer's working checkout. **Never reset, clean, or stash an interactive checkout.** A dirty working tree or non-master branch does NOT block the GitHub-only steps (1-reconcile, 4-triage) — it only blocks steps that touch the working tree (2's CI/feedback fixes, 3-build). If a working-tree step is what the tick needs and the tree is dirty, report that and stop rather than stashing or resetting anything.
 - **Dry run** (`/auto-dev dry-run`, or the user asks for a dry run): execute the full tick logic **read-only**. Gather all state, decide exactly what a live tick would do, and print it as the exit report with every action prefixed `would:` — but post no comments, change no labels, create no branches/commits/PRs, and push nothing. This is the recommended first test and is always safe to run.
+
+**Overlap & isolation.** With no lockfile, the scheduled task must not overlap its own runs — set the cadence comfortably longer than a typical tick (a tick that builds can take many minutes). The label state machine is the backstop (work is claimed by swapping to `auto:in-progress`, and at most one PR is ever in flight), but two truly concurrent ticks could still race when picking the oldest `auto:ready`, so don't schedule tighter than a tick can finish. Each scheduled run is its own disposable sandbox, so runs never share a working tree.
 
 ## Label state machine
 
@@ -42,12 +44,26 @@ Work through these steps in order — the order **is** the priority. Execute the
 
 Do not fall through to later steps after completing one, with one exception: **step 2 falls through to the triage pass (step 4) when the open PR needs nothing** — that waiting tick is spent grooming the backlog instead of idling. (The build step is skipped on those ticks regardless: it is gated on no PR being open.)
 
-### Step 0 — Preflight
+### Step 0 — Preflight & environment
+
+First establish the working baseline. **The skill owns this now that there is no runner script.**
+
+- **Scheduled (disposable sandbox)** — put the repo on a clean, current `master` and install deps (safe precisely because the sandbox is throwaway):
+
+  ```bash
+  git fetch origin --prune
+  git checkout master && git reset --hard origin/master && git clean -fd
+  git pull --ff-only origin master
+  npm install --no-audit --no-fund
+  ```
+
+- **Interactive checkout** — do NOT reset, clean, or stash. Just observe state with `git status --porcelain`; a dirty tree or non-master branch only blocks the working-tree steps (see Invocation modes).
+
+Then confirm GitHub access and identity:
 
 ```bash
-gh auth status                      # must be authenticated
+gh auth status                      # must be authenticated (as the maintainer)
 gh repo view --json nameWithOwner   # confirm the repo
-git status --porcelain              # clean in scheduled runs; in interactive runs a dirty tree only blocks working-tree steps
 ```
 
 Gather the current state in parallel:
@@ -105,7 +121,7 @@ Take the **oldest** `auto:ready` issue (or a step-1 orphan). Then:
 6. Create the PR with the **create-pr** skill (template, checklist, AI-disclosure section). The body must include `Fixes #<N>`, the marker line, and a note that this PR was produced by the auto-dev pipeline from the approved plan.
 7. Comment on the issue (marker) linking the PR.
 
-If the build cannot complete inside this tick's budget, push the WIP commits and open a **draft** PR (`gh pr create --draft`) before exiting — a bare pushed branch is invisible to the next tick, whose discovery queries only look at PRs and issues. The draft body still carries `Fixes #<N>` and the marker, plus a note that the build is incomplete and will be resumed. Never mark a PR ready for review (`gh pr ready`) while pre-flight checks fail.
+If the build cannot complete within this run's time/effort budget, push the WIP commits and open a **draft** PR (`gh pr create --draft`) before exiting — a bare pushed branch is invisible to the next tick, whose discovery queries only look at PRs and issues. The draft body still carries `Fixes #<N>` and the marker, plus a note that the build is incomplete and will be resumed. Never mark a PR ready for review (`gh pr ready`) while pre-flight checks fail.
 
 ### Step 4 — Triage pass (bounded)
 
@@ -202,7 +218,7 @@ A parked issue is durable rest, not abandonment: the skill picks it back up the 
 
 ## Exit report
 
-Every tick ends by printing a structured report to stdout (the runner appends it to the log):
+Every tick ends by printing a structured report — it is the run's summary output (the scheduled task surfaces it; an interactive run shows it inline):
 
 ```text
 auto-dev tick — <ISO timestamp>
@@ -232,4 +248,4 @@ errors: <none | details>
 - Don't close issues, edit issue bodies, or modify human comments.
 - Don't expand a PR's scope in response to review; file a follow-up issue instead.
 - Don't bypass failing checks (`--no-verify`, skipping tests) to get a PR out.
-- Don't work around permission denials from the runner's allowlist — report them in the exit report so the allowlist can be tuned deliberately.
+- Don't reach for any of the self-enforced hard prohibitions (invariant 5) — there is no external allowlist to catch you now, so the skill's own discipline is the only guardrail. If a tick seems to require one, stop and report it in the exit report instead.
