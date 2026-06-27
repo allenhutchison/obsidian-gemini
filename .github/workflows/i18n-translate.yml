@@ -51,12 +51,16 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           LANGS: ${{ github.event.inputs.langs }}
 
+      # Run even when translate exits non-zero: it writes locale files and the
+      # translation-state manifest incrementally, so a partial run (some
+      # languages failed) still has progress worth committing. create-pull-request
+      # is a no-op when there's no diff, so a total failure produces no PR.
       - name: Format translation files
-        if: steps.translate.outcome == 'success'
+        if: always() && steps.translate.outcome != 'cancelled'
         run: npx prettier --write src/i18n
 
       - name: Create PR if translations changed
-        if: steps.translate.outcome == 'success'
+        if: always() && steps.translate.outcome != 'cancelled'
         uses: peter-evans/create-pull-request@v8
         with:
           commit-message: 'chore(i18n): update AI translations'
