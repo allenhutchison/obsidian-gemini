@@ -25,6 +25,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          # create-pull-request uses its own token, so the checkout token does
+          # not need to persist in git config where npm ci / translate could read it.
+          persist-credentials: false
 
       - name: Use Node.js
         uses: actions/setup-node@v6
