@@ -274,13 +274,13 @@ export class AgentViewMessages {
 		if (emptyState) emptyState.remove();
 
 		const messageDiv = this.chatContainer.createDiv({
-			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-message-plan',
+			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
 		});
 
 		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
 		header.createEl('span', {
 			text: t('agent.planMode.headerLabel'),
-			cls: 'gemini-agent-message-role',
+			cls: 'gemini-agent-message-role gemini-agent-plan-role',
 		});
 		header.createEl('span', {
 			text: entry.created_at.toLocaleTimeString(),
