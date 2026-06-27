@@ -3571,6 +3571,11 @@ export const en = {
 		message: 'Toggle Plan Mode — review a plan before the agent executes',
 		context: 'Accessibility label for the Plan Mode toggle button in the agent send bar.',
 	},
+	'agent.planMode.label': {
+		message: 'Plan',
+		context:
+			'Short label revealed on the Plan Mode toggle button when the mode is active. Sits next to a checklist icon in the agent send bar.',
+	},
 	'agent.planMode.headerLabel': {
 		message: 'Agent (Plan)',
 		context: 'Role label on a plan message in the agent chat. Distinguishes the plan from a regular agent reply.',

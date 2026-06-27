@@ -5214,28 +5214,62 @@ If your plugin does not need CSS, delete this file.
 	padding-bottom: 0.5em;
 }
 
-/* Plan mode toggle button */
+/* Plan mode toggle — quiet borderless icon at rest, accent pill when armed.
+ * Off state stays minimal so it doesn't compete with Send for bar width; the
+ * "Plan" label only appears (and only then takes space) once the mode is on. */
 .gemini-agent-plan-btn {
-	align-self: stretch;
-	padding: var(--size-4-2);
-	min-width: 38px;
-	display: flex;
+	align-self: center;
+	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	opacity: 0.7;
+	gap: var(--size-2-1);
+	min-width: 0;
+	width: auto;
+	padding: var(--size-2-2);
+	border: none;
+	border-radius: var(--radius-s);
+	background-color: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
 	transition:
-		opacity 0.15s,
-		background-color 0.15s;
+		background-color 0.12s ease,
+		color 0.12s ease;
+}
+
+.gemini-agent-plan-btn-icon {
+	display: inline-flex;
+}
+
+.gemini-agent-plan-btn-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Hidden at rest — revealed only when the mode is active */
+.gemini-agent-plan-btn-label {
+	display: none;
+	font-size: var(--font-smaller);
+	font-weight: 600;
+	line-height: 1;
 }
 
 .gemini-agent-plan-btn:hover {
-	opacity: 1;
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
 }
 
 .gemini-agent-plan-btn.gemini-agent-plan-btn-active {
-	opacity: 1;
+	padding: var(--size-2-2) var(--size-2-3);
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active:hover {
+	background-color: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
+}
+
+.gemini-agent-plan-btn.gemini-agent-plan-btn-active .gemini-agent-plan-btn-label {
+	display: inline;
 }
 
 .gemini-agent-plan-btn.gemini-agent-plan-btn-active svg {

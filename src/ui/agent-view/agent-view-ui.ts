@@ -365,11 +365,16 @@ export class AgentViewUI {
 			},
 		}) as HTMLDivElement;
 
+		// Quiet-when-off, loud-when-armed: at rest this is a borderless icon; when
+		// active it becomes an accent pill that reveals the "Plan" label (the label
+		// is hidden via CSS until then, so it costs no horizontal space at rest).
 		const planModeButton = inputRow.createEl('button', {
-			cls: 'gemini-agent-btn gemini-agent-btn-secondary gemini-agent-plan-btn',
+			cls: 'clickable-icon gemini-agent-plan-btn',
 			attr: { 'aria-label': t('agent.planMode.toggleAria') },
 		});
-		setIcon(planModeButton, 'map');
+		const planIcon = planModeButton.createSpan({ cls: 'gemini-agent-plan-btn-icon' });
+		setIcon(planIcon, 'list-checks');
+		planModeButton.createSpan({ cls: 'gemini-agent-plan-btn-label', text: t('agent.planMode.label') });
 
 		planModeButton.addEventListener('click', () => {
 			callbacks.togglePlanMode();

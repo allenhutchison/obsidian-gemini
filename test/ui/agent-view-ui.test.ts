@@ -117,6 +117,9 @@ describe('AgentViewUI', () => {
 				});
 			}
 			if (options?.text) el.textContent = options.text;
+			// Created elements (e.g. the plan-mode button) need the Obsidian DOM
+			// helpers too, so callers can chain createSpan/createDiv on them.
+			setupMockElement(el);
 			return el;
 		});
 
