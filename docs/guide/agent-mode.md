@@ -278,7 +278,7 @@ Update my todo list with these items
 
 #### delete_file
 
-Remove files (requires confirmation):
+Move files or folders to Obsidian's trash (requires confirmation). The exact destination depends on your Obsidian **"Deleted files"** setting — system trash, the vault's `.trash` folder, or permanent deletion if you've configured it that way. Folder deletions are recursive.
 
 ```
 Delete the old draft file
