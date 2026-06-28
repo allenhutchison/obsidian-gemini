@@ -697,8 +697,8 @@ export const en = {
 			'Notice when an indexing action is attempted before the indexing service is ready. RAG stands for retrieval-augmented generation.',
 	},
 	'settings.rag.indexResult': {
-		message: 'Indexed {indexed} files ({skipped} skipped, {failed} failed)',
-		context: 'Notice summarizing an indexing run. {indexed}, {skipped}, and {failed} are file counts.',
+		message: 'Rescan complete: {indexed} re-indexed, {skipped} skipped, {failed} failed',
+		context: 'Notice summarizing a rescan run. {indexed}, {skipped}, and {failed} are file counts.',
 	},
 	'settings.rag.indexingFailed': {
 		message: 'Indexing failed: {error}',
@@ -763,12 +763,12 @@ export const en = {
 		context: 'Settings toggle name for indexing non-markdown files such as PDFs.',
 	},
 	'settings.rag.includeAttachmentsDesc': {
-		message: 'Index PDFs and other supported file types in addition to markdown notes. Requires reindexing.',
+		message: 'Index PDFs and other supported file types in addition to markdown notes. Requires rescanning.',
 		context: 'Settings toggle description for including attachments in the search index.',
 	},
 	'settings.rag.attachmentSettingChangedNotice': {
-		message: 'Attachment setting changed. Reindex vault to apply changes.',
-		context: 'Notice after toggling attachment indexing, reminding the user to reindex.',
+		message: 'Attachment setting changed. Rescan vault to apply changes.',
+		context: 'Notice after toggling attachment indexing, reminding the user to rescan.',
 	},
 	'settings.rag.excludeFoldersName': {
 		message: 'Exclude folders',
