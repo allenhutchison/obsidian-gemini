@@ -2,14 +2,8 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
+
 export const tr: Partial<Record<TranslationKey, string>> = {
-	'time.daysAgoPlural': '{count} gün önce',
-	'time.dayAgoSingular': '{count} gün önce',
-	'time.hoursAgoPlural': '{count} saat önce',
-	'time.hourAgoSingular': '{count} saat önce',
-	'time.minutesAgoPlural': '{count} dakika önce',
-	'time.minuteAgoSingular': '{count} dakika önce',
-	'time.justNow': 'Az önce',
 	'agent.empty.title': 'Bir sohbet başlatın',
 	'agent.empty.description': 'Kasanızla aktif olarak çalışabilen yapay zeka asistanınız.',
 	'agent.empty.capabilitiesTitle': 'Ajan ne yapabilir?',
@@ -143,6 +137,9 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.logToFileName': 'Dosyaya kaydet',
 	'settings.agentConfig.logToFileDesc':
 		'Günlük kayıtlarını eklenti durum klasöründeki bir dosyaya yazın. Hatalar ve uyarılar her zaman günlüğe kaydedilir; hata ayıklama kayıtları hata ayıklama modunu gerektirir. Günlük dosyaları 1 MB boyutunda otomatik olarak döndürülür.',
+	'settings.agentConfig.useInteractionsApiName': "Interactions API'yi Kullan",
+	'settings.agentConfig.useInteractionsApiDesc':
+		"Gemini isteklerini eski generateContent API yerine Google'ın daha yeni olan Interactions API'si üzerinden yönlendirin. Durumsuz (stateless) çalışır — konuşma geçmişi her turda yeniden oynatılır ve turlar arasında Google tarafında saklanmaz. Deneyseldir — sorun yaşarsanız kapalı bırakın.",
 	'settings.agentConfig.customEndpointName': 'Özel API uç noktası',
 	'settings.agentConfig.customEndpointDesc':
 		"Varsayılan Google API temel URL'sini geçersiz kılın (örneğin kurumsal bir proxy veya yerel ağ geçidi için). Resmi uç noktayı kullanmak için boş bırakın.",
@@ -207,15 +204,16 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.rag.filesIndexed': '{count} dosya dizine eklendi',
 	'settings.rag.notYetIndexed': 'Henüz dizine eklenmedi',
 	'settings.rag.indexStatusName': 'Dizin durumu',
-	'settings.rag.reindexButton': "Vault'u yeniden dizine ekle",
+	'settings.rag.reindexButton': "Vault'u yeniden tara",
 	'settings.rag.indexingButton': 'Dizine ekleniyor...',
 	'settings.rag.serviceNotInitialized': 'RAG dizine ekleme servisi başlatılmadı',
-	'settings.rag.indexResult': '{indexed} dosya dizine eklendi ({skipped} atlandı, {failed} başarısız oldu)',
+	'settings.rag.indexResult':
+		'Yeniden tarama tamamlandı: {indexed} yeniden dizine eklendi, {skipped} atlandı, {failed} başarısız oldu',
 	'settings.rag.indexingFailed': 'Dizine ekleme başarısız oldu: {error}',
 	'settings.rag.deleteIndexButton': 'Dizini sil',
 	'settings.rag.deletingButton': 'Siliniyor...',
 	'settings.rag.indexDeletedNotice':
-		'Dizin silindi. Yeniden oluşturmak için "Vault\'u yeniden dizine ekle" seçeneğini kullanın.',
+		'Dizin silindi. Yeniden oluşturmak için "Vault\'u yeniden tara" seçeneğini kullanın.',
 	'settings.rag.deleteIndexFailed': 'Dizin silinemedi: {error}',
 	'settings.rag.openDeleteConfirmFailed': 'Silme onayı açılamadı: {error}',
 	'settings.rag.storeNameName': 'Arama dizini adı',
@@ -231,9 +229,9 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Dosyalar oluşturulduğunda, değiştirildiğinde veya silindiğinde dizini otomatik olarak güncelle.',
 	'settings.rag.includeAttachmentsName': 'Ekleri dahil et',
 	'settings.rag.includeAttachmentsDesc':
-		"Markdown notlarına ek olarak PDF'leri ve desteklenen diğer dosya türlerini dizine ekle. Yeniden dizin oluşturmayı gerektirir.",
+		"Markdown notlarına ek olarak PDF'leri ve desteklenen diğer dosya türlerini dizine ekleyin. Yeniden tarama gerektirir.",
 	'settings.rag.attachmentSettingChangedNotice':
-		"Ek ayarı değiştirildi. Değişiklikleri uygulamak için vault'u yeniden dizine ekleyin.",
+		"Ek ayarı değişti. Değişiklikleri uygulamak için vault'u yeniden tarayın.",
 	'settings.rag.excludeFoldersName': 'Klasörleri hariç tut',
 	'settings.rag.excludeFoldersDesc':
 		'Her zaman hariç tutulanlar: {folders}. Aşağıya ek klasörler ekleyin (her satıra bir tane).',
@@ -423,7 +421,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.syncTooltipNone': 'Bekleyen değişiklik yok',
 	'ragStatus.syncing': 'Senkronize ediliyor...',
 	'ragStatus.syncFailed': 'Senkronizasyon başarısız oldu: {message}',
-	'ragStatus.reindexButton': 'Tümünü yeniden dizine ekle',
+	'ragStatus.reindexButton': "Vault'u yeniden tara",
 	'ragStatus.settingsButton': 'Ayarlar',
 	'ragStatus.searchPlaceholder': 'Dosyalarda ara...',
 	'ragStatus.noFilesIndexed': 'Henüz hiçbir dosya dizinlenmedi',
@@ -437,6 +435,13 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Devre Dışı',
 	'ragStatus.statusRateLimited': 'Hız sınırına ulaşıldı',
 	'ragStatus.statusUnknown': 'Bilinmiyor',
+	'time.justNow': 'Az önce',
+	'time.minuteAgoSingular': '{count} dakika önce',
+	'time.minutesAgoPlural': '{count} dakika önce',
+	'time.hourAgoSingular': '{count} saat önce',
+	'time.hoursAgoPlural': '{count} saat önce',
+	'time.dayAgoSingular': '{count} gün önce',
+	'time.daysAgoPlural': '{count} gün önce',
 	'scheduler.presetOnce': 'Bir kez',
 	'scheduler.presetDaily': 'Günlük (her 24 saatte bir)',
 	'scheduler.presetDailyAt': 'Her gün belirli bir saatte',
@@ -618,7 +623,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'backgroundTasks.ragDisabled': 'RAG indeksleme etkinleştirilmemiş. Ayarlar → Gemini Scribe menüsünden etkinleştirin.',
 	'backgroundTasks.openFileAria': '{path} dosyasını aç',
 	'backgroundTasks.indexingComplete':
-		'RAG dizin oluşturma tamamlandı: {indexed} dizine eklendi, {skipped} değiştirilmedi',
+		'Yeniden tarama tamamlandı: {indexed} yeniden dizine eklendi, {skipped} değişmedi',
 	'backgroundTasks.indexingFailed': 'RAG dizin oluşturma başarısız oldu: {message}',
 	'ragProgress.durationHours': '{hours}sa {minutes}dk {seconds}sn',
 	'ragProgress.durationMinutes': '{minutes}dk {seconds}sn',
@@ -700,12 +705,14 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.fileTooLarge': 'Dosya çok büyük: {name} toplam 20 MB ek sınırını aşıyor',
 	'agent.attachments.attached': '{name} eklendi',
 	'agent.progress.thinking': 'Düşünüyor...',
+	'agent.progress.thinkingWithBudget': '{thinking} ({remaining} kaldı)',
 	'agent.progress.generating': 'Yanıt oluşturuluyor...',
 	'agent.progress.processing': 'Yanıt işleniyor...',
 	'agent.progress.elapsedAria': 'Geçen süre',
 	'agent.send.emptyResponse':
 		'Model boş bir yanıt döndürdü. Bu durum düşünme modellerinde yaşanabilir. Sorunuzu farklı şekilde ifade etmeyi deneyin.',
 	'agent.send.cancelled': 'Temsilci yürütmesi iptal edildi',
+	'agent.planMode.approved': 'Onaylandı',
 	'agent.session.createFailed': 'Ajan oturumu oluşturulamadı',
 	'agent.session.loadFailed': 'Oturum yüklenemedi',
 	'agent.shelf.attachmentFallback': 'Ek',
@@ -809,6 +816,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'command.browseSessions': 'Temsilci oturumlarına göz at',
 	'command.linkProject': 'Projeyi temsilci oturumuna bağla',
 	'command.sessionSettings': 'Temsilci oturumu ayarları',
+	'command.togglePlanMode': 'Plan Modunu Aç/Kapat',
 	'ribbon.agentMode': 'Gemini Scribe: Temsilci modu',
 	'menu.main.rewriteText': 'Gemini Scribe: Metni yeniden yaz...',
 	'menu.main.askQuestion': 'Gemini Scribe: Soru sor...',
@@ -840,7 +848,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'RAG senkronizasyonu duraklatıldı',
 	'notice.main.ragNotPaused': 'RAG senkronizasyonu duraklatılmamış',
 	'notice.main.ragResumed': 'RAG senkronizasyonu devam ettirildi',
-	'notice.main.ragIndexComplete': 'RAG dizine ekleme tamamlandı: {indexed} dizine eklendi, {skipped} değiştirilmedi',
+	'notice.main.ragIndexComplete': 'Yeniden tarama tamamlandı: {indexed} yeniden dizine eklendi, {skipped} değişmedi',
 	'notice.main.ragIndexFailed': 'RAG dizine ekleme başarısız oldu: {error}',
 	'notice.main.ragSyncingPending': 'RAG dizini: Bekleyen değişiklikler senkronize ediliyor...',
 	'notice.main.readyToUse': 'Gemini Scribe artık kullanıma hazır!',
@@ -870,7 +878,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'notice.backgroundTask.openResult': 'Sonucu aç',
 	'notice.rag.resuming': 'RAG indeksleme: Kesintiye uğrayan indeksleme sürdürülüyor...',
 	'notice.rag.startingFresh': 'RAG indeksleme: Sıfırdan başlatılıyor...',
-	'notice.rag.indexingComplete': 'RAG indeksleme tamamlandı: {indexed} indekslendi, {skipped} değiştirilmedi',
+	'notice.rag.indexingComplete': 'Yeniden tarama tamamlandı: {indexed} yeniden dizine eklendi, {skipped} değişmedi',
 	'notice.rag.indexingFailed': 'RAG indeksleme başarısız oldu: {error}',
 	'notice.rag.startFreshFailed': 'RAG indeksleme: Sıfırdan başlatılamadı: {error}',
 	'notice.rag.initFailed': 'Vault arama dizini başlatılamadı. Detaylar için konsolu kontrol edin.',
@@ -925,7 +933,8 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'tool.confirm.addMemory': 'Aşağıdakileri AGENTS.md belleğine ekle:\n\n{preview}',
 	'tool.confirm.writeFileSummary': 'Dosyaya yaz: {path}\n\n{summary}',
 	'tool.confirm.writeFile': 'Dosyaya içerik yaz: {path}\n\nİçerik önizlemesi:\n{preview}',
-	'tool.confirm.deleteFile': 'Dosyayı veya klasörü sil: {path}\n\nBu işlem geri alınamaz.',
+	'tool.confirm.deleteFile':
+		'Dosyayı veya klasörü sil: {path}\n\nBu işlem Obsidian "Silinen dosyalar" ayarınızı takip eder (sistem çöp kutusuna taşıma, vault\'un .trash klasörüne taşıma veya kalıcı olarak silme).',
 	'tool.confirm.createFolder': 'Klasör oluştur: {path}',
 	'tool.confirm.moveFile': 'Dosyayı veya klasörü şuradan taşı: {source}\nŞuraya: {target}',
 	'modal.generateImage.title': 'Görsel oluştur',
@@ -1002,4 +1011,11 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'validation.topP.notANumber': 'Top P {value} geçerli bir sayı değil. {adjusted} olarak ayarlandı.',
 	'validation.topP.outOfRange':
 		'Top P {value}, geçerli [{min}, {max}] aralığının dışında. {adjusted} olarak ayarlandı.',
+	'agent.planMode.toggleAria': 'Plan Modunu Aç/Kapat — temsilci yürütmeden önce planı inceleyin',
+	'agent.planMode.label': 'Plan',
+	'agent.planMode.headerLabel': 'Temsilci (Plan)',
+	'agent.planMode.approveBtn': 'Onayla ve Yürüt',
+	'agent.planMode.rejectBtn': 'Reddet',
+	'agent.planMode.rejectedNotice': 'Plan reddedildi.',
+	'agent.planMode.proceedMessage': 'Onaylanan planla devam et.',
 };

@@ -2,14 +2,8 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
+
 export const de: Partial<Record<TranslationKey, string>> = {
-	'time.daysAgoPlural': 'Vor {count} Tagen',
-	'time.dayAgoSingular': 'Vor {count} Tag',
-	'time.hoursAgoPlural': 'Vor {count} Stunden',
-	'time.hourAgoSingular': 'Vor {count} Stunde',
-	'time.minutesAgoPlural': 'Vor {count} Minuten',
-	'time.minuteAgoSingular': 'Vor {count} Minute',
-	'time.justNow': 'Gerade eben',
 	'agent.empty.title': 'Unterhaltung starten',
 	'agent.empty.description': 'Dein KI-Assistent, der aktiv mit deinem Vault arbeiten kann.',
 	'agent.empty.capabilitiesTitle': 'Was kann der Agent tun?',
@@ -144,6 +138,9 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.logToFileName': 'In Datei protokollieren',
 	'settings.agentConfig.logToFileDesc':
 		'Schreibe Protokolleinträge in eine Datei im Plugin-Statusordner. Fehler und Warnungen werden immer protokolliert; Debug-Einträge erfordern den Debug-Modus. Protokolldateien werden automatisch bei 1 MB rotiert.',
+	'settings.agentConfig.useInteractionsApiName': 'Interactions-API verwenden',
+	'settings.agentConfig.useInteractionsApiDesc':
+		'Leitet Gemini-Anfragen über Googles neuere Interactions-API anstelle der veralteten generateContent-API weiter. Läuft zustandslos – der Konversationsverlauf wird bei jedem Durchgang neu abgespielt und zwischen den Durchgängen nicht auf Googles Seite gespeichert. Experimentell – deaktiviert lassen, falls Probleme auftreten.',
 	'settings.agentConfig.customEndpointName': 'Benutzerdefinierter API-Endpunkt',
 	'settings.agentConfig.customEndpointDesc':
 		'Überschreibt die standardmäßige Google-API-Basis-URL (z. B. für einen Firmen-Proxy oder ein lokales Gateway). Leer lassen, um den offiziellen Endpunkt zu verwenden.',
@@ -211,14 +208,15 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.rag.filesIndexed': '{count} Dateien indiziert',
 	'settings.rag.notYetIndexed': 'Noch nicht indiziert',
 	'settings.rag.indexStatusName': 'Index-Status',
-	'settings.rag.reindexButton': 'Vault neu indizieren',
+	'settings.rag.reindexButton': 'Vault neu scannen',
 	'settings.rag.indexingButton': 'Indizieren...',
 	'settings.rag.serviceNotInitialized': 'RAG-Indizierungsdienst nicht initialisiert',
-	'settings.rag.indexResult': '{indexed} Dateien indiziert ({skipped} übersprungen, {failed} fehlgeschlagen)',
+	'settings.rag.indexResult':
+		'Scan abgeschlossen: {indexed} neu indiziert, {skipped} übersprungen, {failed} fehlgeschlagen',
 	'settings.rag.indexingFailed': 'Indizierung fehlgeschlagen: {error}',
 	'settings.rag.deleteIndexButton': 'Index löschen',
 	'settings.rag.deletingButton': 'Löschen...',
-	'settings.rag.indexDeletedNotice': 'Index gelöscht. Verwende "Vault neu indizieren", um ihn neu aufzubauen.',
+	'settings.rag.indexDeletedNotice': 'Index gelöscht. Verwende "Vault neu scannen", um ihn neu aufzubauen.',
 	'settings.rag.deleteIndexFailed': 'Index konnte nicht gelöscht werden: {error}',
 	'settings.rag.openDeleteConfirmFailed': 'Löschbestätigung konnte nicht geöffnet werden: {error}',
 	'settings.rag.storeNameName': 'Suchindex-Name',
@@ -234,9 +232,9 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Aktualisiert den Index automatisch, wenn Dateien erstellt, geändert oder gelöscht werden.',
 	'settings.rag.includeAttachmentsName': 'Anhänge einschließen',
 	'settings.rag.includeAttachmentsDesc':
-		'Indiziert PDFs und andere unterstützte Dateitypen zusätzlich zu Markdown-Notizen. Erfordert eine Neuindizierung.',
+		'Indiziere PDFs und andere unterstützte Dateitypen zusätzlich zu Markdown-Notizen. Erfordert einen neuen Scan.',
 	'settings.rag.attachmentSettingChangedNotice':
-		'Einstellung für Anhänge geändert. Reindizieren Sie den Vault, um die Änderungen anzuwenden.',
+		'Einstellung für Anhänge geändert. Vault neu scannen, um Änderungen anzuwenden.',
 	'settings.rag.excludeFoldersName': 'Ordner ausschließen',
 	'settings.rag.excludeFoldersDesc':
 		'Immer ausgeschlossen: {folders}. Fügen Sie unten weitere Ordner hinzu (einer pro Zeile).',
@@ -428,7 +426,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.syncTooltipNone': 'Keine ausstehenden Änderungen',
 	'ragStatus.syncing': 'Synchronisierung läuft...',
 	'ragStatus.syncFailed': 'Synchronisierung fehlgeschlagen: {message}',
-	'ragStatus.reindexButton': 'Alles neu indizieren',
+	'ragStatus.reindexButton': 'Vault neu scannen',
 	'ragStatus.settingsButton': 'Einstellungen',
 	'ragStatus.searchPlaceholder': 'Dateien suchen...',
 	'ragStatus.noFilesIndexed': 'Noch keine Dateien indiziert',
@@ -442,6 +440,13 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Deaktiviert',
 	'ragStatus.statusRateLimited': 'Rate-Limit erreicht',
 	'ragStatus.statusUnknown': 'Unbekannt',
+	'time.justNow': 'Gerade eben',
+	'time.minuteAgoSingular': 'Vor {count} Minute',
+	'time.minutesAgoPlural': 'Vor {count} Minuten',
+	'time.hourAgoSingular': 'Vor {count} Stunde',
+	'time.hoursAgoPlural': 'Vor {count} Stunden',
+	'time.dayAgoSingular': 'Vor {count} Tag',
+	'time.daysAgoPlural': 'Vor {count} Tagen',
 	'scheduler.presetOnce': 'Einmalig',
 	'scheduler.presetDaily': 'Täglich (alle 24 Std.)',
 	'scheduler.presetDailyAt': 'Täglich um Uhrzeit',
@@ -623,7 +628,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'backgroundTasks.ragDisabled':
 		'RAG-Indizierung ist nicht aktiviert. Aktiviere sie in den Einstellungen → Gemini Scribe.',
 	'backgroundTasks.openFileAria': '{path} öffnen',
-	'backgroundTasks.indexingComplete': 'RAG-Indizierung abgeschlossen: {indexed} indiziert, {skipped} unverändert',
+	'backgroundTasks.indexingComplete': 'Scan abgeschlossen: {indexed} neu indiziert, {skipped} unverändert',
 	'backgroundTasks.indexingFailed': 'RAG-Indizierung fehlgeschlagen: {message}',
 	'ragProgress.durationHours': '{hours}h {minutes}m {seconds}s',
 	'ragProgress.durationMinutes': '{minutes}m {seconds}s',
@@ -707,12 +712,14 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.fileTooLarge': 'Datei zu groß: {name} überschreitet das Gesamtlimit für Anhänge von 20 MB',
 	'agent.attachments.attached': '{name} angehängt',
 	'agent.progress.thinking': 'Denkt nach...',
+	'agent.progress.thinkingWithBudget': '{thinking} ({remaining} verbleibend)',
 	'agent.progress.generating': 'Antwort wird generiert...',
 	'agent.progress.processing': 'Antwort wird verarbeitet...',
 	'agent.progress.elapsedAria': 'Vergangene Zeit',
 	'agent.send.emptyResponse':
 		'Das Modell hat eine leere Antwort zurückgegeben. Dies kann bei Denkmodellen vorkommen. Versuche, deine Frage anders zu formulieren.',
 	'agent.send.cancelled': 'Agenten-Ausführung abgebrochen',
+	'agent.planMode.approved': 'Genehmigt',
 	'agent.session.createFailed': 'Agenten-Sitzung konnte nicht erstellt werden',
 	'agent.session.loadFailed': 'Sitzung konnte nicht geladen werden',
 	'agent.shelf.attachmentFallback': 'Anhang',
@@ -816,6 +823,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'command.browseSessions': 'Agenten-Sitzungen durchsuchen',
 	'command.linkProject': 'Projekt mit Agenten-Sitzung verknüpfen',
 	'command.sessionSettings': 'Agenten-Sitzungseinstellungen',
+	'command.togglePlanMode': 'Planungsmodus umschalten',
 	'ribbon.agentMode': 'Gemini Scribe: Agenten-Modus',
 	'menu.main.rewriteText': 'Gemini Scribe: Text umschreiben...',
 	'menu.main.askQuestion': 'Gemini Scribe: Frage stellen...',
@@ -849,7 +857,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'RAG-Synchronisierung pausiert',
 	'notice.main.ragNotPaused': 'RAG-Synchronisierung ist nicht pausiert',
 	'notice.main.ragResumed': 'RAG-Synchronisierung fortgesetzt',
-	'notice.main.ragIndexComplete': 'RAG-Indizierung abgeschlossen: {indexed} indiziert, {skipped} unverändert',
+	'notice.main.ragIndexComplete': 'Scan abgeschlossen: {indexed} neu indiziert, {skipped} unverändert',
 	'notice.main.ragIndexFailed': 'RAG-Indizierung fehlgeschlagen: {error}',
 	'notice.main.ragSyncingPending': 'RAG-Index: Ausstehende Änderungen werden synchronisiert...',
 	'notice.main.readyToUse': 'Gemini Scribe ist jetzt einsatzbereit!',
@@ -879,7 +887,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'notice.backgroundTask.openResult': 'Ergebnis öffnen',
 	'notice.rag.resuming': 'RAG-Indizierung: Unterbrochene Indizierung wird fortgesetzt...',
 	'notice.rag.startingFresh': 'RAG-Indizierung: Wird neu gestartet...',
-	'notice.rag.indexingComplete': 'RAG-Indizierung abgeschlossen: {indexed} indiziert, {skipped} unverändert',
+	'notice.rag.indexingComplete': 'Scan abgeschlossen: {indexed} neu indiziert, {skipped} unverändert',
 	'notice.rag.indexingFailed': 'RAG-Indizierung fehlgeschlagen: {error}',
 	'notice.rag.startFreshFailed': 'RAG-Indizierung: Neustart fehlgeschlagen: {error}',
 	'notice.rag.initFailed': 'Fehler beim Initialisieren des Vault-Suchindex. Details finden Sie in der Konsole.',
@@ -935,7 +943,8 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'tool.confirm.addMemory': 'Folgendes zum AGENTS.md-Speicher hinzufügen:\n\n{preview}',
 	'tool.confirm.writeFileSummary': 'In Datei schreiben: {path}\n\n{summary}',
 	'tool.confirm.writeFile': 'Inhalt in Datei schreiben: {path}\n\nInhaltsvorschau:\n{preview}',
-	'tool.confirm.deleteFile': 'Datei oder Ordner löschen: {path}\n\nDiese Aktion kann nicht rückgängig gemacht werden.',
+	'tool.confirm.deleteFile':
+		'Datei oder Ordner löschen: {path}\n\nDies folgt deiner Obsidian-Einstellung für "Gelöschte Dateien" (In den System-Papierkorb verschieben, in den .trash-Ordner des Vaults verschieben oder dauerhaft löschen).',
 	'tool.confirm.createFolder': 'Ordner erstellen: {path}',
 	'tool.confirm.moveFile': 'Datei oder Ordner verschieben von: {source}\nNach: {target}',
 	'modal.generateImage.title': 'Bild generieren',
@@ -1012,4 +1021,11 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'validation.topP.notANumber': 'Top P {value} ist keine gültige Zahl. Auf {adjusted} angepasst.',
 	'validation.topP.outOfRange':
 		'Top P {value} liegt außerhalb des gültigen Bereichs [{min}, {max}]. Auf {adjusted} angepasst.',
+	'agent.planMode.toggleAria': 'Planungsmodus umschalten — überprüfe einen Plan, bevor der Agent ihn ausführt',
+	'agent.planMode.label': 'Plan',
+	'agent.planMode.headerLabel': 'Agent (Plan)',
+	'agent.planMode.approveBtn': 'Genehmigen & Ausführen',
+	'agent.planMode.rejectBtn': 'Ablehnen',
+	'agent.planMode.rejectedNotice': 'Plan abgelehnt.',
+	'agent.planMode.proceedMessage': 'Mit dem genehmigten Plan fortfahren.',
 };
