@@ -15,7 +15,7 @@ function mockEndpoints(tagsModels: any[], showResponse: (name: string) => any) {
 	mockedRequestUrl.mockImplementation((opts: { url: string; body?: string }) => {
 		if (opts.url.endsWith('/api/show')) {
 			const body = JSON.parse(opts.body ?? '{}');
-			return Promise.resolve({ status: 200, json: showResponse(body.name) });
+			return Promise.resolve({ status: 200, json: showResponse(body.model) });
 		}
 		return Promise.resolve({ status: 200, json: { models: tagsModels } });
 	});

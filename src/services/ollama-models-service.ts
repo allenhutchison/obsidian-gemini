@@ -148,7 +148,7 @@ export class OllamaModelsService {
 		}
 		try {
 			const url = `${baseUrl.replace(/\/$/, '')}/api/show`;
-			const response = await requestUrl({ url, method: 'POST', body: JSON.stringify({ name }), throw: false });
+			const response = await requestUrl({ url, method: 'POST', body: JSON.stringify({ model: name }), throw: false });
 			if (response.status !== 200) {
 				return null;
 			}
