@@ -684,8 +684,8 @@ export const en = {
 		context: 'Settings field name for the row showing index state with reindex/delete buttons.',
 	},
 	'settings.rag.reindexButton': {
-		message: 'Reindex vault',
-		context: 'Button label that rebuilds the vault search index.',
+		message: 'Rescan vault',
+		context: 'Button label that rescans the vault for changed files and updates the search index.',
 	},
 	'settings.rag.indexingButton': {
 		message: 'Indexing...',
@@ -697,8 +697,8 @@ export const en = {
 			'Notice when an indexing action is attempted before the indexing service is ready. RAG stands for retrieval-augmented generation.',
 	},
 	'settings.rag.indexResult': {
-		message: 'Indexed {indexed} files ({skipped} skipped, {failed} failed)',
-		context: 'Notice summarizing an indexing run. {indexed}, {skipped}, and {failed} are file counts.',
+		message: 'Rescan complete: {indexed} re-indexed, {skipped} skipped, {failed} failed',
+		context: 'Notice summarizing a rescan run. {indexed}, {skipped}, and {failed} are file counts.',
 	},
 	'settings.rag.indexingFailed': {
 		message: 'Indexing failed: {error}',
@@ -713,9 +713,9 @@ export const en = {
 		context: 'Temporary button label while the search index is being deleted.',
 	},
 	'settings.rag.indexDeletedNotice': {
-		message: 'Index deleted. Use "Reindex vault" to rebuild.',
+		message: 'Index deleted. Use "Rescan vault" to rebuild.',
 		context:
-			'Notice after the search index was deleted. "Reindex Vault" refers to the button labeled by settings.rag.reindexButton; translate consistently.',
+			'Notice after the search index was deleted. "Rescan vault" refers to the button labeled by settings.rag.reindexButton; translate consistently.',
 	},
 	'settings.rag.deleteIndexFailed': {
 		message: 'Failed to delete index: {error}',
@@ -763,12 +763,12 @@ export const en = {
 		context: 'Settings toggle name for indexing non-markdown files such as PDFs.',
 	},
 	'settings.rag.includeAttachmentsDesc': {
-		message: 'Index PDFs and other supported file types in addition to markdown notes. Requires reindexing.',
+		message: 'Index PDFs and other supported file types in addition to markdown notes. Requires rescanning.',
 		context: 'Settings toggle description for including attachments in the search index.',
 	},
 	'settings.rag.attachmentSettingChangedNotice': {
-		message: 'Attachment setting changed. Reindex vault to apply changes.',
-		context: 'Notice after toggling attachment indexing, reminding the user to reindex.',
+		message: 'Attachment setting changed. Rescan vault to apply changes.',
+		context: 'Notice after toggling attachment indexing, reminding the user to rescan.',
 	},
 	'settings.rag.excludeFoldersName': {
 		message: 'Exclude folders',
@@ -1425,8 +1425,8 @@ export const en = {
 		context: 'Notice when the manual sync fails. {message} is the raw error message.',
 	},
 	'ragStatus.reindexButton': {
-		message: 'Reindex all',
-		context: 'Button in the RAG status modal that rebuilds the entire index.',
+		message: 'Rescan vault',
+		context: 'Button in the RAG status modal that rescans the vault for changed files.',
 	},
 	'ragStatus.settingsButton': {
 		message: 'Settings',
@@ -2002,8 +2002,8 @@ export const en = {
 		context: 'Accessibility label of a file row that opens the note. {path} is a vault file path.',
 	},
 	'backgroundTasks.indexingComplete': {
-		message: 'RAG indexing complete: {indexed} indexed, {skipped} unchanged',
-		context: 'Notice when a full reindex finishes. {indexed} and {skipped} are counts.',
+		message: 'Rescan complete: {indexed} re-indexed, {skipped} unchanged',
+		context: 'Notice when a vault rescan finishes. {indexed} and {skipped} are counts.',
 	},
 	'backgroundTasks.indexingFailed': {
 		message: 'RAG indexing failed: {message}',
@@ -2896,9 +2896,9 @@ export const en = {
 		context: 'Confirmation notice after RAG synchronization was resumed.',
 	},
 	'notice.main.ragIndexComplete': {
-		message: 'RAG indexing complete: {indexed} indexed, {skipped} unchanged',
+		message: 'Rescan complete: {indexed} re-indexed, {skipped} unchanged',
 		context:
-			'Notice after a full RAG index run; {indexed} is the number of files indexed and {skipped} the number left unchanged.',
+			'Notice after a vault rescan; {indexed} is the number of files uploaded and {skipped} the number left unchanged because they had not changed.',
 	},
 	'notice.main.ragIndexFailed': {
 		message: 'RAG indexing failed: {error}',
@@ -3021,8 +3021,8 @@ export const en = {
 		context: 'Toast notification when the user chooses to discard the interrupted index and rebuild from scratch.',
 	},
 	'notice.rag.indexingComplete': {
-		message: 'RAG indexing complete: {indexed} indexed, {skipped} unchanged',
-		context: 'Toast notification when vault search indexing finishes. {indexed} and {skipped} are file counts.',
+		message: 'Rescan complete: {indexed} re-indexed, {skipped} unchanged',
+		context: 'Toast notification when vault rescan finishes. {indexed} and {skipped} are file counts.',
 	},
 	'notice.rag.indexingFailed': {
 		message: 'RAG indexing failed: {error}',

@@ -42,8 +42,10 @@ Initial indexing time depends on vault size. A vault with 1,000 notes typically 
 
 In the settings panel you'll find two action buttons:
 
-- **Reindex vault** — Performs a full re-index. Smart sync skips files that haven't changed, so this is safe to run anytime.
+- **Rescan vault** — Scans your vault for changed files and uploads any that are new or modified. Smart sync skips unchanged files, so the button is safe to run anytime. Files that haven't changed are reported as "unchanged" — this is expected behaviour, not a no-op.
 - **Delete index** — Permanently removes your data from Google Cloud. Use this if you want a fresh start or are done with the feature.
+
+> **Forcing a full re-embed** (e.g. after switching to a new model or recovering from a suspected corrupt index): use **Delete index** followed by **Rescan vault**. Deleting the index clears all stored embeddings, so the next rescan uploads every file from scratch.
 
 ## Commands
 
@@ -74,7 +76,7 @@ Click the status bar icon anytime to open the full status modal.
 
 The status modal has three tabs:
 
-- **Overview** — Current status, file counts, pending changes, last sync time, and action buttons (Sync now, Reindex all)
+- **Overview** — Current status, file counts, pending changes, last sync time, and action buttons (Sync now, Rescan vault)
 - **Files** — Searchable list of all indexed files with timestamps
 - **Failures** — Any files that failed to index with error details
 
@@ -163,7 +165,7 @@ You can also use **Delete index** in settings at any time.
 
 ## Known Limitations
 
-- **No individual file deletion from the index** — When you delete a vault file, it may remain as an orphan in Google Cloud. Use **Reindex vault** or **Delete index** for a clean state.
+- **No individual file deletion from the index** — When you delete a vault file, it may remain as an orphan in Google Cloud. Use **Delete index** followed by **Rescan vault** for a clean state.
 - **Search results don't include file paths** — The Google API returns text excerpts but not source file paths. The agent may not always be able to link results back to specific files.
 - **Rate limits during indexing** — Large vaults may hit API rate limits. The plugin handles this automatically with exponential backoff (30s base, up to 5 minutes). The status bar shows a countdown.
 - **Concurrent upload limit** — Files are uploaded 5 at a time to balance speed with rate limit avoidance.
@@ -184,7 +186,7 @@ This was fixed in v4.2+. Update to the latest version. The fix includes deferred
 
 - Verify the file is actually indexed — open the status modal (Files tab) and search for it
 - Check that the file's folder isn't in the exclude list
-- If you recently enabled **Include attachments**, run **Reindex vault** to pick up non-markdown files
+- If you recently enabled **Include attachments**, run **Rescan vault** to pick up non-markdown files
 - Try increasing `maxResults` by asking the agent: "Search for X with more results"
 
 ### Status shows errors
@@ -195,7 +197,7 @@ Click the status bar icon to see the Failures tab. Common causes:
 - **Invalid API key** — Verify your key in [Google AI Studio](https://aistudio.google.com)
 - **Network issues** — Check your internet connection
 
-For persistent issues, try **Delete index** followed by **Reindex vault** for a clean start.
+For persistent issues, try **Delete index** followed by **Rescan vault** for a clean start.
 
 ## Further Reading
 
