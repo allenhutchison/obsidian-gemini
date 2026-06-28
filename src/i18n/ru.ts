@@ -2,14 +2,8 @@
 // Hand-refinements are welcome and PRESERVED: a key is only regenerated when its
 // English source string in src/i18n/en.ts changes (tracked in translation-state.json).
 import type { TranslationKey } from './en';
+
 export const ru: Partial<Record<TranslationKey, string>> = {
-	'time.daysAgoPlural': '{count} дн. назад',
-	'time.dayAgoSingular': '{count} день назад',
-	'time.hoursAgoPlural': '{count} ч. назад',
-	'time.hourAgoSingular': '{count} час назад',
-	'time.minutesAgoPlural': '{count} мин. назад',
-	'time.minuteAgoSingular': '{count} минуту назад',
-	'time.justNow': 'Только что',
 	'agent.empty.title': 'Начать беседу',
 	'agent.empty.description': 'Ваш ИИ-ассистент, который может активно работать с вашим хранилищем.',
 	'agent.empty.capabilitiesTitle': 'Что умеет агент?',
@@ -142,6 +136,9 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.agentConfig.logToFileName': 'Записывать логи в файл',
 	'settings.agentConfig.logToFileDesc':
 		'Записывать логи в файл в папке состояния плагина. Ошибки и предупреждения записываются всегда; для записей отладки требуется включить режим отладки. Файлы логов автоматически ротируются при достижении 1 МБ.',
+	'settings.agentConfig.useInteractionsApiName': 'Использовать Interactions API',
+	'settings.agentConfig.useInteractionsApiDesc':
+		'Маршрутизировать запросы Gemini через более новый Interactions API от Google вместо устаревшего generateContent API. Работает без сохранения состояния — история беседы воспроизводится заново при каждом шаге и не сохраняется на стороне Google между шагами. Экспериментальная функция — отключите при возникновении проблем.',
 	'settings.agentConfig.customEndpointName': 'Пользовательский эндпоинт API',
 	'settings.agentConfig.customEndpointDesc':
 		'Переопределить базовый URL-адрес Google API по умолчанию (например, для корпоративного прокси или локального шлюза). Оставьте пустым, чтобы использовать официальный эндпоинт.',
@@ -210,15 +207,15 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.rag.filesIndexed': 'Проиндексировано файлов: {count}',
 	'settings.rag.notYetIndexed': 'Еще не проиндексировано',
 	'settings.rag.indexStatusName': 'Статус индекса',
-	'settings.rag.reindexButton': 'Переиндексировать хранилище',
+	'settings.rag.reindexButton': 'Пересканировать хранилище',
 	'settings.rag.indexingButton': 'Индексация...',
 	'settings.rag.serviceNotInitialized': 'Служба индексации RAG не инициализирована',
-	'settings.rag.indexResult': 'Проиндексировано файлов: {indexed} (пропущено: {skipped}, с ошибкой: {failed})',
+	'settings.rag.indexResult':
+		'Сканирование завершено: {indexed} переиндексировано, {skipped} пропущено, {failed} не удалось',
 	'settings.rag.indexingFailed': 'Индексация не удалась: {error}',
 	'settings.rag.deleteIndexButton': 'Удалить индекс',
 	'settings.rag.deletingButton': 'Удаление...',
-	'settings.rag.indexDeletedNotice':
-		'Индекс удален. Используйте «Переиндексировать хранилище» для повторного создания.',
+	'settings.rag.indexDeletedNotice': 'Индекс удален. Используйте "Пересканировать хранилище" для восстановления.',
 	'settings.rag.deleteIndexFailed': 'Не удалось удалить индекс: {error}',
 	'settings.rag.openDeleteConfirmFailed': 'Не удалось открыть подтверждение удаления: {error}',
 	'settings.rag.storeNameName': 'Имя поискового индекса',
@@ -232,9 +229,9 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.rag.autoSyncDesc': 'Автоматически обновлять индекс при создании, изменении или удалении файлов.',
 	'settings.rag.includeAttachmentsName': 'Включать вложения',
 	'settings.rag.includeAttachmentsDesc':
-		'Индексировать PDF и другие поддерживаемые типы файлов в дополнение к markdown-заметкам. Требуется переиндексация.',
+		'Индексировать PDF и другие поддерживаемые типы файлов в дополнение к markdown-заметкам. Требуется пересканирование.',
 	'settings.rag.attachmentSettingChangedNotice':
-		'Настройка вложений изменена. Переиндексируйте хранилище, чтобы применить изменения.',
+		'Настройки вложений изменены. Пересканируйте хранилище, чтобы применить изменения.',
 	'settings.rag.excludeFoldersName': 'Исключить папки',
 	'settings.rag.excludeFoldersDesc':
 		'Всегда исключены: {folders}. Добавьте дополнительные папки ниже (по одной на строку).',
@@ -424,7 +421,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.syncTooltipNone': 'Нет ожидающих изменений',
 	'ragStatus.syncing': 'Синхронизация...',
 	'ragStatus.syncFailed': 'Ошибка синхронизации: {message}',
-	'ragStatus.reindexButton': 'Переиндексировать всё',
+	'ragStatus.reindexButton': 'Пересканировать хранилище',
 	'ragStatus.settingsButton': 'Настройки',
 	'ragStatus.searchPlaceholder': 'Поиск файлов...',
 	'ragStatus.noFilesIndexed': 'Файлы еще не индексированы',
@@ -438,6 +435,13 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'ragStatus.statusDisabled': 'Отключено',
 	'ragStatus.statusRateLimited': 'Ограничение частоты запросов',
 	'ragStatus.statusUnknown': 'Неизвестно',
+	'time.justNow': 'Только что',
+	'time.minuteAgoSingular': '{count} минуту назад',
+	'time.minutesAgoPlural': '{count} мин. назад',
+	'time.hourAgoSingular': '{count} час назад',
+	'time.hoursAgoPlural': '{count} ч. назад',
+	'time.dayAgoSingular': '{count} день назад',
+	'time.daysAgoPlural': '{count} дн. назад',
 	'scheduler.presetOnce': 'Однократно',
 	'scheduler.presetDaily': 'Ежедневно (каждые 24 ч)',
 	'scheduler.presetDailyAt': 'Ежедневно в указанное время',
@@ -618,8 +622,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'backgroundTasks.started': 'Запущено в {time}',
 	'backgroundTasks.ragDisabled': 'Индексирование RAG не включено. Включите его в Настройки → Gemini Scribe.',
 	'backgroundTasks.openFileAria': 'Открыть {path}',
-	'backgroundTasks.indexingComplete':
-		'Индексирование RAG завершено: {indexed} проиндексировано, {skipped} без изменений',
+	'backgroundTasks.indexingComplete': 'Сканирование завершено: {indexed} переиндексировано, {skipped} без изменений',
 	'backgroundTasks.indexingFailed': 'Индексирование RAG не удалось: {message}',
 	'ragProgress.durationHours': '{hours}ч {minutes}м {seconds}с',
 	'ragProgress.durationMinutes': '{minutes}м {seconds}с',
@@ -704,12 +707,14 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'agent.attachments.fileTooLarge': 'Файл слишком большой: {name} превышает общий лимит вложений в 20 МБ',
 	'agent.attachments.attached': 'Прикреплен файл {name}',
 	'agent.progress.thinking': 'Думает...',
+	'agent.progress.thinkingWithBudget': '{thinking} (осталось: {remaining})',
 	'agent.progress.generating': 'Генерация ответа...',
 	'agent.progress.processing': 'Обработка ответа...',
 	'agent.progress.elapsedAria': 'Прошедшее время',
 	'agent.send.emptyResponse':
 		'Модель вернула пустой ответ. Это может происходить с рассуждающими моделями. Попробуйте переформулировать вопрос.',
 	'agent.send.cancelled': 'Выполнение агента отменено',
+	'agent.planMode.approved': 'Одобрено',
 	'agent.session.createFailed': 'Не удалось создать сессию агента',
 	'agent.session.loadFailed': 'Не удалось загрузить сессию',
 	'agent.shelf.attachmentFallback': 'Вложение',
@@ -812,6 +817,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'command.browseSessions': 'Обзор сессий агента',
 	'command.linkProject': 'Привязать проект к сессии агента',
 	'command.sessionSettings': 'Настройки сессии агента',
+	'command.togglePlanMode': 'Переключить режим планирования',
 	'ribbon.agentMode': 'Gemini Scribe: Режим агента',
 	'menu.main.rewriteText': 'Gemini Scribe: Переписать текст...',
 	'menu.main.askQuestion': 'Gemini Scribe: Задать вопрос...',
@@ -844,7 +850,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'Синхронизация RAG приостановлена',
 	'notice.main.ragNotPaused': 'Синхронизация RAG не приостановлена',
 	'notice.main.ragResumed': 'Синхронизация RAG возобновлена',
-	'notice.main.ragIndexComplete': 'Индексирование RAG завершено: проиндексировано {indexed}, без изменений {skipped}',
+	'notice.main.ragIndexComplete': 'Сканирование завершено: {indexed} переиндексировано, {skipped} без изменений',
 	'notice.main.ragIndexFailed': 'Ошибка индексирования RAG: {error}',
 	'notice.main.ragSyncingPending': 'Индекс RAG: синхронизация ожидающих изменений...',
 	'notice.main.readyToUse': 'Gemini Scribe готов к работе!',
@@ -873,7 +879,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'notice.backgroundTask.openResult': 'Открыть результат',
 	'notice.rag.resuming': 'Индексирование RAG: возобновление прерванного индексирования...',
 	'notice.rag.startingFresh': 'Индексирование RAG: запуск заново...',
-	'notice.rag.indexingComplete': 'Индексирование RAG завершено: проиндексировано {indexed}, без изменений {skipped}',
+	'notice.rag.indexingComplete': 'Сканирование завершено: {indexed} переиндексировано, {skipped} без изменений',
 	'notice.rag.indexingFailed': 'Ошибка индексирования RAG: {error}',
 	'notice.rag.startFreshFailed': 'Индексирование RAG: не удалось запустить заново: {error}',
 	'notice.rag.initFailed': 'Не удалось инициализировать поисковый индекс хранилища. Подробности см. в консоли.',
@@ -929,7 +935,8 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'tool.confirm.addMemory': 'Добавить следующее в память AGENTS.md:\n\n{preview}',
 	'tool.confirm.writeFileSummary': 'Записать в файл: {path}\n\n{summary}',
 	'tool.confirm.writeFile': 'Записать содержимое в файл: {path}\n\nПредпросмотр содержимого:\n{preview}',
-	'tool.confirm.deleteFile': 'Удалить файл или папку: {path}\n\nЭто действие нельзя отменить.',
+	'tool.confirm.deleteFile':
+		'Удалить файл или папку: {path}\n\nЭто действие следует вашей настройке Obsidian "Удаленные файлы" (перемещение в системную корзину, в папку .trash хранилища или безвозвратное удаление).',
 	'tool.confirm.createFolder': 'Создать папку: {path}',
 	'tool.confirm.moveFile': 'Переместить файл или папку из: {source}\nВ: {target}',
 	'modal.generateImage.title': 'Сгенерировать изображение',
@@ -1008,4 +1015,11 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'validation.topP.notANumber': 'Параметр Top P {value} не является допустимым числом. Скорректировано на {adjusted}.',
 	'validation.topP.outOfRange':
 		'Параметр Top P {value} находится вне допустимого диапазона [{min}, {max}]. Скорректировано на {adjusted}.',
+	'agent.planMode.toggleAria': 'Переключить режим планирования — просмотр плана перед выполнением агентом',
+	'agent.planMode.label': 'План',
+	'agent.planMode.headerLabel': 'Агент (План)',
+	'agent.planMode.approveBtn': 'Одобрить и выполнить',
+	'agent.planMode.rejectBtn': 'Отклонить',
+	'agent.planMode.rejectedNotice': 'План отклонен.',
+	'agent.planMode.proceedMessage': 'Продолжить выполнение одобренного плана.',
 };
