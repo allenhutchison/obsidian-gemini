@@ -1416,7 +1416,7 @@ describe('AgentLoop', () => {
 			expect(Math.abs(read1Start - read2Start)).toBeLessThan(20);
 
 			// The write tool must only start AFTER both read tools have finished
-			expect(write1Start).toBeGreaterThanOrEqual(Math.min(read1End, read2End) - 5);
+			expect(write1Start).toBeGreaterThanOrEqual(Math.max(read1End, read2End) - 5);
 		});
 	});
 });

@@ -619,7 +619,11 @@ export class AgentLoop {
 
 		if (isCancelled()) {
 			plugin.logger.debug('[AgentLoop] Cancellation detected before tool batch execution');
-			return results;
+			return sortedToolCalls.map((toolCall) => ({
+				toolName: toolCall.name,
+				toolArguments: toolCall.arguments || {},
+				result: { success: false, error: 'Cancelled' },
+			}));
 		}
 
 		// Split tool calls into parallelizable and serial (confirmation-requiring or write/destructive)
@@ -725,10 +729,16 @@ export class AgentLoop {
 		}
 
 		// Execute serial calls sequentially
+		let serialCancelled = false;
 		for (const toolCall of serialCalls) {
-			if (isCancelled()) {
-				plugin.logger.debug('[AgentLoop] Cancellation detected, stopping serial tool execution');
-				break;
+			if (serialCancelled || isCancelled()) {
+				serialCancelled = true;
+				results.push({
+					toolName: toolCall.name,
+					toolArguments: toolCall.arguments || {},
+					result: { success: false, error: 'Cancelled' },
+				});
+				continue;
 			}
 
 			const executionId = `${toolCall.name}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
