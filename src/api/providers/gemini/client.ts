@@ -86,6 +86,18 @@ export class GeminiClient implements ModelApi {
 	private prompts: GeminiPrompts;
 	private plugin?: ObsidianGemini;
 
+	private static activeCaches = new Map<
+		string,
+		{
+			cacheName: string;
+			model: string;
+			systemInstruction: string;
+			toolsJson: string;
+			cachedTurnsJson: string;
+			expiresAt: number;
+		}
+	>();
+
 	constructor(config: GeminiClientConfig, prompts?: GeminiPrompts, plugin?: ObsidianGemini) {
 		this.config = {
 			temperature: 1.0,
@@ -441,9 +453,6 @@ export class GeminiClient implements ModelApi {
 			systemInstruction = request.prompt || '';
 		}
 
-		// Build conversation contents
-		const contents = this.buildContents(request);
-
 		// Build config
 		const config: any = {
 			temperature: request.temperature ?? this.config.temperature,
@@ -479,6 +488,109 @@ export class GeminiClient implements ModelApi {
 
 			config.tools = config.tools || [];
 			config.tools.push({ functionDeclarations });
+		}
+
+		// Build conversation contents
+		let contents = this.buildContents(request);
+
+		let cachedContent: string | undefined;
+
+		// Handle context caching if enabled and session ID is present
+		const sessionId = this.config.sessionId;
+		if (isExtended && sessionId && this.plugin?.settings.contextCachingEnabled) {
+			const estimatedTokens = estimateTokensFromContents(contents);
+			this.plugin.logger.debug(`[GeminiClient] Context Caching check: estimated tokens = ${estimatedTokens}`);
+
+			const now = Date.now();
+			// Clean up expired caches from map
+			for (const [key, cacheInfo] of GeminiClient.activeCaches.entries()) {
+				if (cacheInfo.expiresAt < now) {
+					GeminiClient.activeCaches.delete(key);
+				}
+			}
+
+			// We need at least 32,768 tokens to cache
+			if (estimatedTokens >= 32768) {
+				const toolsJson = JSON.stringify(config.tools || []);
+				const cachedInfo = GeminiClient.activeCaches.get(sessionId);
+
+				if (
+					cachedInfo &&
+					cachedInfo.model === model &&
+					cachedInfo.systemInstruction === (systemInstruction || '') &&
+					cachedInfo.toolsJson === toolsJson
+				) {
+					const cachedTurns = JSON.parse(cachedInfo.cachedTurnsJson) as Content[];
+					if (this.checkHistoryPrefixMatch(contents, cachedTurns)) {
+						this.plugin.logger.log(`[GeminiClient] Context Cache HIT! Reusing cache: ${cachedInfo.cacheName}`);
+						cachedInfo.expiresAt = now + 300000; // Reset TTL (5 mins)
+						cachedContent = cachedInfo.cacheName;
+
+						// Slice off cached turns from the request contents
+						contents = contents.slice(cachedTurns.length);
+					} else {
+						this.plugin.logger.log('[GeminiClient] Context Cache prefix mismatch, invalidating old cache');
+						GeminiClient.activeCaches.delete(sessionId);
+					}
+				}
+
+				// If no active cache matched, create a new one
+				if (!cachedContent && contents.length > 1) {
+					try {
+						// Cache all turns except the very last one to ensure request is never empty and prefix is stable
+						const contentsToCache = contents.slice(0, -1);
+						const cachedTokens = estimateTokensFromContents(contentsToCache);
+
+						if (cachedTokens >= 32768) {
+							this.plugin.logger.log(
+								`[GeminiClient] Context Cache MISS. Creating new context cache for session ${sessionId} (${cachedTokens} tokens)...`
+							);
+							const cache = await this.ai.caches.create({
+								model: model,
+								config: {
+									contents: contentsToCache,
+									systemInstruction: systemInstruction || '',
+									...(config.tools?.length && { tools: config.tools }),
+									ttl: '300s', // 5 minutes
+								},
+							});
+
+							if (cache && cache.name) {
+								this.plugin.logger.log(`[GeminiClient] Created context cache successfully: ${cache.name}`);
+								GeminiClient.activeCaches.set(sessionId, {
+									cacheName: cache.name,
+									model,
+									systemInstruction: systemInstruction || '',
+									toolsJson,
+									cachedTurnsJson: JSON.stringify(contentsToCache),
+									expiresAt: now + 300000,
+								});
+
+								cachedContent = cache.name;
+								// Slice off cached turns from the request contents
+								contents = contents.slice(contentsToCache.length);
+							}
+						}
+					} catch (e) {
+						this.plugin.logger.warn(
+							'[GeminiClient] Failed to create context cache (likely custom endpoint or unsupported model). Falling back to uncached request:',
+							e
+						);
+						GeminiClient.activeCaches.delete(sessionId);
+					}
+				}
+			} else {
+				// History is too small, delete any existing cache
+				GeminiClient.activeCaches.delete(sessionId);
+			}
+		}
+
+		if (cachedContent) {
+			config.cachedContent = cachedContent;
+			// Since systemInstruction and tools are loaded from the cache, we should NOT pass them
+			// again in the config, or the API might reject the request or complain about duplicates.
+			delete config.systemInstruction;
+			delete config.tools;
 		}
 
 		// Build params
@@ -523,8 +635,11 @@ export class GeminiClient implements ModelApi {
 		if (extReq.conversationHistory?.length) {
 			for (const entry of extReq.conversationHistory) {
 				// Support Content format (already has role and parts)
-				if ('role' in entry && 'parts' in entry) {
-					contents.push(entry);
+				if ('role' in entry && entry.parts?.length) {
+					contents.push({
+						role: entry.role,
+						parts: entry.parts,
+					});
 				}
 				// Support our internal format with role and text
 				else if ('role' in entry && 'text' in entry) {
@@ -578,6 +693,17 @@ export class GeminiClient implements ModelApi {
 		}
 
 		return contents;
+	}
+
+	private checkHistoryPrefixMatch(current: Content[], cached: Content[]): boolean {
+		if (current.length < cached.length) return false;
+		for (let i = 0; i < cached.length; i++) {
+			const curTurn = current[i];
+			const cachedTurn = cached[i];
+			if (curTurn.role !== cachedTurn.role) return false;
+			if (JSON.stringify(curTurn.parts) !== JSON.stringify(cachedTurn.parts)) return false;
+		}
+		return true;
 	}
 
 	/**
@@ -805,4 +931,9 @@ export class GeminiClient implements ModelApi {
 			throw error;
 		}
 	}
+}
+
+function estimateTokensFromContents(contents: Content[]): number {
+	const json = JSON.stringify(contents ?? []);
+	return Math.ceil(json.length / 4);
 }
