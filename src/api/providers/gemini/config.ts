@@ -16,6 +16,7 @@ export interface GeminiClientConfig {
 	topP?: number;
 	maxOutputTokens?: number;
 	streamingEnabled?: boolean;
+	sessionId?: string;
 	/**
 	 * Route requests through the GA Interactions API (`interactions.create`)
 	 * instead of the legacy `generateContent`. Stateless (`store: false`) — the
