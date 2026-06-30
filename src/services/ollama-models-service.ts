@@ -19,8 +19,10 @@ const COMPLETION_NAME_HINT_PATTERNS = [
 ];
 
 /**
- * Models known to support vision (image input). Used as a hint only — Ollama
- * does not expose this in /api/tags, so we pattern-match on the family.
+ * Last-resort vision hint list used only when the /api/show probe is unavailable
+ * (network failure, older Ollama that lacks the endpoint, etc.). Primary detection
+ * now uses the structured `capabilities` array returned by /api/show, with a
+ * template-regex fallback for Ollama versions that predate the capabilities field.
  */
 const VISION_NAME_HINTS = ['llava', 'bakllava', 'vision', 'moondream', 'qwen2-vl', 'qwen2.5-vl', 'minicpm-v'];
 
@@ -42,6 +44,14 @@ interface OllamaTagsResponse {
 	models: OllamaTagsModel[];
 }
 
+/** Subset of the /api/show response used for capability detection. */
+interface OllamaShowResponse {
+	/** Structured capability strings present in Ollama ≥ 0.x (e.g. "vision", "tools"). */
+	capabilities?: string[];
+	/** Modelfile template text, present in all Ollama versions. */
+	template?: string;
+}
+
 /**
  * Fetches the list of locally available models from an Ollama server's
  * `/api/tags` endpoint and returns them as `GeminiModel` entries that can
@@ -54,6 +64,12 @@ export class OllamaModelsService {
 	private plugin: ObsidianGemini;
 	private cachedModels: GeminiModel[] | null = null;
 	private lastBaseUrl: string | null = null;
+	/**
+	 * Caches /api/show responses by model name so each model is probed at most
+	 * once per listing cycle. A sibling probe (e.g. for tool-use detection,
+	 * issue #709) can reuse these cached responses without extra network calls.
+	 */
+	private showCache = new Map<string, OllamaShowResponse>();
 
 	constructor(plugin: ObsidianGemini) {
 		this.plugin = plugin;
@@ -70,6 +86,11 @@ export class OllamaModelsService {
 		const cacheMatchesBaseUrl = this.lastBaseUrl === baseUrl;
 		if (!forceRefresh && this.cachedModels && cacheMatchesBaseUrl) {
 			return this.cachedModels;
+		}
+
+		// Clear capability probes so they run against the current daemon state.
+		if (forceRefresh || !cacheMatchesBaseUrl) {
+			this.showCache.clear();
 		}
 
 		try {
@@ -91,7 +112,7 @@ export class OllamaModelsService {
 				throw new Error('Invalid /api/tags response shape');
 			}
 
-			this.cachedModels = data.models.map((m) => this.toGeminiModel(m));
+			this.cachedModels = await Promise.all(data.models.map((m) => this.toGeminiModel(m, baseUrl)));
 			this.lastBaseUrl = baseUrl;
 			this.plugin.logger.log(`[OllamaModelsService] Loaded ${this.cachedModels.length} models from ${baseUrl}`);
 			return this.cachedModels;
@@ -114,13 +135,68 @@ export class OllamaModelsService {
 	invalidate(): void {
 		this.cachedModels = null;
 		this.lastBaseUrl = null;
+		this.showCache.clear();
 	}
 
-	private toGeminiModel(m: OllamaTagsModel): GeminiModel {
+	/**
+	 * Fetches /api/show for a model and caches the result. Returns null on any
+	 * failure so callers can fall back to name-hint detection gracefully.
+	 */
+	private async probeModel(name: string, baseUrl: string): Promise<OllamaShowResponse | null> {
+		if (this.showCache.has(name)) {
+			return this.showCache.get(name)!;
+		}
+		try {
+			const url = `${baseUrl.replace(/\/$/, '')}/api/show`;
+			const response = await requestUrl({
+				url,
+				method: 'POST',
+				contentType: 'application/json',
+				body: JSON.stringify({ model: name }),
+				throw: false,
+			});
+			if (response.status !== 200) {
+				return null;
+			}
+			const result = response.json as OllamaShowResponse;
+			this.showCache.set(name, result);
+			return result;
+		} catch (err) {
+			this.plugin.logger.debug(`[OllamaModelsService] /api/show probe failed for ${name}:`, err);
+			return null;
+		}
+	}
+
+	/**
+	 * Three-tier vision detection (most- to least-authoritative):
+	 *   1. `capabilities` array from /api/show — structured, authoritative on
+	 *      current Ollama (e.g. `["completion", "vision"]`).
+	 *   2. Template regex — covers older Ollama versions that predate the
+	 *      capabilities field but document image support in the modelfile template.
+	 *   3. VISION_NAME_HINTS name-match — last resort when /api/show is
+	 *      unavailable (daemon unreachable, network error, etc.).
+	 */
+	private detectVision(name: string, show: OllamaShowResponse | null): boolean {
+		if (show !== null) {
+			// A present-but-empty capabilities array is authoritative: the daemon
+			// explicitly reports no capabilities, so we do not fall through to name hints.
+			if (Array.isArray(show.capabilities)) {
+				return show.capabilities.includes('vision');
+			}
+			if (typeof show.template === 'string') {
+				return /image|vision|multimodal/i.test(show.template);
+			}
+		}
+		const lower = name.toLowerCase();
+		return VISION_NAME_HINTS.some((h) => lower.includes(h));
+	}
+
+	private async toGeminiModel(m: OllamaTagsModel, baseUrl: string): Promise<GeminiModel> {
 		const name = m.name;
 		const lower = name.toLowerCase();
 		const isCompletion = COMPLETION_NAME_HINT_PATTERNS.some((re) => re.test(lower));
-		const isVision = VISION_NAME_HINTS.some((h) => lower.includes(h));
+		const show = await this.probeModel(name, baseUrl);
+		const isVision = this.detectVision(name, show);
 
 		const defaultForRoles = isCompletion ? (['completions'] as const) : undefined;
 
