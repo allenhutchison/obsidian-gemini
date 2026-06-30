@@ -187,6 +187,33 @@ describe('OllamaModelsService', () => {
 			expect(showCallCount).toBe(1);
 		});
 
+		it('falls back to VISION_NAME_HINTS when /api/show returns 200 but neither capabilities nor template', async () => {
+			mockEndpoints([{ name: 'llava:13b' }, { name: 'llama3.2:latest' }], () => ({}));
+			const svc = new OllamaModelsService(buildPlugin());
+			const models = await svc.getModels();
+			expect(models[0].supportsVision).toBe(true); // llava → name hint wins
+			expect(models[1].supportsVision).toBe(false); // llama3.2 → not in hints
+		});
+
+		it('capabilities array wins over a conflicting template keyword', async () => {
+			mockEndpoints([{ name: 'mymodel:latest' }], () => ({
+				capabilities: ['completion'],
+				template: 'This model accepts image input for visual understanding',
+			}));
+			const svc = new OllamaModelsService(buildPlugin());
+			const models = await svc.getModels();
+			// capabilities (no vision entry) wins; template keyword is not consulted
+			expect(models[0].supportsVision).toBe(false);
+		});
+
+		it('empty capabilities array is authoritative — does not fall through to name hints', async () => {
+			mockEndpoints([{ name: 'llava:13b' }], () => ({ capabilities: [] }));
+			const svc = new OllamaModelsService(buildPlugin());
+			const models = await svc.getModels();
+			// empty array short-circuits the name-hint tier
+			expect(models[0].supportsVision).toBe(false);
+		});
+
 		it('clears the /api/show cache on invalidate so probes re-run after refresh', async () => {
 			let showCallCount = 0;
 			mockedRequestUrl.mockImplementation((opts: { url: string; body?: string }) => {

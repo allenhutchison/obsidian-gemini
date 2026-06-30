@@ -19,7 +19,7 @@ If the daemon runs on a different host or port, edit the **Ollama base URL** fie
 ## What works
 
 - Agent chat with streaming, tool calling, and conversation memory
-- Drag-and-drop / paste of **image** attachments to vision models (e.g. `llava`, `moondream`, `qwen2.5-vl`)
+- Drag-and-drop / paste of **image** attachments to vision models (e.g. `llava`, `moondream`, `qwen2.5-vl`); vision support is auto-detected from the model's reported capabilities via `/api/show`
 - File summarization, IDE-style completions, selection rewriting
 - Custom prompts, projects, agent skills, scheduled tasks, MCP servers
 

@@ -148,14 +148,21 @@ export class OllamaModelsService {
 		}
 		try {
 			const url = `${baseUrl.replace(/\/$/, '')}/api/show`;
-			const response = await requestUrl({ url, method: 'POST', body: JSON.stringify({ model: name }), throw: false });
+			const response = await requestUrl({
+				url,
+				method: 'POST',
+				contentType: 'application/json',
+				body: JSON.stringify({ model: name }),
+				throw: false,
+			});
 			if (response.status !== 200) {
 				return null;
 			}
 			const result = response.json as OllamaShowResponse;
 			this.showCache.set(name, result);
 			return result;
-		} catch {
+		} catch (err) {
+			this.plugin.logger.debug(`[OllamaModelsService] /api/show probe failed for ${name}:`, err);
 			return null;
 		}
 	}
@@ -172,6 +179,8 @@ export class OllamaModelsService {
 	private detectVision(name: string, show: OllamaShowResponse | null): boolean {
 		if (show !== null) {
 			if (Array.isArray(show.capabilities)) {
+				// A present-but-empty array is authoritative — the daemon knows this model
+				// and it has no vision capability; do not fall through to name hints.
 				return show.capabilities.includes('vision');
 			}
 			if (typeof show.template === 'string') {
