@@ -61,6 +61,7 @@ export default defineConfig({
 					items: [
 						{ text: 'Settings', link: '/reference/settings' },
 						{ text: 'Advanced Settings', link: '/reference/advanced-settings' },
+						{ text: 'Provider Capabilities', link: '/reference/provider-capabilities' },
 						{ text: 'Loop Detection', link: '/reference/loop-detection' },
 						{ text: 'Eval Suite', link: '/reference/evals' },
 					],
