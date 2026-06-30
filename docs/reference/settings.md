@@ -71,6 +71,7 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 - **Structure**:
   ```text
   gemini-scribe/
+  ├── History/          # Legacy note-centric chat history files (v3.x and earlier)
   ├── Prompts/          # Custom prompt templates
   ├── Skills/           # Custom agent skills (<skill-name>/SKILL.md)
   ├── Agent-Sessions/   # Agent mode sessions with conversation history
