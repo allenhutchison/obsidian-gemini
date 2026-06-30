@@ -2,6 +2,7 @@ import { Notice, setIcon, setTooltip } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { RagIndexStatus, RagProgressInfo, IndexResult, ProgressListener } from './rag-types';
 import { getErrorMessage } from '../utils/error-utils';
+import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
 
 /**
@@ -67,10 +68,7 @@ export class RagStatusBar {
 						this.provider.getDetailedStatus(),
 						() => {
 							// Open settings to RAG section
-							// @ts-expect-error - Obsidian's setting API
-							this.plugin.app.setting.open();
-							// @ts-expect-error - Obsidian's setting API
-							this.plugin.app.setting.openTabById('gemini-scribe');
+							openPluginSettingsTab(this.plugin.app, this.plugin.manifest.id);
 						},
 						async () => {
 							// Open progress modal and start reindexing
