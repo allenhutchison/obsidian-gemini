@@ -6,6 +6,7 @@ import type { ProgressListener } from '../services/rag-types';
 import type { RagIndexingService } from '../services/rag-indexing';
 import { getErrorMessage } from '../utils/error-utils';
 import { formatRelativeTime } from '../utils/format-relative-time';
+import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
 
 type ModalTab = 'tasks' | 'rag';
@@ -488,10 +489,7 @@ export class BackgroundTasksModal extends Modal {
 					.setCta()
 					.onClick(() => {
 						this.close();
-						// @ts-expect-error — Obsidian internal API
-						this.plugin.app.setting.open();
-						// @ts-expect-error — Obsidian internal API
-						this.plugin.app.setting.openTabById('gemini-scribe');
+						openPluginSettingsTab(this.plugin.app, this.plugin.manifest.id);
 					})
 			);
 	}

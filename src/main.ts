@@ -43,6 +43,7 @@ import { BackgroundStatusBar } from './services/background-status-bar';
 import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
 import { getErrorMessage, getRawErrorMessage } from './utils/error-utils';
+import { openPluginSettingsTab } from './utils/obsidian-settings';
 import { t } from './i18n';
 
 export interface RagIndexingSettings {
@@ -773,10 +774,7 @@ export default class ObsidianGemini extends Plugin {
 					this.ragIndexing.getDetailedStatus(),
 					() => {
 						// Open settings to RAG section
-						// @ts-expect-error - Obsidian's setting API
-						this.app.setting.open();
-						// @ts-expect-error - Obsidian's setting API
-						this.app.setting.openTabById('gemini-scribe');
+						openPluginSettingsTab(this.app, this.manifest.id);
 					},
 					async () => {
 						// Reindex
