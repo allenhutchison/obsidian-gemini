@@ -178,9 +178,9 @@ export class OllamaModelsService {
 	 */
 	private detectVision(name: string, show: OllamaShowResponse | null): boolean {
 		if (show !== null) {
+			// A present-but-empty capabilities array is authoritative: the daemon
+			// explicitly reports no capabilities, so we do not fall through to name hints.
 			if (Array.isArray(show.capabilities)) {
-				// A present-but-empty array is authoritative — the daemon knows this model
-				// and it has no vision capability; do not fall through to name hints.
 				return show.capabilities.includes('vision');
 			}
 			if (typeof show.template === 'string') {

@@ -40,6 +40,7 @@ Switching back to Gemini at any time restores all features — settings persist 
 
 ## Tips
 
+- **Vision model detection** — Vision capability is auto-detected from each model's `/api/show` response. Any model that Ollama reports as vision-capable is enabled for image attachments automatically; you do not need to add new keywords or update settings when pulling a new multimodal model.
 - **Tool calling** — Most modern instruct models support function calling; older or very small models may not. If the agent loop stalls, try a different model (Llama 3.2, Qwen 2.5, Mistral 0.3 are good starting points).
 - **Context window** — Local models often have smaller context than Gemini. Compaction triggers at the percentage set by `Context Compaction Threshold` (default `20`%) of an estimated 32k-token window; long sessions will summarize older turns earlier than they do on Gemini.
 - **Token counts** — Ollama does not expose a `countTokens` endpoint, so the plugin estimates tokens from character length (chars ÷ 4). The token-usage indicator is approximate.
