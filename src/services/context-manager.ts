@@ -297,12 +297,22 @@ export class ContextManager {
 	/**
 	 * Check if compaction is needed and perform it if so.
 	 *
-	 * This is the main entry point called before each API request.
-	 * It uses cached usageMetadata from the last API response to decide
-	 * whether compaction is needed. countTokens() is only called after
+	 * This is the main entry point called before each API request — including
+	 * mid-loop, after each tool batch in `AgentLoop`, so long tool chains don't
+	 * overflow the context window. `options.protectFromIndex` marks the start
+	 * of the caller's protected suffix (e.g. the current agent-loop's turns,
+	 * which carry `functionCall`/`thoughtSignature` continuity that summarization
+	 * must never touch); entries at or after that index are never folded into
+	 * the summary. It uses cached usageMetadata from the last API response to
+	 * decide whether compaction is needed. countTokens() is only called after
 	 * compaction to measure the result size.
 	 */
-	async prepareHistory(conversationHistory: Content[], modelName: string): Promise<CompactionResult> {
+	async prepareHistory(
+		conversationHistory: Content[],
+		modelName: string,
+		options?: { protectFromIndex?: number }
+	): Promise<CompactionResult> {
+		const protectFromIndex = options?.protectFromIndex;
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
 
 		// Short-circuit for very short conversations
@@ -386,7 +396,19 @@ export class ContextManager {
 
 		const aggressiveThreshold = await this.getAggressiveThreshold(modelName);
 		const isAggressive = postPhase1Tokens >= aggressiveThreshold;
-		const result = await this.compactHistory(truncatedHistory, modelName, isAggressive);
+		const result = await this.compactHistory(truncatedHistory, modelName, isAggressive, protectFromIndex);
+
+		if (!result) {
+			// Nothing old enough to summarize — the protected suffix (e.g. the
+			// current agent-loop's turns) covers the whole history. Truncation
+			// (phase 1) still applies; summarization is a no-op this call.
+			this.logger.log('[ContextManager] Protected region covers entire history; skipping summarization');
+			return {
+				compactedHistory: truncatedHistory,
+				wasCompacted: false,
+				estimatedTokens: postPhase1Tokens,
+			};
+		}
 
 		// Verify the compacted history is smaller
 		const compactedTokens = await this.countTokens(modelName, result.compactedHistory);
@@ -404,13 +426,15 @@ export class ContextManager {
 
 	/**
 	 * Perform the actual compaction: split history, summarize old turns,
-	 * and return the compacted history.
+	 * and return the compacted history. Returns `null` when there's nothing
+	 * old enough to summarize (the protected suffix covers the whole history).
 	 */
 	private async compactHistory(
 		conversationHistory: Content[],
 		modelName: string,
-		aggressive: boolean
-	): Promise<{ compactedHistory: Content[]; summaryText: string }> {
+		aggressive: boolean,
+		protectFromIndex?: number
+	): Promise<{ compactedHistory: Content[]; summaryText: string } | null> {
 		const totalTurns = conversationHistory.length;
 
 		// Determine how many recent turns to keep
@@ -419,6 +443,13 @@ export class ContextManager {
 			: Math.max(MIN_RECENT_TURNS_TO_KEEP, Math.floor(totalTurns * RECENT_TURNS_RATIO));
 
 		let splitIndex = totalTurns - recentTurnsToKeep;
+
+		// Never fold the protected suffix (e.g. the current agent-loop's turns,
+		// which carry live functionCall/thoughtSignature continuity) into the
+		// summary — clamp the split to stay strictly before it.
+		if (protectFromIndex !== undefined) {
+			splitIndex = Math.min(splitIndex, protectFromIndex);
+		}
 
 		// Ensure we don't split in the middle of a tool exchange (functionCall/functionResponse pair)
 		// Scan backward to find a safe boundary at the start of a user turn
@@ -430,6 +461,10 @@ export class ContextManager {
 				break;
 			}
 			splitIndex--;
+		}
+
+		if (splitIndex <= 0) {
+			return null;
 		}
 
 		// Split into old (to summarize) and recent (to keep verbatim)

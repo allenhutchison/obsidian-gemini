@@ -229,6 +229,8 @@ Below the threshold, neither phase fires — older history bytes are left untouc
 
 Re-issuing a tool call brings the full output back if the agent needs it. The behavior is always-on and not currently exposed as a setting.
 
+Compaction isn't only checked before the initial request — `AgentLoop` re-checks after every tool batch, so a long tool chain (many iterations in a single turn) can be compacted mid-flight instead of only at the start of the next user turn. Mid-loop compaction never touches the current tool chain's own turns (the ones carrying the in-flight `functionCall`/`thoughtSignature` continuity) — only turns from before the chain started are eligible, so an in-progress multi-step tool sequence is never summarized out from under itself.
+
 ### Show Token Usage
 
 - **Setting**: `showTokenUsage`

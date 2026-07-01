@@ -744,6 +744,7 @@ export class AgentView extends ItemView {
 			displayMessage: (entry: GeminiConversationEntry) => this.displayMessage(entry),
 			renderReasoning: (container: HTMLElement, thoughts: string, sourcePath: string) =>
 				this.messages.renderReasoningInto(container, thoughts, sourcePath),
+			updateTokenUsage: () => this.updateTokenUsage(),
 			incrementToolCallCount: (count: number) => {
 				this.send?.incrementToolCallCount(count);
 			},

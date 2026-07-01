@@ -582,6 +582,93 @@ describe('ContextManager', () => {
 				expect.any(Error)
 			);
 		});
+
+		describe('protectFromIndex (mid-loop compaction)', () => {
+			test('clamps the split so the protected suffix (e.g. current agent-loop turns) is never summarized away', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 250_000,
+					totalTokenCount: 300_000,
+				});
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+
+				// 8 prior (completed) turns, then a 12-turn in-flight tool chain
+				// carrying functionCall + thoughtSignature. Without protection the
+				// default 30%-recent split (splitIndex=14) would land inside the
+				// tool chain and summarize away some of its functionCall turns.
+				const priorTurns = Array.from({ length: 8 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Prior turn ${i}` }],
+				}));
+				const loopTurns = [
+					{ role: 'user', parts: [{ text: 'kick off a long tool chain' }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'a.md' } }, thoughtSignature: 'sig-a' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'a' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'b.md' } }, thoughtSignature: 'sig-b' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'b' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'c.md' } }, thoughtSignature: 'sig-c' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'c' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'd.md' } }, thoughtSignature: 'sig-d' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'd' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'e.md' } }, thoughtSignature: 'sig-e' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'e' } } }] },
+					{ role: 'model', parts: [{ text: 'done' }] },
+				];
+				const history = [...priorTurns, ...loopTurns];
+				const protectFromIndex = priorTurns.length; // 8
+
+				const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash', { protectFromIndex });
+
+				expect(result.wasCompacted).toBe(true);
+				// summary + ack + all 12 loop turns kept verbatim.
+				expect(result.compactedHistory).toHaveLength(2 + loopTurns.length);
+				expect(result.compactedHistory[0].parts![0].text).toContain(CONTEXT_SUMMARY_MARKER);
+				expect(result.compactedHistory.slice(2)).toEqual(loopTurns);
+
+				// Every functionCall + thoughtSignature from the protected chain survives, in order.
+				const signatures = result.compactedHistory
+					.flatMap((turn) => turn.parts ?? [])
+					.filter((p: any) => p.functionCall)
+					.map((p: any) => p.thoughtSignature);
+				expect(signatures).toEqual(['sig-a', 'sig-b', 'sig-c', 'sig-d', 'sig-e']);
+			});
+
+			test('skips summarization entirely when the protected suffix covers the whole history', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 250_000,
+					totalTokenCount: 300_000,
+				});
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+
+				// A headless caller with no prior history (initialHistory: []) — the
+				// entire conversation belongs to the current loop, so there's
+				// nothing older to fold into a summary.
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i}` }],
+				}));
+
+				const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash', { protectFromIndex: 0 });
+
+				expect(result.wasCompacted).toBe(false);
+				expect(result.compactedHistory).toEqual(history);
+				expect(mockGenerateContent).not.toHaveBeenCalled();
+			});
+		});
 	});
 
 	describe('reset', () => {
