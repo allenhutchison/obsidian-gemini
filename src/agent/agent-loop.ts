@@ -441,6 +441,14 @@ export class AgentLoop {
 			}
 			updatedHistory = compactionResult.compactedHistory;
 
+			// prepareHistory can spend real time (token counting, an LLM
+			// summarization call) — re-check cancellation before scheduling the
+			// follow-up request so a stop during compaction doesn't sneak out
+			// another model call.
+			if (isCancelled()) {
+				return this.cancelledResult(updatedHistory, iterations);
+			}
+
 			// Follow-up: ask the model what to do next given the tool results
 			await this.safeHook('onFollowUpRequestStart', plugin, () => hooks?.onFollowUpRequestStart?.());
 

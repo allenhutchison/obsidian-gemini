@@ -382,6 +382,12 @@ export class ContextManager {
 			this.logger.log(
 				`[ContextManager] Phase 1 sufficient (${postPhase1Tokens} < ${compactionThreshold}); skipping summarization`
 			);
+			// Force-set even though wasCompacted is false: truncation may have
+			// genuinely lowered the estimate, and updateUsageMetadata's
+			// high-water mark would otherwise reject the next (accurate, lower)
+			// API-reported count for the rest of this turn, leaving the cache
+			// stuck on the stale pre-truncation figure.
+			this.setUsageMetadata({ promptTokenCount: postPhase1Tokens, totalTokenCount: postPhase1Tokens });
 			return {
 				compactedHistory: truncatedHistory,
 				wasCompacted: false,
@@ -403,6 +409,8 @@ export class ContextManager {
 			// current agent-loop's turns) covers the whole history. Truncation
 			// (phase 1) still applies; summarization is a no-op this call.
 			this.logger.log('[ContextManager] Protected region covers entire history; skipping summarization');
+			// Same force-set rationale as the phase-1-sufficient branch above.
+			this.setUsageMetadata({ promptTokenCount: postPhase1Tokens, totalTokenCount: postPhase1Tokens });
 			return {
 				compactedHistory: truncatedHistory,
 				wasCompacted: false,

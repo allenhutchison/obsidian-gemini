@@ -452,6 +452,16 @@ describe('ContextManager', () => {
 			expect((oldToolResult as any).truncated).toBe(true);
 			// No summarization roundtrip — phase 1 alone was sufficient.
 			expect(mockCountTokens).not.toHaveBeenCalled();
+
+			// The lower post-truncation estimate must be persisted immediately —
+			// not left to the caller — so a subsequent real (lower) API-reported
+			// count isn't rejected by updateUsageMetadata's high-water mark.
+			expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(result.estimatedTokens);
+			contextManager.updateUsageMetadata({
+				promptTokenCount: result.estimatedTokens,
+				totalTokenCount: result.estimatedTokens,
+			});
+			expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(result.estimatedTokens);
 		});
 
 		test('does not truncate under threshold even when big tool results are present (cache preservation)', async () => {

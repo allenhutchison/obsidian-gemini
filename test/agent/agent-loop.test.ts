@@ -1096,10 +1096,14 @@ describe('AgentLoop', () => {
 			}));
 			// Iteration 1's updatedHistory is 5 (prior) + 3 (spliced-in user message,
 			// this batch's model call, this batch's tool result) = 8 turns.
-			// Compacting down to 4 (2-entry summary + the 2 loop turns) is a shrinkage of 4.
+			// A contract-faithful compaction never drops anything at/after
+			// protectFromIndex (5), so the spliced-in user message survives too —
+			// compacting down to 5 (2-entry summary + the 3 protected loop turns)
+			// is a shrinkage of 3.
 			const afterFirstCompaction = [
 				{ role: 'user', parts: [{ text: '[Context Summary]' }] },
 				{ role: 'model', parts: [{ text: 'ack' }] },
+				{ role: 'user', parts: [{ text: 'do it' }] },
 				{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: {} } }] },
 				{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: {} } }] },
 			];
@@ -1133,8 +1137,8 @@ describe('AgentLoop', () => {
 			expect(prepareHistory).toHaveBeenCalledTimes(2);
 			// First batch: boundary is exactly where initialHistory ended.
 			expect(prepareHistory.mock.calls[0][2]).toEqual({ protectFromIndex: 5 });
-			// Second batch: boundary shifted left by the 4 entries the first compaction shed.
-			expect(prepareHistory.mock.calls[1][2]).toEqual({ protectFromIndex: 1 });
+			// Second batch: boundary shifted left by the 3 entries the first compaction shed.
+			expect(prepareHistory.mock.calls[1][2]).toEqual({ protectFromIndex: 2 });
 		});
 	});
 
