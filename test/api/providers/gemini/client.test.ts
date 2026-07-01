@@ -10,9 +10,12 @@ import { ModelUseCase } from '../../../../src/api/model-use-case';
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
 // us share the spy with the factory while keeping vitest's mock-hoisting safe.
-const { generateContentMock, interactionsCreateMock, interactionsService } = vi.hoisted(() => {
+const { generateContentMock, filesUploadMock, interactionsCreateMock, interactionsService } = vi.hoisted(() => {
 	return {
 		generateContentMock: vi.fn(),
+		filesUploadMock: vi
+			.fn()
+			.mockResolvedValue({ name: 'files/test-file-id', uri: 'https://files.gemini/test-file-id' }),
 		interactionsCreateMock: vi.fn(),
 		// Shared so the test can observe the getClient wrap installObsidianFetch applies.
 		// getClient returns a FRESH sub-client per call (each with its own `_httpClient`),
@@ -34,6 +37,10 @@ vi.mock('@google/genai', () => ({
 			models: {
 				generateContent: generateContentMock,
 				generateContentStream: vi.fn(),
+			},
+
+			files: {
+				upload: filesUploadMock,
 			},
 			interactions: interactionsService,
 		};
@@ -982,6 +989,89 @@ describe('GeminiClient', () => {
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			expect(params.config.maxOutputTokens).toBe(4096);
+		});
+	});
+
+	describe('Advanced AI Optimizations', () => {
+		describe('Files API', () => {
+			beforeEach(() => {
+				(mockPlugin as any).agentsMemory = { read: vi.fn().mockResolvedValue('') };
+				(mockPlugin as any).skillManager = { getSkillSummaries: vi.fn().mockResolvedValue([]) };
+				(mockPlugin as any).settings = {
+					userName: 'Tester',
+					ragIndexing: { enabled: false },
+					filesApiEnabled: true,
+				};
+			});
+
+			test('uploads binary files via Files API when enabled', async () => {
+				client = new GeminiClient(
+					{
+						apiKey: 'test-api-key',
+						model: 'gemini-pro',
+					},
+					new GeminiPrompts(mockPlugin),
+					mockPlugin
+				);
+
+				await client.generateModelResponse({
+					prompt: '',
+					kind: 'extended',
+					userMessage: 'look at this image',
+					conversationHistory: [],
+					inlineAttachments: [{ base64: 'abc', mimeType: 'image/png' }],
+				} as ExtendedModelRequest);
+
+				// Verify files.upload was called
+				expect(filesUploadMock).toHaveBeenCalled();
+
+				// Verify request part uses fileData instead of inlineData
+				const genParams = generateContentMock.mock.calls[0][0];
+				const userParts = genParams.contents[0].parts;
+				expect(userParts).toContainEqual({
+					fileData: {
+						fileUri: 'https://files.gemini/test-file-id',
+						mimeType: 'image/png',
+					},
+				});
+				expect(userParts).not.toContainEqual(
+					expect.objectContaining({
+						inlineData: expect.any(Object),
+					})
+				);
+			});
+
+			test('falls back to inlineData when Files API is disabled', async () => {
+				mockPlugin.settings.filesApiEnabled = false;
+				client = new GeminiClient(
+					{
+						apiKey: 'test-api-key',
+						model: 'gemini-pro',
+					},
+					new GeminiPrompts(mockPlugin),
+					mockPlugin
+				);
+
+				await client.generateModelResponse({
+					prompt: '',
+					kind: 'extended',
+					userMessage: 'look at this image',
+					conversationHistory: [],
+					inlineAttachments: [{ base64: 'abc', mimeType: 'image/png' }],
+				} as ExtendedModelRequest);
+
+				expect(filesUploadMock).not.toHaveBeenCalled();
+
+				// Verify request part uses inlineData
+				const genParams = generateContentMock.mock.calls[0][0];
+				const userParts = genParams.contents[0].parts;
+				expect(userParts).toContainEqual({
+					inlineData: {
+						data: 'abc',
+						mimeType: 'image/png',
+					},
+				});
+			});
 		});
 	});
 
