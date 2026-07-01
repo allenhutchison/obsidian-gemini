@@ -22,6 +22,8 @@ export interface AgentViewContext {
 	displayMessage(entry: GeminiConversationEntry): Promise<void>;
 	/** Render a reasoning line into an arbitrary container (e.g. the tool group body). */
 	renderReasoning(container: HTMLElement, thoughts: string, sourcePath: string): Promise<void>;
+	/** Refresh the header token-usage display from ContextManager's cached metadata. */
+	updateTokenUsage?(): Promise<void>;
 	incrementToolCallCount?(count: number): void;
 	/** Who approves tool calls that require confirmation — AgentView implements this. */
 	confirmationProvider: IConfirmationProvider;
@@ -199,6 +201,24 @@ export class AgentViewTools {
 								model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
 								thoughts,
 							});
+						},
+						onMidLoopCompaction: async ({ summaryText }) => {
+							// Mirrors the pre-turn "Context Compacted" notice in
+							// agent-view-send.ts — surface the same notification when
+							// AgentLoop compacts history mid-tool-chain. AgentLoop already
+							// force-set the post-compaction usage metadata before firing
+							// this hook, so refreshing the header just re-reads it.
+							await this.context.updateTokenUsage?.();
+							if (!summaryText) return;
+							const compactionEntry: GeminiConversationEntry = {
+								role: 'model',
+								message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${summaryText}`,
+								notePath: '',
+								created_at: new Date(),
+								model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+							};
+							await this.context.displayMessage(compactionEntry);
+							await this.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
 						},
 					},
 				},

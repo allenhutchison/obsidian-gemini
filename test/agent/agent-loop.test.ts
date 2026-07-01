@@ -52,6 +52,18 @@ function buildPlugin(overrides: any = {}) {
 
 	const sessionHistory = { addEntryToSession: vi.fn().mockResolvedValue(undefined), ...overrides.sessionHistory };
 
+	// Default: pass the history through untouched (no compaction). Tests that
+	// exercise mid-loop compaction override `prepareHistory` directly.
+	const contextManager = {
+		prepareHistory: vi
+			.fn()
+			.mockImplementation((history: any[]) =>
+				Promise.resolve({ compactedHistory: history, wasCompacted: false, estimatedTokens: 0 })
+			),
+		setUsageMetadata: vi.fn(),
+		...overrides.contextManager,
+	};
+
 	return {
 		toolRegistry,
 		toolExecutionEngine,
@@ -59,6 +71,7 @@ function buildPlugin(overrides: any = {}) {
 		logger,
 		settings,
 		sessionHistory,
+		contextManager,
 		...overrides,
 	} as any;
 }
@@ -991,6 +1004,141 @@ describe('AgentLoop', () => {
 			const followUpRequest = (api.generateModelResponse as Mock).mock.calls[0][0];
 			const modelTurn = followUpRequest.conversationHistory.find((t: any) => t.role === 'model');
 			expect(modelTurn.parts[0]).toHaveProperty('thoughtSignature', 'sig_xyz');
+		});
+	});
+
+	describe('mid-loop compaction', () => {
+		test('calls prepareHistory with protectFromIndex pinned to the loop start, and uses the compacted result for the follow-up request', async () => {
+			const initialHistory = [
+				{ role: 'user', parts: [{ text: 'earlier turn' }] },
+				{ role: 'model', parts: [{ text: 'earlier reply' }] },
+			];
+			const compactedStub = [
+				{ role: 'user', parts: [{ text: '[Context Summary]' }] },
+				{ role: 'model', parts: [{ text: 'ack' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: { path: 'a.md' } } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { tool: 'read_file' } } }] },
+			];
+			const prepareHistory = vi.fn().mockResolvedValue({
+				compactedHistory: compactedStub,
+				wasCompacted: true,
+				estimatedTokens: 123,
+				summaryText: 'summary of earlier turns',
+			});
+			const setUsageMetadata = vi.fn();
+			const plugin = buildPlugin({ contextManager: { prepareHistory, setUsageMetadata } });
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('all done')]);
+			const onMidLoopCompaction = vi.fn();
+
+			const loop = new AgentLoop();
+			const result = await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'do the thing',
+				initialHistory,
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: { onMidLoopCompaction },
+				},
+			});
+
+			expect(prepareHistory).toHaveBeenCalledTimes(1);
+			const [, modelNameArg, optsArg] = prepareHistory.mock.calls[0];
+			expect(optsArg).toEqual({ protectFromIndex: initialHistory.length });
+			expect(modelNameArg).toBe('gemini-test');
+
+			// Follow-up request used the compacted history, not the raw pre-compaction one.
+			const followUpRequest = (api.generateModelResponse as Mock).mock.calls[0][0];
+			expect(followUpRequest.conversationHistory).toBe(compactedStub);
+
+			expect(setUsageMetadata).toHaveBeenCalledWith({ promptTokenCount: 123, totalTokenCount: 123 });
+			expect(onMidLoopCompaction).toHaveBeenCalledWith({
+				estimatedTokens: 123,
+				summaryText: 'summary of earlier turns',
+			});
+			expect(result.history).toBe(compactedStub);
+			expect(result.markdown).toBe('all done');
+		});
+
+		test('does not fire onMidLoopCompaction or touch usage metadata when prepareHistory reports no compaction', async () => {
+			const plugin = buildPlugin(); // default stub: wasCompacted false, passthrough history
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('done')]);
+			const onMidLoopCompaction = vi.fn();
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: { onMidLoopCompaction },
+				},
+			});
+
+			expect(onMidLoopCompaction).not.toHaveBeenCalled();
+			expect(plugin.contextManager.setUsageMetadata).not.toHaveBeenCalled();
+		});
+
+		test('re-pins protectFromIndex after a compaction shrinks history, so a later batch still protects only the current loop turns', async () => {
+			const initialHistory = Array.from({ length: 5 }, (_, i) => ({
+				role: i % 2 === 0 ? 'user' : 'model',
+				parts: [{ text: `prior ${i}` }],
+			}));
+			// Iteration 1's updatedHistory is 5 (prior) + 3 (spliced-in user message,
+			// this batch's model call, this batch's tool result) = 8 turns.
+			// A contract-faithful compaction never drops anything at/after
+			// protectFromIndex (5), so the spliced-in user message survives too —
+			// compacting down to 5 (2-entry summary + the 3 protected loop turns)
+			// is a shrinkage of 3.
+			const afterFirstCompaction = [
+				{ role: 'user', parts: [{ text: '[Context Summary]' }] },
+				{ role: 'model', parts: [{ text: 'ack' }] },
+				{ role: 'user', parts: [{ text: 'do it' }] },
+				{ role: 'model', parts: [{ functionCall: { name: 'read_file', args: {} } }] },
+				{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: {} } }] },
+			];
+			const prepareHistory = vi
+				.fn()
+				.mockResolvedValueOnce({
+					compactedHistory: afterFirstCompaction,
+					wasCompacted: true,
+					estimatedTokens: 10,
+					summaryText: 's',
+				})
+				.mockImplementation((history: any[]) =>
+					Promise.resolve({ compactedHistory: history, wasCompacted: false, estimatedTokens: 0 })
+				);
+
+			const plugin = buildPlugin({ contextManager: { prepareHistory, setUsageMetadata: vi.fn() } });
+			const session = buildSession();
+			const api = makeScriptedModelApi([
+				toolResponse([tc('write_file', { path: 'b.md' })]),
+				textResponse('final answer'),
+			]);
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'do it',
+				initialHistory,
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			expect(prepareHistory).toHaveBeenCalledTimes(2);
+			// First batch: boundary is exactly where initialHistory ended.
+			expect(prepareHistory.mock.calls[0][2]).toEqual({ protectFromIndex: 5 });
+			// Second batch: boundary shifted left by the 3 entries the first compaction shed.
+			expect(prepareHistory.mock.calls[1][2]).toEqual({ protectFromIndex: 2 });
 		});
 	});
 
