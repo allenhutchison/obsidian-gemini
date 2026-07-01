@@ -28,6 +28,7 @@ import refSummarization from '../../docs/guide/summarization.md';
 import refAdvancedSettings from '../../docs/reference/advanced-settings.md';
 import refEvals from '../../docs/reference/evals.md';
 import refLoopDetection from '../../docs/reference/loop-detection.md';
+import refProviderCapabilities from '../../docs/reference/provider-capabilities.md';
 import refSettings from '../../docs/reference/settings.md';
 
 export const helpResources = new Map<string, string>([
@@ -52,6 +53,7 @@ export const helpResources = new Map<string, string>([
 	['references/advanced-settings.md', refAdvancedSettings],
 	['references/evals.md', refEvals],
 	['references/loop-detection.md', refLoopDetection],
+	['references/provider-capabilities.md', refProviderCapabilities],
 	['references/settings.md', refSettings],
 ]);
 
@@ -78,4 +80,5 @@ export const helpReferencesTable = `| Reference | Topic |
 | \`references/advanced-settings.md\` | Advanced Settings Guide |
 | \`references/evals.md\` | Eval Suite |
 | \`references/loop-detection.md\` | Tool loop detection |
+| \`references/provider-capabilities.md\` | Provider Capabilities |
 | \`references/settings.md\` | Settings Reference |`;

@@ -25,16 +25,7 @@ If the daemon runs on a different host or port, edit the **Ollama base URL** fie
 
 ## What does not work in Phase 1
 
-These features depend on Gemini built-in services and are hidden when Ollama is the active provider:
-
-| Feature                         | Why it's gated                         | Workaround                                  |
-| ------------------------------- | -------------------------------------- | ------------------------------------------- |
-| Google Search tool              | Uses Gemini's `googleSearch` grounding | Switch to Gemini for search-heavy sessions  |
-| URL Context (web fetch)         | Uses Gemini's URL Context API          | Paste content into a note, then `read_file` |
-| Deep Research                   | Built on Gemini multi-step search      | Switch to Gemini                            |
-| Image generation                | Ollama has no image-generation API     | Switch to Gemini for image-gen              |
-| RAG / Vault Search              | Uses Gemini File Search Store          | Future phase: Ollama embeddings             |
-| PDF / audio / video attachments | Ollama only accepts images             | Convert to image or text first              |
+These features depend on Gemini built-in services and are hidden when Ollama is the active provider. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full Gemini-vs-Ollama matrix and the reasons behind each gap.
 
 Switching back to Gemini at any time restores all features — settings persist across switches.
 
