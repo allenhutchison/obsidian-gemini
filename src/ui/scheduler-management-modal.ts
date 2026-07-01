@@ -122,7 +122,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 				text: this.truncateError(taskState.lastError),
 				cls: 'gemini-scheduler-item-error',
 				title: taskState.lastError,
-			} as any);
+			});
 		}
 
 		// Action buttons

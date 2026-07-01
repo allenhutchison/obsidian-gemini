@@ -279,7 +279,7 @@ export class BackgroundTasksModal extends Modal {
 
 		if (task.error && task.status === 'failed') {
 			const short = this.truncateError(task.error);
-			info.createSpan({ text: short, cls: 'gemini-bg-task-error', title: task.error } as any);
+			info.createSpan({ text: short, cls: 'gemini-bg-task-error', title: task.error });
 		}
 
 		if (canCancel) {
