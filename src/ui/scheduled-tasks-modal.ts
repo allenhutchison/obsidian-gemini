@@ -95,7 +95,7 @@ export class ScheduledTasksModal extends Modal {
 					text: this.truncateError(taskState.lastError),
 					cls: 'gemini-scheduled-task-error',
 					title: taskState.lastError, // full message on hover
-				} as any);
+				});
 			}
 		}
 
