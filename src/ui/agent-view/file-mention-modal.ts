@@ -44,7 +44,7 @@ export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {
 		}
 		if (item instanceof TFile) {
 			const result = classifyFile(item.extension);
-			if (result.category === FileCategory.GEMINI_BINARY) {
+			if (result.category === FileCategory.GEMINI_BINARY || result.category === FileCategory.SVG) {
 				const icon = this.getIconForMime(result.mimeType);
 				return `${icon} ${item.path}`;
 			}

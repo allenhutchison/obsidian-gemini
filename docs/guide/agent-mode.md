@@ -72,7 +72,7 @@ Each tool call in the chat is collapsible — click a tool row to expand its det
 
 ### File Attachments & Drag-and-Drop
 
-You can include images, audio, video, PDFs, and text files in your chat. Files are automatically classified and routed:
+You can include images, audio, video, PDFs, SVGs, and text files in your chat. Files are automatically classified and routed:
 
 **Adding Files:**
 
@@ -90,14 +90,20 @@ When you drop a file, the plugin classifies it based on its extension:
 | ----------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | **Text**                      | `.md`, `.txt`, `.ts`, `.js`, `.json`, `.html`, `.css`, `.py`, etc.            | Added as context chips (the AI reads the file content)             |
 | **Binary (Gemini-supported)** | `.png`, `.jpg`, `.gif`, `.webp`, `.pdf`, `.mp3`, `.wav`, `.mp4`, `.mov`, etc. | Sent as inline data (the AI processes the binary content directly) |
+| **SVG**                       | `.svg`, `.svgz`                                                               | Rasterized to PNG on-device, then sent as inline data              |
 | **Unsupported**               | `.zip`, `.exe`, `.dmg`, etc.                                                  | Skipped with a notification                                        |
 
 **Supported Binary Formats:**
 
 - **Images**: PNG, JPEG, GIF, WebP, HEIC, HEIF
+- **Vector images**: SVG, SVGZ (rasterized to PNG before sending — see below)
 - **Audio**: WAV, MP3, AAC, FLAC
 - **Video**: MP4, MPEG, MOV, FLV, MPG, WebM, WMV, 3GP
 - **Documents**: PDF
+
+**SVG Handling:**
+
+Gemini's API can't process `image/svg+xml` directly, so SVG (and gzip-compressed `.svgz`) files are **rasterized to PNG on your device** before being sent — whether you drag, paste, `@`-mention, or have the agent read them with the Read File tool. Rasterization renders the SVG onto a white background (so transparent artwork like handwritten ink strokes stays legible for OCR) and caps the longest edge at 2048px to keep the payload within the inline-data limit. If an SVG can't be rendered (malformed markup or unresolvable external references), it's skipped with the same "unsupported file type" notice rather than sending unusable data.
 
 **How It Works:**
 
@@ -155,7 +161,7 @@ Context files are displayed in a **unified file shelf** — a horizontal strip a
 
 **Adding files:**
 
-1. Type `@` in the chat input to open the file picker (supports text files **and** Gemini-compatible binary files like images, PDFs, audio, and video)
+1. Type `@` in the chat input to open the file picker (supports text files **and** Gemini-compatible binary files like images, SVGs, PDFs, audio, and video)
 2. Type `/` in an empty chat input to open the skill picker — select a skill to insert an activation prompt you can edit before sending (see [Agent Skills](agent-skills.md) for details)
 3. Click the file icon in the session header to open the multi-select modal:
    - Already-added files appear pre-checked
@@ -255,7 +261,7 @@ Supports:
 
 #### read_file
 
-Read the contents of any file in your vault. Supports text files (markdown, code, `.base`, `.canvas`) and binary files that Gemini can process (images, audio, video, PDF):
+Read the contents of any file in your vault. Supports text files (markdown, code, `.base`, `.canvas`) and binary files that Gemini can process (images, audio, video, PDF, and SVG — SVGs are rasterized to PNG on-device first):
 
 ```
 Read the contents of my daily note
@@ -263,9 +269,10 @@ Show me what's in Projects/Todo.md
 Describe the image at images/diagram.png
 Transcribe the recording at audio/meeting.mp3
 Read the PDF at docs/report.pdf
+Transcribe the handwriting in Ink/Writing/note.svg
 ```
 
-When you ask the agent to read a binary file, it sends the file data directly to Gemini for analysis — enabling image description, audio transcription, PDF reading, and video analysis without manual drag-and-drop.
+When you ask the agent to read a binary file, it sends the file data directly to Gemini for analysis — enabling image description, audio transcription, PDF reading, and video analysis without manual drag-and-drop. SVG files are rasterized to PNG on-device before sending, so the agent can view and OCR vector artwork (e.g. handwritten ink strokes) that Gemini would otherwise reject.
 
 If a file doesn't exist, the agent receives a non-error response with `exists: false` and helpful suggestions for similar file names. This allows automation skills to probe for files without triggering error states.
 

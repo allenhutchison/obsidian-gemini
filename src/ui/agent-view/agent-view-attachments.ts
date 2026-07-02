@@ -6,6 +6,7 @@ import { AgentViewShelf, getTextFilesFromFolder } from './agent-view-shelf';
 import { FileMentionModal } from './file-mention-modal';
 import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { rasterizeSvg } from '../../utils/svg-rasterizer';
 import type ObsidianGemini from '../../main';
 import { t } from '../../i18n';
 
@@ -68,8 +69,12 @@ export class AgentViewAttachments {
 					this.ctx.context.addFileToContext(fileOrFolder, this.ctx.getCurrentSession());
 					this.ctx.updateSessionHeader();
 					this.ctx.updateSessionMetadata();
-				} else if (classification.category === FileCategory.GEMINI_BINARY) {
-					// Handle binary file — create inline attachment (same as drag-drop)
+				} else if (
+					classification.category === FileCategory.GEMINI_BINARY ||
+					classification.category === FileCategory.SVG
+				) {
+					// Handle binary/SVG file — create inline attachment (same as drag-drop).
+					// SVG is rasterized to PNG; other binaries are inlined as-is.
 					try {
 						const buffer = await this.ctx.app.vault.readBinary(fileOrFolder);
 						const existing = this.ctx.getShelf().getPendingAttachments();
@@ -81,9 +86,22 @@ export class AgentViewAttachments {
 							return;
 						}
 
-						const base64 = arrayBufferToBase64(buffer);
-						const mimeType =
-							fileOrFolder.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
+						let base64: string;
+						let mimeType: string;
+						if (classification.category === FileCategory.SVG) {
+							try {
+								base64 = await rasterizeSvg(buffer, fileOrFolder.extension.toLowerCase() === 'svgz');
+								mimeType = 'image/png';
+							} catch (rasterErr) {
+								this.ctx.plugin.logger.error(`Failed to rasterize SVG ${fileOrFolder.path}:`, rasterErr);
+								new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
+								return;
+							}
+						} else {
+							base64 = arrayBufferToBase64(buffer);
+							mimeType =
+								fileOrFolder.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
+						}
 						const { generateAttachmentId } = await import('./inline-attachment');
 						const attachment: InlineAttachment = {
 							base64,
