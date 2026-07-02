@@ -94,12 +94,9 @@ export class OllamaModelsService {
 		}
 
 		try {
-			// Deliberately no retry/backoff here. The Ollama daemon is local; the
-			// dominant failure mode is `ECONNREFUSED` against `localhost:11434`,
-			// which is permanent until the user runs `ollama serve` — retrying
-			// would just delay the actionable error by 6–14s. Settings → Refresh
-			// model list provides the recovery path. Mirrors ModelListProvider's
-			// best-effort + manual-refresh pattern for the bundled Gemini list.
+			// Deliberately no retry/backoff: ECONNREFUSED against the local daemon is
+			// permanent until `ollama serve` runs, so retrying only delays the
+			// actionable error — see #709 for the full rationale.
 			const url = `${baseUrl.replace(/\/$/, '')}/api/tags`;
 			const response = await requestUrl({ url, method: 'GET', throw: false });
 
