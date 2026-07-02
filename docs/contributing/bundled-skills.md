@@ -15,14 +15,14 @@ Obsidian Flavored Markdown). Instead we **track drift and hand-merge**.
 
 ## The pinned baseline
 
-[`SKILL_SOURCES.md`](../../SKILL_SOURCES.md) (repo root) records, per adapted skill, the
+[`SKILL_SOURCES.md`](https://github.com/allenhutchison/obsidian-gemini/blob/master/SKILL_SOURCES.md) (repo root) records, per adapted skill, the
 upstream path and the commit SHA it was last reconciled against. That SHA is the baseline the
 drift check compares against — it is the single source of truth for "how current are our
 adaptations."
 
 ## How drift is surfaced
 
-The [`daily-update`](../../.agents/skills/daily-update/SKILL.md) skill runs a **report-only**
+The [`daily-update`](https://github.com/allenhutchison/obsidian-gemini/blob/master/.agents/skills/daily-update/SKILL.md) skill runs a **report-only**
 bundled skill drift check on each scheduled run. For each adapted skill it lists the upstream
 commits that touched that file since the pinned SHA and, if any exist, surfaces the diff in
 the run report so a human can decide whether it's worth reconciling. The check never edits a

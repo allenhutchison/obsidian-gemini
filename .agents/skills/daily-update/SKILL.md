@@ -85,17 +85,17 @@ git status --short
 
 Decide what to do based on three cases:
 
-**Case A — the working tree is clean, `triage-issues` did nothing, and the drift check found no drift.** Quiet day:
+**Case A — the working tree is clean, `triage-issues` did nothing, the drift check found no drift, and no sub-skill errored.** Quiet day:
 
 - Don't commit. Don't push. Don't open a PR. Empty PRs are noise.
 - Delete the branch you just created (`git checkout master && git branch -D "$BRANCH_NAME"`) so the local branch list stays clean.
 - Report "no daily changes" and stop. The cron's job is done; absence of a PR is the signal.
 
-**Case B — the working tree is clean but `triage-issues` applied labels or the drift check flagged upstream drift.** Report-only day:
+**Case B — the working tree is clean but `triage-issues` applied labels, the drift check flagged upstream drift, or a sub-skill errored.** Report-only day:
 
 - Don't open a PR. Labels on GitHub are already applied, and the drift check writes nothing — opening an empty-diff PR just to write a summary is more friction than it's worth.
 - Delete the branch (same as Case A: `git checkout master && git branch -D "$BRANCH_NAME"`).
-- Reply with the triage summary and/or the flagged bundled-skill drift so a human can act on it if they want.
+- Reply with the triage summary, any flagged bundled-skill drift, and any sub-skill errors captured during the run, so a human can act on them. A run that produced no changes but hit a sub-skill error still reports here — it is never silently swallowed as a quiet day.
 
 **Case C — the working tree has changes.** Commit them all in one commit:
 
