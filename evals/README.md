@@ -62,7 +62,7 @@ npm run eval -- --model=gemini-2.5-pro --repeat=5
 
 The override is **transient**: it's applied in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The settings are **not** persisted to disk, so the user's configured models are unaffected. `--model=` sets **all three** model fields — `chatModelName`, `summaryModelName`, and `completionsModelName` — so summary- and completion-driven tasks exercise the requested model too, not just chat.
 
-The override stamps into the result file's `model` field, so a multi-model sweep produces one result file per model that compare and trend independently. Use the built-in sweep (below) or a shell loop:
+The override stamps into the result file's `model` field, so a multi-model sweep produces one result file per model that can be compared and trended independently. Use the built-in sweep (below) or a shell loop:
 
 ```bash
 for m in gemini-2.5-flash gemini-2.5-flash-lite gemini-2.5-pro; do
@@ -80,7 +80,7 @@ Caveat: while the harness is running, the live agent view is using the override 
 npm run eval -- --models=gemma4:latest,gemma4:26b,gemma4:31b --provider=ollama
 ```
 
-Each model still produces its own `results/<slug>.json` (and compares against its own baseline). At the end, a `results/comparison-<slug>.md` is written and printed: one column per model, a `solved/n` cell per task (flaky tasks flagged with ⚠), and summary rows for solve^k / pass^k rate, mean turns, and total cost. `--models=` and `--model=` are mutually exclusive.
+Each model still produces its own `results/<slug>.json` (which you can `eval:bless` as that model's baseline independently). At the end, a `results/comparison-<slug>.md` is written and printed: one column per model, a `solved/n` cell per task (flaky tasks flagged with ⚠), and summary rows for solve^k / pass^k rate, mean turns, and total cost. Note the automatic baseline regression check (see below) runs only for single-model `--model=` runs, not sweeps — a sweep's output is the comparison report, not per-model baseline diffs. `--models=` and `--model=` are mutually exclusive.
 
 ### Model orchestration (Ollama)
 
