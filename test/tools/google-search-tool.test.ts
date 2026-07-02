@@ -554,22 +554,22 @@ describe('GoogleSearchTool', () => {
 	});
 
 	describe('non-Error thrown by API', () => {
-		it('should include Unknown error for non-Error thrown', async () => {
+		it('should stringify a non-Error string thrown via getRawErrorMessage', async () => {
 			mockGenAI.models.generateContent.mockRejectedValue('string error');
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(false);
-			expect(result.error).toBe('Google search failed: Unknown error');
+			expect(result.error).toBe('Google search failed: string error');
 		});
 
-		it('should include Unknown error for number thrown', async () => {
+		it('should stringify a non-Error number thrown via getRawErrorMessage', async () => {
 			mockGenAI.models.generateContent.mockRejectedValue(42);
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(false);
-			expect(result.error).toBe('Google search failed: Unknown error');
+			expect(result.error).toBe('Google search failed: 42');
 		});
 	});
 });
