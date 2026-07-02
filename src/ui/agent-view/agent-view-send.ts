@@ -557,6 +557,7 @@ To reference an attachment in your response, use the path shown above.`;
 						if (response.usageMetadata) {
 							await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
 								usageMetadata: response.usageMetadata,
+								modelName,
 							});
 						} else {
 							this.ctx.plugin.logger.debug('[AgentView] Streaming response had no usageMetadata');
@@ -678,6 +679,7 @@ To reference an attachment in your response, use the path shown above.`;
 					if (response.usageMetadata) {
 						await this.ctx.plugin.agentEventBus?.emit('apiResponseReceived', {
 							usageMetadata: response.usageMetadata,
+							modelName,
 						});
 					} else {
 						this.ctx.plugin.logger.debug('[AgentView] Non-streaming response had no usageMetadata');

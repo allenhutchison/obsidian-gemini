@@ -26,7 +26,7 @@ export class ContextTrackingSubscriber {
 				'apiResponseReceived',
 				async (payload) => {
 					if (payload.usageMetadata) {
-						plugin.contextManager?.updateUsageMetadata(payload.usageMetadata);
+						plugin.contextManager?.updateUsageMetadata(payload.usageMetadata, payload.modelName);
 					}
 				},
 				HandlerPriority.INTERNAL

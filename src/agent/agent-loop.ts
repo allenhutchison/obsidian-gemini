@@ -496,6 +496,7 @@ export class AgentLoop {
 			if (followUpResponse.usageMetadata) {
 				await this.safeEmit(plugin, 'apiResponseReceived', {
 					usageMetadata: followUpResponse.usageMetadata,
+					modelName,
 				});
 			}
 
@@ -558,6 +559,7 @@ export class AgentLoop {
 			if (retryResponse.usageMetadata) {
 				await this.safeEmit(plugin, 'apiResponseReceived', {
 					usageMetadata: retryResponse.usageMetadata,
+					modelName,
 				});
 			}
 
