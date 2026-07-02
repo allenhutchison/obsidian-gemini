@@ -25,8 +25,11 @@ npm run eval -- --task=smoke
 # Override how many times each task runs
 npm run eval -- --repeat=5
 
-# Sweep models against a fixed task suite (see Model overrides below)
+# Run against a specific model (see Model overrides below)
 npm run eval -- --model=gemini-2.5-flash-lite
+
+# Sweep several models in one shot and write a comparison table
+npm run eval -- --models=gemma4:latest,gemma4:26b --provider=ollama
 
 # Keep scratch files and session history for debugging
 npm run eval -- --keep-artifacts
@@ -57,9 +60,9 @@ npm run eval -- --model=gemini-2.5-flash-lite
 npm run eval -- --model=gemini-2.5-pro --repeat=5
 ```
 
-The override is **transient**: it's applied to `plugin.settings.chatModelName` in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The setting is **not** persisted to disk, so the user's configured model is unaffected.
+The override is **transient**: it's applied in memory at the start of the run and restored on exit (including on Ctrl-C / SIGTERM). The settings are **not** persisted to disk, so the user's configured models are unaffected. `--model=` sets **all three** model fields — `chatModelName`, `summaryModelName`, and `completionsModelName` — so summary- and completion-driven tasks exercise the requested model too, not just chat.
 
-The override stamps into the result file's `model` field, so a multi-model sweep produces one result file per invocation that compare and trend independently:
+The override stamps into the result file's `model` field, so a multi-model sweep produces one result file per model that compare and trend independently. Use the built-in sweep (below) or a shell loop:
 
 ```bash
 for m in gemini-2.5-flash gemini-2.5-flash-lite gemini-2.5-pro; do
@@ -69,9 +72,28 @@ done
 
 Caveat: while the harness is running, the live agent view is using the override too. That's the same disruption already implied by the harness driving the agent — just don't try to use the agent view in another window mid-run.
 
+### Multi-model sweep and comparison
+
+`--models=A,B,C` runs the whole task suite once per model and writes a side-by-side comparison table, for the "which model should I use?" decision:
+
+```bash
+npm run eval -- --models=gemma4:latest,gemma4:26b,gemma4:31b --provider=ollama
+```
+
+Each model still produces its own `results/<slug>.json` (and compares against its own baseline). At the end, a `results/comparison-<slug>.md` is written and printed: one column per model, a `solved/n` cell per task (flaky tasks flagged with ⚠), and summary rows for solve^k / pass^k rate, mean turns, and total cost. `--models=` and `--model=` are mutually exclusive.
+
+### Model orchestration (Ollama)
+
+When the active provider is **Ollama**, model runs are orchestrated so timings and swaps are clean — this drives the local `ollama` CLI:
+
+- **Warmup** — before the first _timed_ task, the harness fires a throwaway generation to load the model into memory, so the first task's turn time excludes cold-start load. The warmup duration is printed separately (`warmup: Xs`) and never counted toward scores.
+- **Auto-swap with unload** — before loading the target model, any _other_ resident model (per `ollama ps`) is unloaded with `ollama stop` and polled until clear, so a swap doesn't briefly double-load two large models. This applies to both `--model=` and each step of a `--models=` sweep.
+
+These paths are Ollama-only and degrade to a no-op (with a one-line warning) if the `ollama` CLI isn't installed or reachable, so Gemini runs are unaffected. Set `OLLAMA_BIN` to point at a non-default `ollama` binary.
+
 ### Cross-provider runs
 
-`--model=` only sets `chatModelName`. To run against a different provider (e.g. an Ollama model from a Gemini-default setup), also pass `--provider=`:
+`--model=` / `--models=` set the model fields but not the provider. To run against a different provider (e.g. an Ollama model from a Gemini-default setup), also pass `--provider=`:
 
 ```bash
 npm run eval -- --model=gemma4:latest --provider=ollama
@@ -283,7 +305,7 @@ ETA is shown only when the task declares `maxTurns` and at least one turn has co
 - Prints `=== Interrupted (SIGINT): N of M tasks completed ===`.
 - Cancels the in-flight agent loop in the plugin.
 - Cleans the in-progress task's scratch fixtures and session history (so `eval-scratch/` doesn't leak into the user's vault).
-- Restores any `--model=` override that was applied for the run.
+- Restores any `--model=` / `--models=` override (chat, summary, and completions models) and `--provider=` override that was applied for the run.
 - Exits with `130` (SIGINT) or `143` (SIGTERM) so CI / wrappers can distinguish "interrupted" from "all green."
 
 A second Ctrl-C while cleanup is in flight is ignored; let the first one finish.

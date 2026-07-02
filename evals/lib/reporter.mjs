@@ -209,6 +209,90 @@ export async function writeResults(result, evalsDir) {
 }
 
 /**
+ * Render a side-by-side markdown comparison of several per-model eval results
+ * (the `--models=A,B,C` sweep). One column per model; each task contributes a
+ * `solved/n` row, followed by bold summary rows (solve^k rate, mean solve
+ * rate, pass^k rate, mean turns, total cost). Pure — returns the markdown
+ * string so the runner can both print it and write it to disk.
+ *
+ * @param {Array<object>} results - buildResult() objects, one per model, in sweep order.
+ * @returns {string} Markdown document (trailing newline included).
+ */
+export function formatComparisonMarkdown(results) {
+	if (!Array.isArray(results) || results.length === 0) return '_No results to compare._\n';
+
+	const models = results.map((r) => r.model || 'unknown');
+	const k = results[0].aggregate?.n_runs ?? 1;
+
+	// Union of task ids across all results, preserving first-seen order so the
+	// table row order is stable even if a later model ran a different subset.
+	const taskIds = [];
+	const seen = new Set();
+	for (const r of results) {
+		for (const t of r.tasks) {
+			if (!seen.has(t.id)) {
+				seen.add(t.id);
+				taskIds.push(t.id);
+			}
+		}
+	}
+
+	const header = ['Task', ...models];
+	const lines = [];
+	lines.push('# Eval model comparison');
+	lines.push('');
+	lines.push(`Provider: ${results[0].provider || 'gemini'} · ${k} run${k === 1 ? '' : 's'} per task`);
+	lines.push('');
+	lines.push(`| ${header.join(' | ')} |`);
+	lines.push(`| ${header.map(() => '---').join(' | ')} |`);
+
+	// Per-task solve^k cell (solved_count/n_runs), flagged when flaky.
+	for (const id of taskIds) {
+		const row = [id];
+		for (const r of results) {
+			const t = r.tasks.find((x) => x.id === id);
+			if (!t) {
+				row.push('—');
+				continue;
+			}
+			row.push(`${t.solved_count}/${t.n_runs}${t.flaky ? ' ⚠' : ''}`);
+		}
+		lines.push(`| ${row.join(' | ')} |`);
+	}
+
+	const summaryRow = (label, fn) => `| **${label}** | ${results.map((r) => fn(r.aggregate || {})).join(' | ')} |`;
+	lines.push(summaryRow(`solve^${k} rate`, (a) => `${a.solve_k_rate ?? 0}%`));
+	lines.push(summaryRow('mean solve rate', (a) => `${a.mean_solve_rate ?? 0}%`));
+	lines.push(summaryRow(`pass^${k} rate`, (a) => `${a.pass_k_rate ?? 0}%`));
+	lines.push(summaryRow('mean turns', (a) => `${a.mean_turns ?? 0}`));
+	lines.push(summaryRow('total cost', (a) => (a.total_cost_usd ? `$${a.total_cost_usd.toFixed(4)}` : 'free')));
+
+	return lines.join('\n') + '\n';
+}
+
+/**
+ * Write the model-comparison markdown (from `formatComparisonMarkdown`) to
+ * evals/results/comparison-<runId>.md.
+ *
+ * @param {Array<object>} results - buildResult() objects, one per model.
+ * @param {string} evalsDir
+ * @param {string} runId - Shared sweep id, used in the filename.
+ * @returns {Promise<string>} Path to the written markdown file.
+ */
+export async function writeComparisonTable(results, evalsDir, runId) {
+	const resultsDir = join(evalsDir, 'results');
+	const stamp = (runId || new Date().toISOString()).replace(/[:.]/g, '-');
+	const outPath = join(resultsDir, `comparison-${stamp}.md`);
+	try {
+		await mkdir(resultsDir, { recursive: true });
+		await writeFile(outPath, formatComparisonMarkdown(results));
+		return outPath;
+	} catch (err) {
+		throw new Error(`Failed to write eval comparison table to ${outPath}: ${err.message}`, { cause: err });
+	}
+}
+
+/**
  * Print a human-readable summary to stdout.
  */
 export function printSummary(result) {

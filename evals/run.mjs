@@ -40,8 +40,16 @@ import { installCollector, peekCollector, readAndClearCollector, removeCollector
 import { scoreTask } from './lib/scorer.mjs';
 import { vaultAssertionPaths } from './lib/vault-assertions.mjs';
 import { taskHasJudgeMatcher } from './lib/matchers.mjs';
-import { aggregateTaskRuns, buildResult, writeResults, printSummary } from './lib/reporter.mjs';
+import {
+	aggregateTaskRuns,
+	buildResult,
+	writeResults,
+	printSummary,
+	writeComparisonTable,
+	formatComparisonMarkdown,
+} from './lib/reporter.mjs';
 import { compareResults, loadBaseline, printRegressionSummary, getBaselinePath } from './lib/compare.mjs';
+import { ensureResidentModel, warmupOllamaModel } from './lib/ollama.mjs';
 import { createJudge } from './lib/judge.mjs';
 import { summarizeProgress, formatProgressLine, progressChanged } from './lib/progress.mjs';
 import { waitForTurnCompletion } from './lib/turn-waiter.mjs';
@@ -70,6 +78,23 @@ function parseArgs() {
 	if (model !== null && model.length === 0) {
 		throw new Error('--model requires a non-empty value');
 	}
+	// `--models=A,B,C` runs the whole suite once per model and writes a
+	// comparison table (#716). Mutually exclusive with `--model=` — one picks a
+	// single model, the other sweeps several.
+	const modelsArg = args.find((a) => a.startsWith('--models='));
+	const models = modelsArg
+		? modelsArg
+				.slice('--models='.length)
+				.split(',')
+				.map((s) => s.trim())
+				.filter(Boolean)
+		: null;
+	if (modelsArg && (!models || models.length === 0)) {
+		throw new Error('--models requires a comma-separated list of at least one model');
+	}
+	if (models && model !== null) {
+		throw new Error('--model and --models are mutually exclusive; pass one or the other');
+	}
 	// Optional `--provider=` override. Mirrors `--model=` and is required for
 	// hands-free cross-provider sweeps (e.g. an Ollama run from a Gemini-default
 	// setup); see #845. Validated against the two real providers — invalid
@@ -84,6 +109,7 @@ function parseArgs() {
 		keepArtifacts: args.includes('--keep-artifacts'),
 		repeat,
 		model,
+		models,
 		providerOverride,
 	};
 }
@@ -97,7 +123,10 @@ function parseArgs() {
 //     eval-scratch leaks into the user's vault).
 //   - Print a "N of M tasks completed" summary so the operator knows where
 //     the run stopped.
-let originalChatModel = null;
+// `--model=` / `--models=` override chat, summary, AND completions models for
+// the run (#716) — the originals of all three are captured on the first
+// override so restore is exact even across a multi-model sweep.
+let originalModels = null; // { chatModelName, summaryModelName, completionsModelName }
 let modelWasOverridden = false;
 let originalProvider = null;
 let providerWasOverridden = false;
@@ -108,12 +137,34 @@ let completedTaskCount = 0;
 let totalPlannedTasks = 0;
 let interruptInProgress = false;
 
-async function restoreChatModel() {
-	if (!modelWasOverridden) return;
-	try {
-		await setSetting('chatModelName', originalChatModel);
-	} catch (err) {
-		console.error(`Failed to restore chatModelName: ${err.message}`);
+const MODEL_SETTING_KEYS = ['chatModelName', 'summaryModelName', 'completionsModelName'];
+
+/**
+ * Point chat, summary, and completions at `model` for the run. Captures the
+ * originals on the first call only, so repeated applications during a sweep
+ * still restore the operator's real settings. Transient — never persisted.
+ */
+async function applyModelOverride(model) {
+	if (!modelWasOverridden) {
+		originalModels = {};
+		for (const key of MODEL_SETTING_KEYS) {
+			originalModels[key] = await getSetting(key);
+		}
+	}
+	for (const key of MODEL_SETTING_KEYS) {
+		await setSetting(key, model);
+	}
+	modelWasOverridden = true;
+}
+
+async function restoreModelOverride() {
+	if (!modelWasOverridden || !originalModels) return;
+	for (const key of MODEL_SETTING_KEYS) {
+		try {
+			await setSetting(key, originalModels[key]);
+		} catch (err) {
+			console.error(`Failed to restore ${key}: ${err.message}`);
+		}
 	}
 	modelWasOverridden = false;
 }
@@ -177,7 +228,7 @@ async function handleInterrupt(signal, exitCode) {
 		} catch (err) {
 			console.warn(`  collector cleanup warning: ${err.message}`);
 		}
-		await restoreChatModel();
+		await restoreModelOverride();
 		await restoreProvider();
 		await restoreChatHistory();
 		process.exit(exitCode);
@@ -537,11 +588,76 @@ async function maybeCompareToBaseline(result) {
 }
 
 /**
+ * Ollama-only pre-run orchestration (#716): unload any *other* resident model
+ * so the swap doesn't double-load, then fire a throwaway generation to warm the
+ * target so the first *timed* task excludes cold-start load. No-op for non-Ollama
+ * providers, and degrades to a no-op when the `ollama` CLI isn't reachable.
+ *
+ * @param {string} model - The model to make resident (an Ollama tag, e.g. `gemma4:latest`).
+ * @param {string} provider - Active provider id.
+ */
+async function prepareOllamaModel(model, provider) {
+	if (provider !== 'ollama' || !model) return;
+	await ensureResidentModel(model);
+	const warmupMs = await warmupOllamaModel(model);
+	if (warmupMs > 0) {
+		console.log(`  warmup: ${(warmupMs / 1000).toFixed(1)}s for '${model}' (excluded from scored timings)`);
+	}
+}
+
+/**
+ * Run the loaded task suite once against the active provider/model and return
+ * the built result (also writing the result file + transcripts and printing the
+ * per-run summary). Shared by the single-model and `--models=` sweep paths.
+ */
+async function runAllTasks({ tasks, repeat, keepArtifacts, provider, judgeFn }) {
+	// One run id per suite invocation, shared by the result file
+	// (`results/<slug>.json`) and the transcript directory (`results/<slug>/`)
+	// so they are trivially correlated on disk. A sweep gets one per model.
+	const runId = new Date().toISOString();
+	const runIdSlug = runId.replace(/[:.]/g, '-');
+	const transcriptDir = join(EVALS_DIR, 'results', runIdSlug);
+	await mkdir(transcriptDir, { recursive: true });
+
+	// Run tasks sequentially. Each task runs `repeat` times so we can report
+	// pass^k reliability on top of per-run pass/solve rates. Module-scoped
+	// task tracking lets the SIGINT handler print "N of M completed" and
+	// clean up the in-progress task's scratch files.
+	totalPlannedTasks = tasks.length * repeat;
+	completedTaskCount = 0;
+	const taskResults = [];
+	for (const task of tasks) {
+		const runs = [];
+		for (let i = 0; i < repeat; i++) {
+			const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
+			console.log(`\n--- Running: ${task.id}${runLabel} ---`);
+			currentTaskInfo = { taskId: task.id, sessionInfo: null, runIndex: i, repeat };
+			try {
+				runs.push(await runTask(task, keepArtifacts, provider, judgeFn, { transcriptDir, runIdSlug, runIndex: i + 1 }));
+			} finally {
+				currentTaskInfo = null;
+				completedTaskCount += 1;
+			}
+		}
+		taskResults.push(aggregateTaskRuns(task, runs));
+	}
+
+	// Build result, write, print
+	const gitSha = getGitSha();
+	const modelName = await getModelName();
+	const result = buildResult(taskResults, gitSha, modelName, provider, runId);
+	const outPath = await writeResults(result, EVALS_DIR);
+	printSummary(result);
+	console.log(`Results written to: ${outPath}`);
+	return result;
+}
+
+/**
  * Execute a full eval harness run: validate prerequisites, run tasks, write
  * aggregate results, and restore any temporary model override.
  */
 async function main() {
-	const { taskFilter, keepArtifacts, repeat, model, providerOverride } = parseArgs();
+	const { taskFilter, keepArtifacts, repeat, model, models, providerOverride } = parseArgs();
 	console.log('=== Gemini Scribe Eval Harness ===');
 
 	// Verify prerequisites
@@ -554,14 +670,10 @@ async function main() {
 	}
 	console.log(`Plugin v${pluginStatus.version} ready.`);
 
-	// Apply the chat-model override BEFORE loading tasks so the result-file's
-	// `model` field (read via getModelName at the end) reflects the override.
-	if (model) {
-		originalChatModel = await getSetting('chatModelName');
-		await setSetting('chatModelName', model);
-		modelWasOverridden = true;
-		console.log(`Overriding chatModelName: ${originalChatModel ?? '(unset)'} → ${model}`);
-	}
+	// The single-model override is applied just before the run (below), not
+	// here, so the single and `--models=` sweep paths share one code path
+	// (`applyModelOverride`) — the result file's `model` field is read via
+	// getModelName at the end and reflects whichever override is active.
 
 	// Apply the provider override BEFORE getProvider() resolves below, so the
 	// resolved value (used for scoring + cost) reflects the override. Required
@@ -616,52 +728,44 @@ async function main() {
 			}
 		}
 
-		// One run id for the whole sweep, shared by the result file
-		// (`results/<slug>.json`) and the transcript directory
-		// (`results/<slug>/`) so they are trivially correlated on disk.
-		const runId = new Date().toISOString();
-		const runIdSlug = runId.replace(/[:.]/g, '-');
-		const transcriptDir = join(EVALS_DIR, 'results', runIdSlug);
-		await mkdir(transcriptDir, { recursive: true });
-
-		// Run tasks sequentially. Each task runs `repeat` times so we can report
-		// pass^k reliability on top of per-run pass/solve rates. Module-scoped
-		// task tracking lets the SIGINT handler print "N of M completed" and
-		// clean up the in-progress task's scratch files.
-		totalPlannedTasks = tasks.length * repeat;
-		completedTaskCount = 0;
-		const taskResults = [];
-		for (const task of tasks) {
-			const runs = [];
-			for (let i = 0; i < repeat; i++) {
-				const runLabel = repeat > 1 ? ` [run ${i + 1}/${repeat}]` : '';
-				console.log(`\n--- Running: ${task.id}${runLabel} ---`);
-				currentTaskInfo = { taskId: task.id, sessionInfo: null, runIndex: i, repeat };
-				try {
-					runs.push(
-						await runTask(task, keepArtifacts, provider, judgeFn, { transcriptDir, runIdSlug, runIndex: i + 1 })
-					);
-				} finally {
-					currentTaskInfo = null;
-					completedTaskCount += 1;
-				}
+		if (models) {
+			// Multi-model sweep: run the suite once per model, then emit a
+			// side-by-side comparison table. Each model gets its own result file
+			// (and baseline lineage) via runAllTasks; the comparison is the
+			// "which model should I use" view the operator wants at a glance.
+			console.log(`Sweeping ${models.length} model(s): ${models.join(', ')}`);
+			const sweepResults = [];
+			for (const m of models) {
+				console.log(`\n========== Model: ${m} ==========`);
+				await applyModelOverride(m);
+				await prepareOllamaModel(m, provider);
+				sweepResults.push(await runAllTasks({ tasks, repeat, keepArtifacts, provider, judgeFn }));
 			}
-			taskResults.push(aggregateTaskRuns(task, runs));
+			const sweepId = new Date().toISOString();
+			const comparisonPath = await writeComparisonTable(sweepResults, EVALS_DIR, sweepId);
+			console.log('\n=== Model comparison ===');
+			console.log(formatComparisonMarkdown(sweepResults));
+			console.log(`Comparison table written to: ${comparisonPath}`);
+		} else {
+			// Single-model run. Apply the `--model=` override (if any) up front so
+			// the result file's `model` field reflects it, then warm the model.
+			if (model !== null) {
+				await applyModelOverride(model);
+				console.log(`Overriding chat/summary/completions models → ${model}`);
+			}
+			// Warm whichever model the run will actually use — the override target,
+			// or the plugin's current chat model when no override was passed.
+			const effectiveModel = model ?? (await getSetting('chatModelName'));
+			await prepareOllamaModel(effectiveModel, provider);
+
+			const result = await runAllTasks({ tasks, repeat, keepArtifacts, provider, judgeFn });
+
+			// Auto-compare against the blessed baseline for this (provider, model)
+			// so the operator sees regressions without typing eval:compare.
+			await maybeCompareToBaseline(result);
 		}
-
-		// Build result, write, print
-		const gitSha = getGitSha();
-		const modelName = await getModelName();
-		const result = buildResult(taskResults, gitSha, modelName, provider, runId);
-		const outPath = await writeResults(result, EVALS_DIR);
-		printSummary(result);
-		console.log(`Results written to: ${outPath}`);
-
-		// Auto-compare against the blessed baseline for this (provider, model)
-		// so the operator sees regressions without typing eval:compare.
-		await maybeCompareToBaseline(result);
 	} finally {
-		await restoreChatModel();
+		await restoreModelOverride();
 		await restoreProvider();
 		await restoreChatHistory();
 	}
