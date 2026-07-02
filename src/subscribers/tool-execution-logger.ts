@@ -178,24 +178,38 @@ function extractKeyParam(toolName: string, args: Record<string, unknown>): { key
  */
 export function mergeToolBlock(content: string, block: string): string {
 	const trimmed = content.trimEnd();
-	// Check if content ends with an existing tools callout block
-	const calloutPattern = /^> \[!tools\]- Tool Execution$/m;
-	// Find the last callout in the content
+	// Only extend an existing tools callout when it is the *trailing* block. The
+	// backward scan walks the tail blockquote region and must stop at the first
+	// callout header it meets: if that header is another callout (e.g.
+	// `> [!reasoning]-`), the tail is NOT a tools callout, so the new lines must
+	// start a fresh block rather than be spliced onto `trimmed` — which would
+	// fold them into the preceding callout (#1050).
+	const calloutPattern = /^> \[!tools\]- Tool Execution$/;
 	const lines = trimmed.split('\n');
 	let calloutStart = -1;
 	for (let i = lines.length - 1; i >= 0; i--) {
-		if (calloutPattern.test(lines[i])) {
+		const line = lines[i];
+		if (calloutPattern.test(line)) {
 			calloutStart = i;
 			break;
 		}
-		// If we hit a non-blockquote, non-empty line, stop searching
-		if (lines[i].trim() !== '' && !lines[i].startsWith('>')) {
+		// A different callout header means the tail block is not a tools callout.
+		if (/^> \[!/.test(line)) {
+			break;
+		}
+		// If we hit a non-blockquote, non-empty line, stop searching.
+		if (line.trim() !== '' && !line.startsWith('>')) {
 			break;
 		}
 	}
 
 	if (calloutStart === -1) {
-		// No existing callout — append new block
+		// No trailing tools callout to extend — append a fresh block. The extra
+		// `\n` keeps a blank line between it and the preceding callout; without
+		// that separation two blockquotes merge into one callout in Obsidian,
+		// which is how tool lines were folding into the preceding `[!reasoning]`
+		// callout (#1050). History entries always end with a trailing newline,
+		// so this yields the required blank-line gap.
 		return content + '\n' + block + '\n';
 	}
 
