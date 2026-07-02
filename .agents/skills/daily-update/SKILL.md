@@ -44,14 +44,14 @@ gh api "repos/kepano/obsidian-skills/commits?path=<upstream-path>&per_page=1&sha
   --jq '.[0].sha'
 ```
 
-If the newest SHA differs from the pinned SHA, upstream has changed. Fetch the diff between the pin and `main` for that path and report it inline:
+If the newest SHA differs from the pinned SHA, upstream has changed — the differing SHA is the authoritative drift signal, and a **rename or delete counts as drift too**. Fetch the diff between the pin and `main`, matching the path as either the current filename **or** a `previous_filename` (renamed-from), so moves and deletions aren't missed:
 
 ```bash
 gh api "repos/kepano/obsidian-skills/compare/<pinned-sha>...main" \
-  --jq '.files[] | select(.filename=="<upstream-path>") | {filename, status, additions, deletions, patch}'
+  --jq '.files[] | select(.filename=="<upstream-path>" or .previous_filename=="<upstream-path>") | {filename, previous_filename, status, additions, deletions, patch}'
 ```
 
-Report, per adapted skill: `up to date` (newest == pinned) or `drift: upstream moved to <short-sha>` with the diff and a note that the adapted `SKILL.md` needs a manual reconcile. If `gh`/the network is unavailable, record the check as errored (like any other sub-skill error) and move on — never guess.
+Report, per adapted skill: `up to date` (newest == pinned) or `drift: upstream moved to <short-sha>` with the diff and a note that the adapted `SKILL.md` needs a manual reconcile. A `renamed` or `removed` status means the upstream file moved or was deleted — still drift; flag it for reconcile even when the patch is empty. If the SHA differs but the filter yields nothing (e.g. an unusual rename chain), treat it as drift needing investigation, never as "up to date." If `gh`/the network is unavailable, record the check as errored (like any other sub-skill error) and move on — never guess.
 
 ## Workflow
 
