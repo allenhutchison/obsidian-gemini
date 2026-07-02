@@ -25,7 +25,7 @@ import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
 import { FileLogWriter } from './utils/file-log-writer';
-import { getApiKeyErrorMessage } from './utils/init-error-message';
+import { getApiKeyErrorMessage as buildApiKeyErrorMessage } from './utils/init-error-message';
 import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
@@ -305,7 +305,7 @@ export default class ObsidianGemini extends Plugin {
 	 * Distinguishes between "never configured" and "storage retrieval failure".
 	 */
 	private getApiKeyErrorMessage(): string {
-		return getApiKeyErrorMessage({
+		return buildApiKeyErrorMessage({
 			provider: this.settings.provider,
 			lastInitError: this.lastInitError,
 			apiKeySecretName: this.settings.apiKeySecretName,
