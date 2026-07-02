@@ -300,6 +300,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Description**: Routes Gemini requests through Google's GA [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API.
 - **Privacy**: Runs statelessly (`store: false`) — conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
 - **Status**: Experimental. Responses stream incrementally (text, reasoning, and tool calls); turn it off to fall back to `generateContent` if you hit issues.
+- **Scope**: Governs the conversational chat transport only. Image generation (the `generate_image` tool and **Generate image** command) always uses `generateContent` regardless of this setting.
 
 #### Custom API Endpoint
 
@@ -424,7 +425,7 @@ Controls which agent tools execute automatically, which require user confirmatio
 - **Setting**: `toolPolicy.toolPermissions`
 - **Type**: Object (tool name → permission)
 - **Default**: `{}` (empty — preset governs all tools)
-- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask` (confirmation required), or `allow` (runs automatically). Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`. Legacy aliases `ask_user` and `approve` still parse correctly but `ask` and `allow` are the canonical forms.
+- **Description**: Each registered tool can be individually set to `deny` (blocked), `ask_user` (confirmation required), or `approve` (runs automatically) — these are the values persisted in `data.json` for this setting. Overrides take precedence over the active preset. Setting an override causes the preset to switch to `custom`. (This is distinct from the `toolPolicy` YAML block used by Projects, Scheduled Tasks, and Hooks, which uses the shorter `deny`/`ask`/`allow` aliases in frontmatter — see those guides.)
 
 ### MCP servers
 

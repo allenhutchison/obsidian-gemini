@@ -28,7 +28,7 @@ npm run dev    # Development build with watch mode
 | `npm install`          | Install dependencies                     |
 | `npm run dev`          | Development build with watch mode        |
 | `npm run build`        | Production build (runs TypeScript check) |
-| `npm test`             | Run Jest tests                           |
+| `npm test`             | Run Vitest tests                         |
 | `npm run format`       | Format code with Prettier                |
 | `npm run format-check` | Check formatting without changes         |
 

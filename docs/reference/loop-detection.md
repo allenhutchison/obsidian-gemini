@@ -34,7 +34,7 @@ The AI will receive an error message:
 
 ## Per-Turn Abort
 
-In addition to the per-tool detection above, the agent loop counts how many times loop detection fires within a single turn. If it fires three or more times in one turn (the model keeps trying near-identical calls after being blocked), the entire turn aborts cleanly with a "loop detected — turn aborted" notice. This prevents a model that is genuinely stuck from spinning through every tool variation. The abort is per-turn — the next user message starts fresh.
+In addition to the per-tool detection above, the agent loop counts how many times loop detection fires within a single turn. If it fires three or more times in one turn (the model keeps trying near-identical calls after being blocked), the entire turn aborts cleanly with a notice: "The agent kept retrying the same tool call (loop detector fired N times). Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session." This prevents a model that is genuinely stuck from spinning through every tool variation. The abort is per-turn — the next user message starts fresh.
 
 ## Implementation Details
 

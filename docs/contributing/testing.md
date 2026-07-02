@@ -234,15 +234,15 @@ Use the appropriate checklist based on what your change affects. All changes sho
 
 The project enforces quality gates through git hooks and CI:
 
-| Check          | Command                  | When it runs    |
-| -------------- | ------------------------ | --------------- |
-| Formatting     | `npm run format-check`   | Pre-commit hook |
-| Build          | `npm run build`          | Pre-push hook   |
-| Tests          | `npm test`               | Pre-push hook   |
-| Lint           | `npm run lint`           | CI only         |
-| Test typecheck | `npm run typecheck:test` | CI only         |
+| Check          | Command                  | When it runs                                          |
+| -------------- | ------------------------ | ----------------------------------------------------- |
+| Formatting     | `npm run format-check`   | CI only (pre-commit auto-fixes staged files instead)  |
+| Build          | `npm run build`          | Pre-push hook                                         |
+| Tests          | `npm test`               | Pre-push hook                                         |
+| Lint           | `npm run lint`           | CI only (pre-commit auto-fixes staged `*.ts` instead) |
+| Test typecheck | `npm run typecheck:test` | CI only                                               |
 
-The last two run only in CI — no local hook covers them. Run all five locally before pushing to avoid a CI-only failure:
+The pre-commit hook runs `lint-staged`, which auto-fixes formatting (`prettier --write`) and lint issues (`eslint --fix`) on staged files only — a different (and narrower) check than the full-repo, fix-nothing commands CI runs. Run all five full-repo commands locally before pushing to avoid a CI-only failure:
 
 ```bash
 npm run format-check && npm run build && npm test && npm run lint && npm run typecheck:test

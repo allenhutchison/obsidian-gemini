@@ -796,6 +796,15 @@ Prevents infinite execution loops:
 - Stops after threshold (default: 3)
 - Configurable time window
 
+### Turn Budget
+
+Long agent turns (many tool-call batches in a row) are bounded by a soft budget instead of a hard cutoff:
+
+- As a turn nears its limit, the agent is reminded how many tool-call batches it has left so it can wrap up cleanly
+- If it runs out mid-task, it gets a one-time extension (half the original budget, rounded up) with a nudge to finish
+- Interactive agent chat sessions default to 50 tool-call batches per turn — high enough to stay out of the way of normal multi-step work
+- See [Scheduled Tasks → Tool Iteration Limit](/guide/scheduled-tasks#tool-iteration-limit) for the same mechanism as it applies to headless runs (default 20, configurable via `maxIterations`)
+
 ### Error Handling
 
 - Operations stop on errors (configurable)
