@@ -26,7 +26,32 @@ Run these in order. Each one's full workflow lives in its own SKILL.md — read 
    - This sub-skill has GitHub side-effects — labels are applied directly. The working tree is unaffected.
    - Capture the count of issues labeled and the labels applied; surface it in the PR body even when the working tree is clean.
 
+4. **Bundled skill drift check** (inline — no separate `SKILL.md`; see "Bundled skill drift check" below)
+   - Compares the three kepano-adapted bundled skills against their upstream sources, using the SHAs pinned in `SKILL_SOURCES.md`.
+   - **Report-only, like `triage-issues`**: it writes nothing to the working tree and never bumps the pinned SHA. Surface any flagged drift in the run report (and the PR body if one is opened).
+
 When adding a new daily sub-skill in the future, append it here with the same shape (name → path → one-line outcome). Order matters only when sub-skills overlap on output paths (today they don't).
+
+## Bundled skill drift check
+
+Three bundled skills — `obsidian-markdown`, `json-canvas`, and `obsidian-bases` — are **adaptations** of upstream skills from [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills), re-framed for this plugin's function tools. `SKILL_SOURCES.md` (repo root) pins the upstream path and last-reconciled SHA for each. This check flags when upstream has moved ahead of a pinned SHA so a human can reconcile; it does **not** edit any `SKILL.md` or bump the pin (see [docs/contributing/bundled-skills.md](../../../docs/contributing/bundled-skills.md) for the reconcile workflow).
+
+For each row in `SKILL_SOURCES.md`, read the pinned SHA and upstream path, then find the newest upstream commit that touched that path:
+
+```bash
+# newest upstream commit SHA affecting the path (main branch)
+gh api "repos/kepano/obsidian-skills/commits?path=<upstream-path>&per_page=1&sha=main" \
+  --jq '.[0].sha'
+```
+
+If the newest SHA differs from the pinned SHA, upstream has changed. Fetch the diff between the pin and `main` for that path and report it inline:
+
+```bash
+gh api "repos/kepano/obsidian-skills/compare/<pinned-sha>...main" \
+  --jq '.files[] | select(.filename=="<upstream-path>") | {filename, status, additions, deletions, patch}'
+```
+
+Report, per adapted skill: `up to date` (newest == pinned) or `drift: upstream moved to <short-sha>` with the diff and a note that the adapted `SKILL.md` needs a manual reconcile. If `gh`/the network is unavailable, record the check as errored (like any other sub-skill error) and move on — never guess.
 
 ## Workflow
 
@@ -60,17 +85,17 @@ git status --short
 
 Decide what to do based on three cases:
 
-**Case A — the working tree is clean and `triage-issues` did nothing.** Quiet day:
+**Case A — the working tree is clean, `triage-issues` did nothing, and the drift check found no drift.** Quiet day:
 
 - Don't commit. Don't push. Don't open a PR. Empty PRs are noise.
 - Delete the branch you just created (`git checkout master && git branch -D "$BRANCH_NAME"`) so the local branch list stays clean.
 - Report "no daily changes" and stop. The cron's job is done; absence of a PR is the signal.
 
-**Case B — the working tree is clean but `triage-issues` applied labels.** Report-only day:
+**Case B — the working tree is clean but `triage-issues` applied labels or the drift check flagged upstream drift.** Report-only day:
 
-- Don't open a PR. Labels on GitHub are already applied — opening an empty-diff PR just to write a summary is more friction than it's worth.
+- Don't open a PR. Labels on GitHub are already applied, and the drift check writes nothing — opening an empty-diff PR just to write a summary is more friction than it's worth.
 - Delete the branch (same as Case A: `git checkout master && git branch -D "$BRANCH_NAME"`).
-- Reply with the triage summary so a human can audit the labels if they want.
+- Reply with the triage summary and/or the flagged bundled-skill drift so a human can act on it if they want.
 
 **Case C — the working tree has changes.** Commit them all in one commit:
 
