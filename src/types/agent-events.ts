@@ -67,6 +67,8 @@ export interface AgentEventMap {
 	/** After any API response (initial, follow-up, or retry) with usage metadata */
 	apiResponseReceived: Readonly<{
 		usageMetadata?: UsageMetadata;
+		/** Model that produced this response — used to calibrate per-model Ollama token estimates. */
+		modelName?: string;
 	}>;
 
 	/** After a new agent session is created */

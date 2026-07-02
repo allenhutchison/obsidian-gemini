@@ -79,6 +79,15 @@ export interface AgentLoopHooks {
 	 * of the turn.
 	 */
 	onFollowUpChunk?(chunk: StreamChunk): void | Promise<void>;
+	/**
+	 * Fired when `ContextManager.prepareHistory` compacts history mid-loop
+	 * (after a tool batch, ahead of the follow-up request) — i.e. `wasCompacted`
+	 * came back true. UI uses this to surface the same "Context Compacted"
+	 * notice/transcript entry as the pre-turn compaction path. Headless callers
+	 * can leave it unset; the compacted history is used for the follow-up
+	 * request either way.
+	 */
+	onMidLoopCompaction?(result: { estimatedTokens: number; summaryText?: string }): void | Promise<void>;
 }
 
 export interface AgentLoopOptions {
@@ -258,6 +267,14 @@ export class AgentLoop {
 		let currentToolCalls = initialResponse.toolCalls ?? [];
 		let conversationHistory = initialHistory;
 		let userMessage = initialUserMessage;
+		// Index marking the start of this turn's tool-loop turns within the
+		// history array. Everything at or after this index carries live
+		// functionCall/thoughtSignature continuity for the in-flight tool chain
+		// and must never be folded into a mid-loop compaction summary — only
+		// entries strictly before it (prior, already-completed turns) are
+		// eligible. See #662.
+		let loopStartIndex = initialHistory.length;
+		const modelName = session?.modelConfig?.model || plugin.settings.chatModelName;
 		// `perTurnContext` is a first-iteration input, like `userMessage`:
 		// `buildToolHistoryTurns` splices it into the user turn once, after which
 		// it lives in `conversationHistory`. Re-passing it on later iterations
@@ -383,7 +400,7 @@ export class AgentLoop {
 				})
 			);
 
-			const updatedHistory = buildToolHistoryTurns({
+			let updatedHistory = buildToolHistoryTurns({
 				conversationHistory,
 				userMessage,
 				perTurnContext,
@@ -392,6 +409,42 @@ export class AgentLoop {
 				appendText: budgetNotice,
 			});
 
+			if (isCancelled()) {
+				return this.cancelledResult(updatedHistory, iterations);
+			}
+
+			// Compact history if this batch pushed us over the token threshold —
+			// long tool chains otherwise grow `updatedHistory` unbounded across
+			// iterations. Only turns strictly before `loopStartIndex` are eligible,
+			// so the current tool chain's functionCall/thoughtSignature turns are
+			// never summarized away. Gated internally on cached token usage, so
+			// this is a no-op on most iterations. See #662.
+			const compactionResult = await plugin.contextManager.prepareHistory(updatedHistory, modelName, {
+				protectFromIndex: loopStartIndex,
+			});
+			if (compactionResult.wasCompacted) {
+				plugin.contextManager.setUsageMetadata({
+					promptTokenCount: compactionResult.estimatedTokens,
+					totalTokenCount: compactionResult.estimatedTokens,
+				});
+				// Summarization replaced the protected prefix with a 2-entry
+				// summary — shift the boundary left by however many entries were
+				// shed so it still points at the same logical (post-compaction)
+				// start of this tool chain on subsequent iterations.
+				loopStartIndex -= updatedHistory.length - compactionResult.compactedHistory.length;
+				await this.safeHook('onMidLoopCompaction', plugin, () =>
+					hooks?.onMidLoopCompaction?.({
+						estimatedTokens: compactionResult.estimatedTokens,
+						summaryText: compactionResult.summaryText,
+					})
+				);
+			}
+			updatedHistory = compactionResult.compactedHistory;
+
+			// prepareHistory can spend real time (token counting, an LLM
+			// summarization call) — re-check cancellation before scheduling the
+			// follow-up request so a stop during compaction doesn't sneak out
+			// another model call.
 			if (isCancelled()) {
 				return this.cancelledResult(updatedHistory, iterations);
 			}
@@ -443,6 +496,7 @@ export class AgentLoop {
 			if (followUpResponse.usageMetadata) {
 				await this.safeEmit(plugin, 'apiResponseReceived', {
 					usageMetadata: followUpResponse.usageMetadata,
+					modelName,
 				});
 			}
 
@@ -505,6 +559,7 @@ export class AgentLoop {
 			if (retryResponse.usageMetadata) {
 				await this.safeEmit(plugin, 'apiResponseReceived', {
 					usageMetadata: retryResponse.usageMetadata,
+					modelName,
 				});
 			}
 

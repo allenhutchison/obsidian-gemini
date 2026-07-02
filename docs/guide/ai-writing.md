@@ -231,13 +231,17 @@ You can assign a keyboard shortcut to "Explain selection with AI" in Obsidian's 
 
 ## Default Prompts
 
-When you first use Explain Selection, three default prompts are created in your Prompts folder:
+The plugin ships with five bundled prompts, available immediately — they aren't written as files to your Prompts folder, but appear in the selection menu alongside any custom prompts you create there:
 
-| Prompt                  | Description                     | Best For           |
-| ----------------------- | ------------------------------- | ------------------ |
-| **Explain Selection**   | General explanation of the text | Most content types |
-| **Explain Code**        | Detailed code walkthrough       | Programming code   |
-| **Summarize Selection** | Concise summary                 | Long passages      |
+| Prompt                       | Description                      | Best For           |
+| ---------------------------- | -------------------------------- | ------------------ |
+| **Explain Selection**        | General explanation of the text  | Most content types |
+| **Explain Code**             | Detailed code walkthrough        | Programming code   |
+| **Summarize Selection**      | Concise summary                  | Long passages      |
+| **Fix Grammar**              | Fixes grammar and improves style | Any text           |
+| **Convert to Bullet Points** | Converts text to a list          | Dense paragraphs   |
+
+If you create a custom prompt in your Prompts folder with the same name as a bundled one, your version takes precedence.
 
 ## Creating Custom Explain Prompts {#creating-custom-explain-prompts}
 

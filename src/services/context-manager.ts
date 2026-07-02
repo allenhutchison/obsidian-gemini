@@ -34,14 +34,14 @@ const DEFAULT_INPUT_TOKEN_LIMIT = 1_000_000;
 const OLLAMA_DEFAULT_INPUT_TOKEN_LIMIT = 32_000;
 
 /**
- * Rough token-count estimate for providers that don't expose a countTokens
- * endpoint (Ollama). Char/4 is the standard heuristic; drift vs. real tokens
- * is acceptable here because we only use it to decide whether to compact.
+ * Starting chars-per-token ratio for providers that don't expose a countTokens
+ * endpoint (Ollama), used until real usage data calibrates a per-model ratio.
+ * 4 is the standard char/token heuristic for English text.
  */
-function estimateTokensFromContents(contents: Content[]): number {
-	const json = JSON.stringify(contents ?? []);
-	return Math.ceil(json.length / 4);
-}
+const DEFAULT_OLLAMA_CHARS_PER_TOKEN = 4;
+
+/** Weight given to each new observation when blending the calibrated ratio (EMA). */
+const OLLAMA_RATIO_CALIBRATION_WEIGHT = 0.5;
 
 /** Minimum number of recent turns to preserve during compaction */
 const MIN_RECENT_TURNS_TO_KEEP = 6;
@@ -100,6 +100,10 @@ export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
 	private acceptNextLowerUpdate = false;
 	private ai: GoogleGenAI | null;
+	/** Per-model chars-per-token ratio for Ollama, calibrated from real usage metadata. */
+	private ollamaCharsPerToken: Map<string, number> = new Map();
+	/** Char length of the most recent Ollama countTokens() estimate per model, awaiting calibration against the next real response. */
+	private pendingOllamaEstimateCharLength: Map<string, number> = new Map();
 
 	constructor(
 		private plugin: ObsidianGemini,
@@ -129,9 +133,17 @@ export class ContextManager {
 	 * Uses high-water mark within a turn: only accepts higher promptTokenCount
 	 * unless beginTurn() was called (which allows one lower update to reset the baseline).
 	 * Use setUsageMetadata() to unconditionally force a value (e.g. after compaction).
+	 *
+	 * When `modelName` is provided and the active provider is Ollama, this also
+	 * calibrates that model's chars-per-token ratio against the real
+	 * `promptTokenCount` Ollama just reported (see calibrateOllamaRatio).
 	 */
-	updateUsageMetadata(metadata: UsageMetadata): void {
+	updateUsageMetadata(metadata: UsageMetadata, modelName?: string): void {
 		if (!metadata) return;
+
+		if (modelName && this.plugin.settings.provider === 'ollama') {
+			this.calibrateOllamaRatio(modelName, metadata.promptTokenCount);
+		}
 
 		const newPrompt = metadata.promptTokenCount ?? 0;
 		const cachedPrompt = this.lastUsageMetadata?.promptTokenCount ?? 0;
@@ -143,6 +155,30 @@ export class ContextManager {
 		} else {
 			this.logger.debug(`[ContextManager] Skipped lower metadata: prompt=${newPrompt} < cached=${cachedPrompt}`);
 		}
+	}
+
+	/**
+	 * Calibrate this model's Ollama chars-per-token ratio from a real response.
+	 * Correlates the character length of the most recent countTokens() estimate
+	 * for this model (computed just before the request that produced this
+	 * response, via prepareHistory) against the response's actual
+	 * promptTokenCount, and blends the observed ratio into the running one via
+	 * exponential moving average. Requires no extra API call and converges
+	 * toward the model's real tokenization over a few turns.
+	 */
+	private calibrateOllamaRatio(modelName: string, promptTokenCount: number | undefined): void {
+		const charLength = this.pendingOllamaEstimateCharLength.get(modelName);
+		if (!charLength || !promptTokenCount) return;
+		this.pendingOllamaEstimateCharLength.delete(modelName);
+
+		const observedRatio = charLength / promptTokenCount;
+		const previousRatio = this.ollamaCharsPerToken.get(modelName) ?? DEFAULT_OLLAMA_CHARS_PER_TOKEN;
+		const calibratedRatio =
+			previousRatio * (1 - OLLAMA_RATIO_CALIBRATION_WEIGHT) + observedRatio * OLLAMA_RATIO_CALIBRATION_WEIGHT;
+		this.ollamaCharsPerToken.set(modelName, calibratedRatio);
+		this.logger.debug(
+			`[ContextManager] Calibrated Ollama chars/token for ${modelName}: ${previousRatio.toFixed(2)} -> ${calibratedRatio.toFixed(2)}`
+		);
 	}
 
 	/**
@@ -211,6 +247,19 @@ export class ContextManager {
 	}
 
 	/**
+	 * Chars-per-token estimate for Ollama, using this model's calibrated ratio
+	 * (falling back to the generic default until enough real data has arrived).
+	 * Records the char length used so the next updateUsageMetadata() call for
+	 * this model can calibrate against it.
+	 */
+	private estimateTokensFromContents(modelName: string, contents: Content[]): number {
+		const json = JSON.stringify(contents ?? []);
+		const charsPerToken = this.ollamaCharsPerToken.get(modelName) ?? DEFAULT_OLLAMA_CHARS_PER_TOKEN;
+		this.pendingOllamaEstimateCharLength.set(modelName, json.length);
+		return Math.ceil(json.length / charsPerToken);
+	}
+
+	/**
 	 * Sanitize conversation contents for the countTokens API.
 	 * The countTokens API only accepts text parts, so we convert
 	 * functionCall, functionResponse, and inlineData parts to text descriptions.
@@ -258,15 +307,17 @@ export class ContextManager {
 	 * Count tokens for a given set of contents.
 	 *
 	 * For Gemini, calls the SDK's countTokens endpoint. For Ollama (which has no
-	 * equivalent API) we fall back to a chars/4 estimate — compaction precision
-	 * is degraded but the trigger logic still works.
+	 * equivalent API) we fall back to a chars-per-token estimate, seeded at 4
+	 * and calibrated per-model from real promptTokenCount values as they arrive
+	 * (see calibrateOllamaRatio) — compaction precision improves as the session
+	 * progresses instead of staying pinned to the generic heuristic.
 	 */
 	async countTokens(modelName: string, contents: Content[]): Promise<number> {
 		// Sanitize contents to only include text-compatible parts
 		const sanitizedContents = this.sanitizeContentsForTokenCount(contents);
 
 		if (this.plugin.settings.provider === 'ollama' || !this.ai) {
-			const estimate = estimateTokensFromContents(sanitizedContents);
+			const estimate = this.estimateTokensFromContents(modelName, sanitizedContents);
 			this.logger.log(`[ContextManager] countTokens (Ollama estimate): ${estimate}`);
 			return estimate;
 		}
@@ -297,13 +348,36 @@ export class ContextManager {
 	/**
 	 * Check if compaction is needed and perform it if so.
 	 *
-	 * This is the main entry point called before each API request.
-	 * It uses cached usageMetadata from the last API response to decide
-	 * whether compaction is needed. countTokens() is only called after
-	 * compaction to measure the result size.
+	 * This is the main entry point called before each API request — including
+	 * mid-loop, after each tool batch in `AgentLoop`, so long tool chains don't
+	 * overflow the context window. `options.protectFromIndex` marks the start
+	 * of the caller's protected suffix (e.g. the current agent-loop's turns,
+	 * which carry `functionCall`/`thoughtSignature` continuity that summarization
+	 * must never touch); entries at or after that index are never folded into
+	 * the summary. It uses cached usageMetadata from the last API response to
+	 * decide whether compaction is needed; the compaction decision itself does
+	 * not call countTokens() (that only happens after compaction, to measure
+	 * the result size), but for Ollama every call still seeds the pending
+	 * chars-per-token calibration estimate for this model — see the note at
+	 * the top of the method body.
 	 */
-	async prepareHistory(conversationHistory: Content[], modelName: string): Promise<CompactionResult> {
+	async prepareHistory(
+		conversationHistory: Content[],
+		modelName: string,
+		options?: { protectFromIndex?: number }
+	): Promise<CompactionResult> {
+		const protectFromIndex = options?.protectFromIndex;
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
+
+		// prepareHistory() runs immediately before every outgoing request, so this
+		// is the char length that will correlate with the next real
+		// promptTokenCount for this model — seed it unconditionally (not just on
+		// the compaction path below, which only runs when over threshold) so
+		// calibrateOllamaRatio() has something to calibrate against on ordinary
+		// turns too. The returned estimate itself isn't needed here.
+		if (this.plugin.settings.provider === 'ollama') {
+			this.estimateTokensFromContents(modelName, this.sanitizeContentsForTokenCount(conversationHistory));
+		}
 
 		// Short-circuit for very short conversations
 		if (conversationHistory.length <= MIN_RECENT_TURNS_TO_KEEP) {
@@ -372,6 +446,12 @@ export class ContextManager {
 			this.logger.log(
 				`[ContextManager] Phase 1 sufficient (${postPhase1Tokens} < ${compactionThreshold}); skipping summarization`
 			);
+			// Force-set even though wasCompacted is false: truncation may have
+			// genuinely lowered the estimate, and updateUsageMetadata's
+			// high-water mark would otherwise reject the next (accurate, lower)
+			// API-reported count for the rest of this turn, leaving the cache
+			// stuck on the stale pre-truncation figure.
+			this.setUsageMetadata({ promptTokenCount: postPhase1Tokens, totalTokenCount: postPhase1Tokens });
 			return {
 				compactedHistory: truncatedHistory,
 				wasCompacted: false,
@@ -386,7 +466,21 @@ export class ContextManager {
 
 		const aggressiveThreshold = await this.getAggressiveThreshold(modelName);
 		const isAggressive = postPhase1Tokens >= aggressiveThreshold;
-		const result = await this.compactHistory(truncatedHistory, modelName, isAggressive);
+		const result = await this.compactHistory(truncatedHistory, modelName, isAggressive, protectFromIndex);
+
+		if (!result) {
+			// Nothing old enough to summarize — the protected suffix (e.g. the
+			// current agent-loop's turns) covers the whole history. Truncation
+			// (phase 1) still applies; summarization is a no-op this call.
+			this.logger.log('[ContextManager] Protected region covers entire history; skipping summarization');
+			// Same force-set rationale as the phase-1-sufficient branch above.
+			this.setUsageMetadata({ promptTokenCount: postPhase1Tokens, totalTokenCount: postPhase1Tokens });
+			return {
+				compactedHistory: truncatedHistory,
+				wasCompacted: false,
+				estimatedTokens: postPhase1Tokens,
+			};
+		}
 
 		// Verify the compacted history is smaller
 		const compactedTokens = await this.countTokens(modelName, result.compactedHistory);
@@ -404,13 +498,15 @@ export class ContextManager {
 
 	/**
 	 * Perform the actual compaction: split history, summarize old turns,
-	 * and return the compacted history.
+	 * and return the compacted history. Returns `null` when there's nothing
+	 * old enough to summarize (the protected suffix covers the whole history).
 	 */
 	private async compactHistory(
 		conversationHistory: Content[],
 		modelName: string,
-		aggressive: boolean
-	): Promise<{ compactedHistory: Content[]; summaryText: string }> {
+		aggressive: boolean,
+		protectFromIndex?: number
+	): Promise<{ compactedHistory: Content[]; summaryText: string } | null> {
 		const totalTurns = conversationHistory.length;
 
 		// Determine how many recent turns to keep
@@ -419,6 +515,13 @@ export class ContextManager {
 			: Math.max(MIN_RECENT_TURNS_TO_KEEP, Math.floor(totalTurns * RECENT_TURNS_RATIO));
 
 		let splitIndex = totalTurns - recentTurnsToKeep;
+
+		// Never fold the protected suffix (e.g. the current agent-loop's turns,
+		// which carry live functionCall/thoughtSignature continuity) into the
+		// summary — clamp the split to stay strictly before it.
+		if (protectFromIndex !== undefined) {
+			splitIndex = Math.min(splitIndex, protectFromIndex);
+		}
 
 		// Ensure we don't split in the middle of a tool exchange (functionCall/functionResponse pair)
 		// Scan backward to find a safe boundary at the start of a user turn
@@ -430,6 +533,10 @@ export class ContextManager {
 				break;
 			}
 			splitIndex--;
+		}
+
+		if (splitIndex <= 0) {
+			return null;
 		}
 
 		// Split into old (to summarize) and recent (to keep verbatim)

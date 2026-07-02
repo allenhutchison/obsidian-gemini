@@ -69,12 +69,19 @@ describe('ContextTrackingSubscriber', () => {
 
 		// Emit with usageMetadata
 		await bus.emit('apiResponseReceived', { usageMetadata });
-		expect(plugin.contextManager.updateUsageMetadata).toHaveBeenCalledWith(usageMetadata);
+		expect(plugin.contextManager.updateUsageMetadata).toHaveBeenCalledWith(usageMetadata, undefined);
 
 		// Emit without usageMetadata
 		plugin.contextManager.updateUsageMetadata.mockClear();
 		await bus.emit('apiResponseReceived', { usageMetadata: undefined });
 		expect(plugin.contextManager.updateUsageMetadata).not.toHaveBeenCalled();
+	});
+
+	it('should forward modelName to contextManager.updateUsageMetadata() for per-model calibration', async () => {
+		const usageMetadata = { totalTokenCount: 100, promptTokenCount: 50, candidatesTokenCount: 50 };
+
+		await bus.emit('apiResponseReceived', { usageMetadata, modelName: 'llama3.2' });
+		expect(plugin.contextManager.updateUsageMetadata).toHaveBeenCalledWith(usageMetadata, 'llama3.2');
 	});
 
 	it('should call contextManager.reset() on sessionCreated and sessionLoaded', async () => {

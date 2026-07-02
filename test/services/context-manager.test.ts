@@ -283,6 +283,57 @@ describe('ContextManager', () => {
 			expect(mockCountTokens).not.toHaveBeenCalled();
 			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (Ollama estimate)'));
 		});
+
+		test('Ollama provider: calibrates the chars-per-token ratio from real usage metadata', async () => {
+			const ollamaPlugin = {
+				...mockPlugin,
+				apiKey: '',
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+			};
+			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
+
+			const initialEstimate = await ollamaCtx.countTokens('llama3.2', contents);
+
+			// Real response reports far fewer tokens than the char/4 default predicted —
+			// simulating a tokenizer that's more efficient than the generic heuristic.
+			ollamaCtx.updateUsageMetadata({ promptTokenCount: Math.round(initialEstimate / 2) }, 'llama3.2');
+
+			const recalibratedEstimate = await ollamaCtx.countTokens('llama3.2', contents);
+			expect(recalibratedEstimate).toBeLessThan(initialEstimate);
+		});
+
+		test('Ollama provider: calibration is per-model and does not affect other models', async () => {
+			const ollamaPlugin = {
+				...mockPlugin,
+				apiKey: '',
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+			};
+			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
+
+			const baselineEstimate = await ollamaCtx.countTokens('llama3.2', contents);
+			await ollamaCtx.countTokens('mistral', contents);
+			ollamaCtx.updateUsageMetadata({ promptTokenCount: Math.round(baselineEstimate / 2) }, 'llama3.2');
+
+			const otherModelEstimate = await ollamaCtx.countTokens('mistral', contents);
+			expect(otherModelEstimate).toBe(baselineEstimate);
+		});
+
+		test('Ollama provider: calibration is skipped without a prior estimate or promptTokenCount', () => {
+			const ollamaPlugin = {
+				...mockPlugin,
+				apiKey: '',
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+			};
+			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+
+			// No prior countTokens() call for this model, and no modelName/promptTokenCount —
+			// none of these should throw.
+			expect(() => ollamaCtx.updateUsageMetadata({ promptTokenCount: 100 }, 'never-estimated')).not.toThrow();
+			expect(() => ollamaCtx.updateUsageMetadata({ totalTokenCount: 100 }, 'llama3.2')).not.toThrow();
+			expect(() => ollamaCtx.updateUsageMetadata({ promptTokenCount: 100 })).not.toThrow();
+		});
 	});
 
 	describe('prepareHistory', () => {
@@ -452,6 +503,16 @@ describe('ContextManager', () => {
 			expect((oldToolResult as any).truncated).toBe(true);
 			// No summarization roundtrip — phase 1 alone was sufficient.
 			expect(mockCountTokens).not.toHaveBeenCalled();
+
+			// The lower post-truncation estimate must be persisted immediately —
+			// not left to the caller — so a subsequent real (lower) API-reported
+			// count isn't rejected by updateUsageMetadata's high-water mark.
+			expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(result.estimatedTokens);
+			contextManager.updateUsageMetadata({
+				promptTokenCount: result.estimatedTokens,
+				totalTokenCount: result.estimatedTokens,
+			});
+			expect((await contextManager.getTokenUsage('gemini-2.5-flash')).estimatedTokens).toBe(result.estimatedTokens);
 		});
 
 		test('does not truncate under threshold even when big tool results are present (cache preservation)', async () => {
@@ -581,6 +642,155 @@ describe('ContextManager', () => {
 				expect.stringContaining('Failed to generate summary'),
 				expect.any(Error)
 			);
+		});
+
+		describe('protectFromIndex (mid-loop compaction)', () => {
+			test('clamps the split so the protected suffix (e.g. current agent-loop turns) is never summarized away', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 250_000,
+					totalTokenCount: 300_000,
+				});
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+
+				// 8 prior (completed) turns, then a 12-turn in-flight tool chain
+				// carrying functionCall + thoughtSignature. Without protection the
+				// default 30%-recent split (splitIndex=14) would land inside the
+				// tool chain and summarize away some of its functionCall turns.
+				const priorTurns = Array.from({ length: 8 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Prior turn ${i}` }],
+				}));
+				const loopTurns = [
+					{ role: 'user', parts: [{ text: 'kick off a long tool chain' }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'a.md' } }, thoughtSignature: 'sig-a' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'a' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'b.md' } }, thoughtSignature: 'sig-b' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'b' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'c.md' } }, thoughtSignature: 'sig-c' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'c' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'd.md' } }, thoughtSignature: 'sig-d' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'd' } } }] },
+					{
+						role: 'model',
+						parts: [{ functionCall: { name: 'read_file', args: { path: 'e.md' } }, thoughtSignature: 'sig-e' }],
+					},
+					{ role: 'user', parts: [{ functionResponse: { name: 'read_file', response: { content: 'e' } } }] },
+					{ role: 'model', parts: [{ text: 'done' }] },
+				];
+				const history = [...priorTurns, ...loopTurns];
+				const protectFromIndex = priorTurns.length; // 8
+
+				const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash', { protectFromIndex });
+
+				expect(result.wasCompacted).toBe(true);
+				// summary + ack + all 12 loop turns kept verbatim.
+				expect(result.compactedHistory).toHaveLength(2 + loopTurns.length);
+				expect(result.compactedHistory[0].parts![0].text).toContain(CONTEXT_SUMMARY_MARKER);
+				expect(result.compactedHistory.slice(2)).toEqual(loopTurns);
+
+				// Every functionCall + thoughtSignature from the protected chain survives, in order.
+				const signatures = result.compactedHistory
+					.flatMap((turn) => turn.parts ?? [])
+					.filter((p: any) => p.functionCall)
+					.map((p: any) => p.thoughtSignature);
+				expect(signatures).toEqual(['sig-a', 'sig-b', 'sig-c', 'sig-d', 'sig-e']);
+			});
+
+			test('skips summarization entirely when the protected suffix covers the whole history', async () => {
+				contextManager.updateUsageMetadata({
+					promptTokenCount: 250_000,
+					totalTokenCount: 300_000,
+				});
+				mockCountTokens.mockResolvedValue({ totalTokens: 50_000 });
+
+				// A headless caller with no prior history (initialHistory: []) — the
+				// entire conversation belongs to the current loop, so there's
+				// nothing older to fold into a summary.
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i}` }],
+				}));
+
+				const result = await contextManager.prepareHistory(history, 'gemini-2.5-flash', { protectFromIndex: 0 });
+
+				expect(result.wasCompacted).toBe(false);
+				expect(result.compactedHistory).toEqual(history);
+				expect(mockGenerateContent).not.toHaveBeenCalled();
+			});
+		});
+
+		describe('Ollama calibration seeding', () => {
+			// prepareHistory() is the entry point called before every outgoing
+			// request. Its normal (no-compaction-needed) paths don't call
+			// countTokens(), so they must still seed the pending Ollama estimate
+			// themselves or calibrateOllamaRatio() never has anything to
+			// calibrate against on ordinary turns (see #707 review feedback).
+			function buildOllamaContext() {
+				const ollamaPlugin = {
+					...mockPlugin,
+					apiKey: '',
+					settings: { ...mockPlugin.settings, provider: 'ollama' },
+				};
+				return new ContextManager(ollamaPlugin as any, mockLogger);
+			}
+
+			// Each test computes a baseline estimate under a distinct, never-seeded
+			// model name so the only thing that can seed calibration for the model
+			// under test is prepareHistory() itself — not an incidental countTokens()
+			// call made afterward for comparison.
+
+			test('seeds calibration on the short-conversation short-circuit path', async () => {
+				const ollamaCtx = buildOllamaContext();
+				const history = [
+					{ role: 'user', parts: [{ text: 'a'.repeat(400) }] },
+					{ role: 'model', parts: [{ text: 'Hi!' }] },
+				];
+
+				const baselineEstimate = await ollamaCtx.countTokens('llama3.2-baseline', history);
+
+				const result = await ollamaCtx.prepareHistory(history, 'llama3.2');
+				expect(result.wasCompacted).toBe(false);
+
+				// Real response reports far fewer tokens than the default ratio predicted.
+				ollamaCtx.updateUsageMetadata({ promptTokenCount: Math.round(baselineEstimate / 2) }, 'llama3.2');
+				const recalibratedEstimate = await ollamaCtx.countTokens('llama3.2', history);
+				expect(recalibratedEstimate).toBeLessThan(baselineEstimate);
+			});
+
+			test('seeds calibration on the under-threshold no-op path', async () => {
+				const ollamaCtx = buildOllamaContext();
+				const history = Array.from({ length: 20 }, (_, i) => ({
+					role: i % 2 === 0 ? 'user' : 'model',
+					parts: [{ text: `Message ${i} `.repeat(20) }],
+				}));
+
+				const baselineEstimate = await ollamaCtx.countTokens('llama3.2-baseline', history);
+
+				// Establish cached usage below threshold so prepareHistory takes the
+				// no-op path (no compaction, no countTokens() call of its own) — the
+				// only thing that can seed calibration for 'llama3.2' here is
+				// prepareHistory() itself.
+				ollamaCtx.updateUsageMetadata({ promptTokenCount: 1000, totalTokenCount: 1000 }, 'llama3.2');
+				const result = await ollamaCtx.prepareHistory(history, 'llama3.2');
+				expect(result.wasCompacted).toBe(false);
+
+				// Real response reports far fewer tokens than the default ratio predicted.
+				ollamaCtx.updateUsageMetadata({ promptTokenCount: Math.round(baselineEstimate / 4) }, 'llama3.2');
+				const recalibratedEstimate = await ollamaCtx.countTokens('llama3.2', history);
+				expect(recalibratedEstimate).toBeLessThan(baselineEstimate);
+			});
 		});
 	});
 
