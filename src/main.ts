@@ -25,6 +25,7 @@ import { VaultAnalyzer } from './services/vault-analyzer';
 import { DeepResearchService } from './services/deep-research';
 import { Logger } from './utils/logger';
 import { FileLogWriter } from './utils/file-log-writer';
+import { getApiKeyErrorMessage } from './utils/init-error-message';
 import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
@@ -304,22 +305,12 @@ export default class ObsidianGemini extends Plugin {
 	 * Distinguishes between "never configured" and "storage retrieval failure".
 	 */
 	private getApiKeyErrorMessage(): string {
-		if (this.settings.provider === 'ollama') {
-			// Surface the captured init error when we have one \u2014 connectivity is the
-			// most common Ollama failure but far from the only one (no model
-			// selected, model not pulled, base URL points at a non-Ollama HTTP
-			// server). The init-time Notice may have already disappeared by the
-			// time the user invokes a guarded command, so reuse the error here
-			// instead of always defaulting to "make sure the daemon is running".
-			if (this.lastInitError) {
-				return t('notice.main.initFailedFix', { error: this.lastInitError });
-			}
-			return t('notice.main.ollamaUnreachable', { url: this.settings.ollamaBaseUrl });
-		}
-		if (!this.settings.apiKeySecretName) {
-			return t('notice.main.noApiKey');
-		}
-		return t('notice.main.apiKeyRetrieveFailed');
+		return getApiKeyErrorMessage({
+			provider: this.settings.provider,
+			lastInitError: this.lastInitError,
+			apiKeySecretName: this.settings.apiKeySecretName,
+			ollamaBaseUrl: this.settings.ollamaBaseUrl,
+		});
 	}
 
 	/**
