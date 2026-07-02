@@ -10,9 +10,10 @@ import { ModelUseCase } from '../../../../src/api/model-use-case';
 // Capture every call to `client.models.generateContent` so tests can assert on
 // the params (system instruction, contents, etc.) the SDK sees. vi.hoisted lets
 // us share the spy with the factory while keeping vitest's mock-hoisting safe.
-const { generateContentMock, interactionsCreateMock, interactionsService } = vi.hoisted(() => {
+const { generateContentMock, cachesCreateMock, interactionsCreateMock, interactionsService } = vi.hoisted(() => {
 	return {
 		generateContentMock: vi.fn(),
+		cachesCreateMock: vi.fn().mockResolvedValue({ name: 'cachedContents/test-cache-id' }),
 		interactionsCreateMock: vi.fn(),
 		// Shared so the test can observe the getClient wrap installObsidianFetch applies.
 		// getClient returns a FRESH sub-client per call (each with its own `_httpClient`),
@@ -35,6 +36,10 @@ vi.mock('@google/genai', () => ({
 				generateContent: generateContentMock,
 				generateContentStream: vi.fn(),
 			},
+			caches: {
+				create: cachesCreateMock,
+			},
+
 			interactions: interactionsService,
 		};
 	}),
@@ -982,6 +987,97 @@ describe('GeminiClient', () => {
 
 			const params = (generateContentMock as Mock).mock.calls[0][0];
 			expect(params.config.maxOutputTokens).toBe(4096);
+		});
+	});
+
+	describe('Advanced AI Optimizations', () => {
+		describe('Context Caching', () => {
+			beforeEach(() => {
+				(mockPlugin as any).agentsMemory = { read: vi.fn().mockResolvedValue('') };
+				(mockPlugin as any).skillManager = { getSkillSummaries: vi.fn().mockResolvedValue([]) };
+				(mockPlugin as any).settings = {
+					userName: 'Tester',
+					ragIndexing: { enabled: false },
+					contextCachingEnabled: true,
+				};
+			});
+
+			test('creates and uses context cache when history exceeds threshold', async () => {
+				client = new GeminiClient(
+					{
+						apiKey: 'test-api-key',
+						model: 'gemini-pro',
+						sessionId: 'test-session-123',
+					},
+					new GeminiPrompts(mockPlugin),
+					mockPlugin
+				);
+
+				// Create history exceeding 32,768 tokens (approx 131,000 chars)
+				const largeHistory = [
+					{
+						role: 'user',
+						parts: [{ text: 'a'.repeat(140000) }],
+					},
+					{
+						role: 'model',
+						parts: [{ text: 'hello' }],
+					},
+				];
+
+				await client.generateModelResponse({
+					kind: 'extended',
+					userMessage: 'new user message',
+					conversationHistory: largeHistory,
+				} as ExtendedModelRequest);
+
+				// Verify caches.create was called
+				expect(cachesCreateMock).toHaveBeenCalled();
+				const cacheParams = cachesCreateMock.mock.calls[0][0];
+				expect(cacheParams.model).toBe('gemini-pro');
+				expect(cacheParams.config.contents).toHaveLength(2); // Cached prefix: everything except the last turn (which was length 2)
+
+				// Verify generateContent was called with cachedContent
+				expect(generateContentMock).toHaveBeenCalled();
+				const genParams = generateContentMock.mock.calls[0][0];
+				expect(genParams.config.cachedContent).toBe('cachedContents/test-cache-id');
+
+				// Verify cached properties (systemInstruction, tools) were deleted from request config to prevent duplicate errors
+				expect(genParams.config.systemInstruction).toBeUndefined();
+				expect(genParams.config.tools).toBeUndefined();
+
+				// Suffix contains the rest: only the new user message
+				expect(genParams.contents).toHaveLength(1);
+			});
+
+			test('skips caching when history is below threshold', async () => {
+				client = new GeminiClient(
+					{
+						apiKey: 'test-api-key',
+						model: 'gemini-pro',
+						sessionId: 'test-session-123',
+					},
+					new GeminiPrompts(mockPlugin),
+					mockPlugin
+				);
+
+				const smallHistory = [
+					{
+						role: 'user',
+						parts: [{ text: 'short message' }],
+					},
+				];
+
+				await client.generateModelResponse({
+					kind: 'extended',
+					userMessage: 'hello',
+					conversationHistory: smallHistory,
+				} as ExtendedModelRequest);
+
+				expect(cachesCreateMock).not.toHaveBeenCalled();
+				const genParams = generateContentMock.mock.calls[0][0];
+				expect(genParams.config.cachedContent).toBeUndefined();
+			});
 		});
 	});
 

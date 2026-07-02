@@ -448,6 +448,16 @@ export const en = {
 		message: 'API configuration',
 		context: 'Sub-heading inside Agent Config settings, above API retry/endpoint options.',
 	},
+	'settings.agentConfig.contextCachingName': {
+		message: 'Enable Context Caching',
+		context: 'Settings toggle name for enabling Gemini context caching.',
+	},
+	'settings.agentConfig.contextCachingDesc': {
+		message:
+			'Cache conversation history prefix on Gemini models. Saves costs and reduces latency for sessions above 32k tokens.',
+		context: 'Settings toggle description for Gemini context caching.',
+	},
+
 	'settings.agentConfig.logToFileName': {
 		message: 'Log to file',
 		context: 'Settings toggle name for writing log entries to a file.',
