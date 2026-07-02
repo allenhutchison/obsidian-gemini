@@ -1257,4 +1257,35 @@ describe('LifecycleService', () => {
 			expect(plugin.imageGeneration).toBeUndefined();
 		});
 	});
+
+	describe('setup – image generation provider switch transitions', () => {
+		// Exercises the Gemini → Ollama → Gemini runtime provider switch: teardown
+		// nulls the Gemini-only ImageGeneration service (lifecycle-service.ts ~L134)
+		// and setup re-instantiates it only when the active provider isn't Ollama
+		// (~L513). A single-provider setup can't cover the drop + re-create cycle.
+		it('drops and re-instantiates ImageGeneration across gemini → ollama → gemini switches', async () => {
+			const { ImageGeneration } = await import('../../src/services/image-generation');
+			(ImageGeneration as unknown as Mock).mockClear();
+
+			// (a) First setup on Gemini creates the image-gen service.
+			mockPlugin.settings.provider = 'gemini';
+			await lifecycle.setup();
+			expect(ImageGeneration).toHaveBeenCalledTimes(1);
+			expect(mockPlugin.imageGeneration).toBeDefined();
+
+			// (b) Switch to Ollama and re-setup: teardown nulls the Gemini-only
+			// service and setup skips re-creating it — no second construction.
+			mockPlugin.isGeminiInitialized = true;
+			mockPlugin.settings.provider = 'ollama';
+			await lifecycle.setup();
+			expect(ImageGeneration).toHaveBeenCalledTimes(1);
+			expect(mockPlugin.imageGeneration).toBeNull();
+
+			// (c) Switch back to Gemini and re-setup: the service is re-instantiated.
+			mockPlugin.settings.provider = 'gemini';
+			await lifecycle.setup();
+			expect(ImageGeneration).toHaveBeenCalledTimes(2);
+			expect(mockPlugin.imageGeneration).toBeDefined();
+		});
+	});
 });
