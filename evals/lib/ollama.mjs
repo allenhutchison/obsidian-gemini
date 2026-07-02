@@ -11,8 +11,11 @@
  * — these paths are only exercised when the active provider is Ollama.
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
+import { promisify } from 'node:util';
 import { setTimeout as sleep } from 'node:timers/promises';
+
+const execFileAsync = promisify(execFile);
 
 const OLLAMA_BIN = process.env.OLLAMA_BIN || 'ollama';
 
@@ -22,6 +25,15 @@ function runOllama(args, { timeoutMs = 30_000 } = {}) {
 		timeout: timeoutMs,
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
+}
+
+// Async variant for the one potentially slow call (warmup): a cold-start model
+// load can take many seconds, and a synchronous exec would block the event loop
+// the whole time — starving the SIGINT/SIGTERM handlers that restore the
+// operator's settings on Ctrl-C. `ollama ps`/`stop` stay synchronous (sub-second).
+async function runOllamaAsync(args, { timeoutMs = 30_000 } = {}) {
+	const { stdout } = await execFileAsync(OLLAMA_BIN, args, { encoding: 'utf8', timeout: timeoutMs });
+	return stdout;
 }
 
 const firstLine = (message) => String(message ?? '').split('\n')[0];
@@ -108,7 +120,8 @@ export async function warmupOllamaModel(model) {
 	try {
 		// A tiny prompt is enough to force the model resident; the response is
 		// discarded. Generous timeout — a large model's first load can be slow.
-		runOllama(['run', model, 'Reply with the single word: ready'], { timeoutMs: 300_000 });
+		// Async so the (potentially long) load doesn't block SIGINT cleanup.
+		await runOllamaAsync(['run', model, 'Reply with the single word: ready'], { timeoutMs: 300_000 });
 	} catch (err) {
 		console.warn(
 			`  [ollama] warmup for '${model}' failed: ${firstLine(err.message)} — first task may include load time.`
