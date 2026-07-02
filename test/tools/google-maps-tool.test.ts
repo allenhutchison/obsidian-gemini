@@ -497,13 +497,13 @@ describe('GoogleMapsTool', () => {
 	});
 
 	describe('non-Error thrown by API', () => {
-		it('should include Unknown error for non-Error thrown', async () => {
+		it('should stringify a non-Error thrown value via getRawErrorMessage', async () => {
 			mockGenAI.models.generateContent.mockRejectedValue('string error');
 
 			const result = await tool.execute({ query: 'test' }, mockContext);
 
 			expect(result.success).toBe(false);
-			expect(result.error).toBe('Google Maps lookup failed: Unknown error');
+			expect(result.error).toBe('Google Maps lookup failed: string error');
 		});
 	});
 });
