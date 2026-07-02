@@ -10,7 +10,7 @@ This skill automates the path from open issue to reviewed PR while keeping the m
 ## Invariants — read these first
 
 1. **Never merge a PR.** Not with `gh pr merge`, not via the API, not by enabling auto-merge. Merging is exclusively the maintainer's act, and a merge is what unblocks the pipeline for the next issue.
-2. **At most one automated PR in flight.** While any auto-dev PR is open, no new issue gets built. Ticks spent in that state only advance the open PR.
+2. **At most `MAX_PRS_IN_FLIGHT` automated PRs in flight (default 6).** Building is gated on the count of open `auto/` PRs being _below_ this cap — not on zero. While at the cap, no new issue is built; ticks either advance an open PR toward merge or groom the backlog. Merges remain exclusively the maintainer's act (invariant 1); this cap only widens how many built-but-unmerged PRs may await review at once — it never merges, auto-merges, or closes anything.
 3. **All runs happen under the maintainer's own GitHub identity**, so authorship cannot distinguish this pipeline from the human. Every comment this skill posts MUST begin with the marker line `<!-- auto-dev -->` (invisible in rendered Markdown). Classify comments into three buckets: **pipeline** (has the marker), **third-party bot** (author login ends in `[bot]` or `app/` — e.g. `coderabbitai`, `dependabot`; CodeRabbit posts auto-enrichment boilerplate on issues), and **human** (everything else). Only _human_ comments count as replies, answers, or approvals; third-party bot comments never satisfy "the human replied" and never gate-keep anything — read them for technical signal at most.
 4. **Labels are the cross-run memory, and humans always win.** If a human has changed an `auto:*` label since the last tick (e.g. removed `auto:ready`, added `auto:skip`), respect the label as found — never "correct" it back.
 5. **Self-enforced hard prohibitions.** There is no external permission allowlist anymore — this skill is the only guardrail, so treat the following as absolute and, if a tick ever seems to need one, stop and report it instead of doing it: never merge, close, or reopen any PR or issue; never force-push, and never push to `master`/`main` directly; never run the release process (`npm version`, `npm publish`, `gh release …`); never create, delete, or edit labels (only **apply or remove the `auto:*` labels** named below); never edit or delete human comments; never delete the repo, issues, or `gh api -X DELETE` anything; never run destructive or privileged shell (`rm -rf` outside the throwaway build sandbox, `sudo`, or `curl`/`wget` to exfiltrate). Working-tree resets are allowed **only** in the disposable scheduled sandbox (Step 0), never in an interactive checkout.
@@ -22,7 +22,9 @@ This skill automates the path from open issue to reviewed PR while keeping the m
 - **Interactive** (`/auto-dev` in a Claude Code session): identical decision logic, but under normal permission prompts and possibly in the maintainer's working checkout. **Never reset, clean, or stash an interactive checkout.** A dirty working tree or non-master branch does NOT block the GitHub-only steps (1-reconcile, 4-triage) — it only blocks steps that touch the working tree (2's CI/feedback fixes, 3-build). If a working-tree step is what the tick needs and the tree is dirty, report that and stop rather than stashing or resetting anything.
 - **Dry run** (`/auto-dev dry-run`, or the user asks for a dry run): execute the full tick logic **read-only**. Gather all state, decide exactly what a live tick would do, and print it as the exit report with every action prefixed `would:` — but post no comments, change no labels, create no branches/commits/PRs, and push nothing. This is the recommended first test and is always safe to run.
 
-**Overlap & isolation.** With no lockfile, the scheduled task must not overlap its own runs — set the cadence comfortably longer than a typical tick (a tick that builds can take many minutes). The label state machine is the backstop (work is claimed by swapping to `auto:in-progress`, and at most one PR is ever in flight), but two truly concurrent ticks could still race when picking the oldest `auto:ready`, so don't schedule tighter than a tick can finish. Each scheduled run is its own disposable sandbox, so runs never share a working tree.
+**Overlap & isolation.** With no lockfile, the scheduled task must not overlap its own runs — set the cadence comfortably longer than a typical tick (a tick that builds can take many minutes). The label state machine is the backstop: work is claimed by swapping to `auto:in-progress`, and the build step is gated on the count of open `auto/` PRs being below `MAX_PRS_IN_FLIGHT`. Two truly concurrent ticks could still race — both picking the same oldest `auto:ready`, or a fresh tick mistaking a build that's mid-flight (labelled `auto:in-progress` but not yet PR'd) for a crashed orphan and rebuilding it. Step 1's **orphan age-gate** closes the second race (only reclaim a PR-less `auto:in-progress` issue once its label event is older than `ORPHAN_RECLAIM_MINUTES`); for the first, still don't schedule tighter than a build tick can finish. Each scheduled run is its own disposable sandbox, so runs never share a working tree.
+
+**Tunables** (single source of truth — adjust here): `MAX_PRS_IN_FLIGHT = 6` — the most simultaneously-open `auto/` PRs allowed; while at the cap, ticks advance open PRs and groom the backlog but start no new build. `ORPHAN_RECLAIM_MINUTES = 90` — minimum age of a PR-less `auto:in-progress` issue before Step 1 treats it as a crashed build rather than one running concurrently.
 
 ## Label state machine
 
@@ -40,9 +42,9 @@ This skill automates the path from open issue to reviewed PR while keeping the m
 
 ## The tick algorithm
 
-Work through these steps in order — the order **is** the priority. Execute the **first step that has work**, finish it, print the exit report, and stop. The ordering puts concrete, human-approved progress ahead of speculative grooming: advancing an open PR (step 2) and **building an approved issue (step 3) both outrank the triage pass (step 4)**, because a ready build is work the maintainer has already greenlit while triage only feeds the queue. Triage therefore runs on the ticks that would otherwise idle — when an open PR is merely waiting on the human, or when nothing is queued to build. Because at most one PR is in flight and merges are human-paced, most ticks either advance the open PR or, finding it idle, fall through to triage, so the backlog is still groomed steadily; it just never preempts a ready build.
+Work through these steps in order — the order **is** the priority. Execute the **first step that has work**, finish it, print the exit report, and stop. The ordering puts concrete, human-approved progress ahead of speculative grooming: advancing an open PR (step 2) and **building an approved issue (step 3) both outrank the triage pass (step 4)**, because a ready build is work the maintainer has already greenlit while triage only feeds the queue. The key change from a single-PR pipeline: an open PR **no longer blocks building**. A tick advances an open PR only when one actually needs work (CI red, unaddressed feedback, a draft to resume); when every open PR is quiescent (waiting on the maintainer's review or merge) and the in-flight count is below `MAX_PRS_IN_FLIGHT`, the tick builds the next `auto:ready` issue instead. That's what drains the queue overnight — each merge-blocked-but-quiescent PR simply frees the tick to build the following issue, up to the cap. Triage runs on the ticks that would otherwise idle (all PRs quiescent, and either nothing is `auto:ready` or the cap is reached).
 
-Do not fall through to later steps after completing one, with one exception: **step 2 falls through to the triage pass (step 4) when the open PR needs nothing** — that waiting tick is spent grooming the backlog instead of idling. (The build step is skipped on those ticks regardless: it is gated on no PR being open.)
+Do not fall through to later steps after completing one, with one exception chain for the **idle** case: when **step 2 finds every open PR quiescent** (nothing to advance), it falls through to **step 3 (build)**, which runs if the in-flight count is below `MAX_PRS_IN_FLIGHT` and something is `auto:ready`; if step 3 also has no work (at the cap, or nothing ready), it falls through to **step 4 (triage)**. A tick that _does_ advance a PR (fixes CI, answers feedback) stops there — that was its unit of work.
 
 ### Step 0 — Preflight & environment
 
@@ -90,11 +92,16 @@ For issues labeled `auto:in-progress`:
 
 - **PR merged** (or issue closed by `Fixes #N`): remove `auto:in-progress`. If the issue is somehow still open after its PR merged, comment (with marker) linking the merged PR and noting it may be closable — but leave closing to the human.
 - **PR closed without merging**: treat as rejection of the approach. Remove `auto:in-progress`, add `auto:skip`, and comment (with marker) that the PR was closed unmerged and the issue needs human direction before auto-dev will touch it again.
-- **No PR exists at all** (a previous tick crashed between labeling and PR creation): treat the issue as `auto:ready` in step 3 (build) — its plan is already approved.
+- **No PR exists at all** — either a previous tick crashed between labeling and PR creation, or a build is running _right now_ in a concurrent tick. Distinguish by the age of the most recent `auto:in-progress` `labeled` event: if it is older than `ORPHAN_RECLAIM_MINUTES`, treat the issue as a crashed orphan and let step 3 rebuild it (its plan is already approved); if it is younger, assume a build is mid-flight and **leave the issue untouched this tick** — do not reclaim or rebuild. Read the label age from the timeline:
 
-### Step 2 — Advance the open automated PR
+  ```bash
+  gh api "repos/{owner}/{repo}/issues/<N>/timeline" --paginate \
+    | jq -r '[.[] | select(.event=="labeled" and .label.name=="auto:in-progress")] | last | .created_at'
+  ```
 
-If an automated PR is open, this tick belongs to it.
+### Step 2 — Advance an open automated PR
+
+If one or more automated PRs are open, pick the **single most-urgent** one to advance this tick (one PR per tick keeps the tick bounded). Urgency order, oldest-first within a tier: (1) a **draft** to resume, (2) **CI red**, (3) **unaddressed feedback** (the newest comment on a thread lacks the marker). A PR with none of these is **quiescent** — waiting on the maintainer's review or merge. If every open PR is quiescent, step 2 has no work: fall through to step 3 (build). Otherwise advance that one PR with the loop below and stop.
 
 **Draft PR** (a yielded partial build from step 3): resume the implementation first — finish the plan, run the full pre-flight, push, and mark it ready with `gh pr ready`. Only then does the review loop below apply.
 
@@ -105,13 +112,15 @@ If an automated PR is open, this tick belongs to it.
 3. **New feedback since the skill's last reply?** A thread is unaddressed if its newest comment lacks the `<!-- auto-dev -->` marker. Triage each item on its merits (CodeRabbit is not always right), fix valid items with **focused commits** (one logical fix per commit, conventional subjects), push, then **reply to every thread** — including ones you decline, with a one-sentence reason. Replies carry the marker.
 4. **Human feedback** outranks bot feedback. If a human reviewer and CodeRabbit conflict, follow the human and say so in the reply to the bot.
 5. **Scope creep requested in review?** Acknowledge in a reply, file a follow-up issue (it enters this same pipeline untriaged), link it, and keep the PR scoped.
-6. **Nothing new** (no new comments, CI green, all threads answered): the PR is waiting on review or merge. Print that in the exit report and **fall through to the triage pass (step 4, triage only)** — never build, since a PR is already in flight.
+6. **Nothing new** (no new comments, CI green, all threads answered): this PR is quiescent, waiting on the maintainer's review or merge. Note it in the exit report; it isn't this tick's work. Since advancing it produced nothing, **fall through to step 3 (build)** — which builds the next `auto:ready` issue if the in-flight count is below `MAX_PRS_IN_FLIGHT`, or itself falls through to triage.
 
-### Step 3 — Build (only if NO automated PR is open)
+### Step 3 — Build (only if under the in-flight cap)
 
-Runs only when no automated PR is in flight **and** there is an `auto:ready` issue (or a step-1 orphan) to build — building approved, human-greenlit work outranks the triage pass below, so it never waits behind backlog grooming. If a PR is open, or nothing is `auto:ready`, this step has no work; fall through to step 4.
+Runs when the number of open `auto/` PRs is **below `MAX_PRS_IN_FLIGHT`** **and** there is an `auto:ready` issue (or a reclaimed step-1 orphan) to build — building approved, human-greenlit work outranks the triage pass below, so it never waits behind backlog grooming. If the in-flight count is already at the cap, or nothing is `auto:ready`, this step has no work; fall through to step 4.
 
-Take the **oldest** `auto:ready` issue (or a step-1 orphan). Then:
+Because several PRs may be open at once, each build still branches from **fresh master** and is blind to the other open PRs' changes. Independent issues (disjoint files) are safe. When the oldest `auto:ready` issue obviously overlaps an already-open `auto/` PR's files, prefer the next non-overlapping `auto:ready` issue to reduce merge-time conflicts and note the skip in the exit report — a best-effort heuristic, not a guarantee; the maintainer resolves any residual conflict at merge/rebase time.
+
+Take the **oldest** eligible `auto:ready` issue (or a step-1 orphan). Then:
 
 1. Swap labels: remove `auto:ready`, add `auto:in-progress`.
 2. Branch from fresh master: `git checkout master && git pull --ff-only && git checkout -b auto/issue-<N>-<short-slug>`.
@@ -223,7 +232,7 @@ Every tick ends by printing a structured report — it is the run's summary outp
 ```text
 auto-dev tick — <ISO timestamp>
 step executed: <0-failed | 1-reconcile | 2-pr-advance | 3-build | 4-triage | 5-idle>
-open auto PR: #<n> (<status>) | none
+open auto PRs: <count>/<MAX_PRS_IN_FLIGHT> — #<n> (<status>), … | none
 actions:
 - #123: asked 2 clarifying questions → auto:needs-info
 - #145: plan approved by reply → auto:ready
@@ -239,7 +248,7 @@ errors: <none | details>
 ## What not to do
 
 - Don't merge, approve, or enable auto-merge on any PR.
-- Don't start a second build while an automated PR is open.
+- Don't start a new build while already at `MAX_PRS_IN_FLIGHT` open `auto/` PRs.
 - Don't post a second question/plan when the previous one is still unanswered.
 - Don't park an issue on your own initiative — only _propose_ parking; the maintainer parks by replying "park it" or adding the label. (`auto:parked` is set by the skill solely on a human park reply, or by the human directly.)
 - Don't re-propose parking, re-ask, or re-plan an `auto:parked` issue — it rests until the maintainer removes the label or adds a comment _after_ the park. Don't remove `auto:parked` yourself except when re-triaging it because the maintainer commented after parking.
