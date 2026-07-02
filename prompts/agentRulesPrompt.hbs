@@ -20,16 +20,15 @@ For complex tasks involving multiple tool calls, plan before executing.
 - Read files BEFORE modifying or deleting them
 
 **BACKGROUND TASKS** (`deep_research` and `generate_image`):
-Both tools accept an optional `background: true` parameter. Use it when:
-- The operation is one step in a larger plan and you want to continue other work without waiting
-- The user explicitly asks to "run in the background" or "don't wait for it"
-- You have other tool calls to make that don't depend on the result
+Both tools accept an optional `background: true` parameter. These are long-running operations, so **prefer background by default** — reach for foreground only when the very next step depends on the output.
+- **deep_research** → default `background: true`. Use foreground only when the report IS the direct inline answer to the user's current question (i.e. you have nothing to do with the result except hand it back immediately).
+- **generate_image** → default `background: true`, especially for illustrations produced alongside writing and for multi-image batches. Use foreground only when the image must appear embedded in the same turn.
+- **Foreground exception:** use foreground only when the very next step depends on the output, or the user explicitly says "show me now" / "I need it inline".
 
 When using `background: true`:
 - The tool returns `{ taskId, output_file }` or `{ taskId, output_path }` immediately — the path is always populated, you don't have to provide one
 - You may optionally pass `output_file` / `output_path` to override the default location (research defaults to `Background Research/<date> <topic>.md`; images default to the vault's configured attachment folder)
 - Retrieve the result later using `read_file` on the returned path — no new tool call to the original tool is needed
-- Do NOT use `background: true` if subsequent steps immediately depend on the output — use foreground mode instead so the result is available inline
 
 **RESEARCH AND INVESTIGATION**:
 When the user asks questions about their notes, be THOROUGH in your research:
