@@ -131,6 +131,26 @@ describe('formatToolLine', () => {
 		});
 		expect(line).toBe(`🔧 \`read_file\` path="a.md" → error: ${exactError} (10ms)`);
 	});
+
+	it('renders the query key for google_search', () => {
+		const line = formatToolLine({
+			toolName: 'google_search',
+			args: { query: 'TypeScript generics' },
+			result: success(),
+			durationMs: 1500,
+		});
+		expect(line).toBe('🔧 `google_search` query="TypeScript generics" → success (1500ms)');
+	});
+
+	it('renders the url key for fetch_url', () => {
+		const line = formatToolLine({
+			toolName: 'fetch_url',
+			args: { url: 'https://example.com', query: 'ignored' },
+			result: success(),
+			durationMs: 800,
+		});
+		expect(line).toBe('🔧 `fetch_url` url="https://example.com" → success (800ms)');
+	});
 });
 
 describe('formatToolBlock', () => {
@@ -177,6 +197,24 @@ describe('mergeToolBlock', () => {
 		expect(merged).toContain('> 🔧 `write_file` path="b.md"');
 		// Order preserved — old line precedes new line.
 		expect(merged.indexOf('read_file')).toBeLessThan(merged.indexOf('write_file'));
+	});
+
+	it('merges into a trailing tools callout that has no tool lines yet', () => {
+		const existing = '# Session\n\n> [!tools]- Tool Execution\n';
+		const merged = mergeToolBlock(existing, block);
+		expect(merged).toBe('# Session\n\n> [!tools]- Tool Execution\n> 🔧 `read_file` path="a.md" → success (5ms)\n');
+	});
+
+	it('merges multiple new lines into the trailing callout in order', () => {
+		const existing = '# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n';
+		const newBlock = formatToolBlock([
+			'🔧 `move_file` sourcePath="a" → success (100ms)',
+			'🔧 `move_file` sourcePath="b" → success (200ms)',
+		]);
+		const merged = mergeToolBlock(existing, newBlock);
+		expect(merged).toBe(
+			'# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n> 🔧 `move_file` sourcePath="a" → success (100ms)\n> 🔧 `move_file` sourcePath="b" → success (200ms)\n'
+		);
 	});
 
 	it('appends as a new block when a non-blockquote line sits between EOF and the last callout', () => {
