@@ -28,7 +28,7 @@ npm run dev    # Development build with watch mode
 | `npm install`          | Install dependencies                     |
 | `npm run dev`          | Development build with watch mode        |
 | `npm run build`        | Production build (runs TypeScript check) |
-| `npm test`             | Run Jest tests                           |
+| `npm test`             | Run Vitest tests                         |
 | `npm run format`       | Format code with Prettier                |
 | `npm run format-check` | Check formatting without changes         |
 
@@ -45,7 +45,7 @@ Before requesting a review, ensure **all CI checks are green**. Run these locall
 ```bash
 npm run format-check   # Prettier formatting
 npm run build          # TypeScript type checking + production build
-npm test               # Jest test suite
+npm test               # Vitest test suite
 ```
 
 PRs with failing CI will not be reviewed. Fix the failures first.
