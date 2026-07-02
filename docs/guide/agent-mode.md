@@ -359,6 +359,8 @@ What do you remember about my vault?
 
 ### Web & Research Operations
 
+> All four tools in this section (`google_search`, `google_maps`, `fetch_url`, `deep_research`) are available on the Gemini provider only — they're hidden when Ollama is the active provider. See the [Provider Capabilities reference](/reference/provider-capabilities) for the full matrix.
+
 #### google_search
 
 Search the web for current information:
