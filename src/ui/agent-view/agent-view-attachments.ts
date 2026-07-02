@@ -6,6 +6,7 @@ import { AgentViewShelf, getTextFilesFromFolder } from './agent-view-shelf';
 import { FileMentionModal } from './file-mention-modal';
 import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
+import { rasterizeSvg } from '../../utils/svg-rasterizer';
 import type ObsidianGemini from '../../main';
 import { t } from '../../i18n';
 
@@ -88,7 +89,6 @@ export class AgentViewAttachments {
 						let base64: string;
 						let mimeType: string;
 						if (classification.category === FileCategory.SVG) {
-							const { rasterizeSvg } = await import('../../utils/svg-rasterizer');
 							try {
 								base64 = await rasterizeSvg(buffer, fileOrFolder.extension.toLowerCase() === 'svgz');
 								mimeType = 'image/png';

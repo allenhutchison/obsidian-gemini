@@ -64,34 +64,45 @@ async function gunzip(buffer: ArrayBuffer): Promise<ArrayBuffer> {
 	return await new Response(ds.readable).arrayBuffer();
 }
 
+/** Intrinsic sizing declared by an SVG's root element. Absent/unusable values are 0. */
+interface SvgIntrinsicSize {
+	/** Explicit `width` attribute in user units (0 if absent or a percentage). */
+	width: number;
+	/** Explicit `height` attribute in user units (0 if absent or a percentage). */
+	height: number;
+	/** `viewBox` width (0 if no viewBox). */
+	viewBoxWidth: number;
+	/** `viewBox` height (0 if no viewBox). */
+	viewBoxHeight: number;
+}
+
 /**
- * Parse intrinsic dimensions from an SVG document's markup as a fallback when
- * the loaded `<img>` reports no natural size (SVGs with only a `viewBox` and no
- * width/height often report 0 in some engines).
+ * Parse the sizing declared on an SVG's root element: explicit `width`/`height`
+ * and the `viewBox` extent. Percentage widths/heights (relative to the
+ * viewport, meaningless for off-screen rasterization) are reported as 0 so
+ * callers fall back to the viewBox.
  */
-function parseSvgDimensions(svgText: string): { width: number; height: number } {
+function parseSvgIntrinsicSize(svgText: string): SvgIntrinsicSize {
 	const rootMatch = svgText.match(/<svg\b[^>]*>/i);
 	const root = rootMatch ? rootMatch[0] : '';
 
 	const readLength = (attr: string): number => {
-		const m = root.match(new RegExp(`\\b${attr}\\s*=\\s*["']?\\s*([0-9]*\\.?[0-9]+)`, 'i'));
-		return m ? parseFloat(m[1]) : 0;
+		const m = root.match(new RegExp(`\\b${attr}\\s*=\\s*["']?\\s*([0-9]*\\.?[0-9]+)\\s*(%?)`, 'i'));
+		if (!m) return 0;
+		// Percentages are relative to the viewport and unusable as a render size.
+		if (m[2] === '%') return 0;
+		return parseFloat(m[1]);
 	};
 
-	let width = readLength('width');
-	let height = readLength('height');
-
-	if (width <= 0 || height <= 0) {
-		const vb = root.match(/\bviewBox\s*=\s*["']?\s*([-\d.]+)[\s,]+([-\d.]+)[\s,]+([-\d.]+)[\s,]+([-\d.]+)/i);
-		if (vb) {
-			const vbW = parseFloat(vb[3]);
-			const vbH = parseFloat(vb[4]);
-			if (width <= 0) width = vbW;
-			if (height <= 0) height = vbH;
-		}
+	let viewBoxWidth = 0;
+	let viewBoxHeight = 0;
+	const vb = root.match(/\bviewBox\s*=\s*["']?\s*([-\d.]+)[\s,]+([-\d.]+)[\s,]+([-\d.]+)[\s,]+([-\d.]+)/i);
+	if (vb) {
+		viewBoxWidth = parseFloat(vb[3]);
+		viewBoxHeight = parseFloat(vb[4]);
 	}
 
-	return { width, height };
+	return { width: readLength('width'), height: readLength('height'), viewBoxWidth, viewBoxHeight };
 }
 
 /**
@@ -131,14 +142,15 @@ export async function rasterizeSvg(buffer: ArrayBuffer, isSvgz: boolean): Promis
 	try {
 		const img = await loadSvgImage(url);
 
-		// Prefer the browser's intrinsic size; fall back to parsing the markup.
-		let width = img.naturalWidth || img.width;
-		let height = img.naturalHeight || img.height;
-		if (width <= 0 || height <= 0) {
-			const parsed = parseSvgDimensions(svgText);
-			width = width > 0 ? width : parsed.width;
-			height = height > 0 ? height : parsed.height;
-		}
+		// Determine the render size. Explicit width/height win; for viewBox-only
+		// SVGs prefer the viewBox extent, because Chromium reports a *reduced*
+		// default intrinsic size for them (e.g. a viewBox="0 0 400 300" SVG loads
+		// as 200×150), which would rasterize at half resolution. Fall back to the
+		// browser's reported intrinsic size, then to the default in
+		// computeScaledDimensions when nothing is declared.
+		const intrinsic = parseSvgIntrinsicSize(svgText);
+		const width = intrinsic.width || intrinsic.viewBoxWidth || img.naturalWidth || img.width;
+		const height = intrinsic.height || intrinsic.viewBoxHeight || img.naturalHeight || img.height;
 
 		const dims = computeScaledDimensions(width, height);
 

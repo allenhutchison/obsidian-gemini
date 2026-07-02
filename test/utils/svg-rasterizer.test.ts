@@ -9,6 +9,13 @@ import {
 
 const SIMPLE_SVG =
 	'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><rect width="100" height="50" fill="black"/></svg>';
+const LARGE_SVG =
+	'<svg xmlns="http://www.w3.org/2000/svg" width="8192" height="4096"><rect width="8192" height="4096" fill="black"/></svg>';
+// viewBox but no explicit width/height — Chromium reports a reduced default
+// intrinsic size (here mocked as 200×150), so the rasterizer must fall back to
+// the viewBox extent (400×300) rather than the img's default.
+const VIEWBOX_ONLY_SVG =
+	'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="black"/></svg>';
 
 // --- Mock harness for the DOM rasterization path -------------------------------
 
@@ -157,14 +164,21 @@ describe('rasterizeSvg', () => {
 	});
 
 	it('scales an oversized SVG so neither canvas dimension exceeds the cap', async () => {
-		imageNatural = { width: 8192, height: 4096 };
-		const buffer = new TextEncoder().encode(SIMPLE_SVG).buffer;
+		const buffer = new TextEncoder().encode(LARGE_SVG).buffer;
 		await rasterizeSvg(buffer, false);
 		expect(lastCanvasDims).not.toBeNull();
 		expect(lastCanvasDims!.width).toBeLessThanOrEqual(SVG_RASTER_MAX_EDGE);
 		expect(lastCanvasDims!.height).toBeLessThanOrEqual(SVG_RASTER_MAX_EDGE);
 		expect(lastCanvasDims!.width).toBe(2048);
 		expect(lastCanvasDims!.height).toBe(1024);
+	});
+
+	it('rasterizes a viewBox-only SVG at the viewBox size, not the reduced img intrinsic size', async () => {
+		// Mock the browser's reduced default intrinsic size for a viewBox-only SVG.
+		imageNatural = { width: 200, height: 150 };
+		const buffer = new TextEncoder().encode(VIEWBOX_ONLY_SVG).buffer;
+		await rasterizeSvg(buffer, false);
+		expect(lastCanvasDims).toEqual({ width: 400, height: 300 });
 	});
 
 	it('rejects when the SVG fails to load (malformed / unresolvable refs)', async () => {
