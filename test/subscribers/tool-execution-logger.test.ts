@@ -131,6 +131,26 @@ describe('formatToolLine', () => {
 		});
 		expect(line).toBe(`🔧 \`read_file\` path="a.md" → error: ${exactError} (10ms)`);
 	});
+
+	it('renders the query key for google_search', () => {
+		const line = formatToolLine({
+			toolName: 'google_search',
+			args: { query: 'TypeScript generics' },
+			result: success(),
+			durationMs: 1500,
+		});
+		expect(line).toBe('🔧 `google_search` query="TypeScript generics" → success (1500ms)');
+	});
+
+	it('renders the url key for fetch_url', () => {
+		const line = formatToolLine({
+			toolName: 'fetch_url',
+			args: { url: 'https://example.com', query: 'ignored' },
+			result: success(),
+			durationMs: 800,
+		});
+		expect(line).toBe('🔧 `fetch_url` url="https://example.com" → success (800ms)');
+	});
 });
 
 describe('formatToolBlock', () => {
@@ -177,6 +197,24 @@ describe('mergeToolBlock', () => {
 		expect(merged).toContain('> 🔧 `write_file` path="b.md"');
 		// Order preserved — old line precedes new line.
 		expect(merged.indexOf('read_file')).toBeLessThan(merged.indexOf('write_file'));
+	});
+
+	it('merges into a trailing tools callout that has no tool lines yet', () => {
+		const existing = '# Session\n\n> [!tools]- Tool Execution\n';
+		const merged = mergeToolBlock(existing, block);
+		expect(merged).toBe('# Session\n\n> [!tools]- Tool Execution\n> 🔧 `read_file` path="a.md" → success (5ms)\n');
+	});
+
+	it('merges multiple new lines into the trailing callout in order', () => {
+		const existing = '# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n';
+		const newBlock = formatToolBlock([
+			'🔧 `move_file` sourcePath="a" → success (100ms)',
+			'🔧 `move_file` sourcePath="b" → success (200ms)',
+		]);
+		const merged = mergeToolBlock(existing, newBlock);
+		expect(merged).toBe(
+			'# Session\n\n> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)\n> 🔧 `move_file` sourcePath="a" → success (100ms)\n> 🔧 `move_file` sourcePath="b" → success (200ms)\n'
+		);
 	});
 
 	it('appends as a new block when a non-blockquote line sits between EOF and the last callout', () => {
@@ -231,5 +269,45 @@ describe('mergeToolBlock', () => {
 		const mergedWithout = mergeToolBlock(withoutNewline, newBlock);
 
 		expect(mergedWith).toBe(mergedWithout);
+	});
+
+	it('does not fold a new tool line into a trailing [!reasoning] callout (#1050)', () => {
+		// A prior tool batch exists earlier in the file, then a reasoning-only turn
+		// was written. The backward scan must NOT walk past the reasoning callout to
+		// match the earlier [!tools] header and splice the new line onto the end —
+		// which lands it inside the reasoning callout. It must start a fresh block.
+		const existing = [
+			'# Chat History',
+			'',
+			'> [!tools]- Tool Execution',
+			'> 🔧 `read_file` path="a.md" → success (5ms)',
+			'',
+			'> [!reasoning]- Reasoning',
+			'> Okay, I should search the web for this.',
+			'', // template writes a trailing blank line after the reasoning callout
+		].join('\n');
+
+		const newBlock = formatToolBlock(['🔧 `google_search` query="AB 2047 bill" → success (28718ms)']);
+		const merged = mergeToolBlock(existing, newBlock);
+
+		// The new tool line lands in its OWN [!tools] callout — two headers now.
+		expect(merged.match(/> \[!tools\]- Tool Execution/g)).toHaveLength(2);
+		// A blank line separates the reasoning callout from the new tools callout.
+		expect(merged).toContain('> Okay, I should search the web for this.\n\n> [!tools]- Tool Execution');
+		// The 🔧 line sits under the new tools header, never as a reasoning continuation.
+		const reasoningIdx = merged.indexOf('> [!reasoning]- Reasoning');
+		const newHeaderIdx = merged.lastIndexOf('> [!tools]- Tool Execution');
+		expect(newHeaderIdx).toBeGreaterThan(reasoningIdx);
+		expect(merged.indexOf('google_search')).toBeGreaterThan(newHeaderIdx);
+	});
+
+	it('separates a fresh tools block from a preceding reasoning callout with a blank line', () => {
+		// Even with no earlier tools callout, appending after a reasoning callout
+		// must insert a blank-line separator so the blockquotes do not merge.
+		const existing = '> [!reasoning]- Reasoning\n> Thinking about it.\n';
+		const merged = mergeToolBlock(existing, block);
+
+		expect(merged.match(/> \[!tools\]- Tool Execution/g)).toHaveLength(1);
+		expect(merged).toContain('> Thinking about it.\n\n> [!tools]- Tool Execution');
 	});
 });

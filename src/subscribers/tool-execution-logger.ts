@@ -141,12 +141,15 @@ export function formatToolLine(entry: ToolLogEntry): string {
 	return `🔧 \`${toolName}\`${paramStr} → ${status} (${durationMs}ms)`;
 }
 
+/** Header line for the collapsible tool-execution callout — the single source of truth. */
+const TOOLS_CALLOUT_HEADER = '> [!tools]- Tool Execution';
+
 /**
  * Wrap tool log lines in a collapsible callout block.
  */
 export function formatToolBlock(lines: string[]): string {
 	const quoted = lines.map((line) => `> ${line}`).join('\n');
-	return `> [!tools]- Tool Execution\n${quoted}`;
+	return `${TOOLS_CALLOUT_HEADER}\n${quoted}`;
 }
 
 /**
@@ -178,29 +181,43 @@ function extractKeyParam(toolName: string, args: Record<string, unknown>): { key
  */
 export function mergeToolBlock(content: string, block: string): string {
 	const trimmed = content.trimEnd();
-	// Check if content ends with an existing tools callout block
-	const calloutPattern = /^> \[!tools\]- Tool Execution$/m;
-	// Find the last callout in the content
+	// Only extend an existing tools callout when it is the *trailing* block. The
+	// backward scan walks the tail blockquote region and must stop at the first
+	// callout header it meets: if that header is another callout (e.g.
+	// `> [!reasoning]-`), the tail is NOT a tools callout, so the new lines must
+	// start a fresh block rather than be spliced onto `trimmed` — which would
+	// fold them into the preceding callout (#1050). The header is a fixed line,
+	// so an exact string match is equivalent to an anchored regex.
 	const lines = trimmed.split('\n');
 	let calloutStart = -1;
 	for (let i = lines.length - 1; i >= 0; i--) {
-		if (calloutPattern.test(lines[i])) {
+		const line = lines[i];
+		if (line === TOOLS_CALLOUT_HEADER) {
 			calloutStart = i;
 			break;
 		}
-		// If we hit a non-blockquote, non-empty line, stop searching
-		if (lines[i].trim() !== '' && !lines[i].startsWith('>')) {
+		// A different callout header means the tail block is not a tools callout.
+		if (/^> \[!/.test(line)) {
+			break;
+		}
+		// If we hit a non-blockquote, non-empty line, stop searching.
+		if (line.trim() !== '' && !line.startsWith('>')) {
 			break;
 		}
 	}
 
 	if (calloutStart === -1) {
-		// No existing callout — append new block
-		return content + '\n' + block + '\n';
+		// No trailing tools callout to extend — append a fresh block. The blank
+		// line keeps the blockquotes from merging into one callout in Obsidian,
+		// which is how tool lines were folding into the preceding `[!reasoning]`
+		// callout (#1050). Build from `trimmed` so the single separating blank
+		// line holds regardless of how `content` happens to be terminated.
+		if (!trimmed) return '\n' + block + '\n';
+		return trimmed + '\n\n' + block + '\n';
 	}
 
 	// Extract just the new tool lines (skip the callout header)
-	const newLines = block.split('\n').filter((line) => line !== '> [!tools]- Tool Execution');
+	const newLines = block.split('\n').filter((line) => line !== TOOLS_CALLOUT_HEADER);
 
 	return trimmed + '\n' + newLines.join('\n') + '\n';
 }
