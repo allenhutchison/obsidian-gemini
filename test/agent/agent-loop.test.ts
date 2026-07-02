@@ -29,6 +29,7 @@ function buildPlugin(overrides: any = {}) {
 			};
 		}),
 		getEnabledTools: vi.fn().mockReturnValue([]),
+		requiresConfirmation: vi.fn().mockReturnValue(false),
 		...overrides.toolRegistry,
 	};
 
@@ -1501,6 +1502,69 @@ describe('AgentLoop', () => {
 
 			expect(result.loopAborted).toBe(false);
 			expect(result.markdown).toBe('recovered');
+		});
+	});
+
+	describe('parallel tool execution', () => {
+		test('runs read tools in parallel and serial tools serially', async () => {
+			const startTimes = new Map<string, number>();
+			const endTimes = new Map<string, number>();
+
+			const plugin = buildPlugin({
+				toolRegistry: {
+					getTool: vi.fn().mockImplementation((name: string) => {
+						if (name.startsWith('read')) {
+							return { name, displayName: name, classification: 'read' };
+						} else {
+							return { name, displayName: name, classification: 'write' };
+						}
+					}),
+					getEnabledTools: vi.fn().mockImplementation(() => {
+						return [
+							{ name: 'read_1', classification: 'read' },
+							{ name: 'read_2', classification: 'read' },
+							{ name: 'write_1', classification: 'write' },
+						];
+					}),
+					requiresConfirmation: vi.fn().mockReturnValue(false),
+				},
+				toolExecutionEngine: {
+					executeTool: vi.fn().mockImplementation(async (toolCall: ToolCall) => {
+						startTimes.set(toolCall.name, Date.now());
+						await new Promise((resolve) => window.setTimeout(resolve, 50));
+						endTimes.set(toolCall.name, Date.now());
+						return { success: true };
+					}),
+				},
+			});
+
+			const session = buildSession();
+			const api = makeScriptedModelApi([textResponse('done')]);
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_1'), tc('read_2'), tc('write_1')]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: { plugin, session, confirmationProvider, isCancelled: () => false, createModelApi: () => api },
+			});
+
+			// Verify they all ran
+			expect(startTimes.has('read_1')).toBe(true);
+			expect(startTimes.has('read_2')).toBe(true);
+			expect(startTimes.has('write_1')).toBe(true);
+
+			// Parallel reads should overlap and start virtually at the same time
+			const read1Start = startTimes.get('read_1')!;
+			const read2Start = startTimes.get('read_2')!;
+			const write1Start = startTimes.get('write_1')!;
+			const read1End = endTimes.get('read_1')!;
+			const read2End = endTimes.get('read_2')!;
+
+			expect(Math.abs(read1Start - read2Start)).toBeLessThan(20);
+
+			// The write tool must only start AFTER both read tools have finished
+			expect(write1Start).toBeGreaterThanOrEqual(Math.max(read1End, read2End) - 5);
 		});
 	});
 });
