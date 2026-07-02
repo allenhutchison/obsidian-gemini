@@ -56,6 +56,13 @@ export const OBSIDIAN_TEXT_EXTENSIONS: Record<string, string> = {
 export enum FileCategory {
 	TEXT = 'text',
 	GEMINI_BINARY = 'gemini_binary',
+	/**
+	 * SVG/SVGZ vector image. Gemini rejects `image/svg+xml` on the inline-data
+	 * endpoint, so these must be rasterized to PNG (see `svg-rasterizer.ts`)
+	 * before inlining. The reported `mimeType` is the source `image/svg+xml`;
+	 * the rasterized attachment carries `image/png`.
+	 */
+	SVG = 'svg',
 	UNSUPPORTED = 'unsupported',
 }
 
@@ -73,6 +80,15 @@ export interface FileClassification {
 export function classifyFile(extension: string): FileClassification {
 	// Normalize: strip leading dot, lowercase
 	const ext = extension.replace(/^\./, '').toLowerCase();
+
+	// SVG/SVGZ: recognized as an image, but requires client-side rasterization
+	// to PNG before inlining (Gemini rejects image/svg+xml as inline data).
+	if (ext === 'svg' || ext === 'svgz') {
+		return {
+			category: FileCategory.SVG,
+			mimeType: 'image/svg+xml',
+		};
+	}
 
 	// Check binary types first (more specific match)
 	if (Object.prototype.hasOwnProperty.call(GEMINI_INLINE_BINARY_MIMES, ext)) {

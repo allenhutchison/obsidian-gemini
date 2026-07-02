@@ -18,6 +18,7 @@ import {
 	detectWebmMimeType,
 	GEMINI_INLINE_DATA_LIMIT,
 } from '../../utils/file-classification';
+import { rasterizeSvg } from '../../utils/svg-rasterizer';
 import { t } from '../../i18n';
 
 /**
@@ -607,6 +608,7 @@ export class AgentViewUI {
 
 				// Classify each file
 				const textFiles: TFile[] = [];
+				// Binary + SVG both inline as base64; SVG is rasterized to PNG first.
 				const binaryFiles: TFile[] = [];
 				const unsupportedExts: string[] = [];
 
@@ -617,6 +619,7 @@ export class AgentViewUI {
 							textFiles.push(file);
 							break;
 						case FileCategory.GEMINI_BINARY:
+						case FileCategory.SVG:
 							binaryFiles.push(file);
 							break;
 						case FileCategory.UNSUPPORTED:
@@ -646,11 +649,27 @@ export class AgentViewUI {
 							continue;
 						}
 
-						const base64 = arrayBufferToBase64(buffer);
 						const classification = classifyFile(file.extension);
-						// For .webm files, detect audio vs video from container header
-						const mimeType =
-							file.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
+						let base64: string;
+						let mimeType: string;
+						if (classification.category === FileCategory.SVG) {
+							// SVG can't be inlined directly — rasterize to PNG. On failure
+							// (malformed SVG, unresolvable refs), fall back to the
+							// unsupported-file notice rather than sending raw XML.
+							try {
+								base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz');
+								mimeType = 'image/png';
+							} catch (rasterErr) {
+								this.plugin.logger.error(`Failed to rasterize SVG ${file.path}:`, rasterErr);
+								unsupportedExts.push(`.${file.extension}`);
+								cumulativeSize -= buffer.byteLength;
+								continue;
+							}
+						} else {
+							base64 = arrayBufferToBase64(buffer);
+							// For .webm files, detect audio vs video from container header
+							mimeType = file.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
+						}
 						const attachment: InlineAttachment = {
 							base64,
 							mimeType,
@@ -715,7 +734,7 @@ export class AgentViewUI {
 			// Non-vault drops: handle images from external sources (browser, desktop)
 			const files = e.dataTransfer?.files;
 			const fileArray = files?.length ? Array.from(files) : [];
-			const hasImages = fileArray.some((file) => isSupportedImageType(file.type));
+			const hasImages = fileArray.some((file) => isSupportedImageType(file.type) || this.isSvgFile(file));
 
 			// Only prevent default behavior if we have images to handle
 			if (!hasImages) {
@@ -754,6 +773,18 @@ export class AgentViewUI {
 					} catch (err) {
 						this.plugin.logger.error('Failed to process dropped image:', err);
 						new Notice(t('agent.attachments.imageAttachFailed'));
+					}
+				} else if (this.isSvgFile(file)) {
+					// External SVG/SVGZ — rasterize to PNG before inlining.
+					if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+						new Notice(t('agent.attachments.sizeLimitReached'));
+						break;
+					}
+					if (await this.attachExternalSvgFile(file, callbacks)) {
+						cumulativeSize += file.size;
+						imagesProcessed++;
+					} else {
+						unsupportedCount++;
 					}
 				} else if (file.type.startsWith('image/')) {
 					unsupportedCount++;
@@ -802,6 +833,21 @@ export class AgentViewUI {
 						} catch (err) {
 							this.plugin.logger.error('Failed to process pasted image:', err);
 							new Notice(t('agent.attachments.imageAttachFailed'));
+						}
+					} else if (this.isSvgFile(file)) {
+						// External SVG/SVGZ paste — rasterize to PNG before inlining.
+						if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+							new Notice(t('agent.attachments.sizeLimitReached'));
+							break;
+						}
+						if (imagesProcessed === 0) {
+							e.preventDefault();
+						}
+						if (await this.attachExternalSvgFile(file, callbacks)) {
+							cumulativeSize += file.size;
+							imagesProcessed++;
+						} else {
+							unsupportedCount++;
 						}
 					} else if (file.type.startsWith('image/')) {
 						unsupportedCount++;
@@ -907,6 +953,39 @@ export class AgentViewUI {
 	 */
 	private getCurrentAttachmentSize(callbacks: UICallbacks): number {
 		return callbacks.getAttachments().reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0);
+	}
+
+	/**
+	 * Whether an external (non-vault) File is an SVG/SVGZ that needs rasterization.
+	 * Checks MIME type and, for `.svgz` (which may arrive with a gzip or empty
+	 * type), the filename extension.
+	 */
+	private isSvgFile(file: File): boolean {
+		return file.type === 'image/svg+xml' || /\.svgz?$/i.test(file.name);
+	}
+
+	/**
+	 * Rasterize an external SVG/SVGZ File to a PNG inline attachment and add it.
+	 * Returns true if an attachment was added. On rasterization failure, logs and
+	 * returns false so the caller can count it as unsupported.
+	 */
+	private async attachExternalSvgFile(file: File, callbacks: UICallbacks): Promise<boolean> {
+		try {
+			const buffer = await file.arrayBuffer();
+			const isSvgz = /\.svgz$/i.test(file.name) || file.type === 'application/gzip';
+			const base64 = await rasterizeSvg(buffer, isSvgz);
+			const attachment: InlineAttachment = {
+				base64,
+				mimeType: 'image/png',
+				id: generateAttachmentId(),
+				fileName: file.name || undefined,
+			};
+			callbacks.addAttachment(attachment);
+			return true;
+		} catch (err) {
+			this.plugin.logger.error('Failed to rasterize external SVG:', err);
+			return false;
+		}
 	}
 
 	/**
