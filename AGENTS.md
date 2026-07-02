@@ -334,6 +334,19 @@ For creating pull requests, use the **create-pr** skill which enforces the PR te
 
 For UI/UX guidelines, use the **ui-ux-guidelines** skill.
 
+### Design system
+
+The plugin has a theme-adaptive **design token layer** at the top of `styles.css`
+(`:root { --gs-* }`) — semantic tokens aliasing Obsidian's theme variables, plus
+plugin-owned spacing / radius / icon / motion scales and one Gemini brand accent.
+When writing or modifying UI styles, **consume these tokens** rather than hardcoding
+color or reaching for raw `var(--obsidian-var)` / magic numbers; keep the plugin
+theme-adaptive. Icons are Lucide via `setIcon()`, sized from `--gs-icon-*` (`lg` =
+18px is the default for toolbar/action icons — one size per context). The full
+reference, token table, and migration status live in
+[docs/contributing/design-system.md](docs/contributing/design-system.md); migrating
+the rest of `styles.css` onto the tokens is ongoing, surface by surface.
+
 ## Security & Configuration
 
 - Never commit API keys or vault data; keep secrets in local Obsidian configuration
