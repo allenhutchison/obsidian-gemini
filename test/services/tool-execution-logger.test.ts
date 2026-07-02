@@ -130,11 +130,13 @@ describe('formatToolBlock', () => {
 });
 
 describe('mergeToolBlock', () => {
-	it('should append new block when no existing callout', () => {
+	it('should append new block separated by a blank line when no existing callout', () => {
 		const content = '# Session\n\nSome content';
 		const block = '> [!tools]- Tool Execution\n> 🔧 `list_files` path="" → success (0ms)';
 		const result = mergeToolBlock(content, block);
-		expect(result).toBe(content + '\n' + block + '\n');
+		// A blank line must separate the fresh callout from the preceding content so
+		// adjacent blockquotes don't merge into one callout in Obsidian (#1050).
+		expect(result).toBe(content + '\n\n' + block + '\n');
 	});
 
 	it('should merge into existing callout at end of content', () => {
