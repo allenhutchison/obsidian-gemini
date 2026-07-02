@@ -34,14 +34,14 @@ const DEFAULT_INPUT_TOKEN_LIMIT = 1_000_000;
 const OLLAMA_DEFAULT_INPUT_TOKEN_LIMIT = 32_000;
 
 /**
- * Rough token-count estimate for providers that don't expose a countTokens
- * endpoint (Ollama). Char/4 is the standard heuristic; drift vs. real tokens
- * is acceptable here because we only use it to decide whether to compact.
+ * Starting chars-per-token ratio for providers that don't expose a countTokens
+ * endpoint (Ollama), used until real usage data calibrates a per-model ratio.
+ * 4 is the standard char/token heuristic for English text.
  */
-function estimateTokensFromContents(contents: Content[]): number {
-	const json = JSON.stringify(contents ?? []);
-	return Math.ceil(json.length / 4);
-}
+const DEFAULT_OLLAMA_CHARS_PER_TOKEN = 4;
+
+/** Weight given to each new observation when blending the calibrated ratio (EMA). */
+const OLLAMA_RATIO_CALIBRATION_WEIGHT = 0.5;
 
 /** Minimum number of recent turns to preserve during compaction */
 const MIN_RECENT_TURNS_TO_KEEP = 6;
@@ -100,6 +100,10 @@ export class ContextManager {
 	private lastUsageMetadata: UsageMetadata | null = null;
 	private acceptNextLowerUpdate = false;
 	private ai: GoogleGenAI | null;
+	/** Per-model chars-per-token ratio for Ollama, calibrated from real usage metadata. */
+	private ollamaCharsPerToken: Map<string, number> = new Map();
+	/** Char length of the most recent Ollama countTokens() estimate per model, awaiting calibration against the next real response. */
+	private pendingOllamaEstimateCharLength: Map<string, number> = new Map();
 
 	constructor(
 		private plugin: ObsidianGemini,
@@ -129,9 +133,17 @@ export class ContextManager {
 	 * Uses high-water mark within a turn: only accepts higher promptTokenCount
 	 * unless beginTurn() was called (which allows one lower update to reset the baseline).
 	 * Use setUsageMetadata() to unconditionally force a value (e.g. after compaction).
+	 *
+	 * When `modelName` is provided and the active provider is Ollama, this also
+	 * calibrates that model's chars-per-token ratio against the real
+	 * `promptTokenCount` Ollama just reported (see calibrateOllamaRatio).
 	 */
-	updateUsageMetadata(metadata: UsageMetadata): void {
+	updateUsageMetadata(metadata: UsageMetadata, modelName?: string): void {
 		if (!metadata) return;
+
+		if (modelName && this.plugin.settings.provider === 'ollama') {
+			this.calibrateOllamaRatio(modelName, metadata.promptTokenCount);
+		}
 
 		const newPrompt = metadata.promptTokenCount ?? 0;
 		const cachedPrompt = this.lastUsageMetadata?.promptTokenCount ?? 0;
@@ -143,6 +155,30 @@ export class ContextManager {
 		} else {
 			this.logger.debug(`[ContextManager] Skipped lower metadata: prompt=${newPrompt} < cached=${cachedPrompt}`);
 		}
+	}
+
+	/**
+	 * Calibrate this model's Ollama chars-per-token ratio from a real response.
+	 * Correlates the character length of the most recent countTokens() estimate
+	 * for this model (computed just before the request that produced this
+	 * response, via prepareHistory) against the response's actual
+	 * promptTokenCount, and blends the observed ratio into the running one via
+	 * exponential moving average. Requires no extra API call and converges
+	 * toward the model's real tokenization over a few turns.
+	 */
+	private calibrateOllamaRatio(modelName: string, promptTokenCount: number | undefined): void {
+		const charLength = this.pendingOllamaEstimateCharLength.get(modelName);
+		if (!charLength || !promptTokenCount) return;
+		this.pendingOllamaEstimateCharLength.delete(modelName);
+
+		const observedRatio = charLength / promptTokenCount;
+		const previousRatio = this.ollamaCharsPerToken.get(modelName) ?? DEFAULT_OLLAMA_CHARS_PER_TOKEN;
+		const calibratedRatio =
+			previousRatio * (1 - OLLAMA_RATIO_CALIBRATION_WEIGHT) + observedRatio * OLLAMA_RATIO_CALIBRATION_WEIGHT;
+		this.ollamaCharsPerToken.set(modelName, calibratedRatio);
+		this.logger.debug(
+			`[ContextManager] Calibrated Ollama chars/token for ${modelName}: ${previousRatio.toFixed(2)} -> ${calibratedRatio.toFixed(2)}`
+		);
 	}
 
 	/**
@@ -211,6 +247,19 @@ export class ContextManager {
 	}
 
 	/**
+	 * Chars-per-token estimate for Ollama, using this model's calibrated ratio
+	 * (falling back to the generic default until enough real data has arrived).
+	 * Records the char length used so the next updateUsageMetadata() call for
+	 * this model can calibrate against it.
+	 */
+	private estimateTokensFromContents(modelName: string, contents: Content[]): number {
+		const json = JSON.stringify(contents ?? []);
+		const charsPerToken = this.ollamaCharsPerToken.get(modelName) ?? DEFAULT_OLLAMA_CHARS_PER_TOKEN;
+		this.pendingOllamaEstimateCharLength.set(modelName, json.length);
+		return Math.ceil(json.length / charsPerToken);
+	}
+
+	/**
 	 * Sanitize conversation contents for the countTokens API.
 	 * The countTokens API only accepts text parts, so we convert
 	 * functionCall, functionResponse, and inlineData parts to text descriptions.
@@ -258,15 +307,17 @@ export class ContextManager {
 	 * Count tokens for a given set of contents.
 	 *
 	 * For Gemini, calls the SDK's countTokens endpoint. For Ollama (which has no
-	 * equivalent API) we fall back to a chars/4 estimate — compaction precision
-	 * is degraded but the trigger logic still works.
+	 * equivalent API) we fall back to a chars-per-token estimate, seeded at 4
+	 * and calibrated per-model from real promptTokenCount values as they arrive
+	 * (see calibrateOllamaRatio) — compaction precision improves as the session
+	 * progresses instead of staying pinned to the generic heuristic.
 	 */
 	async countTokens(modelName: string, contents: Content[]): Promise<number> {
 		// Sanitize contents to only include text-compatible parts
 		const sanitizedContents = this.sanitizeContentsForTokenCount(contents);
 
 		if (this.plugin.settings.provider === 'ollama' || !this.ai) {
-			const estimate = estimateTokensFromContents(sanitizedContents);
+			const estimate = this.estimateTokensFromContents(modelName, sanitizedContents);
 			this.logger.log(`[ContextManager] countTokens (Ollama estimate): ${estimate}`);
 			return estimate;
 		}

@@ -283,6 +283,57 @@ describe('ContextManager', () => {
 			expect(mockCountTokens).not.toHaveBeenCalled();
 			expect(mockLogger.log).toHaveBeenCalledWith(expect.stringContaining('countTokens (Ollama estimate)'));
 		});
+
+		test('Ollama provider: calibrates the chars-per-token ratio from real usage metadata', async () => {
+			const ollamaPlugin = {
+				...mockPlugin,
+				apiKey: '',
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+			};
+			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
+
+			const initialEstimate = await ollamaCtx.countTokens('llama3.2', contents);
+
+			// Real response reports far fewer tokens than the char/4 default predicted —
+			// simulating a tokenizer that's more efficient than the generic heuristic.
+			ollamaCtx.updateUsageMetadata({ promptTokenCount: Math.round(initialEstimate / 2) }, 'llama3.2');
+
+			const recalibratedEstimate = await ollamaCtx.countTokens('llama3.2', contents);
+			expect(recalibratedEstimate).toBeLessThan(initialEstimate);
+		});
+
+		test('Ollama provider: calibration is per-model and does not affect other models', async () => {
+			const ollamaPlugin = {
+				...mockPlugin,
+				apiKey: '',
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+			};
+			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
+
+			const baselineEstimate = await ollamaCtx.countTokens('llama3.2', contents);
+			await ollamaCtx.countTokens('mistral', contents);
+			ollamaCtx.updateUsageMetadata({ promptTokenCount: Math.round(baselineEstimate / 2) }, 'llama3.2');
+
+			const otherModelEstimate = await ollamaCtx.countTokens('mistral', contents);
+			expect(otherModelEstimate).toBe(baselineEstimate);
+		});
+
+		test('Ollama provider: calibration is skipped without a prior estimate or promptTokenCount', () => {
+			const ollamaPlugin = {
+				...mockPlugin,
+				apiKey: '',
+				settings: { ...mockPlugin.settings, provider: 'ollama' },
+			};
+			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+
+			// No prior countTokens() call for this model, and no modelName/promptTokenCount —
+			// none of these should throw.
+			expect(() => ollamaCtx.updateUsageMetadata({ promptTokenCount: 100 }, 'never-estimated')).not.toThrow();
+			expect(() => ollamaCtx.updateUsageMetadata({ totalTokenCount: 100 }, 'llama3.2')).not.toThrow();
+			expect(() => ollamaCtx.updateUsageMetadata({ promptTokenCount: 100 })).not.toThrow();
+		});
 	});
 
 	describe('prepareHistory', () => {
