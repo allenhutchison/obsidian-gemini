@@ -355,8 +355,11 @@ export class ContextManager {
 	 * which carry `functionCall`/`thoughtSignature` continuity that summarization
 	 * must never touch); entries at or after that index are never folded into
 	 * the summary. It uses cached usageMetadata from the last API response to
-	 * decide whether compaction is needed. countTokens() is only called after
-	 * compaction to measure the result size.
+	 * decide whether compaction is needed; the compaction decision itself does
+	 * not call countTokens() (that only happens after compaction, to measure
+	 * the result size), but for Ollama every call still seeds the pending
+	 * chars-per-token calibration estimate for this model — see the note at
+	 * the top of the method body.
 	 */
 	async prepareHistory(
 		conversationHistory: Content[],
@@ -365,6 +368,16 @@ export class ContextManager {
 	): Promise<CompactionResult> {
 		const protectFromIndex = options?.protectFromIndex;
 		const estimatedTokens = this.lastUsageMetadata?.promptTokenCount ?? 0;
+
+		// prepareHistory() runs immediately before every outgoing request, so this
+		// is the char length that will correlate with the next real
+		// promptTokenCount for this model — seed it unconditionally (not just on
+		// the compaction path below, which only runs when over threshold) so
+		// calibrateOllamaRatio() has something to calibrate against on ordinary
+		// turns too. The returned estimate itself isn't needed here.
+		if (this.plugin.settings.provider === 'ollama') {
+			this.estimateTokensFromContents(modelName, this.sanitizeContentsForTokenCount(conversationHistory));
+		}
 
 		// Short-circuit for very short conversations
 		if (conversationHistory.length <= MIN_RECENT_TURNS_TO_KEEP) {
