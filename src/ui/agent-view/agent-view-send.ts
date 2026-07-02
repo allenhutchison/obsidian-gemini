@@ -740,9 +740,7 @@ To reference an attachment in your response, use the path shown above.`;
 						} else {
 							// Empty response - might be thinking tokens
 							this.ctx.plugin.logger.warn('Model returned empty response');
-							new Notice(
-								'Model returned an empty response. This might happen with thinking models. Try rephrasing your question.'
-							);
+							new Notice(t('agent.send.emptyResponse'));
 
 							// User message already saved early in sendMessage()
 
