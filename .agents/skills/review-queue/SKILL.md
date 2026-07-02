@@ -89,7 +89,7 @@ When drained or dismissed, print a short session summary: what you decided, what
 
 **A plan (`auto:planned`):**
 
-- **Approve** ("approved", "lgtm", "go", "ship it") → add `auto:ready`. The oldest `auto:ready` builds on the next tick with no PR in flight.
+- **Approve** ("approved", "lgtm", "go", "ship it") → add `auto:ready`. The oldest `auto:ready` builds on the next tick that's under the in-flight cap (`MAX_PRS_IN_FLIGHT`).
 - **Approve with a tweak** ("approved, but use X") → post your tweak as a plain comment, then add `auto:ready` (the build adapts to the latest comment). If the change is large enough to reshape the plan, instead post the change and leave `auto:planned` so the next tick re-plans — ask which you want if it's unclear.
 - **Request changes** → post your feedback as a comment; leave `auto:planned` (next tick revises the plan).
 - **Not now** → `auto:parked` (hold, revisit later) or `auto:skip` (opt out entirely), per your words. If you give a reason, record it the park-safe way (below).
