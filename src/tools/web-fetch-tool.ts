@@ -194,7 +194,7 @@ export class WebFetchTool implements Tool {
 			plugin.logger.log('Primary web fetch failed, attempting fallback...');
 			try {
 				return await this.fallbackFetch(params, plugin);
-			} catch (fallbackError) {
+			} catch (_fallbackError) {
 				return {
 					success: false,
 					error: `Failed to fetch URL with both methods: ${error instanceof Error ? error.message : 'Unknown error'}`,

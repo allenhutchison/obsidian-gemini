@@ -442,7 +442,7 @@ describe('SkillManager', () => {
 		it('should create a skill directory and SKILL.md using processFrontMatter', async () => {
 			const createdFile = new TFile('gemini-scribe/Skills/new-skill/SKILL.md');
 			// createSkill flow: duplicate check + ensureFolderExists (skill dir)
-			const folderResponses: Record<string, InstanceType<typeof TFolder> | null> = {};
+			const folderResponses: Record<string, TFolderBase | null> = {};
 			mockVault.createFolder.mockImplementation(async (path: string) => {
 				// After createFolder, mark the folder as existing
 				folderResponses[path] = new TFolder(path);

@@ -2,6 +2,7 @@ import type ObsidianGemini from '../main';
 import { App, Setting, Notice, setIcon } from 'obsidian';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 import { clearServerEnv } from '../mcp/mcp-secrets';
+import { MCPConnectionStatus } from '../mcp/types';
 import { getErrorMessage, getRawErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
 import { t } from '../i18n';
@@ -74,9 +75,9 @@ async function createMCPSettings(
 			const statusText = status?.status || 'disconnected';
 
 			let iconName: string;
-			if (status?.status === 'connected') {
+			if (status?.status === MCPConnectionStatus.CONNECTED) {
 				iconName = 'check-circle';
-			} else if (status?.status === 'error') {
+			} else if (status?.status === MCPConnectionStatus.ERROR) {
 				iconName = 'alert-circle';
 			} else {
 				iconName = 'circle';
