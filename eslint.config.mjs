@@ -39,7 +39,10 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// 82 violations: pervasive `document` usage. Migrating to `activeDocument` is
 	// a separate refactor with cross-window implications.
 	'obsidianmd/prefer-active-doc': 'off',
-	// 81 violations: direct `style.X = ...` assignments. Needs CSS class migration.
+	// ~69 violations remaining: direct `style.X = ...` assignments. Needs CSS class
+	// migration. Cleaned so far and enforced per-file below (see the scoped override
+	// block): src/ui/agent-view/agent-view-progress.ts, agent-view-shelf.ts. Flip to
+	// 'error' globally once the remaining sites are migrated.
 	'obsidianmd/no-static-styles-assignment': 'off',
 	// 48 violations: `x as TFile` / `x as TFolder` casts scattered across vault
 	// helpers. Replacing each with `instanceof` checks is a careful refactor.
@@ -109,6 +112,13 @@ export default defineConfig([
 			globals: NODE_GLOBALS,
 		},
 		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
+	},
+	{
+		// Files fully migrated off direct `style.X = ...` assignments to CSS classes.
+		// Enforce `no-static-styles-assignment` here so they cannot regress while the
+		// rule stays globally disabled for the remaining unmigrated files (#1034).
+		files: ['src/ui/agent-view/agent-view-progress.ts', 'src/ui/agent-view/agent-view-shelf.ts'],
+		rules: { 'obsidianmd/no-static-styles-assignment': 'error' },
 	},
 	{
 		files: ['test/**/*.ts'],

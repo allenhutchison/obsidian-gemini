@@ -111,30 +111,30 @@ describe('AgentViewProgress', () => {
 		});
 
 		it('should be hidden by default', () => {
-			expect(container.style.display).toBe('none');
+			expect(container.classList.contains('gemini-agent-progress-container--hidden')).toBe(true);
 		});
 
 		it('should have thinking chevron hidden by default', () => {
 			const chevron = container.querySelector('.gemini-agent-thinking-chevron') as HTMLElement;
-			expect(chevron.style.display).toBe('none');
+			expect(chevron.classList.contains('gemini-agent-thinking-chevron--hidden')).toBe(true);
 		});
 
 		it('should have thinking section hidden by default', () => {
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('none');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(true);
 		});
 	});
 
 	describe('show/hide', () => {
 		it('should make container visible when shown', () => {
 			progress.show('Thinking...', 'thinking');
-			expect(container.style.display).toBe('block');
+			expect(container.classList.contains('gemini-agent-progress-container--hidden')).toBe(false);
 		});
 
 		it('should hide container', () => {
 			progress.show('Thinking...', 'thinking');
 			progress.hide();
-			expect(container.style.display).toBe('none');
+			expect(container.classList.contains('gemini-agent-progress-container--hidden')).toBe(true);
 		});
 
 		it('should set status text when shown', () => {
@@ -195,7 +195,7 @@ describe('AgentViewProgress', () => {
 			progress.updateThought('I need to consider...');
 
 			const chevron = container.querySelector('.gemini-agent-thinking-chevron') as HTMLElement;
-			expect(chevron.style.display).toBe('');
+			expect(chevron.classList.contains('gemini-agent-thinking-chevron--hidden')).toBe(false);
 		});
 
 		it('should make status row clickable when thought arrives', () => {
@@ -244,7 +244,7 @@ describe('AgentViewProgress', () => {
 			progress.updateThought('Should not appear');
 
 			const chevron = container.querySelector('.gemini-agent-thinking-chevron') as HTMLElement;
-			expect(chevron.style.display).toBe('none');
+			expect(chevron.classList.contains('gemini-agent-thinking-chevron--hidden')).toBe(true);
 		});
 	});
 
@@ -257,7 +257,7 @@ describe('AgentViewProgress', () => {
 			statusContainer.click();
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('block');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(false);
 
 			const chevron = container.querySelector('.gemini-agent-thinking-chevron');
 			expect(chevron?.classList.contains('gemini-agent-thinking-chevron-expanded')).toBe(true);
@@ -274,7 +274,7 @@ describe('AgentViewProgress', () => {
 			statusContainer.click(); // collapse
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('none');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(true);
 
 			const chevron = container.querySelector('.gemini-agent-thinking-chevron');
 			expect(chevron?.classList.contains('gemini-agent-thinking-chevron-expanded')).toBe(false);
@@ -289,7 +289,7 @@ describe('AgentViewProgress', () => {
 			statusContainer.click();
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('none');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(true);
 		});
 
 		it('should reset thinking section on hide', () => {
@@ -302,10 +302,10 @@ describe('AgentViewProgress', () => {
 			progress.hide();
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('none');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(true);
 
 			const chevron = container.querySelector('.gemini-agent-thinking-chevron') as HTMLElement;
-			expect(chevron.style.display).toBe('none');
+			expect(chevron.classList.contains('gemini-agent-thinking-chevron--hidden')).toBe(true);
 
 			expect(statusContainer.classList.contains('gemini-agent-progress-clickable')).toBe(false);
 			expect(statusContainer.getAttribute('tabindex')).toBeNull();
@@ -332,7 +332,7 @@ describe('AgentViewProgress', () => {
 			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('block');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(false);
 		});
 
 		it('should expand when Space key is pressed', () => {
@@ -343,7 +343,7 @@ describe('AgentViewProgress', () => {
 			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('block');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(false);
 		});
 
 		it('should not toggle on other keys', () => {
@@ -354,7 +354,7 @@ describe('AgentViewProgress', () => {
 			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('none');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(true);
 		});
 
 		it('should not toggle via keyboard without thinking content', () => {
@@ -364,7 +364,7 @@ describe('AgentViewProgress', () => {
 			statusContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
 			const section = container.querySelector('.gemini-agent-thinking-section') as HTMLElement;
-			expect(section.style.display).toBe('none');
+			expect(section.classList.contains('gemini-agent-thinking-section--collapsed')).toBe(true);
 		});
 
 		it('should remove tabindex and role on hide', () => {

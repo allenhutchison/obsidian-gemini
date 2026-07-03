@@ -1232,6 +1232,11 @@ body {
 	z-index: 10;
 }
 
+/* Hidden state — progress container is hidden until an agent operation starts */
+.gemini-agent-progress-container--hidden {
+	display: none;
+}
+
 /* Progress Bar Wrapper */
 .gemini-agent-progress-bar-wrapper {
 	width: 100%;
@@ -1343,6 +1348,11 @@ body {
 	transition: color 0.15s ease;
 }
 
+/* Hidden state — chevron only appears once thinking content is available */
+.gemini-agent-thinking-chevron--hidden {
+	display: none;
+}
+
 .gemini-agent-thinking-chevron svg {
 	transition: transform 0.2s ease;
 }
@@ -1360,6 +1370,11 @@ body {
 	border-top: 1px solid var(--gs-border);
 	margin-top: var(--size-2-2);
 	padding-top: var(--size-2-2);
+}
+
+/* Collapsed state — thinking section is hidden until expanded */
+.gemini-agent-thinking-section--collapsed {
+	display: none;
 }
 
 .gemini-agent-thinking-content {
@@ -3993,6 +4008,11 @@ body {
 	padding: 8px 0;
 }
 
+/* Visible state — shelf is shown only when it holds one or more items */
+.gemini-agent-shelf--visible {
+	display: flex;
+}
+
 .gemini-shelf-item {
 	position: relative;
 	display: inline-flex;
@@ -4003,6 +4023,11 @@ body {
 	background-color: var(--gs-surface);
 	overflow: hidden;
 	cursor: default;
+}
+
+/* Clickable state — items with an openable path show a pointer cursor */
+.gemini-shelf-item-clickable {
+	cursor: pointer;
 }
 
 .gemini-shelf-item:hover {

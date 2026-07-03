@@ -41,7 +41,7 @@ export class AgentViewProgress {
 	 */
 	createProgressBar(container: HTMLElement): void {
 		this.progressBarContainer = container;
-		this.progressBarContainer.style.display = 'none'; // Hidden by default
+		this.progressBarContainer.addClass('gemini-agent-progress-container--hidden'); // Hidden by default
 
 		// Progress bar wrapper
 		const barWrapper = this.progressBarContainer.createDiv({
@@ -68,7 +68,7 @@ export class AgentViewProgress {
 		// eslint-disable-next-line @microsoft/sdl/no-inner-html -- static SVG literal, no user input
 		this.thinkingChevron.innerHTML =
 			'<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-		this.thinkingChevron.style.display = 'none'; // Hidden until thinking content arrives
+		this.thinkingChevron.addClass('gemini-agent-thinking-chevron--hidden'); // Hidden until thinking content arrives
 
 		this.progressStatus = this.progressStatusContainer.createSpan({
 			cls: 'gemini-agent-progress-status-text',
@@ -101,7 +101,7 @@ export class AgentViewProgress {
 		this.thinkingSection = this.progressBarContainer.createDiv({
 			cls: 'gemini-agent-thinking-section',
 		});
-		this.thinkingSection.style.display = 'none';
+		this.thinkingSection.addClass('gemini-agent-thinking-section--collapsed');
 
 		this.thinkingContent = this.thinkingSection.createDiv({
 			cls: 'gemini-agent-thinking-content',
@@ -114,7 +114,7 @@ export class AgentViewProgress {
 	show(statusText: string, state: ProgressState): void {
 		if (!this.progressBarContainer) return;
 
-		this.progressBarContainer.style.display = 'block';
+		this.progressBarContainer.removeClass('gemini-agent-progress-container--hidden');
 		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
 		this.progressStatus.innerHTML = this.formatProgressText(statusText);
 
@@ -132,7 +132,8 @@ export class AgentViewProgress {
 	 * Updates the progress bar with new status
 	 */
 	update(statusText: string, state?: ProgressState): void {
-		if (!this.progressBarContainer || this.progressBarContainer.style.display === 'none') return;
+		if (!this.progressBarContainer || this.progressBarContainer.hasClass('gemini-agent-progress-container--hidden'))
+			return;
 
 		// eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- formatProgressText escapes HTML before adding <strong>
 		this.progressStatus.innerHTML = this.formatProgressText(statusText);
@@ -149,12 +150,13 @@ export class AgentViewProgress {
 	 * The status line shows a truncated preview; the expanded section renders the full markdown.
 	 */
 	updateThought(accumulatedThought: string): void {
-		if (!this.progressBarContainer || this.progressBarContainer.style.display === 'none') return;
+		if (!this.progressBarContainer || this.progressBarContainer.hasClass('gemini-agent-progress-container--hidden'))
+			return;
 
 		this.hasThinkingContent = true;
 
 		// Show the chevron and make the row look clickable + keyboard-accessible
-		this.thinkingChevron.style.display = '';
+		this.thinkingChevron.removeClass('gemini-agent-thinking-chevron--hidden');
 		this.progressStatusContainer.addClass('gemini-agent-progress-clickable');
 		this.progressStatusContainer.setAttribute('tabindex', '0');
 		this.progressStatusContainer.setAttribute('role', 'button');
@@ -220,13 +222,13 @@ export class AgentViewProgress {
 	hide(): void {
 		if (!this.progressBarContainer) return;
 
-		this.progressBarContainer.style.display = 'none';
+		this.progressBarContainer.addClass('gemini-agent-progress-container--hidden');
 		this.chatTimer.stop();
 
 		// Reset thinking section
 		this.collapseThinkingSection();
 		this.thinkingContent.empty();
-		this.thinkingChevron.style.display = 'none';
+		this.thinkingChevron.addClass('gemini-agent-thinking-chevron--hidden');
 		this.hasThinkingContent = false;
 		// Invalidate any in-flight async renders
 		this.thinkingRenderVersion++;
@@ -240,7 +242,7 @@ export class AgentViewProgress {
 	 * Checks if progress is currently visible
 	 */
 	isVisible(): boolean {
-		return this.progressBarContainer && this.progressBarContainer.style.display !== 'none';
+		return this.progressBarContainer && !this.progressBarContainer.hasClass('gemini-agent-progress-container--hidden');
 	}
 
 	/**
@@ -259,7 +261,7 @@ export class AgentViewProgress {
 	 */
 	private expandThinkingSection(): void {
 		this.isThinkingExpanded = true;
-		this.thinkingSection.style.display = 'block';
+		this.thinkingSection.removeClass('gemini-agent-thinking-section--collapsed');
 		this.thinkingChevron.addClass('gemini-agent-thinking-chevron-expanded');
 		this.progressStatusContainer.setAttribute('aria-expanded', 'true');
 
@@ -275,7 +277,7 @@ export class AgentViewProgress {
 	private collapseThinkingSection(): void {
 		this.isThinkingExpanded = false;
 		if (this.thinkingSection) {
-			this.thinkingSection.style.display = 'none';
+			this.thinkingSection.addClass('gemini-agent-thinking-section--collapsed');
 		}
 		if (this.thinkingChevron) {
 			this.thinkingChevron.removeClass('gemini-agent-thinking-chevron-expanded');
