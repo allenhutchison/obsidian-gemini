@@ -20,7 +20,7 @@ function createMockApi(responses: Array<ModelResponse | Error>): ModelApi {
 			return {
 				complete: promise,
 				cancel: vi.fn(),
-			} as StreamingModelResponse;
+			};
 		}),
 	};
 }

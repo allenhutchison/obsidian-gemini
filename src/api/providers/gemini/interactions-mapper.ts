@@ -15,15 +15,9 @@
  * interfaces) on purpose: the SDK marks `interactions` experimental and several
  * step types are not exported, so we avoid hard-coupling to unstable type names.
  */
-import type { Content, Part } from '@google/genai';
+import type { Content } from '@google/genai';
 import type { ModelResponse, ToolCall, ToolDefinition } from '../../interfaces/model-api';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
-
-/** A `Part` that may carry Gemini's thought metadata. */
-interface PartWithThought extends Part {
-	thought?: boolean;
-	thoughtSignature?: string;
-}
 
 /** A typed step in an Interactions `input` array or response `steps` array. */
 export type InteractionStep = Record<string, unknown>;
@@ -76,27 +70,28 @@ export function contentToSteps(content: Content): InteractionStep[] {
 	const callSteps: InteractionStep[] = [];
 
 	for (const part of content.parts ?? []) {
-		const p = part as PartWithThought;
-		if (p.functionCall) {
+		if (part.functionCall) {
 			const step: InteractionStep = {
 				type: 'function_call',
-				id: p.functionCall.id ?? p.functionCall.name ?? 'call',
-				name: p.functionCall.name,
-				arguments: p.functionCall.args ?? {},
+				id: part.functionCall.id ?? part.functionCall.name ?? 'call',
+				name: part.functionCall.name,
+				arguments: part.functionCall.args ?? {},
 			};
-			if (p.thoughtSignature) step.signature = p.thoughtSignature;
+			if (part.thoughtSignature) step.signature = part.thoughtSignature;
 			callSteps.push(step);
-		} else if (p.functionResponse) {
+		} else if (part.functionResponse) {
 			callSteps.push({
 				type: 'function_result',
-				call_id: p.functionResponse.id ?? p.functionResponse.name ?? 'call',
-				name: p.functionResponse.name,
-				result: functionResponseToResult(p.functionResponse.response),
+				call_id: part.functionResponse.id ?? part.functionResponse.name ?? 'call',
+				name: part.functionResponse.name,
+				result: functionResponseToResult(part.functionResponse.response),
 			});
-		} else if (p.inlineData?.data) {
-			mediaItems.push(inlineDataToContentItem(p.inlineData.mimeType ?? 'application/octet-stream', p.inlineData.data));
-		} else if (typeof p.text === 'string' && p.text.length > 0 && !p.thought) {
-			mediaItems.push({ type: 'text', text: p.text });
+		} else if (part.inlineData?.data) {
+			mediaItems.push(
+				inlineDataToContentItem(part.inlineData.mimeType ?? 'application/octet-stream', part.inlineData.data)
+			);
+		} else if (typeof part.text === 'string' && part.text.length > 0 && !part.thought) {
+			mediaItems.push({ type: 'text', text: part.text });
 		}
 	}
 

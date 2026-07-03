@@ -66,11 +66,11 @@ beforeEach(() => {
 
 	origCreate = URL.createObjectURL;
 	origRevoke = URL.revokeObjectURL;
-	URL.createObjectURL = ((blob: Blob) => {
+	URL.createObjectURL = (blob: Blob) => {
 		capturedBlobs.push(blob);
 		return 'blob:mock-url';
-	}) as typeof URL.createObjectURL;
-	URL.revokeObjectURL = (() => {}) as typeof URL.revokeObjectURL;
+	};
+	URL.revokeObjectURL = () => {};
 
 	vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => {
 		lastContext = { fillStyle: '', fillRect: vi.fn(), drawImage: vi.fn() };

@@ -34,7 +34,7 @@ describe('AgentViewMessages — plan approval', () => {
 		chatContainer = addDOMMethods(document.createElement('div'));
 		const app = {} as unknown as App;
 		const plugin = {} as unknown as ObsidianGemini;
-		const userInput = document.createElement('div') as HTMLDivElement;
+		const userInput = document.createElement('div');
 		messages = new AgentViewMessages(app, chatContainer, plugin, userInput, {});
 	});
 

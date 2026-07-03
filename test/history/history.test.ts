@@ -25,7 +25,7 @@ vi.mock('../../src/agent/session-history', () => {
 		SessionHistory: class MockSessionHistory {
 			constructor(_plugin: any) {
 				// Return the shared mock instance so tests can set up return values
-				return mockSessionHistoryInstance as any;
+				return mockSessionHistoryInstance;
 			}
 		},
 	};

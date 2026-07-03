@@ -231,14 +231,14 @@ describe('Skill Tools', () => {
 		});
 
 		it('should have confirmation message function', () => {
-			const message = tool.confirmationMessage!({ name: 'code-review', description: 'Reviews code quality' });
+			const message = tool.confirmationMessage({ name: 'code-review', description: 'Reviews code quality' });
 			expect(message).toContain('code-review');
 			expect(message).toContain('Reviews code quality');
 		});
 
 		it('should truncate long descriptions in confirmation', () => {
 			const longDesc = 'a'.repeat(300);
-			const message = tool.confirmationMessage!({ name: 'test', description: longDesc });
+			const message = tool.confirmationMessage({ name: 'test', description: longDesc });
 			expect(message).toContain('...');
 		});
 
@@ -366,13 +366,13 @@ describe('Skill Tools', () => {
 		});
 
 		it('should have confirmation message function', () => {
-			const message = tool.confirmationMessage!({ name: 'code-review', content: 'new content' });
+			const message = tool.confirmationMessage({ name: 'code-review', content: 'new content' });
 			expect(message).toContain('code-review');
 			expect(message).toContain('content');
 		});
 
 		it('should show both fields in confirmation when updating both', () => {
-			const message = tool.confirmationMessage!({
+			const message = tool.confirmationMessage({
 				name: 'code-review',
 				description: 'new desc',
 				content: 'new content',
@@ -393,19 +393,19 @@ describe('Skill Tools', () => {
 		});
 
 		it('should treat whitespace-only description as empty in confirmation', () => {
-			const message = tool.confirmationMessage!({ name: 'test', description: '   ', content: 'real content' });
+			const message = tool.confirmationMessage({ name: 'test', description: '   ', content: 'real content' });
 			expect(message).not.toContain('description');
 			expect(message).toContain('content');
 		});
 
 		it('should treat whitespace-only content as empty in confirmation', () => {
-			const message = tool.confirmationMessage!({ name: 'test', description: 'real desc', content: '   ' });
+			const message = tool.confirmationMessage({ name: 'test', description: 'real desc', content: '   ' });
 			expect(message).toContain('description');
 			expect(message).not.toContain('content');
 		});
 
 		it('should show no valid fields message in confirmation when both are whitespace', () => {
-			const message = tool.confirmationMessage!({ name: 'test', description: '   ', content: '   ' });
+			const message = tool.confirmationMessage({ name: 'test', description: '   ', content: '   ' });
 			expect(message).toContain('no valid fields provided');
 		});
 

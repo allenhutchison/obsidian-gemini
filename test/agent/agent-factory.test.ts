@@ -42,12 +42,12 @@ function createMockSession(overrides: Partial<ChatSession> = {}): ChatSession {
 		id: 'test-session-id',
 		type: 'agent-session' as any,
 		title: 'Test Session',
-		context: { contextFiles: [], requireConfirmation: [] } as any,
+		context: { contextFiles: [], requireConfirmation: [] },
 		created: new Date(),
 		lastActive: new Date(),
 		historyPath: 'gemini-scribe/Agent-Sessions/Test Session.md',
 		...overrides,
-	} as ChatSession;
+	};
 }
 
 describe('AgentFactory', () => {
@@ -81,7 +81,7 @@ describe('AgentFactory', () => {
 
 		it('should return the ModelApi instance from the factory', () => {
 			const mockApi = { generateModelResponse: vi.fn() };
-			vi.mocked(ModelClientFactory.createChatModel).mockReturnValue(mockApi as any);
+			vi.mocked(ModelClientFactory.createChatModel).mockReturnValue(mockApi);
 
 			const plugin = createMockPlugin();
 			const session = createMockSession();

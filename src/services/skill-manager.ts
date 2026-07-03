@@ -369,7 +369,7 @@ export class SkillManager {
 		// Validate name
 		const nameValidation = this.validateSkillName(name);
 		if (!nameValidation.valid) {
-			throw new Error(nameValidation.error!);
+			throw new Error(nameValidation.error);
 		}
 
 		// Check for duplicates
@@ -400,7 +400,7 @@ export class SkillManager {
 		// Validate name
 		const nameValidation = this.validateSkillName(name);
 		if (!nameValidation.valid) {
-			throw new Error(nameValidation.error!);
+			throw new Error(nameValidation.error);
 		}
 
 		// Reject no-op updates at the service boundary

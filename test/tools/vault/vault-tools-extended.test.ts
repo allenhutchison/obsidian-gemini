@@ -92,7 +92,7 @@ describe('UpdateFrontmatterTool', () => {
 	});
 
 	it('confirmationMessage formats params', () => {
-		const msg = tool.confirmationMessage!({ path: 'notes/foo.md', key: 'status', value: 'done' });
+		const msg = tool.confirmationMessage({ path: 'notes/foo.md', key: 'status', value: 'done' });
 		expect(msg).toContain('notes/foo.md');
 		expect(msg).toContain('status');
 		expect(msg).toContain('done');
@@ -335,12 +335,12 @@ describe('AppendContentTool', () => {
 	});
 
 	it('confirmationMessage formats params and truncates long content', () => {
-		const shortMsg = tool.confirmationMessage!({ path: 'notes/foo.md', content: 'hello' });
+		const shortMsg = tool.confirmationMessage({ path: 'notes/foo.md', content: 'hello' });
 		expect(shortMsg).toContain('notes/foo.md');
 		expect(shortMsg).toContain('hello');
 
 		const longContent = 'x'.repeat(300);
-		const longMsg = tool.confirmationMessage!({ path: 'notes/foo.md', content: longContent });
+		const longMsg = tool.confirmationMessage({ path: 'notes/foo.md', content: longContent });
 		expect(longMsg).toContain('...');
 	});
 

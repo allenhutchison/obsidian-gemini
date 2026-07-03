@@ -170,10 +170,13 @@ describe('WriteFileTool', () => {
 			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),
 		};
 
-		const result = await tool.execute({ path: 'shelf-me.md', content: 'content' }, {
-			...mockContext,
-			viewActions,
-		} as any);
+		const result = await tool.execute(
+			{ path: 'shelf-me.md', content: 'content' },
+			{
+				...mockContext,
+				viewActions,
+			}
+		);
 
 		expect(result.success).toBe(true);
 		expect(hostSession.context.contextFiles).toContain(mockFile);
@@ -193,7 +196,7 @@ describe('WriteFileTool', () => {
 			updateSessionMetadata: vi.fn().mockResolvedValue(undefined),
 		};
 
-		const result = await tool.execute({ path: 'test.md', content: 'updated' }, { ...mockContext, viewActions } as any);
+		const result = await tool.execute({ path: 'test.md', content: 'updated' }, { ...mockContext, viewActions });
 
 		expect(result.success).toBe(true);
 		expect(viewActions.addContextFileToShelf).not.toHaveBeenCalled();
@@ -250,7 +253,7 @@ describe('WriteFileTool', () => {
 	});
 
 	it('should have confirmation message', () => {
-		const message = tool.confirmationMessage!({ path: 'test.md', content: 'content' });
+		const message = tool.confirmationMessage({ path: 'test.md', content: 'content' });
 		expect(message).toContain('Write content to file: test.md');
 		expect(message).toContain('content');
 	});
@@ -265,7 +268,7 @@ describe('WriteFileTool', () => {
 	});
 
 	it('should use summary in confirmation message when provided', () => {
-		const msg = tool.confirmationMessage!({
+		const msg = tool.confirmationMessage({
 			path: 'test.md',
 			content: 'full content here',
 			summary: 'Added a new section about testing',
@@ -275,7 +278,7 @@ describe('WriteFileTool', () => {
 	});
 
 	it('should fall back to content preview when summary is not provided', () => {
-		const msg = tool.confirmationMessage!({
+		const msg = tool.confirmationMessage({
 			path: 'test.md',
 			content: 'full content here',
 		});

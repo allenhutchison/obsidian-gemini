@@ -76,19 +76,19 @@ describe('DeepResearchTool', () => {
 		});
 
 		it('should have confirmation message function', () => {
-			const message = tool.confirmationMessage!({ topic: 'AI Ethics' });
+			const message = tool.confirmationMessage({ topic: 'AI Ethics' });
 			expect(message).toContain('Conduct deep research on: "AI Ethics"');
 			expect(message).toContain('using vault and web');
 		});
 
 		it('should include scope in confirmation message', () => {
-			const messageVault = tool.confirmationMessage!({ topic: 'Test', scope: 'vault_only' });
+			const messageVault = tool.confirmationMessage({ topic: 'Test', scope: 'vault_only' });
 			expect(messageVault).toContain('using vault notes only');
 
-			const messageWeb = tool.confirmationMessage!({ topic: 'Test', scope: 'web_only' });
+			const messageWeb = tool.confirmationMessage({ topic: 'Test', scope: 'web_only' });
 			expect(messageWeb).toContain('using web search only');
 
-			const messageBoth = tool.confirmationMessage!({ topic: 'Test', scope: 'both' });
+			const messageBoth = tool.confirmationMessage({ topic: 'Test', scope: 'both' });
 			expect(messageBoth).toContain('using vault and web');
 		});
 
@@ -126,28 +126,28 @@ describe('DeepResearchTool', () => {
 		});
 
 		it('should return topic in progress description', () => {
-			const desc = tool.getProgressDescription!({ topic: 'AI Ethics' });
+			const desc = tool.getProgressDescription({ topic: 'AI Ethics' });
 			expect(desc).toBe('Researching "AI Ethics"');
 		});
 
 		it('should truncate long topics', () => {
-			const desc = tool.getProgressDescription!({ topic: 'This is a very long research topic' });
+			const desc = tool.getProgressDescription({ topic: 'This is a very long research topic' });
 			expect(desc).toBe('Researching "This is a very long re..."');
 		});
 
 		it('should include scope in progress description', () => {
-			const descVault = tool.getProgressDescription!({ topic: 'Test', scope: 'vault_only' });
+			const descVault = tool.getProgressDescription({ topic: 'Test', scope: 'vault_only' });
 			expect(descVault).toBe('Researching "Test" (vault)');
 
-			const descWeb = tool.getProgressDescription!({ topic: 'Test', scope: 'web_only' });
+			const descWeb = tool.getProgressDescription({ topic: 'Test', scope: 'web_only' });
 			expect(descWeb).toBe('Researching "Test" (web)');
 
-			const descBoth = tool.getProgressDescription!({ topic: 'Test', scope: 'both' });
+			const descBoth = tool.getProgressDescription({ topic: 'Test', scope: 'both' });
 			expect(descBoth).toBe('Researching "Test"');
 		});
 
 		it('should return default message when no topic', () => {
-			const desc = tool.getProgressDescription!({ topic: '' });
+			const desc = tool.getProgressDescription({ topic: '' });
 			expect(desc).toBe('Conducting research');
 		});
 	});
@@ -286,7 +286,7 @@ describe('DeepResearchTool', () => {
 
 			expect(result.success).toBe(true);
 			expect(result.data.outputFile).toBe('research-report.md');
-			expect(mockContext.session!.context.contextFiles).toContain(mockFile);
+			expect(mockContext.session.context.contextFiles).toContain(mockFile);
 		});
 
 		it('should not add to context if no session', async () => {
@@ -318,11 +318,11 @@ describe('DeepResearchTool', () => {
 				sourceCount: 5,
 			});
 
-			const initialFiles = mockContext.session!.context.contextFiles.length;
+			const initialFiles = mockContext.session.context.contextFiles.length;
 
 			await tool.execute({ topic: 'Test' }, mockContext);
 
-			expect(mockContext.session!.context.contextFiles.length).toBe(initialFiles);
+			expect(mockContext.session.context.contextFiles.length).toBe(initialFiles);
 		});
 
 		it('should handle service errors gracefully', async () => {

@@ -158,7 +158,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 	private updateCheckboxAt(chooserSuggestions: HTMLElement[], index: number): void {
 		const el = chooserSuggestions[index];
 		if (!el) return;
-		const aux = el.querySelector('.suggestion-aux') as HTMLElement | null;
+		const aux = el.querySelector<HTMLElement>('.suggestion-aux');
 		if (!aux) return;
 		setIcon(aux, this.getIconForItem(this.lastSuggestions[index]));
 	}

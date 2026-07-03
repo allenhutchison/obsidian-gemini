@@ -95,7 +95,7 @@ describe('RagSyncQueue', () => {
 			onUpdateStatusBar: vi.fn(),
 		};
 
-		queue = new RagSyncQueue(mockPlugin, mockCache as any, mockRateLimiter as any, mockCallbacks);
+		queue = new RagSyncQueue(mockPlugin, mockCache, mockRateLimiter, mockCallbacks);
 	});
 
 	afterEach(async () => {

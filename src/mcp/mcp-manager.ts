@@ -51,10 +51,10 @@ function patchSetTimeoutForElectron(): void {
 		const testTimer = origSetTimeout(() => {}, 0);
 		if (typeof (testTimer as any).unref === 'function') {
 			// Already has .unref() — no patch needed
-			window.clearTimeout(testTimer as any);
+			window.clearTimeout(testTimer);
 			return;
 		}
-		window.clearTimeout(testTimer as any);
+		window.clearTimeout(testTimer);
 
 		// Patch: wrap return value to add .unref() and .ref() as no-ops
 		(window as any).setTimeout = function patchedSetTimeout(

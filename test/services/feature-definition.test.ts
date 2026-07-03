@@ -81,7 +81,7 @@ describe('JsonSidecarStateStore', () => {
 		it('writes the state as pretty-printed JSON to the resolved path', async () => {
 			const { plugin, files, adapter } = makeStoreFixture();
 			const store = new JsonSidecarStateStore(plugin as any, () => 'state.json', '[Test]');
-			await store.save({ hook: { consecutiveFailures: 2 } } as any);
+			await store.save({ hook: { consecutiveFailures: 2 } });
 			const expected = JSON.stringify({ hook: { consecutiveFailures: 2 } }, null, 2);
 			expect(adapter.write).toHaveBeenCalledWith('state.json', expected);
 			expect(files['state.json']).toBe(expected);
@@ -100,9 +100,9 @@ describe('JsonSidecarStateStore', () => {
 		const { plugin, files } = makeStoreFixture();
 		let path = 'first.json';
 		const store = new JsonSidecarStateStore(plugin as any, () => path, '[Test]');
-		await store.save({ a: 1 } as any);
+		await store.save({ a: 1 });
 		path = 'second.json';
-		await store.save({ b: 2 } as any);
+		await store.save({ b: 2 });
 		expect(Object.keys(files).sort()).toEqual(['first.json', 'second.json']);
 	});
 });

@@ -131,7 +131,7 @@ export class ToolPolicyEditor {
 		const inheritId = `gemini-tool-policy-inherit-${++ToolPolicyEditor.nextInheritId}`;
 		const inheritCb = inheritRow.createEl('input', {
 			attr: { type: 'checkbox', id: inheritId },
-		}) as HTMLInputElement;
+		});
 		inheritCb.checked = this.state === undefined;
 		inheritRow.createEl('label', {
 			text: ` ${t('component.toolPolicyEditor.inheritGlobal')}`,
@@ -160,7 +160,7 @@ export class ToolPolicyEditor {
 	private renderPresetRow(): void {
 		const row = this.bodyEl.createDiv({ cls: 'gemini-tool-policy-editor-preset-row' });
 		row.createEl('label', { text: t('component.toolPolicyEditor.presetLabel') });
-		const select = row.createEl('select') as HTMLSelectElement;
+		const select = row.createEl('select');
 
 		// "(no preset)" means: use the preset from the global policy, only
 		// honour any explicit overrides on this feature. Distinct from
@@ -221,7 +221,7 @@ export class ToolPolicyEditor {
 					cls: 'gemini-tool-policy-editor-tool-name',
 				});
 
-				const select = row.createEl('select') as HTMLSelectElement;
+				const select = row.createEl('select');
 				select.add(new Option(t('component.toolPolicyEditor.inheritOption'), INHERIT_OVERRIDE));
 				for (const perm of Object.values(ToolPermission)) {
 					select.add(new Option(t(PERMISSION_LABELS[perm]), perm));

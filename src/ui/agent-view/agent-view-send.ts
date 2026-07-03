@@ -118,7 +118,7 @@ export class AgentViewSend {
 		// renders the final text with proper formatting and approval buttons.
 		if (modelApi.generateStreamingResponse && this.ctx.plugin.settings.streamingEnabled !== false) {
 			let accumulated = '';
-			const stream = modelApi.generateStreamingResponse!(planRequest, (chunk: StreamChunk) => {
+			const stream = modelApi.generateStreamingResponse(planRequest, (chunk: StreamChunk) => {
 				if (chunk.text) {
 					accumulated += chunk.text;
 				}
@@ -486,7 +486,7 @@ To reference an attachment in your response, use the path shown above.`;
 				};
 
 				// Create model API for this session
-				const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession!);
+				const modelApi = AgentFactory.createAgentModel(this.ctx.plugin, currentSession);
 
 				// Plan mode: ask for a plan first, await user approval, then execute with tools
 				let messageToSend = message;

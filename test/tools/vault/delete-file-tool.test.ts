@@ -172,7 +172,7 @@ describe('DeleteFileTool', () => {
 	});
 
 	it('should have confirmation message', () => {
-		const message = tool.confirmationMessage!({ path: 'test.md' });
+		const message = tool.confirmationMessage({ path: 'test.md' });
 		expect(message).toContain('Delete file or folder: test.md');
 		expect(message).toContain('system trash');
 	});

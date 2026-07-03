@@ -708,7 +708,7 @@ describe('AgentView UI Tests', () => {
 			await agentView.showToolExecution('write_file', { path: 'a.md', content: longContent }, 'exec-copy-1');
 
 			const chatContainer = (agentView as any).chatContainer as HTMLElement;
-			const copyBtn = chatContainer.querySelector('.gemini-agent-tool-copy-section') as HTMLButtonElement | null;
+			const copyBtn = chatContainer.querySelector<HTMLButtonElement>('.gemini-agent-tool-copy-section');
 			expect(copyBtn).toBeTruthy();
 
 			copyBtn!.click();
@@ -1225,7 +1225,7 @@ describe('AgentView UI Tests', () => {
 			(agentView as any).send['isExecuting'] = false;
 
 			// Track if resetExecutionUiState was called on the send component
-			const resetSpy = vi.spyOn((agentView as any).send as any, 'resetExecutionUiState');
+			const resetSpy = vi.spyOn((agentView as any).send, 'resetExecutionUiState');
 
 			// Simulate finally block behavior
 			if ((agentView as any).send.getIsExecuting()) {

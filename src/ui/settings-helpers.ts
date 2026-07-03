@@ -35,7 +35,7 @@ export function createCollapsibleSection(
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
 		// Stub container in unit tests — return a detached div so callers can
 		// keep passing it to `new Setting(...)` without DOM side-effects.
-		return typeof document !== 'undefined' ? document.createElement('div') : (containerEl as HTMLElement);
+		return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
 	}
 
 	const expanded = plugin.settings.expandedSettingsSections ?? [];
@@ -107,7 +107,7 @@ export function createCollapsibleSection(
  */
 export function createAlwaysOpenSection(containerEl: HTMLElement, title: string, description?: string): HTMLElement {
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
-		return typeof document !== 'undefined' ? document.createElement('div') : (containerEl as HTMLElement);
+		return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
 	}
 
 	const wrapper = document.createElement('div');
@@ -188,7 +188,7 @@ export async function selectModelSetting(
 			});
 
 			// Get current setting value
-			const currentValue = String((plugin.settings as ObsidianGeminiSettings)[settingName]);
+			const currentValue = String(plugin.settings[settingName]);
 
 			// Check if current value exists in available models
 			const valueExists = availableModels.some((m) => m.value === currentValue);
@@ -199,7 +199,7 @@ export async function selectModelSetting(
 				plugin.logger.warn(
 					`${label}: Current value "${currentValue}" not found in available models. Defaulting to "${defaultValue}"`
 				);
-				(plugin.settings as ObsidianGeminiSettings)[settingName] = defaultValue;
+				plugin.settings[settingName] = defaultValue;
 				dropdown.setValue(defaultValue);
 				// Save the corrected setting
 				plugin.saveSettings().catch((e) => plugin.logger.error(`Failed to save corrected ${label} setting:`, e));
@@ -208,7 +208,7 @@ export async function selectModelSetting(
 			}
 
 			dropdown.onChange(async (value) => {
-				(plugin.settings as ObsidianGeminiSettings)[settingName] = value;
+				plugin.settings[settingName] = value;
 				await plugin.saveSettings();
 			});
 			return dropdown;

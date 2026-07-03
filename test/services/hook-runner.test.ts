@@ -438,9 +438,9 @@ describe('HookRunner action: rewrite', () => {
 		// re-fetch return a fresher TFile-shaped instance so the
 		// `instanceof TFile` guard in rewriteFile passes.
 		const file = plantFile(plugin, 'Notes/foo.md');
-		(file as any).stat = { mtime: 1000 };
+		file.stat = { mtime: 1000 };
 		const liveFile = plantFile(plugin, 'Notes/foo.md');
-		(liveFile as any).stat = { mtime: 2000 };
+		liveFile.stat = { mtime: 2000 };
 		plugin.app.vault.read = vi.fn().mockResolvedValue('original');
 		plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValueOnce(file).mockReturnValue(liveFile);
 
@@ -457,7 +457,7 @@ describe('HookRunner action: rewrite', () => {
 
 		const plugin = createMockPlugin();
 		const file = plantFile(plugin, 'Notes/foo.md');
-		(file as any).stat = { mtime: 1000 };
+		file.stat = { mtime: 1000 };
 		plugin.app.vault.read = vi.fn().mockResolvedValue('original');
 		// Live re-fetch returns null (file deleted).
 		plugin.app.vault.getAbstractFileByPath = vi.fn().mockReturnValueOnce(file).mockReturnValue(null);

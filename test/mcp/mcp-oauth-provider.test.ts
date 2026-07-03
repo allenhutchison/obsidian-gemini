@@ -95,7 +95,7 @@ describe('ObsidianOAuthClientProvider', () => {
 				refresh_token: 'test-refresh-token',
 			};
 
-			provider.saveTokens(tokens as any);
+			provider.saveTokens(tokens);
 			expect(app.secretStorage.setSecret).toHaveBeenCalledWith('mcp-oauth-tokens-test-server', JSON.stringify(tokens));
 
 			const loaded = provider.tokens();
@@ -149,14 +149,14 @@ describe('ObsidianOAuthClientProvider', () => {
 		});
 
 		it('should return true when tokens exist', () => {
-			provider.saveTokens({ access_token: 'tok', token_type: 'bearer' } as any);
+			provider.saveTokens({ access_token: 'tok', token_type: 'bearer' });
 			expect(provider.hasTokens()).toBe(true);
 		});
 	});
 
 	describe('invalidateCredentials', () => {
 		beforeEach(() => {
-			provider.saveTokens({ access_token: 'tok', token_type: 'bearer' } as any);
+			provider.saveTokens({ access_token: 'tok', token_type: 'bearer' });
 			provider.saveClientInformation({ client_id: 'cid' } as any);
 			provider.saveCodeVerifier('verifier');
 		});
@@ -190,7 +190,7 @@ describe('ObsidianOAuthClientProvider', () => {
 
 	describe('clearAll', () => {
 		it('should clear all credentials', () => {
-			provider.saveTokens({ access_token: 'tok', token_type: 'bearer' } as any);
+			provider.saveTokens({ access_token: 'tok', token_type: 'bearer' });
 			provider.saveClientInformation({ client_id: 'cid' } as any);
 
 			provider.clearAll();

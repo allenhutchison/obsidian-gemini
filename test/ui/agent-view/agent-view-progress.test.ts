@@ -56,7 +56,7 @@ function addObsidianMethods(el: HTMLElement): HTMLElement {
 		return elem;
 	};
 	(el as any).createSpan = function (opts?: any) {
-		return (this as any).createEl('span', opts);
+		return this.createEl('span', opts);
 	};
 	(el as any).addClass = function (cls: string) {
 		this.classList.add(cls);

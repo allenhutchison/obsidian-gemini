@@ -68,7 +68,7 @@ describe('SessionManager Integration Tests', () => {
 		};
 
 		// Create history after plugin is fully initialized
-		plugin.history = new SessionHistory(plugin as any);
+		plugin.history = new SessionHistory(plugin);
 		sessionManager = new SessionManager(plugin);
 	});
 

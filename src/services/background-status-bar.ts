@@ -77,9 +77,9 @@ export class BackgroundStatusBar {
 	update(): void {
 		if (!this.statusBarItem) return;
 
-		const iconEl = this.statusBarItem.querySelector('.gemini-bg-status-icon') as HTMLElement | null;
-		const textEl = this.statusBarItem.querySelector('.gemini-bg-status-text') as HTMLElement | null;
-		const badgeEl = this.statusBarItem.querySelector('.gemini-bg-status-badge') as HTMLElement | null;
+		const iconEl = this.statusBarItem.querySelector<HTMLElement>('.gemini-bg-status-icon');
+		const textEl = this.statusBarItem.querySelector<HTMLElement>('.gemini-bg-status-text');
+		const badgeEl = this.statusBarItem.querySelector<HTMLElement>('.gemini-bg-status-badge');
 		if (!iconEl || !textEl) return;
 
 		// Catch-up badge — show ! when there are pending approvals

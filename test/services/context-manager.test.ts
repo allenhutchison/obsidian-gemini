@@ -271,7 +271,7 @@ describe('ContextManager', () => {
 				apiKey: '',
 				settings: { ...mockPlugin.settings, provider: 'ollama' },
 			};
-			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 
 			const result = await ollamaCtx.countTokens('llama3.2', [{ role: 'user', parts: [{ text: 'hello world' }] }]);
 
@@ -290,7 +290,7 @@ describe('ContextManager', () => {
 				apiKey: '',
 				settings: { ...mockPlugin.settings, provider: 'ollama' },
 			};
-			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
 
 			const initialEstimate = await ollamaCtx.countTokens('llama3.2', contents);
@@ -309,7 +309,7 @@ describe('ContextManager', () => {
 				apiKey: '',
 				settings: { ...mockPlugin.settings, provider: 'ollama' },
 			};
-			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 			const contents = [{ role: 'user', parts: [{ text: 'a'.repeat(400) }] }];
 
 			const baselineEstimate = await ollamaCtx.countTokens('llama3.2', contents);
@@ -326,7 +326,7 @@ describe('ContextManager', () => {
 				apiKey: '',
 				settings: { ...mockPlugin.settings, provider: 'ollama' },
 			};
-			const ollamaCtx = new ContextManager(ollamaPlugin as any, mockLogger);
+			const ollamaCtx = new ContextManager(ollamaPlugin, mockLogger);
 
 			// No prior countTokens() call for this model, and no modelName/promptTokenCount —
 			// none of these should throw.
@@ -743,7 +743,7 @@ describe('ContextManager', () => {
 					apiKey: '',
 					settings: { ...mockPlugin.settings, provider: 'ollama' },
 				};
-				return new ContextManager(ollamaPlugin as any, mockLogger);
+				return new ContextManager(ollamaPlugin, mockLogger);
 			}
 
 			// Each test computes a baseline estimate under a distinct, never-seeded

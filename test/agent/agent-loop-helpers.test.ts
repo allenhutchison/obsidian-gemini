@@ -203,7 +203,7 @@ describe('buildFunctionResponseParts', () => {
 			{
 				toolName: 'read_file',
 				toolArguments: { path: 'note.md' },
-				result: { success: true, data: { path: 'note.md', content: 'hello' } } as any,
+				result: { success: true, data: { path: 'note.md', content: 'hello' } },
 			},
 		];
 
@@ -227,7 +227,7 @@ describe('buildFunctionResponseParts', () => {
 					success: true,
 					data: { path: 'photo.png', mimeType: 'image/png' },
 					inlineData: [{ base64: 'iVBOR...', mimeType: 'image/png' }],
-				} as any,
+				},
 			},
 		];
 
@@ -251,7 +251,7 @@ describe('buildFunctionResponseParts', () => {
 						{ base64: 'page1', mimeType: 'application/pdf' },
 						{ base64: 'page2', mimeType: 'application/pdf' },
 					],
-				} as any,
+				},
 			},
 		];
 
@@ -267,7 +267,7 @@ describe('buildFunctionResponseParts', () => {
 			{
 				toolName: 'read_file',
 				toolArguments: { path: 'note.md' },
-				result: { success: true, data: { path: 'note.md' }, inlineData: [] } as any,
+				result: { success: true, data: { path: 'note.md' }, inlineData: [] },
 			},
 		];
 
@@ -296,7 +296,7 @@ describe('buildFunctionResponseParts', () => {
 			{
 				toolName: 'read_file',
 				toolArguments: { path: 'a.md' },
-				result: { success: true, data: { content: 'text' } } as any,
+				result: { success: true, data: { content: 'text' } },
 			},
 			{
 				toolName: 'read_file',
@@ -305,12 +305,12 @@ describe('buildFunctionResponseParts', () => {
 					success: true,
 					data: { path: 'b.png' },
 					inlineData: [{ base64: 'imgdata', mimeType: 'image/png' }],
-				} as any,
+				},
 			},
 			{
 				toolName: 'list_files',
 				toolArguments: {},
-				result: { success: true, data: { files: ['a', 'b'] } } as any,
+				result: { success: true, data: { files: ['a', 'b'] } },
 			},
 		];
 
@@ -338,7 +338,7 @@ describe('buildToolHistoryTurns', () => {
 	const sampleResult: ToolCallResultPair = {
 		toolName: 'read_file',
 		toolArguments: { path: 'a.md' },
-		result: { success: true, data: { content: 'x' } } as any,
+		result: { success: true, data: { content: 'x' } },
 	};
 
 	test('appends model + user turns after existing history when userMessage is empty', () => {
@@ -470,7 +470,7 @@ describe('buildToolHistoryTurns', () => {
 						success: true,
 						data: { path: 'photo.png' },
 						inlineData: [{ base64: 'imgbytes', mimeType: 'image/png' }],
-					} as any,
+					},
 				},
 			],
 		});
@@ -613,7 +613,7 @@ describe('truncateOldToolResults', () => {
 		const history = [original, fnResponseTurn('read_file', big())];
 		truncateOldToolResults(history, { keepRecent: 1 });
 		// The first turn was a candidate for truncation; the original object should be unchanged.
-		expect((original.parts[0].functionResponse.response as any).truncated).toBeUndefined();
+		expect(original.parts[0].functionResponse.response.truncated).toBeUndefined();
 	});
 
 	test('passes through inlineData and other non-functionResponse parts', () => {

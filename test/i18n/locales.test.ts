@@ -26,7 +26,7 @@ describe('i18n locales', () => {
 			for (const [key, value] of Object.entries(table)) {
 				expect(enKeys.has(key), `${code}: unknown key ${key}`).toBe(true);
 				expect(typeof value, `${code}.${key}: not a string`).toBe('string');
-				expect((value as string).trim(), `${code}.${key}: empty translation`).not.toBe('');
+				expect(value.trim(), `${code}.${key}: empty translation`).not.toBe('');
 			}
 		}
 	});

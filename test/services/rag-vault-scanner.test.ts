@@ -149,7 +149,7 @@ function createMockCallbacks(overrides: Partial<VaultScannerCallbacks> = {}): Va
 		getStatus: vi.fn(() => status) as any,
 		setStatus: vi.fn((s: string) => {
 			status = s;
-		}) as any,
+		}),
 		isReady: vi.fn().mockReturnValue(true),
 		getAi: vi.fn().mockReturnValue({
 			fileSearchStores: {

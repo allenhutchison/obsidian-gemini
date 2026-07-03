@@ -254,7 +254,7 @@ describe('MoveFileTool', () => {
 	});
 
 	it('should have confirmation message', () => {
-		const message = tool.confirmationMessage!({
+		const message = tool.confirmationMessage({
 			sourcePath: 'old.md',
 			targetPath: 'new.md',
 		});

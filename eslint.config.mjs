@@ -17,7 +17,8 @@ const SOFTENED_TS_RULES = {
 	'@typescript-eslint/no-unsafe-return': 'off',
 	// #1041: cleared — enforced.
 	'@typescript-eslint/no-unsafe-enum-comparison': 'error',
-	'@typescript-eslint/no-unnecessary-type-assertion': 'off',
+	// #1039: cleared — enforced.
+	'@typescript-eslint/no-unnecessary-type-assertion': 'error',
 	'@typescript-eslint/no-misused-promises': 'off',
 	'@typescript-eslint/no-floating-promises': 'off',
 	'@typescript-eslint/no-base-to-string': 'off',
