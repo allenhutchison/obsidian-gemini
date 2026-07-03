@@ -275,15 +275,26 @@ export class GeminiClient implements ModelApi {
 		if ('role' in entry && 'parts' in entry) {
 			return entry;
 		}
-		if ('role' in entry && 'text' in entry) {
-			const legacy = entry as Content & { text: string };
-			return { role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.text }] };
-		}
-		if ('role' in entry && 'message' in entry) {
-			const legacy = entry as Content & { role: string; message: string };
-			return { role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.message }] };
+		if ('role' in entry && ('text' in entry || 'message' in entry)) {
+			const legacy = entry as Content & { role?: string; text?: string; message?: string };
+			const text = legacy.text ?? legacy.message ?? '';
+			return { role: this.coerceHistoryRole(legacy.role), parts: [{ text }] };
 		}
 		return null;
+	}
+
+	/**
+	 * Map a legacy history role to a Gemini `Content` role. Only `user`/`model`
+	 * are valid Content roles; a `system` (or any other unexpected) role is
+	 * coerced to `model`, deliberately and with a warning rather than silently,
+	 * since replaying it as a model turn is a lossy fallback.
+	 */
+	private coerceHistoryRole(role: string | undefined): 'user' | 'model' {
+		if (role === 'user') return 'user';
+		if (role !== 'model') {
+			this.plugin?.logger.warn(`Unexpected conversation-history role "${role}", coercing to "model"`);
+		}
+		return 'model';
 	}
 
 	/**
