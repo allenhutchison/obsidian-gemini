@@ -70,27 +70,28 @@ export function contentToSteps(content: Content): InteractionStep[] {
 	const callSteps: InteractionStep[] = [];
 
 	for (const part of content.parts ?? []) {
-		const p = part;
-		if (p.functionCall) {
+		if (part.functionCall) {
 			const step: InteractionStep = {
 				type: 'function_call',
-				id: p.functionCall.id ?? p.functionCall.name ?? 'call',
-				name: p.functionCall.name,
-				arguments: p.functionCall.args ?? {},
+				id: part.functionCall.id ?? part.functionCall.name ?? 'call',
+				name: part.functionCall.name,
+				arguments: part.functionCall.args ?? {},
 			};
-			if (p.thoughtSignature) step.signature = p.thoughtSignature;
+			if (part.thoughtSignature) step.signature = part.thoughtSignature;
 			callSteps.push(step);
-		} else if (p.functionResponse) {
+		} else if (part.functionResponse) {
 			callSteps.push({
 				type: 'function_result',
-				call_id: p.functionResponse.id ?? p.functionResponse.name ?? 'call',
-				name: p.functionResponse.name,
-				result: functionResponseToResult(p.functionResponse.response),
+				call_id: part.functionResponse.id ?? part.functionResponse.name ?? 'call',
+				name: part.functionResponse.name,
+				result: functionResponseToResult(part.functionResponse.response),
 			});
-		} else if (p.inlineData?.data) {
-			mediaItems.push(inlineDataToContentItem(p.inlineData.mimeType ?? 'application/octet-stream', p.inlineData.data));
-		} else if (typeof p.text === 'string' && p.text.length > 0 && !p.thought) {
-			mediaItems.push({ type: 'text', text: p.text });
+		} else if (part.inlineData?.data) {
+			mediaItems.push(
+				inlineDataToContentItem(part.inlineData.mimeType ?? 'application/octet-stream', part.inlineData.data)
+			);
+		} else if (typeof part.text === 'string' && part.text.length > 0 && !part.thought) {
+			mediaItems.push({ type: 'text', text: part.text });
 		}
 	}
 
