@@ -4026,7 +4026,7 @@ body {
 }
 
 /* Clickable state — items with an openable path show a pointer cursor */
-.gemini-shelf-item-clickable {
+.gemini-shelf-item--clickable {
 	cursor: pointer;
 }
 

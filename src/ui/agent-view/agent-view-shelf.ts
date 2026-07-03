@@ -260,7 +260,7 @@ export class AgentViewShelf {
 			// Click to open file in Obsidian (when the item has an openable path)
 			const openPath = item.path || item.attachment?.vaultPath;
 			if (openPath) {
-				el.addClass('gemini-shelf-item-clickable');
+				el.addClass('gemini-shelf-item--clickable');
 				el.addEventListener('click', (e) => {
 					if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
 					this.app.workspace.openLinkText(openPath, '', false);
