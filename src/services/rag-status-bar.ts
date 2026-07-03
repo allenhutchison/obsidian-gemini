@@ -1,4 +1,4 @@
-import { Notice, setIcon, setTooltip } from 'obsidian';
+import { App, Notice, setIcon, setTooltip } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { RagIndexStatus, RagProgressInfo, IndexResult, ProgressListener } from './rag-types';
 import { getErrorMessage } from '../utils/error-utils';
@@ -21,6 +21,45 @@ export interface RagStatusProvider {
 	addProgressListener(listener: ProgressListener): void;
 	removeProgressListener(listener: ProgressListener): void;
 	cancelIndexing(): void;
+}
+
+/**
+ * Open the RAG status modal, wiring up the shared open-settings / reindex / sync-now
+ * callbacks. Shared by the status-bar click handler and the "RAG status" command so the
+ * modal is constructed in exactly one place.
+ */
+export async function openRagStatusModal(app: App, provider: RagStatusProvider, pluginId: string): Promise<void> {
+	const { RagStatusModal } = await import('../ui/rag-status-modal');
+	const modal = new RagStatusModal(
+		app,
+		provider.getDetailedStatus(),
+		() => {
+			// Open settings to the RAG section
+			openPluginSettingsTab(app, pluginId);
+		},
+		async () => {
+			// Open progress modal and start reindexing
+			const { RagProgressModal } = await import('../ui/rag-progress-modal');
+			const progressModal = new RagProgressModal(app, provider, (result) => {
+				new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
+			});
+			progressModal.open();
+
+			// Trigger reindex (don't await - modal handles progress)
+			provider.indexVault().catch((error) => {
+				new Notice(t('notice.rag.indexingFailed', { error: getErrorMessage(error) }));
+			});
+		},
+		async () => {
+			// Sync pending changes immediately
+			const synced = await provider.syncPendingChanges();
+			if (synced) {
+				new Notice(t('notice.rag.syncingPending'));
+			}
+			return synced;
+		}
+	);
+	modal.open();
 }
 
 /**
@@ -62,37 +101,7 @@ export class RagStatusBar {
 					});
 					modal.open();
 				} else {
-					const { RagStatusModal } = await import('../ui/rag-status-modal');
-					const modal = new RagStatusModal(
-						this.plugin.app,
-						this.provider.getDetailedStatus(),
-						() => {
-							// Open settings to RAG section
-							openPluginSettingsTab(this.plugin.app, this.plugin.manifest.id);
-						},
-						async () => {
-							// Open progress modal and start reindexing
-							const { RagProgressModal } = await import('../ui/rag-progress-modal');
-							const progressModal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
-								new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
-							});
-							progressModal.open();
-
-							// Trigger reindex (don't await - modal handles progress)
-							this.provider.indexVault().catch((error) => {
-								new Notice(t('notice.rag.indexingFailed', { error: getErrorMessage(error) }));
-							});
-						},
-						async () => {
-							// Sync pending changes immediately
-							const synced = await this.provider.syncPendingChanges();
-							if (synced) {
-								new Notice(t('notice.rag.syncingPending'));
-							}
-							return synced;
-						}
-					);
-					modal.open();
+					await openRagStatusModal(this.plugin.app, this.provider, this.plugin.manifest.id);
 				}
 			} catch (error) {
 				this.plugin.logger.error('RAG Indexing: Failed to open status UI', error);

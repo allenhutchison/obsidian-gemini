@@ -2895,19 +2895,6 @@ export const en = {
 		message: 'RAG sync resumed',
 		context: 'Confirmation notice after RAG synchronization was resumed.',
 	},
-	'notice.main.ragIndexComplete': {
-		message: 'Rescan complete: {indexed} re-indexed, {skipped} unchanged',
-		context:
-			'Notice after a vault rescan; {indexed} is the number of files uploaded and {skipped} the number left unchanged because they had not changed.',
-	},
-	'notice.main.ragIndexFailed': {
-		message: 'RAG indexing failed: {error}',
-		context: 'Error notice when a RAG vault indexing run failed; {error} is the underlying error message.',
-	},
-	'notice.main.ragSyncingPending': {
-		message: 'RAG index: Syncing pending changes...',
-		context: 'Notice shown while pending vault changes are being synced into the RAG index.',
-	},
 	'notice.main.readyToUse': {
 		message: 'Gemini Scribe is now ready to use!',
 		context:
