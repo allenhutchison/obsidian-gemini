@@ -154,7 +154,7 @@ export async function saveAttachmentToVault(app: App, attachment: InlineAttachme
 		for (let i = 0; i < binaryString.length; i++) {
 			bytes[i] = binaryString.charCodeAt(i);
 		}
-	} catch (error) {
+	} catch (_error) {
 		throw new Error('Failed to decode base64 data');
 	}
 

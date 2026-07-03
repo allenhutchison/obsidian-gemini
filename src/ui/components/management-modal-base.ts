@@ -312,7 +312,7 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 	// ── Abstract: data access ────────────────────────────────────────────────
 
 	/** Return the entity manager, or null/undefined if unavailable. */
-	protected abstract getManager(): unknown | null | undefined;
+	protected abstract getManager(): unknown;
 	/** Return all entities for the list view. */
 	protected abstract getEntities(): TEntity[];
 	/** Return the state map keyed by slug. */
