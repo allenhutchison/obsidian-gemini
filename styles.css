@@ -1425,9 +1425,9 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-2-2);
-	padding: var(--size-4-3);
-	background-color: var(--background-secondary);
-	border-top: 1px solid var(--background-modifier-border);
+	padding: var(--gs-space-3);
+	background-color: var(--gs-surface-alt);
+	border-top: 1px solid var(--gs-border);
 	flex-shrink: 0;
 }
 
@@ -1438,7 +1438,7 @@ body {
    inflates this element by hundreds of pixels and shoves the input off
    screen when typing. A fixed pad is safer than a misreported env(). */
 .is-mobile .gemini-agent-input-area {
-	padding-bottom: var(--size-4-3);
+	padding-bottom: var(--gs-space-3);
 }
 
 /* Wrapper for input + send button */
@@ -1455,11 +1455,11 @@ body {
 	flex: 1;
 	min-height: 80px;
 	max-height: 200px;
-	padding: var(--size-4-2);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	background-color: var(--background-primary);
-	color: var(--text-normal);
+	padding: var(--gs-space-2);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-md);
+	background-color: var(--gs-surface);
+	color: var(--gs-text);
 	font-family: var(--font-interface);
 	font-size: var(--font-text-size);
 	resize: vertical;
@@ -1468,8 +1468,8 @@ body {
 
 .gemini-agent-input:focus {
 	outline: none;
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 2px var(--interactive-accent-hover) inset;
+	border-color: var(--gs-accent);
+	box-shadow: 0 0 0 2px var(--gs-accent-hover) inset;
 }
 
 /* Rich Input Field */
@@ -1477,33 +1477,33 @@ body {
 	min-height: 40px;
 	max-height: 200px;
 	overflow-y: auto;
-	padding: var(--size-4-2);
+	padding: var(--gs-space-2);
 	position: relative;
 	line-height: 1.6;
 }
 
 .gemini-agent-input-rich:focus {
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 2px var(--interactive-accent-hover) inset;
+	border-color: var(--gs-accent);
+	box-shadow: 0 0 0 2px var(--gs-accent-hover) inset;
 }
 
 /* Placeholder text */
 .gemini-agent-input-rich:empty:before {
 	content: attr(data-placeholder);
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 	pointer-events: none;
 	position: absolute;
 }
 
 .gemini-agent-input::placeholder {
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 }
 
 .gemini-agent-send-btn {
 	/* center on the input row so it shares the plan button's vertical center
 	   (was `stretch`, which pinned this fixed-height button to the top) */
 	align-self: center;
-	padding: var(--size-4-2);
+	padding: var(--gs-space-2);
 	min-width: 50px;
 	display: flex;
 	align-items: center;
@@ -1513,11 +1513,11 @@ body {
 .gemini-agent-send-btn svg {
 	width: var(--gs-icon-lg);
 	height: var(--gs-icon-lg);
-	fill: var(--color-green, #10b981);
+	fill: var(--gs-success, #10b981);
 }
 
 .gemini-agent-stop-btn svg {
-	fill: var(--color-red, #dc3545);
+	fill: var(--gs-error, #dc3545);
 }
 
 .gemini-agent-send-btn:disabled {
@@ -1530,7 +1530,7 @@ body {
 .gemini-agent-plan-actions {
 	display: flex;
 	justify-content: flex-end;
-	margin-top: var(--size-4-3);
+	margin-top: var(--gs-space-3);
 }
 
 /* "Approved" badge replacing the buttons once a plan has been decided */
@@ -1543,7 +1543,7 @@ body {
 }
 
 .gemini-agent-plan-decision-approve {
-	color: var(--color-green, #10b981);
+	color: var(--gs-success, #10b981);
 }
 
 /* Stop button styling - red/warning color scheme
@@ -1551,12 +1551,12 @@ body {
  * Fallback colors provided for custom themes that may not define these variables
  */
 .gemini-agent-stop-btn {
-	background-color: var(--color-red, #dc3545);
-	color: var(--text-on-accent, #ffffff);
+	background-color: var(--gs-error, #dc3545);
+	color: var(--gs-on-accent, #ffffff);
 }
 
 .gemini-agent-stop-btn:hover:not(:disabled) {
-	background-color: color-mix(in srgb, var(--color-red, #dc3545) 85%, black);
+	background-color: color-mix(in srgb, var(--gs-error, #dc3545) 85%, black);
 }
 
 /* Session Modal Styles */
