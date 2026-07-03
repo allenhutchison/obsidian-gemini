@@ -1917,16 +1917,16 @@ body {
    ============================================================ */
 
 .gemini-tool-group {
-	margin: var(--size-4-2) 0;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
+	margin: var(--gs-space-2) 0;
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-md);
 	overflow: hidden;
-	background-color: var(--background-secondary);
+	background-color: var(--gs-surface-alt);
 	transition: all 0.2s ease;
 }
 
 .gemini-tool-group:hover {
-	border-color: var(--background-modifier-border-hover);
+	border-color: var(--gs-border-strong);
 }
 
 /* Summary bar (always visible) */
@@ -1934,20 +1934,20 @@ body {
 	display: flex;
 	align-items: center;
 	gap: var(--size-2-2);
-	padding: var(--size-2-3) var(--size-4-3);
+	padding: var(--size-2-3) var(--gs-space-3);
 	cursor: pointer;
 	user-select: none;
 	transition: background-color 0.15s ease;
 }
 
 .gemini-tool-group-summary:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 .gemini-tool-group-icon {
 	display: flex;
 	align-items: center;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-tool-group-icon svg {
@@ -1959,7 +1959,7 @@ body {
 	flex: 1;
 	font-size: var(--font-ui-small);
 	font-weight: 500;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-tool-group-status {
@@ -1968,22 +1968,22 @@ body {
 }
 
 .gemini-tool-group-status-running {
-	color: var(--color-blue);
+	color: var(--gs-info);
 	animation: pulse 2s infinite;
 }
 
 .gemini-tool-group-status-success {
-	color: var(--color-green);
+	color: var(--gs-success);
 }
 
 .gemini-tool-group-status-error {
-	color: var(--color-red);
+	color: var(--gs-error);
 }
 
 .gemini-tool-group-chevron {
 	display: flex;
 	align-items: center;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	transition: transform 0.2s ease;
 }
 
@@ -1994,13 +1994,13 @@ body {
 
 /* Group body (expandable) */
 .gemini-tool-group-body {
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 	animation: slideDown 0.2s ease-out;
 }
 
 /* Individual tool rows */
 .gemini-tool-row {
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 	transition: background-color 0.15s ease;
 }
 
@@ -2012,20 +2012,20 @@ body {
 	display: flex;
 	align-items: center;
 	gap: var(--size-2-2);
-	padding: var(--size-2-2) var(--size-4-3);
+	padding: var(--size-2-2) var(--gs-space-3);
 	cursor: pointer;
 	user-select: none;
 	transition: background-color 0.15s ease;
 }
 
 .gemini-tool-row-header:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 .gemini-tool-row-icon {
 	display: flex;
 	align-items: center;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	flex-shrink: 0;
 }
 
@@ -2037,7 +2037,7 @@ body {
 .gemini-tool-row-name {
 	font-size: var(--font-ui-small);
 	font-weight: 500;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	white-space: nowrap;
 }
 
@@ -2045,7 +2045,7 @@ body {
 	flex: 1;
 	font-size: var(--font-ui-smaller);
 	font-family: var(--font-monospace);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -2055,7 +2055,7 @@ body {
 .gemini-tool-row-status {
 	font-size: var(--font-ui-smaller);
 	padding: 1px 6px;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	font-weight: 500;
 	white-space: nowrap;
 	flex-shrink: 0;
@@ -2063,25 +2063,25 @@ body {
 }
 
 .gemini-tool-row-status-running {
-	background-color: var(--color-blue);
+	background-color: var(--gs-info);
 	color: white;
 	animation: pulse 2s infinite;
 }
 
 .gemini-tool-row-status-success {
-	background-color: var(--color-green);
+	background-color: var(--gs-success);
 	color: white;
 }
 
 .gemini-tool-row-status-error {
-	background-color: var(--color-red);
+	background-color: var(--gs-error);
 	color: white;
 }
 
 .gemini-tool-row-chevron {
 	display: flex;
 	align-items: center;
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 	flex-shrink: 0;
 }
 
@@ -2092,9 +2092,9 @@ body {
 
 /* Row details (expandable per-row) */
 .gemini-tool-row-details {
-	border-top: 1px solid var(--background-modifier-border);
-	padding: var(--size-4-2) var(--size-4-3);
-	background-color: var(--background-primary);
+	border-top: 1px solid var(--gs-border);
+	padding: var(--gs-space-2) var(--gs-space-3);
+	background-color: var(--gs-surface);
 	animation: slideDown 0.2s ease-out;
 }
 
@@ -2112,19 +2112,19 @@ body {
    ============================================================ */
 
 .gemini-agent-message-tool {
-	margin-bottom: var(--size-4-2);
+	margin-bottom: var(--gs-space-2);
 }
 
 .gemini-agent-tool-message {
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-md);
 	overflow: hidden;
 	transition: all 0.2s ease;
 }
 
 .gemini-agent-tool-message:hover {
-	border-color: var(--background-modifier-border-hover);
+	border-color: var(--gs-border-strong);
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -2132,14 +2132,14 @@ body {
 	display: flex;
 	align-items: center;
 	gap: var(--size-2-2);
-	padding: var(--size-4-2) var(--size-4-3);
+	padding: var(--gs-space-2) var(--gs-space-3);
 	cursor: pointer;
 	user-select: none;
 	transition: background-color 0.15s ease;
 }
 
 .gemini-agent-tool-header:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 .gemini-agent-tool-toggle {
@@ -2147,14 +2147,14 @@ body {
 	border: none;
 	padding: 0;
 	cursor: pointer;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	display: flex;
 	align-items: center;
 	transition: color 0.15s ease;
 }
 
 .gemini-agent-tool-toggle:hover {
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-toggle svg {
@@ -2166,7 +2166,7 @@ body {
 .gemini-agent-tool-icon {
 	display: flex;
 	align-items: center;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-agent-tool-icon svg {
@@ -2177,29 +2177,29 @@ body {
 .gemini-agent-tool-title {
 	flex: 1;
 	font-weight: 500;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-status {
 	font-size: var(--font-ui-small);
 	padding: 2px 8px;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	font-weight: 500;
 }
 
 .gemini-agent-tool-status-running {
-	background-color: var(--color-blue);
+	background-color: var(--gs-info);
 	color: white;
 	animation: pulse 2s infinite;
 }
 
 .gemini-agent-tool-status-success {
-	background-color: var(--color-green);
+	background-color: var(--gs-success);
 	color: white;
 }
 
 .gemini-agent-tool-status-error {
-	background-color: var(--color-red);
+	background-color: var(--gs-error);
 	color: white;
 }
 
@@ -2215,7 +2215,7 @@ body {
    no extra margin) so reasoning and tool calls read as one activity stream. */
 .gemini-tool-group-body .gemini-reasoning-row {
 	margin: 0;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 }
 
 /* "Permission granted" acknowledgment row — sits in the tool stack next to the
@@ -2226,11 +2226,11 @@ body {
 
 .gemini-permission-row .gemini-tool-row-name {
 	font-weight: 400;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-permission-row-icon {
-	color: var(--color-green);
+	color: var(--gs-success);
 }
 
 .gemini-reasoning-row .gemini-tool-row-icon {
@@ -2245,7 +2245,7 @@ body {
 
 .gemini-reasoning-row-details {
 	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 @keyframes pulse {
