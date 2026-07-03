@@ -71,7 +71,9 @@ export class ListFilesTool implements Tool {
 
 			const files = params.recursive
 				? plugin.app.vault.getFiles()
-				: (folder as TFolder)?.children || plugin.app.vault.getRoot().children;
+				: folder instanceof TFolder
+					? folder.children
+					: plugin.app.vault.getRoot().children;
 
 			const fileList = files
 				.filter((f) => {

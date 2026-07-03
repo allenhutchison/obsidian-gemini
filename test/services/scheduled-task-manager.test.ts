@@ -1298,7 +1298,10 @@ describe('ScheduledTaskManager', () => {
 	describe('updateTask', () => {
 		async function makeManagerWithTask() {
 			const plugin = createMockPlugin();
-			const fakeFile = { path: 'gemini-scribe/Scheduled-Tasks/editable.md', basename: 'editable' };
+			const fakeFile = Object.assign(new MockTFile(), {
+				path: 'gemini-scribe/Scheduled-Tasks/editable.md',
+				basename: 'editable',
+			});
 			plugin.app.vault.getMarkdownFiles.mockReturnValue([fakeFile]);
 			plugin.app.metadataCache.getFileCache.mockReturnValue({ frontmatter: { schedule: 'daily' } });
 			plugin.app.vault.read = vi.fn().mockResolvedValue('Original prompt.');

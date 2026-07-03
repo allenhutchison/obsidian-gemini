@@ -424,7 +424,7 @@ export class HookManager {
 		if (!hook) throw new Error(`Hook "${slug}" not found`);
 
 		const file = this.plugin.app.vault.getAbstractFileByPath(hook.filePath);
-		if (!file) throw new Error(`Hook file not found: ${hook.filePath}`);
+		if (!(file instanceof TFile)) throw new Error(`Hook file not found: ${hook.filePath}`);
 
 		// `toolPolicy` is genuinely optional (undefined == inherit global), so
 		// the merged shape can't use `Required<HookCreateParams>` like it used
@@ -454,7 +454,7 @@ export class HookManager {
 		};
 
 		const content = this.serializeHook(merged);
-		await this.plugin.app.vault.modify(file as TFile, content);
+		await this.plugin.app.vault.modify(file, content);
 
 		this.hooks.set(slug, this.toHook(slug, hook.filePath, merged));
 	}

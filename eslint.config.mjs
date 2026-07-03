@@ -51,9 +51,11 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// block): src/ui/agent-view/agent-view-progress.ts, agent-view-shelf.ts. Flip to
 	// 'error' globally once the remaining sites are migrated.
 	'obsidianmd/no-static-styles-assignment': 'off',
-	// 48 violations: `x as TFile` / `x as TFolder` casts scattered across vault
-	// helpers. Replacing each with `instanceof` checks is a careful refactor.
-	'obsidianmd/no-tfile-tfolder-cast': 'off',
+	// `obsidianmd/no-tfile-tfolder-cast` was here — now fixed: all `x as TFile`
+	// / `x as TFolder` casts replaced with `instanceof` narrowing (the sole
+	// remaining exception is a fabricated early-init folder stub in
+	// file-utils.ts with a scoped inline disable), so the rule is enforced
+	// again (left at the preset default).
 	// 28 violations: command IDs include the plugin ID (e.g. `gemini-scribe-foo`).
 	// Removing the prefix would break user hotkey bindings — needs a migration.
 	'obsidianmd/commands/no-plugin-id-in-command-id': 'off',
@@ -142,6 +144,11 @@ export default defineConfig([
 			// exclusion logic; the rule enforcing `vault.configDir` applies to production
 			// code in `src/`, not to fixture data.
 			'obsidianmd/hardcoded-config-path': 'off',
+			// Tests fabricate `TFile`/`TFolder` mocks via casts (`{ path } as TFile`,
+			// `as unknown as TFile` + `setPrototypeOf`); there is no real instance to
+			// narrow with `instanceof`. The rule guards production vault lookups in
+			// `src/`, not fabricated fixture objects.
+			'obsidianmd/no-tfile-tfolder-cast': 'off',
 		},
 	},
 ]);
