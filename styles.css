@@ -1330,7 +1330,7 @@ body {
 }
 
 .gemini-agent-progress-clickable:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 /* Thinking Chevron Indicator */
