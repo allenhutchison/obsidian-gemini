@@ -217,8 +217,10 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 			}
 		}
 
-		// Exclude system folders
-		if (filePath.startsWith('.obsidian/')) {
+		// Exclude system folders (the Obsidian configuration directory, which the
+		// user may have renamed from the default `.obsidian`)
+		const configDir = this.vault.configDir;
+		if (filePath === configDir || filePath.startsWith(configDir + '/')) {
 			return false;
 		}
 

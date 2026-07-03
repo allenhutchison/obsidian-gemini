@@ -244,7 +244,8 @@ export class ToolExecutionEngine {
 
 		if (tool.name === 'write_file' && parameters.path && parameters.content !== undefined) {
 			const normalizedPath = normalizePath(parameters.path);
-			if (shouldExcludePath(normalizedPath, plugin.settings.historyFolder)) return undefined;
+			if (shouldExcludePath(normalizedPath, plugin.settings.historyFolder, plugin.app.vault.configDir))
+				return undefined;
 
 			const file = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 			const originalContent = file instanceof TFile ? await this.safeReadFile(file) : '';

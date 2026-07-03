@@ -13,18 +13,34 @@ import { getRawErrorMessage } from './error-utils';
 import { t } from '../i18n';
 
 /**
+ * Obsidian's default configuration directory name. Vaults can rename their
+ * config directory, so callers should prefer the vault's actual `configDir`
+ * (threaded through `shouldExcludePathForPlugin`); this is only the fallback
+ * used when no `configDir` is supplied.
+ */
+// eslint-disable-next-line obsidianmd/hardcoded-config-path -- documented fallback only; real callers pass vault.configDir via shouldExcludePathForPlugin
+export const DEFAULT_CONFIG_DIR = '.obsidian';
+
+/**
  * Check if a file or folder path should be excluded from selection or operations.
  * This excludes:
  * - Files/folders within the specified exclude folder (e.g., plugin state folder)
- * - Files/folders within the .obsidian system folder
+ * - Files/folders within the Obsidian configuration directory (`vault.configDir`,
+ *   default `.obsidian` — but users can rename it)
  *
  * @param path - The path to check
  * @param excludeFolder - Optional folder path to exclude (e.g., 'gemini-scribe')
+ * @param configDir - The vault's configuration directory (from `vault.configDir`).
+ *                    Defaults to `.obsidian` when omitted. Prefer supplying the real
+ *                    value so renamed config directories are excluded correctly and a
+ *                    user folder literally named `.obsidian` is not over-matched.
  * @returns true if the path should be excluded, false otherwise
  */
-export function shouldExcludePath(path: string, excludeFolder?: string): boolean {
-	// Check if path is within .obsidian folder
-	if (path === '.obsidian' || path.startsWith('.obsidian/')) {
+export function shouldExcludePath(path: string, excludeFolder?: string, configDir?: string): boolean {
+	// Check if path is within the Obsidian configuration directory. Honor the
+	// vault's actual configDir when provided; fall back to the default name.
+	const config = configDir || DEFAULT_CONFIG_DIR;
+	if (path === config || path.startsWith(config + '/')) {
 		return true;
 	}
 
@@ -37,7 +53,8 @@ export function shouldExcludePath(path: string, excludeFolder?: string): boolean
 }
 
 /**
- * Check if a path should be excluded using the plugin's configured state folder.
+ * Check if a path should be excluded using the plugin's configured state folder
+ * and the vault's configuration directory.
  * Convenience wrapper around shouldExcludePath() for use in tool contexts.
  *
  * @param path - The path to check
@@ -45,7 +62,7 @@ export function shouldExcludePath(path: string, excludeFolder?: string): boolean
  * @returns true if the path should be excluded, false otherwise
  */
 export function shouldExcludePathForPlugin(path: string, plugin: ObsidianGemini): boolean {
-	return shouldExcludePath(path, plugin.settings.historyFolder);
+	return shouldExcludePath(path, plugin.settings.historyFolder, plugin.app.vault.configDir);
 }
 
 /**

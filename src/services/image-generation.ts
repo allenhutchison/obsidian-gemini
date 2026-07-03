@@ -271,8 +271,10 @@ export class ImageGeneration {
 			throw new Error(`Output path escapes the vault: "${outputPath}"`);
 		}
 
-		// Reject paths inside .obsidian/
-		if (normalized.split('/').includes('.obsidian')) {
+		// Reject paths inside the Obsidian configuration directory (default
+		// `.obsidian`, but the user may have renamed it)
+		const configDir = this.plugin.app.vault.configDir;
+		if (normalized === configDir || normalized.startsWith(configDir + '/')) {
 			throw new Error(`Output path cannot be inside the Obsidian configuration folder: "${outputPath}"`);
 		}
 

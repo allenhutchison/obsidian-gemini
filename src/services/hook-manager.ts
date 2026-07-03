@@ -794,7 +794,8 @@ export class HookManager {
 		const stateFolder = normalizePath(this.plugin.settings.historyFolder) + '/';
 		if (filePath === stateFolder.slice(0, -1)) return true;
 		if (filePath.startsWith(stateFolder)) return true;
-		if (filePath.startsWith('.obsidian/')) return true;
+		const configDir = this.plugin.app.vault.configDir;
+		if (filePath === configDir || filePath.startsWith(configDir + '/')) return true;
 		return false;
 	}
 

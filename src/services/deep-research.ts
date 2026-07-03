@@ -7,11 +7,6 @@ import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/re
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 
 /**
- * System folders that should not be written to
- */
-const PROTECTED_FOLDER_SEGMENTS = ['.obsidian'];
-
-/**
  * Research scope options
  */
 export type ResearchScope = 'vault_only' | 'web_only' | 'both';
@@ -308,12 +303,13 @@ export class DeepResearchService {
 		// Normalize the path using Obsidian's normalizePath (handles slashes, removes redundant separators)
 		const normalizedPath = normalizePath(rawFilePath);
 
-		// Split into segments to check for protected folders
+		// Split into segments to check for protected folders. The Obsidian
+		// configuration directory (default `.obsidian`, but the user may have
+		// renamed it) must never be written to.
 		const segments = normalizedPath.split('/');
-
-		// Check for protected folder segments
+		const configDir = this.plugin.app.vault.configDir;
 		for (const segment of segments) {
-			if (PROTECTED_FOLDER_SEGMENTS.includes(segment)) {
+			if (segment === configDir) {
 				throw new Error(
 					`Cannot write report to protected system folder: "${segment}". Please choose a different output location.`
 				);

@@ -200,7 +200,7 @@ export async function renderRAGSettings(
 			);
 
 		// Build the list of excluded folders including system folders
-		const systemFolders = [plugin.settings.historyFolder, '.obsidian'];
+		const systemFolders = [plugin.settings.historyFolder, plugin.app.vault.configDir];
 		const userFolders = plugin.settings.ragIndexing.excludeFolders.filter((f) => !systemFolders.includes(f)); // Remove duplicates with system folders
 
 		new Setting(containerEl)

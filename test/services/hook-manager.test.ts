@@ -81,6 +81,7 @@ function createMockPlugin(overrides: Record<string, any> = {}) {
 		app: {
 			fileManager: { trashFile: vi.fn().mockResolvedValue(undefined) },
 			vault: {
+				configDir: '.obsidian',
 				getMarkdownFiles: vi.fn().mockReturnValue([]),
 				getAbstractFileByPath: vi.fn().mockReturnValue(null),
 				on: vi.fn().mockReturnValue({ __ref: true }),

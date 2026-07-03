@@ -56,6 +56,7 @@ describe('ImageGeneration.validateOutputPath (output-path validator)', () => {
 			apiKey: 'test-key',
 			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0 },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
+			app: { vault: { configDir: '.obsidian' } },
 		} as any;
 		service = new ImageGeneration(mockPlugin);
 	});
@@ -137,6 +138,7 @@ describe('ImageGeneration.generateAndInsertImage (palette flow)', () => {
 			backgroundTaskManager: { submit: mockSubmit },
 			app: {
 				vault: {
+					configDir: '.obsidian',
 					createBinary: createBinaryMock,
 					getAbstractFileByPath: vi.fn((path: string) => {
 						const f = new MockTFile();
@@ -291,6 +293,7 @@ describe('ImageGeneration.validateOutputPath – edge cases', () => {
 			apiKey: 'test-key',
 			settings: { historyFolder, temperature: 0, topP: 0 },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
+			app: { vault: { configDir: '.obsidian' } },
 		} as any;
 		return new ImageGeneration(mockPlugin);
 	};
@@ -338,6 +341,7 @@ describe('ImageGeneration.resolveOutputPath', () => {
 			apiKey: 'test-key',
 			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0 },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
+			app: { vault: { configDir: '.obsidian' } },
 		} as any;
 		service = new ImageGeneration(mockPlugin);
 	});
@@ -409,7 +413,7 @@ describe('ImageGeneration.saveImageToVault (private)', () => {
 			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0 },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			app: {
-				vault: { createBinary: createBinaryMock },
+				vault: { configDir: '.obsidian', createBinary: createBinaryMock },
 			},
 		} as any;
 		service = new ImageGeneration(mockPlugin);
@@ -518,7 +522,7 @@ describe('ImageGeneration.generateImage (agent tool method)', () => {
 			settings: { historyFolder: 'gemini-scribe', temperature: 0, topP: 0, imageModelName: 'imagen-3' },
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			app: {
-				vault: { createBinary: createBinaryMock },
+				vault: { configDir: '.obsidian', createBinary: createBinaryMock },
 			},
 		} as any;
 		service = new ImageGeneration(mockPlugin);
@@ -569,7 +573,7 @@ describe('ImageGeneration.generateAndInsertSynchronously – error path', () => 
 			logger: { log: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 			backgroundTaskManager: null, // force synchronous path
 			app: {
-				vault: { createBinary: vi.fn() },
+				vault: { configDir: '.obsidian', createBinary: vi.fn() },
 				workspace: {
 					getActiveViewOfType: vi.fn().mockReturnValue(activeView),
 				},

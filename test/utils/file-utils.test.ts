@@ -46,12 +46,41 @@ describe('file-utils', () => {
 			expect(shouldExcludePath('.obsidian-backup')).toBe(false);
 			expect(shouldExcludePath('gemini-scribe-backup', 'gemini-scribe')).toBe(false);
 		});
+
+		it('should exclude a renamed config directory when configDir is supplied', () => {
+			expect(shouldExcludePath('_obsidian', undefined, '_obsidian')).toBe(true);
+			expect(shouldExcludePath('_obsidian/plugins/some-plugin', undefined, '_obsidian')).toBe(true);
+		});
+
+		it('should not over-match a literal .obsidian folder when configDir is renamed', () => {
+			// The user renamed their config dir to _obsidian, so a vault folder that
+			// happens to be named .obsidian is real content and must not be excluded.
+			expect(shouldExcludePath('.obsidian/plugins/some-plugin', undefined, '_obsidian')).toBe(false);
+			expect(shouldExcludePath('.obsidian', undefined, '_obsidian')).toBe(false);
+		});
+
+		it('should still exclude .obsidian when configDir is explicitly .obsidian', () => {
+			expect(shouldExcludePath('.obsidian', undefined, '.obsidian')).toBe(true);
+			expect(shouldExcludePath('.obsidian/config', undefined, '.obsidian')).toBe(true);
+			expect(shouldExcludePath('notes/note.md', undefined, '.obsidian')).toBe(false);
+		});
+
+		it('should honor both excludeFolder and a custom configDir together', () => {
+			expect(shouldExcludePath('gemini-scribe/History', 'gemini-scribe', '_obsidian')).toBe(true);
+			expect(shouldExcludePath('_obsidian/app.json', 'gemini-scribe', '_obsidian')).toBe(true);
+			expect(shouldExcludePath('notes/note.md', 'gemini-scribe', '_obsidian')).toBe(false);
+		});
 	});
 
 	describe('shouldExcludePathForPlugin', () => {
 		const mockPlugin = {
 			settings: {
 				historyFolder: 'gemini-scribe',
+			},
+			app: {
+				vault: {
+					configDir: '.obsidian',
+				},
 			},
 		} as any;
 
@@ -67,11 +96,35 @@ describe('file-utils', () => {
 				settings: {
 					historyFolder: 'my-custom-folder',
 				},
+				app: {
+					vault: {
+						configDir: '.obsidian',
+					},
+				},
 			} as any;
 
 			expect(shouldExcludePathForPlugin('my-custom-folder', customPlugin)).toBe(true);
 			expect(shouldExcludePathForPlugin('my-custom-folder/sub', customPlugin)).toBe(true);
 			expect(shouldExcludePathForPlugin('gemini-scribe', customPlugin)).toBe(false);
+		});
+
+		it('should use the vault configDir so a renamed config directory is excluded', () => {
+			const renamedConfigPlugin = {
+				settings: {
+					historyFolder: 'gemini-scribe',
+				},
+				app: {
+					vault: {
+						configDir: '_obsidian',
+					},
+				},
+			} as any;
+
+			// The renamed config dir is excluded...
+			expect(shouldExcludePathForPlugin('_obsidian', renamedConfigPlugin)).toBe(true);
+			expect(shouldExcludePathForPlugin('_obsidian/plugins/x', renamedConfigPlugin)).toBe(true);
+			// ...and a real vault folder literally named .obsidian is NOT over-matched.
+			expect(shouldExcludePathForPlugin('.obsidian/plugins/x', renamedConfigPlugin)).toBe(false);
 		});
 	});
 

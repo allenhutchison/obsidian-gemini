@@ -69,6 +69,7 @@ describe('DeepResearchService', () => {
 
 		// Setup mock vault
 		mockVault = {
+			configDir: '.obsidian',
 			getAbstractFileByPath: vi.fn(),
 			modify: vi.fn(),
 			create: vi.fn(),
