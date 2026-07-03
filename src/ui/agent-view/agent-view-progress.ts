@@ -182,8 +182,9 @@ export class AgentViewProgress {
 
 		if (this.app && this.renderComponent) {
 			// Render into a temporary container to avoid stale async renders
-			// mutating the live DOM node
-			const tempEl = document.createElement('div');
+			// mutating the live DOM node. Use the live node's document so the
+			// temp element matches its context in a popout window.
+			const tempEl = this.thinkingContent.ownerDocument.createElement('div');
 			try {
 				await MarkdownRenderer.render(this.app, text, tempEl, '', this.renderComponent);
 
@@ -301,6 +302,9 @@ export class AgentViewProgress {
 	 * Escape HTML entities to prevent XSS
 	 */
 	private escapeHtml(text: string): string {
+		// Detached node used only to HTML-escape a string; never inserted into a
+		// live view, so it isn't cross-window-relevant.
+		// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached escape-only node, never attached
 		const div = document.createElement('div');
 		div.textContent = text;
 		return div.innerHTML;

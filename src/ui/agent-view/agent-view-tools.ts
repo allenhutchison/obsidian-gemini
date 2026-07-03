@@ -189,7 +189,7 @@ export class AgentViewTools {
 							if (!this.streamingFollowUpContainer) return;
 							const contentDiv = this.streamingFollowUpContainer.querySelector('.gemini-agent-message-content');
 							if (contentDiv) {
-								contentDiv.appendChild(document.createTextNode(chunk.text));
+								contentDiv.appendChild(contentDiv.ownerDocument.createTextNode(chunk.text));
 							}
 						},
 						onFollowUpStreamReady: (stream) => {

@@ -34,42 +34,48 @@ export function createCollapsibleSection(
 ): HTMLElement {
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
 		// Stub container in unit tests — return a detached div so callers can
-		// keep passing it to `new Setting(...)` without DOM side-effects.
+		// keep passing it to `new Setting(...)` without DOM side-effects. This
+		// node is never inserted into a live view, so it isn't cross-window-relevant.
+		// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached test-stub node, never attached
 		return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
 	}
 
 	const expanded = plugin.settings.expandedSettingsSections ?? [];
 	const isOpen = expanded.includes(id);
 
-	const details = document.createElement('details');
+	// Create nodes in the container's own document so the section renders correctly
+	// when the settings tab lives in a popout window.
+	const doc = containerEl.ownerDocument;
+
+	const details = doc.createElement('details');
 	details.classList.add('gemini-settings-section');
 	if (options.advanced) details.classList.add('gemini-settings-section--advanced');
 	details.dataset.sectionId = id;
 	if (isOpen) details.setAttribute('open', '');
 	containerEl.appendChild(details);
 
-	const summary = document.createElement('summary');
+	const summary = doc.createElement('summary');
 	summary.classList.add('gemini-settings-section-summary');
 
 	// HTML spec: <summary> only permits phrasing/heading content; <div> isn't
 	// valid here. Use <span>s styled with flex/block via CSS instead.
-	const header = document.createElement('span');
+	const header = doc.createElement('span');
 	header.classList.add('gemini-settings-section-header');
-	const titleRow = document.createElement('span');
+	const titleRow = doc.createElement('span');
 	titleRow.classList.add('gemini-settings-section-title-row');
-	const titleEl = document.createElement('span');
+	const titleEl = doc.createElement('span');
 	titleEl.classList.add('gemini-settings-section-title');
 	titleEl.textContent = title;
 	titleRow.appendChild(titleEl);
 	if (options.advanced) {
-		const badge = document.createElement('span');
+		const badge = doc.createElement('span');
 		badge.classList.add('gemini-settings-section-badge');
 		badge.textContent = t('settings.common.advancedBadge');
 		titleRow.appendChild(badge);
 	}
 	header.appendChild(titleRow);
 	if (options.description) {
-		const descEl = document.createElement('span');
+		const descEl = doc.createElement('span');
 		descEl.classList.add('gemini-settings-section-description');
 		descEl.textContent = options.description;
 		header.appendChild(descEl);
@@ -77,7 +83,7 @@ export function createCollapsibleSection(
 	summary.appendChild(header);
 	details.appendChild(summary);
 
-	const content = document.createElement('div');
+	const content = doc.createElement('div');
 	content.classList.add('gemini-settings-section-content');
 	details.appendChild(content);
 
@@ -107,33 +113,38 @@ export function createCollapsibleSection(
  */
 export function createAlwaysOpenSection(containerEl: HTMLElement, title: string, description?: string): HTMLElement {
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
+		// Detached test-stub node, never attached to a live view (see createCollapsibleSection).
+		// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached test-stub node, never attached
 		return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
 	}
 
-	const wrapper = document.createElement('div');
+	// Create nodes in the container's own document for popout-window compatibility.
+	const doc = containerEl.ownerDocument;
+
+	const wrapper = doc.createElement('div');
 	wrapper.classList.add('gemini-settings-section', 'gemini-settings-section--always-open');
 	containerEl.appendChild(wrapper);
 
 	// Use spans here too for parity with the collapsible variant (where the
 	// elements live inside <summary> and must be phrasing content).
-	const header = document.createElement('span');
+	const header = doc.createElement('span');
 	header.classList.add('gemini-settings-section-header');
-	const titleRow = document.createElement('span');
+	const titleRow = doc.createElement('span');
 	titleRow.classList.add('gemini-settings-section-title-row');
-	const titleEl = document.createElement('span');
+	const titleEl = doc.createElement('span');
 	titleEl.classList.add('gemini-settings-section-title');
 	titleEl.textContent = title;
 	titleRow.appendChild(titleEl);
 	header.appendChild(titleRow);
 	if (description) {
-		const descEl = document.createElement('span');
+		const descEl = doc.createElement('span');
 		descEl.classList.add('gemini-settings-section-description');
 		descEl.textContent = description;
 		header.appendChild(descEl);
 	}
 	wrapper.appendChild(header);
 
-	const content = document.createElement('div');
+	const content = doc.createElement('div');
 	content.classList.add('gemini-settings-section-content');
 	wrapper.appendChild(content);
 

@@ -42,9 +42,10 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// 207 violations: many false positives on acronyms (e.g. URL, HTTP) and brand
 	// names. Needs a brand allowlist + audit pass.
 	'obsidianmd/ui/sentence-case': 'off',
-	// 82 violations: pervasive `document` usage. Migrating to `activeDocument` is
-	// a separate refactor with cross-window implications.
-	'obsidianmd/prefer-active-doc': 'off',
+	// `obsidianmd/prefer-active-doc` was here (bare `document` usage) — now fixed:
+	// live-view DOM operations use the target element's `ownerDocument`, and the few
+	// genuinely detached nodes (escape-only, rasterization, test stubs) carry scoped
+	// inline disables. The rule is enforced again (left at the preset default).
 	// ~69 violations remaining: direct `style.X = ...` assignments. Needs CSS class
 	// migration. Cleaned so far and enforced per-file below (see the scoped override
 	// block): src/ui/agent-view/agent-view-progress.ts, agent-view-shelf.ts. Flip to

@@ -112,7 +112,7 @@ export class AgentView extends ItemView {
 			'.mod-mobile-toolbar',
 		];
 		for (const sel of selectors) {
-			const el = document.querySelector<HTMLElement>(sel);
+			const el = this.containerEl.ownerDocument.querySelector<HTMLElement>(sel);
 			if (el && el.offsetHeight > 0) return el;
 		}
 		return null;
