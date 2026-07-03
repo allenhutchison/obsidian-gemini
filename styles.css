@@ -52,12 +52,14 @@ body {
 	--gs-dur-slow: 320ms;
 	--gs-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
-	/* Icons — aliases Obsidian's icon size + stroke tokens.
-	   lg (18px) is the default for toolbar & action icons. */
-	--gs-icon-sm: var(--icon-xs, 14px);
-	--gs-icon-md: var(--icon-s, 16px);
-	--gs-icon-lg: var(--icon-m, 18px);
-	--gs-icon-xl: var(--icon-l, 20px);
+	/* Icons — a fixed, definitive scale. lg (18px) is the default for toolbar &
+	   action icons. (Fixed literals rather than aliasing Obsidian's --icon-*
+	   steps, whose values don't match this scale — e.g. --icon-l is 18px, not 20.)
+	   Stroke still aliases Obsidian's for a native-light feel. */
+	--gs-icon-sm: 14px;
+	--gs-icon-md: 16px;
+	--gs-icon-lg: 18px;
+	--gs-icon-xl: 20px;
 	--gs-icon-stroke: var(--icon-stroke, 1.75px);
 
 	/* Gemini brand — the single signature, for primary actions & brand only */
