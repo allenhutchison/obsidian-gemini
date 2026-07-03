@@ -231,7 +231,7 @@ describe('HookManager CRUD', () => {
 		});
 		plugin.app.vault.getAbstractFileByPath = vi
 			.fn()
-			.mockImplementation((path: string) => (files.has(path) ? { path } : null));
+			.mockImplementation((path: string) => (files.has(path) ? Object.assign(new MockTFile(), { path }) : null));
 		(plugin as any).__files = files;
 		return plugin as any;
 	}
@@ -782,7 +782,7 @@ describe('HookManager serializeHook – edge cases via createHook', () => {
 		});
 		plugin.app.vault.getAbstractFileByPath = vi
 			.fn()
-			.mockImplementation((path: string) => (files.has(path) ? { path } : null));
+			.mockImplementation((path: string) => (files.has(path) ? Object.assign(new MockTFile(), { path }) : null));
 		(plugin as any).__files = files;
 		return plugin as any;
 	}
