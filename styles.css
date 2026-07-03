@@ -39,10 +39,12 @@ body {
 	--gs-radius-lg: var(--radius-l);
 	--gs-radius-pill: 999px;
 
-	/* Elevation */
-	--gs-shadow-sm: var(--shadow-s);
-	--gs-shadow-md: var(--shadow-l);
-	--gs-shadow-lg: var(--shadow-l);
+	/* Elevation — a 3-step scale. sm = resting content, md = interactive lift,
+	   lg = floating overlays. Dark-theme values are overridden below (a subtle
+	   light-mode shadow is invisible on a dark surface). */
+	--gs-shadow-sm: 0 1px 2px rgba(16, 22, 33, 0.07);
+	--gs-shadow-md: 0 4px 12px rgba(16, 22, 33, 0.1);
+	--gs-shadow-lg: 0 14px 40px rgba(16, 22, 33, 0.16);
 
 	/* Motion */
 	--gs-dur-fast: 120ms;
@@ -84,6 +86,13 @@ body {
 	--gs-warning: var(--color-orange);
 	--gs-error: var(--color-red);
 	--gs-info: var(--color-blue);
+}
+
+/* Elevation — deeper shadows for dark themes, where light-mode values vanish. */
+body.theme-dark {
+	--gs-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+	--gs-shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
+	--gs-shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.6);
 }
 /* in your plugin's styles.css or a <style> tag in your view */
 
@@ -193,7 +202,7 @@ body {
 
 .gemini-scribe-submit-button.mod-cta:hover {
 	background-color: var(--gs-accent-hover);
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--gs-shadow-md);
 }
 
 .gemini-scribe-chatbox {
@@ -932,7 +941,7 @@ body {
 .gemini-tool-confirm-btn:hover {
 	background: var(--gs-accent-hover);
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	box-shadow: var(--gs-shadow-md);
 }
 
 .gemini-tool-btn-icon {
@@ -1032,7 +1041,7 @@ body {
 
 .gemini-agent-btn-primary:hover {
 	background-color: var(--gs-accent-hover);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--gs-shadow-md);
 }
 
 .gemini-agent-btn-secondary {
@@ -1769,7 +1778,7 @@ body {
 	padding: var(--gs-space-3) var(--gs-space-4);
 	border-radius: var(--gs-radius-lg);
 	position: relative;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--gs-shadow-sm);
 	transition: box-shadow 0.15s ease;
 	user-select: text;
 	-webkit-user-select: text;
@@ -1777,7 +1786,7 @@ body {
 }
 
 .gemini-agent-message:hover .gemini-agent-message-content {
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--gs-shadow-md);
 }
 
 .gemini-agent-message-user .gemini-agent-message-content {
@@ -2104,7 +2113,7 @@ body {
 }
 
 .gemini-tool-group-expanded {
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+	box-shadow: var(--gs-shadow-sm);
 }
 
 /* ============================================================
@@ -2125,7 +2134,7 @@ body {
 
 .gemini-agent-tool-message:hover {
 	border-color: var(--gs-border-strong);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--gs-shadow-sm);
 }
 
 .gemini-agent-tool-header {
@@ -2421,7 +2430,7 @@ body {
 
 /* Expanded state */
 .gemini-agent-tool-expanded {
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--gs-shadow-sm);
 }
 
 /* Completion animation */
@@ -2805,7 +2814,7 @@ body {
 	border-color: var(--gs-accent);
 	color: var(--gs-text);
 	transform: translateY(-1px);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--gs-shadow-md);
 }
 
 .gemini-agent-suggestion-session {
@@ -2842,14 +2851,14 @@ body {
 	border-radius: var(--gs-radius-lg);
 	cursor: pointer;
 	transition: all 0.2s ease;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	box-shadow: var(--gs-shadow-sm);
 	width: 100%;
 	max-width: 400px;
 }
 
 .gemini-agent-init-context-button:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+	box-shadow: var(--gs-shadow-md);
 	border-color: var(--gs-accent-hover);
 }
 
@@ -2895,13 +2904,13 @@ body {
 .gemini-agent-init-context-button-update {
 	background: var(--gs-surface-alt);
 	border: 1px solid var(--gs-border);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--gs-shadow-sm);
 }
 
 .gemini-agent-init-context-button-update:hover {
 	background: var(--gs-hover);
 	border-color: var(--gs-border-strong);
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+	box-shadow: var(--gs-shadow-md);
 }
 
 .gemini-agent-init-context-button-update .gemini-agent-init-icon {

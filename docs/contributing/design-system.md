@@ -32,7 +32,7 @@ writing or migrating styles.
 | Status    | `--gs-success`, `--gs-warning`, `--gs-error`, `--gs-info`           | `--color-green/-orange/-red/-blue`                                              |
 | Spacing   | `--gs-space-1..8`                                                   | 4 / 8 / 12 / 16 / 24 / 32 / 48 px                                               |
 | Radius    | `--gs-radius-sm/-md/-lg/-pill`                                      | `--radius-s/-m/-l`                                                              |
-| Elevation | `--gs-shadow-sm/-md/-lg`                                            | `--shadow-s/-l`                                                                 |
+| Elevation | `--gs-shadow-sm/-md/-lg`                                            | custom 3-step scale, theme-aware (dark override on `body.theme-dark`)           |
 | Type      | `--gs-font-ui`, `--gs-font-mono`                                    | `--font-interface`, `--font-monospace`                                          |
 | Motion    | `--gs-dur-fast/-/-slow`, `--gs-ease`                                | 120 / 200 / 320 ms                                                              |
 | Icons     | `--gs-icon-sm/-md/-lg/-xl`, `--gs-icon-stroke`                      | `--icon-xs/-s/-m/-l`, `--icon-stroke`                                           |
