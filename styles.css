@@ -4341,8 +4341,8 @@ body {
 	align-items: center;
 	justify-content: space-between;
 	padding: 8px 12px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background-color: var(--background-secondary);
+	border-bottom: 1px solid var(--gs-border);
+	background-color: var(--gs-surface-alt);
 }
 
 .gemini-diff-file-info {
@@ -4355,7 +4355,7 @@ body {
 .gemini-diff-file-icon {
 	display: flex;
 	align-items: center;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-diff-file-path {
@@ -4366,7 +4366,7 @@ body {
 }
 
 .gemini-diff-new-badge {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-smaller);
 	font-style: italic;
 }
@@ -4382,7 +4382,7 @@ body {
 	align-items: center;
 	gap: 4px;
 	padding: 4px 12px;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
 	font-size: var(--font-ui-small);
 }
