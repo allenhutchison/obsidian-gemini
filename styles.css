@@ -950,14 +950,14 @@ body {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-	background-color: var(--background-primary);
+	background-color: var(--gs-surface);
 }
 
 /* Session Header */
 .gemini-agent-header {
-	background-color: var(--background-secondary);
-	border-bottom: 1px solid var(--background-modifier-border);
-	padding: var(--size-4-3) var(--size-4-4);
+	background-color: var(--gs-surface-alt);
+	border-bottom: 1px solid var(--gs-border);
+	padding: var(--gs-space-3) var(--gs-space-4);
 	flex-shrink: 0;
 }
 
@@ -972,24 +972,24 @@ body {
 	margin: 0;
 	font-size: var(--font-size-h2);
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	cursor: text;
 	padding: 2px 4px;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	transition: background-color 0.15s ease;
 }
 
 .gemini-agent-title:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 .gemini-agent-title-input {
 	font-size: var(--font-size-h2);
 	font-weight: 600;
-	color: var(--text-normal);
-	background-color: var(--background-primary);
-	border: 2px solid var(--interactive-accent);
-	border-radius: var(--radius-s);
+	color: var(--gs-text);
+	background-color: var(--gs-surface);
+	border: 2px solid var(--gs-accent);
+	border-radius: var(--gs-radius-sm);
 	padding: 2px 4px;
 	width: 100%;
 	max-width: 400px;
@@ -997,9 +997,9 @@ body {
 
 .gemini-agent-session-info {
 	display: flex;
-	gap: var(--size-4-3);
+	gap: var(--gs-space-3);
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-agent-controls {
@@ -1011,8 +1011,8 @@ body {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--size-2-1);
-	padding: var(--size-2-1) var(--size-4-3);
-	border-radius: var(--radius-s);
+	padding: var(--size-2-1) var(--gs-space-3);
+	border-radius: var(--gs-radius-sm);
 	font-size: var(--font-ui-small);
 	font-weight: 500;
 	cursor: pointer;
@@ -1026,29 +1026,29 @@ body {
 }
 
 .gemini-agent-btn-primary {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 }
 
 .gemini-agent-btn-primary:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--gs-accent-hover);
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .gemini-agent-btn-secondary {
 	background-color: var(--interactive-normal);
-	color: var(--text-normal);
-	border: 1px solid var(--background-modifier-border);
+	color: var(--gs-text);
+	border: 1px solid var(--gs-border);
 }
 
 .gemini-agent-btn-secondary:hover {
 	background-color: var(--interactive-hover);
-	border-color: var(--background-modifier-border-hover);
+	border-color: var(--gs-border-strong);
 }
 
 /* Compact Header Styles */
 .gemini-agent-header-compact {
-	padding: var(--size-2-2) var(--size-4-2);
+	padding: var(--size-2-2) var(--gs-space-2);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -1058,7 +1058,7 @@ body {
 .gemini-agent-header-left {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 	flex: 1;
 	min-width: 0;
 	overflow: hidden;
@@ -1077,16 +1077,16 @@ body {
 	border: none;
 	cursor: pointer;
 	padding: var(--size-2-1);
-	border-radius: var(--radius-s);
-	color: var(--text-muted);
+	border-radius: var(--gs-radius-sm);
+	color: var(--gs-text-muted);
 	display: flex;
 	align-items: center;
 	transition: all 0.15s ease;
 }
 
 .gemini-agent-toggle-btn:hover {
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background-color: var(--gs-hover);
+	color: var(--gs-text);
 }
 
 .gemini-agent-toggle-btn svg {
@@ -1106,10 +1106,10 @@ body {
 .gemini-agent-title-compact {
 	font-size: var(--font-ui-medium);
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	cursor: text;
 	padding: var(--size-2-1) var(--size-2-2);
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	transition: background-color 0.15s ease;
 	white-space: nowrap;
 	overflow: hidden;
@@ -1117,26 +1117,26 @@ body {
 }
 
 .gemini-agent-title-compact:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 .gemini-agent-title-input-compact {
 	font-size: var(--font-ui-medium);
 	font-weight: 600;
-	border: 1px solid var(--interactive-accent);
-	border-radius: var(--radius-s);
+	border: 1px solid var(--gs-accent);
+	border-radius: var(--gs-radius-sm);
 	padding: var(--size-2-1) var(--size-2-2);
-	background-color: var(--background-primary);
+	background-color: var(--gs-surface);
 	width: 100%;
 }
 
 .gemini-agent-project-badge {
 	font-size: var(--font-ui-smaller);
 	color: var(--text-accent);
-	background-color: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background-color: var(--gs-surface);
+	border: 1px solid var(--gs-border);
 	padding: 2px var(--size-2-2);
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	white-space: nowrap;
 	cursor: pointer;
 	display: inline-flex;
@@ -1145,7 +1145,7 @@ body {
 }
 
 .gemini-agent-project-badge:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 .gemini-agent-project-badge .svg-icon {
@@ -1176,11 +1176,11 @@ body {
 }
 
 .gemini-agent-active-badge {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 	font-size: var(--font-ui-smaller);
 	padding: 1px var(--size-2-2);
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	font-weight: 500;
 	margin-left: auto;
 }
@@ -1189,14 +1189,14 @@ body {
 .gemini-agent-depth-control {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
-	padding-top: var(--size-4-2);
-	border-top: 1px solid var(--background-modifier-border);
+	gap: var(--gs-space-2);
+	padding-top: var(--gs-space-2);
+	border-top: 1px solid var(--gs-border);
 }
 
 .gemini-agent-depth-control label {
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-weight: 500;
 }
 
@@ -1207,7 +1207,7 @@ body {
 
 .gemini-agent-depth-control span {
 	font-size: var(--font-ui-small);
-	color: var(--text-normal);
+	color: var(--gs-text);
 	font-weight: 600;
 	min-width: 20px;
 	text-align: center;
@@ -1218,16 +1218,16 @@ body {
 	flex: 1;
 	min-height: 0;
 	overflow-y: auto;
-	padding: var(--size-4-3);
-	background-color: var(--background-primary);
+	padding: var(--gs-space-3);
+	background-color: var(--gs-surface);
 }
 
 /* Progress Bar Container - Fixed above input */
 .gemini-agent-progress-container {
 	position: relative;
-	padding: var(--size-2-2) var(--size-4-3);
-	background-color: var(--background-secondary);
-	border-top: 1px solid var(--background-modifier-border);
+	padding: var(--size-2-2) var(--gs-space-3);
+	background-color: var(--gs-surface-alt);
+	border-top: 1px solid var(--gs-border);
 	flex-shrink: 0;
 	z-index: 10;
 }
@@ -1236,7 +1236,7 @@ body {
 .gemini-agent-progress-bar-wrapper {
 	width: 100%;
 	height: 4px;
-	background-color: var(--background-modifier-border);
+	background-color: var(--gs-border);
 	border-radius: 2px;
 	overflow: hidden;
 	margin-bottom: var(--size-2-2);
@@ -1259,25 +1259,21 @@ body {
 
 /* State Colors */
 .gemini-agent-progress-thinking {
-	background: linear-gradient(
-		90deg,
-		var(--interactive-accent),
-		color-mix(in srgb, var(--interactive-accent) 80%, white)
-	);
+	background: linear-gradient(90deg, var(--gs-accent), color-mix(in srgb, var(--gs-accent) 80%, white));
 }
 
 .gemini-agent-progress-tool {
 	background: linear-gradient(
 		90deg,
-		color-mix(in srgb, var(--color-green) 70%, var(--interactive-accent) 30%),
-		color-mix(in srgb, var(--color-green) 50%, white)
+		color-mix(in srgb, var(--gs-success) 70%, var(--gs-accent) 30%),
+		color-mix(in srgb, var(--gs-success) 50%, white)
 	);
 }
 
 .gemini-agent-progress-waiting {
 	background: linear-gradient(
 		90deg,
-		color-mix(in srgb, var(--color-yellow) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-yellow) 70%, var(--gs-accent) 30%),
 		color-mix(in srgb, var(--color-yellow) 50%, white)
 	);
 }
@@ -1285,7 +1281,7 @@ body {
 .gemini-agent-progress-streaming {
 	background: linear-gradient(
 		90deg,
-		color-mix(in srgb, var(--color-purple) 70%, var(--interactive-accent) 30%),
+		color-mix(in srgb, var(--color-purple) 70%, var(--gs-accent) 30%),
 		color-mix(in srgb, var(--color-purple) 50%, white)
 	);
 }
@@ -1306,20 +1302,20 @@ body {
 .gemini-agent-progress-status-container {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 	font-size: var(--font-ui-small);
 }
 
 /* Status Text */
 .gemini-agent-progress-status-text {
 	flex: 1;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-style: italic;
 }
 
 /* Timer */
 .gemini-agent-progress-timer {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-family: var(--font-monospace);
 	font-size: 0.9em;
 	min-width: 3.5em;
@@ -1329,7 +1325,7 @@ body {
 /* Clickable Status Row — the entire row toggles thinking expansion */
 .gemini-agent-progress-clickable {
 	cursor: pointer;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	transition: background-color 0.15s ease;
 }
 
