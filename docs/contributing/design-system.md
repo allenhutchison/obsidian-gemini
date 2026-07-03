@@ -80,10 +80,10 @@ stay as literals.
 
 ## Migrating & verifying
 
-The whole stylesheet is on the tokens. The raw `var(--…)` references that remain are
-deliberate holdouts — the font-size scale, Obsidian's sub-grid `--size-2-*`
-micro-spacing, and other Obsidian variables with no `--gs-` equivalent. When you
-touch a component's styles, keep it on the tokens.
+Every surface is migrated onto the tokens, with a few intentional raw-var holdouts:
+the font-size scale, Obsidian's sub-grid `--size-2-*` micro-spacing, and other
+Obsidian variables with no `--gs-` equivalent still use `var(--obsidian-var)`
+directly. When you touch a component's styles, keep it on the tokens.
 
 Two rules made the migration safe, and they apply to any future work here:
 

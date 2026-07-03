@@ -344,8 +344,9 @@ color or reaching for raw `var(--obsidian-var)` / magic numbers; keep the plugin
 theme-adaptive. Icons are Lucide via `setIcon()`, sized from `--gs-icon-*` (`lg` =
 18px is the default for toolbar/action icons — one size per context). The full
 reference and token table live in
-[docs/contributing/design-system.md](docs/contributing/design-system.md); the whole
-stylesheet is now on the tokens. When making a value-preserving CSS/token change,
+[docs/contributing/design-system.md](docs/contributing/design-system.md); every
+surface is now on the tokens (with a few intentional raw-var holdouts). When making
+a value-preserving CSS/token change,
 **verify no computed-value change in a live vault** (`obsidian eval` +
 `getComputedStyle`, or token-resolution equality) rather than eyeballing — that
 catches token mis-maps and theme-scope bugs a screenshot won't.
