@@ -267,6 +267,26 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
+	 * Normalize a conversation-history entry to a `Content`, tolerating two legacy
+	 * runtime shapes (`{ role, text }` and `{ role, message }`) alongside the
+	 * canonical `{ role, parts }`. Returns null for unrecognized entries.
+	 */
+	private normalizeHistoryEntry(entry: Content): Content | null {
+		if ('role' in entry && 'parts' in entry) {
+			return entry;
+		}
+		if ('role' in entry && 'text' in entry) {
+			const legacy = entry as Content & { text: string };
+			return { role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.text }] };
+		}
+		if ('role' in entry && 'message' in entry) {
+			const legacy = entry as Content & { role: string; message: string };
+			return { role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.message }] };
+		}
+		return null;
+	}
+
+	/**
 	 * Build the Interactions `input` step array: replayed history followed by the
 	 * current user turn (message + per-turn context + inline attachments).
 	 */
@@ -274,19 +294,8 @@ export class GeminiClient implements ModelApi {
 		const steps: InteractionStep[] = [];
 
 		for (const entry of request.conversationHistory ?? []) {
-			if ('role' in entry && 'parts' in entry) {
-				steps.push(...contentToSteps(entry as Content));
-			} else if ('role' in entry && 'text' in entry) {
-				const legacy = entry as Content & { text: string };
-				steps.push(
-					...contentToSteps({ role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.text }] })
-				);
-			} else if ('role' in entry && 'message' in entry) {
-				const legacy = entry as Content & { role: string; message: string };
-				steps.push(
-					...contentToSteps({ role: legacy.role === 'user' ? 'user' : 'model', parts: [{ text: legacy.message }] })
-				);
-			}
+			const content = this.normalizeHistoryEntry(entry);
+			if (content) steps.push(...contentToSteps(content));
 		}
 
 		const attachments = [...(request.inlineAttachments || []), ...(request.imageAttachments || [])];
@@ -522,26 +531,8 @@ export class GeminiClient implements ModelApi {
 		// Add conversation history
 		if (extReq.conversationHistory?.length) {
 			for (const entry of extReq.conversationHistory) {
-				// Support Content format (already has role and parts)
-				if ('role' in entry && 'parts' in entry) {
-					contents.push(entry);
-				}
-				// Support our internal format with role and text
-				else if ('role' in entry && 'text' in entry) {
-					const legacy = entry as Content & { text: string };
-					contents.push({
-						role: legacy.role === 'user' ? 'user' : 'model',
-						parts: [{ text: legacy.text }],
-					});
-				}
-				// Support our internal format with role and message
-				else if ('role' in entry && 'message' in entry) {
-					const legacy = entry as Content & { role: string; message: string };
-					contents.push({
-						role: legacy.role === 'user' ? 'user' : 'model',
-						parts: [{ text: legacy.message }],
-					});
-				}
+				const content = this.normalizeHistoryEntry(entry);
+				if (content) contents.push(content);
 			}
 		}
 
