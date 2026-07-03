@@ -21,6 +21,7 @@
 		"format-check": "prettier --check .",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
+		"lint:actions": "node scripts/check-action-pins.mjs",
 		"knip": "knip",
 		"install:test-vault": "node scripts/install-test-vault.mjs",
 		"translate": "node scripts/translate.mjs",

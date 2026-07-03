@@ -31,6 +31,7 @@ npm run dev    # Development build with watch mode
 | `npm test`             | Generate refs and run Vitest tests       |
 | `npm run format`       | Format code with Prettier                |
 | `npm run format-check` | Check formatting without changes         |
+| `npm run lint:actions` | Verify GitHub Actions are SHA-pinned     |
 
 ## Pull Request Requirements
 
@@ -49,6 +50,14 @@ npm test               # Generate refs and run Vitest test suite
 ```
 
 PRs with failing CI will not be reviewed. Fix the failures first.
+
+**GitHub Actions must be SHA-pinned.** Every third-party action referenced in `.github/workflows/*` must be pinned to a full commit SHA with a version comment (tags are mutable and can be silently re-pointed upstream). The `Lint & Format` workflow runs `npm run lint:actions` and fails on any unpinned reference, so if you add or edit a workflow, pin new actions like this:
+
+```yaml
+- uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+```
+
+Resolve the SHA for a tag with `git ls-remote https://github.com/<owner>/<repo> <tag>`. Dependabot (configured for the `github-actions` ecosystem) keeps the pins current with automated update PRs.
 
 ### 3. Proof of Functionality
 
