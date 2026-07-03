@@ -362,10 +362,11 @@ export class ScheduledTaskManager {
 		// Re-parse a task definition file whenever the metadata cache updates it
 		// (fires after Obsidian re-indexes the frontmatter, so values are current).
 		this.metadataCacheHandler = (...data: unknown[]) => {
-			const file = data[0] as TFile;
+			const file = data[0];
+			if (!(file instanceof TFile)) return;
 			const prefix = this.scheduledTasksFolder + '/';
 			const runsPrefix = this.runsFolder + '/';
-			if (file?.path?.startsWith(prefix) && !file.path.startsWith(runsPrefix) && file.extension === 'md') {
+			if (file.path.startsWith(prefix) && !file.path.startsWith(runsPrefix) && file.extension === 'md') {
 				const slug = file.basename;
 				// Skip if the vault create handler already claimed this slug — it will
 				// parse the file after its 500 ms defer, so we don't need to do it here.
@@ -608,7 +609,7 @@ export class ScheduledTaskManager {
 		}
 
 		const file = this.plugin.app.vault.getAbstractFileByPath(task.filePath);
-		if (!file) throw new Error(`Task file not found: ${task.filePath}`);
+		if (!(file instanceof TFile)) throw new Error(`Task file not found: ${task.filePath}`);
 
 		const merged = {
 			slug,
@@ -626,7 +627,7 @@ export class ScheduledTaskManager {
 		};
 
 		const content = this.serializeTask(merged);
-		await this.plugin.app.vault.modify(file as TFile, content);
+		await this.plugin.app.vault.modify(file, content);
 
 		// Immediately reflect the new values in the in-memory map so callers
 		// don't have to wait for the metadata cache listener to re-parse the file.

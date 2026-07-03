@@ -99,12 +99,11 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 					this.selectedFiles.add(f);
 				}
 			});
-		} else {
-			const file = item as TFile;
-			if (this.selectedFiles.has(file)) {
-				this.selectedFiles.delete(file);
+		} else if (item instanceof TFile) {
+			if (this.selectedFiles.has(item)) {
+				this.selectedFiles.delete(item);
 			} else {
-				this.selectedFiles.add(file);
+				this.selectedFiles.add(item);
 			}
 		}
 
@@ -114,7 +113,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 
 		if (suggestions && suggestions.length === this.lastSuggestions.length && this.lastSuggestions.length > 0) {
 			const affectedFiles: Set<TFile> = new Set(
-				item instanceof TFolder ? this.getFilesInFolder(item) : [item as TFile]
+				item instanceof TFolder ? this.getFilesInFolder(item) : item instanceof TFile ? [item] : []
 			);
 
 			for (let i = 0; i < this.lastSuggestions.length; i++) {
@@ -123,7 +122,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 					if (this.getFilesInFolder(suggestion).some((f) => affectedFiles.has(f))) {
 						this.updateCheckboxAt(suggestions, i);
 					}
-				} else if (affectedFiles.has(suggestion as TFile)) {
+				} else if (suggestion instanceof TFile && affectedFiles.has(suggestion)) {
 					this.updateCheckboxAt(suggestions, i);
 				}
 			}
@@ -152,7 +151,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 			const selectedCount = folderFiles.filter((f) => this.selectedFiles.has(f)).length;
 			return selectedCount === 0 ? 'square' : selectedCount === folderFiles.length ? 'check-square' : 'minus-square';
 		}
-		return this.selectedFiles.has(item as TFile) ? 'check-square' : 'square';
+		return item instanceof TFile && this.selectedFiles.has(item) ? 'check-square' : 'square';
 	}
 
 	private updateCheckboxAt(chooserSuggestions: HTMLElement[], index: number): void {

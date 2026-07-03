@@ -84,6 +84,24 @@ export function createFileFilter(
 }
 
 /**
+ * Resolve a folder that is known to exist on disk to its `TFolder`.
+ *
+ * Prefers the metadata-cache entry (narrowed with `instanceof TFolder`). During
+ * early plugin init the cache may not be populated yet even though the folder
+ * exists on disk, so we fall back to a minimal stub carrying just the path.
+ * Callers only read `path`/`name` until the cache catches up; a fabricated
+ * object has no runtime kind to narrow, so the single cast here is unavoidable.
+ */
+function resolveExistingFolder(vault: Vault, normalized: string): TFolder {
+	const existing = vault.getAbstractFileByPath(normalized);
+	if (existing instanceof TFolder) {
+		return existing;
+	}
+	// eslint-disable-next-line obsidianmd/no-tfile-tfolder-cast -- fabricated early-init stub; nothing to narrow
+	return { path: normalized } as TFolder;
+}
+
+/**
  * Safely ensure a folder exists in the vault, creating it if needed.
  *
  * Uses vault.adapter.exists() as the primary existence check since it reads
@@ -115,11 +133,9 @@ export async function ensureFolderExists(
 
 	// Check filesystem directly — handles early init before metadata cache is populated
 	if (await vault.adapter.exists(normalized)) {
-		// Folder exists on disk. Return from cache if available, otherwise
-		// return a minimal TFolder-compatible object. Callers only use the
-		// path/name fields; full TFolder features become available once
-		// Obsidian's metadata cache catches up.
-		return (vault.getAbstractFileByPath(normalized) as TFolder) ?? ({ path: normalized } as TFolder);
+		// Folder exists on disk. Return from cache if available, otherwise a
+		// minimal stub until Obsidian's metadata cache catches up.
+		return resolveExistingFolder(vault, normalized);
 	}
 
 	// Folder doesn't exist — create it
@@ -130,7 +146,7 @@ export async function ensureFolderExists(
 
 		// Race condition: another process created it between our check and createFolder
 		if (await vault.adapter.exists(normalized)) {
-			return (vault.getAbstractFileByPath(normalized) as TFolder) ?? ({ path: normalized } as TFolder);
+			return resolveExistingFolder(vault, normalized);
 		}
 
 		const label = context ? ` (${context})` : '';
@@ -139,7 +155,7 @@ export async function ensureFolderExists(
 		throw new Error(`Failed to create folder "${normalized}"${label}: ${message}`);
 	}
 
-	return (vault.getAbstractFileByPath(normalized) as TFolder) ?? ({ path: normalized } as TFolder);
+	return resolveExistingFolder(vault, normalized);
 }
 
 /**
