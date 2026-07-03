@@ -103,7 +103,7 @@ body {
 .modal.gemini-scribe-rewrite-modal h2 {
 	margin: 0;
 	padding: 20px 24px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 	font-size: 18px;
 	font-weight: 600;
 }
@@ -111,7 +111,7 @@ body {
 /* Section styling */
 .gemini-scribe-section {
 	padding: 20px 24px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 }
 
 .gemini-scribe-section:last-of-type {
@@ -123,14 +123,14 @@ body {
 	display: block;
 	font-weight: 500;
 	margin-bottom: 8px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: 13px;
 }
 
 /* Selected text preview */
 .gemini-scribe-preview-text {
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
 	padding: 12px;
 	max-height: 200px;
@@ -143,7 +143,7 @@ body {
 	word-wrap: break-word;
 	word-break: break-word;
 	font-size: 14px;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	line-height: 1.5;
 }
 
@@ -155,22 +155,22 @@ body {
 	font-family: var(--font-text);
 	font-size: 14px;
 	padding: 12px;
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
-	background-color: var(--background-primary);
-	color: var(--text-normal);
+	background-color: var(--gs-surface);
+	color: var(--gs-text);
 	line-height: 1.5;
 	box-sizing: border-box;
 }
 
 .gemini-scribe-instructions-input::placeholder {
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 	opacity: 0.6;
 }
 
 .gemini-scribe-instructions-input:focus {
 	outline: none;
-	border-color: var(--interactive-accent);
+	border-color: var(--gs-accent);
 }
 
 /* Submit button */
@@ -186,13 +186,13 @@ body {
 }
 
 .gemini-scribe-submit-button.mod-cta {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 	border: none;
 }
 
 .gemini-scribe-submit-button.mod-cta:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--gs-accent-hover);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -204,7 +204,7 @@ body {
 	/* Add scrollbar if needed */
 	flex-grow: 1;
 	padding: var(--size-2-1);
-	background-color: var(--background-primary);
+	background-color: var(--gs-surface);
 }
 
 .gemini-scribe-message-container {
@@ -216,7 +216,7 @@ body {
 	font-weight: bold;
 	margin-bottom: var(--size-1-2);
 	/* Space between indicator and message */
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	/* Use theme's muted text color */
 }
 
@@ -228,35 +228,35 @@ body {
 	/* For older Internet Explorer */
 	padding: var(--size-2-1) var(--size-2-2);
 	/* Padding within message bubbles */
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	/* Rounded corners for the bubbles */
 	box-sizing: border-box;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	/* Use theme's normal text color */
 	width: 100%;
 }
 
 .gemini-scribe-message.user {
-	background-color: var(--background-secondary);
+	background-color: var(--gs-surface-alt);
 	/* Use theme's modifier background color */
 }
 
 .gemini-scribe-message.model {
-	background-color: var(--background-secondary);
+	background-color: var(--gs-surface-alt);
 	/* Use theme's primary background color */
 }
 
 .gemini-scribe-message.grounding {
-	background-color: var(--background-secondary);
+	background-color: var(--gs-surface-alt);
 	/* Use theme's primary background color */
 }
 
 .gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button {
-	background-color: var(--interactive-accent);
+	background-color: var(--gs-accent);
 	border: none;
-	color: var(--text-on-accent);
-	padding: var(--size-4-2) var(--size-4-3);
-	border-radius: var(--radius-s);
+	color: var(--gs-on-accent);
+	padding: var(--gs-space-2) var(--gs-space-3);
+	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
 	display: flex;
 	align-items: center;
@@ -271,7 +271,7 @@ body {
 }
 
 .gemini-scribe-chatbox .gemini-scribe-message .gemini-scribe-copy-button:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--gs-accent-hover);
 }
 
 /* Style the input area */
@@ -286,9 +286,9 @@ body {
 }
 
 .gemini-scribe-input-area .gemini-scribe-chat-input {
-	padding: var(--size-4-2);
-	border: var(--border-width) solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
+	padding: var(--gs-space-2);
+	border: var(--border-width) solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
 	margin-right: var(--size-2-2);
 	flex-grow: 1;
 	background-color: var(--background-modifier-form-field);
@@ -308,7 +308,7 @@ body {
 
 /* Optional: Style the placeholder text */
 .gemini-scribe-input-area .gemini-scribe-chat-input::placeholder {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	/* Adjust the color as needed */
 	opacity: 1;
 	/* Ensure the placeholder text is fully opaque */
@@ -316,7 +316,7 @@ body {
 
 /* Create a container for send button and timer */
 .gemini-scribe-send-container .gemini-scribe-send-button:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--gs-accent-hover);
 }
 
 /* Create a container for send button and timer */
@@ -328,25 +328,25 @@ body {
 }
 
 .gemini-scribe-send-button {
-	background-color: var(--interactive-accent);
+	background-color: var(--gs-accent);
 	border: none;
-	color: var(--text-on-accent);
-	padding: var(--size-4-2) var(--size-4-3);
-	border-radius: var(--radius-s);
+	color: var(--gs-on-accent);
+	padding: var(--gs-space-2) var(--gs-space-3);
+	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
 }
 
 .gemini-scribe-send-container .gemini-scribe-send-button {
-	background-color: var(--interactive-accent);
+	background-color: var(--gs-accent);
 	border: none;
-	color: var(--text-on-accent);
-	padding: var(--size-4-2) var(--size-4-3);
-	border-radius: var(--radius-s);
+	color: var(--gs-on-accent);
+	padding: var(--gs-space-2) var(--gs-space-3);
+	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
 }
 
 .gemini-scribe-send-container .gemini-scribe-send-button:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--gs-accent-hover);
 }
 
 .gemini-scribe-options-area {
@@ -361,14 +361,14 @@ body {
 }
 
 .gemini-scribe-rewrite-label {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	display: flex;
 	align-items: center;
 	cursor: pointer;
 }
 
 .gemini-scribe-timer {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: 0.9em;
 	font-family: var(--font-monospace);
 	margin-top: 5px;
@@ -377,7 +377,7 @@ body {
 }
 
 .gemini-ghost-text {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	opacity: 0.5;
 }
 
@@ -389,32 +389,32 @@ body {
 	/* Match the width of the input area */
 	padding: 0;
 	/* Remove padding to align with input area */
-	background-color: var(--background-secondary);
-	border-radius: var(--radius-s);
+	background-color: var(--gs-surface-alt);
+	border-radius: var(--gs-radius-sm);
 }
 
 .gemini-scribe-model-label {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	margin-right: var(--size-2-2);
 	font-size: var(--font-ui-small);
 }
 
 .gemini-scribe-model-picker {
 	flex: 1;
-	padding: var(--size-4-2) var(--size-4-3);
+	padding: var(--gs-space-2) var(--gs-space-3);
 	min-height: 32px;
-	border: var(--border-width) solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
+	border: var(--border-width) solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
 	background-color: var(--background-modifier-form-field);
-	color: var(--text-normal);
+	color: var(--gs-text);
 	font-size: var(--font-ui-small);
 	cursor: pointer;
 	appearance: none;
 	-webkit-appearance: none;
 	background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
 	background-repeat: no-repeat;
-	background-position: right var(--size-4-2) center;
-	padding-right: calc(var(--size-4-3) * 2 + 16px);
+	background-position: right var(--gs-space-2) center;
+	padding-right: calc(var(--gs-space-3) * 2 + 16px);
 }
 
 .gemini-scribe-model-picker:hover {
