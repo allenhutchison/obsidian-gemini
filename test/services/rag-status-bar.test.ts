@@ -91,6 +91,29 @@ describe('openRagStatusModal', () => {
 		expect(provider.indexVault).toHaveBeenCalledTimes(1);
 	});
 
+	it('reindex progress-complete callback shows the indexing-complete notice', async () => {
+		await openRagStatusModal(makeApp(), makeProvider(), 'id');
+		await statusModalArgs[ON_REINDEX]();
+
+		// The helper passes an onComplete callback (3rd arg) to RagProgressModal.
+		const onComplete = progressModalArgs[2];
+		onComplete({ indexed: 3, skipped: 1, failed: 0 });
+
+		expect(Notice).toHaveBeenCalledTimes(1);
+	});
+
+	it('reindex shows an error notice when indexVault rejects', async () => {
+		const provider = makeProvider({ indexVault: vi.fn().mockRejectedValue(new Error('boom')) });
+
+		await openRagStatusModal(makeApp(), provider, 'id');
+		await statusModalArgs[ON_REINDEX]();
+		// Flush the indexVault().catch() microtask so the failure notice fires.
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(Notice).toHaveBeenCalledTimes(1);
+	});
+
 	it('sync callback syncs pending changes and notifies when work was queued', async () => {
 		const provider = makeProvider({ syncPendingChanges: vi.fn().mockResolvedValue(true) });
 

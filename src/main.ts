@@ -43,7 +43,7 @@ import { BackgroundTaskManager } from './services/background-task-manager';
 import { BackgroundStatusBar } from './services/background-status-bar';
 import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
-import { getRawErrorMessage } from './utils/error-utils';
+import { getErrorMessage, getRawErrorMessage } from './utils/error-utils';
 import { t } from './i18n';
 
 export interface RagIndexingSettings {
@@ -758,8 +758,13 @@ export default class ObsidianGemini extends Plugin {
 					return;
 				}
 				// Trigger the same modal as clicking the status bar
-				const { openRagStatusModal } = await import('./services/rag-status-bar');
-				await openRagStatusModal(this.app, this.ragIndexing, this.manifest.id);
+				try {
+					const { openRagStatusModal } = await import('./services/rag-status-bar');
+					await openRagStatusModal(this.app, this.ragIndexing, this.manifest.id);
+				} catch (error) {
+					this.logger.error('RAG Indexing: Failed to open status UI', error);
+					new Notice(t('notice.rag.uiError', { error: getErrorMessage(error) }));
+				}
 			},
 		});
 
