@@ -1273,33 +1273,14 @@ body.theme-dark {
 	animation: progress-slide 1.5s ease-in-out infinite;
 }
 
-/* State Colors */
-.gemini-agent-progress-thinking {
-	background: linear-gradient(90deg, var(--gs-accent), color-mix(in srgb, var(--gs-accent) 80%, white));
-}
-
-.gemini-agent-progress-tool {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--gs-success) 70%, var(--gs-accent) 30%),
-		color-mix(in srgb, var(--gs-success) 50%, white)
-	);
-}
-
-.gemini-agent-progress-waiting {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--color-yellow) 70%, var(--gs-accent) 30%),
-		color-mix(in srgb, var(--color-yellow) 50%, white)
-	);
-}
-
+/* State colors — every state uses the Gemini brand gradient. The running agent
+   is a signature moment; the specific state (thinking / tool / waiting /
+   streaming) is conveyed by the adjacent status text, not the bar color. */
+.gemini-agent-progress-thinking,
+.gemini-agent-progress-tool,
+.gemini-agent-progress-waiting,
 .gemini-agent-progress-streaming {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--color-purple) 70%, var(--gs-accent) 30%),
-		color-mix(in srgb, var(--color-purple) 50%, white)
-	);
+	background: var(--gs-brand-gradient);
 }
 
 /* Indeterminate Animation */
