@@ -3999,14 +3999,14 @@ body {
 	align-items: center;
 	gap: 4px;
 	border-radius: 6px;
-	border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
+	border: 1px solid var(--gs-border);
+	background-color: var(--gs-surface);
 	overflow: hidden;
 	cursor: default;
 }
 
 .gemini-shelf-item:hover {
-	border-color: var(--interactive-accent);
+	border-color: var(--gs-accent);
 }
 
 /* Image thumbnails */
@@ -4031,7 +4031,7 @@ body {
 	flex-shrink: 0;
 	width: 14px;
 	height: 14px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-shelf-icon svg {
@@ -4051,7 +4051,7 @@ body {
 	flex-shrink: 0;
 	width: 10px;
 	height: 10px;
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 	display: inline-flex;
 	align-items: center;
 }
@@ -4080,7 +4080,7 @@ body {
 
 /* Keyboard focus styling */
 .gemini-shelf-item:focus-visible {
-	outline: 2px solid var(--interactive-accent);
+	outline: 2px solid var(--gs-accent);
 	outline-offset: 1px;
 }
 
@@ -4150,7 +4150,7 @@ body {
 .modal.gemini-scribe-selection-response-modal h2 {
 	margin: 0;
 	padding: 16px 20px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 	font-size: 18px;
 	font-weight: 600;
 	flex-shrink: 0;
@@ -4158,8 +4158,8 @@ body {
 
 .gemini-scribe-selection-preview {
 	padding: 12px 20px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background-color: var(--background-secondary);
+	border-bottom: 1px solid var(--gs-border);
+	background-color: var(--gs-surface-alt);
 	flex-shrink: 0;
 }
 
@@ -4172,14 +4172,14 @@ body {
 .gemini-scribe-preview-label {
 	font-size: 12px;
 	font-weight: 500;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
 }
 
 .gemini-scribe-selection-preview .gemini-scribe-preview-content {
 	font-size: 13px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	line-height: 1.4;
 	max-height: 100px;
 	overflow-y: auto;
@@ -4193,7 +4193,7 @@ body {
 	justify-content: center;
 	gap: 12px;
 	padding: 40px 20px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scribe-spinner {
@@ -4237,8 +4237,8 @@ body {
 	display: flex;
 	gap: 8px;
 	padding: 16px 20px;
-	border-top: 1px solid var(--background-modifier-border);
-	background-color: var(--background-secondary);
+	border-top: 1px solid var(--gs-border);
+	background-color: var(--gs-surface-alt);
 	flex-shrink: 0;
 }
 
@@ -4247,24 +4247,24 @@ body {
 	font-size: 14px;
 	border-radius: 4px;
 	cursor: pointer;
-	border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
-	color: var(--text-normal);
+	border: 1px solid var(--gs-border);
+	background-color: var(--gs-surface);
+	color: var(--gs-text);
 	transition: all 0.15s ease;
 }
 
 .gemini-scribe-actions button:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 }
 
 .gemini-scribe-actions button.mod-cta {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 	border: none;
 }
 
 .gemini-scribe-actions button.mod-cta:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--gs-accent-hover);
 }
 
 /* Ask Question Modal Styles */
@@ -4282,7 +4282,7 @@ body {
 .modal.gemini-scribe-ask-question-modal h2 {
 	margin: 0;
 	padding: 16px 20px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 	font-size: 18px;
 	font-weight: 600;
 }
@@ -4295,7 +4295,7 @@ body {
 	display: block;
 	font-weight: 500;
 	margin-bottom: 8px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: 13px;
 }
 
@@ -4306,22 +4306,22 @@ body {
 	font-family: var(--font-text);
 	font-size: 14px;
 	padding: 12px;
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
-	background-color: var(--background-primary);
-	color: var(--text-normal);
+	background-color: var(--gs-surface);
+	color: var(--gs-text);
 	line-height: 1.5;
 	box-sizing: border-box;
 }
 
 .gemini-scribe-question-input::placeholder {
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 	opacity: 0.6;
 }
 
 .gemini-scribe-question-input:focus {
 	outline: none;
-	border-color: var(--interactive-accent);
+	border-color: var(--gs-accent);
 }
 
 .modal.gemini-scribe-ask-question-modal .gemini-scribe-submit-button {
