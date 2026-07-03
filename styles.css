@@ -3373,7 +3373,7 @@ body {
 	margin: 0 0 16px 0;
 	font-size: 24px;
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	text-align: center;
 }
 
@@ -3381,14 +3381,14 @@ body {
 	margin: 0 0 24px 0;
 	text-align: center;
 	font-size: 15px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-update-highlights {
 	margin-bottom: 24px;
 	padding: 20px;
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 	border-radius: 8px;
 }
 
@@ -3396,7 +3396,7 @@ body {
 	margin: 0 0 12px 0;
 	font-size: 16px;
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-update-highlights ul {
@@ -3411,14 +3411,14 @@ body {
 	position: relative;
 	font-size: 14px;
 	line-height: 1.6;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-update-details {
 	margin-bottom: 24px;
 	padding: 16px;
 	background-color: var(--background-primary-alt);
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 6px;
 }
 
@@ -3426,7 +3426,7 @@ body {
 	margin: 0;
 	font-size: 14px;
 	line-height: 1.6;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-update-message {
@@ -3437,7 +3437,7 @@ body {
 .gemini-update-message p {
 	margin: 0;
 	font-size: 15px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	line-height: 1.6;
 }
 
@@ -3459,18 +3459,18 @@ body {
 	text-align: center;
 	margin-top: 16px;
 	padding-top: 16px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 }
 
 .gemini-update-links a {
-	color: var(--interactive-accent);
+	color: var(--gs-accent);
 	text-decoration: none;
 	font-size: 14px;
 	transition: color 0.15s ease;
 }
 
 .gemini-update-links a:hover {
-	color: var(--interactive-accent-hover);
+	color: var(--gs-accent-hover);
 	text-decoration: underline;
 }
 
@@ -3557,8 +3557,8 @@ body {
 	gap: 8px;
 	margin-bottom: 20px;
 	padding: 12px;
-	background: var(--background-secondary);
-	border-radius: var(--radius-m);
+	background: var(--gs-surface-alt);
+	border-radius: var(--gs-radius-md);
 }
 
 .rag-status-row {
@@ -3568,7 +3568,7 @@ body {
 }
 
 .rag-status-label {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-small);
 }
 
@@ -3616,34 +3616,34 @@ body {
 	display: flex;
 	gap: 4px;
 	margin-bottom: 16px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 	padding-bottom: 8px;
 }
 
 .rag-status-tab {
 	padding: 8px 16px;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	transition:
 		background 0.15s ease,
 		color 0.15s ease;
 }
 
 .rag-status-tab:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background: var(--gs-hover);
+	color: var(--gs-text);
 }
 
 .rag-status-tab-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--gs-accent);
+	color: var(--gs-on-accent);
 }
 
 .rag-status-tab-active:hover {
-	background: var(--interactive-accent-hover);
-	color: var(--text-on-accent);
+	background: var(--gs-accent-hover);
+	color: var(--gs-on-accent);
 }
 
 .rag-status-content {
@@ -3659,14 +3659,14 @@ body {
 .rag-status-search {
 	width: 100%;
 	padding: 8px 12px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
-	background: var(--background-primary);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
+	background: var(--gs-surface);
 	font-size: var(--font-ui-small);
 }
 
 .rag-status-search:focus {
-	border-color: var(--interactive-accent);
+	border-color: var(--gs-accent);
 	outline: none;
 }
 
@@ -3675,8 +3675,8 @@ body {
 .rag-status-file-list {
 	max-height: 350px;
 	overflow-y: auto;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
 }
 
 .rag-status-file-item {
@@ -3684,7 +3684,7 @@ body {
 	justify-content: space-between;
 	align-items: center;
 	padding: 8px 12px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 	transition: background 0.15s ease;
 	/* reset <button> browser defaults */
 	width: 100%;
@@ -3704,7 +3704,7 @@ body {
 }
 
 .rag-status-file-item:hover {
-	background: var(--background-modifier-hover);
+	background: var(--gs-hover);
 }
 
 .rag-status-file-item--clickable {
@@ -3724,7 +3724,7 @@ body {
 .rag-status-file-time {
 	flex-shrink: 0;
 	margin-left: 12px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-smaller);
 }
 
@@ -3737,13 +3737,13 @@ body {
 }
 
 .rag-status-show-more:hover {
-	background: var(--background-modifier-hover);
+	background: var(--gs-hover);
 }
 
 .rag-status-empty {
 	padding: 24px;
 	text-align: center;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-small);
 }
 
@@ -3757,8 +3757,8 @@ body {
 
 .rag-status-failure-item {
 	padding: 12px;
-	background: var(--background-secondary);
-	border-radius: var(--radius-s);
+	background: var(--gs-surface-alt);
+	border-radius: var(--gs-radius-sm);
 	border-left: 3px solid var(--text-error);
 }
 
@@ -3793,12 +3793,12 @@ body {
 
 .rag-status-failure-time {
 	flex-shrink: 0;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-smaller);
 }
 
 .rag-status-failure-error {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-smaller);
 	padding-left: 24px;
 }
@@ -3811,8 +3811,8 @@ body {
 	gap: 8px;
 	margin: 16px 0;
 	padding: 12px;
-	background: var(--background-secondary);
-	border-radius: var(--radius-m);
+	background: var(--gs-surface-alt);
+	border-radius: var(--gs-radius-md);
 }
 
 .rag-resume-stat-row {
@@ -3822,7 +3822,7 @@ body {
 }
 
 .rag-resume-stat-label {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-small);
 }
 
@@ -3862,7 +3862,7 @@ body {
 .rag-progress-bar {
 	width: 100%;
 	height: 8px;
-	background: var(--background-modifier-border);
+	background: var(--gs-border);
 	border-radius: 4px;
 	overflow: hidden;
 	margin-bottom: 8px;
@@ -3870,7 +3870,7 @@ body {
 
 .rag-progress-bar-fill {
 	height: 100%;
-	background: var(--interactive-accent);
+	background: var(--gs-accent);
 	border-radius: 4px;
 	transition: width 0.3s ease;
 }
@@ -3878,7 +3878,7 @@ body {
 .rag-progress-text {
 	text-align: center;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 /* Current file section */
@@ -3888,20 +3888,20 @@ body {
 
 .rag-progress-label {
 	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	margin-bottom: 4px;
 }
 
 .rag-progress-current-file {
 	font-family: var(--font-monospace);
 	font-size: var(--font-ui-small);
-	color: var(--text-normal);
+	color: var(--gs-text);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	padding: 8px 12px;
-	background: var(--background-secondary);
-	border-radius: var(--radius-s);
+	background: var(--gs-surface-alt);
+	border-radius: var(--gs-radius-sm);
 }
 
 /* Time section */
@@ -3911,7 +3911,7 @@ body {
 	justify-content: center;
 	margin-bottom: 16px;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .rag-progress-time-separator {
@@ -3919,15 +3919,15 @@ body {
 }
 
 .rag-progress-time-value {
-	color: var(--text-normal);
+	color: var(--gs-text);
 	font-weight: 500;
 }
 
 /* Stats section */
 .rag-progress-stats {
 	padding: 12px;
-	background: var(--background-secondary);
-	border-radius: var(--radius-m);
+	background: var(--gs-surface-alt);
+	border-radius: var(--gs-radius-md);
 	margin-bottom: 20px;
 }
 
@@ -3960,7 +3960,7 @@ body {
 }
 
 .rag-progress-stat-icon.rag-stat-warning svg {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .rag-progress-stat-icon.rag-stat-error svg {
@@ -3972,8 +3972,8 @@ body {
 }
 
 .gemini-agent-input.gemini-agent-input-dragover {
-	background-color: var(--background-modifier-hover);
-	border-color: var(--interactive-accent);
+	background-color: var(--gs-hover);
+	border-color: var(--gs-accent);
 }
 
 .gemini-agent-clickable-image {
