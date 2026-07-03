@@ -101,7 +101,7 @@ For issues labeled `auto:in-progress`:
 
 ### Step 2 — Advance an open automated PR
 
-If one or more automated PRs are open, pick the **single most-urgent** one to advance this tick (one PR per tick keeps the tick bounded). Urgency order, oldest-first within a tier: (1) a **draft** to resume, (2) **CI red**, (3) **unaddressed feedback** (the newest comment on a thread lacks the marker), (4) **unreviewed past the review window** — ready, CI green, no review activity from any human or third-party bot, older than `FALLBACK_REVIEW_MINUTES`, and no prior fallback self-review (see **Fallback self-review** below). A PR with none of these is **quiescent** — waiting on the maintainer's review or merge. If every open PR is quiescent, step 2 has no work: fall through to step 3 (build). Otherwise advance that one PR with the loop below and stop.
+If one or more automated PRs are open, pick the **single most-urgent** one to advance this tick (one PR per tick keeps the tick bounded). Urgency order, oldest-first within a tier: (1) a **draft** to resume, (2) **CI red**, (3) **unaddressed feedback** (the newest comment on a thread lacks the marker — auto-generated bot notices don't count; see the review loop), (4) **unreviewed past the review window** — ready, CI green, no review activity from any human or third-party bot, older than `FALLBACK_REVIEW_MINUTES`, and no prior fallback self-review (see **Fallback self-review** below). A PR with none of these is **quiescent** — waiting on the maintainer's review or merge. If every open PR is quiescent, step 2 has no work: fall through to step 3 (build). Otherwise advance that one PR with the loop below and stop.
 
 **Draft PR** (a yielded partial build from step 3): resume the implementation first — finish the plan, run the full pre-flight, push, and mark it ready with `gh pr ready`. Only then does the review loop below apply.
 
@@ -109,7 +109,7 @@ If one or more automated PRs are open, pick the **single most-urgent** one to ad
 
 1. Fetch all four feedback surfaces: PR metadata + CI rollup, review summaries, inline review comments, and issue-style comments (`gh pr view`, `gh api .../pulls/N/reviews`, `.../pulls/N/comments`, `.../issues/N/comments`).
 2. **CI red?** Fix CI first — check out the `auto/` branch, fix, run the repo pre-flight (`npm run format-check`, `npm run build`, `npm test`, `npm run typecheck:test`), push.
-3. **New feedback since the skill's last reply?** A thread is unaddressed if its newest comment lacks the `<!-- auto-dev -->` marker. Triage each item on its merits (CodeRabbit is not always right), fix valid items with **focused commits** (one logical fix per commit, conventional subjects), push, then **reply to every thread** — including ones you decline, with a one-sentence reason. Replies carry the marker.
+3. **New feedback since the skill's last reply?** A thread is unaddressed if its newest comment lacks the `<!-- auto-dev -->` marker. **Not feedback:** CodeRabbit's auto-generated boilerplate — rate-limit notices, walkthrough/summary comments, "finishing touches" checklists — identifiable by an HTML comment of the form `<!-- This is an auto-generated comment: … -->` in the body. Never reply to those and never count them as unaddressed feedback (a rate-limit notice matters only as tier-4 input). For real feedback, triage each item on its merits (CodeRabbit is not always right), fix valid items with **focused commits** (one logical fix per commit, conventional subjects), push, then **reply to every thread** — including ones you decline, with a one-sentence reason. Replies carry the marker.
 4. **Human feedback** outranks bot feedback. If a human reviewer and CodeRabbit conflict, follow the human and say so in the reply to the bot.
 5. **Scope creep requested in review?** Acknowledge in a reply, file a follow-up issue (it enters this same pipeline untriaged), link it, and keep the PR scoped.
 6. **Nothing new** (no new comments, CI green, all threads answered, and the PR has review activity or a posted fallback self-review): this PR is quiescent, waiting on the maintainer's review or merge. Note it in the exit report; it isn't this tick's work. Since advancing it produced nothing, **fall through to step 3 (build)** — which builds the next `auto:ready` issue if the in-flight count is below `MAX_PRS_IN_FLIGHT`, or itself falls through to triage.
@@ -117,7 +117,7 @@ If one or more automated PRs are open, pick the **single most-urgent** one to ad
 **Fallback self-review** (tier 4 — when CodeRabbit can't keep up): CodeRabbit normally reviews within minutes of a PR going ready; when it hits its rate limits it stays silent or posts only a rate-limit/"in queue" notice, and the PR would otherwise sit with no review signal at all, blocking the maintainer's merge decision. A PR qualifies when **all** of these hold:
 
 - it is ready (not draft) and CI is green;
-- it has **no review activity from any human or third-party bot** — no reviews, no inline review comments (a CodeRabbit rate-limit or queue notice does _not_ count as review activity);
+- it has **no review activity from any human or third-party bot** — no reviews, no inline review comments. A CodeRabbit rate-limit notice does _not_ count as review activity: it arrives as an **issue-style comment** (not a review) whose body contains the line `<!-- This is an auto-generated comment: rate limited by coderabbit.ai -->`, and it often quotes a short "next review available in N minutes" — the review window deliberately overshoots those short waits, giving CodeRabbit several chances first;
 - it has been ready for review longer than `FALLBACK_REVIEW_MINUTES` (from the PR's `createdAt`, or the latest `ready_for_review` timeline event if it started as a draft);
 - it has no prior fallback self-review — no marker comment containing the `## Fallback review` heading. **At most one fallback self-review per PR**; that comment is the cross-tick memory.
 
@@ -129,6 +129,8 @@ Then review it yourself:
 4. **Never submit a formal GitHub review** — no approval, no request-changes, not even a comment-type review. The summary is an ordinary PR comment. A self-review is a signal for the maintainer, not independent sign-off, and must never be dressed up to look like one.
 
 After the fallback review is posted, the PR counts as quiescent. If CodeRabbit later catches up and reviews the PR, its feedback flows through the normal tier-3 handling — the fallback review never suppresses or substitutes for a real external review.
+
+**Re-triggering CodeRabbit.** Its rate-limit notice offers two re-triggers: pushing new commits, or a `@coderabbitai review` comment. The fallback review's own fix-push therefore doubles as a re-trigger — desirable, since a real external review may follow. But **never post the `@coderabbitai review` trigger yourself**: a bare command comment from the maintainer's account without the marker would be classified by every later tick as human input (invariant 3), while adding the marker may break CodeRabbit's command parsing. The fallback summary instead reminds the maintainer they can trigger it manually.
 
 ### Step 3 — Build (only if under the in-flight cap)
 
@@ -263,6 +265,10 @@ No external review arrived within the review window (CodeRabbit appears rate-lim
 
 - <observation or trade-off the maintainer should weigh before merging>
 - _(or "nothing flagged")_
+
+---
+
+CodeRabbit can be re-run on this PR at any time with a `@coderabbitai review` comment.
 ```
 
 ## Exit report
@@ -291,6 +297,7 @@ errors: <none | details>
 - Don't merge, approve, or enable auto-merge on any PR.
 - Don't submit a formal GitHub review of any kind on the pipeline's own PRs — the fallback self-review is a plain comment, never an approval or request-changes.
 - Don't post more than one fallback self-review per PR, and don't self-review a PR that already has human or third-party review activity — the fallback exists only to fill the gap when CodeRabbit can't keep up.
+- Don't reply to CodeRabbit's auto-generated notices (rate-limit, walkthrough, finishing-touches boilerplate), and don't post bot trigger commands like `@coderabbitai review` — a marker-less command comment reads as human input to every later tick.
 - Don't start a new build while already at `MAX_PRS_IN_FLIGHT` open `auto/` PRs.
 - Don't post a second question/plan when the previous one is still unanswered.
 - Don't park an issue on your own initiative — only _propose_ parking; the maintainer parks by replying "park it" or adding the label. (`auto:parked` is set by the skill solely on a human park reply, or by the human directly.)
