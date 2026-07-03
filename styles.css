@@ -4417,7 +4417,7 @@ body {
 	display: flex;
 	gap: 4px;
 	margin-bottom: 16px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 	padding-bottom: 8px;
 }
 
@@ -4426,28 +4426,28 @@ body {
 	align-items: center;
 	gap: 6px;
 	padding: 8px 16px;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	transition:
 		background 0.15s ease,
 		color 0.15s ease;
 }
 
 .gemini-activity-tab:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background: var(--gs-hover);
+	color: var(--gs-text);
 }
 
 .gemini-activity-tab--active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--gs-accent);
+	color: var(--gs-on-accent);
 }
 
 .gemini-activity-tab--active:hover {
-	background: var(--interactive-accent-hover);
-	color: var(--text-on-accent);
+	background: var(--gs-accent-hover);
+	color: var(--gs-on-accent);
 }
 
 .gemini-activity-tab-icon {
@@ -4478,7 +4478,7 @@ body {
 	font-size: var(--font-ui-small);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-bg-tasks-recent-header {
@@ -4497,22 +4497,22 @@ body {
 	font-size: var(--font-ui-smaller);
 	padding: 2px 10px;
 	border-radius: 4px;
-	border: 1px solid var(--background-modifier-border);
-	background: var(--background-primary);
-	color: var(--text-muted);
+	border: 1px solid var(--gs-border);
+	background: var(--gs-surface);
+	color: var(--gs-text-muted);
 	cursor: pointer;
 	white-space: nowrap;
 	flex-shrink: 0;
 }
 
 .gemini-bg-tasks-clear:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
-	border-color: var(--background-modifier-border-hover);
+	background: var(--gs-hover);
+	color: var(--gs-text);
+	border-color: var(--gs-border-strong);
 }
 
 .gemini-bg-tasks-empty {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-small);
 }
 
@@ -4523,7 +4523,7 @@ body {
 
 .gemini-bg-tasks-overflow {
 	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	margin: 4px 0 0;
 	padding-left: 4px;
 }
@@ -4542,14 +4542,14 @@ body {
 	align-items: flex-start;
 	gap: 10px;
 	padding: 8px 10px;
-	border-radius: var(--radius-s);
-	background: var(--background-secondary);
+	border-radius: var(--gs-radius-sm);
+	background: var(--gs-surface-alt);
 }
 
 .gemini-bg-task-icon {
 	flex-shrink: 0;
 	margin-top: 2px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-bg-task--pending .gemini-bg-task-icon,
@@ -4558,15 +4558,15 @@ body {
 }
 
 .gemini-bg-task--complete .gemini-bg-task-icon {
-	color: var(--color-green);
+	color: var(--gs-success);
 }
 
 .gemini-bg-task--failed .gemini-bg-task-icon {
-	color: var(--color-red);
+	color: var(--gs-error);
 }
 
 .gemini-bg-task--cancelled .gemini-bg-task-icon {
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 }
 
 .gemini-bg-task-info {
@@ -4580,17 +4580,17 @@ body {
 .gemini-bg-task-label {
 	font-size: var(--font-ui-small);
 	font-weight: 500;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-bg-task-meta {
 	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-bg-task-error {
 	font-size: var(--font-ui-smaller);
-	color: var(--color-red);
+	color: var(--gs-error);
 }
 
 .gemini-bg-task-link {
@@ -4650,8 +4650,8 @@ body {
 	display: none;
 	font-size: 10px;
 	font-weight: 700;
-	color: var(--text-on-accent);
-	background: var(--color-red);
+	color: var(--gs-on-accent);
+	background: var(--gs-error);
 	border-radius: 50%;
 	width: 14px;
 	height: 14px;
@@ -4669,7 +4669,7 @@ body {
 }
 
 .gemini-catchup-description {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	margin-bottom: 16px;
 }
 
@@ -4685,7 +4685,7 @@ body {
 	justify-content: space-between;
 	gap: 8px;
 	padding: 8px 0;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 }
 
 .gemini-catchup-item:last-child {
@@ -4703,7 +4703,7 @@ body {
 .gemini-catchup-item-icon svg {
 	width: 14px;
 	height: 14px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	flex-shrink: 0;
 }
 
@@ -4715,7 +4715,7 @@ body {
 }
 
 .gemini-catchup-item-age {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-smaller);
 	flex-shrink: 0;
 }
@@ -4731,11 +4731,11 @@ body {
 	gap: 8px;
 	justify-content: flex-end;
 	padding-top: 8px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 }
 
 .gemini-catchup-empty {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 /* ── Scheduled Tasks Modal ─────────────────────────────────────── */
@@ -4746,7 +4746,7 @@ body {
 }
 
 .gemini-scheduled-tasks-empty {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-style: italic;
 }
 
@@ -4765,8 +4765,8 @@ body {
 	gap: 10px;
 	padding: 10px 12px;
 	border-radius: 8px;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 }
 
 .gemini-scheduled-task--disabled {
@@ -4774,18 +4774,18 @@ body {
 }
 
 .gemini-scheduled-task--paused {
-	border-color: var(--color-orange);
-	background: color-mix(in srgb, var(--color-orange) 8%, var(--background-secondary));
+	border-color: var(--gs-warning);
+	background: color-mix(in srgb, var(--gs-warning) 8%, var(--gs-surface-alt));
 }
 
 .gemini-scheduled-task-icon {
 	flex-shrink: 0;
 	margin-top: 2px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scheduled-task--paused .gemini-scheduled-task-icon {
-	color: var(--color-orange);
+	color: var(--gs-warning);
 }
 
 .gemini-scheduled-task-info {
@@ -4809,24 +4809,24 @@ body {
 	font-size: 11px;
 	padding: 1px 7px;
 	border-radius: 99px;
-	background: var(--background-modifier-hover);
-	color: var(--text-muted);
+	background: var(--gs-hover);
+	color: var(--gs-text-muted);
 	width: fit-content;
 }
 
 .gemini-scheduled-task--paused .gemini-scheduled-task-badge {
-	background: color-mix(in srgb, var(--color-orange) 20%, transparent);
-	color: var(--color-orange);
+	background: color-mix(in srgb, var(--gs-warning) 20%, transparent);
+	color: var(--gs-warning);
 }
 
 .gemini-scheduled-task-meta {
 	font-size: 11px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scheduled-task-error {
 	font-size: 11px;
-	color: var(--color-orange);
+	color: var(--gs-warning);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -4846,9 +4846,9 @@ body {
 	padding: 3px 10px;
 	border-radius: 4px;
 	cursor: pointer;
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	background: var(--interactive-normal);
-	color: var(--text-normal);
+	color: var(--gs-text);
 	white-space: nowrap;
 }
 
@@ -4863,13 +4863,13 @@ body {
 }
 
 .gemini-scheduled-task-reset {
-	background: color-mix(in srgb, var(--color-orange) 15%, var(--interactive-normal));
-	color: var(--color-orange);
-	border-color: var(--color-orange);
+	background: color-mix(in srgb, var(--gs-warning) 15%, var(--interactive-normal));
+	color: var(--gs-warning);
+	border-color: var(--gs-warning);
 }
 
 .gemini-scheduled-task-reset:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--color-orange) 25%, var(--interactive-normal));
+	background: color-mix(in srgb, var(--gs-warning) 25%, var(--interactive-normal));
 }
 
 /* ── Scheduler Management Modal ─────────────────────────────────── */
@@ -4906,7 +4906,7 @@ body {
 	padding: 32px 16px;
 	gap: 8px;
 	text-align: center;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scheduler-empty-icon {
@@ -4934,8 +4934,8 @@ body {
 	gap: 10px;
 	padding: 10px 12px;
 	border-radius: 8px;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 }
 
 .gemini-scheduler-item--disabled {
@@ -4943,18 +4943,18 @@ body {
 }
 
 .gemini-scheduler-item--paused {
-	border-color: var(--color-orange);
-	background: color-mix(in srgb, var(--color-orange) 8%, var(--background-secondary));
+	border-color: var(--gs-warning);
+	background: color-mix(in srgb, var(--gs-warning) 8%, var(--gs-surface-alt));
 }
 
 .gemini-scheduler-item-icon {
 	flex-shrink: 0;
 	margin-top: 2px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scheduler-item--paused .gemini-scheduler-item-icon {
-	color: var(--color-orange);
+	color: var(--gs-warning);
 }
 
 .gemini-scheduler-item-info {
@@ -4978,24 +4978,24 @@ body {
 	font-size: 11px;
 	padding: 1px 7px;
 	border-radius: 99px;
-	background: var(--background-modifier-hover);
-	color: var(--text-muted);
+	background: var(--gs-hover);
+	color: var(--gs-text-muted);
 	width: fit-content;
 }
 
 .gemini-scheduler-item--paused .gemini-scheduler-item-badge {
-	background: color-mix(in srgb, var(--color-orange) 20%, transparent);
-	color: var(--color-orange);
+	background: color-mix(in srgb, var(--gs-warning) 20%, transparent);
+	color: var(--gs-warning);
 }
 
 .gemini-scheduler-item-meta {
 	font-size: 11px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scheduler-item-error {
 	font-size: 11px;
-	color: var(--color-orange);
+	color: var(--gs-warning);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -5015,9 +5015,9 @@ body {
 	padding: 4px 10px;
 	border-radius: 4px;
 	cursor: pointer;
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	background: var(--interactive-normal);
-	color: var(--text-normal);
+	color: var(--gs-text);
 	white-space: nowrap;
 	text-align: center;
 }
@@ -5032,21 +5032,21 @@ body {
 }
 
 .gemini-scheduler-modal .gemini-scheduler-action--delete {
-	background: var(--color-red);
-	border-color: var(--color-red);
+	background: var(--gs-error);
+	border-color: var(--gs-error);
 	color: #fff;
 	font-weight: 600;
 }
 
 .gemini-scheduler-modal .gemini-scheduler-action--delete:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--color-red) 80%, #000);
-	border-color: color-mix(in srgb, var(--color-red) 80%, #000);
+	background: color-mix(in srgb, var(--gs-error) 80%, #000);
+	border-color: color-mix(in srgb, var(--gs-error) 80%, #000);
 }
 
 /* Confirm delete */
 .gemini-scheduler-delete-hint {
 	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scheduler-confirm-btns {
@@ -5059,15 +5059,15 @@ body {
 	padding: 6px 16px;
 	border-radius: 4px;
 	cursor: pointer;
-	border: 1px solid var(--color-red);
-	background: var(--color-red);
+	border: 1px solid var(--gs-error);
+	background: var(--gs-error);
 	color: #fff;
 	font-weight: 600;
 }
 
 .gemini-scheduler-modal .gemini-scheduler-confirm-delete:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--color-red) 80%, #000);
-	border-color: color-mix(in srgb, var(--color-red) 80%, #000);
+	background: color-mix(in srgb, var(--gs-error) 80%, #000);
+	border-color: color-mix(in srgb, var(--gs-error) 80%, #000);
 }
 
 /* Create / Edit form */
@@ -5103,29 +5103,29 @@ body {
 }
 
 .gemini-scheduler-select {
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
-	background: var(--background-secondary);
-	color: var(--text-normal);
+	background: var(--gs-surface-alt);
+	color: var(--gs-text);
 	padding: 4px 8px;
 	font-size: var(--font-ui-small);
 }
 
 .gemini-scheduler-custom-interval {
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
-	background: var(--background-secondary);
-	color: var(--text-normal);
+	background: var(--gs-surface-alt);
+	color: var(--gs-text);
 	padding: 4px 8px;
 	font-size: var(--font-ui-small);
 	width: 100px;
 }
 
 .gemini-scheduler-time-input {
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
-	background: var(--background-secondary);
-	color: var(--text-normal);
+	background: var(--gs-surface-alt);
+	color: var(--gs-text);
 	padding: 4px 8px;
 	font-size: var(--font-ui-small);
 }
@@ -5165,10 +5165,10 @@ body {
 	box-sizing: border-box;
 	font-family: var(--font-monospace);
 	font-size: var(--font-ui-smaller);
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
-	background: var(--background-secondary);
-	color: var(--text-normal);
+	background: var(--gs-surface-alt);
+	color: var(--gs-text);
 	padding: 8px;
 	resize: vertical;
 	margin-bottom: 8px;
@@ -5181,7 +5181,7 @@ body {
 .gemini-scheduler-advanced summary {
 	cursor: pointer;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	padding: 4px 0;
 }
 
