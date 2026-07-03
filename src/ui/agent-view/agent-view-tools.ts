@@ -41,6 +41,12 @@ export interface AgentViewContext {
 	 * a follow-up was streamed.
 	 */
 	finalizeFollowUpStream?(container: HTMLElement, entry: GeminiConversationEntry): Promise<void>;
+	/**
+	 * Register the in-flight follow-up stream (or clear it with `null`) so the
+	 * Stop button can cancel it mid-stream. The view forwards this to the same
+	 * `currentStreamingResponse` slot the initial request uses.
+	 */
+	registerFollowUpStream?(stream: { cancel: () => void } | null): void;
 }
 
 /**
@@ -187,6 +193,11 @@ export class AgentViewTools {
 							if (contentDiv) {
 								contentDiv.appendChild(document.createTextNode(chunk.text));
 							}
+						},
+						onFollowUpStreamReady: (stream) => {
+							// Route the live follow-up stream to the view's Stop target so
+							// pressing Stop cancels token generation immediately.
+							this.context.registerFollowUpStream?.(stream);
 						},
 						onModelReasoning: async (thoughts) => {
 							// Reasoning the model produced before deciding to call the
