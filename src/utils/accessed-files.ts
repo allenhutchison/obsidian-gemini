@@ -13,7 +13,7 @@ const TRACKED_TOOLS = new Set([
 
 interface ToolResultEntry {
 	toolName: string;
-	toolArguments: any;
+	toolArguments: unknown;
 	result: ToolResult;
 }
 

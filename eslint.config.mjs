@@ -120,6 +120,13 @@ export default defineConfig([
 		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
 	},
 	{
+		// #1036: `no-explicit-any` is cleared for these directories, so enforce it here
+		// to prevent regressions while the rule stays globally softened for the rest of
+		// `src/` (remaining areas — src/tools, src/api, src/ui — tracked in #1036).
+		files: ['src/utils/**/*.ts', 'src/mcp/**/*.ts'],
+		rules: { '@typescript-eslint/no-explicit-any': 'error' },
+	},
+	{
 		// Files fully migrated off direct `style.X = ...` assignments to CSS classes.
 		// Enforce `no-static-styles-assignment` here so they cannot regress while the
 		// rule stays globally disabled for the remaining unmigrated files (#1034).

@@ -53,6 +53,7 @@ vi.mock('@allenhutchison/gemini-utils', () => ({
 }));
 
 vi.mock('../../src/utils/error-utils', () => ({
+	asRecord: vi.fn((value: unknown) => (value !== null && typeof value === 'object' ? value : {})),
 	getErrorMessage: vi.fn((err: any) => (err instanceof Error ? err.message : String(err))),
 	getRawErrorMessage: vi.fn((err: any) => (err instanceof Error ? err.message : String(err))),
 	isQuotaExhausted: vi.fn().mockReturnValue(false),
