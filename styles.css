@@ -1805,6 +1805,13 @@ body.theme-dark {
 	margin-left: var(--gs-space-6);
 	border-bottom-right-radius: var(--gs-radius-sm);
 	border: 1px solid var(--gs-accent);
+	/* Accent-tinted elevation: the neutral --gs-shadow-sm is swamped by the
+	   bubble's own colour, so lift it with a soft accent glow instead. */
+	box-shadow: 0 2px 8px color-mix(in srgb, var(--gs-accent) 25%, transparent);
+}
+
+.gemini-agent-message-user:hover .gemini-agent-message-content {
+	box-shadow: 0 4px 14px color-mix(in srgb, var(--gs-accent) 32%, transparent);
 }
 
 .gemini-agent-message-model .gemini-agent-message-content {
@@ -1907,10 +1914,15 @@ body.theme-dark {
 	position: absolute;
 	top: var(--size-2-2);
 	right: var(--size-2-2);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	background-color: var(--interactive-normal);
 	border: 1px solid var(--gs-border);
-	border-radius: var(--gs-radius-sm);
-	padding: var(--size-2-1);
+	/* Circular so it echoes the bubble's rounding rather than a mismatched
+	   square corner tucked into a rounded corner. */
+	border-radius: var(--gs-radius-pill);
+	padding: var(--size-2-2);
 	cursor: pointer;
 	opacity: 0;
 	transition: opacity var(--gs-dur) var(--gs-ease);
@@ -1928,6 +1940,22 @@ body.theme-dark {
 	width: var(--gs-icon-sm);
 	height: var(--gs-icon-sm);
 	color: var(--gs-text-muted);
+}
+
+/* On the accent-filled user bubble, the neutral light chip clashes. Make the
+   copy button a translucent-white overlay with a white icon so it sits on the
+   accent instead of standing out. */
+.gemini-agent-message-user .gemini-agent-copy-button {
+	background-color: color-mix(in srgb, var(--gs-on-accent) 16%, transparent);
+	border-color: color-mix(in srgb, var(--gs-on-accent) 30%, transparent);
+}
+
+.gemini-agent-message-user .gemini-agent-copy-button:hover {
+	background-color: color-mix(in srgb, var(--gs-on-accent) 30%, transparent);
+}
+
+.gemini-agent-message-user .gemini-agent-copy-button svg {
+	color: var(--gs-on-accent);
 }
 
 /* Collapsible tool messages */
