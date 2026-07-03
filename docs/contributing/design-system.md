@@ -69,6 +69,11 @@ button (`list-checks`) and send button (`play`) now match at 18px instead of the
 `list-checks`, copy = `copy`, delete = `trash-2`. Emoji stays for content only
 (🔧 tool logs, 💬 session avatars) — it round-trips into saved session files.
 
+Two intentional exceptions sit outside the action-icon scale: **hero icons** on
+modal headers / empty states (24px) and sub-scale **micro-icons** (chevrons, tiny
+status badges at 10–12px). These are display sizes, not toolbar/action icons, and
+stay as literals.
+
 ## Migration status
 
 The token layer is in place and every major surface — agent chat messages, modals
