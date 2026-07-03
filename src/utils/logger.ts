@@ -22,7 +22,7 @@ export class Logger {
 	/**
 	 * Debug log - only shown when debug mode is enabled
 	 */
-	log(...args: any[]): void {
+	log(...args: unknown[]): void {
 		if (this.plugin.settings?.debugMode) {
 			// eslint-disable-next-line obsidianmd/rule-custom-message -- central console wrapper; see AGENTS.md
 			console.log(this.prefix, ...args);
@@ -33,7 +33,7 @@ export class Logger {
 	/**
 	 * Debug log - only shown when debug mode is enabled
 	 */
-	debug(...args: any[]): void {
+	debug(...args: unknown[]): void {
 		if (this.plugin.settings?.debugMode) {
 			console.debug(this.prefix, ...args);
 			this.plugin.fileLogWriter?.write('DEBUG', this.prefix, args);
@@ -43,7 +43,7 @@ export class Logger {
 	/**
 	 * Error log - always shown
 	 */
-	error(...args: any[]): void {
+	error(...args: unknown[]): void {
 		console.error(this.prefix, ...args);
 		this.plugin.fileLogWriter?.write('ERROR', this.prefix, args);
 	}
@@ -51,7 +51,7 @@ export class Logger {
 	/**
 	 * Warning log - always shown
 	 */
-	warn(...args: any[]): void {
+	warn(...args: unknown[]): void {
 		console.warn(this.prefix, ...args);
 		this.plugin.fileLogWriter?.write('WARN', this.prefix, args);
 	}

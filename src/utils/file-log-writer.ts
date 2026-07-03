@@ -38,7 +38,7 @@ export class FileLogWriter {
 	 * Buffer a log entry for writing. Synchronous — never blocks the caller.
 	 * Checks the fileLogging setting so Logger doesn't need to.
 	 */
-	write(level: string, prefix: string, args: any[]): void {
+	write(level: string, prefix: string, args: unknown[]): void {
 		if (!this.plugin.settings?.fileLogging) return;
 
 		const timestamp = formatLocalTimestamp();
@@ -144,7 +144,7 @@ export class FileLogWriter {
 		}
 	}
 
-	private formatArgs(args: any[]): string {
+	private formatArgs(args: unknown[]): string {
 		return args
 			.map((arg) => {
 				if (arg === null || arg === undefined) return String(arg);

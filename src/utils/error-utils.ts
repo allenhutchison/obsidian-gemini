@@ -7,29 +7,43 @@
  */
 
 /**
+ * Coerce an unknown value to a string-keyed record for safe property probing.
+ *
+ * Error values arriving from SDKs, `fetch`, and JSON payloads are structurally
+ * dynamic, so we navigate them as `Record<string, unknown>` and narrow each
+ * field at the point of use. Non-objects (including `null`) yield an empty
+ * record so property access never throws.
+ */
+export function asRecord(value: unknown): Record<string, unknown> {
+	return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+/**
  * Extract the `details` array from various Google API error shapes.
  * Google errors may carry details at `error.details`, `error.error.details`,
  * `error.response.data.error.details`, or embedded as JSON in `error.message`.
  */
-export function extractErrorDetails(error: unknown): any[] {
+export function extractErrorDetails(error: unknown): unknown[] {
 	if (!error || typeof error !== 'object') return [];
-	const err = error as any;
+	const err = asRecord(error);
 
 	// Direct details array
 	if (Array.isArray(err.details)) return err.details;
 	// Nested under .error
-	if (Array.isArray(err.error?.details)) return err.error.details;
+	const nestedError = asRecord(err.error);
+	if (Array.isArray(nestedError.details)) return nestedError.details;
 	// Nested under .response.data.error
-	if (Array.isArray(err.response?.data?.error?.details)) return err.response.data.error.details;
+	const responseError = asRecord(asRecord(asRecord(err.response).data).error);
+	if (Array.isArray(responseError.details)) return responseError.details;
 
 	// Try to parse details from the error message (Google SDK sometimes embeds JSON)
-	if (err.message && typeof err.message === 'string') {
+	if (typeof err.message === 'string') {
 		try {
 			const start = err.message.indexOf('{');
 			const end = err.message.lastIndexOf('}');
 			if (start !== -1 && end > start) {
-				const parsed = JSON.parse(err.message.slice(start, end + 1));
-				const details = parsed.details ?? parsed.error?.details;
+				const parsed = asRecord(JSON.parse(err.message.slice(start, end + 1)));
+				const details = parsed.details ?? asRecord(parsed.error).details;
 				if (Array.isArray(details)) return details;
 			}
 		} catch {
@@ -51,17 +65,20 @@ export function isQuotaExhausted(error: unknown): boolean {
 	// Check structured details for QuotaFailure with limit: 0
 	const details = extractErrorDetails(error);
 	for (const detail of details) {
-		if (detail['@type']?.includes('QuotaFailure') || detail['@type']?.includes('quotaFailure')) {
-			const violations = detail.violations || [];
+		const d = asRecord(detail);
+		const type = d['@type'];
+		if (typeof type === 'string' && (type.includes('QuotaFailure') || type.includes('quotaFailure'))) {
+			const violations = Array.isArray(d.violations) ? d.violations : [];
 			for (const v of violations) {
-				if (v.limit === 0 || v.limit === '0') return true;
+				const limit = asRecord(v).limit;
+				if (limit === 0 || limit === '0') return true;
 			}
 		}
 	}
 
 	// Fall back to message-based detection for SDK errors that flatten details
 	if (error && typeof error === 'object') {
-		const message = (error as any).message || String(error);
+		const message: unknown = asRecord(error).message || String(error);
 		const messageLower = typeof message === 'string' ? message.toLowerCase() : '';
 		if (
 			messageLower.includes('resource_exhausted') &&
@@ -88,7 +105,7 @@ export function isRateLimitError(error: unknown): boolean {
 	if (statusCode === 429) return true;
 
 	if (typeof error === 'object') {
-		const message = (error as any).message || '';
+		const message: unknown = asRecord(error).message || '';
 		const messageLower = typeof message === 'string' ? message.toLowerCase() : String(error).toLowerCase();
 		return (
 			messageLower.includes('429') ||
@@ -282,7 +299,7 @@ export function getErrorMessage(error: unknown): string {
 
 	// Handle objects with error information
 	if (typeof error === 'object') {
-		const err = error as any;
+		const err = asRecord(error);
 
 		// Check for status code using the extraction function
 		const statusCode = extractStatusCode(err);
@@ -301,12 +318,13 @@ export function getErrorMessage(error: unknown): string {
 		}
 
 		// Check for error description
-		if (err.error?.message) {
+		const nestedError = asRecord(err.error);
+		if (nestedError.message) {
 			// Process nested error message
-			if (typeof err.error.message === 'string') {
-				return `API error: ${err.error.message}`;
+			if (typeof nestedError.message === 'string') {
+				return `API error: ${nestedError.message}`;
 			}
-			return getErrorMessage(err.error.message);
+			return getErrorMessage(nestedError.message);
 		}
 
 		// Try to stringify the error
@@ -327,50 +345,51 @@ export function getErrorMessage(error: unknown): string {
 /**
  * Extract HTTP status code from error object
  */
-export function extractStatusCode(error: any): number | null {
+export function extractStatusCode(error: unknown): number | null {
 	// Guard non-object inputs so callers passing `null`, `undefined`, or a
-	// primitive (this is an exported helper typed as `any`) don't trigger a
+	// primitive (this is an exported helper accepting `unknown`) don't trigger a
 	// secondary TypeError inside an already-failing error path.
 	if (!error || (typeof error !== 'object' && typeof error !== 'function')) {
 		return null;
 	}
+	const err = asRecord(error);
 
 	// Check common status code properties
-	if (typeof error.status === 'number') {
-		return error.status;
+	if (typeof err.status === 'number') {
+		return err.status;
 	}
-	if (typeof error.statusCode === 'number') {
-		return error.statusCode;
+	if (typeof err.statusCode === 'number') {
+		return err.statusCode;
 	}
 	// ollama-js throws ResponseError with `status_code`
-	if (typeof error.status_code === 'number') {
-		return error.status_code;
+	if (typeof err.status_code === 'number') {
+		return err.status_code;
 	}
-	if (typeof error.code === 'number') {
-		return error.code;
+	if (typeof err.code === 'number') {
+		return err.code;
 	}
 
 	// Check in nested error object
-	if (error.error) {
-		if (typeof error.error.status === 'number') {
-			return error.error.status;
-		}
-		if (typeof error.error.code === 'number') {
-			return error.error.code;
-		}
+	const nestedError = asRecord(err.error);
+	if (typeof nestedError.status === 'number') {
+		return nestedError.status;
+	}
+	if (typeof nestedError.code === 'number') {
+		return nestedError.code;
 	}
 
 	// Check in response object (fetch API pattern)
-	if (error.response) {
-		if (typeof error.response.status === 'number') {
-			return error.response.status;
-		}
+	const response = asRecord(err.response);
+	if (typeof response.status === 'number') {
+		return response.status;
 	}
 
 	// Try to extract from error message
-	const match = error.message?.match(/(?:status|code)[\s:]+(\d{3})/i);
-	if (match) {
-		return parseInt(match[1], 10);
+	if (typeof err.message === 'string') {
+		const match = err.message.match(/(?:status|code)[\s:]+(\d{3})/i);
+		if (match) {
+			return parseInt(match[1], 10);
+		}
 	}
 
 	return null;
@@ -379,8 +398,9 @@ export function extractStatusCode(error: any): number | null {
 /**
  * Get user-friendly message for HTTP status codes
  */
-function getHttpErrorMessage(statusCode: number, error: any): string {
-	const errorMessage = error.message || '';
+function getHttpErrorMessage(statusCode: number, error: unknown): string {
+	const rawMessage = asRecord(error).message;
+	const errorMessage = typeof rawMessage === 'string' ? rawMessage : '';
 
 	switch (statusCode) {
 		case 400:

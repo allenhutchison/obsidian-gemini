@@ -4,7 +4,7 @@
  */
 
 import { Logger } from './logger';
-import { extractErrorDetails, extractStatusCode, isQuotaExhausted } from './error-utils';
+import { asRecord, extractErrorDetails, extractStatusCode, isQuotaExhausted } from './error-utils';
 
 /**
  * Configuration for retry behavior
@@ -179,8 +179,10 @@ export function parseRetryDelay(error: unknown): number | null {
 	const details = extractErrorDetails(error);
 
 	for (const detail of details) {
-		if (detail['@type']?.includes('RetryInfo') || detail['@type']?.includes('retryInfo')) {
-			const delay = detail.retryDelay;
+		const d = asRecord(detail);
+		const type = d['@type'];
+		if (typeof type === 'string' && (type.includes('RetryInfo') || type.includes('retryInfo'))) {
+			const delay = d.retryDelay;
 			if (typeof delay === 'string') {
 				// Parse duration strings like "17s", "1.5s"
 				const match = delay.match(/^(\d+(?:\.\d+)?)s$/);
@@ -233,7 +235,7 @@ export function isRetryableApiError(error: unknown): boolean {
 	// For errors with rate-limit/quota messages but no status code,
 	// check if it's a permanent quota issue
 	if (error && typeof error === 'object') {
-		const message = (error as any).message || '';
+		const message: unknown = asRecord(error).message || '';
 		const messageLower = typeof message === 'string' ? message.toLowerCase() : '';
 		if (
 			messageLower.includes('resource_exhausted') ||

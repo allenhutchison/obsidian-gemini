@@ -4,19 +4,23 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { MCP_CALL_TOOL_TIMEOUT_MS } from './mcp-constants';
 import { withTimeout } from '../utils/timeout';
-import { getRawErrorMessage } from '../utils/error-utils';
+import { asRecord, getRawErrorMessage } from '../utils/error-utils';
 
 /**
- * MCP tool definition as returned by client.listTools()
+ * MCP tool definition as returned by client.listTools().
+ *
+ * The `inputSchema` is external JSON Schema (the SDK types property values as
+ * bare `object`), so `properties` values stay `unknown` and are narrowed at the
+ * point of use (see `convertInputSchema`).
  */
 interface MCPToolDefinition {
 	name: string;
 	description?: string;
 	inputSchema?: {
 		type?: string;
-		properties?: Record<string, any>;
+		properties?: Record<string, unknown>;
 		required?: string[];
-		[key: string]: any;
+		[key: string]: unknown;
 	};
 }
 
@@ -43,7 +47,7 @@ export class MCPToolWrapper implements Tool {
 		this.parameters = convertInputSchema(toolDef.inputSchema);
 	}
 
-	async execute(params: any, _context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(params: Record<string, unknown>, _context: ToolExecutionContext): Promise<ToolResult> {
 		try {
 			// Bound the wait — a hung MCP server must not freeze the agent loop.
 			// Timeout surfaces as `{ success: false, error }` via the catch below,
@@ -85,7 +89,7 @@ export class MCPToolWrapper implements Tool {
 		}
 	}
 
-	confirmationMessage(params: any): string {
+	confirmationMessage(params: Record<string, unknown>): string {
 		const paramSummary = Object.entries(params || {})
 			.map(([key, value]) => {
 				const strValue = typeof value === 'string' ? value : JSON.stringify(value);
@@ -97,7 +101,7 @@ export class MCPToolWrapper implements Tool {
 		return `Run MCP tool "${this.displayName}"${paramSummary ? `\n${paramSummary}` : ''}`;
 	}
 
-	getProgressDescription(_params: any): string {
+	getProgressDescription(_params: Record<string, unknown>): string {
 		return `Running ${this.displayName}...`;
 	}
 }
@@ -171,12 +175,16 @@ function convertInputSchema(inputSchema?: MCPToolDefinition['inputSchema']): Too
 
 	const properties: ToolParameterSchema['properties'] = {};
 
-	for (const [key, schema] of Object.entries(inputSchema.properties)) {
+	for (const [key, rawSchema] of Object.entries(inputSchema.properties)) {
+		const schema = asRecord(rawSchema);
+		const rawDescription = schema.description;
+		const enumValues = schema.enum;
+		const items = schema.items;
 		properties[key] = {
-			type: mapJsonSchemaType(schema?.type),
-			description: schema?.description || `Parameter "${key}"`,
-			...(schema?.enum ? { enum: schema.enum } : {}),
-			...(schema?.items ? { items: { type: mapJsonSchemaType(schema.items.type) } } : {}),
+			type: mapJsonSchemaType(schema.type),
+			description: typeof rawDescription === 'string' && rawDescription ? rawDescription : `Parameter "${key}"`,
+			...(Array.isArray(enumValues) ? { enum: enumValues } : {}),
+			...(items ? { items: { type: mapJsonSchemaType(asRecord(items).type) } } : {}),
 		};
 	}
 
@@ -190,7 +198,7 @@ function convertInputSchema(inputSchema?: MCPToolDefinition['inputSchema']): Too
 /**
  * Map JSON Schema types to the plugin's simpler type system.
  */
-function mapJsonSchemaType(type: any): 'string' | 'number' | 'boolean' | 'array' {
+function mapJsonSchemaType(type: unknown): 'string' | 'number' | 'boolean' | 'array' {
 	switch (type) {
 		case 'string':
 			return 'string';

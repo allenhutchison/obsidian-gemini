@@ -15,7 +15,7 @@ import type ObsidianGemini from '../main';
 export function generateToolDescription(
 	plugin: ObsidianGemini,
 	toolName: string,
-	_toolArguments: Record<string, any>,
+	_toolArguments: Record<string, unknown>,
 	displayName: string
 ): string {
 	const fallback = `Executing: ${displayName}`;
