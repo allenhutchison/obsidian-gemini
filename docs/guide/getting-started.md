@@ -111,7 +111,7 @@ If you see a message about a missing or inaccessible API key:
 
 - Check file permissions and paths
 - Verify files exist and are accessible
-- System folders (.obsidian, plugin folders) are protected from modifications
+- System folders (Obsidian's configuration folder — `.obsidian` by default, or a renamed one — and plugin folders) are protected from modifications
 
 **Poor Quality Output**
 

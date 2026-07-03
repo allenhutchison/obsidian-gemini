@@ -793,7 +793,7 @@ Agent: I'll research productivity methods and create notes.
 
 The following folders are automatically protected:
 
-- `.obsidian/` - Plugin configurations
+- `.obsidian/` - Obsidian's configuration folder (or your renamed config directory)
 - `gemini-scribe/` - Plugin state files
 - Any folder containing plugin data
 

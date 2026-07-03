@@ -167,7 +167,7 @@ Hooks fire reactively and can run continuously, so the engine has several guardr
 Two folders never trigger hooks regardless of glob:
 
 - The plugin state folder (`[state-folder]/`)
-- Obsidian's own configuration folder (`.obsidian/`)
+- Obsidian's own configuration folder (`.obsidian/` by default, or a renamed one)
 
 This prevents trivial loops where a hook's own output (in `Hooks/Runs/...`) would re-trigger it.
 
