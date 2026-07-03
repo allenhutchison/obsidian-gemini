@@ -43,6 +43,7 @@ vi.mock('obsidian', async () => ({
 import { TFile, MarkdownView } from 'obsidian';
 
 const mockVault = {
+	configDir: '.obsidian',
 	getAbstractFileByPath: vi.fn(),
 	read: vi.fn(),
 	readBinary: vi.fn(),

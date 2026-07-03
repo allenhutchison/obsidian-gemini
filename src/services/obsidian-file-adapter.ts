@@ -6,6 +6,7 @@ import {
 	getMimeTypeWithFallback,
 	isExtensionSupportedWithFallback,
 } from '@allenhutchison/gemini-utils';
+import { isPathInFolder } from '../utils/file-utils';
 
 /**
  * Obsidian Vault adapter for the gemini-utils FileSystemAdapter interface.
@@ -217,8 +218,9 @@ export class ObsidianVaultAdapter implements FileSystemAdapter {
 			}
 		}
 
-		// Exclude system folders
-		if (filePath.startsWith('.obsidian/')) {
+		// Exclude system folders (the Obsidian configuration directory, which the
+		// user may have renamed from the default `.obsidian`)
+		if (isPathInFolder(filePath, this.vault.configDir)) {
 			return false;
 		}
 

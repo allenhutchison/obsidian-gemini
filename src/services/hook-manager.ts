@@ -1,6 +1,6 @@
 import { Platform, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
-import { ensureFolderExists } from '../utils/file-utils';
+import { ensureFolderExists, shouldExcludePath } from '../utils/file-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import {
@@ -791,11 +791,13 @@ export class HookManager {
 	// ── Filter / gate helpers ────────────────────────────────────────────────
 
 	private isExcludedPath(filePath: string): boolean {
-		const stateFolder = normalizePath(this.plugin.settings.historyFolder) + '/';
-		if (filePath === stateFolder.slice(0, -1)) return true;
-		if (filePath.startsWith(stateFolder)) return true;
-		if (filePath.startsWith('.obsidian/')) return true;
-		return false;
+		// Excludes the plugin state folder and the Obsidian configuration directory.
+		// Delegates to the shared helper so the containment semantics live in one place.
+		return shouldExcludePath(
+			filePath,
+			normalizePath(this.plugin.settings.historyFolder),
+			this.plugin.app.vault.configDir
+		);
 	}
 
 	private passesPlatformGate(hook: Hook): boolean {

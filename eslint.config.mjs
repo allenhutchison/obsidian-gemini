@@ -53,9 +53,6 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// 48 violations: `x as TFile` / `x as TFolder` casts scattered across vault
 	// helpers. Replacing each with `instanceof` checks is a careful refactor.
 	'obsidianmd/no-tfile-tfolder-cast': 'off',
-	// 35 violations: hardcoded `.obsidian` references. Some are in path constants
-	// that need `vault.configDir` plumbed through; some are in docs/comments.
-	'obsidianmd/hardcoded-config-path': 'off',
 	// 28 violations: command IDs include the plugin ID (e.g. `gemini-scribe-foo`).
 	// Removing the prefix would break user hotkey bindings — needs a migration.
 	'obsidianmd/commands/no-plugin-id-in-command-id': 'off',
@@ -140,6 +137,10 @@ export default defineConfig([
 			'import/no-nodejs-modules': 'off',
 			// innerHTML inside test setup is fine (jsdom, not user-facing).
 			'@microsoft/sdl/no-inner-html': 'off',
+			// Tests use concrete `.obsidian` sample paths as fixtures to verify the
+			// exclusion logic; the rule enforcing `vault.configDir` applies to production
+			// code in `src/`, not to fixture data.
+			'obsidianmd/hardcoded-config-path': 'off',
 		},
 	},
 ]);

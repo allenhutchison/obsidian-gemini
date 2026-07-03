@@ -3,7 +3,7 @@ import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, no
 import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
 import { getErrorMessage } from '../utils/error-utils';
-import { ensureFolderExists } from '../utils/file-utils';
+import { ensureFolderExists, isPathInFolder } from '../utils/file-utils';
 import { t } from '../i18n';
 
 export class ImageGeneration {
@@ -271,8 +271,10 @@ export class ImageGeneration {
 			throw new Error(`Output path escapes the vault: "${outputPath}"`);
 		}
 
-		// Reject paths inside .obsidian/
-		if (normalized.split('/').includes('.obsidian')) {
+		// Reject paths inside the Obsidian configuration directory (default
+		// `.obsidian`, but the user may have renamed it). Root-anchored, matching
+		// deep-research's write-path validator.
+		if (isPathInFolder(normalized, this.plugin.app.vault.configDir)) {
 			throw new Error(`Output path cannot be inside the Obsidian configuration folder: "${outputPath}"`);
 		}
 

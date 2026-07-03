@@ -30,13 +30,13 @@ Initial indexing time depends on vault size. A vault with 1,000 notes typically 
 
 ### Configuration Options
 
-| Setting                   | Default        | Description                                                                                                                     |
-| ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Enable vault indexing** | Off            | Master toggle for the feature                                                                                                   |
-| **Search index name**     | Auto-generated | Read-only. The Google File Search store identifier, assigned automatically when indexing starts                                 |
-| **Auto-sync changes**     | On             | Automatically update the index when files change                                                                                |
-| **Include attachments**   | Off            | Index PDFs, Office documents, and other supported file types beyond markdown                                                    |
-| **Exclude folders**       | None           | Folders to skip during indexing (one per line). System folders like `.obsidian` and the plugin state folder are always excluded |
+| Setting                   | Default        | Description                                                                                                                                                                                      |
+| ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Enable vault indexing** | Off            | Master toggle for the feature                                                                                                                                                                    |
+| **Search index name**     | Auto-generated | Read-only. The Google File Search store identifier, assigned automatically when indexing starts                                                                                                  |
+| **Auto-sync changes**     | On             | Automatically update the index when files change                                                                                                                                                 |
+| **Include attachments**   | Off            | Index PDFs, Office documents, and other supported file types beyond markdown                                                                                                                     |
+| **Exclude folders**       | None           | Folders to skip during indexing (one per line). System folders — Obsidian's configuration directory (`.obsidian` by default, or a renamed one) and the plugin state folder — are always excluded |
 
 ### Index Management
 
@@ -148,7 +148,7 @@ A cache file (`rag-index-cache.json`) is stored in your plugin state folder. It 
 
 ### Protecting sensitive content
 
-- System folders (`.obsidian`, plugin state folder) are always excluded
+- System folders (Obsidian's configuration directory — `.obsidian` by default, or a renamed one — and the plugin state folder) are always excluded
 - Use **Exclude folders** in settings to skip sensitive directories (e.g., `private/`, `journal/`)
 - Keep **Include attachments** off if you don't want PDFs/documents indexed
 

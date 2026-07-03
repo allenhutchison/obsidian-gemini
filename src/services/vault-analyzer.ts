@@ -4,6 +4,7 @@ import { ModelClientFactory } from '../api';
 import { AgentsMemoryData } from './agents-memory';
 import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
 import { collectFilesFromFolder } from '../utils/folder-walk';
+import { isPathInFolder } from '../utils/file-utils';
 import { t } from '../i18n';
 
 /**
@@ -240,8 +241,8 @@ export class VaultAnalyzer {
 		const indent = '  '.repeat(depth);
 		let structure = '';
 
-		// Skip system folders
-		const skipFolders = ['.obsidian', this.plugin.settings.historyFolder];
+		// Skip system folders (the Obsidian config dir may be renamed from `.obsidian`)
+		const skipFolders = [this.plugin.app.vault.configDir, this.plugin.settings.historyFolder];
 		if (skipFolders.includes(folder.path)) {
 			return '';
 		}
@@ -289,8 +290,10 @@ export class VaultAnalyzer {
 	 */
 	private getSampleFileNames(files: TFile[], limit: number = 20): string[] {
 		// Get files from different parts of the vault for diversity
-		const skipPaths = [this.plugin.settings.historyFolder, '.obsidian'];
-		const filteredFiles = files.filter((f) => !skipPaths.some((skip) => f.path.startsWith(skip)));
+		const skipPaths = [this.plugin.settings.historyFolder, this.plugin.app.vault.configDir];
+		// Root-anchored containment so a sibling like `gemini-scribe-backup/` or a
+		// renamed `_obsidian-notes/` is not wrongly excluded by a bare prefix match.
+		const filteredFiles = files.filter((f) => !skipPaths.some((skip) => isPathInFolder(f.path, skip)));
 
 		// Sort by modification time to get recent files
 		const sortedFiles = filteredFiles.sort((a, b) => b.stat.mtime - a.stat.mtime).slice(0, limit);

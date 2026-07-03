@@ -54,6 +54,7 @@ const mockFile = new TFile();
 };
 
 const mockVault = {
+	configDir: '.obsidian',
 	getAbstractFileByPath: vi.fn(),
 	read: vi.fn(),
 	readBinary: vi.fn(),

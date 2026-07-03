@@ -47,6 +47,7 @@ function createMockFile(path: string, opts?: { size?: number; mtime?: number }):
 
 function createMockVault(files: TFile[] = []) {
 	return {
+		configDir: '.obsidian',
 		getMarkdownFiles: vi.fn(() => files.filter((f) => f.path.endsWith('.md'))),
 		getFiles: vi.fn(() => files),
 		getAbstractFileByPath: vi.fn((path: string) => files.find((f) => f.path === path) ?? null),

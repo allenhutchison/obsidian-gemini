@@ -503,7 +503,7 @@ Available permission bypasses:
 ## Security Best Practices
 
 1. **API Key**: Your API key is stored securely via Obsidian's SecretStorage and is not written to `data.json`. Never share your API key or commit it to version control
-2. **System Folders**: Plugin automatically protects `.obsidian` and plugin state folders from tool operations
+2. **System Folders**: Plugin automatically protects Obsidian's configuration folder (`.obsidian` by default, or a renamed one) and plugin state folders from tool operations
 3. **Tool permissions**: Review tool operations before approving (when confirmations are enabled)
 4. **System Prompt Override**: Use with caution; can break expected functionality
 

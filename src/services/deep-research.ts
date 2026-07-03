@@ -1,15 +1,11 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { isPathInFolder } from '../utils/file-utils';
 import type { Interactions } from '@google/genai';
 import { ResearchManager, ReportGenerator, Interaction, InteractionOutput } from '@allenhutchison/gemini-utils';
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
-
-/**
- * System folders that should not be written to
- */
-const PROTECTED_FOLDER_SEGMENTS = ['.obsidian'];
 
 /**
  * Research scope options
@@ -308,16 +304,14 @@ export class DeepResearchService {
 		// Normalize the path using Obsidian's normalizePath (handles slashes, removes redundant separators)
 		const normalizedPath = normalizePath(rawFilePath);
 
-		// Split into segments to check for protected folders
-		const segments = normalizedPath.split('/');
-
-		// Check for protected folder segments
-		for (const segment of segments) {
-			if (PROTECTED_FOLDER_SEGMENTS.includes(segment)) {
-				throw new Error(
-					`Cannot write report to protected system folder: "${segment}". Please choose a different output location.`
-				);
-			}
+		// The Obsidian configuration directory (default `.obsidian`, but the user
+		// may have renamed it) must never be written to. Root-anchored, matching
+		// the image-generation write-path validator.
+		const configDir = this.plugin.app.vault.configDir;
+		if (isPathInFolder(normalizedPath, configDir)) {
+			throw new Error(
+				`Cannot write report to protected system folder: "${configDir}". Please choose a different output location.`
+			);
 		}
 
 		// Check if path is inside the plugin's history folder (or is the folder itself).

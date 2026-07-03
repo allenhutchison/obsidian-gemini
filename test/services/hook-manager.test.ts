@@ -24,7 +24,8 @@ vi.mock('obsidian', () => ({
 	Platform: { isMobile: false },
 }));
 
-vi.mock('../../src/utils/file-utils', () => ({
+vi.mock('../../src/utils/file-utils', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../../src/utils/file-utils')>()),
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -81,6 +82,7 @@ function createMockPlugin(overrides: Record<string, any> = {}) {
 		app: {
 			fileManager: { trashFile: vi.fn().mockResolvedValue(undefined) },
 			vault: {
+				configDir: '.obsidian',
 				getMarkdownFiles: vi.fn().mockReturnValue([]),
 				getAbstractFileByPath: vi.fn().mockReturnValue(null),
 				on: vi.fn().mockReturnValue({ __ref: true }),

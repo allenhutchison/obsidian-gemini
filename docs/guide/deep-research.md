@@ -95,7 +95,7 @@ When you specify an output file:
 - The report is saved to that path in your vault
 - A `.md` extension is added automatically if missing
 - The file is added to your current session context, so the agent can reference the findings in follow-up messages
-- Protected folders (`.obsidian`, plugin state folder) cannot be used as output paths
+- Protected folders (Obsidian's configuration folder — `.obsidian` by default, or a renamed one — and the plugin state folder) cannot be used as output paths
 
 ## How It Differs from Google Search
 
@@ -154,7 +154,7 @@ Deep Research is inherently slow — it's performing thorough multi-source inves
 
 The research succeeded but saving failed. Check that:
 
-- The output path isn't in a protected folder (`.obsidian`, plugin state folder)
+- The output path isn't in a protected folder (Obsidian's configuration folder — `.obsidian` by default, or a renamed one — or the plugin state folder)
 - You have write permissions to the target directory
 - The research results are still available in the chat — you can copy them manually
 
