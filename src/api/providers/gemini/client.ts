@@ -68,9 +68,6 @@ const THINKING_LEVEL_BY_USE_CASE: Record<ModelUseCase, ThinkingLevel> = {
 } as Record<ModelUseCase, ThinkingLevel>;
 
 /**
- * Extends Part to include the optional thought property
- */
-/**
  * GeminiClient - Simplified API wrapper using js-genai SDK
  *
  * Implements ModelApi interface while leveraging the official Google SDK
