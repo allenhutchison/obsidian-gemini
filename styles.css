@@ -5190,7 +5190,7 @@ body {
 	gap: 8px;
 	margin-top: 16px;
 	padding-top: 12px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 }
 
 /* Collapsible settings sections (issue #430).
@@ -5206,7 +5206,7 @@ body {
    the General `<div>` and the first `<details>` of its type, so the first
    collapsible lost its border. Adjacent-sibling selector is element-agnostic. */
 .gemini-settings-section + .gemini-settings-section {
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 	margin-top: 0.75em;
 }
 
@@ -5218,7 +5218,7 @@ body {
 	align-items: flex-start;
 	gap: var(--size-2-2);
 	padding: 0.75em 0 0.5em;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 /* Always-open variant uses the same shape but isn't clickable. */
@@ -5239,7 +5239,7 @@ body {
 	margin-top: 0.4em;
 	border-top: 5px solid transparent;
 	border-bottom: 5px solid transparent;
-	border-left: 6px solid var(--text-muted);
+	border-left: 6px solid var(--gs-text-muted);
 	transition: transform 0.15s ease;
 	flex-shrink: 0;
 }
@@ -5277,8 +5277,8 @@ body {
 	font-weight: 500;
 	padding: 1px 7px;
 	border-radius: 8px;
-	background: var(--background-modifier-border);
-	color: var(--text-muted);
+	background: var(--gs-border);
+	color: var(--gs-text-muted);
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
@@ -5286,7 +5286,7 @@ body {
 .gemini-settings-section-description {
 	display: block;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-weight: normal;
 	line-height: 1.4;
 }
@@ -5307,9 +5307,9 @@ body {
 	width: auto;
 	padding: var(--size-2-2);
 	border: none;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	background-color: transparent;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	cursor: pointer;
 	transition:
 		background-color 0.12s ease,
@@ -5334,19 +5334,19 @@ body {
 }
 
 .gemini-agent-plan-btn:hover {
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background-color: var(--gs-hover);
+	color: var(--gs-text);
 }
 
 .gemini-agent-plan-btn.gemini-agent-plan-btn-active {
 	padding: var(--size-2-2) var(--size-2-3);
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 }
 
 .gemini-agent-plan-btn.gemini-agent-plan-btn-active:hover {
-	background-color: var(--interactive-accent-hover);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent-hover);
+	color: var(--gs-on-accent);
 }
 
 .gemini-agent-plan-btn.gemini-agent-plan-btn-active .gemini-agent-plan-btn-label {
@@ -5354,18 +5354,18 @@ body {
 }
 
 .gemini-agent-plan-btn.gemini-agent-plan-btn-active svg {
-	color: var(--text-on-accent);
+	color: var(--gs-on-accent);
 }
 
 /* Plan card — one cohesive accent panel. Used by both the pending-approval
  * card and the approved/reloaded card so they read identically. */
 .gemini-agent-plan-message {
-	border: 1px solid var(--interactive-accent);
+	border: 1px solid var(--gs-accent);
 	border-left-width: 3px;
-	border-radius: var(--radius-m);
-	background-color: color-mix(in srgb, var(--interactive-accent) 6%, var(--background-primary));
-	padding: var(--size-4-3) var(--size-4-4);
-	margin-right: var(--size-4-6);
+	border-radius: var(--gs-radius-md);
+	background-color: color-mix(in srgb, var(--gs-accent) 6%, var(--gs-surface));
+	padding: var(--gs-space-3) var(--gs-space-4);
+	margin-right: var(--gs-space-5);
 }
 
 /* The plan content flows directly on the panel — drop the nested message
@@ -5384,7 +5384,7 @@ body {
 }
 
 .gemini-agent-plan-role {
-	color: var(--interactive-accent);
+	color: var(--gs-accent);
 	font-weight: 600;
 }
 
@@ -5392,28 +5392,28 @@ body {
 .gemini-agent-plan-buttons {
 	display: flex;
 	gap: var(--size-2-3);
-	margin-top: var(--size-4-3);
+	margin-top: var(--gs-space-3);
 	justify-content: flex-end;
 }
 
 /* Primary = filled accent; reject = quiet ghost outline */
 .gemini-agent-plan-buttons .gemini-agent-btn-primary {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 	font-weight: 600;
 }
 
 .gemini-agent-plan-buttons .gemini-agent-btn-primary:hover {
-	background-color: var(--interactive-accent-hover);
+	background-color: var(--gs-accent-hover);
 }
 
 .gemini-agent-plan-buttons .gemini-agent-btn-secondary {
 	background-color: transparent;
-	color: var(--text-muted);
-	border: 1px solid var(--background-modifier-border);
+	color: var(--gs-text-muted);
+	border: 1px solid var(--gs-border);
 }
 
 .gemini-agent-plan-buttons .gemini-agent-btn-secondary:hover {
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background-color: var(--gs-hover);
+	color: var(--gs-text);
 }
