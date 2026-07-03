@@ -1586,7 +1586,7 @@ body {
 	max-height: 400px;
 	overflow-y: auto;
 	overflow-x: hidden;
-	margin: var(--size-4-3) 20px;
+	margin: var(--gs-space-3) 20px;
 	padding-right: 5px;
 	/* Add some padding for scrollbar */
 }
@@ -1596,9 +1596,9 @@ body {
 	justify-content: space-between;
 	align-items: center;
 	gap: var(--size-2-2);
-	padding: var(--size-4-2) var(--size-4-3);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
+	padding: var(--gs-space-2) var(--gs-space-3);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-md);
 	margin-bottom: var(--size-2-2);
 	cursor: pointer;
 	transition: all 0.15s ease;
@@ -1608,13 +1608,13 @@ body {
 }
 
 .gemini-session-item:hover {
-	background-color: var(--background-modifier-hover);
-	border-color: var(--interactive-accent);
+	background-color: var(--gs-hover);
+	border-color: var(--gs-accent);
 }
 
 .gemini-session-item-active {
 	background-color: var(--background-modifier-active);
-	border-color: var(--interactive-accent);
+	border-color: var(--gs-accent);
 }
 
 .gemini-session-info {
@@ -1626,7 +1626,7 @@ body {
 
 .gemini-session-title {
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	margin-bottom: var(--size-2-1);
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1635,7 +1635,7 @@ body {
 
 .gemini-session-meta {
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -1652,15 +1652,15 @@ body {
 	padding: var(--size-2-1);
 	background: none;
 	border: none;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	cursor: pointer;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 	transition: all 0.15s ease;
 }
 
 .gemini-session-action-btn:hover {
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
+	background-color: var(--gs-hover);
+	color: var(--gs-text);
 }
 
 .gemini-session-action-btn.delete:hover {
@@ -1672,11 +1672,11 @@ body {
 .gemini-session-filter-bar {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 	padding: 0 20px;
 	margin-bottom: var(--size-2-1);
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-session-filter-bar select {
@@ -1688,9 +1688,9 @@ body {
 	display: inline-flex;
 	align-items: center;
 	gap: 2px;
-	background-color: var(--background-modifier-hover);
-	color: var(--text-muted);
-	border-radius: var(--radius-s);
+	background-color: var(--gs-hover);
+	color: var(--gs-text-muted);
+	border-radius: var(--gs-radius-sm);
 	padding: 1px 6px;
 	font-size: var(--font-ui-smaller);
 	margin-right: var(--size-2-2);
@@ -1711,7 +1711,7 @@ body {
 /* Modal button container in session modal */
 .gemini-session-modal .modal-button-container {
 	padding: 20px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 	margin-top: 0;
 }
 
