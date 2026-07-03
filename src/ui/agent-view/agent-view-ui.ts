@@ -333,13 +333,6 @@ export class AgentViewUI {
 	}
 
 	/**
-	 * Creates the session header (delegates to compact header)
-	 */
-	createSessionHeader(sessionHeader: HTMLElement, currentSession: ChatSession | null, callbacks: UICallbacks): void {
-		this.createCompactHeader(sessionHeader, currentSession, callbacks);
-	}
-
-	/**
 	 * Creates the input area with paste/keyboard handlers
 	 */
 	createInputArea(
