@@ -48,6 +48,10 @@ writing or migrating styles.
   numbers. The `--gs-space-*` scale covers the 4px grid (4/8/12/16/24/32/48);
   sub-grid micro-spacing (Obsidian's 2px-based `--size-2-*`: 2/4/6px) has no token
   and stays on the Obsidian variable.
+- **Colored surfaces need colored elevation.** A neutral `--gs-shadow-*` gets
+  perceptually swamped by a strongly-coloured fill (the accent-filled user bubble
+  reads flat despite carrying the shadow). Lift such an element with a `color-mix`
+  accent shadow scoped to it; neutral surfaces keep the neutral `--gs-shadow-*` scale.
 
 ## Icons
 
@@ -74,13 +78,23 @@ modal headers / empty states (24px) and sub-scale **micro-icons** (chevrons, tin
 status badges at 10–12px). These are display sizes, not toolbar/action icons, and
 stay as literals.
 
-## Migration status
+## Migrating & verifying
 
-The token layer is in place and every major surface — agent chat messages, modals
-(rewrite/chat, tool confirmation), agent-view controls, buttons, status bar,
-thinking/reasoning blocks, the file picker, and the input area — has been migrated
-onto it. About 325 raw `var(--…)` references remain in `styles.css`; most are
-deliberate holdouts rather than unmigrated components — the font-size scale,
-Obsidian's sub-grid `--size-2-*` micro-spacing, and other Obsidian variables with no
-`--gs-` equivalent. When you touch a component's styles, prefer moving its
-declarations onto tokens as you go.
+Every surface is migrated onto the tokens, with a few intentional raw-var holdouts:
+the font-size scale, Obsidian's sub-grid `--size-2-*` micro-spacing, and other
+Obsidian variables with no `--gs-` equivalent still use `var(--obsidian-var)`
+directly. When you touch a component's styles, keep it on the tokens.
+
+Two rules made the migration safe, and they apply to any future work here:
+
+- **Value-preserving first; visible changes are separate.** Migrate a surface onto
+  tokens with **zero visual change** — each token aliases the same value the code
+  already used — then make deliberate visual refinements in their own,
+  maintainer-directed commits. Mixing the two hides bugs and makes review hard.
+- **Verify by computed parity, not by eyeballing.** For a value-preserving change,
+  assert the computed result is unchanged in a _live vault_: `obsidian eval` +
+  `getComputedStyle`, or token-resolution equality (does `--gs-x` resolve to the same
+  value as the variable it replaced?). This is exactly what caught the two real bugs
+  during migration — the `--size-2-*` mis-map (2px vs 4px) and the `:root`-vs-`body`
+  scope bug where color tokens silently resolved to _invalid_. A screenshot would not
+  have caught either.
