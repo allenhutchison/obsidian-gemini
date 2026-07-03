@@ -457,8 +457,8 @@ body {
 
 /* Agent Mode Controls */
 .gemini-scribe-agent-controls {
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 	border-radius: 6px;
 	padding: 12px;
 	margin-bottom: 12px;
@@ -478,7 +478,7 @@ body {
 .gemini-scribe-context-panel {
 	margin-top: 12px;
 	padding-top: 12px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 }
 
 .gemini-scribe-context-header {
@@ -495,8 +495,8 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	background-color: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background-color: var(--gs-surface);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
 	padding: 4px 8px;
 	margin-bottom: 4px;
@@ -506,25 +506,25 @@ body {
 .gemini-scribe-remove-file-btn {
 	background: none;
 	border: none;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	cursor: pointer;
 	padding: 2px 4px;
 	border-radius: 2px;
 }
 
 .gemini-scribe-remove-file-btn:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--gs-hover);
 	color: var(--text-error);
 }
 
 .gemini-scribe-add-files-btn {
 	background-color: var(--interactive-normal);
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
 	padding: 4px 8px;
 	font-size: 12px;
 	cursor: pointer;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-scribe-add-files-btn:hover {
@@ -544,7 +544,7 @@ body {
 }
 
 .gemini-scribe-no-files {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-style: italic;
 	font-size: 12px;
 }
@@ -558,8 +558,8 @@ body {
 
 /* Tool Execution Panel */
 .gemini-scribe-tool-panel {
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 	border-radius: 6px;
 	margin: 8px 0;
 	padding: 12px;
@@ -577,8 +577,8 @@ body {
 }
 
 .gemini-scribe-tool-params {
-	background-color: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background-color: var(--gs-surface);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
 	padding: 8px;
 }
@@ -586,7 +586,7 @@ body {
 .gemini-scribe-tool-params pre {
 	margin: 0;
 	font-size: 12px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-scribe-tool-result {
