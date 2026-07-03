@@ -59,7 +59,7 @@ for (const file of files) {
 }
 
 if (files.length === 0) {
-	console.error(`No workflow files found in ${WORKFLOWS_DIR}/ — nothing to check.`);
+	console.warn(`No workflow files found in ${WORKFLOWS_DIR}/ — nothing to check.`);
 	process.exit(0);
 }
 
