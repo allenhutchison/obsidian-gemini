@@ -337,7 +337,7 @@ For UI/UX guidelines, use the **ui-ux-guidelines** skill.
 ### Design system
 
 The plugin has a theme-adaptive **design token layer** at the top of `styles.css`
-(`:root { --gs-* }`) — semantic tokens aliasing Obsidian's theme variables, plus
+(`body { --gs-* }`) — semantic tokens aliasing Obsidian's theme variables, plus
 plugin-owned spacing / radius / icon / motion scales and one Gemini brand accent.
 When writing or modifying UI styles, **consume these tokens** rather than hardcoding
 color or reaching for raw `var(--obsidian-var)` / magic numbers; keep the plugin

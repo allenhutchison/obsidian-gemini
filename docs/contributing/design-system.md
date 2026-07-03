@@ -15,8 +15,12 @@ accent. Cohesion comes from consistent tokens, not from hardcoded color.
 
 ## The token layer
 
-Defined once at the top of `styles.css` under `:root`. Prefer these over raw
-`var(--obsidian-var)` references or magic numbers when writing or migrating styles.
+Defined once at the top of `styles.css` under **`body`** (not `:root`). Obsidian's
+theme variables are scoped to `body.theme-light` / `body.theme-dark`, so a token
+that aliases one from `:root` — where the source is undefined — resolves to an
+invalid value. `body` is the highest scope where the aliases actually resolve.
+Prefer these tokens over raw `var(--obsidian-var)` references or magic numbers when
+writing or migrating styles.
 
 | Group     | Tokens                                                              | Aliases                                                                         |
 | --------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -41,7 +45,9 @@ Defined once at the top of `styles.css` under `:root`. Prefer these over raw
 - **Status is semantic, not accent.** Use `--gs-success/-warning/-error/-info` for
   state; never repurpose the accent for meaning.
 - **Stay on the scales.** Spacing, radius, and icon sizes come from tokens — no magic
-  numbers.
+  numbers. The `--gs-space-*` scale covers the 4px grid (4/8/12/16/24/32/48);
+  sub-grid micro-spacing (Obsidian's 2px-based `--size-2-*`: 2/4/6px) has no token
+  and stays on the Obsidian variable.
 
 ## Icons
 
