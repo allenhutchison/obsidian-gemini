@@ -12,6 +12,23 @@ export interface CollapsibleSectionOptions {
 }
 
 /**
+ * When `containerEl` isn't a real DOM node (unit tests pass a bare `{}` stub
+ * without `appendChild`), return a detached div so callers can keep handing the
+ * result to `new Setting(...)` without DOM side-effects. Returns `null` for a
+ * real container, signalling the caller to proceed with normal rendering.
+ *
+ * The returned node is never inserted into a live view, so it isn't
+ * cross-window-relevant — hence the scoped `document` use.
+ */
+function createDetachedStubIfNeeded(containerEl: HTMLElement): HTMLElement | null {
+	if (typeof (containerEl as { appendChild?: unknown })?.appendChild === 'function') {
+		return null;
+	}
+	// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached test-stub node, never attached
+	return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
+}
+
+/**
  * Render a collapsible settings section using a native `<details>` element.
  * Returns the inner content element; pass it as the container for any
  * `new Setting(...)` calls that belong inside the section.
@@ -32,13 +49,8 @@ export function createCollapsibleSection(
 	id: string,
 	options: CollapsibleSectionOptions = {}
 ): HTMLElement {
-	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
-		// Stub container in unit tests — return a detached div so callers can
-		// keep passing it to `new Setting(...)` without DOM side-effects. This
-		// node is never inserted into a live view, so it isn't cross-window-relevant.
-		// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached test-stub node, never attached
-		return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
-	}
+	const stub = createDetachedStubIfNeeded(containerEl);
+	if (stub) return stub;
 
 	const expanded = plugin.settings.expandedSettingsSections ?? [];
 	const isOpen = expanded.includes(id);
@@ -112,11 +124,8 @@ export function createCollapsibleSection(
  * the inner content element; visually matches the collapsibles minus chevron.
  */
 export function createAlwaysOpenSection(containerEl: HTMLElement, title: string, description?: string): HTMLElement {
-	if (typeof (containerEl as { appendChild?: unknown })?.appendChild !== 'function') {
-		// Detached test-stub node, never attached to a live view (see createCollapsibleSection).
-		// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached test-stub node, never attached
-		return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
-	}
+	const stub = createDetachedStubIfNeeded(containerEl);
+	if (stub) return stub;
 
 	// Create nodes in the container's own document for popout-window compatibility.
 	const doc = containerEl.ownerDocument;
