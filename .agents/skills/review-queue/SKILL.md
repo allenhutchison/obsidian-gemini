@@ -117,7 +117,7 @@ When drained or dismissed, print a short session summary: what you decided, what
 
 **The open automated PR:**
 
-- **Surface** its CI rollup, CodeRabbit/human review threads, and mergeable state (`gh pr view`, `gh pr checks`, the reviews/comments APIs).
+- **Surface** its CI rollup, CodeRabbit/human review threads, and mergeable state (`gh pr view`, `gh pr checks`, the reviews/comments APIs). Say where the review signal came from: CodeRabbit, a human, or the pipeline's own **fallback self-review** (a marker comment with a `## Fallback review` heading, posted when CodeRabbit was rate-limited) — a PR whose only review is the pipeline's self-review deserves your closer look before merging.
 - **Review deeper** → hand off to the user-level `coderabbit-review` skill or `/code-review`; don't reimplement a review here.
 - **Leave feedback** → post review comments **as you** (no marker). The next tick addresses them and replies.
 - **Merge** → only on your explicit instruction for that PR, with a confirmation. After a merge, offer to clear a stale `auto:in-progress` label on the fixed issue (the next reconcile tick would otherwise do it).
