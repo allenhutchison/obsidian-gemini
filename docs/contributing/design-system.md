@@ -35,7 +35,7 @@ writing or migrating styles.
 | Elevation | `--gs-shadow-sm/-md/-lg`                                            | custom 3-step scale, theme-aware (dark override on `body.theme-dark`)           |
 | Type      | `--gs-font-ui`, `--gs-font-mono`                                    | `--font-interface`, `--font-monospace`                                          |
 | Motion    | `--gs-dur-fast/-/-slow`, `--gs-ease`                                | 120 / 200 / 320 ms                                                              |
-| Icons     | `--gs-icon-sm/-md/-lg/-xl`, `--gs-icon-stroke`                      | `--icon-xs/-s/-m/-l`, `--icon-stroke`                                           |
+| Icons     | `--gs-icon-sm/-md/-lg/-xl`, `--gs-icon-stroke`                      | fixed 14/16/18/20; stroke aliases `--icon-stroke`                               |
 
 ### Rules
 

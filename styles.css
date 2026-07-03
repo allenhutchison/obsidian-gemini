@@ -52,12 +52,14 @@ body {
 	--gs-dur-slow: 320ms;
 	--gs-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
-	/* Icons — aliases Obsidian's icon size + stroke tokens.
-	   lg (18px) is the default for toolbar & action icons. */
-	--gs-icon-sm: var(--icon-xs, 14px);
-	--gs-icon-md: var(--icon-s, 16px);
-	--gs-icon-lg: var(--icon-m, 18px);
-	--gs-icon-xl: var(--icon-l, 20px);
+	/* Icons — a fixed, definitive scale. lg (18px) is the default for toolbar &
+	   action icons. (Fixed literals rather than aliasing Obsidian's --icon-*
+	   steps, whose values don't match this scale — e.g. --icon-l is 18px, not 20.)
+	   Stroke still aliases Obsidian's for a native-light feel. */
+	--gs-icon-sm: 14px;
+	--gs-icon-md: 16px;
+	--gs-icon-lg: 18px;
+	--gs-icon-xl: 20px;
 	--gs-icon-stroke: var(--icon-stroke, 1.75px);
 
 	/* Gemini brand — the single signature, for primary actions & brand only */
@@ -191,7 +193,7 @@ body.theme-dark {
 	font-weight: 500;
 	border-radius: 4px;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-scribe-submit-button.mod-cta {
@@ -817,7 +819,7 @@ body.theme-dark {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: all 0.1s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-tool-expand-btn:hover {
@@ -918,7 +920,7 @@ body.theme-dark {
 	font-size: 14px;
 	font-weight: 500;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-tool-cancel-btn {
@@ -985,7 +987,7 @@ body.theme-dark {
 	cursor: text;
 	padding: 2px 4px;
 	border-radius: var(--gs-radius-sm);
-	transition: background-color 0.15s ease;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-title:hover {
@@ -1025,7 +1027,7 @@ body.theme-dark {
 	font-size: var(--font-ui-small);
 	font-weight: 500;
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 	border: none;
 }
 
@@ -1090,7 +1092,7 @@ body.theme-dark {
 	color: var(--gs-text-muted);
 	display: flex;
 	align-items: center;
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-toggle-btn:hover {
@@ -1119,7 +1121,7 @@ body.theme-dark {
 	cursor: text;
 	padding: var(--size-2-1) var(--size-2-2);
 	border-radius: var(--gs-radius-sm);
-	transition: background-color 0.15s ease;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1340,7 +1342,7 @@ body.theme-dark {
 .gemini-agent-progress-clickable {
 	cursor: pointer;
 	border-radius: var(--gs-radius-sm);
-	transition: background-color 0.15s ease;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-progress-clickable:hover {
@@ -1354,7 +1356,7 @@ body.theme-dark {
 	justify-content: center;
 	flex-shrink: 0;
 	color: var(--gs-text-muted);
-	transition: color 0.15s ease;
+	transition: color var(--gs-dur-fast) var(--gs-ease);
 }
 
 /* Hidden state — chevron only appears once thinking content is available */
@@ -1363,7 +1365,7 @@ body.theme-dark {
 }
 
 .gemini-agent-thinking-chevron svg {
-	transition: transform 0.2s ease;
+	transition: transform var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-agent-thinking-chevron-expanded svg {
@@ -1487,7 +1489,7 @@ body.theme-dark {
 	font-family: var(--font-interface);
 	font-size: var(--font-text-size);
 	resize: vertical;
-	transition: border-color 0.15s ease;
+	transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-input:focus {
@@ -1634,7 +1636,7 @@ body.theme-dark {
 	border-radius: var(--gs-radius-md);
 	margin-bottom: var(--size-2-2);
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 	overflow: hidden;
 	width: 100%;
 	box-sizing: border-box;
@@ -1688,7 +1690,7 @@ body.theme-dark {
 	color: var(--gs-text-muted);
 	cursor: pointer;
 	border-radius: var(--gs-radius-sm);
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-session-action-btn:hover {
@@ -1750,7 +1752,7 @@ body.theme-dark {
 
 .gemini-agent-message {
 	margin-bottom: var(--gs-space-4);
-	animation: fadeIn 0.3s ease-in;
+	animation: fadeIn var(--gs-dur-slow) var(--gs-ease);
 }
 
 @keyframes fadeIn {
@@ -1803,7 +1805,7 @@ body.theme-dark {
 	border-radius: var(--gs-radius-lg);
 	position: relative;
 	box-shadow: var(--gs-shadow-sm);
-	transition: box-shadow 0.15s ease;
+	transition: box-shadow var(--gs-dur-fast) var(--gs-ease);
 	user-select: text;
 	-webkit-user-select: text;
 	-ms-user-select: text;
@@ -1930,7 +1932,7 @@ body.theme-dark {
 	padding: var(--size-2-1);
 	cursor: pointer;
 	opacity: 0;
-	transition: opacity 0.2s ease-in-out;
+	transition: opacity var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-agent-message:hover .gemini-agent-copy-button {
@@ -1958,7 +1960,7 @@ body.theme-dark {
 	border-radius: var(--gs-radius-md);
 	overflow: hidden;
 	background-color: var(--gs-surface-alt);
-	transition: all 0.2s ease;
+	transition: all var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-tool-group:hover {
@@ -1973,7 +1975,7 @@ body.theme-dark {
 	padding: var(--size-2-3) var(--gs-space-3);
 	cursor: pointer;
 	user-select: none;
-	transition: background-color 0.15s ease;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-tool-group-summary:hover {
@@ -2020,7 +2022,7 @@ body.theme-dark {
 	display: flex;
 	align-items: center;
 	color: var(--gs-text-muted);
-	transition: transform 0.2s ease;
+	transition: transform var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-tool-group-chevron svg {
@@ -2031,13 +2033,13 @@ body.theme-dark {
 /* Group body (expandable) */
 .gemini-tool-group-body {
 	border-top: 1px solid var(--gs-border);
-	animation: slideDown 0.2s ease-out;
+	animation: slideDown var(--gs-dur) var(--gs-ease);
 }
 
 /* Individual tool rows */
 .gemini-tool-row {
 	border-bottom: 1px solid var(--gs-border);
-	transition: background-color 0.15s ease;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-tool-row:last-child {
@@ -2051,7 +2053,7 @@ body.theme-dark {
 	padding: var(--size-2-2) var(--gs-space-3);
 	cursor: pointer;
 	user-select: none;
-	transition: background-color 0.15s ease;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-tool-row-header:hover {
@@ -2131,7 +2133,7 @@ body.theme-dark {
 	border-top: 1px solid var(--gs-border);
 	padding: var(--gs-space-2) var(--gs-space-3);
 	background-color: var(--gs-surface);
-	animation: slideDown 0.2s ease-out;
+	animation: slideDown var(--gs-dur) var(--gs-ease);
 }
 
 /* Expanded state */
@@ -2156,7 +2158,7 @@ body.theme-dark {
 	border: 1px solid var(--gs-border);
 	border-radius: var(--gs-radius-md);
 	overflow: hidden;
-	transition: all 0.2s ease;
+	transition: all var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-agent-tool-message:hover {
@@ -2171,7 +2173,7 @@ body.theme-dark {
 	padding: var(--gs-space-2) var(--gs-space-3);
 	cursor: pointer;
 	user-select: none;
-	transition: background-color 0.15s ease;
+	transition: background-color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-tool-header:hover {
@@ -2186,7 +2188,7 @@ body.theme-dark {
 	color: var(--gs-text-muted);
 	display: flex;
 	align-items: center;
-	transition: color 0.15s ease;
+	transition: color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-tool-toggle:hover {
@@ -2196,7 +2198,7 @@ body.theme-dark {
 .gemini-agent-tool-toggle svg {
 	width: var(--gs-icon-md);
 	height: var(--gs-icon-md);
-	transition: transform 0.2s ease;
+	transition: transform var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-agent-tool-icon {
@@ -2303,7 +2305,7 @@ body.theme-dark {
 	border-top: 1px solid var(--gs-border);
 	padding: var(--gs-space-3);
 	background-color: var(--gs-surface);
-	animation: slideDown 0.2s ease-out;
+	animation: slideDown var(--gs-dur) var(--gs-ease);
 }
 
 @keyframes slideDown {
@@ -2354,7 +2356,7 @@ body.theme-dark {
 	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
 	color: var(--gs-text-muted);
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-tool-copy-section:hover {
@@ -2462,7 +2464,7 @@ body.theme-dark {
 
 /* Completion animation */
 .gemini-agent-tool-completed {
-	animation: toolComplete 0.5s ease;
+	animation: toolComplete var(--gs-dur-slow) var(--gs-ease);
 }
 
 @keyframes toolComplete {
@@ -2507,7 +2509,7 @@ body.theme-dark {
 	border-radius: var(--gs-radius-sm);
 	font-size: var(--font-ui-small);
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-tool-expand-content:hover {
@@ -2706,7 +2708,7 @@ body.theme-dark {
 	cursor: pointer;
 	font-size: var(--font-ui-medium);
 	font-weight: 500;
-	transition: all 0.2s ease;
+	transition: all var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-agent-confirmation-btn:hover {
@@ -2767,7 +2769,7 @@ body.theme-dark {
 	padding: var(--size-2-3);
 	border-radius: var(--gs-radius-sm);
 	background: var(--gs-surface-alt);
-	animation: fadeIn 0.2s ease-in;
+	animation: fadeIn var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-agent-result-icon {
@@ -2788,7 +2790,7 @@ body.theme-dark {
 	text-align: center;
 	padding: var(--gs-space-6);
 	min-height: 300px;
-	animation: fadeIn 0.5s ease-in;
+	animation: fadeIn var(--gs-dur-slow) var(--gs-ease);
 }
 
 .gemini-agent-empty-icon {
@@ -2837,7 +2839,7 @@ body.theme-dark {
 	border: 1px solid var(--gs-border);
 	border-radius: var(--gs-radius-md);
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 	font-size: var(--font-ui-small);
 	color: var(--gs-text-muted);
 }
@@ -2883,7 +2885,7 @@ body.theme-dark {
 	border: 1px solid var(--gs-accent);
 	border-radius: var(--gs-radius-lg);
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: all var(--gs-dur) var(--gs-ease);
 	box-shadow: var(--gs-shadow-sm);
 	width: 100%;
 	max-width: 400px;
@@ -3027,7 +3029,7 @@ body.theme-dark {
 	color: var(--gs-accent);
 	text-decoration: none;
 	cursor: pointer;
-	transition: color 0.15s ease;
+	transition: color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-agent-docs-link-text:hover {
@@ -3508,7 +3510,7 @@ body.theme-dark {
 	color: var(--gs-accent);
 	text-decoration: none;
 	font-size: 14px;
-	transition: color 0.15s ease;
+	transition: color var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-update-links a:hover {
@@ -3727,7 +3729,7 @@ body.theme-dark {
 	align-items: center;
 	padding: 8px 12px;
 	border-bottom: 1px solid var(--gs-border);
-	transition: background 0.15s ease;
+	transition: background var(--gs-dur-fast) var(--gs-ease);
 	/* reset <button> browser defaults */
 	width: 100%;
 	background: none;
@@ -3914,7 +3916,7 @@ body.theme-dark {
 	height: 100%;
 	background: var(--gs-accent);
 	border-radius: 4px;
-	transition: width 0.3s ease;
+	transition: width var(--gs-dur-slow) var(--gs-ease);
 }
 
 .rag-progress-text {
@@ -4020,7 +4022,7 @@ body.theme-dark {
 
 .gemini-agent-clickable-image {
 	cursor: pointer;
-	transition: opacity 0.2s ease;
+	transition: opacity var(--gs-dur) var(--gs-ease);
 }
 
 .gemini-agent-clickable-image:hover {
@@ -4127,7 +4129,7 @@ body.theme-dark {
 }
 
 .gemini-shelf-item {
-	animation: shelf-slide-in 0.15s ease-out;
+	animation: shelf-slide-in var(--gs-dur-fast) var(--gs-ease);
 }
 
 /* Keyboard focus styling */
@@ -4164,7 +4166,7 @@ body.theme-dark {
 	align-items: center;
 	justify-content: center;
 	opacity: 0;
-	transition: opacity 0.15s ease;
+	transition: opacity var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-shelf-item:hover .gemini-shelf-remove,
@@ -4302,7 +4304,7 @@ body.theme-dark {
 	border: 1px solid var(--gs-border);
 	background-color: var(--gs-surface);
 	color: var(--gs-text);
-	transition: all 0.15s ease;
+	transition: all var(--gs-dur-fast) var(--gs-ease);
 }
 
 .gemini-scribe-actions button:hover {
@@ -5292,7 +5294,7 @@ body.theme-dark {
 	border-top: 5px solid transparent;
 	border-bottom: 5px solid transparent;
 	border-left: 6px solid var(--gs-text-muted);
-	transition: transform 0.15s ease;
+	transition: transform var(--gs-dur-fast) var(--gs-ease);
 	flex-shrink: 0;
 }
 
