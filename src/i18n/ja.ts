@@ -839,9 +839,6 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'RAG同期を一時停止しました',
 	'notice.main.ragNotPaused': 'RAG同期は一時停止されていません',
 	'notice.main.ragResumed': 'RAG同期を再開しました',
-	'notice.main.ragIndexComplete': '再スキャン完了: {indexed} 件を再インデックス、{skipped} 件は変更なし',
-	'notice.main.ragIndexFailed': 'RAGインデックス作成失敗: {error}',
-	'notice.main.ragSyncingPending': 'RAGインデックス: 保留中の変更を同期中...',
 	'notice.main.readyToUse': 'Gemini Scribe の準備が整いました！',
 	'component.managementModalBase.managerUnavailable': '{label} マネージャーが利用できません。',
 	'component.managementModalBase.deleteConfirm':

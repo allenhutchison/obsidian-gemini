@@ -759,6 +759,7 @@ export class AgentView extends ItemView {
 				updateSessionMetadata: () => this.updateSessionMetadata(),
 			},
 			createFollowUpStream: () => this.messages.createStreamingMessageContainer('model'),
+			registerFollowUpStream: (stream: { cancel: () => void } | null) => this.send?.setActiveStreamingResponse(stream),
 			finalizeFollowUpStream: async (container: HTMLElement, entry: GeminiConversationEntry) => {
 				await this.messages.finalizeStreamingMessage(container, entry.message, entry, this.currentSession);
 				this.messages.scrollToBottom();

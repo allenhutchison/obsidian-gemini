@@ -64,6 +64,16 @@ export class AgentViewSend {
 	constructor(private ctx: SendContext) {}
 
 	/**
+	 * Register the in-flight follow-up stream (created inside AgentLoop) so the
+	 * Stop button can cancel it mid-stream, mirroring how the initial request
+	 * wires its own stream into `currentStreamingResponse`. Called with the stream
+	 * when a streaming follow-up starts and with `null` once it settles.
+	 */
+	public setActiveStreamingResponse(stream: { cancel: () => void } | null): void {
+		this.currentStreamingResponse = stream;
+	}
+
+	/**
 	 * Toggle plan mode on/off. When active, the next send will ask the model to
 	 * produce a plan first; the user approves or rejects before tools run.
 	 */

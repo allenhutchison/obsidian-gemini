@@ -35,7 +35,7 @@ writing or migrating styles.
 | Elevation | `--gs-shadow-sm/-md/-lg`                                            | custom 3-step scale, theme-aware (dark override on `body.theme-dark`)           |
 | Type      | `--gs-font-ui`, `--gs-font-mono`                                    | `--font-interface`, `--font-monospace`                                          |
 | Motion    | `--gs-dur-fast/-/-slow`, `--gs-ease`                                | 120 / 200 / 320 ms                                                              |
-| Icons     | `--gs-icon-sm/-md/-lg/-xl`, `--gs-icon-stroke`                      | `--icon-xs/-s/-m/-l`, `--icon-stroke`                                           |
+| Icons     | `--gs-icon-sm/-md/-lg/-xl`, `--gs-icon-stroke`                      | fixed 14/16/18/20; stroke aliases `--icon-stroke`                               |
 
 ### Rules
 
@@ -68,6 +68,11 @@ button (`list-checks`) and send button (`play`) now match at 18px instead of the
 16-vs-20 split. Keep a canonical glyph per concept: send = `play`, plan mode =
 `list-checks`, copy = `copy`, delete = `trash-2`. Emoji stays for content only
 (🔧 tool logs, 💬 session avatars) — it round-trips into saved session files.
+
+Two intentional exceptions sit outside the action-icon scale: **hero icons** on
+modal headers / empty states (24px) and sub-scale **micro-icons** (chevrons, tiny
+status badges at 10–12px). These are display sizes, not toolbar/action icons, and
+stay as literals.
 
 ## Migration status
 

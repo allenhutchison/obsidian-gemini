@@ -1331,6 +1331,60 @@ describe('AgentLoop', () => {
 			expect(result.iterations).toBe(2);
 			expect(api.streamCalls).toBe(2);
 		});
+
+		test('registers the follow-up stream via onFollowUpStreamReady and cancels it on mid-stream Stop', async () => {
+			const plugin = buildPlugin();
+			const session = buildSession();
+
+			const cancel = vi.fn();
+			// Ordered log of lifecycle events: proves the stream is registered
+			// before it completes and cleared (null) afterwards.
+			const events: string[] = [];
+
+			const api = {
+				generateModelResponse: vi.fn(),
+				generateStreamingResponse: vi.fn().mockImplementation((_req: any, onChunk: StreamCallback) => {
+					const complete = Promise.resolve().then(() => {
+						onChunk({ text: 'partial' });
+						events.push('complete');
+						return textResponse('partial');
+					});
+					return { complete, cancel };
+				}),
+			} as any;
+
+			const loop = new AgentLoop();
+			await loop.run({
+				initialResponse: toolResponse([tc('read_file', { path: 'a.md' })]),
+				initialUserMessage: 'q',
+				initialHistory: [],
+				options: {
+					plugin,
+					session,
+					confirmationProvider,
+					isCancelled: () => false,
+					createModelApi: () => api,
+					hooks: {
+						onFollowUpChunk: () => {},
+						onFollowUpStreamReady: (stream) => {
+							if (stream) {
+								events.push('ready:stream');
+								// Simulate the Stop button firing while the stream is live —
+								// the registered stream must be the real, cancelable one.
+								stream.cancel();
+							} else {
+								events.push('ready:null');
+							}
+						},
+					},
+				},
+			});
+
+			// Registered with the live stream before completion, cleared with null after.
+			expect(events).toEqual(['ready:stream', 'complete', 'ready:null']);
+			// Stop reached the underlying stream's cancel().
+			expect(cancel).toHaveBeenCalledTimes(1);
+		});
 	});
 
 	describe('per-turn context propagation', () => {

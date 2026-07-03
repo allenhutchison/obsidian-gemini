@@ -80,6 +80,15 @@ export interface AgentLoopHooks {
 	 */
 	onFollowUpChunk?(chunk: StreamChunk): void | Promise<void>;
 	/**
+	 * Fired when a streaming follow-up call is created, and again with `null`
+	 * once it settles. UI callers register the live stream in the same slot the
+	 * Stop button cancels (`currentStreamingResponse`), so pressing Stop mid-stream
+	 * halts token generation immediately instead of waiting for `stream.complete`
+	 * to resolve. Only fires on the streaming path (alongside `onFollowUpChunk`);
+	 * headless/non-streaming follow-ups leave it unset and are unaffected.
+	 */
+	onFollowUpStreamReady?(stream: { cancel: () => void } | null): void | Promise<void>;
+	/**
 	 * Fired when `ContextManager.prepareHistory` compacts history mid-loop
 	 * (after a tool batch, ahead of the follow-up request) — i.e. `wasCompacted`
 	 * came back true. UI uses this to surface the same "Context Compacted"
@@ -480,7 +489,15 @@ export class AgentLoop {
 						void this.safeHook('onFollowUpChunk', plugin, () => hooks?.onFollowUpChunk?.({ text: chunk.text }));
 					}
 				});
-				followUpResponse = await stream.complete;
+				// Expose the in-flight stream so a mid-stream Stop can cancel token
+				// generation immediately rather than waiting for stream.complete to
+				// settle; clear it (null) once the stream resolves or throws.
+				await this.safeHook('onFollowUpStreamReady', plugin, () => hooks?.onFollowUpStreamReady?.(stream));
+				try {
+					followUpResponse = await stream.complete;
+				} finally {
+					await this.safeHook('onFollowUpStreamReady', plugin, () => hooks?.onFollowUpStreamReady?.(null));
+				}
 				// Prefer the completed response's text; fall back to the accumulated
 				// streaming text when the response object arrives empty.
 				if (!followUpResponse.markdown?.trim() && accText.trim()) {

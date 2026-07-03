@@ -848,9 +848,6 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'RAG senkronizasyonu duraklatıldı',
 	'notice.main.ragNotPaused': 'RAG senkronizasyonu duraklatılmamış',
 	'notice.main.ragResumed': 'RAG senkronizasyonu devam ettirildi',
-	'notice.main.ragIndexComplete': 'Yeniden tarama tamamlandı: {indexed} yeniden dizine eklendi, {skipped} değişmedi',
-	'notice.main.ragIndexFailed': 'RAG dizine ekleme başarısız oldu: {error}',
-	'notice.main.ragSyncingPending': 'RAG dizini: Bekleyen değişiklikler senkronize ediliyor...',
 	'notice.main.readyToUse': 'Gemini Scribe artık kullanıma hazır!',
 	'component.managementModalBase.managerUnavailable': '{label} yöneticisi mevcut değil.',
 	'component.managementModalBase.deleteConfirm':

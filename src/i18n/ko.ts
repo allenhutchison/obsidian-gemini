@@ -822,9 +822,6 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'RAG 동기화 일시 중지됨',
 	'notice.main.ragNotPaused': 'RAG 동기화가 일시 중지 상태가 아닙니다',
 	'notice.main.ragResumed': 'RAG 동기화 재개됨',
-	'notice.main.ragIndexComplete': '재스캔 완료: {indexed}개 재색인됨, {skipped}개 변경 없음',
-	'notice.main.ragIndexFailed': 'RAG 인덱싱 실패: {error}',
-	'notice.main.ragSyncingPending': 'RAG 인덱스: 대기 중인 변경 사항 동기화 중...',
 	'notice.main.readyToUse': '이제 Gemini Scribe를 사용할 준비가 되었습니다!',
 	'component.managementModalBase.managerUnavailable': '{label} 관리자를 사용할 수 없습니다.',
 	'component.managementModalBase.deleteConfirm':

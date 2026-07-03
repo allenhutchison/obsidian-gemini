@@ -834,9 +834,6 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'RAG-synkronisering satt på pause',
 	'notice.main.ragNotPaused': 'RAG-synkronisering er ikke satt på pause',
 	'notice.main.ragResumed': 'RAG-synkronisering gjenopptatt',
-	'notice.main.ragIndexComplete': 'Skanning fullført: {indexed} re-indeksert, {skipped} uendret',
-	'notice.main.ragIndexFailed': 'RAG-indeksering feilet: {error}',
-	'notice.main.ragSyncingPending': 'RAG-indeks: Synkroniserer ventende endringer...',
 	'notice.main.readyToUse': 'Gemini Scribe er nå klar til bruk!',
 	'component.managementModalBase.managerUnavailable': '{label}-behandler er ikke tilgjengelig.',
 	'component.managementModalBase.deleteConfirm':
