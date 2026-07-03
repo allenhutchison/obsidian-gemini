@@ -111,15 +111,13 @@ The agent has both tools available and will choose the right one based on your r
 
 ## Background Mode
 
-Because Deep Research takes several minutes, the agent can run it as a background task so it doesn't block your editing session. To trigger background mode, ask:
+Because Deep Research takes several minutes, the agent runs it as a background task by default so it doesn't block your editing session — you don't need to ask for background mode explicitly. The agent only runs it in the foreground (blocking the conversation until the report is ready) when the report itself is the direct inline answer to your current question, or when you ask it to run inline:
 
 ```text
-Run deep research on quantum error correction in the background and save it to Research/quantum.md
+Research quantum error correction and show me the results inline
 ```
 
-When the task starts, the agent returns immediately with a task ID. A notification appears in the bottom-right corner when the research completes, with an **Open result** link. You can track progress (or cancel) from the **Background tasks** panel (Command Palette → **View background tasks**).
-
-If you don't specify an output file, results land in `[state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md` by default.
+If you don't specify an output file for a background run, the report lands in `[state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md` by default. When the task starts, the agent returns immediately with a task ID. A notification appears in the bottom-right corner when the research completes, with an **Open result** link. You can track progress (or cancel) from the **Background tasks** panel (Command Palette → **View background tasks**).
 
 See [Background tasks](/guide/background-tasks) for more on the status bar indicator, the task panel, and cancellation.
 

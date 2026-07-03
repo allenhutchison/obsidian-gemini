@@ -71,7 +71,11 @@ button (`list-checks`) and send button (`play`) now match at 18px instead of the
 
 ## Migration status
 
-The token layer is in place and the icon scale is applied to the agent input row.
-The remaining ~1,000 raw `var(--…)` references in `styles.css` are being migrated
-onto the semantic tokens **surface by surface** in follow-up PRs. When you touch a
-component's styles, prefer moving its declarations onto tokens as you go.
+The token layer is in place and every major surface — agent chat messages, modals
+(rewrite/chat, tool confirmation), agent-view controls, buttons, status bar,
+thinking/reasoning blocks, the file picker, and the input area — has been migrated
+onto it. About 325 raw `var(--…)` references remain in `styles.css`; most are
+deliberate holdouts rather than unmigrated components — the font-size scale,
+Obsidian's sub-grid `--size-2-*` micro-spacing, and other Obsidian variables with no
+`--gs-` equivalent. When you touch a component's styles, prefer moving its
+declarations onto tokens as you go.

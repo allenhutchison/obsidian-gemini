@@ -73,7 +73,7 @@ Route all Google API requests through a proxy or gateway instead of hitting the 
   - Corporate networks that block `generativelanguage.googleapis.com` or `aiplatform.googleapis.com`
   - Local reverse proxies for API key management or cost tracking
   - Regional mirrors for latency or compliance requirements
-- **Scope**: All seven Google GenAI SDK call sites are covered — chat, streaming, web fetch, Google Search grounding, RAG embedding, deep research, and token counting. Leaving one path unproxied while routing others is not possible with this setting.
+- **Scope**: Every Google GenAI SDK call site is covered — chat, streaming, image generation, web fetch, Google Search/Maps grounding, RAG indexing, deep research, and context management (token counting). Leaving one path unproxied while routing others is not possible with this setting.
 - **Validation**: The value is validated on blur; invalid URLs will show a warning notice and be cleared automatically.
 
 ### Retry Settings

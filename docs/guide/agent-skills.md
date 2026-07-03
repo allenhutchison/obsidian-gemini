@@ -107,11 +107,12 @@ Skill names must follow these rules:
 
 - Lowercase letters, numbers, and hyphens only
 - 1–64 characters
+- Must start with a lowercase letter (not a digit or hyphen)
 - No consecutive hyphens (`--`)
-- Cannot start or end with a hyphen
+- Cannot end with a hyphen
 
 **Valid:** `code-review`, `daily-planner`, `research-assistant`
-**Invalid:** `Code Review`, `--my-skill`, `my--skill-`
+**Invalid:** `Code Review`, `--my-skill`, `my--skill-`, `2024-review` (starts with a digit)
 
 ## Using Skills
 
