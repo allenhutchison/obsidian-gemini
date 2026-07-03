@@ -1444,6 +1444,10 @@ If your plugin does not need CSS, delete this file.
 /* Wrapper for input + send button */
 .gemini-agent-input-row {
 	display: flex;
+	/* Center all controls on one line so the plan button (align-self: center)
+	   and the send button (previously inheriting stretch → top-aligned) share
+	   the same vertical center instead of drifting apart. */
+	align-items: center;
 	gap: var(--size-2-2);
 }
 
@@ -1496,7 +1500,9 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-send-btn {
-	align-self: stretch;
+	/* center on the input row so it shares the plan button's vertical center
+	   (was `stretch`, which pinned this fixed-height button to the top) */
+	align-self: center;
 	padding: var(--size-4-2);
 	min-width: 50px;
 	display: flex;
