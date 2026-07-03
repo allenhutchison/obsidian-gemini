@@ -59,6 +59,7 @@ mockFolder.name = 'folder';
 mockFolder.children = [mockFile];
 
 const mockVault = {
+	configDir: '.obsidian',
 	getAbstractFileByPath: vi.fn(),
 	read: vi.fn(),
 	readBinary: vi.fn(),

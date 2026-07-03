@@ -24,7 +24,8 @@ vi.mock('obsidian', () => ({
 	Platform: { isMobile: false },
 }));
 
-vi.mock('../../src/utils/file-utils', () => ({
+vi.mock('../../src/utils/file-utils', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../../src/utils/file-utils')>()),
 	ensureFolderExists: vi.fn().mockResolvedValue(undefined),
 }));
 

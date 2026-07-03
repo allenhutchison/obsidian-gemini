@@ -4,47 +4,62 @@ import {
 	shouldExcludePathForPlugin,
 	createFileFilter,
 	ensureFolderExists,
+	isPathInFolder,
 } from '../../src/utils/file-utils';
 import { TFile, TFolder, Vault, Notice, normalizePath } from 'obsidian';
 
 describe('file-utils', () => {
+	describe('isPathInFolder', () => {
+		it('matches the folder itself and anything beneath it', () => {
+			expect(isPathInFolder('.obsidian', '.obsidian')).toBe(true);
+			expect(isPathInFolder('.obsidian/plugins/x', '.obsidian')).toBe(true);
+			expect(isPathInFolder('gemini-scribe/History', 'gemini-scribe')).toBe(true);
+		});
+
+		it('is root-anchored and does not over-match siblings', () => {
+			expect(isPathInFolder('.obsidian-backup', '.obsidian')).toBe(false);
+			expect(isPathInFolder('gemini-scribe-backup', 'gemini-scribe')).toBe(false);
+			expect(isPathInFolder('notes/my-note.md', '.obsidian')).toBe(false);
+		});
+	});
+
 	describe('shouldExcludePath', () => {
-		it('should exclude .obsidian folder', () => {
-			expect(shouldExcludePath('.obsidian')).toBe(true);
-			expect(shouldExcludePath('.obsidian/')).toBe(true);
-			expect(shouldExcludePath('.obsidian/config')).toBe(true);
-			expect(shouldExcludePath('.obsidian/plugins/some-plugin')).toBe(true);
+		it('should exclude the config directory', () => {
+			expect(shouldExcludePath('.obsidian', undefined, '.obsidian')).toBe(true);
+			expect(shouldExcludePath('.obsidian/', undefined, '.obsidian')).toBe(true);
+			expect(shouldExcludePath('.obsidian/config', undefined, '.obsidian')).toBe(true);
+			expect(shouldExcludePath('.obsidian/plugins/some-plugin', undefined, '.obsidian')).toBe(true);
 		});
 
 		it('should exclude custom folder when specified', () => {
-			expect(shouldExcludePath('gemini-scribe', 'gemini-scribe')).toBe(true);
-			expect(shouldExcludePath('gemini-scribe/', 'gemini-scribe')).toBe(true);
-			expect(shouldExcludePath('gemini-scribe/History', 'gemini-scribe')).toBe(true);
-			expect(shouldExcludePath('gemini-scribe/Agent-Sessions/session.md', 'gemini-scribe')).toBe(true);
+			expect(shouldExcludePath('gemini-scribe', 'gemini-scribe', '.obsidian')).toBe(true);
+			expect(shouldExcludePath('gemini-scribe/', 'gemini-scribe', '.obsidian')).toBe(true);
+			expect(shouldExcludePath('gemini-scribe/History', 'gemini-scribe', '.obsidian')).toBe(true);
+			expect(shouldExcludePath('gemini-scribe/Agent-Sessions/session.md', 'gemini-scribe', '.obsidian')).toBe(true);
 		});
 
 		it('should not exclude custom folder when not specified', () => {
-			expect(shouldExcludePath('gemini-scribe')).toBe(false);
-			expect(shouldExcludePath('gemini-scribe/History')).toBe(false);
+			expect(shouldExcludePath('gemini-scribe', undefined, '.obsidian')).toBe(false);
+			expect(shouldExcludePath('gemini-scribe/History', undefined, '.obsidian')).toBe(false);
 		});
 
 		it('should not exclude regular files and folders', () => {
-			expect(shouldExcludePath('notes/my-note.md')).toBe(false);
-			expect(shouldExcludePath('Projects/Project A/README.md')).toBe(false);
-			expect(shouldExcludePath('Daily Notes')).toBe(false);
-			expect(shouldExcludePath('my-note.md', 'gemini-scribe')).toBe(false);
+			expect(shouldExcludePath('notes/my-note.md', undefined, '.obsidian')).toBe(false);
+			expect(shouldExcludePath('Projects/Project A/README.md', undefined, '.obsidian')).toBe(false);
+			expect(shouldExcludePath('Daily Notes', undefined, '.obsidian')).toBe(false);
+			expect(shouldExcludePath('my-note.md', 'gemini-scribe', '.obsidian')).toBe(false);
 		});
 
 		it('should handle different custom folder names', () => {
-			expect(shouldExcludePath('custom-state', 'custom-state')).toBe(true);
-			expect(shouldExcludePath('custom-state/subfolder', 'custom-state')).toBe(true);
-			expect(shouldExcludePath('other-folder', 'custom-state')).toBe(false);
+			expect(shouldExcludePath('custom-state', 'custom-state', '.obsidian')).toBe(true);
+			expect(shouldExcludePath('custom-state/subfolder', 'custom-state', '.obsidian')).toBe(true);
+			expect(shouldExcludePath('other-folder', 'custom-state', '.obsidian')).toBe(false);
 		});
 
 		it('should not exclude files with similar names to excluded folders', () => {
 			// File named .obsidian-something is not in .obsidian folder
-			expect(shouldExcludePath('.obsidian-backup')).toBe(false);
-			expect(shouldExcludePath('gemini-scribe-backup', 'gemini-scribe')).toBe(false);
+			expect(shouldExcludePath('.obsidian-backup', undefined, '.obsidian')).toBe(false);
+			expect(shouldExcludePath('gemini-scribe-backup', 'gemini-scribe', '.obsidian')).toBe(false);
 		});
 
 		it('should exclude a renamed config directory when configDir is supplied', () => {
@@ -129,8 +144,8 @@ describe('file-utils', () => {
 	});
 
 	describe('createFileFilter', () => {
-		it('should create a filter function that excludes .obsidian', () => {
-			const filter = createFileFilter();
+		it('should create a filter function that excludes the config directory', () => {
+			const filter = createFileFilter(undefined, '.obsidian');
 
 			const obsidianFile = { path: '.obsidian/config' } as TFile;
 			const normalFile = { path: 'notes/my-note.md' } as TFile;
@@ -139,8 +154,16 @@ describe('file-utils', () => {
 			expect(filter(normalFile)).toBe(true);
 		});
 
+		it('should create a filter function that excludes a renamed config directory', () => {
+			const filter = createFileFilter(undefined, '_obsidian');
+
+			expect(filter({ path: '_obsidian/workspace' } as TFile)).toBe(false);
+			// A real vault folder literally named .obsidian is not over-matched.
+			expect(filter({ path: '.obsidian/workspace' } as TFile)).toBe(true);
+		});
+
 		it('should create a filter function that excludes custom folder', () => {
-			const filter = createFileFilter('gemini-scribe');
+			const filter = createFileFilter('gemini-scribe', '.obsidian');
 
 			const stateFile = { path: 'gemini-scribe/History/chat.md' } as TFile;
 			const obsidianFile = { path: '.obsidian/workspace' } as TFile;
@@ -160,7 +183,7 @@ describe('file-utils', () => {
 				{ path: 'gemini-scribe/Prompts/custom.md' } as TFile,
 			];
 
-			const filtered = files.filter(createFileFilter('gemini-scribe'));
+			const filtered = files.filter(createFileFilter('gemini-scribe', '.obsidian'));
 
 			expect(filtered).toHaveLength(2);
 			expect(filtered[0].path).toBe('notes/note1.md');
@@ -168,7 +191,7 @@ describe('file-utils', () => {
 		});
 
 		it('should work with TFolder as well as TFile', () => {
-			const filter = createFileFilter('gemini-scribe');
+			const filter = createFileFilter('gemini-scribe', '.obsidian');
 
 			const stateFolder = { path: 'gemini-scribe' } as TFolder;
 			const normalFolder = { path: 'Projects' } as TFolder;

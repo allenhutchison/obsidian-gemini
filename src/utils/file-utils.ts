@@ -13,39 +13,42 @@ import { getRawErrorMessage } from './error-utils';
 import { t } from '../i18n';
 
 /**
- * Obsidian's default configuration directory name. Vaults can rename their
- * config directory, so callers should prefer the vault's actual `configDir`
- * (threaded through `shouldExcludePathForPlugin`); this is only the fallback
- * used when no `configDir` is supplied.
+ * Check whether a path is the given folder or lives inside it.
+ *
+ * Root-anchored containment: matches `folder` itself and `folder/...` but never
+ * a sibling such as `folder-backup`. This is the single source of truth for the
+ * "is this path inside that directory?" check used for both the plugin state
+ * folder and the Obsidian configuration directory, so the semantics (and the
+ * over-match fix) live in one place.
+ *
+ * @param path - The path to check
+ * @param folder - The folder to test containment against
  */
-// eslint-disable-next-line obsidianmd/hardcoded-config-path -- documented fallback only; real callers pass vault.configDir via shouldExcludePathForPlugin
-export const DEFAULT_CONFIG_DIR = '.obsidian';
+export function isPathInFolder(path: string, folder: string): boolean {
+	return path === folder || path.startsWith(folder + '/');
+}
 
 /**
  * Check if a file or folder path should be excluded from selection or operations.
  * This excludes:
  * - Files/folders within the specified exclude folder (e.g., plugin state folder)
- * - Files/folders within the Obsidian configuration directory (`vault.configDir`,
- *   default `.obsidian` — but users can rename it)
+ * - Files/folders within the Obsidian configuration directory (`vault.configDir`)
  *
  * @param path - The path to check
  * @param excludeFolder - Optional folder path to exclude (e.g., 'gemini-scribe')
  * @param configDir - The vault's configuration directory (from `vault.configDir`).
- *                    Defaults to `.obsidian` when omitted. Prefer supplying the real
- *                    value so renamed config directories are excluded correctly and a
- *                    user folder literally named `.obsidian` is not over-matched.
+ *                    Required so renamed config directories are excluded correctly
+ *                    and a user folder literally named `.obsidian` is not over-matched.
  * @returns true if the path should be excluded, false otherwise
  */
-export function shouldExcludePath(path: string, excludeFolder?: string, configDir?: string): boolean {
-	// Check if path is within the Obsidian configuration directory. Honor the
-	// vault's actual configDir when provided; fall back to the default name.
-	const config = configDir || DEFAULT_CONFIG_DIR;
-	if (path === config || path.startsWith(config + '/')) {
+export function shouldExcludePath(path: string, excludeFolder: string | undefined, configDir: string): boolean {
+	// Check if path is within the Obsidian configuration directory.
+	if (isPathInFolder(path, configDir)) {
 		return true;
 	}
 
 	// Check if path is within the exclude folder
-	if (excludeFolder && (path === excludeFolder || path.startsWith(excludeFolder + '/'))) {
+	if (excludeFolder && isPathInFolder(path, excludeFolder)) {
 		return true;
 	}
 
@@ -70,10 +73,14 @@ export function shouldExcludePathForPlugin(path: string, plugin: ObsidianGemini)
  * Can be used directly with Array.filter()
  *
  * @param excludeFolder - Optional folder path to exclude (e.g., 'gemini-scribe')
+ * @param configDir - The vault's configuration directory (from `vault.configDir`)
  * @returns Filter function that returns true for items that should be included
  */
-export function createFileFilter(excludeFolder?: string): (item: TAbstractFile) => boolean {
-	return (item: TAbstractFile) => !shouldExcludePath(item.path, excludeFolder);
+export function createFileFilter(
+	excludeFolder: string | undefined,
+	configDir: string
+): (item: TAbstractFile) => boolean {
+	return (item: TAbstractFile) => !shouldExcludePath(item.path, excludeFolder, configDir);
 }
 
 /**

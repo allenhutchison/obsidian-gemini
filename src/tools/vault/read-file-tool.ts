@@ -2,7 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+import { shouldExcludePathForPlugin as shouldExcludePath, isPathInFolder } from '../../utils/file-utils';
 import {
 	classifyFile,
 	FileCategory,
@@ -53,8 +53,7 @@ export class ReadFileTool implements Tool {
 			const agentSessionsFolder = normalizePath(`${plugin.settings.historyFolder}/Agent-Sessions`);
 			const isAgentSessionPath =
 				normalizedPath === agentSessionsFolder || normalizedPath.startsWith(agentSessionsFolder + '/');
-			const configDir = plugin.app.vault.configDir;
-			const isObsidianPath = normalizedPath === configDir || normalizedPath.startsWith(configDir + '/');
+			const isObsidianPath = isPathInFolder(normalizedPath, plugin.app.vault.configDir);
 
 			// Check if path is excluded (allow agent session files, but never the Obsidian config dir)
 			if ((isObsidianPath || !isAgentSessionPath) && shouldExcludePath(normalizedPath, plugin)) {
