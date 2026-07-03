@@ -1517,12 +1517,21 @@ body.theme-dark {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	/* Signature: the primary send action carries the Gemini brand gradient. */
+	background: var(--gs-brand-gradient);
+	border: none;
+}
+
+.gemini-agent-send-btn:hover {
+	/* keep the gradient on hover — otherwise btn-primary:hover repaints it accent */
+	background: var(--gs-brand-gradient);
+	filter: brightness(1.05);
 }
 
 .gemini-agent-send-btn svg {
 	width: var(--gs-icon-lg);
 	height: var(--gs-icon-lg);
-	fill: var(--gs-success, #10b981);
+	fill: var(--gs-on-accent);
 }
 
 .gemini-agent-stop-btn svg {
@@ -1790,8 +1799,11 @@ body.theme-dark {
 }
 
 .gemini-agent-message-user .gemini-agent-message-content {
-	background-color: var(--background-primary-alt);
-	color: var(--gs-text);
+	/* Bolder identity: your messages are a solid accent-filled bubble with
+	   white text (the border matches the fill, keeping box parity with the
+	   bordered model bubble). */
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 	margin-left: var(--gs-space-6);
 	border-bottom-right-radius: var(--gs-radius-sm);
 	border: 1px solid var(--gs-accent);
@@ -2765,16 +2777,22 @@ body.theme-dark {
 }
 
 .gemini-agent-empty-icon {
-	width: 64px;
-	height: 64px;
+	/* Brand mark: a Gemini-gradient badge with a white sparkle. The gradient is
+	   reserved for this and the send button — the plugin's two signature spots. */
+	width: 56px;
+	height: 56px;
 	margin-bottom: var(--gs-space-4);
-	color: var(--gs-text-muted);
-	opacity: 0.3;
+	background: var(--gs-brand-gradient);
+	color: var(--gs-on-accent);
+	border-radius: var(--gs-radius-lg);
+	display: grid;
+	place-items: center;
+	box-shadow: var(--gs-shadow-md);
 }
 
 .gemini-agent-empty-icon svg {
-	width: 100%;
-	height: 100%;
+	width: 32px;
+	height: 32px;
 }
 
 .gemini-agent-empty-title {
