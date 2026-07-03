@@ -253,7 +253,7 @@ export class VaultAnalyzer {
 		}
 
 		// Sort children: folders first, then files
-		const folders = folder.children.filter((c) => c instanceof TFolder) as TFolder[];
+		const folders = folder.children.filter((c) => c instanceof TFolder);
 		const files = folder.children.filter((c) => c instanceof TFile && c.extension === 'md') as TFile[];
 
 		// Add subfolders recursively

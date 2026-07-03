@@ -27,7 +27,7 @@ describe('scoreTask — judge short-circuit on failed runs', () => {
 		// turnError alone already makes passed=false. Either way, the judge
 		// must not be called.
 		const result: any = await scoreTask(
-			baseTask as any,
+			baseTask,
 			events,
 			'response text',
 			'gemini-2.5-flash',
@@ -49,7 +49,7 @@ describe('scoreTask — judge short-circuit on failed runs', () => {
 		const judge = vi.fn().mockResolvedValue(true);
 		const events = [apiResponse()]; // No turnEnd → timedOut → passed=false
 		const result: any = await scoreTask(
-			baseTask as any,
+			baseTask,
 			events,
 			'response text',
 			'gemini-2.5-flash',
@@ -65,7 +65,7 @@ describe('scoreTask — judge short-circuit on failed runs', () => {
 		const judge = vi.fn().mockResolvedValue(true);
 		const events = [apiResponse(), turnEnd()];
 		const result: any = await scoreTask(
-			baseTask as any,
+			baseTask,
 			events,
 			'response text',
 			'gemini-2.5-flash',
@@ -80,7 +80,7 @@ describe('scoreTask — judge short-circuit on failed runs', () => {
 
 	it('records judge_skipped when a clean run cannot create the judge', async () => {
 		const events = [apiResponse(), turnEnd()];
-		const result: any = await scoreTask(baseTask as any, events, 'response text', 'gemini-2.5-flash', 1234, 'ollama');
+		const result: any = await scoreTask(baseTask, events, 'response text', 'gemini-2.5-flash', 1234, 'ollama');
 		expect(result.passed).toBe(true);
 		expect(result.solved).toBe(false);
 		expect(result.solve_details.judge_attempted).toBe(true);
@@ -105,7 +105,7 @@ describe('scoreTask — vault assertions', () => {
 
 	it('solves when the vault assertion holds', async () => {
 		const events = [apiResponse(), toolComplete('write_file'), turnEnd()];
-		const result: any = await scoreTask(task as any, events, 'done', 'gemini-2.5-flash', 100, 'gemini', undefined, {
+		const result: any = await scoreTask(task, events, 'done', 'gemini-2.5-flash', 100, 'gemini', undefined, {
 			vaultState: { 'eval-scratch/out.md': { exists: true, content: '# Summary', frontmatter: null } },
 		});
 		expect(result.solved).toBe(true);
@@ -114,7 +114,7 @@ describe('scoreTask — vault assertions', () => {
 
 	it('does not solve when the file was never written, even if write_file was called', async () => {
 		const events = [apiResponse(), toolComplete('write_file'), turnEnd()];
-		const result: any = await scoreTask(task as any, events, 'done', 'gemini-2.5-flash', 100, 'gemini', undefined, {
+		const result: any = await scoreTask(task, events, 'done', 'gemini-2.5-flash', 100, 'gemini', undefined, {
 			vaultState: { 'eval-scratch/out.md': { exists: false, content: null, frontmatter: null } },
 		});
 		expect(result.passed).toBe(true);
@@ -124,14 +124,7 @@ describe('scoreTask — vault assertions', () => {
 
 	it('treats a task with no vaultAssertions as trivially passing that gate', async () => {
 		const plain = { id: 't', userMessage: 'x', expectedTools: [], forbiddenTools: [], outputMatchers: [] };
-		const result: any = await scoreTask(
-			plain as any,
-			[apiResponse(), turnEnd()],
-			'ok',
-			'gemini-2.5-flash',
-			100,
-			'gemini'
-		);
+		const result: any = await scoreTask(plain, [apiResponse(), turnEnd()], 'ok', 'gemini-2.5-flash', 100, 'gemini');
 		expect(result.solved).toBe(true);
 		expect(result.solve_details.vault_assertions_pass).toBe(true);
 	});
@@ -149,7 +142,7 @@ describe('scoreTask — tool-call budget', () => {
 
 	it('solves when tool calls stay within budget', async () => {
 		const events = [apiResponse(), toolComplete('find_files_by_content'), toolComplete('read_file'), turnEnd()];
-		const result: any = await scoreTask(task as any, events, 'answer', 'gemini-2.5-flash', 100, 'gemini');
+		const result: any = await scoreTask(task, events, 'answer', 'gemini-2.5-flash', 100, 'gemini');
 		expect(result.solve_details.tool_budget_ok).toBe(true);
 		expect(result.solved).toBe(true);
 	});
@@ -162,7 +155,7 @@ describe('scoreTask — tool-call budget', () => {
 			toolComplete('read_file'),
 			turnEnd(),
 		];
-		const result: any = await scoreTask(task as any, events, 'answer', 'gemini-2.5-flash', 100, 'gemini');
+		const result: any = await scoreTask(task, events, 'answer', 'gemini-2.5-flash', 100, 'gemini');
 		expect(result.passed).toBe(true);
 		expect(result.solve_details.tool_budget_ok).toBe(false);
 		expect(result.solved).toBe(false);
@@ -180,19 +173,19 @@ describe('scoreTask — persisted judging evidence (#869)', () => {
 
 	it('freezes the agent response text on the result', async () => {
 		const events = [apiResponse(), turnEnd()];
-		const result: any = await scoreTask(task as any, events, 'Here is the Summary', 'gemini-2.5-flash', 100, 'gemini');
+		const result: any = await scoreTask(task, events, 'Here is the Summary', 'gemini-2.5-flash', 100, 'gemini');
 		expect(result.response_text).toBe('Here is the Summary');
 	});
 
 	it('itemizes matcher verdicts on a clean run', async () => {
 		const events = [apiResponse(), turnEnd()];
-		const result: any = await scoreTask(task as any, events, 'Here is the Summary', 'gemini-2.5-flash', 100, 'gemini');
+		const result: any = await scoreTask(task, events, 'Here is the Summary', 'gemini-2.5-flash', 100, 'gemini');
 		expect(result.solve_details.matcher_details).toEqual([{ type: 'contains', value: 'Summary', verdict: true }]);
 	});
 
 	it('leaves matcher_details empty when the run failed before matchers ran', async () => {
 		const events = [apiResponse(), turnError('crashed')];
-		const result: any = await scoreTask(task as any, events, '', 'gemini-2.5-flash', 100, 'gemini');
+		const result: any = await scoreTask(task, events, '', 'gemini-2.5-flash', 100, 'gemini');
 		expect(result.passed).toBe(false);
 		expect(result.solve_details.matchers_pass).toBe(false);
 		expect(result.solve_details.matcher_details).toEqual([]);
@@ -200,14 +193,7 @@ describe('scoreTask — persisted judging evidence (#869)', () => {
 
 	it('captures an empty response text without crashing', async () => {
 		const plain = { id: 't', userMessage: 'x', expectedTools: [], forbiddenTools: [], outputMatchers: [] };
-		const result: any = await scoreTask(
-			plain as any,
-			[apiResponse(), turnEnd()],
-			'',
-			'gemini-2.5-flash',
-			100,
-			'gemini'
-		);
+		const result: any = await scoreTask(plain, [apiResponse(), turnEnd()], '', 'gemini-2.5-flash', 100, 'gemini');
 		expect(result.response_text).toBe('');
 	});
 });

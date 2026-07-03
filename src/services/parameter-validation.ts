@@ -38,7 +38,7 @@ export class ParameterValidationService {
 
 		const maxTemperatures = models
 			.map((model) => model.maxTemperature)
-			.filter((temp) => temp !== undefined && temp !== null) as number[];
+			.filter((temp) => temp !== undefined && temp !== null);
 
 		const maxTemp =
 			maxTemperatures.length > 0

@@ -15,15 +15,9 @@
  * interfaces) on purpose: the SDK marks `interactions` experimental and several
  * step types are not exported, so we avoid hard-coupling to unstable type names.
  */
-import type { Content, Part } from '@google/genai';
+import type { Content } from '@google/genai';
 import type { ModelResponse, ToolCall, ToolDefinition } from '../../interfaces/model-api';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
-
-/** A `Part` that may carry Gemini's thought metadata. */
-interface PartWithThought extends Part {
-	thought?: boolean;
-	thoughtSignature?: string;
-}
 
 /** A typed step in an Interactions `input` array or response `steps` array. */
 export type InteractionStep = Record<string, unknown>;
@@ -76,7 +70,7 @@ export function contentToSteps(content: Content): InteractionStep[] {
 	const callSteps: InteractionStep[] = [];
 
 	for (const part of content.parts ?? []) {
-		const p = part as PartWithThought;
+		const p = part;
 		if (p.functionCall) {
 			const step: InteractionStep = {
 				type: 'function_call',

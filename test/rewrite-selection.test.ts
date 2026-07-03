@@ -77,7 +77,7 @@ describe('SelectionRewriter', () => {
 			},
 		};
 
-		rewriter = new SelectionRewriter(mockPlugin as unknown as ObsidianGemini);
+		rewriter = new SelectionRewriter(mockPlugin);
 	});
 
 	describe('buildSelectionPrompt (via rewriteSelection)', () => {

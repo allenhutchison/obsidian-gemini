@@ -32,7 +32,7 @@ function makeContext(pluginOverrides: any = {}, session: any = null): ToolExecut
 	return {
 		plugin: { ...basePlugin, ...pluginOverrides },
 		session,
-	} as unknown as ToolExecutionContext;
+	};
 }
 
 function getTool(): Tool {
@@ -55,7 +55,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({}, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		const titles = result.data.sessions.map((s: any) => s.title);
 		expect(titles).toEqual(['Newest', 'Middle', 'Older']);
 	});
 
@@ -69,7 +69,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({}, ctx);
 		expect(result.success).toBe(true);
-		const ids = (result.data as any).sessions.map((s: any) => s.title);
+		const ids = result.data.sessions.map((s: any) => s.title);
 		expect(ids).toEqual(['Other']);
 	});
 
@@ -82,10 +82,10 @@ describe('RecallSessionsTool', () => {
 		});
 
 		const overLimit = await getTool().execute({ limit: 9999 }, ctx);
-		expect((overLimit.data as any).sessions.length).toBeLessThanOrEqual(50);
+		expect(overLimit.data.sessions.length).toBeLessThanOrEqual(50);
 
 		const underLimit = await getTool().execute({ limit: -5 }, ctx);
-		expect((underLimit.data as any).sessions.length).toBeGreaterThanOrEqual(1);
+		expect(underLimit.data.sessions.length).toBeGreaterThanOrEqual(1);
 	});
 
 	it('filters by filePath via accessedFileRefs (case-insensitive substring)', async () => {
@@ -105,7 +105,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({ filePath: 'meetingnotes' }, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		const titles = result.data.sessions.map((s: any) => s.title);
 		expect(titles).toEqual(['Has file']);
 	});
 
@@ -126,7 +126,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({ filePath: 'design' }, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		const titles = result.data.sessions.map((s: any) => s.title);
 		expect(titles).toEqual(['Has context']);
 	});
 
@@ -155,7 +155,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({ filePath: 'Deleted Note' }, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		const titles = result.data.sessions.map((s: any) => s.title);
 		expect(titles).toEqual(['Touched a note that was later deleted']);
 	});
 
@@ -177,7 +177,7 @@ describe('RecallSessionsTool', () => {
 		// Full path query should still match a basename-only ref
 		const result = await getTool().execute({ filePath: 'Notes/MeetingNotes.md' }, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		const titles = result.data.sessions.map((s: any) => s.title);
 		expect(titles).toEqual(['Has file']);
 	});
 
@@ -190,7 +190,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({ query: 'planning' }, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		const titles = result.data.sessions.map((s: any) => s.title);
 		expect(titles).toEqual(['Planning Q1 goals']);
 	});
 
@@ -217,7 +217,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({ project: 'widget' }, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title).sort();
+		const titles = result.data.sessions.map((s: any) => s.title).sort();
 		// `bad` must be excluded (lookup threw), `good` matches via project name,
 		// `otherMatch` matches via substring on projectRef.
 		expect(titles).toEqual(['Good', 'Path match']);
@@ -227,8 +227,8 @@ describe('RecallSessionsTool', () => {
 		const ctx = makeContext();
 		const result = await getTool().execute({}, ctx);
 		expect(result.success).toBe(true);
-		expect((result.data as any).sessions).toEqual([]);
-		expect((result.data as any).count).toBe(0);
+		expect(result.data.sessions).toEqual([]);
+		expect(result.data.count).toBe(0);
 	});
 
 	// ── getProgressDescription ───────────────────────────────────────────
@@ -302,7 +302,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({ project: 'widget' }, ctx);
 		expect(result.success).toBe(true);
-		const titles = (result.data as any).sessions.map((s: any) => s.title);
+		const titles = result.data.sessions.map((s: any) => s.title);
 		// noProject has no projectRef so it's excluded; hasProject matches via substring
 		expect(titles).toEqual(['Has Project']);
 	});
@@ -316,7 +316,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({}, ctx);
 		expect(result.success).toBe(true);
-		expect((result.data as any).sessions[0].filesAccessed.length).toBe(20);
+		expect(result.data.sessions[0].filesAccessed.length).toBe(20);
 	});
 
 	it('reports totalMatched as filtered count before limit', async () => {
@@ -329,7 +329,7 @@ describe('RecallSessionsTool', () => {
 
 		const result = await getTool().execute({ limit: 5 }, ctx);
 		expect(result.success).toBe(true);
-		expect((result.data as any).sessions.length).toBe(5);
-		expect((result.data as any).totalMatched).toBe(15);
+		expect(result.data.sessions.length).toBe(5);
+		expect(result.data.totalMatched).toBe(15);
 	});
 });

@@ -129,13 +129,13 @@ describe('ImageTools', () => {
 		});
 
 		it('should have confirmation message', () => {
-			const message = tool.confirmationMessage!({ prompt: 'a beautiful sunset' });
+			const message = tool.confirmationMessage({ prompt: 'a beautiful sunset' });
 			expect(message).toContain('Generate an image with prompt');
 			expect(message).toContain('a beautiful sunset');
 		});
 
 		it('should include destination in confirmation message when output_path is provided', () => {
-			const message = tool.confirmationMessage!({
+			const message = tool.confirmationMessage({
 				prompt: 'a mountain',
 				output_path: 'attachments/mountain.png',
 			});

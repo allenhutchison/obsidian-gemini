@@ -357,7 +357,7 @@ export class AgentViewUI {
 				contenteditable: 'true',
 				'data-placeholder': t('agent.input.placeholder'),
 			},
-		}) as HTMLDivElement;
+		});
 
 		// Quiet-when-off, loud-when-armed: at rest this is a borderless icon; when
 		// active it becomes an accent pill that reveals the "Plan" label (the label

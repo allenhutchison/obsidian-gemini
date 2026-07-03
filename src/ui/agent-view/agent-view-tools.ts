@@ -181,9 +181,7 @@ export class AgentViewTools {
 								this.context.updateProgress(t('agent.progress.generating'), 'streaming');
 							}
 							if (!this.streamingFollowUpContainer) return;
-							const contentDiv = this.streamingFollowUpContainer.querySelector(
-								'.gemini-agent-message-content'
-							) as HTMLElement | null;
+							const contentDiv = this.streamingFollowUpContainer.querySelector('.gemini-agent-message-content');
 							if (contentDiv) {
 								contentDiv.appendChild(document.createTextNode(chunk.text));
 							}
@@ -317,7 +315,7 @@ export class AgentViewTools {
 	 */
 	private async renderReasoningInGroup(thoughts: string): Promise<void> {
 		if (!this.currentGroupContainer) return;
-		const body = this.currentGroupContainer.querySelector('.gemini-tool-group-body') as HTMLElement | null;
+		const body = this.currentGroupContainer.querySelector<HTMLElement>('.gemini-tool-group-body');
 		if (!body) return;
 		const sourcePath = this.context.getCurrentSession()?.historyPath || '';
 		await this.context.renderReasoning(body, thoughts, sourcePath);

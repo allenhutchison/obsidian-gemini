@@ -73,7 +73,7 @@ function buildPlugin(overrides: any = {}) {
 		sessionHistory,
 		contextManager,
 		...overrides,
-	} as any;
+	};
 }
 
 function buildSession(): any {
@@ -1298,7 +1298,7 @@ describe('AgentLoop', () => {
 				generateModelResponse: vi.fn(),
 				generateStreamingResponse: vi.fn().mockImplementation((_req: any, onChunk: StreamCallback) => {
 					const entry = responses[call++];
-					(api as any).streamCalls++;
+					api.streamCalls++;
 					const chunks: StreamChunk[] = [];
 					const complete = Promise.resolve().then(() => {
 						for (const chunk of entry.chunks) {

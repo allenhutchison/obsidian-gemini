@@ -107,7 +107,7 @@ export class ReadFileTool implements Tool {
 			}
 
 			// Handle file - read its contents
-			const file = item as TFile;
+			const file = item;
 
 			// Classify the file to determine how to read it
 			const classification = classifyFile(file.extension);

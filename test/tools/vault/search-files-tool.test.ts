@@ -297,7 +297,7 @@ describe('SearchFilesTool', () => {
 		const contextWithProject: ToolExecutionContext = {
 			...mockContext,
 			projectRootPath: 'projects/myproj',
-		} as any;
+		};
 
 		const result = await tool.execute({ pattern: 'todo' }, contextWithProject);
 

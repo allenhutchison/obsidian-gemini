@@ -48,14 +48,14 @@ describe('Memory Tools', () => {
 		});
 
 		it('should have confirmation message function', () => {
-			const message = tool.confirmationMessage!({ content: 'Test content for memory' });
+			const message = tool.confirmationMessage({ content: 'Test content for memory' });
 			expect(message).toContain('Add the following to AGENTS.md memory');
 			expect(message).toContain('Test content for memory');
 		});
 
 		it('should truncate long content in confirmation message', () => {
 			const longContent = 'a'.repeat(300);
-			const message = tool.confirmationMessage!({ content: longContent });
+			const message = tool.confirmationMessage({ content: longContent });
 			expect(message).toContain('...');
 			expect(message.length).toBeLessThan(300);
 		});

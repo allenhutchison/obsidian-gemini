@@ -91,12 +91,12 @@ function createMockSession(overrides: Partial<ChatSession> = {}): ChatSession {
 		context: {
 			contextFiles: [],
 			requireConfirmation: [],
-		} as any,
+		},
 		created: new Date('2026-01-01T00:00:00Z'),
 		lastActive: new Date('2026-01-01T00:00:00Z'),
 		historyPath: 'gemini-scribe/Agent-Sessions/Test Session.md',
 		...overrides,
-	} as ChatSession;
+	};
 }
 
 describe('SessionHistory', () => {
@@ -764,7 +764,7 @@ describe('SessionHistory', () => {
 				context: {
 					contextFiles: [contextFile],
 					requireConfirmation: [],
-				} as any,
+				},
 			});
 
 			await sessionHistory.updateSessionMetadata(session);
@@ -789,7 +789,7 @@ describe('SessionHistory', () => {
 				context: {
 					contextFiles: [],
 					requireConfirmation: [],
-				} as any,
+				},
 			});
 
 			await sessionHistory.updateSessionMetadata(session);
@@ -883,7 +883,7 @@ describe('SessionHistory', () => {
 					contextFiles: [],
 					requireConfirmation: [],
 					toolPolicy: undefined,
-				} as any,
+				},
 			});
 
 			await sessionHistory.updateSessionMetadata(session);

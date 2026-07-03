@@ -72,7 +72,7 @@ describe('dom-context utils', () => {
 			// Cursor should be directly after the inserted text node 'new '
 			const precedingNode = element.childNodes[newRange.startOffset - 1];
 			expect(precedingNode).toBeDefined();
-			expect(precedingNode!.textContent).toBe('new ');
+			expect(precedingNode.textContent).toBe('new ');
 		});
 
 		test('case 3: selection is outside target element -> behaves like case 1 (appends to end)', () => {

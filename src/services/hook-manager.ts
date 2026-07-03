@@ -813,7 +813,7 @@ export class HookManager {
 	private readFrontmatter(file: TFile): Record<string, unknown> | undefined {
 		if (file.extension !== 'md') return undefined;
 		const cache = this.plugin.app.metadataCache.getFileCache(file);
-		return cache?.frontmatter as Record<string, unknown> | undefined;
+		return cache?.frontmatter;
 	}
 
 	// ── Vault subscription ──────────────────────────────────────────────────

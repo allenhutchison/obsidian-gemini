@@ -84,7 +84,7 @@ async function createToolPermissionsSettings(
 				if (preset === PolicyPreset.CUSTOM) {
 					// Materialize current effective permissions before changing preset
 					const materializedPermissions = Object.fromEntries(
-						allTools.map((t) => [t.name, plugin.toolRegistry!.getEffectivePermission(t.name)])
+						allTools.map((t) => [t.name, plugin.toolRegistry.getEffectivePermission(t.name)])
 					);
 					plugin.settings.toolPolicy.toolPermissions = materializedPermissions;
 					plugin.settings.toolPolicy.activePreset = PolicyPreset.CUSTOM;
@@ -121,7 +121,7 @@ async function createToolPermissionsSettings(
 				setting.setName(displayName);
 
 				// toolRegistry is guaranteed non-null — allTools is sourced from it above
-				const effectivePermission = plugin.toolRegistry!.getEffectivePermission(tool.name);
+				const effectivePermission = plugin.toolRegistry.getEffectivePermission(tool.name);
 
 				setting.addDropdown((dropdown) => {
 					for (const perm of Object.values(ToolPermission)) {
@@ -139,7 +139,7 @@ async function createToolPermissionsSettings(
 							// Switching to Custom — materialize all current permissions first
 							if (policy.activePreset !== PolicyPreset.CUSTOM) {
 								plugin.settings.toolPolicy.toolPermissions = Object.fromEntries(
-									allTools.map((t) => [t.name, plugin.toolRegistry!.getEffectivePermission(t.name)])
+									allTools.map((t) => [t.name, plugin.toolRegistry.getEffectivePermission(t.name)])
 								);
 								plugin.settings.toolPolicy.activePreset = PolicyPreset.CUSTOM;
 							}

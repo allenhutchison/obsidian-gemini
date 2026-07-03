@@ -236,7 +236,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		const dayCheckboxes: HTMLInputElement[] = [];
 		for (const day of WEEKDAY_OPTIONS) {
 			const label = daysRow.createEl('label', { cls: 'gemini-scheduler-day-label' });
-			const cb = label.createEl('input', { attr: { type: 'checkbox' } }) as HTMLInputElement;
+			const cb = label.createEl('input', { attr: { type: 'checkbox' } });
 			cb.checked = this.form.scheduleDays.includes(day.code);
 			cb.addEventListener('change', () => {
 				if (cb.checked) {
@@ -257,7 +257,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		updateScheduleVisibility(this.form.schedulePreset);
 
 		presetSelect.addEventListener('change', () => {
-			this.form.schedulePreset = presetSelect.value as any;
+			this.form.schedulePreset = presetSelect.value;
 			updateScheduleVisibility(presetSelect.value);
 		});
 		customInput.addEventListener('input', () => {

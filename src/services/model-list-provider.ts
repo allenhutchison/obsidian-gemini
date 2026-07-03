@@ -40,7 +40,7 @@ export class ModelListProvider {
 		if (cache?.models && cache?.timestamp) {
 			this.remoteModels = cache.models;
 			this.cacheTimestamp = cache.timestamp;
-			this.plugin.logger.debug(`[ModelListProvider] Loaded cached remote models: ${this.remoteModels!.length} models`);
+			this.plugin.logger.debug(`[ModelListProvider] Loaded cached remote models: ${this.remoteModels.length} models`);
 		}
 	}
 

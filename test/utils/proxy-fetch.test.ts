@@ -424,7 +424,7 @@ describe('proxyFetch', () => {
 
 			await proxyFetch('https://api.example.com/data', {
 				method: 'POST',
-				body: circular as any,
+				body: circular,
 			});
 
 			const callArg = mockRequestUrl.mock.calls[0][0];

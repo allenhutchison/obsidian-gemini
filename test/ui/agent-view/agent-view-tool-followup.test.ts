@@ -29,7 +29,7 @@ describe('buildFollowUpRequest / buildRetryRequest — perTurnContext is not dup
 	const toolResult: ToolCallResultPair = {
 		toolName: 'read_file',
 		toolArguments: { path: 'a.md' },
-		result: { success: true, data: { content: 'x' } } as any,
+		result: { success: true, data: { content: 'x' } },
 	};
 
 	// buildToolHistoryTurns splices perTurnContext into the user turn — so the
@@ -59,7 +59,7 @@ describe('buildFollowUpRequest / buildRetryRequest — perTurnContext is not dup
 		expect(request.perTurnContext).toBeUndefined();
 		// Still reaches the model — once — via conversation history.
 		expect(request.conversationHistory).toBe(updatedHistory);
-		expect(countContextOccurrences(request.conversationHistory as Content[])).toBe(1);
+		expect(countContextOccurrences(request.conversationHistory)).toBe(1);
 	});
 
 	test('buildRetryRequest omits perTurnContext and preserves it in history', () => {
@@ -72,6 +72,6 @@ describe('buildFollowUpRequest / buildRetryRequest — perTurnContext is not dup
 
 		expect(request.perTurnContext).toBeUndefined();
 		expect(request.conversationHistory).toBe(updatedHistory);
-		expect(countContextOccurrences(request.conversationHistory as Content[])).toBe(1);
+		expect(countContextOccurrences(request.conversationHistory)).toBe(1);
 	});
 });

@@ -290,7 +290,7 @@ describe('ModelClientFactory', () => {
 				topP: 0.9,
 				streamingEnabled: false,
 			};
-			ModelClientFactory.createCustom(config as any);
+			ModelClientFactory.createCustom(config);
 
 			expect(MockGeminiClient).toHaveBeenCalledWith(config, undefined, undefined);
 			expect(MockRetryDecorator).toHaveBeenCalledTimes(1);
@@ -298,7 +298,7 @@ describe('ModelClientFactory', () => {
 
 		it('should use default retry config when no plugin provided', () => {
 			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1, streamingEnabled: true };
-			ModelClientFactory.createCustom(config as any);
+			ModelClientFactory.createCustom(config);
 
 			expect(MockRetryDecorator).toHaveBeenCalledWith(
 				expect.anything(),
@@ -310,7 +310,7 @@ describe('ModelClientFactory', () => {
 		it('should use plugin retry config when plugin is provided', () => {
 			const plugin = createMockPlugin({ maxRetries: 10, initialBackoffDelay: 5000 });
 			const config = { apiKey: 'key', model: 'model', temperature: 1, topP: 1, streamingEnabled: true };
-			ModelClientFactory.createCustom(config as any, undefined, plugin);
+			ModelClientFactory.createCustom(config, undefined, plugin);
 
 			expect(MockRetryDecorator).toHaveBeenCalledWith(
 				expect.anything(),

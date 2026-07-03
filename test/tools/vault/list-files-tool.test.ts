@@ -272,7 +272,7 @@ describe('ListFilesTool', () => {
 		const contextWithProject: ToolExecutionContext = {
 			...mockContext,
 			projectRootPath: 'projects/my-project',
-		} as any;
+		};
 
 		const result = await tool.execute({ path: '' }, contextWithProject);
 

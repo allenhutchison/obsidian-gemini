@@ -456,7 +456,7 @@ describe('ToolExecutionEngine - Loop Detection', () => {
 
 		registry = new ToolRegistry(plugin);
 		engine = new ToolExecutionEngine(plugin, registry);
-		registry.registerTool(noopTool as any);
+		registry.registerTool(noopTool);
 	});
 
 	afterEach(() => {
@@ -569,8 +569,8 @@ describe('ToolExecutionEngine - executeToolCalls with stopOnToolError=false', ()
 
 		registry = new ToolRegistry(plugin);
 		engine = new ToolExecutionEngine(plugin, registry);
-		registry.registerTool(succeedTool as any);
-		registry.registerTool(failTool as any);
+		registry.registerTool(succeedTool);
+		registry.registerTool(failTool);
 	});
 
 	afterEach(() => {
@@ -1092,7 +1092,7 @@ describe('ToolExecutionEngine - getAvailableToolsDescription', () => {
 			},
 			execute: vi.fn().mockResolvedValue({ success: true }),
 		};
-		registry.registerTool(toolWithParams as any);
+		registry.registerTool(toolWithParams);
 
 		const context = {
 			plugin,
@@ -1144,7 +1144,7 @@ describe('ToolExecutionEngine - Execution History Management', () => {
 
 		registry = new ToolRegistry(plugin);
 		engine = new ToolExecutionEngine(plugin, registry);
-		registry.registerTool(noopTool as any);
+		registry.registerTool(noopTool);
 	});
 
 	afterEach(() => {
@@ -1234,7 +1234,7 @@ describe('ToolExecutionEngine - Loop Detection Event Bus Emit Error', () => {
 
 		registry = new ToolRegistry(plugin);
 		engine = new ToolExecutionEngine(plugin, registry);
-		registry.registerTool(noopTool as any);
+		registry.registerTool(noopTool);
 	});
 
 	afterEach(() => {
@@ -1370,7 +1370,7 @@ describe('ToolExecutionEngine - Confirmation Flow', () => {
 				return { success: true, data: { params } };
 			}),
 		};
-		registry.registerTool(appendTool as any);
+		registry.registerTool(appendTool);
 
 		const context = {
 			plugin,
@@ -1449,7 +1449,7 @@ describe('ToolExecutionEngine - Non-Error Thrown Value', () => {
 			parameters: { type: 'object' as const, properties: {}, required: [] },
 			execute: vi.fn().mockRejectedValue('just a string'),
 		};
-		registry.registerTool(stringThrowTool as any);
+		registry.registerTool(stringThrowTool);
 
 		const context = {
 			plugin,

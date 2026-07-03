@@ -120,11 +120,11 @@ describe('evaluateVaultAssertions — frontmatterEquals', () => {
 	});
 
 	it('fails closed on a malformed assertion missing key or value', () => {
-		const noKey = evaluateVaultAssertions([{ type: 'frontmatterEquals', path: 'a.md', value: 'x' }] as any, {
+		const noKey = evaluateVaultAssertions([{ type: 'frontmatterEquals', path: 'a.md', value: 'x' }], {
 			'a.md': file('body', { status: 'archived' }),
 		});
 		expect(noKey.pass).toBe(false);
-		const noValue = evaluateVaultAssertions([{ type: 'frontmatterEquals', path: 'a.md', key: 'missing' }] as any, {
+		const noValue = evaluateVaultAssertions([{ type: 'frontmatterEquals', path: 'a.md', key: 'missing' }], {
 			'a.md': file('body', { status: 'archived' }),
 		});
 		expect(noValue.pass).toBe(false);
@@ -181,7 +181,7 @@ describe('evaluateVaultAssertions — composition & edge cases', () => {
 	});
 
 	it('unknown assertion types fail closed', () => {
-		const r = evaluateVaultAssertions([{ type: 'bogus', path: 'a.md' }] as any, { 'a.md': file('x') });
+		const r = evaluateVaultAssertions([{ type: 'bogus', path: 'a.md' }], { 'a.md': file('x') });
 		expect(r.pass).toBe(false);
 	});
 });

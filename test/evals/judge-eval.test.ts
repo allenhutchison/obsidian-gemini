@@ -106,7 +106,7 @@ describe('evaluateJudgeAgainstCalibration — skipping behaviour', () => {
 
 	it('treats an empty-string judge_error as no error (defensive)', async () => {
 		const judge = vi.fn(async () => true);
-		const r = await evaluateJudgeAgainstCalibration(cal([tuple({ humanLabel: 'YES', judgeError: '' as any })]), judge);
+		const r = await evaluateJudgeAgainstCalibration(cal([tuple({ humanLabel: 'YES', judgeError: '' })]), judge);
 		expect(r.evaluated).toBe(1);
 		expect(r.skipped_judge_error).toBe(0);
 	});
@@ -146,7 +146,7 @@ describe('evaluateJudgeAgainstCalibration — judge call failures', () => {
 describe('evaluateJudgeAgainstCalibration — edge cases', () => {
 	it('handles an empty calibration', async () => {
 		const r = await evaluateJudgeAgainstCalibration(
-			{ tuples: [] } as any,
+			{ tuples: [] },
 			vi.fn(async () => true)
 		);
 		expect(r.total).toBe(0);

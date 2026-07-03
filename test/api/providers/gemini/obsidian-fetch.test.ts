@@ -129,7 +129,7 @@ describe('installObsidianFetch', () => {
 	});
 
 	test('leaves the default fetcher in place if a sub-client lacks _httpClient', () => {
-		const getClient = vi.fn(() => ({}) as Record<string, unknown>);
+		const getClient = vi.fn(() => ({}));
 		const ai = { interactions: { getClient } };
 		expect(installObsidianFetch(ai)).toBe(true);
 		// Should not throw when the expected internal shape is missing.

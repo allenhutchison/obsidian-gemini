@@ -14,7 +14,6 @@ const SOFTENED_TS_RULES = {
 	'@typescript-eslint/no-unsafe-member-access': 'off',
 	'@typescript-eslint/no-unsafe-return': 'off',
 	'@typescript-eslint/no-unsafe-enum-comparison': 'off',
-	'@typescript-eslint/no-unnecessary-type-assertion': 'off',
 	'@typescript-eslint/no-misused-promises': 'off',
 	'@typescript-eslint/no-floating-promises': 'off',
 	'@typescript-eslint/no-base-to-string': 'off',

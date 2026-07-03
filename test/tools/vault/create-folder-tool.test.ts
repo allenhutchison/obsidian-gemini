@@ -189,7 +189,7 @@ describe('CreateFolderTool', () => {
 	});
 
 	it('should have confirmation message', () => {
-		const message = tool.confirmationMessage!({ path: 'my-new-folder' });
+		const message = tool.confirmationMessage({ path: 'my-new-folder' });
 		expect(message).toContain('Create folder: my-new-folder');
 	});
 

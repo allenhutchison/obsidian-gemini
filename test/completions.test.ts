@@ -77,7 +77,7 @@ describe('GeminiCompletions', () => {
 			addCommand: vi.fn(),
 		};
 
-		completions = new GeminiCompletions(mockPlugin as unknown as ObsidianGemini);
+		completions = new GeminiCompletions(mockPlugin);
 	});
 
 	describe('complete() generator', () => {

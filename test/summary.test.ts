@@ -74,7 +74,7 @@ describe('GeminiSummary', () => {
 			addCommand: vi.fn(),
 		};
 
-		summaryService = new GeminiSummary(mockPlugin as unknown as ObsidianGemini);
+		summaryService = new GeminiSummary(mockPlugin);
 	});
 
 	describe('summarizeActiveFile', () => {

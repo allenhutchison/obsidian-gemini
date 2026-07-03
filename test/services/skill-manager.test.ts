@@ -786,14 +786,14 @@ describe('findFrontmatterEndOffset', () => {
 		const end = findFrontmatterEndOffset(content);
 		expect(end).toBeDefined();
 		// Slicing up to `end` should give the full frontmatter including the closing ---
-		expect(content.slice(0, end!)).toBe('---\nname: foo\ndescription: bar\n---');
+		expect(content.slice(0, end)).toBe('---\nname: foo\ndescription: bar\n---');
 	});
 
 	it('handles CRLF line endings', () => {
 		const content = '---\r\nname: foo\r\ndescription: bar\r\n---\r\nBody\r\n';
 		const end = findFrontmatterEndOffset(content);
 		expect(end).toBeDefined();
-		expect(content.slice(0, end!)).toBe('---\r\nname: foo\r\ndescription: bar\r\n---');
+		expect(content.slice(0, end)).toBe('---\r\nname: foo\r\ndescription: bar\r\n---');
 	});
 
 	it('does not terminate on --- that appears inside a multi-line YAML string value', () => {
@@ -803,7 +803,7 @@ describe('findFrontmatterEndOffset', () => {
 		const end = findFrontmatterEndOffset(content);
 		expect(end).toBeDefined();
 		// The only valid closing marker is the `---` at column 0 on its own line before "Actual body".
-		expect(content.slice(end!).replace(/^\n/, '')).toBe('Actual body\n');
+		expect(content.slice(end).replace(/^\n/, '')).toBe('Actual body\n');
 	});
 
 	it('returns undefined when the content does not start with ---', () => {
@@ -819,6 +819,6 @@ describe('findFrontmatterEndOffset', () => {
 		const content = '---\nname: foo\n...\nBody\n';
 		const end = findFrontmatterEndOffset(content);
 		expect(end).toBeDefined();
-		expect(content.slice(0, end!)).toBe('---\nname: foo\n...');
+		expect(content.slice(0, end)).toBe('---\nname: foo\n...');
 	});
 });

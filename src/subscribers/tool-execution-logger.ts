@@ -56,7 +56,7 @@ export class ToolExecutionLogger {
 					if (!this.plugin.settings.logToolExecution) return;
 					this.pendingLogs.push({
 						toolName: payload.toolName,
-						args: payload.args as Record<string, unknown>,
+						args: payload.args,
 						result: payload.result,
 						durationMs: payload.durationMs,
 					});
@@ -160,7 +160,7 @@ function extractKeyParam(toolName: string, args: Record<string, unknown>): { key
 	if (toolName in KEY_PARAM_MAP) {
 		const paramName = KEY_PARAM_MAP[toolName];
 		if (paramName && typeof args[paramName] === 'string') {
-			return { key: paramName, value: args[paramName] as string };
+			return { key: paramName, value: args[paramName] };
 		}
 		return null;
 	}
