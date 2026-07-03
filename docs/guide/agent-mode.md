@@ -398,7 +398,7 @@ Analyze this blog post and summarize key points
 
 #### deep_research
 
-Conduct multi-source research with citations and (optionally) save the report to your vault. Distinct from `google_search` — Deep Research runs iterative multi-turn investigation that takes minutes rather than seconds. See the [Deep Research guide](/guide/deep-research) for scope options (`web_only`, `vault_only`, `both`) and example prompts.
+Conduct multi-source research with citations and (optionally) save the report to your vault. Distinct from `google_search` — Deep Research runs iterative multi-turn investigation that takes minutes rather than seconds. By default it runs as a background task so it doesn't block the conversation; the agent only waits inline when the report is the direct answer to your current question. See the [Deep Research guide](/guide/deep-research#background-mode) for scope options (`web_only`, `vault_only`, `both`), background mode, and example prompts.
 
 ```text
 Research the latest developments in quantum error correction and save it to Research/quantum.md
@@ -406,7 +406,7 @@ Research the latest developments in quantum error correction and save it to Rese
 
 #### generate_image
 
-Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Available on the Gemini provider only.
+Generate an image from a prompt and save it to your vault. The agent picks a default attachment path if you don't specify one. Like `deep_research`, it defaults to running as a background task — the agent only generates inline when the image needs to appear in the same turn. Available on the Gemini provider only.
 
 ```text
 Generate a watercolor diagram of a Zettelkasten workflow and embed it in my notes
