@@ -720,8 +720,8 @@ body.theme-dark {
 }
 
 .gemini-tool-params-icon svg {
-	width: 18px;
-	height: 18px;
+	width: var(--gs-icon-lg);
+	height: var(--gs-icon-lg);
 }
 
 .gemini-tool-params-title {
@@ -825,8 +825,8 @@ body.theme-dark {
 }
 
 .gemini-tool-expand-btn svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-md);
+	height: var(--gs-icon-md);
 	color: var(--gs-text-muted);
 }
 
@@ -853,8 +853,8 @@ body.theme-dark {
 }
 
 .gemini-tool-message-icon svg {
-	width: 18px;
-	height: 18px;
+	width: var(--gs-icon-lg);
+	height: var(--gs-icon-lg);
 	color: var(--gs-on-accent);
 }
 
@@ -950,8 +950,8 @@ body.theme-dark {
 }
 
 .gemini-tool-btn-icon svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-md);
+	height: var(--gs-icon-md);
 }
 
 /* Agent View Styles */
@@ -1099,8 +1099,8 @@ body.theme-dark {
 }
 
 .gemini-agent-toggle-btn svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 /* Title Container */
@@ -1987,8 +1987,8 @@ body.theme-dark {
 }
 
 .gemini-tool-group-icon svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 .gemini-tool-group-text {
@@ -2024,8 +2024,8 @@ body.theme-dark {
 }
 
 .gemini-tool-group-chevron svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 /* Group body (expandable) */
@@ -2066,8 +2066,8 @@ body.theme-dark {
 }
 
 .gemini-tool-row-icon svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 .gemini-tool-row-name {
@@ -2194,8 +2194,8 @@ body.theme-dark {
 }
 
 .gemini-agent-tool-toggle svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-md);
+	height: var(--gs-icon-md);
 	transition: transform 0.2s ease;
 }
 
@@ -2206,8 +2206,8 @@ body.theme-dark {
 }
 
 .gemini-agent-tool-icon svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-md);
+	height: var(--gs-icon-md);
 }
 
 .gemini-agent-tool-title {
@@ -2363,8 +2363,8 @@ body.theme-dark {
 }
 
 .gemini-agent-tool-copy-section svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 /* Parameters list */
@@ -3532,8 +3532,8 @@ body.theme-dark {
 }
 
 .rag-status-bar .rag-status-icon svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 .rag-status-bar .rag-status-text {
@@ -3818,8 +3818,8 @@ body.theme-dark {
 }
 
 .rag-status-failure-icon svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-md);
+	height: var(--gs-icon-md);
 }
 
 .rag-status-failure-path {
@@ -3993,8 +3993,8 @@ body.theme-dark {
 }
 
 .rag-progress-stat-icon svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 .rag-progress-stat-icon.rag-stat-success svg {
@@ -4087,8 +4087,8 @@ body.theme-dark {
 }
 
 .gemini-shelf-icon svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 .gemini-shelf-name {
@@ -4445,8 +4445,8 @@ body.theme-dark {
 }
 
 .gemini-diff-btn-icon svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 .gemini-diff-editor {
@@ -4510,8 +4510,8 @@ body.theme-dark {
 }
 
 .gemini-activity-tab-icon svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-md);
+	height: var(--gs-icon-md);
 }
 
 .gemini-activity-content {
@@ -4753,8 +4753,8 @@ body.theme-dark {
 }
 
 .gemini-catchup-item-icon svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 	color: var(--gs-text-muted);
 	flex-shrink: 0;
 }
