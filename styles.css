@@ -2264,9 +2264,9 @@ body {
 
 /* Tool details */
 .gemini-agent-tool-details {
-	border-top: 1px solid var(--background-modifier-border);
-	padding: var(--size-4-3);
-	background-color: var(--background-primary);
+	border-top: 1px solid var(--gs-border);
+	padding: var(--gs-space-3);
+	background-color: var(--gs-surface);
 	animation: slideDown 0.2s ease-out;
 }
 
@@ -2283,7 +2283,7 @@ body {
 }
 
 .gemini-agent-tool-section {
-	margin-bottom: var(--size-4-3);
+	margin-bottom: var(--gs-space-3);
 }
 
 .gemini-agent-tool-section:last-child {
@@ -2294,7 +2294,7 @@ body {
 	margin: 0 0 var(--size-2-2) 0;
 	font-size: var(--font-ui-small);
 	font-weight: 600;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
@@ -2314,16 +2314,16 @@ body {
 	padding: var(--size-2-1);
 	margin-bottom: var(--size-2-2);
 	background-color: var(--interactive-normal);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
 	cursor: pointer;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	transition: all 0.15s ease;
 }
 
 .gemini-agent-tool-copy-section:hover {
 	background-color: var(--interactive-hover);
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-copy-section svg {
@@ -2340,23 +2340,23 @@ body {
 
 .gemini-agent-tool-param-item {
 	display: flex;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 	align-items: baseline;
 }
 
 .gemini-agent-tool-param-key {
 	font-weight: 500;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	min-width: 100px;
 }
 
 .gemini-agent-tool-param-value {
 	font-family: var(--font-monospace);
 	font-size: var(--font-ui-smaller);
-	background-color: var(--background-secondary);
+	background-color: var(--gs-surface-alt);
 	padding: 2px 6px;
-	border-radius: var(--radius-s);
-	color: var(--text-muted);
+	border-radius: var(--gs-radius-sm);
+	color: var(--gs-text-muted);
 	word-break: break-all;
 	flex: 1;
 }
@@ -2368,12 +2368,12 @@ body {
 
 .gemini-agent-tool-result-list {
 	margin: 0;
-	padding-left: var(--size-4-4);
+	padding-left: var(--gs-space-4);
 }
 
 .gemini-agent-tool-result-list li {
 	margin-bottom: var(--size-2-1);
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-result-object {
@@ -2389,28 +2389,28 @@ body {
 
 .gemini-agent-tool-result-key {
 	font-weight: 500;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-agent-tool-result-value {
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-empty-result {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-style: italic;
 }
 
 .gemini-agent-tool-more-items {
 	margin-top: var(--size-2-1);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-style: italic;
 }
 
 .gemini-agent-tool-error-content {
 	background-color: var(--background-modifier-error);
-	padding: var(--size-4-2);
-	border-radius: var(--radius-s);
+	padding: var(--gs-space-2);
+	border-radius: var(--gs-radius-sm);
 	border-left: 3px solid var(--text-error);
 }
 
@@ -2446,10 +2446,10 @@ body {
 
 /* Code results */
 .gemini-agent-tool-code-result {
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
-	padding: var(--size-4-2);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
+	padding: var(--gs-space-2);
 	margin: var(--size-2-1) 0;
 	overflow-x: auto;
 	max-height: 300px;
@@ -2460,15 +2460,15 @@ body {
 	font-family: var(--font-monospace);
 	font-size: var(--font-ui-smaller);
 	white-space: pre;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-expand-content {
 	margin-top: var(--size-2-2);
-	padding: var(--size-2-1) var(--size-4-2);
+	padding: var(--size-2-1) var(--gs-space-2);
 	background-color: var(--interactive-normal);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
 	font-size: var(--font-ui-small);
 	cursor: pointer;
 	transition: all 0.15s ease;
@@ -2476,18 +2476,18 @@ body {
 
 .gemini-agent-tool-expand-content:hover {
 	background-color: var(--interactive-hover);
-	border-color: var(--interactive-accent);
+	border-color: var(--gs-accent);
 }
 
 /* File info display */
 .gemini-agent-tool-file-info {
 	margin-bottom: var(--size-2-2);
 	font-size: var(--font-ui-small);
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-file-size {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-style: italic;
 }
 
@@ -2496,13 +2496,13 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 2px;
-	padding: var(--size-2-2) var(--size-4-3);
+	padding: var(--size-2-2) var(--gs-space-3);
 }
 
 .gemini-agent-thinking-container {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-3);
+	gap: var(--gs-space-3);
 }
 
 .gemini-agent-thinking-text-container {
@@ -2512,7 +2512,7 @@ body {
 }
 
 .gemini-agent-thinking-text {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-style: italic;
 }
 
@@ -2522,7 +2522,7 @@ body {
 	width: 4px;
 	height: 4px;
 	border-radius: 50%;
-	background-color: var(--text-muted);
+	background-color: var(--gs-text-muted);
 	animation: thinking-bounce 1.4s infinite ease-in-out both;
 }
 
@@ -2536,7 +2536,7 @@ body {
 
 /* Timer display */
 .gemini-agent-timer {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: 0.9em;
 	font-family: var(--font-monospace);
 	min-width: 3.5em;
@@ -2560,26 +2560,26 @@ body {
 /* Confirmation Request Message */
 .gemini-agent-confirmation-request {
 	background: var(--background-secondary-alt);
-	border: 2px solid var(--interactive-accent);
-	border-radius: var(--radius-m);
-	padding: var(--size-4-3);
-	margin: var(--size-4-2) 0;
+	border: 2px solid var(--gs-accent);
+	border-radius: var(--gs-radius-md);
+	padding: var(--gs-space-3);
+	margin: var(--gs-space-2) 0;
 }
 
 /* Confirmation Card */
 .gemini-agent-confirmation-card {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
-	padding: var(--size-4-3);
-	margin: var(--size-4-2) 0;
+	background: var(--gs-surface);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-sm);
+	padding: var(--gs-space-3);
+	margin: var(--gs-space-2) 0;
 }
 
 /* Tool Info Section */
 .gemini-agent-tool-info-header {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 	margin-bottom: var(--size-2-3);
 }
 
@@ -2592,25 +2592,25 @@ body {
 .gemini-agent-tool-name {
 	font-weight: 600;
 	font-size: var(--font-ui-medium);
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-tool-category {
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
-	background: var(--background-modifier-border);
+	color: var(--gs-text-muted);
+	background: var(--gs-border);
 	padding: 2px 8px;
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 }
 
 .gemini-agent-tool-description {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	margin: var(--size-2-2) 0;
 }
 
 /* Parameters Section */
 .gemini-agent-params-section {
-	margin-top: var(--size-4-2);
+	margin-top: var(--gs-space-2);
 }
 
 .gemini-agent-params-header {
@@ -2627,8 +2627,8 @@ body {
 .gemini-agent-param-item {
 	font-size: var(--font-ui-small);
 	padding: var(--size-2-1) var(--size-2-3);
-	background: var(--background-secondary);
-	border-radius: var(--radius-s);
+	background: var(--gs-surface-alt);
+	border-radius: var(--gs-radius-sm);
 }
 
 .gemini-agent-param-item code {
@@ -2637,16 +2637,16 @@ body {
 }
 
 .gemini-agent-confirmation-message {
-	margin-top: var(--size-4-2);
+	margin-top: var(--gs-space-2);
 	padding: var(--size-2-3);
 	background: var(--background-modifier-info);
 	border-left: 3px solid var(--text-accent);
-	border-radius: var(--radius-s);
+	border-radius: var(--gs-radius-sm);
 }
 
 .gemini-agent-confirmation-message p {
 	margin: 0;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 /* Action Buttons */
@@ -2654,19 +2654,19 @@ body {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: var(--size-4-2);
-	margin-top: var(--size-4-3);
+	gap: var(--gs-space-2);
+	margin-top: var(--gs-space-3);
 }
 
 .gemini-agent-confirmation-btn {
 	display: flex;
 	align-items: center;
 	gap: var(--size-2-2);
-	padding: var(--size-2-2) var(--size-4-3);
-	border-radius: var(--radius-m);
-	border: 1px solid var(--background-modifier-border);
+	padding: var(--size-2-2) var(--gs-space-3);
+	border-radius: var(--gs-radius-md);
+	border: 1px solid var(--gs-border);
 	background: var(--interactive-normal);
-	color: var(--text-normal);
+	color: var(--gs-text);
 	cursor: pointer;
 	font-size: var(--font-ui-medium);
 	font-weight: 500;
@@ -2687,17 +2687,17 @@ body {
 }
 
 .gemini-agent-confirmation-btn-confirm {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
+	background: var(--gs-accent);
+	color: var(--gs-on-accent);
+	border-color: var(--gs-accent);
 }
 
 .gemini-agent-confirmation-btn-confirm:hover {
-	background: var(--interactive-accent-hover);
+	background: var(--gs-accent-hover);
 }
 
 .gemini-agent-confirmation-btn-cancel {
-	background: var(--background-secondary);
+	background: var(--gs-surface-alt);
 }
 
 .gemini-agent-confirmation-btn-icon {
@@ -2712,7 +2712,7 @@ body {
 	gap: var(--size-2-2);
 	margin-left: auto;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-agent-checkbox-input {
@@ -2729,8 +2729,8 @@ body {
 	align-items: center;
 	gap: var(--size-2-3);
 	padding: var(--size-2-3);
-	border-radius: var(--radius-s);
-	background: var(--background-secondary);
+	border-radius: var(--gs-radius-sm);
+	background: var(--gs-surface-alt);
 	animation: fadeIn 0.2s ease-in;
 }
 
@@ -2740,7 +2740,7 @@ body {
 
 .gemini-agent-result-text {
 	font-size: var(--font-ui-medium);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 /* Empty chat state */
@@ -2750,7 +2750,7 @@ body {
 	align-items: center;
 	justify-content: center;
 	text-align: center;
-	padding: var(--size-4-8);
+	padding: var(--gs-space-6);
 	min-height: 300px;
 	animation: fadeIn 0.5s ease-in;
 }
@@ -2758,8 +2758,8 @@ body {
 .gemini-agent-empty-icon {
 	width: 64px;
 	height: 64px;
-	margin-bottom: var(--size-4-4);
-	color: var(--text-muted);
+	margin-bottom: var(--gs-space-4);
+	color: var(--gs-text-muted);
 	opacity: 0.3;
 }
 
@@ -2769,15 +2769,15 @@ body {
 }
 
 .gemini-agent-empty-title {
-	margin: 0 0 var(--size-4-2) 0;
+	margin: 0 0 var(--gs-space-2) 0;
 	font-size: var(--font-size-h3);
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-empty-desc {
-	margin: 0 0 var(--size-4-4) 0;
-	color: var(--text-muted);
+	margin: 0 0 var(--gs-space-4) 0;
+	color: var(--gs-text-muted);
 	max-width: 400px;
 }
 
@@ -2790,20 +2790,20 @@ body {
 }
 
 .gemini-agent-suggestion {
-	padding: var(--size-4-2) var(--size-4-3);
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
+	padding: var(--gs-space-2) var(--gs-space-3);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-md);
 	cursor: pointer;
 	transition: all 0.15s ease;
 	font-size: var(--font-ui-small);
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-agent-suggestion:hover {
-	background-color: var(--background-modifier-hover);
-	border-color: var(--interactive-accent);
-	color: var(--text-normal);
+	background-color: var(--gs-hover);
+	border-color: var(--gs-accent);
+	color: var(--gs-text);
 	transform: translateY(-1px);
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -2812,7 +2812,7 @@ body {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 }
 
 .gemini-agent-suggestion-title {
@@ -2834,12 +2834,12 @@ body {
 .gemini-agent-init-context-button {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-3);
-	padding: var(--size-4-4) var(--size-4-4);
-	margin: var(--size-4-4) 0;
-	background: linear-gradient(135deg, var(--interactive-accent), var(--interactive-accent-hover));
-	border: 1px solid var(--interactive-accent);
-	border-radius: var(--radius-l);
+	gap: var(--gs-space-3);
+	padding: var(--gs-space-4) var(--gs-space-4);
+	margin: var(--gs-space-4) 0;
+	background: linear-gradient(135deg, var(--gs-accent), var(--gs-accent-hover));
+	border: 1px solid var(--gs-accent);
+	border-radius: var(--gs-radius-lg);
 	cursor: pointer;
 	transition: all 0.2s ease;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -2850,14 +2850,14 @@ body {
 .gemini-agent-init-context-button:hover {
 	transform: translateY(-2px);
 	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-	border-color: var(--interactive-accent-hover);
+	border-color: var(--gs-accent-hover);
 }
 
 .gemini-agent-init-icon {
 	width: 40px;
 	height: 40px;
 	background: rgba(255, 255, 255, 0.2);
-	border-radius: var(--radius-m);
+	border-radius: var(--gs-radius-md);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2867,7 +2867,7 @@ body {
 .gemini-agent-init-icon svg {
 	width: 24px;
 	height: 24px;
-	color: var(--text-on-accent);
+	color: var(--gs-on-accent);
 }
 
 .gemini-agent-init-text {
@@ -2879,46 +2879,46 @@ body {
 	display: block;
 	font-size: var(--font-ui-medium);
 	font-weight: 600;
-	color: var(--text-on-accent);
+	color: var(--gs-on-accent);
 	margin-bottom: var(--size-2-1);
 }
 
 .gemini-agent-init-desc {
 	display: block;
 	font-size: var(--font-ui-small);
-	color: var(--text-on-accent);
+	color: var(--gs-on-accent);
 	opacity: 0.9;
 	line-height: 1.4;
 }
 
 /* Update variant - more subtle styling */
 .gemini-agent-init-context-button-update {
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .gemini-agent-init-context-button-update:hover {
-	background: var(--background-modifier-hover);
-	border-color: var(--background-modifier-border-hover);
+	background: var(--gs-hover);
+	border-color: var(--gs-border-strong);
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .gemini-agent-init-context-button-update .gemini-agent-init-icon {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface);
+	border: 1px solid var(--gs-border);
 }
 
 .gemini-agent-init-context-button-update .gemini-agent-init-icon svg {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-agent-init-context-button-update .gemini-agent-init-text strong {
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-init-context-button-update .gemini-agent-init-desc {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	opacity: 1;
 }
 
@@ -2926,18 +2926,18 @@ body {
 .gemini-agent-capabilities {
 	width: 100%;
 	max-width: 400px;
-	margin: var(--size-4-6) 0 var(--size-4-4) 0;
-	padding: var(--size-4-4);
-	background-color: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-l);
+	margin: var(--gs-space-5) 0 var(--gs-space-4) 0;
+	padding: var(--gs-space-4);
+	background-color: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
+	border-radius: var(--gs-radius-lg);
 }
 
 .gemini-agent-capabilities-title {
-	margin: 0 0 var(--size-4-3) 0;
+	margin: 0 0 var(--gs-space-3) 0;
 	font-size: var(--font-ui-medium);
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-agent-capabilities-list {
@@ -2949,16 +2949,16 @@ body {
 .gemini-agent-capability-item {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 	padding: var(--size-2-2) 0;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: var(--font-ui-small);
 }
 
 .gemini-agent-capability-icon {
 	width: 16px;
 	height: 16px;
-	color: var(--interactive-accent);
+	color: var(--gs-accent);
 	flex-shrink: 0;
 }
 
@@ -2972,9 +2972,9 @@ body {
 }
 
 .gemini-agent-docs-link {
-	margin-top: var(--size-4-3);
-	padding-top: var(--size-4-3);
-	border-top: 1px solid var(--background-modifier-border);
+	margin-top: var(--gs-space-3);
+	padding-top: var(--gs-space-3);
+	border-top: 1px solid var(--gs-border);
 }
 
 .gemini-agent-docs-link-text {
@@ -2982,23 +2982,23 @@ body {
 	align-items: center;
 	gap: var(--size-2-1);
 	font-size: var(--font-ui-small);
-	color: var(--interactive-accent);
+	color: var(--gs-accent);
 	text-decoration: none;
 	cursor: pointer;
 	transition: color 0.15s ease;
 }
 
 .gemini-agent-docs-link-text:hover {
-	color: var(--interactive-accent-hover);
+	color: var(--gs-accent-hover);
 	text-decoration: underline;
 }
 
 /* Suggestions Header */
 .gemini-agent-suggestions-header {
-	margin: var(--size-4-4) 0 var(--size-4-2) 0;
+	margin: var(--gs-space-4) 0 var(--gs-space-2) 0;
 	font-size: var(--font-ui-small);
 	font-weight: 600;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	width: 100%;
@@ -3007,22 +3007,22 @@ body {
 
 /* AI-translation disclosure shown when the UI is displayed in a non-English language */
 .gemini-agent-i18n-notice {
-	margin-top: var(--size-4-4);
+	margin-top: var(--gs-space-4);
 	font-size: var(--font-ui-smaller);
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 }
 
 /* Example Prompts with Icons */
 .gemini-agent-suggestion-example {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
+	gap: var(--gs-space-2);
 }
 
 .gemini-agent-example-icon {
 	width: 16px;
 	height: 16px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	flex-shrink: 0;
 }
 
@@ -3032,7 +3032,7 @@ body {
 }
 
 .gemini-agent-suggestion-example:hover .gemini-agent-example-icon {
-	color: var(--interactive-accent);
+	color: var(--gs-accent);
 }
 
 .gemini-agent-example-text {
@@ -3050,7 +3050,7 @@ body {
 	margin: 0 0 8px 0;
 	font-size: 13px;
 	font-weight: 600;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
@@ -3076,14 +3076,14 @@ body {
 .gemini-agent-tool-citations {
 	margin-top: 16px;
 	padding-top: 16px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 }
 
 .gemini-agent-tool-citations h5 {
 	margin: 0 0 12px 0;
 	font-size: 13px;
 	font-weight: 600;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
@@ -3104,7 +3104,7 @@ body {
 	content: '\u2022';
 	position: absolute;
 	left: 4px;
-	color: var(--text-faint);
+	color: var(--gs-text-faint);
 }
 
 .gemini-agent-tool-citation-link {
@@ -3124,16 +3124,16 @@ body {
 .gemini-agent-tool-citation-snippet {
 	margin: 0;
 	font-size: 12px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	line-height: 1.5;
 	padding-left: 16px;
-	border-left: 2px solid var(--background-modifier-border);
+	border-left: 2px solid var(--gs-border);
 }
 
 /* Model Config Badge */
 .gemini-agent-model-badge {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--gs-accent);
+	color: var(--gs-on-accent);
 	padding: 3px 8px;
 	border-radius: 12px;
 	font-size: 11px;
@@ -3152,8 +3152,8 @@ body {
 	display: inline-flex;
 	align-items: center;
 	padding: 3px 10px;
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--gs-accent);
+	color: var(--gs-on-accent);
 	border-radius: 12px;
 	font-size: var(--font-ui-smaller);
 	font-weight: 500;
@@ -3174,11 +3174,11 @@ body {
 	height: 20px;
 	margin-left: 8px;
 	cursor: help;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-agent-settings-indicator:hover {
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 /* Session Settings Modal */
@@ -3204,14 +3204,14 @@ body {
 .session-settings-modal select,
 .session-settings-modal .dropdown select {
 	background-color: var(--background-modifier-form-field);
-	color: var(--text-normal);
-	border: 1px solid var(--background-modifier-border);
+	color: var(--gs-text);
+	border: 1px solid var(--gs-border);
 }
 
 .session-settings-modal select option,
 .session-settings-modal .dropdown select option {
-	background-color: var(--background-primary);
-	color: var(--text-normal);
+	background-color: var(--gs-surface);
+	color: var(--gs-text);
 }
 
 .session-settings-modal .slider {
@@ -3222,7 +3222,7 @@ body {
 .session-settings-modal .top-p-value {
 	font-family: var(--font-monospace);
 	font-size: 0.875rem;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	padding: 0.25rem 0.5rem;
 	background: var(--background-modifier-form-field);
 	border-radius: 4px;
@@ -3233,10 +3233,10 @@ body {
 .session-settings-modal .setting-item-description {
 	margin-top: 2rem;
 	padding: 1rem;
-	background: var(--background-secondary);
+	background: var(--gs-surface-alt);
 	border-radius: 8px;
 	font-size: 0.875rem;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .session-settings-modal .modal-button-container {
@@ -3245,7 +3245,7 @@ body {
 	gap: 0.5rem;
 	margin-top: 2rem;
 	padding-top: 1rem;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 }
 
 /* Vault Analysis Modal Styles */
@@ -3260,7 +3260,7 @@ body {
 
 .gemini-vault-analysis-description {
 	margin-bottom: 24px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-vault-analysis-status {
@@ -3268,7 +3268,7 @@ body {
 	align-items: center;
 	gap: 12px;
 	padding: 16px;
-	background: var(--background-secondary);
+	background: var(--gs-surface-alt);
 	border-radius: 8px;
 	margin-bottom: 20px;
 }
@@ -3284,7 +3284,7 @@ body {
 }
 
 .gemini-spinner .path {
-	stroke: var(--interactive-accent);
+	stroke: var(--gs-accent);
 	stroke-linecap: round;
 	animation: dash 1.5s ease-in-out infinite;
 }
@@ -3333,7 +3333,7 @@ body {
 }
 
 .gemini-vault-analysis-step.in-progress {
-	background: var(--background-secondary);
+	background: var(--gs-surface-alt);
 }
 
 .gemini-vault-analysis-step.complete {
@@ -3356,7 +3356,7 @@ body {
 .gemini-vault-analysis-step-error {
 	margin-top: 4px;
 	padding: 8px;
-	background: var(--background-primary);
+	background: var(--gs-surface);
 	border-radius: 4px;
 	font-size: 0.9em;
 	color: var(--text-error);
