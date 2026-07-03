@@ -46,3 +46,9 @@ evals/results/
 # VitePress
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+
+# Claude Design sync — local pin to a personal claude.ai/design project.
+# Not a secret (just a project UUID, no token), but it's personal account state,
+# not shared config — keep it out of this public repo. Auth lives in the local
+# Claude config from /design-login, never here.
+.design-sync/

@@ -6,6 +6,81 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/* ============================================================
+   DESIGN TOKENS — Gemini Scribe design system
+   Semantic tokens aliasing Obsidian's theme variables, plus the
+   plugin's own spacing / radius / icon / motion / brand scales.
+   This is the single vocabulary component styles should consume;
+   see docs/contributing/design-system.md. Migrating the rest of
+   this file onto these tokens is ongoing, surface by surface.
+   ============================================================ */
+:root {
+	/* Type — Obsidian's own interface & mono faces */
+	--gs-font-ui: var(--font-interface);
+	--gs-font-mono: var(--font-monospace);
+
+	/* Spacing — 4px rhythm */
+	--gs-space-1: 4px;
+	--gs-space-2: 8px;
+	--gs-space-3: 12px;
+	--gs-space-4: 16px;
+	--gs-space-5: 24px;
+	--gs-space-6: 32px;
+	--gs-space-8: 48px;
+
+	/* Radius — aliases Obsidian's radius scale */
+	--gs-radius-sm: var(--radius-s);
+	--gs-radius-md: var(--radius-m);
+	--gs-radius-lg: var(--radius-l);
+	--gs-radius-pill: 999px;
+
+	/* Elevation */
+	--gs-shadow-sm: var(--shadow-s);
+	--gs-shadow-md: var(--shadow-l);
+	--gs-shadow-lg: var(--shadow-l);
+
+	/* Motion */
+	--gs-dur-fast: 120ms;
+	--gs-dur: 200ms;
+	--gs-dur-slow: 320ms;
+	--gs-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+	/* Icons — aliases Obsidian's icon size + stroke tokens.
+	   lg (18px) is the default for toolbar & action icons. */
+	--gs-icon-sm: var(--icon-xs, 14px);
+	--gs-icon-md: var(--icon-s, 16px);
+	--gs-icon-lg: var(--icon-m, 18px);
+	--gs-icon-xl: var(--icon-l, 20px);
+	--gs-icon-stroke: var(--icon-stroke, 1.75px);
+
+	/* Gemini brand — the single signature, for primary actions & brand only */
+	--gs-brand-1: #4989f5;
+	--gs-brand-2: #9168e8;
+	--gs-brand-3: #e2688b;
+	--gs-brand-gradient: linear-gradient(95deg, var(--gs-brand-1), var(--gs-brand-2) 52%, var(--gs-brand-3));
+
+	/* Surfaces & text — alias Obsidian's theme variables (theme-adaptive) */
+	--gs-surface: var(--background-primary);
+	--gs-surface-alt: var(--background-secondary);
+	--gs-hover: var(--background-modifier-hover);
+	--gs-border: var(--background-modifier-border);
+	--gs-border-strong: var(--background-modifier-border-hover);
+	--gs-text: var(--text-normal);
+	--gs-text-muted: var(--text-muted);
+	--gs-text-faint: var(--text-faint);
+
+	/* Accent */
+	--gs-accent: var(--interactive-accent);
+	--gs-accent-hover: var(--interactive-accent-hover);
+	--gs-on-accent: var(--text-on-accent);
+
+	/* Semantic status — separate from the accent hue */
+	--gs-success: var(--color-green);
+	--gs-warning: var(--color-orange);
+	--gs-error: var(--color-red);
+	--gs-info: var(--color-blue);
+}
 /* in your plugin's styles.css or a <style> tag in your view */
 
 /* Rewrite Modal Styles */
@@ -942,8 +1017,8 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-btn svg {
-	width: 14px;
-	height: 14px;
+	width: var(--gs-icon-sm);
+	height: var(--gs-icon-sm);
 }
 
 .gemini-agent-btn-primary {
@@ -1086,8 +1161,8 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-btn-icon svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-md);
+	height: var(--gs-icon-md);
 }
 
 /* Small Buttons */
@@ -1369,6 +1444,10 @@ If your plugin does not need CSS, delete this file.
 /* Wrapper for input + send button */
 .gemini-agent-input-row {
 	display: flex;
+	/* Center all controls on one line so the plan button (align-self: center)
+	   and the send button (previously inheriting stretch → top-aligned) share
+	   the same vertical center instead of drifting apart. */
+	align-items: center;
 	gap: var(--size-2-2);
 }
 
@@ -1421,7 +1500,9 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-send-btn {
-	align-self: stretch;
+	/* center on the input row so it shares the plan button's vertical center
+	   (was `stretch`, which pinned this fixed-height button to the top) */
+	align-self: center;
 	padding: var(--size-4-2);
 	min-width: 50px;
 	display: flex;
@@ -1430,8 +1511,8 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-send-btn svg {
-	width: 20px;
-	height: 20px;
+	width: var(--gs-icon-lg);
+	height: var(--gs-icon-lg);
 	fill: var(--color-green, #10b981);
 }
 
@@ -5240,8 +5321,8 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-agent-plan-btn-icon svg {
-	width: 16px;
-	height: 16px;
+	width: var(--gs-icon-lg);
+	height: var(--gs-icon-lg);
 }
 
 /* Hidden at rest — revealed only when the mode is active */
