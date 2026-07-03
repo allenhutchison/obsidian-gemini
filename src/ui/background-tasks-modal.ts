@@ -74,7 +74,7 @@ export class BackgroundTasksModal extends Modal {
 				if (this.activeTab !== 'rag') return;
 				// Don't wipe the Files tab while the search box has focus — the
 				// debounce timer may still hold a reference to the old list container.
-				const active = document.activeElement;
+				const active = this.contentEl.ownerDocument.activeElement;
 				if (this.ragInnerTab === 'files' && active instanceof HTMLElement && active.hasClass('rag-status-search'))
 					return;
 				this.renderTabContent();

@@ -154,6 +154,9 @@ export async function rasterizeSvg(buffer: ArrayBuffer, isSvgz: boolean): Promis
 
 		const dims = computeScaledDimensions(width, height);
 
+		// Detached canvas used only to rasterize the SVG to a PNG data URL; it is
+		// never inserted into a view, so it isn't cross-window-relevant.
+		// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached rasterization canvas, never attached
 		const canvas = document.createElement('canvas');
 		canvas.width = dims.width;
 		canvas.height = dims.height;

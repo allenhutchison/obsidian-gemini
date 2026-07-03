@@ -400,7 +400,7 @@ export class AgentViewMessages {
 		if (messageDiv) {
 			// For streaming, append the new chunk as plain text to avoid re-rendering
 			// We'll do a final markdown render when streaming completes
-			const textNode = document.createTextNode(newChunk);
+			const textNode = messageDiv.ownerDocument.createTextNode(newChunk);
 			messageDiv.appendChild(textNode);
 		}
 	}
