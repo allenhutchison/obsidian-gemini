@@ -611,13 +611,13 @@ body {
 	gap: 16px;
 	margin-bottom: 24px;
 	padding-bottom: 20px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 }
 
 .gemini-tool-modal-icon {
 	width: 48px;
 	height: 48px;
-	background: linear-gradient(135deg, var(--interactive-accent), var(--interactive-accent-hover));
+	background: linear-gradient(135deg, var(--gs-accent), var(--gs-accent-hover));
 	border-radius: 12px;
 	display: flex;
 	align-items: center;
@@ -628,7 +628,7 @@ body {
 .gemini-tool-modal-icon svg {
 	width: 24px;
 	height: 24px;
-	color: var(--text-on-accent);
+	color: var(--gs-on-accent);
 }
 
 .gemini-tool-modal-header-text {
@@ -639,19 +639,19 @@ body {
 	margin: 0 0 4px 0;
 	font-size: 20px;
 	font-weight: 600;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-tool-modal-subtitle {
 	margin: 0;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: 14px;
 }
 
 /* Tool Card */
 .gemini-tool-card {
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 	border-radius: 8px;
 	padding: 16px;
 	margin-bottom: 20px;
@@ -665,8 +665,8 @@ body {
 }
 
 .gemini-tool-name-badge {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface);
+	border: 1px solid var(--gs-border);
 	border-radius: 6px;
 	padding: 6px 12px;
 	font-family: var(--font-monospace);
@@ -675,8 +675,8 @@ body {
 }
 
 .gemini-tool-category-badge {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--gs-accent);
+	color: var(--gs-on-accent);
 	border-radius: 4px;
 	padding: 4px 8px;
 	font-size: 11px;
@@ -687,7 +687,7 @@ body {
 
 .gemini-tool-description p {
 	margin: 0;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	font-size: 14px;
 	line-height: 1.5;
 }
@@ -705,7 +705,7 @@ body {
 }
 
 .gemini-tool-params-icon {
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	display: flex;
 	align-items: center;
 }
@@ -718,12 +718,12 @@ body {
 .gemini-tool-params-title {
 	font-weight: 600;
 	font-size: 16px;
-	color: var(--text-normal);
+	color: var(--gs-text);
 }
 
 .gemini-tool-params-container {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface);
+	border: 1px solid var(--gs-border);
 	border-radius: 8px;
 	padding: 16px;
 	max-height: 300px;
@@ -736,7 +736,7 @@ body {
 	gap: 16px;
 	align-items: start;
 	padding: 12px 0;
-	border-bottom: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--gs-border);
 }
 
 .gemini-tool-param-row:first-child {
@@ -750,7 +750,7 @@ body {
 
 .gemini-tool-param-key {
 	font-weight: 500;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	font-size: 14px;
 }
 
@@ -761,8 +761,8 @@ body {
 .gemini-tool-param-code,
 .gemini-tool-param-content code {
 	display: block;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
 	padding: 8px;
 	font-family: var(--font-monospace);
@@ -770,7 +770,7 @@ body {
 	line-height: 1.5;
 	white-space: pre-wrap;
 	word-break: break-all;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 .gemini-tool-param-content {
@@ -790,7 +790,7 @@ body {
 	left: 0;
 	right: 0;
 	height: 20px;
-	background: linear-gradient(to bottom, transparent, var(--background-secondary));
+	background: linear-gradient(to bottom, transparent, var(--gs-surface-alt));
 	pointer-events: none;
 }
 
@@ -801,8 +801,8 @@ body {
 	width: 24px;
 	height: 24px;
 	padding: 0;
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--gs-surface);
+	border: 1px solid var(--gs-border);
 	border-radius: 4px;
 	cursor: pointer;
 	display: flex;
@@ -812,21 +812,21 @@ body {
 }
 
 .gemini-tool-expand-btn:hover {
-	background: var(--background-modifier-hover);
+	background: var(--gs-hover);
 }
 
 .gemini-tool-expand-btn svg {
 	width: 16px;
 	height: 16px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 }
 
 /* Custom Message */
 .gemini-tool-custom-message {
 	display: flex;
 	gap: 12px;
-	background: linear-gradient(135deg, var(--background-secondary), var(--background-primary));
-	border: 1px solid var(--background-modifier-border);
+	background: linear-gradient(135deg, var(--gs-surface-alt), var(--gs-surface));
+	border: 1px solid var(--gs-border);
 	border-radius: 8px;
 	padding: 16px;
 	margin-bottom: 20px;
@@ -836,7 +836,7 @@ body {
 	flex-shrink: 0;
 	width: 32px;
 	height: 32px;
-	background: var(--interactive-accent);
+	background: var(--gs-accent);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -846,7 +846,7 @@ body {
 .gemini-tool-message-icon svg {
 	width: 18px;
 	height: 18px;
-	color: var(--text-on-accent);
+	color: var(--gs-on-accent);
 }
 
 .gemini-tool-message-content {
@@ -855,7 +855,7 @@ body {
 
 .gemini-tool-message-content p {
 	margin: 0;
-	color: var(--text-normal);
+	color: var(--gs-text);
 	font-size: 14px;
 	line-height: 1.5;
 }
@@ -864,9 +864,9 @@ body {
 .gemini-tool-allow-container {
 	margin-top: 20px;
 	padding: 16px;
-	background: var(--background-secondary);
+	background: var(--gs-surface-alt);
 	border-radius: 8px;
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--gs-border);
 }
 
 .gemini-tool-allow-label {
@@ -885,7 +885,7 @@ body {
 
 .gemini-tool-allow-text {
 	font-size: 13px;
-	color: var(--text-muted);
+	color: var(--gs-text-muted);
 	flex: 1;
 }
 
@@ -896,7 +896,7 @@ body {
 	justify-content: flex-end;
 	margin-top: 16px;
 	padding-top: 20px;
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid var(--gs-border);
 }
 
 .gemini-tool-cancel-btn,
@@ -913,24 +913,24 @@ body {
 }
 
 .gemini-tool-cancel-btn {
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	color: var(--text-normal);
+	background: var(--gs-surface-alt);
+	border: 1px solid var(--gs-border);
+	color: var(--gs-text);
 }
 
 .gemini-tool-cancel-btn:hover {
-	background: var(--background-modifier-hover);
-	border-color: var(--background-modifier-border-hover);
+	background: var(--gs-hover);
+	border-color: var(--gs-border-strong);
 }
 
 .gemini-tool-confirm-btn {
-	background: var(--interactive-accent);
+	background: var(--gs-accent);
 	border: none;
-	color: var(--text-on-accent);
+	color: var(--gs-on-accent);
 }
 
 .gemini-tool-confirm-btn:hover {
-	background: var(--interactive-accent-hover);
+	background: var(--gs-accent-hover);
 	transform: translateY(-1px);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
