@@ -43,8 +43,7 @@ import { BackgroundTaskManager } from './services/background-task-manager';
 import { BackgroundStatusBar } from './services/background-status-bar';
 import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
-import { getErrorMessage, getRawErrorMessage } from './utils/error-utils';
-import { openPluginSettingsTab } from './utils/obsidian-settings';
+import { getRawErrorMessage } from './utils/error-utils';
 import { t } from './i18n';
 
 export interface RagIndexingSettings {
@@ -759,35 +758,8 @@ export default class ObsidianGemini extends Plugin {
 					return;
 				}
 				// Trigger the same modal as clicking the status bar
-				const { RagStatusModal } = await import('./ui/rag-status-modal');
-				const modal = new RagStatusModal(
-					this.app,
-					this.ragIndexing.getDetailedStatus(),
-					() => {
-						// Open settings to RAG section
-						openPluginSettingsTab(this.app, this.manifest.id);
-					},
-					async () => {
-						// Reindex
-						const { RagProgressModal } = await import('./ui/rag-progress-modal');
-						const progressModal = new RagProgressModal(this.app, this.ragIndexing!, (result) => {
-							new Notice(t('notice.main.ragIndexComplete', { indexed: result.indexed, skipped: result.skipped }));
-						});
-						progressModal.open();
-						this.ragIndexing!.indexVault().catch((error: unknown) => {
-							new Notice(t('notice.main.ragIndexFailed', { error: getErrorMessage(error) }));
-						});
-					},
-					async () => {
-						// Sync now
-						const synced = await this.ragIndexing!.syncPendingChanges();
-						if (synced) {
-							new Notice(t('notice.main.ragSyncingPending'));
-						}
-						return synced;
-					}
-				);
-				modal.open();
+				const { openRagStatusModal } = await import('./services/rag-status-bar');
+				await openRagStatusModal(this.app, this.ragIndexing, this.manifest.id);
 			},
 		});
 

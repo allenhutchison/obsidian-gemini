@@ -850,9 +850,6 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'Sincronização de RAG pausada',
 	'notice.main.ragNotPaused': 'A sincronização de RAG não está pausada',
 	'notice.main.ragResumed': 'Sincronização de RAG retomada',
-	'notice.main.ragIndexComplete': 'Reanálise concluída: {indexed} reindexados, {skipped} inalterados',
-	'notice.main.ragIndexFailed': 'Falha na indexação de RAG: {error}',
-	'notice.main.ragSyncingPending': 'Índice RAG: A sincronizar alterações pendentes...',
 	'notice.main.readyToUse': 'O Gemini Scribe está agora pronto a usar!',
 	'component.managementModalBase.managerUnavailable': 'Gestor de {label} não disponível.',
 	'component.managementModalBase.deleteConfirm':

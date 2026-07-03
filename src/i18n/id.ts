@@ -835,9 +835,6 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'notice.main.ragPaused': 'Sinkronisasi RAG dijeda',
 	'notice.main.ragNotPaused': 'Sinkronisasi RAG tidak dijeda',
 	'notice.main.ragResumed': 'Sinkronisasi RAG dilanjutkan',
-	'notice.main.ragIndexComplete': 'Pemindaian ulang selesai: {indexed} diindeks ulang, {skipped} tidak berubah',
-	'notice.main.ragIndexFailed': 'Pengindeksan RAG gagal: {error}',
-	'notice.main.ragSyncingPending': 'Indeks RAG: Menyinkronkan perubahan tertunda...',
 	'notice.main.readyToUse': 'Gemini Scribe kini siap digunakan!',
 	'component.managementModalBase.managerUnavailable': 'Pengelola {label} tidak tersedia.',
 	'component.managementModalBase.deleteConfirm':
