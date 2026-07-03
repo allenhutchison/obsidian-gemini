@@ -101,7 +101,11 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 			});
 		} else {
 			const file = item as TFile;
-			this.selectedFiles.has(file) ? this.selectedFiles.delete(file) : this.selectedFiles.add(file);
+			if (this.selectedFiles.has(file)) {
+				this.selectedFiles.delete(file);
+			} else {
+				this.selectedFiles.add(file);
+			}
 		}
 
 		// In-place checkbox update: touch only affected DOM elements

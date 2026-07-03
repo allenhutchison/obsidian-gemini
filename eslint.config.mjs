@@ -5,7 +5,9 @@ import obsidianmd from 'eslint-plugin-obsidianmd';
 // `eslint-plugin-obsidianmd@0.3.0`'s recommended preset bundles a large set of
 // strict `@typescript-eslint/*` rules (no-explicit-any, no-unsafe-*, etc.) in
 // addition to its Obsidian-specific rules. We only want the obsidianmd/* rules
-// enforced; the bundled TS-strictness can be tightened in a follow-up.
+// enforced; the bundled TS-strictness is being tightened rule-by-rule as the
+// remaining violations are cleared (the `'error'` entries below are already
+// enforced; the `'off'` entries are tracked in sibling #1032 issues).
 const SOFTENED_TS_RULES = {
 	'@typescript-eslint/no-explicit-any': 'off',
 	'@typescript-eslint/no-unsafe-argument': 'off',
@@ -13,15 +15,18 @@ const SOFTENED_TS_RULES = {
 	'@typescript-eslint/no-unsafe-call': 'off',
 	'@typescript-eslint/no-unsafe-member-access': 'off',
 	'@typescript-eslint/no-unsafe-return': 'off',
-	'@typescript-eslint/no-unsafe-enum-comparison': 'off',
+	// #1041: cleared — enforced.
+	'@typescript-eslint/no-unsafe-enum-comparison': 'error',
 	'@typescript-eslint/no-unnecessary-type-assertion': 'off',
 	'@typescript-eslint/no-misused-promises': 'off',
 	'@typescript-eslint/no-floating-promises': 'off',
 	'@typescript-eslint/no-base-to-string': 'off',
 	'@typescript-eslint/restrict-template-expressions': 'off',
-	'@typescript-eslint/no-redundant-type-constituents': 'off',
+	// #1041: cleared — enforced.
+	'@typescript-eslint/no-redundant-type-constituents': 'error',
 	'@typescript-eslint/no-require-imports': 'off',
-	'@typescript-eslint/no-unused-expressions': 'off',
+	// #1041: cleared — enforced.
+	'@typescript-eslint/no-unused-expressions': 'error',
 	'@typescript-eslint/no-deprecated': 'off',
 	'@typescript-eslint/unbound-method': 'off',
 	'@typescript-eslint/no-unused-vars': [
