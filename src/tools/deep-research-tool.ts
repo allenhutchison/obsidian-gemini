@@ -6,6 +6,7 @@ import { ResearchScope } from '../services/deep-research';
 import { formatLocalDate } from '../utils/format-utils';
 import { sanitizeFileName, ensureFolderExists } from '../utils/file-utils';
 import { t } from '../i18n';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Deep Research Tool that conducts comprehensive research using Google's Deep Research API
@@ -179,7 +180,7 @@ export class DeepResearchTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Deep research failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Deep research failed: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

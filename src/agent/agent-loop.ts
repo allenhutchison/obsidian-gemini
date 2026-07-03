@@ -6,6 +6,7 @@ import type { ToolCall, ModelResponse, ModelApi, StreamChunk } from '../api/inte
 import type { CustomPrompt } from '../prompts/types';
 import type { IConfirmationProvider, IToolHostView, ToolExecutionContext, ToolResult } from '../tools/types';
 import { generateToolDescription } from '../utils/text-generation';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 import {
 	sortToolCallsByPriority,
 	buildToolHistoryTurns,
@@ -744,7 +745,7 @@ export class AgentLoop {
 					toolArguments: toolCall.arguments || {},
 					result: {
 						success: false,
-						error: error instanceof Error ? error.message : 'Unknown error',
+						error: getRawErrorMessageOr(error, 'Unknown error'),
 					},
 				});
 			}

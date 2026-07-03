@@ -6,6 +6,7 @@ import { VaultAnalysisModal } from '../ui/vault-analysis-modal';
 import { collectFilesFromFolder } from '../utils/folder-walk';
 import { isPathInFolder } from '../utils/file-utils';
 import { t } from '../i18n';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Simple cache entry for vault information
@@ -165,10 +166,7 @@ export class VaultAnalyzer {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to initialize AGENTS.md:', error);
-			modal.setStepFailed(
-				modal.currentStep,
-				error instanceof Error ? error.message : t('modal.vaultAnalysis.unknownError')
-			);
+			modal.setStepFailed(modal.currentStep, getRawErrorMessageOr(error, t('modal.vaultAnalysis.unknownError')));
 			new Notice(t('notice.vaultAnalysis.initFailed'));
 			window.setTimeout(() => modal.close(), 3000);
 		}

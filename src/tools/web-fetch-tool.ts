@@ -7,6 +7,7 @@ import { executeWithRetry } from '../utils/retry';
 import TurndownService from 'turndown';
 import { decodeHtmlEntities } from '../utils/html-entities';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Web fetch tool using Google's URL Context feature
@@ -197,7 +198,7 @@ export class WebFetchTool implements Tool {
 			} catch (_fallbackError) {
 				return {
 					success: false,
-					error: `Failed to fetch URL with both methods: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					error: `Failed to fetch URL with both methods: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 				};
 			}
 		}
@@ -299,7 +300,7 @@ export class WebFetchTool implements Tool {
 			plugin.logger.error('Fallback fetch error:', error);
 			return {
 				success: false,
-				error: `Fallback fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Fallback fetch failed: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

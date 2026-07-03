@@ -5,6 +5,7 @@ import { normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 import { resolvePathToFileOrFolder } from './utils';
 import { t } from '../../i18n';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /**
  * Delete a file or folder
@@ -77,7 +78,7 @@ export class DeleteFileTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error deleting file or folder: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error deleting file or folder: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

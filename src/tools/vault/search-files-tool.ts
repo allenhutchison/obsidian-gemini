@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /**
  * Search for files by name pattern
@@ -99,7 +100,7 @@ export class SearchFilesTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error searching files: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error searching files: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

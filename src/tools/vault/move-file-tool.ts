@@ -5,6 +5,7 @@ import { normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
 import { resolvePathToFileOrFolder } from './utils';
 import { t } from '../../i18n';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /**
  * Move or rename a file or folder
@@ -119,7 +120,7 @@ export class MoveFileTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error moving file or folder: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error moving file or folder: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

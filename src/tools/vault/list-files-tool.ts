@@ -3,6 +3,7 @@ import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /**
  * List files in a folder
@@ -101,7 +102,7 @@ export class ListFilesTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error listing files: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error listing files: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

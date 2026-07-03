@@ -4,6 +4,7 @@ import { ToolClassification } from '../../types/tool-policy';
 import { TFolder, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
 import { t } from '../../i18n';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /**
  * Create a new folder
@@ -84,7 +85,7 @@ export class CreateFolderTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error creating folder: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error creating folder: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

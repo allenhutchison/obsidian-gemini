@@ -182,10 +182,7 @@ export class MCPManager {
 			try {
 				await this.connectServer(config);
 			} catch (error) {
-				this.logger.warn(
-					`MCP: Reconnect on online event failed for "${config.name}":`,
-					error instanceof Error ? error.message : error
-				);
+				this.logger.warn(`MCP: Reconnect on online event failed for "${config.name}":`, getRawErrorMessage(error));
 			}
 		}
 	}
@@ -214,10 +211,7 @@ export class MCPManager {
 			try {
 				await this.connectServer(config);
 			} catch (error) {
-				this.logger.warn(
-					`MCP: Failed to connect to server "${config.name}":`,
-					error instanceof Error ? error.message : error
-				);
+				this.logger.warn(`MCP: Failed to connect to server "${config.name}":`, getRawErrorMessage(error));
 			}
 		}
 	}

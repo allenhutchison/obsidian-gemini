@@ -1,6 +1,7 @@
 import { TFile, normalizePath } from 'obsidian';
 import Handlebars from 'handlebars';
 import type ObsidianGemini from '../main';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 export interface AgentsMemoryData {
 	vaultOverview?: string;
@@ -83,7 +84,7 @@ export class AgentsMemory {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to write AGENTS.md:', error);
-			throw new Error(`Failed to write AGENTS.md: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			throw new Error(`Failed to write AGENTS.md: ${getRawErrorMessageOr(error, 'Unknown error')}`);
 		}
 	}
 
@@ -144,7 +145,7 @@ export class AgentsMemory {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to append to AGENTS.md:', error);
-			throw new Error(`Failed to append to AGENTS.md: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			throw new Error(`Failed to append to AGENTS.md: ${getRawErrorMessageOr(error, 'Unknown error')}`);
 		}
 	}
 }

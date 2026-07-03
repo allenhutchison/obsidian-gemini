@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /**
  * Search for text content within files
@@ -87,7 +88,7 @@ export class SearchFileContentsTool implements Tool {
 			} catch (error) {
 				return {
 					success: false,
-					error: `Invalid regex pattern: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					error: `Invalid regex pattern: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 				};
 			}
 
@@ -193,7 +194,7 @@ export class SearchFileContentsTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error searching file contents: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error searching file contents: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

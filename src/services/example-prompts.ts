@@ -1,5 +1,6 @@
 import { TFile, normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Represents an example prompt shown in the Agent Panel UI
@@ -112,9 +113,7 @@ export class ExamplePromptsManager {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Failed to write example-prompts.json:', error);
-			throw new Error(
-				`Failed to write example-prompts.json: ${error instanceof Error ? error.message : 'Unknown error'}`
-			);
+			throw new Error(`Failed to write example-prompts.json: ${getRawErrorMessageOr(error, 'Unknown error')}`);
 		}
 	}
 }

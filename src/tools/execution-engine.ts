@@ -8,6 +8,7 @@ import {
 	DiffContext,
 	ConfirmationResult,
 } from './types';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 import { ToolRegistry } from './tool-registry';
 import { ToolLoopDetector } from './loop-detector';
 import { TFile, normalizePath } from 'obsidian';
@@ -181,7 +182,7 @@ export class ToolExecutionEngine {
 
 			return result;
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+			const errorMessage = getRawErrorMessageOr(error, 'Unknown error');
 			return {
 				success: false,
 				error: errorMessage,

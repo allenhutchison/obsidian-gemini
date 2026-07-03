@@ -4,6 +4,7 @@ import { ToolClassification } from '../../types/tool-policy';
 import { TFile, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
 import { t } from '../../i18n';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /**
  * Write file content
@@ -123,7 +124,7 @@ export class WriteFileTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error writing file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error writing file: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

@@ -3,6 +3,7 @@ import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { resolvePathToFile } from './vault/utils';
 import { t } from '../i18n';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Tool to safely update YAML frontmatter without touching content
@@ -102,7 +103,7 @@ class UpdateFrontmatterTool implements Tool {
 				},
 			};
 		} catch (error) {
-			const msg = error instanceof Error ? error.message : 'Unknown error';
+			const msg = getRawErrorMessageOr(error, 'Unknown error');
 			plugin.logger.error(`Failed to update frontmatter for ${path}: ${msg}`);
 			return {
 				success: false,
@@ -209,7 +210,7 @@ class AppendContentTool implements Tool {
 				},
 			};
 		} catch (error) {
-			const msg = error instanceof Error ? error.message : 'Unknown error';
+			const msg = getRawErrorMessageOr(error, 'Unknown error');
 			plugin.logger.error(`Failed to append content to ${path}: ${msg}`);
 			return {
 				success: false,
