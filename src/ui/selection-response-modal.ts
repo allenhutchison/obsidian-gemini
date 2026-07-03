@@ -1,6 +1,7 @@
 import { App, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
 import { t } from '../i18n';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Normalize newlines in AI responses for proper Markdown rendering.
@@ -225,7 +226,7 @@ export class SelectionResponseModal extends Modal {
 			new Notice(t('selectionResponse.copiedNotice'));
 		} catch (error) {
 			this.plugin.logger.error('Failed to copy to clipboard:', error);
-			const message = error instanceof Error ? error.message : t('selectionResponse.unknownError');
+			const message = getRawErrorMessageOr(error, t('selectionResponse.unknownError'));
 			new Notice(t('selectionResponse.copyFailed', { message }));
 		}
 	}

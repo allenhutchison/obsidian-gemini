@@ -6,6 +6,7 @@ import {
 	HandlerPriority,
 } from '../types/agent-events';
 import { Logger } from '../utils/logger';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Typed async event bus for agent lifecycle hooks.
@@ -63,7 +64,7 @@ export class AgentEventBus {
 			try {
 				await handler(frozenPayload);
 			} catch (error) {
-				this.logger.error(`Handler error for event "${event}":`, error instanceof Error ? error.message : error);
+				this.logger.error(`Handler error for event "${event}":`, getRawErrorMessage(error));
 			}
 		}
 	}

@@ -2,7 +2,7 @@ import type ObsidianGemini from '../main';
 import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, normalizePath } from 'obsidian';
 import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';
-import { getErrorMessage } from '../utils/error-utils';
+import { getErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
 import { ensureFolderExists, isPathInFolder } from '../utils/file-utils';
 import { t } from '../i18n';
 
@@ -320,7 +320,7 @@ export class ImageGeneration {
 				throw new Error('Empty image data');
 			}
 		} catch (error) {
-			throw new Error(`Invalid base64 image data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			throw new Error(`Invalid base64 image data: ${getRawErrorMessageOr(error, 'Unknown error')}`);
 		}
 
 		// Convert binary string to Uint8Array

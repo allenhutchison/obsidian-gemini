@@ -3,6 +3,7 @@ import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { MarkdownView } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 
 /** Maximum characters of selected text to include in workspace state */
 const MAX_SELECTION_LENGTH = 1000;
@@ -119,7 +120,7 @@ export class GetWorkspaceStateTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error getting workspace state: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error getting workspace state: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

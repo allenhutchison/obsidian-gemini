@@ -3,7 +3,7 @@ import { MCPServerConfig, MCP_TRANSPORT_STDIO, MCP_TRANSPORT_HTTP, MCPTransportT
 import { MCPManager } from '../mcp/mcp-manager';
 import { ObsidianOAuthClientProvider } from '../mcp/mcp-oauth-provider';
 import { resolveServerEnv, writeServerEnv } from '../mcp/mcp-secrets';
-import { getRawErrorMessage } from '../utils/error-utils';
+import { getRawErrorMessage, getRawErrorMessageOr } from '../utils/error-utils';
 import { t } from '../i18n';
 
 /**
@@ -288,7 +288,7 @@ export class MCPServerModal extends Modal {
 							try {
 								writeServerEnv(this.app, this.config, this.env);
 							} catch (error) {
-								new Notice(error instanceof Error ? error.message : t('mcpServer.envStoreFailed'));
+								new Notice(getRawErrorMessageOr(error, t('mcpServer.envStoreFailed')));
 								return;
 							}
 						}

@@ -5,6 +5,7 @@ import { SelectionResponseModal, AskQuestionModal } from '../ui/selection-respon
 import { CustomPrompt } from '../prompts/types';
 import { ModelClientFactory } from '../api';
 import { t } from '../i18n';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Service to coordinate selection-based actions.
@@ -161,7 +162,7 @@ export class SelectionActionService {
 			}
 		} catch (error) {
 			this.plugin.logger.error('Error generating response:', error);
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+			const errorMessage = getRawErrorMessageOr(error, 'Unknown error occurred');
 			responseModal.showError(errorMessage);
 		}
 	}

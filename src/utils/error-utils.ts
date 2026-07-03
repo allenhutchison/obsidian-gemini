@@ -1,7 +1,8 @@
 /**
  * Utility functions for extracting error messages from API errors.
  *
- * Raw extraction (no translation): `getRawErrorMessage`.
+ * Raw extraction (no translation): `getRawErrorMessage` — `Error` → `.message`, everything else → `String(error)`.
+ * Raw extraction with an explicit fallback: `getRawErrorMessageOr` — `Error` → `.message`, everything else → the supplied fallback.
  * User-facing translation (maps provider quirks to friendly guidance): `getErrorMessage`.
  */
 
@@ -123,6 +124,20 @@ export function isNotFoundError(error: unknown): boolean {
 export function getRawErrorMessage(error: unknown): string {
 	if (error instanceof Error) return error.message;
 	return String(error);
+}
+
+/**
+ * Extract the raw message from an `unknown` error value, falling back to a caller-supplied
+ * string when the value is not an `Error`.
+ *
+ * Returns `error.message` for `Error` instances and `fallback` for everything else. This is the
+ * DRY replacement for the `error instanceof Error ? error.message : '<literal>'` ternary that was
+ * duplicated across tool error returns and service throws. Use it when the non-`Error` case should
+ * become a fixed label (e.g. `'Unknown error'`) rather than `String(error)`; when the raw value
+ * itself is the desired fallback, use `getRawErrorMessage` instead.
+ */
+export function getRawErrorMessageOr(error: unknown, fallback: string): string {
+	return error instanceof Error ? error.message : fallback;
 }
 
 /**

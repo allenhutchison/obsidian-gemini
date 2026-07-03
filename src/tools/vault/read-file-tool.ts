@@ -3,6 +3,7 @@ import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, isPathInFolder } from '../../utils/file-utils';
+import { getRawErrorMessageOr } from '../../utils/error-utils';
 import {
 	classifyFile,
 	FileCategory,
@@ -147,7 +148,7 @@ export class ReadFileTool implements Tool {
 				} catch (rasterErr) {
 					return {
 						success: false,
-						error: `Failed to rasterize SVG for viewing: ${file.name} (${rasterErr instanceof Error ? rasterErr.message : 'Unknown error'})`,
+						error: `Failed to rasterize SVG for viewing: ${file.name} (${getRawErrorMessageOr(rasterErr, 'Unknown error')})`,
 					};
 				}
 			}
@@ -196,7 +197,7 @@ export class ReadFileTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Error reading file or folder: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Error reading file or folder: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}

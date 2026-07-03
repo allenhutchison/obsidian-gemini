@@ -1,6 +1,7 @@
 import {
 	getErrorMessage,
 	getRawErrorMessage,
+	getRawErrorMessageOr,
 	getShortErrorMessage,
 	isNotFoundError,
 	isQuotaExhausted,
@@ -45,6 +46,48 @@ describe('error-utils', () => {
 		test('does not translate raw messages (unlike getErrorMessage)', () => {
 			// getErrorMessage maps "api key" to friendly guidance; getRawErrorMessage must not.
 			expect(getRawErrorMessage(new Error('Invalid api key supplied'))).toBe('Invalid api key supplied');
+		});
+	});
+
+	describe('getRawErrorMessageOr', () => {
+		test('returns Error.message for Error instances', () => {
+			expect(getRawErrorMessageOr(new Error('boom'), 'Unknown error')).toBe('boom');
+		});
+
+		test('preserves message on Error subclasses', () => {
+			expect(getRawErrorMessageOr(new TypeError('bad type'), 'Unknown error')).toBe('bad type');
+		});
+
+		test('returns the fallback verbatim for string inputs', () => {
+			expect(getRawErrorMessageOr('plain string', 'Unknown error')).toBe('Unknown error');
+		});
+
+		test('returns the fallback for null', () => {
+			expect(getRawErrorMessageOr(null, 'Unknown error')).toBe('Unknown error');
+		});
+
+		test('returns the fallback for undefined', () => {
+			expect(getRawErrorMessageOr(undefined, 'Unknown error')).toBe('Unknown error');
+		});
+
+		test('returns the fallback for objects with a custom toString()', () => {
+			// Unlike getRawErrorMessage (which would call String()), the fallback wins for non-Error values.
+			const obj = {
+				toString() {
+					return 'custom-stringified';
+				},
+			};
+			expect(getRawErrorMessageOr(obj, 'Unknown error')).toBe('Unknown error');
+		});
+
+		test('passes the supplied fallback through unchanged (e.g. a localized string)', () => {
+			expect(getRawErrorMessageOr({}, 'Une erreur inconnue')).toBe('Une erreur inconnue');
+		});
+
+		test('does not translate raw messages (unlike getErrorMessage)', () => {
+			expect(getRawErrorMessageOr(new Error('Invalid api key supplied'), 'Unknown error')).toBe(
+				'Invalid api key supplied'
+			);
 		});
 	});
 

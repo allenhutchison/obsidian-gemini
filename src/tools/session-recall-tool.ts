@@ -1,6 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
+import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
  * Tool that lets the agent recall past sessions by file overlap, project, or title search.
@@ -146,7 +147,7 @@ class RecallSessionsTool implements Tool {
 		} catch (error) {
 			return {
 				success: false,
-				error: `Failed to search sessions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+				error: `Failed to search sessions: ${getRawErrorMessageOr(error, 'Unknown error')}`,
 			};
 		}
 	}
