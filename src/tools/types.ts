@@ -7,10 +7,21 @@ import type { TFile } from 'obsidian';
 export type { ToolCall } from '../api/interfaces/model-api';
 
 /**
+ * Parameters passed to a tool, parsed from a model function call. The model
+ * supplies an arbitrary JSON object, so this is the honest static type; tools
+ * narrow individual fields at their execution boundary.
+ */
+export type ToolParams = Record<string, unknown>;
+
+/**
  * Result from a tool execution
  */
 export interface ToolResult {
 	success: boolean;
+	// Per-tool payload: each tool returns a differently-shaped object (and the ~40
+	// consumer sites narrow it by runtime shape), so this is a genuine dynamic
+	// boundary. Kept as `any` deliberately.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	data?: any;
 	error?: string;
 	requiresConfirmation?: boolean;
@@ -75,7 +86,7 @@ export interface ToolParameterSchema {
 			type: 'string' | 'number' | 'boolean' | 'array';
 			description: string;
 			required?: boolean;
-			enum?: any[];
+			enum?: unknown[];
 			items?: { type: string };
 		}
 	>;
@@ -105,16 +116,16 @@ export interface Tool {
 	parameters: ToolParameterSchema;
 
 	/** Execute the tool with given parameters */
-	execute(params: any, context: ToolExecutionContext): Promise<ToolResult>;
+	execute(params: ToolParams, context: ToolExecutionContext): Promise<ToolResult>;
 
 	/** Whether this tool requires user confirmation before execution */
 	requiresConfirmation?: boolean;
 
 	/** Custom confirmation message (if requiresConfirmation is true) */
-	confirmationMessage?: (params: any) => string;
+	confirmationMessage?(params: ToolParams): string;
 
 	/** Get a human-friendly description of this tool execution for progress display */
-	getProgressDescription?: (params: any) => string;
+	getProgressDescription?(params: ToolParams): string;
 }
 
 /**
@@ -122,7 +133,7 @@ export interface Tool {
  */
 export interface ToolExecution {
 	toolName: string;
-	parameters: any;
+	parameters: ToolParams;
 	result: ToolResult;
 	timestamp: Date;
 	confirmed?: boolean;
@@ -163,7 +174,7 @@ export interface IConfirmationProvider {
 	/** Show a confirmation request in the chat UI */
 	showConfirmationInChat(
 		tool: Tool,
-		parameters: any,
+		parameters: ToolParams,
 		executionId: string,
 		diffContext?: DiffContext
 	): Promise<ConfirmationResult>;

@@ -109,7 +109,7 @@ describe('ImageTools', () => {
 		});
 
 		it('should return error when prompt is not a string', async () => {
-			const result = await tool.execute({ prompt: 123 as any }, mockContext);
+			const result = await tool.execute({ prompt: 123 }, mockContext);
 
 			expect(result.success).toBe(false);
 			expect(result.error).toBe('Prompt is required and must be a non-empty string');

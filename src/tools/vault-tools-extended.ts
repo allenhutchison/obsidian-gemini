@@ -51,7 +51,7 @@ class UpdateFrontmatterTool implements Tool {
 		required: ['path', 'key', 'value'],
 	};
 
-	confirmationMessage = (params: { path: string; key: string; value: any }) => {
+	confirmationMessage = (params: { path: string; key: string; value: unknown }) => {
 		return t('tool.confirm.updateFrontmatter', { path: params.path, key: params.key, value: String(params.value) });
 	};
 
@@ -62,7 +62,10 @@ class UpdateFrontmatterTool implements Tool {
 		return 'Updating frontmatter';
 	}
 
-	async execute(params: { path: string; key: string; value: any }, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(
+		params: { path: string; key: string; value: unknown },
+		context: ToolExecutionContext
+	): Promise<ToolResult> {
 		const plugin = context.plugin;
 		const { path, key, value } = params;
 

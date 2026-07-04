@@ -128,8 +128,10 @@ export class WebFetchTool implements Tool {
 			}
 
 			// Check if URL retrieval failed - the field is urlRetrievalStatus (camelCase)
-			const urlRetrievalFailed = urlMetadata?.urlMetadata?.some((meta: any) => {
-				const status = meta.urlRetrievalStatus;
+			const urlRetrievalFailed = urlMetadata?.urlMetadata?.some((meta) => {
+				// Widen the SDK enum to a plain string so the failure-status checks below
+				// stay a straight string comparison (avoiding no-unsafe-enum-comparison).
+				const status: string = meta.urlRetrievalStatus ?? '';
 				plugin.logger.log('Checking URL status:', status);
 				return (
 					status === 'URL_RETRIEVAL_STATUS_ERROR' ||
@@ -151,7 +153,7 @@ export class WebFetchTool implements Tool {
 					query: params.query,
 					content: text,
 					urlsRetrieved:
-						urlMetadata?.urlMetadata?.map((meta: any) => ({
+						urlMetadata?.urlMetadata?.map((meta) => ({
 							url: meta.retrievedUrl,
 							status: meta.urlRetrievalStatus,
 						})) || [],

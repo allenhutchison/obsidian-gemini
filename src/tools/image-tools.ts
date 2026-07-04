@@ -1,4 +1,4 @@
-import { Tool, ToolResult, ToolExecutionContext } from './types';
+import { Tool, ToolResult, ToolExecutionContext, ToolParams } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
@@ -40,10 +40,12 @@ export class GenerateImageTool implements Tool {
 
 	requiresConfirmation = true;
 
-	confirmationMessage = (params: any) => {
-		let message = t('tool.confirm.generateImage', { prompt: params.prompt });
-		if (params.output_path) {
-			message += `\n\n${t('tool.confirm.generateImageDestination', { path: params.output_path })}`;
+	confirmationMessage = (params: ToolParams) => {
+		const prompt = typeof params.prompt === 'string' ? params.prompt : '';
+		const outputPath = typeof params.output_path === 'string' ? params.output_path : undefined;
+		let message = t('tool.confirm.generateImage', { prompt });
+		if (outputPath) {
+			message += `\n\n${t('tool.confirm.generateImageDestination', { path: outputPath })}`;
 		}
 		return message;
 	};
@@ -56,8 +58,11 @@ export class GenerateImageTool implements Tool {
 		return 'Generating image';
 	}
 
-	async execute(params: any, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(params: ToolParams, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin;
+		const prompt = typeof params.prompt === 'string' ? params.prompt : undefined;
+		const outputPath = typeof params.output_path === 'string' ? params.output_path : undefined;
+		const background = !!params.background;
 
 		try {
 			// Get the image generation service
@@ -69,7 +74,7 @@ export class GenerateImageTool implements Tool {
 			}
 
 			// Validate prompt
-			if (!params.prompt || typeof params.prompt !== 'string' || params.prompt.trim().length === 0) {
+			if (!prompt || prompt.trim().length === 0) {
 				return {
 					success: false,
 					error: 'Prompt is required and must be a non-empty string',
@@ -77,7 +82,7 @@ export class GenerateImageTool implements Tool {
 			}
 
 			// ── Background mode ──────────────────────────────────────────────────
-			if (params.background) {
+			if (background) {
 				if (!plugin.backgroundTaskManager) {
 					return { success: false, error: 'Background task manager not available' };
 				}
@@ -89,7 +94,7 @@ export class GenerateImageTool implements Tool {
 				// matches where the task will actually write.
 				let resolvedOutputPath: string;
 				try {
-					resolvedOutputPath = await plugin.imageGeneration.resolveOutputPath(params.prompt, params.output_path);
+					resolvedOutputPath = await plugin.imageGeneration.resolveOutputPath(prompt, outputPath);
 				} catch (error) {
 					return {
 						success: false,
@@ -98,12 +103,12 @@ export class GenerateImageTool implements Tool {
 				}
 
 				const imageGeneration = plugin.imageGeneration;
-				const label = params.prompt.length > 40 ? params.prompt.slice(0, 37) + '…' : params.prompt;
+				const label = prompt.length > 40 ? prompt.slice(0, 37) + '…' : prompt;
 				const taskId = plugin.backgroundTaskManager.submit('image-generation', label, async (isCancelled) => {
 					if (isCancelled()) return undefined;
 					// Always pass the pre-resolved path as the explicit outputPath so the
 					// task writes exactly where we told the agent it would land.
-					return imageGeneration.generateImage(params.prompt, resolvedOutputPath);
+					return imageGeneration.generateImage(prompt, resolvedOutputPath);
 				});
 
 				return {
@@ -113,13 +118,13 @@ export class GenerateImageTool implements Tool {
 			}
 
 			// ── Foreground mode (default) ────────────────────────────────────────
-			const imagePath = await plugin.imageGeneration.generateImage(params.prompt, params.output_path);
+			const imagePath = await plugin.imageGeneration.generateImage(prompt, outputPath);
 
 			return {
 				success: true,
 				data: {
 					path: imagePath,
-					prompt: params.prompt,
+					prompt,
 					wikilink: `![[${imagePath}]]`,
 				},
 			};
