@@ -53,7 +53,7 @@ export class AgentViewAttachments {
 						this.ctx.context.addFileToContext(file, this.ctx.getCurrentSession());
 					}
 					this.ctx.updateSessionHeader();
-					this.ctx.updateSessionMetadata();
+					await this.ctx.updateSessionMetadata();
 					return;
 				}
 
@@ -68,7 +68,7 @@ export class AgentViewAttachments {
 					this.ctx.getShelf().addTextFile(fileOrFolder);
 					this.ctx.context.addFileToContext(fileOrFolder, this.ctx.getCurrentSession());
 					this.ctx.updateSessionHeader();
-					this.ctx.updateSessionMetadata();
+					await this.ctx.updateSessionMetadata();
 				} else if (
 					classification.category === FileCategory.GEMINI_BINARY ||
 					classification.category === FileCategory.SVG
@@ -168,7 +168,8 @@ export class AgentViewAttachments {
 			this.ctx.context.addFileToContext(file, this.ctx.getCurrentSession());
 		}
 		this.ctx.updateSessionHeader();
-		this.ctx.updateSessionMetadata();
+		// Fire-and-forget: persist session metadata in the background from this sync handler.
+		void this.ctx.updateSessionMetadata();
 	}
 
 	/**

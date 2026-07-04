@@ -211,7 +211,8 @@ export class AgentViewUI {
 			input.addEventListener('keydown', (e) => {
 				if (e.key === 'Enter') {
 					e.preventDefault();
-					saveTitle();
+					// Fire-and-forget: persist the renamed title; errors are handled within saveTitle.
+					void saveTitle();
 				} else if (e.key === 'Escape') {
 					finished = true; // prevent the upcoming blur from saving
 					title.style.display = '';
@@ -389,7 +390,8 @@ export class AgentViewUI {
 
 			if (e.key === 'Enter' && !e.shiftKey) {
 				e.preventDefault();
-				callbacks.sendMessage();
+				// Fire-and-forget: sending is driven by the UI; the send path handles its own errors.
+				void callbacks.sendMessage();
 			} else if (e.key === '@') {
 				// Trigger file mention — don't preventDefault so @ is typed.
 				// Defer to next microtask so the browser commits the @ character first.
@@ -930,7 +932,8 @@ export class AgentViewUI {
 			if (sendButton.hasClass('gemini-agent-stop-btn')) {
 				callbacks.stopAgentLoop();
 			} else {
-				callbacks.sendMessage();
+				// Fire-and-forget: sending is driven by the UI; the send path handles its own errors.
+				void callbacks.sendMessage();
 			}
 		});
 

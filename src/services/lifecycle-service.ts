@@ -212,7 +212,7 @@ export class LifecycleService {
 		plugin.scheduledTaskManager = null;
 		plugin.hookManager?.destroy();
 		plugin.hookManager = null;
-		plugin.history?.onUnload();
+		await plugin.history?.onUnload();
 		plugin.projectManager?.destroy();
 		plugin.toolExecutionLogger?.destroy();
 		plugin.toolExecutionLogger = null;

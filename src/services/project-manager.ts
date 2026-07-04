@@ -321,7 +321,10 @@ Add your project instructions here. This text will be injected into the agent's 
 		this.cancelPendingRefresh(file.path);
 		const timer = window.setTimeout(() => {
 			this.pendingTimers.delete(file.path);
-			this.onFileCreateOrModify(file);
+			// Debounced background refresh — surface failures via the logger rather than swallowing.
+			this.onFileCreateOrModify(file).catch((error) =>
+				this.plugin.logger.error('ProjectManager: background file refresh failed', error)
+			);
 		}, 500);
 		this.pendingTimers.set(file.path, timer);
 	}

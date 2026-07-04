@@ -272,7 +272,8 @@ export class BackgroundTasksModal extends Modal {
 			const link = info.createEl('a', { text: t('backgroundTasks.openResult'), href: '#', cls: 'gemini-bg-task-link' });
 			link.addEventListener('click', (e) => {
 				e.preventDefault();
-				this.plugin.app.workspace.openLinkText(task.outputPath!, '', false);
+				// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
+				void this.plugin.app.workspace.openLinkText(task.outputPath!, '', false);
 				this.close();
 			});
 		}
@@ -553,7 +554,8 @@ export class BackgroundTasksModal extends Modal {
 			item.createSpan({ cls: 'rag-status-file-time', text: formatRelativeTime(file.lastIndexed) });
 			item.addEventListener('click', () => {
 				this.close();
-				this.plugin.app.workspace.openLinkText(file.path, '', false);
+				// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
+				void this.plugin.app.workspace.openLinkText(file.path, '', false);
 			});
 		}
 

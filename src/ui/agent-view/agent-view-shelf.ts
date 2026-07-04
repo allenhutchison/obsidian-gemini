@@ -263,7 +263,8 @@ export class AgentViewShelf {
 				el.addClass('gemini-shelf-item--clickable');
 				el.addEventListener('click', (e) => {
 					if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
-					this.app.workspace.openLinkText(openPath, '', false);
+					// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
+					void this.app.workspace.openLinkText(openPath, '', false);
 				});
 			}
 
@@ -273,7 +274,8 @@ export class AgentViewShelf {
 				if ((e.target as HTMLElement).closest('.gemini-shelf-remove')) return;
 				if ((e.key === 'Enter' || e.key === ' ') && openPath) {
 					e.preventDefault();
-					this.app.workspace.openLinkText(openPath, '', false);
+					// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
+					void this.app.workspace.openLinkText(openPath, '', false);
 				} else if (e.key === 'Delete' || e.key === 'Backspace') {
 					e.preventDefault();
 					const next = el.nextElementSibling as HTMLElement | null;

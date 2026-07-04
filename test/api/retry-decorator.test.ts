@@ -147,7 +147,8 @@ describe('RetryDecorator', () => {
 
 			// Verify that it hasn't resolved before the 5000ms delay has elapsed
 			let resolved = false;
-			promise.then(() => {
+			// Fire-and-forget probe: the promise itself is awaited below.
+			void promise.then(() => {
 				resolved = true;
 			});
 

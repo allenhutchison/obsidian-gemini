@@ -23,7 +23,8 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		name: t('command.openAgentView'),
 		callback: () => {
 			if (!plugin.checkInitialized()) return;
-			plugin.activateAgentView();
+			// Fire-and-forget: opening the view is a UI action; errors surface via Obsidian.
+			void plugin.activateAgentView();
 		},
 	});
 
@@ -105,7 +106,8 @@ export function registerCommands(plugin: ObsidianGemini): void {
 		name: t('command.switchProject'),
 		callback: () => {
 			if (!plugin.checkInitialized()) return;
-			plugin.activateAgentView();
+			// Fire-and-forget: opening the view is a UI action; errors surface via Obsidian.
+			void plugin.activateAgentView();
 			// The agent view's switchProject is triggered via the project badge in the header
 			// or users can click the project indicator once the view is open
 		},

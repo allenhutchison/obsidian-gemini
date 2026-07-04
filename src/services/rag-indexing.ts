@@ -154,7 +154,8 @@ export class RagIndexingService {
 				new Notice(t('notice.rag.startingInitial'));
 
 				// Open progress modal for initial indexing
-				import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
+				// Fire-and-forget: lazy-load and open the progress modal; indexing itself is handled below.
+				void import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
 					const progressModal = new RagProgressModal(this.plugin.app, this, (result) => {
 						new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
 					});
@@ -359,7 +360,10 @@ export class RagIndexingService {
 		// Process any pending changes that accumulated while paused
 		if (this.syncQueue && this.syncQueue.getPendingCount() > 0) {
 			this.plugin.logger.log(`RAG Indexing: Processing ${this.syncQueue.getPendingCount()} pending changes`);
-			this.syncQueue.flushPendingChanges();
+			// Background flush — surface failures via the logger rather than swallowing.
+			this.syncQueue
+				.flushPendingChanges()
+				.catch((error) => this.plugin.logger.error('RAG Indexing: Failed to flush pending changes', error));
 		}
 	}
 

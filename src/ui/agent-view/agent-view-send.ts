@@ -546,10 +546,12 @@ To reference an attachment in your response, use the path shown above.`;
 							if (!modelMessageContainer) {
 								// First chunk - create the container
 								modelMessageContainer = this.ctx.messages.createStreamingMessageContainer('model');
-								this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
+								// Fire-and-forget: async markdown render of the streamed chunk (unchanged behavior).
+								void this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
 							} else {
 								// Update existing container with new chunk
-								this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
+								// Fire-and-forget: async markdown render of the streamed chunk (unchanged behavior).
+								void this.ctx.messages.updateStreamingMessage(modelMessageContainer, chunk.text);
 								// Use debounced scroll to avoid stuttering
 								this.ctx.messages.debouncedScrollToBottom();
 							}

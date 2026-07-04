@@ -61,7 +61,7 @@ export class ScribeFile {
 		const activeFile = this.getActiveFile();
 		if (activeFile) {
 			// Use processFrontMatter to add or update the summary in the frontmatter
-			this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter) => {
+			await this.plugin.app.fileManager.processFrontMatter(activeFile, (frontmatter) => {
 				frontmatter[key] = value;
 			});
 		}
@@ -72,7 +72,7 @@ export class ScribeFile {
 		const vault = this.plugin.app.vault;
 
 		if (activeFile) {
-			vault.modify(activeFile, newText);
+			await vault.modify(activeFile, newText);
 		}
 	}
 

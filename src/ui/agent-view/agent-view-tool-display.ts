@@ -554,7 +554,8 @@ export class AgentViewToolDisplay {
 								cls: 'gemini-agent-tool-copy-wikilink',
 							});
 							copyBtn.addEventListener('click', () => {
-								navigator.clipboard.writeText(result.data.wikilink).then(() => {
+								// Fire-and-forget: clipboard write is a UI convenience; failures are non-fatal.
+								void navigator.clipboard.writeText(result.data.wikilink).then(() => {
 									copyBtn.textContent = t('agent.tools.copiedButton');
 									window.setTimeout(() => {
 										copyBtn.textContent = t('agent.tools.copyButton');

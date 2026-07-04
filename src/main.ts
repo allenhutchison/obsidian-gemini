@@ -331,7 +331,8 @@ export default class ObsidianGemini extends Plugin {
 		// Add ribbon icon
 		this.ribbonIcon = this.addRibbonIcon('sparkles', t('ribbon.agentMode'), () => {
 			if (!this.checkInitialized()) return;
-			this.activateAgentView();
+			// Fire-and-forget: opening the view is a UI action; errors surface via Obsidian.
+			void this.activateAgentView();
 		});
 
 		// Register views
