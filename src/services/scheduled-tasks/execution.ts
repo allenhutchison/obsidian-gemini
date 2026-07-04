@@ -29,7 +29,7 @@ export interface ExecutionDeps {
  * slow or failed run can't re-fire on the next tick) and by the catch-up
  * "Skip" action indirectly. No-op when the slug is unknown.
  */
-export async function advanceState(deps: ExecutionDeps, slug: string, from: Date): Promise<void> {
+async function advanceState(deps: ExecutionDeps, slug: string, from: Date): Promise<void> {
 	const task = deps.tasks.get(slug);
 	if (!task) return;
 
@@ -47,7 +47,7 @@ export async function advanceState(deps: ExecutionDeps, slug: string, from: Date
  * shared failure tracker. Returns the output path, or `undefined` when the run
  * was cancelled (which is deliberately not recorded as a success).
  */
-export async function executeTask(
+async function executeTask(
 	deps: ExecutionDeps,
 	task: ScheduledTask,
 	isCancelled: () => boolean
