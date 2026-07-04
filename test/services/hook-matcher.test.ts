@@ -23,6 +23,13 @@ describe('globToRegExp', () => {
 		expect(globToRegExp('a.b+c.md').test('a.b+c.md')).toBe(true);
 		expect(globToRegExp('a.b+c.md').test('aXbYc.md')).toBe(false);
 	});
+
+	it('treats a literal ? as a literal, not a regex quantifier', () => {
+		// `?` is a regex quantifier; a literal `?` in a path glob must match a
+		// literal `?`, not make the preceding character optional.
+		expect(globToRegExp('notes/q?.md').test('notes/q?.md')).toBe(true);
+		expect(globToRegExp('notes/q?.md').test('notes/q.md')).toBe(false);
+	});
 });
 
 describe('matchesGlob', () => {

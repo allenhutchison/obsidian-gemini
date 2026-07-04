@@ -27,7 +27,7 @@ export function globToRegExp(glob: string): RegExp {
 			} else {
 				pattern += '[^/]*';
 			}
-		} else if (/[.+^${}()|[\]\\]/.test(ch)) {
+		} else if (/[.+?^${}()|[\]\\]/.test(ch)) {
 			pattern += '\\' + ch;
 		} else {
 			pattern += ch;
