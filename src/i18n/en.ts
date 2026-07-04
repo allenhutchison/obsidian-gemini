@@ -1812,7 +1812,7 @@ export const en = {
 	},
 	'hooks.commandIdDesc': {
 		message:
-			'Command palette id to fire. Examples: editor:save-file, gemini-scribe-summarize-active-file. View command IDs via Settings → Hotkeys (open the developer console with Ctrl+Shift+I to inspect ids).',
+			'Command palette id to fire. Examples: editor:save-file, gemini-scribe:summarize-active-file. View command IDs via Settings → Hotkeys (open the developer console with Ctrl+Shift+I to inspect ids).',
 		context: 'Description of the command id field. The example ids and Ctrl+Shift+I are literal; keep them.',
 	},
 	'hooks.focusFileSetting': {

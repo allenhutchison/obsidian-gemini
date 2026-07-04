@@ -73,7 +73,7 @@ export class GeminiCompletions {
 	async setupCompletionsCommands() {
 		try {
 			this.plugin.addCommand({
-				id: 'gemini-scribe-toggle-completions', // Add plugin prefix
+				id: 'toggle-completions',
 				name: t('command.toggleCompletions'),
 				callback: () => {
 					// Use callback instead of editorCallback

@@ -108,7 +108,7 @@ Model discovery is automatic — no configuration is required. On startup, the p
 
 Both providers expose a **Refresh model list** button in Settings → General:
 
-- **Gemini** — bypasses the 24-hour cache and re-fetches the remote model list immediately. You can also trigger this from the command palette with **Gemini Scribe: Refresh model list** (`gemini-scribe-refresh-model-list`). Useful when a newly-published model doesn't appear yet.
+- **Gemini** — bypasses the 24-hour cache and re-fetches the remote model list immediately. You can also trigger this from the command palette with **Gemini Scribe: Refresh model list** (`gemini-scribe:refresh-model-list`). Useful when a newly-published model doesn't appear yet.
 - **Ollama** — re-queries the Ollama daemon for any models you've pulled since the plugin loaded (`ollama pull <name>`). Use this instead of restarting Obsidian.
 
 ## Performance Optimization

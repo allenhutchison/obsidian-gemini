@@ -19,7 +19,7 @@ import type ObsidianGemini from '../main';
 export function registerCommands(plugin: ObsidianGemini): void {
 	// Add command
 	plugin.addCommand({
-		id: 'gemini-scribe-open-agent-view',
+		id: 'open-agent-view',
 		name: t('command.openAgentView'),
 		callback: () => {
 			if (!plugin.checkInitialized()) return;
@@ -30,7 +30,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Refresh remote Gemini model list (bypass 24h cache)
 	plugin.addCommand({
-		id: 'gemini-scribe-refresh-model-list',
+		id: 'refresh-model-list',
 		name: t('command.refreshModelList'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -40,7 +40,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// View background tasks
 	plugin.addCommand({
-		id: 'gemini-scribe-view-background-tasks',
+		id: 'view-background-tasks',
 		name: t('command.viewBackgroundTasks'),
 		callback: async () => {
 			const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
@@ -52,7 +52,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Open scheduler management modal
 	plugin.addCommand({
-		id: 'gemini-scribe-open-scheduler',
+		id: 'open-scheduler',
 		name: t('command.openScheduler'),
 		callback: async () => {
 			const { SchedulerManagementModal } = await import('../ui/scheduler-management-modal');
@@ -62,7 +62,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// New scheduled task — jump straight to create form
 	plugin.addCommand({
-		id: 'gemini-scribe-new-scheduled-task',
+		id: 'new-scheduled-task',
 		name: t('command.newScheduledTask'),
 		callback: async () => {
 			const { SchedulerManagementModal } = await import('../ui/scheduler-management-modal');
@@ -72,7 +72,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Open lifecycle hook management modal
 	plugin.addCommand({
-		id: 'gemini-scribe-open-hook-manager',
+		id: 'open-hook-manager',
 		name: t('command.openHookManager'),
 		callback: async () => {
 			const { HookManagementModal } = await import('../ui/hook-management-modal');
@@ -82,7 +82,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// New lifecycle hook — jump straight to create form
 	plugin.addCommand({
-		id: 'gemini-scribe-new-hook',
+		id: 'new-hook',
 		name: t('command.newHook'),
 		callback: async () => {
 			const { HookManagementModal } = await import('../ui/hook-management-modal');
@@ -92,7 +92,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// View scheduled tasks (read-only legacy — kept for backwards compatibility)
 	plugin.addCommand({
-		id: 'gemini-scribe-view-scheduled-tasks',
+		id: 'view-scheduled-tasks',
 		name: t('command.viewScheduledTasks'),
 		callback: async () => {
 			const { ScheduledTasksModal } = await import('../ui/scheduled-tasks-modal');
@@ -102,7 +102,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Switch project for the current agent session
 	plugin.addCommand({
-		id: 'gemini-scribe-switch-project',
+		id: 'switch-project',
 		name: t('command.switchProject'),
 		callback: () => {
 			if (!plugin.checkInitialized()) return;
@@ -115,7 +115,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Create a new project
 	plugin.addCommand({
-		id: 'gemini-scribe-create-project',
+		id: 'create-project',
 		name: t('command.createProject'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -134,7 +134,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Convert current note to a project
 	plugin.addCommand({
-		id: 'gemini-scribe-convert-to-project',
+		id: 'convert-to-project',
 		name: t('command.convertToProject'),
 		editorCallback: async (_editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 			if (!plugin.checkInitialized()) return;
@@ -151,7 +151,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Open project settings (the project file itself)
 	plugin.addCommand({
-		id: 'gemini-scribe-open-project-settings',
+		id: 'open-project-settings',
 		name: t('command.openProjectSettings'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -180,7 +180,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Resume the most recent session for a project
 	plugin.addCommand({
-		id: 'gemini-scribe-resume-project-session',
+		id: 'resume-project-session',
 		name: t('command.resumeProjectSession'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -213,7 +213,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Remove project status from a file
 	plugin.addCommand({
-		id: 'gemini-scribe-remove-project',
+		id: 'remove-project',
 		name: t('command.removeProject'),
 		editorCallback: async (_editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 			if (!plugin.checkInitialized()) return;
@@ -230,7 +230,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Add rewrite command (works with selection or full file)
 	plugin.addCommand({
-		id: 'gemini-scribe-rewrite-selection',
+		id: 'rewrite-selection',
 		name: t('command.rewriteSelection'),
 		editorCallback: (editor: Editor, _view: MarkdownView | MarkdownFileInfo) => {
 			if (!plugin.checkInitialized()) return;
@@ -264,7 +264,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Add explain selection command
 	plugin.addCommand({
-		id: 'gemini-scribe-explain-selection',
+		id: 'explain-selection',
 		name: t('command.explainSelection'),
 		editorCallback: async (editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 			if (!plugin.checkInitialized()) return;
@@ -274,7 +274,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Add ask about selection command
 	plugin.addCommand({
-		id: 'gemini-scribe-ask-selection',
+		id: 'ask-selection',
 		name: t('command.askSelection'),
 		editorCallback: async (editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 			if (!plugin.checkInitialized()) return;
@@ -284,7 +284,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Add command to view release notes
 	plugin.addCommand({
-		id: 'gemini-scribe-view-release-notes',
+		id: 'view-release-notes',
 		name: t('command.viewReleaseNotes'),
 		callback: () => {
 			const modal = new UpdateNotificationModal(plugin.app, plugin.manifest.version);
@@ -297,7 +297,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	// callback gates on provider before touching the (potentially null)
 	// `imageGeneration` service.
 	plugin.addCommand({
-		id: 'gemini-scribe-generate-image',
+		id: 'generate-image',
 		name: t('command.generateImage'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -321,7 +321,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	// consistent and the user gets a clear "not available" notice on the
 	// Ollama path (RAG depends on Gemini's File Search Store in Phase 1).
 	plugin.addCommand({
-		id: 'gemini-scribe-rag-pause',
+		id: 'rag-pause',
 		name: t('command.ragPause'),
 		callback: () => {
 			if (plugin.settings.provider === 'ollama') {
@@ -346,7 +346,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	});
 
 	plugin.addCommand({
-		id: 'gemini-scribe-rag-resume',
+		id: 'rag-resume',
 		name: t('command.ragResume'),
 		callback: () => {
 			if (plugin.settings.provider === 'ollama') {
@@ -367,7 +367,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	});
 
 	plugin.addCommand({
-		id: 'gemini-scribe-rag-status',
+		id: 'rag-status',
 		name: t('command.ragStatus'),
 		callback: async () => {
 			if (plugin.settings.provider === 'ollama') {
@@ -391,7 +391,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 
 	// Agent session management commands
 	plugin.addCommand({
-		id: 'gemini-scribe-new-session',
+		id: 'new-session',
 		name: t('command.newSession'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -408,7 +408,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	});
 
 	plugin.addCommand({
-		id: 'gemini-scribe-browse-sessions',
+		id: 'browse-sessions',
 		name: t('command.browseSessions'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -420,7 +420,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	});
 
 	plugin.addCommand({
-		id: 'gemini-scribe-link-project',
+		id: 'link-project',
 		name: t('command.linkProject'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -432,7 +432,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	});
 
 	plugin.addCommand({
-		id: 'gemini-scribe-session-settings',
+		id: 'session-settings',
 		name: t('command.sessionSettings'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;
@@ -444,7 +444,7 @@ export function registerCommands(plugin: ObsidianGemini): void {
 	});
 
 	plugin.addCommand({
-		id: 'gemini-scribe-toggle-plan-mode',
+		id: 'toggle-plan-mode',
 		name: t('command.togglePlanMode'),
 		callback: async () => {
 			if (!plugin.checkInitialized()) return;

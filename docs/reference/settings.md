@@ -359,7 +359,7 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 
 Model discovery is automatic — no user-configurable settings are required. On startup, the plugin fetches the latest available Gemini models from GitHub and falls back to the bundled list if the fetch fails. The remote list is cached in `data.json` under `remoteModelCache` for 24 hours; subsequent reloads within that window are no-ops.
 
-To pick up a newly-published model without waiting for the cache to expire, click **Refresh model list** in Settings → General, or run the **Gemini Scribe: Refresh model list** command (`gemini-scribe-refresh-model-list`). Both honor the same skip conditions as the auto-fetch — they no-op when the provider is Ollama or the host reports offline, and surface the outcome via a `Notice`. When the Ollama provider is active, the same row appears but re-queries the Ollama daemon for newly pulled models instead.
+To pick up a newly-published model without waiting for the cache to expire, click **Refresh model list** in Settings → General, or run the **Gemini Scribe: Refresh model list** command (`gemini-scribe:refresh-model-list`). Both honor the same skip conditions as the auto-fetch — they no-op when the provider is Ollama or the host reports offline, and surface the outcome via a `Notice`. When the Ollama provider is active, the same row appears but re-queries the Ollama daemon for newly pulled models instead.
 
 ### Tool Execution
 

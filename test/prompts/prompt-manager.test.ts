@@ -597,7 +597,7 @@ Content`;
 			expect(mockPlugin.addCommand).toHaveBeenCalledTimes(1);
 			expect(mockPlugin.addCommand).toHaveBeenCalledWith(
 				expect.objectContaining({
-					id: 'gemini-scribe-create-custom-prompt',
+					id: 'create-custom-prompt',
 					name: 'Create new custom prompt',
 				})
 			);
