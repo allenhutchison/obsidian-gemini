@@ -26,12 +26,12 @@ function createMockPlugin(overrides: Record<string, any> = {}): any {
 	};
 }
 
-// Mock Obsidian's Notice — provide a noticeEl so showCompletionNotice doesn't throw.
-// Track instances via noticeInstances so tests can assert on noticeEl method calls.
+// Mock Obsidian's Notice — provide a messageEl so showCompletionNotice doesn't throw.
+// Track instances via noticeInstances so tests can assert on messageEl method calls.
 const { noticeInstances, NoticeMock } = vi.hoisted(() => {
 	const instances: any[] = [];
 	const Mock = vi.fn().mockImplementation(function (this: any) {
-		this.noticeEl = {
+		this.messageEl = {
 			createSpan: vi.fn().mockReturnValue({ setText: vi.fn() }),
 			createEl: vi.fn().mockReturnValue({
 				addEventListener: vi.fn(),
@@ -377,12 +377,12 @@ describe('BackgroundTaskManager', () => {
 
 			// showCompletionNotice should have created a Notice with a clickable link
 			expect(NoticeMock).toHaveBeenCalled();
-			const notice = noticeInstances.find((n) => n.noticeEl.createEl.mock.calls.length > 0);
+			const notice = noticeInstances.find((n) => n.messageEl.createEl.mock.calls.length > 0);
 			expect(notice).toBeDefined();
-			expect(notice.noticeEl.createSpan).toHaveBeenCalledWith(
+			expect(notice.messageEl.createSpan).toHaveBeenCalledWith(
 				expect.objectContaining({ text: expect.stringContaining('Deep research') })
 			);
-			expect(notice.noticeEl.createEl).toHaveBeenCalledWith('a', expect.objectContaining({ text: 'Open result' }));
+			expect(notice.messageEl.createEl).toHaveBeenCalledWith('a', expect.objectContaining({ text: 'Open result' }));
 		});
 
 		it('completes without error when task has no outputPath', async () => {

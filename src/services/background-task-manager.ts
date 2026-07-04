@@ -215,7 +215,7 @@ export class BackgroundTaskManager {
 	private showCompletionNotice(task: BackgroundTask): void {
 		if (task.outputPath) {
 			const notice = new Notice(``, 8000);
-			const fragment = notice.noticeEl;
+			const fragment = notice.messageEl;
 			fragment.createSpan({ text: `${t('notice.backgroundTask.complete', { label: task.label })} ` });
 			const link = fragment.createEl('a', { text: t('notice.backgroundTask.openResult'), href: '#' });
 			link.addEventListener('click', (e) => {

@@ -91,6 +91,8 @@ export class SessionSettingsModal extends Modal {
 				slider
 					.setLimits(0, 2, 0.1)
 					.setValue(currentTemp)
+					// Dropping setDynamicTooltip() is only safe on Obsidian >= 1.13.0 (where the value shows inline); minAppVersion is 1.11.4, so keep it to preserve the slider value tooltip (#1040).
+					// eslint-disable-next-line @typescript-eslint/no-deprecated
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						// Only save if different from default
@@ -139,6 +141,8 @@ export class SessionSettingsModal extends Modal {
 				slider
 					.setLimits(0, 1, 0.05)
 					.setValue(currentTopP)
+					// Dropping setDynamicTooltip() is only safe on Obsidian >= 1.13.0 (where the value shows inline); minAppVersion is 1.11.4, so keep it to preserve the slider value tooltip (#1040).
+					// eslint-disable-next-line @typescript-eslint/no-deprecated
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						// Only save if different from default

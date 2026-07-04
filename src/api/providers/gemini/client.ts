@@ -301,6 +301,10 @@ export class GeminiClient implements ModelApi {
 			if (content) steps.push(...contentToSteps(content));
 		}
 
+		// `imageAttachments` is the deprecated alias for `inlineAttachments`; still read here so
+		// callers passing the legacy field keep working (backward-compat merge). Remove once no
+		// caller populates it. See ExtendedModelRequest.imageAttachments (#1040).
+		// eslint-disable-next-line @typescript-eslint/no-deprecated
 		const attachments = [...(request.inlineAttachments || []), ...(request.imageAttachments || [])];
 		const userStep = buildUserInputStep(request.userMessage, request.perTurnContext, attachments);
 		if (userStep) steps.push(userStep);
@@ -553,6 +557,9 @@ export class GeminiClient implements ModelApi {
 		}
 
 		// Add inline data attachments (images, audio, video, PDF)
+		// `imageAttachments` is the deprecated alias for `inlineAttachments`; still merged here for
+		// backward-compat with callers passing the legacy field (#1040).
+		// eslint-disable-next-line @typescript-eslint/no-deprecated
 		const allAttachments = [...(extReq.inlineAttachments || []), ...(extReq.imageAttachments || [])];
 		for (const attachment of allAttachments) {
 			userParts.push({
