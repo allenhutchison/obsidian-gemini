@@ -1258,5 +1258,66 @@ describe('GeminiClient', () => {
 			expect(params.input).toBe('just answer');
 			expect(params.system_instruction).toBeUndefined();
 		});
+
+		describe('error handling', () => {
+			test('generateModelResponse logs and rethrows when interactions.create rejects', async () => {
+				const apiError = new Error('interactions boom');
+				interactionsCreateMock.mockReset();
+				interactionsCreateMock.mockRejectedValue(apiError);
+
+				const client = makeInteractionsClient();
+				await expect(
+					client.generateModelResponse({
+						prompt: '',
+						userMessage: 'hi',
+						kind: 'extended',
+						conversationHistory: [],
+					})
+				).rejects.toBe(apiError);
+
+				expect(mockLogger.error).toHaveBeenCalledWith('[GeminiClient] Error creating interaction:', apiError);
+			});
+
+			test('streaming logs and rethrows when interactions.create rejects', async () => {
+				const apiError = new Error('interactions stream boom');
+				interactionsCreateMock.mockReset();
+				interactionsCreateMock.mockRejectedValue(apiError);
+
+				const client = makeInteractionsClient();
+				const chunks: Array<{ text: string }> = [];
+				const stream = client.generateStreamingResponse(
+					{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+					(chunk) => chunks.push(chunk)
+				);
+
+				await expect(stream.complete).rejects.toBe(apiError);
+				expect(chunks).toEqual([]);
+				expect(mockLogger.error).toHaveBeenCalledWith('[GeminiClient] Error streaming interaction:', apiError);
+			});
+
+			test('streaming logs and rethrows when the stream throws mid-iteration', async () => {
+				const apiError = new Error('mid-stream boom');
+				interactionsCreateMock.mockReset();
+				interactionsCreateMock.mockImplementation(async () => {
+					return (async function* () {
+						yield { event_type: 'step.start', index: 0, step: { type: 'model_output' } };
+						yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'partial' } };
+						throw apiError;
+					})();
+				});
+
+				const client = makeInteractionsClient();
+				const chunks: Array<{ text: string }> = [];
+				const stream = client.generateStreamingResponse(
+					{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+					(chunk) => chunks.push(chunk)
+				);
+
+				await expect(stream.complete).rejects.toBe(apiError);
+				// The pre-error chunk was still emitted before the stream faulted.
+				expect(chunks).toEqual([{ text: 'partial' }]);
+				expect(mockLogger.error).toHaveBeenCalledWith('[GeminiClient] Error streaming interaction:', apiError);
+			});
+		});
 	});
 });
