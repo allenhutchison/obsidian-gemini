@@ -58,6 +58,8 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': '완성 모델',
 	'settings.general.completionModelDesc':
 		'노트에 입력할 때 IDE 스타일의 인라인 자동 완성을 제공하는 데 사용되는 모델입니다.',
+	'settings.general.ollamaModelName': 'Ollama 모델',
+	'settings.general.ollamaModelDesc': '채팅, 요약, 완성, 재작성 등 모든 Ollama 사용 사례에 사용되는 모델입니다.',
 	'settings.general.imageModelName': '이미지 모델',
 	'settings.general.imageModelDesc': '이미지 생성에 사용되는 모델입니다.',
 	'settings.general.stateFolderName': '플러그인 상태 폴더',
@@ -538,7 +540,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'이 Glob과 일치하는 경로로 실행을 제한합니다. 예시: Daily/**/*.md, Notes/*.md. 모든 경로에 적용하려면 비워 두세요.',
 	'hooks.commandIdSetting': '명령 ID',
 	'hooks.commandIdDesc':
-		'실행할 명령 팔레트 ID입니다. 예: editor:save-file, gemini-scribe-summarize-active-file. 설정 → 단축키에서 명령 ID를 확인할 수 있습니다 (Ctrl+Shift+I로 개발자 콘솔을 열어 ID 검사 가능).',
+		'실행할 명령어 팔레트 ID입니다. 예: editor:save-file, gemini-scribe:summarize-active-file. 설정 → 단축키에서 명령어 ID를 확인할 수 있습니다 (Ctrl+Shift+I를 눌러 개발자 콘솔을 열고 ID를 확인하세요).',
 	'hooks.focusFileSetting': '실행 전 트리거 파일에 포커스',
 	'hooks.focusFileDesc':
 		'활성화하면 명령이 실행되기 전에 트리거된 파일이 작업 공간에 열립니다. 에디터 범위의 명령에 유용합니다. 비활성화하면 현재 활성화된 파일에 대해 명령이 실행됩니다. 기본값은 비활성입니다.',

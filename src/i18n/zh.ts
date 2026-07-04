@@ -55,6 +55,8 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'settings.general.summaryModelDesc': '用于 "总结当前文件" 命令的模型，该命令会将摘要添加到 frontmatter 中。',
 	'settings.general.completionModelName': '补全模型',
 	'settings.general.completionModelDesc': '用于在您在笔记中输入时进行 IDE 风格行内补全的模型。',
+	'settings.general.ollamaModelName': 'Ollama 模型',
+	'settings.general.ollamaModelDesc': '用于所有 Ollama 使用场景的模型：对话、摘要、补全和重写。',
 	'settings.general.imageModelName': '图像模型',
 	'settings.general.imageModelDesc': '用于生成图像的模型。',
 	'settings.general.stateFolderName': '插件状态文件夹',
@@ -514,7 +516,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc': '仅限匹配此 glob 的路径触发。示例：Daily/**/*.md, Notes/*.md。留空表示允许任何路径。',
 	'hooks.commandIdSetting': '命令 ID',
 	'hooks.commandIdDesc':
-		'要触发的命令面板 ID。例如：editor:save-file, gemini-scribe-summarize-active-file。可通过“设置” → “快捷键”查看命令 ID（使用 Ctrl+Shift+I 打开开发者控制台以检查 ID）。',
+		'要触发的命令面板 ID。例如：editor:save-file、gemini-scribe:summarize-active-file。可通过“设置” → “快捷键”查看命令 ID（按 Ctrl+Shift+I 打开开发者控制台以检查 ID）。',
 	'hooks.focusFileSetting': '发送前聚焦触发文件',
 	'hooks.focusFileDesc':
 		'开启时，在运行命令之前会在工作区中打开触发文件 —— 这对编辑器范围的命令很有用。关闭时，命令将针对当前活动的任何文件运行。默认关闭。',

@@ -60,6 +60,9 @@ export const id: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Model pelengkapan',
 	'settings.general.completionModelDesc':
 		'Model yang digunakan untuk pelengkapan sebaris gaya IDE saat Anda mengetik di catatan.',
+	'settings.general.ollamaModelName': 'Model Ollama',
+	'settings.general.ollamaModelDesc':
+		'Model yang digunakan untuk semua kegunaan Ollama: obrolan, peringkasan, pelengkapan, dan penulisan ulang.',
 	'settings.general.imageModelName': 'Model gambar',
 	'settings.general.imageModelDesc': 'Model yang digunakan untuk pembuatan gambar.',
 	'settings.general.stateFolderName': 'Folder status plugin',
@@ -551,7 +554,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Batasi pemicuan hanya pada jalur yang cocok dengan glob ini. Contoh: Daily/**/*.md, Notes/*.md. Biarkan kosong untuk jalur apa pun.',
 	'hooks.commandIdSetting': 'ID perintah',
 	'hooks.commandIdDesc':
-		'ID palet perintah yang akan dijalankan. Contoh: editor:save-file, gemini-scribe-summarize-active-file. Lihat ID perintah melalui Pengaturan → Tombol Pintas (buka konsol pengembang dengan Ctrl+Shift+I untuk memeriksa ID).',
+		'ID palet perintah yang akan dijalankan. Contoh: editor:save-file, gemini-scribe:summarize-active-file. Lihat ID perintah melalui Pengaturan → Pintasan keyboard (buka konsol pengembang dengan Ctrl+Shift+I untuk memeriksa ID).',
 	'hooks.focusFileSetting': 'Fokuskan file pemicu sebelum dijalankan',
 	'hooks.focusFileDesc':
 		'Saat aktif, file pemicu akan dibuka di ruang kerja sebelum perintah dijalankan — berguna untuk perintah yang berlingkup editor. Saat nonaktif, perintah dijalankan pada file apa pun yang sedang aktif. Default nonaktif.',

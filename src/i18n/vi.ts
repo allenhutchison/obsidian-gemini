@@ -61,6 +61,9 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Mô hình hoàn thành',
 	'settings.general.completionModelDesc':
 		'Mô hình được sử dụng để tự động hoàn thành nội dung trực tiếp (inline) kiểu IDE khi bạn nhập trong ghi chú.',
+	'settings.general.ollamaModelName': 'Mô hình Ollama',
+	'settings.general.ollamaModelDesc':
+		'Mô hình được sử dụng cho tất cả các tác vụ của Ollama: trò chuyện, tóm tắt, hoàn thành và viết lại.',
 	'settings.general.imageModelName': 'Mô hình hình ảnh',
 	'settings.general.imageModelDesc': 'Mô hình được sử dụng để tạo hình ảnh.',
 	'settings.general.stateFolderName': 'Thư mục trạng thái plugin',
@@ -551,7 +554,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Chỉ kích hoạt cho các đường dẫn khớp với glob này. Ví dụ: Daily/**/*.md, Notes/*.md. Để trống cho mọi đường dẫn.',
 	'hooks.commandIdSetting': 'ID lệnh',
 	'hooks.commandIdDesc':
-		'ID bảng lệnh để kích hoạt. Ví dụ: editor:save-file, gemini-scribe-summarize-active-file. Xem các ID lệnh qua Cài đặt → Phím tắt (mở bảng điều khiển cho nhà phát triển bằng Ctrl+Shift+I để kiểm tra ID).',
+		'ID bảng lệnh cần kích hoạt. Ví dụ: editor:save-file, gemini-scribe:summarize-active-file. Xem các ID lệnh qua Cài đặt → Phím tắt (mở bảng điều khiển cho nhà phát triển bằng Ctrl+Shift+I để kiểm tra ID).',
 	'hooks.focusFileSetting': 'Chuyển đến tệp kích hoạt trước khi chạy',
 	'hooks.focusFileDesc':
 		'Khi bật, tệp kích hoạt sẽ được mở trong không gian làm việc trước khi lệnh chạy — hữu ích cho các lệnh trong phạm vi trình chỉnh sửa. Khi tắt, lệnh sẽ chạy trên bất kỳ tệp nào đang hoạt động. Mặc định tắt.',

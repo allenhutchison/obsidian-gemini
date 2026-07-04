@@ -61,6 +61,9 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Modelo de autocompletar',
 	'settings.general.completionModelDesc':
 		'Modelo usado para autocompletar em linha no estilo IDE enquanto você digita nas notas.',
+	'settings.general.ollamaModelName': 'Modelo Ollama',
+	'settings.general.ollamaModelDesc':
+		'Modelo usado para todos os casos de uso do Ollama: chat, sumarização, completamentos e reescrita.',
 	'settings.general.imageModelName': 'Modelo de imagem',
 	'settings.general.imageModelDesc': 'Modelo usado para geração de imagens.',
 	'settings.general.stateFolderName': 'Pasta de estado do plugin',
@@ -556,7 +559,7 @@ export const ptBR: Partial<Record<TranslationKey, string>> = {
 		'Limita os disparos aos caminhos que correspondem a este glob. Exemplos: Daily/**/*.md, Notes/*.md. Deixe em branco para qualquer caminho.',
 	'hooks.commandIdSetting': 'ID do comando',
 	'hooks.commandIdDesc':
-		'ID da paleta de comandos a ser acionado. Exemplos: editor:save-file, gemini-scribe-summarize-active-file. Visualize os IDs de comando em Configurações → Atalhos (abra o console do desenvolvedor com Ctrl+Shift+I para inspecionar os IDs).',
+		'ID do comando a ser disparado. Exemplos: editor:save-file, gemini-scribe:summarize-active-file. Visualize os IDs dos comandos em Configurações → Atalhos (abra o console do desenvolvedor com Ctrl+Shift+I para inspecionar os IDs).',
 	'hooks.focusFileSetting': 'Focar no arquivo disparador antes da execução',
 	'hooks.focusFileDesc':
 		'Quando ativado, o arquivo disparador é aberto no espaço de trabalho antes da execução do comando — útil para comandos com escopo de editor. Quando desativado, o comando é executado no arquivo que estiver ativo no momento. Padrão: desativado.',

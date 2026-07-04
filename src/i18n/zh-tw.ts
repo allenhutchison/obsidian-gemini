@@ -55,6 +55,8 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'settings.general.summaryModelDesc': '用於「摘要目前檔案」命令的模型，該命令會將摘要新增至 frontmatter。',
 	'settings.general.completionModelName': '補全模型',
 	'settings.general.completionModelDesc': '用於在筆記中輸入時，進行 IDE 風格行內自動補全的模型。',
+	'settings.general.ollamaModelName': 'Ollama 模型',
+	'settings.general.ollamaModelDesc': '用於所有 Ollama 使用場景的模型：對話、摘要、補全和重寫。',
 	'settings.general.imageModelName': '圖片模型',
 	'settings.general.imageModelDesc': '用於圖片生成的模型。',
 	'settings.general.stateFolderName': '外掛狀態資料夾',
@@ -512,7 +514,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 	'hooks.pathGlobDesc': '僅在路徑符合此 Glob 模式時觸發。例如：Daily/**/*.md、Notes/*.md。留空表示不限制路徑。',
 	'hooks.commandIdSetting': '命令 ID',
 	'hooks.commandIdDesc':
-		'要觸發的命令面板 ID。例如：editor:save-file、gemini-scribe-summarize-active-file。可透過「設定」→「快捷鍵」檢視命令 ID（按下 Ctrl+Shift+I 開啟開發者主控台以檢查 ID）。',
+		'要執行的命令面板 ID。例如：editor:save-file、gemini-scribe:summarize-active-file。可透過「設定」→「快捷鍵」查看命令 ID（按下 Ctrl+Shift+I 開啟開發者主控台以檢查 ID）。',
 	'hooks.focusFileSetting': '在執行前聚焦觸發的檔案',
 	'hooks.focusFileDesc':
 		'啟用時，在執行命令前會在工作區中開啟觸發的檔案 — 這對編輯器範圍的命令很有用。停用時，命令會針對目前作用中的檔案執行。預設為停用。',

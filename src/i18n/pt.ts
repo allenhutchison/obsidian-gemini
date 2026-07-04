@@ -61,6 +61,9 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Modelo de conclusão',
 	'settings.general.completionModelDesc':
 		'Modelo utilizado para conclusões em linha ao estilo de IDE enquanto escreve nas notas.',
+	'settings.general.ollamaModelName': 'Modelo Ollama',
+	'settings.general.ollamaModelDesc':
+		'Modelo utilizado para todos os casos de uso do Ollama: chat, sumarização, completamentos e reescrita.',
 	'settings.general.imageModelName': 'Modelo de imagem',
 	'settings.general.imageModelDesc': 'Modelo utilizado para a geração de imagens.',
 	'settings.general.stateFolderName': 'Pasta de estado do plugin',
@@ -560,7 +563,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Limitar execuções a caminhos que correspondam a este glob. Exemplos: Daily/**/*.md, Notes/*.md. Deixe em branco para qualquer caminho.',
 	'hooks.commandIdSetting': 'ID do comando',
 	'hooks.commandIdDesc':
-		'ID da paleta de comandos a acionar. Exemplos: editor:save-file, gemini-scribe-summarize-active-file. Veja os IDs dos comandos em Definições → Atalhos (abra a consola de programador com Ctrl+Shift+I para inspecionar os IDs).',
+		'ID da paleta de comandos a executar. Exemplos: editor:save-file, gemini-scribe:summarize-active-file. Visualize os IDs dos comandos em Definições → Atalhos (abra a consola de programador com Ctrl+Shift+I para inspecionar os IDs).',
 	'hooks.focusFileSetting': 'Focar o ficheiro de gatilho antes do envio',
 	'hooks.focusFileDesc':
 		'Quando ativado, o ficheiro de gatilho é aberto na área de trabalho antes de o comando ser executado — útil para comandos no âmbito do editor. Quando desativado, o comando é executado no ficheiro que estiver ativo no momento. Desativado por predefinição.',

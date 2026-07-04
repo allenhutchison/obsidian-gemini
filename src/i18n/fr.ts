@@ -63,6 +63,9 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Modèle de complétion',
 	'settings.general.completionModelDesc':
 		'Modèle utilisé pour les complétions en ligne de style IDE lors de la saisie dans les notes.',
+	'settings.general.ollamaModelName': 'Modèle Ollama',
+	'settings.general.ollamaModelDesc':
+		"Modèle utilisé pour tous les cas d'utilisation d'Ollama : discussion, résumé, complétion et réécriture.",
 	'settings.general.imageModelName': "Modèle d'image",
 	'settings.general.imageModelDesc': "Modèle utilisé pour la génération d'images.",
 	'settings.general.stateFolderName': "Dossier d'état du plugin",
@@ -564,7 +567,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"Limiter les déclenchements aux chemins correspondant à ce glob. Exemples : Daily/**/*.md, Notes/*.md. Laisser vide pour n'importe quel chemin.",
 	'hooks.commandIdSetting': 'ID de commande',
 	'hooks.commandIdDesc':
-		'ID de la palette de commandes à déclencher. Exemples : editor:save-file, gemini-scribe-summarize-active-file. Affichez les ID de commande via Paramètres → Raccourcis clavier (ouvrez la console de développement avec Ctrl+Shift+I pour inspecter les ID).',
+		'ID de la commande de la palette à exécuter. Exemples : editor:save-file, gemini-scribe:summarize-active-file. Affichez les ID des commandes via Paramètres → Raccourcis clavier (ouvrez la console de développement avec Ctrl+Shift+I pour inspecter les ID).',
 	'hooks.focusFileSetting': "Focus sur le fichier déclencheur avant l'envoi",
 	'hooks.focusFileDesc':
 		"Lorsqu'il est activé, le fichier déclencheur est ouvert dans l'espace de travail avant l'exécution de la commande — utile pour les commandes limitées à l'éditeur. Lorsqu'il est désactivé, la commande s'exécute sur le fichier actuellement actif. Désactivé par défaut.",

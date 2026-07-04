@@ -61,6 +61,9 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Tamamlama modeli',
 	'settings.general.completionModelDesc':
 		'Siz notlara yazarken IDE tarzı satır içi tamamlamalar için kullanılan model.',
+	'settings.general.ollamaModelName': 'Ollama modeli',
+	'settings.general.ollamaModelDesc':
+		'Tüm Ollama kullanım durumları için kullanılan model: sohbet, özetleme, tamamlama ve yeniden yazma.',
 	'settings.general.imageModelName': 'Görsel modeli',
 	'settings.general.imageModelDesc': 'Görsel oluşturma için kullanılan model.',
 	'settings.general.stateFolderName': 'Eklenti durum klasörü',
@@ -560,7 +563,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Tetiklemeleri bu glob ile eşleşen yollarla sınırlandırın. Örnekler: Daily/**/*.md, Notes/*.md. Tüm yollar için boş bırakın.',
 	'hooks.commandIdSetting': 'Komut kimliği',
 	'hooks.commandIdDesc':
-		'Tetiklenecek komut paleti kimliği. Örnekler: editor:save-file, gemini-scribe-summarize-active-file. Komut kimliklerini Ayarlar → Kısayollar üzerinden görüntüleyin (kimlikleri incelemek için Ctrl+Shift+I ile geliştirici konsolunu açın).',
+		'Tetiklenecek komut paleti kimliği. Örnekler: editor:save-file, gemini-scribe:summarize-active-file. Komut kimliklerini Ayarlar → Kısayollar üzerinden görüntüleyin (kimlikleri incelemek için Ctrl+Shift+I ile geliştirici konsolunu açın).',
 	'hooks.focusFileSetting': 'Göndermeden önce tetikleyici dosyaya odaklan',
 	'hooks.focusFileDesc':
 		'Açık olduğunda, komut çalıştırılmadan önce tetikleyici dosya çalışma alanında açılır — editör kapsamlı komutlar için kullanışlıdır. Kapalı olduğunda, komut o anda aktif olan dosya üzerinde çalışır. Varsayılan olarak kapalıdır.',

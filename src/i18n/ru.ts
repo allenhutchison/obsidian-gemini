@@ -60,6 +60,9 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Модель автодополнения',
 	'settings.general.completionModelDesc':
 		'Модель, используемая для встроенного автодополнения в стиле IDE при вводе текста в заметках.',
+	'settings.general.ollamaModelName': 'Модель Ollama',
+	'settings.general.ollamaModelDesc':
+		'Модель, используемая для всех сценариев Ollama: чат, суммаризация, автодополнение и переписывание.',
 	'settings.general.imageModelName': 'Модель генерации изображений',
 	'settings.general.imageModelDesc': 'Модель, используемая для генерации изображений.',
 	'settings.general.stateFolderName': 'Папка состояния плагина',
@@ -560,7 +563,7 @@ export const ru: Partial<Record<TranslationKey, string>> = {
 		'Ограничить запуск путями, соответствующими этой маске. Примеры: Daily/**/*.md, Notes/*.md. Оставьте пустым для любых путей.',
 	'hooks.commandIdSetting': 'ID команды',
 	'hooks.commandIdDesc':
-		'ID команды из палитры команд для запуска. Примеры: editor:save-file, gemini-scribe-summarize-active-file. Вы можете посмотреть ID команд в меню Настройки → Горячие клавиши (откройте консоль разработчика с помощью Ctrl+Shift+I, чтобы узнать ID).',
+		'ID запускаемой команды из палитры команд. Примеры: editor:save-file, gemini-scribe:summarize-active-file. Просмотреть ID команд можно в меню Настройки → Горячие клавиши (откройте консоль разработчика с помощью Ctrl+Shift+I, чтобы узнать ID).',
 	'hooks.focusFileSetting': 'Фокусировать файл-триггер перед отправкой',
 	'hooks.focusFileDesc':
 		'Если включено, файл-триггер открывается в рабочей области перед запуском команды — полезно для команд редактора. Если выключено, команда выполняется для текущего активного файла. По умолчанию выключено.',
