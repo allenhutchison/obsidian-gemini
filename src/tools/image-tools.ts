@@ -5,6 +5,17 @@ import { getRawErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
 
 /**
+ * Narrow the model-supplied image params to their expected string types once, so
+ * `confirmationMessage` and `execute` share a single source of truth for the
+ * `prompt`/`output_path` fields instead of re-deriving them independently.
+ */
+function parseImageParams(params: ToolParams): { prompt?: string; outputPath?: string } {
+	const prompt = typeof params.prompt === 'string' ? params.prompt : undefined;
+	const outputPath = typeof params.output_path === 'string' ? params.output_path : undefined;
+	return { prompt, outputPath };
+}
+
+/**
  * Tool to generate images from text prompts using Gemini's image generation API
  */
 export class GenerateImageTool implements Tool {
@@ -41,8 +52,7 @@ export class GenerateImageTool implements Tool {
 	requiresConfirmation = true;
 
 	confirmationMessage = (params: ToolParams) => {
-		const prompt = typeof params.prompt === 'string' ? params.prompt : '';
-		const outputPath = typeof params.output_path === 'string' ? params.output_path : undefined;
+		const { prompt = '', outputPath } = parseImageParams(params);
 		let message = t('tool.confirm.generateImage', { prompt });
 		if (outputPath) {
 			message += `\n\n${t('tool.confirm.generateImageDestination', { path: outputPath })}`;
@@ -60,8 +70,7 @@ export class GenerateImageTool implements Tool {
 
 	async execute(params: ToolParams, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin;
-		const prompt = typeof params.prompt === 'string' ? params.prompt : undefined;
-		const outputPath = typeof params.output_path === 'string' ? params.output_path : undefined;
+		const { prompt, outputPath } = parseImageParams(params);
 		const background = !!params.background;
 
 		try {
