@@ -60,6 +60,9 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'フロントマターに要約を追加する「アクティブなファイルを要約」コマンドに使用されるモデル。',
 	'settings.general.completionModelName': '補完モデル',
 	'settings.general.completionModelDesc': 'ノートに入力する際のIDEスタイルのインライン補完に使用されるモデル。',
+	'settings.general.ollamaModelName': 'Ollamaモデル',
+	'settings.general.ollamaModelDesc':
+		'チャット、要約、補完、書き換えなど、すべてのOllamaのユースケースで使用されるモデル。',
 	'settings.general.imageModelName': '画像モデル',
 	'settings.general.imageModelDesc': '画像生成に使用されるモデル。',
 	'settings.general.stateFolderName': 'プラグインのステートフォルダ',
@@ -549,7 +552,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'このGlobパターンに一致するパスのみに実行を制限します。例: Daily/**/*.md, Notes/*.md。すべてのパスを対象にする場合は空欄にしてください。',
 	'hooks.commandIdSetting': 'コマンドID',
 	'hooks.commandIdDesc':
-		'実行するコマンドパレットのID。例: editor:save-file、gemini-scribe-summarize-active-file。コマンドIDは 設定 → ホットキー で確認できます（Ctrl+Shift+I でデベロッパーコンソールを開いてIDを確認できます）。',
+		'実行するコマンドパレットのID。例: editor:save-file、gemini-scribe:summarize-active-file。コマンドIDは 設定 → ホットキー で確認できます（Ctrl+Shift+Iでデベロッパーコンソールを開き、IDを確認してください）。',
 	'hooks.focusFileSetting': '実行前にトリガーとなったファイルにフォーカスする',
 	'hooks.focusFileDesc':
 		'オンにすると、コマンドが実行される前にトリガーとなったファイルがワークスペースで開かれます（エディタースコープのコマンドに便利です）。オフの場合、コマンドは現在アクティブなファイルに対して実行されます。デフォルトはオフです。',

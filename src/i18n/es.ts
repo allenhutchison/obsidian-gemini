@@ -63,6 +63,9 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Modelo de autocompletado',
 	'settings.general.completionModelDesc':
 		'Modelo utilizado para el autocompletado en línea estilo IDE a medida que escribes en las notas.',
+	'settings.general.ollamaModelName': 'Modelo de Ollama',
+	'settings.general.ollamaModelDesc':
+		'Modelo utilizado para todos los casos de uso de Ollama: chat, resumen, completado y reescritura.',
 	'settings.general.imageModelName': 'Modelo de imagen',
 	'settings.general.imageModelDesc': 'Modelo utilizado para la generación de imágenes.',
 	'settings.general.stateFolderName': 'Carpeta de estado del plugin',
@@ -562,7 +565,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 		'Limita las ejecuciones a las rutas que coincidan con este glob. Ejemplos: Daily/**/*.md, Notes/*.md. Déjalo en blanco para cualquier ruta.',
 	'hooks.commandIdSetting': 'ID del comando',
 	'hooks.commandIdDesc':
-		'ID de la paleta de comandos a ejecutar. Ejemplos: editor:save-file, gemini-scribe-summarize-active-file. Consulta los ID de los comandos en Ajustes → Atajos de teclado (abre la consola de desarrollador con Ctrl+Shift+I para inspeccionar los ID).',
+		'ID de la paleta de comandos a ejecutar. Ejemplos: editor:save-file, gemini-scribe:summarize-active-file. Ver los ID de comando a través de Configuración → Atajos de teclado (abre la consola de desarrollador con Ctrl+Shift+I para inspeccionar los ID).',
 	'hooks.focusFileSetting': 'Enfocar el archivo disparador antes de la ejecución',
 	'hooks.focusFileDesc':
 		'Cuando está activado, el archivo que dispara el evento se abre en el espacio de trabajo antes de que se ejecute el comando (útil para comandos del editor). Cuando está desactivado, el comando se ejecuta en el archivo que esté activo en ese momento. Desactivado por defecto.',

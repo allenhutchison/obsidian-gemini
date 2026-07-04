@@ -62,6 +62,9 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Vervollständigungsmodell',
 	'settings.general.completionModelDesc':
 		'Modell, das für Inline-Vervollständigungen im IDE-Stil während des Schreibens in Notizen verwendet wird.',
+	'settings.general.ollamaModelName': 'Ollama-Modell',
+	'settings.general.ollamaModelDesc':
+		'Modell, das für alle Ollama-Anwendungsfälle verwendet wird: Chat, Zusammenfassung, Vervollständigungen und Umschreiben.',
 	'settings.general.imageModelName': 'Bildmodell',
 	'settings.general.imageModelDesc': 'Modell, das für die Bildgenerierung verwendet wird.',
 	'settings.general.stateFolderName': 'Plugin-Statusordner',
@@ -565,7 +568,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Auslösungen auf Pfade beschränken, die diesem Glob entsprechen. Beispiele: Daily/**/*.md, Notes/*.md. Leer lassen für beliebige Pfade.',
 	'hooks.commandIdSetting': 'Befehls-ID',
 	'hooks.commandIdDesc':
-		'Auszuführende Befehlspaletten-ID. Beispiele: editor:save-file, gemini-scribe-summarize-active-file. Zeige Befehls-IDs über Einstellungen → Tastaturkürzel an (öffne die Entwicklerkonsole mit Strg+Shift+I, um IDs zu untersuchen).',
+		'Auszuführende Befehlspaletten-ID. Beispiele: editor:save-file, gemini-scribe:summarize-active-file. Befehls-IDs können über Einstellungen → Tastaturkürzel eingesehen werden (öffnen Sie die Entwicklerkonsole mit Ctrl+Shift+I, um IDs zu untersuchen).',
 	'hooks.focusFileSetting': 'Auslösende Datei vor Ausführung fokussieren',
 	'hooks.focusFileDesc':
 		'Wenn aktiviert, wird die auslösende Datei im Workspace geöffnet, bevor der Befehl ausgeführt wird – nützlich für Befehle mit Editor-Fokus. Wenn deaktiviert, wird der Befehl auf die aktuell aktive Datei angewendet. Standardmäßig deaktiviert.',

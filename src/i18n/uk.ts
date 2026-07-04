@@ -60,6 +60,9 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Модель автодоповнення',
 	'settings.general.completionModelDesc':
 		'Модель, що використовується для вбудованого автодоповнення в стилі IDE під час введення тексту в нотатках.',
+	'settings.general.ollamaModelName': 'Модель Ollama',
+	'settings.general.ollamaModelDesc':
+		'Модель, що використовується для всіх сценаріїв Ollama: чат, резюмування, автодоповнення та переписування.',
 	'settings.general.imageModelName': 'Модель зображень',
 	'settings.general.imageModelDesc': 'Модель, що використовується для генерації зображень.',
 	'settings.general.stateFolderName': 'Папка стану плагіну',
@@ -555,7 +558,7 @@ export const uk: Partial<Record<TranslationKey, string>> = {
 		'Обмежити запуск шляхами, що відповідають цьому glob-шаблону. Приклади: Daily/**/*.md, Notes/*.md. Залиште порожнім для будь-якого шляху.',
 	'hooks.commandIdSetting': 'ID команди',
 	'hooks.commandIdDesc':
-		'ID команди з палітри команд для запуску. Приклади: editor:save-file, gemini-scribe-summarize-active-file. Переглянути ID команд можна через Налаштування → Гарячі клавіші (відкрийте консоль розробника за допомогою Ctrl+Shift+I, щоб перевірити ID).',
+		'ID команди з палітри команд для запуску. Приклади: editor:save-file, gemini-scribe:summarize-active-file. Переглянути ID команд можна в Налаштування → Гарячі клавіші (відкрийте консоль розробника за допомогою Ctrl+Shift+I, щоб переглянути ID).',
 	'hooks.focusFileSetting': 'Фокусувати файл-тригер перед виконанням',
 	'hooks.focusFileDesc':
 		'Якщо увімкнено, файл, що викликав тригер, відкривається в робочій області перед виконанням команди — корисно для команд, що діють у межах редактора. Якщо вимкнено, команда виконується для поточного активного файлу. За замовчуванням вимкнено.',

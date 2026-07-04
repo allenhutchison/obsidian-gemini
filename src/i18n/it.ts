@@ -61,6 +61,9 @@ export const it: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Modello di completamento',
 	'settings.general.completionModelDesc':
 		'Modello utilizzato per i completamenti in linea in stile IDE mentre digiti nelle note.',
+	'settings.general.ollamaModelName': 'Modello Ollama',
+	'settings.general.ollamaModelDesc':
+		"Modello utilizzato per tutti i casi d'uso di Ollama: chat, sintesi, completamento e riscrittura.",
 	'settings.general.imageModelName': 'Modello immagini',
 	'settings.general.imageModelDesc': 'Modello utilizzato per la generazione di immagini.',
 	'settings.general.stateFolderName': 'Cartella di stato del plugin',
@@ -561,7 +564,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 		'Limita gli avvii ai percorsi che corrispondono a questo glob. Esempi: Daily/**/*.md, Notes/*.md. Lascia vuoto per qualsiasi percorso.',
 	'hooks.commandIdSetting': 'ID comando',
 	'hooks.commandIdDesc':
-		'ID della tavolozza dei comandi da attivare. Esempi: editor:save-file, gemini-scribe-summarize-active-file. Visualizza gli ID dei comandi tramite Impostazioni → Scorciatoie (apri la console per sviluppatori con Ctrl+Shift+I per ispezionare gli ID).',
+		'ID della tavolozza dei comandi da eseguire. Esempi: editor:save-file, gemini-scribe:summarize-active-file. Visualizza gli ID dei comandi tramite Impostazioni → Scorciatoie (apri la console per sviluppatori con Ctrl+Shift+I per ispezionare gli ID).',
 	'hooks.focusFileSetting': "Metti a fuoco il file di attivazione prima dell'invio",
 	'hooks.focusFileDesc':
 		"Quando attivo, il file di attivazione viene aperto nell'area di lavoro prima dell'esecuzione del comando — utile per i comandi limitati all'editor. Quando disattivato, il comando viene eseguito su qualsiasi file sia attualmente attivo. Disattivato per impostazione predefinita.",

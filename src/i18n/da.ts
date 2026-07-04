@@ -60,6 +60,9 @@ export const da: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Fuldførelsesmodel',
 	'settings.general.completionModelDesc':
 		'Model, der bruges til inline-fuldførelser i IDE-stil, mens du skriver i noter.',
+	'settings.general.ollamaModelName': 'Ollama-model',
+	'settings.general.ollamaModelDesc':
+		'Model, der bruges til alle Ollama-anvendelser: chat, opsummering, autofuldførelse og omskrivning.',
 	'settings.general.imageModelName': 'Billedmodel',
 	'settings.general.imageModelDesc': 'Model, der bruges til billedgenerering.',
 	'settings.general.stateFolderName': 'Plugin-statusmappe',
@@ -551,7 +554,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Begræns udløsninger til stier, der matcher denne glob. Eksempler: Daily/**/*.md, Notes/*.md. Lad feltet være tomt for alle stier.',
 	'hooks.commandIdSetting': 'Kommando-id',
 	'hooks.commandIdDesc':
-		"Kommandopalet-id, der skal aktiveres. Eksempler: editor:save-file, gemini-scribe-summarize-active-file. Vis kommando-id'er via Indstillinger → Genvejstaster (åbn udviklerkonsollen med Ctrl+Shift+I for at inspicere id'er).",
+		"Kommando-id fra kommandopaletten, der skal udløses. Eksempler: editor:save-file, gemini-scribe:summarize-active-file. Se kommando-id'er via Indstillinger → Genvejstaster (åbn udviklerkonsollen med Ctrl+Shift+I for at inspicere id'er).",
 	'hooks.focusFileSetting': 'Fokuser på udløsende fil før afsendelse',
 	'hooks.focusFileDesc':
 		'Når denne er aktiveret, åbnes den udløsende fil i arbejdsområdet, før kommandoen kører — nyttigt til kommandoer, der er begrænset til editoren. Når den er deaktiveret, kører kommandoen mod den fil, der i øjeblikket er aktiv. Standard er deaktiveret.',

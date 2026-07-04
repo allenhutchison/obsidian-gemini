@@ -61,6 +61,9 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Fullføringsmodell',
 	'settings.general.completionModelDesc':
 		'Modell som brukes til innebygde fullføringer i IDE-stil mens du skriver i notater.',
+	'settings.general.ollamaModelName': 'Ollama-modell',
+	'settings.general.ollamaModelDesc':
+		'Modell som brukes til alle Ollama-bruksområder: chat, oppsummering, fullføring og omskriving.',
 	'settings.general.imageModelName': 'Bildemodell',
 	'settings.general.imageModelDesc': 'Modell som brukes til bildegenerering.',
 	'settings.general.stateFolderName': 'Mappe for plugin-status',
@@ -549,7 +552,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Begrens utløsere til stier som samsvarer med denne globen. Eksempler: Daily/**/*.md, Notes/*.md. La stå tom for alle stier.',
 	'hooks.commandIdSetting': 'Kommando-ID',
 	'hooks.commandIdDesc':
-		'Kommandopalett-ID som skal utløses. Eksempler: editor:save-file, gemini-scribe-summarize-active-file. Vis kommando-ID-er via Innstillinger → Hurtigtaster (åpne utviklerkonsollen med Ctrl+Shift+I for å inspisere ID-er).',
+		'Kommando-ID fra kommandopaletten som skal kjøres. Eksempler: editor:save-file, gemini-scribe:summarize-active-file. Se kommando-ID-er via Innstillinger → Hurtigtaster (åpne utviklerkonsollen med Ctrl+Shift+I for å inspisere ID-er).',
 	'hooks.focusFileSetting': 'Fokuser på utløsende fil før sending',
 	'hooks.focusFileDesc':
 		'Når aktivert, åpnes den utløsende filen i arbeidsområdet før kommandoen kjører — nyttig for kommandoer som er begrenset til teksteditoren. Når deaktivert, kjører kommandoen mot filen som er aktiv for øyeblikket. Standard er av.',

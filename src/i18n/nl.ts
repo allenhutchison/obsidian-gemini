@@ -60,6 +60,9 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Aanvullingsmodel',
 	'settings.general.completionModelDesc':
 		'Model dat wordt gebruikt voor inline aanvullingen in IDE-stijl terwijl je in notities typt.',
+	'settings.general.ollamaModelName': 'Ollama-model',
+	'settings.general.ollamaModelDesc':
+		'Model gebruikt voor alle Ollama-toepassingen: chat, samenvatten, aanvullen en herschrijven.',
 	'settings.general.imageModelName': 'Afbeeldingsmodel',
 	'settings.general.imageModelDesc': 'Model dat wordt gebruikt voor het genereren van afbeeldingen.',
 	'settings.general.stateFolderName': 'Plugin-statusmap',
@@ -553,7 +556,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Beperk activeringen tot paden die overeenkomen met deze glob. Voorbeelden: Daily/**/*.md, Notes/*.md. Laat leeg voor elk pad.',
 	'hooks.commandIdSetting': 'Opdracht-ID',
 	'hooks.commandIdDesc':
-		"ID van het te activeren commando in het opdrachtpalet. Voorbeelden: editor:save-file, gemini-scribe-summarize-active-file. Bekijk commando-ID's via Instellingen → Sneltoetsen (open de ontwikkelaarsconsole met Ctrl+Shift+I om ID's te inspecteren).",
+		"Uit te voeren opdrachtpalet-ID. Voorbeelden: editor:save-file, gemini-scribe:summarize-active-file. Bekijk opdracht-ID's via Instellingen → Sneltoetsen (open de ontwikkelaarsconsole met Ctrl+Shift+I om ID's te inspecteren).",
 	'hooks.focusFileSetting': 'Focus op triggerbestand vóór verzending',
 	'hooks.focusFileDesc':
 		'Indien ingeschakeld, wordt het activerende bestand geopend in de werkruimte voordat de opdracht wordt uitgevoerd — handig voor opdrachten binnen de editor. Indien uitgeschakeld, wordt de opdracht uitgevoerd op het bestand dat momenteel actief is. Standaard uitgeschakeld.',

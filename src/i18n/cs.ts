@@ -60,6 +60,9 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Model pro doplňování',
 	'settings.general.completionModelDesc':
 		'Model používaný pro řádkové doplňování (ve stylu IDE) během psaní v poznámkách.',
+	'settings.general.ollamaModelName': 'Model Ollama',
+	'settings.general.ollamaModelDesc':
+		'Model používaný pro všechny případy použití Ollama: chat, sumarizace, doplňování a přepisování.',
 	'settings.general.imageModelName': 'Model pro obrázky',
 	'settings.general.imageModelDesc': 'Model používaný pro generování obrázků.',
 	'settings.general.stateFolderName': 'Složka stavu pluginu',
@@ -549,7 +552,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Omezit spouštění na cesty odpovídající tomuto globu. Příklady: Daily/**/*.md, Notes/*.md. Pro jakoukoli cestu ponechte prázdné.',
 	'hooks.commandIdSetting': 'ID příkazu',
 	'hooks.commandIdDesc':
-		'ID příkazu z palety příkazů, který se má spustit. Příklady: editor:save-file, gemini-scribe-summarize-active-file. ID příkazů zobrazíte v Nastavení → Klávesové zkratky (otevřete vývojářskou konzoli pomocí Ctrl+Shift+I pro zobrazení ID).',
+		'ID příkazu z palety příkazů, který se má spustit. Příklady: editor:save-file, gemini-scribe:summarize-active-file. ID příkazů si můžete zobrazit v Nastavení → Klávesové zkratky (otevřete vývojářskou konzoli pomocí Ctrl+Shift+I pro zobrazení ID).',
 	'hooks.focusFileSetting': 'Zaměřit spouštěcí soubor před odesláním',
 	'hooks.focusFileDesc':
 		'Pokud je zapnuto, spouštěcí soubor se před spuštěním příkazu otevře v pracovní ploše – užitečné pro příkazy vázané na editor. Pokud je vypnuto, příkaz se spustí nad aktuálně aktivním souborem. Výchozí stav je vypnuto.',

@@ -60,6 +60,9 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'settings.general.completionModelName': 'Model autouzupełniania',
 	'settings.general.completionModelDesc':
 		'Model używany do uzupełniania tekstu w locie (w stylu IDE) podczas pisania w notatkach.',
+	'settings.general.ollamaModelName': 'Model Ollama',
+	'settings.general.ollamaModelDesc':
+		'Model używany do wszystkich zastosowań Ollama: czat, podsumowywanie, uzupełnianie i przepisywanie.',
 	'settings.general.imageModelName': 'Model obrazów',
 	'settings.general.imageModelDesc': 'Model używany do generowania obrazów.',
 	'settings.general.stateFolderName': 'Folder stanu wtyczki',
@@ -562,7 +565,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Ogranicz wywołania do ścieżek pasujących do tego wzorca glob. Przykłady: Daily/**/*.md, Notes/*.md. Pozostaw puste dla dowolnej ścieżki.',
 	'hooks.commandIdSetting': 'Identyfikator polecenia',
 	'hooks.commandIdDesc':
-		'Identyfikator polecenia z palety poleceń do uruchomienia. Przykłady: editor:save-file, gemini-scribe-summarize-active-file. Możesz wyświetlić identyfikatory poleceń w Ustawienia → Skróty klawiszowe (otwórz konsolę deweloperską za pomocą Ctrl+Shift+I, aby sprawdzić identyfikatory).',
+		'ID polecenia z palety poleceń do wywołania. Przykłady: editor:save-file, gemini-scribe:summarize-active-file. Wyświetl ID poleceń w Ustawienia → Skróty klawiszowe (otwórz konsolę deweloperską za pomocą Ctrl+Shift+I, aby sprawdzić identyfikatory).',
 	'hooks.focusFileSetting': 'Przejdź do pliku wyzwalającego przed uruchomieniem',
 	'hooks.focusFileDesc':
 		'Gdy włączone, plik wyzwalający jest otwierany w obszarze roboczym przed uruchomieniem polecenia — przydatne dla poleceń powiązanych z edytorem. Gdy wyłączone, polecenie jest uruchamiane dla aktualnie aktywnego pliku. Domyślnie wyłączone.',
