@@ -1,4 +1,4 @@
-import { Tool, ToolExecutionContext } from './types';
+import { Tool, ToolExecutionContext, ToolParameterSchema, ToolParams } from './types';
 import {
 	ToolPermission,
 	FeatureToolPolicy,
@@ -131,7 +131,7 @@ export class ToolRegistry {
 		function: {
 			name: string;
 			description: string;
-			parameters: any;
+			parameters: ToolParameterSchema;
 		};
 	}> {
 		const enabledTools = this.getEnabledTools(context);
@@ -149,7 +149,7 @@ export class ToolRegistry {
 	/**
 	 * Validate tool parameters against schema
 	 */
-	validateParameters(toolName: string, params: any): { valid: boolean; errors?: string[] } {
+	validateParameters(toolName: string, params: ToolParams): { valid: boolean; errors?: string[] } {
 		const tool = this.getTool(toolName);
 		if (!tool) {
 			return { valid: false, errors: [`Tool ${toolName} not found`] };

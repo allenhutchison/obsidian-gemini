@@ -258,7 +258,7 @@ describe('Memory Tools', () => {
 			mockAgentsMemory.getMemoryFilePath.mockReturnValue('test-folder/AGENTS.md');
 
 			// Should ignore extra params
-			const result = await tool.execute({ extraParam: 'ignored' } as any, mockContext);
+			const result = await tool.execute({ extraParam: 'ignored' }, mockContext);
 
 			expect(result.success).toBe(true);
 		});

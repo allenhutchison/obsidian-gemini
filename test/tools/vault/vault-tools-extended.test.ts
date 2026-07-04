@@ -285,7 +285,7 @@ describe('UpdateFrontmatterTool', () => {
 		});
 
 		// When value is already a number (not a string), skip parsing
-		await tool.execute({ path: 'notes/foo.md', key: 'num', value: 99 as any }, makeContext(plugin));
+		await tool.execute({ path: 'notes/foo.md', key: 'num', value: 99 }, makeContext(plugin));
 		expect(captured['num']).toBe(99);
 	});
 

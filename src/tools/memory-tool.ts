@@ -1,4 +1,4 @@
-import { Tool, ToolResult, ToolExecutionContext } from './types';
+import { Tool, ToolResult, ToolExecutionContext, ToolParams } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
@@ -35,7 +35,7 @@ export class UpdateMemoryTool implements Tool {
 		return t('tool.confirm.addMemory', { preview });
 	};
 
-	getProgressDescription(_params: any): string {
+	getProgressDescription(_params: ToolParams): string {
 		return 'Updating vault memory';
 	}
 
@@ -97,11 +97,11 @@ export class ReadMemoryTool implements Tool {
 		required: [],
 	};
 
-	getProgressDescription(_params: any): string {
+	getProgressDescription(_params: ToolParams): string {
 		return 'Reading vault memory';
 	}
 
-	async execute(_params: any, context: ToolExecutionContext): Promise<ToolResult> {
+	async execute(_params: ToolParams, context: ToolExecutionContext): Promise<ToolResult> {
 		const plugin = context.plugin;
 
 		try {
