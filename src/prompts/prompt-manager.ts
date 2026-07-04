@@ -188,7 +188,7 @@ Focus on being helpful while maintaining intellectual honesty.`;
 	// Setup commands for prompt management
 	setupPromptCommands(): void {
 		this.plugin.addCommand({
-			id: 'gemini-scribe-create-custom-prompt',
+			id: 'create-custom-prompt',
 			name: t('command.createCustomPrompt'),
 			callback: () => this.createNewCustomPrompt(),
 		});

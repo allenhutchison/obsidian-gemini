@@ -143,7 +143,7 @@ Run a full-file rewrite using the prompt body as the rewrite instruction. The tr
 
 ### `command`
 
-Execute a registered command palette command by id. The hook frontmatter must include `commandId:` (e.g. `editor:save-file`, `gemini-scribe-summarize-active-file`); the prompt body is ignored. If the command id is unknown, the hook records a failure rather than silently no-op.
+Execute a registered command palette command by id. The hook frontmatter must include `commandId:` (e.g. `editor:save-file`, `gemini-scribe:summarize-active-file`); the prompt body is ignored. If the command id is unknown, the hook records a failure rather than silently no-op.
 
 **Active file vs. trigger file.** Obsidian's command API (`app.commands.executeCommandById`) always runs the command against whatever workspace state is currently active — there's no way to scope a single dispatch to a specific file. By default a hook just dispatches; if your trigger file is already focused (typical for `file-modified`), an editor-scoped command like `editor:save-file` will act on it. If you can't rely on that, opt in to `focusFile: true`:
 
@@ -274,7 +274,7 @@ Tighten the prose in {{fileName}}: remove filler words, hedging, and passive voi
 trigger: file-created
 pathGlob: 'Inbox/**/*.md'
 action: command
-commandId: gemini-scribe-summarize-active-file
+commandId: gemini-scribe:summarize-active-file
 focusFile: true
 ---
 ```

@@ -156,7 +156,7 @@ describe('GeminiCompletions', () => {
 			await completions.setupCompletionsCommands();
 			expect(mockPlugin.addCommand).toHaveBeenCalledWith(
 				expect.objectContaining({
-					id: 'gemini-scribe-toggle-completions',
+					id: 'toggle-completions',
 					name: 'Toggle completions',
 					callback: expect.any(Function),
 				})

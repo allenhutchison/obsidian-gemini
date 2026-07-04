@@ -58,9 +58,10 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// remaining exception is a fabricated early-init folder stub in
 	// file-utils.ts with a scoped inline disable), so the rule is enforced
 	// again (left at the preset default).
-	// 28 violations: command IDs include the plugin ID (e.g. `gemini-scribe-foo`).
-	// Removing the prefix would break user hotkey bindings — needs a migration.
-	'obsidianmd/commands/no-plugin-id-in-command-id': 'off',
+	// `obsidianmd/commands/no-plugin-id-in-command-id` was here (28 violations) —
+	// now fixed: the `gemini-scribe-` prefix was dropped from every command ID
+	// (#1042), so Obsidian's automatic `gemini-scribe:` namespacing is no longer
+	// duplicated and the rule is enforced again (left at the preset default).
 	// `obsidianmd/prefer-file-manager-trash-file` was here (6 violations) — now
 	// fixed: all deletions go through `fileManager.trashFile`, so the rule is
 	// enforced again (left at the preset default).

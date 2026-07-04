@@ -70,7 +70,7 @@ export class GeminiSummary {
 
 	async setupSummarizationCommand() {
 		this.plugin.addCommand({
-			id: 'gemini-scribe-summarize-active-file',
+			id: 'summarize-active-file',
 			name: t('command.summarizeActiveFile'),
 			callback: () => this.summarizeActiveFile(),
 		});

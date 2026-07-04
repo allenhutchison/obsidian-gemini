@@ -150,7 +150,7 @@ describe('GeminiSummary', () => {
 			await summaryService.setupSummarizationCommand();
 			expect(mockPlugin.addCommand).toHaveBeenCalledWith(
 				expect.objectContaining({
-					id: 'gemini-scribe-summarize-active-file',
+					id: 'summarize-active-file',
 					name: 'Summarize active file',
 					callback: expect.any(Function),
 				})
