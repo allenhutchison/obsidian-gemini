@@ -6,6 +6,7 @@ import { formatModelMessage } from '../../utils/markdown-formatting';
 import { stripTurnPreamble } from '../../utils/turn-preamble';
 import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
 import { t, getResolvedLocale } from '../../i18n';
+import { isToolExecutionMessage, parseToolSections } from './tool-section-parser';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://allenhutchison.github.io/obsidian-gemini';
@@ -130,7 +131,7 @@ export class AgentViewMessages {
 		const renderMessage = entry.role === 'user' ? stripTurnPreamble(entry.message) : entry.message;
 
 		// Check if this is a tool execution message from history
-		const isToolExecution = entry.metadata?.toolName || renderMessage.includes('Tool Execution Results:');
+		const isToolExecution = isToolExecutionMessage(renderMessage, Boolean(entry.metadata?.toolName));
 
 		// Convert single newlines to double newlines for proper markdown rendering
 		// while preserving table formatting
@@ -152,69 +153,63 @@ export class AgentViewMessages {
 		// Special handling for tool execution messages
 		if (isToolExecution && renderMessage.includes('Tool Execution Results:')) {
 			// Extract tool execution sections and make them collapsible
-			const toolSections = formattedMessage.split(/### ([^\n]+)/);
+			const { hasSections, intro, sections } = parseToolSections(formattedMessage);
 
-			if (toolSections.length > 1) {
+			if (hasSections) {
 				// First part before any tool sections
-				const intro = toolSections[0].trim();
 				if (intro) {
 					const introDiv = content.createDiv();
 					await MarkdownRenderer.render(this.app, intro, introDiv, sourcePath, this.viewContext);
 				}
 
 				// Process each tool section
-				for (let i = 1; i < toolSections.length; i += 2) {
-					const toolName = toolSections[i];
-					const toolContent = toolSections[i + 1]?.trim() || '';
+				for (const { toolName, content: toolContent } of sections) {
+					// Create collapsible tool execution block
+					const toolDiv = content.createDiv({ cls: 'gemini-agent-tool-execution' });
+					const toolHeader = toolDiv.createDiv({ cls: 'gemini-agent-tool-header' });
 
-					if (toolName && toolContent) {
-						// Create collapsible tool execution block
-						const toolDiv = content.createDiv({ cls: 'gemini-agent-tool-execution' });
-						const toolHeader = toolDiv.createDiv({ cls: 'gemini-agent-tool-header' });
+					// Add expand/collapse icon
+					const icon = toolHeader.createEl('span', { cls: 'gemini-agent-tool-icon' });
+					setIcon(icon, 'chevron-right');
 
-						// Add expand/collapse icon
-						const icon = toolHeader.createEl('span', { cls: 'gemini-agent-tool-icon' });
-						setIcon(icon, 'chevron-right');
+					// Tool name
+					toolHeader.createEl('span', {
+						text: t('agent.message.toolPrefix', { name: toolName }),
+						cls: 'gemini-agent-tool-name',
+					});
 
-						// Tool name
+					// Tool status (if available)
+					if (toolContent.includes('✅')) {
 						toolHeader.createEl('span', {
-							text: t('agent.message.toolPrefix', { name: toolName }),
-							cls: 'gemini-agent-tool-name',
+							text: t('agent.message.toolSuccess'),
+							cls: 'gemini-agent-tool-status gemini-agent-tool-status-success',
 						});
-
-						// Tool status (if available)
-						if (toolContent.includes('✅')) {
-							toolHeader.createEl('span', {
-								text: t('agent.message.toolSuccess'),
-								cls: 'gemini-agent-tool-status gemini-agent-tool-status-success',
-							});
-						} else if (toolContent.includes('❌')) {
-							toolHeader.createEl('span', {
-								text: t('agent.message.toolFailed'),
-								cls: 'gemini-agent-tool-status gemini-agent-tool-status-error',
-							});
-						}
-
-						// Tool content (initially hidden)
-						const toolContentDiv = toolDiv.createDiv({
-							cls: 'gemini-agent-tool-content gemini-agent-tool-content-collapsed',
-						});
-
-						// Render the tool content
-						await MarkdownRenderer.render(this.app, toolContent, toolContentDiv, sourcePath, this.viewContext);
-
-						// Toggle handler
-						toolHeader.addEventListener('click', () => {
-							const isCollapsed = toolContentDiv.hasClass('gemini-agent-tool-content-collapsed');
-							if (isCollapsed) {
-								toolContentDiv.removeClass('gemini-agent-tool-content-collapsed');
-								setIcon(icon, 'chevron-down');
-							} else {
-								toolContentDiv.addClass('gemini-agent-tool-content-collapsed');
-								setIcon(icon, 'chevron-right');
-							}
+					} else if (toolContent.includes('❌')) {
+						toolHeader.createEl('span', {
+							text: t('agent.message.toolFailed'),
+							cls: 'gemini-agent-tool-status gemini-agent-tool-status-error',
 						});
 					}
+
+					// Tool content (initially hidden)
+					const toolContentDiv = toolDiv.createDiv({
+						cls: 'gemini-agent-tool-content gemini-agent-tool-content-collapsed',
+					});
+
+					// Render the tool content
+					await MarkdownRenderer.render(this.app, toolContent, toolContentDiv, sourcePath, this.viewContext);
+
+					// Toggle handler
+					toolHeader.addEventListener('click', () => {
+						const isCollapsed = toolContentDiv.hasClass('gemini-agent-tool-content-collapsed');
+						if (isCollapsed) {
+							toolContentDiv.removeClass('gemini-agent-tool-content-collapsed');
+							setIcon(icon, 'chevron-down');
+						} else {
+							toolContentDiv.addClass('gemini-agent-tool-content-collapsed');
+							setIcon(icon, 'chevron-right');
+						}
+					});
 				}
 			} else {
 				// No tool sections found, render normally
