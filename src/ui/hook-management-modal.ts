@@ -242,6 +242,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			.setDesc(t('hooks.commandIdDesc'))
 			.addText((text) =>
 				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case -- literal command-id format hint, shown verbatim
 					.setPlaceholder('plugin-id:command-name')
 					.setValue(this.form.commandId)
 					.onChange((v) => {
@@ -354,6 +355,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			.setDesc(t('hooks.skillsDesc'))
 			.addText((text) =>
 				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case -- example skill names (lowercase), shown verbatim
 					.setPlaceholder('summarize, index-files')
 					.setValue(this.form.enabledSkills.join(', '))
 					.onChange((v) => {
@@ -369,6 +371,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			.setDesc(t('hooks.modelOverrideDesc'))
 			.addText((text) =>
 				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case -- example model id, shown verbatim
 					.setPlaceholder('gemini-2.5-flash-lite')
 					.setValue(this.form.model)
 					.onChange((v) => {

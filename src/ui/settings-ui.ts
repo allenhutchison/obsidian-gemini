@@ -40,6 +40,7 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 		.setDesc(t('settings.ui.summaryFrontmatterKeyDesc'))
 		.addText((text) =>
 			text
+				// eslint-disable-next-line obsidianmd/ui/sentence-case -- default frontmatter key (lowercase), shown verbatim
 				.setPlaceholder('summary')
 				.setValue(plugin.settings.summaryFrontmatterKey)
 				.onChange((value) => {

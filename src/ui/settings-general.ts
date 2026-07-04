@@ -82,6 +82,7 @@ async function renderGeneralSection(
 			.setDesc(t('settings.general.ollamaBaseUrlDesc'))
 			.addText((text) =>
 				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case -- default endpoint URL, shown verbatim
 					.setPlaceholder('http://localhost:11434')
 					.setValue(plugin.settings.ollamaBaseUrl)
 					.onChange((value) => {
