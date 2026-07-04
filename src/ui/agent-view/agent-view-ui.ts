@@ -207,7 +207,9 @@ export class AgentViewUI {
 				}
 			};
 
-			input.addEventListener('blur', saveTitle);
+			input.addEventListener('blur', () => {
+				void saveTitle();
+			});
 			input.addEventListener('keydown', (e) => {
 				if (e.key === 'Enter') {
 					e.preventDefault();
@@ -397,12 +399,12 @@ export class AgentViewUI {
 				// Defer to next microtask so the browser commits the @ character first.
 				// If user selects a file, the @ will be removed before inserting the chip.
 				// If user dismisses the picker, the @ stays as a literal character.
-				window.setTimeout(() => callbacks.showFileMention(), 0);
+				window.setTimeout(() => void callbacks.showFileMention(), 0);
 			} else if (e.key === '/') {
 				// Trigger skill picker only when input is empty (slash command, not mid-sentence slash)
 				const text = userInput.innerText || '';
 				if (text.trim().length === 0) {
-					window.setTimeout(() => callbacks.showSkillPicker(), 0);
+					window.setTimeout(() => void callbacks.showSkillPicker(), 0);
 				}
 			}
 		});
@@ -421,399 +423,341 @@ export class AgentViewUI {
 			userInput.removeClass('gemini-agent-input-dragover');
 		});
 
-		userInput.addEventListener('drop', async (e) => {
-			userInput.removeClass('gemini-agent-input-dragover');
+		userInput.addEventListener('drop', (e) => {
+			void (async () => {
+				userInput.removeClass('gemini-agent-input-dragover');
 
-			// --- Handle Vault File Drops ---
-			const droppedFiles: (TFile | TFolder)[] = [];
+				// --- Handle Vault File Drops ---
+				const droppedFiles: (TFile | TFolder)[] = [];
 
-			// Debug: log all dataTransfer types and data
-			if (e.dataTransfer) {
-				this.plugin.logger.debug('[AgentViewUI] Drop event dataTransfer types:', Array.from(e.dataTransfer.types));
-				for (const type of Array.from(e.dataTransfer.types)) {
-					if (type !== 'Files') {
-						this.plugin.logger.debug(`[AgentViewUI] dataTransfer[${type}]:`, e.dataTransfer.getData(type));
-					}
-				}
-				if (e.dataTransfer.files?.length) {
-					this.plugin.logger.debug(
-						'[AgentViewUI] dataTransfer files:',
-						Array.from(e.dataTransfer.files).map((f) => ({
-							name: f.name,
-							type: f.type,
-							size: f.size,
-							path: (f as any).path,
-						}))
-					);
-				}
-			}
-
-			// Helper to resolve path to file/folder
-			const resolvePath = (path: string): TFile | TFolder | null => {
-				const abstractFile = this.app.vault.getAbstractFileByPath(path);
-				if (abstractFile instanceof TFile || abstractFile instanceof TFolder) {
-					return abstractFile;
-				}
-				// Try to resolve as a link (closest match)
-				const resolved = this.app.metadataCache.getFirstLinkpathDest(path, '');
-				return resolved;
-			};
-
-			// 1. Check for File objects (Electron drag from file system)
-			if (e.dataTransfer?.files?.length) {
-				const adapter = this.app.vault.adapter;
-				if (adapter && 'basePath' in adapter) {
-					const basePath = (adapter as any).basePath;
-					// Normalize slashes for cross-platform consistency (Windows backslashes vs POSIX)
-					// Using explicit replace instead of normalizePath which is intended for vault-relative paths
-					const normalizedBase = basePath.replace(/\\/g, '/');
-
-					for (const file of Array.from(e.dataTransfer.files)) {
-						// (file as any).path is an Electron extension that provides the full filesystem path
-						const rawPath = (file as any).path;
-
-						if (rawPath && typeof rawPath === 'string') {
-							const normalizedRaw = rawPath.replace(/\\/g, '/');
-
-							if (normalizedRaw.startsWith(normalizedBase)) {
-								let relPath = normalizedRaw.substring(normalizedBase.length);
-								if (relPath.startsWith('/')) relPath = relPath.substring(1);
-
-								const validFile = resolvePath(relPath);
-								if (validFile) {
-									droppedFiles.push(validFile);
-								} else {
-									this.plugin.logger.debug(`[AgentViewUI] Failed to resolve dropped file path: ${relPath}`);
-								}
-							}
+				// Debug: log all dataTransfer types and data
+				if (e.dataTransfer) {
+					this.plugin.logger.debug('[AgentViewUI] Drop event dataTransfer types:', Array.from(e.dataTransfer.types));
+					for (const type of Array.from(e.dataTransfer.types)) {
+						if (type !== 'Files') {
+							this.plugin.logger.debug(`[AgentViewUI] dataTransfer[${type}]:`, e.dataTransfer.getData(type));
 						}
 					}
+					if (e.dataTransfer.files?.length) {
+						this.plugin.logger.debug(
+							'[AgentViewUI] dataTransfer files:',
+							Array.from(e.dataTransfer.files).map((f) => ({
+								name: f.name,
+								type: f.type,
+								size: f.size,
+								path: (f as any).path,
+							}))
+						);
+					}
 				}
-			}
 
-			// 2. Check for Text links (Obsidian internal drag)
-			// Skip internal link parsing if we already found filesystem files to prevent double-counting
-			// (Obsidian sometimes puts both File objects and text links in the same drop)
-			if (droppedFiles.length === 0 && e.dataTransfer) {
-				const text = e.dataTransfer.getData('text/plain');
-				if (text) {
-					const lines = text.split('\n');
-					for (const line of lines) {
-						const trimmed = line.trim();
-						if (!trimmed) continue;
+				// Helper to resolve path to file/folder
+				const resolvePath = (path: string): TFile | TFolder | null => {
+					const abstractFile = this.app.vault.getAbstractFileByPath(path);
+					if (abstractFile instanceof TFile || abstractFile instanceof TFolder) {
+						return abstractFile;
+					}
+					// Try to resolve as a link (closest match)
+					const resolved = this.app.metadataCache.getFirstLinkpathDest(path, '');
+					return resolved;
+				};
 
-						// Check Obsidian URI: obsidian://open?vault=...&file=...
-						if (trimmed.startsWith('obsidian://')) {
-							try {
-								const url = new URL(trimmed);
-								const filePath = url.searchParams.get('file');
-								if (filePath) {
-									const decoded = decodeURIComponent(filePath);
-									const resolved = resolvePath(decoded);
-									if (resolved) {
-										droppedFiles.push(resolved);
+				// 1. Check for File objects (Electron drag from file system)
+				if (e.dataTransfer?.files?.length) {
+					const adapter = this.app.vault.adapter;
+					if (adapter && 'basePath' in adapter) {
+						const basePath = (adapter as any).basePath;
+						// Normalize slashes for cross-platform consistency (Windows backslashes vs POSIX)
+						// Using explicit replace instead of normalizePath which is intended for vault-relative paths
+						const normalizedBase = basePath.replace(/\\/g, '/');
+
+						for (const file of Array.from(e.dataTransfer.files)) {
+							// (file as any).path is an Electron extension that provides the full filesystem path
+							const rawPath = (file as any).path;
+
+							if (rawPath && typeof rawPath === 'string') {
+								const normalizedRaw = rawPath.replace(/\\/g, '/');
+
+								if (normalizedRaw.startsWith(normalizedBase)) {
+									let relPath = normalizedRaw.substring(normalizedBase.length);
+									if (relPath.startsWith('/')) relPath = relPath.substring(1);
+
+									const validFile = resolvePath(relPath);
+									if (validFile) {
+										droppedFiles.push(validFile);
 									} else {
-										this.plugin.logger.debug(`[AgentViewUI] Failed to resolve obsidian URI file param: ${decoded}`);
+										this.plugin.logger.debug(`[AgentViewUI] Failed to resolve dropped file path: ${relPath}`);
 									}
 								}
-							} catch (_err) {
-								this.plugin.logger.debug(`[AgentViewUI] Failed to parse obsidian URI: ${trimmed}`);
 							}
-							continue;
 						}
+					}
+				}
 
-						// Check Wikilink: [[Path|Name]] or [[Path]]
-						const wikiMatch = trimmed.match(/^\[\[(.*?)(\|.*)?\]\]$/);
-						if (wikiMatch) {
-							const resolved = resolvePath(wikiMatch[1]);
-							// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
-							if (resolved) {
-								droppedFiles.push(resolved);
-							} else {
-								this.plugin.logger.debug(`[AgentViewUI] Failed to resolve wikilink: ${wikiMatch[1]}`);
+				// 2. Check for Text links (Obsidian internal drag)
+				// Skip internal link parsing if we already found filesystem files to prevent double-counting
+				// (Obsidian sometimes puts both File objects and text links in the same drop)
+				if (droppedFiles.length === 0 && e.dataTransfer) {
+					const text = e.dataTransfer.getData('text/plain');
+					if (text) {
+						const lines = text.split('\n');
+						for (const line of lines) {
+							const trimmed = line.trim();
+							if (!trimmed) continue;
+
+							// Check Obsidian URI: obsidian://open?vault=...&file=...
+							if (trimmed.startsWith('obsidian://')) {
+								try {
+									const url = new URL(trimmed);
+									const filePath = url.searchParams.get('file');
+									if (filePath) {
+										const decoded = decodeURIComponent(filePath);
+										const resolved = resolvePath(decoded);
+										if (resolved) {
+											droppedFiles.push(resolved);
+										} else {
+											this.plugin.logger.debug(`[AgentViewUI] Failed to resolve obsidian URI file param: ${decoded}`);
+										}
+									}
+								} catch (_err) {
+									this.plugin.logger.debug(`[AgentViewUI] Failed to parse obsidian URI: ${trimmed}`);
+								}
+								continue;
 							}
-							continue;
-						}
 
-						// Check Markdown Link: [Name](Path)
-						const mdMatch = trimmed.match(/^\[(.*?)\]\((.*?)\)$/);
-						if (mdMatch) {
-							try {
-								const path = decodeURIComponent(mdMatch[2]);
-								const resolved = resolvePath(path);
+							// Check Wikilink: [[Path|Name]] or [[Path]]
+							const wikiMatch = trimmed.match(/^\[\[(.*?)(\|.*)?\]\]$/);
+							if (wikiMatch) {
+								const resolved = resolvePath(wikiMatch[1]);
 								// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
 								if (resolved) {
 									droppedFiles.push(resolved);
 								} else {
-									this.plugin.logger.debug(`[AgentViewUI] Failed to resolve markdown link: ${path}`);
+									this.plugin.logger.debug(`[AgentViewUI] Failed to resolve wikilink: ${wikiMatch[1]}`);
 								}
-							} catch (_err) {
-								// Ignore decoding errors
-								this.plugin.logger.debug(`[AgentViewUI] Failed to decode markdown link path: ${mdMatch[2]}`);
+								continue;
 							}
-							continue;
-						}
 
-						// Fallback: try resolving as a plain vault path
-						const plainResolved = resolvePath(trimmed);
-						if (plainResolved) {
-							droppedFiles.push(plainResolved);
-						} else {
-							this.plugin.logger.debug(`[AgentViewUI] Could not resolve dropped text as vault path: ${trimmed}`);
+							// Check Markdown Link: [Name](Path)
+							const mdMatch = trimmed.match(/^\[(.*?)\]\((.*?)\)$/);
+							if (mdMatch) {
+								try {
+									const path = decodeURIComponent(mdMatch[2]);
+									const resolved = resolvePath(path);
+									// Note: getFirstLinkpathDest only resolves TFile, so folders linked this way won't be resolved
+									if (resolved) {
+										droppedFiles.push(resolved);
+									} else {
+										this.plugin.logger.debug(`[AgentViewUI] Failed to resolve markdown link: ${path}`);
+									}
+								} catch (_err) {
+									// Ignore decoding errors
+									this.plugin.logger.debug(`[AgentViewUI] Failed to decode markdown link path: ${mdMatch[2]}`);
+								}
+								continue;
+							}
+
+							// Fallback: try resolving as a plain vault path
+							const plainResolved = resolvePath(trimmed);
+							if (plainResolved) {
+								droppedFiles.push(plainResolved);
+							} else {
+								this.plugin.logger.debug(`[AgentViewUI] Could not resolve dropped text as vault path: ${trimmed}`);
+							}
 						}
 					}
 				}
-			}
 
-			// If valid vault files were found, classify and route them
-			if (droppedFiles.length > 0) {
-				e.preventDefault();
-				e.stopPropagation();
+				// If valid vault files were found, classify and route them
+				if (droppedFiles.length > 0) {
+					e.preventDefault();
+					e.stopPropagation();
 
-				// Deduplicate files
-				const uniqueFiles = [...new Map(droppedFiles.map((f) => [f.path, f])).values()];
+					// Deduplicate files
+					const uniqueFiles = [...new Map(droppedFiles.map((f) => [f.path, f])).values()];
 
-				// Filter out system folders and excluded files
-				const filteredFiles = uniqueFiles.filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin));
+					// Filter out system folders and excluded files
+					const filteredFiles = uniqueFiles.filter((f) => !shouldExcludePathForPlugin(f.path, this.plugin));
 
-				if (filteredFiles.length === 0) {
-					if (uniqueFiles.length > 0) {
-						new Notice(t('agent.attachments.droppedExcluded'), 3000);
+					if (filteredFiles.length === 0) {
+						if (uniqueFiles.length > 0) {
+							new Notice(t('agent.attachments.droppedExcluded'), 3000);
+						}
+						return;
+					}
+
+					// Expand folders → collect all child TFiles recursively, pruning
+					// any subtree that lives inside the plugin state folder or `.obsidian`.
+					const allTFiles: TFile[] = [];
+					for (const file of filteredFiles) {
+						if (file instanceof TFolder) {
+							allTFiles.push(
+								...collectFilesFromFolder(file, {
+									prune: (item) => shouldExcludePathForPlugin(item.path, this.plugin),
+								})
+							);
+						} else if (file instanceof TFile) {
+							allTFiles.push(file);
+						}
+					}
+
+					// Deduplicate again after folder expansion
+					const dedupedFiles = [...new Map(allTFiles.map((f) => [f.path, f])).values()];
+
+					// Classify each file
+					const textFiles: TFile[] = [];
+					// Binary + SVG both inline as base64; SVG is rasterized to PNG first.
+					const binaryFiles: TFile[] = [];
+					const unsupportedExts: string[] = [];
+
+					for (const file of dedupedFiles) {
+						const result = classifyFile(file.extension);
+						switch (result.category) {
+							case FileCategory.TEXT:
+								textFiles.push(file);
+								break;
+							case FileCategory.GEMINI_BINARY:
+							case FileCategory.SVG:
+								binaryFiles.push(file);
+								break;
+							case FileCategory.UNSUPPORTED:
+								unsupportedExts.push(`.${file.extension}`);
+								break;
+						}
+					}
+
+					// Route text files → context chips
+					if (textFiles.length > 0) {
+						callbacks.handleDroppedFiles(textFiles);
+					}
+
+					// Route binary files → inline attachments
+					let binaryCount = 0;
+					let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
+					const sizeLimitExceeded: string[] = [];
+
+					for (const file of binaryFiles) {
+						try {
+							const buffer = await this.app.vault.readBinary(file);
+							cumulativeSize += buffer.byteLength;
+
+							if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
+								sizeLimitExceeded.push(file.name);
+								cumulativeSize -= buffer.byteLength;
+								continue;
+							}
+
+							const classification = classifyFile(file.extension);
+							let base64: string;
+							let mimeType: string;
+							if (classification.category === FileCategory.SVG) {
+								// SVG can't be inlined directly — rasterize to PNG. On failure
+								// (malformed SVG, unresolvable refs), fall back to the
+								// unsupported-file notice rather than sending raw XML.
+								try {
+									base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz');
+									mimeType = 'image/png';
+								} catch (rasterErr) {
+									this.plugin.logger.error(`Failed to rasterize SVG ${file.path}:`, rasterErr);
+									unsupportedExts.push(`.${file.extension}`);
+									cumulativeSize -= buffer.byteLength;
+									continue;
+								}
+							} else {
+								base64 = arrayBufferToBase64(buffer);
+								// For .webm files, detect audio vs video from container header
+								mimeType =
+									file.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
+							}
+							const attachment: InlineAttachment = {
+								base64,
+								mimeType,
+								id: generateAttachmentId(),
+								vaultPath: file.path,
+								fileName: file.name,
+							};
+							callbacks.addAttachment(attachment);
+							binaryCount++;
+						} catch (err) {
+							this.plugin.logger.error(`Failed to read binary file ${file.path}:`, err);
+							new Notice(t('agent.attachments.attachFailed', { name: file.name }));
+						}
+					}
+
+					// Show notices
+					const parts: string[] = [];
+					if (textFiles.length > 0) {
+						parts.push(
+							textFiles.length === 1
+								? t('agent.attachments.textFileAddedOne')
+								: t('agent.attachments.textFilesAdded', { count: textFiles.length })
+						);
+					}
+					if (binaryCount > 0) {
+						parts.push(
+							binaryCount === 1
+								? t('agent.attachments.fileAttachedOne')
+								: t('agent.attachments.filesAttached', { count: binaryCount })
+						);
+					}
+					if (parts.length > 0) {
+						new Notice(parts.join(', '), 3000);
+					}
+
+					if (sizeLimitExceeded.length > 0) {
+						new Notice(
+							sizeLimitExceeded.length === 1
+								? t('agent.attachments.skippedSizeOne', { files: sizeLimitExceeded.join(', ') })
+								: t('agent.attachments.skippedSize', {
+										count: sizeLimitExceeded.length,
+										files: sizeLimitExceeded.join(', '),
+									}),
+							5000
+						);
+					}
+
+					if (unsupportedExts.length > 0) {
+						const uniqueExts = [...new Set(unsupportedExts)];
+						new Notice(
+							uniqueExts.length === 1
+								? t('agent.attachments.skippedUnsupportedOne', { exts: uniqueExts.join(', ') })
+								: t('agent.attachments.skippedUnsupported', { exts: uniqueExts.join(', ') }),
+							4000
+						);
+					}
+
+					return;
+				}
+				// --- End Vault File Drops ---
+
+				// Non-vault drops: handle images from external sources (browser, desktop)
+				const files = e.dataTransfer?.files;
+				const fileArray = files?.length ? Array.from(files) : [];
+				const hasImages = fileArray.some((file) => isSupportedImageType(file.type) || this.isSvgFile(file));
+
+				// Only prevent default behavior if we have images to handle
+				if (!hasImages) {
+					const unsupportedImages = fileArray.filter(
+						(file) => file.type?.startsWith('image/') && !isSupportedImageType(file.type)
+					);
+					if (unsupportedImages.length > 0) {
+						new Notice(t('agent.attachments.unsupportedImageFormat'));
 					}
 					return;
 				}
 
-				// Expand folders → collect all child TFiles recursively, pruning
-				// any subtree that lives inside the plugin state folder or `.obsidian`.
-				const allTFiles: TFile[] = [];
-				for (const file of filteredFiles) {
-					if (file instanceof TFolder) {
-						allTFiles.push(
-							...collectFilesFromFolder(file, {
-								prune: (item) => shouldExcludePathForPlugin(item.path, this.plugin),
-							})
-						);
-					} else if (file instanceof TFile) {
-						allTFiles.push(file);
-					}
-				}
+				e.preventDefault();
+				e.stopPropagation();
 
-				// Deduplicate again after folder expansion
-				const dedupedFiles = [...new Map(allTFiles.map((f) => [f.path, f])).values()];
-
-				// Classify each file
-				const textFiles: TFile[] = [];
-				// Binary + SVG both inline as base64; SVG is rasterized to PNG first.
-				const binaryFiles: TFile[] = [];
-				const unsupportedExts: string[] = [];
-
-				for (const file of dedupedFiles) {
-					const result = classifyFile(file.extension);
-					switch (result.category) {
-						case FileCategory.TEXT:
-							textFiles.push(file);
-							break;
-						case FileCategory.GEMINI_BINARY:
-						case FileCategory.SVG:
-							binaryFiles.push(file);
-							break;
-						case FileCategory.UNSUPPORTED:
-							unsupportedExts.push(`.${file.extension}`);
-							break;
-					}
-				}
-
-				// Route text files → context chips
-				if (textFiles.length > 0) {
-					callbacks.handleDroppedFiles(textFiles);
-				}
-
-				// Route binary files → inline attachments
-				let binaryCount = 0;
+				// Process all supported images from non-vault sources
+				let imagesProcessed = 0;
+				let unsupportedCount = 0;
 				let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
-				const sizeLimitExceeded: string[] = [];
-
-				for (const file of binaryFiles) {
-					try {
-						const buffer = await this.app.vault.readBinary(file);
-						cumulativeSize += buffer.byteLength;
-
-						if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
-							sizeLimitExceeded.push(file.name);
-							cumulativeSize -= buffer.byteLength;
-							continue;
-						}
-
-						const classification = classifyFile(file.extension);
-						let base64: string;
-						let mimeType: string;
-						if (classification.category === FileCategory.SVG) {
-							// SVG can't be inlined directly — rasterize to PNG. On failure
-							// (malformed SVG, unresolvable refs), fall back to the
-							// unsupported-file notice rather than sending raw XML.
-							try {
-								base64 = await rasterizeSvg(buffer, file.extension.toLowerCase() === 'svgz');
-								mimeType = 'image/png';
-							} catch (rasterErr) {
-								this.plugin.logger.error(`Failed to rasterize SVG ${file.path}:`, rasterErr);
-								unsupportedExts.push(`.${file.extension}`);
-								cumulativeSize -= buffer.byteLength;
-								continue;
-							}
-						} else {
-							base64 = arrayBufferToBase64(buffer);
-							// For .webm files, detect audio vs video from container header
-							mimeType = file.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
-						}
-						const attachment: InlineAttachment = {
-							base64,
-							mimeType,
-							id: generateAttachmentId(),
-							vaultPath: file.path,
-							fileName: file.name,
-						};
-						callbacks.addAttachment(attachment);
-						binaryCount++;
-					} catch (err) {
-						this.plugin.logger.error(`Failed to read binary file ${file.path}:`, err);
-						new Notice(t('agent.attachments.attachFailed', { name: file.name }));
-					}
-				}
-
-				// Show notices
-				const parts: string[] = [];
-				if (textFiles.length > 0) {
-					parts.push(
-						textFiles.length === 1
-							? t('agent.attachments.textFileAddedOne')
-							: t('agent.attachments.textFilesAdded', { count: textFiles.length })
-					);
-				}
-				if (binaryCount > 0) {
-					parts.push(
-						binaryCount === 1
-							? t('agent.attachments.fileAttachedOne')
-							: t('agent.attachments.filesAttached', { count: binaryCount })
-					);
-				}
-				if (parts.length > 0) {
-					new Notice(parts.join(', '), 3000);
-				}
-
-				if (sizeLimitExceeded.length > 0) {
-					new Notice(
-						sizeLimitExceeded.length === 1
-							? t('agent.attachments.skippedSizeOne', { files: sizeLimitExceeded.join(', ') })
-							: t('agent.attachments.skippedSize', {
-									count: sizeLimitExceeded.length,
-									files: sizeLimitExceeded.join(', '),
-								}),
-						5000
-					);
-				}
-
-				if (unsupportedExts.length > 0) {
-					const uniqueExts = [...new Set(unsupportedExts)];
-					new Notice(
-						uniqueExts.length === 1
-							? t('agent.attachments.skippedUnsupportedOne', { exts: uniqueExts.join(', ') })
-							: t('agent.attachments.skippedUnsupported', { exts: uniqueExts.join(', ') }),
-						4000
-					);
-				}
-
-				return;
-			}
-			// --- End Vault File Drops ---
-
-			// Non-vault drops: handle images from external sources (browser, desktop)
-			const files = e.dataTransfer?.files;
-			const fileArray = files?.length ? Array.from(files) : [];
-			const hasImages = fileArray.some((file) => isSupportedImageType(file.type) || this.isSvgFile(file));
-
-			// Only prevent default behavior if we have images to handle
-			if (!hasImages) {
-				const unsupportedImages = fileArray.filter(
-					(file) => file.type?.startsWith('image/') && !isSupportedImageType(file.type)
-				);
-				if (unsupportedImages.length > 0) {
-					new Notice(t('agent.attachments.unsupportedImageFormat'));
-				}
-				return;
-			}
-
-			e.preventDefault();
-			e.stopPropagation();
-
-			// Process all supported images from non-vault sources
-			let imagesProcessed = 0;
-			let unsupportedCount = 0;
-			let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
-			for (const file of fileArray) {
-				if (isSupportedImageType(file.type)) {
-					if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-						new Notice(t('agent.attachments.sizeLimitReached'));
-						break;
-					}
-					try {
-						const base64 = await fileToBase64(file);
-						const attachment: InlineAttachment = {
-							base64,
-							mimeType: getMimeType(file),
-							id: generateAttachmentId(),
-						};
-						callbacks.addAttachment(attachment);
-						cumulativeSize += file.size;
-						imagesProcessed++;
-					} catch (err) {
-						this.plugin.logger.error('Failed to process dropped image:', err);
-						new Notice(t('agent.attachments.imageAttachFailed'));
-					}
-				} else if (this.isSvgFile(file)) {
-					// External SVG/SVGZ — rasterize to PNG before inlining.
-					if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-						new Notice(t('agent.attachments.sizeLimitReached'));
-						break;
-					}
-					if (await this.attachExternalSvgFile(file, callbacks)) {
-						cumulativeSize += file.size;
-						imagesProcessed++;
-					} else {
-						unsupportedCount++;
-					}
-				} else if (file.type.startsWith('image/')) {
-					unsupportedCount++;
-				}
-			}
-
-			if (imagesProcessed > 0) {
-				new Notice(
-					imagesProcessed === 1
-						? t('agent.attachments.imageAttachedOne')
-						: t('agent.attachments.imagesAttached', { count: imagesProcessed })
-				);
-			}
-			if (unsupportedCount > 0) {
-				new Notice(t('agent.attachments.imagesSkippedUnsupportedHint', { count: unsupportedCount }));
-			}
-		});
-
-		// Handle paste - check for images first, then text
-		userInput.addEventListener('paste', async (e) => {
-			// Check for image files in clipboard
-			let imagesProcessed = 0;
-			let unsupportedCount = 0;
-			if (e.clipboardData?.files?.length) {
-				let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
-				for (const file of Array.from(e.clipboardData.files)) {
+				for (const file of fileArray) {
 					if (isSupportedImageType(file.type)) {
 						if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
 							new Notice(t('agent.attachments.sizeLimitReached'));
 							break;
-						}
-						// Prevent default once when we find the first image
-						if (imagesProcessed === 0) {
-							e.preventDefault();
 						}
 						try {
 							const base64 = await fileToBase64(file);
@@ -826,17 +770,14 @@ export class AgentViewUI {
 							cumulativeSize += file.size;
 							imagesProcessed++;
 						} catch (err) {
-							this.plugin.logger.error('Failed to process pasted image:', err);
+							this.plugin.logger.error('Failed to process dropped image:', err);
 							new Notice(t('agent.attachments.imageAttachFailed'));
 						}
 					} else if (this.isSvgFile(file)) {
-						// External SVG/SVGZ paste — rasterize to PNG before inlining.
+						// External SVG/SVGZ — rasterize to PNG before inlining.
 						if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
 							new Notice(t('agent.attachments.sizeLimitReached'));
 							break;
-						}
-						if (imagesProcessed === 0) {
-							e.preventDefault();
 						}
 						if (await this.attachExternalSvgFile(file, callbacks)) {
 							cumulativeSize += file.size;
@@ -848,84 +789,150 @@ export class AgentViewUI {
 						unsupportedCount++;
 					}
 				}
-			}
 
-			// Notify about unsupported formats
-			if (unsupportedCount > 0 && imagesProcessed === 0) {
-				new Notice(t('agent.attachments.unsupportedImageFormat'));
-			} else if (unsupportedCount > 0) {
-				new Notice(t('agent.attachments.imagesSkippedUnsupported', { count: unsupportedCount }));
-			}
-
-			// If images were processed, show notice and skip text handling
-			if (imagesProcessed > 0) {
-				new Notice(
-					imagesProcessed === 1
-						? t('agent.attachments.imageAttachedOne')
-						: t('agent.attachments.imagesAttached', { count: imagesProcessed })
-				);
-				return;
-			}
-
-			// No images found, handle as text paste
-			e.preventDefault();
-
-			let text = '';
-
-			// Method 1: Try standard clipboardData (works in main window)
-			if (e.clipboardData && e.clipboardData.getData) {
-				try {
-					text = e.clipboardData.getData('text/plain') || '';
-				} catch (err) {
-					// Clipboard access might fail in popout
-					this.plugin.logger.debug('Standard clipboard access failed:', err);
+				if (imagesProcessed > 0) {
+					new Notice(
+						imagesProcessed === 1
+							? t('agent.attachments.imageAttachedOne')
+							: t('agent.attachments.imagesAttached', { count: imagesProcessed })
+					);
 				}
-			}
+				if (unsupportedCount > 0) {
+					new Notice(t('agent.attachments.imagesSkippedUnsupportedHint', { count: unsupportedCount }));
+				}
+			})();
+		});
 
-			// Method 2: If no text yet, try the async Clipboard API
-			// This might work better in popout windows
-			if (!text && navigator.clipboard && navigator.clipboard.readText) {
-				try {
-					text = await navigator.clipboard.readText();
-				} catch (err) {
-					this.plugin.logger.debug('Async clipboard access failed:', err);
-
-					// Method 3: As last resort, get the selection and use execCommand
-					// This is a fallback that might help in some browsers
-					try {
-						// Focus the input first
-						userInput.focus();
-
-						// Try using execCommand as absolute fallback
-						// This will paste with formatting, but we'll clean it up after
-						execContextCommand(userInput, 'paste');
-
-						// Give it a moment to paste, then clean up formatting
-						window.setTimeout(() => {
-							// Get just the text content, removing all HTML
-							const plainText = userInput.innerText || userInput.textContent || '';
-
-							// Clear and set plain text
-							userInput.textContent = plainText;
-
-							// Move cursor to end
-							moveCursorToEnd(userInput);
-						}, 10);
-
-						return; // Exit early since we handled it with the timeout
-					} catch (execErr) {
-						this.plugin.logger.warn('All paste methods failed:', execErr);
-						// If all else fails, we can't paste
-						new Notice(t('agent.input.pasteFailed'));
-						return;
+		// Handle paste - check for images first, then text
+		userInput.addEventListener('paste', (e) => {
+			void (async () => {
+				// Check for image files in clipboard
+				let imagesProcessed = 0;
+				let unsupportedCount = 0;
+				if (e.clipboardData?.files?.length) {
+					let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
+					for (const file of Array.from(e.clipboardData.files)) {
+						if (isSupportedImageType(file.type)) {
+							if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+								new Notice(t('agent.attachments.sizeLimitReached'));
+								break;
+							}
+							// Prevent default once when we find the first image
+							if (imagesProcessed === 0) {
+								e.preventDefault();
+							}
+							try {
+								const base64 = await fileToBase64(file);
+								const attachment: InlineAttachment = {
+									base64,
+									mimeType: getMimeType(file),
+									id: generateAttachmentId(),
+								};
+								callbacks.addAttachment(attachment);
+								cumulativeSize += file.size;
+								imagesProcessed++;
+							} catch (err) {
+								this.plugin.logger.error('Failed to process pasted image:', err);
+								new Notice(t('agent.attachments.imageAttachFailed'));
+							}
+						} else if (this.isSvgFile(file)) {
+							// External SVG/SVGZ paste — rasterize to PNG before inlining.
+							if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+								new Notice(t('agent.attachments.sizeLimitReached'));
+								break;
+							}
+							if (imagesProcessed === 0) {
+								e.preventDefault();
+							}
+							if (await this.attachExternalSvgFile(file, callbacks)) {
+								cumulativeSize += file.size;
+								imagesProcessed++;
+							} else {
+								unsupportedCount++;
+							}
+						} else if (file.type.startsWith('image/')) {
+							unsupportedCount++;
+						}
 					}
 				}
-			}
 
-			// If we got text, insert it
-			if (text) {
-				insertTextAtCursor(userInput, text);
-			}
+				// Notify about unsupported formats
+				if (unsupportedCount > 0 && imagesProcessed === 0) {
+					new Notice(t('agent.attachments.unsupportedImageFormat'));
+				} else if (unsupportedCount > 0) {
+					new Notice(t('agent.attachments.imagesSkippedUnsupported', { count: unsupportedCount }));
+				}
+
+				// If images were processed, show notice and skip text handling
+				if (imagesProcessed > 0) {
+					new Notice(
+						imagesProcessed === 1
+							? t('agent.attachments.imageAttachedOne')
+							: t('agent.attachments.imagesAttached', { count: imagesProcessed })
+					);
+					return;
+				}
+
+				// No images found, handle as text paste
+				e.preventDefault();
+
+				let text = '';
+
+				// Method 1: Try standard clipboardData (works in main window)
+				if (e.clipboardData && e.clipboardData.getData) {
+					try {
+						text = e.clipboardData.getData('text/plain') || '';
+					} catch (err) {
+						// Clipboard access might fail in popout
+						this.plugin.logger.debug('Standard clipboard access failed:', err);
+					}
+				}
+
+				// Method 2: If no text yet, try the async Clipboard API
+				// This might work better in popout windows
+				if (!text && navigator.clipboard && navigator.clipboard.readText) {
+					try {
+						text = await navigator.clipboard.readText();
+					} catch (err) {
+						this.plugin.logger.debug('Async clipboard access failed:', err);
+
+						// Method 3: As last resort, get the selection and use execCommand
+						// This is a fallback that might help in some browsers
+						try {
+							// Focus the input first
+							userInput.focus();
+
+							// Try using execCommand as absolute fallback
+							// This will paste with formatting, but we'll clean it up after
+							execContextCommand(userInput, 'paste');
+
+							// Give it a moment to paste, then clean up formatting
+							window.setTimeout(() => {
+								// Get just the text content, removing all HTML
+								const plainText = userInput.innerText || userInput.textContent || '';
+
+								// Clear and set plain text
+								userInput.textContent = plainText;
+
+								// Move cursor to end
+								moveCursorToEnd(userInput);
+							}, 10);
+
+							return; // Exit early since we handled it with the timeout
+						} catch (execErr) {
+							this.plugin.logger.warn('All paste methods failed:', execErr);
+							// If all else fails, we can't paste
+							new Notice(t('agent.input.pasteFailed'));
+							return;
+						}
+					}
+				}
+
+				// If we got text, insert it
+				if (text) {
+					insertTextAtCursor(userInput, text);
+				}
+			})();
 		});
 
 		sendButton.addEventListener('click', () => {

@@ -107,11 +107,13 @@ export class ScheduledTasksModal extends Modal {
 				text: t('scheduledTasks.resetButton'),
 				cls: 'gemini-scheduled-task-reset',
 			});
-			resetBtn.addEventListener('click', async () => {
-				resetBtn.disabled = true;
-				resetBtn.setText(t('scheduledTasks.resetting'));
-				await this.plugin.scheduledTaskManager?.resetTask(task.slug);
-				this.onOpen(); // re-render
+			resetBtn.addEventListener('click', () => {
+				void (async () => {
+					resetBtn.disabled = true;
+					resetBtn.setText(t('scheduledTasks.resetting'));
+					await this.plugin.scheduledTaskManager?.resetTask(task.slug);
+					this.onOpen(); // re-render
+				})();
 			});
 		}
 
@@ -122,16 +124,18 @@ export class ScheduledTasksModal extends Modal {
 		});
 		if (isPaused || isDisabled) runBtn.disabled = true;
 
-		runBtn.addEventListener('click', async () => {
-			runBtn.disabled = true;
-			runBtn.setText(t('scheduledTasks.running'));
-			try {
-				await this.plugin.scheduledTaskManager?.runNow(task.slug);
-				runBtn.setText(t('scheduledTasks.submitted'));
-			} catch (error) {
-				runBtn.setText(t('scheduledTasks.runError'));
-				this.plugin.logger.error(`[ScheduledTasksModal] runNow failed for "${task.slug}":`, error);
-			}
+		runBtn.addEventListener('click', () => {
+			void (async () => {
+				runBtn.disabled = true;
+				runBtn.setText(t('scheduledTasks.running'));
+				try {
+					await this.plugin.scheduledTaskManager?.runNow(task.slug);
+					runBtn.setText(t('scheduledTasks.submitted'));
+				} catch (error) {
+					runBtn.setText(t('scheduledTasks.runError'));
+					this.plugin.logger.error(`[ScheduledTasksModal] runNow failed for "${task.slug}":`, error);
+				}
+			})();
 		});
 	}
 

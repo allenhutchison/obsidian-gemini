@@ -45,38 +45,42 @@ export class CatchUpModal extends Modal {
 			cls: 'mod-cta',
 			attr: { type: 'button' },
 		});
-		runAllBtn.addEventListener('click', async () => {
-			runAllBtn.disabled = true;
-			skipAllBtn.disabled = true;
-			try {
-				await this.approveAll();
-				this.pending = [];
-				this.close();
-			} catch (err) {
-				this.plugin.logger.error('[CatchUpModal] Run all failed:', err);
-				new Notice(t('catchUp.runAllFailed'));
-				runAllBtn.disabled = false;
-				skipAllBtn.disabled = false;
-			}
+		runAllBtn.addEventListener('click', () => {
+			void (async () => {
+				runAllBtn.disabled = true;
+				skipAllBtn.disabled = true;
+				try {
+					await this.approveAll();
+					this.pending = [];
+					this.close();
+				} catch (err) {
+					this.plugin.logger.error('[CatchUpModal] Run all failed:', err);
+					new Notice(t('catchUp.runAllFailed'));
+					runAllBtn.disabled = false;
+					skipAllBtn.disabled = false;
+				}
+			})();
 		});
 
 		const skipAllBtn = actions.createEl('button', {
 			text: t('catchUp.skipAllButton'),
 			attr: { type: 'button' },
 		});
-		skipAllBtn.addEventListener('click', async () => {
-			runAllBtn.disabled = true;
-			skipAllBtn.disabled = true;
-			try {
-				await this.skipAll();
-				this.pending = [];
-				this.close();
-			} catch (err) {
-				this.plugin.logger.error('[CatchUpModal] Skip all failed:', err);
-				new Notice(t('catchUp.skipAllFailed'));
-				runAllBtn.disabled = false;
-				skipAllBtn.disabled = false;
-			}
+		skipAllBtn.addEventListener('click', () => {
+			void (async () => {
+				runAllBtn.disabled = true;
+				skipAllBtn.disabled = true;
+				try {
+					await this.skipAll();
+					this.pending = [];
+					this.close();
+				} catch (err) {
+					this.plugin.logger.error('[CatchUpModal] Skip all failed:', err);
+					new Notice(t('catchUp.skipAllFailed'));
+					runAllBtn.disabled = false;
+					skipAllBtn.disabled = false;
+				}
+			})();
 		});
 	}
 
@@ -118,46 +122,50 @@ export class CatchUpModal extends Modal {
 				cls: 'mod-cta gemini-catchup-approve',
 				attr: { type: 'button' },
 			});
-			approveBtn.addEventListener('click', async () => {
-				approveBtn.disabled = true;
-				skipBtn.disabled = true;
-				try {
-					await this.approveOne(entry);
-					this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
-					if (this.pending.length === 0) {
-						this.close();
-					} else {
-						this.renderList(list);
+			approveBtn.addEventListener('click', () => {
+				void (async () => {
+					approveBtn.disabled = true;
+					skipBtn.disabled = true;
+					try {
+						await this.approveOne(entry);
+						this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
+						if (this.pending.length === 0) {
+							this.close();
+						} else {
+							this.renderList(list);
+						}
+					} catch (err) {
+						this.plugin.logger.error(`[CatchUpModal] Failed to run "${entry.task.slug}":`, err);
+						new Notice(t('catchUp.runFailed', { slug: entry.task.slug }));
+						approveBtn.disabled = false;
+						skipBtn.disabled = false;
 					}
-				} catch (err) {
-					this.plugin.logger.error(`[CatchUpModal] Failed to run "${entry.task.slug}":`, err);
-					new Notice(t('catchUp.runFailed', { slug: entry.task.slug }));
-					approveBtn.disabled = false;
-					skipBtn.disabled = false;
-				}
+				})();
 			});
 
 			const skipBtn = btns.createEl('button', {
 				text: t('catchUp.skipButton'),
 				attr: { type: 'button' },
 			});
-			skipBtn.addEventListener('click', async () => {
-				approveBtn.disabled = true;
-				skipBtn.disabled = true;
-				try {
-					await this.skipOne(entry);
-					this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
-					if (this.pending.length === 0) {
-						this.close();
-					} else {
-						this.renderList(list);
+			skipBtn.addEventListener('click', () => {
+				void (async () => {
+					approveBtn.disabled = true;
+					skipBtn.disabled = true;
+					try {
+						await this.skipOne(entry);
+						this.pending = this.pending.filter((p) => p.task.slug !== entry.task.slug);
+						if (this.pending.length === 0) {
+							this.close();
+						} else {
+							this.renderList(list);
+						}
+					} catch (err) {
+						this.plugin.logger.error(`[CatchUpModal] Failed to skip "${entry.task.slug}":`, err);
+						new Notice(t('catchUp.skipFailed', { slug: entry.task.slug }));
+						approveBtn.disabled = false;
+						skipBtn.disabled = false;
 					}
-				} catch (err) {
-					this.plugin.logger.error(`[CatchUpModal] Failed to skip "${entry.task.slug}":`, err);
-					new Notice(t('catchUp.skipFailed', { slug: entry.task.slug }));
-					approveBtn.disabled = false;
-					skipBtn.disabled = false;
-				}
+				})();
 			});
 		}
 	}

@@ -38,7 +38,11 @@ export class SessionSettingsModal extends Modal {
 			.setName(t('agent.sessionSettings.model'))
 			.setDesc(t('agent.sessionSettings.modelDesc'));
 
-		let modelDropdown: DropdownComponent;
+		// `| undefined` + an explicit `!== undefined` check below: Obsidian's
+		// BaseComponent exposes a builder-style `then()` method, which makes
+		// DropdownComponent structurally Promise-like, so a bare truthiness test
+		// trips @typescript-eslint/no-misused-promises.
+		let modelDropdown: DropdownComponent | undefined;
 		modelSetting
 			.addDropdown((dropdown: DropdownComponent) => {
 				modelDropdown = dropdown;
@@ -68,8 +72,8 @@ export class SessionSettingsModal extends Modal {
 				button
 					.setIcon('reset')
 					.setTooltip(t('agent.sessionSettings.resetToDefault'))
-					.onClick(async () => {
-						if (modelDropdown) {
+					.onClick(() => {
+						if (modelDropdown !== undefined) {
 							// Update the dropdown value
 							modelDropdown.setValue('__default__');
 							// Trigger the onChange handler by simulating a change event
@@ -184,7 +188,9 @@ export class SessionSettingsModal extends Modal {
 			.setName(t('agent.sessionSettings.promptTemplate'))
 			.setDesc(t('agent.sessionSettings.promptTemplateDesc'));
 
-		let promptDropdown: DropdownComponent;
+		// See modelDropdown above: `| undefined` + explicit `!== undefined` avoids a
+		// no-misused-promises false positive from BaseComponent's builder `then()`.
+		let promptDropdown: DropdownComponent | undefined;
 		promptSetting
 			.addDropdown((dropdown: DropdownComponent) => {
 				promptDropdown = dropdown;
@@ -224,8 +230,8 @@ export class SessionSettingsModal extends Modal {
 				button
 					.setIcon('reset')
 					.setTooltip(t('agent.sessionSettings.resetToDefault'))
-					.onClick(async () => {
-						if (promptDropdown) {
+					.onClick(() => {
+						if (promptDropdown !== undefined) {
 							// Update the dropdown value
 							promptDropdown.setValue('__default__');
 							// Trigger the onChange handler by simulating a change event

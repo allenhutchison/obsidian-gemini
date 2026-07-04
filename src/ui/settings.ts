@@ -28,7 +28,14 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	async display(): Promise<void> {
+	// PluginSettingTab.display() must return void; delegate the async rendering
+	// to a fire-and-forget helper. The redisplay callback below also calls the
+	// void-returning display(), matching the void-typed `redisplay` contract.
+	display(): void {
+		void this.renderSettings();
+	}
+
+	private async renderSettings(): Promise<void> {
 		// Each call claims a fresh token; concurrent calls (e.g. Obsidian opening
 		// the tab while a redisplay() is mid-await) compare against this and bail
 		// out before re-appending into the now-cleared container.

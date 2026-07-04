@@ -91,22 +91,24 @@ export class RagStatusBar {
 		// Create text element for file count
 		this.statusBarItem.createSpan({ cls: 'rag-status-text' });
 
-		this.statusBarItem.addEventListener('click', async () => {
-			try {
-				// Show progress modal if indexing, otherwise show status modal
-				if (this.provider.getStatus() === 'indexing') {
-					const { RagProgressModal } = await import('../ui/rag-progress-modal');
-					const modal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
-						new Notice(t('notice.rag.indexingSummary', { indexed: result.indexed, skipped: result.skipped }));
-					});
-					modal.open();
-				} else {
-					await openRagStatusModal(this.plugin.app, this.provider, this.plugin.manifest.id);
+		this.statusBarItem.addEventListener('click', () => {
+			void (async () => {
+				try {
+					// Show progress modal if indexing, otherwise show status modal
+					if (this.provider.getStatus() === 'indexing') {
+						const { RagProgressModal } = await import('../ui/rag-progress-modal');
+						const modal = new RagProgressModal(this.plugin.app, this.provider, (result) => {
+							new Notice(t('notice.rag.indexingSummary', { indexed: result.indexed, skipped: result.skipped }));
+						});
+						modal.open();
+					} else {
+						await openRagStatusModal(this.plugin.app, this.provider, this.plugin.manifest.id);
+					}
+				} catch (error) {
+					this.plugin.logger.error('RAG Indexing: Failed to open status UI', error);
+					new Notice(t('notice.rag.uiError', { error: getErrorMessage(error) }));
 				}
-			} catch (error) {
-				this.plugin.logger.error('RAG Indexing: Failed to open status UI', error);
-				new Notice(t('notice.rag.uiError', { error: getErrorMessage(error) }));
-			}
+			})();
 		});
 	}
 

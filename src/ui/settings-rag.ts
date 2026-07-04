@@ -50,13 +50,15 @@ export async function renderRAGSettings(
 					// Show cleanup modal when disabling
 					try {
 						const { RagCleanupModal } = await import('./rag-cleanup-modal');
-						const modal = new RagCleanupModal(app, async (deleteData) => {
-							if (deleteData && plugin.ragIndexing) {
-								await plugin.ragIndexing.deleteFileSearchStore();
-							}
-							plugin.settings.ragIndexing.enabled = false;
-							await plugin.saveSettings();
-							context.redisplay();
+						const modal = new RagCleanupModal(app, (deleteData) => {
+							void (async () => {
+								if (deleteData && plugin.ragIndexing) {
+									await plugin.ragIndexing.deleteFileSearchStore();
+								}
+								plugin.settings.ragIndexing.enabled = false;
+								await plugin.saveSettings();
+								context.redisplay();
+							})();
 						});
 						modal.open();
 					} catch (error) {
@@ -129,22 +131,24 @@ export async function renderRAGSettings(
 						// Show confirmation modal
 						try {
 							const { RagCleanupModal } = await import('./rag-cleanup-modal');
-							const modal = new RagCleanupModal(app, async (deleteData) => {
-								if (deleteData && plugin.ragIndexing) {
-									button.setButtonText(t('settings.rag.deletingButton'));
-									button.setDisabled(true);
+							const modal = new RagCleanupModal(app, (deleteData) => {
+								void (async () => {
+									if (deleteData && plugin.ragIndexing) {
+										button.setButtonText(t('settings.rag.deletingButton'));
+										button.setDisabled(true);
 
-									try {
-										await plugin.ragIndexing.deleteFileSearchStore();
-										new Notice(t('settings.rag.indexDeletedNotice'));
-										context.redisplay();
-									} catch (error) {
-										new Notice(t('settings.rag.deleteIndexFailed', { error: getErrorMessage(error) }));
-									} finally {
-										button.setButtonText(t('settings.rag.deleteIndexButton'));
-										button.setDisabled(false);
+										try {
+											await plugin.ragIndexing.deleteFileSearchStore();
+											new Notice(t('settings.rag.indexDeletedNotice'));
+											context.redisplay();
+										} catch (error) {
+											new Notice(t('settings.rag.deleteIndexFailed', { error: getErrorMessage(error) }));
+										} finally {
+											button.setButtonText(t('settings.rag.deleteIndexButton'));
+											button.setDisabled(false);
+										}
 									}
-								}
+								})();
 							});
 							modal.open();
 						} catch (error) {

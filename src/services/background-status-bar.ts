@@ -53,21 +53,23 @@ export class BackgroundStatusBar {
 		this.statusBarItem.createSpan({ cls: 'gemini-bg-status-text' });
 		this.statusBarItem.createSpan({ cls: 'gemini-bg-status-badge' });
 
-		this.statusBarItem.addEventListener('click', async () => {
-			// Pending catch-up approvals take priority — open the approval modal first
-			if (this._pendingCatchUpCount > 0 && this.plugin.scheduledTaskManager) {
-				const pending = this.plugin.scheduledTaskManager.detectMissedRuns();
-				if (pending.length > 0) {
-					const { CatchUpModal } = await import('../ui/catch-up-modal');
-					new CatchUpModal(this.plugin.app, this.plugin, pending).open();
-					return;
+		this.statusBarItem.addEventListener('click', () => {
+			void (async () => {
+				// Pending catch-up approvals take priority — open the approval modal first
+				if (this._pendingCatchUpCount > 0 && this.plugin.scheduledTaskManager) {
+					const pending = this.plugin.scheduledTaskManager.detectMissedRuns();
+					if (pending.length > 0) {
+						const { CatchUpModal } = await import('../ui/catch-up-modal');
+						new CatchUpModal(this.plugin.app, this.plugin, pending).open();
+						return;
+					}
+					// detectMissedRuns returned empty — stale badge; self-correct
+					this.setPendingCatchUpCount(0);
 				}
-				// detectMissedRuns returned empty — stale badge; self-correct
-				this.setPendingCatchUpCount(0);
-			}
-			const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
-			const defaultTab = this.taskManager.runningCount > 0 ? 'tasks' : 'rag';
-			new BackgroundTasksModal(this.plugin.app, this.plugin, defaultTab).open();
+				const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
+				const defaultTab = this.taskManager.runningCount > 0 ? 'tasks' : 'rag';
+				new BackgroundTasksModal(this.plugin.app, this.plugin, defaultTab).open();
+			})();
 		});
 
 		this.update();

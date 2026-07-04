@@ -153,18 +153,20 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			cls: 'gemini-scheduler-action',
 			attr: { type: 'button' },
 		});
-		toggleBtn.addEventListener('click', async () => {
-			toggleBtn.disabled = true;
-			toggleBtn.setText('…');
-			try {
-				await this.plugin.hookManager?.toggleHook(hook.slug, !hook.enabled);
-				this.render();
-			} catch (err) {
-				this.plugin.logger.error(`[HookManagementModal] Toggle failed for "${hook.slug}":`, err);
-				new Notice(t('hooks.toggleFailed', { slug: hook.slug }));
-				toggleBtn.setText(isDisabled ? t('hooks.enableButton') : t('hooks.disableButton'));
-				toggleBtn.disabled = false;
-			}
+		toggleBtn.addEventListener('click', () => {
+			void (async () => {
+				toggleBtn.disabled = true;
+				toggleBtn.setText('…');
+				try {
+					await this.plugin.hookManager?.toggleHook(hook.slug, !hook.enabled);
+					this.render();
+				} catch (err) {
+					this.plugin.logger.error(`[HookManagementModal] Toggle failed for "${hook.slug}":`, err);
+					new Notice(t('hooks.toggleFailed', { slug: hook.slug }));
+					toggleBtn.setText(isDisabled ? t('hooks.enableButton') : t('hooks.disableButton'));
+					toggleBtn.disabled = false;
+				}
+			})();
 		});
 
 		if (isPaused) {
@@ -173,10 +175,12 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 				cls: 'gemini-scheduler-action',
 				attr: { type: 'button', title: t('hooks.resetTooltip') },
 			});
-			resetBtn.addEventListener('click', async () => {
-				resetBtn.disabled = true;
-				await this.plugin.hookManager?.resetHook(hook.slug);
-				this.render();
+			resetBtn.addEventListener('click', () => {
+				void (async () => {
+					resetBtn.disabled = true;
+					await this.plugin.hookManager?.resetHook(hook.slug);
+					this.render();
+				})();
 			});
 		}
 
