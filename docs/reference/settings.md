@@ -102,7 +102,7 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 The active model list depends on the [`provider`](#provider) setting:
 
 - **Gemini (default)** — models are loaded from the bundled list and auto-refreshed from GitHub on startup (cached for 24h). `imageModelName` is only available on this provider. Click **Refresh model list** in Settings → General — or run the **Gemini Scribe: Refresh model list** command — to fetch the latest list immediately (bypasses the cache).
-- **Ollama** — the chat / summary / completion dropdowns are populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
+- **Ollama** — a single **Ollama model** picker is shown (bound to `chatModelName`); that one model serves every use case — chat, summary, completions, and rewrite. Ollama keeps only one model resident at a time, so diverging models per use case would just thrash RAM/VRAM on each switch; the separate `summaryModelName` / `completionsModelName` values are ignored while Ollama is active. The dropdown is populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
 
 ### Chat model
 
@@ -127,6 +127,7 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Default**: `gemini-flash-latest`
 - **Description**: Model used for document summarization
 - **Used by**: Summarize active file command
+- **Note**: Gemini only. Under Ollama every use case resolves to `chatModelName`, so this value is ignored and its picker is hidden.
 
 ### Completions Model
 
@@ -135,6 +136,7 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Default**: `gemini-flash-lite-latest`
 - **Description**: Model used for IDE-style auto-completions
 - **Note**: Completions must be enabled via command palette
+- **Note**: Gemini only. Under Ollama every use case resolves to `chatModelName`, so this value is ignored and its picker is hidden.
 
 ### Image model
 

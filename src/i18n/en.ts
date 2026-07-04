@@ -216,6 +216,15 @@ export const en = {
 		message: 'Model used for IDE-style inline completions as you type in notes.',
 		context: 'Settings field description for the completion model dropdown.',
 	},
+	'settings.general.ollamaModelName': {
+		message: 'Ollama model',
+		context: 'Settings field name for the single model Ollama uses for every use case.',
+	},
+	'settings.general.ollamaModelDesc': {
+		message: 'Model used for all Ollama use cases: chat, summarization, completions, and rewriting.',
+		context:
+			'Settings field description for the single Ollama model dropdown shown when the Ollama provider is selected.',
+	},
 	'settings.general.imageModelName': {
 		message: 'Image model',
 		context: 'Settings field name for the model used to generate images.',

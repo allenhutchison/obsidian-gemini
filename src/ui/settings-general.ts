@@ -139,28 +139,39 @@ async function renderGeneralSection(
 			);
 	}
 
-	await selectModelSetting(
-		sectionEl,
-		plugin,
-		'chatModelName',
-		t('settings.general.chatModelName'),
-		t('settings.general.chatModelDesc')
-	);
-	await selectModelSetting(
-		sectionEl,
-		plugin,
-		'summaryModelName',
-		t('settings.general.summaryModelName'),
-		t('settings.general.summaryModelDesc')
-	);
-	await selectModelSetting(
-		sectionEl,
-		plugin,
-		'completionsModelName',
-		t('settings.general.completionModelName'),
-		t('settings.general.completionModelDesc')
-	);
-	if (plugin.settings.provider === 'gemini') {
+	if (plugin.settings.provider === 'ollama') {
+		// Ollama keeps a single model resident at a time, so one model applies to
+		// every use case (chat / summary / completions / rewrite). Show just the
+		// one picker, bound to chatModelName. (#1077)
+		await selectModelSetting(
+			sectionEl,
+			plugin,
+			'chatModelName',
+			t('settings.general.ollamaModelName'),
+			t('settings.general.ollamaModelDesc')
+		);
+	} else {
+		await selectModelSetting(
+			sectionEl,
+			plugin,
+			'chatModelName',
+			t('settings.general.chatModelName'),
+			t('settings.general.chatModelDesc')
+		);
+		await selectModelSetting(
+			sectionEl,
+			plugin,
+			'summaryModelName',
+			t('settings.general.summaryModelName'),
+			t('settings.general.summaryModelDesc')
+		);
+		await selectModelSetting(
+			sectionEl,
+			plugin,
+			'completionsModelName',
+			t('settings.general.completionModelName'),
+			t('settings.general.completionModelDesc')
+		);
 		await selectModelSetting(
 			sectionEl,
 			plugin,
