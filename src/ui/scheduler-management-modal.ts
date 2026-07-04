@@ -302,6 +302,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			.setDesc(t('scheduler.modelOverrideDesc'))
 			.addText((text) =>
 				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case -- example model id, shown verbatim
 					.setPlaceholder('gemini-2.0-flash')
 					.setValue(this.form.model)
 					.onChange((v) => {

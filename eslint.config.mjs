@@ -41,9 +41,15 @@ const SOFTENED_TS_RULES = {
 // Obsidian-specific rules that flag pervasive patterns we can't realistically
 // migrate in this PR. Tracked as follow-up issues — flip to 'error' once cleaned up.
 const PERVASIVE_OBSIDIANMD_RULES_TODO = {
-	// 207 violations: many false positives on acronyms (e.g. URL, HTTP) and brand
-	// names. Needs a brand allowlist + audit pass.
-	'obsidianmd/ui/sentence-case': 'off',
+	// `obsidianmd/ui/sentence-case` was here (originally ~207 violations) — now
+	// fixed: the i18n migration routed almost all UI text through `t()` (which the
+	// rule can't statically evaluate), leaving only a handful of `setPlaceholder`
+	// hints that intentionally show a literal value the user types verbatim (a URL,
+	// example model IDs, a command-id format, skill names, a frontmatter key). Those
+	// carry scoped inline disables at their call sites, so the rule is enforced again
+	// (left at the preset default). The anticipated brand/acronym allowlist proved
+	// unnecessary — the plugin's built-in allowlist already covers the acronyms and
+	// brands in use (#1043).
 	// `obsidianmd/prefer-active-doc` was here (bare `document` usage) — now fixed:
 	// live-view DOM operations use the target element's `ownerDocument`, and the few
 	// genuinely detached nodes (escape-only, rasterization, test stubs) carry scoped
@@ -159,6 +165,10 @@ export default defineConfig([
 			// narrow with `instanceof`. The rule guards production vault lookups in
 			// `src/`, not fabricated fixture objects.
 			'obsidianmd/no-tfile-tfolder-cast': 'off',
+			// Tests build DOM elements with arbitrary placeholder fixture text
+			// (`'some text'`, `'file1'`, `'inside'`); sentence-case enforcement targets
+			// real user-facing UI strings in `src/`, not fixture data.
+			'obsidianmd/ui/sentence-case': 'off',
 		},
 	},
 ]);
