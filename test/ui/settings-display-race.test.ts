@@ -1,3 +1,7 @@
+// This suite exists specifically to exercise the race behavior of the settings tab's
+// `display()` override, so it calls the deprecated `PluginSettingTab.display()` directly.
+// Migrating off `display()` to `getSettingDefinitions()` is out of scope for #1040.
+/* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Counters that the section-render mocks bump so the test can assert on

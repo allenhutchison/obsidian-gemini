@@ -51,6 +51,8 @@ export class YoloConfirmationModal extends Modal {
 			.addButton((btn) =>
 				btn
 					.setButtonText(t('yolo.enableButton'))
+					// setDestructive() (the recommended replacement) requires Obsidian 1.13.0, above the current minAppVersion 1.11.4; keep setWarning until the floor is raised (#1040).
+					// eslint-disable-next-line @typescript-eslint/no-deprecated
 					.setWarning()
 					.onClick(() => {
 						this.resolved = true;

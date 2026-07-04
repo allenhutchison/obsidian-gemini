@@ -108,8 +108,15 @@ export function moveCursorToEnd(element: HTMLElement): void {
 /**
  * Execute a command in the correct document context.
  * Useful for commands like 'paste', 'copy', etc.
+ *
+ * This is a last-resort fallback: the sole caller (the agent input paste handler)
+ * tries the async Clipboard API (`navigator.clipboard.readText`) first and only
+ * falls back here when it is unavailable or throws (e.g. some popout-window
+ * contexts). `document.execCommand` is deprecated but remains the only synchronous
+ * fallback for those environments, so the deprecation is intentionally suppressed.
  */
 export function execContextCommand(element: HTMLElement, command: string, value?: string): boolean {
 	const { doc } = getDOMContext(element);
+	// eslint-disable-next-line @typescript-eslint/no-deprecated
 	return doc.execCommand(command, false, value);
 }

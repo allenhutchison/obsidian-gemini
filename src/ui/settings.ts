@@ -38,6 +38,11 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		const context: SettingsSectionContext = {
+			// `PluginSettingTab.display()` is deprecated in favor of the declarative
+			// `getSettingDefinitions()` (Obsidian 1.13.0). Migrating this settings tree to the
+			// new API is a large rework tracked separately and out of scope for #1040; the
+			// imperative `display()` override remains the supported pattern meanwhile.
+			// eslint-disable-next-line @typescript-eslint/no-deprecated
 			redisplay: () => this.display(),
 			showDeveloperSettings: this.showDeveloperSettings,
 			setShowDeveloperSettings: (value: boolean) => {

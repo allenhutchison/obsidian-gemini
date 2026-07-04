@@ -253,6 +253,9 @@ export class OllamaClient implements ModelApi {
 		}
 		const allAttachments: InlineDataPart[] = [
 			...(request.inlineAttachments || []),
+			// `imageAttachments` is the deprecated alias for `inlineAttachments`; still merged here for
+			// backward-compat with callers passing the legacy field (#1040).
+			// eslint-disable-next-line @typescript-eslint/no-deprecated
 			...(request.imageAttachments || []),
 		];
 		for (const att of allAttachments) {

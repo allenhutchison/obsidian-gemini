@@ -29,7 +29,8 @@ const SOFTENED_TS_RULES = {
 	'@typescript-eslint/no-require-imports': 'off',
 	// #1041: cleared — enforced.
 	'@typescript-eslint/no-unused-expressions': 'error',
-	'@typescript-eslint/no-deprecated': 'off',
+	// #1040: cleared — enforced.
+	'@typescript-eslint/no-deprecated': 'error',
 	'@typescript-eslint/unbound-method': 'off',
 	'@typescript-eslint/no-unused-vars': [
 		'warn',
