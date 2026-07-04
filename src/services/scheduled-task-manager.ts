@@ -12,6 +12,15 @@ import {
 	resolveFeatureToolPolicy,
 } from './feature-definition';
 import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
+import { computeNextRunAt } from './scheduled-tasks/schedule';
+import { detectMissedRuns as detectMissedRunsInWindow } from './scheduled-tasks/missed-runs';
+import { submitTask as submitTaskDispatch, type ExecutionDeps } from './scheduled-tasks/execution';
+import type { PendingCatchUp, ScheduledTask, ScheduledTasksState, TaskState } from './scheduled-tasks/types';
+
+// Re-export the task types and the pure schedule helper from their new module
+// homes so existing import paths (`from '.../scheduled-task-manager'`) keep working.
+export type { PendingCatchUp, ScheduledTask, ScheduledTasksState, TaskState } from './scheduled-tasks/types';
+export { computeNextRunAt } from './scheduled-tasks/schedule';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
@@ -21,227 +30,6 @@ const STATE_FILE = 'scheduled-tasks-state.json';
 
 /** Milliseconds between scheduler ticks (60 s). Same cadence as ChatTimer. */
 const TICK_INTERVAL_MS = 60_000;
-
-// ─── Public types ─────────────────────────────────────────────────────────────
-
-/**
- * A scheduled task definition parsed from a markdown file.
- * The file lives at {historyFolder}/Scheduled-Tasks/<slug>.md.
- * Frontmatter controls scheduling; the file body is the prompt text.
- */
-export interface ScheduledTask {
-	/** Derived from the file basename (no extension). */
-	slug: string;
-	/**
-	 * Schedule string. Supported values:
-	 *   once               — run exactly once, then the task is considered exhausted
-	 *   daily              — every 24 h from creation
-	 *   daily@HH:MM        — every day at the given local time (e.g. daily@16:30)
-	 *   weekly             — every 7 d from creation
-	 *   weekly@HH:MM:DAYS  — at the given local time on the listed weekdays
-	 *                        (DAYS is comma-separated, e.g. weekly@16:30:mon,tue,wed)
-	 *   interval:Xm        — every X minutes (e.g. interval:30m)
-	 *   interval:Xh        — every X hours   (e.g. interval:2h)
-	 */
-	schedule: string;
-	/**
-	 * Tool policy applied for the duration of each run. Layered on top of the
-	 * global plugin policy via FeatureToolPolicy. Undefined means inherit the
-	 * global policy.
-	 */
-	toolPolicy?: FeatureToolPolicy;
-	/**
-	 * Output path template. Supports {slug} and {date} placeholders.
-	 * Default: Scheduled-Tasks/Runs/{slug}/{date}.md
-	 */
-	outputPath: string;
-	/**
-	 * Model override for this task (e.g. 'gemini-2.0-flash').
-	 * Defaults to the plugin's chat model when omitted.
-	 */
-	model?: string;
-	/**
-	 * Cap on agent tool-execution iterations for this run. Each iteration is one
-	 * tool-call batch, not a single tool call. Omitted means use
-	 * DEFAULT_HEADLESS_MAX_ITERATIONS. Raise this for long multi-step tasks that
-	 * legitimately need more than the default before producing a final response.
-	 */
-	maxIterations?: number;
-	/** When false the scheduler skips this task entirely. Default: true. */
-	enabled: boolean;
-	/**
-	 * When true and the task missed its window (plugin was offline), run once
-	 * immediately on the next tick instead of skipping the missed run.
-	 * Default: false.
-	 */
-	runIfMissed: boolean;
-	/** Prompt text — the file body after the closing frontmatter delimiter. */
-	prompt: string;
-	/** Vault path of the task definition file. */
-	filePath: string;
-}
-
-/** Per-task volatile runtime state stored in the sidecar JSON. */
-export interface TaskState {
-	/** ISO-8601 date string for the next scheduled run. */
-	nextRunAt: string;
-	/** ISO-8601 date string for the last successful run, if any. */
-	lastRunAt?: string;
-	/** Error message from the most recent failed run, if any. */
-	lastError?: string;
-	/** Number of consecutive failures since the last success. */
-	consecutiveFailures?: number;
-	/**
-	 * When true the scheduler skips this task until the user manually resets it.
-	 * Set automatically after MAX_CONSECUTIVE_FAILURES failures in a row.
-	 */
-	pausedDueToErrors?: boolean;
-}
-
-/** The full sidecar state file — a map of slug → TaskState. */
-export type ScheduledTasksState = Record<string, TaskState>;
-
-/** A single missed-run entry returned by detectMissedRuns(). */
-export interface PendingCatchUp {
-	task: ScheduledTask;
-	/** The nextRunAt instant that was missed. */
-	missedAt: Date;
-}
-
-// ─── Pure helper ─────────────────────────────────────────────────────────────
-
-// Day-of-week codes accepted in `weekly@HH:MM:DAYS` schedules. Order matches
-// JS Date.getDay() so the array index doubles as the weekday number.
-const WEEKDAY_CODES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
-type WeekdayCode = (typeof WEEKDAY_CODES)[number];
-
-/**
- * Compute the next run time given a schedule string and a reference instant.
- * Pure function — no I/O — safe to unit-test in isolation.
- *
- * @throws {Error} if the schedule string is not recognised
- */
-export function computeNextRunAt(schedule: string, from: Date): Date {
-	switch (schedule) {
-		case 'once':
-			// Far-future sentinel: task has run once and should not fire again
-			return new Date(8640000000000000);
-		case 'daily':
-			return new Date(from.getTime() + 24 * 60 * 60 * 1000);
-		case 'weekly':
-			return new Date(from.getTime() + 7 * 24 * 60 * 60 * 1000);
-		default: {
-			if (schedule.startsWith('interval:')) {
-				const spec = schedule.slice('interval:'.length);
-				const match = /^(\d+)(m|h)$/.exec(spec);
-				if (!match) {
-					throw new Error(`Invalid interval schedule: "${schedule}". Expected format: interval:Xm or interval:Xh`);
-				}
-				const value = parseInt(match[1], 10);
-				if (value <= 0) {
-					throw new Error(`Invalid interval schedule: "${schedule}". Interval must be greater than zero`);
-				}
-				const ms = match[2] === 'h' ? value * 60 * 60 * 1000 : value * 60 * 1000;
-				return new Date(from.getTime() + ms);
-			}
-			if (schedule.startsWith('daily@')) {
-				const { hour, minute } = parseHourMinute(schedule, schedule.slice('daily@'.length));
-				return nextOccurrenceAtTime(from, hour, minute);
-			}
-			if (schedule.startsWith('weekly@')) {
-				const rest = schedule.slice('weekly@'.length).toLowerCase();
-				const match = /^(\d{1,2}:\d{2}):(.+)$/.exec(rest);
-				if (!match) {
-					throw new Error(
-						`Invalid weekly schedule: "${schedule}". Expected format: weekly@HH:MM:days (e.g. weekly@16:30:mon,tue,wed)`
-					);
-				}
-				const { hour, minute } = parseHourMinute(schedule, match[1]);
-				const allowedDays = parseWeekdayList(schedule, match[2]);
-				return nextOccurrenceOnAllowedDay(from, hour, minute, allowedDays);
-			}
-			throw new Error(
-				`Unknown schedule type: "${schedule}". Expected: once, daily, weekly, interval:Xm, interval:Xh, daily@HH:MM, weekly@HH:MM:days`
-			);
-		}
-	}
-}
-
-/**
- * Parse a `HH:MM` time component out of a `daily@…` or `weekly@…` schedule
- * and validate that hour/minute are in range. The full schedule string is
- * passed in only so the error messages can quote the offending value.
- */
-function parseHourMinute(schedule: string, time: string): { hour: number; minute: number } {
-	const match = /^(\d{1,2}):(\d{2})$/.exec(time);
-	if (!match) {
-		throw new Error(`Invalid schedule time in "${schedule}". Expected HH:MM (24-hour, e.g. 16:30)`);
-	}
-	const hour = parseInt(match[1], 10);
-	const minute = parseInt(match[2], 10);
-	if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-		throw new Error(`Invalid schedule time in "${schedule}". Hour must be 0-23 and minute must be 0-59`);
-	}
-	return { hour, minute };
-}
-
-/**
- * Parse the comma-separated weekday list from a `weekly@HH:MM:days` schedule
- * into a Set of weekday numbers (0 = Sunday … 6 = Saturday). Empty lists,
- * unknown codes, and stray separators are all rejected.
- */
-function parseWeekdayList(schedule: string, days: string): Set<number> {
-	const tokens = days.split(',').map((d) => d.trim());
-	if (tokens.some((t) => t.length === 0)) {
-		throw new Error(`Invalid weekly schedule "${schedule}": days list contains empty entries`);
-	}
-	const result = new Set<number>();
-	for (const token of tokens) {
-		const idx = WEEKDAY_CODES.indexOf(token as WeekdayCode);
-		if (idx === -1) {
-			throw new Error(`Invalid weekday "${token}" in "${schedule}". Expected one of: ${WEEKDAY_CODES.join(', ')}`);
-		}
-		result.add(idx);
-	}
-	return result;
-}
-
-/**
- * Return the next Date strictly after `from` whose local time is `hour:minute`.
- * Today's slot is preferred when it's still in the future; otherwise tomorrow's.
- */
-function nextOccurrenceAtTime(from: Date, hour: number, minute: number): Date {
-	const candidate = new Date(from);
-	candidate.setHours(hour, minute, 0, 0);
-	if (candidate.getTime() > from.getTime()) return candidate;
-	candidate.setDate(candidate.getDate() + 1);
-	return candidate;
-}
-
-/**
- * Return the next Date strictly after `from` whose local time is `hour:minute`
- * AND whose weekday is in `allowedDays`. The set is non-empty (validated by
- * the caller), so the search terminates within 8 days: each weekday-and-time
- * pair is checked once over the next 7 days, plus a final wrap-around for the
- * case where today's allowed slot has already passed and no later day in the
- * week qualifies.
- */
-function nextOccurrenceOnAllowedDay(from: Date, hour: number, minute: number, allowedDays: Set<number>): Date {
-	for (let offset = 0; offset <= 7; offset++) {
-		const candidate = new Date(from);
-		candidate.setDate(candidate.getDate() + offset);
-		candidate.setHours(hour, minute, 0, 0);
-		if (allowedDays.has(candidate.getDay()) && candidate.getTime() > from.getTime()) {
-			return candidate;
-		}
-	}
-	// Unreachable: with a non-empty allowedDays set, one of the 8 candidates
-	// above always matches. Throw rather than return a wrong value if the
-	// invariant ever breaks.
-	throw new Error(
-		`Internal error: failed to compute next run for weekly schedule (allowedDays=${[...allowedDays].join(',')})`
-	);
-}
 
 // ─── Manager ─────────────────────────────────────────────────────────────────
 
@@ -285,6 +73,8 @@ export class ScheduledTaskManager {
 	private readonly stateStore: JsonSidecarStateStore<ScheduledTasksState>;
 	/** Shared auto-pause-after-N-failures ladder over the per-task sidecar state. */
 	private readonly failureTracker: FailurePauseTracker<TaskState>;
+	/** Dependencies handed to the execution-dispatch module (submit/execute/advance). */
+	private readonly execDeps: ExecutionDeps;
 
 	constructor(private plugin: ObsidianGemini) {
 		this.stateStore = new JsonSidecarStateStore<ScheduledTasksState>(
@@ -302,6 +92,15 @@ export class ScheduledTaskManager {
 			label: '[ScheduledTaskManager]',
 			entityNoun: 'Task',
 		});
+		this.execDeps = {
+			plugin: this.plugin,
+			tasks: this.tasks,
+			submitting: this.submitting,
+			failureTracker: this.failureTracker,
+			// `state` is reassigned on load, so read it lazily rather than capturing it.
+			getState: () => this.state,
+			saveState: () => this.saveState(),
+		};
 	}
 
 	// ── Folder path helpers ──────────────────────────────────────────────────
@@ -490,7 +289,7 @@ export class ScheduledTaskManager {
 			if (now < nextRunAt) continue;
 
 			this.plugin.logger.log(`[ScheduledTaskManager] Task "${task.slug}" is due — submitting`);
-			await this.submitTask(task, now);
+			await submitTaskDispatch(this.execDeps, task, now);
 		}
 	}
 
@@ -502,7 +301,7 @@ export class ScheduledTaskManager {
 		const task = this.tasks.get(slug);
 		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
 		this.catchUpPending.delete(slug);
-		return this.submitTask(task, new Date());
+		return submitTaskDispatch(this.execDeps, task, new Date());
 	}
 
 	/** Returns a snapshot of all known task definitions. */
@@ -654,26 +453,7 @@ export class ScheduledTaskManager {
 	 *                  excluded — they missed their window entirely.
 	 */
 	detectMissedRuns(windowMs = 7 * 24 * 60 * 60 * 1000): PendingCatchUp[] {
-		const now = new Date();
-		const cutoff = new Date(now.getTime() - windowMs);
-		const result: PendingCatchUp[] = [];
-
-		for (const task of this.tasks.values()) {
-			if (!task.enabled || !task.runIfMissed) continue;
-			if (task.schedule === 'once') continue;
-
-			const taskState = this.state[task.slug];
-			if (!taskState) continue;
-			if (taskState.pausedDueToErrors) continue;
-
-			const nextRunAt = new Date(taskState.nextRunAt);
-			// Due in the past AND within the catch-up window
-			if (nextRunAt < now && nextRunAt >= cutoff) {
-				result.push({ task, missedAt: nextRunAt });
-			}
-		}
-
-		return result;
+		return detectMissedRunsInWindow(this.tasks.values(), this.state, new Date(), windowMs);
 	}
 
 	/**
@@ -735,69 +515,6 @@ export class ScheduledTaskManager {
 	}
 
 	// ── Private ──────────────────────────────────────────────────────────────
-
-	private async submitTask(task: ScheduledTask, triggeredAt: Date): Promise<string> {
-		if (this.submitting.has(task.slug)) {
-			throw new Error(`[ScheduledTaskManager] Task "${task.slug}" is already being submitted`);
-		}
-		this.submitting.add(task.slug);
-
-		try {
-			const bgManager = this.plugin.backgroundTaskManager;
-			if (!bgManager) {
-				throw new Error('[ScheduledTaskManager] BackgroundTaskManager not available');
-			}
-
-			// Advance nextRunAt immediately — prevents re-firing on the next tick even
-			// if the background execution takes longer than 60 s or fails.
-			await this.advanceState(task.slug, triggeredAt);
-
-			const taskId = bgManager.submit(`scheduled-task`, task.slug, async (isCancelled) => {
-				try {
-					return await this.executeTask(task, isCancelled);
-				} finally {
-					// Guard is held for the full background run duration to prevent
-					// a concurrent tick or runNow from double-submitting the same slug.
-					this.submitting.delete(task.slug);
-				}
-			});
-
-			return taskId;
-		} catch (error) {
-			this.submitting.delete(task.slug);
-			throw error;
-		}
-	}
-
-	private async executeTask(task: ScheduledTask, isCancelled: () => boolean): Promise<string | undefined> {
-		try {
-			const { ScheduledTaskRunner } = await import('./scheduled-task-runner');
-			const runner = new ScheduledTaskRunner(this.plugin, task);
-			const outputPath = await runner.run(isCancelled);
-
-			// undefined means the run was cancelled — don't record as a successful
-			// completion so lastRunAt only reflects genuine completions.
-			if (outputPath !== undefined) {
-				await this.failureTracker.recordSuccess(task.slug, { lastRunAt: new Date().toISOString() });
-			}
-			return outputPath;
-		} catch (error) {
-			await this.failureTracker.recordFailure(task.slug, error);
-			throw error;
-		}
-	}
-
-	private async advanceState(slug: string, from: Date): Promise<void> {
-		const task = this.tasks.get(slug);
-		if (!task) return;
-
-		const nextRunAt = computeNextRunAt(task.schedule, from);
-		this.state[slug] = {
-			...this.state[slug],
-			nextRunAt: nextRunAt.toISOString(),
-		};
-		await this.saveState();
-	}
 
 	private async discoverTasks(): Promise<void> {
 		this.tasks.clear();
