@@ -3,7 +3,7 @@ import type { Content } from '@google/genai';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { ToolExecutionContext } from '../../tools/types';
-import { ExtendedModelRequest, ModelApi, StreamChunk } from '../../api/interfaces/model-api';
+import { ExtendedModelRequest, ModelApi, ModelResponse, StreamChunk } from '../../api/interfaces/model-api';
 import { CustomPrompt } from '../../prompts/types';
 import { AgentFactory } from '../../agent/agent-factory';
 import { getErrorMessage } from '../../utils/error-utils';
@@ -620,61 +620,31 @@ To reference an attachment in your response, use the path shown above.`;
 								hadPartialText ? undefined : turnThoughts
 							);
 						} else {
-							// Normal response without tool calls
-							// Only finalize and save if response has content
-							if (response.markdown && response.markdown.trim()) {
-								const aiEntry: GeminiConversationEntry = {
-									role: 'model',
-									message: response.markdown,
-									notePath: '',
-									created_at: new Date(),
-									model: modelName,
-									...(turnThoughts ? { thoughts: turnThoughts } : {}),
-								};
-
-								// Finalize the streaming message with proper rendering
-								if (modelMessageContainer) {
-									await this.ctx.messages.finalizeStreamingMessage(
-										modelMessageContainer,
-										response.markdown,
-										aiEntry,
-										currentSession
-									);
+							// Normal response without tool calls — shared three-way finalize
+							// with a streaming-specific render step: finalize the live
+							// container for answer text (display the reasoning entry when
+							// there's no answer), then scroll to the bottom.
+							await this.finalizeNoToolCallResponse(
+								response,
+								turnThoughts,
+								modelName,
+								currentSession,
+								async (entry, reasoningOnly) => {
+									if (reasoningOnly) {
+										await this.ctx.messages.displayMessage(entry, currentSession);
+									} else if (modelMessageContainer) {
+										// Finalize the streaming message with proper rendering
+										await this.ctx.messages.finalizeStreamingMessage(
+											modelMessageContainer,
+											entry.message,
+											entry,
+											currentSession
+										);
+									}
+									// Ensure we're scrolled to bottom after streaming completes
+									this.ctx.messages.scrollToBottom();
 								}
-
-								// Save AI response to history (user message already saved early)
-								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-
-								// Ensure we're scrolled to bottom after streaming completes
-								this.ctx.messages.scrollToBottom();
-
-								// Hide progress bar after successful response
-								this.ctx.progress.hide();
-							} else if (turnThoughts) {
-								// No answer text, but the model did reason — show and persist
-								// the reasoning instead of a bare "empty response" notice.
-								const reasoningEntry: GeminiConversationEntry = {
-									role: 'model',
-									message: '',
-									notePath: '',
-									created_at: new Date(),
-									model: modelName,
-									thoughts: turnThoughts,
-								};
-								await this.ctx.messages.displayMessage(reasoningEntry, currentSession);
-								await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
-								this.ctx.messages.scrollToBottom();
-								this.ctx.progress.hide();
-							} else {
-								// Empty response - might be thinking tokens
-								this.ctx.plugin.logger.warn('Model returned empty response');
-								new Notice(t('agent.send.emptyResponse'));
-
-								// Hide progress bar
-								this.ctx.progress.hide();
-
-								// User message already saved early in sendMessage()
-							}
+							);
 						}
 					} catch (error) {
 						this.currentStreamingResponse = null;
@@ -717,48 +687,12 @@ To reference an attachment in your response, use the path shown above.`;
 							turnThoughts
 						);
 					} else {
-						// Normal response without tool calls
-						// Only display if response has content
-						if (response.markdown && response.markdown.trim()) {
-							// Display AI response
-							const aiEntry: GeminiConversationEntry = {
-								role: 'model',
-								message: response.markdown,
-								notePath: '',
-								created_at: new Date(),
-								model: modelName,
-								...(turnThoughts ? { thoughts: turnThoughts } : {}),
-							};
-							await this.ctx.displayMessage(aiEntry);
-
-							// Save AI response to history (user message already saved early)
-							await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
-
-							// Hide progress bar after successful response
-							this.ctx.progress.hide();
-						} else if (turnThoughts) {
-							// No answer text, but the model reasoned — show and persist it.
-							const reasoningEntry: GeminiConversationEntry = {
-								role: 'model',
-								message: '',
-								notePath: '',
-								created_at: new Date(),
-								model: modelName,
-								thoughts: turnThoughts,
-							};
-							await this.ctx.displayMessage(reasoningEntry);
-							await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
-							this.ctx.progress.hide();
-						} else {
-							// Empty response - might be thinking tokens
-							this.ctx.plugin.logger.warn('Model returned empty response');
-							new Notice(t('agent.send.emptyResponse'));
-
-							// User message already saved early in sendMessage()
-
-							// Hide progress bar
-							this.ctx.progress.hide();
-						}
+						// Normal response without tool calls — shared three-way finalize
+						// with the non-streaming render step (plain displayMessage, no
+						// scroll) for both the answer and reasoning-only cases.
+						await this.finalizeNoToolCallResponse(response, turnThoughts, modelName, currentSession, async (entry) => {
+							await this.ctx.displayMessage(entry);
+						});
 					}
 				}
 			} catch (error) {
@@ -791,6 +725,63 @@ To reference an attachment in your response, use the path shown above.`;
 
 			// Always update token usage display after any message completion
 			await this.ctx.updateTokenUsage();
+		}
+	}
+
+	/**
+	 * Finalize a normal (no-tool-call) model response. Shared by the streaming
+	 * and non-streaming send paths, which previously duplicated this three-way
+	 * branch. Owns the shared work — building the model entry, persisting it to
+	 * session history, and hiding the progress bar — while the caller-supplied
+	 * `renderEntry` step handles the one part that genuinely differs between the
+	 * two paths: how the entry is rendered (and, for streaming, the extra scroll).
+	 *
+	 * `renderEntry` is invoked with `reasoningOnly = false` for an answer entry
+	 * and `reasoningOnly = true` for a reasoning-only entry (no answer text).
+	 */
+	private async finalizeNoToolCallResponse(
+		response: Pick<ModelResponse, 'markdown'>,
+		turnThoughts: string | undefined,
+		modelName: string,
+		currentSession: ChatSession,
+		renderEntry: (entry: GeminiConversationEntry, reasoningOnly: boolean) => Promise<void>
+	): Promise<void> {
+		// Only finalize and save if response has content
+		if (response.markdown && response.markdown.trim()) {
+			const aiEntry: GeminiConversationEntry = {
+				role: 'model',
+				message: response.markdown,
+				notePath: '',
+				created_at: new Date(),
+				model: modelName,
+				...(turnThoughts ? { thoughts: turnThoughts } : {}),
+			};
+			await renderEntry(aiEntry, false);
+			// Save AI response to history (user message already saved early)
+			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, aiEntry);
+			// Hide progress bar after successful response
+			this.ctx.progress.hide();
+		} else if (turnThoughts) {
+			// No answer text, but the model did reason — show and persist the
+			// reasoning instead of a bare "empty response" notice.
+			const reasoningEntry: GeminiConversationEntry = {
+				role: 'model',
+				message: '',
+				notePath: '',
+				created_at: new Date(),
+				model: modelName,
+				thoughts: turnThoughts,
+			};
+			await renderEntry(reasoningEntry, true);
+			await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, reasoningEntry);
+			this.ctx.progress.hide();
+		} else {
+			// Empty response - might be thinking tokens.
+			// User message already saved early in sendMessage().
+			this.ctx.plugin.logger.warn('Model returned empty response');
+			new Notice(t('agent.send.emptyResponse'));
+			// Hide progress bar
+			this.ctx.progress.hide();
 		}
 	}
 
