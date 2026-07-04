@@ -116,9 +116,16 @@ function createContext() {
 	};
 }
 
-// The settingName is the 3rd positional arg to selectModelSetting.
-function renderedModelKeys(): string[] {
-	return mockSelectModelSetting.mock.calls.map((call) => call[2]);
+// selectModelSetting(containerEl, plugin, settingName, label, description, role?).
+// Capture the settingName (arg 2) plus the label/description i18n keys (args 3/4)
+// so a picker wired to the wrong i18n key is caught, not just the wrong setting.
+// `t()` is mocked to echo its key, so label/desc are the raw key strings.
+function renderedModelCalls(): Array<{ settingName: string; label: string; desc: string }> {
+	return mockSelectModelSetting.mock.calls.map((call) => ({
+		settingName: call[2],
+		label: call[3],
+		desc: call[4],
+	}));
 }
 
 describe('renderGeneralSettings — model pickers per provider', () => {
@@ -126,22 +133,44 @@ describe('renderGeneralSettings — model pickers per provider', () => {
 		vi.clearAllMocks();
 	});
 
-	it('renders a single chatModelName picker under Ollama', async () => {
+	it('renders a single chatModelName picker with the Ollama label/description under Ollama', async () => {
 		const plugin = createMockPlugin('ollama');
 		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
 
-		expect(renderedModelKeys()).toEqual(['chatModelName']);
+		expect(renderedModelCalls()).toEqual([
+			{
+				settingName: 'chatModelName',
+				label: 'settings.general.ollamaModelName',
+				desc: 'settings.general.ollamaModelDesc',
+			},
+		]);
 	});
 
-	it('renders all four independent pickers under Gemini', async () => {
+	it('renders all four independent pickers with their own labels/descriptions under Gemini', async () => {
 		const plugin = createMockPlugin('gemini');
 		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
 
-		expect(renderedModelKeys()).toEqual([
-			'chatModelName',
-			'summaryModelName',
-			'completionsModelName',
-			'imageModelName',
+		expect(renderedModelCalls()).toEqual([
+			{
+				settingName: 'chatModelName',
+				label: 'settings.general.chatModelName',
+				desc: 'settings.general.chatModelDesc',
+			},
+			{
+				settingName: 'summaryModelName',
+				label: 'settings.general.summaryModelName',
+				desc: 'settings.general.summaryModelDesc',
+			},
+			{
+				settingName: 'completionsModelName',
+				label: 'settings.general.completionModelName',
+				desc: 'settings.general.completionModelDesc',
+			},
+			{
+				settingName: 'imageModelName',
+				label: 'settings.general.imageModelName',
+				desc: 'settings.general.imageModelDesc',
+			},
 		]);
 	});
 });
