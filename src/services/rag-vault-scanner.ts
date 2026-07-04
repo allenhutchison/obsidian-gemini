@@ -249,17 +249,19 @@ export class RagVaultScanner {
 		const { RagResumeModal } = await import('../ui/rag-resume-modal');
 
 		return new Promise<void>((resolve) => {
-			const modal = new RagResumeModal(this.plugin.app, resumeInfo, async (resume: boolean) => {
-				if (resume) {
-					// Resume: just start indexing - smart sync will skip already-indexed files
-					new Notice(t('notice.rag.resuming'));
-					this.startResumeIndexing(progressProvider);
-				} else {
-					// Start fresh: clear cache and store, then reindex
-					new Notice(t('notice.rag.startingFresh'));
-					await this.startFresh(progressProvider);
-				}
-				resolve();
+			const modal = new RagResumeModal(this.plugin.app, resumeInfo, (resume: boolean) => {
+				void (async () => {
+					if (resume) {
+						// Resume: just start indexing - smart sync will skip already-indexed files
+						new Notice(t('notice.rag.resuming'));
+						this.startResumeIndexing(progressProvider);
+					} else {
+						// Start fresh: clear cache and store, then reindex
+						new Notice(t('notice.rag.startingFresh'));
+						await this.startFresh(progressProvider);
+					}
+					resolve();
+				})();
 			});
 			modal.open();
 		});
@@ -424,6 +426,12 @@ export class RagVaultScanner {
 					// alarming console noise for routine skips (empty files, inaccessible notes).
 					error: (msg: string, ...args: any[]) => this.plugin.logger.warn(msg, ...args),
 				},
+				// ProgressCallback is typed `(event) => void`, but this handler must be async:
+				// it awaits per-file hashing / incremental cache saves, and it *throws* to signal
+				// cancellation and rate-limit cooldown, which callers (including the uploader mock
+				// in tests) await and rely on propagating. Wrapping the body to void the promise
+				// would swallow those throws, so the async signature is intentional here.
+				// eslint-disable-next-line @typescript-eslint/no-misused-promises
 				onProgress: async (event: any) => {
 					// Check for cancellation
 					if (this.cancelRequested) {

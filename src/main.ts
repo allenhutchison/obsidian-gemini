@@ -364,9 +364,11 @@ export default class ObsidianGemini extends Plugin {
 								const modal = new RewriteInstructionsModal(
 									this.app,
 									selection,
-									async (instructions) => {
-										const rewriter = new SelectionRewriter(this);
-										await rewriter.rewriteSelection(editor, selection, instructions);
+									(instructions) => {
+										void (async () => {
+											const rewriter = new SelectionRewriter(this);
+											await rewriter.rewriteSelection(editor, selection, instructions);
+										})();
 									},
 									false // Context menu is always for selection, not full file
 								);

@@ -171,18 +171,20 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 			cls: 'gemini-scheduler-confirm-delete',
 			attr: { type: 'button' },
 		});
-		confirmBtn.addEventListener('click', async () => {
-			confirmBtn.disabled = true;
-			confirmBtn.setText(t('component.managementModalBase.deleting'));
-			try {
-				await this.deleteEntity(slug);
-				new Notice(t('component.managementModalBase.deleted', { label: this.capitalizedEntityLabel, slug }));
-				this.render();
-			} catch (err) {
-				this.plugin.logger.error(`[${this.constructor.name}] Delete failed for "${slug}":`, err);
-				new Notice(t('component.managementModalBase.deleteFailed', { slug }));
-				this.render();
-			}
+		confirmBtn.addEventListener('click', () => {
+			void (async () => {
+				confirmBtn.disabled = true;
+				confirmBtn.setText(t('component.managementModalBase.deleting'));
+				try {
+					await this.deleteEntity(slug);
+					new Notice(t('component.managementModalBase.deleted', { label: this.capitalizedEntityLabel, slug }));
+					this.render();
+				} catch (err) {
+					this.plugin.logger.error(`[${this.constructor.name}] Delete failed for "${slug}":`, err);
+					new Notice(t('component.managementModalBase.deleteFailed', { slug }));
+					this.render();
+				}
+			})();
 		});
 	}
 
@@ -250,7 +252,9 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 			cls: 'mod-cta',
 			attr: { type: 'button' },
 		});
-		saveBtn.addEventListener('click', () => this.handleSave(isEdit));
+		saveBtn.addEventListener('click', () => {
+			void this.handleSave(isEdit);
+		});
 
 		const cancelBtn = footer.createEl('button', {
 			text: t('component.managementModalBase.cancel'),

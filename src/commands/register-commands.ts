@@ -168,9 +168,9 @@ export function registerCommands(plugin: ObsidianGemini): void {
 			// Show picker for multiple projects
 			const { ProjectPickerModal } = await import('../ui/agent-view/project-picker-modal');
 			const modal = new ProjectPickerModal(plugin.app, plugin, {
-				onSelect: async (project) => {
+				onSelect: (project) => {
 					if (project) {
-						await plugin.app.workspace.openLinkText(project.filePath, '', true);
+						void plugin.app.workspace.openLinkText(project.filePath, '', true);
 					}
 				},
 			});
@@ -191,20 +191,22 @@ export function registerCommands(plugin: ObsidianGemini): void {
 			}
 			const { ProjectPickerModal } = await import('../ui/agent-view/project-picker-modal');
 			const modal = new ProjectPickerModal(plugin.app, plugin, {
-				onSelect: async (project) => {
-					if (!project) return;
-					// Find most recent session linked to this project
-					const sessions = await plugin.sessionManager.getRecentAgentSessions(50);
-					const projectSession = sessions.find((s) => s.projectPath === project.filePath);
-					if (projectSession) {
-						await plugin.activateAgentView();
-						// The agent view will load the session
-						if (plugin.agentView) {
-							await plugin.agentView.loadSession(projectSession);
+				onSelect: (project) => {
+					void (async () => {
+						if (!project) return;
+						// Find most recent session linked to this project
+						const sessions = await plugin.sessionManager.getRecentAgentSessions(50);
+						const projectSession = sessions.find((s) => s.projectPath === project.filePath);
+						if (projectSession) {
+							await plugin.activateAgentView();
+							// The agent view will load the session
+							if (plugin.agentView) {
+								await plugin.agentView.loadSession(projectSession);
+							}
+						} else {
+							new Notice(t('notice.main.noSessionsForProject', { name: project.name }));
 						}
-					} else {
-						new Notice(t('notice.main.noSessionsForProject', { name: project.name }));
-					}
+					})();
 				},
 			});
 			modal.open();
@@ -248,13 +250,15 @@ export function registerCommands(plugin: ObsidianGemini): void {
 			const modal = new RewriteInstructionsModal(
 				plugin.app,
 				textToRewrite,
-				async (instructions) => {
-					const rewriter = new SelectionRewriter(plugin);
-					if (isFullFile) {
-						await rewriter.rewriteFullFile(editor, instructions);
-					} else {
-						await rewriter.rewriteSelection(editor, selection, instructions);
-					}
+				(instructions) => {
+					void (async () => {
+						const rewriter = new SelectionRewriter(plugin);
+						if (isFullFile) {
+							await rewriter.rewriteFullFile(editor, instructions);
+						} else {
+							await rewriter.rewriteSelection(editor, selection, instructions);
+						}
+					})();
 				},
 				isFullFile
 			);

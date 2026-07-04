@@ -38,85 +38,91 @@ export class AgentViewAttachments {
 	async showFileMention(): Promise<void> {
 		const modal = new FileMentionModal(
 			this.ctx.app,
-			async (fileOrFolder: TAbstractFile) => {
-				// Remove the @ character that triggered the picker
-				this.removeTrailingTriggerChar('@');
+			(fileOrFolder: TAbstractFile) => {
+				// FileMentionModal expects a void-returning callback; run the async
+				// attachment handling as a fire-and-forget task.
+				void (async () => {
+					// Remove the @ character that triggered the picker
+					this.removeTrailingTriggerChar('@');
 
-				if (fileOrFolder instanceof TFolder) {
-					this.ctx.getShelf().addFolder(fileOrFolder);
-					// Seed session context with current folder contents. Subsequent turns
-					// re-expand the folder via the shelf so new files are picked up (#127).
-					const files = getTextFilesFromFolder(fileOrFolder, (path) =>
-						shouldExcludePathForPlugin(path, this.ctx.plugin)
-					);
-					for (const file of files) {
-						this.ctx.context.addFileToContext(file, this.ctx.getCurrentSession());
-					}
-					this.ctx.updateSessionHeader();
-					await this.ctx.updateSessionMetadata();
-					return;
-				}
-
-				if (!(fileOrFolder instanceof TFile)) return;
-
-				// Classify the file to determine text vs binary handling
-				const { classifyFile, FileCategory, arrayBufferToBase64, detectWebmMimeType, GEMINI_INLINE_DATA_LIMIT } =
-					await import('../../utils/file-classification');
-				const classification = classifyFile(fileOrFolder.extension);
-
-				if (classification.category === FileCategory.TEXT) {
-					this.ctx.getShelf().addTextFile(fileOrFolder);
-					this.ctx.context.addFileToContext(fileOrFolder, this.ctx.getCurrentSession());
-					this.ctx.updateSessionHeader();
-					await this.ctx.updateSessionMetadata();
-				} else if (
-					classification.category === FileCategory.GEMINI_BINARY ||
-					classification.category === FileCategory.SVG
-				) {
-					// Handle binary/SVG file — create inline attachment (same as drag-drop).
-					// SVG is rasterized to PNG; other binaries are inlined as-is.
-					try {
-						const buffer = await this.ctx.app.vault.readBinary(fileOrFolder);
-						const existing = this.ctx.getShelf().getPendingAttachments();
-						const cumulativeSize =
-							existing.reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0) + buffer.byteLength;
-
-						if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
-							new Notice(t('agent.attachments.fileTooLarge', { name: fileOrFolder.name }), 5000);
-							return;
+					if (fileOrFolder instanceof TFolder) {
+						this.ctx.getShelf().addFolder(fileOrFolder);
+						// Seed session context with current folder contents. Subsequent turns
+						// re-expand the folder via the shelf so new files are picked up (#127).
+						const files = getTextFilesFromFolder(fileOrFolder, (path) =>
+							shouldExcludePathForPlugin(path, this.ctx.plugin)
+						);
+						for (const file of files) {
+							this.ctx.context.addFileToContext(file, this.ctx.getCurrentSession());
 						}
+						this.ctx.updateSessionHeader();
+						await this.ctx.updateSessionMetadata();
+						return;
+					}
 
-						let base64: string;
-						let mimeType: string;
-						if (classification.category === FileCategory.SVG) {
-							try {
-								base64 = await rasterizeSvg(buffer, fileOrFolder.extension.toLowerCase() === 'svgz');
-								mimeType = 'image/png';
-							} catch (rasterErr) {
-								this.ctx.plugin.logger.error(`Failed to rasterize SVG ${fileOrFolder.path}:`, rasterErr);
-								new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
+					if (!(fileOrFolder instanceof TFile)) return;
+
+					// Classify the file to determine text vs binary handling
+					const { classifyFile, FileCategory, arrayBufferToBase64, detectWebmMimeType, GEMINI_INLINE_DATA_LIMIT } =
+						await import('../../utils/file-classification');
+					const classification = classifyFile(fileOrFolder.extension);
+
+					if (classification.category === FileCategory.TEXT) {
+						this.ctx.getShelf().addTextFile(fileOrFolder);
+						this.ctx.context.addFileToContext(fileOrFolder, this.ctx.getCurrentSession());
+						this.ctx.updateSessionHeader();
+						await this.ctx.updateSessionMetadata();
+					} else if (
+						classification.category === FileCategory.GEMINI_BINARY ||
+						classification.category === FileCategory.SVG
+					) {
+						// Handle binary/SVG file — create inline attachment (same as drag-drop).
+						// SVG is rasterized to PNG; other binaries are inlined as-is.
+						try {
+							const buffer = await this.ctx.app.vault.readBinary(fileOrFolder);
+							const existing = this.ctx.getShelf().getPendingAttachments();
+							const cumulativeSize =
+								existing.reduce((sum, a) => sum + Math.ceil((a.base64.length * 3) / 4), 0) + buffer.byteLength;
+
+							if (cumulativeSize > GEMINI_INLINE_DATA_LIMIT) {
+								new Notice(t('agent.attachments.fileTooLarge', { name: fileOrFolder.name }), 5000);
 								return;
 							}
-						} else {
-							base64 = arrayBufferToBase64(buffer);
-							mimeType =
-								fileOrFolder.extension.toLowerCase() === 'webm' ? detectWebmMimeType(buffer) : classification.mimeType;
+
+							let base64: string;
+							let mimeType: string;
+							if (classification.category === FileCategory.SVG) {
+								try {
+									base64 = await rasterizeSvg(buffer, fileOrFolder.extension.toLowerCase() === 'svgz');
+									mimeType = 'image/png';
+								} catch (rasterErr) {
+									this.ctx.plugin.logger.error(`Failed to rasterize SVG ${fileOrFolder.path}:`, rasterErr);
+									new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
+									return;
+								}
+							} else {
+								base64 = arrayBufferToBase64(buffer);
+								mimeType =
+									fileOrFolder.extension.toLowerCase() === 'webm'
+										? detectWebmMimeType(buffer)
+										: classification.mimeType;
+							}
+							const { generateAttachmentId } = await import('./inline-attachment');
+							const attachment: InlineAttachment = {
+								base64,
+								mimeType,
+								id: generateAttachmentId(),
+								vaultPath: fileOrFolder.path,
+								fileName: fileOrFolder.name,
+							};
+							this.addAttachment(attachment);
+							new Notice(t('agent.attachments.attached', { name: fileOrFolder.name }), 2000);
+						} catch (err) {
+							this.ctx.plugin.logger.error(`Failed to attach ${fileOrFolder.path}:`, err);
+							new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
 						}
-						const { generateAttachmentId } = await import('./inline-attachment');
-						const attachment: InlineAttachment = {
-							base64,
-							mimeType,
-							id: generateAttachmentId(),
-							vaultPath: fileOrFolder.path,
-							fileName: fileOrFolder.name,
-						};
-						this.addAttachment(attachment);
-						new Notice(t('agent.attachments.attached', { name: fileOrFolder.name }), 2000);
-					} catch (err) {
-						this.ctx.plugin.logger.error(`Failed to attach ${fileOrFolder.path}:`, err);
-						new Notice(t('agent.attachments.attachFailed', { name: fileOrFolder.name }));
 					}
-				}
+				})();
 			},
 			this.ctx.plugin
 		);

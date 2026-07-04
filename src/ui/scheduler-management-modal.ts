@@ -134,18 +134,20 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			cls: 'gemini-scheduler-action',
 			attr: { type: 'button', title: isDisabled ? t('scheduler.enableTooltip') : t('scheduler.disableTooltip') },
 		});
-		toggleBtn.addEventListener('click', async () => {
-			toggleBtn.disabled = true;
-			toggleBtn.setText('…');
-			try {
-				await this.plugin.scheduledTaskManager?.updateTask(task.slug, { enabled: !task.enabled });
-				this.render();
-			} catch (err) {
-				this.plugin.logger.error(`[SchedulerManagementModal] Toggle failed for "${task.slug}":`, err);
-				new Notice(t('scheduler.toggleFailed', { slug: task.slug }));
-				toggleBtn.setText(isDisabled ? t('scheduler.enableButton') : t('scheduler.disableButton'));
-				toggleBtn.disabled = false;
-			}
+		toggleBtn.addEventListener('click', () => {
+			void (async () => {
+				toggleBtn.disabled = true;
+				toggleBtn.setText('…');
+				try {
+					await this.plugin.scheduledTaskManager?.updateTask(task.slug, { enabled: !task.enabled });
+					this.render();
+				} catch (err) {
+					this.plugin.logger.error(`[SchedulerManagementModal] Toggle failed for "${task.slug}":`, err);
+					new Notice(t('scheduler.toggleFailed', { slug: task.slug }));
+					toggleBtn.setText(isDisabled ? t('scheduler.enableButton') : t('scheduler.disableButton'));
+					toggleBtn.disabled = false;
+				}
+			})();
 		});
 
 		if (isPaused) {
@@ -154,10 +156,12 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 				cls: 'gemini-scheduler-action',
 				attr: { type: 'button', title: t('scheduler.resetTooltip') },
 			});
-			resetBtn.addEventListener('click', async () => {
-				resetBtn.disabled = true;
-				await this.plugin.scheduledTaskManager?.resetTask(task.slug);
-				this.render();
+			resetBtn.addEventListener('click', () => {
+				void (async () => {
+					resetBtn.disabled = true;
+					await this.plugin.scheduledTaskManager?.resetTask(task.slug);
+					this.render();
+				})();
 			});
 		}
 
@@ -168,18 +172,20 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			attr: { type: 'button' },
 		});
 		if (isPaused || isDisabled) runBtn.disabled = true;
-		runBtn.addEventListener('click', async () => {
-			runBtn.disabled = true;
-			runBtn.setText(t('scheduler.running'));
-			try {
-				await this.plugin.scheduledTaskManager?.runNow(task.slug);
-				runBtn.setText(t('scheduler.submitted'));
-			} catch (err) {
-				this.plugin.logger.error(`[SchedulerManagementModal] runNow failed for "${task.slug}":`, err);
-				new Notice(t('scheduler.runFailed', { slug: task.slug }));
-				runBtn.disabled = false;
-				runBtn.setText(t('scheduler.runNowButton'));
-			}
+		runBtn.addEventListener('click', () => {
+			void (async () => {
+				runBtn.disabled = true;
+				runBtn.setText(t('scheduler.running'));
+				try {
+					await this.plugin.scheduledTaskManager?.runNow(task.slug);
+					runBtn.setText(t('scheduler.submitted'));
+				} catch (err) {
+					this.plugin.logger.error(`[SchedulerManagementModal] runNow failed for "${task.slug}":`, err);
+					new Notice(t('scheduler.runFailed', { slug: task.slug }));
+					runBtn.disabled = false;
+					runBtn.setText(t('scheduler.runNowButton'));
+				}
+			})();
 		});
 
 		// Edit

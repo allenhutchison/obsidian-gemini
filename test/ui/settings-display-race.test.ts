@@ -109,6 +109,13 @@ vi.mock('obsidian', () => {
 
 import ObsidianGeminiSettingTab from '../../src/ui/settings';
 
+// `display()` returns void (it must, to satisfy PluginSettingTab's void-typed
+// override); the awaitable rendering — including the token-based race guard —
+// lives in the private `renderSettings()`, which `display()` kicks off
+// fire-and-forget. Tests reach it directly to observe render completion.
+const invokeRender = (tab: ObsidianGeminiSettingTab): Promise<void> =>
+	(tab as unknown as { renderSettings(): Promise<void> }).renderSettings();
+
 describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 	beforeEach(() => {
 		generalCalls = 0;
@@ -134,7 +141,7 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 
 		// Kick off the first render — it will block inside renderGeneralSettings
 		// until we resolve the gate. Don't await yet.
-		const first = tab.display();
+		const first = invokeRender(tab);
 		// Yield so renderGeneralSettings starts and bumps generalCalls.
 		await Promise.resolve();
 		expect(generalCalls).toBe(1);
@@ -146,7 +153,7 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		// arrives. With the token guard, the first render must abort after the
 		// gate resolves and the second render owns the container.
 		gate = null; // second render does not block
-		const second = tab.display();
+		const second = invokeRender(tab);
 
 		// Release the first render. With the guard, it should bail out before
 		// running renderUISettings / renderContextSettings.
@@ -167,7 +174,7 @@ describe('ObsidianGeminiSettingTab.display() concurrent-call guard', () => {
 		const plugin = { settings: { debugMode: false }, saveSettings: vi.fn() };
 		const tab = new ObsidianGeminiSettingTab({} as never, plugin as never);
 
-		await tab.display();
+		await invokeRender(tab);
 
 		expect(generalCalls).toBe(1);
 		expect(uiCalls).toBe(1);

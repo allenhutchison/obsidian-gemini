@@ -467,7 +467,7 @@ export class AgentViewMessages {
 		const images = container.findAll('img');
 		for (const img of images) {
 			img.addClass('gemini-agent-clickable-image');
-			img.addEventListener('click', async (e) => {
+			img.addEventListener('click', (e) => {
 				e.stopPropagation();
 
 				// Try to get file path from alt text (standard Obsidian behavior)
@@ -476,7 +476,7 @@ export class AgentViewMessages {
 					const file = this.app.metadataCache.getFirstLinkpathDest(altText, sourcePath);
 					if (file) {
 						const leaf = this.app.workspace.getLeaf('tab');
-						await leaf.openFile(file);
+						void leaf.openFile(file);
 					}
 				}
 			});
@@ -604,13 +604,15 @@ export class AgentViewMessages {
 				});
 			}
 
-			initButton.addEventListener('click', async () => {
-				// Run the vault analyzer
-				if (this.plugin.vaultAnalyzer) {
-					await this.plugin.vaultAnalyzer.initializeAgentsMemory();
-					// Refresh the empty state to update the button
-					await this.showEmptyState(currentSession, onLoadSession, onSendMessage);
-				}
+			initButton.addEventListener('click', () => {
+				void (async () => {
+					// Run the vault analyzer
+					if (this.plugin.vaultAnalyzer) {
+						await this.plugin.vaultAnalyzer.initializeAgentsMemory();
+						// Refresh the empty state to update the button
+						await this.showEmptyState(currentSession, onLoadSession, onSendMessage);
+					}
+				})();
 			});
 
 			// Try to get recent sessions (excluding the current session)
@@ -644,8 +646,8 @@ export class AgentViewMessages {
 						cls: 'gemini-agent-suggestion-date',
 					});
 
-					suggestion.addEventListener('click', async () => {
-						await onLoadSession(session);
+					suggestion.addEventListener('click', () => {
+						void onLoadSession(session);
 					});
 				});
 			}
@@ -673,9 +675,9 @@ export class AgentViewMessages {
 					cls: 'gemini-agent-example-text',
 				});
 
-				suggestion.addEventListener('click', async () => {
+				suggestion.addEventListener('click', () => {
 					this.userInput.textContent = example.text;
-					await onSendMessage();
+					void onSendMessage();
 				});
 			});
 
@@ -881,8 +883,8 @@ export class AgentViewMessages {
 					text: diffContext.isNewFile ? t('agent.confirm.previewFile') : t('agent.confirm.viewChanges'),
 				});
 
-				viewChangesBtn.addEventListener('click', async () => {
-					await this.openDiffView(
+				viewChangesBtn.addEventListener('click', () => {
+					void this.openDiffView(
 						diffContext,
 						handleResponse,
 						(view) => {

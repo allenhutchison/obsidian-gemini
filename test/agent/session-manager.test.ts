@@ -376,7 +376,7 @@ describe('SessionManager', () => {
 			vi.spyOn(sessionManager as any, 'getAgentSessionsFolder').mockReturnValue(mockFolder);
 
 			// Mock loadSessionFromFile to return mock sessions
-			vi.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation(async (...args: unknown[]) =>
+			vi.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation((...args: unknown[]) =>
 				createMockSession(args[0] as TFile)
 			);
 		});
@@ -425,9 +425,11 @@ describe('SessionManager', () => {
 
 		it('should handle errors loading individual sessions gracefully', async () => {
 			// Override mock to throw for one file, reuse createMockSession for others
-			vi.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation(async (...args: unknown[]) => {
+			vi.spyOn(sessionManager as any, 'loadSessionFromFile').mockImplementation((...args: unknown[]) => {
 				const file = args[0] as TFile;
 				if (file.basename === 'session2') {
+					// Synchronous throw is caught by the consumer's try/catch the same
+					// way a rejected promise would be — and keeps the mock void-returning.
 					throw new Error('Failed to load session');
 				}
 				return createMockSession(file);

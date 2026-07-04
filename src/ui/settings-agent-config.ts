@@ -244,40 +244,42 @@ async function createTemperatureSetting(containerEl: HTMLElement, plugin: Obsidi
 
 					const runId = ++temperatureRunId;
 
-					temperatureDebounceTimer = window.setTimeout(async () => {
-						try {
-							// Validate the current value against model capabilities. Read from
-							// settings rather than the captured `value` so the validation always
-							// matches the most recent user input.
-							const validation = await modelManager.validateParameters(
-								plugin.settings.temperature,
-								plugin.settings.topP
-							);
+					temperatureDebounceTimer = window.setTimeout(() => {
+						void (async () => {
+							try {
+								// Validate the current value against model capabilities. Read from
+								// settings rather than the captured `value` so the validation always
+								// matches the most recent user input.
+								const validation = await modelManager.validateParameters(
+									plugin.settings.temperature,
+									plugin.settings.topP
+								);
 
-							// A newer slider change has superseded this run — discard the
-							// stale result instead of clobbering the current slider/value.
-							if (runId !== temperatureRunId) {
-								return;
-							}
-
-							if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
-								slider.setValue(validation.temperature.adjustedValue);
-								plugin.settings.temperature = validation.temperature.adjustedValue;
-								if (validation.temperature.warning) {
-									new Notice(validation.temperature.warning);
+								// A newer slider change has superseded this run — discard the
+								// stale result instead of clobbering the current slider/value.
+								if (runId !== temperatureRunId) {
+									return;
 								}
-							}
 
-							await plugin.saveSettings();
-						} catch (error) {
-							// If a newer run has superseded us, drop this stale failure silently —
-							// surfacing it would contradict whatever the current run is doing.
-							if (runId !== temperatureRunId) {
-								return;
+								if (!validation.temperature.isValid && validation.temperature.adjustedValue !== undefined) {
+									slider.setValue(validation.temperature.adjustedValue);
+									plugin.settings.temperature = validation.temperature.adjustedValue;
+									if (validation.temperature.warning) {
+										new Notice(validation.temperature.warning);
+									}
+								}
+
+								await plugin.saveSettings();
+							} catch (error) {
+								// If a newer run has superseded us, drop this stale failure silently —
+								// surfacing it would contradict whatever the current run is doing.
+								if (runId !== temperatureRunId) {
+									return;
+								}
+								plugin.logger.error('Failed to validate/save temperature setting:', error);
+								new Notice(t('settings.agentConfig.temperatureSaveFailedNotice'));
 							}
-							plugin.logger.error('Failed to validate/save temperature setting:', error);
-							new Notice(t('settings.agentConfig.temperatureSaveFailedNotice'));
-						}
+						})();
 					}, 300);
 				})
 		);
@@ -309,33 +311,35 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemin
 
 					const runId = ++topPRunId;
 
-					topPDebounceTimer = window.setTimeout(async () => {
-						try {
-							const validation = await modelManager.validateParameters(
-								plugin.settings.temperature,
-								plugin.settings.topP
-							);
+					topPDebounceTimer = window.setTimeout(() => {
+						void (async () => {
+							try {
+								const validation = await modelManager.validateParameters(
+									plugin.settings.temperature,
+									plugin.settings.topP
+								);
 
-							if (runId !== topPRunId) {
-								return;
-							}
-
-							if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
-								slider.setValue(validation.topP.adjustedValue);
-								plugin.settings.topP = validation.topP.adjustedValue;
-								if (validation.topP.warning) {
-									new Notice(validation.topP.warning);
+								if (runId !== topPRunId) {
+									return;
 								}
-							}
 
-							await plugin.saveSettings();
-						} catch (error) {
-							if (runId !== topPRunId) {
-								return;
+								if (!validation.topP.isValid && validation.topP.adjustedValue !== undefined) {
+									slider.setValue(validation.topP.adjustedValue);
+									plugin.settings.topP = validation.topP.adjustedValue;
+									if (validation.topP.warning) {
+										new Notice(validation.topP.warning);
+									}
+								}
+
+								await plugin.saveSettings();
+							} catch (error) {
+								if (runId !== topPRunId) {
+									return;
+								}
+								plugin.logger.error('Failed to validate/save topP setting:', error);
+								new Notice(t('settings.agentConfig.topPSaveFailedNotice'));
 							}
-							plugin.logger.error('Failed to validate/save topP setting:', error);
-							new Notice(t('settings.agentConfig.topPSaveFailedNotice'));
-						}
+						})();
 					}, 300);
 				})
 		);

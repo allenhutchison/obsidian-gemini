@@ -10,9 +10,14 @@ import { t } from '../i18n';
 export class ExplainPromptSelectionModal extends SuggestModal<PromptInfo> {
 	private plugin: ObsidianGemini;
 	private prompts: PromptInfo[];
-	private onSelect: (prompt: CustomPrompt) => void;
+	private onSelect: (prompt: CustomPrompt) => void | Promise<void>;
 
-	constructor(app: App, plugin: ObsidianGemini, prompts: PromptInfo[], onSelect: (prompt: CustomPrompt) => void) {
+	constructor(
+		app: App,
+		plugin: ObsidianGemini,
+		prompts: PromptInfo[],
+		onSelect: (prompt: CustomPrompt) => void | Promise<void>
+	) {
 		super(app);
 		this.plugin = plugin;
 		this.prompts = prompts;
@@ -41,11 +46,17 @@ export class ExplainPromptSelectionModal extends SuggestModal<PromptInfo> {
 		}
 	}
 
-	async onChooseSuggestion(promptInfo: PromptInfo): Promise<void> {
+	onChooseSuggestion(promptInfo: PromptInfo): void {
+		// SuggestModal.onChooseSuggestion expects a void return; run the async
+		// prompt load as a fire-and-forget task.
+		void this.chooseSuggestion(promptInfo);
+	}
+
+	private async chooseSuggestion(promptInfo: PromptInfo): Promise<void> {
 		// Load the full prompt content
 		const prompt = await this.plugin.promptManager.loadPrompt(promptInfo.path);
 		if (prompt) {
-			this.onSelect(prompt);
+			await this.onSelect(prompt);
 		} else {
 			this.plugin.logger.error('Failed to load prompt:', promptInfo.path);
 		}

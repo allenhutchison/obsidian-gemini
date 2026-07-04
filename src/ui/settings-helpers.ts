@@ -99,21 +99,23 @@ export function createCollapsibleSection(
 	content.classList.add('gemini-settings-section-content');
 	details.appendChild(content);
 
-	details.addEventListener('toggle', async () => {
-		const current = plugin.settings.expandedSettingsSections ?? [];
-		const next = details.open ? Array.from(new Set([...current, id])) : current.filter((x) => x !== id);
-		// Skip the save if nothing actually changed (e.g. a programmatic toggle that
-		// fires after setAttribute('open') without altering the user's persisted set).
-		if (next.length === current.length && next.every((x, i) => x === current[i])) return;
-		plugin.settings.expandedSettingsSections = next;
-		// Persist directly via saveData rather than saveSettings — this is UI-only
-		// state and shouldn't trigger plugin.saveSettings()'s lifecycle reconciliation
-		// (re-init on api-key/provider/RAG changes).
-		try {
-			await plugin.saveData(plugin.settings);
-		} catch (error) {
-			plugin.logger.error('Failed to save expandedSettingsSections:', error);
-		}
+	details.addEventListener('toggle', () => {
+		void (async () => {
+			const current = plugin.settings.expandedSettingsSections ?? [];
+			const next = details.open ? Array.from(new Set([...current, id])) : current.filter((x) => x !== id);
+			// Skip the save if nothing actually changed (e.g. a programmatic toggle that
+			// fires after setAttribute('open') without altering the user's persisted set).
+			if (next.length === current.length && next.every((x, i) => x === current[i])) return;
+			plugin.settings.expandedSettingsSections = next;
+			// Persist directly via saveData rather than saveSettings — this is UI-only
+			// state and shouldn't trigger plugin.saveSettings()'s lifecycle reconciliation
+			// (re-init on api-key/provider/RAG changes).
+			try {
+				await plugin.saveData(plugin.settings);
+			} catch (error) {
+				plugin.logger.error('Failed to save expandedSettingsSections:', error);
+			}
+		})();
 	});
 
 	return content;

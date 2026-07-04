@@ -26,7 +26,7 @@ type TabId = 'overview' | 'files' | 'failures';
 export class RagStatusModal extends Modal {
 	private statusInfo: RagDetailedStatus;
 	private onOpenSettings: () => void;
-	private onReindex: () => void;
+	private onReindex: () => void | Promise<void>;
 	private onSyncNow: () => Promise<boolean>;
 
 	private activeTab: TabId = 'overview';
@@ -39,7 +39,7 @@ export class RagStatusModal extends Modal {
 		app: App,
 		statusInfo: RagDetailedStatus,
 		onOpenSettings: () => void,
-		onReindex: () => void,
+		onReindex: () => void | Promise<void>,
 		onSyncNow: () => Promise<boolean>
 	) {
 		super(app);
@@ -207,7 +207,7 @@ export class RagStatusModal extends Modal {
 					.setDisabled(isIndexing)
 					.onClick(() => {
 						this.close();
-						this.onReindex();
+						void this.onReindex();
 					})
 			)
 			.addButton((btn) =>

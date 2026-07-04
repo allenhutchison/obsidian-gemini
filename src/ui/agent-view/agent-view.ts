@@ -519,8 +519,8 @@ export class AgentView extends ItemView {
 			this.app,
 			this.plugin,
 			{
-				onSelect: async (session: ChatSession) => {
-					await this.loadSession(session);
+				onSelect: (session: ChatSession) => {
+					void this.loadSession(session);
 				},
 				onDelete: (session: ChatSession) => {
 					// If the deleted session is the current one, create a new session
@@ -599,22 +599,24 @@ export class AgentView extends ItemView {
 			this.app,
 			this.plugin,
 			{
-				onSelect: async (project) => {
-					if (!this.currentSession) return;
+				onSelect: (project) => {
+					void (async () => {
+						if (!this.currentSession) return;
 
-					const previousProjectPath = this.currentSession.projectPath;
-					this.currentSession.projectPath = project?.filePath ?? undefined;
+						const previousProjectPath = this.currentSession.projectPath;
+						this.currentSession.projectPath = project?.filePath ?? undefined;
 
-					try {
-						await this.plugin.sessionHistory.updateSessionMetadata(this.currentSession);
-						this.updateSessionHeader();
-						this.plugin.logger.log(`Switched project to: ${project?.name ?? 'none'}`);
-					} catch (error) {
-						// Rollback on persistence failure
-						this.currentSession.projectPath = previousProjectPath;
-						this.updateSessionHeader();
-						this.plugin.logger.error('Failed to persist project change:', error);
-					}
+						try {
+							await this.plugin.sessionHistory.updateSessionMetadata(this.currentSession);
+							this.updateSessionHeader();
+							this.plugin.logger.log(`Switched project to: ${project?.name ?? 'none'}`);
+						} catch (error) {
+							// Rollback on persistence failure
+							this.currentSession.projectPath = previousProjectPath;
+							this.updateSessionHeader();
+							this.plugin.logger.error('Failed to persist project change:', error);
+						}
+					})();
 				},
 			},
 			this.currentSession.projectPath ?? null

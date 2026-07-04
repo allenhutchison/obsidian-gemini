@@ -198,35 +198,49 @@ Focus on being helpful while maintaining intellectual honesty.`;
 	async createNewCustomPrompt(): Promise<void> {
 		try {
 			// Open input modal for prompt name
-			const modal = new PromptNameModal(this.plugin.app, async (promptName: string) => {
-				if (!promptName || promptName.trim() === '') {
-					new Notice(t('notice.prompt.nameEmpty'));
-					return;
-				}
+			const modal = new PromptNameModal(this.plugin.app, (promptName: string) => {
+				// PromptNameModal expects a void-returning callback; run the async
+				// file creation as a fire-and-forget task with its own error handling.
+				void this.createPromptFromName(promptName);
+			});
 
-				// Sanitize filename (remove special characters, keep alphanumeric, spaces, hyphens, underscores)
-				const sanitizedName = promptName
-					.trim()
-					.replace(/[^\w\s-]/g, '')
-					.replace(/\s+/g, '-');
-				if (!sanitizedName) {
-					new Notice(t('notice.prompt.nameInvalid'));
-					return;
-				}
+			modal.open();
+		} catch (error) {
+			this.plugin.logger.error('Error creating new custom prompt:', error);
+			new Notice(t('notice.prompt.createFailed'));
+		}
+	}
 
-				const promptsDir = this.getPromptsDirectory();
-				const fileName = `${sanitizedName.toLowerCase()}.md`;
-				const filePath = normalizePath(`${promptsDir}/${fileName}`);
+	// Create the prompt file for a user-supplied name (invoked from the name modal).
+	private async createPromptFromName(promptName: string): Promise<void> {
+		if (!promptName || promptName.trim() === '') {
+			new Notice(t('notice.prompt.nameEmpty'));
+			return;
+		}
 
-				// Check if file already exists
-				const existingFile = this.vault.getAbstractFileByPath(filePath);
-				if (existingFile) {
-					new Notice(t('notice.prompt.alreadyExists', { fileName }));
-					return;
-				}
+		// Sanitize filename (remove special characters, keep alphanumeric, spaces, hyphens, underscores)
+		const sanitizedName = promptName
+			.trim()
+			.replace(/[^\w\s-]/g, '')
+			.replace(/\s+/g, '-');
+		if (!sanitizedName) {
+			new Notice(t('notice.prompt.nameInvalid'));
+			return;
+		}
 
-				// Create template content
-				const templateContent = `---
+		const promptsDir = this.getPromptsDirectory();
+		const fileName = `${sanitizedName.toLowerCase()}.md`;
+		const filePath = normalizePath(`${promptsDir}/${fileName}`);
+
+		// Check if file already exists
+		const existingFile = this.vault.getAbstractFileByPath(filePath);
+		if (existingFile) {
+			new Notice(t('notice.prompt.alreadyExists', { fileName }));
+			return;
+		}
+
+		// Create template content
+		const templateContent = `---
 name: "${promptName}"
 description: "Brief description of what this prompt does"
 version: 1
@@ -246,24 +260,17 @@ Your custom prompt content goes here. This will modify how the AI behaves when a
 ## Example Usage:
 This prompt will be applied to sessions and will supplement the default system prompt unless override_system_prompt is set to true.`;
 
-				try {
-					// Create the file
-					const newFile = await this.vault.create(filePath, templateContent);
+		try {
+			// Create the file
+			const newFile = await this.vault.create(filePath, templateContent);
 
-					// Open the file for editing
-					await this.plugin.app.workspace.openLinkText(newFile.path, '', true);
+			// Open the file for editing
+			await this.plugin.app.workspace.openLinkText(newFile.path, '', true);
 
-					new Notice(t('notice.prompt.created', { name: promptName }));
-				} catch (error) {
-					this.plugin.logger.error('Error creating prompt file:', error);
-					new Notice(t('notice.prompt.createFileFailed'));
-				}
-			});
-
-			modal.open();
+			new Notice(t('notice.prompt.created', { name: promptName }));
 		} catch (error) {
-			this.plugin.logger.error('Error creating new custom prompt:', error);
-			new Notice(t('notice.prompt.createFailed'));
+			this.plugin.logger.error('Error creating prompt file:', error);
+			new Notice(t('notice.prompt.createFileFailed'));
 		}
 	}
 }

@@ -242,10 +242,10 @@ export class SelectionResponseModal extends Modal {
  */
 export class AskQuestionModal extends Modal {
 	private questionInput!: HTMLTextAreaElement;
-	private onSubmit: (question: string) => void;
+	private onSubmit: (question: string) => void | Promise<void>;
 	private selectedText: string;
 
-	constructor(app: App, selectedText: string, onSubmit: (question: string) => void) {
+	constructor(app: App, selectedText: string, onSubmit: (question: string) => void | Promise<void>) {
 		super(app);
 		this.selectedText = selectedText;
 		this.onSubmit = onSubmit;
@@ -298,7 +298,7 @@ export class AskQuestionModal extends Modal {
 		const question = this.questionInput.value.trim();
 		if (question) {
 			this.close();
-			this.onSubmit(question);
+			void this.onSubmit(question);
 		}
 	}
 
