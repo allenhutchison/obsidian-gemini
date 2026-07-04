@@ -554,13 +554,18 @@ export class AgentViewToolDisplay {
 								cls: 'gemini-agent-tool-copy-wikilink',
 							});
 							copyBtn.addEventListener('click', () => {
-								// Fire-and-forget: clipboard write is a UI convenience; failures are non-fatal.
-								void navigator.clipboard.writeText(result.data.wikilink).then(() => {
-									copyBtn.textContent = t('agent.tools.copiedButton');
-									window.setTimeout(() => {
-										copyBtn.textContent = t('agent.tools.copyButton');
-									}, 2000);
-								});
+								// Fire-and-forget: clipboard write is a UI convenience; failures are logged, not fatal.
+								void navigator.clipboard
+									.writeText(result.data.wikilink)
+									.then(() => {
+										copyBtn.textContent = t('agent.tools.copiedButton');
+										window.setTimeout(() => {
+											copyBtn.textContent = t('agent.tools.copyButton');
+										}, 2000);
+									})
+									.catch((err) => {
+										this.plugin.logger.error('Failed to copy wikilink to clipboard:', err);
+									});
 							});
 						} else {
 							imageDiv.createEl('p', {
