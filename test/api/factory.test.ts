@@ -209,38 +209,49 @@ describe('ModelClientFactory', () => {
 		});
 
 		describe('Ollama provider', () => {
-			// Mirrors the Gemini rows above but routes through the Ollama branch of
-			// createFromPlugin, asserting the resolved model lands on the
-			// OllamaClient config. resolveModelName reads the same settings keys
-			// regardless of provider (chatModelName / summaryModelName /
-			// completionsModelName); only the default fallback is provider-aware.
-			const cases: Array<{ useCase: ModelUseCase; settingKey: string; expected: string }> = [
-				{ useCase: ModelUseCase.CHAT, settingKey: 'chatModelName', expected: 'ollama-chat' },
-				{ useCase: ModelUseCase.SUMMARY, settingKey: 'summaryModelName', expected: 'ollama-summary' },
-				{ useCase: ModelUseCase.COMPLETIONS, settingKey: 'completionsModelName', expected: 'ollama-completions' },
-				{ useCase: ModelUseCase.REWRITE, settingKey: 'chatModelName', expected: 'ollama-chat' },
-				{ useCase: ModelUseCase.SEARCH, settingKey: 'chatModelName', expected: 'ollama-chat' },
+			// Ollama keeps a single model resident at a time, so every use case
+			// resolves to the one configured chatModelName — the per-use-case
+			// summary/completions settings are ignored under Ollama. (#1077)
+			const useCases: ModelUseCase[] = [
+				ModelUseCase.CHAT,
+				ModelUseCase.SUMMARY,
+				ModelUseCase.COMPLETIONS,
+				ModelUseCase.REWRITE,
+				ModelUseCase.SEARCH,
 			];
 
-			it.each(cases)('resolves $useCase to the configured Ollama model', ({ useCase, settingKey, expected }) => {
-				const plugin = createMockPlugin({ provider: 'ollama', [settingKey]: expected });
+			it.each(useCases)('resolves %s to the single chatModelName', (useCase) => {
+				// Divergent summary/completions values are set but must be ignored.
+				const plugin = createMockPlugin({
+					provider: 'ollama',
+					chatModelName: 'ollama-chat',
+					summaryModelName: 'ollama-summary',
+					completionsModelName: 'ollama-completions',
+				});
 				ModelClientFactory.createFromPlugin(plugin, useCase);
 
 				expect(MockOllamaClient).toHaveBeenCalledTimes(1);
 				expect(MockGeminiClient).not.toHaveBeenCalled();
 				const config = MockOllamaClient.mock.calls[0][0];
-				expect(config.model).toBe(expected);
+				expect(config.model).toBe('ollama-chat');
 			});
 
-			it('falls back to the Ollama default when the model name is empty', () => {
-				const plugin = createMockPlugin({ provider: 'ollama', chatModelName: '' });
-				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.CHAT);
+			it('falls back to the Ollama default for every use case when chatModelName is empty', () => {
+				// Even with a summary model configured, an empty chatModelName under
+				// Ollama resolves SUMMARY to the Ollama chat default — never the
+				// summary setting.
+				const plugin = createMockPlugin({
+					provider: 'ollama',
+					chatModelName: '',
+					summaryModelName: 'ollama-summary',
+				});
+				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
 
 				const config = MockOllamaClient.mock.calls[0][0];
 				// The default is resolved by the real getDefaultModelForRole (not mocked),
 				// so assert against it directly rather than a hard-coded string. In a unit
 				// context with no Ollama models loaded this is the empty-string sentinel,
-				// which is exactly the unconfigured-Ollama state the resolver is meant to pass through.
+				// which is exactly the unconfigured-Ollama state the resolver passes through.
 				expect(config.model).toBe(getDefaultModelForRole('chat', 'ollama'));
 			});
 		});

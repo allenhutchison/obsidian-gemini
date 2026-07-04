@@ -80,6 +80,13 @@ export class ModelClientFactory {
 	private static resolveModelName(plugin: ObsidianGemini, useCase: ModelUseCase): string {
 		const settings = plugin.settings;
 		const provider = settings.provider ?? 'gemini';
+		// Ollama keeps a single model resident at a time, so diverging models
+		// across use cases just thrashes RAM/VRAM on every switch for no benefit.
+		// Collapse every use case to the one configured chat model; the
+		// per-use-case summary/completions settings are ignored under Ollama. (#1077)
+		if (provider === 'ollama') {
+			return settings.chatModelName || getDefaultModelForRole('chat', 'ollama');
+		}
 		switch (useCase) {
 			case ModelUseCase.CHAT:
 				return settings.chatModelName || getDefaultModelForRole('chat', provider);
