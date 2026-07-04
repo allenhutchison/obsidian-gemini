@@ -270,7 +270,8 @@ export class RagVaultScanner {
 	 * @param progressProvider - The object to pass to the progress modal (typically the orchestrator)
 	 */
 	startResumeIndexing(progressProvider: RagProgressProvider): void {
-		import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
+		// Fire-and-forget: lazy-load and open the progress modal; indexing itself is handled below.
+		void import('../ui/rag-progress-modal').then(({ RagProgressModal }) => {
 			const progressModal = new RagProgressModal(this.plugin.app, progressProvider, (result) => {
 				new Notice(t('notice.rag.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
 			});

@@ -250,14 +250,16 @@ export class AgentView extends ItemView {
 				onRemoveTextFile: (file: TFile) => {
 					this.context.removeContextFile(file, this.currentSession);
 					this.updateSessionHeader();
-					this.updateSessionMetadata();
+					// Fire-and-forget: persist session metadata in the background from this sync handler.
+					void this.updateSessionMetadata();
 				},
 				onRemoveFolder: (files: TFile[]) => {
 					for (const file of files) {
 						this.context.removeContextFile(file, this.currentSession);
 					}
 					this.updateSessionHeader();
-					this.updateSessionMetadata();
+					// Fire-and-forget: persist session metadata in the background from this sync handler.
+					void this.updateSessionMetadata();
 				},
 				onRemoveAttachment: () => {
 					// Shelf handles its own state; nothing else to sync
@@ -523,7 +525,8 @@ export class AgentView extends ItemView {
 				onDelete: (session: ChatSession) => {
 					// If the deleted session is the current one, create a new session
 					if (this.currentSession && this.currentSession.id === session.id) {
-						this.createNewSession();
+						// Fire-and-forget: replacing the deleted session; errors are handled within.
+						void this.createNewSession();
 					}
 				},
 			},
@@ -693,7 +696,8 @@ export class AgentView extends ItemView {
 				evt.preventDefault();
 				const href = target.getAttribute('href');
 				if (href) {
-					this.app.workspace.openLinkText(href, '', false);
+					// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
+					void this.app.workspace.openLinkText(href, '', false);
 				}
 			}
 		});

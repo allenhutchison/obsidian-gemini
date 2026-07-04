@@ -305,7 +305,8 @@ describe('BackgroundTaskManager', () => {
 			// Start draining while the work is still blocked
 			const drainPromise = manager.drain('scheduled-task');
 			let drainResolved = false;
-			drainPromise.then(() => {
+			// Fire-and-forget probe: drainPromise is awaited below.
+			void drainPromise.then(() => {
 				drainResolved = true;
 			});
 

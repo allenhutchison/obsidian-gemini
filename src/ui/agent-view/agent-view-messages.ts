@@ -966,7 +966,8 @@ export class AgentViewMessages {
 				}
 				this.autoOpenDiffTimeout = window.setTimeout(() => {
 					this.autoOpenDiffTimeout = null;
-					this.openDiffView(
+					// Fire-and-forget: auto-opening the diff view is a UI side effect.
+					void this.openDiffView(
 						diffContext,
 						handleResponse,
 						(view) => {

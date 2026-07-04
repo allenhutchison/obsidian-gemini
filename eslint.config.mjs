@@ -20,7 +20,8 @@ const SOFTENED_TS_RULES = {
 	// #1039: cleared — enforced.
 	'@typescript-eslint/no-unnecessary-type-assertion': 'error',
 	'@typescript-eslint/no-misused-promises': 'off',
-	'@typescript-eslint/no-floating-promises': 'off',
+	// #1037: cleared — enforced.
+	'@typescript-eslint/no-floating-promises': 'error',
 	'@typescript-eslint/no-base-to-string': 'off',
 	'@typescript-eslint/restrict-template-expressions': 'off',
 	// #1041: cleared — enforced.

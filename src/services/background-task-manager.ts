@@ -220,7 +220,8 @@ export class BackgroundTaskManager {
 			const link = fragment.createEl('a', { text: t('notice.backgroundTask.openResult'), href: '#' });
 			link.addEventListener('click', (e) => {
 				e.preventDefault();
-				this.plugin.app.workspace.openLinkText(task.outputPath!, '', false);
+				// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
+				void this.plugin.app.workspace.openLinkText(task.outputPath!, '', false);
 				notice.hide();
 			});
 		} else {
