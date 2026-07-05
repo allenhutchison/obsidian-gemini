@@ -96,18 +96,7 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 		const isPaused = hookState?.pausedDueToErrors === true;
 		const isDisabled = !hook.enabled;
 
-		const li = container.createEl('li', {
-			cls: [
-				'gemini-scheduler-item',
-				isDisabled ? 'gemini-scheduler-item--disabled' : '',
-				isPaused ? 'gemini-scheduler-item--paused' : '',
-			]
-				.filter(Boolean)
-				.join(' '),
-		});
-
-		const iconEl = li.createSpan({ cls: 'gemini-scheduler-item-icon' });
-		setIcon(iconEl, isPaused ? 'alert-circle' : isDisabled ? 'pause-circle' : 'webhook');
+		const { li } = this.renderEntityRowShell(container, { isPaused, isDisabled, activeIcon: 'webhook' });
 
 		const info = li.createDiv({ cls: 'gemini-scheduler-item-info' });
 		info.createDiv({ text: hook.slug, cls: 'gemini-scheduler-item-slug' });

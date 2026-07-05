@@ -281,6 +281,38 @@ export abstract class ManagementModalBase<TEntity, TEntityState> extends Modal {
 		return msg.length > 80 ? `${msg.slice(0, 77)}…` : msg;
 	}
 
+	/**
+	 * Build the shared entity-row shell used by every management modal: the
+	 * `<li>` carrying the paused/disabled state classes and the leading
+	 * status-icon span. Subclasses call this, then append their entity-specific
+	 * badge/info/action content to the returned `li`. The icon reflects
+	 * paused → disabled → active state; the active-state icon is entity-specific
+	 * (e.g. `'clock'` for tasks, `'webhook'` for hooks) and is supplied by the
+	 * caller, while the paused (`alert-circle`) and disabled (`pause-circle`)
+	 * icons are shared.
+	 */
+	protected renderEntityRowShell(
+		container: HTMLElement,
+		opts: { isPaused: boolean; isDisabled: boolean; activeIcon: string }
+	): { li: HTMLElement; iconEl: HTMLElement } {
+		const { isPaused, isDisabled, activeIcon } = opts;
+
+		const li = container.createEl('li', {
+			cls: [
+				'gemini-scheduler-item',
+				isDisabled ? 'gemini-scheduler-item--disabled' : '',
+				isPaused ? 'gemini-scheduler-item--paused' : '',
+			]
+				.filter(Boolean)
+				.join(' '),
+		});
+
+		const iconEl = li.createSpan({ cls: 'gemini-scheduler-item-icon' });
+		setIcon(iconEl, isPaused ? 'alert-circle' : isDisabled ? 'pause-circle' : activeIcon);
+
+		return { li, iconEl };
+	}
+
 	/** Capitalize the entity label for use in UI strings. */
 	protected get capitalizedEntityLabel(): string {
 		return this.entityLabel.charAt(0).toUpperCase() + this.entityLabel.slice(1);
