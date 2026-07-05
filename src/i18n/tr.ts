@@ -18,6 +18,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': 'Kasanız hakkındaki bilgimi yenileyin',
 	'agent.empty.initContext': 'Vault bağlamını başlat',
 	'agent.empty.initContextDesc': 'Kasa yapınızı ve düzeninizi anlamama yardımcı olun',
+	'agent.empty.initContextFailed': 'Vault bağlamı başlatılamadı',
 	'agent.empty.recentSessions': 'Son oturumlar:',
 	'agent.empty.examplesHeader': 'Bu örnekleri deneyin:',
 	'i18n.aiTranslatedNotice':
@@ -839,6 +840,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'Not projeye dönüştürülemedi',
 	'notice.main.noProjectsFound': 'Hiçbir proje bulunamadı',
 	'notice.main.noSessionsForProject': '{name} projesi için oturum bulunamadı',
+	'notice.main.resumeProjectSessionFailed': 'Proje oturumu devam ettirilemedi',
 	'notice.main.projectRemoved': 'Şu ögeden proje durumu kaldırıldı: {name}',
 	'notice.main.projectRemoveFailed': 'Proje durumu kaldırılamadı',
 	'notice.main.selectTextFirst': 'Lütfen önce bir metin seçin',

@@ -19,6 +19,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': 'Actualiser ma compréhension de votre coffre',
 	'agent.empty.initContext': 'Initialiser le contexte du coffre',
 	'agent.empty.initContextDesc': "M'aider à comprendre la structure et l'organisation de votre coffre",
+	'agent.empty.initContextFailed': "Échec de l'initialisation du contexte du coffre",
 	'agent.empty.recentSessions': 'Sessions récentes :',
 	'agent.empty.examplesHeader': 'Essayez ces exemples :',
 	'i18n.aiTranslatedNotice':
@@ -848,6 +849,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'Échec de la conversion de la note en projet',
 	'notice.main.noProjectsFound': 'Aucun projet trouvé',
 	'notice.main.noSessionsForProject': 'Aucune session trouvée pour le projet : {name}',
+	'notice.main.resumeProjectSessionFailed': 'Échec de la reprise de la session de projet',
 	'notice.main.projectRemoved': 'Statut de projet retiré de : {name}',
 	'notice.main.projectRemoveFailed': 'Échec du retrait du statut de projet',
 	'notice.main.selectTextFirst': "Veuillez d'abord sélectionner du texte",
