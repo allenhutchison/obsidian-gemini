@@ -1,6 +1,32 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
+import type { TAbstractFile } from 'obsidian';
 import type ObsidianGemini from '../../main';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+
+/** Plain, serializable description of a vault file or folder. */
+export interface VaultFileEntry {
+	name: string;
+	path: string;
+	type: 'file' | 'folder';
+	size: number | undefined;
+	modified: number | undefined;
+}
+
+/**
+ * Serialize a vault file or folder into the plain entry shape the
+ * directory-listing tools return (`read_file` on a folder, `list_files`).
+ * Folders carry no size/mtime, so those fields are `undefined` for them.
+ */
+export function toFileEntry(f: TAbstractFile): VaultFileEntry {
+	const isFile = f instanceof TFile;
+	return {
+		name: f.name,
+		path: f.path,
+		type: isFile ? 'file' : 'folder',
+		size: isFile ? f.stat.size : undefined,
+		modified: isFile ? f.stat.mtime : undefined,
+	};
+}
 
 /**
  * Helper function to resolve a path to a file with multiple fallback strategies
