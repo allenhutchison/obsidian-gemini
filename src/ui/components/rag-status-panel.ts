@@ -1,5 +1,5 @@
 import { Notice, Setting, setIcon } from 'obsidian';
-import type { RagDetailedStatus } from '../rag-status-modal';
+import type { RagDetailedStatus } from '../../services/rag-types';
 import { formatRelativeTime } from '../../utils/format-relative-time';
 import { t } from '../../i18n';
 

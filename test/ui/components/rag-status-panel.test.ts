@@ -68,7 +68,7 @@ import {
 	type RagFileListOptions,
 	type RagOverviewCallbacks,
 } from '../../../src/ui/components/rag-status-panel';
-import type { RagDetailedStatus } from '../../../src/ui/rag-status-modal';
+import type { RagDetailedStatus } from '../../../src/services/rag-types';
 import { t } from '../../../src/i18n';
 
 /** Build a jsdom element carrying the Obsidian DOM-helper methods the panel uses. */

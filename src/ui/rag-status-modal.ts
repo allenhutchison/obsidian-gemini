@@ -1,22 +1,8 @@
 import { App, Modal, setIcon } from 'obsidian';
-import type { RagIndexStatus, FailedFileEntry } from '../services/rag-types';
+import type { RagDetailedStatus } from '../services/rag-types';
 import { getRawErrorMessage } from '../utils/error-utils';
 import { renderRagOverview, renderRagFileList, renderRagFailures } from './components/rag-status-panel';
 import { t } from '../i18n';
-
-/**
- * Detailed status information for the modal
- */
-export interface RagDetailedStatus {
-	status: RagIndexStatus;
-	indexedCount: number;
-	failedCount: number;
-	pendingCount: number;
-	storeName: string | null;
-	lastSync: number | null;
-	indexedFiles: Array<{ path: string; lastIndexed: number }>;
-	failedFiles: FailedFileEntry[];
-}
 
 type TabId = 'overview' | 'files' | 'failures';
 
