@@ -111,8 +111,16 @@ export class ScheduledTasksModal extends Modal {
 				void (async () => {
 					resetBtn.disabled = true;
 					resetBtn.setText(t('scheduledTasks.resetting'));
-					await this.plugin.scheduledTaskManager?.resetTask(task.slug);
-					this.onOpen(); // re-render
+					try {
+						await this.plugin.scheduledTaskManager?.resetTask(task.slug);
+						this.onOpen(); // re-render
+					} catch (error) {
+						// resetTask failed before the re-render, so restore the button
+						// instead of leaving it stuck disabled/"…"-ing.
+						this.plugin.logger.error(`[ScheduledTasksModal] resetTask failed for "${task.slug}":`, error);
+						resetBtn.disabled = false;
+						resetBtn.setText(t('scheduledTasks.resetButton'));
+					}
 				})();
 			});
 		}
@@ -133,6 +141,9 @@ export class ScheduledTasksModal extends Modal {
 					runBtn.setText(t('scheduledTasks.submitted'));
 				} catch (error) {
 					runBtn.setText(t('scheduledTasks.runError'));
+					// Restore the disabled state so the user can retry, matching the
+					// scheduler-management run-button sibling.
+					runBtn.disabled = false;
 					this.plugin.logger.error(`[ScheduledTasksModal] runNow failed for "${task.slug}":`, error);
 				}
 			})();

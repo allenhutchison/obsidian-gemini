@@ -178,8 +178,15 @@ export class HookManagementModal extends ManagementModalBase<Hook, HookState> {
 			resetBtn.addEventListener('click', () => {
 				void (async () => {
 					resetBtn.disabled = true;
-					await this.plugin.hookManager?.resetHook(hook.slug);
-					this.render();
+					try {
+						await this.plugin.hookManager?.resetHook(hook.slug);
+						this.render();
+					} catch (err) {
+						// On success render() rebuilds the row; on failure restore the
+						// button so it can't stay stuck disabled (mirrors the toggle handler above).
+						this.plugin.logger.error(`[HookManagementModal] resetHook failed for "${hook.slug}":`, err);
+						resetBtn.disabled = false;
+					}
 				})();
 			});
 		}

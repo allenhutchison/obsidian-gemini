@@ -53,12 +53,18 @@ export class ExplainPromptSelectionModal extends SuggestModal<PromptInfo> {
 	}
 
 	private async chooseSuggestion(promptInfo: PromptInfo): Promise<void> {
-		// Load the full prompt content
-		const prompt = await this.plugin.promptManager.loadPrompt(promptInfo.path);
-		if (prompt) {
-			await this.onSelect(prompt);
-		} else {
-			this.plugin.logger.error('Failed to load prompt:', promptInfo.path);
+		// Invoked via `void this.chooseSuggestion(...)`, so a rejection here would be
+		// an unhandled promise rejection — guard loadPrompt/onSelect with try/catch.
+		try {
+			// Load the full prompt content
+			const prompt = await this.plugin.promptManager.loadPrompt(promptInfo.path);
+			if (prompt) {
+				await this.onSelect(prompt);
+			} else {
+				this.plugin.logger.error('Failed to load prompt:', promptInfo.path);
+			}
+		} catch (error) {
+			this.plugin.logger.error('Failed to load or apply prompt:', promptInfo.path, error);
 		}
 	}
 }

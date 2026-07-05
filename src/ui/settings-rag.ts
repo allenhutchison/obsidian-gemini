@@ -52,12 +52,23 @@ export async function renderRAGSettings(
 						const { RagCleanupModal } = await import('./rag-cleanup-modal');
 						const modal = new RagCleanupModal(app, (deleteData) => {
 							void (async () => {
-								if (deleteData && plugin.ragIndexing) {
-									await plugin.ragIndexing.deleteFileSearchStore();
+								const previousEnabled = plugin.settings.ragIndexing.enabled;
+								try {
+									if (deleteData && plugin.ragIndexing) {
+										await plugin.ragIndexing.deleteFileSearchStore();
+									}
+									plugin.settings.ragIndexing.enabled = false;
+									await plugin.saveSettings();
+									context.redisplay();
+								} catch (error) {
+									// Revert the in-memory flag so it can't drift from the persisted
+									// value when saveSettings()/deleteFileSearchStore() throws after it
+									// was flipped, then surface it and redisplay (mirrors delete-index).
+									plugin.settings.ragIndexing.enabled = previousEnabled;
+									plugin.logger.error('Failed to disable RAG indexing:', error);
+									new Notice(t('settings.rag.deleteIndexFailed', { error: getErrorMessage(error) }));
+									context.redisplay();
 								}
-								plugin.settings.ragIndexing.enabled = false;
-								await plugin.saveSettings();
-								context.redisplay();
 							})();
 						});
 						modal.open();
