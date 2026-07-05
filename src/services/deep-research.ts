@@ -56,27 +56,66 @@ export class DeepResearchService {
 
 		if (!this.researchManager) {
 			const genAI = createGoogleGenAI(this.plugin);
-			// WORKAROUND (as of @google/genai v0.14.x): The GoogleGenAI interactions getter creates
-			// a new client that ignores the fetch option passed to the constructor. We must manually
-			// inject our proxyFetch into the generated interactions client to ensure CORS requests
-			// are handled correctly in Obsidian's browser environment.
-			// This may break if the SDK internal structure changes - monitor on SDK updates.
-			const interactions = genAI.interactions as any;
-			if (interactions && interactions._client) {
-				this.plugin.logger.log('[DeepResearch] Injecting proxyFetch into interactions client');
-				interactions._client.fetch = proxyFetch;
-			} else {
-				// Fail fast - without proxyFetch injection, all research requests will fail with CORS errors
-				throw new Error(
-					'Failed to initialize research client: SDK structure has changed and proxyFetch injection failed. ' +
-						'Please update the plugin or report this issue at https://github.com/allenhutchison/obsidian-gemini/issues'
-				);
-			}
-
+			this.injectProxyFetch(genAI);
 			this.researchManager = new ResearchManager(genAI);
 		}
 
 		return this.researchManager;
+	}
+
+	/**
+	 * Route the Deep Research (`interactions`) API through Obsidian's requestUrl-based
+	 * {@link proxyFetch}. Unlike `models.*` (which reach Google's endpoint directly
+	 * from the renderer), the interactions endpoint is not CORS-accessible with the
+	 * default `fetch`, so its requests must go through the proxy or they fail with
+	 * "Failed to fetch".
+	 *
+	 * In `@google/genai` 2.x the interactions client is a Speakeasy-generated
+	 * `ClientSDK` created **lazily on the first request** and assigned to
+	 * `interactions.sdk`; its fetch lives at `sdk._httpClient.fetcher` (this was
+	 * `interactions._client.fetch` in the 0.14.x SDK the old workaround targeted).
+	 * Because the client doesn't exist until the first call, we trap the `sdk`
+	 * assignment on the (stable) interactions instance and swap in `proxyFetch` the
+	 * moment the client is built — and patch it immediately if it already exists.
+	 */
+	private injectProxyFetch(genAI: unknown): void {
+		type SpeakeasyClient = { _httpClient?: { fetcher?: unknown } };
+		const interactions = (genAI as { interactions?: { sdk?: SpeakeasyClient } }).interactions;
+		if (!interactions) {
+			this.plugin.logger.warn('[DeepResearch] GoogleGenAI has no interactions client; proxyFetch not injected');
+			return;
+		}
+
+		const patch = (sdk: SpeakeasyClient | undefined) => {
+			const httpClient = sdk?._httpClient;
+			if (httpClient && typeof httpClient.fetcher === 'function' && httpClient.fetcher !== proxyFetch) {
+				httpClient.fetcher = proxyFetch;
+				this.plugin.logger.log('[DeepResearch] Injected proxyFetch into interactions HTTP client');
+			}
+		};
+
+		// Patch an already-built client (e.g. a warm getter) up front...
+		patch(interactions.sdk);
+
+		// ...and trap future lazy assignment so the client built on the first request
+		// gets proxyFetch before it makes any call.
+		let current = interactions.sdk;
+		try {
+			Object.defineProperty(interactions, 'sdk', {
+				configurable: true,
+				enumerable: true,
+				get: () => current,
+				set: (value: SpeakeasyClient | undefined) => {
+					patch(value);
+					current = value;
+				},
+			});
+		} catch (error) {
+			this.plugin.logger.warn(
+				'[DeepResearch] Could not install interactions fetch trap; Deep Research may fail with CORS errors',
+				error
+			);
+		}
 	}
 
 	/**
