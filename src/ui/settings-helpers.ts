@@ -24,7 +24,8 @@ function createDetachedStubIfNeeded(containerEl: HTMLElement): HTMLElement | nul
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild === 'function') {
 		return null;
 	}
-	return typeof document !== 'undefined' ? createDiv() : containerEl;
+	// eslint-disable-next-line obsidianmd/prefer-create-el -- jsdom unit tests exercise this path; Obsidian's createDiv global doesn't exist there
+	return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
 }
 
 /**

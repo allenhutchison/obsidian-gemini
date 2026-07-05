@@ -174,6 +174,10 @@ export default defineConfig([
 			...PERVASIVE_OBSIDIANMD_RULES_TODO,
 			// Tests legitimately use Node.js modules for fixtures and don't run in Obsidian.
 			'import/no-nodejs-modules': 'off',
+			// Tests run in jsdom, where Obsidian's createEl/createDiv/createSpan DOM
+			// globals don't exist — the rule's suggestion (and its autofix, which the
+			// pre-commit `eslint --fix` would apply) is impossible there.
+			'obsidianmd/prefer-create-el': 'off',
 			// innerHTML inside test setup is fine (jsdom, not user-facing).
 			'@microsoft/sdl/no-inner-html': 'off',
 			// Tests use concrete `.obsidian` sample paths as fixtures to verify the
