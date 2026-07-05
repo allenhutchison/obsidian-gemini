@@ -1,7 +1,6 @@
 import type ObsidianGemini from '../main';
-import { Setting, ToggleComponent, debounce, Notice } from 'obsidian';
-import { createCollapsibleSection } from './settings-helpers';
-import { getErrorMessage } from '../utils/error-utils';
+import { Setting, ToggleComponent } from 'obsidian';
+import { createCollapsibleSection, createDebouncedSave } from './settings-helpers';
 import { t } from '../i18n';
 
 export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemini): void {
@@ -9,18 +8,7 @@ export function renderUISettings(containerEl: HTMLElement, plugin: ObsidianGemin
 		description: t('settings.ui.sectionDesc'),
 	});
 
-	const debouncedSave = debounce(
-		async () => {
-			try {
-				await plugin.saveSettings();
-			} catch (error) {
-				plugin.logger.error('Failed to save settings:', error);
-				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
-			}
-		},
-		300,
-		true
-	);
+	const debouncedSave = createDebouncedSave(plugin);
 
 	new Setting(sectionEl)
 		.setName(t('settings.ui.userNameName'))

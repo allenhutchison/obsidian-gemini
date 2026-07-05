@@ -14,6 +14,7 @@ vi.mock('../../src/ui/settings-helpers', () => ({
 	selectModelSetting: mockSelectModelSetting,
 	// The General section is rendered directly into the element we pass in.
 	createAlwaysOpenSection: (containerEl: any) => containerEl,
+	createDebouncedSave: () => () => {},
 }));
 
 vi.mock('../../src/ui/folder-suggest', () => ({

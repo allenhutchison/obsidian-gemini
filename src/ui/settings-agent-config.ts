@@ -1,7 +1,6 @@
 import type ObsidianGemini from '../main';
-import { Setting, Notice, debounce } from 'obsidian';
-import { createCollapsibleSection } from './settings-helpers';
-import { getErrorMessage } from '../utils/error-utils';
+import { Setting, Notice } from 'obsidian';
+import { createCollapsibleSection, createDebouncedSave } from './settings-helpers';
 import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings';
 
@@ -31,20 +30,7 @@ export async function renderAgentConfigSettings(
 		}
 	);
 
-	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
-	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
-	const debouncedSave = debounce(
-		async () => {
-			try {
-				await plugin.saveSettings();
-			} catch (error) {
-				plugin.logger.error('Failed to save settings:', error);
-				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
-			}
-		},
-		300,
-		true
-	);
+	const debouncedSave = createDebouncedSave(plugin);
 
 	// --- Custom Prompts ---
 	new Setting(sectionEl).setName(t('settings.agentConfig.customPromptsHeading')).setHeading();
