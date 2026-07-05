@@ -1,6 +1,6 @@
 import type ObsidianGemini from '../main';
-import { App, Notice, Setting, SecretComponent, debounce } from 'obsidian';
-import { createAlwaysOpenSection, selectModelSetting } from './settings-helpers';
+import { App, Notice, Setting, SecretComponent } from 'obsidian';
+import { createAlwaysOpenSection, createDebouncedSave, selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
@@ -12,22 +12,7 @@ export async function renderGeneralSettings(
 	app: App,
 	context: SettingsSectionContext
 ): Promise<void> {
-	// Debounce saveSettings() to avoid re-running the plugin lifecycle on every keystroke
-	// in text inputs. In-memory settings are mutated immediately so the UI stays responsive.
-	// The callback is async + wrapped in try/catch so rejections from saveSettings() don't
-	// become unhandled promise rejections.
-	const debouncedSave = debounce(
-		async () => {
-			try {
-				await plugin.saveSettings();
-			} catch (error) {
-				plugin.logger.error('Failed to save settings:', error);
-				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
-			}
-		},
-		300,
-		true
-	);
+	const debouncedSave = createDebouncedSave(plugin);
 
 	const generalEl = createAlwaysOpenSection(
 		containerEl,

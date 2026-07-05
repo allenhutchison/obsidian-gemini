@@ -1,7 +1,7 @@
 import type ObsidianGemini from '../main';
-import { App, Setting, Notice, debounce } from 'obsidian';
+import { App, Setting, Notice } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
-import { createCollapsibleSection } from './settings-helpers';
+import { createCollapsibleSection, createDebouncedSave } from './settings-helpers';
 import { t } from '../i18n';
 import type { SettingsSectionContext } from './settings';
 
@@ -14,20 +14,7 @@ export async function renderRAGSettings(
 	const containerEl = createCollapsibleSection(plugin, outerContainerEl, t('settings.rag.sectionTitle'), 'rag', {
 		description: t('settings.rag.sectionDesc'),
 	});
-	// Debounce saveSettings() for text inputs so typing doesn't trigger the plugin
-	// lifecycle on every keystroke. Settings are mutated immediately; only the save is delayed.
-	const debouncedSave = debounce(
-		async () => {
-			try {
-				await plugin.saveSettings();
-			} catch (error) {
-				plugin.logger.error('Failed to save RAG settings:', error);
-				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
-			}
-		},
-		300,
-		true
-	);
+	const debouncedSave = createDebouncedSave(plugin, 'Failed to save RAG settings:');
 
 	// Privacy warning
 	const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });

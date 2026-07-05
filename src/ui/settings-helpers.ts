@@ -1,8 +1,36 @@
-import { Setting } from 'obsidian';
+import { Setting, Notice, debounce } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ObsidianGeminiSettings } from '../main';
 import { GEMINI_MODELS } from '../models';
+import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
+
+/**
+ * Create a debounced `saveSettings()` callback shared by the settings renderers.
+ *
+ * Text inputs invoke this on every keystroke; debouncing avoids re-running the
+ * plugin lifecycle (and its reload) until typing settles. The callback is async
+ * and wrapped in try/catch so a rejected save surfaces a Notice instead of an
+ * unhandled promise rejection.
+ *
+ * @param plugin - The plugin instance whose settings are saved.
+ * @param logLabel - Debug-log prefix used when a save fails; pass a
+ *   section-specific label to keep failure logs greppable.
+ */
+export function createDebouncedSave(plugin: ObsidianGemini, logLabel: string = 'Failed to save settings:'): () => void {
+	return debounce(
+		async () => {
+			try {
+				await plugin.saveSettings();
+			} catch (error) {
+				plugin.logger.error(logLabel, error);
+				new Notice(t('settings.common.saveFailedNotice', { error: getErrorMessage(error) }));
+			}
+		},
+		300,
+		true
+	);
+}
 
 export interface CollapsibleSectionOptions {
 	/** Description shown under the title; visible whether the section is open or closed. */
