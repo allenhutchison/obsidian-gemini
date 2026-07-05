@@ -1,11 +1,11 @@
-import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
+import { App, Modal, Notice, setIcon } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { BackgroundTask } from '../services/background-task-manager';
-import type { RagDetailedStatus } from './rag-status-modal';
+import type { RagDetailedStatus } from '../services/rag-types';
 import type { ProgressListener } from '../services/rag-types';
 import type { RagIndexingService } from '../services/rag-indexing';
 import { getErrorMessage } from '../utils/error-utils';
-import { formatRelativeTime } from '../utils/format-relative-time';
+import { renderRagOverview, renderRagFileList, renderRagFailures } from './components/rag-status-panel';
 import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
 
@@ -381,118 +381,37 @@ export class BackgroundTasksModal extends Modal {
 	private renderRagInnerContent(container: HTMLElement, status: RagDetailedStatus, rag: RagIndexingService): void {
 		switch (this.ragInnerTab) {
 			case 'overview':
-				this.renderRagOverview(container, status, rag);
+				renderRagOverview(container, status, {
+					onSyncNow: () => rag.syncPendingChanges(),
+					onSyncSuccess: () => this.renderTabContent(),
+					formatSyncError: (error) => getErrorMessage(error),
+					onReindex: () => {
+						this.close();
+						// Fire-and-forget: user-initiated reindex; progress + errors surface via modal/notices.
+						void (async () => {
+							const { RagProgressModal } = await import('./rag-progress-modal');
+							const progressModal = new RagProgressModal(this.plugin.app, rag, (result) => {
+								new Notice(t('backgroundTasks.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
+							});
+							progressModal.open();
+							rag.indexVault().catch((error: unknown) => {
+								new Notice(t('backgroundTasks.indexingFailed', { message: getErrorMessage(error) }));
+							});
+						})();
+					},
+					onOpenSettings: () => {
+						this.close();
+						openPluginSettingsTab(this.plugin.app, this.plugin.manifest.id);
+					},
+				});
 				break;
 			case 'files':
 				this.renderRagFiles(container, status);
 				break;
 			case 'failures':
-				this.renderRagFailures(container, status);
+				renderRagFailures(container, status);
 				break;
 		}
-	}
-
-	private renderRagOverview(container: HTMLElement, status: RagDetailedStatus, rag: RagIndexingService): void {
-		const infoEl = container.createDiv({ cls: 'rag-status-info' });
-
-		// Status row
-		const statusRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		statusRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.statusLabel') });
-		const statusValue = statusRow.createSpan({ cls: `rag-status-value ${this.ragStatusClass(status.status)}` });
-		statusValue.setText(this.ragStatusText(status.status));
-
-		// Files indexed
-		const filesRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		filesRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.filesIndexedLabel') });
-		filesRow.createSpan({ cls: 'rag-status-value', text: status.indexedCount.toLocaleString() });
-
-		// Pending changes
-		const pendingRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		pendingRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.pendingLabel') });
-		pendingRow.createSpan({
-			cls: 'rag-status-value',
-			text:
-				status.pendingCount === 1
-					? t('ragStatus.changeSingular', { count: status.pendingCount })
-					: t('ragStatus.changePlural', { count: status.pendingCount }),
-		});
-
-		// Failures (if any)
-		if (status.failedCount > 0) {
-			const failedRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			failedRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.failedLabel') });
-			failedRow.createSpan({
-				cls: 'rag-status-value rag-status-error',
-				text:
-					status.failedCount === 1
-						? t('ragStatus.fileSingular', { count: status.failedCount })
-						: t('ragStatus.filePlural', { count: status.failedCount }),
-			});
-		}
-
-		// Last sync
-		if (status.lastSync) {
-			const syncRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			syncRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.lastSyncLabel') });
-			syncRow.createSpan({ cls: 'rag-status-value', text: formatRelativeTime(status.lastSync) });
-		}
-
-		// Store name
-		if (status.storeName) {
-			const storeRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			storeRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.storeLabel') });
-			storeRow.createSpan({ cls: 'rag-status-value rag-status-store', text: status.storeName });
-		}
-
-		// Action buttons
-		const isIndexing = status.status === 'indexing';
-		const hasPending = status.pendingCount > 0;
-
-		new Setting(container)
-			.addButton((btn) =>
-				btn
-					.setButtonText(t('ragStatus.syncNowButton'))
-					.setDisabled(isIndexing || !hasPending)
-					.setTooltip(hasPending ? t('ragStatus.syncTooltipPending') : t('ragStatus.syncTooltipNone'))
-					.onClick(async () => {
-						btn.setDisabled(true);
-						btn.setButtonText(t('ragStatus.syncing'));
-						try {
-							await rag.syncPendingChanges();
-							btn.setButtonText(t('ragStatus.syncNowButton'));
-							this.renderTabContent();
-						} catch (error) {
-							new Notice(t('ragStatus.syncFailed', { message: getErrorMessage(error) }));
-							btn.setButtonText(t('ragStatus.syncNowButton'));
-							btn.setDisabled(false);
-						}
-					})
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText(t('ragStatus.reindexButton'))
-					.setDisabled(isIndexing)
-					.onClick(async () => {
-						this.close();
-						const { RagProgressModal } = await import('./rag-progress-modal');
-						const progressModal = new RagProgressModal(this.plugin.app, rag, (result) => {
-							new Notice(t('backgroundTasks.indexingComplete', { indexed: result.indexed, skipped: result.skipped }));
-						});
-						progressModal.open();
-						rag.indexVault().catch((error: unknown) => {
-							new Notice(t('backgroundTasks.indexingFailed', { message: getErrorMessage(error) }));
-						});
-					})
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText(t('ragStatus.settingsButton'))
-					.setCta()
-					.onClick(() => {
-						this.close();
-						openPluginSettingsTab(this.plugin.app, this.plugin.manifest.id);
-					})
-			);
 	}
 
 	private renderRagFiles(container: HTMLElement, status: RagDetailedStatus): void {
@@ -503,7 +422,22 @@ export class BackgroundTasksModal extends Modal {
 		});
 
 		const listContainer = container.createDiv({ cls: 'rag-status-file-list' });
-		this.renderRagFileList(listContainer, status);
+		const renderList = () =>
+			renderRagFileList(listContainer, status, {
+				searchQuery: this.ragSearchQuery,
+				showAll: this.ragShowAllFiles,
+				maxInitial: this.RAG_MAX_FILES_INITIAL,
+				onShowAll: () => {
+					this.ragShowAllFiles = true;
+					renderList();
+				},
+				onOpenFile: (path) => {
+					this.close();
+					// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
+					void this.plugin.app.workspace.openLinkText(path, '', false);
+				},
+			});
+		renderList();
 
 		// Restore scroll position (lost on progress-tick re-render)
 		listContainer.scrollTop = this.ragFileScrollTop;
@@ -516,103 +450,8 @@ export class BackgroundTasksModal extends Modal {
 			this.ragDebounceTimer = window.setTimeout(() => {
 				this.ragSearchQuery = (e.target as HTMLInputElement).value;
 				this.ragFileScrollTop = 0;
-				this.renderRagFileList(listContainer, status);
+				renderList();
 			}, 150);
 		});
-	}
-
-	private renderRagFileList(container: HTMLElement, status: RagDetailedStatus): void {
-		container.empty();
-
-		if (status.indexedFiles.length === 0) {
-			container.createDiv({ cls: 'rag-status-empty', text: t('ragStatus.noFilesIndexed') });
-			return;
-		}
-
-		let filtered = status.indexedFiles;
-		if (this.ragSearchQuery) {
-			const q = this.ragSearchQuery.toLowerCase();
-			filtered = filtered.filter((f) => f.path.toLowerCase().includes(q));
-		}
-
-		if (filtered.length === 0) {
-			container.createDiv({ cls: 'rag-status-empty', text: t('ragStatus.noSearchMatches') });
-			return;
-		}
-
-		const total = filtered.length;
-		const display = this.ragShowAllFiles ? filtered : filtered.slice(0, this.RAG_MAX_FILES_INITIAL);
-
-		for (const file of display) {
-			const item = container.createEl('button', {
-				cls: 'rag-status-file-item rag-status-file-item--clickable',
-				attr: { type: 'button', 'aria-label': t('backgroundTasks.openFileAria', { path: file.path }) },
-			});
-			const pathEl = item.createSpan({ cls: 'rag-status-file-path' });
-			pathEl.setText(file.path);
-			pathEl.setAttribute('title', file.path);
-			item.createSpan({ cls: 'rag-status-file-time', text: formatRelativeTime(file.lastIndexed) });
-			item.addEventListener('click', () => {
-				this.close();
-				// Fire-and-forget: user-initiated navigation; errors surface via Obsidian.
-				void this.plugin.app.workspace.openLinkText(file.path, '', false);
-			});
-		}
-
-		if (!this.ragShowAllFiles && total > this.RAG_MAX_FILES_INITIAL) {
-			const more = container.createDiv({ cls: 'rag-status-show-more' });
-			more.setText(t('ragStatus.showAllFiles', { count: total.toLocaleString() }));
-			more.addEventListener('click', () => {
-				this.ragShowAllFiles = true;
-				this.renderRagFileList(container, status);
-			});
-		}
-	}
-
-	private renderRagFailures(container: HTMLElement, status: RagDetailedStatus): void {
-		if (status.failedFiles.length === 0) {
-			container.createDiv({ cls: 'rag-status-empty', text: t('ragStatus.noFailures') });
-			return;
-		}
-
-		const listContainer = container.createDiv({ cls: 'rag-status-failure-list' });
-		for (const failure of status.failedFiles) {
-			const item = listContainer.createDiv({ cls: 'rag-status-failure-item' });
-			const headerRow = item.createDiv({ cls: 'rag-status-failure-header' });
-			const iconEl = headerRow.createSpan({ cls: 'rag-status-failure-icon' });
-			setIcon(iconEl, 'x-circle');
-			const pathEl = headerRow.createSpan({ cls: 'rag-status-failure-path' });
-			pathEl.setText(failure.path);
-			pathEl.setAttribute('title', failure.path);
-			headerRow.createSpan({ cls: 'rag-status-failure-time', text: formatRelativeTime(failure.timestamp) });
-			item.createDiv({ cls: 'rag-status-failure-error', text: failure.error });
-		}
-	}
-
-	// ---------------------------------------------------------------------------
-	// RAG display helpers
-	// ---------------------------------------------------------------------------
-
-	private ragStatusText(status: string): string {
-		const map: Record<string, string> = {
-			idle: t('ragStatus.statusReady'),
-			indexing: t('ragStatus.statusIndexing'),
-			error: t('ragStatus.statusError'),
-			paused: t('ragStatus.statusPaused'),
-			disabled: t('ragStatus.statusDisabled'),
-			rate_limited: t('ragStatus.statusRateLimited'),
-		};
-		return map[status] ?? t('ragStatus.statusUnknown');
-	}
-
-	private ragStatusClass(status: string): string {
-		const map: Record<string, string> = {
-			idle: 'rag-status-ready',
-			indexing: 'rag-status-indexing',
-			error: 'rag-status-error',
-			paused: 'rag-status-paused',
-			rate_limited: 'rag-status-rate-limited',
-		};
-		return map[status] ?? '';
 	}
 }

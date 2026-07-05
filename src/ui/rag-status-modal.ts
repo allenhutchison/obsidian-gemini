@@ -1,22 +1,8 @@
-import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
-import type { RagIndexStatus, FailedFileEntry } from '../services/rag-types';
+import { App, Modal, setIcon } from 'obsidian';
+import type { RagDetailedStatus } from '../services/rag-types';
 import { getRawErrorMessage } from '../utils/error-utils';
-import { formatRelativeTime } from '../utils/format-relative-time';
+import { renderRagOverview, renderRagFileList, renderRagFailures } from './components/rag-status-panel';
 import { t } from '../i18n';
-
-/**
- * Detailed status information for the modal
- */
-export interface RagDetailedStatus {
-	status: RagIndexStatus;
-	indexedCount: number;
-	failedCount: number;
-	pendingCount: number;
-	storeName: string | null;
-	lastSync: number | null;
-	indexedFiles: Array<{ path: string; lastIndexed: number }>;
-	failedFiles: FailedFileEntry[];
-}
 
 type TabId = 'overview' | 'files' | 'failures';
 
@@ -122,103 +108,19 @@ export class RagStatusModal extends Modal {
 	}
 
 	private renderOverviewTab(container: HTMLElement): void {
-		const infoEl = container.createDiv({ cls: 'rag-status-info' });
-
-		// Status row
-		const statusRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		statusRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.statusLabel') });
-		const statusValue = statusRow.createSpan({ cls: 'rag-status-value' });
-		statusValue.setText(this.getStatusText());
-		statusValue.addClass(this.getStatusClass());
-
-		// Files indexed row
-		const filesRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		filesRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.filesIndexedLabel') });
-		filesRow.createSpan({ cls: 'rag-status-value', text: this.statusInfo.indexedCount.toLocaleString() });
-
-		// Pending changes row
-		const pendingRow = infoEl.createDiv({ cls: 'rag-status-row' });
-		pendingRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.pendingLabel') });
-		pendingRow.createSpan({
-			cls: 'rag-status-value',
-			text:
-				this.statusInfo.pendingCount === 1
-					? t('ragStatus.changeSingular', { count: this.statusInfo.pendingCount })
-					: t('ragStatus.changePlural', { count: this.statusInfo.pendingCount }),
+		renderRagOverview(container, this.statusInfo, {
+			onSyncNow: () => this.onSyncNow(),
+			onSyncSuccess: () => this.close(),
+			formatSyncError: (error) => getRawErrorMessage(error),
+			onReindex: () => {
+				this.close();
+				void this.onReindex();
+			},
+			onOpenSettings: () => {
+				this.close();
+				this.onOpenSettings();
+			},
 		});
-
-		// Failures row (if any)
-		if (this.statusInfo.failedCount > 0) {
-			const failedRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			failedRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.failedLabel') });
-			const failedValue = failedRow.createSpan({ cls: 'rag-status-value rag-status-error' });
-			failedValue.setText(
-				this.statusInfo.failedCount === 1
-					? t('ragStatus.fileSingular', { count: this.statusInfo.failedCount })
-					: t('ragStatus.filePlural', { count: this.statusInfo.failedCount })
-			);
-		}
-
-		// Last sync row
-		if (this.statusInfo.lastSync) {
-			const syncRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			syncRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.lastSyncLabel') });
-			syncRow.createSpan({
-				cls: 'rag-status-value',
-				text: formatRelativeTime(this.statusInfo.lastSync),
-			});
-		}
-
-		// Store name row
-		if (this.statusInfo.storeName) {
-			const storeRow = infoEl.createDiv({ cls: 'rag-status-row' });
-			storeRow.createSpan({ cls: 'rag-status-label', text: t('ragStatus.storeLabel') });
-			const storeValue = storeRow.createSpan({ cls: 'rag-status-value rag-status-store' });
-			storeValue.setText(this.statusInfo.storeName);
-		}
-
-		// Actions
-		const isIndexing = this.statusInfo.status === 'indexing';
-		const hasPending = this.statusInfo.pendingCount > 0;
-
-		new Setting(container)
-			.addButton((btn) =>
-				btn
-					.setButtonText(t('ragStatus.syncNowButton'))
-					.setDisabled(isIndexing || !hasPending)
-					.setTooltip(hasPending ? t('ragStatus.syncTooltipPending') : t('ragStatus.syncTooltipNone'))
-					.onClick(async () => {
-						btn.setDisabled(true);
-						btn.setButtonText(t('ragStatus.syncing'));
-						try {
-							await this.onSyncNow();
-							this.close();
-						} catch (error) {
-							const message = getRawErrorMessage(error);
-							new Notice(t('ragStatus.syncFailed', { message }));
-							btn.setButtonText(t('ragStatus.syncNowButton'));
-							btn.setDisabled(false);
-						}
-					})
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText(t('ragStatus.reindexButton'))
-					.setDisabled(isIndexing)
-					.onClick(() => {
-						this.close();
-						void this.onReindex();
-					})
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText(t('ragStatus.settingsButton'))
-					.setCta()
-					.onClick(() => {
-						this.close();
-						this.onOpenSettings();
-					})
-			);
 	}
 
 	private renderFilesTab(container: HTMLElement): void {
@@ -233,102 +135,33 @@ export class RagStatusModal extends Modal {
 			},
 		});
 
+		// File list container
+		const listContainer = container.createDiv({ cls: 'rag-status-file-list' });
+		const renderList = () =>
+			renderRagFileList(listContainer, this.statusInfo, {
+				searchQuery: this.searchQuery,
+				showAll: this.showAllFiles,
+				maxInitial: this.MAX_FILES_INITIAL,
+				onShowAll: () => {
+					this.showAllFiles = true;
+					renderList();
+				},
+			});
+		renderList();
+
 		searchInput.addEventListener('input', (e) => {
 			if (this.debounceTimer) {
 				window.clearTimeout(this.debounceTimer);
 			}
 			this.debounceTimer = window.setTimeout(() => {
 				this.searchQuery = (e.target as HTMLInputElement).value;
-				this.renderFileList(listContainer);
+				renderList();
 			}, 150);
 		});
-
-		// File list container
-		const listContainer = container.createDiv({ cls: 'rag-status-file-list' });
-		this.renderFileList(listContainer);
-	}
-
-	private renderFileList(container: HTMLElement): void {
-		container.empty();
-
-		if (this.statusInfo.indexedFiles.length === 0) {
-			container.createDiv({
-				cls: 'rag-status-empty',
-				text: t('ragStatus.noFilesIndexed'),
-			});
-			return;
-		}
-
-		// Filter files by search query
-		let filteredFiles = this.statusInfo.indexedFiles;
-		if (this.searchQuery) {
-			const query = this.searchQuery.toLowerCase();
-			filteredFiles = filteredFiles.filter((f) => f.path.toLowerCase().includes(query));
-		}
-
-		if (filteredFiles.length === 0) {
-			container.createDiv({
-				cls: 'rag-status-empty',
-				text: t('ragStatus.noSearchMatches'),
-			});
-			return;
-		}
-
-		// Limit display unless "show all" is enabled
-		const totalFiles = filteredFiles.length;
-		const displayFiles = this.showAllFiles ? filteredFiles : filteredFiles.slice(0, this.MAX_FILES_INITIAL);
-
-		// Render file items
-		for (const file of displayFiles) {
-			const item = container.createDiv({ cls: 'rag-status-file-item' });
-
-			const pathEl = item.createSpan({ cls: 'rag-status-file-path' });
-			pathEl.setText(file.path);
-			pathEl.setAttribute('title', file.path);
-
-			const timeEl = item.createSpan({ cls: 'rag-status-file-time' });
-			timeEl.setText(formatRelativeTime(file.lastIndexed));
-		}
-
-		// Show "load more" button if there are more files
-		if (!this.showAllFiles && totalFiles > this.MAX_FILES_INITIAL) {
-			const moreButton = container.createDiv({ cls: 'rag-status-show-more' });
-			moreButton.setText(t('ragStatus.showAllFiles', { count: totalFiles.toLocaleString() }));
-			moreButton.addEventListener('click', () => {
-				this.showAllFiles = true;
-				this.renderFileList(container);
-			});
-		}
 	}
 
 	private renderFailuresTab(container: HTMLElement): void {
-		if (this.statusInfo.failedFiles.length === 0) {
-			container.createDiv({
-				cls: 'rag-status-empty',
-				text: t('ragStatus.noFailures'),
-			});
-			return;
-		}
-
-		const listContainer = container.createDiv({ cls: 'rag-status-failure-list' });
-
-		for (const failure of this.statusInfo.failedFiles) {
-			const item = listContainer.createDiv({ cls: 'rag-status-failure-item' });
-
-			const headerRow = item.createDiv({ cls: 'rag-status-failure-header' });
-			const iconEl = headerRow.createSpan({ cls: 'rag-status-failure-icon' });
-			setIcon(iconEl, 'x-circle');
-
-			const pathEl = headerRow.createSpan({ cls: 'rag-status-failure-path' });
-			pathEl.setText(failure.path);
-			pathEl.setAttribute('title', failure.path);
-
-			const timeEl = headerRow.createSpan({ cls: 'rag-status-failure-time' });
-			timeEl.setText(formatRelativeTime(failure.timestamp));
-
-			const errorEl = item.createDiv({ cls: 'rag-status-failure-error' });
-			errorEl.setText(failure.error);
-		}
+		renderRagFailures(container, this.statusInfo);
 	}
 
 	private refresh(): void {
@@ -386,42 +219,6 @@ export class RagStatusModal extends Modal {
 				break;
 			default:
 				setIcon(el, 'database');
-		}
-	}
-
-	private getStatusText(): string {
-		switch (this.statusInfo.status) {
-			case 'idle':
-				return t('ragStatus.statusReady');
-			case 'indexing':
-				return t('ragStatus.statusIndexing');
-			case 'error':
-				return t('ragStatus.statusError');
-			case 'paused':
-				return t('ragStatus.statusPaused');
-			case 'disabled':
-				return t('ragStatus.statusDisabled');
-			case 'rate_limited':
-				return t('ragStatus.statusRateLimited');
-			default:
-				return t('ragStatus.statusUnknown');
-		}
-	}
-
-	private getStatusClass(): string {
-		switch (this.statusInfo.status) {
-			case 'idle':
-				return 'rag-status-ready';
-			case 'indexing':
-				return 'rag-status-indexing';
-			case 'error':
-				return 'rag-status-error';
-			case 'paused':
-				return 'rag-status-paused';
-			case 'rate_limited':
-				return 'rag-status-rate-limited';
-			default:
-				return '';
 		}
 	}
 }

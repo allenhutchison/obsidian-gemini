@@ -68,6 +68,23 @@ export interface PendingChange {
 export type RagIndexStatus = 'disabled' | 'idle' | 'indexing' | 'error' | 'paused' | 'rate_limited';
 
 /**
+ * Detailed RAG status snapshot rendered by the status modal and the Background
+ * Tasks "RAG" tab. Lives here (next to `RagIndexStatus`/`FailedFileEntry`) rather
+ * than in a UI module so the shared presenter in `src/ui/components/rag-status-panel.ts`
+ * and both modal consumers depend on the domain type, not on each other.
+ */
+export interface RagDetailedStatus {
+	status: RagIndexStatus;
+	indexedCount: number;
+	failedCount: number;
+	pendingCount: number;
+	storeName: string | null;
+	lastSync: number | null;
+	indexedFiles: Array<{ path: string; lastIndexed: number }>;
+	failedFiles: FailedFileEntry[];
+}
+
+/**
  * Extended progress information for live UI updates
  */
 export interface RagProgressInfo {
