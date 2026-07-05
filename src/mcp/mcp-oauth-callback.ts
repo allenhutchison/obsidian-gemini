@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-nodejs-modules -- desktop-only OAuth loopback server
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { OAUTH_CALLBACK_PORT } from './mcp-oauth-provider';
 

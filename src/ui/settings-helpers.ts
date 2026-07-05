@@ -24,8 +24,7 @@ function createDetachedStubIfNeeded(containerEl: HTMLElement): HTMLElement | nul
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild === 'function') {
 		return null;
 	}
-	// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached test-stub node, never attached
-	return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
+	return typeof document !== 'undefined' ? createDiv() : containerEl;
 }
 
 /**

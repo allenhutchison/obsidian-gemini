@@ -304,8 +304,7 @@ export class AgentViewProgress {
 	private escapeHtml(text: string): string {
 		// Detached node used only to HTML-escape a string; never inserted into a
 		// live view, so it isn't cross-window-relevant.
-		// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached escape-only node, never attached
-		const div = document.createElement('div');
+		const div = createDiv();
 		div.textContent = text;
 		return div.innerHTML;
 	}
