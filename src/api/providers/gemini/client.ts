@@ -9,9 +9,12 @@ import {
 	GoogleGenAI,
 	Content,
 	Part,
+	GenerateContentConfig,
 	GenerateContentParameters,
 	GenerateContentResponse,
 	GenerateContentResponseUsageMetadata,
+	FunctionDeclaration,
+	Schema,
 } from '@google/genai';
 import type { ThinkingLevel } from '@google/genai';
 import {
@@ -132,6 +135,32 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
+	 * Typed accessor for the SDK's experimental Interactions surface. `interactions`
+	 * is marked experimental and omitted from `GoogleGenAI`'s public types, so we
+	 * narrow the `create` boundary here in one place instead of scattering `as any`
+	 * (mirrors the structural casts in obsidian-fetch.ts). The return type advertises
+	 * both the non-streaming interaction record and the streaming async-iterable
+	 * shape; which the SDK actually returns depends on `params.stream`.
+	 */
+	private get interactionsClient(): {
+		create(
+			params: Record<string, unknown>
+		): Promise<Record<string, unknown> & AsyncIterable<Record<string, unknown>> & { controller?: AbortController }>;
+	} {
+		return (
+			this.ai as unknown as {
+				interactions: {
+					create(
+						params: Record<string, unknown>
+					): Promise<
+						Record<string, unknown> & AsyncIterable<Record<string, unknown>> & { controller?: AbortController }
+					>;
+				};
+			}
+		).interactions;
+	}
+
+	/**
 	 * Non-streaming generation via the Interactions API (stateless transport).
 	 */
 	private async generateViaInteractions(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
@@ -139,7 +168,7 @@ export class GeminiClient implements ModelApi {
 		this.ensureInteractionsFetch();
 
 		try {
-			const interaction = await (this.ai as any).interactions.create(params);
+			const interaction = await this.interactionsClient.create(params);
 			return extractModelResponseFromInteraction(interaction);
 		} catch (error) {
 			this.plugin?.logger.error('[GeminiClient] Error creating interaction:', error);
@@ -180,7 +209,7 @@ export class GeminiClient implements ModelApi {
 			this.ensureInteractionsFetch();
 
 			try {
-				const stream = await (this.ai as any).interactions.create(params);
+				const stream = await this.interactionsClient.create(params);
 				activeStream = stream;
 				// Cancelled during request setup, before iteration began.
 				if (cancelled) {
@@ -461,7 +490,7 @@ export class GeminiClient implements ModelApi {
 		const contents = this.buildContents(request);
 
 		// Build config
-		const config: any = {
+		const config: GenerateContentConfig = {
 			temperature: request.temperature ?? this.config.temperature,
 			topP: request.topP ?? this.config.topP,
 			...(this.config.maxOutputTokens && { maxOutputTokens: this.config.maxOutputTokens }),
@@ -483,14 +512,18 @@ export class GeminiClient implements ModelApi {
 		const hasTools = isExtended && request.availableTools?.length;
 		if (hasTools) {
 			const tools = request.availableTools!;
-			const functionDeclarations = tools.map((tool) => ({
+			const functionDeclarations: FunctionDeclaration[] = tools.map((tool) => ({
 				name: tool.name,
 				description: tool.description,
+				// The SDK's `Schema.type` is the upper-case `Type` enum, but the Gemini API
+				// also accepts the lower-case OpenAPI `'object'` this plugin has always sent;
+				// keep that wire value and narrow the hand-built schema (whose `properties`
+				// come from the provider-agnostic `Record<string, unknown>` bag) to `Schema`.
 				parameters: {
-					type: 'object' as const,
+					type: 'object',
 					properties: tool.parameters.properties || {},
 					required: tool.parameters.required || [],
-				},
+				} as unknown as Schema,
 			}));
 
 			config.tools = config.tools || [];
@@ -499,7 +532,7 @@ export class GeminiClient implements ModelApi {
 
 		// Build params
 		// If no contents built, use a simple string from the prompt
-		let finalContents: any = contents;
+		let finalContents: Content[] | string = contents;
 		if (contents.length === 0 && !isExtended) {
 			// For BaseModelRequest with no conversation, just pass the prompt as string
 			finalContents = request.prompt || '';

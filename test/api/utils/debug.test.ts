@@ -237,14 +237,14 @@ describe('stripFileContextNode', () => {
 	});
 
 	it('should process a simple node with no links (isRoot = true)', () => {
-		const result = stripFileContextNode(baseNode, true);
+		const result = stripFileContextNode(baseNode, true) as any;
 		expect(result.content).toBe('File content here');
 		expect(result.path).toBe('/path/to/file.md');
 		expect(result.links).toEqual({});
 	});
 
 	it('should process a simple node with no links (isRoot = false)', () => {
-		const result = stripFileContextNode(baseNode, false);
+		const result = stripFileContextNode(baseNode, false) as any;
 		expect(result.content).toBe('[Linked file: [[file]]]');
 		expect(result.path).toBe('/path/to/file.md');
 		expect(result.links).toEqual({});
@@ -252,7 +252,7 @@ describe('stripFileContextNode', () => {
 
 	it('should use node.path for content if wikilink is missing (isRoot = false)', () => {
 		const nodeWithoutWikilink = { ...baseNode, wikilink: undefined };
-		const result = stripFileContextNode(nodeWithoutWikilink, false);
+		const result = stripFileContextNode(nodeWithoutWikilink, false) as any;
 		expect(result.content).toBe('[Linked file: /path/to/file.md]');
 	});
 
@@ -284,7 +284,7 @@ describe('stripFileContextNode', () => {
 				},
 			},
 		};
-		const result = stripFileContextNode(nestedNode, true);
+		const result = stripFileContextNode(nestedNode, true) as any;
 		expect(result.content).toBe('File content here');
 		expect(result.links.link1.content).toBe('[Linked file: [[link1]]]');
 		expect(result.links.link1.links.nestedLink.content).toBe('[Linked file: [[nested]]]');
@@ -328,7 +328,7 @@ describe('stripFileContextNode', () => {
 				],
 			]),
 		};
-		const result = stripFileContextNode(nestedMapNode, true);
+		const result = stripFileContextNode(nestedMapNode, true) as any;
 		expect(result.content).toBe('File content here');
 		expect(result.links.link1.content).toBe('[Linked file: [[link1]]]');
 		expect(result.links.link1.links.nestedLink.content).toBe('[Linked file: [[nested]]]');
@@ -341,7 +341,7 @@ describe('stripFileContextNode', () => {
 			prop2: baseNode, // This should be processed
 			prop3: { nested: 'value3', anotherNode: { ...baseNode, path: '/another.md', content: 'Another' } },
 		};
-		const result = stripFileContextNode(otherObject, true);
+		const result = stripFileContextNode(otherObject, true) as any;
 		expect(result.prop1).toBe('value1');
 		// prop2 is a FileContextNode, but since otherObject is not, isRoot will be true for baseNode here
 		expect(result.prop2.content).toBe('File content here');
@@ -360,7 +360,7 @@ describe('stripFileContextNode', () => {
 				nestedNodeInArray: { ...baseNode, path: '/path/to/nestedInArray.md', content: 'Nested Array Content' },
 			},
 		];
-		const result = stripFileContextNode(arr, true);
+		const result = stripFileContextNode(arr, true) as any;
 		expect(result[0].content).toBe('File content here');
 		expect(result[1].content).toBe('Content 2');
 		expect(result[2]).toBe('stringInArray');
@@ -395,7 +395,7 @@ describe('stripLinkedFileContents', () => {
 	};
 
 	it('should use stripFileContextNode if the object is a FileContextNode', () => {
-		const result = stripLinkedFileContents(baseNode);
+		const result = stripLinkedFileContents(baseNode) as any;
 		// Check a specific transformation of stripFileContextNode to confirm it was called
 		expect(result.content).toBe('File content here'); // isRoot = true by default for the root call
 		expect(result.path).toBe('/path/to/file.md');
@@ -407,7 +407,7 @@ describe('stripLinkedFileContents', () => {
 			{ prop: 'value', nested: { ...baseNode, content: 'Nested Content' } },
 			'stringInArray',
 		];
-		const result = stripLinkedFileContents(arr);
+		const result = stripLinkedFileContents(arr) as any;
 		expect(result[0].content).toBe('File content here');
 		expect(result[1].prop).toBe('value');
 		// Since the parent of nested is not a FileContextNode, stripFileContextNode is not directly called on it by stripLinkedFileContents
@@ -425,7 +425,7 @@ describe('stripLinkedFileContents', () => {
 				anotherNode: { ...baseNode, wikilink: '[[another]]', content: 'Another Content' },
 			},
 		};
-		const result = stripLinkedFileContents(obj);
+		const result = stripLinkedFileContents(obj) as any;
 		expect(result.someKey).toBe('someValue');
 		expect(result.fileNode.content).toBe('File content here');
 		expect(result.nestedObj.anotherKey).toBe('anotherValue');
@@ -452,7 +452,7 @@ describe('stripLinkedFileContents', () => {
 				},
 			},
 		};
-		const result = stripLinkedFileContents(deepObject);
+		const result = stripLinkedFileContents(deepObject) as any;
 		expect(result.level1.level2.node.content).toBe('File content here');
 		expect(result.level1.level2.node.links.nestedLink.content).toBe('[Linked file: [[nested]]]');
 	});

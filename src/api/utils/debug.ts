@@ -8,40 +8,43 @@ import type { BaseModelRequest, ExtendedModelRequest } from '../interfaces/model
  * @param data Data to log (will be stringified)
  */
 // Recursively strip linked file contents from a file-context object for debug output
-export function stripFileContextNode(node: any, isRoot = true): any {
+export function stripFileContextNode(node: unknown, isRoot = true): unknown {
 	if (!node || typeof node !== 'object') return node;
+	const record = node as Record<string, unknown>;
 	// If it looks like a FileContextNode
-	if ('path' in node && 'content' in node && 'wikilink' in node && 'links' in node) {
-		const newNode: any = {
-			...node,
-			content: isRoot ? node.content : `[Linked file: ${node.wikilink || node.path}]`,
-			// Recursively process links (which may be a Map or object)
-			links: {},
-		};
+	if ('path' in record && 'content' in record && 'wikilink' in record && 'links' in record) {
 		// Support both Map and plain object for links
-		const linksObj = node.links instanceof Map ? Object.fromEntries(node.links) : node.links;
+		const linksObj =
+			record.links instanceof Map ? Object.fromEntries(record.links) : (record.links as Record<string, unknown>);
+		const newLinks: Record<string, unknown> = {};
 		for (const key in linksObj) {
 			if (Object.prototype.hasOwnProperty.call(linksObj, key)) {
-				newNode.links[key] = stripFileContextNode(linksObj[key], false);
+				newLinks[key] = stripFileContextNode(linksObj[key], false);
 			}
 		}
+		const newNode: Record<string, unknown> = {
+			...record,
+			content: isRoot ? record.content : `[Linked file: ${String(record.wikilink || record.path)}]`,
+			// Recursively processed links (which may originate from a Map or object)
+			links: newLinks,
+		};
 		return newNode;
 	}
 	// Fallback: recursively process arrays and objects
 	if (Array.isArray(node)) {
 		return node.map((item) => stripFileContextNode(item, isRoot));
 	} else {
-		const newObj: any = {};
-		for (const key in node) {
-			if (Object.prototype.hasOwnProperty.call(node, key)) {
-				newObj[key] = stripFileContextNode(node[key], isRoot);
+		const newObj: Record<string, unknown> = {};
+		for (const key in record) {
+			if (Object.prototype.hasOwnProperty.call(record, key)) {
+				newObj[key] = stripFileContextNode(record[key], isRoot);
 			}
 		}
 		return newObj;
 	}
 }
 
-export function stripLinkedFileContents(obj: any): any {
+export function stripLinkedFileContents(obj: unknown): unknown {
 	// If this is a file-context object or contains one, use the new logic
 	if (obj && typeof obj === 'object' && 'path' in obj && 'content' in obj && 'wikilink' in obj && 'links' in obj) {
 		return stripFileContextNode(obj, true);
@@ -50,10 +53,11 @@ export function stripLinkedFileContents(obj: any): any {
 	if (Array.isArray(obj)) {
 		return obj.map(stripLinkedFileContents);
 	} else if (obj && typeof obj === 'object') {
-		const newObj: any = {};
-		for (const key in obj) {
-			if (Object.prototype.hasOwnProperty.call(obj, key)) {
-				newObj[key] = stripLinkedFileContents(obj[key]);
+		const record = obj as Record<string, unknown>;
+		const newObj: Record<string, unknown> = {};
+		for (const key in record) {
+			if (Object.prototype.hasOwnProperty.call(record, key)) {
+				newObj[key] = stripLinkedFileContents(record[key]);
 			}
 		}
 		return newObj;
@@ -123,7 +127,7 @@ export function formatExtendedModelRequest(req: ExtendedModelRequest): string {
 	].join('\n');
 }
 
-export function logDebugInfo(logger: Logger, title: string, data: any) {
+export function logDebugInfo(logger: Logger, title: string, data: unknown) {
 	if (isExtendedModelRequest(data)) {
 		logger.log(`[GeminiAPI Debug] ${title} (ExtendedModelRequest):\n${formatExtendedModelRequest(data)}`);
 		return;
@@ -132,7 +136,7 @@ export function logDebugInfo(logger: Logger, title: string, data: any) {
 		logger.log(`[GeminiAPI Debug] ${title} (BaseModelRequest):\n${formatBaseModelRequest(data)}`);
 		return;
 	}
-	let sanitizedData: any;
+	let sanitizedData: unknown;
 	if (typeof data === 'string' && data.includes('File Label:')) {
 		sanitizedData = redactLinkedFileSections(data);
 		logger.log(`[GeminiAPI Debug] ${title}:\n${sanitizedData}`);
