@@ -1,11 +1,10 @@
-import { normalizePath } from 'obsidian';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask } from './scheduled-task-manager';
 import { DestructiveAction } from '../types/agent';
 import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';
 import { ExtendedModelRequest } from '../api/interfaces/model-api';
-import { ensureFolderExists } from '../utils/file-utils';
+import { resolveOutputPath, writeHeadlessOutput } from './headless-run-output';
 import { formatLocalDate, formatLocalTimestamp } from '../utils/format-utils';
 import { buildTurnPreamble } from '../utils/turn-preamble';
 import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
@@ -128,57 +127,24 @@ export class ScheduledTaskRunner {
 			throw new Error(`[ScheduledTaskRunner] Task "${this.task.slug}" produced no response`);
 		}
 
-		const outputPath = this.resolveOutputPath();
-		await this.writeOutput(outputPath, finalText);
-		return outputPath;
-	}
-
-	// ── Private helpers ──────────────────────────────────────────────────────
-
-	private resolveOutputPath(): string {
-		const date = formatLocalDate();
-		// Use split/join instead of replace() to avoid $& / $$ special replacement
-		// sequences if the slug or date string ever contains a dollar sign.
-		const resolved = this.task.outputPath.split('{slug}').join(this.task.slug).split('{date}').join(date);
-		return normalizePath(resolved);
-	}
-
-	private async writeOutput(outputPath: string, content: string): Promise<void> {
-		// Resolve a unique path — {date} is day-granular so interval tasks or
-		// multiple manual runs on the same day would otherwise overwrite each other.
-		const uniquePath = this.resolveUniquePath(outputPath);
-
-		const parentPath = uniquePath.includes('/') ? uniquePath.slice(0, uniquePath.lastIndexOf('/')) : null;
-		if (parentPath) {
-			await ensureFolderExists(this.plugin.app.vault, parentPath, 'scheduled task output folder', this.plugin.logger);
-		}
-
-		const ranAt = new Date().toISOString();
+		// {date} is day-granular so interval tasks or multiple manual runs on the
+		// same day would otherwise overwrite each other — writeHeadlessOutput
+		// resolves a unique path before creating the file.
+		const outputPath = resolveOutputPath(this.task.outputPath, {
+			slug: this.task.slug,
+			date: formatLocalDate(),
+		});
 		// Use JSON.stringify for YAML quoted scalars — guards against quotes or
 		// backslashes in the slug or ISO timestamp breaking the frontmatter.
-		const header = `---\nscheduled_task: ${JSON.stringify(this.task.slug)}\nran_at: ${JSON.stringify(ranAt)}\n---\n\n`;
-		const fullContent = header + content;
-
-		await this.plugin.app.vault.create(uniquePath, fullContent);
-	}
-
-	/**
-	 * Return a path that does not already exist in the vault.
-	 * If `base` is taken, appends -1, -2, … before the extension until a free
-	 * slot is found (e.g. `2026-04-20.md` → `2026-04-20-1.md`).
-	 */
-	private resolveUniquePath(base: string): string {
-		if (!this.plugin.app.vault.getAbstractFileByPath(base)) return base;
-
-		const dotIdx = base.lastIndexOf('.');
-		const stem = dotIdx >= 0 ? base.slice(0, dotIdx) : base;
-		const ext = dotIdx >= 0 ? base.slice(dotIdx) : '';
-
-		for (let i = 1; i <= 99; i++) {
-			const candidate = `${stem}-${i}${ext}`;
-			if (!this.plugin.app.vault.getAbstractFileByPath(candidate)) return candidate;
-		}
-		// Fallback: timestamp suffix guarantees uniqueness
-		return `${stem}-${Date.now()}${ext}`;
+		const header = `---\nscheduled_task: ${JSON.stringify(this.task.slug)}\nran_at: ${JSON.stringify(new Date().toISOString())}\n---\n\n`;
+		await writeHeadlessOutput({
+			vault: this.plugin.app.vault,
+			outputPath,
+			header,
+			content: finalText,
+			folderLabel: 'scheduled task output folder',
+			logger: this.plugin.logger,
+		});
+		return outputPath;
 	}
 }
