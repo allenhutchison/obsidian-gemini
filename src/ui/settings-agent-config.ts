@@ -166,7 +166,7 @@ export async function renderAgentConfigSettings(
 			.setLimits(5, 50, 5)
 			.setValue(plugin.settings.contextCompactionThreshold)
 			// Dropping setDynamicTooltip() is only safe on Obsidian >= 1.13.0 (where the value shows inline); minAppVersion is 1.11.4, so keep it to preserve the slider value tooltip (#1040).
-			// eslint-disable-next-line @typescript-eslint/no-deprecated
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- minAppVersion 1.11.4 needs setDynamicTooltip() (#1040)
 			.setDynamicTooltip()
 			.onChange(async (value) => {
 				plugin.settings.contextCompactionThreshold = value;
@@ -198,7 +198,7 @@ export async function renderAgentConfigSettings(
 					.setLimits(2, 10, 1)
 					.setValue(plugin.settings.loopDetectionThreshold)
 					// Dropping setDynamicTooltip() is only safe on Obsidian >= 1.13.0 (where the value shows inline); minAppVersion is 1.11.4, so keep it to preserve the slider value tooltip (#1040).
-					// eslint-disable-next-line @typescript-eslint/no-deprecated
+					// eslint-disable-next-line @typescript-eslint/no-deprecated -- minAppVersion 1.11.4 needs setDynamicTooltip() (#1040)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						plugin.settings.loopDetectionThreshold = value;
@@ -214,7 +214,7 @@ export async function renderAgentConfigSettings(
 					.setLimits(10, 120, 5)
 					.setValue(plugin.settings.loopDetectionTimeWindowSeconds)
 					// Dropping setDynamicTooltip() is only safe on Obsidian >= 1.13.0 (where the value shows inline); minAppVersion is 1.11.4, so keep it to preserve the slider value tooltip (#1040).
-					// eslint-disable-next-line @typescript-eslint/no-deprecated
+					// eslint-disable-next-line @typescript-eslint/no-deprecated -- minAppVersion 1.11.4 needs setDynamicTooltip() (#1040)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						plugin.settings.loopDetectionTimeWindowSeconds = value;
@@ -241,7 +241,7 @@ async function createTemperatureSetting(containerEl: HTMLElement, plugin: Obsidi
 				.setLimits(ranges.temperature.min, ranges.temperature.max, ranges.temperature.step)
 				.setValue(plugin.settings.temperature)
 				// Dropping setDynamicTooltip() is only safe on Obsidian >= 1.13.0 (where the value shows inline); minAppVersion is 1.11.4, so keep it to preserve the slider value tooltip (#1040).
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
+				// eslint-disable-next-line @typescript-eslint/no-deprecated -- minAppVersion 1.11.4 needs setDynamicTooltip() (#1040)
 				.setDynamicTooltip()
 				.onChange(async (value) => {
 					if (temperatureDebounceTimer) {
@@ -310,7 +310,7 @@ async function createTopPSetting(containerEl: HTMLElement, plugin: ObsidianGemin
 				.setLimits(ranges.topP.min, ranges.topP.max, ranges.topP.step)
 				.setValue(plugin.settings.topP)
 				// Dropping setDynamicTooltip() is only safe on Obsidian >= 1.13.0 (where the value shows inline); minAppVersion is 1.11.4, so keep it to preserve the slider value tooltip (#1040).
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
+				// eslint-disable-next-line @typescript-eslint/no-deprecated -- minAppVersion 1.11.4 needs setDynamicTooltip() (#1040)
 				.setDynamicTooltip()
 				.onChange(async (value) => {
 					if (topPDebounceTimer) {

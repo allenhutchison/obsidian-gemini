@@ -24,7 +24,7 @@ export class YoloConfirmationModal extends Modal {
 
 		contentEl.createEl('h2', { text: t('yolo.title') });
 
-		const container = contentEl.createEl('div');
+		const container = contentEl.createDiv();
 
 		container.createEl('p', {
 			text: t('yolo.description'),
@@ -52,7 +52,7 @@ export class YoloConfirmationModal extends Modal {
 				btn
 					.setButtonText(t('yolo.enableButton'))
 					// setDestructive() (the recommended replacement) requires Obsidian 1.13.0, above the current minAppVersion 1.11.4; keep setWarning until the floor is raised (#1040).
-					// eslint-disable-next-line @typescript-eslint/no-deprecated
+					// eslint-disable-next-line @typescript-eslint/no-deprecated -- setDestructive() needs Obsidian 1.13.0, above minAppVersion 1.11.4 (#1040)
 					.setWarning()
 					.onClick(() => {
 						this.resolved = true;

@@ -32,7 +32,7 @@ export class RagResumeModal extends Modal {
 		});
 
 		// Stats section
-		const statsEl = contentEl.createEl('div', { cls: 'rag-resume-stats' });
+		const statsEl = contentEl.createDiv({ cls: 'rag-resume-stats' });
 
 		const filesRow = statsEl.createDiv({ cls: 'rag-resume-stat-row' });
 		filesRow.createSpan({ cls: 'rag-resume-stat-label', text: t('ragResume.filesIndexedLabel') });
@@ -50,7 +50,7 @@ export class RagResumeModal extends Modal {
 		}
 
 		// Info about resume behavior
-		const noteEl = contentEl.createEl('div', { cls: 'rag-resume-note' });
+		const noteEl = contentEl.createDiv({ cls: 'rag-resume-note' });
 		noteEl.createEl('p', {
 			text: t('ragResume.resumeNote'),
 			cls: 'setting-item-description',
@@ -71,7 +71,7 @@ export class RagResumeModal extends Modal {
 				btn
 					.setButtonText(t('ragResume.startFreshButton'))
 					// setDestructive() (the recommended replacement) requires Obsidian 1.13.0, above the current minAppVersion 1.11.4; keep setWarning until the floor is raised (#1040).
-					// eslint-disable-next-line @typescript-eslint/no-deprecated
+					// eslint-disable-next-line @typescript-eslint/no-deprecated -- setDestructive() needs Obsidian 1.13.0, above minAppVersion 1.11.4 (#1040)
 					.setWarning()
 					.onClick(() => {
 						this.close();

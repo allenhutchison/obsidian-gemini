@@ -1,35 +1,34 @@
 // This suite exists specifically to exercise the race behavior of the settings tab's
 // `display()` override, so it calls the deprecated `PluginSettingTab.display()` directly.
 // Migrating off `display()` to `getSettingDefinitions()` is out of scope for #1040.
-/* eslint-disable @typescript-eslint/no-deprecated */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Counters that the section-render mocks bump so the test can assert on
 // per-section call counts. Declared with `var` so vi.mock's hoisted factory
 // can capture them (TDZ safe).
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var generalCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var uiCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var automationCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var agentConfigCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var toolCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var mcpCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var ragCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var debugCalls = 0;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var advancedToggleCalls = 0;
 
 // `gate` is a deferred promise the test resolves to release the first
 // in-flight render. Letting `renderGeneralSettings` block on it lets us
 // interleave a second display() call before the first finishes.
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var gate: Promise<void> | null = null;
 
 vi.mock('../../src/ui/settings-general', () => ({

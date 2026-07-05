@@ -21,7 +21,7 @@ export interface ToolResult {
 	// Per-tool payload: each tool returns a differently-shaped object (and the ~40
 	// consumer sites narrow it by runtime shape), so this is a genuine dynamic
 	// boundary. Kept as `any` deliberately.
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- per-tool payload is a genuine dynamic boundary
 	data?: any;
 	error?: string;
 	requiresConfirmation?: boolean;

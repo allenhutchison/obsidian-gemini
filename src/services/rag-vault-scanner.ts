@@ -431,7 +431,7 @@ export class RagVaultScanner {
 				// cancellation and rate-limit cooldown, which callers (including the uploader mock
 				// in tests) await and rely on propagating. Wrapping the body to void the promise
 				// would swallow those throws, so the async signature is intentional here.
-				// eslint-disable-next-line @typescript-eslint/no-misused-promises
+				// eslint-disable-next-line @typescript-eslint/no-misused-promises -- async handler must propagate cancellation/rate-limit throws
 				onProgress: async (event: any) => {
 					// Check for cancellation
 					if (this.cancelRequested) {
