@@ -117,6 +117,6 @@ export function moveCursorToEnd(element: HTMLElement): void {
  */
 export function execContextCommand(element: HTMLElement, command: string, value?: string): boolean {
 	const { doc } = getDOMContext(element);
-	// eslint-disable-next-line @typescript-eslint/no-deprecated
+	// eslint-disable-next-line @typescript-eslint/no-deprecated -- last-resort sync fallback when async Clipboard API is unavailable
 	return doc.execCommand(command, false, value);
 }

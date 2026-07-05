@@ -4,13 +4,13 @@ import { Notice } from 'obsidian';
 // Capture the arguments the lazy-imported modals are constructed with so the
 // tests can invoke the callbacks `openRagStatusModal` wires up. Declared with
 // `var` so vi.mock's hoisted factories can capture them (TDZ safe).
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var statusModalArgs: any[] = [];
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var progressModalArgs: any[] = [];
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var statusModalOpen = vi.fn();
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var progressModalOpen = vi.fn();
 
 vi.mock('../../src/ui/rag-status-modal', () => ({

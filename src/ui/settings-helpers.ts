@@ -24,7 +24,7 @@ function createDetachedStubIfNeeded(containerEl: HTMLElement): HTMLElement | nul
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild === 'function') {
 		return null;
 	}
-	// eslint-disable-next-line obsidianmd/prefer-active-doc -- detached test-stub node, never attached
+	// eslint-disable-next-line obsidianmd/prefer-create-el -- jsdom unit tests exercise this path; Obsidian's createDiv global doesn't exist there
 	return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
 }
 

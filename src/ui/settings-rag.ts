@@ -31,7 +31,7 @@ export async function renderRAGSettings(
 
 	// Privacy warning
 	const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });
-	privacyWarning.createEl('div', {
+	privacyWarning.createDiv({
 		cls: 'setting-item-description',
 		text: t('settings.rag.privacyNotice'),
 	});
@@ -120,7 +120,7 @@ export async function renderRAGSettings(
 				button
 					.setButtonText(t('settings.rag.deleteIndexButton'))
 					// setDestructive() (the recommended replacement) requires Obsidian 1.13.0, above the current minAppVersion 1.11.4; keep setWarning until the floor is raised (#1040).
-					// eslint-disable-next-line @typescript-eslint/no-deprecated
+					// eslint-disable-next-line @typescript-eslint/no-deprecated -- setDestructive() needs Obsidian 1.13.0, above minAppVersion 1.11.4 (#1040)
 					.setWarning()
 					.onClick(async () => {
 						if (!plugin.ragIndexing) {

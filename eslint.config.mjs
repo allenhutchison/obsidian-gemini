@@ -121,6 +121,25 @@ export default defineConfig([
 	},
 	...obsidianmd.configs.recommended,
 	{
+		// The 0.4.x preset's `eslint-comments/no-restricted-disable` forbids inline
+		// `eslint-disable` comments for a list of rules outright, expecting exceptions
+		// to live as file-scoped config overrides instead. This repo's documented
+		// policy is the opposite: intentional exceptions are line-scoped inline
+		// disables at the call site, each carrying a `-- reason` description
+		// (`eslint-comments/require-description` stays enforced). Keep the restriction
+		// only for rules we never disable inline.
+		rules: {
+			'eslint-comments/no-restricted-disable': [
+				'error',
+				'no-console',
+				'no-restricted-globals',
+				'@typescript-eslint/no-restricted-imports',
+				'@microsoft/sdl/no-document-write',
+				'no-eval',
+			],
+		},
+	},
+	{
 		files: ['src/**/*.ts'],
 		languageOptions: {
 			parser: tsparser,
@@ -155,6 +174,10 @@ export default defineConfig([
 			...PERVASIVE_OBSIDIANMD_RULES_TODO,
 			// Tests legitimately use Node.js modules for fixtures and don't run in Obsidian.
 			'import/no-nodejs-modules': 'off',
+			// Tests run in jsdom, where Obsidian's createEl/createDiv/createSpan DOM
+			// globals don't exist — the rule's suggestion (and its autofix, which the
+			// pre-commit `eslint --fix` would apply) is impossible there.
+			'obsidianmd/prefer-create-el': 'off',
 			// innerHTML inside test setup is fine (jsdom, not user-facing).
 			'@microsoft/sdl/no-inner-html': 'off',
 			// Tests use concrete `.obsidian` sample paths as fixtures to verify the

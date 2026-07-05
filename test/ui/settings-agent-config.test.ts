@@ -13,9 +13,9 @@ import type { Mock } from 'vitest';
 // `var` (not `const`) so that vi.mock hoisting can reference these below.
 // vi.mock is hoisted to the top of the file, while `const` would hit the
 // Temporal Dead Zone when the factory runs during module evaluation.
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var mockSliderRegistry: Record<string, any>;
-// eslint-disable-next-line no-var
+// eslint-disable-next-line no-var -- vi.mock hoisted factory must capture it (TDZ safe)
 var mockNotice: Mock;
 
 vi.mock('../../src/main');

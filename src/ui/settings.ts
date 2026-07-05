@@ -49,7 +49,7 @@ export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 			// `getSettingDefinitions()` (Obsidian 1.13.0). Migrating this settings tree to the
 			// new API is a large rework tracked separately and out of scope for #1040; the
 			// imperative `display()` override remains the supported pattern meanwhile.
-			// eslint-disable-next-line @typescript-eslint/no-deprecated
+			// eslint-disable-next-line @typescript-eslint/no-deprecated -- display() migration to getSettingDefinitions() is out of scope for #1040
 			redisplay: () => this.display(),
 			showDeveloperSettings: this.showDeveloperSettings,
 			setShowDeveloperSettings: (value: boolean) => {
