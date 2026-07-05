@@ -15,9 +15,13 @@ vi.mock('obsidian', () => ({
 	Vault: class {},
 }));
 
-const ensureFolderExists = vi.fn().mockResolvedValue(undefined);
+// vi.mock factories are hoisted above the file body, so the spy must be created
+// in a hoisted scope (and mock-prefixed) for the factory to reference it safely.
+const { mockEnsureFolderExists } = vi.hoisted(() => ({
+	mockEnsureFolderExists: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('../../src/utils/file-utils', () => ({
-	ensureFolderExists: (...args: unknown[]) => ensureFolderExists(...args),
+	ensureFolderExists: mockEnsureFolderExists,
 }));
 
 /** Build a minimal Vault stub with controllable existence + create behavior. */
@@ -30,7 +34,7 @@ function makeVault(opts?: { exists?: (path: string) => boolean; create?: Mock })
 }
 
 beforeEach(() => {
-	ensureFolderExists.mockClear();
+	mockEnsureFolderExists.mockClear();
 });
 
 describe('resolveOutputPath', () => {
@@ -83,6 +87,11 @@ describe('resolveUniquePath', () => {
 		expect(resolveUniquePath(vault, 'notes/README')).toBe('notes/README-1');
 	});
 
+	it('ignores dots in parent folders (suffix goes on the last segment)', () => {
+		const vault = makeVault({ exists: (p) => p === 'my.notes/README' });
+		expect(resolveUniquePath(vault, 'my.notes/README')).toBe('my.notes/README-1');
+	});
+
 	it('falls back to a timestamp suffix after 99 collisions', () => {
 		const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
 		// Base plus -1..-99 are all taken; only the timestamp candidate is free.
@@ -127,7 +136,7 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 		});
 
 		expect(written).toBe('Runs/task/2026-04-18.md');
-		expect(ensureFolderExists).toHaveBeenCalledWith(vault, 'Runs/task', 'scheduled task output folder', undefined);
+		expect(mockEnsureFolderExists).toHaveBeenCalledWith(vault, 'Runs/task', 'scheduled task output folder', undefined);
 		expect(create).toHaveBeenCalledWith('Runs/task/2026-04-18.md', '---\nscheduled_task: "task"\n---\n\nBody text');
 	});
 
@@ -150,7 +159,7 @@ describe('writeHeadlessOutput — no retry (scheduled-task shape)', () => {
 	it('skips folder creation for a top-level (folderless) path', async () => {
 		const vault = makeVault({ exists: () => false });
 		await writeHeadlessOutput({ vault, outputPath: 'out.md', header: 'H\n', content: 'B', folderLabel: 'x' });
-		expect(ensureFolderExists).not.toHaveBeenCalled();
+		expect(mockEnsureFolderExists).not.toHaveBeenCalled();
 	});
 
 	it('propagates a non-"already exists" create error unchanged', async () => {

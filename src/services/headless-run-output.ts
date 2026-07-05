@@ -32,6 +32,21 @@ export function resolveOutputPath(template: string, tokens: Record<string, strin
 }
 
 /**
+ * Split `base` into its stem and extension so a suffix can be inserted before
+ * the extension. Only the last path segment is inspected for a dot — a dot in a
+ * parent folder (e.g. `my.notes/README`) is never treated as an extension, so
+ * the folder name is preserved unchanged.
+ */
+function splitStemExt(base: string): { stem: string; ext: string } {
+	const slashIdx = base.lastIndexOf('/');
+	const dotIdx = base.lastIndexOf('.');
+	if (dotIdx > slashIdx) {
+		return { stem: base.slice(0, dotIdx), ext: base.slice(dotIdx) };
+	}
+	return { stem: base, ext: '' };
+}
+
+/**
  * Return a path that does not already exist in the vault.
  * If `base` is taken, appends -1, -2, … before the extension until a free
  * slot is found (e.g. `2026-04-20.md` → `2026-04-20-1.md`). After 99 collisions
@@ -40,9 +55,7 @@ export function resolveOutputPath(template: string, tokens: Record<string, strin
 export function resolveUniquePath(vault: Vault, base: string): string {
 	if (!vault.getAbstractFileByPath(base)) return base;
 
-	const dotIdx = base.lastIndexOf('.');
-	const stem = dotIdx >= 0 ? base.slice(0, dotIdx) : base;
-	const ext = dotIdx >= 0 ? base.slice(dotIdx) : '';
+	const { stem, ext } = splitStemExt(base);
 
 	for (let i = 1; i <= 99; i++) {
 		const candidate = `${stem}-${i}${ext}`;
@@ -59,9 +72,7 @@ export function resolveUniquePath(vault: Vault, base: string): string {
  * could have proposed the same name.
  */
 export function resolveTimestampPath(base: string): string {
-	const dotIdx = base.lastIndexOf('.');
-	const stem = dotIdx >= 0 ? base.slice(0, dotIdx) : base;
-	const ext = dotIdx >= 0 ? base.slice(dotIdx) : '';
+	const { stem, ext } = splitStemExt(base);
 	return `${stem}-${Date.now()}${ext}`;
 }
 
