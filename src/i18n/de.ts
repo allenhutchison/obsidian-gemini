@@ -19,6 +19,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': 'Mein Verständnis deines Vaults aktualisieren',
 	'agent.empty.initContext': 'Vault-Kontext initialisieren',
 	'agent.empty.initContextDesc': 'Hilf mir, die Struktur und Organisation deines Vaults zu verstehen',
+	'agent.empty.initContextFailed': 'Vault-Kontext konnte nicht initialisiert werden',
 	'agent.empty.recentSessions': 'Letzte Sitzungen:',
 	'agent.empty.examplesHeader': 'Probiere diese Beispiele aus:',
 	'i18n.aiTranslatedNotice':
@@ -847,6 +848,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'Notiz konnte nicht in Projekt konvertiert werden',
 	'notice.main.noProjectsFound': 'Keine Projekte gefunden',
 	'notice.main.noSessionsForProject': 'Keine Sitzungen für Projekt gefunden: {name}',
+	'notice.main.resumeProjectSessionFailed': 'Projektsitzung konnte nicht fortgesetzt werden',
 	'notice.main.projectRemoved': 'Projektstatus entfernt von: {name}',
 	'notice.main.projectRemoveFailed': 'Projektstatus konnte nicht entfernt werden',
 	'notice.main.selectTextFirst': 'Bitte wähle zuerst einen Text aus',

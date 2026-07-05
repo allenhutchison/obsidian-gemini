@@ -18,6 +18,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': '保管庫に対する理解を更新します',
 	'agent.empty.initContext': '保管庫のコンテキストを初期化',
 	'agent.empty.initContextDesc': '保管庫の構造や整理方法の理解を助けます',
+	'agent.empty.initContextFailed': '保管庫のコンテキストの初期化に失敗しました',
 	'agent.empty.recentSessions': '最近のセッション:',
 	'agent.empty.examplesHeader': '次の例をお試しください:',
 	'i18n.aiTranslatedNotice':
@@ -830,6 +831,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'ノートのプロジェクトへの変換に失敗しました',
 	'notice.main.noProjectsFound': 'プロジェクトが見つかりません',
 	'notice.main.noSessionsForProject': 'プロジェクトのセッションが見つかりません: {name}',
+	'notice.main.resumeProjectSessionFailed': 'プロジェクトセッションの再開に失敗しました',
 	'notice.main.projectRemoved': 'プロジェクトのステータスを削除しました: {name}',
 	'notice.main.projectRemoveFailed': 'プロジェクトステータスの削除に失敗しました',
 	'notice.main.selectTextFirst': '最初にテキストを選択してください',

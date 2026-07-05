@@ -18,6 +18,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': 'Oppdater min forståelse av hvelvet ditt',
 	'agent.empty.initContext': 'Initialiser vault-kontekst',
 	'agent.empty.initContextDesc': 'Hjelp meg å forstå hvelvets struktur og organisering',
+	'agent.empty.initContextFailed': 'Kunne ikke initialisere hvelvkontekst',
 	'agent.empty.recentSessions': 'Nylige økter:',
 	'agent.empty.examplesHeader': 'Prøv disse eksemplene:',
 	'i18n.aiTranslatedNotice':
@@ -825,6 +826,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'Kunne ikke konvertere notat til prosjekt',
 	'notice.main.noProjectsFound': 'Ingen prosjekter funnet',
 	'notice.main.noSessionsForProject': 'Ingen økter funnet for prosjekt: {name}',
+	'notice.main.resumeProjectSessionFailed': 'Kunne ikke gjenoppta prosjektøkt',
 	'notice.main.projectRemoved': 'Fjernet prosjektstatus fra: {name}',
 	'notice.main.projectRemoveFailed': 'Kunne ikke fjerne prosjektstatus',
 	'notice.main.selectTextFirst': 'Vennligst velg litt tekst først',

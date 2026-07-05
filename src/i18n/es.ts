@@ -19,6 +19,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': 'Actualizar mi comprensión de tu bóveda',
 	'agent.empty.initContext': 'Inicializar el contexto del vault',
 	'agent.empty.initContextDesc': 'Ayúdame a comprender la estructura y organización de tu bóveda',
+	'agent.empty.initContextFailed': 'Error al inicializar el contexto del vault',
 	'agent.empty.recentSessions': 'Sesiones recientes:',
 	'agent.empty.examplesHeader': 'Prueba estos ejemplos:',
 	'i18n.aiTranslatedNotice':
@@ -843,6 +844,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'Error al convertir la nota en proyecto',
 	'notice.main.noProjectsFound': 'No se encontraron proyectos',
 	'notice.main.noSessionsForProject': 'No se encontraron sesiones para el proyecto: {name}',
+	'notice.main.resumeProjectSessionFailed': 'Error al reanudar la sesión del proyecto',
 	'notice.main.projectRemoved': 'Se ha eliminado el estado de proyecto de: {name}',
 	'notice.main.projectRemoveFailed': 'Error al eliminar el estado de proyecto',
 	'notice.main.selectTextFirst': 'Por favor, selecciona primero un fragmento de texto',

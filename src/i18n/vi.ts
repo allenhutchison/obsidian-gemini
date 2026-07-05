@@ -18,6 +18,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': 'Làm mới hiểu biết của tôi về vault của bạn',
 	'agent.empty.initContext': 'Khởi tạo ngữ cảnh vault',
 	'agent.empty.initContextDesc': 'Giúp tôi hiểu cấu trúc và cách sắp xếp vault của bạn',
+	'agent.empty.initContextFailed': 'Không thể khởi tạo ngữ cảnh vault',
 	'agent.empty.recentSessions': 'Các phiên gần đây:',
 	'agent.empty.examplesHeader': 'Thử các ví dụ sau:',
 	'i18n.aiTranslatedNotice':
@@ -828,6 +829,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'Chuyển đổi ghi chú thành dự án thất bại',
 	'notice.main.noProjectsFound': 'Không tìm thấy dự án nào',
 	'notice.main.noSessionsForProject': 'Không tìm thấy phiên nào cho dự án: {name}',
+	'notice.main.resumeProjectSessionFailed': 'Không thể tiếp tục phiên dự án',
 	'notice.main.projectRemoved': 'Đã gỡ bỏ trạng thái dự án khỏi: {name}',
 	'notice.main.projectRemoveFailed': 'Gỡ bỏ trạng thái dự án thất bại',
 	'notice.main.selectTextFirst': 'Vui lòng chọn một đoạn văn bản trước',

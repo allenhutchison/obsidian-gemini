@@ -18,6 +18,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'agent.empty.updateContextDesc': 'Odśwież moje zrozumienie Twojego skarbca',
 	'agent.empty.initContext': 'Inicjalizuj kontekst krypty',
 	'agent.empty.initContextDesc': 'Pomóż mi zrozumieć strukturę i organizację Twojego skarbca',
+	'agent.empty.initContextFailed': 'Nie udało się zainicjować kontekstu skarbca',
 	'agent.empty.recentSessions': 'Ostatnie sesje:',
 	'agent.empty.examplesHeader': 'Wypróbuj te przykłady:',
 	'i18n.aiTranslatedNotice':
@@ -840,6 +841,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 	'notice.main.convertToProjectFailed': 'Nie udało się przekonwertować notatki na projekt',
 	'notice.main.noProjectsFound': 'Nie znaleziono projektów',
 	'notice.main.noSessionsForProject': 'Nie znaleziono sesji dla projektu: {name}',
+	'notice.main.resumeProjectSessionFailed': 'Nie udało się wznowić sesji projektu',
 	'notice.main.projectRemoved': 'Usunięto status projektu z: {name}',
 	'notice.main.projectRemoveFailed': 'Nie udało się usunąć statusu projektu',
 	'notice.main.selectTextFirst': 'Najpierw zaznacz tekst',
