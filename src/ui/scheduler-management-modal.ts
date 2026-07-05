@@ -159,8 +159,15 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 			resetBtn.addEventListener('click', () => {
 				void (async () => {
 					resetBtn.disabled = true;
-					await this.plugin.scheduledTaskManager?.resetTask(task.slug);
-					this.render();
+					try {
+						await this.plugin.scheduledTaskManager?.resetTask(task.slug);
+						this.render();
+					} catch (err) {
+						// On success render() rebuilds the row; on failure restore the
+						// button so it can't stay stuck disabled.
+						this.plugin.logger.error(`[SchedulerManagementModal] resetTask failed for "${task.slug}":`, err);
+						resetBtn.disabled = false;
+					}
 				})();
 			});
 		}

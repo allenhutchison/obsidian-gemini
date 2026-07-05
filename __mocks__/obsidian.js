@@ -248,6 +248,9 @@ export class SuggestModal extends Modal {
 		};
 	}
 
+	setPlaceholder() {
+		return this;
+	}
 	getSuggestions() {
 		return [];
 	}

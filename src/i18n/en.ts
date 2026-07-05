@@ -72,6 +72,11 @@ export const en = {
 		context:
 			'Button description under "Initialize Vault Context". Phrased as the AI agent asking the user to let it analyze the vault.',
 	},
+	'agent.empty.initContextFailed': {
+		message: 'Failed to initialize vault context',
+		context:
+			'Error notice shown when the "Initialize vault context" empty-state button fails to analyze the vault (e.g. an API error).',
+	},
 	'agent.empty.recentSessions': {
 		message: 'Recent sessions:',
 		context: 'List header above recently used chat sessions. Keep the trailing colon.',
@@ -2854,6 +2859,10 @@ export const en = {
 		message: 'No sessions found for project: {name}',
 		context:
 			'Notice when resuming a project session but no agent sessions are linked to that project; {name} is the project name.',
+	},
+	'notice.main.resumeProjectSessionFailed': {
+		message: 'Failed to resume project session',
+		context: 'Error notice shown when resuming the most recent session for a project fails.',
 	},
 	'notice.main.projectRemoved': {
 		message: 'Removed project status from: {name}',

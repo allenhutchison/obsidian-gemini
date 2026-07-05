@@ -193,18 +193,24 @@ export function registerCommands(plugin: ObsidianGemini): void {
 			const modal = new ProjectPickerModal(plugin.app, plugin, {
 				onSelect: (project) => {
 					void (async () => {
-						if (!project) return;
-						// Find most recent session linked to this project
-						const sessions = await plugin.sessionManager.getRecentAgentSessions(50);
-						const projectSession = sessions.find((s) => s.projectPath === project.filePath);
-						if (projectSession) {
-							await plugin.activateAgentView();
-							// The agent view will load the session
-							if (plugin.agentView) {
-								await plugin.agentView.loadSession(projectSession);
+						try {
+							if (!project) return;
+							// Find most recent session linked to this project
+							const sessions = await plugin.sessionManager.getRecentAgentSessions(50);
+							const projectSession = sessions.find((s) => s.projectPath === project.filePath);
+							if (projectSession) {
+								await plugin.activateAgentView();
+								// The agent view will load the session
+								if (plugin.agentView) {
+									await plugin.agentView.loadSession(projectSession);
+								}
+							} else {
+								new Notice(t('notice.main.noSessionsForProject', { name: project.name }));
 							}
-						} else {
-							new Notice(t('notice.main.noSessionsForProject', { name: project.name }));
+						} catch (error) {
+							// Mirror the try/catch the sibling project commands already have.
+							plugin.logger.error('Failed to resume project session:', error);
+							new Notice(t('notice.main.resumeProjectSessionFailed'));
 						}
 					})();
 				},

@@ -55,20 +55,26 @@ export class BackgroundStatusBar {
 
 		this.statusBarItem.addEventListener('click', () => {
 			void (async () => {
-				// Pending catch-up approvals take priority — open the approval modal first
-				if (this._pendingCatchUpCount > 0 && this.plugin.scheduledTaskManager) {
-					const pending = this.plugin.scheduledTaskManager.detectMissedRuns();
-					if (pending.length > 0) {
-						const { CatchUpModal } = await import('../ui/catch-up-modal');
-						new CatchUpModal(this.plugin.app, this.plugin, pending).open();
-						return;
+				try {
+					// Pending catch-up approvals take priority — open the approval modal first
+					if (this._pendingCatchUpCount > 0 && this.plugin.scheduledTaskManager) {
+						const pending = this.plugin.scheduledTaskManager.detectMissedRuns();
+						if (pending.length > 0) {
+							const { CatchUpModal } = await import('../ui/catch-up-modal');
+							new CatchUpModal(this.plugin.app, this.plugin, pending).open();
+							return;
+						}
+						// detectMissedRuns returned empty — stale badge; self-correct
+						this.setPendingCatchUpCount(0);
 					}
-					// detectMissedRuns returned empty — stale badge; self-correct
-					this.setPendingCatchUpCount(0);
+					const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
+					const defaultTab = this.taskManager.runningCount > 0 ? 'tasks' : 'rag';
+					new BackgroundTasksModal(this.plugin.app, this.plugin, defaultTab).open();
+				} catch (error) {
+					// Mirror the RagStatusBar click handler's guard so a dynamic import or
+					// modal-open failure can't become an unhandled promise rejection.
+					this.plugin.logger.error('BackgroundStatusBar: failed to open status UI', error);
 				}
-				const { BackgroundTasksModal } = await import('../ui/background-tasks-modal');
-				const defaultTab = this.taskManager.runningCount > 0 ? 'tasks' : 'rag';
-				new BackgroundTasksModal(this.plugin.app, this.plugin, defaultTab).open();
 			})();
 		});
 

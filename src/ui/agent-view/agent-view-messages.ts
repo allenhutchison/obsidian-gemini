@@ -603,9 +603,16 @@ export class AgentViewMessages {
 				void (async () => {
 					// Run the vault analyzer
 					if (this.plugin.vaultAnalyzer) {
-						await this.plugin.vaultAnalyzer.initializeAgentsMemory();
-						// Refresh the empty state to update the button
-						await this.showEmptyState(currentSession, onLoadSession, onSendMessage);
+						try {
+							await this.plugin.vaultAnalyzer.initializeAgentsMemory();
+							// Refresh the empty state to update the button
+							await this.showEmptyState(currentSession, onLoadSession, onSendMessage);
+						} catch (error) {
+							// Without this, a failing analyzer run is an unhandled rejection
+							// with no feedback to the user.
+							this.plugin.logger.error('Failed to initialize vault context (AGENTS.md):', error);
+							new Notice(t('agent.empty.initContextFailed'));
+						}
 					}
 				})();
 			});
