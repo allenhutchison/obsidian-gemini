@@ -36,7 +36,7 @@ export interface ModelResponse {
  */
 export interface ToolCall {
 	name: string;
-	arguments: Record<string, any>;
+	arguments: Record<string, unknown>;
 	id?: string;
 	thoughtSignature?: string;
 }
@@ -116,7 +116,7 @@ export interface ToolDefinition {
 	description: string;
 	parameters: {
 		type: 'object';
-		properties: Record<string, any>;
+		properties: Record<string, unknown>;
 		required?: string[];
 	};
 }
