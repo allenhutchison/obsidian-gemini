@@ -1,7 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
-import { TFile, TFolder, normalizePath } from 'obsidian';
+import { TFolder, normalizePath } from 'obsidian';
 import { shouldExcludePathForPlugin as shouldExcludePath, isPathInFolder } from '../../utils/file-utils';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 import {
@@ -12,7 +12,7 @@ import {
 	detectWebmMimeType,
 } from '../../utils/file-classification';
 import { rasterizeSvg } from '../../utils/svg-rasterizer';
-import { resolvePathToFileOrFolder } from './utils';
+import { resolvePathToFileOrFolder, toFileEntry } from './utils';
 
 /**
  * Read file content or list folder contents
@@ -85,15 +85,7 @@ export class ReadFileTool implements Tool {
 
 			// Handle folder - list its contents
 			if (item instanceof TFolder) {
-				const files = item.children
-					.filter((f) => !shouldExcludePath(f.path, plugin))
-					.map((f) => ({
-						name: f.name,
-						path: f.path,
-						type: f instanceof TFile ? 'file' : 'folder',
-						size: f instanceof TFile ? f.stat.size : undefined,
-						modified: f instanceof TFile ? f.stat.mtime : undefined,
-					}));
+				const files = item.children.filter((f) => !shouldExcludePath(f.path, plugin)).map(toFileEntry);
 
 				return {
 					success: true,
