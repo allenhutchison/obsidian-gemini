@@ -1,3 +1,4 @@
+import { setIcon } from 'obsidian';
 import { ManagementModalBase } from '../../src/ui/components/management-modal-base';
 
 /**
@@ -178,6 +179,12 @@ class TestModal extends ManagementModalBase<StubEntity, StubState> {
 	callTruncateError(msg: string) {
 		return this.truncateError(msg);
 	}
+	callRenderEntityRowShell(
+		container: HTMLElement,
+		opts: { isPaused: boolean; isDisabled: boolean; activeIcon: string }
+	) {
+		return this.renderEntityRowShell(container, opts);
+	}
 
 	/** Disable the manager to test the "not available" path. */
 	setManagerNull() {
@@ -295,6 +302,62 @@ describe('ManagementModalBase', () => {
 		it('keeps exactly 80-char messages unchanged', () => {
 			const exact = 'B'.repeat(80);
 			expect(modal.callTruncateError(exact)).toBe(exact);
+		});
+	});
+
+	// ── renderEntityRowShell ─────────────────────────────────────────────
+
+	describe('renderEntityRowShell', () => {
+		beforeEach(() => {
+			(setIcon as any).mockClear();
+		});
+
+		it('builds a plain <li> with the base class and the active icon for an active entity', () => {
+			const container = createMockElement();
+			const { li, iconEl } = modal.callRenderEntityRowShell(container, {
+				isPaused: false,
+				isDisabled: false,
+				activeIcon: 'clock',
+			});
+			expect(container.createEl).toHaveBeenCalledWith('li', { cls: 'gemini-scheduler-item' });
+			expect((li as any).createSpan).toHaveBeenCalledWith({ cls: 'gemini-scheduler-item-icon' });
+			expect(setIcon).toHaveBeenCalledWith(iconEl, 'clock');
+		});
+
+		it('adds the disabled class and the pause-circle icon when disabled', () => {
+			const container = createMockElement();
+			const { iconEl } = modal.callRenderEntityRowShell(container, {
+				isPaused: false,
+				isDisabled: true,
+				activeIcon: 'clock',
+			});
+			expect(container.createEl).toHaveBeenCalledWith('li', {
+				cls: 'gemini-scheduler-item gemini-scheduler-item--disabled',
+			});
+			expect(setIcon).toHaveBeenCalledWith(iconEl, 'pause-circle');
+		});
+
+		it('adds the paused class and the alert-circle icon, with paused winning over disabled', () => {
+			const container = createMockElement();
+			const { iconEl } = modal.callRenderEntityRowShell(container, {
+				isPaused: true,
+				isDisabled: true,
+				activeIcon: 'webhook',
+			});
+			expect(container.createEl).toHaveBeenCalledWith('li', {
+				cls: 'gemini-scheduler-item gemini-scheduler-item--disabled gemini-scheduler-item--paused',
+			});
+			expect(setIcon).toHaveBeenCalledWith(iconEl, 'alert-circle');
+		});
+
+		it('uses the caller-supplied active icon (entity-specific)', () => {
+			const container = createMockElement();
+			const { iconEl } = modal.callRenderEntityRowShell(container, {
+				isPaused: false,
+				isDisabled: false,
+				activeIcon: 'webhook',
+			});
+			expect(setIcon).toHaveBeenCalledWith(iconEl, 'webhook');
 		});
 	});
 

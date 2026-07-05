@@ -1,4 +1,4 @@
-import { Notice, Setting, setIcon } from 'obsidian';
+import { Notice, Setting } from 'obsidian';
 import type { ScheduledTask, TaskState, ScheduledTasksState } from '../services/scheduled-task-manager';
 import { DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import type { FeatureToolPolicy } from '../types/tool-policy';
@@ -80,19 +80,7 @@ export class SchedulerManagementModal extends ManagementModalBase<ScheduledTask,
 		const isPaused = taskState?.pausedDueToErrors === true;
 		const isDisabled = !task.enabled;
 
-		const li = container.createEl('li', {
-			cls: [
-				'gemini-scheduler-item',
-				isDisabled ? 'gemini-scheduler-item--disabled' : '',
-				isPaused ? 'gemini-scheduler-item--paused' : '',
-			]
-				.filter(Boolean)
-				.join(' '),
-		});
-
-		// Status icon
-		const iconEl = li.createSpan({ cls: 'gemini-scheduler-item-icon' });
-		setIcon(iconEl, isPaused ? 'alert-circle' : isDisabled ? 'pause-circle' : 'clock');
+		const { li } = this.renderEntityRowShell(container, { isPaused, isDisabled, activeIcon: 'clock' });
 
 		// Info block
 		const info = li.createDiv({ cls: 'gemini-scheduler-item-info' });
