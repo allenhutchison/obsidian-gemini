@@ -1,5 +1,6 @@
 import {
 	GEMINI_MODELS,
+	getActiveChatModel,
 	getDefaultModelForRole,
 	GeminiModel,
 	getUpdatedModelSettings,
@@ -235,42 +236,72 @@ describe('getUpdatedModelSettings', () => {
 		]);
 	});
 
-	it('tolerates empty Ollama model names while the model list has not loaded yet', () => {
-		setTestModels([]); // Simulates Ollama before /api/tags responds — no models registered
+	it('tolerates an empty Ollama model while the daemon list has not loaded yet', () => {
+		// Only Gemini models are registered here — the Ollama list loads later via
+		// /api/tags. The Gemini fields stay valid and the empty ollamaModelName is
+		// left untouched (rather than throwing or blanking a Gemini field).
 		const currentSettings = {
 			provider: 'ollama',
-			chatModelName: '', // Empty after a previous reconcile cleared a stale Gemini value
-			summaryModelName: '',
-			completionsModelName: '',
+			chatModelName: 'gemini-chat-default',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
+			ollamaModelName: '',
 		};
-		// Should NOT throw; empty values are allowed when the daemon hasn't reported
-		// any models yet (the throw only fires when an empty needs replacing AND no
-		// models are available, but for Ollama the "we'll backfill later" path wins).
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(false);
-		expect(result.updatedSettings.chatModelName).toBe('');
-		expect(result.updatedSettings.summaryModelName).toBe('');
-		expect(result.updatedSettings.completionsModelName).toBe('');
+		expect(result.updatedSettings.ollamaModelName).toBe('');
 		expect(result.changedSettingsInfo).toEqual([]);
 	});
 
-	it('backfills empty Ollama model names once the model list has loaded', () => {
+	it('backfills an empty Ollama model once the daemon list has loaded', () => {
 		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
+			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
+			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
 			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
-			{ value: 'mistral', label: 'Mistral', provider: 'ollama' as const, defaultForRoles: ['summary'] },
-			{ value: 'qwen2.5', label: 'Qwen 2.5', provider: 'ollama' as const, defaultForRoles: ['completions'] },
+			{ value: 'mistral', label: 'Mistral', provider: 'ollama' as const },
 		]);
 		const currentSettings = {
 			provider: 'ollama',
-			chatModelName: '', // Cleared on an earlier reconcile when daemon was unreachable
-			summaryModelName: '',
-			completionsModelName: '',
+			chatModelName: 'gemini-chat-default',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
+			ollamaModelName: '',
 		};
 		const result = getUpdatedModelSettings(currentSettings);
 		expect(result.settingsChanged).toBe(true);
-		expect(result.updatedSettings.chatModelName).toBe('llama3.2');
-		expect(result.updatedSettings.summaryModelName).toBe('mistral');
-		expect(result.updatedSettings.completionsModelName).toBe('qwen2.5');
+		expect(result.updatedSettings.ollamaModelName).toBe('llama3.2');
+		// Gemini fields are preserved across an Ollama-active reconcile.
+		expect(result.updatedSettings.chatModelName).toBe('gemini-chat-default');
+	});
+
+	it('preserves the Gemini model fields when the active provider is Ollama (#1125 regression)', () => {
+		// The core of the fix: reconciling while Ollama is active must never touch
+		// the Gemini per-use-case fields, so a Gemini → Ollama → Gemini round trip
+		// keeps the user's Gemini chat model instead of resetting it to the default.
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-flash-lite', label: 'Flash Lite' },
+			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
+			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
+			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+		]);
+		const currentSettings = {
+			provider: 'ollama',
+			chatModelName: 'gemini-flash-lite', // a non-default Gemini choice
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
+			ollamaModelName: 'llama3.2',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(false);
+		expect(result.updatedSettings.chatModelName).toBe('gemini-flash-lite');
+		expect(result.updatedSettings.ollamaModelName).toBe('llama3.2');
 	});
 
 	it('should propagate error if GEMINI_MODELS is empty and a model update is attempted', () => {
@@ -284,6 +315,49 @@ describe('getUpdatedModelSettings', () => {
 		// Expect getUpdatedModelSettings to throw the error from getDefaultModelForRole
 		expect(() => getUpdatedModelSettings(currentSettings)).toThrow(
 			'CRITICAL: GEMINI_MODELS array is empty. Please configure available models.'
+		);
+	});
+});
+
+describe('getActiveChatModel', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-flash-lite', label: 'Flash Lite' },
+			{ value: 'llama3.2', label: 'Llama 3.2', provider: 'ollama' as const, defaultForRoles: ['chat'] },
+		]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	it('returns chatModelName under the Gemini provider', () => {
+		expect(
+			getActiveChatModel({ provider: 'gemini', chatModelName: 'gemini-flash-lite', ollamaModelName: 'llama3.2' })
+		).toBe('gemini-flash-lite');
+	});
+
+	it('defaults to the provider when no explicit provider is set', () => {
+		expect(getActiveChatModel({ chatModelName: 'gemini-flash-lite' })).toBe('gemini-flash-lite');
+	});
+
+	it('returns ollamaModelName under the Ollama provider', () => {
+		expect(
+			getActiveChatModel({ provider: 'ollama', chatModelName: 'gemini-flash-lite', ollamaModelName: 'llama3.2' })
+		).toBe('llama3.2');
+	});
+
+	it('falls back to the Gemini chat default when chatModelName is empty', () => {
+		expect(getActiveChatModel({ provider: 'gemini', chatModelName: '' })).toBe('gemini-chat-default');
+	});
+
+	it('falls back to the Ollama chat default when ollamaModelName is empty', () => {
+		expect(getActiveChatModel({ provider: 'ollama', chatModelName: 'gemini-flash-lite', ollamaModelName: '' })).toBe(
+			'llama3.2'
 		);
 	});
 });

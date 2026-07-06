@@ -1,4 +1,5 @@
 import type { Content } from '@google/genai';
+import { getActiveChatModel } from '../../models';
 import type ObsidianGemini from '../../main';
 import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
@@ -75,7 +76,7 @@ export function buildFollowUpRequest(params: FollowUpRequestParams): ExtendedMod
 		kind: 'extended',
 		userMessage: '', // Empty since tool results are already in conversation history
 		conversationHistory: updatedHistory,
-		model: modelConfig.model || plugin.settings.chatModelName,
+		model: modelConfig.model || getActiveChatModel(plugin.settings),
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
 		prompt: '', // Unused in agent pipeline — context lives in conversationHistory
@@ -103,7 +104,7 @@ export function buildRetryRequest(params: RetryRequestParams): ExtendedModelRequ
 		kind: 'extended',
 		userMessage: 'Please summarize what you just did with the tools.',
 		conversationHistory: updatedHistory,
-		model: modelConfig.model || plugin.settings.chatModelName,
+		model: modelConfig.model || getActiveChatModel(plugin.settings),
 		temperature: modelConfig.temperature ?? plugin.settings.temperature,
 		topP: modelConfig.topP ?? plugin.settings.topP,
 		prompt: '', // Unused in agent pipeline — context lives in conversationHistory

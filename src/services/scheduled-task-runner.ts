@@ -1,3 +1,4 @@
+import { getActiveChatModel } from '../models';
 import type ObsidianGemini from '../main';
 import type { ScheduledTask } from './scheduled-task-manager';
 import { DestructiveAction } from '../types/agent';
@@ -61,7 +62,7 @@ export class ScheduledTaskRunner {
 		// Prepend a turn preamble so the model has accurate "now" awareness.
 		const startedAt = formatLocalTimestamp(session.created);
 		const userMessage = buildTurnPreamble(formatLocalTimestamp(new Date())) + this.task.prompt;
-		const model = this.task.model ?? this.plugin.settings.chatModelName;
+		const model = this.task.model ?? getActiveChatModel(this.plugin.settings);
 
 		const initialRequest: ExtendedModelRequest = {
 			kind: 'extended',

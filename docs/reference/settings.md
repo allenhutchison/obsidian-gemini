@@ -102,7 +102,7 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 The active model list depends on the [`provider`](#provider) setting:
 
 - **Gemini (default)** — models are loaded from the bundled list and auto-refreshed from GitHub on startup (cached for 24h). `imageModelName` is only available on this provider. Click **Refresh model list** in Settings → General — or run the **Gemini Scribe: Refresh model list** command — to fetch the latest list immediately (bypasses the cache).
-- **Ollama** — a single **Ollama model** picker is shown (bound to `chatModelName`); that one model serves every use case — chat, summary, completions, and rewrite. Ollama keeps only one model resident at a time, so diverging models per use case would just thrash RAM/VRAM on each switch; the separate `summaryModelName` / `completionsModelName` values are ignored while Ollama is active. The dropdown is populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
+- **Ollama** — a single **Ollama model** picker is shown (bound to its own `ollamaModelName` setting); that one model serves every use case — chat, summary, completions, and rewrite. Ollama keeps only one model resident at a time, so diverging models per use case would just thrash RAM/VRAM on each switch; the Gemini `chatModelName` / `summaryModelName` / `completionsModelName` values are ignored while Ollama is active. Because Ollama uses its own field, switching Gemini ↔ Ollama preserves each provider's model choice — returning to Gemini restores the exact chat model you had. The dropdown is populated from `GET <ollamaBaseUrl>/api/tags`, listing whatever you have pulled. Click "Refresh model list" in settings if a freshly pulled model doesn't appear. Image generation is unavailable in this mode.
 
 ### Chat model
 
@@ -127,7 +127,7 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Default**: `gemini-flash-latest`
 - **Description**: Model used for document summarization
 - **Used by**: Summarize active file command
-- **Note**: Gemini only. Under Ollama every use case resolves to `chatModelName`, so this value is ignored and its picker is hidden.
+- **Note**: Gemini only. Under Ollama every use case resolves to `ollamaModelName`, so this value is ignored and its picker is hidden.
 
 ### Completions Model
 
@@ -136,7 +136,7 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Default**: `gemini-flash-lite-latest`
 - **Description**: Model used for IDE-style auto-completions
 - **Note**: Completions must be enabled via command palette
-- **Note**: Gemini only. Under Ollama every use case resolves to `chatModelName`, so this value is ignored and its picker is hidden.
+- **Note**: Gemini only. Under Ollama every use case resolves to `ollamaModelName`, so this value is ignored and its picker is hidden.
 
 ### Image model
 
@@ -145,6 +145,14 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Default**: `gemini-2.5-flash-image`
 - **Only available when**: Provider is `gemini`
 - **Description**: Model used for image generation via the `generate_image` tool and the **Generate image** command. Only models with image-generation capability appear in this dropdown.
+
+### Ollama model
+
+- **Setting**: `ollamaModelName`
+- **Type**: String
+- **Default**: `''` (backfilled to the first pulled model once the daemon's list loads)
+- **Only shown when**: Provider is `ollama`
+- **Description**: The single local model that serves every use case (chat, summary, completions, rewrite) while Ollama is the active provider. Stored separately from the Gemini `chatModelName` so switching Gemini ↔ Ollama preserves each provider's model choice. Populated from `GET <ollamaBaseUrl>/api/tags`.
 
 ## Custom Prompts
 

@@ -85,7 +85,7 @@ export class ModelClientFactory {
 		// Collapse every use case to the one configured chat model; the
 		// per-use-case summary/completions settings are ignored under Ollama. (#1077)
 		if (provider === 'ollama') {
-			return settings.chatModelName || getDefaultModelForRole('chat', 'ollama');
+			return settings.ollamaModelName || getDefaultModelForRole('chat', 'ollama');
 		}
 		switch (useCase) {
 			case ModelUseCase.CHAT:

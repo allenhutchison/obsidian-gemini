@@ -72,6 +72,25 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 	throw new Error('CRITICAL: GEMINI_MODELS array is empty. Please configure available models.');
 }
 
+/**
+ * Resolve the chat model for the *active* provider. Gemini and Ollama each keep
+ * their own persisted model (`chatModelName` vs `ollamaModelName`), so switching
+ * providers back and forth never clobbers the other's choice. Use this anywhere
+ * the "current chat model" is needed for a request or for history metadata; the
+ * Gemini-cloud tools (search grounding, URL context, RAG) intentionally keep
+ * reading `chatModelName` directly since they always call Google's API.
+ */
+export function getActiveChatModel(settings: {
+	provider?: ModelProvider;
+	chatModelName?: string;
+	ollamaModelName?: string;
+}): string {
+	if ((settings.provider ?? 'gemini') === 'ollama') {
+		return settings.ollamaModelName || getDefaultModelForRole('chat', 'ollama');
+	}
+	return settings.chatModelName || getDefaultModelForRole('chat', 'gemini');
+}
+
 export interface ModelUpdateResult {
 	updatedSettings: any; // Ideally, this would be ObsidianGeminiSettings, but that would create a circular dependency
 	settingsChanged: boolean;
@@ -79,61 +98,52 @@ export interface ModelUpdateResult {
 }
 
 export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult {
-	const provider: ModelProvider = currentSettings?.provider === 'ollama' ? 'ollama' : 'gemini';
-	const availableModelValues = new Set(
-		GEMINI_MODELS.filter((m) => getModelProvider(m) === provider).map((m) => m.value)
-	);
+	const geminiModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'gemini').map((m) => m.value));
+	const ollamaModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'ollama').map((m) => m.value));
 	let settingsChanged = false;
 	const changedSettingsInfo: string[] = [];
 	const newSettings = { ...currentSettings };
 
-	// Helper function to check if a model needs updating.
-	// For Ollama we tolerate empty *only* while the model list hasn't loaded
-	// yet — once /api/tags has resolved, an empty value should be backfilled
-	// to a real default (otherwise a Gemini → Ollama switch made before the
-	// daemon was reachable would leave chat/summary/completions blank
-	// indefinitely, since the empty value never re-triggers reconciliation).
-	const needsUpdate = (modelName: string) => {
-		if (!modelName) {
-			return provider !== 'ollama' || availableModelValues.size > 0;
-		}
-		return !availableModelValues.has(modelName);
-	};
-
-	const reconcile = (
-		key: 'chatModelName' | 'summaryModelName' | 'completionsModelName',
+	// The Gemini per-use-case fields are always reconciled against the (always
+	// bundled) Gemini list, regardless of the active provider. This migrates
+	// renamed/legacy Gemini model IDs and, critically, keeps a Gemini → Ollama →
+	// Gemini round trip from clobbering the user's Gemini chat model: the Ollama
+	// model lives in its own `ollamaModelName` field, so the Gemini fields are
+	// never reconciled against the Ollama list.
+	const reconcileGemini = (
+		key: 'chatModelName' | 'summaryModelName' | 'completionsModelName' | 'imageModelName',
 		role: ModelRole,
 		label: string
 	) => {
-		if (!needsUpdate(newSettings[key])) return;
-		const next = getDefaultModelForRole(role, provider);
-		// When the active provider has no default available (e.g. Ollama before
-		// /api/tags has resolved), clear the stale value so the factory falls
-		// through to its "no model selected" path instead of sending a
-		// cross-provider model name (e.g. `gemini-flash-latest` to Ollama).
 		const previous = newSettings[key];
+		if (previous && geminiModelValues.has(previous)) return;
+		const next = getDefaultModelForRole(role, 'gemini');
+		// Image generation has no dedicated default in some model lists; leave a
+		// stale image model untouched rather than blanking it.
+		if (!next) return;
 		newSettings[key] = next;
-		changedSettingsInfo.push(
-			next
-				? `${label}: '${previous}' -> '${next}' (legacy model update)`
-				: `${label}: cleared stale '${previous}' (no default for provider '${provider}')`
-		);
+		changedSettingsInfo.push(`${label}: '${previous}' -> '${next}' (legacy model update)`);
 		settingsChanged = true;
 	};
 
-	reconcile('chatModelName', 'chat', 'Chat model');
-	reconcile('summaryModelName', 'summary', 'Summary model');
-	reconcile('completionsModelName', 'completions', 'Completions model');
+	reconcileGemini('chatModelName', 'chat', 'Chat model');
+	reconcileGemini('summaryModelName', 'summary', 'Summary model');
+	reconcileGemini('completionsModelName', 'completions', 'Completions model');
+	reconcileGemini('imageModelName', 'image', 'Image model');
 
-	// Image generation is Gemini-only in Phase 1 — only reconcile when on Gemini.
-	if (provider === 'gemini' && needsUpdate(newSettings.imageModelName)) {
-		const newDefaultImage = getDefaultModelForRole('image', 'gemini');
-		if (newDefaultImage) {
-			changedSettingsInfo.push(
-				`Image model: '${newSettings.imageModelName}' -> '${newDefaultImage}' (legacy model update)`
-			);
-			newSettings.imageModelName = newDefaultImage;
-			settingsChanged = true;
+	// The single Ollama model is only backfilled/validated once the daemon's
+	// models are known (they load lazily via /api/tags). Until then, tolerate an
+	// empty or stale value so a switch made while the daemon was unreachable
+	// doesn't blank it, and a Gemini model name is never sent to Ollama.
+	if (ollamaModelValues.size > 0) {
+		const previous = newSettings.ollamaModelName;
+		if (!previous || !ollamaModelValues.has(previous)) {
+			const next = getDefaultModelForRole('chat', 'ollama');
+			if (next && next !== previous) {
+				newSettings.ollamaModelName = next;
+				changedSettingsInfo.push(`Ollama model: '${previous ?? ''}' -> '${next}' (legacy model update)`);
+				settingsChanged = true;
+			}
 		}
 	}
 

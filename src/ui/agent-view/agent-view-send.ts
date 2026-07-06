@@ -1,4 +1,5 @@
 import { Notice, setIcon, App } from 'obsidian';
+import { getActiveChatModel } from '../../models';
 import type { Content } from '@google/genai';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
@@ -425,7 +426,7 @@ To reference an attachment in your response, use the path shown above.`;
 			try {
 				// Get model config from session or use defaults
 				const modelConfig = currentSession?.modelConfig || {};
-				const modelName = modelConfig.model || this.ctx.plugin.settings.chatModelName;
+				const modelName = modelConfig.model || getActiveChatModel(this.ctx.plugin.settings);
 
 				// beginTurn() is now handled by the turnStart event bus subscriber
 

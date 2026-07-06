@@ -210,8 +210,9 @@ describe('ModelClientFactory', () => {
 
 		describe('Ollama provider', () => {
 			// Ollama keeps a single model resident at a time, so every use case
-			// resolves to the one configured chatModelName — the per-use-case
-			// summary/completions settings are ignored under Ollama. (#1077)
+			// resolves to the one configured ollamaModelName — the Gemini
+			// chat/summary/completions settings are ignored under Ollama, and kept
+			// separate so switching providers preserves each choice. (#1077, #1125)
 			const useCases: ModelUseCase[] = [
 				ModelUseCase.CHAT,
 				ModelUseCase.SUMMARY,
@@ -220,13 +221,14 @@ describe('ModelClientFactory', () => {
 				ModelUseCase.SEARCH,
 			];
 
-			it.each(useCases)('resolves %s to the single chatModelName', (useCase) => {
-				// Divergent summary/completions values are set but must be ignored.
+			it.each(useCases)('resolves %s to the single ollamaModelName', (useCase) => {
+				// The Gemini fields are set to divergent values but must be ignored.
 				const plugin = createMockPlugin({
 					provider: 'ollama',
-					chatModelName: 'ollama-chat',
-					summaryModelName: 'ollama-summary',
-					completionsModelName: 'ollama-completions',
+					ollamaModelName: 'ollama-chat',
+					chatModelName: 'gemini-chat',
+					summaryModelName: 'gemini-summary',
+					completionsModelName: 'gemini-completions',
 				});
 				ModelClientFactory.createFromPlugin(plugin, useCase);
 
@@ -236,14 +238,14 @@ describe('ModelClientFactory', () => {
 				expect(config.model).toBe('ollama-chat');
 			});
 
-			it('falls back to the Ollama default for every use case when chatModelName is empty', () => {
-				// Even with a summary model configured, an empty chatModelName under
-				// Ollama resolves SUMMARY to the Ollama chat default — never the
-				// summary setting.
+			it('falls back to the Ollama default for every use case when ollamaModelName is empty', () => {
+				// Even with a Gemini chat model configured, an empty ollamaModelName
+				// under Ollama resolves to the Ollama chat default — never a Gemini field.
 				const plugin = createMockPlugin({
 					provider: 'ollama',
-					chatModelName: '',
-					summaryModelName: 'ollama-summary',
+					ollamaModelName: '',
+					chatModelName: 'gemini-chat',
+					summaryModelName: 'gemini-summary',
 				});
 				ModelClientFactory.createFromPlugin(plugin, ModelUseCase.SUMMARY);
 

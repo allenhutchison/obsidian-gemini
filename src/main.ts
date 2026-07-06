@@ -65,6 +65,12 @@ export interface ObsidianGeminiSettings {
 	summaryModelName: string;
 	completionsModelName: string;
 	imageModelName: string;
+	/**
+	 * Single model used for every use case under the Ollama provider (Ollama keeps
+	 * one model resident at a time). Stored separately from the Gemini fields above
+	 * so switching Gemini ↔ Ollama preserves each provider's model choice.
+	 */
+	ollamaModelName: string;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;
@@ -126,6 +132,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
 	imageModelName: getDefaultModelForRole('image'),
+	ollamaModelName: getDefaultModelForRole('chat', 'ollama'),
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
@@ -452,6 +459,19 @@ export default class ObsidianGemini extends Plugin {
 	async loadSettings() {
 		const data = await this.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+
+		// One-time migration: split the Ollama model out of the shared chatModelName
+		// field. Before ollamaModelName existed, the Ollama single-model picker wrote
+		// to chatModelName, so an Ollama user's chatModelName holds an Ollama model
+		// (and any prior Gemini choice was already overwritten). Move it into its own
+		// field and reset chatModelName to a Gemini default so switching providers no
+		// longer clobbers either choice.
+		if (data && data.ollamaModelName === undefined && this.settings.provider === 'ollama') {
+			this.settings.ollamaModelName = this.settings.chatModelName || '';
+			this.settings.chatModelName = getDefaultModelForRole('chat', 'gemini');
+			await this.saveData(this.settings);
+			this.logger?.log('Migrated Ollama model into its own setting (ollamaModelName)');
+		}
 
 		// One-time migration: move API key from data.json to secret storage
 		if (!this.settings.apiKeySecretName && data?.apiKey) {
