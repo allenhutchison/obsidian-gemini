@@ -4,6 +4,7 @@ import {
 	getDefaultModelForRole,
 	GeminiModel,
 	getUpdatedModelSettings,
+	migrateOllamaModelSetting,
 	setGeminiModels,
 } from '../src/models';
 
@@ -359,5 +360,72 @@ describe('getActiveChatModel', () => {
 		expect(getActiveChatModel({ provider: 'ollama', chatModelName: 'gemini-flash-lite', ollamaModelName: '' })).toBe(
 			'llama3.2'
 		);
+	});
+});
+
+describe('migrateOllamaModelSetting', () => {
+	let originalModels: GeminiModel[];
+
+	beforeEach(() => {
+		originalModels = [...GEMINI_MODELS];
+		setTestModels([{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] }]);
+	});
+
+	afterEach(() => {
+		setTestModels(originalModels);
+	});
+
+	it('moves the legacy Ollama chatModelName into ollamaModelName and resets chatModelName', () => {
+		// The pre-migration shape: an Ollama user whose data.json predates
+		// ollamaModelName (so rawData.ollamaModelName is undefined) and whose
+		// chatModelName holds the Ollama model.
+		const rawData = { provider: 'ollama', chatModelName: 'gemma4:31b-mlx' };
+		const settings = { provider: 'ollama' as const, chatModelName: 'gemma4:31b-mlx', ollamaModelName: '' };
+
+		const migrated = migrateOllamaModelSetting(settings, rawData);
+
+		expect(migrated).toBe(true);
+		expect(settings.ollamaModelName).toBe('gemma4:31b-mlx');
+		expect(settings.chatModelName).toBe('gemini-chat-default');
+	});
+
+	it('does not migrate a Gemini user (leaves chatModelName intact)', () => {
+		const rawData = { provider: 'gemini', chatModelName: 'gemini-chat-default' };
+		const settings = { provider: 'gemini' as const, chatModelName: 'gemini-chat-default', ollamaModelName: '' };
+
+		const migrated = migrateOllamaModelSetting(settings, rawData);
+
+		expect(migrated).toBe(false);
+		expect(settings.chatModelName).toBe('gemini-chat-default');
+		expect(settings.ollamaModelName).toBe('');
+	});
+
+	it('does not migrate when the data already has ollamaModelName (already migrated)', () => {
+		const rawData = { provider: 'ollama', chatModelName: 'gemini-chat-default', ollamaModelName: 'llama3.2' };
+		const settings = { provider: 'ollama' as const, chatModelName: 'gemini-chat-default', ollamaModelName: 'llama3.2' };
+
+		const migrated = migrateOllamaModelSetting(settings, rawData);
+
+		expect(migrated).toBe(false);
+		expect(settings.chatModelName).toBe('gemini-chat-default');
+		expect(settings.ollamaModelName).toBe('llama3.2');
+	});
+
+	it('does not migrate a first-run install (no persisted data)', () => {
+		const settings = { provider: 'ollama' as const, chatModelName: 'gemini-chat-default', ollamaModelName: '' };
+
+		expect(migrateOllamaModelSetting(settings, null)).toBe(false);
+		expect(migrateOllamaModelSetting(settings, undefined)).toBe(false);
+	});
+
+	it('tolerates an empty legacy chatModelName', () => {
+		const rawData = { provider: 'ollama', chatModelName: '' };
+		const settings = { provider: 'ollama' as const, chatModelName: '', ollamaModelName: '' };
+
+		const migrated = migrateOllamaModelSetting(settings, rawData);
+
+		expect(migrated).toBe(true);
+		expect(settings.ollamaModelName).toBe('');
+		expect(settings.chatModelName).toBe('gemini-chat-default');
 	});
 });

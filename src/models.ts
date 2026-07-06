@@ -97,6 +97,36 @@ export interface ModelUpdateResult {
 	changedSettingsInfo: string[];
 }
 
+/**
+ * One-time migration: split an existing Ollama user's model out of the shared
+ * `chatModelName` field into the dedicated `ollamaModelName` field.
+ *
+ * Before `ollamaModelName` existed, the Ollama single-model picker wrote to
+ * `chatModelName`, so an Ollama user's `chatModelName` holds an Ollama model (and
+ * any prior Gemini choice was already overwritten). This moves it into its own
+ * field and resets `chatModelName` to a Gemini default so switching providers no
+ * longer clobbers either choice.
+ *
+ * Mutates `settings` in place and returns `true` when a migration was applied, so
+ * the caller can persist and log. The pre-migration shape is detected from the
+ * raw persisted data (`ollamaModelName === undefined`) rather than the merged
+ * settings, whose default already backfills the field.
+ *
+ * @param settings - freshly merged settings (mutated in place)
+ * @param rawData - raw persisted data as loaded from disk, pre-merge
+ */
+export function migrateOllamaModelSetting(
+	settings: { provider?: ModelProvider; chatModelName?: string; ollamaModelName?: string },
+	rawData: Record<string, unknown> | null | undefined
+): boolean {
+	if (rawData && rawData.ollamaModelName === undefined && settings.provider === 'ollama') {
+		settings.ollamaModelName = settings.chatModelName || '';
+		settings.chatModelName = getDefaultModelForRole('chat', 'gemini');
+		return true;
+	}
+	return false;
+}
+
 export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult {
 	const geminiModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'gemini').map((m) => m.value));
 	const ollamaModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'ollama').map((m) => m.value));

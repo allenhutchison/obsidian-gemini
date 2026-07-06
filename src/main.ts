@@ -8,7 +8,7 @@ import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { getDefaultModelForRole, GeminiModel, ModelProvider } from './models';
+import { getDefaultModelForRole, GeminiModel, migrateOllamaModelSetting, ModelProvider } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -461,14 +461,9 @@ export default class ObsidianGemini extends Plugin {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 
 		// One-time migration: split the Ollama model out of the shared chatModelName
-		// field. Before ollamaModelName existed, the Ollama single-model picker wrote
-		// to chatModelName, so an Ollama user's chatModelName holds an Ollama model
-		// (and any prior Gemini choice was already overwritten). Move it into its own
-		// field and reset chatModelName to a Gemini default so switching providers no
-		// longer clobbers either choice.
-		if (data && data.ollamaModelName === undefined && this.settings.provider === 'ollama') {
-			this.settings.ollamaModelName = this.settings.chatModelName || '';
-			this.settings.chatModelName = getDefaultModelForRole('chat', 'gemini');
+		// field so switching providers no longer clobbers either choice. See
+		// migrateOllamaModelSetting for the full rationale.
+		if (migrateOllamaModelSetting(this.settings, data)) {
 			await this.saveData(this.settings);
 			this.logger?.log('Migrated Ollama model into its own setting (ollamaModelName)');
 		}
