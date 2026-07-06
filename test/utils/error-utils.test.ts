@@ -250,6 +250,25 @@ describe('error-utils', () => {
 				);
 			});
 
+			test('Chromium/Electron "Failed to fetch" is a network error', () => {
+				const error = new Error('Unable to make request: TypeError: Failed to fetch');
+				expect(getErrorMessage(error)).toBe(
+					'Network error: Unable to reach the model API. Please check your connection.'
+				);
+			});
+
+			test('An error that merely mentions "fetch" is not misclassified as a network error', () => {
+				// The bare-"fetch" heuristic used to flag this as a connectivity problem
+				// because "proxyFetch" contains "fetch", sending users to check their
+				// connection instead of the real cause.
+				const error = new Error(
+					'Failed to initialize research client: SDK structure has changed and proxyFetch injection failed.'
+				);
+				expect(getErrorMessage(error)).not.toBe(
+					'Network error: Unable to reach the model API. Please check your connection.'
+				);
+			});
+
 			test('ECONNREFUSED to a non-Ollama localhost endpoint stays generic', () => {
 				// Mention a non-11434 localhost target so this would actually catch a
 				// regression of the old "any localhost ECONNREFUSED is Ollama" heuristic.

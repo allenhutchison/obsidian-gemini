@@ -231,9 +231,14 @@ export function getErrorMessage(error: unknown): string {
 			return 'The selected model is not available. Please check your model settings.';
 		}
 
-		// Network errors
+		// Network errors. Match the specific fetch-failure phrasings — "Failed to
+		// fetch" (Chromium/Electron) and "fetch failed" (Node/undici) — rather than
+		// a bare "fetch" substring, which would misclassify unrelated errors that
+		// merely mention fetch (e.g. "proxyFetch injection failed") as connectivity
+		// problems and send users to check their connection for the wrong reason.
 		if (
-			messageLower.includes('fetch') ||
+			messageLower.includes('failed to fetch') ||
+			messageLower.includes('fetch failed') ||
 			messageLower.includes('network') ||
 			messageLower.includes('econnrefused') ||
 			messageLower.includes('etimedout')
