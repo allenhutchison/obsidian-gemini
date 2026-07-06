@@ -1,4 +1,5 @@
 import { TFolder, TFile, Notice } from 'obsidian';
+import { getActiveChatModel } from '../models';
 import type ObsidianGemini from '../main';
 import { ModelClientFactory } from '../api';
 import { AgentsMemoryData } from './agents-memory';
@@ -47,7 +48,7 @@ export class VaultAnalyzer {
 		modal.open();
 
 		// Get the model name for display
-		const modelName = this.plugin.settings.chatModelName;
+		const modelName = getActiveChatModel(this.plugin.settings);
 
 		// Define steps
 		modal.addStep('collect', t('modal.vaultAnalysis.stepCollect'));
@@ -81,7 +82,7 @@ export class VaultAnalyzer {
 			const response = await modelApi.generateModelResponse({
 				kind: 'base',
 				prompt: analysisPrompt,
-				model: this.plugin.settings.chatModelName,
+				model: getActiveChatModel(this.plugin.settings),
 			});
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('analyze');
@@ -135,7 +136,7 @@ export class VaultAnalyzer {
 			const examplePromptsResponse = await modelApi.generateModelResponse({
 				kind: 'base',
 				prompt: examplePromptsPrompt,
-				model: this.plugin.settings.chatModelName,
+				model: getActiveChatModel(this.plugin.settings),
 			});
 			await this.ensureMinimumDelay(stepStart);
 			modal.setStepComplete('examples');

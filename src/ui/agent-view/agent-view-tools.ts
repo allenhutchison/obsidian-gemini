@@ -1,4 +1,5 @@
 import type { Content } from '@google/genai';
+import { getActiveChatModel } from '../../models';
 import type ObsidianGemini from '../../main';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
@@ -112,7 +113,7 @@ export class AgentViewTools {
 				message: '',
 				notePath: '',
 				created_at: new Date(),
-				model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+				model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
 				thoughts: this.pendingReasoning,
 			});
 		}
@@ -207,7 +208,7 @@ export class AgentViewTools {
 								message: '',
 								notePath: '',
 								created_at: new Date(),
-								model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+								model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
 								thoughts,
 							});
 						},
@@ -224,7 +225,7 @@ export class AgentViewTools {
 								message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${summaryText}`,
 								notePath: '',
 								created_at: new Date(),
-								model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+								model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
 							};
 							await this.context.displayMessage(compactionEntry);
 							await this.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
@@ -257,7 +258,7 @@ export class AgentViewTools {
 				message: result.markdown,
 				notePath: '',
 				created_at: new Date(),
-				model: currentSession.modelConfig?.model || this.plugin.settings.chatModelName,
+				model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
 				...(result.thoughts ? { thoughts: result.thoughts } : {}),
 			};
 

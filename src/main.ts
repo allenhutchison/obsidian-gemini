@@ -8,7 +8,7 @@ import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { getDefaultModelForRole, GeminiModel, ModelProvider } from './models';
+import { getDefaultModelForRole, GeminiModel, migrateOllamaModelSetting, ModelProvider } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -65,6 +65,12 @@ export interface ObsidianGeminiSettings {
 	summaryModelName: string;
 	completionsModelName: string;
 	imageModelName: string;
+	/**
+	 * Single model used for every use case under the Ollama provider (Ollama keeps
+	 * one model resident at a time). Stored separately from the Gemini fields above
+	 * so switching Gemini ↔ Ollama preserves each provider's model choice.
+	 */
+	ollamaModelName: string;
 	summaryFrontmatterKey: string;
 	userName: string;
 	chatHistory: boolean;
@@ -126,6 +132,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	summaryModelName: getDefaultModelForRole('summary'),
 	completionsModelName: getDefaultModelForRole('completions'),
 	imageModelName: getDefaultModelForRole('image'),
+	ollamaModelName: getDefaultModelForRole('chat', 'ollama'),
 	summaryFrontmatterKey: 'summary',
 	userName: 'User',
 	chatHistory: false,
@@ -452,6 +459,14 @@ export default class ObsidianGemini extends Plugin {
 	async loadSettings() {
 		const data = await this.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+
+		// One-time migration: split the Ollama model out of the shared chatModelName
+		// field so switching providers no longer clobbers either choice. See
+		// migrateOllamaModelSetting for the full rationale.
+		if (migrateOllamaModelSetting(this.settings, data)) {
+			await this.saveData(this.settings);
+			this.logger?.log('Migrated Ollama model into its own setting (ollamaModelName)');
+		}
 
 		// One-time migration: move API key from data.json to secret storage
 		if (!this.settings.apiKeySecretName && data?.apiKey) {

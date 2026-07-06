@@ -128,11 +128,12 @@ async function renderGeneralSection(
 	if (plugin.settings.provider === 'ollama') {
 		// Ollama keeps a single model resident at a time, so one model applies to
 		// every use case (chat / summary / completions / rewrite). Show just the
-		// one picker, bound to chatModelName. (#1077)
+		// one picker, bound to the dedicated `ollamaModelName` field so switching
+		// providers doesn't overwrite the user's Gemini chat model. (#1077)
 		await selectModelSetting(
 			sectionEl,
 			plugin,
-			'chatModelName',
+			'ollamaModelName',
 			t('settings.general.ollamaModelName'),
 			t('settings.general.ollamaModelDesc')
 		);

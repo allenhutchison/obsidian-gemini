@@ -1,4 +1,5 @@
 import { App, Notice } from 'obsidian';
+import { getActiveChatModel } from '../../models';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type ObsidianGemini from '../../main';
@@ -237,7 +238,7 @@ Assistant: ${modelSummary}`;
 				kind: 'extended',
 				userMessage: titlePrompt,
 				conversationHistory: [],
-				model: this.plugin.settings.chatModelName,
+				model: getActiveChatModel(this.plugin.settings),
 				prompt: titlePrompt,
 				renderContent: false,
 			});

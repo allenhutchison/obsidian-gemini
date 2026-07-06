@@ -1,4 +1,5 @@
 import { Editor, TFile, Notice } from 'obsidian';
+import { getActiveChatModel } from '../models';
 import type ObsidianGemini from '../main';
 import { ExplainPromptSelectionModal } from '../ui/explain-prompt-modal';
 import { SelectionResponseModal, AskQuestionModal } from '../ui/selection-response-modal';
@@ -141,7 +142,7 @@ export class SelectionActionService {
 				kind: 'extended',
 				userMessage: userMessage,
 				conversationHistory: [],
-				model: this.plugin.settings.chatModelName,
+				model: getActiveChatModel(this.plugin.settings),
 				prompt: contextInfo,
 				temperature: this.plugin.settings.temperature,
 				topP: this.plugin.settings.topP,

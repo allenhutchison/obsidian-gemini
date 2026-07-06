@@ -1,4 +1,5 @@
 import { App, TFile } from 'obsidian';
+import { getActiveChatModel } from '../models';
 import type ObsidianGemini from '../main';
 import { DestructiveAction } from '../types/agent';
 import { ToolExecutionContext } from '../tools/types';
@@ -78,7 +79,7 @@ export class HookRunner {
 		const renderedPrompt = renderPrompt(hook.prompt, this.promptVars());
 		const startedAt = formatLocalTimestamp(session.created);
 		const userMessage = buildTurnPreamble(formatLocalTimestamp(new Date())) + renderedPrompt;
-		const model = hook.model ?? this.plugin.settings.chatModelName;
+		const model = hook.model ?? getActiveChatModel(this.plugin.settings);
 
 		const initialRequest: ExtendedModelRequest = {
 			kind: 'extended',

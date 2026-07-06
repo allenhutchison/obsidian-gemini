@@ -134,13 +134,13 @@ describe('renderGeneralSettings — model pickers per provider', () => {
 		vi.clearAllMocks();
 	});
 
-	it('renders a single chatModelName picker with the Ollama label/description under Ollama', async () => {
+	it('renders a single ollamaModelName picker with the Ollama label/description under Ollama', async () => {
 		const plugin = createMockPlugin('ollama');
 		await renderGeneralSettings({} as any, plugin, {} as any, createContext());
 
 		expect(renderedModelCalls()).toEqual([
 			{
-				settingName: 'chatModelName',
+				settingName: 'ollamaModelName',
 				label: 'settings.general.ollamaModelName',
 				desc: 'settings.general.ollamaModelDesc',
 			},
