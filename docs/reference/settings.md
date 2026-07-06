@@ -36,7 +36,7 @@ UI sections without a dedicated topic in this reference: _Vault search index_ (c
 - **Type**: `'gemini' | 'ollama'`
 - **Default**: `'gemini'`
 - **Description**: Selects the model backend. `gemini` calls the Google Cloud API; `ollama` calls a local Ollama daemon.
-- **Notes**: Switching providers re-initialises the plugin and resets stale model selections to the new provider's defaults. Provider-coupled features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are hidden when `ollama` is active. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
+- **Notes**: Switching providers re-initialises the plugin. Model selections persist across the switch — the Gemini fields (`chatModelName`, `summaryModelName`, `completionsModelName`, `imageModelName`) and `ollamaModelName` are stored separately, so returning to a provider restores the model you had there; a value is only reset if it's actually stale for its own provider (e.g. a deprecated Gemini model id), never merely because you switched providers. Provider-coupled features (Google Search, URL Context, Deep Research, image generation, RAG indexing) are hidden when `ollama` is active. See the [Ollama Setup Guide](/guide/ollama-setup) for details.
 
 ### Ollama base URL
 
