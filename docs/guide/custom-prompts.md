@@ -316,9 +316,8 @@ Always maintain academic objectivity and cite sources appropriately.
    - Ensure proper YAML frontmatter formatting
    - Verify required fields (`name`, `description`) are present
 
-2. **Confirm settings**
-   - "Enable Custom Prompts" is ON
-   - Prompt file exists in the `[state-folder]/Prompts/` folder
+2. **Confirm the file location**
+   - Prompt file exists in the `[state-folder]/Prompts/` folder (there's no separate "enable custom prompts" toggle — any valid prompt file there is available)
 
 3. **Check session settings**
    - Open the session settings (gear icon) and verify the prompt is selected
