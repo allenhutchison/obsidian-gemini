@@ -220,9 +220,18 @@ export function renderRagFileList(container: HTMLElement, status: RagDetailedSta
 	}
 
 	if (!opts.showAll && total > opts.maxInitial) {
-		const more = container.createDiv({ cls: 'rag-status-show-more' });
+		const more = container.createDiv({
+			cls: 'rag-status-show-more',
+			attr: { role: 'button', tabindex: '0' },
+		});
 		more.setText(t('ragStatus.showAllFiles', { count: total.toLocaleString() }));
 		more.addEventListener('click', () => opts.onShowAll());
+		more.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				opts.onShowAll();
+			}
+		});
 	}
 }
 

@@ -211,6 +211,32 @@ describe('renderRagFileList', () => {
 		expect(onShowAll).toHaveBeenCalledTimes(1);
 	});
 
+	it('exposes button semantics and invokes onShowAll on Enter/Space (keyboard access)', () => {
+		const container = makeEl('div');
+		const status = statusFixture({
+			indexedFiles: [
+				{ path: 'a.md', lastIndexed: 1 },
+				{ path: 'b.md', lastIndexed: 2 },
+			],
+		});
+		const onShowAll = vi.fn();
+		renderRagFileList(container, status, baseFileListOptions({ maxInitial: 1, onShowAll }));
+		const more = container.querySelector('.rag-status-show-more') as HTMLElement;
+
+		expect(more.getAttribute('role')).toBe('button');
+		expect(more.getAttribute('tabindex')).toBe('0');
+
+		more.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+		expect(onShowAll).toHaveBeenCalledTimes(1);
+
+		more.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+		expect(onShowAll).toHaveBeenCalledTimes(2);
+
+		// An unrelated key does not activate the control.
+		more.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+		expect(onShowAll).toHaveBeenCalledTimes(2);
+	});
+
 	it('renders plain, non-interactive rows when onOpenFile is omitted', () => {
 		const container = makeEl('div');
 		const status = statusFixture({ indexedFiles: [{ path: 'note.md', lastIndexed: 1 }] });
