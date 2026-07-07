@@ -110,20 +110,7 @@ export class AgentViewMessages {
 			cls: `gemini-agent-message gemini-agent-message-${entry.role}`,
 		});
 
-		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
-		header.createEl('span', {
-			text:
-				entry.role === 'user'
-					? t('agent.message.roleUser')
-					: entry.role === 'system'
-						? t('agent.message.roleSystem')
-						: t('agent.message.roleAgent'),
-			cls: 'gemini-agent-message-role',
-		});
-		header.createEl('span', {
-			text: entry.created_at.toLocaleTimeString(),
-			cls: 'gemini-agent-message-time',
-		});
+		this.createMessageHeader(messageDiv, this.roleLabel(entry.role), entry.created_at.toLocaleTimeString());
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 
@@ -232,24 +219,9 @@ export class AgentViewMessages {
 		this.setupImageClickHandlers(content, sourcePath);
 
 		// Add a copy button for messages with visible text (skip reasoning-only turns).
+		// Copy the user-visible text (preamble stripped for user turns).
 		if ((entry.role === 'model' || entry.role === 'user') && renderMessage.trim()) {
-			const copyButton = content.createEl('button', {
-				cls: 'gemini-agent-copy-button',
-			});
-			setIcon(copyButton, 'copy');
-
-			copyButton.addEventListener('click', () => {
-				// Copy the user-visible text (preamble stripped for user turns)
-				navigator.clipboard
-					.writeText(renderMessage)
-					.then(() => {
-						new Notice(t('agent.message.copied'));
-					})
-					.catch((err) => {
-						new Notice(t('agent.message.copyFailed'));
-						this.plugin.logger.error(err);
-					});
-			});
+			this.addCopyButton(content, renderMessage);
 		}
 
 		// Auto-scroll to bottom
@@ -272,15 +244,12 @@ export class AgentViewMessages {
 			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
 		});
 
-		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
-		header.createEl('span', {
-			text: t('agent.planMode.headerLabel'),
-			cls: 'gemini-agent-message-role gemini-agent-plan-role',
-		});
-		header.createEl('span', {
-			text: entry.created_at.toLocaleTimeString(),
-			cls: 'gemini-agent-message-time',
-		});
+		this.createMessageHeader(
+			messageDiv,
+			t('agent.planMode.headerLabel'),
+			entry.created_at.toLocaleTimeString(),
+			'gemini-agent-plan-role'
+		);
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 		const sourcePath = currentSession?.historyPath || '';
@@ -354,6 +323,57 @@ export class AgentViewMessages {
 	}
 
 	/**
+	 * Resolve the localized role label for a message header.
+	 */
+	private roleLabel(role: 'user' | 'model' | 'system'): string {
+		return role === 'user'
+			? t('agent.message.roleUser')
+			: role === 'system'
+				? t('agent.message.roleSystem')
+				: t('agent.message.roleAgent');
+	}
+
+	/**
+	 * Build the standard message header (role label + timestamp) shared by every
+	 * message renderer. `roleCls` adds an accent class (e.g. plan headers) to the
+	 * role span.
+	 */
+	private createMessageHeader(parent: HTMLElement, roleText: string, timestamp: string, roleCls?: string): HTMLElement {
+		const header = parent.createDiv({ cls: 'gemini-agent-message-header' });
+		header.createEl('span', {
+			text: roleText,
+			cls: roleCls ? `gemini-agent-message-role ${roleCls}` : 'gemini-agent-message-role',
+		});
+		header.createEl('span', {
+			text: timestamp,
+			cls: 'gemini-agent-message-time',
+		});
+		return header;
+	}
+
+	/**
+	 * Add the standard copy-to-clipboard button to a rendered message.
+	 */
+	private addCopyButton(container: HTMLElement, textToCopy: string): void {
+		const copyButton = container.createEl('button', {
+			cls: 'gemini-agent-copy-button',
+		});
+		setIcon(copyButton, 'copy');
+
+		copyButton.addEventListener('click', () => {
+			navigator.clipboard
+				.writeText(textToCopy)
+				.then(() => {
+					new Notice(t('agent.message.copied'));
+				})
+				.catch((err) => {
+					new Notice(t('agent.message.copyFailed'));
+					this.plugin.logger.error('Failed to copy to clipboard', err);
+				});
+		});
+	}
+
+	/**
 	 * Create empty message container for streaming
 	 */
 	createStreamingMessageContainer(role: 'user' | 'model' | 'system' = 'model'): HTMLElement {
@@ -367,20 +387,7 @@ export class AgentViewMessages {
 			cls: `gemini-agent-message gemini-agent-message-${role}`,
 		});
 
-		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
-		header.createEl('span', {
-			text:
-				role === 'user'
-					? t('agent.message.roleUser')
-					: role === 'system'
-						? t('agent.message.roleSystem')
-						: t('agent.message.roleAgent'),
-			cls: 'gemini-agent-message-role',
-		});
-		header.createEl('span', {
-			text: new Date().toLocaleTimeString(),
-			cls: 'gemini-agent-message-time',
-		});
+		this.createMessageHeader(messageDiv, this.roleLabel(role), new Date().toLocaleTimeString());
 
 		messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 
@@ -429,25 +436,10 @@ export class AgentViewMessages {
 			}
 
 			// Add a copy button only when there's visible message text — mirrors the
-			// reasoning-only suppression in displayMessage.
+			// reasoning-only suppression in displayMessage. Use the original message
+			// text to preserve formatting.
 			if (entry.role === 'model' && fullMarkdown.trim()) {
-				const copyButton = messageDiv.createEl('button', {
-					cls: 'gemini-agent-copy-button',
-				});
-				setIcon(copyButton, 'copy');
-
-				copyButton.addEventListener('click', () => {
-					// Use the original message text to preserve formatting
-					navigator.clipboard
-						.writeText(entry.message)
-						.then(() => {
-							new Notice(t('agent.message.copied'));
-						})
-						.catch((err) => {
-							new Notice(t('agent.message.copyFailed'));
-							this.plugin.logger.error('Failed to copy to clipboard', err);
-						});
-				});
+				this.addCopyButton(messageDiv, entry.message);
 			}
 
 			// Setup image click handlers
@@ -717,15 +709,12 @@ export class AgentViewMessages {
 			cls: 'gemini-agent-message gemini-agent-message-model gemini-agent-plan-message',
 		});
 
-		const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
-		header.createEl('span', {
-			text: t('agent.planMode.headerLabel'),
-			cls: 'gemini-agent-message-role gemini-agent-plan-role',
-		});
-		header.createEl('span', {
-			text: new Date().toLocaleTimeString(),
-			cls: 'gemini-agent-message-time',
-		});
+		this.createMessageHeader(
+			messageDiv,
+			t('agent.planMode.headerLabel'),
+			new Date().toLocaleTimeString(),
+			'gemini-agent-plan-role'
+		);
 
 		const content = messageDiv.createDiv({ cls: 'gemini-agent-message-content' });
 		await MarkdownRenderer.render(this.app, formatModelMessage(planText), content, '', this.viewContext);
@@ -787,12 +776,7 @@ export class AgentViewMessages {
 			});
 
 			// Add header
-			const header = messageDiv.createDiv({ cls: 'gemini-agent-message-header' });
-			header.createEl('span', { text: t('agent.confirm.title'), cls: 'gemini-agent-message-role' });
-			header.createEl('span', {
-				text: new Date().toLocaleTimeString(),
-				cls: 'gemini-agent-message-time',
-			});
+			this.createMessageHeader(messageDiv, t('agent.confirm.title'), new Date().toLocaleTimeString());
 
 			// Create confirmation card
 			const card = messageDiv.createDiv({ cls: 'gemini-agent-confirmation-card' });
