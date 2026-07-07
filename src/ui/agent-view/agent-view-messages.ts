@@ -338,15 +338,10 @@ export class AgentViewMessages {
 	 * message renderer. `roleCls` adds an accent class (e.g. plan headers) to the
 	 * role span.
 	 */
-	private createMessageHeader(
-		parent: HTMLElement,
-		roleLabel: string,
-		timestamp: string,
-		roleCls?: string
-	): HTMLElement {
+	private createMessageHeader(parent: HTMLElement, roleText: string, timestamp: string, roleCls?: string): HTMLElement {
 		const header = parent.createDiv({ cls: 'gemini-agent-message-header' });
 		header.createEl('span', {
-			text: roleLabel,
+			text: roleText,
 			cls: roleCls ? `gemini-agent-message-role ${roleCls}` : 'gemini-agent-message-role',
 		});
 		header.createEl('span', {
