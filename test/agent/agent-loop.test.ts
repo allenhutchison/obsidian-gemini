@@ -678,10 +678,10 @@ describe('AgentLoop', () => {
 					createModelApi: () => api,
 					hooks: {
 						onToolCallStart: (tcArg) => {
-							events.push(`start:${tcArg.name}:${tcArg.arguments?.path}`);
+							events.push(`start:${tcArg.name}:${tcArg.arguments?.path as string}`);
 						},
 						onToolCallComplete: (tcArg) => {
-							events.push(`complete:${tcArg.name}:${tcArg.arguments?.path}`);
+							events.push(`complete:${tcArg.name}:${tcArg.arguments?.path as string}`);
 						},
 					},
 				},

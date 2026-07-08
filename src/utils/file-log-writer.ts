@@ -153,10 +153,14 @@ export class FileLogWriter {
 					try {
 						return JSON.stringify(arg);
 					} catch {
-						return String(arg);
+						// Circular structure — same output String(arg) would produce.
+						return Object.prototype.toString.call(arg);
 					}
 				}
-				return String(arg);
+				if (typeof arg === 'string') return arg;
+				if (typeof arg === 'number' || typeof arg === 'boolean' || typeof arg === 'bigint') return String(arg);
+				// symbol / function — never logged in practice; label rather than coerce
+				return Object.prototype.toString.call(arg);
 			})
 			.join(' ');
 	}

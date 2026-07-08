@@ -315,6 +315,7 @@ export class AgentLoop {
 				// Deliberate lazy require to break the AgentFactory → tools → AgentLoop
 				// import cycle (see AGENTS.md). A top-level import here would be circular.
 
+				// eslint-disable-next-line @typescript-eslint/no-require-imports -- a top-level import here would recreate that cycle
 				const { AgentFactory } = require('./agent-factory');
 				return AgentFactory.createAgentModel(plugin, session) as ModelApi;
 			});

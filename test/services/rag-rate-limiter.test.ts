@@ -1,7 +1,7 @@
 vi.mock('../../src/utils/error-utils', () => ({
 	isRateLimitError: (error: unknown) => {
 		if (!error) return false;
-		const msg = error instanceof Error ? error.message : String(error);
+		const msg = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
 		return (
 			msg.includes('429') ||
 			msg.includes('RESOURCE_EXHAUSTED') ||

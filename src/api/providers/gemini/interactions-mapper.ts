@@ -239,7 +239,7 @@ export function extractModelResponseFromInteraction(interaction: Record<string, 
 			thoughts += textFromContentArray(step.summary);
 		} else if (type === 'function_call') {
 			toolCalls.push({
-				name: String(step.name ?? ''),
+				name: typeof step.name === 'string' ? step.name : '',
 				arguments: (step.arguments as Record<string, unknown>) ?? {},
 				id: typeof step.id === 'string' ? step.id : undefined,
 				thoughtSignature: typeof step.signature === 'string' ? step.signature : undefined,
@@ -324,7 +324,7 @@ export class InteractionStreamAccumulator {
 				const index = event.index as number;
 				this.pending.set(index, {
 					id: typeof step.id === 'string' ? step.id : undefined,
-					name: String(step.name ?? ''),
+					name: typeof step.name === 'string' ? step.name : '',
 					signature: typeof step.signature === 'string' ? step.signature : undefined,
 					argsBuffer: '',
 					seedArgs:
@@ -361,7 +361,7 @@ export class InteractionStreamAccumulator {
 
 		switch (delta.type) {
 			case 'text': {
-				const text = decodeHtmlEntities(String(delta.text ?? ''));
+				const text = decodeHtmlEntities(typeof delta.text === 'string' ? delta.text : '');
 				if (!text) return null;
 				this.text += text;
 				return { text };

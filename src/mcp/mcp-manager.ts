@@ -528,7 +528,7 @@ export class MCPManager {
 					this.logger.debug(`MCP: OAuth callback server listening on port ${OAUTH_CALLBACK_PORT}`);
 				} catch (serverErr) {
 					// Non-fatal: if the port is busy, OAuth just won't work
-					this.logger.warn(`MCP: Could not start OAuth callback server: ${serverErr}`);
+					this.logger.warn(`MCP: Could not start OAuth callback server: ${getRawErrorMessage(serverErr)}`);
 				}
 			}
 		} else {

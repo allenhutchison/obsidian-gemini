@@ -25,16 +25,21 @@ const SOFTENED_TS_RULES = {
 	'@typescript-eslint/no-misused-promises': 'error',
 	// #1037: cleared — enforced.
 	'@typescript-eslint/no-floating-promises': 'error',
-	'@typescript-eslint/no-base-to-string': 'off',
-	'@typescript-eslint/restrict-template-expressions': 'off',
+	// #1032 sweep: cleared — enforced.
+	'@typescript-eslint/no-base-to-string': 'error',
+	'@typescript-eslint/restrict-template-expressions': 'error',
 	// #1041: cleared — enforced.
 	'@typescript-eslint/no-redundant-type-constituents': 'error',
-	'@typescript-eslint/no-require-imports': 'off',
+	// #1032 sweep: cleared — enforced. The one deliberate lazy require (AgentLoop's
+	// cycle-breaking agent-factory load, see AGENTS.md) carries an inline disable.
+	'@typescript-eslint/no-require-imports': 'error',
 	// #1041: cleared — enforced.
 	'@typescript-eslint/no-unused-expressions': 'error',
 	// #1040: cleared — enforced.
 	'@typescript-eslint/no-deprecated': 'error',
-	'@typescript-eslint/unbound-method': 'off',
+	// #1032 sweep: cleared — enforced (src was already clean; test/ overrides back to
+	// 'off' below for vitest's expect(mock.method) idiom, a known false positive).
+	'@typescript-eslint/unbound-method': 'error',
 	'@typescript-eslint/no-unused-vars': [
 		'warn',
 		{ argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
@@ -170,6 +175,9 @@ export default defineConfig([
 			// `any` is pervasive in test mocks/fixtures (~1.8k occurrences) and outside
 			// #1036's src-only scope — keep it off here.
 			'@typescript-eslint/no-explicit-any': 'off',
+			// vitest's expect(mock.method).toHaveBeenCalled() pattern trips this rule's
+			// method-reference check (~56 false positives) — keep it off for tests.
+			'@typescript-eslint/unbound-method': 'off',
 			// Tests legitimately use Node.js modules for fixtures and don't run in Obsidian.
 			'import/no-nodejs-modules': 'off',
 			// Tests run in jsdom, where Obsidian's createEl/createDiv/createSpan DOM

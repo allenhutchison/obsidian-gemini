@@ -136,12 +136,9 @@ export function logDebugInfo(logger: Logger, title: string, data: unknown) {
 		logger.log(`[GeminiAPI Debug] ${title} (BaseModelRequest):\n${formatBaseModelRequest(data)}`);
 		return;
 	}
-	let sanitizedData: unknown;
 	if (typeof data === 'string' && data.includes('File Label:')) {
-		sanitizedData = redactLinkedFileSections(data);
-		logger.log(`[GeminiAPI Debug] ${title}:\n${sanitizedData}`);
+		logger.log(`[GeminiAPI Debug] ${title}:\n${redactLinkedFileSections(data)}`);
 	} else {
-		sanitizedData = stripLinkedFileContents(data);
-		logger.log(`[GeminiAPI Debug] ${title}:`, JSON.stringify(sanitizedData, null, 2));
+		logger.log(`[GeminiAPI Debug] ${title}:`, JSON.stringify(stripLinkedFileContents(data), null, 2));
 	}
 }
