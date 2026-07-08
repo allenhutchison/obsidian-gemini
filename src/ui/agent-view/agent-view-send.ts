@@ -44,7 +44,7 @@ export interface SendContext {
 	allowToolWithoutConfirmation: (toolName: string) => void;
 	showConfirmationInChat: (
 		tool: Tool,
-		parameters: any,
+		parameters: Record<string, unknown>,
 		executionId: string,
 		diffContext?: DiffContext
 	) => Promise<ConfirmationResult>;

@@ -151,8 +151,9 @@ export default defineConfig([
 	{
 		// #1036: `no-explicit-any` is cleared for these directories, so enforce it here
 		// to prevent regressions while the rule stays globally softened for the rest of
-		// `src/` (remaining area — src/ui — tracked in #1036).
-		files: ['src/utils/**/*.ts', 'src/mcp/**/*.ts', 'src/tools/**/*.ts', 'src/api/**/*.ts'],
+		// `src/` (remaining areas — src/agent, src/services, src/types, src/subscribers,
+		// src/main.ts, src/models.ts — still tracked in #1036).
+		files: ['src/utils/**/*.ts', 'src/mcp/**/*.ts', 'src/tools/**/*.ts', 'src/api/**/*.ts', 'src/ui/**/*.ts'],
 		rules: { '@typescript-eslint/no-explicit-any': 'error' },
 	},
 	{

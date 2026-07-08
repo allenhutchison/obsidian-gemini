@@ -78,13 +78,13 @@ export class AgentViewToolDisplay {
 	/**
 	 * Get a brief parameter summary for a tool row (e.g. file path or query)
 	 */
-	public getToolParamSummary(_toolName: string, parameters: any): string {
+	public getToolParamSummary(_toolName: string, parameters: Record<string, unknown> | undefined): string {
 		if (!parameters) return '';
 		// Pick the most meaningful parameter for each tool type
-		if (parameters.path) return parameters.path;
-		if (parameters.query) return parameters.query;
-		if (parameters.url) return parameters.url;
-		if (parameters.name) return parameters.name;
+		if (typeof parameters.path === 'string' && parameters.path) return parameters.path;
+		if (typeof parameters.query === 'string' && parameters.query) return parameters.query;
+		if (typeof parameters.url === 'string' && parameters.url) return parameters.url;
+		if (typeof parameters.name === 'string' && parameters.name) return parameters.name;
 		// Fallback: show first key's value
 		const keys = Object.keys(parameters);
 		if (keys.length > 0) {
@@ -248,7 +248,7 @@ export class AgentViewToolDisplay {
 
 	public async showToolExecution(
 		toolName: string,
-		parameters: any,
+		parameters: Record<string, unknown>,
 		executionId?: string,
 		groupContainer?: HTMLElement | null
 	): Promise<void> {
@@ -449,7 +449,7 @@ export class AgentViewToolDisplay {
 						});
 					} else {
 						const list = resultContent.createEl('ul', { cls: 'gemini-agent-tool-result-list' });
-						result.data.slice(0, 10).forEach((item: any) => {
+						result.data.slice(0, 10).forEach((item: unknown) => {
 							list.createEl('li', { text: String(item) });
 						});
 						if (result.data.length > 10) {

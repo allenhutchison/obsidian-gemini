@@ -675,7 +675,7 @@ export class AgentView extends ItemView {
 	 */
 	public async showConfirmationInChat(
 		tool: Tool,
-		parameters: any,
+		parameters: Record<string, unknown>,
 		executionId: string,
 		diffContext?: import('../../tools/types').DiffContext
 	): Promise<import('../../tools/types').ConfirmationResult> {
@@ -778,7 +778,7 @@ export class AgentView extends ItemView {
 	 * Public method to show tool execution (delegates to tools component)
 	 * Used by tests and external components
 	 */
-	async showToolExecution(toolName: string, parameters: any, executionId?: string): Promise<void> {
+	async showToolExecution(toolName: string, parameters: Record<string, unknown>, executionId?: string): Promise<void> {
 		// Lazy initialization for tests that don't call onOpen()
 		if (!this.tools) {
 			this.ensureToolsInitialized();

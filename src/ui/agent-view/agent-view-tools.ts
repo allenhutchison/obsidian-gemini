@@ -351,7 +351,11 @@ export class AgentViewTools {
 	 * Show tool execution in the UI as a compact row inside a group container.
 	 * If no group container is active, creates a standalone fallback.
 	 */
-	public async showToolExecution(toolName: string, parameters: any, executionId?: string): Promise<void> {
+	public async showToolExecution(
+		toolName: string,
+		parameters: Record<string, unknown>,
+		executionId?: string
+	): Promise<void> {
 		return this.display.showToolExecution(toolName, parameters, executionId, this.currentGroupContainer);
 	}
 
