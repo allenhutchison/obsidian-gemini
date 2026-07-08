@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Notice, setIcon } from 'obsidian';
+import { App, Component, MarkdownRenderer, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type { ObsidianGemini } from '../../types/plugin';
@@ -43,14 +43,14 @@ export class AgentViewMessages {
 	private autoOpenDiffTimeout: number | null = null;
 	private pendingConfirmations = new Set<(result: ConfirmationResult) => void>();
 	private pendingPlanApproval: ((approved: boolean) => void) | null = null;
-	private viewContext: any; // For MarkdownRenderer context
+	private viewContext: Component; // For MarkdownRenderer context
 
 	constructor(
 		app: App,
 		chatContainer: HTMLElement,
 		plugin: ObsidianGemini,
 		userInput: HTMLDivElement,
-		viewContext: any
+		viewContext: Component
 	) {
 		this.app = app;
 		this.chatContainer = chatContainer;
@@ -156,23 +156,23 @@ export class AgentViewMessages {
 					const toolHeader = toolDiv.createDiv({ cls: 'gemini-agent-tool-header' });
 
 					// Add expand/collapse icon
-					const icon = toolHeader.createEl('span', { cls: 'gemini-agent-tool-icon' });
+					const icon = toolHeader.createSpan({ cls: 'gemini-agent-tool-icon' });
 					setIcon(icon, 'chevron-right');
 
 					// Tool name
-					toolHeader.createEl('span', {
+					toolHeader.createSpan({
 						text: t('agent.message.toolPrefix', { name: toolName }),
 						cls: 'gemini-agent-tool-name',
 					});
 
 					// Tool status (if available)
 					if (toolContent.includes('✅')) {
-						toolHeader.createEl('span', {
+						toolHeader.createSpan({
 							text: t('agent.message.toolSuccess'),
 							cls: 'gemini-agent-tool-status gemini-agent-tool-status-success',
 						});
 					} else if (toolContent.includes('❌')) {
-						toolHeader.createEl('span', {
+						toolHeader.createSpan({
 							text: t('agent.message.toolFailed'),
 							cls: 'gemini-agent-tool-status gemini-agent-tool-status-error',
 						});
@@ -260,7 +260,7 @@ export class AgentViewMessages {
 		this.setupImageClickHandlers(content, sourcePath);
 
 		const actionsDiv = messageDiv.createDiv({ cls: 'gemini-agent-plan-actions' });
-		actionsDiv.createEl('span', {
+		actionsDiv.createSpan({
 			text: t('agent.planMode.approved'),
 			cls: 'gemini-agent-plan-decision gemini-agent-plan-decision-approve',
 		});
@@ -340,11 +340,11 @@ export class AgentViewMessages {
 	 */
 	private createMessageHeader(parent: HTMLElement, roleText: string, timestamp: string, roleCls?: string): HTMLElement {
 		const header = parent.createDiv({ cls: 'gemini-agent-message-header' });
-		header.createEl('span', {
+		header.createSpan({
 			text: roleText,
 			cls: roleCls ? `gemini-agent-message-role ${roleCls}` : 'gemini-agent-message-role',
 		});
-		header.createEl('span', {
+		header.createSpan({
 			text: timestamp,
 			cls: 'gemini-agent-message-time',
 		});
@@ -579,13 +579,13 @@ export class AgentViewMessages {
 
 			if (agentsMemoryExists) {
 				buttonText.createEl('strong', { text: t('agent.empty.updateContext') });
-				buttonText.createEl('span', {
+				buttonText.createSpan({
 					text: t('agent.empty.updateContextDesc'),
 					cls: 'gemini-agent-init-desc',
 				});
 			} else {
 				buttonText.createEl('strong', { text: t('agent.empty.initContext') });
-				buttonText.createEl('span', {
+				buttonText.createSpan({
 					text: t('agent.empty.initContextDesc'),
 					cls: 'gemini-agent-init-desc',
 				});
@@ -637,12 +637,12 @@ export class AgentViewMessages {
 						cls: 'gemini-agent-suggestion gemini-agent-suggestion-session',
 					});
 
-					suggestion.createEl('span', {
+					suggestion.createSpan({
 						text: session.title,
 						cls: 'gemini-agent-suggestion-title',
 					});
 
-					suggestion.createEl('span', {
+					suggestion.createSpan({
 						text: new Date(session.lastActive).toLocaleDateString(),
 						cls: 'gemini-agent-suggestion-date',
 					});
@@ -760,7 +760,7 @@ export class AgentViewMessages {
 	 */
 	public async displayConfirmationRequest(
 		tool: Tool,
-		parameters: any,
+		parameters: Record<string, unknown>,
 		executionId: string,
 		diffContext?: DiffContext
 	): Promise<ConfirmationResult> {
@@ -788,12 +788,12 @@ export class AgentViewMessages {
 			const iconContainer = toolHeader.createDiv({ cls: 'gemini-agent-confirmation-tool-icon' });
 			this.setToolIcon(iconContainer, tool.name);
 
-			toolHeader.createEl('span', {
+			toolHeader.createSpan({
 				text: tool.displayName || tool.name,
 				cls: 'gemini-agent-tool-name',
 			});
 
-			toolHeader.createEl('span', {
+			toolHeader.createSpan({
 				text: this.getCategoryLabel(tool.category),
 				cls: 'gemini-agent-tool-category',
 			});
@@ -807,7 +807,7 @@ export class AgentViewMessages {
 			// Parameters section
 			if (parameters && Object.keys(parameters).length > 0) {
 				const paramsSection = card.createDiv({ cls: 'gemini-agent-params-section' });
-				paramsSection.createEl('div', { text: t('agent.confirm.parameters'), cls: 'gemini-agent-params-header' });
+				paramsSection.createDiv({ text: t('agent.confirm.parameters'), cls: 'gemini-agent-params-header' });
 
 				const paramsList = paramsSection.createDiv({ cls: 'gemini-agent-params-list' });
 				for (const [key, value] of Object.entries(parameters)) {
@@ -1061,7 +1061,7 @@ export class AgentViewMessages {
 	/**
 	 * Format parameter value for display with proper error handling
 	 */
-	private formatParameterValue(value: any): string {
+	private formatParameterValue(value: unknown): string {
 		const MAX_LENGTH = 100;
 
 		try {

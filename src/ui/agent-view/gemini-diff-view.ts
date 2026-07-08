@@ -55,7 +55,7 @@ export class GeminiDiffView extends ItemView {
 		this.state = state;
 		this.resolved = false;
 		// updateHeader is an internal Obsidian API to refresh the tab title
-		(this.leaf as any).updateHeader();
+		(this.leaf as unknown as { updateHeader(): void }).updateHeader();
 		this.renderView();
 	}
 

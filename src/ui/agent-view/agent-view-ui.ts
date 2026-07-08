@@ -445,7 +445,8 @@ export class AgentViewUI {
 								name: f.name,
 								type: f.type,
 								size: f.size,
-								path: (f as any).path,
+								// `.path` is an Electron extension on File that exposes the full filesystem path
+								path: (f as File & { path?: string }).path,
 							}))
 						);
 					}
@@ -466,14 +467,14 @@ export class AgentViewUI {
 				if (e.dataTransfer?.files?.length) {
 					const adapter = this.app.vault.adapter;
 					if (adapter && 'basePath' in adapter) {
-						const basePath = (adapter as any).basePath;
+						const basePath = (adapter as { basePath: string }).basePath;
 						// Normalize slashes for cross-platform consistency (Windows backslashes vs POSIX)
 						// Using explicit replace instead of normalizePath which is intended for vault-relative paths
 						const normalizedBase = basePath.replace(/\\/g, '/');
 
 						for (const file of Array.from(e.dataTransfer.files)) {
-							// (file as any).path is an Electron extension that provides the full filesystem path
-							const rawPath = (file as any).path;
+							// `.path` is an Electron extension on File that provides the full filesystem path
+							const rawPath = (file as File & { path?: string }).path;
 
 							if (rawPath && typeof rawPath === 'string') {
 								const normalizedRaw = rawPath.replace(/\\/g, '/');

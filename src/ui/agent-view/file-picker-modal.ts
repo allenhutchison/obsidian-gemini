@@ -108,7 +108,8 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 		}
 
 		// In-place checkbox update: touch only affected DOM elements
-		const chooser = (this as any).chooser as SuggestModalChooser | undefined;
+		// `chooser` is an internal, undocumented SuggestModal property holding the rendered suggestions
+		const chooser = (this as unknown as { chooser?: SuggestModalChooser }).chooser;
 		const suggestions = chooser?.suggestions;
 
 		if (suggestions && suggestions.length === this.lastSuggestions.length && this.lastSuggestions.length > 0) {

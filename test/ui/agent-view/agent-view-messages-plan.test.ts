@@ -1,4 +1,4 @@
-import { App } from 'obsidian';
+import { App, Component } from 'obsidian';
 import { AgentViewMessages } from '../../../src/ui/agent-view/agent-view-messages';
 import type ObsidianGemini from '../../../src/main';
 
@@ -35,7 +35,7 @@ describe('AgentViewMessages — plan approval', () => {
 		const app = {} as unknown as App;
 		const plugin = {} as unknown as ObsidianGemini;
 		const userInput = document.createElement('div');
-		messages = new AgentViewMessages(app, chatContainer, plugin, userInput, {});
+		messages = new AgentViewMessages(app, chatContainer, plugin, userInput, {} as unknown as Component);
 	});
 
 	function queryButtons() {
