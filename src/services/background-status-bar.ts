@@ -94,11 +94,10 @@ export class BackgroundStatusBar {
 		if (badgeEl) {
 			if (this._pendingCatchUpCount > 0) {
 				badgeEl.setText('!');
-				badgeEl.style.display = 'inline-block';
 			} else {
 				badgeEl.setText('');
-				badgeEl.style.display = 'none';
 			}
+			badgeEl.toggleClass('is-visible', this._pendingCatchUpCount > 0);
 		}
 
 		const runningCount = this.taskManager.runningCount;
@@ -108,11 +107,11 @@ export class BackgroundStatusBar {
 		// AND there are no pending catch-up approvals (otherwise the ! badge would be
 		// unreachable). When RAG is idle, show the database icon + indexed-file count.
 		if (runningCount === 0 && ragStatus === 'disabled' && this._pendingCatchUpCount === 0) {
-			this.statusBarItem.style.display = 'none';
+			this.statusBarItem.hide();
 			return;
 		}
 
-		this.statusBarItem.style.display = '';
+		this.statusBarItem.show();
 		this.statusBarItem.removeClass('gemini-bg-active');
 
 		const tooltipParts: string[] = [];

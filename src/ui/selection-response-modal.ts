@@ -129,11 +129,11 @@ export class SelectionResponseModal extends Modal {
 
 		// Response container (hidden initially)
 		this.responseContainer = contentEl.createDiv({ cls: 'gemini-scribe-response-container' });
-		this.responseContainer.style.display = 'none';
+		this.responseContainer.hide();
 
 		// Actions container (hidden initially)
 		this.actionsContainer = contentEl.createDiv({ cls: 'gemini-scribe-actions' });
-		this.actionsContainer.style.display = 'none';
+		this.actionsContainer.hide();
 
 		const insertBtn = this.actionsContainer.createEl('button', {
 			text: t('selectionResponse.insertButton'),
@@ -159,9 +159,9 @@ export class SelectionResponseModal extends Modal {
 		this.response = response;
 
 		// Hide loading, show response
-		this.loadingEl.style.display = 'none';
-		this.responseContainer.style.display = 'block';
-		this.actionsContainer.style.display = 'flex';
+		this.loadingEl.hide();
+		this.responseContainer.show();
+		this.actionsContainer.show();
 
 		// Normalize newlines for proper Markdown rendering
 		const normalizedResponse = normalizeNewlines(response);
@@ -176,9 +176,9 @@ export class SelectionResponseModal extends Modal {
 	 * Show an error in the modal
 	 */
 	showError(error: string) {
-		this.loadingEl.style.display = 'none';
-		this.responseContainer.style.display = 'block';
-		this.actionsContainer.style.display = 'flex';
+		this.loadingEl.hide();
+		this.responseContainer.show();
+		this.actionsContainer.show();
 
 		this.responseContainer.empty();
 		const errorEl = this.responseContainer.createDiv({ cls: 'gemini-scribe-error' });

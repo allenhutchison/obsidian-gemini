@@ -133,16 +133,16 @@ export class RagStatusBar {
 
 		switch (status) {
 			case 'disabled':
-				this.statusBarItem.style.display = 'none';
+				this.statusBarItem.hide();
 				break;
 			case 'idle':
-				this.statusBarItem.style.display = '';
+				this.statusBarItem.show();
 				setIcon(iconEl, 'database');
 				textEl.setText(`${indexedCount}`);
 				tooltip = t('statusbar.rag.indexed', { count: indexedCount });
 				break;
 			case 'indexing':
-				this.statusBarItem.style.display = '';
+				this.statusBarItem.show();
 				this.statusBarItem.addClass('rag-indexing');
 				setIcon(iconEl, 'upload-cloud');
 				if (indexingProgress.total > 0) {
@@ -155,19 +155,19 @@ export class RagStatusBar {
 				}
 				break;
 			case 'error':
-				this.statusBarItem.style.display = '';
+				this.statusBarItem.show();
 				setIcon(iconEl, 'alert-triangle');
 				textEl.setText('');
 				tooltip = t('statusbar.rag.error');
 				break;
 			case 'paused':
-				this.statusBarItem.style.display = '';
+				this.statusBarItem.show();
 				setIcon(iconEl, 'pause-circle');
 				textEl.setText('');
 				tooltip = t('statusbar.rag.paused');
 				break;
 			case 'rate_limited': {
-				this.statusBarItem.style.display = '';
+				this.statusBarItem.show();
 				setIcon(iconEl, 'clock');
 				const remaining = this.provider.getRateLimitRemainingSeconds();
 				textEl.setText(`${remaining}s`);

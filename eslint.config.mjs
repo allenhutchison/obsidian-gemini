@@ -62,11 +62,12 @@ const PERVASIVE_OBSIDIANMD_RULES_TODO = {
 	// live-view DOM operations use the target element's `ownerDocument`, and the few
 	// genuinely detached nodes (escape-only, rasterization, test stubs) carry scoped
 	// inline disables. The rule is enforced again (left at the preset default).
-	// ~69 violations remaining: direct `style.X = ...` assignments. Needs CSS class
-	// migration. Cleaned so far and enforced per-file below (see the scoped override
-	// block): src/ui/agent-view/agent-view-progress.ts, agent-view-shelf.ts. Flip to
-	// 'error' globally once the remaining sites are migrated.
-	'obsidianmd/no-static-styles-assignment': 'off',
+	// `obsidianmd/no-static-styles-assignment` was here (~69 violations) — now fixed:
+	// static inline styles migrated to CSS classes / Obsidian's show()/hide() helpers
+	// (#1167). The agent view's iOS layout fix keeps deliberate inline `!important`
+	// setProperty calls with scoped inline disables (a class can't beat theme
+	// !important rules or round-trip host-element inline styles). The rule is
+	// enforced again (left at the preset default).
 	// `obsidianmd/no-tfile-tfolder-cast` was here — now fixed: all `x as TFile`
 	// / `x as TFolder` casts replaced with `instanceof` narrowing (the sole
 	// remaining exception is a fabricated early-init folder stub in
@@ -154,13 +155,6 @@ export default defineConfig([
 			globals: NODE_GLOBALS,
 		},
 		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
-	},
-	{
-		// Files fully migrated off direct `style.X = ...` assignments to CSS classes.
-		// Enforce `no-static-styles-assignment` here so they cannot regress while the
-		// rule stays globally disabled for the remaining unmigrated files (#1034).
-		files: ['src/ui/agent-view/agent-view-progress.ts', 'src/ui/agent-view/agent-view-shelf.ts'],
-		rules: { 'obsidianmd/no-static-styles-assignment': 'error' },
 	},
 	{
 		files: ['test/**/*.ts'],

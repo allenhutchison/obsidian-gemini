@@ -5480,3 +5480,66 @@ body.theme-dark {
 	background-color: var(--gs-hover);
 	color: var(--gs-text);
 }
+
+/* ── #1167: classes replacing static inline style assignments ──────────────── */
+
+/* Shared utilities */
+.gemini-invisible {
+	visibility: hidden;
+}
+
+.gemini-input-wide {
+	width: 30ch;
+}
+
+.gemini-warning-text {
+	color: var(--text-warning);
+}
+
+.gemini-warning-text-bold {
+	font-weight: bold;
+}
+
+/* Prompt-name modal (PromptNameModal in prompt-manager.ts) */
+.gemini-prompt-name-modal .prompt-input-container input {
+	width: 100%;
+	margin-top: var(--gs-space-2);
+	padding: var(--gs-space-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.gemini-prompt-name-modal .prompt-button-container {
+	margin-top: var(--gs-space-4);
+	display: flex;
+	gap: var(--gs-space-2);
+	justify-content: flex-end;
+}
+
+.gemini-prompt-name-modal .prompt-button-container button {
+	padding: var(--gs-space-2) var(--gs-space-4);
+}
+
+.gemini-prompt-name-modal .prompt-create-button {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	border-radius: 4px;
+}
+
+/* Background-tasks status bar: the ! badge is display:none at rest (see the
+   base .gemini-bg-status-badge rule) and shown via this modifier. */
+.gemini-bg-status-badge.is-visible {
+	display: inline-block;
+}
+
+/* MCP server modal: discovered-tools description spacing */
+.gemini-discovered-tools-desc {
+	margin-bottom: 0.5em;
+}
+
+/* RAG settings: privacy notice emphasis */
+.gemini-rag-privacy-notice {
+	margin-bottom: 1em;
+	color: var(--text-warning);
+}

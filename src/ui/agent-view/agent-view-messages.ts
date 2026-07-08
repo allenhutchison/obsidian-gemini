@@ -303,7 +303,7 @@ export class AgentViewMessages {
 		setIcon(chevron, 'chevron-right');
 
 		const details = row.createDiv({ cls: 'gemini-tool-row-details gemini-reasoning-row-details' });
-		details.style.display = 'none';
+		details.hide();
 		await MarkdownRenderer.render(this.app, formatModelMessage(thoughts), details, sourcePath, this.viewContext);
 
 		const toggle = () => {

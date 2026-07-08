@@ -28,11 +28,10 @@ export class RagCleanupModal extends Modal {
 			cls: 'setting-item-description',
 		});
 
-		const warningEl = noteEl.createEl('p', {
+		noteEl.createEl('p', {
 			text: t('ragCleanup.deleteWarning'),
-			cls: 'setting-item-description',
+			cls: 'setting-item-description gemini-warning-text',
 		});
-		warningEl.style.color = 'var(--text-warning)';
 
 		new Setting(contentEl)
 			.addButton((btn) =>

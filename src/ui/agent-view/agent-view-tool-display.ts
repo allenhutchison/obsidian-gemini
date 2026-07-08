@@ -132,7 +132,7 @@ export class AgentViewToolDisplay {
 
 		// Body (hidden by default)
 		const body = group.createDiv({ cls: 'gemini-tool-group-body' });
-		body.style.display = 'none';
+		body.hide();
 
 		// Store counts in dataset
 		group.dataset.totalCount = String(totalToolCount);
@@ -214,7 +214,7 @@ export class AgentViewToolDisplay {
 			const chevron = group.querySelector('.gemini-tool-group-chevron') as HTMLElement;
 			const summaryEl = group.querySelector('.gemini-tool-group-summary') as HTMLElement;
 			if (body && body.style.display === 'none') {
-				body.style.display = 'block';
+				body.show();
 				if (chevron) setIcon(chevron, 'chevron-down');
 				if (summaryEl) summaryEl.setAttribute('aria-expanded', 'true');
 				group.classList.add('gemini-tool-group-expanded');
@@ -306,7 +306,7 @@ export class AgentViewToolDisplay {
 
 		// Row details (hidden by default, contains parameters and later results)
 		const rowDetails = toolRow.createDiv({ cls: 'gemini-tool-row-details' });
-		rowDetails.style.display = 'none';
+		rowDetails.hide();
 
 		// Parameters section inside details
 		if (parameters && Object.keys(parameters).length > 0) {
@@ -526,7 +526,7 @@ export class AgentViewToolDisplay {
 							img.onloadstart = () => imgContainer.addClass('loading');
 							img.onload = () => imgContainer.removeClass('loading');
 							img.onerror = () => {
-								img.style.display = 'none';
+								img.hide();
 								imgContainer.removeClass('loading');
 								imgContainer.createEl('p', {
 									text: t('agent.tools.imagePreviewFailed'),
@@ -639,7 +639,7 @@ export class AgentViewToolDisplay {
 			const rowChevron = toolRow.querySelector('.gemini-tool-row-chevron') as HTMLElement;
 			const rowHeader = toolRow.querySelector('.gemini-tool-row-header') as HTMLElement;
 			if (rowDetails && rowDetails.style.display === 'none') {
-				rowDetails.style.display = 'block';
+				rowDetails.show();
 				if (rowChevron) setIcon(rowChevron, 'chevron-down');
 				if (rowHeader) rowHeader.setAttribute('aria-expanded', 'true');
 				toolRow.classList.add('gemini-tool-row-expanded');

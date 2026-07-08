@@ -96,7 +96,7 @@ export class AgentViewUI {
 
 		// Token usage indicator (hidden by default, shown when setting enabled)
 		const tokenUsageContainer = inputArea.createDiv({ cls: 'gemini-agent-token-usage' });
-		tokenUsageContainer.style.display = 'none';
+		tokenUsageContainer.hide();
 
 		const { userInput, sendButton, planModeButton, imagePreviewContainer } = this.createInputArea(inputArea, callbacks);
 
@@ -144,7 +144,7 @@ export class AgentViewUI {
 				cls: 'gemini-agent-title-input-compact',
 			});
 
-			title.style.display = 'none';
+			title.hide();
 			input.focus();
 			input.select();
 
@@ -201,7 +201,7 @@ export class AgentViewUI {
 					// is never left with an orphaned input element.
 					if (input.isConnected) {
 						title.textContent = editingSession.title;
-						title.style.display = '';
+						title.show();
 						input.remove();
 					}
 				}
@@ -217,7 +217,7 @@ export class AgentViewUI {
 					void saveTitle();
 				} else if (e.key === 'Escape') {
 					finished = true; // prevent the upcoming blur from saving
-					title.style.display = '';
+					title.show();
 					input.remove();
 				}
 			});
