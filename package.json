@@ -81,6 +81,9 @@
 		"*.ts": "eslint --fix"
 	},
 	"overrides": {
-		"esbuild": "0.28.1"
+		"esbuild": "0.28.1",
+		"madge": {
+			"typescript": "$typescript"
+		}
 	}
 }
