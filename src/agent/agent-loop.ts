@@ -2,6 +2,7 @@ import type { Content } from '@google/genai';
 import { getActiveChatModel } from '../models';
 import type { ObsidianGemini } from '../types/plugin';
 import type { ChatSession, PerTurnContext } from '../types/agent';
+import type { AgentEventMap, AgentEventName } from '../types/agent-events';
 import type { FeatureToolPolicy } from '../types/tool-policy';
 import type { ToolCall, ModelResponse, ModelApi, StreamChunk } from '../api/interfaces/model-api';
 import type { CustomPrompt } from '../prompts/types';
@@ -647,9 +648,13 @@ export class AgentLoop {
 	 * hooks. A subscriber's failure is observability noise, not a reason to
 	 * abort an in-flight agent turn.
 	 */
-	private async safeEmit(plugin: ObsidianGemini, event: string, payload: any): Promise<void> {
+	private async safeEmit<E extends AgentEventName>(
+		plugin: ObsidianGemini,
+		event: E,
+		payload: AgentEventMap[E]
+	): Promise<void> {
 		try {
-			await plugin.agentEventBus?.emit(event as any, payload);
+			await plugin.agentEventBus?.emit(event, payload);
 		} catch (error) {
 			plugin.logger.error(`[AgentLoop] Event bus emit "${event}" threw — continuing:`, error);
 		}

@@ -17,7 +17,7 @@ import type { ToolResult } from '../tools/types';
  */
 export interface ToolCallResultPair {
 	toolName: string;
-	toolArguments: Record<string, any>;
+	toolArguments: Record<string, unknown>;
 	result: ToolResult;
 }
 

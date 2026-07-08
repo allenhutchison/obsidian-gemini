@@ -405,7 +405,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			const stored = this.app.secretStorage.getSecret(MIGRATION_SECRET_NAME);
 			if (stored === data.apiKey) {
 				this.settings.apiKeySecretName = MIGRATION_SECRET_NAME;
-				delete (this.settings as any).apiKey;
+				delete (this.settings as { apiKey?: unknown }).apiKey;
 				await this.saveData(this.settings);
 				this.logger?.log('Migrated API key from settings to secure storage');
 			} else {
@@ -427,8 +427,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 
 		// Migrate: remove deprecated modelDiscovery and modelDiscoveryCache
 		if (data?.modelDiscovery !== undefined || data?.modelDiscoveryCache !== undefined) {
-			delete (this.settings as any).modelDiscovery;
-			delete (this.settings as any).modelDiscoveryCache;
+			delete (this.settings as { modelDiscovery?: unknown }).modelDiscovery;
+			delete (this.settings as { modelDiscoveryCache?: unknown }).modelDiscoveryCache;
 			await this.saveData(this.settings);
 			this.logger?.log('Removed deprecated model discovery settings');
 		}
@@ -444,7 +444,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 				toolPermissions: {},
 			};
 			// Clear the legacy setting
-			delete (this.settings as any).alwaysAllowReadWrite;
+			delete (this.settings as { alwaysAllowReadWrite?: unknown }).alwaysAllowReadWrite;
 			await this.saveData(this.settings);
 			this.logger?.log(
 				`Migrated alwaysAllowReadWrite=${data.alwaysAllowReadWrite} → toolPolicy.activePreset=${this.settings.toolPolicy.activePreset}`

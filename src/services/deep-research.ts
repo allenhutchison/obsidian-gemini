@@ -197,7 +197,7 @@ export class DeepResearchService {
 
 		// Check status
 		if (completed.status === 'failed') {
-			const errorMessage = (completed as any).error?.message || 'Unknown error';
+			const errorMessage = (completed as { error?: { message?: string } }).error?.message || 'Unknown error';
 			// Clear interaction ID on terminal failure state
 			this.currentInteractionId = null;
 			throw new Error(`Research failed: ${errorMessage}`);

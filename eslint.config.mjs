@@ -9,7 +9,9 @@ import obsidianmd from 'eslint-plugin-obsidianmd';
 // remaining violations are cleared (the `'error'` entries below are already
 // enforced; the `'off'` entries are tracked in sibling #1032 issues).
 const SOFTENED_TS_RULES = {
-	'@typescript-eslint/no-explicit-any': 'off',
+	// #1036: cleared — enforced across src/ (test/ overrides back to 'off' below;
+	// mock plumbing there is tracked separately, not part of #1036's src scope).
+	'@typescript-eslint/no-explicit-any': 'error',
 	'@typescript-eslint/no-unsafe-argument': 'off',
 	'@typescript-eslint/no-unsafe-assignment': 'off',
 	'@typescript-eslint/no-unsafe-call': 'off',
@@ -149,14 +151,6 @@ export default defineConfig([
 		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
 	},
 	{
-		// #1036: `no-explicit-any` is cleared for these directories, so enforce it here
-		// to prevent regressions while the rule stays globally softened for the rest of
-		// `src/` (remaining areas — src/agent, src/services, src/types, src/subscribers,
-		// src/main.ts, src/models.ts — still tracked in #1036).
-		files: ['src/utils/**/*.ts', 'src/mcp/**/*.ts', 'src/tools/**/*.ts', 'src/api/**/*.ts', 'src/ui/**/*.ts'],
-		rules: { '@typescript-eslint/no-explicit-any': 'error' },
-	},
-	{
 		// Files fully migrated off direct `style.X = ...` assignments to CSS classes.
 		// Enforce `no-static-styles-assignment` here so they cannot regress while the
 		// rule stays globally disabled for the remaining unmigrated files (#1034).
@@ -173,6 +167,9 @@ export default defineConfig([
 		rules: {
 			...SOFTENED_TS_RULES,
 			...PERVASIVE_OBSIDIANMD_RULES_TODO,
+			// `any` is pervasive in test mocks/fixtures (~1.8k occurrences) and outside
+			// #1036's src-only scope — keep it off here.
+			'@typescript-eslint/no-explicit-any': 'off',
 			// Tests legitimately use Node.js modules for fixtures and don't run in Obsidian.
 			'import/no-nodejs-modules': 'off',
 			// Tests run in jsdom, where Obsidian's createEl/createDiv/createSpan DOM

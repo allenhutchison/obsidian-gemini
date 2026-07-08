@@ -1,6 +1,6 @@
 import { App, Notice, setIcon, setTooltip } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
-import type { RagIndexStatus, RagProgressInfo, IndexResult, ProgressListener } from './rag-types';
+import type { RagIndexStatus, RagProgressInfo, IndexResult, ProgressListener, RagDetailedStatus } from './rag-types';
 import { getErrorMessage } from '../utils/error-utils';
 import { openPluginSettingsTab } from '../utils/obsidian-settings';
 import { t } from '../i18n';
@@ -15,7 +15,7 @@ export interface RagStatusProvider {
 	getProgressInfo(): RagProgressInfo;
 	isPaused(): boolean;
 	getRateLimitRemainingSeconds(): number;
-	getDetailedStatus(): any;
+	getDetailedStatus(): RagDetailedStatus;
 	indexVault(): Promise<IndexResult>;
 	syncPendingChanges(): Promise<boolean>;
 	addProgressListener(listener: ProgressListener): void;
