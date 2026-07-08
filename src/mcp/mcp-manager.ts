@@ -14,7 +14,7 @@ import {
 } from './mcp-constants';
 import { withTimeout } from '../utils/timeout';
 import { getRawErrorMessage } from '../utils/error-utils';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { Logger } from '../utils/logger';
 import { Notice, Platform } from 'obsidian';
 import { t } from '../i18n';

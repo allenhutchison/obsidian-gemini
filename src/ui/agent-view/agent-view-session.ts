@@ -2,7 +2,7 @@ import { App, Notice } from 'obsidian';
 import { getActiveChatModel } from '../../models';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { ModelClientFactory } from '../../api';
 import { HandlerPriority } from '../../types/agent-events';
 import { sanitizeFileName } from '../../utils/file-utils';

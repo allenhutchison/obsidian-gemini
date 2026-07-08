@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { App, Setting, SettingGroup, Notice } from 'obsidian';
 import {
 	ToolPermission,
@@ -13,7 +13,7 @@ import {
 import { getErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
 import { t } from '../i18n';
-import type { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings-helpers';
 
 export async function renderToolSettings(
 	containerEl: HTMLElement,

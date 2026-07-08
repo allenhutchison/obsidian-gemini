@@ -1,4 +1,4 @@
-import type ObsidianGemini from './main';
+import type { ObsidianGemini } from './types/plugin';
 import { MarkdownView, Notice } from 'obsidian';
 import { forceableInlineSuggestion, Suggestion } from 'codemirror-companion-extension';
 import { BaseModelRequest } from './api/index';

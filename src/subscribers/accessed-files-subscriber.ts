@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { HandlerPriority } from '../types/agent-events';
 import { extractAccessedPaths } from '../utils/accessed-files';
 import { ToolResult } from '../tools/types';

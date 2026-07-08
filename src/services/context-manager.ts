@@ -11,7 +11,7 @@
  */
 import { GoogleGenAI, Content, Part } from '@google/genai';
 import { Logger } from '../utils/logger';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ModelClientFactory, ModelUseCase } from '../api';
 import { executeWithRetry } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';

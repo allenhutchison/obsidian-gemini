@@ -5,7 +5,7 @@ import { SelectionRewriter } from '../rewrite-selection';
 import { RewriteInstructionsModal } from '../ui/rewrite-modal';
 import { UpdateNotificationModal } from '../ui/update-notification-modal';
 import { getErrorMessage } from '../utils/error-utils';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 
 /**
  * Register all command-palette commands on the plugin instance.

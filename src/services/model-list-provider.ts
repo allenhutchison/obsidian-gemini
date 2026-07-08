@@ -1,5 +1,5 @@
 import { requestUrl } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { GeminiModel } from '../models';
 
 import bundledModelData from '../data/models.json';

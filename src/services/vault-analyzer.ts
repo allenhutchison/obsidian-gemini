@@ -1,6 +1,6 @@
 import { TFolder, TFile, Notice } from 'obsidian';
 import { getActiveChatModel } from '../models';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ModelClientFactory } from '../api';
 import { AgentsMemoryData } from './agents-memory';
 import { VaultAnalysisModal } from '../ui/vault-analysis-modal';

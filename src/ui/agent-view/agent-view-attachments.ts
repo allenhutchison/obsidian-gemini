@@ -7,7 +7,7 @@ import { FileMentionModal } from './file-mention-modal';
 import { getContextSelection, createContextRange } from '../../utils/dom-context';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { rasterizeSvg } from '../../utils/svg-rasterizer';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 
 /**

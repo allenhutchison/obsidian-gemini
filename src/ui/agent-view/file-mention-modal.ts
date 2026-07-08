@@ -2,7 +2,7 @@ import { App, FuzzySuggestModal, TFile, TFolder, TAbstractFile } from 'obsidian'
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { classifyFile, FileCategory } from '../../utils/file-classification';
 import { collectFoldersFromFolder } from '../../utils/folder-walk';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 
 export class FileMentionModal extends FuzzySuggestModal<TAbstractFile> {

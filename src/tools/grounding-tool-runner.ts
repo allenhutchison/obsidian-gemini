@@ -1,5 +1,5 @@
 import { ToolResult } from './types';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { getDefaultModelForRole } from '../models';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { executeWithRetry } from '../utils/retry';

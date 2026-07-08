@@ -1,6 +1,6 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type { TAbstractFile } from 'obsidian';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 
 /** Plain, serializable description of a vault file or folder. */

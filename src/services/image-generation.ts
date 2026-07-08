@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { Notice, App, MarkdownView, Modal, Setting, TextAreaComponent, TFile, normalizePath } from 'obsidian';
 import { BaseModelRequest, GeminiClient, ModelClientFactory } from '../api';
 import { GeminiPrompts } from '../prompts';

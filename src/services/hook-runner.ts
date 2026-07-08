@@ -1,6 +1,6 @@
 import { App, TFile } from 'obsidian';
 import { getActiveChatModel } from '../models';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { DestructiveAction } from '../types/agent';
 import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';
@@ -11,7 +11,8 @@ import { buildTurnPreamble } from '../utils/turn-preamble';
 import { AgentLoop, DEFAULT_HEADLESS_MAX_ITERATIONS } from '../agent/agent-loop';
 import { GeminiSummary } from '../summary';
 import { SelectionRewriter } from '../rewrite-selection';
-import { HookFireContext, renderPrompt } from './hook-manager';
+import { renderPrompt } from './hook-types';
+import type { HookFireContext } from './hook-types';
 import { HeadlessConfirmationProvider } from './headless-confirmation-provider';
 
 /**

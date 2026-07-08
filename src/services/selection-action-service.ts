@@ -1,6 +1,6 @@
 import { Editor, TFile, Notice } from 'obsidian';
 import { getActiveChatModel } from '../models';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ExplainPromptSelectionModal } from '../ui/explain-prompt-modal';
 import { SelectionResponseModal, AskQuestionModal } from '../ui/selection-response-modal';
 import { CustomPrompt } from '../prompts/types';

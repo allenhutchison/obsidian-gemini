@@ -1,7 +1,7 @@
 import { App, Modal, Setting, DropdownComponent, SliderComponent, TFile, TFolder } from 'obsidian';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiModel } from '../../models';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 
 export class SessionSettingsModal extends Modal {

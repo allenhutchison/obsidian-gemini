@@ -1,9 +1,9 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { App, Setting, Notice } from 'obsidian';
 import { getErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection, createDebouncedSave } from './settings-helpers';
 import { t } from '../i18n';
-import type { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings-helpers';
 
 export async function renderRAGSettings(
 	outerContainerEl: HTMLElement,

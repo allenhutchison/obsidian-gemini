@@ -1,5 +1,5 @@
 import { App, Modal, Notice, setIcon } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { BackgroundTask } from '../services/background-task-manager';
 import type { RagDetailedStatus } from '../services/rag-types';
 import type { ProgressListener } from '../services/rag-types';

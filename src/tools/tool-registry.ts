@@ -6,7 +6,7 @@ import {
 	ToolPolicySettings,
 	DEFAULT_TOOL_POLICY,
 } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 
 /**
  * Registry for managing available tools

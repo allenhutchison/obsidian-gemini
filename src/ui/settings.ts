@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { App, PluginSettingTab } from 'obsidian';
 import { renderGeneralSettings } from './settings-general';
 import { renderUISettings } from './settings-ui';
@@ -9,14 +9,8 @@ import { renderMCPSettings } from './settings-mcp';
 import { renderRAGSettings } from './settings-rag';
 import { renderDebugSettings } from './settings-debug';
 
-export interface SettingsSectionContext {
-	/** Call to trigger a full re-render of the settings tab */
-	redisplay: () => void;
-	/** Whether advanced settings are currently visible */
-	showDeveloperSettings: boolean;
-	/** Update the show-advanced flag from inside a section (e.g. the toggle in General). */
-	setShowDeveloperSettings: (value: boolean) => void;
-}
+export type { SettingsSectionContext } from './settings-helpers';
+import type { SettingsSectionContext } from './settings-helpers';
 
 export default class ObsidianGeminiSettingTab extends PluginSettingTab {
 	plugin: ObsidianGemini;

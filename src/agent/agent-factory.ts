@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ModelApi } from '../api/interfaces/model-api';
 import { ModelClientFactory } from '../api';
 import { ChatSession } from '../types/agent';

@@ -1,5 +1,5 @@
 import { TFolder, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists } from '../utils/file-utils';
 
 /**

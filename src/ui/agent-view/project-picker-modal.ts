@@ -1,5 +1,5 @@
 import { Modal, App, setIcon } from 'obsidian';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { ProjectSummary } from '../../types/project';
 import { t } from '../../i18n';
 

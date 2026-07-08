@@ -1,5 +1,5 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists } from '../utils/file-utils';
 import { BundledSkillRegistry } from './bundled-skills';
 
@@ -24,10 +24,8 @@ export interface SkillMetadata {
 /**
  * Summary of a skill for system prompt injection (progressive disclosure - level 1)
  */
-export interface SkillSummary {
-	name: string;
-	description: string;
-}
+export type { SkillSummary } from './skill-types';
+import type { SkillSummary } from './skill-types';
 
 /** Regex for validating skill names per the agentskills.io spec */
 const SKILL_NAME_REGEX = /^[a-z][a-z0-9-]*[a-z0-9]$|^[a-z]$/;

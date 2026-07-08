@@ -2,7 +2,7 @@ import * as Handlebars from 'handlebars';
 import { getLanguage } from 'obsidian';
 import { CustomPrompt } from './types';
 import { ExtendedModelRequest, ToolDefinition } from '../api/interfaces/model-api';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 
 import systemPromptContent from '../../prompts/systemPrompt.hbs';
 import completionPromptContent from '../../prompts/completionPrompt.hbs';

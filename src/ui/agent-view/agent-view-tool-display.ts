@@ -1,5 +1,5 @@
 import { setIcon, TFile } from 'obsidian';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { ToolResult } from '../../tools/types';
 import { formatFileSize } from '../../utils/format-utils';
 import { t } from '../../i18n';

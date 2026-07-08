@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import type { FailurePauseTracker } from '../failure-pause-tracker';
 import { computeNextRunAt } from './schedule';
 import type { ScheduledTask, ScheduledTasksState, TaskState } from './types';

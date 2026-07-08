@@ -7,7 +7,7 @@
  */
 
 import { TAbstractFile, TFolder, Vault, normalizePath, Notice } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { Logger } from './logger';
 import { getRawErrorMessage } from './error-utils';
 import { t } from '../i18n';

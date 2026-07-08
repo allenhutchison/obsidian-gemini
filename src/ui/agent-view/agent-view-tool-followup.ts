@@ -1,6 +1,6 @@
 import type { Content } from '@google/genai';
 import { getActiveChatModel } from '../../models';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession, type PerTurnContext } from '../../types/agent';
 import { ToolExecutionContext } from '../../tools/types';
 import { ExtendedModelRequest } from '../../api/interfaces/model-api';

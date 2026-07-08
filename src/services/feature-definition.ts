@@ -1,5 +1,5 @@
 import type { TFile } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { findFrontmatterEndOffset } from './skill-manager';
 import { FeatureToolPolicy, parseToolPolicyFrontmatter } from '../types/tool-policy';
 import { migrateLegacyToolCategoryArray } from './feature-policy-yaml';

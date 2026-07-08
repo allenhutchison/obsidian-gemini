@@ -1,5 +1,5 @@
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { CACHE_VERSION, CACHE_SAVE_INTERVAL } from './rag-types';
 import type { RagIndexCache } from './rag-types';
 import { getRawErrorMessage } from '../utils/error-utils';

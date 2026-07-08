@@ -1,6 +1,6 @@
 import { TFile, Notice } from 'obsidian';
 import type { FileUploader } from '@allenhutchison/gemini-utils';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { ObsidianVaultAdapter } from './obsidian-file-adapter';
 import type { RagCache } from './rag-cache';
 import type { RagRateLimiter } from './rag-rate-limiter';

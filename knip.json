@@ -1,6 +1,6 @@
 {
 	"$schema": "https://unpkg.com/knip@6/schema.json",
-	"entry": ["src/main.ts!", "test/**/*.{test,spec}.ts", "scripts/*.mjs"],
+	"entry": ["src/main.ts!", "src/types/plugin-services.ts!", "test/**/*.{test,spec}.ts", "scripts/*.mjs"],
 	"project": ["src/**/*.ts", "test/**/*.ts"],
 	"ignoreDependencies": ["codemirror", "@typescript-eslint/parser"],
 	"ignoreExportsUsedInFile": {
