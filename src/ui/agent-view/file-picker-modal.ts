@@ -83,7 +83,7 @@ export class FilePickerModal extends SuggestModal<TAbstractFile> {
 		// Always render the folder-icon span so paths align; hide it for plain files
 		const folderIconEl = titleEl.createSpan();
 		setIcon(folderIconEl, 'folder');
-		if (!isFolder) folderIconEl.style.visibility = 'hidden';
+		if (!isFolder) folderIconEl.addClass('gemini-invisible');
 		titleEl.createSpan({ text: ' ' + item.path + (isFolder ? '/' : '') });
 	}
 

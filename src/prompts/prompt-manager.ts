@@ -287,6 +287,7 @@ class PromptNameModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
+		contentEl.addClass('gemini-prompt-name-modal');
 
 		contentEl.createEl('h2', { text: t('modal.promptName.title') });
 
@@ -297,12 +298,6 @@ class PromptNameModal extends Modal {
 			type: 'text',
 			placeholder: t('modal.promptName.placeholder'),
 		});
-
-		this.inputEl.style.width = '100%';
-		this.inputEl.style.marginTop = '8px';
-		this.inputEl.style.padding = '8px';
-		this.inputEl.style.border = '1px solid var(--background-modifier-border)';
-		this.inputEl.style.borderRadius = '4px';
 
 		// Handle Enter key
 		this.inputEl.addEventListener('keydown', (event) => {
@@ -315,21 +310,14 @@ class PromptNameModal extends Modal {
 		});
 
 		const buttonContainer = contentEl.createDiv({ cls: 'prompt-button-container' });
-		buttonContainer.style.marginTop = '16px';
-		buttonContainer.style.display = 'flex';
-		buttonContainer.style.gap = '8px';
-		buttonContainer.style.justifyContent = 'flex-end';
 
 		const cancelButton = buttonContainer.createEl('button', { text: t('modal.promptName.cancel') });
-		cancelButton.style.padding = '8px 16px';
 		cancelButton.addEventListener('click', () => this.close());
 
-		const createButton = buttonContainer.createEl('button', { text: t('modal.promptName.create') });
-		createButton.style.padding = '8px 16px';
-		createButton.style.backgroundColor = 'var(--interactive-accent)';
-		createButton.style.color = 'var(--text-on-accent)';
-		createButton.style.border = 'none';
-		createButton.style.borderRadius = '4px';
+		const createButton = buttonContainer.createEl('button', {
+			text: t('modal.promptName.create'),
+			cls: 'prompt-create-button',
+		});
 		createButton.addEventListener('click', () => this.submit());
 
 		// Focus the input

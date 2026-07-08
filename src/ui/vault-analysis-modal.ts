@@ -136,7 +136,7 @@ export class VaultAnalysisModal extends Modal {
 
 		// Hide spinner
 		if (this.spinnerEl) {
-			this.spinnerEl.style.display = 'none';
+			this.spinnerEl.hide();
 		}
 
 		// Add a close button

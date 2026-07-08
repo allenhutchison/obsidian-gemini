@@ -17,13 +17,11 @@ export async function renderRAGSettings(
 	const debouncedSave = createDebouncedSave(plugin, 'Failed to save RAG settings:');
 
 	// Privacy warning
-	const privacyWarning = containerEl.createDiv({ cls: 'setting-item' });
+	const privacyWarning = containerEl.createDiv({ cls: 'setting-item gemini-rag-privacy-notice' });
 	privacyWarning.createDiv({
 		cls: 'setting-item-description',
 		text: t('settings.rag.privacyNotice'),
 	});
-	privacyWarning.style.marginBottom = '1em';
-	privacyWarning.style.color = 'var(--text-warning)';
 
 	new Setting(containerEl)
 		.setName(t('settings.rag.enableName'))
@@ -167,7 +165,7 @@ export async function renderRAGSettings(
 		if (currentStoreName) {
 			storeNameSetting
 				.addText((text) => {
-					text.inputEl.style.width = '30ch';
+					text.inputEl.addClass('gemini-input-wide');
 					text.setValue(currentStoreName);
 					text.setDisabled(true);
 				})

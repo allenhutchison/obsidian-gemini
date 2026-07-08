@@ -30,11 +30,10 @@ export class YoloConfirmationModal extends Modal {
 			text: t('yolo.description'),
 		});
 
-		const warningEl = container.createEl('p', {
+		container.createEl('p', {
 			text: t('yolo.warning'),
+			cls: 'gemini-warning-text gemini-warning-text-bold',
 		});
-		warningEl.style.color = 'var(--text-warning)';
-		warningEl.style.fontWeight = 'bold';
 
 		container.createEl('p', {
 			text: t('yolo.trustNote'),

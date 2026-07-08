@@ -140,8 +140,11 @@ export class AgentView extends ItemView {
 			const ctrBottom = container.getBoundingClientRect().bottom;
 			const navbarTop = this.findMobileNavbar()?.getBoundingClientRect().top ?? Infinity;
 			const targetBottom = Math.min(ctrBottom, navbarTop);
+			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- inline !important is the point (see doc comment): it must beat theme !important flex rules, which a class cannot
 			chat.style.setProperty('flex-grow', '0', 'important');
+			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- see above
 			chat.style.setProperty('flex-shrink', '0', 'important');
+			// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- see above
 			chat.style.setProperty('flex-basis', 'auto', 'important');
 			for (let i = 0; i < 3; i++) {
 				const delta = targetBottom - iarea.getBoundingClientRect().bottom;
@@ -175,7 +178,9 @@ export class AgentView extends ItemView {
 					priority: parent.style.getPropertyPriority('overflow'),
 				}
 			: null;
+		// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- paired with the inline save/restore above on host elements Obsidian reuses; a class can't round-trip the pre-existing inline value
 		container.style.setProperty('overflow', 'hidden', 'important');
+		// eslint-disable-next-line obsidianmd/no-static-styles-assignment -- see above
 		parent?.style.setProperty('overflow', 'hidden', 'important');
 		const onScroll = () => {
 			if (container.scrollTop !== 0) container.scrollTop = 0;
@@ -819,7 +824,7 @@ export class AgentView extends ItemView {
 	private async updateTokenUsage(): Promise<void> {
 		if (!this.plugin.contextManager || !this.plugin.settings.showTokenUsage || !this.tokenUsageContainer) {
 			if (this.tokenUsageContainer) {
-				this.tokenUsageContainer.style.display = 'none';
+				this.tokenUsageContainer.hide();
 			}
 			return;
 		}
@@ -846,11 +851,11 @@ export class AgentView extends ItemView {
 
 			// Still no data (e.g., new session with no messages)
 			if (usage.estimatedTokens === 0) {
-				this.tokenUsageContainer.style.display = 'none';
+				this.tokenUsageContainer.hide();
 				return;
 			}
 
-			this.tokenUsageContainer.style.display = '';
+			this.tokenUsageContainer.show();
 			this.tokenUsageContainer.empty();
 
 			const tokenText = this.tokenUsageContainer.createSpan({ cls: 'gemini-agent-token-text' });

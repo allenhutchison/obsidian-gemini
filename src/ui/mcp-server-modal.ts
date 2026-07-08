@@ -109,7 +109,7 @@ export class MCPServerModal extends Modal {
 				.setName(t('mcpServer.urlSetting'))
 				.setDesc(t('mcpServer.urlDesc'))
 				.addText((text) => {
-					text.inputEl.style.width = '30ch';
+					text.inputEl.addClass('gemini-input-wide');
 					text
 						.setPlaceholder(t('mcpServer.urlPlaceholder'))
 						.setValue(this.config.url || '')
@@ -145,7 +145,7 @@ export class MCPServerModal extends Modal {
 				.setName(t('mcpServer.commandSetting'))
 				.setDesc(t('mcpServer.commandDesc'))
 				.addText((text) => {
-					text.inputEl.style.width = '30ch';
+					text.inputEl.addClass('gemini-input-wide');
 					text
 						.setPlaceholder(t('mcpServer.commandPlaceholder'))
 						.setValue(this.config.command)
@@ -307,11 +307,10 @@ export class MCPServerModal extends Modal {
 		if (this.discoveredTools.length === 0) return;
 
 		this.discoveredToolsContainer.createEl('h3', { text: t('mcpServer.discoveredToolsTitle') });
-		const desc = this.discoveredToolsContainer.createEl('p', {
+		this.discoveredToolsContainer.createEl('p', {
 			text: t('mcpServer.discoveredToolsDesc'),
-			cls: 'setting-item-description',
+			cls: 'setting-item-description gemini-discovered-tools-desc',
 		});
-		desc.style.marginBottom = '0.5em';
 
 		const toolList = this.discoveredToolsContainer.createEl('ul');
 		for (const toolName of this.discoveredTools) {

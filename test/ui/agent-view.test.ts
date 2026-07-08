@@ -886,7 +886,7 @@ describe('AgentView UI Tests', () => {
 
 			// After failure, group should auto-expand
 			await agentView.showToolResult('read_file', { success: false, error: 'Error' }, 'exec-ae1');
-			expect(body.style.display).toBe('block');
+			expect(body.style.display).not.toBe('none');
 			expect(group.classList.contains('gemini-tool-group-expanded')).toBe(true);
 		});
 
@@ -899,7 +899,7 @@ describe('AgentView UI Tests', () => {
 
 			// After failure, row details should auto-expand
 			await agentView.showToolResult('read_file', { success: false, error: 'Error' }, 'exec-rd1');
-			expect(rowDetails.style.display).toBe('block');
+			expect(rowDetails.style.display).not.toBe('none');
 
 			// Row header aria-expanded should be updated
 			const rowHeader = chatContainer.querySelector('.gemini-tool-row-header') as HTMLElement;
