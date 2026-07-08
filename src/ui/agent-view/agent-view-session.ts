@@ -1,6 +1,7 @@
 import { App, Notice } from 'obsidian';
 import { getActiveChatModel } from '../../models';
 import { ChatSession } from '../../types/agent';
+import { isSameSession } from './session-identity';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type { ObsidianGemini } from '../../types/plugin';
 import { ModelClientFactory } from '../../api';
@@ -127,8 +128,7 @@ export class AgentViewSession {
 	 * Compares both session ID and history path for robustness
 	 */
 	isCurrentSession(session: ChatSession): boolean {
-		if (!this.currentSession) return false;
-		return session.id === this.currentSession.id || session.historyPath === this.currentSession.historyPath;
+		return isSameSession(session, this.currentSession);
 	}
 
 	/**

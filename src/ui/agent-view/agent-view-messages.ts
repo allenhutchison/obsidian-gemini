@@ -1,5 +1,6 @@
 import { App, Component, MarkdownRenderer, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../../types/agent';
+import { isSameSession } from './session-identity';
 import { GeminiConversationEntry } from '../../types/conversation';
 import type { ObsidianGemini } from '../../types/plugin';
 import { formatModelMessage } from '../../utils/markdown-formatting';
@@ -619,9 +620,7 @@ export class AgentViewMessages {
 			// Try to get recent sessions (excluding the current session)
 			// Fetch 6 sessions since we might filter out the current one
 			const allRecentSessions = await this.plugin.sessionManager.getRecentAgentSessions(6);
-			const recentSessions = allRecentSessions
-				.filter((session) => !this.isCurrentSession(session, currentSession))
-				.slice(0, 5); // Limit to 5 after filtering
+			const recentSessions = allRecentSessions.filter((session) => !isSameSession(session, currentSession)).slice(0, 5); // Limit to 5 after filtering
 
 			if (recentSessions.length > 0) {
 				// Show recent sessions
@@ -689,15 +688,6 @@ export class AgentViewMessages {
 				});
 			}
 		}
-	}
-
-	/**
-	 * Check if a session is the current session
-	 * Compares both session ID and history path for robustness
-	 */
-	private isCurrentSession(session: ChatSession, currentSession: ChatSession | null): boolean {
-		if (!currentSession) return false;
-		return session.id === currentSession.id || session.historyPath === currentSession.historyPath;
 	}
 
 	/**
