@@ -78,7 +78,9 @@ export function isQuotaExhausted(error: unknown): boolean {
 
 	// Fall back to message-based detection for SDK errors that flatten details
 	if (error && typeof error === 'object') {
-		const message: unknown = asRecord(error).message || String(error);
+		// No String(error) fallback: base Object stringification ('[object Object]')
+		// can never match the keyword checks below.
+		const message: unknown = asRecord(error).message;
 		const messageLower = typeof message === 'string' ? message.toLowerCase() : '';
 		if (
 			messageLower.includes('resource_exhausted') &&
@@ -106,7 +108,10 @@ export function isRateLimitError(error: unknown): boolean {
 
 	if (typeof error === 'object') {
 		const message: unknown = asRecord(error).message || '';
-		const messageLower = typeof message === 'string' ? message.toLowerCase() : String(error).toLowerCase();
+		// Numeric messages (e.g. `message: 429`) stringify to something matchable;
+		// any other non-string shape could only ever yield '[object Object]'.
+		const messageLower =
+			typeof message === 'string' ? message.toLowerCase() : typeof message === 'number' ? String(message) : '';
 		return (
 			messageLower.includes('429') ||
 			messageLower.includes('resource_exhausted') ||

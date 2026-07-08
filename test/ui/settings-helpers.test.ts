@@ -9,7 +9,7 @@ import { Notice } from 'obsidian';
 import { createDebouncedSave } from '../../src/ui/settings-helpers';
 
 vi.mock('../../src/i18n', () => ({
-	t: (key: string, vars?: Record<string, unknown>) => `${key}:${vars?.error ?? ''}`,
+	t: (key: string, vars?: Record<string, unknown>) => `${key}:${(vars?.error as string) ?? ''}`,
 }));
 
 vi.mock('../../src/utils/error-utils', () => ({

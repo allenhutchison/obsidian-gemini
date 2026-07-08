@@ -43,7 +43,7 @@ export class HookRunner {
 			case 'command':
 				return this.runCommand(isCancelled);
 			default:
-				throw new Error(`[HookRunner] Unknown action "${hook.action}" for hook "${hook.slug}"`);
+				throw new Error(`[HookRunner] Unknown action "${String(hook.action)}" for hook "${hook.slug}"`);
 		}
 	}
 

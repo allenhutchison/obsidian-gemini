@@ -173,6 +173,7 @@ export async function proxyFetch(input: RequestInfo | URL, init?: RequestInit): 
 			try {
 				body = JSON.stringify(init.body);
 			} catch {
+				// eslint-disable-next-line @typescript-eslint/no-base-to-string -- last-resort coercion of an exotic BodyInit after JSON.stringify threw; String() of e.g. URLSearchParams is meaningful
 				body = String(init.body);
 			}
 		}

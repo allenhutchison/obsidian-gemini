@@ -615,7 +615,8 @@ export class AgentViewToolDisplay {
 
 							const item = resultList.createDiv({ cls: 'gemini-agent-tool-result-item' });
 							item.createSpan({ text: key + ':', cls: 'gemini-agent-tool-result-key' });
-							const valueStr = typeof value === 'string' ? value : JSON.stringify(value) || String(value);
+							const valueStr =
+								typeof value === 'string' ? value : JSON.stringify(value) || Object.prototype.toString.call(value);
 							item.createSpan({
 								text: valueStr.length > 100 ? valueStr.substring(0, 100) + '...' : valueStr,
 								cls: 'gemini-agent-tool-result-value',

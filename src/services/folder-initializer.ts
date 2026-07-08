@@ -1,6 +1,7 @@
 import { TFolder, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists } from '../utils/file-utils';
+import { getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Centralizes creation of all plugin state folders.
@@ -55,7 +56,7 @@ export class FolderInitializer {
 				await this.plugin.app.fileManager.renameFile(oldFolder, newPath);
 				this.plugin.logger.log(`Migrated skills folder: ${oldPath} → ${newPath}`);
 			} catch (error) {
-				this.plugin.logger.warn(`Failed to migrate skills folder: ${error}`);
+				this.plugin.logger.warn(`Failed to migrate skills folder: ${getRawErrorMessage(error)}`);
 			}
 		}
 	}
