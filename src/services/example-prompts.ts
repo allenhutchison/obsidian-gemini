@@ -1,5 +1,5 @@
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**

@@ -1,5 +1,5 @@
 import { App, Modal, MarkdownRenderer, Editor, Notice, setIcon } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { t } from '../i18n';
 import { getRawErrorMessageOr } from '../utils/error-utils';
 

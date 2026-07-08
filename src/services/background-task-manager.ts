@@ -1,5 +1,5 @@
 import { Notice } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { AgentEventBus } from '../agent/agent-event-bus';
 import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';

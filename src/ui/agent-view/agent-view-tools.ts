@@ -1,6 +1,6 @@
 import type { Content } from '@google/genai';
 import { getActiveChatModel } from '../../models';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
 import { IConfirmationProvider, IToolHostView, ToolResult } from '../../tools/types';

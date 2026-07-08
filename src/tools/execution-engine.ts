@@ -13,7 +13,7 @@ import { getRawErrorMessageOr } from '../utils/error-utils';
 import { ToolRegistry } from './tool-registry';
 import { ToolLoopDetector } from './loop-detector';
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { shouldExcludePath } from '../utils/file-utils';
 import { resolvePathToFile } from './vault/utils';
 

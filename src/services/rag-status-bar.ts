@@ -1,5 +1,5 @@
 import { App, Notice, setIcon, setTooltip } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { RagIndexStatus, RagProgressInfo, IndexResult, ProgressListener } from './rag-types';
 import { getErrorMessage } from '../utils/error-utils';
 import { openPluginSettingsTab } from '../utils/obsidian-settings';

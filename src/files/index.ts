@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { TFile } from 'obsidian';
 import { logDebugInfo } from '../api/utils/debug';
 import { GeminiPrompts } from '../prompts';

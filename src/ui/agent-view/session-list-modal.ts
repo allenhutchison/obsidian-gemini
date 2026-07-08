@@ -1,6 +1,6 @@
 import { Modal, App, TFile, Notice, setIcon } from 'obsidian';
 import { ChatSession } from '../../types/agent';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 
 /** Filter value representing all sessions regardless of project. */

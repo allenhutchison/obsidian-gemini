@@ -1,5 +1,5 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { ToolPolicyEditor } from './tool-policy-editor';
 import { t } from '../../i18n';
 

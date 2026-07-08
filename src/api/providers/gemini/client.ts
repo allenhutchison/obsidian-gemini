@@ -28,7 +28,7 @@ import {
 	isExtendedRequest,
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
-import type ObsidianGemini from '../../../main';
+import type { ObsidianGemini } from '../../../types/plugin';
 import { getDefaultModelForRole } from '../../../models';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
 import type { GeminiClientConfig } from './config';

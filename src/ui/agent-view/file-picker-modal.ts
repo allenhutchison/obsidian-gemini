@@ -1,7 +1,7 @@
 import { App, prepareFuzzySearch, setIcon, SuggestModal, TAbstractFile, TFile, TFolder } from 'obsidian';
 import { shouldExcludePathForPlugin } from '../../utils/file-utils';
 import { collectFoldersFromFolder } from '../../utils/folder-walk';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 
 /** Undocumented internal SuggestModal API for programmatic highlight control. */

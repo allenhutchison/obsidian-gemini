@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 
 /**
  * Logger service that respects debug mode settings.

@@ -2,7 +2,7 @@ import { ItemView, MarkdownView, Platform, WorkspaceLeaf, TFile, Notice } from '
 import { getActiveChatModel } from '../../models';
 import { ChatSession, SessionModelConfig } from '../../types/agent';
 import { GeminiConversationEntry } from '../../types/conversation';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import type { Tool, ToolResult } from '../../tools/types';
 import { HandlerPriority } from '../../types/agent-events';
 

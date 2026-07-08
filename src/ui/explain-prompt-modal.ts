@@ -1,6 +1,6 @@
 import { App, SuggestModal } from 'obsidian';
 import { PromptInfo, CustomPrompt } from '../prompts/types';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { t } from '../i18n';
 
 /**

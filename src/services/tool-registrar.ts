@@ -2,7 +2,7 @@ import { ToolRegistry } from '../tools/tool-registry';
 import { Tool } from '../tools/types';
 import { Logger } from '../utils/logger';
 import { getVaultTools } from '../tools/vault';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { ModelProvider } from '../models';
 
 interface ToolSource {

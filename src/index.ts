@@ -51,7 +51,7 @@ export { GEMINI_MODELS } from './models';
 export type { ModelRole, GeminiModel, ModelUpdateResult } from './models';
 
 // Settings Types
-export type { ObsidianGeminiSettings } from './main';
+export type { ObsidianGeminiSettings } from './types/settings';
 
 export type { ModelUpdateOptions } from './services/model-manager';
 

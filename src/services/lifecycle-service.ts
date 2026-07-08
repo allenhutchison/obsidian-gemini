@@ -1,5 +1,5 @@
 import { TFile, Platform, Notice } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { t } from '../i18n';
 import { AgentEventBus } from '../agent/agent-event-bus';
 import { ContextTrackingSubscriber } from '../subscribers/context-tracking-subscriber';

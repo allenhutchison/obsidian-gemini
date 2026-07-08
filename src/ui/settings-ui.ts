@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { Setting, ToggleComponent } from 'obsidian';
 import { createCollapsibleSection, createDebouncedSave } from './settings-helpers';
 import { t } from '../i18n';

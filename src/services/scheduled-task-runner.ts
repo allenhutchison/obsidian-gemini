@@ -1,6 +1,6 @@
 import { getActiveChatModel } from '../models';
-import type ObsidianGemini from '../main';
-import type { ScheduledTask } from './scheduled-task-manager';
+import type { ObsidianGemini } from '../types/plugin';
+import type { ScheduledTask } from './scheduled-tasks/types';
 import { DestructiveAction } from '../types/agent';
 import { ToolExecutionContext } from '../tools/types';
 import { ModelClientFactory } from '../api';

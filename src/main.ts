@@ -8,7 +8,7 @@ import { ScribeFile } from './files';
 import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
-import { getDefaultModelForRole, GeminiModel, migrateOllamaModelSetting, ModelProvider } from './models';
+import { getDefaultModelForRole, migrateOllamaModelSetting, ModelProvider } from './models';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -28,12 +28,11 @@ import { getApiKeyErrorMessage as buildApiKeyErrorMessage } from './utils/init-e
 import { RagIndexingService } from './services/rag-indexing';
 import { SelectionActionService } from './services/selection-action-service';
 import { MCPManager } from './mcp/mcp-manager';
-import { MCPServerConfig } from './mcp/types';
 import { migrateServerEnvToSecretStorage } from './mcp/mcp-secrets';
 import { ContextManager } from './services/context-manager';
 import { SkillManager } from './services/skill-manager';
 import { FolderInitializer } from './services/folder-initializer';
-import { ToolPolicySettings, DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
+import { DEFAULT_TOOL_POLICY, PolicyPreset } from './types/tool-policy';
 import { ProjectManager } from './services/project-manager';
 import { AgentEventBus } from './agent/agent-event-bus';
 import { ToolExecutionLogger } from './subscribers/tool-execution-logger';
@@ -45,83 +44,14 @@ import { HookManager } from './services/hook-manager';
 import { getRawErrorMessage } from './utils/error-utils';
 import { t } from './i18n';
 
-export interface RagIndexingSettings {
-	enabled: boolean;
-	fileSearchStoreName: string | null;
-	excludeFolders: string[];
-	autoSync: boolean;
-	includeAttachments: boolean;
-}
-
-export interface ObsidianGeminiSettings {
-	/** Active model provider. 'gemini' is the cloud default; 'ollama' targets a local Ollama daemon. */
-	provider: ModelProvider;
-	/** Base URL for the Ollama HTTP API. Only used when provider === 'ollama'. */
-	ollamaBaseUrl: string;
-	/** Optional custom base URL to override the default Google Gemini API endpoint. */
-	customBaseUrl: string;
-	apiKeySecretName: string;
-	chatModelName: string;
-	summaryModelName: string;
-	completionsModelName: string;
-	imageModelName: string;
-	/**
-	 * Single model used for every use case under the Ollama provider (Ollama keeps
-	 * one model resident at a time). Stored separately from the Gemini fields above
-	 * so switching Gemini ↔ Ollama preserves each provider's model choice.
-	 */
-	ollamaModelName: string;
-	summaryFrontmatterKey: string;
-	userName: string;
-	chatHistory: boolean;
-	historyFolder: string;
-	debugMode: boolean;
-	fileLogging: boolean;
-	maxRetries: number;
-	initialBackoffDelay: number;
-	streamingEnabled: boolean;
-	/**
-	 * Use Google's GA Interactions API (`client.interactions.create`) as the
-	 * Gemini transport instead of the legacy `generateContent`. Runs stateless
-	 * (`store: false`); we still own and replay conversation history. Opt-in
-	 * while the SDK surface settles — see epic #1013.
-	 */
-	useInteractionsApi: boolean;
-	allowSystemPromptOverride: boolean;
-	temperature: number;
-	topP: number;
-	stopOnToolError: boolean;
-	// Tool loop detection settings
-	loopDetectionEnabled: boolean;
-	loopDetectionThreshold: number;
-	loopDetectionTimeWindowSeconds: number;
-	// Trusted Mode (legacy — migrated to toolPolicy)
-	alwaysAllowReadWrite: boolean;
-	// Tool policy settings
-	toolPolicy: ToolPolicySettings;
-	// Version tracking for update notifications
-	lastSeenVersion: string;
-	// RAG Indexing settings
-	ragIndexing: RagIndexingSettings;
-	// MCP server settings
-	mcpEnabled: boolean;
-	mcpServers: MCPServerConfig[];
-	// Context management
-	contextCompactionThreshold: number;
-	showTokenUsage: boolean;
-	// Diff review
-	alwaysShowDiffView: boolean;
-	// Tool execution logging
-	logToolExecution: boolean;
-	// Scheduled task catch-up
-	autoRunCatchUp: boolean;
-	// Lifecycle hooks (opt-in: AI runs triggered by vault events)
-	hooksEnabled: boolean;
-	// IDs of collapsible settings sections currently expanded; persists across reloads.
-	expandedSettingsSections: string[];
-	// Cached remote model list (managed by ModelListProvider)
-	remoteModelCache?: { models: GeminiModel[]; timestamp: number };
-}
+// Settings interfaces live in a leaf module so the rest of the codebase can
+// reference them without importing this hub file (see #1155).
+import type { ObsidianGeminiSettings } from './types/settings';
+export type { ObsidianGeminiSettings, RagIndexingSettings } from './types/settings';
+// The interface the rest of the codebase depends on instead of this class; the
+// `implements` clause below keeps it (and its ./types/plugin-services.ts
+// augmentation) in sync with the real plugin surface.
+import type { ObsidianGemini as ObsidianGeminiApi } from './types/plugin';
 
 const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	provider: 'gemini',
@@ -185,7 +115,7 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 
 const MIGRATION_SECRET_NAME = 'gemini-scribe-api-key';
 
-export default class ObsidianGemini extends Plugin {
+export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi {
 	settings!: ObsidianGeminiSettings;
 
 	get apiKey(): string {

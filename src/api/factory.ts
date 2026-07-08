@@ -14,7 +14,7 @@ import { ModelApi } from './interfaces/model-api';
 import { GeminiPrompts } from '../prompts';
 import { RetryDecorator } from './retry-decorator';
 import { getDefaultModelForRole } from '../models';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ModelUseCase } from './model-use-case';
 
 // Re-exported so existing `import { ModelUseCase } from '.../api/factory'` call

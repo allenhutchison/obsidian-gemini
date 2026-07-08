@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { TFile } from 'obsidian';
 import { GeminiConversationEntry } from '../types/conversation';
 import { SessionHistory } from '../agent/session-history';

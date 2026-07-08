@@ -1,5 +1,5 @@
 import { App, Modal, setIcon } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { ScheduledTask, TaskState } from '../services/scheduled-task-manager';
 import { t } from '../i18n';
 

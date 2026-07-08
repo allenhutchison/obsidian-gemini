@@ -32,7 +32,7 @@ import {
 	isExtendedRequest,
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
-import type ObsidianGemini from '../../../main';
+import type { ObsidianGemini } from '../../../types/plugin';
 import type { OllamaClientConfig } from './config';
 
 export class OllamaClient implements ModelApi {

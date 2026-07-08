@@ -1,5 +1,5 @@
 import { normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { formatLocalTimestamp } from './format-utils';
 
 /**

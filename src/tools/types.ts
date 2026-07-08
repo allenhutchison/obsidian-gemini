@@ -1,6 +1,6 @@
 import { ChatSession } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { TFile } from 'obsidian';
 
 // Re-export ToolCall from its canonical definition in model-api

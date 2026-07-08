@@ -8,7 +8,7 @@ import {
 	SessionModelConfig,
 	DestructiveAction,
 } from '../types/agent';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { sanitizeFileName } from '../utils/file-utils';
 import { formatLocalDate } from '../utils/format-utils';
 import { PolicyPreset, FeatureToolPolicy, parseToolPolicyFrontmatter, clonePolicy } from '../types/tool-policy';

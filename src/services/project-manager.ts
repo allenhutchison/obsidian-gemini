@@ -1,5 +1,5 @@
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { Project, ProjectConfig, ProjectSummary, PROJECT_TAG } from '../types/project';
 import {
 	FeatureToolPolicy,

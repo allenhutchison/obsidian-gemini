@@ -1,9 +1,24 @@
 import { Setting, Notice, debounce } from 'obsidian';
-import type ObsidianGemini from '../main';
-import type { ObsidianGeminiSettings } from '../main';
+import type { ObsidianGemini } from '../types/plugin';
+import type { ObsidianGeminiSettings } from '../types/settings';
 import { GEMINI_MODELS } from '../models';
 import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
+
+/**
+ * Shared context handed to each settings-section renderer. Lives here (a leaf
+ * the section modules already import) rather than in settings.ts so sections
+ * don't import the settings tab back, which would create an import cycle
+ * (see #1155). settings.ts re-exports it, so external paths are unchanged.
+ */
+export interface SettingsSectionContext {
+	/** Call to trigger a full re-render of the settings tab */
+	redisplay: () => void;
+	/** Whether advanced settings are currently visible */
+	showDeveloperSettings: boolean;
+	/** Update the show-advanced flag from inside a section (e.g. the toggle in General). */
+	setShowDeveloperSettings: (value: boolean) => void;
+}
 
 /**
  * Create a debounced `saveSettings()` callback shared by the settings renderers.

@@ -1,6 +1,6 @@
 import { TFile, normalizePath } from 'obsidian';
 import Handlebars from 'handlebars';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { getRawErrorMessageOr } from '../utils/error-utils';
 
 export interface AgentsMemoryData {

@@ -1,7 +1,7 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import { ChatSession } from '../types/agent';
 import { GeminiConversationEntry } from '../types/conversation';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { pathToWikilink } from '../utils/accessed-files';
 import { formatLocalTimestamp } from '../utils/format-utils';
 import { serializeToolPolicy } from '../types/tool-policy';

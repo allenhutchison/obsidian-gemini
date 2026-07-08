@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { TFile, Notice } from 'obsidian';
 import { FileUploader } from '@allenhutchison/gemini-utils';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ObsidianVaultAdapter } from './obsidian-file-adapter';
 import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';

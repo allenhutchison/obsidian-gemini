@@ -1,5 +1,5 @@
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { isPathInFolder } from '../utils/file-utils';
 import type { Interactions } from '@google/genai';
 import { ResearchManager, ReportGenerator, Interaction, InteractionOutput } from '@allenhutchison/gemini-utils';

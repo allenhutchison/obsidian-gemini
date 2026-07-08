@@ -17,7 +17,7 @@ import { AgentViewMessages } from './agent-view-messages';
 import { AgentViewTools } from './agent-view-tools';
 import { AgentViewSession } from './agent-view-session';
 import { AgentViewShelf } from './agent-view-shelf';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import type { ConfirmationResult, DiffContext, Tool } from '../../tools/types';
 import { t } from '../../i18n';
 

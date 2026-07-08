@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { App, Setting, Notice, setIcon } from 'obsidian';
 import { sanitizeKeySegment } from '../mcp/mcp-oauth-provider';
 import { clearServerEnv } from '../mcp/mcp-secrets';
@@ -6,7 +6,7 @@ import { MCPConnectionStatus } from '../mcp/types';
 import { getErrorMessage, getRawErrorMessage } from '../utils/error-utils';
 import { createCollapsibleSection } from './settings-helpers';
 import { t } from '../i18n';
-import type { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings-helpers';
 
 export async function renderMCPSettings(
 	containerEl: HTMLElement,

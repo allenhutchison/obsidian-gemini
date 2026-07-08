@@ -1,4 +1,4 @@
-import type ObsidianGemini from './main';
+import type { ObsidianGemini } from './types/plugin';
 import { t } from './i18n';
 import { Editor, Notice, TFile } from 'obsidian';
 import { ExtendedModelRequest } from './api/index';

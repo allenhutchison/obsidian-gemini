@@ -1,5 +1,5 @@
 import { setIcon, setTooltip } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import type { BackgroundTaskManager } from './background-task-manager';
 import type { RagStatusProvider } from './rag-status-bar';
 import { t } from '../i18n';

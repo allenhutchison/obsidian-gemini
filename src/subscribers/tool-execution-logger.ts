@@ -1,5 +1,5 @@
 import { TFile } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { HandlerPriority } from '../types/agent-events';
 import { ToolResult } from '../tools/types';
 import { ChatSession } from '../types/agent';

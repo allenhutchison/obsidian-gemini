@@ -1,4 +1,4 @@
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import type { Tool } from '../../tools/types';
 import {
 	FeatureToolPolicy,
@@ -216,7 +216,7 @@ export class ToolPolicyEditor {
 
 			for (const tool of list) {
 				const row = wrapper.createDiv({ cls: 'gemini-tool-policy-editor-tool-row' });
-				row.createEl('span', {
+				row.createSpan({
 					text: tool.displayName || tool.name,
 					cls: 'gemini-tool-policy-editor-tool-name',
 				});

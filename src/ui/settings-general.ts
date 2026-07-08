@@ -1,10 +1,10 @@
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { App, Notice, Setting, SecretComponent } from 'obsidian';
 import { createAlwaysOpenSection, createDebouncedSave, selectModelSetting } from './settings-helpers';
 import { FolderSuggest } from './folder-suggest';
 import { getErrorMessage } from '../utils/error-utils';
 import { t } from '../i18n';
-import type { SettingsSectionContext } from './settings';
+import type { SettingsSectionContext } from './settings-helpers';
 
 export async function renderGeneralSettings(
 	containerEl: HTMLElement,

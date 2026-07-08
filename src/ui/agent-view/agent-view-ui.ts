@@ -1,5 +1,5 @@
 import { App, Menu, TFile, TFolder, Notice, setIcon, setTooltip } from 'obsidian';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { ChatSession } from '../../types/agent';
 import { insertTextAtCursor, moveCursorToEnd, execContextCommand } from '../../utils/dom-context';
 import { sanitizeFileName, shouldExcludePathForPlugin } from '../../utils/file-utils';
@@ -125,7 +125,7 @@ export class AgentViewUI {
 		const titleContainer = leftSection.createDiv({ cls: 'gemini-agent-title-container' });
 
 		// Session title (inline, not as large)
-		const title = titleContainer.createEl('span', {
+		const title = titleContainer.createSpan({
 			text: currentSession?.title || 'New Agent Session',
 			cls: 'gemini-agent-title-compact',
 		});
@@ -225,7 +225,7 @@ export class AgentViewUI {
 
 		// Project badge (only shown when a project is linked)
 		if (currentSession?.projectPath && this.plugin.projectManager) {
-			const badge = leftSection.createEl('span', {
+			const badge = leftSection.createSpan({
 				cls: 'gemini-agent-project-badge',
 			});
 			const iconSpan = badge.createSpan();
@@ -270,7 +270,7 @@ export class AgentViewUI {
 				// Show just the prompt template name if present, otherwise show icon
 				if (currentSession.modelConfig.promptTemplate) {
 					const promptName = currentSession.modelConfig.promptTemplate.split('/').pop()?.replace('.md', '') || 'Custom';
-					leftSection.createEl('span', {
+					leftSection.createSpan({
 						cls: 'gemini-agent-prompt-badge',
 						text: promptName,
 						attr: {
@@ -279,7 +279,7 @@ export class AgentViewUI {
 					});
 				} else {
 					// Show settings icon for other custom settings
-					const settingsIndicator = leftSection.createEl('span', {
+					const settingsIndicator = leftSection.createSpan({
 						cls: 'gemini-agent-settings-indicator',
 						attr: {
 							title: tooltipParts.join('\n'),

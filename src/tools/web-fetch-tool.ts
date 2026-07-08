@@ -1,7 +1,7 @@
 import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { requestUrlWithRetry } from '../utils/proxy-fetch';
 import { executeWithRetry } from '../utils/retry';
 import TurndownService from 'turndown';

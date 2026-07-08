@@ -1,5 +1,5 @@
 import { TFile, normalizePath } from 'obsidian';
-import type ObsidianGemini from '../main';
+import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists } from '../utils/file-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';

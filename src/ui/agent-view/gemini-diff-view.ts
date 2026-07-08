@@ -4,7 +4,7 @@ import { EditorView, basicSetup } from 'codemirror';
 // eslint-disable-next-line import/no-extraneous-dependencies -- bundled by Obsidian
 import { EditorState } from '@codemirror/state';
 import { unifiedMergeView } from '@codemirror/merge';
-import type ObsidianGemini from '../../main';
+import type { ObsidianGemini } from '../../types/plugin';
 import { t } from '../../i18n';
 
 export const VIEW_TYPE_DIFF = 'gemini-diff-view';
