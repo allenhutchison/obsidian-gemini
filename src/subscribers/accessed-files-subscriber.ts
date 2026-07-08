@@ -1,7 +1,6 @@
 import type { ObsidianGemini } from '../types/plugin';
 import { HandlerPriority } from '../types/agent-events';
 import { extractAccessedPaths } from '../utils/accessed-files';
-import { ToolResult } from '../tools/types';
 
 /**
  * Subscribes to toolChainComplete to track which files the agent
@@ -17,13 +16,7 @@ export class AccessedFilesSubscriber {
 				'toolChainComplete',
 				async (payload) => {
 					const session = payload.session;
-					const accessedPaths = extractAccessedPaths(
-						payload.toolResults as Array<{
-							toolName: string;
-							toolArguments: any;
-							result: ToolResult;
-						}>
-					);
+					const accessedPaths = extractAccessedPaths(payload.toolResults);
 					if (accessedPaths.length === 0) return;
 
 					if (!session.accessedFiles) {

@@ -1,6 +1,6 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import { ChatSession } from '../types/agent';
-import { GeminiConversationEntry } from '../types/conversation';
+import { ConversationEntryMetadata, GeminiConversationEntry } from '../types/conversation';
 import type { ObsidianGemini } from '../types/plugin';
 import { pathToWikilink } from '../utils/accessed-files';
 import { formatLocalTimestamp } from '../utils/format-utils';
@@ -125,7 +125,7 @@ export class SessionHistory {
 			topP: entry.metadata?.topP,
 			customPrompt: entry.metadata?.customPrompt,
 			toolsUsed: [], // TODO: Add tool support later
-			isDefined: (value: any) => value !== undefined,
+			isDefined: (value: unknown) => value !== undefined,
 		});
 
 		const newContent = existingContent + '\n' + entryContent;
@@ -247,7 +247,7 @@ export class SessionHistory {
 					const message = this.extractCalloutBody(lines, i).join('\n').trim();
 					if (!message) continue;
 
-					const metadata: Record<string, any> = {};
+					const metadata: ConversationEntryMetadata = {};
 					const isPlanCallout = calloutType === 'plan';
 					if (!isPlanCallout && toolNameMatch) {
 						metadata.toolName = toolNameMatch[1];
@@ -341,7 +341,7 @@ export class SessionHistory {
 	 * Apply session metadata to file frontmatter using Obsidian API
 	 */
 	private async applySessionFrontmatter(file: TFile, session: ChatSession): Promise<void> {
-		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 			// Required fields - always set
 			frontmatter.session_id = session.id;
 			frontmatter.type = session.type;

@@ -23,7 +23,7 @@ interface ToolResultEntry {
  * occurs in agent-view-tools.ts when paths are added to the session Set.
  * Search/list tools are excluded to avoid noise.
  */
-export function extractAccessedPaths(toolResults: ToolResultEntry[]): string[] {
+export function extractAccessedPaths(toolResults: readonly ToolResultEntry[]): string[] {
 	const paths: string[] = [];
 
 	for (const tr of toolResults) {

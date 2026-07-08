@@ -1,6 +1,6 @@
 import { TFile, Notice } from 'obsidian';
 import type { GoogleGenAI } from '@google/genai';
-import type { FileUploader } from '@allenhutchison/gemini-utils';
+import type { FileUploader, UploadProgressEvent } from '@allenhutchison/gemini-utils';
 import type { ObsidianGemini } from '../types/plugin';
 import type { ObsidianVaultAdapter } from './obsidian-file-adapter';
 import type { RagCache } from './rag-cache';
@@ -420,11 +420,11 @@ export class RagVaultScanner {
 				smartSync: true,
 				parallel: { maxConcurrent: 5 },
 				logger: {
-					debug: (msg: string, ...args: any[]) => this.plugin.logger.debug(msg, ...args),
+					debug: (msg: string, ...args: unknown[]) => this.plugin.logger.debug(msg, ...args),
 					// Per-file upload failures are already tracked via the file_error progress
 					// event and surfaced in the RAG Failures tab — downgrade to warn to avoid
 					// alarming console noise for routine skips (empty files, inaccessible notes).
-					error: (msg: string, ...args: any[]) => this.plugin.logger.warn(msg, ...args),
+					error: (msg: string, ...args: unknown[]) => this.plugin.logger.warn(msg, ...args),
 				},
 				// ProgressCallback is typed `(event) => void`, but this handler must be async:
 				// it awaits per-file hashing / incremental cache saves, and it *throws* to signal
@@ -432,7 +432,7 @@ export class RagVaultScanner {
 				// in tests) await and rely on propagating. Wrapping the body to void the promise
 				// would swallow those throws, so the async signature is intentional here.
 				// eslint-disable-next-line @typescript-eslint/no-misused-promises -- async handler must propagate cancellation/rate-limit throws
-				onProgress: async (event: any) => {
+				onProgress: async (event: UploadProgressEvent) => {
 					// Check for cancellation
 					if (this.cancelRequested) {
 						throw new Error('Indexing cancelled by user');

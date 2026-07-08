@@ -1,16 +1,31 @@
+/**
+ * Optional per-entry metadata persisted with conversation history. Known keys
+ * are typed; the index signature keeps room for forward-compatible extras
+ * parsed back from older/newer history files.
+ */
+export interface ConversationEntryMetadata {
+	temperature?: number;
+	topP?: number;
+	customPrompt?: string;
+	/** Set on tool-activity entries parsed from session history. */
+	toolName?: string;
+	toolStatus?: string;
+	[key: string]: unknown;
+}
+
 export interface BasicGeminiConversationEntry {
 	role: 'user' | 'model' | 'system';
 	message: string;
 	userMessage?: string;
 	model?: string;
-	metadata?: Record<string, any>;
+	metadata?: ConversationEntryMetadata;
 }
 
 export interface GeminiConversationEntry extends BasicGeminiConversationEntry {
 	id?: number;
 	notePath: string;
 	created_at: Date;
-	metadata?: Record<string, any>;
+	metadata?: ConversationEntryMetadata;
 	/**
 	 * Model reasoning ("thinking") captured for this turn, when the model is a
 	 * thinking model and emitted thought summaries. Persisted to session history

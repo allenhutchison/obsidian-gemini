@@ -14,7 +14,14 @@ import { getRawErrorMessage } from '../utils/error-utils';
  * Errors in handlers are logged but never propagate.
  */
 export class AgentEventBus {
-	private handlers = new Map<string, HandlerRegistration<any>[]>();
+	/**
+	 * Heterogeneous per-event storage: each key's array only ever holds
+	 * registrations for that event (enforced by the generic signatures of
+	 * on/off/emit), but a Map value type can't express that per-key link.
+	 * `never` makes the arrays accept any registration contravariantly; emit
+	 * re-asserts the concrete handler type at the single dispatch site.
+	 */
+	private handlers = new Map<AgentEventName, HandlerRegistration<never>[]>();
 	private logger: Logger;
 
 	constructor(logger: Logger) {
@@ -58,11 +65,13 @@ export class AgentEventBus {
 		if (!registrations || registrations.length === 0) return;
 
 		const sorted = [...registrations].sort((a, b) => a.priority - b.priority);
-		const frozenPayload = Object.freeze(payload);
+		// Safe: every AgentEventMap payload is declared Readonly<…>, so freezing
+		// doesn't change the type handlers were declared against.
+		const frozenPayload = Object.freeze(payload) as AgentEventMap[E];
 
 		for (const { handler } of sorted) {
 			try {
-				await handler(frozenPayload);
+				await (handler as AgentEventHandler<E>)(frozenPayload);
 			} catch (error) {
 				this.logger.error(`Handler error for event "${event}":`, getRawErrorMessage(error));
 			}

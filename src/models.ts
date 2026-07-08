@@ -91,8 +91,27 @@ export function getActiveChatModel(settings: {
 	return settings.chatModelName || getDefaultModelForRole('chat', 'gemini');
 }
 
-export interface ModelUpdateResult {
-	updatedSettings: any; // Ideally, this would be ObsidianGeminiSettings, but that would create a circular dependency
+/**
+ * The slice of plugin settings that model reconciliation reads and rewrites.
+ * Structural on purpose: importing ObsidianGeminiSettings here would create a
+ * models.ts ↔ types/settings.ts import cycle (types/settings.ts imports
+ * GeminiModel/ModelProvider from this module), which the lint:cycles gate
+ * forbids. ObsidianGeminiSettings satisfies this shape structurally.
+ */
+export interface ModelSettingsSlice {
+	chatModelName: string;
+	summaryModelName: string;
+	completionsModelName: string;
+	imageModelName: string;
+	/**
+	 * Optional: the Ollama model is only reconciled once the daemon's models are
+	 * known, and callers (tests, partial fixtures) may omit the field entirely.
+	 */
+	ollamaModelName?: string;
+}
+
+export interface ModelUpdateResult<T extends ModelSettingsSlice = ModelSettingsSlice> {
+	updatedSettings: T;
 	settingsChanged: boolean;
 	changedSettingsInfo: string[];
 }
@@ -127,12 +146,15 @@ export function migrateOllamaModelSetting(
 	return false;
 }
 
-export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult {
+export function getUpdatedModelSettings<T extends ModelSettingsSlice>(currentSettings: T): ModelUpdateResult<T> {
 	const geminiModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'gemini').map((m) => m.value));
 	const ollamaModelValues = new Set(GEMINI_MODELS.filter((m) => getModelProvider(m) === 'ollama').map((m) => m.value));
 	let settingsChanged = false;
 	const changedSettingsInfo: string[] = [];
 	const newSettings = { ...currentSettings };
+	// Mutations go through a ModelSettingsSlice-typed view of the same object so
+	// the writes below don't have to assign into generic indexed-access types.
+	const modelFields: ModelSettingsSlice = newSettings;
 
 	// The Gemini per-use-case fields are always reconciled against the (always
 	// bundled) Gemini list, regardless of the active provider. This migrates
@@ -145,13 +167,13 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 		role: ModelRole,
 		label: string
 	) => {
-		const previous = newSettings[key];
+		const previous = modelFields[key];
 		if (previous && geminiModelValues.has(previous)) return;
 		const next = getDefaultModelForRole(role, 'gemini');
 		// Image generation has no dedicated default in some model lists; leave a
 		// stale image model untouched rather than blanking it.
 		if (!next) return;
-		newSettings[key] = next;
+		modelFields[key] = next;
 		changedSettingsInfo.push(`${label}: '${previous}' -> '${next}' (legacy model update)`);
 		settingsChanged = true;
 	};
@@ -166,11 +188,11 @@ export function getUpdatedModelSettings(currentSettings: any): ModelUpdateResult
 	// empty or stale value so a switch made while the daemon was unreachable
 	// doesn't blank it, and a Gemini model name is never sent to Ollama.
 	if (ollamaModelValues.size > 0) {
-		const previous = newSettings.ollamaModelName;
+		const previous = modelFields.ollamaModelName;
 		if (!previous || !ollamaModelValues.has(previous)) {
 			const next = getDefaultModelForRole('chat', 'ollama');
 			if (next && next !== previous) {
-				newSettings.ollamaModelName = next;
+				modelFields.ollamaModelName = next;
 				changedSettingsInfo.push(`Ollama model: '${previous ?? ''}' -> '${next}' (legacy model update)`);
 				settingsChanged = true;
 			}

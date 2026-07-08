@@ -323,13 +323,11 @@ export class ContextManager {
 		}
 
 		try {
-			const config: any = {};
 			const response = await executeWithRetry(
 				() =>
 					this.ai!.models.countTokens({
 						model: modelName,
 						contents: sanitizedContents,
-						config: Object.keys(config).length > 0 ? config : undefined,
 					}),
 				undefined,
 				{ operationName: 'ContextManager.countTokens', logger: this.logger }

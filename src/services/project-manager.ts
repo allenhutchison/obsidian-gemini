@@ -116,7 +116,7 @@ export class ProjectManager {
 		const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
 		if (!(file instanceof TFile)) return;
 
-		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 			if (updates.name !== undefined) frontmatter.name = updates.name;
 			if (updates.skills !== undefined) frontmatter.skills = updates.skills;
 			if ('toolPolicy' in updates) {
@@ -161,7 +161,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 * Add the project tag to an existing note, converting it into a project.
 	 */
 	async convertNoteToProject(file: TFile): Promise<void> {
-		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 			// Normalize tags to array (handle string, array, or missing)
 			let tags: string[] = [];
 			if (Array.isArray(frontmatter.tags)) {
@@ -184,7 +184,7 @@ Add your project instructions here. This text will be injected into the agent's 
 	 * Remove the project tag from a file, stripping its project status.
 	 */
 	async removeProject(file: TFile): Promise<void> {
-		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: any) => {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 			// Normalize tags to array (handle string or array)
 			let tags: string[] = [];
 			if (Array.isArray(frontmatter.tags)) {
@@ -278,7 +278,7 @@ Add your project instructions here. This text will be injected into the agent's 
 		// Failures here are non-fatal — the in-memory shape is correct either way.
 		if (frontmatter.permissions !== undefined && frontmatter.toolPolicy === undefined) {
 			try {
-				await this.plugin.app.fileManager.processFrontMatter(file, (fm: any) => {
+				await this.plugin.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 					const serialized = serializeToolPolicy(config.toolPolicy);
 					if (serialized) {
 						fm.toolPolicy = serialized;

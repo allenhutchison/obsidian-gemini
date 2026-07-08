@@ -1,6 +1,7 @@
 import type { ObsidianGemini } from '../types/plugin';
 import * as modelsModule from '../models';
 import { GeminiModel, ModelUpdateResult, getUpdatedModelSettings, DEFAULT_GEMINI_MODELS } from '../models';
+import type { ObsidianGeminiSettings } from '../types/settings';
 import { ModelListProvider, RefreshResult } from './model-list-provider';
 import { OllamaModelsService } from './ollama-models-service';
 import { ParameterValidationService, ParameterRanges } from './parameter-validation';
@@ -52,7 +53,7 @@ export class ModelManager {
 	/**
 	 * Update the global GEMINI_MODELS list from the active provider and fix any stale settings.
 	 */
-	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult> {
+	async updateModels(options: ModelUpdateOptions = {}): Promise<ModelUpdateResult<ObsidianGeminiSettings>> {
 		const allModels =
 			this.plugin.settings.provider === 'ollama'
 				? await this.ollamaModelsService.getModels(options.forceRefresh)

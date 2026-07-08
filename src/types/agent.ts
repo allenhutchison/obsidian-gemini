@@ -112,7 +112,7 @@ export interface ChatSession {
 	/** Additional metadata for the session */
 	metadata?: {
 		autoLabeled?: boolean;
-		[key: string]: any;
+		[key: string]: unknown;
 	};
 
 	/** In-memory set of file paths accessed during this session. Converted to wikilinks and persisted to frontmatter as accessed_files. */
