@@ -751,45 +751,7 @@ export class AgentViewUI {
 				e.stopPropagation();
 
 				// Process all supported images from non-vault sources
-				let imagesProcessed = 0;
-				let unsupportedCount = 0;
-				let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
-				for (const file of fileArray) {
-					if (isSupportedImageType(file.type)) {
-						if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-							new Notice(t('agent.attachments.sizeLimitReached'));
-							break;
-						}
-						try {
-							const base64 = await fileToBase64(file);
-							const attachment: InlineAttachment = {
-								base64,
-								mimeType: getMimeType(file),
-								id: generateAttachmentId(),
-							};
-							callbacks.addAttachment(attachment);
-							cumulativeSize += file.size;
-							imagesProcessed++;
-						} catch (err) {
-							this.plugin.logger.error('Failed to process dropped image:', err);
-							new Notice(t('agent.attachments.imageAttachFailed'));
-						}
-					} else if (this.isSvgFile(file)) {
-						// External SVG/SVGZ — rasterize to PNG before inlining.
-						if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-							new Notice(t('agent.attachments.sizeLimitReached'));
-							break;
-						}
-						if (await this.attachExternalSvgFile(file, callbacks)) {
-							cumulativeSize += file.size;
-							imagesProcessed++;
-						} else {
-							unsupportedCount++;
-						}
-					} else if (file.type.startsWith('image/')) {
-						unsupportedCount++;
-					}
-				}
+				const { imagesProcessed, unsupportedCount } = await this.processAttachmentFiles(fileArray, callbacks);
 
 				if (imagesProcessed > 0) {
 					new Notice(
@@ -811,50 +773,12 @@ export class AgentViewUI {
 				let imagesProcessed = 0;
 				let unsupportedCount = 0;
 				if (e.clipboardData?.files?.length) {
-					let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
-					for (const file of Array.from(e.clipboardData.files)) {
-						if (isSupportedImageType(file.type)) {
-							if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-								new Notice(t('agent.attachments.sizeLimitReached'));
-								break;
-							}
-							// Prevent default once when we find the first image
-							if (imagesProcessed === 0) {
-								e.preventDefault();
-							}
-							try {
-								const base64 = await fileToBase64(file);
-								const attachment: InlineAttachment = {
-									base64,
-									mimeType: getMimeType(file),
-									id: generateAttachmentId(),
-								};
-								callbacks.addAttachment(attachment);
-								cumulativeSize += file.size;
-								imagesProcessed++;
-							} catch (err) {
-								this.plugin.logger.error('Failed to process pasted image:', err);
-								new Notice(t('agent.attachments.imageAttachFailed'));
-							}
-						} else if (this.isSvgFile(file)) {
-							// External SVG/SVGZ paste — rasterize to PNG before inlining.
-							if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
-								new Notice(t('agent.attachments.sizeLimitReached'));
-								break;
-							}
-							if (imagesProcessed === 0) {
-								e.preventDefault();
-							}
-							if (await this.attachExternalSvgFile(file, callbacks)) {
-								cumulativeSize += file.size;
-								imagesProcessed++;
-							} else {
-								unsupportedCount++;
-							}
-						} else if (file.type.startsWith('image/')) {
-							unsupportedCount++;
-						}
-					}
+					// Prevent default once when the first image/SVG is accepted.
+					({ imagesProcessed, unsupportedCount } = await this.processAttachmentFiles(
+						Array.from(e.clipboardData.files),
+						callbacks,
+						{ onFirstImage: () => e.preventDefault() }
+					));
 				}
 
 				// Notify about unsupported formats
@@ -990,6 +914,83 @@ export class AgentViewUI {
 			this.plugin.logger.error('Failed to rasterize external SVG:', err);
 			return false;
 		}
+	}
+
+	/**
+	 * Process a list of external (non-vault) files as image/SVG inline attachments.
+	 *
+	 * Shared by the external-drop and clipboard-paste handlers, which ran a
+	 * near-identical per-file loop. Per file it runs: `isSupportedImageType` →
+	 * cumulative-size check against `GEMINI_INLINE_DATA_LIMIT` (breaks on
+	 * overflow) → `fileToBase64` → build `InlineAttachment` → `addAttachment` →
+	 * bump counters, with an `isSvgFile` branch delegating to
+	 * `attachExternalSvgFile` (rasterization) and a trailing
+	 * `else if (image/*) unsupportedCount++`. The distinct post-loop notice
+	 * logic stays in each caller.
+	 *
+	 * The paste-only `e.preventDefault()` is parameterized via
+	 * `opts.onFirstImage`, invoked the first time an image or SVG is accepted
+	 * (before the accepted item is processed); drop passes no callback.
+	 */
+	private async processAttachmentFiles(
+		files: File[],
+		callbacks: UICallbacks,
+		opts?: { onFirstImage?: () => void }
+	): Promise<{ imagesProcessed: number; unsupportedCount: number }> {
+		let imagesProcessed = 0;
+		let unsupportedCount = 0;
+		// Gate onFirstImage on its own flag rather than `imagesProcessed === 0`,
+		// so it still fires exactly once if an earlier accepted item fails to
+		// process (a rejected `fileToBase64` or a failed SVG rasterization leaves
+		// `imagesProcessed` at 0). It fires the first time an item passes the
+		// size check and enters processing.
+		let firstImageNotified = false;
+		let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
+		const notifyFirstImage = () => {
+			if (!firstImageNotified) {
+				firstImageNotified = true;
+				opts?.onFirstImage?.();
+			}
+		};
+		for (const file of files) {
+			if (isSupportedImageType(file.type)) {
+				if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+					new Notice(t('agent.attachments.sizeLimitReached'));
+					break;
+				}
+				notifyFirstImage();
+				try {
+					const base64 = await fileToBase64(file);
+					const attachment: InlineAttachment = {
+						base64,
+						mimeType: getMimeType(file),
+						id: generateAttachmentId(),
+					};
+					callbacks.addAttachment(attachment);
+					cumulativeSize += file.size;
+					imagesProcessed++;
+				} catch (err) {
+					this.plugin.logger.error('Failed to process attachment image:', err);
+					new Notice(t('agent.attachments.imageAttachFailed'));
+				}
+			} else if (this.isSvgFile(file)) {
+				// External SVG/SVGZ — rasterize to PNG before inlining.
+				if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
+					new Notice(t('agent.attachments.sizeLimitReached'));
+					break;
+				}
+				notifyFirstImage();
+				if (await this.attachExternalSvgFile(file, callbacks)) {
+					cumulativeSize += file.size;
+					imagesProcessed++;
+				} else {
+					unsupportedCount++;
+				}
+			} else if (file.type.startsWith('image/')) {
+				unsupportedCount++;
+			}
+		}
+		return { imagesProcessed, unsupportedCount };
 	}
 
 	/**

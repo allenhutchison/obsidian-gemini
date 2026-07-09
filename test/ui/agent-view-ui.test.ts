@@ -1,5 +1,6 @@
 import type { Mock } from 'vitest';
 import { AgentViewUI, UICallbacks } from '../../src/ui/agent-view/agent-view-ui';
+import { GEMINI_INLINE_DATA_LIMIT } from '../../src/utils/file-classification';
 import { App, TFile, TFolder, Notice } from 'obsidian';
 import ObsidianGemini from '../../src/main';
 import { shouldExcludePathForPlugin } from '../../src/utils/file-utils';
@@ -562,6 +563,92 @@ describe('AgentViewUI', () => {
 			expect(callbacks.addAttachment).toHaveBeenCalledTimes(1);
 			// Big file should be skipped, notice shown
 			expect(Notice).toHaveBeenCalledWith(expect.stringContaining('20MB'), expect.any(Number));
+		});
+	});
+
+	// The external-drop and clipboard-paste handlers share this per-file
+	// image/SVG loop (extracted from the two near-verbatim copies). Exercise it
+	// directly so the shared unit is covered independently of the DOM events.
+	describe('processAttachmentFiles', () => {
+		const run = (files: File[], opts?: { onFirstImage?: () => void }) =>
+			(agentViewUI as any).processAttachmentFiles(files, callbacks, opts) as Promise<{
+				imagesProcessed: number;
+				unsupportedCount: number;
+			}>;
+
+		const imageFile = (name: string, type: string, size?: number): File => {
+			const file = new File([new Uint8Array([1, 2, 3])], name, { type });
+			if (size !== undefined) {
+				Object.defineProperty(file, 'size', { value: size });
+			}
+			return file;
+		};
+
+		it('accepts a supported image and increments imagesProcessed', async () => {
+			const result = await run([imageFile('a.png', 'image/png')]);
+			expect(result).toEqual({ imagesProcessed: 1, unsupportedCount: 0 });
+			expect(callbacks.addAttachment).toHaveBeenCalledTimes(1);
+			expect(callbacks.addAttachment).toHaveBeenCalledWith(expect.objectContaining({ mimeType: 'image/png' }));
+		});
+
+		it('breaks on the cumulative size limit without attaching', async () => {
+			const result = await run([imageFile('big.png', 'image/png', GEMINI_INLINE_DATA_LIMIT + 1)]);
+			expect(result).toEqual({ imagesProcessed: 0, unsupportedCount: 0 });
+			expect(callbacks.addAttachment).not.toHaveBeenCalled();
+			expect(Notice).toHaveBeenCalledWith(expect.stringContaining('20 MB'));
+		});
+
+		it('delegates SVG files to attachExternalSvgFile (success counts as processed)', async () => {
+			const svgSpy = vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(true);
+			const result = await run([imageFile('icon.svg', 'image/svg+xml')]);
+			expect(svgSpy).toHaveBeenCalledTimes(1);
+			expect(result).toEqual({ imagesProcessed: 1, unsupportedCount: 0 });
+		});
+
+		it('counts an SVG that fails rasterization as unsupported', async () => {
+			vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(false);
+			const result = await run([imageFile('icon.svg', 'image/svg+xml')]);
+			expect(result).toEqual({ imagesProcessed: 0, unsupportedCount: 1 });
+			expect(callbacks.addAttachment).not.toHaveBeenCalled();
+		});
+
+		it('ignores non-image files', async () => {
+			const result = await run([imageFile('note.txt', 'text/plain')]);
+			expect(result).toEqual({ imagesProcessed: 0, unsupportedCount: 0 });
+			expect(callbacks.addAttachment).not.toHaveBeenCalled();
+		});
+
+		it('counts an unsupported image MIME type as unsupported', async () => {
+			const result = await run([imageFile('old.bmp', 'image/bmp')]);
+			expect(result).toEqual({ imagesProcessed: 0, unsupportedCount: 1 });
+			expect(callbacks.addAttachment).not.toHaveBeenCalled();
+		});
+
+		it('invokes onFirstImage exactly once for the first accepted image', async () => {
+			const onFirstImage = vi.fn();
+			const result = await run([imageFile('a.png', 'image/png'), imageFile('b.png', 'image/png')], {
+				onFirstImage,
+			});
+			expect(result).toEqual({ imagesProcessed: 2, unsupportedCount: 0 });
+			expect(onFirstImage).toHaveBeenCalledTimes(1);
+		});
+
+		it('invokes onFirstImage only once even when an earlier accepted item fails to process', async () => {
+			// First item is an SVG that fails rasterization (imagesProcessed stays 0),
+			// second is an image that succeeds. onFirstImage must still fire exactly once.
+			vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(false);
+			const onFirstImage = vi.fn();
+			const result = await run([imageFile('icon.svg', 'image/svg+xml'), imageFile('ok.png', 'image/png')], {
+				onFirstImage,
+			});
+			expect(result).toEqual({ imagesProcessed: 1, unsupportedCount: 1 });
+			expect(onFirstImage).toHaveBeenCalledTimes(1);
+		});
+
+		it('does not invoke onFirstImage when nothing is accepted', async () => {
+			const onFirstImage = vi.fn();
+			await run([imageFile('note.txt', 'text/plain')], { onFirstImage });
+			expect(onFirstImage).not.toHaveBeenCalled();
 		});
 	});
 });
