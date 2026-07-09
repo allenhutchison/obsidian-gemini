@@ -68,8 +68,8 @@ export class MCPToolWrapper implements Tool {
 					// MCP content blocks are external JSON; narrow each to a record and
 					// read its fields by shape (the SDK types the array loosely).
 					const content = asRecord(rawContent);
-					if (content.type === 'text' && 'text' in content) {
-						textParts.push(String(content.text));
+					if (content.type === 'text' && typeof content.text === 'string') {
+						textParts.push(content.text);
 					} else if (content.type === 'image' && 'mimeType' in content) {
 						const mimeType = content.mimeType;
 						textParts.push(`[Image: ${typeof mimeType === 'string' && mimeType ? mimeType : 'image'}]`);
