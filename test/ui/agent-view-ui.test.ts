@@ -633,6 +633,18 @@ describe('AgentViewUI', () => {
 			expect(onFirstImage).toHaveBeenCalledTimes(1);
 		});
 
+		it('invokes onFirstImage only once even when an earlier accepted item fails to process', async () => {
+			// First item is an SVG that fails rasterization (imagesProcessed stays 0),
+			// second is an image that succeeds. onFirstImage must still fire exactly once.
+			vi.spyOn(agentViewUI as any, 'attachExternalSvgFile').mockResolvedValue(false);
+			const onFirstImage = vi.fn();
+			const result = await run([imageFile('icon.svg', 'image/svg+xml'), imageFile('ok.png', 'image/png')], {
+				onFirstImage,
+			});
+			expect(result).toEqual({ imagesProcessed: 1, unsupportedCount: 1 });
+			expect(onFirstImage).toHaveBeenCalledTimes(1);
+		});
+
 		it('does not invoke onFirstImage when nothing is accepted', async () => {
 			const onFirstImage = vi.fn();
 			await run([imageFile('note.txt', 'text/plain')], { onFirstImage });

@@ -939,16 +939,26 @@ export class AgentViewUI {
 	): Promise<{ imagesProcessed: number; unsupportedCount: number }> {
 		let imagesProcessed = 0;
 		let unsupportedCount = 0;
+		// Gate onFirstImage on its own flag rather than `imagesProcessed === 0`,
+		// so it still fires exactly once if an earlier accepted item fails to
+		// process (a rejected `fileToBase64` or a failed SVG rasterization leaves
+		// `imagesProcessed` at 0). It fires the first time an item passes the
+		// size check and enters processing.
+		let firstImageNotified = false;
 		let cumulativeSize = this.getCurrentAttachmentSize(callbacks);
+		const notifyFirstImage = () => {
+			if (!firstImageNotified) {
+				firstImageNotified = true;
+				opts?.onFirstImage?.();
+			}
+		};
 		for (const file of files) {
 			if (isSupportedImageType(file.type)) {
 				if (cumulativeSize + file.size > GEMINI_INLINE_DATA_LIMIT) {
 					new Notice(t('agent.attachments.sizeLimitReached'));
 					break;
 				}
-				if (imagesProcessed === 0) {
-					opts?.onFirstImage?.();
-				}
+				notifyFirstImage();
 				try {
 					const base64 = await fileToBase64(file);
 					const attachment: InlineAttachment = {
@@ -969,9 +979,7 @@ export class AgentViewUI {
 					new Notice(t('agent.attachments.sizeLimitReached'));
 					break;
 				}
-				if (imagesProcessed === 0) {
-					opts?.onFirstImage?.();
-				}
+				notifyFirstImage();
 				if (await this.attachExternalSvgFile(file, callbacks)) {
 					cumulativeSize += file.size;
 					imagesProcessed++;
