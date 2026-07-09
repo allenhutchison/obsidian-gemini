@@ -1,0 +1,95 @@
+{
+	"repo": "allenhutchison/obsidian-gemini",
+	"defaultBranch": "master",
+	"language": "typescript",
+	"commands": {
+		"format": "npm run format-check",
+		"lint": "npm run lint",
+		"build": "npm run build",
+		"test": "npm test",
+		"coverage": "npm test -- --coverage",
+		"typecheck": "npm run typecheck:test"
+	},
+	"paths": {
+		"source": "src/",
+		"tests": "test/",
+		"designDocs": ["docs/contributing/"],
+		"productDocs": ["docs/guide/", "docs/reference/", "README.md", "AGENTS.md"],
+		"changelogDir": "planning/changelog/",
+		"researchRadarDir": "planning/research-radar/",
+		"prTemplate": ".github/PULL_REQUEST_TEMPLATE.md",
+		"skillsDir": ".agents/skills/"
+	},
+	"guidelines": {
+		"coding": ".claude/guidelines/coding.md",
+		"testing": ".claude/guidelines/testing.md",
+		"invariants": ".claude/guidelines/invariants.md",
+		"release": ".claude/guidelines/release.md"
+	},
+	"labels": {
+		"architecture": "architecture",
+		"testQuality": "test-quality",
+		"security": "security",
+		"dependencies": "dependencies",
+		"automated": "automated"
+	},
+	"audits": {
+		"prCap": 3,
+		"issueCap": 5,
+		"testPrCap": 2,
+		"testIssueCap": 2,
+		"securityPrCap": 3,
+		"securityIssueCap": 5,
+		"depsPrCap": 3,
+		"depsIssueCap": 5,
+		"promoteThreshold": 3,
+		"promoteLookbackDays": 90
+	},
+	"models": {
+		"fast": "claude-haiku-4-5",
+		"capable": "claude-opus-4-8",
+		"default": "inherit"
+	},
+	"dailyUpdate": {
+		"subSkills": ["daily-changelog", "audit-product-docs", "triage-issues"],
+		"branchPrefix": "daily-update-",
+		"commitSubject": "chore(daily): {date} daily update"
+	},
+	"autoDev": {
+		"enabled": true,
+		"branchPrefix": "auto/issue-",
+		"marker": "<!-- auto-dev -->",
+		"stateLabels": {
+			"needsInfo": "auto:needs-info",
+			"planned": "auto:planned",
+			"ready": "auto:ready",
+			"inProgress": "auto:in-progress",
+			"parked": "auto:parked",
+			"skip": "auto:skip"
+		},
+		"excludedLabels": ["epic", "question", "wontfix", "duplicate", "invalid"],
+		"openPrsAsDraft": true,
+		"prLabel": "auto:pr",
+		"fallbackReviewMinutes": 60,
+		"maxPrsInFlight": 6,
+		"orphanReclaimMinutes": 90
+	},
+	"researchRadar": {
+		"themes": "derive",
+		"userAgent": "research-radar/1.0 (mailto:allen@hutchison.org)"
+	},
+	"review": {
+		"bots": ["coderabbitai[bot]", "gemini-code-assist[bot]"]
+	},
+	"release": {
+		"versionCommand": "npm version {level}",
+		"versionPushesTag": true,
+		"notesFile": "src/release-notes.json",
+		"readmeSection": "What's New",
+		"githubRelease": true
+	},
+	"journal": {
+		"project": "Gemini Scribe",
+		"hubNote": "Projects/Gemini Scribe/Gemini Scribe - MOC.md"
+	}
+}

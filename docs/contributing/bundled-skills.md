@@ -22,11 +22,13 @@ adaptations."
 
 ## How drift is surfaced
 
-The [`daily-update`](https://github.com/allenhutchison/obsidian-gemini/blob/master/.agents/skills/daily-update/SKILL.md) skill runs a **report-only**
-bundled skill drift check on each scheduled run. For each adapted skill it lists the upstream
-commits that touched that file since the pinned SHA and, if any exist, surfaces the diff in
-the run report so a human can decide whether it's worth reconciling. The check never edits a
-`SKILL.md` and never bumps the pinned SHA — flagging drift is automated, adapting it is not.
+The **release process** runs a **report-only** bundled-skill drift check as a release-prep step
+(see the [release guidelines](../../.claude/guidelines/release.md)). It lives in the release flow
+rather than the unattended `daily-update` runner because it needs `gh` access to the
+`kepano/obsidian-skills` repo, which the cloud daily runner doesn't have. For each adapted skill it
+lists the upstream commits that touched that file since the pinned SHA and, if any exist, surfaces
+the diff so a human can decide whether it's worth reconciling. The check never edits a `SKILL.md` and
+never bumps the pinned SHA — flagging drift is surfaced automatically, adapting it is not.
 
 ## Reconcile workflow
 

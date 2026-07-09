@@ -1,0 +1,17 @@
+{
+	"extraKnownMarketplaces": {
+		"maintainerd": {
+			"source": {
+				"source": "github",
+				"repo": "allenhutchison/maintainerd"
+			}
+		}
+	},
+	"enabledPlugins": {
+		"maintainerd-core@maintainerd": true,
+		"repo-ops@maintainerd": true,
+		"audits@maintainerd": true,
+		"auto-dev@maintainerd": true,
+		"journal@maintainerd": true
+	}
+}
