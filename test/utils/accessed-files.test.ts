@@ -127,6 +127,19 @@ describe('extractAccessedPaths', () => {
 		expect(extractAccessedPaths(results)).toEqual([]);
 	});
 
+	it('should ignore non-string path values', () => {
+		const results = [
+			{ toolName: 'read_file', toolArguments: {}, result: { success: true, data: { path: 123 } } },
+			{
+				toolName: 'move_file',
+				toolArguments: {},
+				result: { success: true, data: { sourcePath: { nested: true }, targetPath: 'new/note.md' } },
+			},
+		];
+		// Only the string path survives the boundary narrowing.
+		expect(extractAccessedPaths(results)).toEqual(['new/note.md']);
+	});
+
 	it('should extract paths from a mixed batch', () => {
 		const results = [
 			{ toolName: 'read_file', toolArguments: { path: 'a.md' }, result: { success: true, data: { path: 'a.md' } } },

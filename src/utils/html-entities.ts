@@ -27,27 +27,30 @@ const MAX_ITERATIONS = 5;
  * Handles named, decimal numeric, and hex numeric entities.
  */
 function decodeOnce(text: string): string {
-	return text.replace(/&(?:#x([0-9a-fA-F]{1,6})|#(\d{1,6})|([a-zA-Z]+));/g, (match, hex, dec, named) => {
-		if (hex) {
-			try {
-				return String.fromCodePoint(parseInt(hex, 16));
-			} catch {
-				return match; // Invalid code point, leave as-is
+	return text.replace(
+		/&(?:#x([0-9a-fA-F]{1,6})|#(\d{1,6})|([a-zA-Z]+));/g,
+		(match: string, hex: string | undefined, dec: string | undefined, named: string | undefined) => {
+			if (hex) {
+				try {
+					return String.fromCodePoint(parseInt(hex, 16));
+				} catch {
+					return match; // Invalid code point, leave as-is
+				}
 			}
-		}
-		if (dec) {
-			try {
-				return String.fromCodePoint(parseInt(dec, 10));
-			} catch {
-				return match; // Invalid code point, leave as-is
+			if (dec) {
+				try {
+					return String.fromCodePoint(parseInt(dec, 10));
+				} catch {
+					return match; // Invalid code point, leave as-is
+				}
 			}
+			if (named) {
+				const key = `&${named};`;
+				return NAMED_ENTITIES[key] ?? match;
+			}
+			return match;
 		}
-		if (named) {
-			const key = `&${named};`;
-			return NAMED_ENTITIES[key] ?? match;
-		}
-		return match;
-	});
+	);
 }
 
 /**

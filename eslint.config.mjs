@@ -157,6 +157,20 @@ export default defineConfig([
 		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
 	},
 	{
+		// #1166 (slice 1): the `@typescript-eslint/no-unsafe-*` family is cleared for
+		// these directories, so enforce it here to prevent regression. The five global
+		// entries in SOFTENED_TS_RULES stay 'off' until the final slice flips them all
+		// at once; each subsequent slice adds its directories to this list.
+		files: ['src/utils/**/*.ts', 'src/mcp/**/*.ts'],
+		rules: {
+			'@typescript-eslint/no-unsafe-argument': 'error',
+			'@typescript-eslint/no-unsafe-assignment': 'error',
+			'@typescript-eslint/no-unsafe-call': 'error',
+			'@typescript-eslint/no-unsafe-member-access': 'error',
+			'@typescript-eslint/no-unsafe-return': 'error',
+		},
+	},
+	{
 		files: ['test/**/*.ts'],
 		languageOptions: {
 			parser: tsparser,
