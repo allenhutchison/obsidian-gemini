@@ -18,6 +18,19 @@ interface ToolResultEntry {
 }
 
 /**
+ * Read a string property from a tool's per-tool `data` payload, which is a
+ * genuine dynamic boundary (`ToolResult.data` is `any`). Returns the value only
+ * when the key is present and holds a string, otherwise `undefined`.
+ */
+function readStringProp(data: unknown, key: string): string | undefined {
+	if (data && typeof data === 'object' && key in data) {
+		const value = (data as Record<string, unknown>)[key];
+		return typeof value === 'string' ? value : undefined;
+	}
+	return undefined;
+}
+
+/**
  * Extract accessed file paths from a batch of tool results.
  * Returns paths in encounter order (duplicates may remain); deduplication
  * occurs in agent-view-tools.ts when paths are added to the session Set.
@@ -30,10 +43,13 @@ export function extractAccessedPaths(toolResults: readonly ToolResultEntry[]): s
 		if (!tr.result.success || !TRACKED_TOOLS.has(tr.toolName)) continue;
 
 		if (tr.toolName === 'move_file') {
-			if (tr.result.data?.sourcePath) paths.push(tr.result.data.sourcePath);
-			if (tr.result.data?.targetPath) paths.push(tr.result.data.targetPath);
+			const sourcePath = readStringProp(tr.result.data, 'sourcePath');
+			const targetPath = readStringProp(tr.result.data, 'targetPath');
+			if (sourcePath) paths.push(sourcePath);
+			if (targetPath) paths.push(targetPath);
 		} else {
-			if (tr.result.data?.path) paths.push(tr.result.data.path);
+			const path = readStringProp(tr.result.data, 'path');
+			if (path) paths.push(path);
 		}
 	}
 

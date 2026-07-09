@@ -64,13 +64,18 @@ export class MCPToolWrapper implements Tool {
 			// Convert MCP CallToolResult to plugin ToolResult
 			const textParts: string[] = [];
 			if (Array.isArray(result.content)) {
-				for (const content of result.content) {
-					if (content.type === 'text' && 'text' in content) {
-						textParts.push(String(content.text));
+				for (const rawContent of result.content as unknown[]) {
+					// MCP content blocks are external JSON; narrow each to a record and
+					// read its fields by shape (the SDK types the array loosely).
+					const content = asRecord(rawContent);
+					if (content.type === 'text' && typeof content.text === 'string') {
+						textParts.push(content.text);
 					} else if (content.type === 'image' && 'mimeType' in content) {
-						textParts.push(`[Image: ${content.mimeType || 'image'}]`);
+						const mimeType = content.mimeType;
+						textParts.push(`[Image: ${typeof mimeType === 'string' && mimeType ? mimeType : 'image'}]`);
 					} else if (content.type === 'resource' && 'uri' in content) {
-						textParts.push(`[Resource: ${content.uri || 'unknown'}]`);
+						const uri = content.uri;
+						textParts.push(`[Resource: ${typeof uri === 'string' && uri ? uri : 'unknown'}]`);
 					}
 				}
 			}
