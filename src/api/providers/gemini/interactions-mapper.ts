@@ -18,6 +18,7 @@
 import type { Content } from '@google/genai';
 import type { ModelResponse, ToolCall, ToolDefinition } from '../../interfaces/model-api';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
+import { asRecord } from '../../../utils/error-utils';
 
 /** A typed step in an Interactions `input` array or response `steps` array. */
 export type InteractionStep = Record<string, unknown>;
@@ -399,7 +400,7 @@ export class InteractionStreamAccumulator {
 		let args: Record<string, unknown> = pending.seedArgs ?? {};
 		if (pending.argsBuffer) {
 			try {
-				args = JSON.parse(pending.argsBuffer);
+				args = asRecord(JSON.parse(pending.argsBuffer));
 			} catch {
 				// Keep the seed args (or empty) if the streamed fragments aren't valid JSON.
 			}
