@@ -1,6 +1,7 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { ensureFolderExists } from '../utils/file-utils';
+import { asRecord } from '../utils/error-utils';
 import { BundledSkillRegistry } from './bundled-skills';
 
 /**
@@ -160,27 +161,37 @@ export class SkillManager {
 	 */
 	private async parseSkillMetadata(file: TFile, dirName: string): Promise<SkillMetadata | null> {
 		const cache = this.plugin.app.metadataCache.getFileCache(file);
-		const frontmatter = cache?.frontmatter;
+		const frontmatter = asRecord(cache?.frontmatter);
 
-		if (!frontmatter || !frontmatter.name || !frontmatter.description) {
+		const name = frontmatter.name;
+		const description = frontmatter.description;
+		if (typeof name !== 'string' || !name || typeof description !== 'string' || !description) {
 			this.plugin.logger.warn(`Skill at ${file.path} missing required frontmatter (name, description)`);
 			return null;
 		}
 
 		// Validate that frontmatter name matches directory name
 		// Always use dirName as the canonical name to ensure loadSkill() can resolve it
-		if (frontmatter.name !== dirName) {
+		if (name !== dirName) {
 			this.plugin.logger.warn(
-				`Skill name "${frontmatter.name}" does not match directory name "${dirName}" at ${file.path}. Using directory name.`
+				`Skill name "${name}" does not match directory name "${dirName}" at ${file.path}. Using directory name.`
 			);
 		}
 
+		const asOptionalString = (value: unknown): string | undefined =>
+			typeof value === 'string' && value ? value : undefined;
+		const asStringRecord = (value: unknown): Record<string, string> | undefined => {
+			const record = asRecord(value);
+			const entries = Object.entries(record).filter(([, v]) => typeof v === 'string') as [string, string][];
+			return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+		};
+
 		return {
 			name: dirName,
-			description: frontmatter.description,
-			license: frontmatter.license || undefined,
-			compatibility: frontmatter.compatibility || undefined,
-			metadata: frontmatter.metadata || undefined,
+			description,
+			license: asOptionalString(frontmatter.license),
+			compatibility: asOptionalString(frontmatter.compatibility),
+			metadata: asStringRecord(frontmatter.metadata),
 			path: file.parent?.path || '',
 		};
 	}
@@ -383,7 +394,7 @@ export class SkillManager {
 		// Create SKILL.md with empty frontmatter block, then use processFrontMatter for safe YAML
 		const skillMdPath = normalizePath(`${skillDir}/${SKILL_MD_FILENAME}`);
 		const file = await this.plugin.app.vault.create(skillMdPath, `---\n---\n\n${content}`);
-		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 			frontmatter.name = name;
 			frontmatter.description = description;
 		});
@@ -438,7 +449,7 @@ export class SkillManager {
 
 		// Update description in frontmatter if provided
 		if (description !== undefined) {
-			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 				frontmatter.name ??= name;
 				frontmatter.description = description;
 			});

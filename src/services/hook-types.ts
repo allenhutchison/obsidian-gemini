@@ -166,5 +166,5 @@ export type HookUpdateParams = Partial<Omit<HookCreateParams, 'slug'>>;
 
 /** Substitute {{var}} placeholders in `template` from `vars`. */
 export function renderPrompt(template: string, vars: Record<string, string>): string {
-	return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, name) => vars[name] ?? '');
+	return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, name: string) => vars[name] ?? '');
 }

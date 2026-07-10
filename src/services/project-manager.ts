@@ -165,7 +165,7 @@ Add your project instructions here. This text will be injected into the agent's 
 			// Normalize tags to array (handle string, array, or missing)
 			let tags: string[] = [];
 			if (Array.isArray(frontmatter.tags)) {
-				tags = frontmatter.tags;
+				tags = frontmatter.tags.filter((t): t is string => typeof t === 'string');
 			} else if (typeof frontmatter.tags === 'string') {
 				tags = [frontmatter.tags];
 			}
@@ -188,7 +188,7 @@ Add your project instructions here. This text will be injected into the agent's 
 			// Normalize tags to array (handle string or array)
 			let tags: string[] = [];
 			if (Array.isArray(frontmatter.tags)) {
-				tags = frontmatter.tags;
+				tags = frontmatter.tags.filter((t): t is string => typeof t === 'string');
 			} else if (typeof frontmatter.tags === 'string') {
 				tags = [frontmatter.tags];
 			}

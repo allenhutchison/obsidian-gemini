@@ -199,7 +199,8 @@ export class HookManager {
 
 	/** Returns a copy of the persisted state map. */
 	getStateSnapshot(): HooksState {
-		return JSON.parse(JSON.stringify(this.state));
+		// Deep clone via serialization round-trip; the state is JSON-serializable.
+		return JSON.parse(JSON.stringify(this.state)) as HooksState;
 	}
 
 	/**

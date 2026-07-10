@@ -146,7 +146,8 @@ export class ModelListProvider {
 			throw new Error(`HTTP ${response.status}`);
 		}
 
-		const data: ModelListJson = response.json;
+		// requestUrl's `.json` is typed `any`; assert the schema here, then validate below.
+		const data = response.json as ModelListJson;
 
 		// Validate schema
 		if (typeof data.version !== 'number' || !Array.isArray(data.models) || data.models.length === 0) {

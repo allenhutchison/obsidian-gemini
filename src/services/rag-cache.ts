@@ -2,7 +2,7 @@ import { TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { CACHE_VERSION, CACHE_SAVE_INTERVAL } from './rag-types';
 import type { RagIndexCache } from './rag-types';
-import { getRawErrorMessage } from '../utils/error-utils';
+import { asRecord, getRawErrorMessage } from '../utils/error-utils';
 
 /**
  * Manages the local cache of indexed files for the RAG indexing service.
@@ -64,21 +64,25 @@ export class RagCache {
 			}
 
 			if (content) {
-				const parsed = JSON.parse(content);
+				const parsed = asRecord(JSON.parse(content));
+				const version = parsed.version;
 
 				// Validate cache version - reset if mismatched
-				if (parsed?.version !== CACHE_VERSION) {
+				if (version !== CACHE_VERSION) {
 					this.plugin.logger.warn(
-						`RAG Indexing: Cache version mismatch (got ${parsed?.version}, expected ${CACHE_VERSION}), resetting cache`
+						`RAG Indexing: Cache version mismatch (got ${
+							typeof version === 'number' ? version : 'unknown'
+						}, expected ${CACHE_VERSION}), resetting cache`
 					);
 					this._cache = {
 						version: CACHE_VERSION,
-						storeName: parsed?.storeName || '',
+						storeName: typeof parsed.storeName === 'string' ? parsed.storeName : '',
 						lastSync: 0,
 						files: {},
 					};
 				} else {
-					this._cache = parsed;
+					// Version matched the expected shape — treat as a validated RagIndexCache.
+					this._cache = parsed as unknown as RagIndexCache;
 				}
 
 				// Count indexed files
