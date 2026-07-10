@@ -41,7 +41,7 @@ import { BackgroundTaskManager } from './services/background-task-manager';
 import { BackgroundStatusBar } from './services/background-status-bar';
 import { ScheduledTaskManager } from './services/scheduled-task-manager';
 import { HookManager } from './services/hook-manager';
-import { getRawErrorMessage } from './utils/error-utils';
+import { asRecord, getRawErrorMessage } from './utils/error-utils';
 import { t } from './i18n';
 
 // Settings interfaces live in a leaf module so the rest of the codebase can
@@ -387,7 +387,8 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 	}
 
 	async loadSettings() {
-		const data = await this.loadData();
+		const rawData: unknown = await this.loadData();
+		const data = asRecord(rawData);
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 
 		// One-time migration: split the Ollama model out of the shared chatModelName
@@ -399,11 +400,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		}
 
 		// One-time migration: move API key from data.json to secret storage
-		if (!this.settings.apiKeySecretName && data?.apiKey) {
-			this.app.secretStorage.setSecret(MIGRATION_SECRET_NAME, data.apiKey);
+		const legacyApiKey = data.apiKey;
+		if (!this.settings.apiKeySecretName && typeof legacyApiKey === 'string' && legacyApiKey) {
+			this.app.secretStorage.setSecret(MIGRATION_SECRET_NAME, legacyApiKey);
 			// Verify the secret was stored before deleting the original
 			const stored = this.app.secretStorage.getSecret(MIGRATION_SECRET_NAME);
-			if (stored === data.apiKey) {
+			if (stored === legacyApiKey) {
 				this.settings.apiKeySecretName = MIGRATION_SECRET_NAME;
 				delete (this.settings as { apiKey?: unknown }).apiKey;
 				await this.saveData(this.settings);
@@ -426,7 +428,7 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		}
 
 		// Migrate: remove deprecated modelDiscovery and modelDiscoveryCache
-		if (data?.modelDiscovery !== undefined || data?.modelDiscoveryCache !== undefined) {
+		if (data.modelDiscovery !== undefined || data.modelDiscoveryCache !== undefined) {
 			delete (this.settings as { modelDiscovery?: unknown }).modelDiscovery;
 			delete (this.settings as { modelDiscoveryCache?: unknown }).modelDiscoveryCache;
 			await this.saveData(this.settings);
@@ -438,16 +440,17 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 		// against DEFAULT_GEMINI_MODELS would use a stale list.
 
 		// Migrate legacy alwaysAllowReadWrite → toolPolicy
-		if (data?.alwaysAllowReadWrite !== undefined && !data?.toolPolicy) {
+		const legacyAllowReadWrite = data.alwaysAllowReadWrite;
+		if (legacyAllowReadWrite !== undefined && !data.toolPolicy) {
 			this.settings.toolPolicy = {
-				activePreset: data.alwaysAllowReadWrite ? PolicyPreset.EDIT_MODE : PolicyPreset.CAUTIOUS,
+				activePreset: legacyAllowReadWrite ? PolicyPreset.EDIT_MODE : PolicyPreset.CAUTIOUS,
 				toolPermissions: {},
 			};
 			// Clear the legacy setting
 			delete (this.settings as { alwaysAllowReadWrite?: unknown }).alwaysAllowReadWrite;
 			await this.saveData(this.settings);
 			this.logger?.log(
-				`Migrated alwaysAllowReadWrite=${data.alwaysAllowReadWrite} → toolPolicy.activePreset=${this.settings.toolPolicy.activePreset}`
+				`Migrated alwaysAllowReadWrite=${legacyAllowReadWrite ? 'true' : 'false'} → toolPolicy.activePreset=${this.settings.toolPolicy.activePreset}`
 			);
 		}
 	}
