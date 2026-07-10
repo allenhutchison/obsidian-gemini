@@ -2,7 +2,7 @@ import { WriteFileTool } from '../../../src/tools/vault';
 import { ToolExecutionContext } from '../../../src/tools/types';
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
-vi.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils/mime', () => ({
 	EXTENSION_TO_MIME: {
 		'.md': 'text/markdown',
 		'.txt': 'text/plain',

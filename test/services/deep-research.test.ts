@@ -18,7 +18,7 @@ const mockPoll = vi.fn();
 const mockCancel = vi.fn();
 const mockGenerateMarkdown = vi.fn();
 
-vi.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils/research', () => ({
 	ResearchManager: vi.fn().mockImplementation(function () {
 		return {
 			startResearch: mockStartResearch,

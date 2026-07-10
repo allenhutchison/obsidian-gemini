@@ -44,7 +44,7 @@ vi.mock('@google/genai', () => ({
 }));
 
 // Mock FileUploader
-vi.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils/file-search', () => ({
 	FileUploader: vi.fn().mockImplementation(function () {
 		return {
 			uploadWithAdapter: vi.fn().mockResolvedValue(undefined),

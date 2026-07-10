@@ -9,7 +9,7 @@ import {
 } from '../../src/utils/file-classification';
 
 // Mock the gemini-utils module
-vi.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils/mime', () => ({
 	EXTENSION_TO_MIME: {
 		'.md': 'text/markdown',
 		'.txt': 'text/plain',

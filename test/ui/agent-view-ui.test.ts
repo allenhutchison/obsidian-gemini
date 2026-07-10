@@ -18,10 +18,12 @@ vi.mock('../../src/utils/dom-context');
 vi.mock('../../src/utils/file-utils');
 
 // Mock external ESM dependencies
-vi.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils/research', () => ({
 	ResearchManager: class {},
 	ReportGenerator: class {},
 	Interaction: class {},
+}));
+vi.mock('@allenhutchison/gemini-utils/mime', () => ({
 	EXTENSION_TO_MIME: {
 		'.md': 'text/markdown',
 		'.txt': 'text/plain',
