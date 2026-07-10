@@ -12,6 +12,17 @@ import type { ObsidianGemini } from '../types/plugin';
 import { sanitizeFileName } from '../utils/file-utils';
 import { formatLocalDate } from '../utils/format-utils';
 import { PolicyPreset, FeatureToolPolicy, parseToolPolicyFrontmatter, clonePolicy } from '../types/tool-policy';
+import { asRecord } from '../utils/error-utils';
+
+/** Read a frontmatter field as a non-empty string, or `undefined`. */
+function asFrontmatterString(value: unknown): string | undefined {
+	return typeof value === 'string' && value !== '' ? value : undefined;
+}
+
+/** Build a Date from a frontmatter string/number, falling back to `fallbackMs`. */
+function frontmatterDate(value: unknown, fallbackMs: number): Date {
+	return typeof value === 'string' || typeof value === 'number' ? new Date(value) : new Date(fallbackMs);
+}
 
 /**
  * Map a legacy `enabled_tools` array (category-level allowlist from the
@@ -207,16 +218,16 @@ export class SessionManager {
 		const results: SessionMetadata[] = [];
 		for (const file of sessionFiles) {
 			try {
-				const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+				const frontmatter = asRecord(this.plugin.app.metadataCache.getFileCache(file)?.frontmatter);
 				results.push({
-					id: frontmatter?.session_id || file.basename,
-					title: frontmatter?.title || file.basename,
-					created: frontmatter?.created ? new Date(frontmatter.created) : new Date(file.stat.ctime),
+					id: asFrontmatterString(frontmatter.session_id) ?? file.basename,
+					title: asFrontmatterString(frontmatter.title) ?? file.basename,
+					created: frontmatterDate(frontmatter.created, file.stat.ctime),
 					lastActive: new Date(file.stat.mtime),
 					historyPath: file.path,
-					projectRef: this.extractRawRef(frontmatter?.project),
-					accessedFileRefs: this.extractRawRefs(frontmatter?.accessed_files),
-					contextFileRefs: this.extractRawRefs(frontmatter?.context_files),
+					projectRef: this.extractRawRef(frontmatter.project),
+					accessedFileRefs: this.extractRawRefs(frontmatter.accessed_files),
+					contextFileRefs: this.extractRawRefs(frontmatter.context_files),
 				});
 			} catch (error) {
 				this.plugin.logger.warn(`Failed to read session metadata from ${file.path}:`, error);
@@ -358,23 +369,24 @@ export class SessionManager {
 	 * Load session from a history file
 	 */
 	private async loadSessionFromFile(file: TFile): Promise<ChatSession> {
-		const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+		const frontmatter = asRecord(this.plugin.app.metadataCache.getFileCache(file)?.frontmatter);
 
 		// Determine session type based on folder location
 		const isAgentSession = file.path.startsWith(this.getAgentSessionsFolderPath());
 
 		const session: ChatSession = {
-			id: frontmatter?.session_id || this.generateSessionId(),
+			id: asFrontmatterString(frontmatter.session_id) ?? this.generateSessionId(),
 			type: isAgentSession ? SessionType.AGENT_SESSION : SessionType.NOTE_CHAT,
-			title: frontmatter?.title || file.basename,
+			title: asFrontmatterString(frontmatter.title) ?? file.basename,
 			context: this.parseContextFromFrontmatter(frontmatter),
 			modelConfig: this.parseModelConfigFromFrontmatter(frontmatter),
-			created: frontmatter?.created ? new Date(frontmatter.created) : new Date(file.stat.ctime),
+			created: frontmatterDate(frontmatter.created, file.stat.ctime),
 			lastActive: new Date(file.stat.mtime),
 			historyPath: file.path,
-			sourceNotePath: frontmatter?.source_note_path,
+			sourceNotePath: asFrontmatterString(frontmatter.source_note_path),
 			projectPath: this.parseProjectPath(frontmatter),
-			metadata: frontmatter?.metadata,
+			// Persisted metadata is a loose record ({ autoLabeled?, [key]: unknown }).
+			metadata: frontmatter.metadata as ChatSession['metadata'],
 		};
 
 		// Restore accessed_files Set from frontmatter wikilinks
