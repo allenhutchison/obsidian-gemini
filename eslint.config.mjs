@@ -157,7 +157,7 @@ export default defineConfig([
 		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
 	},
 	{
-		// #1166 (slices 1–5): the `@typescript-eslint/no-unsafe-*` family is cleared for
+		// #1166 (slices 1–6): the `@typescript-eslint/no-unsafe-*` family is cleared for
 		// these directories, so enforce it here to prevent regression. The five global
 		// entries in SOFTENED_TS_RULES stay 'off' until the final slice flips them all
 		// at once; each subsequent slice adds its directories to this list.
@@ -168,6 +168,7 @@ export default defineConfig([
 			'src/services/**/*.ts',
 			'src/main.ts',
 			'src/agent/**/*.ts',
+			'src/prompts/**/*.ts',
 		],
 		rules: {
 			'@typescript-eslint/no-unsafe-argument': 'error',

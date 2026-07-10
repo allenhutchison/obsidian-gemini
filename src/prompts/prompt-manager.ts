@@ -3,6 +3,7 @@ import type { ObsidianGemini } from '../types/plugin';
 import { CustomPrompt, PromptInfo } from './types';
 import { BundledPromptRegistry } from './bundled-prompts';
 import { t } from '../i18n';
+import { asRecord } from '../utils/error-utils';
 
 export class PromptManager {
 	constructor(
@@ -23,7 +24,7 @@ export class PromptManager {
 
 			// Use Obsidian's metadata cache to get frontmatter
 			const cache = this.plugin.app.metadataCache.getFileCache(file);
-			const frontmatter = cache?.frontmatter || {};
+			const frontmatter = asRecord(cache?.frontmatter);
 
 			// Get content without frontmatter using frontmatterPosition
 			const fullContent = await this.vault.read(file);
@@ -38,21 +39,25 @@ export class PromptManager {
 			}
 
 			// Parse tags - normalize to array of lowercase strings
-			let rawTags = frontmatter.tags;
+			const rawTags: unknown = frontmatter.tags;
+			let tagList: unknown[];
 			if (typeof rawTags === 'string') {
-				rawTags = [rawTags];
-			} else if (!Array.isArray(rawTags)) {
-				rawTags = [];
+				tagList = [rawTags];
+			} else if (Array.isArray(rawTags)) {
+				tagList = rawTags;
+			} else {
+				tagList = [];
 			}
-			const tags = rawTags
-				.filter((t: unknown): t is string => typeof t === 'string')
-				.map((t: string) => t.toLowerCase());
+			const tags = tagList.filter((t): t is string => typeof t === 'string').map((t) => t.toLowerCase());
 
+			const name = frontmatter.name;
+			const description = frontmatter.description;
+			const version = frontmatter.version;
 			return {
-				name: frontmatter.name || 'Unnamed Prompt',
-				description: frontmatter.description || '',
-				version: frontmatter.version || 1,
-				overrideSystemPrompt: frontmatter.override_system_prompt || false,
+				name: typeof name === 'string' && name ? name : 'Unnamed Prompt',
+				description: typeof description === 'string' ? description : '',
+				version: typeof version === 'number' ? version : 1,
+				overrideSystemPrompt: frontmatter.override_system_prompt === true,
 				tags: tags,
 				content: contentWithoutFrontmatter.trim(),
 			};
