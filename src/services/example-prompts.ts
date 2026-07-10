@@ -75,7 +75,7 @@ export class ExamplePromptsManager {
 			}
 
 			const content = await this.plugin.app.vault.read(file);
-			const prompts = JSON.parse(content);
+			const prompts: unknown = JSON.parse(content);
 
 			if (!this.isValidPromptsArray(prompts)) {
 				this.plugin.logger.warn('Invalid example prompts structure in file');
