@@ -23,7 +23,7 @@ adaptations."
 ## How drift is surfaced
 
 The **release process** runs a **report-only** bundled-skill drift check as a release-prep step
-(see the [release guidelines](../../.claude/guidelines/release.md)). It lives in the release flow
+(see the [release guidelines](https://github.com/allenhutchison/obsidian-gemini/blob/master/.claude/guidelines/release.md)). It lives in the release flow
 rather than the unattended `daily-update` runner because it needs `gh` access to the
 `kepano/obsidian-skills` repo, which the cloud daily runner doesn't have. For each adapted skill it
 lists the upstream commits that touched that file since the pinned SHA and, if any exist, surfaces
