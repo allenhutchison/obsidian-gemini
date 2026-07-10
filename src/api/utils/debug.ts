@@ -14,8 +14,10 @@ export function stripFileContextNode(node: unknown, isRoot = true): unknown {
 	// If it looks like a FileContextNode
 	if ('path' in record && 'content' in record && 'wikilink' in record && 'links' in record) {
 		// Support both Map and plain object for links
-		const linksObj =
-			record.links instanceof Map ? Object.fromEntries(record.links) : (record.links as Record<string, unknown>);
+		const linksObj: Record<string, unknown> =
+			record.links instanceof Map
+				? Object.fromEntries(record.links as Map<string, unknown>)
+				: (record.links as Record<string, unknown>);
 		const newLinks: Record<string, unknown> = {};
 		for (const key in linksObj) {
 			if (Object.prototype.hasOwnProperty.call(linksObj, key)) {

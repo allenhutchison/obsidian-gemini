@@ -90,7 +90,7 @@ class UpdateFrontmatterTool implements Tool {
 			}
 
 			// Use Obsidian's native API for safe frontmatter updates
-			await plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			await plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 				frontmatter[key] = parsedValue;
 			});
 

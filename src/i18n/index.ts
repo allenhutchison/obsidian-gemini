@@ -77,5 +77,5 @@ export function t(key: TranslationKey, vars?: Record<string, string | number>): 
 	if (!vars) {
 		return msg;
 	}
-	return msg.replace(/\{(\w+)\}/g, (match, name) => (name in vars ? String(vars[name]) : match));
+	return msg.replace(/\{(\w+)\}/g, (match, name: string) => (name in vars ? String(vars[name]) : match));
 }

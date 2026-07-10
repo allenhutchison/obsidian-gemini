@@ -61,7 +61,7 @@ export class GeminiSummary {
 		};
 		const summary = await modelApi.generateModelResponse(request);
 
-		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter) => {
+		await this.plugin.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
 			frontmatter[this.plugin.settings.summaryFrontmatterKey] = summary.markdown;
 		});
 

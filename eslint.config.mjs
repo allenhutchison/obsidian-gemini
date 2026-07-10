@@ -4,19 +4,21 @@ import obsidianmd from 'eslint-plugin-obsidianmd';
 
 // `eslint-plugin-obsidianmd@0.3.0`'s recommended preset bundles a large set of
 // strict `@typescript-eslint/*` rules (no-explicit-any, no-unsafe-*, etc.) in
-// addition to its Obsidian-specific rules. We only want the obsidianmd/* rules
-// enforced; the bundled TS-strictness is being tightened rule-by-rule as the
-// remaining violations are cleared (the `'error'` entries below are already
-// enforced; the `'off'` entries are tracked in sibling #1032 issues).
+// addition to its Obsidian-specific rules. These were tightened rule-by-rule as
+// the violations were cleared (tracked under epic #1032); every entry below is now
+// enforced across src/. The `test/**` override relaxes a few back to 'off' for
+// mock/fixture plumbing (see that block).
 const SOFTENED_TS_RULES = {
 	// #1036: cleared — enforced across src/ (test/ overrides back to 'off' below;
 	// mock plumbing there is tracked separately, not part of #1036's src scope).
 	'@typescript-eslint/no-explicit-any': 'error',
-	'@typescript-eslint/no-unsafe-argument': 'off',
-	'@typescript-eslint/no-unsafe-assignment': 'off',
-	'@typescript-eslint/no-unsafe-call': 'off',
-	'@typescript-eslint/no-unsafe-member-access': 'off',
-	'@typescript-eslint/no-unsafe-return': 'off',
+	// #1166: cleared across src/ directory-by-directory (slices 1–7); now enforced
+	// globally (test/ overrides back to 'off' below).
+	'@typescript-eslint/no-unsafe-argument': 'error',
+	'@typescript-eslint/no-unsafe-assignment': 'error',
+	'@typescript-eslint/no-unsafe-call': 'error',
+	'@typescript-eslint/no-unsafe-member-access': 'error',
+	'@typescript-eslint/no-unsafe-return': 'error',
 	// #1041: cleared — enforced.
 	'@typescript-eslint/no-unsafe-enum-comparison': 'error',
 	// #1039: cleared — enforced.
@@ -157,28 +159,6 @@ export default defineConfig([
 		rules: { ...SOFTENED_TS_RULES, ...PERVASIVE_OBSIDIANMD_RULES_TODO },
 	},
 	{
-		// #1166 (slices 1–6): the `@typescript-eslint/no-unsafe-*` family is cleared for
-		// these directories, so enforce it here to prevent regression. The five global
-		// entries in SOFTENED_TS_RULES stay 'off' until the final slice flips them all
-		// at once; each subsequent slice adds its directories to this list.
-		files: [
-			'src/utils/**/*.ts',
-			'src/mcp/**/*.ts',
-			'src/ui/**/*.ts',
-			'src/services/**/*.ts',
-			'src/main.ts',
-			'src/agent/**/*.ts',
-			'src/prompts/**/*.ts',
-		],
-		rules: {
-			'@typescript-eslint/no-unsafe-argument': 'error',
-			'@typescript-eslint/no-unsafe-assignment': 'error',
-			'@typescript-eslint/no-unsafe-call': 'error',
-			'@typescript-eslint/no-unsafe-member-access': 'error',
-			'@typescript-eslint/no-unsafe-return': 'error',
-		},
-	},
-	{
 		files: ['test/**/*.ts'],
 		languageOptions: {
 			parser: tsparser,
@@ -191,6 +171,13 @@ export default defineConfig([
 			// `any` is pervasive in test mocks/fixtures (~1.8k occurrences) and outside
 			// #1036's src-only scope — keep it off here.
 			'@typescript-eslint/no-explicit-any': 'off',
+			// The `no-unsafe-*` family (enforced across src/ by #1166) stays off for
+			// tests, where mock/fixture plumbing flows untyped values by design.
+			'@typescript-eslint/no-unsafe-argument': 'off',
+			'@typescript-eslint/no-unsafe-assignment': 'off',
+			'@typescript-eslint/no-unsafe-call': 'off',
+			'@typescript-eslint/no-unsafe-member-access': 'off',
+			'@typescript-eslint/no-unsafe-return': 'off',
 			// vitest's expect(mock.method).toHaveBeenCalled() pattern trips this rule's
 			// method-reference check (~56 false positives) — keep it off for tests.
 			'@typescript-eslint/unbound-method': 'off',
