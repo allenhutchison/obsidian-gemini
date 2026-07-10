@@ -8,8 +8,8 @@ verbatim copies** — upstream changes are hand-merged into our framing, never b
 re-pulled.
 
 This file pins the upstream commit each adapted skill was last reconciled against, so the
-`daily-update` skill's [bundled skill drift check](.agents/skills/daily-update/SKILL.md)
-can flag upstream changes to those files since that point. See
+release process's [bundled-skill drift check](.claude/guidelines/release.md) can flag upstream
+changes to those files since that point. See
 [docs/contributing/bundled-skills.md](docs/contributing/bundled-skills.md) for the full
 reconcile workflow.
 

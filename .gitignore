@@ -25,11 +25,16 @@ data.json
 coverage/
 
 
-# Agent tool configs (keep skills symlinks, ignore everything else)
+# Agent tool configs (keep skills symlinks + maintainerd config, ignore everything else)
 .gemini/*
 !.gemini/skills/
 .claude/*
 !.claude/skills/
+# Maintainerd repo config — must be tracked so cloud sessions (fresh clone) and the
+# plugin marketplace declaration reach the toolkit. See .claude/maintainerd.json.
+!.claude/maintainerd.json
+!.claude/settings.json
+!.claude/guidelines/
 
 # Obsidian debug logs
 obsidian.md-*.log
