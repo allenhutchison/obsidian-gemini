@@ -1,11 +1,9 @@
 import { TFile, Vault, MetadataCache } from 'obsidian';
-import {
-	FileSystemAdapter,
-	FileInfo,
-	FileContent,
-	getMimeTypeWithFallback,
-	isExtensionSupportedWithFallback,
-} from '@allenhutchison/gemini-utils';
+// Types are erased at compile time, so importing them from the barrel is free.
+import type { FileSystemAdapter, FileInfo, FileContent } from '@allenhutchison/gemini-utils';
+// The MIME helpers are runtime values — import them from the built-in-free
+// `/mime` subpath so this module never pulls Node built-ins at load (#1154).
+import { getMimeTypeWithFallback, isExtensionSupportedWithFallback } from '@allenhutchison/gemini-utils/mime';
 import { isPathInFolder } from '../utils/file-utils';
 
 /**

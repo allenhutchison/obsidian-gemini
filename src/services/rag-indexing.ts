@@ -1,6 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
 import { TFile, Notice } from 'obsidian';
-import { FileUploader } from '@allenhutchison/gemini-utils';
+// FileUploader lives in the `/file-search` group, which pulls Node built-ins
+// (fs/path/crypto). Import the type only, and lazy-load the implementation at
+// first use so those built-ins never evaluate at plugin load (#1154).
+import type { FileUploader } from '@allenhutchison/gemini-utils';
 import type { ObsidianGemini } from '../types/plugin';
 import { ObsidianVaultAdapter } from './obsidian-file-adapter';
 import { getErrorMessage } from '../utils/error-utils';
@@ -120,7 +123,10 @@ export class RagIndexingService {
 				logError: (msg, ...args) => this.plugin.logger.error(msg, ...args),
 			});
 
-			// Create file uploader with logger
+			// Create file uploader with logger. Lazy-load the desktop-only
+			// implementation so its fs/path/crypto requires never run at plugin
+			// load (they'd raise mobile-compat warning toasts — #1154).
+			const { FileUploader } = await import('@allenhutchison/gemini-utils/file-search');
 			this.fileUploader = new FileUploader(this.ai, {
 				debug: (msg, ...args) => this.plugin.logger.debug(msg, ...args),
 				error: (msg, ...args) => this.plugin.logger.error(msg, ...args),

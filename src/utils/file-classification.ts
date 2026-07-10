@@ -5,7 +5,10 @@
  * or UNSUPPORTED based on their extension.
  */
 
-import { EXTENSION_TO_MIME, TEXT_FALLBACK_EXTENSIONS } from '@allenhutchison/gemini-utils';
+// Import from the built-in-free `/mime` subpath (not the barrel) so this hot,
+// load-time module never pulls Node built-ins (fs/path/crypto) into a mobile
+// bundle. See #1154 and gemini-utils 1.2.0 subpath exports.
+import { EXTENSION_TO_MIME, TEXT_FALLBACK_EXTENSIONS } from '@allenhutchison/gemini-utils/mime';
 
 /** Maximum size for inline data sent to Gemini (20 MB) */
 export const GEMINI_INLINE_DATA_LIMIT = 20 * 1024 * 1024;

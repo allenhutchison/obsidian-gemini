@@ -77,6 +77,8 @@ Gemini Scribe runs on **both Desktop and Mobile** (iOS/Android via Obsidian Mobi
 
 Do not use Node.js-specific APIs, browser-only APIs, or desktop-only Electron APIs without checking platform availability first. Test on mobile if your change touches UI or file system operations.
 
+**Never let a Node built-in (`fs`, `path`, `crypto`, `url`, …) evaluate at plugin load.** Even a value import of a module that _transitively_ requires a built-in makes Obsidian raise "attempted to load NodeJS package" warnings on every load (the plugin declares mobile support via `isDesktopOnly: false`). In particular, import `@allenhutchison/gemini-utils` helpers from its built-in-free subpaths (`/mime`, `/support-registry`) rather than the barrel, keep type-only imports as `import type`, and lazy-load desktop-only managers (`FileUploader`, etc.) via `await import('@allenhutchison/gemini-utils/file-search')` at first use so their `fs`/`crypto` requires never run at load. See [testing.md → Mobile Testing](testing.md#mobile-testing) for how to verify.
+
 ### 5. Use the Obsidian API
 
 This project follows an **Obsidian API First** principle. The `obsidian` package provides a rich set of utilities — use them instead of rolling your own:

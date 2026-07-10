@@ -2,7 +2,10 @@ import { TFile, normalizePath } from 'obsidian';
 import type { ObsidianGemini } from '../types/plugin';
 import { isPathInFolder } from '../utils/file-utils';
 import type { Interactions } from '@google/genai';
-import { ResearchManager, ReportGenerator, Interaction, InteractionOutput } from '@allenhutchison/gemini-utils';
+// The `/research` subpath is built-in-free (no fs/path/crypto), unlike the
+// barrel — import from it so this module stays mobile-safe at load (#1154).
+import { ResearchManager, ReportGenerator } from '@allenhutchison/gemini-utils/research';
+import type { Interaction, InteractionOutput } from '@allenhutchison/gemini-utils/research';
 import { proxyFetch } from '../utils/proxy-fetch';
 import { executeWithRetry, RetryConfig, DEFAULT_RETRY_CONFIG } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';

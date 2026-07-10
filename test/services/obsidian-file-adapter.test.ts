@@ -1,7 +1,7 @@
 import { TFile } from 'obsidian';
 
-// Mock gemini-utils
-vi.mock('@allenhutchison/gemini-utils', () => ({
+// Mock gemini-utils MIME helpers (imported from the built-in-free /mime subpath)
+vi.mock('@allenhutchison/gemini-utils/mime', () => ({
 	getMimeTypeWithFallback: vi.fn((filePath: string) => {
 		if (filePath.endsWith('.md')) return { mimeType: 'text/markdown' };
 		if (filePath.endsWith('.pdf')) return { mimeType: 'application/pdf' };
@@ -19,7 +19,7 @@ vi.mock('@allenhutchison/gemini-utils', () => ({
 
 // Import after mocks
 import { ObsidianVaultAdapter } from '../../src/services/obsidian-file-adapter';
-import { isExtensionSupportedWithFallback } from '@allenhutchison/gemini-utils';
+import { isExtensionSupportedWithFallback } from '@allenhutchison/gemini-utils/mime';
 
 // --- Helpers ---
 

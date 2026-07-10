@@ -15,7 +15,7 @@ const denyProvider: IConfirmationProvider = {
 };
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
-vi.mock('@allenhutchison/gemini-utils', () => ({
+vi.mock('@allenhutchison/gemini-utils/mime', () => ({
 	EXTENSION_TO_MIME: { '.md': 'text/markdown', '.txt': 'text/plain' },
 	TEXT_FALLBACK_EXTENSIONS: new Set(['.ts', '.js', '.json']),
 }));
