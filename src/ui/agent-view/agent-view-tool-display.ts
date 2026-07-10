@@ -4,6 +4,54 @@ import { ToolResult } from '../../tools/types';
 import { formatFileSize } from '../../utils/format-utils';
 import { t } from '../../i18n';
 
+/** Citation entry rendered for google_search / google_maps results. */
+interface SearchCitation {
+	title?: string;
+	url: string;
+	snippet?: string;
+}
+
+/** A search/maps tool result carrying a grounded answer plus citations. */
+interface CitationAnswerResult {
+	answer: string;
+	citations: SearchCitation[];
+}
+
+/** A generate_image tool result. */
+interface GeneratedImageResult {
+	path: string;
+	wikilink: string;
+	prompt?: string;
+}
+
+/** A file-content tool result (e.g. read_file). */
+interface FileContentResult {
+	content: string;
+	path: string;
+	size?: number;
+}
+
+/** Narrow an unknown value to a plain (non-null) object with string-keyed members. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
+}
+
+function isCitationAnswerResult(
+	value: Record<string, unknown>
+): value is Record<string, unknown> & CitationAnswerResult {
+	return typeof value.answer === 'string' && Array.isArray(value.citations);
+}
+
+function isGeneratedImageResult(
+	value: Record<string, unknown>
+): value is Record<string, unknown> & GeneratedImageResult {
+	return typeof value.path === 'string' && typeof value.wikilink === 'string';
+}
+
+function isFileContentResult(value: Record<string, unknown>): value is Record<string, unknown> & FileContentResult {
+	return typeof value.content === 'string' && typeof value.path === 'string';
+}
+
 // Shared tool icon mapping
 const TOOL_ICONS: Record<string, string> = {
 	read_file: 'file-text',
@@ -421,51 +469,51 @@ export class AgentViewToolDisplay {
 				});
 			} else if (result.data) {
 				const resultContent = resultSection.createDiv({ cls: 'gemini-agent-tool-result-content' });
+				const data: unknown = result.data;
 
-				if (typeof result.data === 'string') {
-					if (result.data.length > 500) {
+				if (typeof data === 'string') {
+					if (data.length > 500) {
 						const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
 						const code = codeBlock.createEl('code');
-						code.textContent = result.data.substring(0, 500) + '\n\n' + t('agent.tools.truncatedSuffix');
+						code.textContent = data.substring(0, 500) + '\n\n' + t('agent.tools.truncatedSuffix');
 
 						const expandBtn = resultContent.createEl('button', {
 							text: t('agent.tools.showFullContent'),
 							cls: 'gemini-agent-tool-expand-content',
 						});
 						expandBtn.addEventListener('click', () => {
-							code.textContent = result.data;
+							code.textContent = data;
 							expandBtn.remove();
 						});
 					} else {
-						resultContent
-							.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
-							.createEl('code', { text: result.data });
+						resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' }).createEl('code', { text: data });
 					}
-				} else if (Array.isArray(result.data)) {
-					if (result.data.length === 0) {
+				} else if (Array.isArray(data)) {
+					if (data.length === 0) {
 						resultContent.createEl('p', {
 							text: t('agent.tools.noResults'),
 							cls: 'gemini-agent-tool-empty-result',
 						});
 					} else {
 						const list = resultContent.createEl('ul', { cls: 'gemini-agent-tool-result-list' });
-						result.data.slice(0, 10).forEach((item: unknown) => {
+						data.slice(0, 10).forEach((item: unknown) => {
 							list.createEl('li', { text: String(item) });
 						});
-						if (result.data.length > 10) {
+						if (data.length > 10) {
 							resultContent.createEl('p', {
-								text: t('agent.tools.moreItems', { count: result.data.length - 10 }),
+								text: t('agent.tools.moreItems', { count: data.length - 10 }),
 								cls: 'gemini-agent-tool-more-items',
 							});
 						}
 					}
-				} else if (typeof result.data === 'object') {
+				} else if (isRecord(data)) {
 					this.plugin.logger.log('Tool result is object for:', toolName);
-					this.plugin.logger.log('Result data keys:', Object.keys(result.data));
+					this.plugin.logger.log('Result data keys:', Object.keys(data));
 
 					if (
-						result.data.answer &&
-						result.data.citations &&
+						isCitationAnswerResult(data) &&
+						data.answer &&
+						data.citations &&
 						(toolName === 'google_search' || toolName === 'google_maps')
 					) {
 						this.plugin.logger.log(`Handling ${toolName} result with citations`);
@@ -477,9 +525,9 @@ export class AgentViewToolDisplay {
 						let lastIndex = 0;
 						let match;
 
-						while ((match = linkRegex.exec(result.data.answer)) !== null) {
+						while ((match = linkRegex.exec(data.answer)) !== null) {
 							if (match.index > lastIndex) {
-								answerPara.appendText(result.data.answer.substring(lastIndex, match.index));
+								answerPara.appendText(data.answer.substring(lastIndex, match.index));
 							}
 							const link = answerPara.createEl('a', {
 								text: match[1],
@@ -488,17 +536,17 @@ export class AgentViewToolDisplay {
 							link.setAttribute('target', '_blank');
 							lastIndex = linkRegex.lastIndex;
 						}
-						if (lastIndex < result.data.answer.length) {
-							answerPara.appendText(result.data.answer.substring(lastIndex));
+						if (lastIndex < data.answer.length) {
+							answerPara.appendText(data.answer.substring(lastIndex));
 						}
 
-						if (result.data.citations.length > 0) {
+						if (data.citations.length > 0) {
 							const citationsDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-citations' });
 							citationsDiv.createEl('h5', { text: t('agent.tools.sourcesHeader') });
 							const citationsList = citationsDiv.createEl('ul', {
 								cls: 'gemini-agent-tool-citations-list',
 							});
-							for (const citation of result.data.citations) {
+							for (const citation of data.citations) {
 								const citationItem = citationsList.createEl('li');
 								const link = citationItem.createEl('a', {
 									text: citation.title || citation.url,
@@ -514,11 +562,11 @@ export class AgentViewToolDisplay {
 								}
 							}
 						}
-					} else if (result.data.path && result.data.wikilink && toolName === 'generate_image') {
+					} else if (isGeneratedImageResult(data) && data.path && data.wikilink && toolName === 'generate_image') {
 						const imageDiv = resultContent.createDiv({ cls: 'gemini-agent-tool-image-result' });
 						imageDiv.createEl('h5', { text: t('agent.tools.generatedImageHeader') });
 
-						const imageFile = this.plugin.app.vault.getAbstractFileByPath(result.data.path);
+						const imageFile = this.plugin.app.vault.getAbstractFileByPath(data.path);
 						if (imageFile instanceof TFile) {
 							const imgContainer = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-container' });
 							const img = imgContainer.createEl('img', { cls: 'gemini-agent-tool-image' });
@@ -536,7 +584,7 @@ export class AgentViewToolDisplay {
 
 							try {
 								img.src = this.plugin.app.vault.getResourcePath(imageFile);
-								img.alt = result.data.prompt || t('agent.tools.generatedImageAlt');
+								img.alt = data.prompt || t('agent.tools.generatedImageAlt');
 							} catch (error) {
 								this.plugin.logger.error('Failed to get resource path for image:', error);
 								img.onerror?.(new Event('error'));
@@ -544,11 +592,11 @@ export class AgentViewToolDisplay {
 
 							const imageInfo = imageDiv.createDiv({ cls: 'gemini-agent-tool-image-info' });
 							imageInfo.createEl('strong', { text: t('agent.tools.pathLabel') + ' ' });
-							imageInfo.createSpan({ text: result.data.path });
+							imageInfo.createSpan({ text: data.path });
 							imageInfo.createEl('br');
 							imageInfo.createEl('strong', { text: t('agent.tools.wikilinkLabel') + ' ' });
 							imageInfo.createEl('code', {
-								text: result.data.wikilink,
+								text: data.wikilink,
 								cls: 'gemini-agent-tool-wikilink',
 							});
 							const copyBtn = imageInfo.createEl('button', {
@@ -558,7 +606,7 @@ export class AgentViewToolDisplay {
 							copyBtn.addEventListener('click', () => {
 								// Fire-and-forget: clipboard write is a UI convenience; failures are logged, not fatal.
 								void navigator.clipboard
-									.writeText(result.data.wikilink)
+									.writeText(data.wikilink)
 									.then(() => {
 										copyBtn.textContent = t('agent.tools.copiedButton');
 										window.setTimeout(() => {
@@ -571,23 +619,23 @@ export class AgentViewToolDisplay {
 							});
 						} else {
 							imageDiv.createEl('p', {
-								text: t('agent.tools.imageSavedTo', { path: result.data.path }),
+								text: t('agent.tools.imageSavedTo', { path: data.path }),
 								cls: 'gemini-agent-tool-image-path',
 							});
 						}
-					} else if (result.data.content && result.data.path) {
+					} else if (isFileContentResult(data) && data.content && data.path) {
 						const fileInfo = resultContent.createDiv({ cls: 'gemini-agent-tool-file-info' });
 						fileInfo.createEl('strong', { text: t('agent.tools.fileLabel') + ' ' });
-						fileInfo.createSpan({ text: result.data.path });
+						fileInfo.createSpan({ text: data.path });
 
-						if (result.data.size) {
+						if (data.size) {
 							fileInfo.createSpan({
-								text: ` (${formatFileSize(result.data.size)})`,
+								text: ` (${formatFileSize(data.size)})`,
 								cls: 'gemini-agent-tool-file-size',
 							});
 						}
 
-						const content = result.data.content;
+						const content = data.content;
 						if (content.length > 500) {
 							const codeBlock = resultContent.createEl('pre', {
 								cls: 'gemini-agent-tool-code-result',
@@ -609,7 +657,7 @@ export class AgentViewToolDisplay {
 						}
 					} else {
 						const resultList = resultContent.createDiv({ cls: 'gemini-agent-tool-result-object' });
-						for (const [key, value] of Object.entries(result.data)) {
+						for (const [key, value] of Object.entries(data)) {
 							if (value === undefined || value === null) continue;
 							if (key === 'content' && typeof value === 'string' && value.length > 100) continue;
 

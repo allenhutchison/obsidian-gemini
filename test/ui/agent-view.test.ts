@@ -583,6 +583,10 @@ describe('AgentView UI Tests', () => {
 				el.createSpan = function (opts?: any) {
 					return this.createEl('span', opts);
 				};
+				el.appendText = function (text: string) {
+					this.appendChild(document.createTextNode(text));
+					return this;
+				};
 				el.toggleClass = function (cls: string, force: boolean) {
 					this.classList.toggle(cls, force);
 				};
@@ -656,6 +660,71 @@ describe('AgentView UI Tests', () => {
 
 			// Should contain the data
 			expect(resultContent?.textContent).toContain('File content here');
+		});
+
+		it('renders the answer + citations branch for google_search object results (#1166)', async () => {
+			await agentView.showToolExecution('google_search', { query: 'obsidian' }, 'exec-cite');
+
+			await agentView.showToolResult(
+				'google_search',
+				{
+					success: true,
+					data: {
+						answer: 'Obsidian is a note app.',
+						citations: [{ title: 'Obsidian', url: 'https://obsidian.md', snippet: 'A knowledge base.' }],
+					},
+				},
+				'exec-cite'
+			);
+
+			const chatContainer = (agentView as any).chatContainer as HTMLElement;
+			const answer = chatContainer.querySelector('.gemini-agent-tool-search-answer');
+			expect(answer).toBeTruthy();
+			expect(answer?.textContent).toContain('Obsidian is a note app.');
+
+			const citations = chatContainer.querySelector('.gemini-agent-tool-citations');
+			expect(citations?.textContent).toContain('Obsidian');
+			expect(citations?.textContent).toContain('A knowledge base.');
+		});
+
+		it('renders the file-info branch for object results carrying content + path (#1166)', async () => {
+			await agentView.showToolExecution('read_file', { path: 'note.md' }, 'exec-file');
+
+			await agentView.showToolResult(
+				'read_file',
+				{
+					success: true,
+					data: { path: 'note.md', content: 'hello world', size: 11 },
+				},
+				'exec-file'
+			);
+
+			const chatContainer = (agentView as any).chatContainer as HTMLElement;
+			const fileInfo = chatContainer.querySelector('.gemini-agent-tool-file-info');
+			expect(fileInfo?.textContent).toContain('note.md');
+
+			const resultContent = chatContainer.querySelector('.gemini-agent-tool-result-content');
+			expect(resultContent?.textContent).toContain('hello world');
+		});
+
+		it('falls back to the generic key/value branch for unrecognized object shapes (#1166)', async () => {
+			await agentView.showToolExecution('some_tool', {}, 'exec-generic');
+
+			await agentView.showToolResult(
+				'some_tool',
+				{
+					success: true,
+					data: { alpha: 'one', beta: 2 },
+				},
+				'exec-generic'
+			);
+
+			const chatContainer = (agentView as any).chatContainer as HTMLElement;
+			const generic = chatContainer.querySelector('.gemini-agent-tool-result-object');
+			expect(generic).toBeTruthy();
+			expect(generic?.textContent).toContain('alpha');
+			expect(generic?.textContent).toContain('one');
+			expect(generic?.textContent).toContain('beta');
 		});
 
 		it('should display success message when tool succeeds without data', async () => {
