@@ -60,15 +60,14 @@ export interface CollapsibleSectionOptions {
  * result to `new Setting(...)` without DOM side-effects. Returns `null` for a
  * real container, signalling the caller to proceed with normal rendering.
  *
- * The returned node is never inserted into a live view, so it isn't
- * cross-window-relevant — hence the scoped `document` use.
+ * The returned node is never inserted into a live view.
  */
 function createDetachedStubIfNeeded(containerEl: HTMLElement): HTMLElement | null {
 	if (typeof (containerEl as { appendChild?: unknown })?.appendChild === 'function') {
 		return null;
 	}
 	// eslint-disable-next-line obsidianmd/prefer-create-el -- jsdom unit tests exercise this path; Obsidian's createDiv global doesn't exist there
-	return typeof document !== 'undefined' ? document.createElement('div') : containerEl;
+	return typeof activeDocument !== 'undefined' ? activeDocument.createElement('div') : containerEl;
 }
 
 /**

@@ -520,7 +520,7 @@ export class AgentViewUI {
 											this.plugin.logger.debug(`[AgentViewUI] Failed to resolve obsidian URI file param: ${decoded}`);
 										}
 									}
-								} catch (_err) {
+								} catch {
 									this.plugin.logger.debug(`[AgentViewUI] Failed to parse obsidian URI: ${trimmed}`);
 								}
 								continue;
@@ -551,7 +551,7 @@ export class AgentViewUI {
 									} else {
 										this.plugin.logger.debug(`[AgentViewUI] Failed to resolve markdown link: ${path}`);
 									}
-								} catch (_err) {
+								} catch {
 									// Ignore decoding errors
 									this.plugin.logger.debug(`[AgentViewUI] Failed to decode markdown link path: ${mdMatch[2]}`);
 								}

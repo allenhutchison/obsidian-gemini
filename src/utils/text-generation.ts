@@ -30,7 +30,7 @@ export function generateToolDescription(
 	} catch (error) {
 		try {
 			plugin.logger.debug('Failed to generate tool description:', error);
-		} catch (_) {
+		} catch {
 			// Ignore secondary logger failures to ensure fallback is always returned
 		}
 		return fallback;
