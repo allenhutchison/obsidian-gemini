@@ -291,7 +291,7 @@ Precisely rewrite any portion of your text with AI assistance. This feature prov
 
 1.  **Toggle Completions:** Use the command palette (Ctrl/Cmd + P) and select "Gemini Scribe: Toggle completions". A notice will confirm whether completions are enabled or disabled.
 2.  **Write:** Begin typing in a Markdown file.
-3.  **Suggestions:** After a short pause in typing (750ms), Gemini will provide an inline suggestion based on your current context.
+3.  **Suggestions:** After a short pause in typing (500ms), Gemini will provide an inline suggestion based on your current context.
 4.  **Accept/Dismiss:**
     - Press `Tab` to accept the suggestion.
     - Press any other key to dismiss the suggestion and continue typing.

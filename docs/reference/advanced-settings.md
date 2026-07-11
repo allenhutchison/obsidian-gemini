@@ -83,13 +83,13 @@ Configure how the plugin handles API failures:
 **Maximum retries**
 
 - **Default**: 3 attempts
-- **Range**: 0-10 retries
+- **Range**: any integer ≥ 0 (no upper bound is enforced)
 - **Purpose**: Handles temporary network issues or API rate limits
 
 **Initial Backoff Delay**
 
 - **Default**: 1000ms (1 second)
-- **Range**: 100-10000ms
+- **Range**: any integer ≥ 0 (no upper bound is enforced)
 - **Purpose**: Time to wait before first retry (uses exponential backoff)
 
 **How retry works:**

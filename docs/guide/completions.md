@@ -46,7 +46,7 @@ Completions provide:
 
 1. Open any markdown note
 2. Type a few words and pause
-3. After ~750ms, a gray suggestion appears
+3. After ~500ms, a gray suggestion appears
 4. Press `Tab` to accept or any other key to dismiss
 
 ## How Completions Work
@@ -54,7 +54,7 @@ Completions provide:
 ### The Completion Process
 
 1. **You type** in your note
-2. **Pause detected** (750ms without typing)
+2. **Pause detected** (500ms without typing)
 3. **Context gathered** from surrounding text
 4. **AI generates** a suggestion
 5. **Suggestion appears** in gray text
@@ -141,7 +141,7 @@ The dropdown reflects whatever models the bundled list and Model Discovery have 
 
 Completions are optimized for:
 
-- 750ms debounce (prevents excessive API calls)
+- 500ms debounce (prevents excessive API calls)
 - Smart context extraction
 - Efficient caching
 - Minimal UI disruption
@@ -354,7 +354,7 @@ Train the AI by:
    - Not in code blocks
 
 3. **Check timing**
-   - Wait full 750ms
+   - Wait full 500ms
    - Don't type too quickly
 
 4. **API issues**

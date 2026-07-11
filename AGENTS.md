@@ -102,7 +102,7 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
 2. **File Operations**: Always use Obsidian's normalized paths and metadata cache
 3. **Error Handling**: API calls wrapped with retry logic and exponential backoff
 4. **Prompts**: Handlebars templates in `prompts/` directory, loaded as text files
-5. **Debouncing**: Completions use 750ms debounce to prevent excessive API calls
+5. **Debouncing**: Completions use a 500ms debounce (the `codemirror-companion-extension` default; the plugin doesn't override `delay`) to prevent excessive API calls
 6. **State Management**: Plugin instance holds all component references with proper cleanup
 7. **Folder Structure**: Plugin uses structured state folder:
    - `[state-folder]/` - Main plugin state folder (default: `gemini-scribe`)
