@@ -302,10 +302,9 @@ export class AgentViewProgress {
 	 * Escape HTML entities to prevent XSS
 	 */
 	private escapeHtml(text: string): string {
-		// Detached node used only to HTML-escape a string; never inserted into a
-		// live view, so it isn't cross-window-relevant.
+		// Detached node used only to HTML-escape a string; never inserted into a live view.
 		// eslint-disable-next-line obsidianmd/prefer-create-el -- jsdom unit tests exercise this path; Obsidian's createDiv global doesn't exist there
-		const div = document.createElement('div');
+		const div = activeDocument.createElement('div');
 		div.textContent = text;
 		return div.innerHTML;
 	}

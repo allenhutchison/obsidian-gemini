@@ -65,7 +65,7 @@ export class ReadFileTool implements Tool {
 			}
 
 			// Try to resolve as either file or folder (with suggestions for errors)
-			const { item, type: _type, suggestions } = resolvePathToFileOrFolder(params.path, plugin, true);
+			const { item, suggestions } = resolvePathToFileOrFolder(params.path, plugin, true);
 
 			if (!item) {
 				// File not existing is information, not an error — the agent asked

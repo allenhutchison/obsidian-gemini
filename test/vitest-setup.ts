@@ -32,4 +32,18 @@ if (typeof HTMLElement !== 'undefined') {
 	}
 }
 
+// Obsidian exposes `activeWindow` / `activeDocument` globals that point at the
+// currently-focused window/document (for popout-window compatibility). jsdom
+// doesn't provide them, so alias them to the test window/document -- this lets
+// production code use `activeDocument` uniformly instead of the bare `document`.
+if (typeof window !== 'undefined') {
+	const win = window as unknown as { activeDocument?: Document; activeWindow?: Window };
+	if (typeof win.activeDocument === 'undefined' && typeof document !== 'undefined') {
+		win.activeDocument = document;
+	}
+	if (typeof win.activeWindow === 'undefined') {
+		win.activeWindow = window;
+	}
+}
+
 export {};

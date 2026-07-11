@@ -84,6 +84,8 @@
 		"esbuild": "0.28.1",
 		"madge": {
 			"typescript": "$typescript"
-		}
+		},
+		"protobufjs": "^7.6.5",
+		"ip-address": "^10.1.1"
 	}
 }
