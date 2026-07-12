@@ -67,6 +67,44 @@ const TOOL_ICONS: Record<string, string> = {
 	generate_image: 'image',
 };
 
+/** Elements that make up one collapsible section (a tool group or a tool row). */
+interface CollapsibleRefs {
+	/** The clickable header; `aria-expanded` lives here and is the source of truth. */
+	control: HTMLElement;
+	/** The collapsible content shown/hidden. */
+	body: HTMLElement;
+	/** The chevron icon span, swapped between right/down. */
+	chevron: HTMLElement;
+	/** The element that carries the `*-expanded` class. */
+	host: HTMLElement;
+	/** e.g. `gemini-tool-group-expanded` / `gemini-tool-row-expanded`. */
+	expandedClass: string;
+}
+
+/** Apply the expanded/collapsed visual state to a collapsible section. */
+function setCollapsibleExpanded(refs: CollapsibleRefs, expanded: boolean): void {
+	refs.body.style.display = expanded ? 'block' : 'none';
+	setIcon(refs.chevron, expanded ? 'chevron-down' : 'chevron-right');
+	refs.host.toggleClass(refs.expandedClass, expanded);
+	refs.control.setAttribute('aria-expanded', String(expanded));
+}
+
+/**
+ * Wire a header so click / Enter / Space toggles its collapsible body. State is
+ * derived from `aria-expanded` so programmatic expansion (auto-expand on error)
+ * and user toggling stay in sync.
+ */
+function wireCollapsibleToggle(refs: CollapsibleRefs): void {
+	const toggle = () => setCollapsibleExpanded(refs, refs.control.getAttribute('aria-expanded') !== 'true');
+	refs.control.addEventListener('click', toggle);
+	refs.control.addEventListener('keydown', (e: KeyboardEvent) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			toggle();
+		}
+	});
+}
+
 /**
  * Handles all tool-related UI rendering: tool groups, execution rows, and result display.
  */
@@ -188,20 +226,12 @@ export class AgentViewToolDisplay {
 		group.dataset.failedCount = '0';
 
 		// Toggle expand/collapse — derive state from DOM to stay in sync with programmatic expansion
-		const toggleGroup = () => {
-			const wasExpanded = summary.getAttribute('aria-expanded') === 'true';
-			const nowExpanded = !wasExpanded;
-			body.style.display = nowExpanded ? 'block' : 'none';
-			setIcon(chevron, nowExpanded ? 'chevron-down' : 'chevron-right');
-			group.toggleClass('gemini-tool-group-expanded', nowExpanded);
-			summary.setAttribute('aria-expanded', String(nowExpanded));
-		};
-		summary.addEventListener('click', toggleGroup);
-		summary.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				toggleGroup();
-			}
+		wireCollapsibleToggle({
+			control: summary,
+			body,
+			chevron,
+			host: group,
+			expandedClass: 'gemini-tool-group-expanded',
 		});
 
 		return group;
@@ -261,11 +291,11 @@ export class AgentViewToolDisplay {
 			const body = group.querySelector('.gemini-tool-group-body') as HTMLElement;
 			const chevron = group.querySelector('.gemini-tool-group-chevron') as HTMLElement;
 			const summaryEl = group.querySelector('.gemini-tool-group-summary') as HTMLElement;
-			if (body && body.style.display === 'none') {
-				body.show();
-				if (chevron) setIcon(chevron, 'chevron-down');
-				if (summaryEl) summaryEl.setAttribute('aria-expanded', 'true');
-				group.classList.add('gemini-tool-group-expanded');
+			if (body && chevron && summaryEl && body.style.display === 'none') {
+				setCollapsibleExpanded(
+					{ control: summaryEl, body, chevron, host: group, expandedClass: 'gemini-tool-group-expanded' },
+					true
+				);
 			}
 		}
 	}
@@ -385,20 +415,12 @@ export class AgentViewToolDisplay {
 		}
 
 		// Toggle row details — derive state from DOM to stay in sync with programmatic expansion
-		const toggleRowDetails = () => {
-			const wasExpanded = rowHeader.getAttribute('aria-expanded') === 'true';
-			const nowExpanded = !wasExpanded;
-			rowDetails.style.display = nowExpanded ? 'block' : 'none';
-			setIcon(rowChevron, nowExpanded ? 'chevron-down' : 'chevron-right');
-			toolRow.toggleClass('gemini-tool-row-expanded', nowExpanded);
-			rowHeader.setAttribute('aria-expanded', String(nowExpanded));
-		};
-		rowHeader.addEventListener('click', toggleRowDetails);
-		rowHeader.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				toggleRowDetails();
-			}
+		wireCollapsibleToggle({
+			control: rowHeader,
+			body: rowDetails,
+			chevron: rowChevron,
+			host: toolRow,
+			expandedClass: 'gemini-tool-row-expanded',
 		});
 
 		// Store references for result updates
@@ -686,11 +708,17 @@ export class AgentViewToolDisplay {
 			const rowDetails = toolRow.querySelector('.gemini-tool-row-details') as HTMLElement;
 			const rowChevron = toolRow.querySelector('.gemini-tool-row-chevron') as HTMLElement;
 			const rowHeader = toolRow.querySelector('.gemini-tool-row-header') as HTMLElement;
-			if (rowDetails && rowDetails.style.display === 'none') {
-				rowDetails.show();
-				if (rowChevron) setIcon(rowChevron, 'chevron-down');
-				if (rowHeader) rowHeader.setAttribute('aria-expanded', 'true');
-				toolRow.classList.add('gemini-tool-row-expanded');
+			if (rowDetails && rowChevron && rowHeader && rowDetails.style.display === 'none') {
+				setCollapsibleExpanded(
+					{
+						control: rowHeader,
+						body: rowDetails,
+						chevron: rowChevron,
+						host: toolRow,
+						expandedClass: 'gemini-tool-row-expanded',
+					},
+					true
+				);
 			}
 		}
 
