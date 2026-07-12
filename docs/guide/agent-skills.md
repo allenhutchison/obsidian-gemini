@@ -134,7 +134,7 @@ To invoke a skill explicitly, type `/` in an empty chat input, pick a skill from
 picker, and a `/skill-name` token is inserted into the input. Add instructions after it,
 or send it on its own:
 
-```
+```text
 /code-review                      → activates the skill with no extra instruction
 /code-review focus on error paths → activates the skill and applies your instruction
 ```
