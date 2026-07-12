@@ -47,6 +47,7 @@
 		"@google/genai": "^2.10.0",
 		"@modelcontextprotocol/sdk": "^1.29.0",
 		"@types/node": "^26.1.0",
+		"@typescript-eslint/parser": "^8.62.1",
 		"@vitest/coverage-v8": "^4.1.9",
 		"@vitest/ui": "^4.1.5",
 		"builtin-modules": "5.3.0",
