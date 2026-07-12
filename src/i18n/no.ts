@@ -141,7 +141,7 @@ export const no: Partial<Record<TranslationKey, string>> = {
 		'Skriv logginnføringer til en fil i mappen for plugin-status. Feil og advarsler logges alltid; feilsøkingsinnføringer krever feilsøkingsmodus. Loggfiler roteres automatisk ved 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Bruk Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Ruter Gemini-forespørsler gjennom Googles nyere Interactions API i stedet for det foreldede generateContent API-et. Kjører tilstandsløst – samtalehistorikken spilles av på nytt for hver tur og lagres ikke på Googles side mellom turene. Eksperimentelt – la være deaktivert hvis du opplever problemer.',
+		'Route Gemini-forespørsler gjennom Googles nyere Interactions API i stedet for det eldre generateContent-API-et. Dette er standard transportmetode. Kjører tilstandsløst — samtalehistorikken spilles av på nytt for hver runde og lagres ikke på Googles side mellom rundene. Slå det av for å falle tilbake til generateContent hvis du støter på problemer.',
 	'settings.agentConfig.customEndpointName': 'Tilpasset API-endepunkt',
 	'settings.agentConfig.customEndpointDesc':
 		'Overstyr standard Google API-base-URL (f.eks. for en bedriftsproxy eller lokal gateway). La stå tomt for å bruke det offisielle endepunktet.',

@@ -125,7 +125,7 @@ export const zhTW: Partial<Record<TranslationKey, string>> = {
 		'將記錄項目寫入外掛狀態資料夾中的檔案。錯誤和警告一律會記錄；除錯項目需要啟用除錯模式。記錄檔在達到 1 MB 時會自動輪替。',
 	'settings.agentConfig.useInteractionsApiName': '使用 Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'透過 Google 較新的 Interactions API 路由 Gemini 請求，而非舊有的 generateContent API。以無狀態方式執行 — 對話記錄會在每次輪替時重新播放，且不會在輪替之間保留於 Google 端。實驗性功能 — 若遇到問題請保持關閉。',
+		'透過 Google 較新的 Interactions API 路由 Gemini 請求，而非舊版的 generateContent API。這是預設的傳輸方式。此方式以無狀態方式執行——對話記錄會在每次對話輪次中重播，且不會在輪次之間保留在 Google 端。如果您遇到問題，請關閉此選項以回退到 generateContent。',
 	'settings.agentConfig.customEndpointName': '自訂 API 端點',
 	'settings.agentConfig.customEndpointDesc':
 		'覆寫預設的 Google API 基礎 URL（例如用於企業代理伺服器或本機閘道）。留空則使用官方端點。',

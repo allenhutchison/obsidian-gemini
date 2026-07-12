@@ -140,7 +140,7 @@ export const cs: Partial<Record<TranslationKey, string>> = {
 		'Zapisovat záznamy protokolu do souboru ve složce stavu pluginu. Chyby a varování jsou protokolovány vždy; záznamy ladění vyžadují režim ladění. Soubory protokolu jsou automaticky rotovány při velikosti 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Použít Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Směrovat požadavky Gemini přes novější Interactions API od Google namísto staršího generateContent API. Běží bezstavově – historie konverzace se přehrává při každém tahu a na straně Google se mezi tahy neukládá. Experimentální – pokud narazíte na problémy, nechte vypnuté.',
+		'Směrujte požadavky Gemini přes novější Interactions API od Google namísto staršího generateContent API. Jedná se o výchozí přenos. Běží bezstavově – historie konverzace se přehrává při každém tahu a neukládá se na straně Google mezi jednotlivými tahy. Vypněte tuto možnost, pokud narazíte na problémy a chcete se vrátit k generateContent.',
 	'settings.agentConfig.customEndpointName': 'Vlastní koncový bod API',
 	'settings.agentConfig.customEndpointDesc':
 		'Přepsat výchozí základní URL adresu Google API (např. pro firemní proxy nebo lokální bránu). Ponechte prázdné pro použití oficiálního koncového bodu.',

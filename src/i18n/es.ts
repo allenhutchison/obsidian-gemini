@@ -144,7 +144,7 @@ export const es: Partial<Record<TranslationKey, string>> = {
 		'Escribe las entradas de registro en un archivo dentro de la carpeta de estado del plugin. Los errores y advertencias siempre se registran; las entradas de depuración requieren el modo de depuración. Los archivos de registro se rotan automáticamente al alcanzar 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Usar Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Dirige las solicitudes de Gemini a través de la nueva Interactions API de Google en lugar de la API heredada generateContent. Se ejecuta sin estado: el historial de conversación se reproduce en cada turno y no se conserva en el lado de Google entre turnos. Experimental: déjalo desactivado si tienes problemas.',
+		'Dirige las solicitudes de Gemini a través de la nueva Interactions API de Google en lugar de la API heredada generateContent. Este es el transporte predeterminado. Funciona sin estado: el historial de conversación se vuelve a enviar en cada turno y no se conserva en el lado de Google entre turnos. Desactívalo para volver a usar generateContent si experimentas problemas.',
 	'settings.agentConfig.customEndpointName': 'Endpoint de API personalizado',
 	'settings.agentConfig.customEndpointDesc':
 		'Invalida la URL base predeterminada de la API de Google (por ejemplo, para un proxy corporativo o una pasarela local). Déjalo en blanco para usar el endpoint oficial.',
