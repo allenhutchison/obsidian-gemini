@@ -110,6 +110,30 @@ export class AgentViewToolDisplay {
 	}
 
 	/**
+	 * Render text into a `<pre><code>` block, truncating to the first 500 chars
+	 * with a "Show full content" button when it's longer. Used for both raw string
+	 * results and file-read `content` payloads, which rendered this identically.
+	 */
+	private renderTruncatableCode(container: HTMLElement, text: string): void {
+		if (text.length > 500) {
+			const codeBlock = container.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
+			const code = codeBlock.createEl('code');
+			code.textContent = text.substring(0, 500) + '\n\n' + t('agent.tools.truncatedSuffix');
+
+			const expandBtn = container.createEl('button', {
+				text: t('agent.tools.showFullContent'),
+				cls: 'gemini-agent-tool-expand-content',
+			});
+			expandBtn.addEventListener('click', () => {
+				code.textContent = text;
+				expandBtn.remove();
+			});
+		} else {
+			container.createEl('pre', { cls: 'gemini-agent-tool-code-result' }).createEl('code', { text });
+		}
+	}
+
+	/**
 	 * The full, untruncated text to copy for a tool result: the error message on
 	 * failure, the raw string for string data, otherwise pretty-printed JSON.
 	 */
@@ -472,22 +496,7 @@ export class AgentViewToolDisplay {
 				const data: unknown = result.data;
 
 				if (typeof data === 'string') {
-					if (data.length > 500) {
-						const codeBlock = resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' });
-						const code = codeBlock.createEl('code');
-						code.textContent = data.substring(0, 500) + '\n\n' + t('agent.tools.truncatedSuffix');
-
-						const expandBtn = resultContent.createEl('button', {
-							text: t('agent.tools.showFullContent'),
-							cls: 'gemini-agent-tool-expand-content',
-						});
-						expandBtn.addEventListener('click', () => {
-							code.textContent = data;
-							expandBtn.remove();
-						});
-					} else {
-						resultContent.createEl('pre', { cls: 'gemini-agent-tool-code-result' }).createEl('code', { text: data });
-					}
+					this.renderTruncatableCode(resultContent, data);
 				} else if (Array.isArray(data)) {
 					if (data.length === 0) {
 						resultContent.createEl('p', {
@@ -635,26 +644,7 @@ export class AgentViewToolDisplay {
 							});
 						}
 
-						const content = data.content;
-						if (content.length > 500) {
-							const codeBlock = resultContent.createEl('pre', {
-								cls: 'gemini-agent-tool-code-result',
-							});
-							const code = codeBlock.createEl('code');
-							code.textContent = content.substring(0, 500) + '\n\n' + t('agent.tools.truncatedSuffix');
-							const expandBtn = resultContent.createEl('button', {
-								text: t('agent.tools.showFullContent'),
-								cls: 'gemini-agent-tool-expand-content',
-							});
-							expandBtn.addEventListener('click', () => {
-								code.textContent = content;
-								expandBtn.remove();
-							});
-						} else {
-							resultContent
-								.createEl('pre', { cls: 'gemini-agent-tool-code-result' })
-								.createEl('code', { text: content });
-						}
+						this.renderTruncatableCode(resultContent, data.content);
 					} else {
 						const resultList = resultContent.createDiv({ cls: 'gemini-agent-tool-result-object' });
 						for (const [key, value] of Object.entries(data)) {
