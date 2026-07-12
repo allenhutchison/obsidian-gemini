@@ -24,9 +24,9 @@ import { ProjectPickerModal } from './project-picker-modal';
 // Import modals from agent-view directory
 import { FilePickerModal } from './file-picker-modal';
 import { SessionListModal } from './session-list-modal';
-import { SkillMentionModal } from './skill-mention-modal';
+import { SkillMentionModal, formatSkillTrigger } from './skill-mention-modal';
 import { SessionSettingsModal } from './session-settings-modal';
-import { moveCursorToEnd } from '../../utils/dom-context';
+import { insertTextAtCursor, moveCursorToEnd } from '../../utils/dom-context';
 import { t } from '../../i18n';
 
 export const VIEW_TYPE_AGENT = 'gemini-agent-view';
@@ -509,7 +509,10 @@ export class AgentView extends ItemView {
 			(skill) => {
 				this.attachments.removeTrailingTriggerChar('/');
 				if (this.userInput) {
-					this.userInput.innerText = `Use the "${skill.name}" skill to help me with: `;
+					// Insert the literal `/skill-name ` token and leave it in the box so the
+					// user can append instructions or send as-is. The model recognizes this
+					// convention (see prompts/toolCatalogPrompt.hbs) and activates the skill.
+					insertTextAtCursor(this.userInput, formatSkillTrigger(skill.name));
 					moveCursorToEnd(this.userInput);
 				}
 			},
