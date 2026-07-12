@@ -9,6 +9,7 @@ import { GeminiHistory } from './history/history';
 import { GeminiCompletions } from './completions';
 import { Notice } from 'obsidian';
 import { getDefaultModelForRole, migrateOllamaModelSetting, ModelProvider } from './models';
+import { migrateInteractionsApiDefault } from './utils/settings-migrations';
 import { ModelManager } from './services/model-manager';
 import { PromptManager, GeminiPrompts } from './prompts';
 import { SelectionRewriter } from './rewrite-selection';
@@ -72,7 +73,8 @@ const DEFAULT_SETTINGS: ObsidianGeminiSettings = {
 	maxRetries: 3,
 	initialBackoffDelay: 1000,
 	streamingEnabled: true,
-	useInteractionsApi: false,
+	useInteractionsApi: true,
+	useInteractionsApiMigrated: true,
 	allowSystemPromptOverride: false,
 	temperature: 0.7,
 	topP: 1,
@@ -433,6 +435,12 @@ export default class ObsidianGemini extends Plugin implements ObsidianGeminiApi 
 			delete (this.settings as { modelDiscoveryCache?: unknown }).modelDiscoveryCache;
 			await this.saveData(this.settings);
 			this.logger?.log('Removed deprecated model discovery settings');
+		}
+
+		// One-time migration: default-on rollout for the Interactions API transport (#1017).
+		if (migrateInteractionsApiDefault(this.settings, data)) {
+			await this.saveData(this.settings);
+			this.logger?.log('Migrated useInteractionsApi to on (default-on rollout, #1017)');
 		}
 
 		// Note: Stale model reconciliation happens later in LifecycleService.syncModels(),

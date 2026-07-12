@@ -40,10 +40,18 @@ export interface ObsidianGeminiSettings {
 	/**
 	 * Use Google's GA Interactions API (`client.interactions.create`) as the
 	 * Gemini transport instead of the legacy `generateContent`. Runs stateless
-	 * (`store: false`); we still own and replay conversation history. Opt-in
-	 * while the SDK surface settles — see epic #1013.
+	 * (`store: false`); we still own and replay conversation history. Default-on
+	 * as of the default-on rollout (#1017); `generateContent` stays reachable as
+	 * a fallback — see epic #1013.
 	 */
 	useInteractionsApi: boolean;
+	/**
+	 * Internal marker for the one-time default-on migration (#1017): once the
+	 * false→true flip has run for an existing install, we never re-run it, so a
+	 * user who deliberately turns the transport back off is respected. New
+	 * installs are seeded `true` and skip the migration entirely.
+	 */
+	useInteractionsApiMigrated?: boolean;
 	allowSystemPromptOverride: boolean;
 	temperature: number;
 	topP: number;

@@ -143,7 +143,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
       - **Temperature:** Control AI creativity and randomness (0-2.0, automatically adjusted based on available models).
       - **Top P:** Control response diversity and focus (0-1.0).
       - **Model Discovery:** Gemini models are automatically fetched on startup (cached for 24h); click **Refresh model list** in General settings or run the "Gemini Scribe: Refresh model list" command to fetch a newly-published model immediately. Ollama users can click the same **Refresh model list** button after pulling new models.
-      - **API configuration:** Configure retry behavior, backoff delays, and the optional Use Interactions API transport (Gemini provider only).
+      - **API configuration:** Configure retry behavior, backoff delays, and the Use Interactions API transport (Gemini provider only; on by default, with `generateContent` retained as a fallback).
       - **Tool Execution:** Control whether to stop agent execution on tool errors.
       - **Tool loop detection:** Prevent infinite tool execution loops.
       - **Developer Options:** Debug mode, file logging, and advanced configuration tools.
