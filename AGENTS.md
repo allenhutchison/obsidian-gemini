@@ -134,7 +134,7 @@ The plugin uses a factory pattern (`ModelClientFactory` in `src/api/factory.ts`)
 
 12. **YAML Frontmatter**: Agent instructions include guidance for respecting YAML frontmatter when modifying files
 
-- The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentToolsPrompt.hbs`)
+- The AI is trained to place "top of note" content after frontmatter blocks (defined in `prompts/agentRulesPrompt.hbs`)
 - YAML frontmatter must start with `---` on line 1 and end with `---`
 - Content is only placed before frontmatter when explicitly instructed to modify frontmatter
 
