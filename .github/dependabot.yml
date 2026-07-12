@@ -13,6 +13,13 @@ updates:
       # Group all dev dependencies together
       dev-dependencies:
         dependency-type: 'development'
+    ignore:
+      # TypeScript 7 is not yet supported by typescript-eslint (peer typescript
+      # ">=4.8.4 <6.1.0"), so a major bump breaks `npm install` with ERESOLVE and
+      # takes down the whole lint/type toolchain. Hold at 6.x until the toolchain
+      # adds TS 7 support, then remove this ignore. Tracked in #1188.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'github-actions'
     directory: '/'
