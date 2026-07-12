@@ -115,6 +115,25 @@ describe('GeminiPrompts', () => {
 		});
 	});
 
+	describe('available skills rendering', () => {
+		// The skills section lives in the tool catalog, which only renders when tools exist.
+		const tools = [
+			{ name: 'read_file', description: 'Read a file', parameters: { properties: {}, required: [] } },
+		] as any;
+		const skills = [{ name: 'code-review', description: 'Review code for quality' }];
+
+		it('includes the /skill-name activation convention when skills are available', () => {
+			const prompt = geminiPrompts.getSystemPromptWithCustom(tools, undefined, null, skills, undefined);
+			expect(prompt).toContain('begins with `/skill-name`');
+			expect(prompt).toContain('code-review');
+		});
+
+		it('omits the /skill-name convention when no skills are available', () => {
+			const prompt = geminiPrompts.getSystemPromptWithCustom(tools, undefined, null, undefined, undefined);
+			expect(prompt).not.toContain('begins with `/skill-name`');
+		});
+	});
+
 	describe('buildExtendedSystemInstruction', () => {
 		const baseRequest: ExtendedModelRequest = {
 			kind: 'extended',

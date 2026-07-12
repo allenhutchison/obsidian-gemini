@@ -36,6 +36,8 @@ Example: If asked to "create a file", you must call write_file with the path, co
 
 You have access to the following skills. Use the `activate_skill` tool to load a skill's full instructions when you need its capabilities. Skills provide specialized knowledge, workflows, and reference materials.
 
+If the user's message begins with `/skill-name` (matching one of the skills below), treat it as an explicit request to activate that skill with `activate_skill` and apply it to the rest of the message (which may be empty).
+
 {{#each availableSkills}}
 - **{{this.name}}**: {{this.description}}
 {{/each}}

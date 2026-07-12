@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest';
-import { SkillMentionModal } from '../../src/ui/agent-view/skill-mention-modal';
+import { SkillMentionModal, formatSkillTrigger } from '../../src/ui/agent-view/skill-mention-modal';
 import type { SkillSummary } from '../../src/services/skill-manager';
 
 vi.mock('obsidian', async () => {
@@ -45,5 +45,11 @@ describe('SkillMentionModal', () => {
 	it('should handle empty skills list', () => {
 		const emptyModal = new SkillMentionModal({} as any, onSelect, []);
 		expect(emptyModal.getItems()).toEqual([]);
+	});
+});
+
+describe('formatSkillTrigger', () => {
+	it('formats a skill name as a slash token with a trailing space', () => {
+		expect(formatSkillTrigger('code-review')).toBe('/code-review ');
 	});
 });

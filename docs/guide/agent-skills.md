@@ -22,7 +22,7 @@ Skills and [custom prompts](/guide/custom-prompts) serve different purposes:
 Skills use **progressive disclosure** — the agent always knows which skills are available (name and description), but only loads the full instructions when it activates a skill. This keeps conversations focused while making specialized knowledge available when needed.
 
 1. **Discovery** — Skill summaries are included in every agent session
-2. **Activation** — When the agent encounters a matching task, it activates the skill to load full instructions. You can also type `/` in an empty chat input to browse and select skills directly via the slash command picker.
+2. **Activation** — When the agent encounters a matching task, it activates the skill to load full instructions. You can also type `/` in an empty chat input to browse and select a skill directly: picking one inserts a `/skill-name` token into the input, and you can then add instructions or just send it as-is to invoke the skill.
 3. **Execution** — The agent follows the skill's instructions to complete the task
 
 ## Built-in Skills
@@ -127,6 +127,20 @@ Agent: I'll activate the code-review skill to help with this...
 [Activates code-review skill]
 [Follows skill instructions to review code]
 ```
+
+### Slash Activation
+
+To invoke a skill explicitly, type `/` in an empty chat input, pick a skill from the
+picker, and a `/skill-name` token is inserted into the input. Add instructions after it,
+or send it on its own:
+
+```
+/code-review                      → activates the skill with no extra instruction
+/code-review focus on error paths → activates the skill and applies your instruction
+```
+
+The `/skill-name` token is sent verbatim; the agent recognizes the convention and
+activates the matching skill.
 
 ### Manual Activation
 
