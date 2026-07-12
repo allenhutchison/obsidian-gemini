@@ -128,6 +128,15 @@ describe('GeminiPrompts', () => {
 			expect(prompt).toContain('code-review');
 		});
 
+		it('spells out exact-name/boundary matching so overlapping names are unambiguous', () => {
+			// Token→skill resolution is model-driven (no parser in code), so the prompt
+			// wording is the mitigation: the exact name, a whitespace/EOM boundary, and
+			// longest-match win must all be stated for /code-review not to read as /code.
+			const prompt = geminiPrompts.getSystemPromptWithCustom(tools, undefined, null, skills, undefined);
+			expect(prompt).toContain('followed by a space or the end of the message');
+			expect(prompt).toContain('a longer name always wins');
+		});
+
 		it('omits the /skill-name convention when no skills are available', () => {
 			const prompt = geminiPrompts.getSystemPromptWithCustom(tools, undefined, null, undefined, undefined);
 			expect(prompt).not.toContain('begins with `/skill-name`');
