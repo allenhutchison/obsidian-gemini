@@ -140,7 +140,7 @@ export const ja: Partial<Record<TranslationKey, string>> = {
 		'ログエントリをプラグインのステートフォルダ内のファイルに書き込みます。エラーと警告は常に記録されます。デバッグエントリの記録にはデバッグモードが必要です。ログファイルは1 MBで自動的にローテーションされます。',
 	'settings.agentConfig.useInteractionsApiName': 'Interactions APIを使用する',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Geminiのリクエストを、従来のgenerateContent APIではなく、Googleの新しいInteractions API経由でルーティングします。ステートレスに動作し、会話履歴はターンごとに再送され、ターンの間にGoogle側で保持されません。実験的機能です。問題が発生した場合はオフにしてください。',
+		'Geminiのリクエストを、従来のgenerateContent APIではなく、Googleの新しいInteractions API経由で送信します。これがデフォルトの転送方式です。ステートレスに動作し、会話履歴はターンごとに再送信され、ターンの合間にGoogle側で保存されることはありません。問題が発生した場合は、オフにしてgenerateContentにフォールバックしてください。',
 	'settings.agentConfig.customEndpointName': 'カスタムAPIエンドポイント',
 	'settings.agentConfig.customEndpointDesc':
 		'デフォルトのGoogle APIベースURLを上書きします（例：企業プロキシやローカルゲートウェイ用）。公式エンドポイントを使用する場合は空白のままにしてください。',

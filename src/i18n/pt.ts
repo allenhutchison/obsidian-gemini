@@ -142,7 +142,7 @@ export const pt: Partial<Record<TranslationKey, string>> = {
 		'Escreve registos num ficheiro na pasta de estado do plugin. Os erros e avisos são sempre registados; os registos de depuração requerem o modo de depuração. Os ficheiros de registo são rodados automaticamente a 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Usar Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Encaminhar pedidos do Gemini através da nova Interactions API da Google em vez da API legada generateContent. Funciona sem estado — o histórico da conversa é reproduzido a cada turno e não é persistido do lado da Google entre turnos. Experimental — desative se encontrar problemas.',
+		'Encaminha os pedidos do Gemini através da Interactions API mais recente da Google, em vez da API legada generateContent. Este é o transporte predefinido. Funciona sem estado — o histórico de conversação é reproduzido a cada turno e não é persistido do lado da Google entre turnos. Desative para reverter para o generateContent se encontrar problemas.',
 	'settings.agentConfig.customEndpointName': 'Endpoint de API personalizado',
 	'settings.agentConfig.customEndpointDesc':
 		'Substituir o URL base predefinido da API da Google (por exemplo, para um proxy corporativo ou gateway local). Deixe em branco para utilizar o endpoint oficial.',

@@ -141,7 +141,7 @@ export const nl: Partial<Record<TranslationKey, string>> = {
 		'Schrijf logboekvermeldingen naar een bestand in de plugin-statusmap. Fouten en waarschuwingen worden altijd gelogd; debug-vermeldingen vereisen de foutopsporingsmodus. Logbestanden worden automatisch geroteerd bij 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Interactions API gebruiken',
 	'settings.agentConfig.useInteractionsApiDesc':
-		"Stuur Gemini-verzoeken via Google's nieuwere Interactions API in plaats van de verouderde generateContent API. Werkt staatloos — de gespreksgeschiedenis wordt bij elke beurt opnieuw afgespeeld en niet bewaard aan de kant van Google tussen beurten. Experimenteel — laat uitgeschakeld als je problemen ondervindt.",
+		"Routeer Gemini-verzoeken via Google's nieuwere Interactions API in plaats van de verouderde generateContent API. Dit is het standaardtransport. Werkt staatloos — gespreksgeschiedenis wordt bij elke beurt opnieuw afgespeeld en niet bewaard aan de kant van Google tussen beurten door. Schakel dit uit om terug te vallen op generateContent als je problemen ondervindt.",
 	'settings.agentConfig.customEndpointName': 'Aangepast API-eindpunt',
 	'settings.agentConfig.customEndpointDesc':
 		'Overschrijf de standaard Google API-basis-URL (bijv. voor een bedrijfsproxy of lokale gateway). Laat leeg om het officiële eindpunt te gebruiken.',

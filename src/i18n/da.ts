@@ -140,7 +140,7 @@ export const da: Partial<Record<TranslationKey, string>> = {
 		'Skriv logposter til en fil i plugin-statusmappen. Fejl og advarsler logges altid; fejlfindingsposter kræver fejlfindingstilstand. Logfiler roteres automatisk ved 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Brug Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Send Gemini-anmodninger gennem Googles nyere Interactions API i stedet for det ældre generateContent API. Kører tilstandsløst — samtalehistorikken afspilles igen ved hver tur og gemmes ikke på Googles side mellem ture. Eksperimentel — lad den være deaktiveret, hvis du oplever problemer.',
+		'Send Gemini-anmodninger via Googles nyere Interactions API i stedet for det ældre generateContent API. Dette er standardtransporten. Kører tilstandsløst – samtalehistorikken genafspilles ved hver tur og gemmes ikke på Googles side mellem turene. Slå det fra for at falde tilbage på generateContent, hvis du støder på problemer.',
 	'settings.agentConfig.customEndpointName': 'Brugerdefineret API-slutpunkt',
 	'settings.agentConfig.customEndpointDesc':
 		'Tilsidesæt standard Google API-basis-URL (f.eks. for en virksomhedsproxy eller lokal gateway). Lad feltet være tomt for at bruge det officielle slutpunkt.',

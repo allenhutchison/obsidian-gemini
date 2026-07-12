@@ -144,7 +144,7 @@ export const it: Partial<Record<TranslationKey, string>> = {
 		'Scrive le voci di log in un file nella cartella di stato del plugin. Gli errori e gli avvisi vengono sempre registrati; le voci di debug richiedono la modalità debug. I file di log vengono ruotati automaticamente a 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Usa API Interactions',
 	'settings.agentConfig.useInteractionsApiDesc':
-		"Invia le richieste di Gemini tramite la nuova API Interactions di Google invece dell'API legacy generateContent. Funziona in modo stateless: la cronologia della conversazione viene riprodotta a ogni turno e non viene salvata da parte di Google tra un turno e l'altro. Sperimentale: disattiva in caso di problemi.",
+		"Instrada le richieste Gemini tramite la più recente Interactions API di Google invece dell'API legacy generateContent. Questo è il trasporto predefinito. Funziona in modalità stateless — la cronologia della conversazione viene riprodotta a ogni turno e non viene memorizzata lato Google tra un turno e l'altro. Disattivalo per tornare a generateContent in caso di problemi.",
 	'settings.agentConfig.customEndpointName': 'Endpoint API personalizzato',
 	'settings.agentConfig.customEndpointDesc':
 		"Sovrascrivi l'URL di base predefinito dell'API di Google (ad es. per un proxy aziendale o un gateway locale). Lascia vuoto per utilizzare l'endpoint ufficiale.",

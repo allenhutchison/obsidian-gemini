@@ -127,7 +127,7 @@ export const zh: Partial<Record<TranslationKey, string>> = {
 		'将日志条目写入插件状态文件夹中的文件。错误和警告始终会被记录；调试条目需要启用调试模式。日志文件在达到 1 MB 时会自动轮转。',
 	'settings.agentConfig.useInteractionsApiName': '使用 Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'通过 Google 较新的 Interactions API 而不是旧版的 generateContent API 路由 Gemini 请求。以无状态方式运行 —— 对话历史记录在每轮中重新播放，且不会在每轮之间保留在 Google 端。实验性功能 —— 如果遇到问题，请保持关闭。',
+		'通过 Google 较新的 Interactions API（而非旧版的 generateContent API）路由 Gemini 请求。这是默认的传输方式。无状态运行——对话历史在每轮中重新发送，且不会在轮次之间持久化保存在 Google 端。如果遇到问题，可关闭此选项以回退到 generateContent。',
 	'settings.agentConfig.customEndpointName': '自定义 API 端点',
 	'settings.agentConfig.customEndpointDesc':
 		'覆盖默认的 Google API 基础 URL（例如用于公司代理或本地网关）。留空则使用官方端点。',

@@ -140,7 +140,7 @@ export const id: Partial<Record<TranslationKey, string>> = {
 		'Tulis entri log ke file di folder status plugin. Kesalahan dan peringatan selalu dicatat; entri debug memerlukan mode debug. File log dirotasi secara otomatis pada ukuran 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Gunakan Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Rute permintaan Gemini melalui Interactions API Google yang lebih baru, alih-alih generateContent API yang lama. Berjalan secara stateless — riwayat percakapan diputar ulang setiap giliran dan tidak disimpan di sisi Google di antara giliran. Eksperimental — biarkan nonaktif jika Anda mengalami masalah.',
+		'Rute permintaan Gemini melalui Interactions API Google yang lebih baru, bukan API generateContent yang lama. Ini adalah transport default. Berjalan secara stateless — riwayat percakapan diputar ulang di setiap giliran dan tidak disimpan di sisi Google di antara giliran. Matikan opsi ini untuk kembali menggunakan generateContent jika Anda mengalami masalah.',
 	'settings.agentConfig.customEndpointName': 'Endpoint API kustom',
 	'settings.agentConfig.customEndpointDesc':
 		'Timpa URL dasar Google API default (misalnya untuk proksi perusahaan atau gateway lokal). Biarkan kosong untuk menggunakan endpoint resmi.',
