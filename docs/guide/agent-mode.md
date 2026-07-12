@@ -46,6 +46,9 @@ Choose which operations require confirmation in **Settings → Gemini Scribe →
 - **update_frontmatter**: Modifying note properties (frontmatter)
 - **create_skill**: Creating new skill packages
 - **edit_skill**: Updating existing skill instructions
+- **generate_image**: Generating and saving images
+- **update_memory**: Updating vault memory (AGENTS.md)
+- **google_search**, **google_maps**, **fetch_url**, **deep_research**: External web/research calls (Gemini provider only)
 
 When the agent needs to perform these operations, an **in-chat confirmation request** appears with interactive buttons. You can also use "Don't ask again this session" for trusted workflows. See [Tool Confirmations](#tool-confirmations) for details.
 
@@ -613,6 +616,9 @@ By default, these operations require confirmation:
 - **update_frontmatter**: Modifying note properties (frontmatter)
 - **create_skill**: Creating new skill packages
 - **edit_skill**: Updating existing skill instructions
+- **generate_image**: Generating and saving images
+- **update_memory**: Updating vault memory (AGENTS.md)
+- **google_search**, **google_maps**, **fetch_url**, **deep_research**: External web/research calls (Gemini provider only)
 
 You can configure which operations require confirmation in **Settings → Gemini Scribe → Tool permissions** (enable **Show advanced settings** first).
 
