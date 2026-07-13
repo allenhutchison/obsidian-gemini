@@ -30,6 +30,36 @@ describe('grounding-render: shared search-grounding renderer', () => {
 		);
 	});
 
+	test('empty-string title (falsy) falls back to the URL as the label', () => {
+		const html = renderGroundingSources([{ url: 'https://empty-title.example', title: '' }]);
+		expect(html).toContain(
+			'<a href="https://empty-title.example" target="_blank" rel="noopener noreferrer">https://empty-title.example</a>'
+		);
+	});
+
+	test('preserves the exact cited URL rather than a URL-normalized form (no added trailing slash)', () => {
+		// `new URL('https://example.com').toString()` would add a trailing slash;
+		// the renderer must echo back the original string so the link stays
+		// faithful to the cited source.
+		const html = renderGroundingSources([{ url: 'https://example.com', title: 'Example' }]);
+		expect(html).toContain('href="https://example.com"');
+		expect(html).not.toContain('href="https://example.com/"');
+	});
+
+	test('preserves ordering across multiple sources', () => {
+		const html = renderGroundingSources([
+			{ url: 'https://first.example', title: 'First' },
+			{ url: 'https://second.example', title: 'Second' },
+			{ url: 'https://third.example', title: 'Third' },
+		]);
+		const firstIndex = html.indexOf('First');
+		const secondIndex = html.indexOf('Second');
+		const thirdIndex = html.indexOf('Third');
+		expect(firstIndex).toBeGreaterThan(-1);
+		expect(firstIndex).toBeLessThan(secondIndex);
+		expect(secondIndex).toBeLessThan(thirdIndex);
+	});
+
 	describe('HTML-safety contract (untrusted grounding metadata)', () => {
 		test('neutralizes a javascript: scheme in the href', () => {
 			const html = renderGroundingSources([{ url: 'javascript:alert(1)', title: 'Click me' }]);
@@ -91,5 +121,13 @@ describe('grounding-render helpers', () => {
 		expect(safeExternalUrl('javascript:alert(1)')).toBe('#');
 		expect(safeExternalUrl('data:text/html,x')).toBe('#');
 		expect(safeExternalUrl('not a url')).toBe('#');
+	});
+
+	test('safeExternalUrl rejects non-http(s) network schemes such as ftp:', () => {
+		expect(safeExternalUrl('ftp://example.com/file')).toBe('#');
+	});
+
+	test('safeExternalUrl does not normalize a bare-origin URL into an origin-with-slash', () => {
+		expect(safeExternalUrl('https://example.com')).toBe('https://example.com');
 	});
 });
