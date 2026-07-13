@@ -2,6 +2,16 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { Notice } from 'obsidian';
 import { AgentViewSend } from '../../../src/ui/agent-view/agent-view-send';
 import type { GeminiConversationEntry } from '../../../src/types/conversation';
+import type { InlineAttachment } from '../../../src/ui/agent-view/inline-attachment';
+
+// Mock the vault-persistence helper so the attachment-persistence phase can be
+// driven without a real Obsidian vault. The rest of the module (types/helpers)
+// is preserved via importActual.
+const saveAttachmentToVault = vi.fn();
+vi.mock('../../../src/ui/agent-view/inline-attachment', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('../../../src/ui/agent-view/inline-attachment')>();
+	return { ...actual, saveAttachmentToVault };
+});
 
 // Unit coverage for the shared `finalizeNoToolCallResponse` helper extracted from
 // the streaming and non-streaming send paths (#1102). It owns the three-way
@@ -110,5 +120,94 @@ describe('AgentViewSend.finalizeNoToolCallResponse', () => {
 		expect(warn).toHaveBeenCalledWith('Model returned empty response');
 		expect(NoticeMock).toHaveBeenCalledTimes(1);
 		expect(hide).toHaveBeenCalledTimes(1);
+	});
+});
+
+// Unit coverage for the `persistAttachments` phase extracted from `sendMessage`
+// (#1196). It writes not-yet-saved attachments to the vault, skips ones already
+// carrying a `vaultPath` (e.g. from drag-drop), and reports save failures to the
+// user while still returning the successes. Previously this was only reachable by
+// driving the whole ~540-line `sendMessage`.
+
+function makeAttachment(id: string, vaultPath?: string): InlineAttachment {
+	return { base64: 'AAAA', mimeType: 'image/png', id, vaultPath };
+}
+
+// Invoke the private helper under test without widening its visibility.
+function persist(send: AgentViewSend, attachments: InlineAttachment[]) {
+	return (send as any).persistAttachments(attachments) as Promise<
+		Array<{ attachment: InlineAttachment; path: string }>
+	>;
+}
+
+describe('AgentViewSend.persistAttachments', () => {
+	beforeEach(() => {
+		NoticeMock.mockClear();
+		saveAttachmentToVault.mockReset();
+	});
+
+	function makeSendCtx() {
+		const error = vi.fn();
+		const app = { name: 'app' };
+		const ctx = { app, plugin: { logger: { error } } } as any;
+		return { send: new AgentViewSend(ctx), app, error };
+	}
+
+	test('saves not-yet-persisted attachments to the vault and returns their paths', async () => {
+		const { send, app } = makeSendCtx();
+		saveAttachmentToVault.mockResolvedValueOnce('vault/a.png').mockResolvedValueOnce('vault/b.png');
+		const a = makeAttachment('a');
+		const b = makeAttachment('b');
+
+		const result = await persist(send, [a, b]);
+
+		expect(saveAttachmentToVault).toHaveBeenCalledTimes(2);
+		expect(saveAttachmentToVault).toHaveBeenNthCalledWith(1, app, a);
+		expect(saveAttachmentToVault).toHaveBeenNthCalledWith(2, app, b);
+		expect(result).toEqual([
+			{ attachment: a, path: 'vault/a.png' },
+			{ attachment: b, path: 'vault/b.png' },
+		]);
+		// The saved path is recorded back onto the attachment.
+		expect(a.vaultPath).toBe('vault/a.png');
+		expect(b.vaultPath).toBe('vault/b.png');
+		expect(NoticeMock).not.toHaveBeenCalled();
+	});
+
+	test('skips attachments already in the vault (drag-drop) without re-saving', async () => {
+		const { send } = makeSendCtx();
+		const dropped = makeAttachment('d', 'vault/dropped.png');
+
+		const result = await persist(send, [dropped]);
+
+		expect(saveAttachmentToVault).not.toHaveBeenCalled();
+		expect(result).toEqual([{ attachment: dropped, path: 'vault/dropped.png' }]);
+		expect(NoticeMock).not.toHaveBeenCalled();
+	});
+
+	test('a save failure is logged and notified; the attachment is omitted but others still return', async () => {
+		const { send, error } = makeSendCtx();
+		const boom = new Error('disk full');
+		saveAttachmentToVault.mockRejectedValueOnce(boom).mockResolvedValueOnce('vault/ok.png');
+		const bad = makeAttachment('bad');
+		const good = makeAttachment('good');
+
+		const result = await persist(send, [bad, good]);
+
+		expect(result).toEqual([{ attachment: good, path: 'vault/ok.png' }]);
+		expect(bad.vaultPath).toBeUndefined();
+		expect(error).toHaveBeenCalledWith('Failed to save attachment to vault:', boom);
+		// The failure surfaces to the user as a notice (attachment still sent to the model).
+		expect(NoticeMock).toHaveBeenCalledTimes(1);
+	});
+
+	test('empty input returns an empty list and touches nothing', async () => {
+		const { send } = makeSendCtx();
+
+		const result = await persist(send, []);
+
+		expect(result).toEqual([]);
+		expect(saveAttachmentToVault).not.toHaveBeenCalled();
+		expect(NoticeMock).not.toHaveBeenCalled();
 	});
 });

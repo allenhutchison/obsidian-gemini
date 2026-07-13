@@ -186,6 +186,56 @@ export class AgentViewSend {
 	}
 
 	/**
+	 * Persist dropped/pasted attachments to the vault, skipping any already saved
+	 * (e.g. from drag-drop, which carry a `vaultPath`). Notifies the user of any
+	 * save failures; failed attachments are omitted from the returned list but are
+	 * still sent to the model as inline data by the caller.
+	 *
+	 * Extracted from `sendMessage` as the self-contained attachment-persistence
+	 * phase (#1196) — a clear input → side-effect → returns-paths boundary. Pure
+	 * code motion; call order relative to the surrounding send steps is unchanged.
+	 *
+	 * @param attachments The pending attachments to persist.
+	 * @returns The successfully saved attachments paired with their vault paths.
+	 */
+	private async persistAttachments(
+		attachments: InlineAttachment[]
+	): Promise<Array<{ attachment: InlineAttachment; path: string }>> {
+		const savedAttachments: Array<{ attachment: InlineAttachment; path: string }> = [];
+		const failedSaves: number[] = [];
+		for (let i = 0; i < attachments.length; i++) {
+			const attachment = attachments[i];
+			if (attachment.vaultPath) {
+				// Already in vault (from drag-drop), skip saving
+				savedAttachments.push({ attachment, path: attachment.vaultPath });
+				continue;
+			}
+			try {
+				const { saveAttachmentToVault } = await import('./inline-attachment');
+				const path = await saveAttachmentToVault(this.ctx.app, attachment);
+				attachment.vaultPath = path;
+				savedAttachments.push({ attachment, path });
+			} catch (err) {
+				this.ctx.plugin.logger.error('Failed to save attachment to vault:', err);
+				failedSaves.push(i + 1);
+			}
+		}
+
+		// Notify user of any save failures (attachments will still be sent to AI)
+		if (failedSaves.length > 0) {
+			const failedList = failedSaves.join(', ');
+			new Notice(
+				failedSaves.length === 1
+					? t('agent.attachments.saveFailedOne', { nums: failedList })
+					: t('agent.attachments.saveFailed', { nums: failedList }),
+				5000
+			);
+		}
+
+		return savedAttachments;
+	}
+
+	/**
 	 * Main orchestration method for sending messages and handling tool calls
 	 */
 	async sendMessage(): Promise<void> {
@@ -224,36 +274,7 @@ export class AgentViewSend {
 		shelf.markBinarySent();
 
 		// Save attachments to vault (skip those already saved, e.g. from drag-drop)
-		const savedAttachments: Array<{ attachment: InlineAttachment; path: string }> = [];
-		const failedSaves: number[] = [];
-		for (let i = 0; i < attachments.length; i++) {
-			const attachment = attachments[i];
-			if (attachment.vaultPath) {
-				// Already in vault (from drag-drop), skip saving
-				savedAttachments.push({ attachment, path: attachment.vaultPath });
-				continue;
-			}
-			try {
-				const { saveAttachmentToVault } = await import('./inline-attachment');
-				const path = await saveAttachmentToVault(this.ctx.app, attachment);
-				attachment.vaultPath = path;
-				savedAttachments.push({ attachment, path });
-			} catch (err) {
-				this.ctx.plugin.logger.error('Failed to save attachment to vault:', err);
-				failedSaves.push(i + 1);
-			}
-		}
-
-		// Notify user of any save failures (attachments will still be sent to AI)
-		if (failedSaves.length > 0) {
-			const failedList = failedSaves.join(', ');
-			new Notice(
-				failedSaves.length === 1
-					? t('agent.attachments.saveFailedOne', { nums: failedList })
-					: t('agent.attachments.saveFailed', { nums: failedList }),
-				5000
-			);
-		}
+		const savedAttachments = await this.persistAttachments(attachments);
 
 		// Clear input
 		userInput.innerHTML = '';
