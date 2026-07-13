@@ -102,5 +102,22 @@ describe('history-normalize', () => {
 			const entry = { role: 'user' } as unknown as Content;
 			expect(normalizeToContent(entry, identityCoerce)).toBeNull();
 		});
+
+		it('does not treat a malformed non-array parts entry as canonical', () => {
+			// `'parts' in entry` is true but the value is not an array; with no legacy
+			// text/message to recover, the entry is rejected rather than passed through.
+			const entry = { role: 'user', parts: null } as unknown as Content;
+			expect(normalizeToContent(entry, identityCoerce)).toBeNull();
+		});
+
+		it('recovers legacy text when parts is present but not an array', () => {
+			// A malformed `{ parts: null }` entry that also carries a legacy `text`
+			// field falls through to the legacy branch instead of losing the text.
+			const entry = { role: 'user', parts: null, text: 'recovered' } as unknown as Content;
+			expect(normalizeToContent(entry, identityCoerce)).toEqual({
+				role: 'user',
+				parts: [{ text: 'recovered' }],
+			});
+		});
 	});
 });

@@ -68,7 +68,11 @@ export function normalizeToContent(
 	entry: Content,
 	coerceRole: (role: string | undefined) => 'user' | 'model'
 ): Content | null {
-	if ('role' in entry && 'parts' in entry) {
+	// Require `parts` to actually be an array before treating the entry as
+	// canonical — a malformed `{ parts: null }` entry must fall through to the
+	// legacy branch (so a co-present `text`/`message` is still recovered) rather
+	// than pass through, matching the sibling guard in `context-manager.ts`.
+	if ('role' in entry && Array.isArray((entry as { parts?: unknown }).parts)) {
 		return entry;
 	}
 	if ('role' in entry && ('text' in entry || 'message' in entry)) {
