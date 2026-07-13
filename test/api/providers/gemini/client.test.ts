@@ -725,9 +725,7 @@ describe('GeminiClient', () => {
 					{
 						content: { parts: [{ text: 'ok' }] },
 						groundingMetadata: {
-							groundingChunks: [
-								{ web: { uri: 'javascript:alert(1)', title: '<img src=x onerror=alert(1)>' } },
-							],
+							groundingChunks: [{ web: { uri: 'javascript:alert(1)', title: '<img src=x onerror=alert(1)>' } }],
 						},
 					},
 				],
