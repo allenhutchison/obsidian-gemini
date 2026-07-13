@@ -44,6 +44,7 @@ Choose which operations require confirmation in **Settings → Gemini Scribe →
 - **move_file**: Moving or renaming files
 - **append_content**: Adding text to the end of files
 - **update_frontmatter**: Modifying note properties (frontmatter)
+- **create_folder**: Creating new folders
 - **create_skill**: Creating new skill packages
 - **edit_skill**: Updating existing skill instructions
 - **generate_image**: Generating and saving images
@@ -614,6 +615,7 @@ By default, these operations require confirmation:
 - **move_file**: Moving or renaming files
 - **append_content**: Adding text to the end of files
 - **update_frontmatter**: Modifying note properties (frontmatter)
+- **create_folder**: Creating new folders
 - **create_skill**: Creating new skill packages
 - **edit_skill**: Updating existing skill instructions
 - **generate_image**: Generating and saving images
