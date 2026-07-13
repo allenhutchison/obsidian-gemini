@@ -1,7 +1,19 @@
 import { TFile, TFolder, normalizePath } from 'obsidian';
 import type { TAbstractFile } from 'obsidian';
 import type { ObsidianGemini } from '../../types/plugin';
+import type { ToolResult } from '../types';
 import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
+
+/**
+ * System-folder guard shared by the write/destructive vault tools. Returns a
+ * failure `ToolResult` when `normalizedPath` lands inside a protected folder
+ * (the plugin state folder or `.obsidian`), or `null` when the path is allowed.
+ * Callers pass the fully-formed, tool-specific error message so each tool keeps
+ * its own wording ("Cannot write to…", "Cannot delete…", etc.).
+ */
+export function guardExcludedPath(normalizedPath: string, plugin: ObsidianGemini, error: string): ToolResult | null {
+	return shouldExcludePath(normalizedPath, plugin) ? { success: false, error } : null;
+}
 
 /** Plain, serializable description of a vault file or folder. */
 export interface VaultFileEntry {

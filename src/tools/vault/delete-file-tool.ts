@@ -2,8 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { normalizePath } from 'obsidian';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
-import { resolvePathToFileOrFolder } from './utils';
+import { guardExcludedPath, resolvePathToFileOrFolder } from './utils';
 import { t } from '../../i18n';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 
@@ -48,12 +47,8 @@ export class DeleteFileTool implements Tool {
 			const normalizedPath = normalizePath(params.path);
 
 			// Check if path is excluded
-			if (shouldExcludePath(normalizedPath, plugin)) {
-				return {
-					success: false,
-					error: `Cannot delete system folder: ${params.path}`,
-				};
-			}
+			const excluded = guardExcludedPath(normalizedPath, plugin, `Cannot delete system folder: ${params.path}`);
+			if (excluded) return excluded;
 
 			// Use shared file/folder resolution helper
 			const { item, type } = resolvePathToFileOrFolder(params.path, plugin);
