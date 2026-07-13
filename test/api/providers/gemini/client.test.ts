@@ -670,6 +670,90 @@ describe('GeminiClient', () => {
 			});
 			expect(result).toContain('>https://no-title.com</a>');
 		});
+
+		test('links carry rel="noopener noreferrer" via the shared renderer', () => {
+			const result = extract({
+				candidates: [
+					{
+						content: { parts: [{ text: 'ok' }] },
+						groundingMetadata: {
+							groundingChunks: [{ web: { uri: 'https://example.com', title: 'Example' } }],
+						},
+					},
+				],
+			});
+			expect(result).toContain('rel="noopener noreferrer"');
+			expect(result).toContain('target="_blank"');
+		});
+
+		test('chunks without a web object are filtered out', () => {
+			const result = extract({
+				candidates: [
+					{
+						content: { parts: [{ text: 'ok' }] },
+						groundingMetadata: {
+							groundingChunks: [{ retrievedContext: { uri: 'https://not-web.example' } }],
+						},
+					},
+				],
+			});
+			expect(result).toBe('');
+		});
+
+		test('web chunks missing a uri are filtered out while valid siblings still render', () => {
+			const result = extract({
+				candidates: [
+					{
+						content: { parts: [{ text: 'ok' }] },
+						groundingMetadata: {
+							groundingChunks: [
+								{ web: { title: 'No URI here' } },
+								{ web: { uri: 'https://valid.example', title: 'Valid' } },
+							],
+						},
+					},
+				],
+			});
+			expect(result).not.toContain('No URI here');
+			expect(result).toContain('<a href="https://valid.example"');
+			expect(result.match(/<li>/g)).toHaveLength(1);
+		});
+
+		test('sanitizes a malicious url/title through the shared hardened renderer (no HTML injection, no javascript: href)', () => {
+			const result = extract({
+				candidates: [
+					{
+						content: { parts: [{ text: 'ok' }] },
+						groundingMetadata: {
+							groundingChunks: [
+								{ web: { uri: 'javascript:alert(1)', title: '<img src=x onerror=alert(1)>' } },
+							],
+						},
+					},
+				],
+			});
+			// Disallowed scheme is neutralized to '#'.
+			expect(result).toContain('href="#"');
+			expect(result).not.toContain('javascript:');
+			// Title is HTML-escaped, so no raw tag survives.
+			expect(result).not.toContain('<img');
+			expect(result).toContain('&lt;img src=x onerror=alert(1)&gt;');
+		});
+
+		test('only the first candidate is considered for grounding metadata', () => {
+			const result = extract({
+				candidates: [
+					{ content: { parts: [{ text: 'ok' }] }, groundingMetadata: { groundingChunks: [] } },
+					{
+						content: { parts: [{ text: 'other' }] },
+						groundingMetadata: {
+							groundingChunks: [{ web: { uri: 'https://second-candidate.example' } }],
+						},
+					},
+				],
+			});
+			expect(result).toBe('');
+		});
 	});
 
 	// ──────────────────────────────────────────────────────────────────────
