@@ -2,7 +2,8 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { TFolder, normalizePath } from 'obsidian';
-import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
+import { ensureFolderExists } from '../../utils/file-utils';
+import { guardExcludedPath } from './utils';
 import { t } from '../../i18n';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 
@@ -47,12 +48,12 @@ export class CreateFolderTool implements Tool {
 			const normalizedPath = normalizePath(params.path);
 
 			// Check if path is excluded
-			if (shouldExcludePath(normalizedPath, plugin)) {
-				return {
-					success: false,
-					error: `Cannot create folder in system directory: ${params.path}`,
-				};
-			}
+			const excluded = guardExcludedPath(
+				normalizedPath,
+				plugin,
+				`Cannot create folder in system directory: ${params.path}`
+			);
+			if (excluded) return excluded;
 
 			const existing = plugin.app.vault.getAbstractFileByPath(normalizedPath);
 

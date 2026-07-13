@@ -2,8 +2,8 @@ import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
 import { normalizePath } from 'obsidian';
-import { shouldExcludePathForPlugin as shouldExcludePath, ensureFolderExists } from '../../utils/file-utils';
-import { resolvePathToFileOrFolder } from './utils';
+import { ensureFolderExists } from '../../utils/file-utils';
+import { guardExcludedPath, resolvePathToFileOrFolder } from './utils';
 import { t } from '../../i18n';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
 
@@ -59,19 +59,19 @@ export class MoveFileTool implements Tool {
 			const targetNormalizedPath = normalizePath(params.targetPath);
 
 			// Check if either path is excluded
-			if (shouldExcludePath(sourceNormalizedPath, plugin)) {
-				return {
-					success: false,
-					error: `Cannot move from system folder: ${params.sourcePath}`,
-				};
-			}
+			const sourceExcluded = guardExcludedPath(
+				sourceNormalizedPath,
+				plugin,
+				`Cannot move from system folder: ${params.sourcePath}`
+			);
+			if (sourceExcluded) return sourceExcluded;
 
-			if (shouldExcludePath(targetNormalizedPath, plugin)) {
-				return {
-					success: false,
-					error: `Cannot move to system folder: ${params.targetPath}`,
-				};
-			}
+			const targetExcluded = guardExcludedPath(
+				targetNormalizedPath,
+				plugin,
+				`Cannot move to system folder: ${params.targetPath}`
+			);
+			if (targetExcluded) return targetExcluded;
 
 			// Use shared file/folder resolution helper
 			const { item: sourceItem, type } = resolvePathToFileOrFolder(params.sourcePath, plugin);
