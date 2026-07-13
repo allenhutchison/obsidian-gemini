@@ -42,6 +42,7 @@ import {
 	type InteractionStep,
 } from './interactions-mapper';
 import { installObsidianFetch } from './obsidian-fetch';
+import { renderGroundingSources } from './grounding-render';
 
 /**
  * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`,
@@ -759,26 +760,16 @@ export class GeminiClient implements ModelApi {
 		const metadata = response.candidates?.[0]?.groundingMetadata;
 		if (!metadata) return '';
 
-		// Extract and format grounding sources
+		// Normalize web chunks to the shared renderer's shape. `chunk.web.uri` /
+		// `chunk.web.title` are untrusted grounding metadata, so rendering goes
+		// through the single hardened renderer (escaped + scheme-validated + rel)
+		// rather than raw string concatenation — see grounding-render.ts / #1195.
 		const chunks = metadata.groundingChunks || [];
+		const sources = chunks
+			.filter((chunk) => chunk.web?.uri)
+			.map((chunk) => ({ url: chunk.web!.uri as string, title: chunk.web!.title }));
 
-		if (chunks.length === 0) return '';
-
-		// Build HTML similar to how Gemini API returns it
-		let html = '<div class="search-grounding">';
-		html += '<h4>Sources:</h4>';
-		html += '<ul>';
-
-		for (const chunk of chunks) {
-			if (chunk.web) {
-				html += `<li><a href="${chunk.web.uri}" target="_blank">${chunk.web.title || chunk.web.uri}</a></li>`;
-			}
-		}
-
-		html += '</ul>';
-		html += '</div>';
-
-		return html;
+		return renderGroundingSources(sources);
 	}
 
 	/**
