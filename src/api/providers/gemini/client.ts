@@ -363,6 +363,17 @@ export class GeminiClient implements ModelApi {
 		const complete = (async (): Promise<ModelResponse> => {
 			const params = await this.buildGenerateContentParams(request);
 
+			// Assemble the response from the current accumulator state. Called from
+			// both the success return and the cancelled-in-catch return, which must
+			// produce the identical shape.
+			const buildResponse = (): ModelResponse => ({
+				markdown: accumulatedText,
+				rendered: accumulatedRendered,
+				...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
+				...(toolCalls && { toolCalls }),
+				...(lastUsageMetadata && { usageMetadata: lastUsageMetadata }),
+			});
+
 			try {
 				const stream = await this.ai.models.generateContentStream(params);
 
@@ -437,22 +448,10 @@ export class GeminiClient implements ModelApi {
 					this.plugin?.logger.debug('[GeminiClient] No usageMetadata received from any streaming chunk');
 				}
 
-				return {
-					markdown: accumulatedText,
-					rendered: accumulatedRendered,
-					...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-					...(toolCalls && { toolCalls }),
-					...(lastUsageMetadata && { usageMetadata: lastUsageMetadata }),
-				};
+				return buildResponse();
 			} catch (error) {
 				if (cancelled) {
-					return {
-						markdown: accumulatedText,
-						rendered: accumulatedRendered,
-						...(accumulatedThoughts && { thoughts: accumulatedThoughts }),
-						...(toolCalls && { toolCalls }),
-						...(lastUsageMetadata && { usageMetadata: lastUsageMetadata }),
-					};
+					return buildResponse();
 				}
 				this.plugin?.logger.error('[GeminiClient] Streaming error:', error);
 				throw error;
