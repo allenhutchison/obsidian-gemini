@@ -20,7 +20,7 @@ In v4.0+, the agent is always available and can:
 ### 1. Open Agent Chat
 
 - Use Command Palette: "Gemini Scribe: Open Gemini chat"
-- Or click the sparkles icon (⭐) in the ribbon
+- Or click the sparkles icon (✨) in the ribbon
 - Or use your configured hotkey
 - You can also manage sessions directly from the command palette with:
   - "New agent session"

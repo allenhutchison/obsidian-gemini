@@ -94,7 +94,7 @@ The fastest way to add context files:
 5. File appears in the shelf above the input
 6. The file is now persistent context for the session
 
-To type a literal `@` symbol without triggering the picker, press `@` twice or continue typing without selecting from the list.
+Typing `@` always opens the picker (focus moves to its search box). To keep a literal `@` in your message instead of picking a file, press **Esc** to dismiss the picker — the `@` you already typed stays in the input.
 
 **Example:**
 

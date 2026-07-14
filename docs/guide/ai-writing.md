@@ -313,7 +313,7 @@ The Ask about selection feature lets you ask any question about selected text. T
 1. **Select text** in your document
 2. **Right-click** and choose "Gemini Scribe: Ask question..."
 3. **Type your question** in the modal
-4. **Press Enter** or click "Ask"
+4. **Press Ctrl/Cmd + Enter** or click "Ask"
 5. **View the response** and choose an action:
    - **Insert as callout**: Adds the Q&A as a callout block
    - **Copy**: Copies the response to clipboard

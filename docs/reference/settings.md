@@ -261,7 +261,7 @@ Compaction isn't only checked before the initial request — `AgentLoop` re-chec
 - **Default**: `true`
 - **Description**: Append a summary of each tool execution to the session history file for auditing
 - **Format**: Collapsible callout blocks showing tool name, key parameters, status, and duration
-- **Note**: Requires plugin reload to take effect when toggled
+- **Note**: Takes effect immediately when toggled — no plugin reload needed
 
 ### Always Show Diff view for File Writes
 
