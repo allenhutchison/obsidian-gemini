@@ -339,16 +339,7 @@ export class AgentLoop {
 					);
 					pendingBudgetNotice = formatBudgetExtension(granted);
 				} else {
-					return {
-						markdown: '',
-						history: conversationHistory,
-						cancelled: false,
-						retried: false,
-						fellBack: false,
-						exhausted: true,
-						loopAborted: false,
-						iterations,
-					};
+					return this.makeResult({ markdown: '', history: conversationHistory, exhausted: true, iterations });
 				}
 			}
 
@@ -544,17 +535,12 @@ export class AgentLoop {
 
 			// Terminal: model returned text (or empty)
 			if (followUpResponse.markdown && followUpResponse.markdown.trim()) {
-				return {
+				return this.makeResult({
 					markdown: followUpResponse.markdown,
 					thoughts: followUpResponse.thoughts?.trim() ? followUpResponse.thoughts : undefined,
 					history: updatedHistory,
-					cancelled: false,
-					retried: false,
-					fellBack: false,
-					exhausted: false,
-					loopAborted: false,
 					iterations,
-				};
+				});
 			}
 
 			// Empty response — try once with a simpler prompt that excludes tools.
@@ -585,45 +571,29 @@ export class AgentLoop {
 			}
 
 			if (retryResponse.markdown && retryResponse.markdown.trim()) {
-				return {
+				return this.makeResult({
 					markdown: retryResponse.markdown,
 					thoughts: retryResponse.thoughts?.trim() ? retryResponse.thoughts : undefined,
 					history: updatedHistory,
-					cancelled: false,
 					retried: true,
-					fellBack: false,
-					exhausted: false,
-					loopAborted: false,
 					iterations,
-				};
+				});
 			}
 
 			// Both attempts empty — fall back to the executed-tools summary.
 			plugin.logger.warn('[AgentLoop] Model returned empty response after retry');
-			return {
+			return this.makeResult({
 				markdown: buildEmptyResponseMessage(toolResults, plugin),
 				history: updatedHistory,
-				cancelled: false,
 				retried: true,
 				fellBack: true,
-				exhausted: false,
-				loopAborted: false,
 				iterations,
-			};
+			});
 		}
 
 		// No initial tool calls at all — degenerate case the caller shouldn't hit
 		// (they'd have used the initial response directly). Return a no-op result.
-		return {
-			markdown: '',
-			history: conversationHistory,
-			cancelled: false,
-			retried: false,
-			fellBack: false,
-			exhausted: false,
-			loopAborted: false,
-			iterations: 0,
-		};
+		return this.makeResult({ markdown: '', history: conversationHistory, iterations: 0 });
 	}
 
 	/**
@@ -661,32 +631,39 @@ export class AgentLoop {
 		}
 	}
 
-	private cancelledResult(history: Content[], iterations: number): AgentLoopResult {
+	/**
+	 * Assemble an {@link AgentLoopResult}, defaulting the five status flags to
+	 * `false` so each terminal path only spells out the flags that are true for
+	 * it. Every return site — including {@link cancelledResult} and
+	 * {@link loopAbortedResult} — routes through here so the default flag block
+	 * is defined exactly once.
+	 */
+	private makeResult(
+		fields: Pick<AgentLoopResult, 'markdown' | 'history' | 'iterations'> & Partial<AgentLoopResult>
+	): AgentLoopResult {
 		return {
-			markdown: '',
-			history,
-			cancelled: true,
-			retried: false,
-			fellBack: false,
-			exhausted: false,
-			loopAborted: false,
-			iterations,
-		};
-	}
-
-	private loopAbortedResult(history: Content[], iterations: number, fireCount: number): AgentLoopResult {
-		return {
-			markdown:
-				`The agent kept retrying the same tool call (loop detector fired ${fireCount} times). ` +
-				'Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session.',
-			history,
 			cancelled: false,
 			retried: false,
 			fellBack: false,
 			exhausted: false,
+			loopAborted: false,
+			...fields,
+		};
+	}
+
+	private cancelledResult(history: Content[], iterations: number): AgentLoopResult {
+		return this.makeResult({ markdown: '', history, cancelled: true, iterations });
+	}
+
+	private loopAbortedResult(history: Content[], iterations: number, fireCount: number): AgentLoopResult {
+		return this.makeResult({
+			markdown:
+				`The agent kept retrying the same tool call (loop detector fired ${fireCount} times). ` +
+				'Stopping this turn to prevent a runaway loop. Try rephrasing your request or starting a new session.',
+			history,
 			loopAborted: true,
 			iterations,
-		};
+		});
 	}
 
 	private async executeToolBatch(
