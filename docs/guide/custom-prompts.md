@@ -46,7 +46,7 @@ Custom prompts are stored in: `[state-folder]/Prompts/`
 
 For example, if your plugin state folder is `gemini-scribe`, prompts will be in `gemini-scribe/Prompts/`.
 
-The plugin automatically creates this folder structure and adds an example prompt when you first enable the feature:
+The plugin automatically creates this folder structure and adds an example prompt the first time it loads (there's no separate toggle to turn the feature on):
 
 - `gemini-scribe/` - Main plugin state folder
 - `gemini-scribe/Prompts/` - Custom prompt templates

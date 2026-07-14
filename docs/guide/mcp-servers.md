@@ -34,15 +34,16 @@ When you connect an MCP server to Gemini Scribe, its tools appear alongside the 
 
 1. Open Obsidian Settings
 2. Navigate to **Gemini Scribe** settings
-3. Scroll to the **MCP servers** section
-4. Toggle **Enable MCP servers** on
-5. Click **Add server**
-6. Select the **Transport** type:
+3. Enable **Show advanced settings** if you haven't already — the **MCP servers** section only appears once it's on
+4. Scroll to the **MCP servers** section
+5. Toggle **Enable MCP servers** on
+6. Click **Add server**
+7. Select the **Transport** type:
    - **Stdio (local process)**: Enter the command, arguments, and optional environment variables
    - **HTTP (remote server)**: Enter the server URL
-7. Click **Test connection** to verify and discover available tools
-8. Configure tool trust settings (see below)
-9. Click **Save**
+8. Click **Test connection** to verify and discover available tools
+9. Configure tool trust settings (see below)
+10. Click **Save**
 
 ### Tool Trust
 
@@ -102,7 +103,7 @@ Some MCP servers require OAuth authentication. Gemini Scribe handles the full OA
 6. Tokens are stored securely in Obsidian's SecretStorage (OS keychain)
 
 ::: tip
-OAuth tokens persist across Obsidian restarts. To clear stored credentials, click **Clear OAuth Credentials** in the server's edit dialog.
+OAuth tokens persist across Obsidian restarts. To clear stored credentials, click **Clear credentials** in the server's edit dialog.
 :::
 
 ::: warning

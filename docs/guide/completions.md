@@ -40,7 +40,7 @@ Completions provide:
 1. Open Command Palette (`Ctrl/Cmd + P`)
 2. Search for "Gemini Scribe: Toggle completions"
 3. Press Enter
-4. See confirmation notice: "Completions enabled" or "Completions disabled"
+4. See confirmation notice: "Gemini Scribe completions are now enabled." or "Gemini Scribe completions are now disabled."
 
 ### Quick Test
 
@@ -350,8 +350,7 @@ Train the AI by:
    - Look for confirmation
 
 2. **Verify file type**
-   - Must be markdown (.md)
-   - Not in code blocks
+   - Must be an open Markdown view (.md file)
 
 3. **Check timing**
    - Wait full 500ms
@@ -492,9 +491,9 @@ Turn off for:
 
 ### With Custom Prompts
 
-- Completions respect active prompts
-- Suggestions match prompt style
-- Consistency across features
+- Completions use a fixed, dedicated prompt template and do not read the session's active custom prompt
+- Suggestions are based only on the surrounding document text, not any custom prompt's style or persona
+- Custom prompts affect Chat, Rewrite, and selection features, not completions
 
 ### With Chat
 

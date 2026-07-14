@@ -15,6 +15,7 @@ Gemini Scribe can run on either the **Google Gemini (cloud)** or **Ollama (local
 | RAG / Vault Semantic Search     |   ✓    | ✗ — tracked in [#705](https://github.com/allenhutchison/obsidian-gemini/issues/705) |
 | Image generation                |   ✓    | ✗ — tracked in [#706](https://github.com/allenhutchison/obsidian-gemini/issues/706) |
 | Google Search grounding         |   ✓    | ✗                                                                                   |
+| Google Maps grounding           |   ✓    | ✗                                                                                   |
 | URL Context (web fetch tool)    |   ✓    | ✗                                                                                   |
 | Deep Research                   |   ✓    | ✗                                                                                   |
 | PDF / audio / video attachments |   ✓    | ✗ (images only)                                                                     |
@@ -23,7 +24,7 @@ Gemini Scribe can run on either the **Google Gemini (cloud)** or **Ollama (local
 
 - **Tool calling** — Whether an Ollama model can call tools depends on the model itself; most modern instruct models (Llama 3.2, Qwen 2.5, Mistral 0.3, …) support it, smaller or older models may not.
 - **Vision** — Ollama vision support is auto-detected per model from its `/api/show` capabilities (with a template/name-hint fallback for older Ollama versions) — no manual configuration is needed when you pull a new multimodal model.
-- **RAG, image generation, Google Search, URL Context, and Deep Research** all call Google's cloud APIs directly and require a Gemini API key regardless of the active provider setting. Google Search, URL Context, and Deep Research are hidden from the agent's tool list when Ollama is selected. RAG and image generation stay visible instead — their settings and commands remain in the UI, but invoking them with Ollama active is a silent no-op (RAG) or shows a "not available" notice (image generation) rather than failing at call time.
+- **RAG, image generation, Google Search, Google Maps, URL Context, and Deep Research** all call Google's cloud APIs directly and require a Gemini API key regardless of the active provider setting. Google Search, Google Maps, URL Context, and Deep Research are hidden from the agent's tool list when Ollama is selected. RAG and image generation stay visible instead — their settings and commands remain in the UI, but invoking them with Ollama active is a silent no-op (RAG) or shows a "not available" notice (image generation) rather than failing at call time.
 - **Scheduled tasks** run through the same chat/tool-calling path as interactive agent sessions, so a task that needs vision or tool calling on Ollama is still bound by that model's capabilities.
 
 Switching the **Provider** setting between Gemini and Ollama at any time restores or hides the Google-only tools immediately — no data is lost, and settings persist across switches.

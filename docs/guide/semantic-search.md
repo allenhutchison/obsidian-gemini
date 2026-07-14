@@ -122,10 +122,11 @@ Agent: [Uses vault_semantic_search with query "project deadlines", folder="work"
 **With "Include attachments" enabled:**
 
 - PDFs (`.pdf`)
-- Office documents (`.docx`, `.xlsx`, `.pptx`)
 - Text files (`.txt`, `.json`, `.yaml`, `.csv`)
 - Code files (`.js`, `.ts`, `.py`, `.sh`, etc.)
 - HTML, XML, and other text-based formats
+
+Office documents (`.docx`, `.xlsx`, `.pptx`) are **not** currently supported by the underlying Gemini File Search API integration and are skipped even with attachments enabled.
 
 ## Privacy & Data Storage
 
