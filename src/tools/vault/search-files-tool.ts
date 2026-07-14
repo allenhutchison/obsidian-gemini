@@ -1,8 +1,8 @@
 import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
+import { isFileInAgentScope } from './utils';
 
 /**
  * Search for files by name pattern
@@ -76,8 +76,7 @@ export class SearchFilesTool implements Tool {
 
 			const projectRoot = context.projectRootPath;
 			const scopedMatches = allFiles.filter((file) => {
-				if (shouldExcludePath(file.path, plugin)) return false;
-				if (projectRoot && !file.path.startsWith(projectRoot + '/')) return false;
+				if (!isFileInAgentScope(file, plugin, projectRoot)) return false;
 				return regex.test(file.name) || regex.test(file.path);
 			});
 

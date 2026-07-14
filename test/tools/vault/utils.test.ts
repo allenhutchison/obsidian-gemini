@@ -1,4 +1,4 @@
-import { resolvePathToFile, resolvePathToFileOrFolder } from '../../../src/tools/vault/utils';
+import { isFileInAgentScope, resolvePathToFile, resolvePathToFileOrFolder } from '../../../src/tools/vault/utils';
 
 // Mock gemini-utils (needed by file-classification, imported by vault-tools)
 vi.mock('@allenhutchison/gemini-utils/mime', () => ({
@@ -228,6 +228,38 @@ describe('resolvePathToFile', () => {
 
 		expect(result.file).toBeNull();
 		expect(result.suggestions).toEqual([]);
+	});
+});
+
+describe('isFileInAgentScope', () => {
+	const makeFile = (path: string): TFile => {
+		const file = new TFile();
+		(file as any).path = path;
+		(file as any).name = path.split('/').pop();
+		return file;
+	};
+
+	it('excludes system-folder files regardless of project root', () => {
+		expect(isFileInAgentScope(makeFile('.obsidian/workspace.json'), mockPlugin, undefined)).toBe(false);
+		expect(isFileInAgentScope(makeFile('test-history-folder/session.md'), mockPlugin, undefined)).toBe(false);
+	});
+
+	it('includes any non-system file when no project root is active', () => {
+		expect(isFileInAgentScope(makeFile('notes/todo.md'), mockPlugin, undefined)).toBe(true);
+	});
+
+	it('includes files under the active project root', () => {
+		expect(isFileInAgentScope(makeFile('Foo/note.md'), mockPlugin, 'Foo')).toBe(true);
+	});
+
+	it('excludes files outside the active project root', () => {
+		expect(isFileInAgentScope(makeFile('Bar/note.md'), mockPlugin, 'Foo')).toBe(false);
+	});
+
+	it('does not treat a sibling with a shared prefix as in-scope (boundary case)', () => {
+		// Without the trailing-slash boundary, projectRoot "Foo" would spuriously
+		// match "Foobar/x.md" — this pins that it does not.
+		expect(isFileInAgentScope(makeFile('Foobar/x.md'), mockPlugin, 'Foo')).toBe(false);
 	});
 });
 

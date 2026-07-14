@@ -1,8 +1,8 @@
 import { Tool, ToolResult, ToolExecutionContext } from '../types';
 import { ToolCategory } from '../../types/agent';
 import { ToolClassification } from '../../types/tool-policy';
-import { shouldExcludePathForPlugin as shouldExcludePath } from '../../utils/file-utils';
 import { getRawErrorMessageOr } from '../../utils/error-utils';
+import { isFileInAgentScope } from './utils';
 
 /**
  * Search for text content within files
@@ -110,12 +110,8 @@ export class SearchFileContentsTool implements Tool {
 
 			// Search through each file
 			for (const file of allFiles) {
-				// Skip system folders
-				if (shouldExcludePath(file.path, plugin)) {
-					continue;
-				}
-				// Scope to project root when active
-				if (projectRoot && !file.path.startsWith(projectRoot + '/')) {
+				// Skip files outside agent scope (system folders, or outside the active project root)
+				if (!isFileInAgentScope(file, plugin, projectRoot)) {
 					continue;
 				}
 
