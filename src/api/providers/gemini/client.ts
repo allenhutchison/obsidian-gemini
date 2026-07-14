@@ -31,6 +31,7 @@ import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import { getDefaultModelForRole } from '../../../models';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
+import { normalizeToContent } from '../../../utils/history-normalize';
 import type { GeminiClientConfig } from './config';
 import { ModelUseCase } from '../../model-use-case';
 import {
@@ -294,15 +295,7 @@ export class GeminiClient implements ModelApi {
 	 * canonical `{ role, parts }`. Returns null for unrecognized entries.
 	 */
 	private normalizeHistoryEntry(entry: Content): Content | null {
-		if ('role' in entry && 'parts' in entry) {
-			return entry;
-		}
-		if ('role' in entry && ('text' in entry || 'message' in entry)) {
-			const legacy = entry as Content & { role?: string; text?: string; message?: string };
-			const text = legacy.text ?? legacy.message ?? '';
-			return { role: this.coerceHistoryRole(legacy.role), parts: [{ text }] };
-		}
-		return null;
+		return normalizeToContent(entry, (role) => this.coerceHistoryRole(role));
 	}
 
 	/**

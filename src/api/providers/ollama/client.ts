@@ -34,6 +34,7 @@ import {
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
 import type { OllamaClientConfig } from './config';
+import { getLegacyEntryText } from '../../../utils/history-normalize';
 
 export class OllamaClient implements ModelApi {
 	private client: Ollama;
@@ -373,7 +374,7 @@ export class OllamaClient implements ModelApi {
 
 		// Internal shape: { role, text } or { role, message }
 		if ('role' in record) {
-			const text = record.text ?? record.message;
+			const text = getLegacyEntryText(record);
 			if (typeof text !== 'string' || !text.trim()) return null;
 			const role = record.role === 'model' || record.role === 'assistant' ? 'assistant' : 'user';
 			return [{ role, content: text }];

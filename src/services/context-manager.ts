@@ -16,6 +16,7 @@ import { ModelClientFactory, ModelUseCase } from '../api';
 import { executeWithRetry } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
+import { getLegacyEntryTextTruthy } from '../utils/history-normalize';
 
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
 
@@ -268,12 +269,11 @@ export class ContextManager {
 		const result: Content[] = [];
 		for (const entry of contents) {
 			if (!entry.parts || !Array.isArray(entry.parts)) {
-				// Legacy stored entries may have top-level text/message fields.
-				const legacy = entry as Content & { text?: string; message?: string };
-				if (legacy.text) {
-					result.push({ role: entry.role || 'user', parts: [{ text: legacy.text }] });
-				} else if (legacy.message) {
-					result.push({ role: entry.role || 'user', parts: [{ text: legacy.message }] });
+				// Legacy stored entries may have top-level text/message fields
+				// (truthiness precedence: an empty-string `text` falls back to `message`).
+				const legacyText = getLegacyEntryTextTruthy(entry);
+				if (legacyText) {
+					result.push({ role: entry.role || 'user', parts: [{ text: legacyText }] });
 				}
 				continue;
 			}
@@ -526,8 +526,7 @@ export class ContextManager {
 		// History entries may use parts[].text (API format) or message (stored format)
 		while (splitIndex > 0 && splitIndex < totalTurns) {
 			const entry = conversationHistory[splitIndex];
-			const legacy = entry as Content & { message?: string; text?: string };
-			if (entry.role === 'user' && (entry.parts?.[0]?.text || legacy.message || legacy.text)) {
+			if (entry.role === 'user' && (entry.parts?.[0]?.text || getLegacyEntryTextTruthy(entry))) {
 				break;
 			}
 			splitIndex--;
@@ -598,11 +597,10 @@ export class ContextManager {
 						.join('\n');
 				} else {
 					// Legacy stored format: top-level text or message fields
-					const legacy = turn as Content & { text?: string; message?: string };
-					if (legacy.text) {
-						text = legacy.text;
-					} else if (legacy.message) {
-						text = legacy.message;
+					// (truthiness precedence: an empty-string `text` falls back to `message`).
+					const legacyText = getLegacyEntryTextTruthy(turn);
+					if (legacyText) {
+						text = legacyText;
 					}
 				}
 
