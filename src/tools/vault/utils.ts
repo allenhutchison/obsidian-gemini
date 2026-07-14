@@ -15,6 +15,20 @@ export function guardExcludedPath(normalizedPath: string, plugin: ObsidianGemini
 	return shouldExcludePath(normalizedPath, plugin) ? { success: false, error } : null;
 }
 
+/**
+ * Agent-scope predicate shared by the read-only vault search tools. A file is in
+ * scope when it is not inside a protected system folder (the plugin state folder
+ * or `.obsidian`) and — when a project is active — it lives under `projectRoot`.
+ *
+ * The `projectRoot + '/'` boundary is load-bearing: without the trailing slash a
+ * `projectRoot` of `Foo` would spuriously match `Foobar/note.md`.
+ */
+export function isFileInAgentScope(file: TFile, plugin: ObsidianGemini, projectRoot: string | undefined): boolean {
+	if (shouldExcludePath(file.path, plugin)) return false;
+	if (projectRoot && !file.path.startsWith(projectRoot + '/')) return false;
+	return true;
+}
+
 /** Plain, serializable description of a vault file or folder. */
 export interface VaultFileEntry {
 	name: string;
