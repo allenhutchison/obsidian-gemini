@@ -108,7 +108,7 @@ Each run drives an agent loop that calls tools, reads the results, and calls mor
 The cap is a **soft budget**, not a hard cliff. As the run nears its limit, the agent is told how many turns it has left so it can wrap up cleanly instead of being cut off mid-thought. And if it runs out while still mid-task, it's granted a **one-time extension** (half the original budget, rounded up) with a nudge to finish — so a task that needs "just a couple more" turns isn't killed at the cap. Only when that extension is also spent does the run fail:
 
 ```text
-Task "<slug>" exhausted its tool-iteration budget (cap 20, ran 30) without producing a response
+[ScheduledTaskRunner] Task "<slug>" exhausted its tool-iteration budget (cap 20, ran 30) without producing a response
 ```
 
 If a legitimately long task keeps hitting this, raise the cap with the `maxIterations` frontmatter key (or the **Max tool iterations** field under **Advanced options** in the Scheduler):

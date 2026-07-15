@@ -84,7 +84,6 @@ Selection-Based Text Rewriting allows you to:
 2. **Context Building**: The AI receives:
    - Your selected text
    - The full document with selection markers
-   - Linked documents (based on your context settings)
    - Your rewrite instructions
 3. **AI Processing**: The AI rewrites only the selected portion while considering:
    - Document style and tone
@@ -98,9 +97,10 @@ Selection-Based Text Rewriting allows you to:
 The AI has access to:
 
 - **Full document content** to understand context and maintain consistency
-- **Linked documents** from your vault (if context sending is enabled)
 - **Selection markers** showing exactly what to rewrite
 - **Document structure** to maintain appropriate flow
+
+Rewrite does not traverse linked notes — only the current document and your selection are sent.
 
 ## Writing Effective Instructions
 
