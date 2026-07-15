@@ -3,6 +3,7 @@ import type { ObsidianGemini } from '../../types/plugin';
 import { ToolResult } from '../../tools/types';
 import { formatFileSize } from '../../utils/format-utils';
 import { t } from '../../i18n';
+import { TOOL_ICONS } from './tool-icons';
 
 /** Citation entry rendered for google_search / google_maps results. */
 interface SearchCitation {
@@ -51,21 +52,6 @@ function isGeneratedImageResult(
 function isFileContentResult(value: Record<string, unknown>): value is Record<string, unknown> & FileContentResult {
 	return typeof value.content === 'string' && typeof value.path === 'string';
 }
-
-// Shared tool icon mapping
-const TOOL_ICONS: Record<string, string> = {
-	read_file: 'file-text',
-	write_file: 'file-edit',
-	list_files: 'folder-open',
-	create_folder: 'folder-plus',
-	delete_file: 'trash-2',
-	move_file: 'file-symlink',
-	find_files_by_name: 'search',
-	google_search: 'globe',
-	google_maps: 'map-pin',
-	fetch_url: 'link',
-	generate_image: 'image',
-};
 
 /** Elements that make up one collapsible section (a tool group or a tool row). */
 interface CollapsibleRefs {

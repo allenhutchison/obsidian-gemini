@@ -8,6 +8,7 @@ import { stripTurnPreamble } from '../../utils/turn-preamble';
 import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
 import { t, getResolvedLocale } from '../../i18n';
 import { isToolExecutionMessage, parseToolSections } from './tool-section-parser';
+import { TOOL_ICONS } from './tool-icons';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://allenhutchison.github.io/obsidian-gemini';
@@ -1102,17 +1103,7 @@ export class AgentViewMessages {
 	 * Set icon for tool based on tool name
 	 */
 	private setToolIcon(container: HTMLElement, toolName: string) {
-		const iconMap: Record<string, string> = {
-			write_file: 'file-edit',
-			delete_file: 'trash-2',
-			move_file: 'file-symlink',
-			create_folder: 'folder-plus',
-			read_file: 'file-text',
-			list_files: 'folder-open',
-			find_files_by_name: 'search',
-			find_files_by_content: 'search',
-		};
-		setIcon(container, iconMap[toolName] || 'tool');
+		setIcon(container, TOOL_ICONS[toolName] || 'tool');
 	}
 
 	/**
