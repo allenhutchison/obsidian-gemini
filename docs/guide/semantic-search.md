@@ -67,6 +67,7 @@ A small icon appears in the bottom-right status bar:
 | ---------------- | ------------ | ------------------------------------------ |
 | Database         | Idle         | Index is up to date, shows file count      |
 | Upload (pulsing) | Indexing     | Files are being uploaded, shows percentage |
+| Pause-circle     | Paused       | Auto-sync paused via **Pause RAG sync**    |
 | Clock            | Rate limited | Waiting for API cooldown, shows countdown  |
 | Triangle         | Error        | Something went wrong — click for details   |
 

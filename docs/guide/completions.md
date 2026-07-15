@@ -76,9 +76,10 @@ Completions understand:
 
 - **Lists**: Continues numbered or bulleted lists
 - **Headers**: Suggests appropriate content
-- **Code blocks**: Language-aware suggestions
 - **Links**: Completes wiki-links and markdown links
 - **Tables**: Helps with table formatting
+
+These aren't separate engineered features — completions use one fixed, general-purpose prompt (see [Integration with Other Features](#integration-with-other-features)) that reads the surrounding text and continues it naturally, whatever the content looks like. There's no dedicated code-language detection or per-content-type logic.
 
 ## Using Completions
 
@@ -259,15 +260,6 @@ Suggestion: " Notes]] for more details"
 | Data     | [pause]
 Suggestion: "More Data |"
 ```
-
-### 4. Code Block Completion
-
-````
-```python
-def calculate_
-[pause]
-Suggestion: "average(numbers):"
-````
 
 ### 5. Template Expansion
 
