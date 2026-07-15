@@ -11,6 +11,7 @@ import { getErrorMessage } from '../../utils/error-utils';
 import { formatLocalTimestamp } from '../../utils/format-utils';
 import { buildTurnPreamble } from '../../utils/turn-preamble';
 import { InlineAttachment } from './inline-attachment';
+import { buildCompactionEntry } from './compaction-notice';
 import planModeInstructionContent from '../../../prompts/planModeInstruction.hbs';
 import { AgentViewProgress } from './agent-view-progress';
 import { AgentViewMessages } from './agent-view-messages';
@@ -463,13 +464,7 @@ To reference an attachment in your response, use the path shown above.`;
 					});
 					await this.ctx.updateTokenUsage();
 
-					const compactionEntry: GeminiConversationEntry = {
-						role: 'model',
-						message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${compactionResult.summaryText}`,
-						notePath: '',
-						created_at: new Date(),
-						model: modelName,
-					};
+					const compactionEntry = buildCompactionEntry(compactionResult.summaryText, modelName);
 					await this.ctx.displayMessage(compactionEntry);
 					await this.ctx.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
 					this.ctx.plugin.logger.log(
