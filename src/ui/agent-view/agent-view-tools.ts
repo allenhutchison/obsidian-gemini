@@ -10,6 +10,7 @@ import { DEFAULT_TURN_BUDGET_REMIND_AT } from '../../agent/turn-budget';
 import type { ToolCall, StreamChunk } from '../../api/interfaces/model-api';
 import { AgentViewToolDisplay } from './agent-view-tool-display';
 import type { PerTurnContext } from './agent-view-tool-followup';
+import { buildCompactionEntry } from './compaction-notice';
 import { t } from '../../i18n';
 
 /**
@@ -220,13 +221,10 @@ export class AgentViewTools {
 							// this hook, so refreshing the header just re-reads it.
 							await this.context.updateTokenUsage?.();
 							if (!summaryText) return;
-							const compactionEntry: GeminiConversationEntry = {
-								role: 'model',
-								message: `> [!info] Context Compacted\n> Older conversation turns have been summarized to maintain performance.\n\n${summaryText}`,
-								notePath: '',
-								created_at: new Date(),
-								model: currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings),
-							};
+							const compactionEntry = buildCompactionEntry(
+								summaryText,
+								currentSession.modelConfig?.model || getActiveChatModel(this.plugin.settings)
+							);
 							await this.context.displayMessage(compactionEntry);
 							await this.plugin.sessionHistory.addEntryToSession(currentSession, compactionEntry);
 						},
