@@ -11,7 +11,8 @@ import {
 import type { ObsidianGemini } from '../types/plugin';
 import { sanitizeFileName } from '../utils/file-utils';
 import { formatLocalDate } from '../utils/format-utils';
-import { PolicyPreset, FeatureToolPolicy, parseToolPolicyFrontmatter, clonePolicy } from '../types/tool-policy';
+import { FeatureToolPolicy, parseToolPolicyFrontmatter, clonePolicy } from '../types/tool-policy';
+import { migrateLegacyToolCategoryArray } from '../services/feature-policy-yaml';
 import { asRecord } from '../utils/error-utils';
 
 /** Read a frontmatter field as a non-empty string, or `undefined`. */
@@ -25,40 +26,9 @@ function frontmatterDate(value: unknown, fallbackMs: number): Date {
 }
 
 /**
- * Map a legacy `enabled_tools` array (category-level allowlist from the
- * pre-unified-policy era) to a FeatureToolPolicy. The mapping is best-effort:
- *
- * - `read_only` only ⇒ READ_ONLY preset
- * - `read_only` + `vault_ops` ⇒ EDIT_MODE preset (writes execute, destructive asks)
- * - any list containing `external_mcp` or `system` ⇒ undefined (inherit global)
- *
- * Broken legacy values (`read_write`, `destructive`) — written by the bugged
- * scheduler/hook modals before this refactor — are folded into the closest
- * preset.
- */
-function migrateLegacyEnabledTools(value: unknown): FeatureToolPolicy | undefined {
-	if (!Array.isArray(value)) return undefined;
-	const set = new Set(value.filter((v): v is string => typeof v === 'string').map((v) => v.toLowerCase()));
-	if (set.size === 0) return undefined;
-
-	const hasReadOnly = set.has('read_only');
-	const hasVaultOps = set.has('vault_ops') || set.has('read_write');
-	const hasDestructive = set.has('destructive');
-	const hasExternal = set.has('external_mcp') || set.has('system');
-
-	if (hasExternal || (hasReadOnly && hasVaultOps && hasDestructive)) {
-		return undefined; // Inherit global — broadest legacy intent.
-	}
-	if (hasDestructive) return { preset: PolicyPreset.YOLO };
-	if (hasVaultOps) return { preset: PolicyPreset.EDIT_MODE };
-	if (hasReadOnly) return { preset: PolicyPreset.READ_ONLY };
-	return undefined;
-}
-
-/**
  * Parse a session's tool policy from frontmatter. Prefers the new
- * `tool_policy:` block; falls back to the legacy `enabled_tools` array;
- * falls back to the supplied default.
+ * `tool_policy:` block; falls back to the legacy `enabled_tools` array
+ * (via the shared category-array migrator); falls back to the supplied default.
  */
 function parseSessionToolPolicy(
 	frontmatter: Record<string, unknown> | undefined,
@@ -66,7 +36,7 @@ function parseSessionToolPolicy(
 ): FeatureToolPolicy | undefined {
 	const fromNewShape = parseToolPolicyFrontmatter(frontmatter?.tool_policy);
 	if (fromNewShape) return fromNewShape;
-	const fromLegacy = migrateLegacyEnabledTools(frontmatter?.enabled_tools);
+	const fromLegacy = migrateLegacyToolCategoryArray(frontmatter?.enabled_tools);
 	if (fromLegacy !== undefined) return fromLegacy;
 	return clonePolicy(fallback);
 }
