@@ -317,9 +317,11 @@ describe('GeminiClient', () => {
 	});
 
 	// Per-use-case thinkingLevel (#621): the client maps the ModelUseCase it was
-	// created for to a thinkingConfig.thinkingLevel, replacing the old global
-	// thinkingBudget. Reasoning persistence (#965) relies on includeThoughts, and
-	// the API rejects sending both knobs — so assert exactly one is present.
+	// created for to a thinkingConfig.thinkingLevel — but only for Gemini 3.x.
+	// Gemini 2.5 models reject thinkingLevel with a 400 ("Thinking level is not
+	// supported for this model") and take the legacy thinkingBudget instead.
+	// Reasoning persistence (#965) relies on includeThoughts, and the API
+	// rejects sending both knobs — so assert exactly one is present.
 	describe('per-use-case thinkingLevel', () => {
 		const THINKING_MODEL = 'gemini-3-pro';
 
@@ -333,9 +335,9 @@ describe('GeminiClient', () => {
 
 		// Captures the thinkingConfig the SDK is handed for a client created with
 		// the given use case against a thinking-capable model.
-		const thinkingConfigFor = async (useCase?: ModelUseCase): Promise<any> => {
+		const thinkingConfigFor = async (useCase?: ModelUseCase, model: string = THINKING_MODEL): Promise<any> => {
 			const client = new GeminiClient(
-				{ apiKey: 'test-api-key', model: THINKING_MODEL, useCase },
+				{ apiKey: 'test-api-key', model, useCase },
 				new GeminiPrompts(mockPlugin),
 				mockPlugin
 			);
@@ -363,6 +365,27 @@ describe('GeminiClient', () => {
 			expect(thinkingConfig.thinkingLevel).toBe('HIGH');
 			expect(thinkingConfig.includeThoughts).toBe(true);
 			expect(thinkingConfig.thinkingBudget).toBeUndefined();
+		});
+
+		// Regression: sending thinkingLevel to a 2.5 model is a guaranteed 400
+		// INVALID_ARGUMENT ("Thinking level is not supported for this model").
+		test.each(['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite', 'thinking-exp-1234'])(
+			'%s gets legacy thinkingBudget, never thinkingLevel',
+			async (model) => {
+				const thinkingConfig = await thinkingConfigFor(ModelUseCase.CHAT, model);
+				expect(thinkingConfig.thinkingBudget).toBe(-1);
+				expect(thinkingConfig.includeThoughts).toBe(true);
+				expect(thinkingConfig.thinkingLevel).toBeUndefined();
+			}
+		);
+
+		test('gemini-3.x variants still get thinkingLevel', async () => {
+			for (const model of ['gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.5-flash']) {
+				generateContentMock.mockClear();
+				const thinkingConfig = await thinkingConfigFor(ModelUseCase.CHAT, model);
+				expect(thinkingConfig.thinkingLevel).toBe('HIGH');
+				expect(thinkingConfig.thinkingBudget).toBeUndefined();
+			}
 		});
 
 		test('omits thinkingConfig entirely for non-thinking models', async () => {
@@ -1179,7 +1202,9 @@ describe('GeminiClient', () => {
 					type: 'function_result',
 					call_id: 'c1',
 					name: 'read_file',
-					result: [{ type: 'text', text: JSON.stringify({ content: 'hi' }) }],
+					// Plain string, never a content array — the array form is a
+					// "multimodal function response" that Gemini 2.5 rejects with a 400.
+					result: JSON.stringify({ content: 'hi' }),
 				},
 				{ type: 'model_output', content: [{ type: 'text', text: 'foo.md says hi' }] },
 				{ type: 'user_input', content: [{ type: 'text', text: 'and now?' }] },

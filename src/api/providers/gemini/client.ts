@@ -47,7 +47,9 @@ import { renderGroundingSources } from './grounding-render';
 
 /**
  * Per-use-case reasoning depth for Gemini 3.x `thinkingConfig.thinkingLevel`,
- * replacing the legacy global `thinkingBudget: -1`. These are starting points
+ * replacing the legacy global `thinkingBudget: -1` (which Gemini 2.5 models
+ * still require on `generateContent` — see `supportsThinkingLevel`). These are
+ * starting points
  * (see #621; tune against the eval suite in #619): latency-sensitive paths
  * think the least, while CHAT — which is the agent loop — thinks the most.
  *
@@ -490,15 +492,19 @@ export class GeminiClient implements ModelApi {
 			...(systemInstruction && { systemInstruction }),
 		};
 
-		// Add thinking config if model supports it. We steer reasoning depth with
-		// `thinkingLevel` (Gemini 3.x) per use case — never the legacy
-		// `thinkingBudget`, and never both knobs in one request. `includeThoughts`
-		// stays true so reasoning persistence (#965) keeps receiving thought parts.
+		// Add thinking config if model supports it. Gemini 3.x models take a
+		// per-use-case `thinkingLevel`; older thinking models (Gemini 2.5,
+		// thinking-exp) reject that knob with a 400 ("Thinking level is not
+		// supported for this model") and take the legacy `thinkingBudget` instead
+		// — send exactly one knob, never both. `includeThoughts` stays true so
+		// reasoning persistence (#965) keeps receiving thought parts.
 		if (this.supportsThinking(model)) {
-			config.thinkingConfig = {
-				includeThoughts: true,
-				thinkingLevel: THINKING_LEVEL_BY_USE_CASE[this.config.useCase ?? ModelUseCase.CHAT],
-			};
+			config.thinkingConfig = this.supportsThinkingLevel(model)
+				? {
+						includeThoughts: true,
+						thinkingLevel: THINKING_LEVEL_BY_USE_CASE[this.config.useCase ?? ModelUseCase.CHAT],
+					}
+				: { includeThoughts: true, thinkingBudget: -1 };
 		}
 
 		// Add function calling tools
@@ -690,6 +696,19 @@ export class GeminiClient implements ModelApi {
 	/**
 	 * Check if a model supports thinking/reasoning mode
 	 */
+	/**
+	 * Whether the model takes the Gemini 3.x `thinkingConfig.thinkingLevel` knob
+	 * on `generateContent`. Older thinking-capable models (Gemini 2.5,
+	 * thinking-exp) reject it with a 400 INVALID_ARGUMENT ("Thinking level is
+	 * not supported for this model") and use the legacy `thinkingBudget`
+	 * instead. The Interactions path is unaffected — that API accepts
+	 * `thinking_level` for 2.5 models and normalizes it server-side (while
+	 * rejecting `thinking_budget` outright), so it always sends the level.
+	 */
+	private supportsThinkingLevel(model: string): boolean {
+		return model.toLowerCase().includes('gemini-3');
+	}
+
 	private supportsThinking(model: string | undefined): boolean {
 		if (!model) {
 			this.plugin?.logger.debug('[GeminiClient] No model specified for thinking check');

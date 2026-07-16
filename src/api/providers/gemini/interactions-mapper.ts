@@ -49,10 +49,15 @@ function inlineDataToContentItem(mimeType: string, data: string): InteractionCon
 	return { type: mediaType, data, mime_type: mimeType };
 }
 
-/** Serialize a tool's `functionResponse.response` into the `function_result.result` shape. */
-function functionResponseToResult(response: unknown): InteractionContentItem[] {
-	const text = typeof response === 'string' ? response : JSON.stringify(response ?? {});
-	return [{ type: 'text', text }];
+/**
+ * Serialize a tool's `functionResponse.response` into the `function_result.result`
+ * shape. Always a plain string: the content-array form (`[{type:'text',…}]`) is a
+ * "multimodal function response", which Gemini 2.5 models reject with a 400
+ * ("Multimodal function responses are not supported for this model"). The string
+ * form is accepted by both 2.5 and 3.x, so it's used unconditionally.
+ */
+function functionResponseToResult(response: unknown): string {
+	return typeof response === 'string' ? response : JSON.stringify(response ?? {});
 }
 
 /**
