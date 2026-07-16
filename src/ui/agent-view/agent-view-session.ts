@@ -7,6 +7,7 @@ import type { ObsidianGemini } from '../../types/plugin';
 import { ModelClientFactory } from '../../api';
 import { HandlerPriority } from '../../types/agent-events';
 import { sanitizeFileName } from '../../utils/file-utils';
+import { resolveUniquePath } from '../../services/headless-run-output';
 import { formatLocalDate } from '../../utils/format-utils';
 import { t } from '../../i18n';
 
@@ -269,11 +270,15 @@ Assistant: ${modelSummary}`;
 				const newFileName = sanitizeFileName(fullTitle);
 				const newPath = oldPath.substring(0, oldPath.lastIndexOf('/') + 1) + newFileName + '.md';
 
-				// Rename the history file
+				// Rename the history file. Skip when the generated name already matches
+				// the current file, and resolve a numeric-suffixed path when another
+				// session file already occupies the target — renameFile throws
+				// "Destination file already exists!" otherwise.
 				const oldFile = this.app.vault.getAbstractFileByPath(oldPath);
-				if (oldFile) {
-					await this.app.fileManager.renameFile(oldFile, newPath);
-					this.currentSession.historyPath = newPath;
+				if (oldFile && newPath !== oldPath) {
+					const targetPath = resolveUniquePath(this.app.vault, newPath);
+					await this.app.fileManager.renameFile(oldFile, targetPath);
+					this.currentSession.historyPath = targetPath;
 				}
 
 				// Update session metadata
