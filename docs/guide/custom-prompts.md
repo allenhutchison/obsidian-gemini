@@ -88,9 +88,9 @@ tags: ['category', 'use-case'] # Optional: For organization
 
 #### Special Tags
 
-| Tag                              | Purpose                                                                                                                                                                                                                        |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `gemini-scribe/selection-prompt` | Makes the prompt available in the right-click "Explain Selection" / "Ask about selection" menu. See [Selection Prompts](/guide/selection-prompts) and the [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
+| Tag                              | Purpose                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gemini-scribe/selection-prompt` | Makes the prompt available in the right-click "Apply prompt..." menu (the Explain Selection feature). It has no effect on the separate "Ask question..." menu item, which always asks a free-form question rather than picking from tagged prompts. See [Selection Prompts](/guide/selection-prompts) and the [AI Writing Guide](/guide/ai-writing#explain-selection) for details. |
 
 ### Example: Technical Documentation Assistant
 

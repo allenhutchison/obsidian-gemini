@@ -185,7 +185,7 @@ Make sure you're on v4.0 or later — earlier versions had a bug where context f
 
 ### "Summarize active file" isn't working
 
-This command requires: (1) a markdown file actively open in the editor, and (2) context sending to be enabled. If no file is open, you'll see "Failed to get file content for summary." ([#134](https://github.com/allenhutchison/obsidian-gemini/issues/134))
+This command requires a markdown file actively open in the editor. If no file is open, you'll see "No active file to summarize. Please open a markdown file first." ([#134](https://github.com/allenhutchison/obsidian-gemini/issues/134))
 
 ## Semantic Vault Search
 
