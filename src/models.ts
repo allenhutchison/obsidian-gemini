@@ -22,6 +22,20 @@ export interface GeminiModel {
 
 export const DEFAULT_GEMINI_MODELS: GeminiModel[] = modelData.models as GeminiModel[];
 
+/**
+ * Retired Gemini model IDs mapped to their direct successors. When Google
+ * removes a model from the API (404 "no longer available") the entry is
+ * dropped from the bundled list; users who still have it configured are
+ * migrated to the successor here instead of falling back to the generic role
+ * default, so e.g. a Pro user stays on a Pro-class model. Keep each entry
+ * pointing at a model that is still in the bundled list — when a successor is
+ * itself retired, re-point the older entries at the newest live model.
+ */
+export const RETIRED_MODEL_SUCCESSORS: Record<string, string> = {
+	// Removed by Google 2026-07: both API paths return 404 "no longer available".
+	'gemini-3-pro-preview': 'gemini-3.1-pro-preview',
+};
+
 export let GEMINI_MODELS: GeminiModel[] = [...DEFAULT_GEMINI_MODELS];
 
 /**
@@ -169,12 +183,18 @@ export function getUpdatedModelSettings<T extends ModelSettingsSlice>(currentSet
 	) => {
 		const previous = modelFields[key];
 		if (previous && geminiModelValues.has(previous)) return;
-		const next = getDefaultModelForRole(role, 'gemini');
+		// A retired model migrates to its designated successor when that successor
+		// is available; anything else falls back to the role default.
+		const successor = previous ? RETIRED_MODEL_SUCCESSORS[previous] : undefined;
+		const useSuccessor = successor !== undefined && geminiModelValues.has(successor);
+		const next = useSuccessor ? successor : getDefaultModelForRole(role, 'gemini');
 		// Image generation has no dedicated default in some model lists; leave a
 		// stale image model untouched rather than blanking it.
 		if (!next) return;
 		modelFields[key] = next;
-		changedSettingsInfo.push(`${label}: '${previous}' -> '${next}' (legacy model update)`);
+		changedSettingsInfo.push(
+			`${label}: '${previous}' -> '${next}' ${useSuccessor ? '(retired model migrated to successor)' : '(legacy model update)'}`
+		);
 		settingsChanged = true;
 	};
 
