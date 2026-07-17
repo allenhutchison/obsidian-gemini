@@ -204,6 +204,7 @@ When you use a thinking model (e.g. Gemini 2.5 Pro), the agent captures the mode
 - The final answer's reasoning appears as a 🧠 line directly beneath the answer.
 - Reasoning is persisted to the session history file as a collapsed `[!reasoning]` callout, so it round-trips when you reopen a past session — making session files a faithful, self-contained record of the whole interaction: your request → reasoning → tools → answer.
 - Sessions created before this feature simply have no reasoning lines — nothing changes for them.
+- Reasoning depth is tuned automatically per task and model family — Gemini 3.x models use per-task thinking levels (deepest for agent chat, lightest for completions), while Gemini 2.5 models use a dynamic thinking budget. There is no setting to configure.
 
 ### Plan Mode
 
