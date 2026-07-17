@@ -9,6 +9,7 @@ import { Tool, DiffContext, ConfirmationResult } from '../../tools/types';
 import { t, getResolvedLocale } from '../../i18n';
 import { isToolExecutionMessage, parseToolSections } from './tool-section-parser';
 import { TOOL_ICONS } from './tool-icons';
+import { wireCollapsibleToggle } from './collapsible';
 
 // Documentation and help content
 const DOCS_BASE_URL = 'https://allenhutchison.github.io/obsidian-gemini';
@@ -308,19 +309,12 @@ export class AgentViewMessages {
 		details.hide();
 		await MarkdownRenderer.render(this.app, formatModelMessage(thoughts), details, sourcePath, this.viewContext);
 
-		const toggle = () => {
-			const nowExpanded = header.getAttribute('aria-expanded') !== 'true';
-			details.style.display = nowExpanded ? 'block' : 'none';
-			setIcon(chevron, nowExpanded ? 'chevron-down' : 'chevron-right');
-			row.toggleClass('gemini-tool-row-expanded', nowExpanded);
-			header.setAttribute('aria-expanded', String(nowExpanded));
-		};
-		header.addEventListener('click', toggle);
-		header.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				toggle();
-			}
+		wireCollapsibleToggle({
+			control: header,
+			body: details,
+			chevron,
+			host: row,
+			expandedClass: 'gemini-tool-row-expanded',
 		});
 	}
 
