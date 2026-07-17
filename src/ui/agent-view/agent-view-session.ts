@@ -7,7 +7,13 @@ import type { ObsidianGemini } from '../../types/plugin';
 import { ModelClientFactory } from '../../api';
 import { HandlerPriority } from '../../types/agent-events';
 import { sanitizeFileName } from '../../utils/file-utils';
-import { resolveUniquePath } from '../../services/headless-run-output';
+import { isAlreadyExistsError, resolveUniquePath } from '../../services/headless-run-output';
+
+/**
+ * How many times the auto-label rename re-resolves a unique path after a
+ * destination-exists collision before giving up (leaving the file un-renamed).
+ */
+const AUTO_LABEL_RENAME_ATTEMPTS = 3;
 import { formatLocalDate } from '../../utils/format-utils';
 import { t } from '../../i18n';
 
@@ -273,12 +279,26 @@ Assistant: ${modelSummary}`;
 				// Rename the history file. Skip when the generated name already matches
 				// the current file, and resolve a numeric-suffixed path when another
 				// session file already occupies the target — renameFile throws
-				// "Destination file already exists!" otherwise.
+				// "Destination file already exists!" otherwise. resolveUniquePath +
+				// renameFile is non-atomic, so a concurrent writer can still occupy the
+				// candidate between the check and the rename; retry on that specific
+				// error (re-resolving each attempt), and give up gracefully after a few
+				// collisions — the title is still applied, only the rename is skipped.
 				const oldFile = this.app.vault.getAbstractFileByPath(oldPath);
 				if (oldFile && newPath !== oldPath) {
-					const targetPath = resolveUniquePath(this.app.vault, newPath);
-					await this.app.fileManager.renameFile(oldFile, targetPath);
-					this.currentSession.historyPath = targetPath;
+					for (let attempt = 0; attempt < AUTO_LABEL_RENAME_ATTEMPTS; attempt++) {
+						const targetPath = resolveUniquePath(this.app.vault, newPath);
+						try {
+							await this.app.fileManager.renameFile(oldFile, targetPath);
+							this.currentSession.historyPath = targetPath;
+							break;
+						} catch (renameError) {
+							if (!isAlreadyExistsError(renameError)) throw renameError;
+							if (attempt === AUTO_LABEL_RENAME_ATTEMPTS - 1) {
+								this.plugin.logger.warn('Auto-label rename skipped after repeated collisions:', targetPath);
+							}
+						}
+					}
 				}
 
 				// Update session metadata
