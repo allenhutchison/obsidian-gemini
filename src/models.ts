@@ -18,6 +18,14 @@ export interface GeminiModel {
 	supportsVision?: boolean;
 	/** Context window in tokens (used for compaction thresholds). */
 	contextWindow?: number;
+	/**
+	 * The model is only served by the Interactions API — `generateContent`
+	 * rejects it with a 400 ("This model only supports Interactions API").
+	 * The Gemini client routes these through the Interactions path regardless
+	 * of the `useInteractionsApi` setting, and generateContent-only callers
+	 * (search grounding, web fetch, RAG) must not send requests to them.
+	 */
+	interactionsOnly?: boolean;
 }
 
 export const DEFAULT_GEMINI_MODELS: GeminiModel[] = modelData.models as GeminiModel[];
@@ -84,6 +92,32 @@ export function getDefaultModelForRole(role: ModelRole, provider: ModelProvider 
 	// `GEMINI_MODELS[0]` could be an Ollama entry and we'd return a
 	// cross-provider model name as the Gemini default.
 	throw new Error('CRITICAL: GEMINI_MODELS array is empty. Please configure available models.');
+}
+
+/**
+ * Whether a model is served exclusively by the Interactions API (see
+ * `GeminiModel.interactionsOnly`). Checks the live model list first (which may
+ * be a newer remote list), then the bundled defaults — a stale remote cache
+ * fetched before the flag existed would otherwise hide it.
+ */
+export function isInteractionsOnlyModel(modelValue: string | null | undefined): boolean {
+	if (!modelValue) return false;
+	const flagIn = (list: GeminiModel[]) => list.find((m) => m.value === modelValue)?.interactionsOnly;
+	return flagIn(GEMINI_MODELS) ?? flagIn(DEFAULT_GEMINI_MODELS) ?? false;
+}
+
+/**
+ * Resolve a model for callers that can only use `generateContent` (search
+ * grounding, web fetch, RAG — features the plugin hasn't migrated to the
+ * Interactions API). Returns `preferred` unless it's empty or
+ * interactions-only, in which case the bundled Gemini default for the role is
+ * substituted so the request doesn't hard-fail with a 400.
+ */
+export function resolveGenerateContentModel(preferred: string | null | undefined, role: ModelRole = 'chat'): string {
+	if (preferred && !isInteractionsOnlyModel(preferred)) {
+		return preferred;
+	}
+	return getDefaultModelForRole(role, 'gemini');
 }
 
 /**

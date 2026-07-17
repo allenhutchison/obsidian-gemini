@@ -2,6 +2,7 @@ import { Tool, ToolResult, ToolExecutionContext } from './types';
 import { ToolCategory } from '../types/agent';
 import { ToolClassification } from '../types/tool-policy';
 import { getRawErrorMessage } from '../utils/error-utils';
+import { resolveGenerateContentModel } from '../models';
 
 /**
  * Search result from RAG semantic search
@@ -200,10 +201,12 @@ export class RagSearchTool implements Tool {
 				fileSearchConfig.metadataFilter = metadataFilter;
 			}
 
-			// Perform search using generateContent with File Search tool
-			// Use the configured chat model for consistency
+			// Perform search using generateContent with File Search tool.
+			// Use the configured chat model for consistency; an interactions-only
+			// chat model falls back to the bundled default since File Search runs
+			// on generateContent.
 			const response = await ai.models.generateContent({
-				model: plugin.settings.chatModelName,
+				model: resolveGenerateContentModel(plugin.settings.chatModelName),
 				contents: `Search for information about: ${params.query}\n\nProvide a summary of the most relevant findings from the indexed documents. Include specific file references when available.`,
 				config: {
 					tools: [

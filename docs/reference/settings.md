@@ -145,6 +145,7 @@ The active model list depends on the [`provider`](#provider) setting:
 - **Default**: `gemini-2.5-flash-image`
 - **Only available when**: Provider is `gemini`
 - **Description**: Model used for image generation via the `generate_image` tool and the **Generate image** command. Only models with image-generation capability appear in this dropdown.
+- **Note**: Interactions-only image models (e.g. `gemini-omni-flash-preview`) generate through the Interactions API instead of `generateContent`, regardless of the [Use Interactions API](#use-interactions-api) toggle.
 
 ### Ollama model
 
@@ -310,7 +311,8 @@ Advanced settings for developers and power users. Access by clicking "Show advan
 - **Description**: Routes Gemini requests through Google's GA [Interactions API](https://ai.google.dev/gemini-api/docs/interactions) (`interactions.create`) instead of the legacy `generateContent` API. This is now the default transport; existing installs are migrated to it automatically (a one-time flip you can reverse by turning the toggle off).
 - **Privacy**: Runs statelessly (`store: false`) — conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
 - **Status**: Default-on. Responses stream incrementally (text, reasoning, and tool calls); turn it off to fall back to the legacy `generateContent` path if you hit issues.
-- **Scope**: Governs the conversational chat transport only. Image generation (the `generate_image` tool and **Generate image** command) always uses `generateContent` regardless of this setting.
+- **Scope**: Governs the conversational chat transport only. Image generation (the `generate_image` tool and **Generate image** command) always uses `generateContent` regardless of this setting — unless the selected image model is interactions-only (see below), in which case it uses the Interactions API.
+- **Interactions-only models**: Models flagged `interactionsOnly` in the model catalog (e.g. `gemini-omni-flash-preview`, an image-generation model) are only served by the Interactions API, so requests to them always route through it even when this toggle is off. Features that still run on `generateContent` (Google Search grounding, web fetch, RAG semantic search) substitute the default chat model if an interactions-only model ever ends up configured as the chat model.
 
 #### Custom API Endpoint
 

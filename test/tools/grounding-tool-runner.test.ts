@@ -112,6 +112,21 @@ describe('runGroundingTool', () => {
 				expect.objectContaining({ model: getDefaultModelForRole('chat') })
 			);
 		});
+
+		it('substitutes the default chat model when the chat model is interactions-only', async () => {
+			// Grounding runs on generateContent, which rejects interactions-only
+			// models with a 400 — the runner must not send them.
+			mockPlugin.settings.chatModelName = 'gemini-omni-flash-preview';
+			mockGenAI.models.generateContent.mockResolvedValue({
+				candidates: [{ content: { parts: [{ text: 'answer' }] } }],
+			});
+
+			await runGroundingTool(mockPlugin, makeRequest());
+
+			expect(mockGenAI.models.generateContent).toHaveBeenCalledWith(
+				expect.objectContaining({ model: getDefaultModelForRole('chat') })
+			);
+		});
 	});
 
 	describe('text extraction', () => {

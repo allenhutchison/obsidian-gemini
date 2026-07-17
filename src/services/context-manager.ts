@@ -17,6 +17,7 @@ import { executeWithRetry } from '../utils/retry';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { truncateOldToolResults } from '../agent/agent-loop-helpers';
 import { getLegacyEntryTextTruthy } from '../utils/history-normalize';
+import { isInteractionsOnlyModel, resolveGenerateContentModel } from '../models';
 
 import contextSummaryPromptContent from '../../prompts/contextSummaryPrompt.hbs';
 
@@ -326,7 +327,11 @@ export class ContextManager {
 			const response = await executeWithRetry(
 				() =>
 					this.ai!.models.countTokens({
-						model: modelName,
+						// countTokens is a generateContent-family endpoint; for an
+						// interactions-only model, count against the bundled default
+						// instead — tokenization is close enough for compaction
+						// thresholds, and the real call would 400.
+						model: resolveGenerateContentModel(modelName),
 						contents: sanitizedContents,
 					}),
 				undefined,
@@ -615,8 +620,11 @@ export class ContextManager {
 
 		try {
 			// Ollama has no SDK instance here; route through the factory so we use
-			// whichever provider the user has configured.
-			if (this.plugin.settings.provider === 'ollama' || !this.ai) {
+			// whichever provider the user has configured. An interactions-only
+			// model also goes through the factory (its summary client routes
+			// interactions-only models via the Interactions API) since the direct
+			// generateContent call below would 400.
+			if (this.plugin.settings.provider === 'ollama' || !this.ai || isInteractionsOnlyModel(modelName)) {
 				// Pass ModelUseCase.SUMMARY to the factory and let its
 				// resolveModelName populate the request — overriding `model`
 				// here would route compaction through the chat model on Ollama

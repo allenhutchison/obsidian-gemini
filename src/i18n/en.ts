@@ -478,7 +478,7 @@ export const en = {
 	},
 	'settings.agentConfig.useInteractionsApiDesc': {
 		message:
-			'Route Gemini requests through Google’s newer Interactions API instead of the legacy generateContent API. This is the default transport. Runs statelessly — conversation history is replayed each turn and not persisted on Google’s side between turns. Turn it off to fall back to generateContent if you hit issues.',
+			'Route Gemini requests through Google’s newer Interactions API instead of the legacy generateContent API. This is the default transport. Runs statelessly — conversation history is replayed each turn and not persisted on Google’s side between turns. Turn it off to fall back to generateContent if you hit issues. Models that only support the Interactions API (such as Gemini Omni) always use it, regardless of this setting.',
 		context:
 			'Settings toggle description for the Interactions API. "Interactions API" and "generateContent" are Google API names; keep them in English.',
 	},

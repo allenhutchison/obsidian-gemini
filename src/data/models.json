@@ -92,7 +92,9 @@
 		{
 			"value": "gemini-omni-flash-preview",
 			"label": "Gemini Omni Flash Preview",
-			"maxTemperature": 2
+			"supportsImageGeneration": true,
+			"maxTemperature": 2,
+			"interactionsOnly": true
 		}
 	]
 }
