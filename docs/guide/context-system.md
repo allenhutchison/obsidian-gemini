@@ -116,7 +116,7 @@ For adding, reviewing, or removing multiple files at once:
 
 **Folder support:**
 
-Folders appear alongside files in the list (identified by a folder icon and a trailing `/`). Selecting a folder toggles all the markdown files inside it at once. The check icon reflects the folder's state:
+Folders appear alongside files in the list (identified by a folder icon and a trailing `/`). Selecting a folder toggles all the text files inside it at once (markdown plus other text formats like `.canvas`, `.base`, `.json`). The check icon reflects the folder's state:
 
 - **☑ Filled** — all files in the folder are selected
 - **☐ Partial** (minus) — some files selected
@@ -190,7 +190,7 @@ To remove a file from context:
 Context files persist:
 
 - ✅ Throughout the current session
-- ✅ Across Obsidian restarts
+- ✅ Across Obsidian restarts, when the "Session History" setting is enabled (off by default — see [Settings Reference](/reference/settings))
 - ✅ When loading saved sessions
 - ❌ When creating a new session
 
