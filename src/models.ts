@@ -182,10 +182,14 @@ export function getUpdatedModelSettings<T extends ModelSettingsSlice>(currentSet
 		label: string
 	) => {
 		const previous = modelFields[key];
-		if (previous && geminiModelValues.has(previous)) return;
+		// The retired-model lookup runs BEFORE the validity short-circuit: the
+		// current list may come from a stale persisted remoteModelCache that still
+		// advertises a retired model, but Google 404s these server-side, so list
+		// membership doesn't make it usable — migrate it regardless.
+		const successor = previous ? RETIRED_MODEL_SUCCESSORS[previous] : undefined;
+		if (successor === undefined && previous && geminiModelValues.has(previous)) return;
 		// A retired model migrates to its designated successor when that successor
 		// is available; anything else falls back to the role default.
-		const successor = previous ? RETIRED_MODEL_SUCCESSORS[previous] : undefined;
 		const useSuccessor = successor !== undefined && geminiModelValues.has(successor);
 		const next = useSuccessor ? successor : getDefaultModelForRole(role, 'gemini');
 		// Image generation has no dedicated default in some model lists; leave a

@@ -261,6 +261,32 @@ describe('getUpdatedModelSettings', () => {
 		]);
 	});
 
+	it('migrates a retired model even when a stale model list still advertises it', () => {
+		// GEMINI_MODELS can be populated from a persisted remoteModelCache that
+		// predates the retirement, so the retired id may still pass the validity
+		// check — it must migrate anyway, since Google 404s it server-side.
+		setTestModels([
+			{ value: 'gemini-chat-default', label: 'Chat Default', defaultForRoles: ['chat'] },
+			{ value: 'gemini-summary-default', label: 'Summary Default', defaultForRoles: ['summary'] },
+			{ value: 'gemini-completions-default', label: 'Completions Default', defaultForRoles: ['completions'] },
+			{ value: 'gemini-image-default', label: 'Image Default', defaultForRoles: ['image'] },
+			{ value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' }, // stale cache entry
+			{ value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro Preview' },
+		]);
+		const currentSettings = {
+			chatModelName: 'gemini-3-pro-preview',
+			summaryModelName: 'gemini-summary-default',
+			completionsModelName: 'gemini-completions-default',
+			imageModelName: 'gemini-image-default',
+		};
+		const result = getUpdatedModelSettings(currentSettings);
+		expect(result.settingsChanged).toBe(true);
+		expect(result.updatedSettings.chatModelName).toBe('gemini-3.1-pro-preview');
+		expect(result.changedSettingsInfo).toEqual([
+			"Chat model: 'gemini-3-pro-preview' -> 'gemini-3.1-pro-preview' (retired model migrated to successor)",
+		]);
+	});
+
 	it('falls back to the role default when a retired model’s successor is not in the list', () => {
 		// Default test models from beforeEach do NOT include gemini-3.1-pro-preview.
 		const currentSettings = {
