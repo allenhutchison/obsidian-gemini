@@ -1427,4 +1427,153 @@ describe('GeminiClient', () => {
 			});
 		});
 	});
+
+	describe('interactions-only model routing (useInteractionsApi off)', () => {
+		// gemini-omni-flash-preview is flagged interactionsOnly in the bundled
+		// catalog: generateContent rejects it with a 400 ("This model only
+		// supports Interactions API"), so the client must route it through the
+		// Interactions path even when the transport toggle is off.
+		const makeClient = (model: string) =>
+			new GeminiClient(
+				{ apiKey: 'test-api-key', model, useInteractionsApi: false },
+				new GeminiPrompts(mockPlugin),
+				mockPlugin
+			);
+
+		beforeEach(() => {
+			interactionsCreateMock.mockReset();
+			interactionsCreateMock.mockResolvedValue({
+				id: 'int_2',
+				status: 'completed',
+				output_text: 'Hello from interactions',
+				steps: [{ type: 'model_output', content: [{ type: 'text', text: 'Hello from interactions' }] }],
+			});
+			generateContentMock.mockReset();
+			generateContentMock.mockResolvedValue({
+				candidates: [{ content: { parts: [{ text: 'Hello from generateContent' }] } }],
+			});
+
+			// Stub the plugin surface buildExtendedSystemInstruction depends on.
+			mockPlugin.agentsMemory = { read: vi.fn().mockResolvedValue('') };
+			mockPlugin.skillManager = { getSkillSummaries: vi.fn().mockResolvedValue([]) };
+			mockPlugin.settings = { userName: 'Tester', ragIndexing: { enabled: false }, useInteractionsApi: false };
+		});
+
+		test('configured interactions-only model routes via interactions.create despite the toggle being off', async () => {
+			const client = makeClient('gemini-omni-flash-preview');
+			const response = await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'hi',
+				kind: 'extended',
+				conversationHistory: [],
+			});
+
+			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
+			expect(generateContentMock).not.toHaveBeenCalled();
+			expect(interactionsCreateMock.mock.calls[0][0].model).toBe('gemini-omni-flash-preview');
+			expect(response.markdown).toBe('Hello from interactions');
+		});
+
+		test('per-request model override to an interactions-only model routes via interactions.create', async () => {
+			const client = makeClient('gemini-flash-latest');
+			await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'hi',
+				kind: 'extended',
+				conversationHistory: [],
+				model: 'gemini-omni-flash-preview',
+			});
+
+			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
+			expect(generateContentMock).not.toHaveBeenCalled();
+			expect(interactionsCreateMock.mock.calls[0][0].model).toBe('gemini-omni-flash-preview');
+		});
+
+		test('regular model keeps using generateContent when the toggle is off', async () => {
+			const client = makeClient('gemini-flash-latest');
+			const response = await client.generateModelResponse({
+				prompt: '',
+				userMessage: 'hi',
+				kind: 'extended',
+				conversationHistory: [],
+			});
+
+			expect(generateContentMock).toHaveBeenCalledTimes(1);
+			expect(interactionsCreateMock).not.toHaveBeenCalled();
+			expect(response.markdown).toBe('Hello from generateContent');
+		});
+
+		test('generateImage routes an interactions-only image model via interactions.create', async () => {
+			interactionsCreateMock.mockReset();
+			interactionsCreateMock.mockResolvedValue({
+				id: 'int_img',
+				status: 'completed',
+				output_image: { data: 'BASE64_IMAGE', mime_type: 'image/png' },
+				steps: [{ type: 'model_output', content: [{ type: 'image', data: 'BASE64_IMAGE' }] }],
+			});
+
+			const client = makeClient('gemini-flash-latest');
+			const data = await client.generateImage('a nano banana dish', 'gemini-omni-flash-preview');
+
+			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
+			expect(generateContentMock).not.toHaveBeenCalled();
+			const params = interactionsCreateMock.mock.calls[0][0];
+			expect(params.model).toBe('gemini-omni-flash-preview');
+			expect(params.input).toBe('a nano banana dish');
+			expect(params.store).toBe(false);
+			expect(data).toBe('BASE64_IMAGE');
+		});
+
+		test('generateImage via interactions throws when the response has no image data', async () => {
+			interactionsCreateMock.mockReset();
+			interactionsCreateMock.mockResolvedValue({
+				id: 'int_img',
+				status: 'completed',
+				output_text: 'Sorry, cannot draw that.',
+				steps: [{ type: 'model_output', content: [{ type: 'text', text: 'Sorry, cannot draw that.' }] }],
+			});
+
+			const client = makeClient('gemini-flash-latest');
+			await expect(client.generateImage('a nano banana dish', 'gemini-omni-flash-preview')).rejects.toThrow(
+				'No image data in response'
+			);
+		});
+
+		test('generateImage keeps using generateContent for regular image models', async () => {
+			generateContentMock.mockReset();
+			generateContentMock.mockResolvedValue({
+				candidates: [{ content: { parts: [{ inlineData: { data: 'GC_IMAGE' } }] } }],
+			});
+
+			const client = makeClient('gemini-flash-latest');
+			const data = await client.generateImage('a nano banana dish', 'gemini-2.5-flash-image');
+
+			expect(generateContentMock).toHaveBeenCalledTimes(1);
+			expect(interactionsCreateMock).not.toHaveBeenCalled();
+			expect(data).toBe('GC_IMAGE');
+		});
+
+		test('streaming an interactions-only model routes via the interactions stream despite the toggle being off', async () => {
+			interactionsCreateMock.mockReset();
+			interactionsCreateMock.mockImplementation(async () => {
+				return (async function* () {
+					yield { event_type: 'step.start', index: 0, step: { type: 'model_output' } };
+					yield { event_type: 'step.delta', index: 0, delta: { type: 'text', text: 'streamed' } };
+				})();
+			});
+
+			const client = makeClient('gemini-omni-flash-preview');
+			const chunks: Array<{ text: string }> = [];
+			const stream = client.generateStreamingResponse(
+				{ prompt: '', userMessage: 'hi', kind: 'extended', conversationHistory: [] },
+				(chunk) => chunks.push(chunk)
+			);
+
+			const response = await stream.complete;
+			expect(interactionsCreateMock).toHaveBeenCalledTimes(1);
+			expect(interactionsCreateMock.mock.calls[0][0].stream).toBe(true);
+			expect(chunks).toEqual([{ text: 'streamed' }]);
+			expect(response.markdown).toBe('streamed');
+		});
+	});
 });

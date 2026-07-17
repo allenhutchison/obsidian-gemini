@@ -62,6 +62,7 @@ Route Gemini requests through Google's newer [Interactions API](https://ai.googl
 - **Scope**: Gemini provider only — the toggle is hidden when the provider is Ollama.
 - **Privacy**: The plugin runs the Interactions API **statelessly** (`store: false`). Conversation history is replayed with each request, and the plugin does not persist Interactions state on Google's side between turns. (Requests are still sent to Google to generate each response, subject to Google's standard API data-handling terms.)
 - **Status**: Default transport. If you hit problems, turn it off to fall back to the proven `generateContent` path. Responses stream incrementally, including reasoning and tool calls.
+- **Interactions-only models**: Some models (e.g. Gemini Omni Flash Preview, an image-generation model) are only served by the Interactions API — `generateContent` rejects them outright. Requests to these models always use the Interactions API, even when this toggle is off; that includes image generation when an interactions-only model is selected as the image model. Features that still run on `generateContent` (Google Search grounding, web fetch, RAG semantic search) substitute the default chat model if an interactions-only model ever ends up configured as the chat model.
 
 ### Custom API Endpoint
 

@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import {
 	InteractionStreamAccumulator,
+	extractImageDataFromInteraction,
 	extractModelResponseFromInteraction,
 	contentToSteps,
 	buildUserInputStep,
@@ -282,5 +283,53 @@ describe('inline attachments (all media classes)', () => {
 		expect(contentToSteps(content)).toEqual([
 			{ type: 'user_input', content: [{ type: 'document', data: 'BBBB', mime_type: 'application/pdf' }] },
 		]);
+	});
+});
+
+describe('extractImageDataFromInteraction', () => {
+	test('prefers the output_image convenience property', () => {
+		const interaction = {
+			output_image: { data: 'BASE64_CONVENIENCE', mime_type: 'image/png' },
+			steps: [{ type: 'model_output', content: [{ type: 'image', data: 'BASE64_STEP' }] }],
+		};
+		expect(extractImageDataFromInteraction(interaction)).toBe('BASE64_CONVENIENCE');
+	});
+
+	test('falls back to scanning model_output steps for image content', () => {
+		const interaction = {
+			steps: [
+				{ type: 'thought', summary: [{ type: 'text', text: 'planning' }] },
+				{
+					type: 'model_output',
+					content: [
+						{ type: 'text', text: 'Here is your image:' },
+						{ type: 'image', data: 'BASE64_STEP', mime_type: 'image/png' },
+					],
+				},
+			],
+		};
+		expect(extractImageDataFromInteraction(interaction)).toBe('BASE64_STEP');
+	});
+
+	test('returns the last image when the output interleaves several', () => {
+		const interaction = {
+			steps: [
+				{ type: 'model_output', content: [{ type: 'image', data: 'FIRST' }] },
+				{ type: 'model_output', content: [{ type: 'image', data: 'LAST' }] },
+			],
+		};
+		expect(extractImageDataFromInteraction(interaction)).toBe('LAST');
+	});
+
+	test('returns null for a text-only response', () => {
+		const interaction = {
+			output_text: 'Sorry, no image.',
+			steps: [{ type: 'model_output', content: [{ type: 'text', text: 'Sorry, no image.' }] }],
+		};
+		expect(extractImageDataFromInteraction(interaction)).toBeNull();
+	});
+
+	test('returns null when steps are missing entirely', () => {
+		expect(extractImageDataFromInteraction({})).toBeNull();
 	});
 });

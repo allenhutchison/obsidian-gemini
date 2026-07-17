@@ -7,6 +7,7 @@ import { executeWithRetry } from '../utils/retry';
 import TurndownService from 'turndown';
 import { decodeHtmlEntities } from '../utils/html-entities';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
+import { resolveGenerateContentModel } from '../models';
 import { getRawErrorMessageOr } from '../utils/error-utils';
 
 /**
@@ -74,9 +75,10 @@ export class WebFetchTool implements Tool {
 
 			// Create a new instance of GoogleGenAI
 			const genAI = createGoogleGenAI(plugin);
-			// Use the same model that's configured for chat
-			// This ensures consistency with the main conversation
-			const modelToUse = plugin.settings.chatModelName || 'gemini-2.5-flash';
+			// Use the same model that's configured for chat for consistency with the
+			// main conversation. URL context runs on generateContent, so an
+			// interactions-only chat model falls back to the bundled default.
+			const modelToUse = resolveGenerateContentModel(plugin.settings.chatModelName);
 
 			// Create a prompt that includes the URL and the query
 			const prompt = `${params.query} for ${params.url}`;
@@ -250,9 +252,10 @@ export class WebFetchTool implements Tool {
 				content = content.substring(0, 10000) + '\n\n[Content truncated...]';
 			}
 
-			// Now use Gemini to analyze the content
+			// Now use Gemini to analyze the content (generateContent path — an
+			// interactions-only chat model falls back to the bundled default).
 			const genAI = createGoogleGenAI(plugin);
-			const modelToUse = plugin.settings.chatModelName || 'gemini-2.5-flash';
+			const modelToUse = resolveGenerateContentModel(plugin.settings.chatModelName);
 
 			// Create a prompt with the content
 			const prompt = `Based on the following web page content from ${params.url}, ${params.query}\n\nWeb Page Title: ${title}\n\nContent:\n${content}`;

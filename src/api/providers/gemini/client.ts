@@ -29,7 +29,7 @@ import {
 } from '../../interfaces/model-api';
 import { GeminiPrompts } from '../../../prompts';
 import type { ObsidianGemini } from '../../../types/plugin';
-import { getDefaultModelForRole } from '../../../models';
+import { getDefaultModelForRole, isInteractionsOnlyModel } from '../../../models';
 import { decodeHtmlEntities } from '../../../utils/html-entities';
 import { normalizeToContent } from '../../../utils/history-normalize';
 import type { GeminiClientConfig } from './config';
@@ -37,6 +37,7 @@ import { ModelUseCase } from '../../model-use-case';
 import {
 	buildUserInputStep,
 	contentToSteps,
+	extractImageDataFromInteraction,
 	extractModelResponseFromInteraction,
 	toolsToInteractionTools,
 	InteractionStreamAccumulator,
@@ -98,11 +99,27 @@ export class GeminiClient implements ModelApi {
 	}
 
 	/**
-	 * Whether this client routes through the GA Interactions API. Reads the
-	 * per-client config first (set by the factory), falling back to live plugin
-	 * settings for `createCustom` callers that don't thread the flag through.
+	 * Resolve the effective model for a request: per-request override, then the
+	 * client's configured model, then the bundled chat default. Single source of
+	 * truth for the routing decision and both param builders.
 	 */
-	private get useInteractions(): boolean {
+	private resolveModel(request: BaseModelRequest | ExtendedModelRequest): string {
+		return request.model || this.config.model || getDefaultModelForRole('chat');
+	}
+
+	/**
+	 * Whether a request for `model` routes through the GA Interactions API.
+	 * Interactions-only models (e.g. gemini-omni-flash-preview) always do —
+	 * `generateContent` rejects them with a 400 ("This model only supports
+	 * Interactions API") — regardless of the user's transport toggle. Otherwise
+	 * the per-client config decides (set by the factory), falling back to live
+	 * plugin settings for `createCustom` callers that don't thread the flag
+	 * through.
+	 */
+	private usesInteractions(model: string): boolean {
+		if (isInteractionsOnlyModel(model)) {
+			return true;
+		}
 		return this.config.useInteractionsApi ?? this.plugin?.settings?.useInteractionsApi ?? false;
 	}
 
@@ -110,7 +127,7 @@ export class GeminiClient implements ModelApi {
 	 * Generate a non-streaming response
 	 */
 	async generateModelResponse(request: BaseModelRequest | ExtendedModelRequest): Promise<ModelResponse> {
-		if (this.useInteractions) {
+		if (this.usesInteractions(this.resolveModel(request))) {
 			return this.generateViaInteractions(request);
 		}
 
@@ -253,7 +270,7 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest
 	): Promise<Record<string, unknown>> {
 		const isExtended = isExtendedRequest(request);
-		const model = request.model || this.config.model || getDefaultModelForRole('chat');
+		const model = this.resolveModel(request);
 
 		const generationConfig: Record<string, unknown> = {
 			temperature: request.temperature ?? this.config.temperature,
@@ -344,7 +361,7 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest,
 		onChunk: StreamCallback
 	): StreamingModelResponse {
-		if (this.useInteractions) {
+		if (this.usesInteractions(this.resolveModel(request))) {
 			return this.streamViaInteractions(request, onChunk);
 		}
 
@@ -468,7 +485,7 @@ export class GeminiClient implements ModelApi {
 		request: BaseModelRequest | ExtendedModelRequest
 	): Promise<GenerateContentParameters> {
 		const isExtended = isExtendedRequest(request);
-		const model = request.model || this.config.model || getDefaultModelForRole('chat');
+		const model = this.resolveModel(request);
 
 		// Build system instruction
 		let systemInstruction = '';
@@ -797,14 +814,19 @@ export class GeminiClient implements ModelApi {
 	 * on (see #1016): image generation is a distinct one-shot capability on a
 	 * dedicated image model — not the conversational transport the flag governs —
 	 * and the existing path is proven across image-tools and scheduled tasks.
-	 * Migrating it to the Interactions image-output surface is deferred until
-	 * there's a concrete reason to (no user-facing benefit today).
+	 * The exception is interactions-only image models (e.g.
+	 * gemini-omni-flash-preview), which `generateContent` rejects with a 400 —
+	 * those route through the Interactions image-output surface.
 	 *
 	 * @param prompt - Text description of the image to generate
 	 * @param model - Image generation model (defaults to gemini-2.5-flash-image-preview)
 	 * @returns Base64 encoded image data
 	 */
 	async generateImage(prompt: string, model: string): Promise<string> {
+		if (isInteractionsOnlyModel(model)) {
+			return this.generateImageViaInteractions(prompt, model);
+		}
+
 		try {
 			const params: GenerateContentParameters = {
 				model,
@@ -836,6 +858,34 @@ export class GeminiClient implements ModelApi {
 			throw new Error('No image data in response. The model may have returned only text.');
 		} catch (error) {
 			this.plugin?.logger.error('[GeminiClient] Error generating image:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Image generation via the Interactions API, for models `generateContent`
+	 * refuses to serve. One-shot and stateless like the generateContent path:
+	 * the prompt is the whole input, and the base64 image is pulled from the
+	 * response's `model_output` steps (via the `output_image` convenience when
+	 * the SDK provides it).
+	 */
+	private async generateImageViaInteractions(prompt: string, model: string): Promise<string> {
+		this.ensureInteractionsFetch();
+
+		try {
+			const interaction = await this.interactionsClient.create({
+				model,
+				store: false,
+				input: prompt,
+			});
+
+			const imageData = extractImageDataFromInteraction(interaction);
+			if (!imageData) {
+				throw new Error('No image data in response. The model may have returned only text.');
+			}
+			return imageData;
+		} catch (error) {
+			this.plugin?.logger.error('[GeminiClient] Error generating image via interactions:', error);
 			throw error;
 		}
 	}

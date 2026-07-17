@@ -1,6 +1,6 @@
 import { ToolResult } from './types';
 import type { ObsidianGemini } from '../types/plugin';
-import { getDefaultModelForRole } from '../models';
+import { resolveGenerateContentModel } from '../models';
 import { createGoogleGenAI } from '../api/providers/gemini/google-genai-factory';
 import { executeWithRetry } from '../utils/retry';
 import { getRawErrorMessage } from '../utils/error-utils';
@@ -62,9 +62,11 @@ export async function runGroundingTool(plugin: ObsidianGemini, req: GroundingToo
 			};
 		}
 
-		// Create a separate model instance with the requested grounding tool enabled
+		// Create a separate model instance with the requested grounding tool enabled.
+		// Grounding runs on generateContent, so an interactions-only chat model is
+		// swapped for the bundled default instead of hard-failing with a 400.
 		const genAI = createGoogleGenAI(plugin);
-		const modelToUse = plugin.settings.chatModelName || getDefaultModelForRole('chat');
+		const modelToUse = resolveGenerateContentModel(plugin.settings.chatModelName);
 		const config = {
 			temperature: plugin.settings.temperature,
 			maxOutputTokens: 8192, // Default max tokens

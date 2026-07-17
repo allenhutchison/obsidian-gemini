@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"lastUpdated": "2026-07-06T09:16:20.824Z",
+	"lastUpdated": "2026-07-16T00:00:00.000Z",
 	"models": [
 		{
 			"value": "gemini-pro-latest",
@@ -97,7 +97,9 @@
 		{
 			"value": "gemini-omni-flash-preview",
 			"label": "Gemini Omni Flash Preview",
-			"maxTemperature": 2
+			"supportsImageGeneration": true,
+			"maxTemperature": 2,
+			"interactionsOnly": true
 		}
 	]
 }
