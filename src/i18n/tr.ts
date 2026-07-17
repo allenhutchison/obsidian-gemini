@@ -143,7 +143,7 @@ export const tr: Partial<Record<TranslationKey, string>> = {
 		'Günlük kayıtlarını eklenti durum klasöründeki bir dosyaya yazın. Hatalar ve uyarılar her zaman günlüğe kaydedilir; hata ayıklama kayıtları hata ayıklama modunu gerektirir. Günlük dosyaları 1 MB boyutunda otomatik olarak döndürülür.',
 	'settings.agentConfig.useInteractionsApiName': "Interactions API'yi Kullan",
 	'settings.agentConfig.useInteractionsApiDesc':
-		"Gemini isteklerini eski generateContent API yerine Google'ın daha yeni olan Interactions API'si üzerinden yönlendirin. Bu, varsayılan aktarım yöntemidir. Durumsuz olarak çalışır; konuşma geçmişi her turda yeniden oynatılır ve turlar arasında Google tarafında saklanmaz. Sorun yaşarsanız generateContent'e geri dönmek için bunu kapatın.",
+		"Gemini isteklerini, eski generateContent API yerine Google'ın daha yeni olan Interactions API'si üzerinden yönlendirin. Bu, varsayılan aktarım yöntemidir. Durumsuz olarak çalışır; sohbet geçmişi her turda yeniden oynatılır ve turlar arasında Google tarafında saklanmaz. Sorun yaşarsanız generateContent API'sine geri dönmek için bunu kapatın. Yalnızca Interactions API'sini destekleyen modeller (Gemini Omni gibi), bu ayardan bağımsız olarak her zaman bunu kullanır.",
 	'settings.agentConfig.customEndpointName': 'Özel API uç noktası',
 	'settings.agentConfig.customEndpointDesc':
 		"Varsayılan Google API temel URL'sini geçersiz kılın (örneğin kurumsal bir proxy veya yerel ağ geçidi için). Resmi uç noktayı kullanmak için boş bırakın.",

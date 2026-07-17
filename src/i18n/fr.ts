@@ -144,7 +144,7 @@ export const fr: Partial<Record<TranslationKey, string>> = {
 		"Écrire les entrées de journal dans un fichier du dossier d'état du plugin. Les erreurs et les avertissements sont toujours enregistrés ; les entrées de débogage nécessitent le mode débogage. Les fichiers de journalisation subissent une rotation automatique à 1 Mo.",
 	'settings.agentConfig.useInteractionsApiName': "Utiliser l'API Interactions",
 	'settings.agentConfig.useInteractionsApiDesc':
-		"Achemine les requêtes Gemini via la nouvelle API Interactions de Google plutôt que l'ancienne API generateContent. Il s'agit du transport par défaut. Fonctionne sans état — l'historique de la conversation est rejoué à chaque tour et n'est pas conservé du côté de Google entre les tours. Désactivez cette option pour revenir à generateContent si vous rencontrez des problèmes.",
+		"Achemine les requêtes Gemini via la nouvelle API Interactions de Google plutôt que l'ancienne API generateContent. Il s'agit du transport par défaut. Fonctionne sans état — l'historique de la conversation est rejoué à chaque tour et n'est pas conservé du côté de Google entre les tours. Désactivez-le pour revenir à generateContent en cas de problème. Les modèles qui ne prennent en charge que l'API Interactions (comme Gemini Omni) l'utilisent toujours, quel que soit ce paramètre.",
 	'settings.agentConfig.customEndpointName': "Point de terminaison d'API personnalisé",
 	'settings.agentConfig.customEndpointDesc':
 		"Surcharger l'URL de base par défaut de l'API Google (par ex. pour un proxy d'entreprise ou une passerelle locale). Laisser vide pour utiliser le point de terminaison officiel.",

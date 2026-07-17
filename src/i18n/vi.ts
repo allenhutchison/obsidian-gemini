@@ -142,7 +142,7 @@ export const vi: Partial<Record<TranslationKey, string>> = {
 		'Ghi nhật ký vào một tệp trong thư mục trạng thái plugin. Lỗi và cảnh báo luôn được ghi lại; các mục gỡ lỗi yêu cầu chế độ gỡ lỗi. Các tệp nhật ký được tự động xoay vòng ở kích thước 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Sử dụng Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Định tuyến các yêu cầu Gemini qua Interactions API mới hơn của Google thay vì generateContent API cũ. Đây là phương thức truyền tải mặc định. Hoạt động không lưu trạng thái (stateless) — lịch sử trò chuyện được gửi lại sau mỗi lượt và không được lưu trữ phía Google giữa các lượt. Tắt tùy chọn này để quay lại sử dụng generateContent nếu bạn gặp sự cố.',
+		'Định tuyến các yêu cầu Gemini qua Interactions API mới hơn của Google thay vì API generateContent cũ. Đây là phương thức truyền tải mặc định. Hoạt động không lưu trạng thái (stateless) — lịch sử trò chuyện được phát lại ở mỗi lượt và không được lưu lại phía Google giữa các lượt. Tắt tùy chọn này để quay lại sử dụng generateContent nếu bạn gặp sự cố. Các mô hình chỉ hỗ trợ Interactions API (chẳng hạn như Gemini Omni) sẽ luôn sử dụng nó, bất kể cài đặt này.',
 	'settings.agentConfig.customEndpointName': 'Endpoint API tùy chỉnh',
 	'settings.agentConfig.customEndpointDesc':
 		'Ghi đè URL cơ sở mặc định của Google API (ví dụ: đối với proxy doanh nghiệp hoặc cổng cục bộ). Để trống để sử dụng endpoint chính thức.',

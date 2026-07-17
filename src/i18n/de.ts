@@ -144,7 +144,7 @@ export const de: Partial<Record<TranslationKey, string>> = {
 		'Schreibe Protokolleinträge in eine Datei im Plugin-Statusordner. Fehler und Warnungen werden immer protokolliert; Debug-Einträge erfordern den Debug-Modus. Protokolldateien werden automatisch bei 1 MB rotiert.',
 	'settings.agentConfig.useInteractionsApiName': 'Interactions-API verwenden',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Leitet Gemini-Anfragen über Googles neuere Interactions API statt der veralteten generateContent-API weiter. Dies ist der Standardtransport. Läuft zustandslos – der Konversationsverlauf wird bei jeder Interaktion erneut abgespielt und zwischen den Interaktionen nicht auf Googles Seite gespeichert. Deaktivieren Sie diese Option, um bei Problemen auf generateContent auszuweichen.',
+		'Leitet Gemini-Anfragen über Googles neuere Interactions API anstelle der veralteten generateContent-API weiter. Dies ist der Standardtransport. Läuft zustandslos – der Konversationsverlauf wird bei jeder Interaktion erneut gesendet und nicht auf Googles Seite gespeichert. Deaktivieren Sie diese Option, um bei Problemen auf generateContent zurückzugreifen. Modelle, die nur die Interactions API unterstützen (wie Gemini Omni), verwenden diese immer, unabhängig von dieser Einstellung.',
 	'settings.agentConfig.customEndpointName': 'Benutzerdefinierter API-Endpunkt',
 	'settings.agentConfig.customEndpointDesc':
 		'Überschreibt die standardmäßige Google-API-Basis-URL (z. B. für einen Firmen-Proxy oder ein lokales Gateway). Leer lassen, um den offiziellen Endpunkt zu verwenden.',
