@@ -248,8 +248,8 @@ Compaction isn't only checked before the initial request — `AgentLoop` re-chec
 - **Type**: Boolean
 - **Default**: `false`
 - **Description**: Display estimated token count in the agent input area
-- **Display format**: `Tokens: ~N (Y new) / M (X%)` showing total prompt tokens, uncached (new) tokens, model limit, and percentage used
-- **How it works**: Token counts update live after each API response, including during tool call chains. Gemini's implicit caching means repeated content (system prompt, tool definitions) is served from cache — the "new" count shows tokens that aren't cached
+- **Display format**: `Tokens: ~N / M (X%)` showing total prompt tokens, model limit, and percentage used. When part of the prompt was served from Gemini's cache, an additional `· Y% cached` suffix appears
+- **How it works**: Token counts update live after each API response, including during tool call chains. Gemini's implicit caching means repeated content (system prompt, tool definitions) is often served from cache — the cached percentage rewards stable prefixes (system prompt, pinned history)
 - **Visual indicators**:
   - Normal (muted text) — well under threshold
   - Yellow — approaching compaction threshold (≥80% of threshold)

@@ -170,7 +170,7 @@ Context files are displayed in a **unified file shelf** — a horizontal strip a
 3. Click the file icon in the session header to open the multi-select modal:
    - Already-added files appear pre-checked
    - Type to fuzzy-search; **Enter** toggles a file or folder; **Esc** confirms and closes
-   - Selecting a folder adds all markdown files inside it (folders are re-expanded each turn, so newly added files are automatically included)
+   - Selecting a folder adds all text files inside it — markdown plus other text formats like `.canvas`, `.base`, `.json` (folders are re-expanded each turn, so newly added files are automatically included)
    - Unchecking a file or folder removes it from context
 4. Drag and drop files or folders from the file explorer or your OS
 5. Paste images from your clipboard
@@ -188,7 +188,7 @@ For detailed information about context files and advanced usage, see the [Contex
 ### Session Management
 
 - Each conversation is a separate session
-- Sessions persist across Obsidian restarts
+- Sessions persist across Obsidian restarts when the "Session History" setting is enabled (off by default — see [Settings Reference](/reference/settings))
 - Access previous sessions from the dropdown
 - Configure session-specific settings
 - Sessions are automatically titled with a YYYY-MM-DD date prefix and AI-generated description after the first exchange
