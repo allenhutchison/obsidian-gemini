@@ -4,6 +4,7 @@ import { ToolResult } from '../../tools/types';
 import { formatFileSize } from '../../utils/format-utils';
 import { t } from '../../i18n';
 import { TOOL_ICONS } from './tool-icons';
+import { setCollapsibleExpanded, wireCollapsibleToggle } from './collapsible';
 
 /** Citation entry rendered for google_search / google_maps results. */
 interface SearchCitation {
@@ -51,44 +52,6 @@ function isGeneratedImageResult(
 
 function isFileContentResult(value: Record<string, unknown>): value is Record<string, unknown> & FileContentResult {
 	return typeof value.content === 'string' && typeof value.path === 'string';
-}
-
-/** Elements that make up one collapsible section (a tool group or a tool row). */
-interface CollapsibleRefs {
-	/** The clickable header; `aria-expanded` lives here and is the source of truth. */
-	control: HTMLElement;
-	/** The collapsible content shown/hidden. */
-	body: HTMLElement;
-	/** The chevron icon span, swapped between right/down. */
-	chevron: HTMLElement;
-	/** The element that carries the `*-expanded` class. */
-	host: HTMLElement;
-	/** e.g. `gemini-tool-group-expanded` / `gemini-tool-row-expanded`. */
-	expandedClass: string;
-}
-
-/** Apply the expanded/collapsed visual state to a collapsible section. */
-function setCollapsibleExpanded(refs: CollapsibleRefs, expanded: boolean): void {
-	refs.body.style.display = expanded ? 'block' : 'none';
-	setIcon(refs.chevron, expanded ? 'chevron-down' : 'chevron-right');
-	refs.host.toggleClass(refs.expandedClass, expanded);
-	refs.control.setAttribute('aria-expanded', String(expanded));
-}
-
-/**
- * Wire a header so click / Enter / Space toggles its collapsible body. State is
- * derived from `aria-expanded` so programmatic expansion (auto-expand on error)
- * and user toggling stay in sync.
- */
-function wireCollapsibleToggle(refs: CollapsibleRefs): void {
-	const toggle = () => setCollapsibleExpanded(refs, refs.control.getAttribute('aria-expanded') !== 'true');
-	refs.control.addEventListener('click', toggle);
-	refs.control.addEventListener('keydown', (e: KeyboardEvent) => {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			toggle();
-		}
-	});
 }
 
 /**
