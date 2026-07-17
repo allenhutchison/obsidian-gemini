@@ -28,21 +28,23 @@ jobs:
 
       - name: Check for new models
         id: update
-        continue-on-error: true
+        # Exits 0 whether or not new models were found (`updated` output says
+        # which); a non-zero exit is a real error (bad API key, API failure)
+        # and should fail the run loudly.
         run: node scripts/update-models.mjs
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
       - name: Install dependencies
-        if: steps.update.outcome == 'success'
+        if: steps.update.outputs.updated == 'true'
         run: npm ci
 
       - name: Format models.json
-        if: steps.update.outcome == 'success'
+        if: steps.update.outputs.updated == 'true'
         run: npm run format
 
       - name: Create PR if models changed
-        if: steps.update.outcome == 'success'
+        if: steps.update.outputs.updated == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           commit-message: 'chore: update models.json with new Gemini models'

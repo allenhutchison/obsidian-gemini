@@ -7,11 +7,16 @@
  * Usage: GOOGLE_API_KEY=... node scripts/update-models.mjs
  *
  * Exit codes:
- *   0 — models.json was updated with new models
- *   1 — no new models found (or error)
+ *   0 — success (whether or not new models were found)
+ *   1 — error (missing API key, API failure, validation failure)
+ *
+ * When run inside GitHub Actions, writes `updated=true|false` to $GITHUB_OUTPUT
+ * so the workflow can gate the PR-creation steps. Errors must exit non-zero so
+ * a broken API key or schema change fails the run loudly instead of looking
+ * like a quiet "no new models" week.
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, appendFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -111,6 +116,13 @@ function gaModelId(modelId) {
 	return modelId.replace(/-preview.*$/, '');
 }
 
+// Report whether models.json changed to the calling workflow (no-op outside CI).
+function setUpdatedOutput(updated) {
+	if (process.env.GITHUB_OUTPUT) {
+		appendFileSync(process.env.GITHUB_OUTPUT, `updated=${updated}\n`, 'utf-8');
+	}
+}
+
 function main() {
 	const apiKey = process.env.GOOGLE_API_KEY;
 	if (!apiKey) {
@@ -190,7 +202,8 @@ function main() {
 
 		if (newModels.length === 0) {
 			console.log('No new models found.');
-			process.exit(1);
+			setUpdatedOutput(false);
+			process.exit(0);
 		}
 
 		console.log(`Found ${newModels.length} new model(s):`);
@@ -223,6 +236,7 @@ function main() {
 		// Write with tab indentation to match Prettier's output for this repo
 		writeFileSync(MODELS_PATH, JSON.stringify(modelsFile, null, '\t') + '\n', 'utf-8');
 		console.log(`Updated ${MODELS_PATH}`);
+		setUpdatedOutput(true);
 		process.exit(0);
 	});
 }
