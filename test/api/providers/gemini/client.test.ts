@@ -98,10 +98,10 @@ describe('GeminiClient', () => {
 		};
 
 		describe('should return true for models that support thinking', () => {
-			test('gemini-3-pro-preview', () => {
-				expect(testSupportsThinking('gemini-3-pro-preview')).toBe(true);
+			test('gemini-3.1-pro-preview', () => {
+				expect(testSupportsThinking('gemini-3.1-pro-preview')).toBe(true);
 				expect(mockLogger.debug).toHaveBeenCalledWith(
-					'[GeminiClient] Enabling thinking mode for model: gemini-3-pro-preview'
+					'[GeminiClient] Enabling thinking mode for model: gemini-3.1-pro-preview'
 				);
 			});
 

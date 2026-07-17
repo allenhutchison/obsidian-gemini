@@ -371,6 +371,8 @@ Model discovery is automatic — no user-configurable settings are required. On 
 
 To pick up a newly-published model without waiting for the cache to expire, click **Refresh model list** in Settings → General, or run the **Gemini Scribe: Refresh model list** command (`gemini-scribe:refresh-model-list`). Both honor the same skip conditions as the auto-fetch — they no-op when the provider is Ollama or the host reports offline, and surface the outcome via a `Notice`. When the Ollama provider is active, the same row appears but re-queries the Ollama daemon for newly pulled models instead.
 
+When Google retires a model (the API starts returning 404 "no longer available" — e.g. `gemini-3-pro-preview` in July 2026), it is removed from the catalog and any settings still pointing at it are migrated automatically on the next reload: to the retired model's designated successor when one exists (`gemini-3-pro-preview` → `gemini-3.1-pro-preview`), otherwise to the default model for that role.
+
 ### Tool Execution
 
 #### Stop on Tool Error

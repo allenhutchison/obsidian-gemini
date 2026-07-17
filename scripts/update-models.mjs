@@ -33,6 +33,10 @@ const EXCLUDE_PATTERNS = [
 	'computer',
 	'robotics',
 	'gemini-2.0',
+	// Retired by Google 2026-07 (API returns 404 "no longer available"); keep it
+	// out even if ListModels still advertises it. Settings migration lives in
+	// RETIRED_MODEL_SUCCESSORS in src/models.ts.
+	'gemini-3-pro-preview',
 ];
 
 async function fetchAllModels(apiKey) {
