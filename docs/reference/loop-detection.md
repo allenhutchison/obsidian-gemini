@@ -41,5 +41,5 @@ In addition to the per-tool detection above, the agent loop counts how many time
 - Uses deterministic key generation for tool calls to ensure consistent detection
 - Automatically cleans up old execution history to prevent memory issues
 - Session-specific tracking - each agent session has its own loop detection history
-- History is cleared when creating new sessions or loading from history
+- History is keyed per session ID, so a brand-new session starts with no prior detection state; loading an existing session's history does not clear it (prior detector state for that session persists)
 - Per-turn abort threshold is fixed at 3 fires; the per-tool threshold and time window above are user-configurable
