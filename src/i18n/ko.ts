@@ -135,7 +135,7 @@ export const ko: Partial<Record<TranslationKey, string>> = {
 		'로그 항목을 플러그인 상태 폴더의 파일에 기록합니다. 오류 및 경고는 항상 기록되며, 디버그 항목은 디버그 모드가 필요합니다. 로그 파일은 1MB에 도달하면 자동으로 로테이션됩니다.',
 	'settings.agentConfig.useInteractionsApiName': 'Interactions API 사용',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Gemini 요청을 기존 generateContent API 대신 Google의 새로운 Interactions API를 통해 라우팅합니다. 이 방식이 기본 전송 방식입니다. 상태를 저장하지 않는 방식으로 실행되어 대화 기록이 매 턴마다 다시 전송되며, 턴 사이에 Google 측에 저장되지 않습니다. 문제가 발생할 경우 generateContent로 대체하려면 이 옵션을 비활성화하세요.',
+		'Gemini 요청을 기존 generateContent API 대신 Google의 최신 Interactions API를 통해 전송합니다. 이는 기본 전송 방식입니다. 상태를 저장하지 않고 실행되므로 대화 기록은 매 턴마다 다시 전송되며, 턴 사이에 Google 측에 저장되지 않습니다. 문제가 발생할 경우 generateContent로 대체하려면 이 옵션을 비활성화하세요. Interactions API만 지원하는 모델(예: Gemini Omni)은 이 설정과 관계없이 항상 이 API를 사용합니다.',
 	'settings.agentConfig.customEndpointName': '사용자 지정 API 엔드포인트',
 	'settings.agentConfig.customEndpointDesc':
 		'기본 Google API 기본 URL을 재정의합니다(예: 회사 프록시 또는 로컬 게이트웨이용). 공식 엔드포인트를 사용하려면 비워 두십시오.',

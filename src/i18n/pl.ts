@@ -141,7 +141,7 @@ export const pl: Partial<Record<TranslationKey, string>> = {
 		'Zapisuj wpisy dziennika do pliku w folderze stanu wtyczki. Błędy i ostrzeżenia są zawsze rejestrowane; wpisy debugowania wymagają włączenia trybu debugowania. Pliki dziennika są automatycznie rotowane po osiągnięciu 1 MB.',
 	'settings.agentConfig.useInteractionsApiName': 'Używaj Interactions API',
 	'settings.agentConfig.useInteractionsApiDesc':
-		'Kieruj żądania Gemini przez nowsze Interactions API od Google zamiast starszego API generateContent. Jest to domyślny transport. Działa bezstanowo — historia konwersacji jest odtwarzana przy każdej turze i nie jest zapisywana po stronie Google między turami. Wyłącz tę opcję, aby powrócić do generateContent w przypadku problemów.',
+		'Kieruj zapytania Gemini przez nowsze Interactions API Google zamiast starszego generateContent API. Jest to domyślny protokół przesyłania. Działa bezstanowo — historia konwersacji jest odtwarzana przy każdej turze i nie jest przechowywana po stronie Google między turami. Wyłącz tę opcję, aby powrócić do generateContent w przypadku problemów. Modele obsługujące wyłącznie Interactions API (takie jak Gemini Omni) zawsze z niego korzystają, niezależnie od tego ustawienia.',
 	'settings.agentConfig.customEndpointName': 'Niestandardowy punkt końcowy API',
 	'settings.agentConfig.customEndpointDesc':
 		'Nadpisz domyślny adres bazowy Google API (np. dla firmowego serwera proxy lub lokalnej bramy). Pozostaw puste, aby użyć oficjalnego punktu końcowego.',
