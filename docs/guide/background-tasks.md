@@ -32,7 +32,7 @@ Completed tasks with output files show an **Open result** link that opens the fi
 
 Background tasks are created automatically when you trigger long-running operations:
 
-- **Deep Research** — starts a research task; result saved to `[state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md` by default (you can specify a custom path via the `outputFile` parameter)
+- **Deep Research** — the agent is steered to run research in the background by default (via its system prompt), and when it does, the result is saved to `[state-folder]/Background-Tasks/YYYY-MM-DD <topic>.md` (you can specify a custom path via the `outputFile` parameter). This is a prompted default, not enforced by the tool itself — if the agent runs research in the foreground instead, no file is saved unless `outputFile` is set.
 - **Image Generation** — generates and saves an image; result path shown in the completion notice. The **Generate image** command palette entry also routes through the background system: it returns control immediately and inserts the wikilink at your captured cursor position when the task completes (or shows a Notice with the wikilink to copy if you've moved on from the source note).
 
 Both operations fire a completion notice with a clickable vault link when done. If a task fails, a notice explains the error.
