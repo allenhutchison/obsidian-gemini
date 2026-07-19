@@ -99,7 +99,7 @@ _A large feature release — a full visual refresh plus smarter, more responsive
 5. Manage sessions directly with command palette actions: "New agent session", "Browse agent sessions", "Link project to agent session", and "Agent session settings"
 6. Start using the AI agent to work with your vault!
 
-**Prefer running models locally?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)". A few Gemini-built-in features (Google Search, URL Context, Deep Research, image generation, RAG) are unavailable on Ollama; see [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
+**Prefer running models locally?** Gemini Scribe also supports [Ollama](https://ollama.com) — install Ollama, pull a model with `ollama pull llama3.2`, and switch the **Provider** in settings to "Ollama (local)". A few Gemini-built-in features (Google Search, Google Maps, URL Context, Deep Research, image generation, RAG) are unavailable on Ollama; see [docs/guide/ollama-setup.md](docs/guide/ollama-setup.md) for details.
 
 ## Installation
 

@@ -92,6 +92,7 @@ A few Gemini-specific features are unavailable on Ollama — these all depend on
 - **Deep Research** (requires Google Search grounding)
 - **Semantic vault search / RAG** (requires the Gemini File Search API)
 - **Google Search grounding** in agent mode
+- **Google Maps grounding** in agent mode
 - **URL Context** web-fetch tool
 - **Image generation** (Imagen API)
 
