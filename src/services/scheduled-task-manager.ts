@@ -534,7 +534,7 @@ export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask
 		if (!prompt) return null;
 
 		const slug = file.basename;
-		const defaultOutputPath = `${this.runsFolder}/${slug}/{date}.md`;
+		const defaultOutputPath = normalizePath(`${this.runsFolder}/${slug}/{date}.md`);
 
 		const task: ScheduledTask = {
 			slug,
