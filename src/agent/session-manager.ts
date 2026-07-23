@@ -11,8 +11,8 @@ import {
 import type { ObsidianGemini } from '../types/plugin';
 import { sanitizeFileName } from '../utils/file-utils';
 import { formatLocalDate } from '../utils/format-utils';
-import { FeatureToolPolicy, parseToolPolicyFrontmatter, clonePolicy } from '../types/tool-policy';
-import { migrateLegacyToolCategoryArray } from '../services/feature-policy-yaml';
+import { FeatureToolPolicy, clonePolicy } from '../types/tool-policy';
+import { resolveFeatureToolPolicy } from '../services/feature-definition';
 import { asRecord } from '../utils/error-utils';
 
 /** Read a frontmatter field as a non-empty string, or `undefined`. */
@@ -26,19 +26,20 @@ function frontmatterDate(value: unknown, fallbackMs: number): Date {
 }
 
 /**
- * Parse a session's tool policy from frontmatter. Prefers the new
- * `tool_policy:` block; falls back to the legacy `enabled_tools` array
- * (via the shared category-array migrator); falls back to the supplied default.
+ * Parse a session's tool policy from frontmatter. Delegates the preference
+ * ladder (canonical `tool_policy:` block → legacy `enabled_tools` array) to the
+ * shared {@link resolveFeatureToolPolicy}, passing the session's snake_case key
+ * dialect; the session-specific `clonePolicy(fallback)` default is layered here
+ * because inheriting the supplied fallback is unique to sessions.
  */
 function parseSessionToolPolicy(
 	frontmatter: Record<string, unknown> | undefined,
 	fallback: FeatureToolPolicy | undefined
 ): FeatureToolPolicy | undefined {
-	const fromNewShape = parseToolPolicyFrontmatter(frontmatter?.tool_policy);
-	if (fromNewShape) return fromNewShape;
-	const fromLegacy = migrateLegacyToolCategoryArray(frontmatter?.enabled_tools);
-	if (fromLegacy !== undefined) return fromLegacy;
-	return clonePolicy(fallback);
+	return (
+		resolveFeatureToolPolicy(frontmatter ?? {}, { policyKey: 'tool_policy', legacyKey: 'enabled_tools' }) ??
+		clonePolicy(fallback)
+	);
 }
 
 /**

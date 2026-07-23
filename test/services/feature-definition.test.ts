@@ -147,6 +147,39 @@ describe('resolveFeatureToolPolicy', () => {
 			preset: PolicyPreset.EDIT_MODE,
 		});
 	});
+
+	describe('with a custom key dialect (e.g. sessions use snake_case)', () => {
+		const keys = { policyKey: 'tool_policy', legacyKey: 'enabled_tools' };
+
+		it('returns undefined when neither dialect key is present', () => {
+			expect(resolveFeatureToolPolicy({ schedule: 'daily' }, keys)).toBeUndefined();
+		});
+
+		it('ignores the default camelCase keys when a custom dialect is given', () => {
+			// The camelCase keys must not be read once snake_case keys are requested.
+			expect(resolveFeatureToolPolicy({ toolPolicy: { preset: 'edit_mode' } }, keys)).toBeUndefined();
+		});
+
+		it('parses the canonical block under the custom policy key', () => {
+			expect(resolveFeatureToolPolicy({ tool_policy: { preset: 'read_only' } }, keys)).toEqual({
+				preset: PolicyPreset.READ_ONLY,
+			});
+		});
+
+		it('falls back to the legacy array under the custom legacy key', () => {
+			expect(resolveFeatureToolPolicy({ enabled_tools: ['read_only'] }, keys)).toEqual({
+				preset: PolicyPreset.READ_ONLY,
+			});
+		});
+
+		it('prefers the canonical block over the legacy array under the custom keys', () => {
+			expect(
+				resolveFeatureToolPolicy({ tool_policy: { preset: 'edit_mode' }, enabled_tools: ['read_only'] }, keys)
+			).toEqual({
+				preset: PolicyPreset.EDIT_MODE,
+			});
+		});
+	});
 });
 
 // ─── migrateLegacyEnabledTools ───────────────────────────────────────────────
