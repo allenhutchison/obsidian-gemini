@@ -13,20 +13,18 @@ import type {
 	HookUpdateParams,
 } from './hook-types';
 import {
-	JsonSidecarStateStore,
 	extractMarkdownBody,
 	migrateLegacyEnabledTools,
 	parseMaxIterations,
-	purgeOrphanState,
 	resolveFeatureToolPolicy,
 } from './feature-definition';
+import { FileBackedFeatureManager } from './file-backed-feature-manager';
 import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
 import { matchesFrontmatterFilter, matchesGlob } from './hook-matcher';
 
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
 const HOOKS_FOLDER = 'Hooks';
-const RUNS_SUBFOLDER = 'Runs';
 const STATE_FILE = 'hooks-state.json';
 
 /** Default per-(hook, file) debounce window (ms). Resets on every matching event. */
@@ -97,10 +95,8 @@ function validateSlug(raw: string): string {
  *
  * Hooks are skipped entirely when `settings.hooksEnabled` is false (default).
  */
-export class HookManager {
+export class HookManager extends FileBackedFeatureManager<Hook, HookState> {
 	private hooks = new Map<string, Hook>();
-	private state: HooksState = {};
-	private readonly stateStore: JsonSidecarStateStore<HooksState>;
 	private initialized = false;
 	/** Per-(hook, file) debounce timers, keyed by `${slug}::${filePath}`. */
 	private debounceTimers = new Map<string, number>();
@@ -111,8 +107,14 @@ export class HookManager {
 	/** Shared auto-pause-after-N-failures ladder over the per-hook sidecar state. */
 	private readonly failureTracker: FailurePauseTracker<HookState>;
 
-	constructor(private plugin: ObsidianGemini) {
-		this.stateStore = new JsonSidecarStateStore<HooksState>(plugin, () => this.stateFilePath, '[HookManager]');
+	constructor(plugin: ObsidianGemini) {
+		super(plugin, {
+			featureFolder: HOOKS_FOLDER,
+			stateFileName: STATE_FILE,
+			logPrefix: '[HookManager]',
+			featureNoun: 'hook',
+			entityLabel: 'Hook',
+		});
 		this.failureTracker = new FailurePauseTracker<HookState>({
 			getState: (slug) => this.state[slug],
 			setState: (slug, next) => {
@@ -128,16 +130,14 @@ export class HookManager {
 
 	// ── Folder path helpers ──────────────────────────────────────────────────
 
+	/** Public alias for the base's feature-folder path (kept for callers). */
 	get hooksFolder(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/${HOOKS_FOLDER}`);
+		return this.featureFolderPath;
 	}
 
-	get runsFolder(): string {
-		return normalizePath(`${this.hooksFolder}/${RUNS_SUBFOLDER}`);
-	}
-
-	get stateFilePath(): string {
-		return normalizePath(`${this.hooksFolder}/${STATE_FILE}`);
+	/** The base operates on this map; `hooks` keeps its descriptive name. */
+	protected get definitions(): Map<string, Hook> {
+		return this.hooks;
 	}
 
 	// ── Lifecycle ────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ export class HookManager {
 		await ensureFolderExists(this.plugin.app.vault, this.hooksFolder, 'hooks', this.plugin.logger);
 		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'hook runs', this.plugin.logger);
 		await this.loadState();
-		await this.discoverHooks();
+		await this.discoverDefinitions();
 		this.registerEventHandlers();
 
 		this.initialized = true;
@@ -224,7 +224,7 @@ export class HookManager {
 		const filePath = normalizePath(`${this.hooksFolder}/${slug}.md`);
 		// Normalize at the write boundary so an invalid value from a programmatic
 		// caller can't be persisted or held in memory — matches the read-path
-		// contract (parseHookFile), where invalid values fall back to the default.
+		// contract (parseDefinitionFile), where invalid values fall back to the default.
 		const normalizedParams = { ...params, maxIterations: parseMaxIterations(params.maxIterations) };
 		const content = this.serializeHook({ ...normalizedParams, slug });
 		await this.plugin.app.vault.create(filePath, content);
@@ -265,7 +265,7 @@ export class HookManager {
 			model: params.model ?? hook.model ?? '',
 			// `in` check (not ??) so callers can clear back to the default by
 			// passing maxIterations: undefined explicitly. Normalize incoming
-			// values so an invalid number can't be persisted (matches parseHookFile).
+			// values so an invalid number can't be persisted (matches parseDefinitionFile).
 			maxIterations: 'maxIterations' in params ? parseMaxIterations(params.maxIterations) : hook.maxIterations,
 			outputPath: params.outputPath ?? hook.outputPath ?? '',
 			enabled: params.enabled ?? hook.enabled,
@@ -285,17 +285,7 @@ export class HookManager {
 	 * Delete a hook: remove the definition file and its state entry.
 	 */
 	async deleteHook(slug: string): Promise<void> {
-		const hook = this.hooks.get(slug);
-		if (!hook) throw new Error(`Hook "${slug}" not found`);
-
-		const file = this.plugin.app.vault.getAbstractFileByPath(hook.filePath);
-		if (file) {
-			await this.plugin.app.fileManager.trashFile(file);
-		}
-
-		this.hooks.delete(slug);
-		delete this.state[slug];
-		await this.saveState();
+		await this.deleteDefinition(slug);
 	}
 
 	/**
@@ -386,7 +376,7 @@ export class HookManager {
 		if (params.focusFile === true) lines.push('focusFile: true');
 
 		// `summarize` and `command` actions don't use the prompt body, but
-		// `parseHookFile` rejects empty bodies for `agent-task` and `rewrite`.
+		// `parseDefinitionFile` rejects empty bodies for `agent-task` and `rewrite`.
 		// Emit the body trimmed; for the prompt-less actions an empty body
 		// is fine because the parser doesn't enforce a non-empty body for them.
 		lines.push('---', '', params.prompt.trim(), '');
@@ -683,31 +673,7 @@ export class HookManager {
 
 	// ── Discovery / parsing ─────────────────────────────────────────────────
 
-	private async discoverHooks(): Promise<void> {
-		this.hooks.clear();
-
-		const prefix = this.hooksFolder + '/';
-		const runsPrefix = this.runsFolder + '/';
-
-		const files = this.plugin.app.vault
-			.getMarkdownFiles()
-			.filter((f) => f.path.startsWith(prefix) && !f.path.startsWith(runsPrefix));
-
-		for (const file of files) {
-			try {
-				const hook = await this.parseHookFile(file);
-				if (hook) this.hooks.set(hook.slug, hook);
-			} catch (err) {
-				this.plugin.logger.warn(`[HookManager] Failed to parse hook file ${file.path}:`, err);
-			}
-		}
-
-		// Drop state entries whose definition file is gone.
-		purgeOrphanState(this.state, (slug) => this.hooks.has(slug));
-		await this.saveState();
-	}
-
-	private async parseHookFile(file: TFile): Promise<Hook | null> {
+	protected async parseDefinitionFile(file: TFile): Promise<Hook | null> {
 		const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
 		if (!frontmatter) return null;
 
@@ -805,15 +771,5 @@ export class HookManager {
 	private parseAction(value: unknown): HookAction | null {
 		if (value === 'agent-task' || value === 'summarize' || value === 'rewrite' || value === 'command') return value;
 		return null;
-	}
-
-	// ── State persistence ───────────────────────────────────────────────────
-
-	private async loadState(): Promise<void> {
-		this.state = await this.stateStore.load();
-	}
-
-	private async saveState(): Promise<void> {
-		await this.stateStore.save(this.state);
 	}
 }

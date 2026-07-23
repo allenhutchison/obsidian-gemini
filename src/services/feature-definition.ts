@@ -5,13 +5,16 @@ import { FeatureToolPolicy, parseToolPolicyFrontmatter } from '../types/tool-pol
 import { migrateLegacyToolCategoryArray } from './feature-policy-yaml';
 
 /**
- * Shared scaffolding for the markdown-defined feature managers — HookManager
- * and ScheduledTaskManager. Both discover `<slug>.md` definition files under a
- * folder in the plugin state directory, parse YAML frontmatter into a typed
- * definition, and persist volatile per-entry runtime state to a JSON sidecar.
- * The helpers below are the parts of that pattern that are identical between
- * the two managers; the feature-specific frontmatter-field mapping stays in
- * each manager's own `parseHookFile` / `parseTaskFile`.
+ * Shared field-level scaffolding for the markdown-defined feature managers —
+ * HookManager and ScheduledTaskManager. Both discover `<slug>.md` definition
+ * files under a folder in the plugin state directory, parse YAML frontmatter
+ * into a typed definition, and persist volatile per-entry runtime state to a
+ * JSON sidecar. The helpers below are the field-mapping parts of that pattern
+ * that are identical between the two managers; the outer manager skeleton
+ * (folder getters, discover-and-purge loop, sidecar load/save, delete) lives in
+ * the `FileBackedFeatureManager` base (`./file-backed-feature-manager.ts`),
+ * which consumes these helpers. The feature-specific frontmatter-field mapping
+ * stays in each manager's own `parseDefinitionFile`.
  */
 
 /**

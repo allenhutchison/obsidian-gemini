@@ -4,13 +4,12 @@ import { ensureFolderExists } from '../utils/file-utils';
 import { FeatureToolPolicy } from '../types/tool-policy';
 import { formatToolPolicyYaml } from './feature-policy-yaml';
 import {
-	JsonSidecarStateStore,
 	extractMarkdownBody,
 	migrateLegacyEnabledTools,
 	parseMaxIterations,
-	purgeOrphanState,
 	resolveFeatureToolPolicy,
 } from './feature-definition';
+import { FileBackedFeatureManager } from './file-backed-feature-manager';
 import { FailurePauseTracker, MAX_CONSECUTIVE_FAILURES } from './failure-pause-tracker';
 import { computeNextRunAt } from './scheduled-tasks/schedule';
 import { detectMissedRuns as detectMissedRunsInWindow } from './scheduled-tasks/missed-runs';
@@ -25,7 +24,6 @@ export { computeNextRunAt } from './scheduled-tasks/schedule';
 // ─── Folder / file layout ─────────────────────────────────────────────────────
 
 const SCHEDULED_TASKS_FOLDER = 'Scheduled-Tasks';
-const RUNS_SUBFOLDER = 'Runs';
 const STATE_FILE = 'scheduled-tasks-state.json';
 
 /** Milliseconds between scheduler ticks (60 s). Same cadence as ChatTimer. */
@@ -47,9 +45,8 @@ const TICK_INTERVAL_MS = 60_000;
  *   │       └── <date>.md               ← result output
  *   └── scheduled-tasks-state.json      ← volatile runtime state
  */
-export class ScheduledTaskManager {
+export class ScheduledTaskManager extends FileBackedFeatureManager<ScheduledTask, TaskState> {
 	private tasks = new Map<string, ScheduledTask>();
-	private state: ScheduledTasksState = {};
 	private tickIntervalId: number | null = null;
 	private initialized = false;
 	private metadataCacheHandler: ((...data: unknown[]) => unknown) | null = null;
@@ -70,18 +67,19 @@ export class ScheduledTaskManager {
 	private pendingDefers = new Set<number>();
 	/** Slugs reserved for catch-up approval — tick skips these until approved or skipped. */
 	private catchUpPending = new Set<string>();
-	private readonly stateStore: JsonSidecarStateStore<ScheduledTasksState>;
 	/** Shared auto-pause-after-N-failures ladder over the per-task sidecar state. */
 	private readonly failureTracker: FailurePauseTracker<TaskState>;
 	/** Dependencies handed to the execution-dispatch module (submit/execute/advance). */
 	private readonly execDeps: ExecutionDeps;
 
-	constructor(private plugin: ObsidianGemini) {
-		this.stateStore = new JsonSidecarStateStore<ScheduledTasksState>(
-			plugin,
-			() => this.stateFilePath,
-			'[ScheduledTaskManager]'
-		);
+	constructor(plugin: ObsidianGemini) {
+		super(plugin, {
+			featureFolder: SCHEDULED_TASKS_FOLDER,
+			stateFileName: STATE_FILE,
+			logPrefix: '[ScheduledTaskManager]',
+			featureNoun: 'task',
+			entityLabel: 'Scheduled task',
+		});
 		this.failureTracker = new FailurePauseTracker<TaskState>({
 			getState: (slug) => this.state[slug],
 			setState: (slug, next) => {
@@ -105,16 +103,14 @@ export class ScheduledTaskManager {
 
 	// ── Folder path helpers ──────────────────────────────────────────────────
 
+	/** Public alias for the base's feature-folder path (kept for callers). */
 	get scheduledTasksFolder(): string {
-		return normalizePath(`${this.plugin.settings.historyFolder}/${SCHEDULED_TASKS_FOLDER}`);
+		return this.featureFolderPath;
 	}
 
-	get runsFolder(): string {
-		return normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}`);
-	}
-
-	get stateFilePath(): string {
-		return normalizePath(`${this.scheduledTasksFolder}/${STATE_FILE}`);
+	/** The base operates on this map; `tasks` keeps its descriptive name. */
+	protected get definitions(): Map<string, ScheduledTask> {
+		return this.tasks;
 	}
 
 	// ── Lifecycle ────────────────────────────────────────────────────────────
@@ -156,7 +152,7 @@ export class ScheduledTaskManager {
 		await ensureFolderExists(this.plugin.app.vault, this.scheduledTasksFolder, 'scheduled tasks', this.plugin.logger);
 		await ensureFolderExists(this.plugin.app.vault, this.runsFolder, 'scheduled task runs', this.plugin.logger);
 		await this.loadState();
-		await this.discoverTasks();
+		await this.discoverDefinitions();
 
 		// Re-parse a task definition file whenever the metadata cache updates it
 		// (fires after Obsidian re-indexes the frontmatter, so values are current).
@@ -334,7 +330,7 @@ export class ScheduledTaskManager {
 		computeNextRunAt(params.schedule, new Date());
 
 		const filePath = normalizePath(`${this.scheduledTasksFolder}/${slug}.md`);
-		const defaultOutputPath = normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`);
+		const defaultOutputPath = normalizePath(`${this.runsFolder}/${slug}/{date}.md`);
 		// Normalize at the write boundary so an invalid value from a programmatic
 		// caller can't be persisted or held in memory — matches the read-path
 		// contract (parseTaskFile), where invalid values fall back to the default.
@@ -364,22 +360,12 @@ export class ScheduledTaskManager {
 	}
 
 	/**
-	 * Delete a scheduled task: remove the definition file and its state entry.
-	 * The metadata cache 'changed' handler will drop the task from the in-memory
-	 * map once Obsidian indexes the deletion; the state cleanup happens immediately.
+	 * Delete a scheduled task. Delegates to the base `deleteDefinition`, which
+	 * trashes the definition file and removes the task (and its sidecar state
+	 * entry) from the in-memory map synchronously in this call.
 	 */
 	async deleteTask(slug: string): Promise<void> {
-		const task = this.tasks.get(slug);
-		if (!task) throw new Error(`Scheduled task "${slug}" not found`);
-
-		const file = this.plugin.app.vault.getAbstractFileByPath(task.filePath);
-		if (file) {
-			await this.plugin.app.fileManager.trashFile(file);
-		}
-
-		this.tasks.delete(slug);
-		delete this.state[slug];
-		await this.saveState();
+		await this.deleteDefinition(slug);
 	}
 
 	/**
@@ -516,41 +502,28 @@ export class ScheduledTaskManager {
 
 	// ── Private ──────────────────────────────────────────────────────────────
 
-	private async discoverTasks(): Promise<void> {
-		this.tasks.clear();
+	protected parseDefinitionFile(file: TFile): Promise<ScheduledTask | null> {
+		return this.parseTaskFile(file);
+	}
 
-		const prefix = this.scheduledTasksFolder + '/';
-		const runsPrefix = this.runsFolder + '/';
-
-		// All markdown files directly inside Scheduled-Tasks/ (not in Runs/ or deeper)
-		const files = this.plugin.app.vault
-			.getMarkdownFiles()
-			.filter((f) => f.path.startsWith(prefix) && !f.path.startsWith(runsPrefix));
-
-		for (const file of files) {
-			try {
-				const task = await this.parseTaskFile(file);
-				if (!task) continue;
-
-				this.tasks.set(task.slug, task);
-
-				// Seed state entry for newly-discovered tasks: due immediately
-				if (!this.state[task.slug]) {
-					this.state[task.slug] = { nextRunAt: new Date().toISOString() };
-				}
-			} catch (error) {
-				this.plugin.logger.warn(`[ScheduledTaskManager] Failed to parse task file ${file.path}:`, error);
-			}
+	/**
+	 * Seed a newly-discovered task's state so it is due immediately. The tick
+	 * already tolerates a missing entry, but seeding keeps discovery and the
+	 * hot-reload paths consistent. Existing entries are preserved verbatim.
+	 */
+	protected seedDiscoveredState(task: ScheduledTask): void {
+		if (!this.state[task.slug]) {
+			this.state[task.slug] = { nextRunAt: new Date().toISOString() };
 		}
+	}
 
-		// Drop state entries for slugs whose definition file is gone. The tick
-		// already tolerates orphan state, but stripping it on init keeps the
-		// JSON tidy and prevents stale lastError messages from accumulating.
-		for (const slug of purgeOrphanState(this.state, (s) => this.tasks.has(s))) {
-			this.plugin.logger.log(`[ScheduledTaskManager] Purged orphan state entry for "${slug}" (no matching task file)`);
-		}
-
-		await this.saveState();
+	/**
+	 * Log each orphan state entry stripped on discovery. The tick already
+	 * tolerates orphan state, but stripping it keeps the JSON tidy and stops
+	 * stale lastError messages from accumulating.
+	 */
+	protected onOrphanPurged(slug: string): void {
+		this.plugin.logger.log(`[ScheduledTaskManager] Purged orphan state entry for "${slug}" (no matching task file)`);
 	}
 
 	private async parseTaskFile(file: TFile): Promise<ScheduledTask | null> {
@@ -561,7 +534,7 @@ export class ScheduledTaskManager {
 		if (!prompt) return null;
 
 		const slug = file.basename;
-		const defaultOutputPath = `${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${slug}/{date}.md`;
+		const defaultOutputPath = normalizePath(`${this.runsFolder}/${slug}/{date}.md`);
 
 		const task: ScheduledTask = {
 			slug,
@@ -613,8 +586,7 @@ export class ScheduledTaskManager {
 			lines.push(...policyLines);
 		}
 
-		const defaultOutputPath =
-			params.slug && normalizePath(`${this.scheduledTasksFolder}/${RUNS_SUBFOLDER}/${params.slug}/{date}.md`);
+		const defaultOutputPath = params.slug && normalizePath(`${this.runsFolder}/${params.slug}/{date}.md`);
 		if (params.outputPath && params.outputPath !== defaultOutputPath) {
 			lines.push(`outputPath: '${params.outputPath}'`);
 		}
@@ -634,13 +606,5 @@ export class ScheduledTaskManager {
 
 		lines.push('---', '', params.prompt.trim(), '');
 		return lines.join('\n');
-	}
-
-	private async loadState(): Promise<void> {
-		this.state = await this.stateStore.load();
-	}
-
-	private async saveState(): Promise<void> {
-		await this.stateStore.save(this.state);
 	}
 }
